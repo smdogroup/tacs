@@ -11,10 +11,11 @@
 #include "TACSDirector.h"
 #include "TACSShellElementTransform.h"
 
+
 template <class quadrature, class basis, class director, class model>
-class TACSShellElement : public TACSElement {
+class TACSThermalShell : public TACSElement {
  public:
-  TACSShellElement( TACSShellTransform *_transform,
+  TACSThermalShell( TACSShellTransform *_transform,
                     TACSShellConstitutive *_con ){
     transform = _transform;
     transform->incref();
@@ -24,7 +25,7 @@ class TACSShellElement : public TACSElement {
   }
 
   int getVarsPerNode(){
-    return 3 + director::NUM_PARAMETERS;
+    return 4 + director::NUM_PARAMETERS;
   }
   int getNumNodes(){
     return basis::NUM_NODES;
@@ -157,7 +158,7 @@ class TACSShellElement : public TACSElement {
 };
 
 template <class quadrature, class basis, class director, class model>
-void TACSShellElement<quadrature, basis, director, model>::
+void TACSThermalShell<quadrature, basis, director, model>::
   getNodeNormals( const TacsScalar Xpts[],
                   TacsScalar fn[],
                   TacsScalar fnorm[] ){
@@ -201,7 +202,7 @@ void TACSShellElement<quadrature, basis, director, model>::
   rate of change of the displacements.
 */
 template <class quadrature, class basis, class director, class model>
-TacsScalar TACSShellElement<quadrature, basis, director, model>::
+TacsScalar TACSThermalShell<quadrature, basis, director, model>::
   computeDispGrad( const double pt[],
                    const TacsScalar Xpts[],
                    const TacsScalar vars[],
@@ -215,7 +216,7 @@ TacsScalar TACSShellElement<quadrature, basis, director, model>::
                    TacsScalar u0x[],
                    TacsScalar u1x[],
                    TacsScalar Ct[] ){
-  const int vars_per_node = 3 + director::NUM_PARAMETERS;
+  const int vars_per_node = 4 + director::NUM_PARAMETERS;
 
   // Compute X,xi = [dX/dxi1 ; dX/dxi2] and n,xi = [dn/dxi1; dn/dxi2]
   TacsScalar Xxi[6], n[3], nxi[6];
@@ -288,7 +289,7 @@ TacsScalar TACSShellElement<quadrature, basis, director, model>::
   Compute the kinetic and potential energies of the shell
 */
 template <class quadrature, class basis, class director, class model>
-void TACSShellElement<quadrature, basis, director, model>::
+void TACSThermalShell<quadrature, basis, director, model>::
   computeEnergies( int elemIndex,
                    double time,
                    const TacsScalar *Xpts,
@@ -301,7 +302,7 @@ void TACSShellElement<quadrature, basis, director, model>::
 
   // Compute the number of quadrature points
   const int nquad = quadrature::getNumQuadraturePoints();
-  const int vars_per_node = 3 + director::NUM_PARAMETERS;
+  const int vars_per_node = 4 + director::NUM_PARAMETERS;
 
   // Compute the node normal directions
   TacsScalar fn[3*basis::NUM_NODES];
@@ -311,7 +312,7 @@ void TACSShellElement<quadrature, basis, director, model>::
   TacsScalar C[9*basis::NUM_NODES];
   TacsScalar d[3*basis::NUM_NODES];
   TacsScalar ddot[3*basis::NUM_NODES];
-  for ( int i = 0, offset = 3; i < basis::NUM_NODES; i++, offset += vars_per_node ){
+  for ( int i = 0, offset = 4; i < basis::NUM_NODES; i++, offset += vars_per_node ){
     director::computeDirectorRates(&vars[offset], &dvars[offset],
                                    &fn[3*i], &C[9*i], &d[3*i], &ddot[3*i]);
   }
@@ -364,7 +365,7 @@ void TACSShellElement<quadrature, basis, director, model>::
   Add the residual to the provided vector
 */
 template <class quadrature, class basis, class director, class model>
-void TACSShellElement<quadrature, basis, director, model>::
+void TACSThermalShell<quadrature, basis, director, model>::
   addResidual( int elemIndex,
                double time,
                const TacsScalar *Xpts,
@@ -374,7 +375,7 @@ void TACSShellElement<quadrature, basis, director, model>::
                TacsScalar *res ){
   // Compute the number of quadrature points
   const int nquad = quadrature::getNumQuadraturePoints();
-  const int vars_per_node = 3 + director::NUM_PARAMETERS;
+  const int vars_per_node = 4 + director::NUM_PARAMETERS;
 
   // Compute the node normal directions
   TacsScalar fn[3*basis::NUM_NODES];
@@ -385,7 +386,7 @@ void TACSShellElement<quadrature, basis, director, model>::
   TacsScalar d[3*basis::NUM_NODES];
   TacsScalar ddot[3*basis::NUM_NODES];
   TacsScalar dddot[3*basis::NUM_NODES];
-  for ( int i = 0, offset = 3; i < basis::NUM_NODES; i++, offset += vars_per_node ){
+  for ( int i = 0, offset = 4; i < basis::NUM_NODES; i++, offset += vars_per_node ){
     director::computeDirectorRates(&vars[offset], &dvars[offset],
                                    &ddvars[offset], &fn[3*i], &C[9*i],
                                    &d[3*i], &ddot[3*i], &dddot[3*i]);
@@ -433,9 +434,42 @@ void TACSShellElement<quadrature, basis, director, model>::
     TacsScalar e[9]; // The components of the strain
     model::evalStrain(u0x, u1x, e0ty, Ct, e);
 
+    // Evaluate the temperature and temperature gradient
+    TacsScalar t, txi[2];
+    basis::interpFields(pt, vars_per_node, &vars[3], 1, &t);
+    basis::interpFieldsGrad(pt, vars_per_node, &vars[3], 1, txi);
+
+    // Transform to the local component of the heat flux
+    TacsScalar tx[2]; // tx = txi*Xdinv*T
+    tx[0] = XdinvT[0]*txi[0] + XdinvT[1]*txi[1];
+    tx[1] = XdinvT[3]*txi[0] + XdinvT[4]*txi[1];
+
+    TacsScalar q[2];
+    con->evalHeatFlux(elemIndex, pt, X, tx, q);
+
+    TacsScalar qxi[2];
+    qxi[0] = detXd*(XdinvT[0]*q[0] + XdinvT[3]*q[1]);
+    qxi[1] = detXd*(XdinvT[1]*q[0] + XdinvT[4]*q[1]);
+    basis::addInterpFieldsGradTranspose(pt, 1, qxi, vars_per_node, &res[3]);
+
+    // This is adding a constant heat source to the element. This
+    // is only for testing purposes and should be removed eventually
+    TacsScalar rhs = -10.0*detXd;
+    basis::addInterpFieldsTranspose(pt, 1, &rhs, vars_per_node, &res[3]);
+
+    // Compute the thermal strain
+    TacsScalar et[9];
+    con->evalThermalStrain(elemIndex, pt, X, t, et);
+
+    // Compute the mechanical strain (and stress)
+    TacsScalar em[9];
+    for ( int i = 0; i < 9; i++ ){
+      em[i] = e[i] - et[i];
+    }
+
     // Compute the corresponding stresses
     TacsScalar s[9];
-    con->evalStress(elemIndex, pt, X, e, s);
+    con->evalStress(elemIndex, pt, X, em, s);
 
     // Compute the derivative of the product of the stress and strain
     // with respect to u0x, u1x and e0ty
@@ -488,7 +522,7 @@ void TACSShellElement<quadrature, basis, director, model>::
                                                         d, dety, res, dd);
 
   // Add the contributions to the director field
-  for ( int i = 0, offset = 3; i < basis::NUM_NODES; i++, offset += vars_per_node ){
+  for ( int i = 0, offset = 4; i < basis::NUM_NODES; i++, offset += vars_per_node ){
     director::addDirectorResidual(&vars[offset], &dvars[offset], &ddvars[offset],
                                    &fn[3*i], &dC[9*i], &dd[3*i], &res[offset]);
   }
@@ -499,7 +533,7 @@ void TACSShellElement<quadrature, basis, director, model>::
 */
 /*
 template <class quadrature, class basis, class director, class model>
-void TACSShellElement<quadrature, basis, director, model>::
+void TACSThermalShell<quadrature, basis, director, model>::
   addJacobian( int elemIndex, double time,
                TacsScalar alpha,
                TacsScalar beta,
@@ -632,6 +666,14 @@ void TACSShellElement<quadrature, basis, director, model>::
 
 
     basis::addInterpGradGradOuterProduct(pt, 3, d2u0xi, vars_per_node, )
+
+
+
+
+
+
+
+
   }
 
   // Set the total number of tying points needed for this element
@@ -650,7 +692,7 @@ void TACSShellElement<quadrature, basis, director, model>::
   Get the element data for the basis
 */
 template <class quadrature, class basis, class director, class model>
-void TACSShellElement<quadrature, basis, director, model>::
+void TACSThermalShell<quadrature, basis, director, model>::
   getOutputData( int elemIndex,
                  ElementType etype,
                  int write_flag,
@@ -674,7 +716,7 @@ void TACSShellElement<quadrature, basis, director, model>::
   TacsScalar C[9*basis::NUM_NODES];
   TacsScalar d[3*basis::NUM_NODES];
   TacsScalar ddot[3*basis::NUM_NODES];
-  for ( int i = 0, offset = 3; i < basis::NUM_NODES; i++, offset += vars_per_node ){
+  for ( int i = 0, offset = 4; i < basis::NUM_NODES; i++, offset += vars_per_node ){
     director::computeDirectorRates(&vars[offset], &dvars[offset], &fn[3*i],
                                    &C[9*i], &d[3*i], &ddot[3*i]);
   }
@@ -709,9 +751,23 @@ void TACSShellElement<quadrature, basis, director, model>::
     TacsScalar e[9]; // The components of the strain
     model::evalStrain(u0x, u1x, e0ty, Ct, e);
 
+    // Evaluate the temperature and temperature gradient
+    TacsScalar t;
+    basis::interpFields(pt, vars_per_node, &vars[3], 1, &t);
+
+    // Compute the thermal strain
+    TacsScalar et[9];
+    con->evalThermalStrain(elemIndex, pt, X, t, et);
+
+    // Compute the mechanical strain (and stress)
+    TacsScalar em[9];
+    for ( int i = 0; i < 9; i++ ){
+      em[i] = e[i] - et[i];
+    }
+
     // Compute the corresponding stresses
     TacsScalar s[9];
-    con->evalStress(elemIndex, pt, X, e, s);
+    con->evalStress(elemIndex, pt, X, em, s);
 
     if (etype == TACS_BEAM_OR_SHELL_ELEMENT){
       if (write_flag & TACS_OUTPUT_NODES){

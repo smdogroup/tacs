@@ -185,7 +185,8 @@ void TACSShellConstitutive::evalTangentStiffness( int elemIndex,
     // The bending-stretch coupling matrix is zero in this case
     B[0] = B[1] = B[2] = B[3] = B[4] = B[5] = 0.0;
 
-    // Scale the in-plane matrix and bending stiffness matrix by the appropriate quantities
+    // Scale the in-plane matrix and bending stiffness
+    // matrix by the appropriate quantities
     TacsScalar I = t*t*t/12.0;
     for ( int i = 0; i < 6; i++ ){
       D[i] = I*A[i];

@@ -135,7 +135,8 @@ int main( int argc, char *argv[] ){
   TacsScalar axis[] = {0.0, 1.0, 0.0};
   TACSShellTransform *transform = new TACSShellRefAxisTransform(axis);
 
-  TACSShellConstitutive *con = new TACSShellConstitutive(props);
+  TacsScalar t = 0.01;
+  TACSShellConstitutive *con = new TACSShellConstitutive(props, t);
 
   TACSElement *linear_shell = new TACSQuadLinearShell(transform, con);
   linear_shell->incref();
@@ -143,11 +144,13 @@ int main( int argc, char *argv[] ){
   TACSElement *quadratic_shell = new TACSQuadQuadraticShell(transform, con);
   quadratic_shell->incref();
 
+  const int VARS_PER_NODE = 7;
   const int NUM_NODES = 9;
+  const int NUM_VARS = VARS_PER_NODE*NUM_NODES;
   int elemIndex = 0;
   double time = 0.0;
   TacsScalar Xpts[3*NUM_NODES];
-  TacsScalar vars[6*NUM_NODES], dvars[6*NUM_NODES], ddvars[6*NUM_NODES];
+  TacsScalar vars[NUM_VARS], dvars[NUM_VARS], ddvars[NUM_VARS];
 
   // Set the values of the
   TacsGenerateRandomArray(Xpts, 3*NUM_NODES);
@@ -190,7 +193,7 @@ int main( int argc, char *argv[] ){
   // Set all the entries in load vector to specified value
   TacsScalar *force_vals;
   int size = f->getArray(&force_vals);
-  for ( int k = 2; k < size; k += 6 ){
+  for ( int k = 2; k < size; k += assembler->getVarsPerNode() ){
     force_vals[k] += 100.0;
   }
   assembler->applyBCs(f);
@@ -198,9 +201,13 @@ int main( int argc, char *argv[] ){
   // Assemble and factor the stiffness/Jacobian matrix. Factor the
   // Jacobian and solve the linear system for the displacements
   double alpha = 1.0, beta = 0.0, gamma = 0.0;
-  assembler->assembleJacobian(alpha, beta, gamma, NULL, mat);
+  assembler->assembleJacobian(alpha, beta, gamma, res, mat);
   pc->factor(); // LU factorization of stiffness matrix
-  pc->applyFactor(f, ans);
+
+  res->axpy(-1.0, f); // Compute res - f
+  pc->applyFactor(res, ans);
+
+  ans->scale(-1.0);
   assembler->setVariables(ans);
 
   // Output for visualization
@@ -214,36 +221,6 @@ int main( int argc, char *argv[] ){
   TACSToFH5 *f5 = new TACSToFH5(assembler, etype, write_flag);
   f5->incref();
   f5->writeToFile("plate.f5");
-
-  /*
-  // Treat f(A) = trace(D o A) as a function of S via A(S) = T^{T}*S*T
-  TacsScalar T[9], S[6], D[6], A[6];
-  TacsGenerateRandomArray(T, 9);
-  TacsGenerateRandomArray(S, 6);
-  TacsGenerateRandomArray(D, 6);
-  mat3x3SymmTransformTranspose(T, S, A);
-
-  TacsScalar dfdS[6];
-  mat3x3SymmTransformTransSens(T, D, dfdS);
-
-  TacsScalar fd[6];
-  TacsScalar f0 =
-    D[0]*A[0] + D[1]*A[1] + D[2]*A[2] + D[3]*A[3] + D[4]*A[4] + D[5]*A[5];
-
-  TacsScalar dh = 1e-6;
-  for ( int i = 0; i < 6; i++ ){
-    TacsScalar S0 = S[i];
-    S[i] = S0 + dh;
-    mat3x3SymmTransformTranspose(T, S, A);
-    TacsScalar f =
-      D[0]*A[0] + D[1]*A[1] + D[2]*A[2] + D[3]*A[3] + D[4]*A[4] + D[5]*A[5];
-
-    fd[i] = (f - f0)/dh;
-
-    S[i] = S0;
-    printf("An: %15.5e  Fd: %15.5e  err: %15.5e\n", dfdS[i], fd[i], (dfdS[i] - fd[i])/fd[i]);
-  }
-  */
 
   linear_shell->decref();
   quadratic_shell->decref();

@@ -224,6 +224,7 @@ class TACSShellLinearModel {
   static void evalStrain( const TacsScalar u0x[],
                           const TacsScalar u1x[],
                           const TacsScalar e0ty[],
+                          const TacsScalar Ct[],
                           TacsScalar e[] ){
     // Evaluate the in-plane strains from the tying strain expressions
     e[0] = e0ty[0];
@@ -239,8 +240,8 @@ class TACSShellLinearModel {
     e[6] = 2.0*e0ty[4];
     e[7] = 2.0*e0ty[2];
 
-    // TODO: Compute the rotational penalty
-    e[8] = 0.0;
+    // Compute the rotational penalty
+    e[8] = 0.5*(Ct[3] + u0x[3] - Ct[1] - u0x[1]);
   }
 
   /**
@@ -250,9 +251,11 @@ class TACSShellLinearModel {
                               const TacsScalar dfde[],
                               const TacsScalar u0x[],
                               const TacsScalar u1x[],
+                              const TacsScalar Ct[],
                               TacsScalar du0x[],
                               TacsScalar du1x[],
-                              TacsScalar de0ty[] ){
+                              TacsScalar de0ty[],
+                              TacsScalar dCt[] ){
     // Evaluate the in-plane strains from the tying strain expressions
     de0ty[0] = scale*dfde[0];
     de0ty[1] = 2.0*scale*dfde[2];
@@ -264,9 +267,9 @@ class TACSShellLinearModel {
     // Linear strain relationships
     // Derivative with respect to u0x
     du0x[0] = 0.0;
-    du0x[1] = 0.0;
+    du0x[1] = -0.5*scale*dfde[8];
     du0x[2] = 0.0;
-    du0x[3] = 0.0;
+    du0x[3] = 0.5*scale*dfde[8];
     du0x[4] = 0.0;
     du0x[5] = 0.0;
     du0x[6] = 0.0;
@@ -283,6 +286,16 @@ class TACSShellLinearModel {
     du1x[6] = 0.0;
     du1x[7] = 0.0;
     du1x[8] = 0.0;
+
+    dCt[0] = 0.0;
+    dCt[1] = -0.5*scale*dfde[8];
+    dCt[2] = 0.0;
+    dCt[3] = 0.5*scale*dfde[8];
+    dCt[4] = 0.0;
+    dCt[5] = 0.0;
+    dCt[6] = 0.0;
+    dCt[7] = 0.0;
+    dCt[8] = 0.0;
   }
 };
 
@@ -515,6 +528,7 @@ class TACSShellNonlinearModel {
   static void evalStrain( const TacsScalar u0x[],
                           const TacsScalar u1x[],
                           const TacsScalar e0ty[],
+                          const TacsScalar Ct[],
                           TacsScalar e[] ){
     // Evaluate the in-plane strains from the tying strain expressions
     e[0] = e0ty[0];
@@ -532,7 +546,10 @@ class TACSShellNonlinearModel {
     e[7] = 2.0*e0ty[2];
 
     // TODO: Compute the rotational penalty
-    e[8] = 0.0;
+    // e2^{T}*Ct*(e1 + u_{,x}*e1) - e1^{T}*Ct*(e2 + u_{,x}*e2)
+    e[8] =
+      (Ct[3]*(1.0 + u0x[0]) + Ct[4]*u0x[3] + Ct[5]*u0x[6]) -
+      (Ct[0]*u0x[1] + Ct[1]*(1.0 + u0x[4]) + Ct[2]*u0x[7]);
   }
 
   /**
@@ -542,9 +559,11 @@ class TACSShellNonlinearModel {
                               const TacsScalar dfde[],
                               const TacsScalar u0x[],
                               const TacsScalar u1x[],
+                              const TacsScalar Ct[],
                               TacsScalar du0x[],
                               TacsScalar du1x[],
-                              TacsScalar de0ty[] ){
+                              TacsScalar de0ty[],
+                              TacsScalar dCt[] ){
     // Evaluate the in-plane strains from the tying strain expressions
     de0ty[0] = scale*dfde[0];
     de0ty[1] = 2.0*scale*dfde[2];
@@ -554,14 +573,14 @@ class TACSShellNonlinearModel {
     de0ty[5] = 0.0;
 
     // Derivative with respect to u0x
-    du0x[0] = scale*(dfde[3]*u1x[0] + dfde[5]*u1x[1]);
-    du0x[1] = scale*(dfde[4]*u1x[1] + dfde[5]*u1x[0]);
+    du0x[0] = scale*((dfde[3]*u1x[0] + dfde[5]*u1x[1]) + Ct[3]*dfde[8]);
+    du0x[1] = scale*((dfde[4]*u1x[1] + dfde[5]*u1x[0]) - Ct[0]*dfde[8]);
     du0x[2] = 0.0;
-    du0x[3] = scale*(dfde[3]*u1x[3] + dfde[5]*u1x[4]);
-    du0x[4] = scale*(dfde[4]*u1x[4] + dfde[5]*u1x[3]);
+    du0x[3] = scale*((dfde[3]*u1x[3] + dfde[5]*u1x[4]) + Ct[4]*dfde[8]);
+    du0x[4] = scale*((dfde[4]*u1x[4] + dfde[5]*u1x[3]) - Ct[1]*dfde[8]);
     du0x[5] = 0.0;
-    du0x[6] = scale*(dfde[3]*u1x[6] + dfde[5]*u1x[7]);
-    du0x[7] = scale*(dfde[4]*u1x[7] + dfde[5]*u1x[6]);
+    du0x[6] = scale*((dfde[3]*u1x[6] + dfde[5]*u1x[7]) + Ct[5]*dfde[8]);
+    du0x[7] = scale*((dfde[4]*u1x[7] + dfde[5]*u1x[6]) - Ct[2]*dfde[8]);
     du0x[8] = 0.0;
 
     // Compute the derivative with respect to U1
@@ -574,7 +593,86 @@ class TACSShellNonlinearModel {
     du1x[6] = scale*(dfde[3]*u0x[6] + dfde[5]*u0x[7]);
     du1x[7] = scale*(dfde[4]*u0x[7] + dfde[5]*u0x[6]);
     du1x[8] = 0.0;
+
+    dCt[0] = -scale*u0x[0]*dfde[8];
+    dCt[1] = -scale*(1.0 + u0x[4])*dfde[8];
+    dCt[2] = -scale*u0x[7]*dfde[8];
+    dCt[3] = scale*(1.0 + u0x[0])*dfde[8];
+    dCt[4] = scale*u0x[3]*dfde[8];
+    dCt[5] = scale*u0x[6]*dfde[8];
+    dCt[6] = 0.0;
+    dCt[7] = 0.0;
+    dCt[8] = 0.0;
   }
+
+/*
+  static void evalStrainSens( const TacsScalar scale,
+                              const TacsScalar dfde[],
+                              const TacsScalar u0x[],
+                              const TacsScalar u1x[],
+                              const TacsScalar Ct[],
+                              TacsScalar du0x[],
+                              TacsScalar du1x[],
+                              TacsScalar de0ty[],
+                              TacsScalar dCt[] ){
+    // Evaluate the in-plane strains from the tying strain expressions
+    de0ty[0] = scale*dfde[0];
+    de0ty[1] = 2.0*scale*dfde[2];
+    de0ty[2] = 2.0*scale*dfde[7];
+    de0ty[3] = scale*dfde[1];
+    de0ty[4] = 2.0*scale*dfde[6];
+    de0ty[5] = 0.0;
+
+    // Derivative with respect to u0x
+    du0x[0] = scale*((dfde[3]*u1x[0] + dfde[5]*u1x[1]) + Ct[3]*dfde[8]);
+    du0x[1] = scale*((dfde[4]*u1x[1] + dfde[5]*u1x[0]) - Ct[0]*dfde[8]);
+    du0x[2] = 0.0;
+    du0x[3] = scale*((dfde[3]*u1x[3] + dfde[5]*u1x[4]) + Ct[4]*dfde[8]);
+    du0x[4] = scale*((dfde[4]*u1x[4] + dfde[5]*u1x[3]) - Ct[1]*dfde[8]);
+    du0x[5] = 0.0;
+    du0x[6] = scale*((dfde[3]*u1x[6] + dfde[5]*u1x[7]) + Ct[5]*dfde[8]);
+    du0x[7] = scale*((dfde[4]*u1x[7] + dfde[5]*u1x[6]) - Ct[2]*dfde[8]);
+    du0x[8] = 0.0;
+
+    // Compute the derivative with respect to U1
+    du1x[0] = scale*(dfde[3]*(1.0 + u0x[0]) + dfde[5]*u0x[1]);
+    du1x[1] = scale*(dfde[5]*(1.0 + u0x[0]) + dfde[4]*u0x[1]);
+    du1x[2] = 0.0;
+    du1x[3] = scale*(dfde[5]*(1.0 + u0x[4]) + dfde[3]*u0x[3]);
+    du1x[4] = scale*(dfde[4]*(1.0 + u0x[4]) + dfde[5]*u0x[3]);
+    du1x[5] = 0.0;
+    du1x[6] = scale*(dfde[3]*u0x[6] + dfde[5]*u0x[7]);
+    du1x[7] = scale*(dfde[4]*u0x[7] + dfde[5]*u0x[6]);
+    du1x[8] = 0.0;
+
+    dCt[0] = -scale*u0x[0]*dfde[8];
+    dCt[1] = -scale*(1.0 + u0x[4])*dfde[8];
+    dCt[2] = -scale*u0x[7]*dfde[8];
+    dCt[3] = scale*(1.0 + u0x[0])*dfde[8];
+    dCt[4] = scale*u0x[3]*dfde[8];
+    dCt[5] = scale*u0x[6]*dfde[8];
+    dCt[6] = 0.0;
+    dCt[7] = 0.0;
+    dCt[8] = 0.0;
+
+    // Compute the second derivative contributions
+    TacsScalar drill;
+    const TacsScalar *A, *B*, *D, *As;
+    TACSShellConstitutive::extractTangenttStiffness(C, &A, &B, &D, &As, &drill);
+
+    // Compute the components of the strain
+    e[0] = u1x[0] + (u0x[0]*u1x[0] + u0x[3]*u1x[3] + u0x[6]*u1x[6]);
+    e[1] = u1x[4] + (u0x[1]*u1x[1] + u0x[4]*u1x[4] + u0x[7]*u1x[7]);
+    e[2] = u1x[1] + u1x[3] + (u0x[0]*u1x[1] + u0x[3]*u1x[4] + u0x[6]*u1x[7] +
+                              u1x[0]*u0x[1] + u1x[3]*u0x[4] + u1x[6]*u0x[7]);
+
+    e[3] = u1x[0] + (u0x[0]*u1x[0] + u0x[3]*u1x[3] + u0x[6]*u1x[6]);
+    e[4] = u1x[4] + (u0x[1]*u1x[1] + u0x[4]*u1x[4] + u0x[7]*u1x[7]);
+    e[5] = u1x[1] + u1x[3] + (u0x[0]*u1x[1] + u0x[3]*u1x[4] + u0x[6]*u1x[7] +
+                              u1x[0]*u0x[1] + u1x[3]*u0x[4] + u1x[6]*u0x[7]);
+
+  }
+  */
 };
 
 #endif // TACS_SHELL_ELEMENT_MODEL_H
