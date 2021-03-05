@@ -664,7 +664,7 @@ void TACSShellElement<quadrature, basis, director, model>::
   int num_vis_nodes = TacsGetNumVisNodes(basis::getLayoutType());
 
   // Compute the number of quadrature points
-  const int vars_per_node = 4 + director::NUM_PARAMETERS;
+  const int vars_per_node = 3 + director::NUM_PARAMETERS;
 
   // Compute the node normal directions
   TacsScalar fn[3*basis::NUM_NODES];
