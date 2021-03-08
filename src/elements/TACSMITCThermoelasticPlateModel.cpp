@@ -333,7 +333,7 @@ void TACSMITCThermoelasticPlateModel::evalWeakMatrix( ElementMatrixType matType,
 
   // Get the stress components
   TacsScalar s[9];
-  con->evalStress(A, B, D, As, drill, e, s);
+  con->computeStress(A, B, D, As, drill, e, s);
 
   // Set pointers to the in-plane, bending and shear resultants
   const TacsScalar *N = &s[0];

@@ -33,8 +33,30 @@ cdef extern from "TACSMaterialProperties.h":
                                TacsScalar, TacsScalar,
                                TacsScalar, TacsScalar,
                                TacsScalar)
+        TACSMaterialProperties(TacsScalar, TacsScalar,
+                               TacsScalar, TacsScalar, TacsScalar,
+                               TacsScalar, TacsScalar, TacsScalar,
+                               TacsScalar, TacsScalar, TacsScalar,
+                               TacsScalar, TacsScalar,
+                               TacsScalar, TacsScalar,
+                               TacsScalar, TacsScalar,
+                               TacsScalar, TacsScalar,
+                               TacsScalar,
+                               TacsScalar, TacsScalar, TacsScalar,
+                               TacsScalar, TacsScalar, TacsScalar)
         void setDensity(TacsScalar)
         void setSpecificHeat(TacsScalar)
+        void getOrthotropicProperties(TacsScalar*, TacsScalar*, TacsScalar*,
+                                      TacsScalar*, TacsScalar*, TacsScalar*,
+                                      TacsScalar*, TacsScalar*, TacsScalar*)
+        void getStrengthProperties(TacsScalar*, TacsScalar*, TacsScalar*,
+                                   TacsScalar*, TacsScalar*, TacsScalar*,
+                                   TacsScalar*, TacsScalar*, TacsScalar*)
+        void getCoefThermalExpansion(TacsScalar*, TacsScalar*, TacsScalar*)
+        void getThermalConductivity(TacsScalar*, TacsScalar*, TacsScalar*)
+
+    cdef cppclass TACSOrthotropicPly(TACSObject):
+        TACSOrthotropicPly(TacsScalar, TACSMaterialProperties*)
 
 cdef class MaterialProperties:
     cdef TACSMaterialProperties *ptr
@@ -64,11 +86,22 @@ cdef class SolidConstitutive(Constitutive):
 
 cdef extern from "TACSShellConstitutive.h":
     cdef cppclass TACSShellConstitutive(TACSConstitutive):
-        TACSShellConstitutive(TACSMaterialProperties*,
-                              TacsScalar, int, TacsScalar, TacsScalar)
+        void setDrillingRegularization(double)
 
 cdef class ShellConstitutive(Constitutive):
     cdef TACSShellConstitutive *cptr
+
+cdef extern from "TACSIsoShellConstitutive.h":
+    cdef cppclass TACSIsoShellConstitutive(TACSShellConstitutive):
+        TACSIsoShellConstitutive(TACSMaterialProperties*, TacsScalar, int,
+                                 TacsScalar, TacsScalar)
+
+cdef extern from "TACSLamParamShellConstitutive.h":
+    cdef cppclass TACSLamParamShellConstitutive(TACSShellConstitutive):
+        TACSLamParamShellConstitutive(TACSOrthotropicPly*, TacsScalar, int, TacsScalar, TacsScalar,
+                                      TacsScalar, TacsScalar, TacsScalar, int, int, int,
+                                      TacsScalar, TacsScalar, TacsScalar,
+                                      TacsScalar, TacsScalar, int, int, TacsScalar, TacsScalar)
 
 cdef extern from "TACSTimoshenkoConstitutive.h":
     cdef cppclass TACSTimoshenkoConstitutive(TACSConstitutive):

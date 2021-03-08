@@ -120,7 +120,7 @@ void TACSCompositeShellConstitutive::evalStress( int elemIndex,
   drill = 0.5*DRILLING_REGULARIZATION*(As[0] + As[2]);
 
   // Evaluate the stress
-  TACSShellConstitutive::evalStress(A, B, D, As, drill, e, s);
+  TACSShellConstitutive::computeStress(A, B, D, As, drill, e, s);
 }
 
 // Evaluate the tangent stiffness

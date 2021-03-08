@@ -410,14 +410,16 @@ class TACSConstitutive : public TACSObject {
   }
 
   /**
-    Write out a two-dimensional representation of the failure envelope
+    Compute a two-dimensional representation of the failure envelope
   */
-  void writeFailureEnvelope( const char *file_name, int npts,
-                             int elemIndex,
-                             const double pt[],
-                             const TacsScalar X[],
-                             const TacsScalar x_stress[],
-                             const TacsScalar y_stress[] );
+  void getFailureEnvelope( int npts,
+                           int elemIndex,
+                           const double pt[],
+                           const TacsScalar X[],
+                           const TacsScalar x_stress[],
+                           const TacsScalar y_stress[],
+                           TacsScalar x_vals[],
+                           TacsScalar y_vals[] );
 
  private:
   static const char *constName;

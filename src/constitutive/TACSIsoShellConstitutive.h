@@ -16,121 +16,96 @@
   http://www.apache.org/licenses/LICENSE-2.0
 */
 
-#ifndef TACS_ISO_FSDT_STIFFNESS_H
-#define TACS_ISO_FSDT_STIFFNESS_H
+#ifndef TACS_ISO_SHELL_CONSTITUTIVE_H
+#define TACS_ISO_SHELL_CONSTITUTIVE_H
 
-#include "FSDTStiffness.h"
+#include "TACSShellConstitutive.h"
+#include "TACSMaterialProperties.h"
 
-/*
-  This object defines the stiffness for a plate or shell. It is
-  derived from the FSDTStiffness class.
-
-  This particular variable thickness constitutive relationship defines
-  the necessary methods for calculating a variable thickness plate.
+/**
+  This constitutive class defines the stiffness properties for a
+  first-order shear deformation theory type element. This class
+  is derived from the TACSConstitutive object, but is still
+  a pure virtual base class.
 */
-class isoFSDTStiffness : public FSDTStiffness {
+class TACSIsoShellConstitutive : public TACSShellConstitutive {
  public:
-  static const int NUM_STRESSES = FSDTStiffness::NUM_STRESSES;
+  static const int NUM_STRESSES = 9;
+  static const int NUM_TANGENT_STIFFNESS_ENTRIES = 22;
 
-  isoFSDTStiffness( TacsScalar _rho, TacsScalar _E, TacsScalar _nu,
-                    TacsScalar _kcorr, TacsScalar _yieldStress,
-                    TacsScalar _thickness, int _tNum=-1,
-                    TacsScalar _minThickness=1e-3,
-                    TacsScalar _maxThickness=50.0 );
-  ~isoFSDTStiffness(){}
+  TACSIsoShellConstitutive( TACSMaterialProperties *props,
+                            TacsScalar _t=1.0, int _tNum=-1,
+                            TacsScalar _tlb=0.0, TacsScalar _tub=1.0 );
+  ~TACSIsoShellConstitutive();
 
-  // Functions for design variable control
-  // -------------------------------------
-  void setDesignVars( const TacsScalar dvs[], int numDVs );
-  void getDesignVars( TacsScalar dvs[], int numDVs );
-  void getDesignVarRange( TacsScalar lowerBound[],
-                          TacsScalar upperBound[], int numDVs );
+  // Retrieve the global design variable numbers
+  int getDesignVarNums( int elemIndex, int dvLen, int dvNums[] );
 
-  // Functions required by TACSConstitutive
-  // --------------------------------------
-  void getPointwiseMass( const double pt[], TacsScalar mass[] );
-  void addPointwiseMassDVSens( const double pt[],
-                               const TacsScalar alpha[],
-                               TacsScalar dvSens[], int dvLen );
+  // Set the element design variable from the design vector
+  int setDesignVars( int elemIndex, int dvLen, const TacsScalar dvs[] );
 
-  // Functions required by FSDTStiffness
-  // -----------------------------------
-  TacsScalar getStiffness( const double pt[],
-                           TacsScalar A[], TacsScalar B[],
-                           TacsScalar D[], TacsScalar As[] );
-  void addStiffnessDVSens( const double pt[],
-                           const TacsScalar e[], const TacsScalar psi[],
-                           TacsScalar rotPsi,
-                           TacsScalar fdvSens[], int dvLen );
+  // Get the element design variables values
+  int getDesignVars( int elemIndex, int dvLen, TacsScalar dvs[] );
 
-  // Functions to compute the failure properties
-  // -------------------------------------------
-  void failure( const double pt[],
-                const TacsScalar strain[],
-                TacsScalar *fail );
-  void failureStrainSens( const double pt[],
-                          const TacsScalar strain[],
-                          TacsScalar sens[] );
-  void addFailureDVSens( const double pt[],
-                         const TacsScalar strain[],
-                         TacsScalar alpha,
-                         TacsScalar dvSens[], int dvLen );
+  // Get the lower and upper bounds for the design variable values
+  int getDesignVarRange( int elemIndex, int dvLen,
+                         TacsScalar lb[], TacsScalar ub[] );
 
-  // Retrieve the design variable for plotting purposes
-  // --------------------------------------------------
-  TacsScalar getDVOutputValue( int dv_index, const double pt[] );
+  // Evaluate the material density
+  TacsScalar evalDensity( int elemIndex, const double pt[],
+                          const TacsScalar X[] );
 
-  // Return the name of the constitutive object
-  // ------------------------------------------
-  const char *constitutiveName(){ return constName; }
+  // Add the derivative of the density
+  void addDensityDVSens( int elemIndex, TacsScalar scale,
+                         const double pt[], const TacsScalar X[],
+                         int dvLen, TacsScalar dfdx[] );
+
+  // Evaluate the specific heat
+  TacsScalar evalSpecificHeat( int elemIndex, const double pt[],
+                               const TacsScalar X[] );
+
+  // Evaluate the stresss
+  void evalStress( int elemIndex, const double pt[], const TacsScalar X[],
+                   const TacsScalar strain[], TacsScalar stress[] );
+
+  // Evaluate the tangent stiffness
+  void evalTangentStiffness( int elemIndex, const double pt[],
+                             const TacsScalar X[], TacsScalar C[] );
+
+  // Add the contribution
+  void addStressDVSens( int elemIndex, TacsScalar scale,
+                        const double pt[], const TacsScalar X[],
+                        const TacsScalar strain[], const TacsScalar psi[],
+                        int dvLen, TacsScalar dfdx[] );
+
+  // Evaluate the thermal strain
+  void evalThermalStrain( int elemIndex, const double pt[],
+                          const TacsScalar X[], TacsScalar theta,
+                          TacsScalar strain[] );
+
+  // Evaluate the heat flux, given the thermal gradient
+  void evalHeatFlux( int elemIndex, const double pt[],
+                     const TacsScalar X[], const TacsScalar grad[],
+                     TacsScalar flux[] );
+
+  // Evaluate the tangent of the heat flux
+  void evalTangentHeatFlux( int elemIndex, const double pt[],
+                            const TacsScalar X[], TacsScalar C[] );
+
+  // The name of the constitutive object
+  const char *getObjectName();
 
  private:
-  // Calculate the state of plane stress within the element
-  // ------------------------------------------------------
-  inline void calculatePlaneStress( TacsScalar pstr[], const TacsScalar ht,
-                                    const TacsScalar strain[] ){
-    const TacsScalar D = E/(1.0 - nu*nu);
-    pstr[0] = D*((strain[0] + ht*strain[3]) + nu*(strain[1] + ht*strain[4]));
-    pstr[1] = D*(nu*(strain[0] + ht*strain[3]) + (strain[1] + ht*strain[4]));
-    pstr[2] = G*(strain[2] + ht*strain[5]);
-  }
+  // Material properties class
+  TACSMaterialProperties *properties;
 
-  inline void calculatePlaneStressTranspose( TacsScalar strain[],
-                                             const TacsScalar ht,
-                                             const TacsScalar pstr[] ){
-    const TacsScalar D = E/(1.0 - nu*nu);
-    strain[0] = D*(pstr[0] + nu*pstr[1]);
-    strain[1] = D*(nu*pstr[0] + pstr[1]);
-    strain[2] = G*pstr[2];
-
-    strain[3] = ht*D*(pstr[0] + nu*pstr[1]);
-    strain[4] = ht*D*(nu*pstr[0] + pstr[1]);
-    strain[5] = G*ht*pstr[2];
-
-    strain[6] = 0.0;
-    strain[7] = 0.0;
-  }
-
-  TacsScalar calculatePlaneStressTSensProduct( const TacsScalar pstr[],
-                                               const TacsScalar strain[] ){
-    return E/(1.0 - nu*nu)*(pstr[0]*(strain[3] + nu*strain[4]) +
-                            pstr[1]*(nu*strain[3] + strain[4])) +
-      G*pstr[2]*strain[5];
-  }
-
-  // The material properties required for this object
+  // Store information about the design variable
   TacsScalar kcorr; // The shear correction factor
-  TacsScalar rho; // The material density
-  TacsScalar E, nu, G; // The stiffness properties
-  TacsScalar yieldStress; // The material yield stress
+  TacsScalar t, tlb, tub;
+  int tNum;
 
-  // The thickness information required by this object
-  int tNum; // The design variable number
-  TacsScalar t; // The thickness
-  TacsScalar minThickness, maxThickness; // The min/max thickness values
-
-  // The name of this object
-  static const char * constName;
+  // The object name
+  static const char *constName;
 };
 
-#endif // TACS_ISO_FSDT_STIFFNESS_H
+#endif // TACS_ISO_SHELL_CONSTITUTIVE_H
