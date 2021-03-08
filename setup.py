@@ -71,7 +71,7 @@ for mod in ['TACS', 'elements', 'constitutive', 'functions']:
 
 for e in exts:
     e.cython_directives = {"embedsignature": True,
-                           "binding":True}
+                           "binding": True}
 
 setup(name='tacs',
       version=0.1,

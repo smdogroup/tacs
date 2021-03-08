@@ -410,10 +410,11 @@ cdef class LamParamShellConstitutive(ShellConstitutive):
         if 'epsilon' in kwargs:
             epsilon = kwargs['epsilon']
 
-        self.ptr = new TACSLamParamShellConstitutive(ply.ptr, t, t_num, min_t, max_t,
-                                                     f0, f45, f90, f0_num, f45_num, f90_num,
-                                                     min_f0, min_f45, min_f90,
-                                                     W1, W3, W1_num, W3_num, ksWeight, epsilon)
+        self.cptr = new TACSLamParamShellConstitutive(ply.ptr, t, t_num, min_t, max_t,
+                                                      f0, f45, f90, f0_num, f45_num, f90_num,
+                                                      min_f0, min_f45, min_f90,
+                                                      W1, W3, W1_num, W3_num, ksWeight, epsilon)
+        self.ptr = self.cptr
         self.ptr.incref()
 
 cdef class TimoshenkoConstitutive(Constitutive):
