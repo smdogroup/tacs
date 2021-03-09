@@ -108,6 +108,10 @@ class TACSAssembler : public TACSObject {
                    int nbcs=-1, const int *vars=NULL,
                    const TacsScalar *vals=NULL );
 
+  // Set Dirichlet BC values at nodes where BCs are imposed
+  // ------------------------------------------------------
+  void setBCValuesFromVec( TACSBVec *vec );
+
   // Reorder the unknowns according to the specified reordering
   // ----------------------------------------------------------
   void computeReordering( OrderingType order_type,

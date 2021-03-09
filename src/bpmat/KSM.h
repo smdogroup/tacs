@@ -52,7 +52,7 @@ class TACSBcMap : public TACSObject {
               const TacsScalar *bc_vals=NULL );
   int getBCs( const int **_nodes,
               const int **_vars,
-              const TacsScalar **_values );
+              TacsScalar **_values );
 
   // Get the node numbers associated with the BCs for reordering
   // -----------------------------------------------------------

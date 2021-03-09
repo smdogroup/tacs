@@ -315,8 +315,7 @@ void TACSParallelMat::applyBCs( TACSBcMap *bcmap ){
 
     // apply the boundary conditions
     const int *nodes, *vars;
-    const TacsScalar *values;
-    int nbcs = bcmap->getBCs(&nodes, &vars, &values);
+    int nbcs = bcmap->getBCs(&nodes, &vars, NULL);
 
     // Get the matrix values
     for ( int i = 0; i < nbcs; i++ ){
@@ -352,8 +351,7 @@ void TACSParallelMat::applyTransposeBCs( TACSBcMap *bcmap ){
 
     // apply the boundary conditions
     const int *nodes, *vars;
-    const TacsScalar *values;
-    int nbcs = bcmap->getBCs(&nodes, &vars, &values);
+    int nbcs = bcmap->getBCs(&nodes, &vars, NULL);
 
     // Allocate space for the temporary values
     int *temp_nodes = new int[ nbcs ];

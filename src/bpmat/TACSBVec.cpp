@@ -546,7 +546,7 @@ void TACSBVec::applyBCs( TACSBcMap *bcmap, TACSVec *tvec ){
 
     // Get the values from the boundary condition arrays
     const int *nodes, *vars;
-    const TacsScalar *values;
+    TacsScalar *values;
     int nbcs = bcmap->getBCs(&nodes, &vars, &values);
 
     if (uvals){
@@ -596,7 +596,7 @@ void TACSBVec::setBCs( TACSBcMap *bcmap ){
 
     // Get the values from the boundary condition arrays
     const int *nodes, *vars;
-    const TacsScalar *values;
+    TacsScalar *values;
     int nbcs = bcmap->getBCs(&nodes, &vars, &values);
 
     for ( int i = 0; i < nbcs; i++ ){

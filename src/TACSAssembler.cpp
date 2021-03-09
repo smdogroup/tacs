@@ -823,6 +823,41 @@ void TACSAssembler::addInitBCs( int nnodes, const int *nodes,
 }
 
 /**
+  Set new Dirichlet BC values at nodes where BCs are imposed
+
+  This takes the new boundary condition values as the entries in the
+  given vector where the Dirichlet boundary conditions are imposed.
+
+  @param vec The vector containing the new boundary condition values
+*/
+void TACSAssembler::setBCValuesFromVec( TACSBVec *vec ){
+  TacsScalar *xvals = NULL;
+  vec->getArray(&xvals);
+
+  // Get the values from the boundary condition arrays
+  const int *nodes, *vars;
+  TacsScalar *values;
+  int nbcs = bcMap->getBCs(&nodes, &vars, &values);
+
+  // Get the ownership range
+  const int *ownerRange;
+  nodeMap->getOwnerRange(&ownerRange);
+
+  for ( int i = 0; i < nbcs; i++ ){
+    if (nodes[i] >= ownerRange[mpiRank] &&
+        nodes[i] < ownerRange[mpiRank+1]){
+      int var = varsPerNode*(nodes[i] - ownerRange[mpiRank]);
+      for ( int k = 0; k < varsPerNode; k++ ){
+        if (vars[i] & (1 << k)){
+          // Scan through the rows to be zeroed
+          values[varsPerNode*i + k] = xvals[var + k];
+        }
+      }
+    }
+  }
+}
+
+/**
   Create a global vector of node locations.
 
   Note that the nodal coordinates are not set into the vector.

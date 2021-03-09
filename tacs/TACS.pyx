@@ -1202,7 +1202,7 @@ cdef class Assembler:
 
     def addBCs(self, np.ndarray[int, ndim=1, mode='c'] nodes,
                np.ndarray[int, ndim=1, mode='c'] _vars=None,
-               np.ndarray[int, ndim=1, mode='c'] values=None):
+               np.ndarray[TacsScalar, ndim=1, mode='c'] values=None):
         cdef int nnodes = nodes.shape[0]
         cdef int *node_nums = <int*>nodes.data
         cdef int vars_dim = -1
@@ -1220,7 +1220,7 @@ cdef class Assembler:
 
     def addInitBCs(self, np.ndarray[int, ndim=1, mode='c'] nodes,
                    np.ndarray[int, ndim=1, mode='c'] _vars=None,
-                   np.ndarray[int, ndim=1, mode='c'] values=None):
+                   np.ndarray[TacsScalar, ndim=1, mode='c'] values=None):
         cdef int nnodes = nodes.shape[0]
         cdef int *node_nums = <int*>nodes.data
         cdef int vars_dim = -1
@@ -1235,6 +1235,16 @@ cdef class Assembler:
             values_data = <TacsScalar*>values.data
         self.ptr.addInitBCs(nnodes, node_nums, vars_dim,
                             vars_data, values_data)
+        return
+
+    def setBCValuesFromVec(self, Vec vec):
+        """
+        Set new Dirichlet BC values at nodes where BCs are imposed
+
+        This takes the new boundary condition values as the entries in the
+        given vector where the Dirichlet boundary conditions are imposed.
+        """
+        self.ptr.setBCValuesFromVec(vec.ptr)
         return
 
     def computeReordering(self, OrderingType order_type,

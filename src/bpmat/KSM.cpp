@@ -177,7 +177,7 @@ void TACSBcMap::addBinaryFlagBC( int node, int _vars ){
 */
 int TACSBcMap::getBCs( const int **_nodes,
                        const int **_vars,
-                       const TacsScalar **_values ){
+                       TacsScalar **_values ){
   if (_nodes){ *_nodes = nodes; }
   if (_vars){ *_vars = vars; }
   if (_values){ *_values = values; }

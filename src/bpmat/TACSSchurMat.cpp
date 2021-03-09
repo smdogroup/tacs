@@ -679,8 +679,7 @@ void TACSSchurMat::applyBCs( TACSBcMap *bcmap ){
 
     // apply the boundary conditions
     const int *nodes, *vars;
-    const TacsScalar *values;
-    int nbcs = bcmap->getBCs(&nodes, &vars, &values);
+    int nbcs = bcmap->getBCs(&nodes, &vars, NULL);
 
     // Get the matrix values
     for ( int i = 0; i < nbcs; i++ ){
@@ -753,7 +752,7 @@ void TACSSchurMat::applyTransposeBCs( TACSBcMap *bcmap ){
     */
   }
 }
-    
+
 /*
   Get the row/column dimension of the matrix
 

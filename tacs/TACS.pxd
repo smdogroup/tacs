@@ -417,6 +417,7 @@ cdef extern from "TACSAssembler.h":
                     int nbcs, int *vars, TacsScalar *vals)
         void addInitBCs(int nnodes, int *nodes,
                         int nbcs, int *vars, TacsScalar *vals)
+        void setBCValuesFromVec(TACSBVec*)
         void computeReordering(OrderingType, MatrixOrderingType)
         void initialize()
         int getVarsPerNode()
