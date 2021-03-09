@@ -365,7 +365,7 @@ void TACSLamParamShellConstitutive::addStressDVSens( int elemIndex,
     sA[3] =  t*(-U2 + U3);
     sA[4] = 0.0;
     sA[5] = -t*U3;
-    dfdx[0] += scale*mat3x3SymmInner(sA, &psi[3], &e[3]);
+    dfdx[0] += scale*mat3x3SymmInner(sA, &psi[0], &e[0]);
 
     TacsScalar sAs0 =  t*kcorr*U7;
     TacsScalar sAs2 = -t*kcorr*U7;
@@ -486,6 +486,7 @@ void TACSLamParamShellConstitutive::computeFailureStrainSens( const TacsScalar s
                                                               TacsScalar sens[] ){
   sens[0] = sens[1] = sens[2] = sens[3] = 0.0;
   sens[4] = sens[5] = sens[6] = sens[7] = 0.0;
+  sens[8] = 0.0;
 
   for ( int k = 0; k < NUM_FAIL_ANGLES; k++ ){
     TacsScalar angle = 0.0, factor = 1.0;

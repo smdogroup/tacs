@@ -114,6 +114,67 @@ class TACSElement : public TACSObject {
   }
 
   /**
+    Get the number of quadrature points for the volume/area of the element
+  */
+  virtual int getNumQuadraturePoints() = 0;
+
+  /**
+    Get the quadrature weight for the n-th quadrature point
+
+    @param n The quadrature point index
+    @return The quadrature weight value
+  */
+  virtual double getQuadratureWeight( int n ) = 0;
+
+  /**
+    Get the parametric location of the n-th quadrature point
+
+    @param n The quadrature point index
+    @param pt The parametric location of the quadrature point
+    @return The quadrature weight value
+  */
+  virtual double getQuadraturePoint( int n, double pt[] ) = 0;
+
+  /**
+    Get the number of faces or edges for the element
+
+    @return The number of faces/edges for the basis
+  */
+  virtual int getNumElementFaces() = 0;
+
+  /**
+    Get the number of quadrature points for the given face
+
+    @param face The face/edge index
+    @return The number of quadrature points for the face
+  */
+  virtual int getNumFaceQuadraturePoints( int face ) = 0;
+
+  /**
+    Get the quadrature point for the given face/edge
+
+    The quadrature point and weight are in the original parameter space
+    (not parametrized along an edge or face). The tangent parameter
+    direction(s) correspond to the directions in parameter space along
+    the specified surface. In the case when the parameter space is
+    of dimention 1, 2, or 3, there are respectively 0, 1 and 2 tagents
+    stored in row major order so that for the 3D case:
+
+    tangent = [d1[0], d1[1], d1[2], d2[0], d2[1], d2[2]]
+
+    Note that the tangents obey the right-hand rule so that
+    crossProduct(Xd*d1, Xd*d2) gives an outward-facing normal direction.
+
+    @param face The face/edge index
+    @param n The quadrautre point index
+    @param pt The quadrature point
+    @param tangent Parametric direction(s) parallel to the face
+    @return The quadrature weight for the face
+  */
+  virtual double getFaceQuadraturePoint( int face, int n, double pt[],
+                                         double tangent[] ) = 0;
+
+  /**
     Get the element model class
 
     @return The TACSElementModel class associated with this element. Possibly NULL.
@@ -559,6 +620,7 @@ class TACSElement : public TACSObject {
     @param vars The values of the element degrees of freedom
     @param dvars The first time derivative of the element DOF
     @param ddvars The second time derivative of the element DOF
+    @param detXd The determinant of the Jacobian transformation
     @param quantity The output quantity of interest
     @return Integer indicating the number of defined quantities
   */
@@ -569,6 +631,7 @@ class TACSElement : public TACSObject {
                                  const TacsScalar vars[],
                                  const TacsScalar dvars[],
                                  const TacsScalar ddvars[],
+                                 TacsScalar *detXd,
                                  TacsScalar *quantity ){
     return 0; // No quantities defined by default
   }
@@ -615,6 +678,7 @@ class TACSElement : public TACSObject {
     @param vars The values of the element degrees of freedom
     @param dvars The first time derivative of the element DOF
     @param ddvars The second time derivative of the element DOF
+    @param detXd The determinant of the Jacobian transformation
     @param dvLen The length of the design array
     @param dfdu The derivative of the quantity w.r.t. state variables
   */
@@ -644,6 +708,7 @@ class TACSElement : public TACSObject {
     @param vars The values of the element degrees of freedom
     @param dvars The first time derivative of the element DOF
     @param ddvars The second time derivative of the element DOF
+    @param dfddetXd The derivative w.r.t. determinant of the Jacobian
     @param dvLen The length of the design array
     @param dfdu The derivative of the quantity w.r.t. state variables
   */
@@ -655,6 +720,7 @@ class TACSElement : public TACSObject {
                                         const TacsScalar vars[],
                                         const TacsScalar dvars[],
                                         const TacsScalar ddvars[],
+                                        const TacsScalar dfddetXd,
                                         const TacsScalar dfdq[],
                                         TacsScalar dfdXpts[] ){}
 

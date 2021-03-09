@@ -405,6 +405,10 @@ cdef class LamParamShellConstitutive(ShellConstitutive):
             W1 = kwargs['W1']
         if 'W3' in kwargs:
             W3 = kwargs['W3']
+        if 'W1_num' in kwargs:
+            W1_num = kwargs['W1_num']
+        if 'W3_num' in kwargs:
+            W3_num = kwargs['W3_num']
         if 'ksWeight' in kwargs:
             ksWeight = kwargs['ksWeight']
         if 'epsilon' in kwargs:

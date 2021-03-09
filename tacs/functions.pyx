@@ -50,57 +50,57 @@ cdef class StructuralMass(Function):
         self.ptr.incref()
         return
 
-cdef class Compliance(Function):
-    cdef TACSCompliance *cptr
-    def __cinit__(self, Assembler assembler):
-        """
-        Wrap the function Compliance
-        """
-        self.cptr = new TACSCompliance(assembler.ptr)
-        self.ptr = self.cptr
-        self.ptr.incref()
-        return
+# cdef class Compliance(Function):
+#     cdef TACSCompliance *cptr
+#     def __cinit__(self, Assembler assembler):
+#         """
+#         Wrap the function Compliance
+#         """
+#         self.cptr = new TACSCompliance(assembler.ptr)
+#         self.ptr = self.cptr
+#         self.ptr.incref()
+#         return
 
-    def setComplianceType(self, int compliance_type):
-        """
-        Set the type of compliance value to use
-        """
-        self.cptr.setComplianceType(compliance_type)
-        return
+#     def setComplianceType(self, int compliance_type):
+#         """
+#         Set the type of compliance value to use
+#         """
+#         self.cptr.setComplianceType(compliance_type)
+#         return
 
-cdef class AverageTemperature(Function):
-    def __cinit__(self, Assembler assembler, TacsScalar _volume=1.0):
-        """
-        Wrap the function AverageTemperature
-        """
-        self.ptr = new TACSAverageTemperature(assembler.ptr, _volume)
-        self.ptr.incref()
-        return
+# cdef class AverageTemperature(Function):
+#     def __cinit__(self, Assembler assembler, TacsScalar _volume=1.0):
+#         """
+#         Wrap the function AverageTemperature
+#         """
+#         self.ptr = new TACSAverageTemperature(assembler.ptr, _volume)
+#         self.ptr.incref()
+#         return
 
-cdef class KSTemperature(Function):
-    cdef TACSKSTemperature *kstptr
-    def __cinit__(self, Assembler assembler, double ksWeight, double alpha=1.0):
-        """
-        Wrap the function KSTemperature
-        """
-        self.kstptr = new TACSKSTemperature(assembler.ptr, ksWeight, alpha)
-        self.ptr = self.kstptr
-        self.ptr.incref()
-        return
+# cdef class KSTemperature(Function):
+#     cdef TACSKSTemperature *kstptr
+#     def __cinit__(self, Assembler assembler, double ksWeight, double alpha=1.0):
+#         """
+#         Wrap the function KSTemperature
+#         """
+#         self.kstptr = new TACSKSTemperature(assembler.ptr, ksWeight, alpha)
+#         self.ptr = self.kstptr
+#         self.ptr.incref()
+#         return
 
-    def setKSTemperatureType(self, ftype='discrete'):
-        if ftype == 'discrete':
-            self.kstptr.setKSTemperatureType(KS_TEMPERATURE_DISCRETE)
-        elif ftype == 'continuous':
-            self.kstptr.setKSTemperatureType(KS_TEMPERATURE_CONTINUOUS)
-        elif ftype == 'pnorm-discrete':
-            self.kstptr.setKSTemperatureType(PNORM_TEMPERATURE_DISCRETE)
-        elif ftype == 'pnorm-continuous':
-            self.kstptr.setKSTemperatureType(PNORM_TEMPERATURE_CONTINUOUS)
-        return
+#     def setKSTemperatureType(self, ftype='discrete'):
+#         if ftype == 'discrete':
+#             self.kstptr.setKSTemperatureType(KS_TEMPERATURE_DISCRETE)
+#         elif ftype == 'continuous':
+#             self.kstptr.setKSTemperatureType(KS_TEMPERATURE_CONTINUOUS)
+#         elif ftype == 'pnorm-discrete':
+#             self.kstptr.setKSTemperatureType(PNORM_TEMPERATURE_DISCRETE)
+#         elif ftype == 'pnorm-continuous':
+#             self.kstptr.setKSTemperatureType(PNORM_TEMPERATURE_CONTINUOUS)
+#         return
 
-    def setParameter(self, double ksparam):
-        self.kstptr.setParameter(ksparam)
+#     def setParameter(self, double ksparam):
+#         self.kstptr.setParameter(ksparam)
 
 cdef class KSFailure(Function):
     cdef TACSKSFailure *ksptr
@@ -127,60 +127,60 @@ cdef class KSFailure(Function):
     def setParameter(self, double ksparam):
         self.ksptr.setParameter(ksparam)
 
-cdef class InducedFailure(Function):
-    cdef TACSInducedFailure *iptr
-    def __cinit__(self, Assembler assembler, double P):
-        """
-        Wrap the function InducedFailure
-        """
-        self.iptr = new TACSInducedFailure(assembler.ptr, P)
-        self.ptr = self.iptr
-        self.ptr.incref()
-        return
+# cdef class InducedFailure(Function):
+#     cdef TACSInducedFailure *iptr
+#     def __cinit__(self, Assembler assembler, double P):
+#         """
+#         Wrap the function InducedFailure
+#         """
+#         self.iptr = new TACSInducedFailure(assembler.ptr, P)
+#         self.ptr = self.iptr
+#         self.ptr.incref()
+#         return
 
-    def setInducedType(self, ftype='exponential'):
-        if ftype == 'exponential':
-            self.iptr.setInducedType(INDUCED_EXPONENTIAL)
-        elif ftype == 'power':
-            self.iptr.setInducedType(INDUCED_POWER)
-        elif ftype == 'exponential-squared':
-            self.iptr.setInducedType(INDUCED_EXPONENTIAL_SQUARED)
-        elif ftype == 'power-squared':
-            self.iptr.setInducedType(INDUCED_POWER_SQUARED)
-        elif ftype == 'discrete-exponential':
-            self.iptr.setInducedType(INDUCED_DISCRETE_EXPONENTIAL)
-        elif ftype == 'discrete-power':
-            self.iptr.setInducedType(INDUCED_DISCRETE_POWER)
-        elif ftype == 'discrete-exponential-squared':
-            self.iptr.setInducedType(INDUCED_DISCRETE_EXPONENTIAL_SQUARED)
-        elif ftype == 'discrete-power-squared':
-            self.iptr.setInducedType(INDUCED_DISCRETE_POWER_SQUARED)
+#     def setInducedType(self, ftype='exponential'):
+#         if ftype == 'exponential':
+#             self.iptr.setInducedType(INDUCED_EXPONENTIAL)
+#         elif ftype == 'power':
+#             self.iptr.setInducedType(INDUCED_POWER)
+#         elif ftype == 'exponential-squared':
+#             self.iptr.setInducedType(INDUCED_EXPONENTIAL_SQUARED)
+#         elif ftype == 'power-squared':
+#             self.iptr.setInducedType(INDUCED_POWER_SQUARED)
+#         elif ftype == 'discrete-exponential':
+#             self.iptr.setInducedType(INDUCED_DISCRETE_EXPONENTIAL)
+#         elif ftype == 'discrete-power':
+#             self.iptr.setInducedType(INDUCED_DISCRETE_POWER)
+#         elif ftype == 'discrete-exponential-squared':
+#             self.iptr.setInducedType(INDUCED_DISCRETE_EXPONENTIAL_SQUARED)
+#         elif ftype == 'discrete-power-squared':
+#             self.iptr.setInducedType(INDUCED_DISCRETE_POWER_SQUARED)
 
-    def setParameter(self, double param):
-        self.iptr.setParameter(param)
+#     def setParameter(self, double param):
+#         self.iptr.setParameter(param)
 
-cdef class HeatFlux(Function):
-    cdef TACSHeatFlux *hptr
-    def __cinit__(self, Assembler assembler, list elem_index,
-                  list surfaces):
-        cdef int num_elems = len(elem_index)
-        cdef int *elem_ind = NULL
-        cdef int *surf = NULL
+# cdef class HeatFlux(Function):
+#     cdef TACSHeatFlux *hptr
+#     def __cinit__(self, Assembler assembler, list elem_index,
+#                   list surfaces):
+#         cdef int num_elems = len(elem_index)
+#         cdef int *elem_ind = NULL
+#         cdef int *surf = NULL
 
-        elem_ind = <int*>malloc(num_elems*sizeof(int));
-        surf = <int*>malloc(num_elems*sizeof(int));
+#         elem_ind = <int*>malloc(num_elems*sizeof(int));
+#         surf = <int*>malloc(num_elems*sizeof(int));
 
-        for i in range(num_elems):
-            elem_ind[i] = <int>elem_index[i]
-            surf[i] = <int>surfaces[i]
-        self.hptr = new TACSHeatFlux(assembler.ptr, elem_ind, surf,
-                                     num_elems)
-        self.ptr = self.hptr
-        self.ptr.incref()
+#         for i in range(num_elems):
+#             elem_ind[i] = <int>elem_index[i]
+#             surf[i] = <int>surfaces[i]
+#         self.hptr = new TACSHeatFlux(assembler.ptr, elem_ind, surf,
+#                                      num_elems)
+#         self.ptr = self.hptr
+#         self.ptr.incref()
 
-        free(elem_ind)
-        free(surf)
-        return
+#         free(elem_ind)
+#         free(surf)
+#         return
 
 # cdef class DisplacementIntegral(Function):
 #     cdef TACSDisplacementIntegral *dptr

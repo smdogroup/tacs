@@ -367,6 +367,41 @@ cdef class Constitutive:
             return self.ptr.getNumStresses()
         return 0
 
+    def getFailureEnvelope(self, sx, sy,
+                           int elemIndex=0, int npts=100,
+                           pt=[0.0, 0.0, 0.0], X=[0.0, 0.0, 0.0]):
+        """
+        Get the failure envelope at a point induced by the stresses sx and sy.
+        """
+        cdef double _pt[3]
+        cdef TacsScalar _X[3]
+        cdef np.ndarray _sx = None
+        cdef np.ndarray _sy = None
+        cdef np.ndarray xvals = None
+        cdef np.ndarray yvals = None
+        for i in range(3):
+            _pt[i] = pt[i]
+            _X[i] = X[i]
+
+        if self.ptr:
+            nstress = self.getNumStresses()
+            _sx = np.zeros(nstress, dtype=dtype)
+            _sy = np.zeros(nstress, dtype=dtype)
+            for i in range(min(nstress, len(sx))):
+                _sx[i] = sx[i]
+            for i in range(min(nstress, len(sy))):
+                _sy[i] = sy[i]
+            xvals = np.zeros(npts, dtype=dtype)
+            yvals = np.zeros(npts, dtype=dtype)
+            self.ptr.getFailureEnvelope(npts, elemIndex, _pt, _X,
+                                        <TacsScalar*>_sx.data,
+                                        <TacsScalar*>_sy.data,
+                                        <TacsScalar*>xvals.data,
+                                        <TacsScalar*>yvals.data)
+            return xvals, yvals
+
+        return None
+
 # A generic wrapper for a TACSVec class - usually TACSBVec
 cdef class Vec:
     def __cinit__(self, NodeMap nmap=None, int bsize=1):

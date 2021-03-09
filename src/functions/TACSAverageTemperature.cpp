@@ -80,27 +80,18 @@ void TACSAverageTemperature::elementWiseEval( EvaluationType ftype,
                                               const TacsScalar vars[],
                                               const TacsScalar dvars[],
                                               const TacsScalar ddvars[] ){
-  // Retrieve the basis object for this element (if it exists)
-  TACSElementBasis *basis = element->getElementBasis();
+  for ( int i = 0; i < element->getNumQuadraturePoints(); i++ ){
+    double pt[3];
+    double weight = element->getQuadraturePoint(i, pt);
 
-  if (basis){
-    for ( int i = 0; i < basis->getNumQuadraturePoints(); i++ ){
-      double pt[3];
-      double weight = basis->getQuadraturePoint(i, pt);
-
-      // Evaluate the strain energy density
-      TacsScalar temp = 0.0;
-      int count = element->evalPointQuantity(elemIndex, TACS_TEMPERATURE,
-                                             time, i, pt,
-                                             Xpts, vars, dvars, ddvars, &temp);
-
-      if (count >= 1){
-        // Evaluate the determinant of the Jacobian
-        TacsScalar Xd[9], J[9];
-        TacsScalar detJ = basis->getJacobianTransform(i, pt, Xpts, Xd, J);
-
-        integral_temp += scale*detJ*weight*temp;
-      }
+    // Evaluate the strain energy density
+    TacsScalar temp = 0.0, detXd = 0.0;
+    int count = element->evalPointQuantity(elemIndex, TACS_TEMPERATURE,
+                                            time, i, pt,
+                                            Xpts, vars, dvars, ddvars,
+                                            &detXd, &temp);
+    if (count >= 1){
+      integral_temp += scale*detXd*weight*temp;
     }
   }
 }
@@ -125,32 +116,24 @@ void TACSAverageTemperature::getElementSVSens( int elemIndex,
   int numVars = element->getNumVariables();
   memset(dfdu, 0, numVars*sizeof(TacsScalar));
 
-  // Retrieve the basis object for this element (if it exists)
-  TACSElementBasis *basis = element->getElementBasis();
+  for ( int i = 0; i < element->getNumQuadraturePoints(); i++ ){
+    double pt[3];
+    double weight = element->getQuadraturePoint(i, pt);
 
-  if (basis){
-    for ( int i = 0; i < basis->getNumQuadraturePoints(); i++ ){
-      double pt[3];
-      double weight = basis->getQuadraturePoint(i, pt);
+    // Evaluate the average temperature
+    TacsScalar temp = 0.0, detXd = 0.0;
+    int count = element->evalPointQuantity(elemIndex, TACS_TEMPERATURE,
+                                            time, i, pt,
+                                            Xpts, vars, dvars, ddvars,
+                                            &detXd, &temp);
 
-      // Evaluate the average temperature
-      TacsScalar temp = 0.0;
-      int count = element->evalPointQuantity(elemIndex, TACS_TEMPERATURE,
-                                             time, i, pt,
-                                             Xpts, vars, dvars, ddvars, &temp);
-
-      if (count >= 1){
-        // Evaluate the determinant of the Jacobian
-        TacsScalar Xd[9], J[9];
-        TacsScalar detJ = basis->getJacobianTransform(i, pt, Xpts, Xd, J);
-
-        // Evaluate the derivative of the temperature w.r.t. states
-        TacsScalar dfdq = detJ*weight*inv_volume;
-        element->addPointQuantitySVSens(elemIndex, TACS_TEMPERATURE, time,
-                                        alpha, beta, gamma,
-                                        i, pt, Xpts, vars, dvars, ddvars,
-                                        &dfdq, dfdu);
-      }
+    if (count >= 1){
+      // Evaluate the derivative of the temperature w.r.t. states
+      TacsScalar dfdq = detXd*weight*inv_volume;
+      element->addPointQuantitySVSens(elemIndex, TACS_TEMPERATURE, time,
+                                      alpha, beta, gamma,
+                                      i, pt, Xpts, vars, dvars, ddvars,
+                                      &dfdq, dfdu);
     }
   }
 }
@@ -173,30 +156,23 @@ void TACSAverageTemperature::getElementXptSens( int elemIndex,
   int numNodes = element->getNumNodes();
   memset(dfdXpts, 0, 3*numNodes*sizeof(TacsScalar));
 
-  // Get the element basis class
-  TACSElementBasis *basis = element->getElementBasis();
+  for ( int i = 0; i < element->getNumQuadraturePoints(); i++ ){
+    double pt[3];
+    double weight = element->getQuadraturePoint(i, pt);
 
-  if (basis){
-    for ( int i = 0; i < basis->getNumQuadraturePoints(); i++ ){
-      double pt[3];
-      double weight = basis->getQuadraturePoint(i, pt);
+    TacsScalar temp = 0.0, detXd = 0.0;
+    int count = element->evalPointQuantity(elemIndex, TACS_TEMPERATURE,
+                                            time, i, pt,
+                                            Xpts, vars, dvars, ddvars,
+                                            &detXd, &temp);
 
-      TacsScalar temp = 0.0;
-      int count = element->evalPointQuantity(elemIndex, TACS_TEMPERATURE,
-                                             time, i, pt,
-                                             Xpts, vars, dvars, ddvars,
-                                             &temp);
-
-      if (count >= 1){
-        // Evaluate the determinant of the Jacobian
-        TacsScalar Xd[9], J[9];
-        basis->getJacobianTransform(i, pt, Xpts, Xd, J);
-
-        // Compute the sensitivity contribution
-        TacsScalar dfddetJ = scale*weight*temp*inv_volume;
-        basis->addJacobianTransformXptSens(i, pt, Xd, J, dfddetJ,
-                                           NULL, NULL, dfdXpts);
-      }
+    if (count >= 1){
+      TacsScalar dfddetXd = weight*temp*inv_volume;
+      TacsScalar dfdq = weight*inv_volume*detXd;
+      element->addPointQuantityXptSens(elemIndex, TACS_TEMPERATURE,
+                                       time, scale, i, pt,
+                                       Xpts, vars, dvars, ddvars,
+                                       dfddetXd, &dfdq, dfdXpts);
     }
   }
 }

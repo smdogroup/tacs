@@ -13,6 +13,7 @@
 */
 
 #include "TACSElement2D.h"
+#include "TACSElementAlgebra.h"
 
 TACSElement2D::TACSElement2D( TACSElementModel *_model,
                               TACSElementBasis *_basis ){
@@ -48,6 +49,31 @@ TACSElementBasis* TACSElement2D::getElementBasis(){
 
 TACSElementModel* TACSElement2D::getElementModel(){
   return model;
+}
+
+int TACSElement2D::getNumQuadraturePoints(){
+  return basis->getNumQuadraturePoints();
+}
+
+double TACSElement2D::getQuadratureWeight( int n ){
+  return basis->getQuadratureWeight(n);
+}
+
+double TACSElement2D::getQuadraturePoint( int n, double pt[] ){
+  return basis->getQuadraturePoint(n, pt);
+}
+
+int TACSElement2D::getNumElementFaces(){
+  return basis->getNumElementFaces();
+}
+
+int TACSElement2D::getNumFaceQuadraturePoints( int face ){
+  return basis->getNumFaceQuadraturePoints(face);
+}
+
+double TACSElement2D::getFaceQuadraturePoint( int face, int n, double pt[],
+                                              double tangent[] ){
+  return basis->getFaceQuadraturePoint(face, n, pt, tangent);
 }
 
 /*
@@ -548,6 +574,7 @@ int TACSElement2D::evalPointQuantity( int elemIndex,
                                       const TacsScalar vars[],
                                       const TacsScalar dvars[],
                                       const TacsScalar ddvars[],
+                                      TacsScalar *detXd,
                                       TacsScalar *quantity ){
   const int vars_per_node = model->getVarsPerNode();
   TacsScalar X[3], Xd[6], J[4];
@@ -555,6 +582,7 @@ int TACSElement2D::evalPointQuantity( int elemIndex,
   TacsScalar Ud[2*MAX_VARS_PER_NODE], Ux[2*MAX_VARS_PER_NODE];
   basis->getFieldGradient(n, pt, Xpts, vars_per_node, vars, dvars, ddvars,
                           X, Xd, J, Ut, Ud, Ux);
+  *detXd = det2x2(Xd);
 
   return model->evalPointQuantity(elemIndex, quantityType, time, n, pt,
                                   X, Xd, Ut, Ux, quantity);
@@ -640,6 +668,7 @@ void TACSElement2D::addPointQuantityXptSens( int elemIndex,
                                              const TacsScalar vars[],
                                              const TacsScalar dvars[],
                                              const TacsScalar ddvars[],
+                                             const TacsScalar dfddetXd,
                                              const TacsScalar dfdq[],
                                              TacsScalar dfdXpts[] ){
   const int vars_per_node = model->getVarsPerNode();
@@ -656,7 +685,7 @@ void TACSElement2D::addPointQuantityXptSens( int elemIndex,
                                X, Xd, Ut, Ux, dfdq, dfdX, dfdXd, dfdUt, dfdUx);
 
   basis->addFieldGradientXptSens(n, pt, Xpts, vars_per_node, Xd, J, Ud,
-                                 0.0, dfdX, dfdXd, NULL, dfdUx, dfdXpts);
+                                 dfddetXd, dfdX, dfdXd, NULL, dfdUx, dfdXpts);
 }
 
 /*

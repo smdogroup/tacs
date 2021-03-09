@@ -33,6 +33,13 @@ class TACSElement2D : public TACSElement {
   ElementLayout getLayoutType();
   TACSElementBasis* getElementBasis();
   TACSElementModel* getElementModel();
+  int getNumQuadraturePoints();
+  double getQuadratureWeight( int n );
+  double getQuadraturePoint( int n, double pt[] );
+  int getNumElementFaces();
+  int getNumFaceQuadraturePoints( int face );
+  double getFaceQuadraturePoint( int face, int n, double pt[],
+                                 double tangent[] );
 
   /**
     Retrieve the global design variable numbers associated with this element
@@ -146,7 +153,8 @@ class TACSElement2D : public TACSElement {
   int evalPointQuantity( int elemIndex, int quantityType, double time,
                          int n, double pt[], const TacsScalar Xpts[],
                          const TacsScalar vars[], const TacsScalar dvars[],
-                         const TacsScalar ddvars[], TacsScalar *quantity );
+                         const TacsScalar ddvars[], TacsScalar *detXd,
+                         TacsScalar *quantity );
 
   /**
     Add the derivative of the point quantity w.r.t. the design variables
@@ -174,7 +182,8 @@ class TACSElement2D : public TACSElement {
                                 TacsScalar scale, int n, double pt[],
                                 const TacsScalar Xpts[], const TacsScalar vars[],
                                 const TacsScalar dvars[], const TacsScalar ddvars[],
-                                const TacsScalar dfdq[], TacsScalar dfdXpts[] );
+                                const TacsScalar dfddetXd, const TacsScalar dfdq[],
+                                TacsScalar dfdXpts[] );
 
   /**
     Compute the output data for visualization

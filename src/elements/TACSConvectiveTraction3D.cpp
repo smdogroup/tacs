@@ -53,6 +53,31 @@ TACSElementBasis* TACSConvectiveTraction3D::getElementBasis(){
   return basis;
 }
 
+int TACSConvectiveTraction3D::getNumQuadraturePoints(){
+  return basis->getNumQuadraturePoints();
+}
+
+double TACSConvectiveTraction3D::getQuadratureWeight( int n ){
+  return basis->getQuadratureWeight(n);
+}
+
+double TACSConvectiveTraction3D::getQuadraturePoint( int n, double pt[] ){
+  return basis->getQuadraturePoint(n, pt);
+}
+
+int TACSConvectiveTraction3D::getNumElementFaces(){
+  return basis->getNumElementFaces();
+}
+
+int TACSConvectiveTraction3D::getNumFaceQuadraturePoints( int face ){
+  return basis->getNumFaceQuadraturePoints(face);
+}
+
+double TACSConvectiveTraction3D::getFaceQuadraturePoint( int face, int n, double pt[],
+                                                         double tangent[] ){
+  return basis->getFaceQuadraturePoint(face, n, pt, tangent);
+}
+
 /*
   Add the residual to the provided vector
 */

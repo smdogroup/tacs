@@ -22,10 +22,7 @@ CXX_OBJS = FElibrary.o \
 	TACSTraction3D.o \
 	TACSConvectiveTraction2D.o \
 	TACSConvectiveTraction3D.o \
-	TACSElementVerification.o \
-	TACSMITCElement2D.o \
-	TACSMITCPlateModel.o \
-	TACSMITCThermoelasticPlateModel.o
+	TACSElementVerification.o
 
 DIR=${TACS_DIR}/src/elements
 

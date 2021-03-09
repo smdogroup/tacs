@@ -19,9 +19,7 @@
 #include "TACSElementVerification.h"
 
 /**
-  Test the residual implementation against the Lagrangian equations
-  of motion. This relies on the element implementation of the kinetic
-  and potential energies.
+  Test the implementation of the constitutive object.
 
   @param con The constitutive object to test
   @param elemIndex The element index for the constitutive test

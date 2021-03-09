@@ -76,28 +76,52 @@ void TACSStructuralMass::elementWiseEval( EvaluationType ftype,
                                           const TacsScalar vars[],
                                           const TacsScalar dvars[],
                                           const TacsScalar ddvars[] ){
-  // Retrieve the number of stress components for this element
-  TACSElementBasis *basis = element->getElementBasis();
+  for ( int i = 0; i < element->getNumQuadraturePoints(); i++ ){
+    double pt[3];
+    double weight = element->getQuadraturePoint(i, pt);
 
-  if (basis){
-    for ( int i = 0; i < basis->getNumQuadraturePoints(); i++ ){
-      double pt[3];
-      double weight = basis->getQuadraturePoint(i, pt);
+    // Evaluate the failure index, and check whether it is an
+    // undefined quantity of interest on this element
+    TacsScalar density = 0.0, detXd = 0.0;
+    int count = element->evalPointQuantity(elemIndex, TACS_ELEMENT_DENSITY,
+                                            time, i, pt,
+                                            Xpts, vars, dvars, ddvars,
+                                            &detXd, &density);
 
-      // Evaluate the failure index, and check whether it is an
-      // undefined quantity of interest on this element
-      TacsScalar density = 0.0;
-      int count = element->evalPointQuantity(elemIndex, TACS_ELEMENT_DENSITY,
-                                             time, i, pt,
-                                             Xpts, vars, dvars, ddvars,
-                                             &density);
+    if (count >= 1){
+      totalMass += scale*weight*detXd*density;
+    }
+  }
+}
 
-      if (count >= 1){
-        // Evaluate the determinant of the Jacobian
-        TacsScalar Xd[9], J[9];
-        TacsScalar detJ = basis->getJacobianTransform(i, pt, Xpts, Xd, J);
-        totalMass += scale*weight*detJ*density;
-      }
+/*
+  Determine the derivative of the mass w.r.t. the material
+  design variables
+*/
+void TACSStructuralMass::addElementDVSens( int elemIndex,
+                                           TACSElement *element,
+                                           double time,
+                                           TacsScalar scale,
+                                           const TacsScalar Xpts[],
+                                           const TacsScalar vars[],
+                                           const TacsScalar dvars[],
+                                           const TacsScalar ddvars[],
+                                           int dvLen, TacsScalar dfdx[] ){
+  for ( int i = 0; i < element->getNumQuadraturePoints(); i++ ){
+    double pt[3];
+    double weight = element->getQuadraturePoint(i, pt);
+
+    TacsScalar density = 0.0, detXd = 0.0;
+    int count = element->evalPointQuantity(elemIndex, TACS_ELEMENT_DENSITY,
+                                            time, i, pt,
+                                            Xpts, vars, dvars, ddvars,
+                                            &detXd, &density);
+    if (count >= 1){
+      TacsScalar dfdq = weight*detXd;
+      element->addPointQuantityDVSens(elemIndex, TACS_ELEMENT_DENSITY,
+                                      time, scale, i, pt,
+                                      Xpts, vars, dvars, ddvars,
+                                      &dfdq, dvLen, dfdx);
     }
   }
 }
@@ -119,71 +143,23 @@ void TACSStructuralMass::getElementXptSens( int elemIndex,
   int numNodes = element->getNumNodes();
   memset(dfdXpts, 0, 3*numNodes*sizeof(TacsScalar));
 
-  // Get the element basis class
-  TACSElementBasis *basis = element->getElementBasis();
+  for ( int i = 0; i < element->getNumQuadraturePoints(); i++ ){
+    double pt[3];
+    double weight = element->getQuadraturePoint(i, pt);
 
-  if (basis){
-    for ( int i = 0; i < basis->getNumQuadraturePoints(); i++ ){
-      double pt[3];
-      double weight = basis->getQuadraturePoint(i, pt);
+    TacsScalar density = 0.0, detXd = 0.0;
+    int count = element->evalPointQuantity(elemIndex, TACS_ELEMENT_DENSITY,
+                                            time, i, pt,
+                                            Xpts, vars, dvars, ddvars,
+                                            &detXd, &density);
 
-      TacsScalar density = 0.0;
-      int count = element->evalPointQuantity(elemIndex, TACS_ELEMENT_DENSITY,
-                                             time, i, pt,
-                                             Xpts, vars, dvars, ddvars,
-                                             &density);
-
-      if (count >= 1){
-        // Evaluate the determinant of the Jacobian
-        TacsScalar Xd[9], J[9];
-        basis->getJacobianTransform(i, pt, Xpts, Xd, J);
-
-        // Compute the sensitivity contribution
-        TacsScalar dfddetJ = density*weight;
-        basis->addJacobianTransformXptSens(i, pt, Xd, J, scale*dfddetJ,
-                                           NULL, NULL, dfdXpts);
-      }
-    }
-  }
-}
-
-/*
-  Determine the derivative of the mass w.r.t. the material
-  design variables
-*/
-void TACSStructuralMass::addElementDVSens( int elemIndex,
-                                           TACSElement *element,
-                                           double time,
-                                           TacsScalar scale,
-                                           const TacsScalar Xpts[],
-                                           const TacsScalar vars[],
-                                           const TacsScalar dvars[],
-                                           const TacsScalar ddvars[],
-                                           int dvLen, TacsScalar dfdx[] ){
-  // Get the element basis class
-  TACSElementBasis *basis = element->getElementBasis();
-
-  if (basis){
-    for ( int i = 0; i < basis->getNumQuadraturePoints(); i++ ){
-      double pt[3];
-      double weight = basis->getQuadraturePoint(i, pt);
-
-      TacsScalar density = 0.0;
-      int count = element->evalPointQuantity(elemIndex, TACS_ELEMENT_DENSITY,
-                                             time, i, pt,
-                                             Xpts, vars, dvars, ddvars,
-                                             &density);
-      if (count >= 1){
-        // Evaluate the determinant of the Jacobian
-        TacsScalar Xd[9], J[9];
-        TacsScalar detJ = basis->getJacobianTransform(i, pt, Xpts, Xd, J);
-        TacsScalar dfdq = weight*detJ;
-
-        element->addPointQuantityDVSens(elemIndex, TACS_ELEMENT_DENSITY,
-                                        time, scale, i, pt,
-                                        Xpts, vars, dvars, ddvars,
-                                        &dfdq, dvLen, dfdx);
-      }
+    if (count >= 1){
+      TacsScalar dfdq = scale*weight*detXd;
+      TacsScalar dfddetXd =scale*weight*density;
+      element->addPointQuantityXptSens(elemIndex, TACS_ELEMENT_DENSITY,
+                                       time, 1.0, i, pt,
+                                       Xpts, vars, dvars, ddvars,
+                                       dfddetXd, &dfdq, dfdXpts);
     }
   }
 }

@@ -29,6 +29,13 @@ class TACSConvectiveTraction3D : public TACSElement {
   int getNumNodes();
   ElementLayout getLayoutType();
   TACSElementBasis* getElementBasis();
+  int getNumQuadraturePoints();
+  double getQuadratureWeight( int n );
+  double getQuadraturePoint( int n, double pt[] );
+  int getNumElementFaces();
+  int getNumFaceQuadraturePoints( int face );
+  double getFaceQuadraturePoint( int face, int n, double pt[],
+                                 double tangent[] );
 
   /**
     Add the residual to the provided vector

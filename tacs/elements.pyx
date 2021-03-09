@@ -297,75 +297,75 @@ cdef class RigidBodyViz:
         if self.ptr:
             self.ptr.decref()
 
-cdef class RigidBody(Element):
-    cdef TACSRigidBody *cptr
-    def __cinit__(self, RefFrame frame, TacsScalar mass,
-                  np.ndarray[TacsScalar, ndim=1, mode='c'] cRef,
-                  np.ndarray[TacsScalar, ndim=1, mode='c'] JRef,
-                  GibbsVector r0,
-                  GibbsVector v0, GibbsVector omega0, GibbsVector g,
-                  int mdv=-1,
-                  np.ndarray[int, ndim=1, mode='c'] cdvs=None,
-                  np.ndarray[int, ndim=1, mode='c'] Jdvs=None):
-        cdef int *_cdvs = NULL
-        cdef int *_Jdvs = NULL
+# cdef class RigidBody(Element):
+#     cdef TACSRigidBody *cptr
+#     def __cinit__(self, RefFrame frame, TacsScalar mass,
+#                   np.ndarray[TacsScalar, ndim=1, mode='c'] cRef,
+#                   np.ndarray[TacsScalar, ndim=1, mode='c'] JRef,
+#                   GibbsVector r0,
+#                   GibbsVector v0, GibbsVector omega0, GibbsVector g,
+#                   int mdv=-1,
+#                   np.ndarray[int, ndim=1, mode='c'] cdvs=None,
+#                   np.ndarray[int, ndim=1, mode='c'] Jdvs=None):
+#         cdef int *_cdvs = NULL
+#         cdef int *_Jdvs = NULL
 
-        # Assign the the variable numbers if they are supplied by the
-        # user
-        if cdvs is not None:
-            _cdvs = <int*>cdvs.data
-        if Jdvs is not None:
-            _Jdvs = <int*>Jdvs.data
+#         # Assign the the variable numbers if they are supplied by the
+#         # user
+#         if cdvs is not None:
+#             _cdvs = <int*>cdvs.data
+#         if Jdvs is not None:
+#             _Jdvs = <int*>Jdvs.data
 
-        # Allocate the rigid body object and set the design variables
-        self.cptr = new TACSRigidBody(frame.ptr, mass,
-                                      <TacsScalar*>cRef.data,
-                                      <TacsScalar*>JRef.data, r0.ptr,
-                                      v0.ptr, omega0.ptr, g.ptr)
-        self.cptr.setDesignVarNums(mdv, _cdvs, _Jdvs)
+#         # Allocate the rigid body object and set the design variables
+#         self.cptr = new TACSRigidBody(frame.ptr, mass,
+#                                       <TacsScalar*>cRef.data,
+#                                       <TacsScalar*>JRef.data, r0.ptr,
+#                                       v0.ptr, omega0.ptr, g.ptr)
+#         self.cptr.setDesignVarNums(mdv, _cdvs, _Jdvs)
 
-        # Increase the reference count to the underlying object
-        self.ptr = self.cptr
-        self.ptr.incref()
+#         # Increase the reference count to the underlying object
+#         self.ptr = self.cptr
+#         self.ptr.incref()
 
-    def setVisualization(self, RigidBodyViz viz):
-        self.cptr.setVisualization(viz.ptr)
+#     def setVisualization(self, RigidBodyViz viz):
+#         self.cptr.setVisualization(viz.ptr)
 
-cdef class FixedConstraint(Element):
-    def __cinit__(self,
-                  GibbsVector point,
-                  RigidBody bodyA):
-        self.ptr = new TACSFixedConstraint(bodyA.cptr,
-                                           point.ptr)
-        self.ptr.incref()
+# cdef class FixedConstraint(Element):
+#     def __cinit__(self,
+#                   GibbsVector point,
+#                   RigidBody bodyA):
+#         self.ptr = new TACSFixedConstraint(bodyA.cptr,
+#                                            point.ptr)
+#         self.ptr.incref()
 
-cdef class SphericalConstraint(Element):
-    def __cinit__(self,
-                  GibbsVector point,
-                  RigidBody bodyA, RigidBody bodyB=None):
-        if bodyB is None:
-            self.ptr = new TACSSphericalConstraint(bodyA.cptr,
-                                                   point.ptr)
-        else:
-            self.ptr = new TACSSphericalConstraint(bodyA.cptr, bodyB.cptr,
-                                                   point.ptr)
-        self.ptr.incref()
+# cdef class SphericalConstraint(Element):
+#     def __cinit__(self,
+#                   GibbsVector point,
+#                   RigidBody bodyA, RigidBody bodyB=None):
+#         if bodyB is None:
+#             self.ptr = new TACSSphericalConstraint(bodyA.cptr,
+#                                                    point.ptr)
+#         else:
+#             self.ptr = new TACSSphericalConstraint(bodyA.cptr, bodyB.cptr,
+#                                                    point.ptr)
+#         self.ptr.incref()
 
-cdef class RevoluteConstraint(Element):
-    def __cinit__(self, GibbsVector point, GibbsVector eA,
-                  int fixed_ref_point=0, int inertial_rev_axis=0,
-                  RigidBody bodyA=None, RigidBody bodyB=None):
-        if bodyA is not None and bodyB is not None:
-            self.ptr = new TACSRevoluteConstraint(bodyA.cptr, bodyB.cptr,
-                                                  point.ptr, eA.ptr)
-        elif bodyA is not None and bodyB is None:
-            self.ptr = new TACSRevoluteConstraint(bodyA.cptr,
-                                                  point.ptr, eA.ptr)
-        else:
-            self.ptr = new TACSRevoluteConstraint(fixed_ref_point,
-                                                  point.ptr, eA.ptr,
-                                                  inertial_rev_axis)
-        self.ptr.incref()
+# cdef class RevoluteConstraint(Element):
+#     def __cinit__(self, GibbsVector point, GibbsVector eA,
+#                   int fixed_ref_point=0, int inertial_rev_axis=0,
+#                   RigidBody bodyA=None, RigidBody bodyB=None):
+#         if bodyA is not None and bodyB is not None:
+#             self.ptr = new TACSRevoluteConstraint(bodyA.cptr, bodyB.cptr,
+#                                                   point.ptr, eA.ptr)
+#         elif bodyA is not None and bodyB is None:
+#             self.ptr = new TACSRevoluteConstraint(bodyA.cptr,
+#                                                   point.ptr, eA.ptr)
+#         else:
+#             self.ptr = new TACSRevoluteConstraint(fixed_ref_point,
+#                                                   point.ptr, eA.ptr,
+#                                                   inertial_rev_axis)
+#         self.ptr.incref()
 
 ## cdef class CylindricalConstraint(Element):
 ##     def __cinit__(self, GibbsVector point, GibbsVector eA,
@@ -378,124 +378,124 @@ cdef class RevoluteConstraint(Element):
 ##                                                      point.ptr, eA.ptr)
 ##         self.ptr.incref()
 
-cdef class RigidLink(Element):
-    def __cinit__(self, RigidBody bodyA):
-        self.ptr = new TACSRigidLink(bodyA.cptr)
-        self.ptr.incref()
-        return
+# cdef class RigidLink(Element):
+#     def __cinit__(self, RigidBody bodyA):
+#         self.ptr = new TACSRigidLink(bodyA.cptr)
+#         self.ptr.incref()
+#         return
 
-cdef class RevoluteDriver(Element):
-    def __cinit__(self, GibbsVector rev, TacsScalar omega):
-        self.ptr = new TACSRevoluteDriver(rev.ptr, omega)
-        self.ptr.incref()
-        return
+# cdef class RevoluteDriver(Element):
+#     def __cinit__(self, GibbsVector rev, TacsScalar omega):
+#         self.ptr = new TACSRevoluteDriver(rev.ptr, omega)
+#         self.ptr.incref()
+#         return
 
-cdef class MotionDriver(Element):
-    def __cinit__(self, GibbsVector dir, TacsScalar omega,
-                  arrest_rot=False):
-        if arrest_rot is False:
-            self.ptr = new TACSMotionDriver(dir.ptr, omega, 0)
-        else:
-            self.ptr = new TACSMotionDriver(dir.ptr, omega, 1)
-        self.ptr.incref()
+# cdef class MotionDriver(Element):
+#     def __cinit__(self, GibbsVector dir, TacsScalar omega,
+#                   arrest_rot=False):
+#         if arrest_rot is False:
+#             self.ptr = new TACSMotionDriver(dir.ptr, omega, 0)
+#         else:
+#             self.ptr = new TACSMotionDriver(dir.ptr, omega, 1)
+#         self.ptr.incref()
 
-cdef class AverageConstraint(Element):
-    def __cinit__(self, RigidBody body, GibbsVector point,
-                  RefFrame frame, int moment_flag=0):
-        self.ptr = new TACSAverageConstraint(body.cptr, point.ptr,
-                                             frame.ptr, moment_flag)
-        self.ptr.incref()
+# cdef class AverageConstraint(Element):
+#     def __cinit__(self, RigidBody body, GibbsVector point,
+#                   RefFrame frame, int moment_flag=0):
+#         self.ptr = new TACSAverageConstraint(body.cptr, point.ptr,
+#                                              frame.ptr, moment_flag)
+#         self.ptr.incref()
 
-cdef class MITCBeam(Element):
-    def __cinit__(self, TimoshenkoConstitutive stiff,
-                  GibbsVector gravity=None,
-                  GibbsVector vInit=None,
-                  GibbsVector omegaInit=None):
-        cdef TACSTimoshenkoConstitutive *con = _dynamicTimoshenkoConstitutive(stiff.ptr)
-        if omegaInit is not None:
-            self.ptr = new MITC3(con, gravity.ptr,
-                                 vInit.ptr, omegaInit.ptr)
-        elif vInit is not None:
-            self.ptr = new MITC3(con, gravity.ptr, vInit.ptr, NULL)
-        elif gravity is not None:
-            self.ptr = new MITC3(con, gravity.ptr, NULL, NULL)
-        else:
-            self.ptr = new MITC3(con, NULL, NULL, NULL)
-        self.ptr.incref()
+# cdef class MITCBeam(Element):
+#     def __cinit__(self, TimoshenkoConstitutive stiff,
+#                   GibbsVector gravity=None,
+#                   GibbsVector vInit=None,
+#                   GibbsVector omegaInit=None):
+#         cdef TACSTimoshenkoConstitutive *con = _dynamicTimoshenkoConstitutive(stiff.ptr)
+#         if omegaInit is not None:
+#             self.ptr = new MITC3(con, gravity.ptr,
+#                                  vInit.ptr, omegaInit.ptr)
+#         elif vInit is not None:
+#             self.ptr = new MITC3(con, gravity.ptr, vInit.ptr, NULL)
+#         elif gravity is not None:
+#             self.ptr = new MITC3(con, gravity.ptr, NULL, NULL)
+#         else:
+#             self.ptr = new MITC3(con, NULL, NULL, NULL)
+#         self.ptr.incref()
 
-cdef inplace_array_1d(int nptype, int dim1, void *data_ptr):
-    '''Return a numpy version of the array'''
-    # Set the shape of the array
-    cdef int size = 1
-    cdef np.npy_intp shape[1]
-    cdef np.ndarray ndarray
+# cdef inplace_array_1d(int nptype, int dim1, void *data_ptr):
+#     '''Return a numpy version of the array'''
+#     # Set the shape of the array
+#     cdef int size = 1
+#     cdef np.npy_intp shape[1]
+#     cdef np.ndarray ndarray
 
-    # Set the first entry of the shape array
-    shape[0] = <np.npy_intp>dim1
+#     # Set the first entry of the shape array
+#     shape[0] = <np.npy_intp>dim1
 
-    # Create the array itself - Note that this function will not
-    # delete the data once the ndarray goes out of scope
-    ndarray = np.PyArray_SimpleNewFromData(size, shape,
-                                           nptype, data_ptr)
+#     # Create the array itself - Note that this function will not
+#     # delete the data once the ndarray goes out of scope
+#     ndarray = np.PyArray_SimpleNewFromData(size, shape,
+#                                            nptype, data_ptr)
 
-    return ndarray
+#     return ndarray
 
-cdef int getMultiplierIndex(void *self_ptr):
-    return (<object>self_ptr).getMultiplierIndex()
+# cdef int getMultiplierIndex(void *self_ptr):
+#     return (<object>self_ptr).getMultiplierIndex()
 
-cdef void getInitConditions(void *self_ptr, int elem_index, int num_nodes,
-                            const TacsScalar *Xpts, int num_vars,
-                            TacsScalar *vars,
-                            TacsScalar *dvars,
-                            TacsScalar *ddvars):
-    _Xpts = inplace_array_1d(TACS_NPY_SCALAR, 3*num_nodes, <void*>Xpts)
-    _vars = inplace_array_1d(TACS_NPY_SCALAR, num_vars, <void*>vars)
-    _dvars = inplace_array_1d(TACS_NPY_SCALAR, num_vars, <void*>dvars)
-    _ddvars = inplace_array_1d(TACS_NPY_SCALAR, num_vars, <void*>ddvars)
-    (<object>self_ptr).getInitConditions(elem_index, _Xpts, _vars, _dvars, _ddvars)
-    return
+# cdef void getInitConditions(void *self_ptr, int elem_index, int num_nodes,
+#                             const TacsScalar *Xpts, int num_vars,
+#                             TacsScalar *vars,
+#                             TacsScalar *dvars,
+#                             TacsScalar *ddvars):
+#     _Xpts = inplace_array_1d(TACS_NPY_SCALAR, 3*num_nodes, <void*>Xpts)
+#     _vars = inplace_array_1d(TACS_NPY_SCALAR, num_vars, <void*>vars)
+#     _dvars = inplace_array_1d(TACS_NPY_SCALAR, num_vars, <void*>dvars)
+#     _ddvars = inplace_array_1d(TACS_NPY_SCALAR, num_vars, <void*>ddvars)
+#     (<object>self_ptr).getInitConditions(elem_index, _Xpts, _vars, _dvars, _ddvars)
+#     return
 
-cdef void addResidual(void *self_ptr, int elem_index, double time,
-                      int num_nodes, const TacsScalar *Xpts,
-                      int num_vars, const TacsScalar *vars,
-                      const TacsScalar *dvars, const TacsScalar *ddvars,
-                      TacsScalar *res):
-    _Xpts = inplace_array_1d(TACS_NPY_SCALAR, 3*num_nodes, <void*>Xpts)
-    _vars = inplace_array_1d(TACS_NPY_SCALAR, num_vars, <void*>vars)
-    _dvars = inplace_array_1d(TACS_NPY_SCALAR, num_vars, <void*>dvars)
-    _ddvars = inplace_array_1d(TACS_NPY_SCALAR, num_vars, <void*>ddvars)
-    _res = inplace_array_1d(TACS_NPY_SCALAR, num_vars, <void*>res)
-    (<object>self_ptr).addResidual(elem_index, time, _Xpts,
-                                   _vars, _dvars, _ddvars, _res)
-    return
+# cdef void addResidual(void *self_ptr, int elem_index, double time,
+#                       int num_nodes, const TacsScalar *Xpts,
+#                       int num_vars, const TacsScalar *vars,
+#                       const TacsScalar *dvars, const TacsScalar *ddvars,
+#                       TacsScalar *res):
+#     _Xpts = inplace_array_1d(TACS_NPY_SCALAR, 3*num_nodes, <void*>Xpts)
+#     _vars = inplace_array_1d(TACS_NPY_SCALAR, num_vars, <void*>vars)
+#     _dvars = inplace_array_1d(TACS_NPY_SCALAR, num_vars, <void*>dvars)
+#     _ddvars = inplace_array_1d(TACS_NPY_SCALAR, num_vars, <void*>ddvars)
+#     _res = inplace_array_1d(TACS_NPY_SCALAR, num_vars, <void*>res)
+#     (<object>self_ptr).addResidual(elem_index, time, _Xpts,
+#                                    _vars, _dvars, _ddvars, _res)
+#     return
 
-cdef void addJacobian(void *self_ptr, int elem_index, double time,
-                      TacsScalar alpha, TacsScalar beta, TacsScalar gamma,
-                      int num_nodes, const TacsScalar *Xpts,
-                      int num_vars, const TacsScalar *vars,
-                      const TacsScalar *dvars, const TacsScalar *ddvars,
-                      TacsScalar *res, TacsScalar *mat):
-    _Xpts = inplace_array_1d(TACS_NPY_SCALAR, 3*num_nodes, <void*>Xpts)
-    _vars = inplace_array_1d(TACS_NPY_SCALAR, num_vars, <void*>vars)
-    _dvars = inplace_array_1d(TACS_NPY_SCALAR, num_vars, <void*>dvars)
-    _ddvars = inplace_array_1d(TACS_NPY_SCALAR, num_vars, <void*>ddvars)
-    _res = inplace_array_1d(TACS_NPY_SCALAR, num_vars, <void*>res)
-    _mat = inplace_array_1d(TACS_NPY_SCALAR, num_vars*num_vars, <void*>mat)
-    (<object>self_ptr).addJacobian(elem_index, time, alpha, beta, gamma, _Xpts,
-                                   _vars, _dvars, _ddvars, _res, _mat)
-    return
+# cdef void addJacobian(void *self_ptr, int elem_index, double time,
+#                       TacsScalar alpha, TacsScalar beta, TacsScalar gamma,
+#                       int num_nodes, const TacsScalar *Xpts,
+#                       int num_vars, const TacsScalar *vars,
+#                       const TacsScalar *dvars, const TacsScalar *ddvars,
+#                       TacsScalar *res, TacsScalar *mat):
+#     _Xpts = inplace_array_1d(TACS_NPY_SCALAR, 3*num_nodes, <void*>Xpts)
+#     _vars = inplace_array_1d(TACS_NPY_SCALAR, num_vars, <void*>vars)
+#     _dvars = inplace_array_1d(TACS_NPY_SCALAR, num_vars, <void*>dvars)
+#     _ddvars = inplace_array_1d(TACS_NPY_SCALAR, num_vars, <void*>ddvars)
+#     _res = inplace_array_1d(TACS_NPY_SCALAR, num_vars, <void*>res)
+#     _mat = inplace_array_1d(TACS_NPY_SCALAR, num_vars*num_vars, <void*>mat)
+#     (<object>self_ptr).addJacobian(elem_index, time, alpha, beta, gamma, _Xpts,
+#                                    _vars, _dvars, _ddvars, _res, _mat)
+#     return
 
-cdef class pyElement(Element):
-    def __cinit__(self, int vars_per_node, int num_nodes, *args, **kwargs):
-        cdef TACSElementWrapper *pointer
-        pointer = new TACSElementWrapper(<PyObject*>self, vars_per_node,
-                                         num_nodes)
-        pointer.incref()
+# cdef class pyElement(Element):
+#     def __cinit__(self, int vars_per_node, int num_nodes, *args, **kwargs):
+#         cdef TACSElementWrapper *pointer
+#         pointer = new TACSElementWrapper(<PyObject*>self, vars_per_node,
+#                                          num_nodes)
+#         pointer.incref()
 
-        # Set the function pointers
-        pointer.getmultiplierindex = getMultiplierIndex
-        pointer.getinitconditions = getInitConditions
-        pointer.addresidual = addResidual
-        pointer.addjacobian = addJacobian
+#         # Set the function pointers
+#         pointer.getmultiplierindex = getMultiplierIndex
+#         pointer.getinitconditions = getInitConditions
+#         pointer.addresidual = addResidual
+#         pointer.addjacobian = addJacobian
 
-        self.ptr = pointer
+#         self.ptr = pointer
