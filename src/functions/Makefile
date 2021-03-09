@@ -12,8 +12,8 @@ CXX_OBJS = TACSFunction.o \
 	TACSKSFailure.o \
 	TACSCompliance.o \
 	TACSAverageTemperature.o \
-	TACSKSTemperature.o
-	# TACSHeatFlux.o \
+	TACSKSTemperature.o \
+	TACSHeatFlux.o
 	# TACSKSFailure.o \
 	# TACSInducedFailure.o
 

@@ -114,12 +114,12 @@ void TACSHeatFlux::elementWiseEval( EvaluationType ftype,
           double weight = basis->getFaceQuadraturePoint(face, i, pt, tangents);
 
           // Evaluate the heat flux at the quadrature point
-          TacsScalar flux[3];
+          TacsScalar flux[3], detXd = 0.0;
           const int not_a_quadrature_pt = -1;
           int count = element->evalPointQuantity(elemIndex, TACS_HEAT_FLUX,
                                                  time, not_a_quadrature_pt, pt,
                                                  Xpts, vars, dvars, ddvars,
-                                                 flux);
+                                                 &detXd, flux);
 
           // Compute the component of the flux normal to the surface
           if (count > 0){
@@ -175,12 +175,12 @@ void TACSHeatFlux::getElementSVSens( int elemIndex, TACSElement *element,
           double weight = basis->getFaceQuadraturePoint(face, i, pt, tangents);
 
           // Evaluate the heat flux at the quadrature point
-          TacsScalar flux[3];
+          TacsScalar flux[3], detXd = 0.0;;
           const int not_a_quadrature_pt = -1;
           int count = element->evalPointQuantity(elemIndex, TACS_HEAT_FLUX,
                                                  time, not_a_quadrature_pt, pt,
                                                  Xpts, vars, dvars, ddvars,
-                                                 flux);
+                                                 &detXd, flux);
 
           if (count > 0){
             TacsScalar X[3], Xd[9], normal[3];
@@ -207,7 +207,6 @@ void TACSHeatFlux::getElementSVSens( int elemIndex, TACSElement *element,
     }
   }
 }
-
 
 /*
   Determine the derivative of the function with respect to
@@ -245,12 +244,12 @@ void TACSHeatFlux::getElementXptSens( int elemIndex,
           double weight = basis->getFaceQuadraturePoint(face, i, pt, tangents);
 
           // Evaluate the heat flux at the quadrature point
-          TacsScalar flux[3];
+          TacsScalar flux[3], detXd = 0.0;
           const int not_a_quadrature_pt = -1;
           int count = element->evalPointQuantity(elemIndex, TACS_HEAT_FLUX,
                                                  time, not_a_quadrature_pt, pt,
                                                  Xpts, vars, dvars, ddvars,
-                                                 flux);
+                                                 &detXd, flux);
 
           if (count > 0){
             TacsScalar X[3], Xd[9], normal[3];
@@ -279,10 +278,11 @@ void TACSHeatFlux::getElementXptSens( int elemIndex,
 
               dfdA = scale*weight*vec3Dot(flux, normal);
             }
+            TacsScalar dfddetXd = 0.0;
             element->addPointQuantityXptSens(elemIndex, TACS_HEAT_FLUX, time,
                                              scale, not_a_quadrature_pt, pt,
                                              Xpts, vars, dvars, ddvars,
-                                             dfdq, dfdXpts);
+                                             dfddetXd, dfdq, dfdXpts);
 
             basis->addFaceNormalXptSens(face, i, Area, Xd, normal,
                                         dfdA, NULL, NULL, dfdn, dfdXpts);
@@ -325,12 +325,12 @@ void TACSHeatFlux::addElementDVSens( int elemIndex,
           double weight = basis->getFaceQuadraturePoint(face, i, pt, tangents);
 
           // Evaluate the heat flux at the quadrature point
-          TacsScalar flux[3];
+          TacsScalar flux[3], detXd = 0.0;
           const int not_a_quadrature_pt = -1;
           int count = element->evalPointQuantity(elemIndex, TACS_HEAT_FLUX,
                                                  time, not_a_quadrature_pt, pt,
                                                  Xpts, vars, dvars, ddvars,
-                                                 flux);
+                                                 &detXd, flux);
 
           if (count > 0){
             TacsScalar X[3], Xd[9], normal[3];

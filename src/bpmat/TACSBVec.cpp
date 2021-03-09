@@ -583,7 +583,6 @@ void TACSBVec::applyBCs( TACSBcMap *bcmap, TACSVec *tvec ){
 /*
   Set the boundary conditions values (both zero and non-zero values)
 */
-
 void TACSBVec::setBCs( TACSBcMap *bcmap ){
   // apply the boundary conditions
   if (x){

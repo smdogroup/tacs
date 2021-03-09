@@ -159,28 +159,28 @@ cdef class KSFailure(Function):
 #     def setParameter(self, double param):
 #         self.iptr.setParameter(param)
 
-# cdef class HeatFlux(Function):
-#     cdef TACSHeatFlux *hptr
-#     def __cinit__(self, Assembler assembler, list elem_index,
-#                   list surfaces):
-#         cdef int num_elems = len(elem_index)
-#         cdef int *elem_ind = NULL
-#         cdef int *surf = NULL
+cdef class HeatFlux(Function):
+    cdef TACSHeatFlux *hptr
+    def __cinit__(self, Assembler assembler, list elem_index,
+                  list surfaces):
+        cdef int num_elems = len(elem_index)
+        cdef int *elem_ind = NULL
+        cdef int *surf = NULL
 
-#         elem_ind = <int*>malloc(num_elems*sizeof(int));
-#         surf = <int*>malloc(num_elems*sizeof(int));
+        elem_ind = <int*>malloc(num_elems*sizeof(int));
+        surf = <int*>malloc(num_elems*sizeof(int));
 
-#         for i in range(num_elems):
-#             elem_ind[i] = <int>elem_index[i]
-#             surf[i] = <int>surfaces[i]
-#         self.hptr = new TACSHeatFlux(assembler.ptr, elem_ind, surf,
-#                                      num_elems)
-#         self.ptr = self.hptr
-#         self.ptr.incref()
+        for i in range(num_elems):
+            elem_ind[i] = <int>elem_index[i]
+            surf[i] = <int>surfaces[i]
+        self.hptr = new TACSHeatFlux(assembler.ptr, elem_ind, surf,
+                                     num_elems)
+        self.ptr = self.hptr
+        self.ptr.incref()
 
-#         free(elem_ind)
-#         free(surf)
-#         return
+        free(elem_ind)
+        free(surf)
+        return
 
 # cdef class DisplacementIntegral(Function):
 #     cdef TACSDisplacementIntegral *dptr
