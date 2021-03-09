@@ -190,32 +190,24 @@ void TACSAverageTemperature::addElementDVSens( int elemIndex,
                                                const TacsScalar dvars[],
                                                const TacsScalar ddvars[],
                                                int dvLen, TacsScalar dfdx[] ){
-  // Retrieve the basis object for this element (if it exists)
-  TACSElementBasis *basis = element->getElementBasis();
+  for ( int i = 0; i < element->getNumQuadraturePoints(); i++ ){
+    double pt[3];
+    double weight = element->getQuadraturePoint(i, pt);
 
-  if (basis){
-    for ( int i = 0; i < basis->getNumQuadraturePoints(); i++ ){
-      double pt[3];
-      double weight = basis->getQuadraturePoint(i, pt);
+    // Evaluate the strain energy density
+    TacsScalar temp = 0.0, detXd = 0.0;
+    int count = element->evalPointQuantity(elemIndex, TACS_TEMPERATURE,
+                                            time, i, pt,
+                                            Xpts, vars, dvars, ddvars,
+                                            &detXd, &temp);
 
-      // Evaluate the strain energy density
-      TacsScalar U0 = 0.0;
-      int count = element->evalPointQuantity(elemIndex, TACS_TEMPERATURE,
-                                             time, i, pt,
-                                             Xpts, vars, dvars, ddvars, &U0);
-
-      if (count >= 1){
-        // Evaluate the determinant of the Jacobian
-        TacsScalar Xd[9], J[9];
-        TacsScalar detJ = basis->getJacobianTransform(i, pt, Xpts, Xd, J);
-
-        // Evaluate the derivative of the strain energy
-        TacsScalar dfdq = detJ*weight*inv_volume;
-        element->addPointQuantityDVSens(elemIndex, TACS_TEMPERATURE,
-                                        time, scale, i, pt,
-                                        Xpts, vars, dvars, ddvars,
-                                        &dfdq, dvLen, dfdx);
-      }
+    if (count >= 1){
+      // Evaluate the derivative of the strain energy
+      TacsScalar dfdq = detXd*weight*inv_volume;
+      element->addPointQuantityDVSens(elemIndex, TACS_TEMPERATURE,
+                                      time, scale, i, pt,
+                                      Xpts, vars, dvars, ddvars,
+                                      &dfdq, dvLen, dfdx);
     }
   }
 }

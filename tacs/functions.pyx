@@ -50,57 +50,57 @@ cdef class StructuralMass(Function):
         self.ptr.incref()
         return
 
-# cdef class Compliance(Function):
-#     cdef TACSCompliance *cptr
-#     def __cinit__(self, Assembler assembler):
-#         """
-#         Wrap the function Compliance
-#         """
-#         self.cptr = new TACSCompliance(assembler.ptr)
-#         self.ptr = self.cptr
-#         self.ptr.incref()
-#         return
+cdef class Compliance(Function):
+    cdef TACSCompliance *cptr
+    def __cinit__(self, Assembler assembler):
+        """
+        Wrap the function Compliance
+        """
+        self.cptr = new TACSCompliance(assembler.ptr)
+        self.ptr = self.cptr
+        self.ptr.incref()
+        return
 
-#     def setComplianceType(self, int compliance_type):
-#         """
-#         Set the type of compliance value to use
-#         """
-#         self.cptr.setComplianceType(compliance_type)
-#         return
+    def setComplianceType(self, int compliance_type):
+        """
+        Set the type of compliance value to use
+        """
+        self.cptr.setComplianceType(compliance_type)
+        return
 
-# cdef class AverageTemperature(Function):
-#     def __cinit__(self, Assembler assembler, TacsScalar _volume=1.0):
-#         """
-#         Wrap the function AverageTemperature
-#         """
-#         self.ptr = new TACSAverageTemperature(assembler.ptr, _volume)
-#         self.ptr.incref()
-#         return
+cdef class AverageTemperature(Function):
+    def __cinit__(self, Assembler assembler, TacsScalar _volume=1.0):
+        """
+        Wrap the function AverageTemperature
+        """
+        self.ptr = new TACSAverageTemperature(assembler.ptr, _volume)
+        self.ptr.incref()
+        return
 
-# cdef class KSTemperature(Function):
-#     cdef TACSKSTemperature *kstptr
-#     def __cinit__(self, Assembler assembler, double ksWeight, double alpha=1.0):
-#         """
-#         Wrap the function KSTemperature
-#         """
-#         self.kstptr = new TACSKSTemperature(assembler.ptr, ksWeight, alpha)
-#         self.ptr = self.kstptr
-#         self.ptr.incref()
-#         return
+cdef class KSTemperature(Function):
+    cdef TACSKSTemperature *kstptr
+    def __cinit__(self, Assembler assembler, double ksWeight, double alpha=1.0):
+        """
+        Wrap the function KSTemperature
+        """
+        self.kstptr = new TACSKSTemperature(assembler.ptr, ksWeight, alpha)
+        self.ptr = self.kstptr
+        self.ptr.incref()
+        return
 
-#     def setKSTemperatureType(self, ftype='discrete'):
-#         if ftype == 'discrete':
-#             self.kstptr.setKSTemperatureType(KS_TEMPERATURE_DISCRETE)
-#         elif ftype == 'continuous':
-#             self.kstptr.setKSTemperatureType(KS_TEMPERATURE_CONTINUOUS)
-#         elif ftype == 'pnorm-discrete':
-#             self.kstptr.setKSTemperatureType(PNORM_TEMPERATURE_DISCRETE)
-#         elif ftype == 'pnorm-continuous':
-#             self.kstptr.setKSTemperatureType(PNORM_TEMPERATURE_CONTINUOUS)
-#         return
+    def setKSTemperatureType(self, ftype='discrete'):
+        if ftype == 'discrete':
+            self.kstptr.setKSTemperatureType(KS_TEMPERATURE_DISCRETE)
+        elif ftype == 'continuous':
+            self.kstptr.setKSTemperatureType(KS_TEMPERATURE_CONTINUOUS)
+        elif ftype == 'pnorm-discrete':
+            self.kstptr.setKSTemperatureType(PNORM_TEMPERATURE_DISCRETE)
+        elif ftype == 'pnorm-continuous':
+            self.kstptr.setKSTemperatureType(PNORM_TEMPERATURE_CONTINUOUS)
+        return
 
-#     def setParameter(self, double ksparam):
-#         self.kstptr.setParameter(ksparam)
+    def setParameter(self, double ksparam):
+        self.kstptr.setParameter(ksparam)
 
 cdef class KSFailure(Function):
     cdef TACSKSFailure *ksptr
