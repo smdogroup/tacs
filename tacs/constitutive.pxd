@@ -57,6 +57,9 @@ cdef extern from "TACSMaterialProperties.h":
 
     cdef cppclass TACSOrthotropicPly(TACSObject):
         TACSOrthotropicPly(TacsScalar, TACSMaterialProperties*)
+        void setKSWeight(TacsScalar)
+        void setUseMaxStrainCriterion()
+        void setUseTsaiWuCriterion()
 
 cdef class MaterialProperties:
     cdef TACSMaterialProperties *ptr

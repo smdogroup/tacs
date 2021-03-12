@@ -113,13 +113,14 @@ void TACSStructuralMass::addElementDVSens( int elemIndex,
 
     TacsScalar density = 0.0, detXd = 0.0;
     int count = element->evalPointQuantity(elemIndex, TACS_ELEMENT_DENSITY,
-                                            time, i, pt,
-                                            Xpts, vars, dvars, ddvars,
-                                            &detXd, &density);
+                                           time, i, pt,
+                                           Xpts, vars, dvars, ddvars,
+                                           &detXd, &density);
+
     if (count >= 1){
-      TacsScalar dfdq = weight*detXd;
+      TacsScalar dfdq = scale*weight*detXd;
       element->addPointQuantityDVSens(elemIndex, TACS_ELEMENT_DENSITY,
-                                      time, scale, i, pt,
+                                      time, 1.0, i, pt,
                                       Xpts, vars, dvars, ddvars,
                                       &dfdq, dvLen, dfdx);
     }

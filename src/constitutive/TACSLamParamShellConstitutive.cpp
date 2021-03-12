@@ -235,8 +235,8 @@ void TACSLamParamShellConstitutive::addDensityDVSens( int elemIndex,
                                                       const TacsScalar X[],
                                                       int dvLen,
                                                       TacsScalar dfdx[] ){
-  if (tNum > 0){
-    dfdx[0] = scale*orthoPly->getDensity();
+  if (tNum >= 0){
+    dfdx[0] += scale*orthoPly->getDensity();
   }
 }
 
@@ -617,22 +617,22 @@ void TACSLamParamShellConstitutive::addFailureDVSens( int elemIndex,
   int index = 0;
   if (tNum >= 0){
     for ( int k = 0; k < NUM_FAIL_ANGLES; k++ ){
-      TacsScalar angle = 0.0, factor = 1.0;
+      TacsScalar angle = 0.0, factor = scale;
       if (k == 0){
         angle = 0.0;
-        factor = f0/(f0 + epsilon);
+        factor *= f0/(f0 + epsilon);
       }
       else if (k == 1){
         angle = 0.25*M_PI;
-        factor = f45/(f45 + epsilon);
+        factor *= f45/(f45 + epsilon);
       }
       else if (k == 2){
         angle = -0.25*M_PI;
-        factor = f45/(f45 + epsilon);
+        factor *= f45/(f45 + epsilon);
       }
       else {
         angle = 0.5*M_PI;
-        factor = f90/(f90 + epsilon);
+        factor *= f90/(f90 + epsilon);
       }
 
       // Compute the strain and failure criteria at the upper surface
@@ -665,22 +665,22 @@ void TACSLamParamShellConstitutive::addFailureDVSens( int elemIndex,
       if (k == 0){
         angle = 0.0;
         TacsScalar d = 1.0/(f0 + epsilon);
-        dfactor = epsilon*d*d;
+        dfactor = scale*epsilon*d*d;
       }
       else if (k == 1){
         angle = 0.25*M_PI;
         TacsScalar d = 1.0/(f45 + epsilon);
-        dfactor = epsilon*d*d;
+        dfactor = scale*epsilon*d*d;
       }
       else if (k == 2){
         angle = -0.25*M_PI;
         TacsScalar d = 1.0/(f45 + epsilon);
-        dfactor = epsilon*d*d;
+        dfactor = scale*epsilon*d*d;
       }
       else {
         angle = 0.5*M_PI;
         TacsScalar d = 1.0/(f90 + epsilon);
-        dfactor = epsilon*d*d;
+        dfactor = scale*epsilon*d*d;
       }
 
       // Compute the strain and failure criteria at the upper surface

@@ -253,9 +253,14 @@ cdef class MaterialProperties:
 
 cdef class OrthotropicPly:
     cdef TACSOrthotropicPly *ptr
-    def __cinit__(self, TacsScalar ply_thickness, MaterialProperties props):
+    def __cinit__(self, TacsScalar ply_thickness, MaterialProperties props,
+                  max_strain_criterion=False):
         self.ptr = new TACSOrthotropicPly(ply_thickness, props.ptr)
         self.ptr.incref()
+        if max_strain_criterion:
+            self.ptr.setUseMaxStrainCriterion()
+        else:
+            self.ptr.setUseTsaiWuCriterion()
 
     def __dealloc__(self):
         self.ptr.decref()

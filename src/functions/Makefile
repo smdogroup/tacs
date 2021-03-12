@@ -14,7 +14,6 @@ CXX_OBJS = TACSFunction.o \
 	TACSAverageTemperature.o \
 	TACSKSTemperature.o \
 	TACSHeatFlux.o
-	# TACSKSFailure.o \
 	# TACSInducedFailure.o
 
 DIR=${TACS_DIR}/src/functions
