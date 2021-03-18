@@ -1,16 +1,18 @@
 #include "TACSShellElement.h"
 #include "TACSElementVerification.h"
+#include "TACSConstitutiveVerification.h"
 #include "TACSElementAlgebra.h"
+#include "TACSIsoShellConstitutive.h"
 
 #include "TACSAssembler.h"
 #include "TACSCreator.h"
 #include "TACSToFH5.h"
 
 typedef TACSShellElement<TACSQuadLinearQuadrature, TACSShellQuadLinearBasis,
-    TACSLinearizedRotation, TACSShellLinearModel> TACSQuadLinearShell;
+    TACSLinearizedRotation, TACSShellNonlinearModel> TACSQuadLinearShell;
 
 typedef TACSShellElement<TACSQuadQuadraticQuadrature, TACSShellQuadQuadraticBasis,
-    TACSLinearizedRotation, TACSShellLinearModel> TACSQuadQuadraticShell;
+    TACSLinearizedRotation, TACSShellNonlinearModel> TACSQuadQuadraticShell;
 
 /*
   Create the TACSAssembler object and return the associated TACS
@@ -136,7 +138,10 @@ int main( int argc, char *argv[] ){
   TACSShellTransform *transform = new TACSShellRefAxisTransform(axis);
 
   TacsScalar t = 0.01;
-  TACSShellConstitutive *con = new TACSShellConstitutive(props, t);
+  int t_num = 0;
+  TACSShellConstitutive *con = new TACSIsoShellConstitutive(props, t, t_num);
+
+  TacsTestConstitutive(con, 0);
 
   TACSElement *linear_shell = new TACSQuadLinearShell(transform, con);
   linear_shell->incref();
@@ -160,6 +165,12 @@ int main( int argc, char *argv[] ){
 
   TacsTestElementResidual(linear_shell, elemIndex, time, Xpts, vars, dvars, ddvars);
   TacsTestElementResidual(quadratic_shell, elemIndex, time, Xpts, vars, dvars, ddvars);
+
+  int dvLen = 10;
+  TacsScalar x[10];
+  con->getDesignVars(elemIndex, dvLen, x);
+  TacsTestAdjResProduct(linear_shell, elemIndex, time, Xpts, vars, dvars, ddvars, dvLen, x);
+  TacsTestAdjResProduct(quadratic_shell, elemIndex, time, Xpts, vars, dvars, ddvars, dvLen, x);
 
   int nx = 20, ny = 20;
   TACSAssembler *assembler;

@@ -66,6 +66,33 @@ class TACSLinearizedRotation {
   }
 
   /*
+    Compute the directional derivative of the director
+  */
+  static void computeDirectorRatesDeriv( const TacsScalar q[],
+                                         const TacsScalar qdot[],
+                                         const TacsScalar qddot[],
+                                         const TacsScalar qd[],
+                                         const TacsScalar t[],
+                                         TacsScalar C[],
+                                         TacsScalar d[],
+                                         TacsScalar ddot[],
+                                         TacsScalar dddot[],
+                                         TacsScalar Cd[],
+                                         TacsScalar dd[] ){
+    // C = I - q^{x}
+    C[0] = C[4] = C[8] = 1.0;
+    setMatSkew(-1.0, q, C);
+    crossProduct(q, t, d);
+    crossProduct(qdot, t, ddot);
+    crossProduct(qddot, t, dddot);
+
+    // Cd = - qd^{x}
+    Cd[0] = Cd[4] = Cd[8] = 0.0;
+    setMatSkew(-1.0, qd, Cd);
+    crossProduct(qd, t, dd);
+  }
+
+  /*
     Given the derivatives of the kinetic energy expression with respect to time,
     add the contributions to the derivative of the
 

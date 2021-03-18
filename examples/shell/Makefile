@@ -7,17 +7,15 @@ CYTHON_INCLUDE = -I${NUMPY_DIR} -I${MPI4PY_DIR}
 
 # ParOpt shared objects
 CYTHON_SO = shell_element.so
-# OBJS = shell.o
+OBJS = shell.o
 
-default: ${CYTHON_SO}
-
-# ${OBJS}
+default: ${CYTHON_SO} shell
 
 debug: TACS_CC_FLAGS=${TACS_DEBUG_CC_FLAGS}
 debug: default
 
-# shell: ${OBJS}
-# 	${CXX} -o shell shell.o ${TACS_LD_FLAGS}
+shell: ${OBJS}
+	${CXX} -o shell shell.o ${TACS_LD_FLAGS}
 
 %.cpp: %.pyx
 	cython -I${TACS_DIR}/tacs/ --cplus $*.pyx --include-dir ${TACS_DIR}/tacs/

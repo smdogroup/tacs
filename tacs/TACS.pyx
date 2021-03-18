@@ -1359,7 +1359,7 @@ cdef class Assembler:
         # Get the node numbers
         if num >= 0 and num < self.ptr.getNumElements():
             self.ptr.getElement(num, &num_nodes, &node_nums)
-            nodes = np.zeros(num_nodes, dtype=np.int)
+            nodes = np.zeros(num_nodes, dtype=np.intc)
             for i in range(num_nodes):
                 nodes[i] = node_nums[i]
 
@@ -2320,11 +2320,11 @@ cdef class FH5Loader:
         for i in range(3*num_points):
             points[i] = _points[i]
 
-        tris = np.zeros(3*ntris, dtype=np.int)
+        tris = np.zeros(3*ntris, dtype=np.intc)
         for i in range(3*ntris):
             tris[i] = _tris[i]
 
-        edges = np.zeros(2*nedges, dtype=np.int)
+        edges = np.zeros(2*nedges, dtype=np.intc)
         for i in range(2*nedges):
             edges[i] = _edges[i]
 
@@ -2448,7 +2448,7 @@ cdef class Creator:
         self.ptr.getAssemblerNodeNums(assembler.ptr, num_orig_nodes, orig_nodes,
                                       &num_new_nodes, &new_nodes)
 
-        cdef np.ndarray array = np.zeros(num_new_nodes, dtype=np.int)
+        cdef np.ndarray array = np.zeros(num_new_nodes, dtype=np.intc)
         for i in range(num_new_nodes):
             array[i] = new_nodes[i]
 
@@ -2558,17 +2558,17 @@ cdef class MeshLoader:
         self.ptr.getConnectivity(&num_nodes, &num_elements,
                                  &elem_ptr, &elem_conn, &elem_comps, &Xpts)
 
-        cdef np.ndarray ptr = np.zeros(num_elements+1, dtype=np.int)
+        cdef np.ndarray ptr = np.zeros(num_elements+1, dtype=np.intc)
         if elem_ptr is not NULL:
             for i in range(num_elements+1):
                 ptr[i] = elem_ptr[i]
 
-        cdef np.ndarray conn = np.zeros(ptr[-1], dtype=np.int)
+        cdef np.ndarray conn = np.zeros(ptr[-1], dtype=np.intc)
         if elem_conn is not NULL:
             for i in range(ptr[-1]):
                 conn[i] = elem_conn[i]
 
-        cdef np.ndarray comps = np.zeros(num_elements, dtype=np.int)
+        cdef np.ndarray comps = np.zeros(num_elements, dtype=np.intc)
         if elem_comps is not NULL:
             for i in range(num_elements):
                 comps[i] = elem_comps[i]
@@ -2592,17 +2592,17 @@ cdef class MeshLoader:
 
         self.ptr.getBCs(&num_bcs, &bc_nodes, &bc_vars, &bc_ptr, &bc_vals)
 
-        cdef np.ndarray nodes = np.zeros(num_bcs, dtype=np.int)
+        cdef np.ndarray nodes = np.zeros(num_bcs, dtype=np.intc)
         if bc_nodes is not NULL:
             for i in range(num_bcs):
                 nodes[i] = bc_nodes[i]
 
-        cdef np.ndarray ptr = np.zeros(num_bcs+1, dtype=np.int)
+        cdef np.ndarray ptr = np.zeros(num_bcs+1, dtype=np.intc)
         if bc_ptr is not NULL:
             for i in range(num_bcs+1):
                 ptr[i] = bc_ptr[i]
 
-        cdef np.ndarray bvars = np.zeros(ptr[-1], dtype=np.int)
+        cdef np.ndarray bvars = np.zeros(ptr[-1], dtype=np.intc)
         cdef np.ndarray vals = np.zeros(ptr[-1], dtype)
         if bc_vars is not NULL and bc_vals is not NULL:
             for i in range(ptr[-1]):
