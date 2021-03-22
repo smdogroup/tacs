@@ -39,7 +39,9 @@ TACSLamParamShellConstitutive::TACSLamParamShellConstitutive( TACSOrthotropicPly
   tNum = _t_num;
 
   numDesignVars = 0;
-  if (tNum >= 0){ numDesignVars++; }
+  if (tNum >= 0){
+    numDesignVars++;
+  }
 
   tlb = _min_t;
   tub = _max_t;
@@ -60,9 +62,15 @@ TACSLamParamShellConstitutive::TACSLamParamShellConstitutive( TACSOrthotropicPly
   min_f90 = _min_f90;
 
   // Adjust it to something reasonable
-  if (min_f0 < 0.0){ min_f0 = 0.0; }
-  if (min_f45 < 0.0){ min_f45 = 0.0; }
-  if (min_f90 < 0.0){ min_f90 = 0.0; }
+  if (TacsRealPart(min_f0) < 0.0){
+    min_f0 = 0.0;
+  }
+  if (TacsRealPart(min_f45) < 0.0){
+    min_f45 = 0.0;
+  }
+  if (TacsRealPart(min_f90) < 0.0){
+    min_f90 = 0.0;
+  }
 
   if ((n0 >= 0 || n45 >= 0 || n90 >= 0) &&
       (n0 <  0 || n45 <  0 || n90 <  0)){
@@ -93,7 +101,9 @@ TACSLamParamShellConstitutive::TACSLamParamShellConstitutive( TACSOrthotropicPly
 
   ksWeight = _ksWeight;
   epsilon = _epsilon;
-  if (epsilon < 0.0){ epsilon = 0.0; }
+  if (TacsRealPart(epsilon) < 0.0){
+    epsilon = 0.0;
+  }
 
   kcorr = 5.0/6.0;
 
@@ -204,17 +214,17 @@ int TACSLamParamShellConstitutive::checkDeterminant( const TacsScalar a[] ){
      a[1]*(a[1]*a[5] - a[2]*a[4]) +
      a[2]*(a[1]*a[4] - a[2]*a[3]));
 
-  if (d <= 0.0){
+  if (TacsRealPart(d) <= 0.0){
     return 0;
   }
 
   d = a[0]*a[3] - a[1]*a[1];
-  if (d <= 0.0){
+  if (TacsRealPart(d) <= 0.0){
     return 0;
   }
 
   d = a[3]*a[5] - a[4]*a[4];
-  if (d <= 0.0){
+  if (TacsRealPart(d) <= 0.0){
     return 0;
   }
 

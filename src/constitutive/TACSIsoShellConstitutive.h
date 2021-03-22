@@ -30,9 +30,6 @@
 */
 class TACSIsoShellConstitutive : public TACSShellConstitutive {
  public:
-  static const int NUM_STRESSES = 9;
-  static const int NUM_TANGENT_STIFFNESS_ENTRIES = 22;
-
   TACSIsoShellConstitutive( TACSMaterialProperties *props,
                             TacsScalar _t=1.0, int _tNum=-1,
                             TacsScalar _tlb=0.0, TacsScalar _tub=1.0 );
