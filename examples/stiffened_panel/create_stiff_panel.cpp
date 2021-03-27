@@ -43,11 +43,11 @@ void write_stiffened_panel_axial( const char * file_name,
     nrepeat = 1;
   }
   if (wb >= b){
-    printf("The width of the base must be less \
-than the width of the segment\n");
+    printf("The width of the base must be less "
+           "than the width of the segment\n");
   }
 
-  const int elem_order = 4;
+  const int elem_order = 3;
   FILE * fp = fopen(file_name, "w");
 
   fprintf(fp, "SOL 103\n");
@@ -218,14 +218,11 @@ than the width of the segment\n");
         }
 
         fprintf(fp, "%-8s%8d%8d%8d%8d%8d%8d%8d%8d\n",
-                "CQUAD16", elem, part_id,
-                nodes[0], nodes[1], nodes[2],
-                nodes[3], nodes[4], nodes[5]);
-        fprintf(fp, "        %8d%8d%8d%8d%8d%8d%8d%8d\n",
-                nodes[6], nodes[7], nodes[8], nodes[9],
-                nodes[10], nodes[11], nodes[12], nodes[13]);
-        fprintf(fp, "        %8d%8d\n",
-                nodes[14], nodes[15]);
+                "CQUAD9", elem, part_id,
+                nodes[0], nodes[2], nodes[8],
+                nodes[6], nodes[1], nodes[5]);
+        fprintf(fp, "        %8d%8d%8d\n",
+                nodes[7], nodes[3], nodes[4]);
         elem += 1;
       }
     }
@@ -244,14 +241,11 @@ than the width of the segment\n");
 
         int part_id = 3;
         fprintf(fp, "%-8s%8d%8d%8d%8d%8d%8d%8d%8d\n",
-                "CQUAD16", elem, part_id,
-                nodes[0], nodes[1], nodes[2],
-                nodes[3], nodes[4], nodes[5]);
-        fprintf(fp, "        %8d%8d%8d%8d%8d%8d%8d%8d\n",
-                nodes[6], nodes[7], nodes[8], nodes[9],
-                nodes[10], nodes[11], nodes[12], nodes[13]);
-        fprintf(fp, "        %8d%8d\n",
-                nodes[14], nodes[15]);
+                "CQUAD9", elem, part_id,
+                nodes[0], nodes[2], nodes[8],
+                nodes[6], nodes[1], nodes[5]);
+        fprintf(fp, "        %8d%8d%8d\n",
+                nodes[7], nodes[3], nodes[4]);
         elem += 1;
       }
     }

@@ -66,114 +66,120 @@ void TACSElement::addJacobian( int elemIndex,
   memcpy(qddotTmp, ddvars, nvars*sizeof(TacsScalar));
 
   // Perturb each state variable and find the residual
-  for ( int i = 0; i < nvars; i++ ){
+  if (TacsRealPart(alpha) != 0.0){
+    for ( int i = 0; i < nvars; i++ ){
 #ifdef TACS_USE_COMPLEX
-    qTmp[i] = vars[i] + TacsScalar(0.0, dh);
+      qTmp[i] = vars[i] + TacsScalar(0.0, dh);
 
-    // Assemble the unperturbed residual
-    memset(Rtmp1, 0, nvars*sizeof(TacsScalar));
-    addResidual(elemIndex, time, Xpts, qTmp, qdotTmp, qddotTmp, Rtmp1);
+      // Assemble the unperturbed residual
+      memset(Rtmp1, 0, nvars*sizeof(TacsScalar));
+      addResidual(elemIndex, time, Xpts, qTmp, qdotTmp, qddotTmp, Rtmp1);
 
-    // Find the approximated jacobian
-    for ( int j = 0; j < nvars; j++ ){
-      J[j*nvars+i] += alpha*TacsImagPart(Rtmp1[j])/dh;
-    }
+      // Find the approximated jacobian
+      for ( int j = 0; j < nvars; j++ ){
+        J[j*nvars+i] += alpha*TacsImagPart(Rtmp1[j])/dh;
+      }
 #else
-    // Perturb the i-th variable
-    qTmp[i] = vars[i] + dh;
+      // Perturb the i-th variable
+      qTmp[i] = vars[i] + dh;
 
-    // Assemble the unperturbed residual
-    memset(Rtmp1, 0, nvars*sizeof(TacsScalar));
-    addResidual(elemIndex, time, Xpts, qTmp, qdotTmp, qddotTmp, Rtmp1);
+      // Assemble the unperturbed residual
+      memset(Rtmp1, 0, nvars*sizeof(TacsScalar));
+      addResidual(elemIndex, time, Xpts, qTmp, qdotTmp, qddotTmp, Rtmp1);
 
-    // Perturb the i-th variable
-    qTmp[i] = vars[i] - dh;
+      // Perturb the i-th variable
+      qTmp[i] = vars[i] - dh;
 
-    // Assemble the unperturbed residual
-    memset(Rtmp2, 0, nvars*sizeof(TacsScalar));
-    addResidual(elemIndex, time, Xpts, qTmp, qdotTmp, qddotTmp, Rtmp2);
+      // Assemble the unperturbed residual
+      memset(Rtmp2, 0, nvars*sizeof(TacsScalar));
+      addResidual(elemIndex, time, Xpts, qTmp, qdotTmp, qddotTmp, Rtmp2);
 
-    // Find the approximated jacobian
-    for ( int j = 0; j < nvars; j++ ){
-      J[j*nvars+i] += 0.5*alpha*(Rtmp1[j] - Rtmp2[j])/dh;
-    }
+      // Find the approximated jacobian
+      for ( int j = 0; j < nvars; j++ ){
+        J[j*nvars+i] += 0.5*alpha*(Rtmp1[j] - Rtmp2[j])/dh;
+      }
 #endif // TACS_USE_COMPLEX
-    // Restore the i-th variable
-    qTmp[i] = vars[i];
+      // Restore the i-th variable
+      qTmp[i] = vars[i];
+    }
   }
 
-  // Perturb each state variable and find the residual
-  for ( int i = 0; i < nvars; i++ ){
+  if (TacsRealPart(beta) != 0.0){
+    // Perturb each state variable and find the residual
+    for ( int i = 0; i < nvars; i++ ){
 #ifdef TACS_USE_COMPLEX
-    qdotTmp[i] = dvars[i] + TacsScalar(0.0, dh);
+      qdotTmp[i] = dvars[i] + TacsScalar(0.0, dh);
 
-    // Assemble the unperturbed residual
-    memset(Rtmp1, 0, nvars*sizeof(TacsScalar));
-    addResidual(elemIndex, time, Xpts, qTmp, qdotTmp, qddotTmp, Rtmp1);
+      // Assemble the unperturbed residual
+      memset(Rtmp1, 0, nvars*sizeof(TacsScalar));
+      addResidual(elemIndex, time, Xpts, qTmp, qdotTmp, qddotTmp, Rtmp1);
 
-    // Find the approximated jacobian
-    for ( int j = 0; j < nvars; j++ ){
-      J[j*nvars+i] += beta*TacsImagPart(Rtmp1[j])/dh;
-    }
+      // Find the approximated jacobian
+      for ( int j = 0; j < nvars; j++ ){
+        J[j*nvars+i] += beta*TacsImagPart(Rtmp1[j])/dh;
+      }
 #else
-    // Perturb the i-th variable
-    qdotTmp[i] = dvars[i] + dh;
+      // Perturb the i-th variable
+      qdotTmp[i] = dvars[i] + dh;
 
-    // Assemble the unperturbed residual
-    memset(Rtmp1, 0, nvars*sizeof(TacsScalar));
-    addResidual(elemIndex, time, Xpts, qTmp, qdotTmp, qddotTmp, Rtmp1);
+      // Assemble the unperturbed residual
+      memset(Rtmp1, 0, nvars*sizeof(TacsScalar));
+      addResidual(elemIndex, time, Xpts, qTmp, qdotTmp, qddotTmp, Rtmp1);
 
-    // Perturb the i-th variable
-    qdotTmp[i] = dvars[i] - dh;
+      // Perturb the i-th variable
+      qdotTmp[i] = dvars[i] - dh;
 
-    // Assemble the unperturbed residual
-    memset(Rtmp2, 0, nvars*sizeof(TacsScalar));
-    addResidual(elemIndex, time, Xpts, qTmp, qdotTmp, qddotTmp, Rtmp2);
+      // Assemble the unperturbed residual
+      memset(Rtmp2, 0, nvars*sizeof(TacsScalar));
+      addResidual(elemIndex, time, Xpts, qTmp, qdotTmp, qddotTmp, Rtmp2);
 
-    // Find the approximated jacobian
-    for ( int j = 0; j < nvars; j++ ){
-      J[j*nvars+i] += 0.5*beta*(Rtmp1[j] - Rtmp2[j])/dh;
-    }
+      // Find the approximated jacobian
+      for ( int j = 0; j < nvars; j++ ){
+        J[j*nvars+i] += 0.5*beta*(Rtmp1[j] - Rtmp2[j])/dh;
+      }
 #endif // TACS_USE_COMPLEX
-    // Restore the i-th variable
-    qdotTmp[i] = dvars[i];
+      // Restore the i-th variable
+      qdotTmp[i] = dvars[i];
+    }
   }
 
-  // Perturb each state variable and find the residual
-  for ( int i = 0; i < nvars; i++ ){
+  if (TacsRealPart(gamma) != 0.0){
+    // Perturb each state variable and find the residual
+    for ( int i = 0; i < nvars; i++ ){
 #ifdef TACS_USE_COMPLEX
-    qddotTmp[i] = ddvars[i] + TacsScalar(0.0, dh);
+      qddotTmp[i] = ddvars[i] + TacsScalar(0.0, dh);
 
-    // Assemble the unperturbed residual
-    memset(Rtmp1, 0, nvars*sizeof(TacsScalar));
-    addResidual(elemIndex, time, Xpts, qTmp, qdotTmp, qddotTmp, Rtmp1);
+      // Assemble the unperturbed residual
+      memset(Rtmp1, 0, nvars*sizeof(TacsScalar));
+      addResidual(elemIndex, time, Xpts, qTmp, qdotTmp, qddotTmp, Rtmp1);
 
-    // Find the approximated jacobian
-    for ( int j = 0; j < nvars; j++ ){
-      J[j*nvars+i] += gamma*TacsImagPart(Rtmp1[j])/dh;
-    }
+      // Find the approximated jacobian
+      for ( int j = 0; j < nvars; j++ ){
+        J[j*nvars+i] += gamma*TacsImagPart(Rtmp1[j])/dh;
+      }
 #else
-    // Perturb the i-th variable
-    qddotTmp[i] = ddvars[i] + dh;
+      // Perturb the i-th variable
+      qddotTmp[i] = ddvars[i] + dh;
 
-    // Assemble the unperturbed residual
-    memset(Rtmp1, 0, nvars*sizeof(TacsScalar));
-    addResidual(elemIndex, time, Xpts, qTmp, qdotTmp, qddotTmp, Rtmp1);
+      // Assemble the unperturbed residual
+      memset(Rtmp1, 0, nvars*sizeof(TacsScalar));
+      addResidual(elemIndex, time, Xpts, qTmp, qdotTmp, qddotTmp, Rtmp1);
 
-    // Perturb the i-th variable
-    qddotTmp[i] = ddvars[i] - dh;
+      // Perturb the i-th variable
+      qddotTmp[i] = ddvars[i] - dh;
 
-    // Assemble the unperturbed residual
-    memset(Rtmp2, 0, nvars*sizeof(TacsScalar));
-    addResidual(elemIndex, time, Xpts, qTmp, qdotTmp, qddotTmp, Rtmp2);
+      // Assemble the unperturbed residual
+      memset(Rtmp2, 0, nvars*sizeof(TacsScalar));
+      addResidual(elemIndex, time, Xpts, qTmp, qdotTmp, qddotTmp, Rtmp2);
 
-    // Find the approximated jacobian
-    for ( int j = 0; j < nvars; j++ ){
-      J[j*nvars+i] += 0.5*gamma*(Rtmp1[j] - Rtmp2[j])/dh;
-    }
+      // Find the approximated jacobian
+      for ( int j = 0; j < nvars; j++ ){
+        J[j*nvars+i] += 0.5*gamma*(Rtmp1[j] - Rtmp2[j])/dh;
+      }
 #endif // TACS_USE_COMPLEX
-    // Restore the i-th variable
-    qddotTmp[i] = ddvars[i];
+      // Restore the i-th variable
+      qddotTmp[i] = ddvars[i];
+    }
   }
 
   delete [] Rtmp1;

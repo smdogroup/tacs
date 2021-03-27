@@ -36,12 +36,12 @@ int TACSShellConstitutive::getNumStresses(){
 }
 
 // Extract the tangent stiffness components from the matrix
-void TACSShellConstitutive::extractTangenttStiffness( const TacsScalar *C,
-                                                      const TacsScalar **A,
-                                                      const TacsScalar **B,
-                                                      const TacsScalar **D,
-                                                      const TacsScalar **As,
-                                                      TacsScalar *drill ){
+void TACSShellConstitutive::extractTangentStiffness( const TacsScalar *C,
+                                                     const TacsScalar **A,
+                                                     const TacsScalar **B,
+                                                     const TacsScalar **D,
+                                                     const TacsScalar **As,
+                                                     TacsScalar *drill ){
   if (A){ *A = &C[0]; }
   if (B){ *B = &C[6]; }
   if (D){ *D = &C[12]; }

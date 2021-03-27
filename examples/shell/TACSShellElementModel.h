@@ -58,9 +58,9 @@ class TACSShellLinearModel {
                             Uxi[1]*Xxi[0] + Uxi[3]*Xxi[2] + Uxi[5]*Xxi[4]);
         }
         else {
-          TacsScalar n0[3], d0[3];
-          basis::interpFields(pt, 3, fn, 3, n0);
+          TacsScalar d0[3], n0[3];
           basis::interpFields(pt, 3, d, 3, d0);
+          basis::interpFields(pt, 3, fn, 3, n0);
 
           if (field == 3){
             // Compute g23 = e2^{T}*G*e3
@@ -132,9 +132,9 @@ class TACSShellLinearModel {
           basis::addInterpFieldsGradTranspose(pt, 3, dUxi, vars_per_node, res);
         }
         else {
-          TacsScalar n0[3], d0[3], dd0[3];
-          basis::interpFields(pt, 3, fn, 3, n0);
+          TacsScalar d0[3], dd0[3], n0[3];
           basis::interpFields(pt, 3, d, 3, d0);
+          basis::interpFields(pt, 3, fn, 3, n0);
 
           if (field == 3){
             // Compute g23 = e2^{T}*G*e3
@@ -216,10 +216,10 @@ class TACSShellLinearModel {
                              Uxid[1]*Xxi[0] + Uxid[3]*Xxi[2] + Uxid[5]*Xxi[4]);
         }
         else {
-          TacsScalar n0[3], d0[3], d0d[3];
-          basis::interpFields(pt, 3, fn, 3, n0);
+          TacsScalar d0[3], d0d[3], n0[3];
           basis::interpFields(pt, 3, d, 3, d0);
           basis::interpFields(pt, 3, dd, 3, d0d);
+          basis::interpFields(pt, 3, fn, 3, n0);
 
           if (field == 3){
             // Compute g23 = e2^{T}*G*e3
@@ -257,8 +257,8 @@ class TACSShellLinearModel {
   */
   template <class basis>
   static void interpTyingStrain( const double pt[],
-                                const TacsScalar ety[],
-                                TacsScalar gty[] ){
+                                 const TacsScalar ety[],
+                                 TacsScalar gty[] ){
     // Set the values into the strain tensor
     const int index[] = {0, 3, 1, 4, 2};
     const int num_tying_fields = 5;

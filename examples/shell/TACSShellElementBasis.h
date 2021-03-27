@@ -10,6 +10,8 @@
 */
 class TACSQuadLinearQuadrature {
  public:
+  static const int NUM_QUADRATURE_POINTS = 4;
+
   static int getNumParameters(){
     return 2;
   }
@@ -337,6 +339,8 @@ class TACSShellQuadLinearBasis {
 
 class TACSQuadQuadraticQuadrature {
  public:
+  static const int NUM_QUADRATURE_POINTS = 9;
+
   static int getNumParameters(){
     return 2;
   }

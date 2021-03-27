@@ -46,10 +46,10 @@ class TACSShellConstitutive : public TACSConstitutive {
   static void setDrillingRegularization( double kval );
 
   // Extract the tangent
-  static void extractTangenttStiffness( const TacsScalar *C,
-                                        const TacsScalar **A, const TacsScalar **B,
-                                        const TacsScalar **D, const TacsScalar **As,
-                                        TacsScalar *drill );
+  static void extractTangentStiffness( const TacsScalar *C,
+                                       const TacsScalar **A, const TacsScalar **B,
+                                       const TacsScalar **D, const TacsScalar **As,
+                                       TacsScalar *drill );
 
   // Once the stiffness matrices have been evaluated, use this
   // function to compute the stress given the strain components

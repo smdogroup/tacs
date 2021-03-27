@@ -93,12 +93,13 @@ int main( int argc, char * argv[] ){
     fprintf(fp, "DATASET UNSTRUCTURED_GRID\n");
 
     // Write out the points
-    fprintf(fp, "POINTS %d double\n", cdim1);
+    fprintf(fp, "POINTS %d double\n", ptr[num_elements]);
 
-    const float *d = cdata;
-    for ( int k = 0; k < cdim1; k++ ){
+    int *conn_element = new int[ ptr[num_elements] ];
+    for ( int k = 0; k < ptr[num_elements]; k++ ){
+      const float *d = &cdata[cdim2*conn[k]];
       fprintf(fp, "%e %e %e\n", d[0], d[1], d[2]);
-      d += cdim2;
+      conn_element[k] = k;
     }
 
     int num_basic_elements = 0;
@@ -143,12 +144,14 @@ int main( int argc, char * argv[] ){
       }
       else {
         TacsConvertVisLayoutToBasicCount(ltype, &ntypes, &nconn);
-        TacsConvertVisLayoutToBasic(ltype, &conn[ptr[k]],
+        TacsConvertVisLayoutToBasic(ltype, &conn_element[ptr[k]],
                                     btypes, bconn);
       }
       btypes += ntypes;
       bconn += nconn;
     }
+
+    delete [] conn_element;
 
     // Write out the cell values
     fprintf(fp, "\nCELLS %d %d\n", num_basic_elements,
@@ -213,7 +216,7 @@ int main( int argc, char * argv[] ){
     delete [] basic_ltypes;
 
     // Print out the rest as fields one-by-one
-    fprintf(fp, "POINT_DATA %d\n", cdim1);
+    fprintf(fp, "POINT_DATA %d\n", edim1);
 
     for ( int j = 0; j < cdim2; j++ ){
       char name[256];
@@ -230,33 +233,14 @@ int main( int argc, char * argv[] ){
         fprintf(fp, "SCALARS %s double 1\n", name);
         fprintf(fp, "LOOKUP_TABLE default\n");
 
-        for ( int k = 0; k < cdim1; k++ ){
-          double d = cdata[cdim2*k + j];
-          // If the value is smaller than 10^-15, set it to 0
-          // so Paraview won't throw an error
-          // if (abs(d) < 1e-15){
-          //   d = 0.0;
-          // }
+        for ( int k = 0; k < ptr[num_elements]; k++ ){
+          const float d = cdata[cdim2*conn[k] + j];
           fprintf(fp, "%.3e\n", d);
         }
       }
     }
 
-    // Count up the number of times each node is referred to
-    // in the discontinuous element-wise data
-    float *counts = new float[ cdim1 ];
-    memset(counts, 0, cdim1*sizeof(float));
-    for ( int j = 0; j < ptr[num_elements]; j++ ){
-      counts[conn[j]] += 1.0;
-    }
-    for ( int i = 0; i < cdim1; i++ ){
-      if (counts[i] != 0.0){
-        counts[i] = 1.0/counts[i];
-      }
-    }
-
     // For each component, average the nodal data
-    float *data = new float[ cdim1 ];
     for ( int j = 0; j < edim2; j++ ){
       char name[256];
       int index = 0;
@@ -267,23 +251,14 @@ int main( int argc, char * argv[] ){
       name[index] = '\0';
       evars++;
 
-      // Nodally average the data
-      memset(data, 0, cdim1*sizeof(float));
-      for ( int k = 0; k < ptr[num_elements]; k++ ){
-        data[conn[k]] += counts[conn[k]]*edata[edim2*k + j];
-      }
-
       // Write out the zone names
       fprintf(fp, "SCALARS %s double 1\n", name);
       fprintf(fp, "LOOKUP_TABLE default\n");
 
-      for ( int k = 0; k < cdim1; k++ ){
-        fprintf(fp, "%.3e\n", data[k]);
+      for ( int k = 0; k < edim1; k++ ){
+        fprintf(fp, "%.3e\n", edata[edim2*k + j]);
       }
     }
-
-    delete [] counts;
-    delete [] data;
 
     fclose(fp);
 

@@ -221,7 +221,7 @@ void TACSPlateModel::evalWeakMatrix( ElementMatrixType matType,
   // Extract the stiffnesses
   TacsScalar drill;
   const TacsScalar *A, *B, *D, *As;
-  con->extractTangenttStiffness(C, &A, &B, &D, &As, &drill);
+  con->extractTangentStiffness(C, &A, &B, &D, &As, &drill);
 
   // Get the stress components
   TacsScalar s[9];

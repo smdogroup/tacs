@@ -25,7 +25,7 @@ cdef extern from "mpi-compat.h":
 
 cdef extern from "TACSShellElementTransform.h":
     cdef cppclass TACSShellTransform(TACSObject):
-        TACSShellTransform()
+        pass
 
     cdef cppclass TACSShellNaturalTransform(TACSShellTransform):
         TACSShellNaturalTransform()
