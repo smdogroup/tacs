@@ -500,7 +500,7 @@ void TACSMg::assembleMatCombo( ElementMatrixType matTypes[],
       }
     }
     else if (assembler[i]){
-      assembler[i]->assembleMatCombo(matTypes, scale, nmats, mat[0], matOr);
+      assembler[i]->assembleMatCombo(matTypes, scale, nmats, mat[i], matOr);
     }
   }
 
