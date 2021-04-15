@@ -155,5 +155,4 @@ inline void TacsLagrangeShapeFuncSecondDerivative( const int order,
   }
 }
 
-
 #endif // TACS_LAGRANGE_INTERPOLATION_H

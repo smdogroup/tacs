@@ -53,10 +53,10 @@ class TACSShellConstitutive : public TACSConstitutive {
 
   // Once the stiffness matrices have been evaluated, use this
   // function to compute the stress given the strain components
-  inline void computeStress( const TacsScalar A[], const TacsScalar B[],
-                             const TacsScalar D[], const TacsScalar As[],
-                             const TacsScalar drill, const TacsScalar e[],
-                             TacsScalar s[] );
+  static inline void computeStress( const TacsScalar A[], const TacsScalar B[],
+                                    const TacsScalar D[], const TacsScalar As[],
+                                    const TacsScalar drill, const TacsScalar e[],
+                                    TacsScalar s[] );
 
  protected:
   // The drilling regularization constant

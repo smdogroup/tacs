@@ -1210,6 +1210,114 @@ static inline void mat3x3SymmTransformTrans2ndSens( const TacsScalar T[],
   }
 }
 
+
+/*
+  Compute D = B*c^{x}
+
+  input:
+  a:   the first 3-vector
+  B    the 3x3 input matrix
+  c:   the second 3-vector
+
+  output:
+  D:   the output
+*/
+static inline void mat3x3MatSkewTransform( const TacsScalar B[],
+                                           const TacsScalar c[],
+                                           TacsScalar D[] ){
+  // [B[0]  B[1]  B[2]][0    -c[2]  c[1]]
+  // [B[3]  B[4]  B[5]][c[2]   0   -c[0]]
+  // [B[6]  B[7]  B[8]][-c[1] c[0]  a[1]]
+
+  D[0] = c[2]*B[1] - c[1]*B[2];
+  D[3] = c[2]*B[4] - c[1]*B[5];
+  D[6] = c[2]*B[7] - c[1]*B[8];
+
+  D[1] = c[0]*B[2] - c[2]*B[0];
+  D[4] = c[0]*B[5] - c[2]*B[3];
+  D[7] = c[0]*B[8] - c[2]*B[6];
+
+  D[2] = c[1]*B[0] - c[0]*B[1];
+  D[5] = c[1]*B[3] - c[0]*B[4];
+  D[8] = c[1]*B[6] - c[0]*B[7];
+}
+
+/*
+  Compute D = a^{x}*B
+
+  input:
+  a:   the first 3-vector
+  B    the 3x3 input matrix
+  c:   the second 3-vector
+
+  output:
+  D:   the output
+*/
+static inline void mat3x3SkewMatTransform( const TacsScalar a[],
+                                           const TacsScalar B[],
+                                           TacsScalar D[] ){
+  // [0    -a[2]  a[1]][B[0]  B[1]  B[2]]
+  // [a[2]   0   -a[0]][B[3]  B[4]  B[5]]
+  // [-a[1] a[0]  a[1]][B[6]  B[7]  B[8]]
+
+  D[0] = a[1]*B[6] - a[2]*B[3];
+  D[1] = a[1]*B[7] - a[2]*B[4];
+  D[2] = a[1]*B[8] - a[2]*B[5];
+
+  D[3] = a[2]*B[0] - a[0]*B[6];
+  D[4] = a[2]*B[1] - a[0]*B[7];
+  D[5] = a[2]*B[2] - a[0]*B[8];
+
+  D[6] = a[0]*B[3] - a[1]*B[0];
+  D[7] = a[0]*B[4] - a[1]*B[1];
+  D[8] = a[0]*B[5] - a[1]*B[2];
+}
+
+/*
+  Compute D = a^{x}*B*c^{x}
+
+  input:
+  a:   the first 3-vector
+  B    the 3x3 input matrix
+  c:   the second 3-vector
+
+  output:
+  D:   the output
+*/
+static inline void mat3x3SkewMatSkewTransform( const TacsScalar a[],
+                                               const TacsScalar B[],
+                                               const TacsScalar c[],
+                                               TacsScalar D[] ){
+  // [0    -a[2]  a[1]][B[0]  B[1]  B[2]][0    -c[2]  c[1]]
+  // [a[2]   0   -a[0]][B[3]  B[4]  B[5]][c[2]   0   -c[0]]
+  // [-a[1] a[0]  a[1]][B[6]  B[7]  B[8]][-c[1] c[0]  a[1]]
+
+  TacsScalar t[9];
+  t[0] = a[1]*B[6] - a[2]*B[3];
+  t[1] = a[1]*B[7] - a[2]*B[4];
+  t[2] = a[1]*B[8] - a[2]*B[5];
+
+  t[3] = a[2]*B[0] - a[0]*B[6];
+  t[4] = a[2]*B[1] - a[0]*B[7];
+  t[5] = a[2]*B[2] - a[0]*B[8];
+
+  t[6] = a[0]*B[3] - a[1]*B[0];
+  t[7] = a[0]*B[4] - a[1]*B[1];
+  t[8] = a[0]*B[5] - a[1]*B[2];
+
+  D[0] = c[2]*t[1] - c[1]*t[2];
+  D[3] = c[2]*t[4] - c[1]*t[5];
+  D[6] = c[2]*t[7] - c[1]*t[8];
+
+  D[1] = c[0]*t[2] - c[2]*t[0];
+  D[4] = c[0]*t[5] - c[2]*t[3];
+  D[7] = c[0]*t[8] - c[2]*t[6];
+
+  D[2] = c[1]*t[0] - c[0]*t[1];
+  D[5] = c[1]*t[3] - c[0]*t[4];
+  D[8] = c[1]*t[6] - c[0]*t[7];
+}
+
 /*
   Compute C += A^{T}*B
 

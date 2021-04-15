@@ -157,15 +157,6 @@ int main( int argc, char *argv[] ){
   TacsScalar Xpts[3*NUM_NODES];
   TacsScalar vars[NUM_VARS], dvars[NUM_VARS], ddvars[NUM_VARS];
 
-  // Test the second derivatives
-
-
-
-
-
-
-
-/*
   // Set the values of the
   TacsGenerateRandomArray(Xpts, 3*NUM_NODES);
   TacsGenerateRandomArray(vars, 6*NUM_NODES);
@@ -242,8 +233,6 @@ int main( int argc, char *argv[] ){
   f5->incref();
   f5->writeToFile("plate.f5");
   assembler->decref();
-
-  */
 
   linear_shell->decref();
   quadratic_shell->decref();
