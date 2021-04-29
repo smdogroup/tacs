@@ -11,6 +11,7 @@
 #include "TACSElementTypes.h"
 #include "TACSDirector.h"
 #include "TACSShellElementTransform.h"
+#include "TACSElementVerification.h"
 
 template <class quadrature, class basis, class director, class model>
 class TACSShellElement : public TACSElement {
@@ -95,16 +96,16 @@ class TACSShellElement : public TACSElement {
                     const TacsScalar *ddvars,
                     TacsScalar *res );
 
-  void addJacobian( int elemIndex, double time,
-                    TacsScalar alpha,
-                    TacsScalar beta,
-                    TacsScalar gamma,
-                    const TacsScalar Xpts[],
-                    const TacsScalar vars[],
-                    const TacsScalar dvars[],
-                    const TacsScalar ddvars[],
-                    TacsScalar res[],
-                    TacsScalar mat[] );
+  // void addJacobian( int elemIndex, double time,
+  //                   TacsScalar alpha,
+  //                   TacsScalar beta,
+  //                   TacsScalar gamma,
+  //                   const TacsScalar Xpts[],
+  //                   const TacsScalar vars[],
+  //                   const TacsScalar dvars[],
+  //                   const TacsScalar ddvars[],
+  //                   TacsScalar res[],
+  //                   TacsScalar mat[] );
 
   void addAdjResProduct( int elemIndex, double time,
                          TacsScalar scale,
@@ -163,9 +164,9 @@ class TACSShellElement : public TACSElement {
 
  private:
   // Set sizes for the different components
-  const int usize = 3*basis::NUM_NODES;
-  const int dsize = 3*basis::NUM_NODES;
-  const int csize = 9*basis::NUM_NODES;
+  static const int usize = 3*basis::NUM_NODES;
+  static const int dsize = 3*basis::NUM_NODES;
+  static const int csize = 9*basis::NUM_NODES;
 
   TACSShellTransform *transform;
   TACSShellConstitutive *con;
@@ -200,7 +201,7 @@ void TACSShellElement<quadrature, basis, director, model>::
 
   // Set the total number of tying points needed for this element
   TacsScalar ety[basis::NUM_TYING_POINTS];
-  model::template computeTyingStrain<basis>(Xpts, fn, vars_per_node, vars, d, ety);
+  model::template computeTyingStrain<vars_per_node, basis>(Xpts, fn, vars, d, ety);
 
   // Loop over each quadrature point and add the residual contribution
   for ( int quad_index = 0; quad_index < nquad; quad_index++ ){
@@ -210,9 +211,9 @@ void TACSShellElement<quadrature, basis, director, model>::
 
     // Compute X, X,xi and the interpolated normal n0
     TacsScalar X[3], Xxi[6], n0[3], T[9];
-    basis::interpFields(pt, 3, Xpts, 3, X);
-    basis::interpFieldsGrad(pt, 3, Xpts, 3, Xxi);
-    basis::interpFields(pt, 3, fn, 3, n0);
+    basis::template interpFields<3, 3>(pt, Xpts, X);
+    basis::template interpFieldsGrad<3, 3>(pt, Xpts, Xxi);
+    basis::template interpFields<3, 3>(pt, fn, n0);
 
     // Compute the transformation at the quadrature point
     transform->computeTransform(Xxi, n0, T);
@@ -285,7 +286,7 @@ void TACSShellElement<quadrature, basis, director, model>::
 
   // Set the total number of tying points needed for this element
   TacsScalar ety[basis::NUM_TYING_POINTS];
-  model::template computeTyingStrain<basis>(Xpts, fn, vars_per_node, vars, d, ety);
+  model::template computeTyingStrain<vars_per_node, basis>(Xpts, fn, vars, d, ety);
 
   // Loop over each quadrature point and add the residual contribution
   for ( int quad_index = 0; quad_index < nquad; quad_index++ ){
@@ -295,9 +296,9 @@ void TACSShellElement<quadrature, basis, director, model>::
 
     // Compute X, X,xi and the interpolated normal n0
     TacsScalar X[3], Xxi[6], n0[3], T[9];
-    basis::interpFields(pt, 3, Xpts, 3, X);
-    basis::interpFieldsGrad(pt, 3, Xpts, 3, Xxi);
-    basis::interpFields(pt, 3, fn, 3, n0);
+    basis::template interpFields<3, 3>(pt, Xpts, X);
+    basis::template interpFieldsGrad<3, 3>(pt, Xpts, Xxi);
+    basis::template interpFields<3, 3>(pt, fn, n0);
 
     // Compute the transformation at the quadrature point
     transform->computeTransform(Xxi, n0, T);
@@ -344,8 +345,8 @@ void TACSShellElement<quadrature, basis, director, model>::
   }
 
   // Set the total number of tying points needed for this element
-  model::template addComputeTyingStrainTranspose<basis>(Xpts, fn, vars_per_node, vars,
-                                                        d, dety, res, dd);
+  model::template addComputeTyingStrainTranspose<vars_per_node, basis>(
+    Xpts, fn, vars, d, dety, res, dd);
 
   // Add the contributions to the director field
   director::template addDirectorResidual<vars_per_node, disp_offset, basis::NUM_NODES>(
@@ -355,6 +356,7 @@ void TACSShellElement<quadrature, basis, director, model>::
 /*
   Add the contributions to the residual and Jacobian matrix
 */
+/*
 template <class quadrature, class basis, class director, class model>
 void TACSShellElement<quadrature, basis, director, model>::
   addJacobian( int elemIndex, double time,
@@ -402,7 +404,7 @@ void TACSShellElement<quadrature, basis, director, model>::
 
   // Set the total number of tying points needed for this element
   TacsScalar ety[basis::NUM_TYING_POINTS];
-  model::template computeTyingStrain<basis>(Xpts, fn, vars_per_node, vars, d, ety);
+  model::template computeTyingStrain<vars_per_node, basis>(Xpts, fn, vars, d, ety);
 
   // Loop over each quadrature point and add the residual contribution
   for ( int quad_index = 0; quad_index < nquad; quad_index++ ){
@@ -412,9 +414,9 @@ void TACSShellElement<quadrature, basis, director, model>::
 
     // Compute X, X,xi and the interpolated normal n0
     TacsScalar X[3], Xxi[6], n0[3], T[9];
-    basis::interpFields(pt, 3, Xpts, 3, X);
-    basis::interpFieldsGrad(pt, 3, Xpts, 3, Xxi);
-    basis::interpFields(pt, 3, fn, 3, n0);
+    basis::template interpFields<3, 3>(pt, Xpts, X);
+    basis::template interpFieldsGrad<3, 3>(pt, Xpts, Xxi);
+    basis::template interpFields<3, 3>(pt, fn, n0);
 
     // Compute the transformation at the quadrature point
     transform->computeTransform(Xxi, n0, T);
@@ -459,7 +461,7 @@ void TACSShellElement<quadrature, basis, director, model>::
     TacsScalar d2u0x[81], d2u1x[81], d2u0xu1x[81];
     TacsScalar d2e0ty[36], d2e0tyu0x[54], d2e0tyu1x[54];
     TacsScalar d2Ct[81], d2Ctu0x[81];
-    model::evalStrainHessian(detXd*alpha, s, Cs, u0x, u1x, Ct,
+    model::evalStrainHessian(alpha*detXd, s, Cs, u0x, u1x, e0ty, Ct,
                              d2u0x, d2u1x, d2u0xu1x,
                              d2e0ty, d2e0tyu0x, d2e0tyu1x,
                              d2Ct, d2Ctu0x);
@@ -471,14 +473,13 @@ void TACSShellElement<quadrature, basis, director, model>::
     }
 
     // Add the contributions to the residual from du0x, du1x and dCt
-    addDispGradHessian<vars_per_node, basis>(pt, T, XdinvT, XdinvzT,
-                                             d2u0x, d2u1x, d2u0xu1x, d2Ct, d2Ctu0x,
-                                             mat, d2d, d2C, d2du, d2Cu);
+    addDispGradHessian<vars_per_node, basis>(
+      pt, T, XdinvT, XdinvzT, d2u0x, d2u1x, d2u0xu1x, mat, d2d, d2du);
 
     // Compute the of the tying strain w.r.t. derivative w.r.t. the coefficients
     TacsScalar dgty[6], d2gty[36];
     mat3x3SymmTransformTransSens(XdinvT, de0ty, dgty);
-    mat3x3SymmTransformTrans2ndSens(XdinvT, d2e0ty, d2gty);
+    mat3x3SymmTransformTransHessian(XdinvT, d2e0ty, d2gty);
 
     // Evaluate the tying strain
     addInterpTyingStrainTranspose<basis>(pt, dgty, dety);
@@ -487,11 +488,11 @@ void TACSShellElement<quadrature, basis, director, model>::
 
   // Set the total number of tying points needed for this element
   if (res){
-    model::template addComputeTyingStrainTranspose<basis>(Xpts, fn, vars_per_node, vars,
-                                                          d, dety, res, dd);
+    model::template addComputeTyingStrainTranspose<vars_per_node, basis>(
+      Xpts, fn, vars, d, dety, res, dd);
   }
-  model::template addComputeTyingStrainHessian<basis>(Xpts, fn, vars_per_node, vars,
-                                                      d, d2ety, mat, d2d, d2du);
+  model::template addComputeTyingStrainHessian<vars_per_node, basis>(
+    Xpts, fn, vars, d, d2ety, mat, d2d, d2du);
 
   if (res){
     // Add the contributions to the director field
@@ -503,6 +504,7 @@ void TACSShellElement<quadrature, basis, director, model>::
   director::template addDirectorJacobian<vars_per_node, disp_offset, basis::NUM_NODES>(
     vars, dvars, ddvars, fn, d2d, d2du, mat);
 }
+*/
 
 template <class quadrature, class basis, class director, class model>
 void TACSShellElement<quadrature, basis, director, model>::
@@ -530,8 +532,8 @@ void TACSShellElement<quadrature, basis, director, model>::
 
   // Set the total number of tying points needed for this element
   TacsScalar ety[basis::NUM_TYING_POINTS], etyd[basis::NUM_TYING_POINTS];
-  model::template computeTyingStrainDeriv<basis>(Xpts, fn, vars_per_node,
-                                                 vars, d, psi, dd, ety, etyd);
+  model::template computeTyingStrainDeriv<vars_per_node, basis>(
+    Xpts, fn, vars, d, psi, dd, ety, etyd);
 
   // Loop over each quadrature point and add the residual contribution
   for ( int quad_index = 0; quad_index < nquad; quad_index++ ){
@@ -541,9 +543,9 @@ void TACSShellElement<quadrature, basis, director, model>::
 
     // Compute X, X,xi and the interpolated normal n0
     TacsScalar X[3], Xxi[6], n0[3], T[9];
-    basis::interpFields(pt, 3, Xpts, 3, X);
-    basis::interpFieldsGrad(pt, 3, Xpts, 3, Xxi);
-    basis::interpFields(pt, 3, fn, 3, n0);
+    basis::template interpFields<3, 3>(pt, Xpts, X);
+    basis::template interpFieldsGrad<3, 3>(pt, Xpts, Xxi);
+    basis::template interpFields<3, 3>(pt, fn, n0);
 
     // Compute the transformation at the quadrature point
     transform->computeTransform(Xxi, n0, T);
@@ -601,13 +603,13 @@ int TACSShellElement<quadrature, basis, director, model>::
 
     // Set the total number of tying points needed for this element
     TacsScalar ety[basis::NUM_TYING_POINTS];
-    model::template computeTyingStrain<basis>(Xpts, fn, vars_per_node, vars, d, ety);
+    model::template computeTyingStrain<vars_per_node, basis>(Xpts, fn, vars, d, ety);
 
     // Compute X, X,xi and the interpolated normal n0
     TacsScalar X[3], Xxi[6], n0[3], T[9];
-    basis::interpFields(pt, 3, Xpts, 3, X);
-    basis::interpFieldsGrad(pt, 3, Xpts, 3, Xxi);
-    basis::interpFields(pt, 3, fn, 3, n0);
+    basis::template interpFields<3, 3>(pt, Xpts, X);
+    basis::template interpFieldsGrad<3, 3>(pt, Xpts, Xxi);
+    basis::template interpFields<3, 3>(pt, fn, n0);
 
     // Compute the transformation at the quadrature point
     transform->computeTransform(Xxi, n0, T);
@@ -637,9 +639,9 @@ int TACSShellElement<quadrature, basis, director, model>::
   }
   else if (quantityType == TACS_ELEMENT_DENSITY){
     TacsScalar Xxi[6], n0[3], X[3];
-    basis::interpFields(pt, 3, Xpts, 3, X);
-    basis::interpFields(pt, 3, fn, 3, n0);
-    basis::interpFieldsGrad(pt, 3, Xpts, 3, Xxi);
+    basis::template interpFields<3, 3>(pt, Xpts, X);
+    basis::template interpFieldsGrad<3, 3>(pt, Xpts, Xxi);
+    basis::template interpFields<3, 3>(pt, fn, n0);
 
     TacsScalar Xd[9];
     assembleFrame(Xxi, n0, Xd);
@@ -678,13 +680,13 @@ void TACSShellElement<quadrature, basis, director, model>::
 
     // Set the total number of tying points needed for this element
     TacsScalar ety[basis::NUM_TYING_POINTS];
-    model::template computeTyingStrain<basis>(Xpts, fn, vars_per_node, vars, d, ety);
+    model::template computeTyingStrain<vars_per_node, basis>(Xpts, fn, vars, d, ety);
 
     // Compute X, X,xi and the interpolated normal n0
     TacsScalar X[3], Xxi[6], n0[3], T[9];
-    basis::interpFields(pt, 3, Xpts, 3, X);
-    basis::interpFieldsGrad(pt, 3, Xpts, 3, Xxi);
-    basis::interpFields(pt, 3, fn, 3, n0);
+    basis::template interpFields<3, 3>(pt, Xpts, X);
+    basis::template interpFieldsGrad<3, 3>(pt, Xpts, Xxi);
+    basis::template interpFields<3, 3>(pt, fn, n0);
 
     // Compute the transformation at the quadrature point
     transform->computeTransform(Xxi, n0, T);
@@ -711,7 +713,7 @@ void TACSShellElement<quadrature, basis, director, model>::
   }
   else if (quantityType == TACS_ELEMENT_DENSITY){
     TacsScalar X[3];
-    basis::interpFields(pt, 3, Xpts, 3, X);
+    basis::template interpFields<3, 3>(pt, Xpts, X);
 
     con->addDensityDVSens(elemIndex, scale*dfdq[0], pt, X, dvLen, dfdx);
   }
@@ -748,7 +750,7 @@ void TACSShellElement<quadrature, basis, director, model>::
 
     // Set the total number of tying points needed for this element
     TacsScalar ety[basis::NUM_TYING_POINTS];
-    model::template computeTyingStrain<basis>(Xpts, fn, vars_per_node, vars, d, ety);
+    model::template computeTyingStrain<vars_per_node, basis>(Xpts, fn, vars, d, ety);
 
     // Zero the contributions to the
     TacsScalar dety[basis::NUM_TYING_POINTS];
@@ -756,9 +758,9 @@ void TACSShellElement<quadrature, basis, director, model>::
 
     // Compute X, X,xi and the interpolated normal n0
     TacsScalar X[3], Xxi[6], n0[3], T[9];
-    basis::interpFields(pt, 3, Xpts, 3, X);
-    basis::interpFieldsGrad(pt, 3, Xpts, 3, Xxi);
-    basis::interpFields(pt, 3, fn, 3, n0);
+    basis::template interpFields<3, 3>(pt, Xpts, X);
+    basis::template interpFieldsGrad<3, 3>(pt, Xpts, Xxi);
+    basis::template interpFields<3, 3>(pt, fn, n0);
 
     // Compute the transformation at the quadrature point
     transform->computeTransform(Xxi, n0, T);
@@ -801,8 +803,8 @@ void TACSShellElement<quadrature, basis, director, model>::
     addInterpTyingStrainTranspose<basis>(pt, dgty, dety);
 
     // Set the total number of tying points needed for this element
-    model::template addComputeTyingStrainTranspose<basis>(Xpts, fn, vars_per_node, vars,
-                                                          d, dety, dfdu, dd);
+    model::template addComputeTyingStrainTranspose<vars_per_node, basis>(
+      Xpts, fn, vars, d, dety, dfdu, dd);
 
     // Add the contributions to the director field
     director::template addDirectorResidual<vars_per_node, disp_offset, basis::NUM_NODES>(
@@ -838,7 +840,7 @@ void TACSShellElement<quadrature, basis, director, model>::
 
   // Set the total number of tying points needed for this element
   TacsScalar ety[basis::NUM_TYING_POINTS];
-  model::template computeTyingStrain<basis>(Xpts, fn, vars_per_node, vars, d, ety);
+  model::template computeTyingStrain<vars_per_node, basis>(Xpts, fn, vars, d, ety);
 
   // Loop over each quadrature point and add the residual contribution
   for ( int index = 0; index < num_vis_nodes; index++ ){
@@ -848,9 +850,9 @@ void TACSShellElement<quadrature, basis, director, model>::
 
     // Compute X, X,xi and the interpolated normal n0
     TacsScalar X[3], Xxi[6], n0[3], T[9];
-    basis::interpFields(pt, 3, Xpts, 3, X);
-    basis::interpFieldsGrad(pt, 3, Xpts, 3, Xxi);
-    basis::interpFields(pt, 3, fn, 3, n0);
+    basis::template interpFields<3, 3>(pt, Xpts, X);
+    basis::template interpFieldsGrad<3, 3>(pt, Xpts, Xxi);
+    basis::template interpFields<3, 3>(pt, fn, n0);
 
     // Compute the transformation at the quadrature point
     transform->computeTransform(Xxi, n0, T);
@@ -953,7 +955,7 @@ int TacsTestShellTyingStrain( double dh=1e-7,
   memset(d2ety, 0, basis::NUM_TYING_POINTS*basis::NUM_TYING_POINTS*sizeof(TacsScalar));
 
   TacsScalar ety[basis::NUM_TYING_POINTS];
-  model::template computeTyingStrain<basis>(Xpts, fn, vars_per_node, vars, d, ety);
+  model::template computeTyingStrain<vars_per_node, basis>(Xpts, fn, vars, d, ety);
 
   // Evaluate the tying components of the strain
   TacsScalar gty[6]; // The symmetric components of the tying strain
@@ -966,7 +968,7 @@ int TacsTestShellTyingStrain( double dh=1e-7,
   // Compute the of the tying strain w.r.t. derivative w.r.t. the coefficients
   TacsScalar dgty[6], d2gty[36];
   mat3x3SymmTransformTransSens(XdinvT, de0ty, dgty);
-  mat3x3SymmTransformTrans2ndSens(XdinvT, d2e0ty, d2gty);
+  mat3x3SymmTransformTransHessian(XdinvT, d2e0ty, d2gty);
 
   // Evaluate the tying strain
   addInterpTyingStrainTranspose<basis>(pt, dgty, dety);
@@ -982,10 +984,10 @@ int TacsTestShellTyingStrain( double dh=1e-7,
   memset(d2du, 0, dsize*usize*sizeof(TacsScalar));
 
   // Set the total number of tying points needed for this element
-  model::template addComputeTyingStrainTranspose<basis>(Xpts, fn, vars_per_node, vars,
-                                                        d, dety, res, dd);
-  model::template addComputeTyingStrainHessian<basis>(Xpts, fn, vars_per_node, vars,
-                                                      d, d2ety, mat, d2d, d2du);
+  model::template addComputeTyingStrainTranspose<vars_per_node, basis>(
+    Xpts, fn, vars, d, dety, res, dd);
+  model::template addComputeTyingStrainHessian<vars_per_node, basis>(
+    Xpts, fn, vars, d, d2ety, mat, d2d, d2du);
 
   TacsScalar fdmat[size*size], fdd2du[dsize*usize];
   for ( int i = 0; i < size; i++ ){
@@ -1000,7 +1002,7 @@ int TacsTestShellTyingStrain( double dh=1e-7,
 
     // Perturb the variables
     TacsScalar etyt[basis::NUM_TYING_POINTS];
-    model::template computeTyingStrain<basis>(Xpts, fn, vars_per_node, varst, d, etyt);
+    model::template computeTyingStrain<vars_per_node, basis>(Xpts, fn, varst, d, etyt);
 
     // Evaluate the tying components of the strain
     TacsScalar gtyt[6]; // The symmetric components of the tying strain
@@ -1033,8 +1035,8 @@ int TacsTestShellTyingStrain( double dh=1e-7,
     memset(ddt, 0, dsize*sizeof(TacsScalar));
 
     // Set the total number of tying points needed for this element
-    model::template addComputeTyingStrainTranspose<basis>(Xpts, fn, vars_per_node, varst,
-                                                          d, detyt, rest, ddt);
+    model::template addComputeTyingStrainTranspose<vars_per_node, basis>(
+      Xpts, fn, varst, d, detyt, rest, ddt);
 
     for ( int j = 0; j < size; j++ ){
 #ifdef TACS_USE_COMPLEX
@@ -1112,7 +1114,7 @@ int TacsTestShellTyingStrain( double dh=1e-7,
 
     // Perturb the variables
     TacsScalar etyt[basis::NUM_TYING_POINTS];
-    model::template computeTyingStrain<basis>(Xpts, fn, vars_per_node, vars, dt, etyt);
+    model::template computeTyingStrain<vars_per_node, basis>(Xpts, fn, vars, dt, etyt);
 
     // Evaluate the tying components of the strain
     TacsScalar gtyt[6]; // The symmetric components of the tying strain
@@ -1145,8 +1147,8 @@ int TacsTestShellTyingStrain( double dh=1e-7,
     memset(ddt, 0, dsize*sizeof(TacsScalar));
 
     // Set the total number of tying points needed for this element
-    model::template addComputeTyingStrainTranspose<basis>(Xpts, fn, vars_per_node, vars,
-                                                          dt, detyt, rest, ddt);
+    model::template addComputeTyingStrainTranspose<vars_per_node, basis>(
+      Xpts, fn, vars, dt, detyt, rest, ddt);
 
     for ( int j = 0; j < dsize; j++ ){
 #ifdef TACS_USE_COMPLEX

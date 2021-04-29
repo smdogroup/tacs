@@ -1,4 +1,3 @@
-
 #ifndef TACS_SHELL_UTILITIES_H
 #define TACS_SHELL_UTILITIES_H
 
@@ -270,6 +269,16 @@ inline void mat3x3TransMatMatHessianAddSymm( const TacsScalar T1[],
   }
 }
 
+/**
+  Compute the frame normals at each of the nodes of the shell element
+
+  This code computes the in-plane coordinates derivatives to evaluate
+  the shell normal.
+
+  @param Xpts The node locations for the shell element
+  @param fn The frame normals computed at each node
+  @param fnorm Optional: the norm of the cross-product
+*/
 template <class basis>
 void getNodeNormals( const TacsScalar Xpts[],
                      TacsScalar fn[],
@@ -280,7 +289,7 @@ void getNodeNormals( const TacsScalar Xpts[],
 
     // Compute the derivative X,xi at each node
     TacsScalar Xxi[6];
-    basis::interpFieldsGrad(pt, 3, Xpts, 3, Xxi);
+    basis::template interpFieldsGrad<3, 3>(pt, Xpts, Xxi);
 
     TacsScalar a[3], b[3];
     a[0] = Xxi[0];
@@ -309,9 +318,24 @@ void getNodeNormals( const TacsScalar Xpts[],
   }
 }
 
-/*
+/**
   Compute the displacement gradient of the constant and through-thickness
   rate of change of the displacements.
+
+  @param pt The parametric point
+  @param Xpts The node locations for the element
+  @param vars The element variables
+  @param fn The frame normal directions at each node
+  @param C The rotation matrix stored at each node
+  @param d The director field at each node
+  @param Xxi The in-plane coordinate derivatives
+  @param n0 The interpolated frame normal direction
+  @param T The transformation to local coordinates
+  @param XdinvT Product of inverse of the Jacobian trans. and T
+  @param XdinvzT Product of z-derivative of Jac. trans. inv. and T
+  @param u0x Derivative of the displacement in the local x coordinates
+  @param u1x Derivative of the through-thickness disp. in local x coordinates
+  @param Ct The interpolated rotation matrix pre/post multiplied by T
 */
 template <int vars_per_node, class basis>
 TacsScalar computeDispGrad( const double pt[],
@@ -330,7 +354,7 @@ TacsScalar computeDispGrad( const double pt[],
                             TacsScalar Ct[] ){
   // Compute n,xi = [dn/dxi1; dn/dxi2]
   TacsScalar nxi[6];
-  basis::interpFieldsGrad(pt, 3, fn, 3, nxi);
+  basis::template interpFieldsGrad<3, 3>(pt, fn, nxi);
 
   // Assemble the terms Xd = [Xxi; n] and Xdz
   TacsScalar Xd[9], Xdz[9];
@@ -357,12 +381,12 @@ TacsScalar computeDispGrad( const double pt[],
   // Compute the director field and the gradient of the director
   // field at the specified point
   TacsScalar d0[3], d0xi[6];
-  basis::interpFields(pt, 3, d, 3, d0);
-  basis::interpFieldsGrad(pt, 3, d, 3, d0xi);
+  basis::template interpFields<3, 3>(pt, d, d0);
+  basis::template interpFieldsGrad<3, 3>(pt, d, d0xi);
 
   // Compute the gradient of the displacement solution at the quadrature points
   TacsScalar u0xi[6];
-  basis::interpFieldsGrad(pt, vars_per_node, vars, 3, u0xi);
+  basis::template interpFieldsGrad<vars_per_node, 3>(pt, vars, u0xi);
 
   // Compute the derivative u0,x
   assembleFrame(u0xi, d0, u0x); // Use u0x to store [u0,xi; d0]
@@ -381,7 +405,7 @@ TacsScalar computeDispGrad( const double pt[],
 
   // Compute the interpolation of the entries of the C matrix
   TacsScalar Cpt[9];
-  basis::interpFields(pt, 9, C, 9, Cpt);
+  basis::template interpFields<9, 9>(pt, C, Cpt);
 
   // Compute Ct = T^{T}*Cpt*T
   mat3x3TransMatMult(T, Cpt, tmp);
@@ -390,6 +414,31 @@ TacsScalar computeDispGrad( const double pt[],
   return detXd;
 }
 
+/**
+  Compute the displacement gradient and the derivative of the displacement
+  gradient with respect to input variables
+
+  @param pt The parametric point
+  @param Xpts The node locations for the element
+  @param vars The element variables
+  @param fn The frame normal directions at each node
+  @param C The rotation matrix stored at each node
+  @param d The director field at each node
+  @param Xxi The in-plane coordinate derivatives
+  @param n0 The interpolated frame normal direction
+  @param T The transformation to local coordinates
+  @param varsd The derivative of the vars
+  @param dd The derivative of the director field
+  @param Cd The derivative of the rotation matrix
+  @param XdinvT Product of inverse of the Jacobian trans. and T
+  @param XdinvzT Product of z-derivative of Jac. trans. inv. and T
+  @param u0x Derivative of the displacement in the local x coordinates
+  @param u1x Derivative of the through-thickness disp. in local x coordinates
+  @param Ct The interpolated rotation matrix pre/post multiplied by T
+  @param u0xd Derivative of u0x
+  @param u1xd Derivative of u1x
+  @param Ctd Derivative of Ct
+*/
 template <int vars_per_node, class basis>
 TacsScalar computeDispGradDeriv( const double pt[],
                                  const TacsScalar Xpts[],
@@ -413,7 +462,7 @@ TacsScalar computeDispGradDeriv( const double pt[],
                                  TacsScalar Ctd[] ){
   // Compute n,xi = [dn/dxi1; dn/dxi2]
   TacsScalar nxi[6];
-  basis::interpFieldsGrad(pt, 3, fn, 3, nxi);
+  basis::template interpFieldsGrad<3, 3>(pt, fn, nxi);
 
   // Assemble the terms Xd = [Xxi; n] and Xdz
   TacsScalar Xd[9], Xdz[9];
@@ -440,15 +489,15 @@ TacsScalar computeDispGradDeriv( const double pt[],
   // Compute the director field and the gradient of the director
   // field at the specified point
   TacsScalar d0[3], d0xi[6], d0d[3], d0xid[6];
-  basis::interpFields(pt, 3, d, 3, d0);
-  basis::interpFieldsGrad(pt, 3, d, 3, d0xi);
-  basis::interpFields(pt, 3, dd, 3, d0d);
-  basis::interpFieldsGrad(pt, 3, dd, 3, d0xid);
+  basis::template interpFields<3, 3>(pt, d, d0);
+  basis::template interpFieldsGrad<3, 3>(pt, d, d0xi);
+  basis::template interpFields<3, 3>(pt, dd, d0d);
+  basis::template interpFieldsGrad<3, 3>(pt, dd, d0xid);
 
   // Compute the gradient of the displacement solution at the quadrature points
   TacsScalar u0xi[6], u0xid[6];
-  basis::interpFieldsGrad(pt, vars_per_node, vars, 3, u0xi);
-  basis::interpFieldsGrad(pt, vars_per_node, varsd, 3, u0xid);
+  basis::template interpFieldsGrad<vars_per_node, 3>(pt, vars, u0xi);
+  basis::template interpFieldsGrad<vars_per_node, 3>(pt, varsd, u0xid);
 
   // Compute the derivative u0,x
   assembleFrame(u0xi, d0, u0x); // Use u0x to store [u0,xi; d0]
@@ -476,8 +525,8 @@ TacsScalar computeDispGradDeriv( const double pt[],
 
   // Compute the interpolation of the entries of the C matrix
   TacsScalar Cpt[9], Cptd[9];
-  basis::interpFields(pt, 9, C, 9, Cpt);
-  basis::interpFields(pt, 9, Cd, 9, Cptd);
+  basis::template interpFields<9, 9>(pt, C, Cpt);
+  basis::template interpFields<9, 9>(pt, Cd, Cptd);
 
   // Compute Ct = T^{T}*Cpt*T
   mat3x3TransMatMult(T, Cpt, tmp);
@@ -489,8 +538,20 @@ TacsScalar computeDispGradDeriv( const double pt[],
   return detXd;
 }
 
-/*
+/**
+  Add/accumulate the contributions to the residual from the coefficients
+  of u0x, u1x and Ct
 
+  @param pt The parametric point
+  @param T The transformation to local coordinates
+  @param XdinvT Product of inverse of the Jacobian trans. and T
+  @param XdinvzT Product of z-derivative of Jac. trans. inv. and T
+  @param du0x Coefficients for u0x
+  @param du1x Coefficients for u1x
+  @param dCt Coefficients for Ct
+  @param res The residual
+  @param dd Residual intermediate for the director field
+  @param dC Residual intermediate for the interpolated rotations
 */
 template <int vars_per_node, class basis>
 void addDispGradSens( const double pt[],
@@ -507,7 +568,7 @@ void addDispGradSens( const double pt[],
   TacsScalar dCpt[9], tmp[9];
   mat3x3MatMult(T, dCt, tmp);
   mat3x3MatTransMult(tmp, T, dCpt);
-  basis::addInterpFieldsTranspose(pt, 9, dCpt, 9, dC);
+  basis::template addInterpFieldsTranspose<9, 9>(pt, dCpt, dC);
 
   // Compute du0d = T*du0x*XdinvT^{T} + T*du1x*XdinvzT^{T}
   TacsScalar du0d[9];
@@ -529,15 +590,27 @@ void addDispGradSens( const double pt[],
 
   // Compute the director field and the gradient of the director
   // field at the specified point
-  basis::addInterpFieldsTranspose(pt, 3, dd0, 3, dd);
-  basis::addInterpFieldsGradTranspose(pt, 3, dd0xi, 3, dd);
+  basis::template addInterpFieldsTranspose<3, 3>(pt, dd0, dd);
+  basis::template addInterpFieldsGradTranspose<3, 3>(pt, dd0xi, dd);
 
   // Compute the gradient of the displacement solution at the quadrature points
-  basis::addInterpFieldsGradTranspose(pt, 3, du0xi, vars_per_node, res);
+  basis::template addInterpFieldsGradTranspose<vars_per_node, 3>(pt, du0xi, res);
 }
 
-/*
+/**
+  Add/accumulate the contribution to the Jacobian matrix from the coefficients
+  of u0x, u1x
 
+  @param pt The parametric point
+  @param T The transformation to local coordinates
+  @param XdinvT Product of inverse of the Jacobian trans. and T
+  @param XdinvzT Product of z-derivative of Jac. trans. inv. and T
+  @param d2u0x Coefficients for the second derivative of u0x
+  @param d2u1x Coefficients for the second derivative of u1x
+  @param d2u0xu1x Coefficients for mixed partials of u0x/u1x
+  @param mat The Jacobian matrix
+  @param d2d The Jacobian matrix intermediate for the director field
+  @param d2du The mixed Jacobian matrix intermediate for displacements/d
 */
 template <int vars_per_node, class basis>
 void addDispGradHessian( const double pt[],
@@ -547,18 +620,9 @@ void addDispGradHessian( const double pt[],
                          const TacsScalar d2u0x[],
                          const TacsScalar d2u1x[],
                          const TacsScalar d2u0xu1x[],
-                         const TacsScalar d2Ct[],
-                         const TacsScalar d2Ctu0x[],
                          TacsScalar mat[],
                          TacsScalar d2d[],
-                         TacsScalar d2C[],
-                         TacsScalar d2du[],
-                         TacsScalar d2Cu[] ){
-  // Compute the second derivative w.r.t. Cpt
-  TacsScalar d2Cpt[81];
-  mat3x3TransMatMatHessian(T, T, d2Ct, d2Cpt);
-  basis::addInterpFieldsOuterProduct(pt, 9, d2Cpt, 9, d2C);
-
+                         TacsScalar d2du[] ){
   // d2u0d = d2u0x*[d(u0x)/d(u0d)]^2 +
   //         d2u1x*[d(u1x)/d(u0d)]^2 +
   //         d2u0xu1x*[d(u0x)/d(u0d)*d(u1x)/d(u0x)]
@@ -588,18 +652,17 @@ void addDispGradHessian( const double pt[],
   extractFrameMixedSens(d2u0du1d, d2d0xiu0xi, d2d0d0xi);
 
   // df/(d(u0d)d(u1d))
-  basis::addInterpFieldsOuterProduct(pt, 3, d2d0, 3, d2d);
-  basis::addInterpGradOuterProduct(pt, 3, d2d0xi, 3, d2d);
-  basis::addInterpGradMixedOuterProduct(pt, 3, d2d0d0xi, d2d0d0xi, 3, d2d);
+  basis::template addInterpFieldsOuterProduct<3, 3>(pt, d2d0, d2d);
+  basis::template addInterpGradOuterProduct<3, 3>(pt, d2d0xi, d2d);
+  basis::template addInterpGradMixedOuterProduct<3, 3>(pt, d2d0d0xi, d2d0d0xi, d2d);
 
   // df/(d(d0)d(u0xi))
-  basis::addInterpGradMixedOuterProduct(pt, 3, d2d0u0xi, NULL, 3, d2du);
-  basis::addInterpGradOuterProduct(pt, 3, d2d0xiu0xi, 3, d2du);
+  basis::template addInterpGradMixedOuterProduct<3, 3>(pt, d2d0u0xi, NULL, d2du);
+  basis::template addInterpGradOuterProduct<3, 3>(pt, d2d0xiu0xi, d2du);
 
   // Add the contribution to the Jacobian matrix
-  basis::addInterpGradOuterProduct(pt, 3, d2u0xi, vars_per_node, mat);
+  basis::template addInterpGradOuterProduct<vars_per_node, 3>(pt, d2u0xi, mat);
 }
-
 
 /**
   Evaluate the tensorial components of the strain tensor at the specific
@@ -699,8 +762,8 @@ int TacsTestShellUtilities( double dh=1e-7,
   TacsGenerateRandomArray(fn, xsize);
 
   TacsScalar n0[3], Xxi[6];
-  basis::interpFields(pt, 3, fn, 3, n0);
-  basis::interpFieldsGrad(pt, 3, Xpts, 3, Xxi);
+  basis::template interpFields<3, 3>(pt, fn, n0);
+  basis::template interpFieldsGrad<3, 3>(pt, Xpts, Xxi);
 
   TacsScalar vars[size], C[csize], d[dsize];
   TacsGenerateRandomArray(vars, size);
@@ -722,12 +785,6 @@ int TacsTestShellUtilities( double dh=1e-7,
   TacsGenerateRandomArray(d2Ct, 81);
   TacsGenerateRandomArray(d2Ctu0x, 81);
 
-  // memset(d2u0x, 0, 81*sizeof(TacsScalar));
-  // memset(d2u0xu1x, 0, 81*sizeof(TacsScalar));
-  // memset(d2u1x, 0, 81*sizeof(TacsScalar));
-  // memset(d2Ct, 0, 81*sizeof(TacsScalar));
-  // memset(d2Ctu0x, 0, 81*sizeof(TacsScalar));
-
   // Symmetrize the random matrices
   for ( int i = 0; i < 9; i++ ){
     for ( int j = i+1; j < 9; j++ ){
@@ -741,17 +798,13 @@ int TacsTestShellUtilities( double dh=1e-7,
   memset(res, 0, size*sizeof(TacsScalar));
   memset(mat, 0, size*size*sizeof(TacsScalar));
 
-  TacsScalar dd[dsize], d2d[dsize*dsize];
+  TacsScalar dd[dsize], d2d[dsize*dsize], d2du[usize*dsize];
   memset(dd, 0, dsize*sizeof(TacsScalar));
   memset(d2d, 0, dsize*dsize*sizeof(TacsScalar));
-
-  TacsScalar dC[csize], d2C[csize*csize];
-  memset(dC, 0, csize*sizeof(TacsScalar));
-  memset(d2C, 0, csize*csize*sizeof(TacsScalar));
-
-  TacsScalar d2du[usize*dsize], d2Cu[usize*csize];
   memset(d2du, 0, usize*dsize*sizeof(TacsScalar));
-  memset(d2Cu, 0, usize*csize*sizeof(TacsScalar));
+
+  TacsScalar dC[csize];
+  memset(dC, 0, csize*sizeof(TacsScalar));
 
   TacsScalar XdinvT[9], XdinvzT[9];
   TacsScalar u0x[9], u1x[9], Ct[9];
@@ -761,11 +814,11 @@ int TacsTestShellUtilities( double dh=1e-7,
   addDispGradSens<vars_per_node, basis>(pt, T, XdinvT, XdinvzT,
                                         du0x, du1x, dCt, res, dd, dC);
   addDispGradHessian<vars_per_node, basis>(pt, T, XdinvT, XdinvzT,
-                                           d2u0x, d2u1x, d2u0xu1x, d2Ct, d2Ctu0x,
-                                           mat, d2d, d2C, d2du, d2Cu);
+                                           d2u0x, d2u1x, d2u0xu1x,
+                                           mat, d2d, d2du);
 
   // Now, check the result
-  TacsScalar fdmat[size*size], fddu[dsize*usize], fdCu[csize*usize];
+  TacsScalar fdmat[size*size], fddu[dsize*usize];
   for ( int k = 0; k < size; k++ ){
     TacsScalar varst[size];
     memcpy(varst, vars, size*sizeof(TacsScalar));
@@ -785,21 +838,16 @@ int TacsTestShellUtilities( double dh=1e-7,
     // d2Ctu0x[9*i + j] = p2f/(p(Ct[i]) p(u0x[j]))
 
     // Compute the perturbed values based on the outputs
-    TacsScalar du0xt[9], du1xt[9], dCtt[9];
+    TacsScalar du0xt[9], du1xt[9];
     for ( int i = 0; i < 9; i++ ){
       du0xt[i] = du0x[i];
       du1xt[i] = du1x[i];
-      dCtt[i] = dCt[i];
       for ( int j = 0; j < 9; j++ ){
         du0xt[i] += d2u0x[9*i + j]*(u0xt[j] - u0x[j]) +
-                    d2u0xu1x[9*i + j]*(u1xt[j] - u1x[j]) +
-                    d2Ctu0x[9*j + i]*(Ctt[j] - Ct[j]);
+                    d2u0xu1x[9*i + j]*(u1xt[j] - u1x[j]);
 
         du1xt[i] += d2u1x[9*i + j]*(u1xt[j] - u1x[j]) +
                     d2u0xu1x[9*j + i]*(u0xt[j] - u0x[j]);
-
-        dCtt[i] += d2Ct[9*i + j]*(Ctt[j] - Ct[j]) +
-                   d2Ctu0x[9*i + j]*(u0xt[j] - u0x[j]);
       }
     }
 
@@ -808,7 +856,7 @@ int TacsTestShellUtilities( double dh=1e-7,
     memset(ddt, 0, dsize*sizeof(TacsScalar));
     memset(dCvt, 0, csize*sizeof(TacsScalar));
     addDispGradSens<vars_per_node, basis>(pt, T, XdinvT, XdinvzT,
-                                          du0xt, du1xt, dCtt, rest, ddt, dCvt);
+                                          du0xt, du1xt, dCt, rest, ddt, dCvt);
 
     // Place the result in the arrays...
     for ( int j = 0; j < size; j++ ){
@@ -822,7 +870,6 @@ int TacsTestShellUtilities( double dh=1e-7,
     if (k % vars_per_node < 3){
       // Compute the u-index
       int index = 3*(k / vars_per_node) + k % vars_per_node;
-      printf("index = %d\n", index);
 
       for ( int j = 0; j < dsize; j++ ){
 #ifdef TACS_USE_COMPLEX
@@ -900,21 +947,16 @@ int TacsTestShellUtilities( double dh=1e-7,
     // d2Ctu0x[9*i + j] = p2f/(p(Ct[i]) p(u0x[j]))
 
     // Compute the perturbed values based on the outputs
-    TacsScalar du0xt[9], du1xt[9], dCtt[9];
+    TacsScalar du0xt[9], du1xt[9];
     for ( int i = 0; i < 9; i++ ){
       du0xt[i] = du0x[i];
       du1xt[i] = du1x[i];
-      dCtt[i] = dCt[i];
       for ( int j = 0; j < 9; j++ ){
         du0xt[i] += d2u0x[9*i + j]*(u0xt[j] - u0x[j]) +
-                    d2u0xu1x[9*i + j]*(u1xt[j] - u1x[j]) +
-                    d2Ctu0x[9*j + i]*(Ctt[j] - Ct[j]);
+                    d2u0xu1x[9*i + j]*(u1xt[j] - u1x[j]);
 
         du1xt[i] += d2u1x[9*i + j]*(u1xt[j] - u1x[j]) +
                     d2u0xu1x[9*j + i]*(u0xt[j] - u0x[j]);
-
-        dCtt[i] += d2Ct[9*i + j]*(Ctt[j] - Ct[j]) +
-                   d2Ctu0x[9*i + j]*(u0xt[j] - u0x[j]);
       }
     }
 
@@ -923,7 +965,7 @@ int TacsTestShellUtilities( double dh=1e-7,
     memset(ddt, 0, dsize*sizeof(TacsScalar));
     memset(dCvt, 0, csize*sizeof(TacsScalar));
     addDispGradSens<vars_per_node, basis>(pt, T, XdinvT, XdinvzT,
-                                          du0xt, du1xt, dCtt, rest, ddt, dCvt);
+                                          du0xt, du1xt, dCt, rest, ddt, dCvt);
 
     for ( int j = 0; j < dsize; j++ ){
 #ifdef TACS_USE_COMPLEX
@@ -948,80 +990,6 @@ int TacsTestShellUtilities( double dh=1e-7,
   // Print the error if required
   if (test_print_level > 1){
     TacsPrintErrorComponents(stderr, "d2d", d2d, fddd, dsize*dsize);
-  }
-  if (test_print_level){ fprintf(stderr, "\n"); }
-
-  fail = (max_err > test_fail_atol || max_rel > test_fail_rtol);
-
-  // Now, check the result
-  TacsScalar fdC[csize*csize];
-  for ( int k = 0; k < csize; k++ ){
-    TacsScalar Cvt[csize];
-    memcpy(Cvt, C, csize*sizeof(TacsScalar));
-
-#ifdef TACS_USE_COMPLEX
-    Cvt[k] = C[k] + TacsScalar(0.0, dh);
-#else
-    Cvt[k] = C[k] + dh;
-#endif // TACS_USE_COMPLEX
-
-    // Compute the pertubation
-    TacsScalar u0xt[9], u1xt[9], Ctt[9];
-    computeDispGrad<vars_per_node, basis>(pt, Xpts, vars, fn, Cvt, d, Xxi, n0, T,
-                                          XdinvT, XdinvzT, u0xt, u1xt, Ctt);
-
-    // d2u0xu1x[9*i + j] = p2f/(p(u0x[i]) p(u1x[j]))
-    // d2Ctu0x[9*i + j] = p2f/(p(Ct[i]) p(u0x[j]))
-
-    // Compute the perturbed values based on the outputs
-    TacsScalar du0xt[9], du1xt[9], dCtt[9];
-    for ( int i = 0; i < 9; i++ ){
-      du0xt[i] = du0x[i];
-      du1xt[i] = du1x[i];
-      dCtt[i] = dCt[i];
-      for ( int j = 0; j < 9; j++ ){
-        du0xt[i] += d2u0x[9*i + j]*(u0xt[j] - u0x[j]) +
-                    d2u0xu1x[9*i + j]*(u1xt[j] - u1x[j]) +
-                    d2Ctu0x[9*j + i]*(Ctt[j] - Ct[j]);
-
-        du1xt[i] += d2u1x[9*i + j]*(u1xt[j] - u1x[j]) +
-                    d2u0xu1x[9*j + i]*(u0xt[j] - u0x[j]);
-
-        dCtt[i] += d2Ct[9*i + j]*(Ctt[j] - Ct[j]) +
-                   d2Ctu0x[9*i + j]*(u0xt[j] - u0x[j]);
-      }
-    }
-
-    TacsScalar rest[size], ddt[dsize], dCvt[csize];
-    memset(rest, 0, size*sizeof(TacsScalar));
-    memset(ddt, 0, dsize*sizeof(TacsScalar));
-    memset(dCvt, 0, csize*sizeof(TacsScalar));
-    addDispGradSens<vars_per_node, basis>(pt, T, XdinvT, XdinvzT,
-                                          du0xt, du1xt, dCtt, rest, ddt, dCvt);
-
-    for ( int j = 0; j < csize; j++ ){
-#ifdef TACS_USE_COMPLEX
-      fdC[k + csize*j] = TacsImagPart(dCvt[j])/dh;
-#else
-      fdC[k + csize*j] = (dCvt[j] - dC[j])/dh;
-#endif // TACS_USE_COMPLEX
-    }
-  }
-
-  // Compute the error
-  max_err = TacsGetMaxError(d2C, fdC, csize*csize, &max_err_index);
-  max_rel = TacsGetMaxRelError(d2C, fdC, csize*csize, &max_rel_index);
-
-  if (test_print_level > 0){
-    fprintf(stderr, "Testing the derivative w.r.t. d\n");
-    fprintf(stderr, "Max Err: %10.4e in component %d.\n",
-            max_err, max_err_index);
-    fprintf(stderr, "Max REr: %10.4e in component %d.\n",
-            max_rel, max_rel_index);
-  }
-  // Print the error if required
-  if (test_print_level > 1){
-    TacsPrintErrorComponents(stderr, "d2C", d2C, fdC, csize*csize);
   }
   if (test_print_level){ fprintf(stderr, "\n"); }
 

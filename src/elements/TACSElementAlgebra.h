@@ -1141,7 +1141,7 @@ static inline void mat3x3SymmTransformTransSens( const TacsScalar T[],
   output:
   d2S: The second derivative of the 3x3 symmetric matrix
 */
-static inline void mat3x3SymmTransformTrans2ndSens( const TacsScalar T[],
+static inline void mat3x3SymmTransformTransHessian( const TacsScalar T[],
                                                     const TacsScalar d2A[],
                                                     TacsScalar d2S[] ){
   TacsScalar tmp[36];

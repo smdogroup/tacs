@@ -7,9 +7,10 @@ CYTHON_INCLUDE = -I${NUMPY_DIR} -I${MPI4PY_DIR}
 
 # ParOpt shared objects
 CYTHON_SO = shell_element.so
-OBJS = shell.o cylinder.o jacobian_test.o
+OBJS = shell.o cylinder.o shell_jacobian.o
 
-default: ${CYTHON_SO} shell cylinder jacobian_test
+default: ${CYTHON_SO} shell cylinder shell_jacobian
+default: shell_jacobian
 
 debug: TACS_CC_FLAGS=${TACS_DEBUG_CC_FLAGS}
 debug: default
@@ -26,8 +27,8 @@ shell: ${OBJS}
 cylinder: ${OBJS}
 	${CXX} -o cylinder cylinder.o ${TACS_LD_FLAGS}
 
-jacobian_test: ${OBJS}
-	${CXX} -o jacobian_test jacobian_test.o ${TACS_LD_FLAGS}
+shell_jacobian: ${OBJS}
+	${CXX} -o shell_jacobian shell_jacobian.o -lprofiler ${TACS_LD_FLAGS}
 
 %.cpp: %.pyx
 	cython -I${TACS_DIR}/tacs/ --cplus $*.pyx --include-dir ${TACS_DIR}/tacs/

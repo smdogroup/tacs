@@ -133,7 +133,7 @@ int main( int argc, char * argv[] ){
         btypes[0] = ltype;
         ntypes = 1;
         nconn = 6;
-        memcpy(bconn, &conn[ptr[k]], 10*sizeof(int));
+        memcpy(bconn, &conn[ptr[k]], 6*sizeof(int));
       }
       else if (ltype == TACS_TETRA_QUADRATIC_ELEMENT){
         btypes[0] = ltype;

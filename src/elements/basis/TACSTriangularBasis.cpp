@@ -254,37 +254,37 @@ double TACSQuadraticTriangleBasis::getFaceQuadraturePoint( int face,
 }
 
 void TACSQuadraticTriangleBasis::computeBasis( const double pt[],
-                                            double N[] ){
-  N[0] = (1 - pt[0] - pt[1])*(1 - 2*pt[0] - 2*pt[1]);
-  N[1] = pt[0]*(2*pt[0] - 1);
-  N[2] = pt[1]*(2*pt[1] - 1);
-  N[3] = 4*pt[0]*(1 - pt[0] - pt[1]);
-  N[4] = 4*pt[0]*pt[1];
-  N[5] = 4*pt[1]*(1 - pt[0] - pt[1]);
+                                               double N[] ){
+  N[0] = (1.0 - pt[0] - pt[1])*(1.0 - 2.0*pt[0] - 2.0*pt[1]);
+  N[1] = pt[0]*(2.0*pt[0] - 1.0);
+  N[2] = pt[1]*(2.0*pt[1] - 1.0);
+  N[3] = 4.0*pt[0]*(1.0 - pt[0] - pt[1]);
+  N[4] = 4.0*pt[0]*pt[1];
+  N[5] = 4.0*pt[1]*(1.0 - pt[0] - pt[1]);
 }
 
 void TACSQuadraticTriangleBasis::computeBasisGradient( const double pt[],
-                                                    double N[],
-                                                    double Nxi[] ){
-  N[0] = (1 - pt[0] - pt[1])*(1 - 2*pt[0] - 2*pt[1]);
-  N[1] = pt[0]*(2*pt[0] - 1);
-  N[2] = pt[1]*(2*pt[1] - 1);
-  N[3] = 4*pt[0]*(1 - pt[0] - pt[1]);
-  N[4] = 4*pt[0]*pt[1];
-  N[5] = 4*pt[1]*(1 - pt[0] - pt[1]);
+                                                       double N[],
+                                                       double Nxi[] ){
+  N[0] = (1.0 - pt[0] - pt[1])*(1.0 - 2.0*pt[0] - 2.0*pt[1]);
+  N[1] = pt[0]*(2.0*pt[0] - 1.0);
+  N[2] = pt[1]*(2.0*pt[1] - 1.0);
+  N[3] = 4.0*pt[0]*(1.0 - pt[0] - pt[1]);
+  N[4] = 4.0*pt[0]*pt[1];
+  N[5] = 4.0*pt[1]*(1.0 - pt[0] - pt[1]);
 
-  Nxi[0] = 4*pt[0] + 4*pt[1] - 3;
-  Nxi[1] = 4*pt[0] + 4*pt[1] - 3;
-  Nxi[2] = 4*pt[0] - 1;
+  Nxi[0] = 4.0*pt[0] + 4.0*pt[1] - 3.0;
+  Nxi[1] = 4.0*pt[0] + 4.0*pt[1] - 3.0;
+  Nxi[2] = 4.0*pt[0] - 1.0;
   Nxi[3] = 0.0;
   Nxi[4] = 0.0;
-  Nxi[5] = 4*pt[1] - 1;
-  Nxi[6] = 4 - 8*pt[0] - 4*pt[1];
-  Nxi[7] = -4*pt[0];
-  Nxi[8] = 4*pt[1];
-  Nxi[9] = 4*pt[0];
-  Nxi[10] = -4*pt[1];
-  Nxi[11] = 4 - 4*pt[0] - 8*pt[1];
+  Nxi[5] = 4.0*pt[1] - 1.0;
+  Nxi[6] = 4.0 - 8.0*pt[0] - 4.0*pt[1];
+  Nxi[7] = -4.0*pt[0];
+  Nxi[8] = 4.0*pt[1];
+  Nxi[9] = 4.0*pt[0];
+  Nxi[10] = -4.0*pt[1];
+  Nxi[11] = 4.0 - 4.0*pt[0] - 8.0*pt[1];
 }
 
 /*

@@ -2,6 +2,7 @@
 #define TACS_SHELL_ELEMENT_BASIS_H
 
 #include "TACSGaussQuadrature.h"
+#include "TACSTriangleQuadrature.h"
 #include "TACSElementAlgebra.h"
 #include "TACSElementTypes.h"
 
@@ -93,10 +94,9 @@ class TACSShellQuadLinearBasis {
     return TACS_QUAD_ELEMENT;
   }
 
+  template <int vars_per_node, int m>
   static void interpFields( const double pt[],
-                            const int vars_per_node,
                             const TacsScalar values[],
-                            const int m,
                             TacsScalar field[] ){
     double na[2];
     na[0] = 0.5*(1.0 - pt[0]);
@@ -120,10 +120,9 @@ class TACSShellQuadLinearBasis {
     }
   }
 
+  template <int vars_per_node, int m>
   static void addInterpFieldsTranspose( const double pt[],
-                                        const int m,
                                         const TacsScalar field[],
-                                        const int vars_per_node,
                                         TacsScalar values[] ){
     double na[2];
     na[0] = 0.5*(1.0 - pt[0]);
@@ -143,10 +142,9 @@ class TACSShellQuadLinearBasis {
     }
   }
 
+  template <int vars_per_node, int m>
   static void interpFieldsGrad( const double pt[],
-                                const int vars_per_node,
                                 const TacsScalar values[],
-                                const int m,
                                 TacsScalar grad[] ){
     double na[2];
     na[0] = 0.5*(1.0 - pt[0]);
@@ -180,10 +178,9 @@ class TACSShellQuadLinearBasis {
     }
   }
 
+  template <int vars_per_node, int m>
   static void addInterpFieldsGradTranspose( const double pt[],
-                                            const int m,
                                             TacsScalar grad[],
-                                            const int vars_per_node,
                                             TacsScalar values[] ){
     double na[2];
     na[0] = 0.5*(1.0 - pt[0]);
@@ -223,10 +220,9 @@ class TACSShellQuadLinearBasis {
     @param vars_per_node The number of variables per node
     @param mat The element matrix
   */
+  template <int vars_per_node, int m>
   static void addInterpFieldsOuterProduct( const double pt[],
-                                           const int m,
                                            const TacsScalar jac[],
-                                           const int vars_per_node,
                                            TacsScalar *mat ){
     double na[2];
     na[0] = 0.5*(1.0 - pt[0]);
@@ -275,11 +271,10 @@ class TACSShellQuadLinearBasis {
     @param vars_per_node The number of variables per node
     @param mat The element matrix
   */
+  template <int vars_per_node, int m>
   static void addInterpFieldsOuterProduct( const double pt1[],
                                            const double pt2[],
-                                           const int m,
                                            const TacsScalar jac[],
-                                           const int vars_per_node,
                                            TacsScalar *mat ){
     double na1[2];
     na1[0] = 0.5*(1.0 - pt1[0]);
@@ -335,10 +330,9 @@ class TACSShellQuadLinearBasis {
     @param vars_per_node The number of variables per node
     @param mat The element matrix
   */
+  template <int vars_per_node, int m>
   static void addInterpGradOuterProduct( const double pt[],
-                                         const int m,
                                          const TacsScalar jac[],
-                                         const int vars_per_node,
                                          TacsScalar *mat ){
     double na[2];
     na[0] = 0.5*(1.0 - pt[0]);
@@ -403,11 +397,10 @@ class TACSShellQuadLinearBasis {
     @param vars_per_node The number of variables per node
     @param mat The element matrix
   */
+  template <int vars_per_node, int m>
   static void addInterpGradOuterProduct( const double pt1[],
                                          const double pt2[],
-                                         const int m,
                                          const TacsScalar jac[],
-                                         const int vars_per_node,
                                          TacsScalar *mat ){
     double na1[2];
     na1[0] = 0.5*(1.0 - pt1[0]);
@@ -490,11 +483,10 @@ class TACSShellQuadLinearBasis {
     @param vars_per_node The number of variables per node
     @param mat The element matrix
   */
+  template <int vars_per_node, int m>
   static void addInterpGradMixedOuterProduct( const double pt[],
-                                              const int m,
                                               const TacsScalar jac[],
                                               const TacsScalar jacT[],
-                                              const int vars_per_node,
                                               TacsScalar *mat ){
     double na[2];
     na[0] = 0.5*(1.0 - pt[0]);
@@ -622,12 +614,11 @@ class TACSShellQuadLinearBasis {
     @param vars_per_node The number of variables per node
     @param mat The element matrix
   */
+  template <int vars_per_node, int m>
   static void addInterpGradMixedOuterProduct( const double pt1[],
                                               const double pt2[],
-                                              const int m,
                                               const TacsScalar jac[],
                                               const TacsScalar jacT[],
-                                              const int vars_per_node,
                                               TacsScalar *mat ){
     double na1[2];
     na1[0] = 0.5*(1.0 - pt1[0]);
@@ -955,10 +946,9 @@ class TACSShellQuadQuadraticBasis {
     return TACS_QUAD_QUADRATIC_ELEMENT;
   }
 
+  template <int vars_per_node, int m>
   static void interpFields( const double pt[],
-                            const int vars_per_node,
                             const TacsScalar values[],
-                            const int m,
                             TacsScalar field[] ){
     double na[3];
     na[0] = -0.5*pt[0]*(1.0 - pt[0]);
@@ -984,10 +974,9 @@ class TACSShellQuadQuadraticBasis {
     }
   }
 
+  template <int vars_per_node, int m>
   static void addInterpFieldsTranspose( const double pt[],
-                                        const int m,
                                         const TacsScalar field[],
-                                        const int vars_per_node,
                                         TacsScalar values[] ){
     double na[3];
     na[0] = -0.5*pt[0]*(1.0 - pt[0]);
@@ -1009,10 +998,9 @@ class TACSShellQuadQuadraticBasis {
     }
   }
 
+  template <int vars_per_node, int m>
   static void interpFieldsGrad( const double pt[],
-                                const int vars_per_node,
                                 const TacsScalar values[],
-                                const int m,
                                 TacsScalar grad[] ){
     double na[3];
     na[0] = -0.5*pt[0]*(1.0 - pt[0]);
@@ -1050,10 +1038,9 @@ class TACSShellQuadQuadraticBasis {
     }
   }
 
+  template <int vars_per_node, int m>
   static void addInterpFieldsGradTranspose( const double pt[],
-                                            const int m,
                                             TacsScalar grad[],
-                                            const int vars_per_node,
                                             TacsScalar values[] ){
     double na[3];
     na[0] = -0.5*pt[0]*(1.0 - pt[0]);
@@ -1097,10 +1084,9 @@ class TACSShellQuadQuadraticBasis {
     @param vars_per_node The number of variables per node
     @param mat The element matrix
   */
+  template <int vars_per_node, int m>
   static void addInterpFieldsOuterProduct( const double pt[],
-                                           const int m,
                                            const TacsScalar jac[],
-                                           const int vars_per_node,
                                            TacsScalar *mat ){
     double na[3];
     na[0] = -0.5*pt[0]*(1.0 - pt[0]);
@@ -1150,11 +1136,10 @@ class TACSShellQuadQuadraticBasis {
     @param vars_per_node The number of variables per node
     @param mat The element matrix
   */
+  template <int vars_per_node, int m>
   static void addInterpFieldsOuterProduct( const double pt1[],
                                            const double pt2[],
-                                           const int m,
                                            const TacsScalar jac[],
-                                           const int vars_per_node,
                                            TacsScalar *mat ){
     double na1[3];
     na1[0] = -0.5*pt1[0]*(1.0 - pt1[0]);
@@ -1214,10 +1199,9 @@ class TACSShellQuadQuadraticBasis {
     @param vars_per_node The number of variables per node
     @param mat The element matrix
   */
+  template <int vars_per_node, int m>
   static void addInterpGradOuterProduct( const double pt[],
-                                         const int m,
                                          const TacsScalar jac[],
-                                         const int vars_per_node,
                                          TacsScalar *mat ){
     double na[3];
     na[0] = -0.5*pt[0]*(1.0 - pt[0]);
@@ -1285,11 +1269,10 @@ class TACSShellQuadQuadraticBasis {
     @param vars_per_node The number of variables per node
     @param mat The element matrix
   */
+  template <int vars_per_node, int m>
   static void addInterpGradOuterProduct( const double pt1[],
                                          const double pt2[],
-                                         const int m,
                                          const TacsScalar jac[],
-                                         const int vars_per_node,
                                          TacsScalar *mat ){
     double na1[3];
     na1[0] = -0.5*pt1[0]*(1.0 - pt1[0]);
@@ -1380,11 +1363,10 @@ class TACSShellQuadQuadraticBasis {
     @param vars_per_node The number of variables per node
     @param mat The element matrix
   */
+  template <int vars_per_node, int m>
   static void addInterpGradMixedOuterProduct( const double pt[],
-                                              const int m,
                                               const TacsScalar jac[],
                                               const TacsScalar jacT[],
-                                              const int vars_per_node,
                                               TacsScalar *mat ){
     double na[3];
     na[0] = -0.5*pt[0]*(1.0 - pt[0]);
@@ -1501,12 +1483,11 @@ class TACSShellQuadQuadraticBasis {
     }
   }
 
+  template <int vars_per_node, int m>
   static void addInterpGradMixedOuterProduct( const double pt1[],
                                               const double pt2[],
-                                              const int m,
                                               const TacsScalar jac[],
                                               const TacsScalar jacT[],
-                                              const int vars_per_node,
                                               TacsScalar *mat ){
     double na1[3];
     na1[0] = -0.5*pt1[0]*(1.0 - pt1[0]);
@@ -1916,5 +1897,629 @@ class TACSShellQuadQuadraticBasis {
     }
   }
 };
+
+class TACSTriLinearQuadrature {
+ public:
+  static const int NUM_QUADRATURE_POINTS = 3;
+
+  static int getNumParameters(){
+    return 2;
+  }
+  static int getNumQuadraturePoints(){
+    return 3;
+  }
+  static double getQuadratureWeight( int n ){
+    return TacsTriangleWts3[n];
+  }
+  static double getQuadraturePoint( int n, double pt[] ){
+    pt[0] = TacsTrianglePts3[2*n];
+    pt[1] = TacsTrianglePts3[2*n+1];
+
+    return TacsTriangleWts3[n];
+  }
+  static int getNumElementFaces(){
+    return 3;
+  }
+  static int getNumFaceQuadraturePoints( int face ){
+    return 2;
+  }
+  static double getFaceQuadraturePoint( int face, int n,
+                                        double pt[],
+                                        double t[] ){
+
+    if (face == 0){
+      t[0] = 1.0;
+      t[1] = 0.0;
+    }
+    else if (face == 1){
+      t[0] = -1.0;
+      t[1] = 1.0;
+    }
+    else if (face == 2){
+      t[0] = 0.0;
+      t[1] = 1.0;
+    }
+
+    if (face == 0){
+      pt[0] = 0.5*TacsGaussQuadPts2[n] + 0.5;
+      pt[1] = 0.0;
+      return 0.5*TacsGaussQuadWts2[n];
+    }
+    else if (face == 2){
+      pt[0] = 0.0;
+      pt[1] = 0.5*TacsGaussQuadPts2[n] + 0.5;
+      return 0.5*TacsGaussQuadWts2[n];
+    }
+    else if (face == 1){
+      pt[0] = 1.0 - (0.5*TacsGaussQuadPts2[n] + 0.5);
+      pt[1] = 0.5*TacsGaussQuadPts2[n] + 0.5;
+      return 0.5*sqrt(2.0)*TacsGaussQuadWts2[n];
+    }
+
+    return 0.0;
+  }
+};
+
+
+class TACSTriQuadraticQuadrature {
+ public:
+  static const int NUM_QUADRATURE_POINTS = 6;
+
+  static int getNumParameters(){
+    return 2;
+  }
+  static int getNumQuadraturePoints(){
+    return 4;
+  }
+  static double getQuadratureWeight( int n ){
+    return TacsTriangleWts4[n];
+  }
+  static double getQuadraturePoint( int n, double pt[] ){
+    pt[0] = TacsTrianglePts4[2*n];
+    pt[1] = TacsTrianglePts4[2*n+1];
+
+    return TacsTriangleWts4[n];
+  }
+  static int getNumElementFaces(){
+    return 3;
+  }
+  static int getNumFaceQuadraturePoints( int face ){
+    return 2;
+  }
+  static double getFaceQuadraturePoint( int face, int n,
+                                        double pt[],
+                                        double t[] ){
+    if (face == 0){
+      t[0] = 1.0;
+      t[1] = 0.0;
+    }
+    else if (face == 1){
+      t[0] = -1.0;
+      t[1] = 1.0;
+    }
+    else if (face == 2){
+      t[0] = 0.0;
+      t[1] = 1.0;
+    }
+
+    if (face == 0){
+      pt[0] = 0.5*TacsGaussQuadPts2[n] + 0.5;
+      pt[1] = 0.0;
+      return 0.5*TacsGaussQuadWts2[n];
+    }
+    else if (face == 2){
+      pt[0] = 0.0;
+      pt[1] = 0.5*TacsGaussQuadPts2[n] + 0.5;
+      return 0.5*TacsGaussQuadWts2[n];
+    }
+    else if (face == 1){
+      pt[0] = 1.0 - (0.5*TacsGaussQuadPts2[n] + 0.5);
+      pt[1] = 0.5*TacsGaussQuadPts2[n] + 0.5;
+      return 0.5*sqrt(2.0)*TacsGaussQuadWts2[n];
+    }
+
+    return 0.0;
+  }
+};
+
+class TACSShellTriQuadraticBasis {
+ public:
+  static const int NUM_NODES = 6;
+
+  // Set the number of tying points for each of the 5 components
+  // of the tying strain
+  static const int NUM_G11_TYING_POINTS = 3;
+  static const int NUM_G22_TYING_POINTS = 3;
+  static const int NUM_G12_TYING_POINTS = 3;
+  static const int NUM_G13_TYING_POINTS = 3;
+  static const int NUM_G23_TYING_POINTS = 3;
+
+  static const int NUM_TYING_POINTS =
+    NUM_G11_TYING_POINTS +
+    NUM_G22_TYING_POINTS +
+    NUM_G12_TYING_POINTS +
+    NUM_G13_TYING_POINTS +
+    NUM_G23_TYING_POINTS;
+
+  static void getNodePoint( const int n, double pt[] ){
+    if (n == 0){
+      pt[0] = 0.0;  pt[1] = 0.0;
+    }
+    else if (n == 1){
+      pt[0] = 1.0;  pt[1] = 0.0;
+    }
+    else if (n == 2){
+      pt[0] = 0.0;  pt[1] = 1.0;
+    }
+    else if (n == 3){
+      pt[0] = 0.5;  pt[1] = 0.0;
+    }
+    else if (n == 4){
+      pt[0] = 0.5;  pt[1] = 0.5;
+    }
+    else if (n == 5){
+      pt[0] = 0.0;  pt[1] = 0.5;
+    }
+  }
+  static ElementLayout getLayoutType(){
+    return TACS_TRI_QUADRATIC_ELEMENT;
+  }
+
+  static inline void computeBasis( const double pt[], double N[] ){
+    N[0] = (1.0 - pt[0] - pt[1])*(1.0 - 2.0*pt[0] - 2.0*pt[1]);
+    N[1] = pt[0]*(2.0*pt[0] - 1.0);
+    N[2] = pt[1]*(2.0*pt[1] - 1.0);
+    N[3] = 4.0*pt[0]*(1.0 - pt[0] - pt[1]);
+    N[4] = 4.0*pt[0]*pt[1];
+    N[5] = 4.0*pt[1]*(1.0 - pt[0] - pt[1]);
+  }
+
+  static inline void computeBasisGradient( const double pt[], double Nxi[] ){
+    Nxi[0] = 4.0*pt[0] + 4.0*pt[1] - 3.0;
+    Nxi[1] = 4.0*pt[0] + 4.0*pt[1] - 3.0;
+    Nxi[2] = 4.0*pt[0] - 1.0;
+    Nxi[3] = 0.0;
+    Nxi[4] = 0.0;
+    Nxi[5] = 4.0*pt[1] - 1.0;
+    Nxi[6] = 4.0 - 8.0*pt[0] - 4.0*pt[1];
+    Nxi[7] = -4.0*pt[0];
+    Nxi[8] = 4.0*pt[1];
+    Nxi[9] = 4.0*pt[0];
+    Nxi[10] = -4.0*pt[1];
+    Nxi[11] = 4.0 - 4.0*pt[0] - 8.0*pt[1];
+  }
+
+  template <int vars_per_node, int m>
+  static void interpFields( const double pt[],
+                            const TacsScalar values[],
+                            TacsScalar field[] ){
+    double N[6];
+    computeBasis(pt, N);
+
+    for ( int k = 0; k < m; k++ ){
+      field[k] = 0.0;
+    }
+
+    for ( int i = 0; i < NUM_NODES; i++ ){
+      for ( int k = 0; k < m; k++ ){
+        field[k] += N[i]*values[k];
+      }
+      values += vars_per_node;
+    }
+  }
+
+  template <int vars_per_node, int m>
+  static void addInterpFieldsTranspose( const double pt[],
+                                        const TacsScalar field[],
+                                        TacsScalar values[] ){
+    double N[6];
+    computeBasis(pt, N);
+
+    for ( int i = 0; i < NUM_NODES; i++ ){
+      for ( int k = 0; k < m; k++ ){
+        values[k] += N[i]*field[k];
+      }
+      values += vars_per_node;
+    }
+  }
+
+  template <int vars_per_node, int m>
+  static void interpFieldsGrad( const double pt[],
+                                const TacsScalar values[],
+                                TacsScalar grad[] ){
+    double Nxi[12];
+    computeBasisGradient(pt, Nxi);
+
+    for ( int k = 0; k < m; k++ ){
+      grad[2*k] = 0.0;
+      grad[2*k+1] = 0.0;
+    }
+
+    for ( int i = 0; i < NUM_NODES; i++ ){
+      for ( int k = 0; k < m; k++ ){
+        grad[2*k]   += Nxi[2*i]*values[k];
+        grad[2*k+1] += Nxi[2*i+1]*values[k];
+      }
+      values += vars_per_node;
+    }
+  }
+
+  template <int vars_per_node, int m>
+  static void addInterpFieldsGradTranspose( const double pt[],
+                                            TacsScalar grad[],
+                                            TacsScalar values[] ){
+    double Nxi[12];
+    computeBasisGradient(pt, Nxi);
+
+    for ( int i = 0; i < NUM_NODES; i++ ){
+      for ( int k = 0; k < m; k++ ){
+        values[k] += (Nxi[2*i]*grad[2*k] + Nxi[2*i+1]*grad[2*k+1]);
+      }
+      values += vars_per_node;
+    }
+  }
+
+  /**
+    Add the outer-product of the shape functions to the matrix
+
+    jac[m*ix + jy] stores the derivative of the ix term with
+    respect to the jx component.
+
+    @param pt The parametric location of the quadrature point
+    @param m The number of field components
+    @param jac The 2m x 2m Jacobian matrix of coefficients
+    @param vars_per_node The number of variables per node
+    @param mat The element matrix
+  */
+  template <int vars_per_node, int m>
+  static void addInterpFieldsOuterProduct( const double pt[],
+                                           const TacsScalar jac[],
+                                           TacsScalar *mat ){
+    double N[6];
+    computeBasis(pt, N);
+
+    const int nvars = 6*vars_per_node;
+
+    for ( int jx = 0; jx < NUM_NODES; jx++ ){
+      const TacsScalar *jac1 = jac;
+      for ( int jm = 0; jm < m; jm++, jac1 += m ){
+        for ( int ix = 0; ix < NUM_NODES; ix++ ){
+          double Ni = N[jx]*N[ix];
+
+          for ( int im = 0; im < m; im++ ){
+            mat[im] += Ni*jac1[im];
+          }
+
+          mat += vars_per_node;
+        }
+      }
+
+      mat += (vars_per_node - m)*nvars;
+    }
+  }
+
+  /**
+    Add the outer-product of the shape functions to the matrix
+
+    jac[2*m*(2*ix + jx) + 2*iy + jy] stores the derivative of the
+    2*ix + jx term with respect to the 2*ix + jx component.
+
+    @param pt The parametric location of the quadrature point
+    @param m The number of field components
+    @param jac The 2m x 2m Jacobian matrix of coefficients
+    @param vars_per_node The number of variables per node
+    @param mat The element matrix
+  */
+  template <int vars_per_node, int m>
+  static void addInterpGradOuterProduct( const double pt[],
+                                         const TacsScalar jac[],
+                                         TacsScalar *mat ){
+    double Nxi[12];
+    computeBasisGradient(pt, Nxi);
+
+    const int nvars = 6*vars_per_node;
+
+    for ( int jx = 0; jx < NUM_NODES; jx++ ){
+      const TacsScalar *jac1 = jac;
+      const TacsScalar *jac2 = &jac[2*m];
+
+      for ( int jm = 0; jm < m; jm++, jac1 += 4*m, jac2 += 4*m ){
+        for ( int ix = 0; ix < NUM_NODES; ix++ ){
+          double Naa = Nxi[2*jx]*Nxi[2*ix];
+          double Nab = Nxi[2*jx]*Nxi[2*ix+1];
+          double Nba = Nxi[2*jx+1]*Nxi[2*ix];
+          double Nbb = Nxi[2*jx+1]*Nxi[2*ix+1];
+
+          for ( int im = 0; im < m; im++ ){
+            mat[im] += (Naa*jac1[2*im] + Nab*jac1[2*im + 1] +
+              Nba*jac2[2*im] + Nbb*jac2[2*im + 1]);
+          }
+
+          mat += vars_per_node;
+        }
+      }
+
+      mat += (vars_per_node - m)*nvars;
+    }
+  }
+
+  /**
+    Add the outer-product of the shape functions and their
+    derivatives
+
+    Here jac and jacT are the Jacobians of the coefficients of the
+    Jacobian matrix of the displacement with respect to the gradient
+    of the displacement.
+
+    @param pt The parametric location of the quadrature point
+    @param m The number of field components
+    @param jac The m x 2m Jacobian matrix of coefficients
+    @param jacT The m x 2m Jacobian matrix of coefficients
+    @param vars_per_node The number of variables per node
+    @param mat The element matrix
+  */
+  template <int vars_per_node, int m>
+  static void addInterpGradMixedOuterProduct( const double pt[],
+                                              const TacsScalar jac[],
+                                              const TacsScalar jacT[],
+                                              TacsScalar *mat ){
+    double N[6];
+    computeBasis(pt, N);
+
+    double Nxi[12];
+    computeBasisGradient(pt, Nxi);
+
+    const int nvars = 6*vars_per_node;
+
+    if (jac && jacT){
+      for ( int jx = 0; jx < NUM_NODES; jx++ ){
+        const TacsScalar *jac1 = jac;
+
+        for ( int jm = 0; jm < m; jm++, jac1 += 2*m ){
+          for ( int ix = 0; ix < NUM_NODES; ix++ ){
+            double Na1 = N[jx]*Nxi[2*ix];
+            double Nb1 = N[jx]*Nxi[2*ix+1];
+            double Na2 = N[ix]*Nxi[2*jx];
+            double Nb2 = N[ix]*Nxi[2*jx+1];
+
+            const TacsScalar *jac2 = &jacT[2*jm];
+            for ( int im = 0; im < m; im++, jac2 += 2*m ){
+              mat[im] +=
+                Na1*jac1[2*im] + Nb1*jac1[2*im+1] +
+                Na2*jac2[0] + Nb2*jac2[1];
+            }
+
+            mat += vars_per_node;
+          }
+
+          mat += (vars_per_node - m)*nvars;
+        }
+      }
+    }
+    else if (jac){
+      for ( int jx = 0; jx < NUM_NODES; jx++ ){
+        const TacsScalar *jac1 = jac;
+
+        for ( int jm = 0; jm < m; jm++, jac1 += 2*m ){
+          for ( int ix = 0; ix < NUM_NODES; ix++ ){
+            double Na1 = N[jx]*Nxi[2*ix];
+            double Nb1 = N[jx]*Nxi[2*ix+1];
+
+            for ( int im = 0; im < m; im++ ){
+              mat[im] += Na1*jac1[2*im] + Nb1*jac1[2*im+1];
+            }
+
+            mat += vars_per_node;
+          }
+
+          mat += (vars_per_node - m)*nvars;
+        }
+      }
+    }
+    else if (jacT){
+      for ( int jx = 0; jx < NUM_NODES; jx++ ){
+        for ( int jm = 0; jm < m; jm++ ){
+          for ( int ix = 0; ix < NUM_NODES; ix++ ){
+            double Na2 = N[ix]*Nxi[2*jx];
+            double Nb2 = N[ix]*Nxi[2*jx+1];
+
+            const TacsScalar *jac2 = &jacT[2*jm];
+            for ( int im = 0; im < m; im++, jac2 += 2*m ){
+              mat[im] += Na2*jac2[0] + Nb2*jac2[1];
+            }
+
+            mat += vars_per_node;
+          }
+
+          mat += (vars_per_node - m)*nvars;
+        }
+      }
+    }
+  }
+
+  static int getNumTyingFields(){
+    return 5;
+  }
+  static int getNumTyingPoints( const int field ){
+    if (field == 0){ return 3; }
+    else if (field == 1){ return 3; }
+    else if (field == 2){ return 3; }
+    else if (field == 3){ return 3; }
+    else if (field == 4){ return 3; }
+    return 0;
+  }
+  static void getTyingPoint( const int field,
+                             const int ty,
+                             double pt[] ){
+    const double s = 0.774596669241483;
+    const double t = 0.577350269189626;
+    const double s0 = 0.5 - 0.5*s;
+    const double t0 = 0.5 - 0.5*t;
+    const double t1 = 0.5 + 0.5*t;
+    const double y0 = s0 + t;
+
+    if (field == 0 || field == 4){ // g11 or g13
+      if (ty == 0){
+        pt[0] = t0;
+        pt[1] = s0;
+      }
+      else if (ty == 1){
+        pt[0] = t1;
+        pt[1] = s0;
+      }
+      else if (ty == 2){
+        pt[0] = t0;
+        pt[1] = y0;
+      }
+    }
+    else if (field == 1 || field == 3){ // g22 or g23
+      if (ty == 0){
+        pt[0] = s0;
+        pt[1] = t0;
+      }
+      else if (ty == 1){
+        pt[0] = y0;
+        pt[1] = t0;
+      }
+      else if (ty == 2){
+        pt[0] = s0;
+        pt[1] = t1;
+      }
+    }
+    else { // (field == 2) g12
+      if (ty == 0){
+        pt[0] = t0;
+        pt[1] = t0;
+      }
+      else if (ty == 1){
+        pt[0] = t1;
+        pt[1] = t0;
+      }
+      else if (ty == 2){
+        pt[0] = t0;
+        pt[1] = t1;
+      }
+    }
+  }
+  static TacsScalar interpTying( const int field,
+                                 const double pt[],
+                                 const TacsScalar ety[] ){
+    const double s = 0.774596669241483;
+    const double t = 0.577350269189626;
+    const double s0 = 0.5 - 0.5*s;
+    const double t0 = 0.5 - 0.5*t;
+    const double tinv = 1.0/t;
+
+    double N[3];
+    if (field == 0 || field == 4){
+      N[0] = 1.0 - tinv*((pt[0] - t0) + (pt[1] - s0));
+      N[1] = tinv*(pt[0] - t0);
+      N[2] = tinv*(pt[1] - s0);
+    }
+    else if (field == 1 || field == 3){
+      N[0] = 1.0 - tinv*((pt[0] - s0) + (pt[1] - t0));
+      N[1] = tinv*(pt[0] - s0);
+      N[2] = tinv*(pt[1] - t0);
+    }
+    else { // field == 2
+      N[0] = 1.0 - tinv*((pt[0] - t0) + (pt[1] - t0));
+      N[1] = tinv*(pt[0] - t0);
+      N[2] = tinv*(pt[1] - t0);
+    }
+
+    TacsScalar value = 0.0;
+    for ( int i = 0; i < 3; i++ ){
+      value += N[i]*ety[i];
+    }
+
+    return value;
+  }
+
+  static void addInterpTyingTranspose( const int field,
+                                       const double pt[],
+                                       const TacsScalar value,
+                                       TacsScalar ety[] ){
+    const double s = 0.774596669241483;
+    const double t = 0.577350269189626;
+    const double s0 = 0.5 - 0.5*s;
+    const double t0 = 0.5 - 0.5*t;
+    const double tinv = 1.0/t;
+
+    double N[3];
+    if (field == 0 || field == 4){
+      N[0] = 1.0 - tinv*((pt[0] - t0) + (pt[1] - s0));
+      N[1] = tinv*(pt[0] - t0);
+      N[2] = tinv*(pt[1] - s0);
+    }
+    else if (field == 1 || field == 3){
+      N[0] = 1.0 - tinv*((pt[0] - s0) + (pt[1] - t0));
+      N[1] = tinv*(pt[0] - s0);
+      N[2] = tinv*(pt[1] - t0);
+    }
+    else { // field == 2
+      N[0] = 1.0 - tinv*((pt[0] - t0) + (pt[1] - t0));
+      N[1] = tinv*(pt[0] - t0);
+      N[2] = tinv*(pt[1] - t0);
+    }
+
+    for ( int i = 0; i < 3; i++ ){
+      ety[i] += N[i]*value;
+    }
+  }
+
+  static void addInterpTyingOuterProduct( const int f1,
+                                          const int f2,
+                                          const double pt[],
+                                          const TacsScalar value,
+                                          TacsScalar d2ety[] ){
+    const double s = 0.774596669241483;
+    const double t = 0.577350269189626;
+    const double s0 = 0.5 - 0.5*s;
+    const double t0 = 0.5 - 0.5*t;
+    const double tinv = 1.0/t;
+
+    double N1[3];
+    if (f1 == 0 || f1 == 4){
+      N1[0] = 1.0 - tinv*((pt[0] - t0) + (pt[1] - s0));
+      N1[1] = tinv*(pt[0] - t0);
+      N1[2] = tinv*(pt[1] - s0);
+    }
+    else if (f1 == 1 || f1 == 3){
+      N1[0] = 1.0 - tinv*((pt[0] - s0) + (pt[1] - t0));
+      N1[1] = tinv*(pt[0] - s0);
+      N1[2] = tinv*(pt[1] - t0);
+    }
+    else { // f1 == 2
+      N1[0] = 1.0 - tinv*((pt[0] - t0) + (pt[1] - t0));
+      N1[1] = tinv*(pt[0] - t0);
+      N1[2] = tinv*(pt[1] - t0);
+    }
+
+    double N2[3];
+    if (f2 == 0 || f2 == 4){
+      N2[0] = 1.0 - tinv*((pt[0] - t0) + (pt[1] - s0));
+      N2[1] = tinv*(pt[0] - t0);
+      N2[2] = tinv*(pt[1] - s0);
+    }
+    else if (f2 == 1 || f2 == 3){
+      N2[0] = 1.0 - tinv*((pt[0] - s0) + (pt[1] - t0));
+      N2[1] = tinv*(pt[0] - s0);
+      N2[2] = tinv*(pt[1] - t0);
+    }
+    else { // f2 == 2
+      N2[0] = 1.0 - tinv*((pt[0] - t0) + (pt[1] - t0));
+      N2[1] = tinv*(pt[0] - t0);
+      N2[2] = tinv*(pt[1] - t0);
+    }
+
+    for ( int i = 0; i < 3; i++ ){
+      for ( int j = 0; j < 3; j++, d2ety++ ){
+        d2ety[0] += value*N1[i]*N2[j];
+      }
+    }
+  }
+};
+
+
 
 #endif // TACS_SHELL_ELEMENT_BASIS_H
