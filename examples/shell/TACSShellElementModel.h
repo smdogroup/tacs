@@ -1603,7 +1603,7 @@ class TACSShellNonlinearModel {
     d2u1x[57] = scale*(D[0]*u0x[3]*u0x[6] + D[2]*u0x[3]*u0x[7] + D[2]*u0x[4]*u0x[6] + D[2]*u0x[6] + D[5]*u0x[4]*u0x[7] + D[5]*u0x[7]);
     d2u1x[58] = scale*(D[1]*u0x[4]*u0x[6] + D[1]*u0x[6] + D[2]*u0x[3]*u0x[6] + D[4]*u0x[4]*u0x[7] + D[4]*u0x[7] + D[5]*u0x[3]*u0x[7]);
     d2u1x[59] = 0.0;
-    d2u1x[60] = scale*(D[0]*u0x[6]*u0x[6] + 2*D[2]*u0x[6]*u0x[7] + D[5]*u0x[7]*u0x[7]);
+    d2u1x[60] = scale*(D[0]*u0x[6]*u0x[6] + 2.0*D[2]*u0x[6]*u0x[7] + D[5]*u0x[7]*u0x[7]);
     d2u1x[61] = scale*(D[1]*u0x[6]*u0x[7] + D[2]*u0x[6]*u0x[6] + D[4]*u0x[7]*u0x[7] + D[5]*u0x[6]*u0x[7]);
     d2u1x[62] = 0.0;
 
@@ -1614,7 +1614,7 @@ class TACSShellNonlinearModel {
     d2u1x[67] = scale*(D[3]*u0x[4]*u0x[7] + D[3]*u0x[7] + D[4]*u0x[3]*u0x[7] + D[4]*u0x[4]*u0x[6] + D[4]*u0x[6] + D[5]*u0x[3]*u0x[6]);
     d2u1x[68] = 0.0;
     d2u1x[69] = scale*(D[1]*u0x[6]*u0x[7] + D[2]*u0x[6]*u0x[6] + D[4]*u0x[7]*u0x[7] + D[5]*u0x[6]*u0x[7]);
-    d2u1x[70] = scale*(D[3]*u0x[7]*u0x[7] + 2*D[4]*u0x[6]*u0x[7] + D[5]*u0x[6]*u0x[6]);
+    d2u1x[70] = scale*(D[3]*u0x[7]*u0x[7] + 2.0*D[4]*u0x[6]*u0x[7] + D[5]*u0x[6]*u0x[6]);
     d2u1x[71] = 0.0;
 
     d2u1x[72] = 0.0;
@@ -1758,9 +1758,9 @@ class TACSShellNonlinearModel {
     d2Ct[8] = 0.0;
 
     d2Ct[9] = scale*(drill*u0x[1]*(u0x[4] + 1.0));
-    d2Ct[10] = scale*(0.5*drill*(u0x[4] + 1.0)*(2*u0x[4] + 2.0));
+    d2Ct[10] = scale*(0.5*drill*(u0x[4] + 1.0)*(2.0*u0x[4] + 2.0));
     d2Ct[11] = scale*(drill*u0x[7]*(u0x[4] + 1.0));
-    d2Ct[12] = scale*(-0.5*drill*(u0x[0] + 1.0)*(2*u0x[4] + 2.0));
+    d2Ct[12] = scale*(-0.5*drill*(u0x[0] + 1.0)*(2.0*u0x[4] + 2.0));
     d2Ct[13] = scale*(-drill*u0x[3]*(u0x[4] + 1.0));
     d2Ct[14] = scale*(-drill*u0x[6]*(u0x[4] + 1.0));
     d2Ct[15] = 0.0;
@@ -1778,9 +1778,9 @@ class TACSShellNonlinearModel {
     d2Ct[26] = 0.0;
 
     d2Ct[27] = scale*(-drill*u0x[1]*(u0x[0] + 1.0));
-    d2Ct[28] = scale*(-0.5*drill*(2*u0x[0] + 2.0)*(u0x[4] + 1.0));
+    d2Ct[28] = scale*(-0.5*drill*(2.0*u0x[0] + 2.0)*(u0x[4] + 1.0));
     d2Ct[29] = scale*(-drill*u0x[7]*(u0x[0] + 1.0));
-    d2Ct[30] = scale*(0.5*drill*(u0x[0] + 1.0)*(2*u0x[0] + 2.0));
+    d2Ct[30] = scale*(0.5*drill*(u0x[0] + 1.0)*(2.0*u0x[0] + 2.0));
     d2Ct[31] = scale*(drill*u0x[3]*(u0x[0] + 1.0));
     d2Ct[32] = scale*(drill*u0x[6]*(u0x[0] + 1.0));
     d2Ct[33] = 0.0;
@@ -1838,7 +1838,7 @@ class TACSShellNonlinearModel {
     d2Ct[80] = 0.0;
 
     d2Ctu0x[0] = scale*(-Ct[3]*drill*u0x[1]);
-    d2Ctu0x[1] = scale*(drill*(2*Ct[0]*u0x[1] + Ct[1]*(u0x[4] + 1.0) + Ct[2]*u0x[7] - Ct[3]*(u0x[0] + 1.0) - Ct[4]*u0x[3] - Ct[5]*u0x[6]));
+    d2Ctu0x[1] = scale*(drill*(2.0*Ct[0]*u0x[1] + Ct[1]*(u0x[4] + 1.0) + Ct[2]*u0x[7] - Ct[3]*(u0x[0] + 1.0) - Ct[4]*u0x[3] - Ct[5]*u0x[6]));
     d2Ctu0x[2] = 0.0;
     d2Ctu0x[3] = scale*(-Ct[4]*drill*u0x[1]);
     d2Ctu0x[4] = scale*(Ct[1]*drill*u0x[1]);
@@ -1851,7 +1851,7 @@ class TACSShellNonlinearModel {
     d2Ctu0x[10] = scale*(Ct[0]*drill*(u0x[4] + 1.0));
     d2Ctu0x[11] = 0.0;
     d2Ctu0x[12] = scale*(-Ct[4]*drill*(u0x[4] + 1.0));
-    d2Ctu0x[13] = scale*(drill*(Ct[0]*u0x[1] + Ct[1]*(u0x[4] + 1.0) + 0.5*Ct[1]*(2*u0x[4] + 2.0) + Ct[2]*u0x[7] - Ct[3]*(u0x[0] + 1.0) - Ct[4]*u0x[3] - Ct[5]*u0x[6]));
+    d2Ctu0x[13] = scale*(drill*(Ct[0]*u0x[1] + Ct[1]*(u0x[4] + 1.0) + 0.5*Ct[1]*(2.0*u0x[4] + 2.0) + Ct[2]*u0x[7] - Ct[3]*(u0x[0] + 1.0) - Ct[4]*u0x[3] - Ct[5]*u0x[6]));
     d2Ctu0x[14] = 0.0;
     d2Ctu0x[15] = scale*(-Ct[5]*drill*(u0x[4] + 1.0));
     d2Ctu0x[16] = scale*(Ct[2]*drill*(u0x[4] + 1.0));
@@ -1864,10 +1864,10 @@ class TACSShellNonlinearModel {
     d2Ctu0x[22] = scale*(Ct[1]*drill*u0x[7]);
     d2Ctu0x[23] = 0.0;
     d2Ctu0x[24] = scale*(-Ct[5]*drill*u0x[7]);
-    d2Ctu0x[25] = scale*(drill*(Ct[0]*u0x[1] + Ct[1]*(u0x[4] + 1.0) + 2*Ct[2]*u0x[7] - Ct[3]*(u0x[0] + 1.0) - Ct[4]*u0x[3] - Ct[5]*u0x[6]));
+    d2Ctu0x[25] = scale*(drill*(Ct[0]*u0x[1] + Ct[1]*(u0x[4] + 1.0) + 2.0*Ct[2]*u0x[7] - Ct[3]*(u0x[0] + 1.0) - Ct[4]*u0x[3] - Ct[5]*u0x[6]));
     d2Ctu0x[26] = 0.0;
 
-    d2Ctu0x[27] = scale*(drill*(-Ct[0]*u0x[1] - Ct[1]*(u0x[4] + 1.0) - Ct[2]*u0x[7] + Ct[3]*(u0x[0] + 1.0) + 0.5*Ct[3]*(2*u0x[0] + 2.0) + Ct[4]*u0x[3] + Ct[5]*u0x[6]));
+    d2Ctu0x[27] = scale*(drill*(-Ct[0]*u0x[1] - Ct[1]*(u0x[4] + 1.0) - Ct[2]*u0x[7] + Ct[3]*(u0x[0] + 1.0) + 0.5*Ct[3]*(2.0*u0x[0] + 2.0) + Ct[4]*u0x[3] + Ct[5]*u0x[6]));
     d2Ctu0x[28] = scale*(-Ct[0]*drill*(u0x[0] + 1.0));
     d2Ctu0x[29] = 0.0;
     d2Ctu0x[30] = scale*(Ct[4]*drill*(u0x[0] + 1.0));
@@ -1880,7 +1880,7 @@ class TACSShellNonlinearModel {
     d2Ctu0x[36] = scale*(Ct[3]*drill*u0x[3]);
     d2Ctu0x[37] = scale*(-Ct[0]*drill*u0x[3]);
     d2Ctu0x[38] = 0.0;
-    d2Ctu0x[39] = scale*(drill*(-Ct[0]*u0x[1] - Ct[1]*(u0x[4] + 1.0) - Ct[2]*u0x[7] + Ct[3]*(u0x[0] + 1.0) + 2*Ct[4]*u0x[3] + Ct[5]*u0x[6]));
+    d2Ctu0x[39] = scale*(drill*(-Ct[0]*u0x[1] - Ct[1]*(u0x[4] + 1.0) - Ct[2]*u0x[7] + Ct[3]*(u0x[0] + 1.0) + 2.0*Ct[4]*u0x[3] + Ct[5]*u0x[6]));
     d2Ctu0x[40] = scale*(-Ct[1]*drill*u0x[3]);
     d2Ctu0x[41] = 0.0;
     d2Ctu0x[42] = scale*(Ct[5]*drill*u0x[3]);
@@ -1893,7 +1893,7 @@ class TACSShellNonlinearModel {
     d2Ctu0x[48] = scale*(Ct[4]*drill*u0x[6]);
     d2Ctu0x[49] = scale*(-Ct[1]*drill*u0x[6]);
     d2Ctu0x[50] = 0.0;
-    d2Ctu0x[51] = scale*(drill*(-Ct[0]*u0x[1] - Ct[1]*(u0x[4] + 1.0) - Ct[2]*u0x[7] + Ct[3]*(u0x[0] + 1.0) + Ct[4]*u0x[3] + 2*Ct[5]*u0x[6]));
+    d2Ctu0x[51] = scale*(drill*(-Ct[0]*u0x[1] - Ct[1]*(u0x[4] + 1.0) - Ct[2]*u0x[7] + Ct[3]*(u0x[0] + 1.0) + Ct[4]*u0x[3] + 2.0*Ct[5]*u0x[6]));
     d2Ctu0x[52] = scale*(-Ct[2]*drill*u0x[6]);
     d2Ctu0x[53] = 0.0;
 

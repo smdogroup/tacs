@@ -420,7 +420,7 @@ void TACSLinearElasticity2D::evalWeakMatrix( ElementMatrixType matType,
   }
   else if (matType == TACS_MASS_MATRIX){
     // Evaluate the density
-    TacsScalar rho = stiff->evalDensity(elemIndex, pt, X);
+    TacsScalar rho = stiff->evalMassMatrixDensity(elemIndex, pt, X);
 
     // Set the acceleration terms
     Jac[0] = rho;
@@ -509,7 +509,7 @@ void TACSLinearElasticity2D::addWeakMatDVSens( ElementMatrixType matType,
   if (matType == TACS_MASS_MATRIX){
     TacsScalar rho_coef = Psi[0]*Phi[0] + Psi[3]*Phi[3];
 
-    stiff->addDensityDVSens(elemIndex, scale*rho_coef, pt, X, dvLen, dfdx);
+    stiff->addMassMatrixDensityDVSens(elemIndex, scale*rho_coef, pt, X, dvLen, dfdx);
   }
   else if (matType == TACS_STIFFNESS_MATRIX){
     TacsScalar ePsi[3];
@@ -1610,7 +1610,7 @@ void TACSLinearElasticity3D::evalWeakMatrix( ElementMatrixType matType,
   }
   else if (matType == TACS_MASS_MATRIX){
     // Evaluate the density
-    TacsScalar rho = stiff->evalDensity(elemIndex, pt, X);
+    TacsScalar rho = stiff->evalMassMatrixDensity(elemIndex, pt, X);
 
     // Set the acceleration terms
     Jac[0] = rho;
@@ -1844,7 +1844,7 @@ void TACSLinearElasticity3D::addWeakMatDVSens( ElementMatrixType matType,
   if (matType == TACS_MASS_MATRIX){
     TacsScalar rho_coef = Psi[0]*Phi[0] + Psi[3]*Phi[3] + Psi[6]*Phi[6];
 
-    stiff->addDensityDVSens(elemIndex, scale*rho_coef, pt, X, dvLen, dfdx);
+    stiff->addMassMatrixDensityDVSens(elemIndex, scale*rho_coef, pt, X, dvLen, dfdx);
   }
   else if (matType == TACS_STIFFNESS_MATRIX){
     TacsScalar ePsi[6];

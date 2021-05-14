@@ -767,9 +767,30 @@ int main( int argc, char *argv[] ){
 
   // TacsTestElementResidual(linear_shell, elemIndex, time, Xpts, vars, dvars, ddvars);
   // TacsTestElementResidual(quadratic_shell, elemIndex, time, Xpts, vars, dvars, ddvars);
-  TacsTestElementResidual(tri_shell, elemIndex, time, Xpts, vars, dvars, ddvars);
+  // TacsTestElementResidual(tri_shell, elemIndex, time, Xpts, vars, dvars, ddvars);
   // TacsTestElementJacobian(linear_shell, elemIndex, time, Xpts, vars, dvars, ddvars);
   // TacsTestElementJacobian(quadratic_shell, elemIndex, time, Xpts, vars, dvars, ddvars);
+
+  TACSShellTriQuadraticBasis basis;
+
+  TacsScalar N[5];
+  for ( int field = 0; field < 5; field++ ){
+    int npts = basis.getNumTyingPoints(field);
+    printf("field %d\n", field);
+    for ( int ty = 0; ty < npts; ty++ ){
+      double pt[2];
+      basis.getTyingPoint(field, ty, pt);
+
+      memset(N, 0, npts*sizeof(TacsScalar));
+      basis.addInterpTyingTranspose(field, pt, 1.0, N);
+
+      for ( int i = 0; i < npts; i++ ){
+        printf("N[%d] = %15.5e\n", i, TacsRealPart(N[i]));
+      }
+      printf("\n");
+    }
+  }
+
 
   int order = 3;
   int nx = 20, ny = 40;

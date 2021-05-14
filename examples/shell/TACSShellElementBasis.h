@@ -2356,33 +2356,32 @@ class TACSShellTriQuadraticBasis {
     const double s0 = 0.5 - 0.5*s;
     const double t0 = 0.5 - 0.5*t;
     const double t1 = 0.5 + 0.5*t;
-    const double y0 = s0 + t;
 
     if (field == 0 || field == 4){ // g11 or g13
       if (ty == 0){
         pt[0] = t0;
-        pt[1] = s0;
+        pt[1] = 0.0;
       }
       else if (ty == 1){
         pt[0] = t1;
-        pt[1] = s0;
+        pt[1] = 0.0;
       }
       else if (ty == 2){
         pt[0] = t0;
-        pt[1] = y0;
+        pt[1] = t;
       }
     }
     else if (field == 1 || field == 3){ // g22 or g23
       if (ty == 0){
-        pt[0] = s0;
+        pt[0] = 0.0;
         pt[1] = t0;
       }
       else if (ty == 1){
-        pt[0] = y0;
+        pt[0] = t;
         pt[1] = t0;
       }
       else if (ty == 2){
-        pt[0] = s0;
+        pt[0] = 0.0;
         pt[1] = t1;
       }
     }
@@ -2412,13 +2411,13 @@ class TACSShellTriQuadraticBasis {
 
     double N[3];
     if (field == 0 || field == 4){
-      N[0] = 1.0 - tinv*((pt[0] - t0) + (pt[1] - s0));
+      N[0] = 1.0 - tinv*((pt[0] - t0) + pt[1]);
       N[1] = tinv*(pt[0] - t0);
-      N[2] = tinv*(pt[1] - s0);
+      N[2] = tinv*pt[1];
     }
     else if (field == 1 || field == 3){
-      N[0] = 1.0 - tinv*((pt[0] - s0) + (pt[1] - t0));
-      N[1] = tinv*(pt[0] - s0);
+      N[0] = 1.0 - tinv*(pt[0] + (pt[1] - t0));
+      N[1] = tinv*pt[0];
       N[2] = tinv*(pt[1] - t0);
     }
     else { // field == 2
@@ -2447,13 +2446,13 @@ class TACSShellTriQuadraticBasis {
 
     double N[3];
     if (field == 0 || field == 4){
-      N[0] = 1.0 - tinv*((pt[0] - t0) + (pt[1] - s0));
+      N[0] = 1.0 - tinv*((pt[0] - t0) + pt[1]);
       N[1] = tinv*(pt[0] - t0);
-      N[2] = tinv*(pt[1] - s0);
+      N[2] = tinv*pt[1];
     }
     else if (field == 1 || field == 3){
-      N[0] = 1.0 - tinv*((pt[0] - s0) + (pt[1] - t0));
-      N[1] = tinv*(pt[0] - s0);
+      N[0] = 1.0 - tinv*(pt[0] + (pt[1] - t0));
+      N[1] = tinv*pt[0];
       N[2] = tinv*(pt[1] - t0);
     }
     else { // field == 2
@@ -2480,13 +2479,13 @@ class TACSShellTriQuadraticBasis {
 
     double N1[3];
     if (f1 == 0 || f1 == 4){
-      N1[0] = 1.0 - tinv*((pt[0] - t0) + (pt[1] - s0));
+      N1[0] = 1.0 - tinv*((pt[0] - t0) + pt[1]);
       N1[1] = tinv*(pt[0] - t0);
-      N1[2] = tinv*(pt[1] - s0);
+      N1[2] = tinv*pt[1];
     }
     else if (f1 == 1 || f1 == 3){
-      N1[0] = 1.0 - tinv*((pt[0] - s0) + (pt[1] - t0));
-      N1[1] = tinv*(pt[0] - s0);
+      N1[0] = 1.0 - tinv*(pt[0] + (pt[1] - t0));
+      N1[1] = tinv*pt[0];
       N1[2] = tinv*(pt[1] - t0);
     }
     else { // f1 == 2
@@ -2497,13 +2496,13 @@ class TACSShellTriQuadraticBasis {
 
     double N2[3];
     if (f2 == 0 || f2 == 4){
-      N2[0] = 1.0 - tinv*((pt[0] - t0) + (pt[1] - s0));
+      N2[0] = 1.0 - tinv*((pt[0] - t0) + pt[1]);
       N2[1] = tinv*(pt[0] - t0);
-      N2[2] = tinv*(pt[1] - s0);
+      N2[2] = tinv*pt[1];
     }
     else if (f2 == 1 || f2 == 3){
-      N2[0] = 1.0 - tinv*((pt[0] - s0) + (pt[1] - t0));
-      N2[1] = tinv*(pt[0] - s0);
+      N2[0] = 1.0 - tinv*(pt[0] + (pt[1] - t0));
+      N2[1] = tinv*pt[0];
       N2[2] = tinv*(pt[1] - t0);
     }
     else { // f2 == 2

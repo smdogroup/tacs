@@ -142,6 +142,42 @@ class TACSConstitutive : public TACSObject {
                                  int dvLen, TacsScalar dfdx[] ){}
 
   /**
+    Evaluate the mass per unit length, area or volume for the element for
+    the mass matrix evaluation.
+
+    For some topology optimization problems the density computed for the mass
+    matrix computation is different than the element density.
+
+    @param elemIndex The local element index
+    @param pt The parametric location
+    @param X The point location
+    @return The density
+  */
+  virtual TacsScalar evalMassMatrixDensity( int elemIndex,
+                                            const double pt[],
+                                            const TacsScalar X[] ){
+    return evalDensity(elemIndex, pt, X);
+  }
+
+  /**
+    Add the derivative of the pointwise mass times the given scalar
+
+    @param elemIndex The local element index
+    @param scale Scale factor for the derivative
+    @param pt The parametric location
+    @param X The point location
+    @param dvLen the length of the sensitivity array
+    @param dfdx The sensitivity array
+  */
+  virtual void addMassMatrixDensityDVSens( int elemIndex,
+                                           TacsScalar scale,
+                                           const double pt[],
+                                           const TacsScalar X[],
+                                           int dvLen, TacsScalar dfdx[] ){
+    addDensityDVSens(elemIndex, scale, pt, X, dvLen, dfdx);
+  }
+
+  /**
     Evaluate the specific heat (heat capacity per unit mass)
 
     @param elemIndex The local element index

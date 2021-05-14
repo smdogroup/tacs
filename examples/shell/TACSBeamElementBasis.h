@@ -8,10 +8,10 @@
 /**
   Defines the quadrature over both the face and quadrature
 */
-class TACSLinearQuadrature {
+class TACSBeamLinearQuadrature {
  public:
   static int getNumParameters(){
-    return 2;
+    return 1;
   }
   static int getNumQuadraturePoints(){
     return 2;
@@ -38,15 +38,46 @@ class TACSLinearQuadrature {
   }
 };
 
-class TACSShellQuadLinearBasis {
+/**
+  Defines the quadrature over both the face and quadrature
+*/
+class TACSBeamQuadraticQuadrature {
+ public:
+  static int getNumParameters(){
+    return 1;
+  }
+  static int getNumQuadraturePoints(){
+    return 3;
+  }
+  static double getQuadratureWeight( int n ){
+    return TacsGaussQuadWts3[n];
+  }
+  static double getQuadraturePoint( int n, double pt[] ){
+    pt[0] = TacsGaussQuadPts3[n];
+
+    return TacsGaussQuadWts3[n];
+  }
+  static int getNumFaces(){
+    return 2;
+  }
+  static int getNumFaceQuadraturePoints( int face ){
+    return 1;
+  }
+  static double getFaceQuadraturePoint( int face, int n,
+                                        double pt[],
+                                        double t[] ){
+    pt[0] = -1.0 + 2.0*face;
+    return 1.0;
+  }
+};
+
+
+class TACSBeamLinearBasis {
  public:
   static const int NUM_NODES = 4;
 
   // Set the number of tying points for each of the 5 components
   // of the tying strain
-  static const int NUM_G11_TYING_POINTS = 2;
-  static const int NUM_G22_TYING_POINTS = 2;
-  static const int NUM_G12_TYING_POINTS = 1;
   static const int NUM_G13_TYING_POINTS = 2;
   static const int NUM_G23_TYING_POINTS = 2;
 
@@ -58,128 +89,81 @@ class TACSShellQuadLinearBasis {
     NUM_G23_TYING_POINTS;
 
   static void getNodePoint( const int n, double pt[] ){
-    pt[0] = -1.0 + 2.0*(n % 2);
-    pt[1] = -1.0 + 2.0*(n / 2);
+    pt[0] = -1.0 + 2.0*n;
   }
   static ElementLayout getLayoutType(){
-    return TACS_QUAD_ELEMENT;
+    return TACS_LINE_ELEMENT;
   }
 
+  template <int vars_per_node, int m>
   static void interpFields( const double pt[],
-                            const int vars_per_node,
                             const TacsScalar values[],
-                            const int m,
                             TacsScalar field[] ){
     double na[2];
     na[0] = 0.5*(1.0 - pt[0]);
     na[1] = 0.5*(1.0 + pt[0]);
 
-    double nb[2];
-    nb[0] = 0.5*(1.0 - pt[1]);
-    nb[1] = 0.5*(1.0 + pt[1]);
-
     for ( int k = 0; k < m; k++ ){
       field[k] = 0.0;
     }
 
-    for ( int j = 0; j < 2; j++ ){
-      for ( int i = 0; i < 2; i++ ){
-        for ( int k = 0; k < m; k++ ){
-          field[k] += na[i]*nb[j]*values[k];
-        }
-        values += vars_per_node;
+    for ( int i = 0; i < 2; i++ ){
+      for ( int k = 0; k < m; k++ ){
+        field[k] += na[i]*values[k];
       }
+      values += vars_per_node;
     }
   }
 
+  template <int vars_per_node, int m>
   static void addInterpFieldsTranspose( const double pt[],
-                                        const int m,
                                         const TacsScalar field[],
-                                        const int vars_per_node,
                                         TacsScalar values[] ){
     double na[2];
     na[0] = 0.5*(1.0 - pt[0]);
     na[1] = 0.5*(1.0 + pt[0]);
 
-    double nb[2];
-    nb[0] = 0.5*(1.0 - pt[1]);
-    nb[1] = 0.5*(1.0 + pt[1]);
-
-    for ( int j = 0; j < 2; j++ ){
-      for ( int i = 0; i < 2; i++ ){
-        for ( int k = 0; k < m; k++ ){
-          values[k] += na[i]*nb[j]*field[k];
-        }
-        values += vars_per_node;
+    for ( int i = 0; i < 2; i++ ){
+      for ( int k = 0; k < m; k++ ){
+        values[k] += na[i]*field[k];
       }
+      values += vars_per_node;
     }
   }
 
+  template <int vars_per_node, int m>
   static void interpFieldsGrad( const double pt[],
-                                const int vars_per_node,
                                 const TacsScalar values[],
-                                const int m,
                                 TacsScalar grad[] ){
-    double na[2];
-    na[0] = 0.5*(1.0 - pt[0]);
-    na[1] = 0.5*(1.0 + pt[0]);
-
-    double nb[2];
-    nb[0] = 0.5*(1.0 - pt[1]);
-    nb[1] = 0.5*(1.0 + pt[1]);
-
     double dna[2];
     dna[0] = -0.5;
     dna[1] = 0.5;
-
-    double dnb[2];
-    dnb[0] = -0.5;
-    dnb[1] = 0.5;
 
     for ( int k = 0; k < m; k++ ){
-      grad[2*k] = 0.0;
-      grad[2*k+1] = 0.0;
+      grad[k] = 0.0;
     }
 
-    for ( int j = 0; j < 2; j++ ){
-      for ( int i = 0; i < 2; i++ ){
-        for ( int k = 0; k < m; k++ ){
-          grad[2*k]   += dna[i]*nb[j]*values[k];
-          grad[2*k+1] += na[i]*dnb[j]*values[k];
-        }
-        values += vars_per_node;
+    for ( int i = 0; i < 2; i++ ){
+      for ( int k = 0; k < m; k++ ){
+        grad[k] += dna[i]*values[k];
       }
+      values += vars_per_node;
     }
   }
 
+  template <int vars_per_node, int m>
   static void addInterpFieldsGradTranspose( const double pt[],
-                                            const int m,
                                             TacsScalar grad[],
-                                            const int vars_per_node,
                                             TacsScalar values[] ){
-    double na[2];
-    na[0] = 0.5*(1.0 - pt[0]);
-    na[1] = 0.5*(1.0 + pt[0]);
-
-    double nb[2];
-    nb[0] = 0.5*(1.0 - pt[1]);
-    nb[1] = 0.5*(1.0 + pt[1]);
-
     double dna[2];
     dna[0] = -0.5;
     dna[1] = 0.5;
 
-    double dnb[2];
-    dnb[0] = -0.5;
-    dnb[1] = 0.5;
-
-    for ( int j = 0; j < 2; j++ ){
-      for ( int i = 0; i < 2; i++ ){
-        for ( int k = 0; k < m; k++ ){
-          values[k] += (dna[i]*nb[j]*grad[2*k] + na[i]*dnb[j]*grad[2*k+1]);
-        }
-        values += vars_per_node;
+    for ( int i = 0; i < 2; i++ ){
+      for ( int k = 0; k < m; k++ ){
+        values[k] += dna[i]*grad[k];
       }
+      values += vars_per_node;
     }
   }
 
