@@ -899,6 +899,12 @@ cdef class Mg(Pc):
         self.mg.assembleMatCombo(matTypes, scale, 2, matOr)
         return
 
+    def assembleGalerkinMat(self):
+        """
+        Assemble the matrix after mat gets modified via getMat()
+        """
+        return self.mg.assembleGalerkinMat()
+
     def setMonitor(self, MPI.Comm comm,
                    _descript='GMRES', int freq=10):
         """

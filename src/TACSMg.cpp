@@ -519,6 +519,45 @@ void TACSMg::assembleMatCombo( ElementMatrixType matTypes[],
 }
 
 /**
+  Assemble the multigrid preconditioner matrix with Galerkin flag, this can be
+  used to assemble the matrix for mg when mat gets modified outside the class via getMat()
+
+  @return fail flag, true if the Galerkin flag is false
+*/
+int TACSMg::assembleGalerkinMat(){
+  int fail = 0;
+
+  // Compute the number
+  for ( int i = 1; i < nlevels-1; i++ ){
+    if (use_galerkin[i]){
+      TACSParallelMat *fine_mat = dynamic_cast<TACSParallelMat*>(mat[i-1]);
+      TACSParallelMat *coarse_mat = dynamic_cast<TACSParallelMat*>(mat[i]);
+      if (fine_mat && coarse_mat){
+        interp[i-1]->computeGalerkin(fine_mat, coarse_mat);
+        assembler[i]->applyBCs(coarse_mat);
+      }
+    }
+    else if (assembler[i]){
+      fail = 1;
+    }
+  }
+
+  // Assemble the coarsest problem
+  if (use_galerkin[nlevels-1]){
+    TACSParallelMat *fine_mat = dynamic_cast<TACSParallelMat*>(mat[nlevels-2]);
+    TACSParallelMat *coarse_mat = dynamic_cast<TACSParallelMat*>(root_mat);
+    if (fine_mat && coarse_mat){
+      interp[nlevels-2]->computeGalerkin(fine_mat, coarse_mat);
+      assembler[nlevels-1]->applyBCs(coarse_mat);
+    }
+  }
+  else if (assembler[nlevels-1]){
+    fail = 1;
+  }
+  return fail;
+}
+
+/**
   Get the matrix operator associated with the finest level
 
   @param _mat A pointer to the matrix
