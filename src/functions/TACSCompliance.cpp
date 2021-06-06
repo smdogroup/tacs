@@ -87,9 +87,9 @@ void TACSCompliance::elementWiseEval( EvaluationType ftype,
     // Evaluate the strain energy density
     TacsScalar U0 = 0.0, detXd = 0.0;
     int count = element->evalPointQuantity(elemIndex, compliance_type,
-                                            time, i, pt,
-                                            Xpts, vars, dvars, ddvars,
-                                            &detXd, &U0);
+                                           time, i, pt,
+                                           Xpts, vars, dvars, ddvars,
+                                           &detXd, &U0);
 
     if (count >= 1){
       compliance += detXd*weight*U0;
