@@ -96,16 +96,16 @@ class TACSShellElement : public TACSElement {
                     const TacsScalar *ddvars,
                     TacsScalar *res );
 
-  // void addJacobian( int elemIndex, double time,
-  //                   TacsScalar alpha,
-  //                   TacsScalar beta,
-  //                   TacsScalar gamma,
-  //                   const TacsScalar Xpts[],
-  //                   const TacsScalar vars[],
-  //                   const TacsScalar dvars[],
-  //                   const TacsScalar ddvars[],
-  //                   TacsScalar res[],
-  //                   TacsScalar mat[] );
+  void addJacobian( int elemIndex, double time,
+                    TacsScalar alpha,
+                    TacsScalar beta,
+                    TacsScalar gamma,
+                    const TacsScalar Xpts[],
+                    const TacsScalar vars[],
+                    const TacsScalar dvars[],
+                    const TacsScalar ddvars[],
+                    TacsScalar res[],
+                    TacsScalar mat[] );
 
   void addAdjResProduct( int elemIndex, double time,
                          TacsScalar scale,
@@ -356,7 +356,6 @@ void TACSShellElement<quadrature, basis, director, model>::
 /*
   Add the contributions to the residual and Jacobian matrix
 */
-/*
 template <class quadrature, class basis, class director, class model>
 void TACSShellElement<quadrature, basis, director, model>::
   addJacobian( int elemIndex, double time,
@@ -504,7 +503,6 @@ void TACSShellElement<quadrature, basis, director, model>::
   director::template addDirectorJacobian<vars_per_node, disp_offset, basis::NUM_NODES>(
     vars, dvars, ddvars, fn, d2d, d2du, mat);
 }
-*/
 
 template <class quadrature, class basis, class director, class model>
 void TACSShellElement<quadrature, basis, director, model>::
