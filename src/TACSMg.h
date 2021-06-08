@@ -82,6 +82,7 @@ class TACSMg : public TACSPc {
   void assembleMatCombo( ElementMatrixType matTypes[],
                          TacsScalar scale[], int nmats,
                          MatrixOrientation matOr=TACS_MAT_NORMAL );
+  int assembleGalerkinMat();
 
   // Methods required by the TACSPc class
   // ------------------------------------

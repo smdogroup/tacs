@@ -266,6 +266,7 @@ cdef extern from "TACSMg.h":
                               MatrixOrientation)
         void assembleMatType(ElementMatrixType, MatrixOrientation)
         void assembleMatCombo(ElementMatrixType*, TacsScalar*, int, MatrixOrientation)
+        int assembleGalerkinMat()
         void setMonitor(KSMPrint*)
 
 cdef class Vec:
