@@ -133,8 +133,6 @@ inline void extractFrameMixedSens( const TacsScalar d2u0du1d[],
 
   C = T^{T}*A*B
   dA = T*dC*B^{T}
-
-  Given d
 */
 inline void mat3x3TransMatMatHessian( const TacsScalar T[],
                                       const TacsScalar B[],
@@ -620,9 +618,14 @@ void addDispGradHessian( const double pt[],
                          const TacsScalar d2u0x[],
                          const TacsScalar d2u1x[],
                          const TacsScalar d2u0xu1x[],
+                         const TacsScalar d2Ct[],
+                         const TacsScalar d2Ctu0x[],
                          TacsScalar mat[],
                          TacsScalar d2d[],
-                         TacsScalar d2du[] ){
+                         TacsScalar d2du[],
+                         TacsScalar d2C[],
+                         TacsScalar d2Cd[],
+                         TacsScalar d2Cu[] ){
   // d2u0d = d2u0x*[d(u0x)/d(u0d)]^2 +
   //         d2u1x*[d(u1x)/d(u0d)]^2 +
   //         d2u0xu1x*[d(u0x)/d(u0d)*d(u1x)/d(u0x)]
@@ -662,6 +665,39 @@ void addDispGradHessian( const double pt[],
 
   // Add the contribution to the Jacobian matrix
   basis::template addInterpGradOuterProduct<vars_per_node, 3>(pt, d2u0xi, mat);
+
+  // Compute the second derivative w.r.t. Cpt
+  TacsScalar d2Cpt[81];
+  mat3x3TransMatMatHessian(T, T, d2Ct, d2Cpt);
+  basis::template addInterpFieldsOuterProduct<9, 9>(pt, d2Cpt, d2C);
+
+  // d2C0u0d = Ctu0x*[d(u0x)/d(u0d)]*[d(Ct)/d(Cpt)]
+  TacsScalar d2Cptu0d[81];
+  mat3x3TransMatMatHessianAdd(T, T, XdinvT, T, d2Ctu0x, d2Cptu0d);
+
+  // Extract the contributions
+  TacsScalar d2Cptu0xi[54], d2Cptd0[27];
+
+  // Extract the second derivatives
+  for ( int j = 0; j < 9; j++ ){
+    for ( int i = 0; i < 6; i++ ){
+      int ii = 3*(i / 2) + (i % 2);
+
+      d2Cptu0xi[6*j + i] = d2Cptu0d[9*j + ii];
+    }
+  }
+
+  for ( int j = 0; j < 9; j++ ){
+    for ( int i = 0; i < 3; i++ ){
+      int ii = 3*i + 2;
+
+      d2Cptd0[3*j + i] = d2Cptu0d[9*j + ii];
+    }
+  }
+
+
+  basis::template addInterpGradMixedOuterProduct<9, 3, 9, 3>(pt, d2Cptu0xi, NULL, d2Cu);
+  basis::template addInterpFieldsOuterProduct<9, 3, 9, 3>(pt, d2Cptd0, d2Cd);
 }
 
 /**
@@ -803,8 +839,11 @@ int TacsTestShellUtilities( double dh=1e-7,
   memset(d2d, 0, dsize*dsize*sizeof(TacsScalar));
   memset(d2du, 0, usize*dsize*sizeof(TacsScalar));
 
-  TacsScalar dC[csize];
+  TacsScalar dC[csize], d2C[csize*csize], d2Cd[csize*dsize], d2Cu[csize*usize];
   memset(dC, 0, csize*sizeof(TacsScalar));
+  memset(d2C, 0, csize*csize*sizeof(TacsScalar));
+  memset(d2Cd, 0, csize*dsize*sizeof(TacsScalar));
+  memset(d2Cu, 0, csize*usize*sizeof(TacsScalar));
 
   TacsScalar XdinvT[9], XdinvzT[9];
   TacsScalar u0x[9], u1x[9], Ct[9];
@@ -814,11 +853,11 @@ int TacsTestShellUtilities( double dh=1e-7,
   addDispGradSens<vars_per_node, basis>(pt, T, XdinvT, XdinvzT,
                                         du0x, du1x, dCt, res, dd, dC);
   addDispGradHessian<vars_per_node, basis>(pt, T, XdinvT, XdinvzT,
-                                           d2u0x, d2u1x, d2u0xu1x,
-                                           mat, d2d, d2du);
+                                           d2u0x, d2u1x, d2u0xu1x, d2Ct, d2Ctu0x,
+                                           mat, d2d, d2du, d2C, d2Cd, d2Cu);
 
   // Now, check the result
-  TacsScalar fdmat[size*size], fddu[dsize*usize];
+  TacsScalar fdmat[size*size], fddu[dsize*usize], fdCu[csize*usize];
   for ( int k = 0; k < size; k++ ){
     TacsScalar varst[size];
     memcpy(varst, vars, size*sizeof(TacsScalar));
@@ -838,16 +877,20 @@ int TacsTestShellUtilities( double dh=1e-7,
     // d2Ctu0x[9*i + j] = p2f/(p(Ct[i]) p(u0x[j]))
 
     // Compute the perturbed values based on the outputs
-    TacsScalar du0xt[9], du1xt[9];
+    TacsScalar du0xt[9], du1xt[9], dCtt[9];
     for ( int i = 0; i < 9; i++ ){
       du0xt[i] = du0x[i];
       du1xt[i] = du1x[i];
+      dCtt[i]  = dCt[i];
       for ( int j = 0; j < 9; j++ ){
         du0xt[i] += d2u0x[9*i + j]*(u0xt[j] - u0x[j]) +
                     d2u0xu1x[9*i + j]*(u1xt[j] - u1x[j]);
 
         du1xt[i] += d2u1x[9*i + j]*(u1xt[j] - u1x[j]) +
                     d2u0xu1x[9*j + i]*(u0xt[j] - u0x[j]);
+
+        dCtt[i] += d2Ct[9*i + j]*(Ctt[j] - Ct[j]) +
+                   d2Ctu0x[9*i + j]*(u0xt[j] - u0x[j]);
       }
     }
 
@@ -856,7 +899,7 @@ int TacsTestShellUtilities( double dh=1e-7,
     memset(ddt, 0, dsize*sizeof(TacsScalar));
     memset(dCvt, 0, csize*sizeof(TacsScalar));
     addDispGradSens<vars_per_node, basis>(pt, T, XdinvT, XdinvzT,
-                                          du0xt, du1xt, dCt, rest, ddt, dCvt);
+                                          du0xt, du1xt, dCtt, rest, ddt, dCvt);
 
     // Place the result in the arrays...
     for ( int j = 0; j < size; j++ ){
@@ -876,6 +919,14 @@ int TacsTestShellUtilities( double dh=1e-7,
         fddu[index + usize*j] = TacsImagPart(ddt[j])/dh;
 #else
         fddu[index + usize*j] = (ddt[j] - dd[j])/dh;
+#endif // TACS_USE_COMPLEX
+      }
+
+      for ( int j = 0; j < csize; j++ ){
+#ifdef TACS_USE_COMPLEX
+        fdCu[index + usize*j] = TacsImagPart(dCvt[j])/dh;
+#else
+        fdCu[index + usize*j] = (dCvt[j] - dC[j])/dh;
 #endif // TACS_USE_COMPLEX
       }
     }
@@ -926,8 +977,26 @@ int TacsTestShellUtilities( double dh=1e-7,
 
   fail = (max_err > test_fail_atol || max_rel > test_fail_rtol);
 
-  // Now, check the result
-  TacsScalar fddd[dsize*dsize];
+  // Compute the error
+  max_err = TacsGetMaxError(d2Cu, fdCu, csize*usize, &max_err_index);
+  max_rel = TacsGetMaxRelError(d2Cu, fdCu, csize*usize, &max_rel_index);
+
+  if (test_print_level > 0){
+    fprintf(stderr, "Testing the derivative w.r.t. C and vars\n");
+    fprintf(stderr, "Max Err: %10.4e in component %d.\n",
+            max_err, max_err_index);
+    fprintf(stderr, "Max REr: %10.4e in component %d.\n",
+            max_rel, max_rel_index);
+  }
+  // Print the error if required
+  if (test_print_level > 1){
+    TacsPrintErrorComponents(stderr, "d2Cu", d2Cu, fdCu, csize*usize);
+  }
+  if (test_print_level){ fprintf(stderr, "\n"); }
+
+  fail = (max_err > test_fail_atol || max_rel > test_fail_rtol);
+
+  TacsScalar fddd[dsize*dsize], fdCd[csize*dsize];
   for ( int k = 0; k < dsize; k++ ){
     TacsScalar dt[dsize];
     memcpy(dt, d, dsize*sizeof(TacsScalar));
@@ -947,16 +1016,20 @@ int TacsTestShellUtilities( double dh=1e-7,
     // d2Ctu0x[9*i + j] = p2f/(p(Ct[i]) p(u0x[j]))
 
     // Compute the perturbed values based on the outputs
-    TacsScalar du0xt[9], du1xt[9];
+    TacsScalar du0xt[9], du1xt[9], dCtt[9];
     for ( int i = 0; i < 9; i++ ){
       du0xt[i] = du0x[i];
       du1xt[i] = du1x[i];
+      dCtt[i] = dCt[i];
       for ( int j = 0; j < 9; j++ ){
         du0xt[i] += d2u0x[9*i + j]*(u0xt[j] - u0x[j]) +
                     d2u0xu1x[9*i + j]*(u1xt[j] - u1x[j]);
 
         du1xt[i] += d2u1x[9*i + j]*(u1xt[j] - u1x[j]) +
                     d2u0xu1x[9*j + i]*(u0xt[j] - u0x[j]);
+
+        dCtt[i] += d2Ct[9*i + j]*(Ctt[j] - Ct[j]) +
+                   d2Ctu0x[9*i + j]*(u0xt[j] - u0x[j]);
       }
     }
 
@@ -965,13 +1038,21 @@ int TacsTestShellUtilities( double dh=1e-7,
     memset(ddt, 0, dsize*sizeof(TacsScalar));
     memset(dCvt, 0, csize*sizeof(TacsScalar));
     addDispGradSens<vars_per_node, basis>(pt, T, XdinvT, XdinvzT,
-                                          du0xt, du1xt, dCt, rest, ddt, dCvt);
+                                          du0xt, du1xt, dCtt, rest, ddt, dCvt);
 
     for ( int j = 0; j < dsize; j++ ){
 #ifdef TACS_USE_COMPLEX
       fddd[k + dsize*j] = TacsImagPart(ddt[j])/dh;
 #else
       fddd[k + dsize*j] = (ddt[j] - dd[j])/dh;
+#endif // TACS_USE_COMPLEX
+    }
+
+    for ( int j = 0; j < csize; j++ ){
+#ifdef TACS_USE_COMPLEX
+      fdCd[k + dsize*j] = TacsImagPart(dCvt[j])/dh;
+#else
+      fdCd[k + dsize*j] = (dCvt[j] - dC[j])/dh;
 #endif // TACS_USE_COMPLEX
     }
   }
@@ -994,6 +1075,99 @@ int TacsTestShellUtilities( double dh=1e-7,
   if (test_print_level){ fprintf(stderr, "\n"); }
 
   fail = (max_err > test_fail_atol || max_rel > test_fail_rtol);
+
+  // Compute the error
+  max_err = TacsGetMaxError(d2Cd, fdCd, csize*dsize, &max_err_index);
+  max_rel = TacsGetMaxRelError(d2Cd, fdCd, csize*dsize, &max_rel_index);
+
+  if (test_print_level > 0){
+    fprintf(stderr, "Testing the derivative w.r.t. C and d\n");
+    fprintf(stderr, "Max Err: %10.4e in component %d.\n",
+            max_err, max_err_index);
+    fprintf(stderr, "Max REr: %10.4e in component %d.\n",
+            max_rel, max_rel_index);
+  }
+  // Print the error if required
+  if (test_print_level > 1){
+    TacsPrintErrorComponents(stderr, "d2Cd", d2Cd, fdCd, csize*dsize);
+  }
+  if (test_print_level){ fprintf(stderr, "\n"); }
+
+  fail = (max_err > test_fail_atol || max_rel > test_fail_rtol);
+
+  // Now, check the result
+  TacsScalar fdC[csize*csize];
+  for ( int k = 0; k < csize; k++ ){
+    TacsScalar Cvt[csize];
+    memcpy(Cvt, C, csize*sizeof(TacsScalar));
+
+#ifdef TACS_USE_COMPLEX
+    Cvt[k] = C[k] + TacsScalar(0.0, dh);
+#else
+    Cvt[k] = C[k] + dh;
+#endif // TACS_USE_COMPLEX
+
+    // Compute the pertubation
+    TacsScalar u0xt[9], u1xt[9], Ctt[9];
+    computeDispGrad<vars_per_node, basis>(pt, Xpts, vars, fn, Cvt, d, Xxi, n0, T,
+                                          XdinvT, XdinvzT, u0xt, u1xt, Ctt);
+
+    // d2u0xu1x[9*i + j] = p2f/(p(u0x[i]) p(u1x[j]))
+    // d2Ctu0x[9*i + j] = p2f/(p(Ct[i]) p(u0x[j]))
+
+    // Compute the perturbed values based on the outputs
+    TacsScalar du0xt[9], du1xt[9], dCtt[9];
+    for ( int i = 0; i < 9; i++ ){
+      du0xt[i] = du0x[i];
+      du1xt[i] = du1x[i];
+      dCtt[i] = dCt[i];
+      for ( int j = 0; j < 9; j++ ){
+        du0xt[i] += d2u0x[9*i + j]*(u0xt[j] - u0x[j]) +
+                    d2u0xu1x[9*i + j]*(u1xt[j] - u1x[j]);
+
+        du1xt[i] += d2u1x[9*i + j]*(u1xt[j] - u1x[j]) +
+                    d2u0xu1x[9*j + i]*(u0xt[j] - u0x[j]);
+
+        dCtt[i] += d2Ct[9*i + j]*(Ctt[j] - Ct[j]) +
+                   d2Ctu0x[9*i + j]*(u0xt[j] - u0x[j]);
+      }
+    }
+
+    TacsScalar rest[size], ddt[dsize], dCvt[csize];
+    memset(rest, 0, size*sizeof(TacsScalar));
+    memset(ddt, 0, dsize*sizeof(TacsScalar));
+    memset(dCvt, 0, csize*sizeof(TacsScalar));
+    addDispGradSens<vars_per_node, basis>(pt, T, XdinvT, XdinvzT,
+                                          du0xt, du1xt, dCtt, rest, ddt, dCvt);
+
+    for ( int j = 0; j < csize; j++ ){
+#ifdef TACS_USE_COMPLEX
+      fdC[k + csize*j] = TacsImagPart(dCvt[j])/dh;
+#else
+      fdC[k + csize*j] = (dCvt[j] - dC[j])/dh;
+#endif // TACS_USE_COMPLEX
+    }
+  }
+
+  // Compute the error
+  max_err = TacsGetMaxError(d2C, fdC, csize*csize, &max_err_index);
+  max_rel = TacsGetMaxRelError(d2C, fdC, csize*csize, &max_rel_index);
+
+  if (test_print_level > 0){
+    fprintf(stderr, "Testing the derivative w.r.t. C\n");
+    fprintf(stderr, "Max Err: %10.4e in component %d.\n",
+            max_err, max_err_index);
+    fprintf(stderr, "Max REr: %10.4e in component %d.\n",
+            max_rel, max_rel_index);
+  }
+  // Print the error if required
+  if (test_print_level > 1){
+    TacsPrintErrorComponents(stderr, "d2C", d2C, fdC, csize*csize);
+  }
+  if (test_print_level){ fprintf(stderr, "\n"); }
+
+  fail = (max_err > test_fail_atol || max_rel > test_fail_rtol);
+
 
   return fail;
 }

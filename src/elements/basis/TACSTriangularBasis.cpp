@@ -63,29 +63,25 @@ int TACSLinearTriangleBasis::getNumQuadraturePoints(){
 }
 
 double TACSLinearTriangleBasis::getQuadratureWeight( int n ){
-  if (n == 0 || n == 1 || n == 2){
-    return TacsTriangleWts3[0];
-  }
-  // bad quadrature index returns 0.0
-  return 0.0;
+  return TacsTriangleWts3[n];
 }
 
 double TACSLinearTriangleBasis::getQuadraturePoint( int n,
                                                     double pt[] ){
-  if ( n == 0 ){
+  if (n == 0){
     pt[0] = TacsTrianglePts3[0];
     pt[1] = TacsTrianglePts3[1];
   }
-  else if ( n == 1 ){
+  else if (n == 1){
     pt[0] = TacsTrianglePts3[2];
     pt[1] = TacsTrianglePts3[3];
   }
-  else if ( n == 2 ){
+  else if (n == 2){
     pt[0] = TacsTrianglePts3[4];
     pt[1] = TacsTrianglePts3[5];
   }
 
-  return TacsTriangleWts3[0];
+  return TacsTriangleWts3[n];
 }
 
 int TACSLinearTriangleBasis::getNumElementFaces(){
@@ -184,14 +180,7 @@ int TACSQuadraticTriangleBasis::getNumQuadraturePoints(){
 }
 
 double TACSQuadraticTriangleBasis::getQuadratureWeight( int n ){
-  if (n == 0){
-    return TacsTriangleWts4[0];
-  }
-  else if (n == 1 || n == 2 || n == 3){
-    return TacsTriangleWts4[1];
-  }
-  // bad quadrature point id returns 0 weight
-  return 0.0;
+  return TacsTriangleWts4[0];
 }
 
 double TACSQuadraticTriangleBasis::getQuadraturePoint( int n,
@@ -209,12 +198,12 @@ double TACSQuadraticTriangleBasis::getQuadraturePoint( int n,
   else if (n == 2){
     pt[0] = TacsTrianglePts4[4];
     pt[1] = TacsTrianglePts4[5];
-    return TacsTriangleWts4[1];
+    return TacsTriangleWts4[2];
   }
   else if (n == 3){
     pt[0] = TacsTrianglePts4[6];
     pt[1] = TacsTrianglePts4[7];
-    return TacsTriangleWts4[1];
+    return TacsTriangleWts4[3];
   }
 
   return 0.0;
@@ -340,15 +329,7 @@ int TACSCubicTriangleBasis::getNumQuadraturePoints(){
 }
 
 double TACSCubicTriangleBasis::getQuadratureWeight( int n ){
-
-  if (n == 0 || n == 1 || n == 2){
-    return TacsTriangleWts6[0];
-  }
-  else if (n == 3 || n == 4 || n == 5){
-    return TacsTriangleWts6[1];
-  }
-  // bad quadrature id returns 0 weight
-  return 0.0;
+  return TacsTriangleWts6[n];
 }
 
 double TACSCubicTriangleBasis::getQuadraturePoint( int n,

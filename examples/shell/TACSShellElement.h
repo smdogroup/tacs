@@ -195,9 +195,12 @@ void TACSShellElement<quadrature, basis, director, model>::
   getNodeNormals<basis>(Xpts, fn);
 
   // Compute the frame normal and directors at each node
-  TacsScalar C[csize], d[dsize], ddot[dsize];
+  TacsScalar C[csize];
+  director::template computeRotationMat<vars_per_node, disp_offset, basis::NUM_NODES>(vars, C);
+
+  TacsScalar d[dsize], ddot[dsize];
   director::template computeDirectorRates<vars_per_node, disp_offset, basis::NUM_NODES>(
-    vars, dvars, fn, C, d, ddot);
+    vars, dvars, fn, d, ddot);
 
   // Set the total number of tying points needed for this element
   TacsScalar ety[basis::NUM_TYING_POINTS];
@@ -279,10 +282,13 @@ void TACSShellElement<quadrature, basis, director, model>::
   TacsScalar fn[3*basis::NUM_NODES];
   getNodeNormals<basis>(Xpts, fn);
 
-  // Compute the frame normal and directors at each node
-  TacsScalar C[csize], d[dsize], ddot[dsize], dddot[dsize];
+  // Compute the rotation matrix and directors at each node
+  TacsScalar C[csize];
+  director::template computeRotationMat<vars_per_node, disp_offset, basis::NUM_NODES>(vars, C);
+
+  TacsScalar d[dsize], ddot[dsize], dddot[dsize];
   director::template computeDirectorRates<vars_per_node, disp_offset, basis::NUM_NODES>(
-    vars, dvars, ddvars, fn, C, d, ddot, dddot);
+    vars, dvars, ddvars, fn, d, ddot, dddot);
 
   // Set the total number of tying points needed for this element
   TacsScalar ety[basis::NUM_TYING_POINTS];
@@ -349,8 +355,10 @@ void TACSShellElement<quadrature, basis, director, model>::
     Xpts, fn, vars, d, dety, res, dd);
 
   // Add the contributions to the director field
+  director::template
+    addRotationMatResidual<vars_per_node, disp_offset, basis::NUM_NODES>(vars, dC, res);
   director::template addDirectorResidual<vars_per_node, disp_offset, basis::NUM_NODES>(
-    vars, dvars, ddvars, fn, dC, dd, res);
+    vars, dvars, ddvars, fn, dd, res);
 }
 
 /*
@@ -381,10 +389,11 @@ void TACSShellElement<quadrature, basis, director, model>::
   memset(dC, 0, csize*sizeof(TacsScalar));
   memset(d2C, 0, csize*csize*sizeof(TacsScalar));
 
-  // Coupling derivativeso
-  TacsScalar d2du[usize*dsize], d2Cu[usize*csize];
+  // Coupling derivatives
+  TacsScalar d2du[usize*dsize], d2Cu[usize*csize], d2Cd[csize*dsize];;
   memset(d2du, 0, usize*dsize*sizeof(TacsScalar));
   memset(d2Cu, 0, usize*csize*sizeof(TacsScalar));
+  memset(d2Cd, 0, csize*dsize*sizeof(TacsScalar));
 
   // Zero the contributions to the tying strain derivatives
   TacsScalar dety[basis::NUM_TYING_POINTS];
@@ -396,10 +405,13 @@ void TACSShellElement<quadrature, basis, director, model>::
   TacsScalar fn[3*basis::NUM_NODES];
   getNodeNormals<basis>(Xpts, fn);
 
-  // Compute the frame normal and directors at each node
-  TacsScalar C[csize], d[dsize], ddot[dsize], dddot[dsize];
+  // Compute the rotation matrix and directors at each node
+  TacsScalar C[csize];
+  director::template computeRotationMat<vars_per_node, disp_offset, basis::NUM_NODES>(vars, C);
+
+  TacsScalar d[dsize], ddot[dsize], dddot[dsize];
   director::template computeDirectorRates<vars_per_node, disp_offset, basis::NUM_NODES>(
-    vars, dvars, ddvars, fn, C, d, ddot, dddot);
+    vars, dvars, ddvars, fn, d, ddot, dddot);
 
   // Set the total number of tying points needed for this element
   TacsScalar ety[basis::NUM_TYING_POINTS];
@@ -473,7 +485,8 @@ void TACSShellElement<quadrature, basis, director, model>::
 
     // Add the contributions to the residual from du0x, du1x and dCt
     addDispGradHessian<vars_per_node, basis>(
-      pt, T, XdinvT, XdinvzT, d2u0x, d2u1x, d2u0xu1x, mat, d2d, d2du);
+      pt, T, XdinvT, XdinvzT, d2u0x, d2u1x, d2u0xu1x,
+      d2Ct, d2Ctu0x, mat, d2d, d2du, d2C, d2Cd, d2Cu);
 
     // Compute the of the tying strain w.r.t. derivative w.r.t. the coefficients
     TacsScalar dgty[6], d2gty[36];
@@ -485,18 +498,22 @@ void TACSShellElement<quadrature, basis, director, model>::
     addInterpTyingStrainHessian<basis>(pt, d2gty, d2ety);
   }
 
-  // Set the total number of tying points needed for this element
+  // Add the residual from the tying strain
   if (res){
     model::template addComputeTyingStrainTranspose<vars_per_node, basis>(
       Xpts, fn, vars, d, dety, res, dd);
   }
+
+  // Add the second order terms from the tying strain
   model::template addComputeTyingStrainHessian<vars_per_node, basis>(
     Xpts, fn, vars, d, d2ety, mat, d2d, d2du);
 
   if (res){
     // Add the contributions to the director field
+    director::template
+      addRotationMatResidual<vars_per_node, disp_offset, basis::NUM_NODES>(vars, dC, res);
     director::template addDirectorResidual<vars_per_node, disp_offset, basis::NUM_NODES>(
-      vars, dvars, ddvars, fn, dC, dd, res);
+      vars, dvars, ddvars, fn, dd, res);
   }
 
   // Add the contributions to the stiffness matrix
@@ -523,10 +540,13 @@ void TACSShellElement<quadrature, basis, director, model>::
   getNodeNormals<basis>(Xpts, fn);
 
   // Compute the frame normal and directors at each node
-  TacsScalar C[csize], d[dsize], ddot[dsize], dddot[dsize];
-  TacsScalar Cd[csize], dd[dsize];
+  // Compute the rotation matrix and directors at each node
+  TacsScalar C[csize], Cd[csize];
+  director::template computeRotationMatDeriv<vars_per_node, disp_offset, basis::NUM_NODES>(vars, psi, C, Cd);
+
+  TacsScalar d[dsize], ddot[dsize], dddot[dsize], dd[dsize];
   director::template computeDirectorRatesDeriv<vars_per_node, disp_offset, basis::NUM_NODES>(
-    vars, dvars, ddvars, psi, fn, C, d, ddot, dddot, Cd, dd);
+    vars, dvars, ddvars, psi, fn, d, ddot, dddot, dd);
 
   // Set the total number of tying points needed for this element
   TacsScalar ety[basis::NUM_TYING_POINTS], etyd[basis::NUM_TYING_POINTS];
@@ -596,8 +616,9 @@ int TACSShellElement<quadrature, basis, director, model>::
   if (quantityType == TACS_FAILURE_INDEX){
     // Compute the frame normal and directors at each node
     TacsScalar C[csize], d[dsize], ddot[dsize], dddot[dsize];
+    director::template computeRotationMat<vars_per_node, disp_offset, basis::NUM_NODES>(vars, C);
     director::template computeDirectorRates<vars_per_node, disp_offset, basis::NUM_NODES>(
-      vars, dvars, ddvars, fn, C, d, ddot, dddot);
+      vars, dvars, ddvars, fn, d, ddot, dddot);
 
     // Set the total number of tying points needed for this element
     TacsScalar ety[basis::NUM_TYING_POINTS];
@@ -672,9 +693,12 @@ void TACSShellElement<quadrature, basis, director, model>::
     getNodeNormals<basis>(Xpts, fn);
 
     // Compute the frame normal and directors at each node
-    TacsScalar C[csize], d[dsize], ddot[dsize], dddot[dsize];
+    TacsScalar C[csize];
+    director::template computeRotationMat<vars_per_node, disp_offset, basis::NUM_NODES>(vars, C);
+
+    TacsScalar d[dsize], ddot[dsize], dddot[dsize];
     director::template computeDirectorRates<vars_per_node, disp_offset, basis::NUM_NODES>(
-      vars, dvars, ddvars, fn, C, d, ddot, dddot);
+      vars, dvars, ddvars, fn, d, ddot, dddot);
 
     // Set the total number of tying points needed for this element
     TacsScalar ety[basis::NUM_TYING_POINTS];
@@ -742,9 +766,12 @@ void TACSShellElement<quadrature, basis, director, model>::
     getNodeNormals<basis>(Xpts, fn);
 
     // Compute the frame normal and directors at each node
-    TacsScalar C[csize], d[dsize], ddot[dsize], dddot[dsize];
+    TacsScalar C[csize];
+    director::template computeRotationMat<vars_per_node, disp_offset, basis::NUM_NODES>(vars, C);
+
+    TacsScalar d[dsize], ddot[dsize], dddot[dsize];
     director::template computeDirectorRates<vars_per_node, disp_offset, basis::NUM_NODES>(
-      vars, dvars, ddvars, fn, C, d, ddot, dddot);
+      vars, dvars, ddvars, fn, d, ddot, dddot);
 
     // Set the total number of tying points needed for this element
     TacsScalar ety[basis::NUM_TYING_POINTS];
@@ -805,8 +832,9 @@ void TACSShellElement<quadrature, basis, director, model>::
       Xpts, fn, vars, d, dety, dfdu, dd);
 
     // Add the contributions to the director field
+    director::template addRotationMatResidual<vars_per_node, disp_offset, basis::NUM_NODES>(vars, dC, dfdu);
     director::template addDirectorResidual<vars_per_node, disp_offset, basis::NUM_NODES>(
-      vars, dvars, ddvars, fn, dC, dd, dfdu);
+      vars, dvars, ddvars, fn, dd, dfdu);
   }
 }
 
@@ -831,10 +859,13 @@ void TACSShellElement<quadrature, basis, director, model>::
   TacsScalar fn[3*basis::NUM_NODES];
   getNodeNormals<basis>(Xpts, fn);
 
-  // Compute the frame normal and directors at each node
-  TacsScalar C[csize], d[dsize], ddot[dsize], dddot[dsize];
+  // Compute the rotation matrix and directors at each node
+  TacsScalar C[csize];
+  director::template computeRotationMat<vars_per_node, disp_offset, basis::NUM_NODES>(vars, C);
+
+  TacsScalar d[dsize], ddot[dsize], dddot[dsize];
   director::template computeDirectorRates<vars_per_node, disp_offset, basis::NUM_NODES>(
-    vars, dvars, ddvars, fn, C, d, ddot, dddot);
+    vars, dvars, ddvars, fn, d, ddot, dddot);
 
   // Set the total number of tying points needed for this element
   TacsScalar ety[basis::NUM_TYING_POINTS];

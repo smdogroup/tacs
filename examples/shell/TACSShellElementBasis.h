@@ -258,6 +258,45 @@ class TACSShellQuadLinearBasis {
     }
   }
 
+
+  template <int nbrows, int nbcols, int rjac, int cjac>
+  static void addInterpFieldsOuterProduct( const double pt[],
+                                           const TacsScalar jac[],
+                                           TacsScalar *mat ){
+    double na[2];
+    na[0] = 0.5*(1.0 - pt[0]);
+    na[1] = 0.5*(1.0 + pt[0]);
+
+    double nb[2];
+    nb[0] = 0.5*(1.0 - pt[1]);
+    nb[1] = 0.5*(1.0 + pt[1]);
+
+    const int ncols = NUM_NODES*nbcols;
+
+    for ( int jy = 0; jy < 2; jy++ ){
+      for ( int jx = 0; jx < 2; jx++ ){
+        double Nj = na[jx]*nb[jy];
+
+        const TacsScalar *jac1 = jac;
+        for ( int jm = 0; jm < rjac; jm++, jac1 += cjac ){
+          for ( int iy = 0; iy < 2; iy++ ){
+            for ( int ix = 0; ix < 2; ix++ ){
+              double Ni = na[ix]*nb[iy];
+
+              for ( int im = 0; im < cjac; im++ ){
+                mat[im] += Ni*Nj*jac1[im];
+              }
+
+              mat += nbcols;
+            }
+          }
+        }
+
+        mat += (nbrows - rjac)*ncols;
+      }
+    }
+  }
+
   /**
     Add the outer-product of the shape functions to the matrix
 
@@ -321,6 +360,138 @@ class TACSShellQuadLinearBasis {
 
         mat += (vars_per_node - m)*nvars;
       }
+    }
+  }
+
+
+  /*
+    Add the outer product of the shape functions and their derivatives
+    to a matrix with a rectangular layout.
+
+    The matrix is arranged into a (NUM_NODES x NUM_NODES) block
+    matrix. Each block is rectangular (nbrows, nbcols)
+    arrangement. The Jacobian matrices jac and jacT the Jacobian
+    matrices of appropriate size.
+
+    jac is a (rjac x 2*cjac) Jacobian matrix
+    jacT is a (2*rjac x cjac) Jacobian matrix
+
+  */
+  template <int nbrows, int nbcols, int rjac, int cjac>
+  static void addInterpGradMixedOuterProduct( const double pt[],
+                                              const TacsScalar jac[],
+                                              const TacsScalar jacT[],
+                                              TacsScalar *mat ){
+    double na[2];
+    na[0] = 0.5*(1.0 - pt[0]);
+    na[1] = 0.5*(1.0 + pt[0]);
+
+    double nb[2];
+    nb[0] = 0.5*(1.0 - pt[1]);
+    nb[1] = 0.5*(1.0 + pt[1]);
+
+    double dna[2];
+    dna[0] = -0.5;
+    dna[1] = 0.5;
+
+    double dnb[2];
+    dnb[0] = -0.5;
+    dnb[1] = 0.5;
+
+    const int ncols = NUM_NODES*nbcols;
+    const int nrows = NUM_NODES*nbrows;
+
+    if (jac && jacT){
+      // for ( int jy = 0; jy < 2; jy++ ){
+      //   for ( int jx = 0; jx < 2; jx++ ){
+      //     double Nj = na[jx]*nb[jy];
+      //     double Naj = dna[jx]*nb[jy];
+      //     double Nbj = na[jx]*dnb[jy];
+
+      //     const TacsScalar *jac1 = jac;
+      //     for ( int jm = 0; jm < m; jm++, jac1 += 2*m ){
+      //       for ( int iy = 0; iy < 2; iy++ ){
+      //         for ( int ix = 0; ix < 2; ix++ ){
+      //           double Ni = na[ix]*nb[iy];
+      //           double Nai = dna[ix]*nb[iy];
+      //           double Nbi = na[ix]*dnb[iy];
+
+      //           double Na1 = Nj*Nai;
+      //           double Nb1 = Nj*Nbi;
+      //           double Na2 = Ni*Naj;
+      //           double Nb2 = Ni*Nbj;
+
+      //           const TacsScalar *jac2 = &jacT[2*jm];
+      //           for ( int im = 0; im < m; im++, jac2 += 2*m ){
+      //             mat[im] +=
+      //               Na1*jac1[2*im] + Nb1*jac1[2*im+1] +
+      //               Na2*jac2[0] + Nb2*jac2[1];
+      //           }
+
+      //           mat += vars_per_node;
+      //         }
+      //       }
+      //     }
+
+      //     mat += (vars_per_node - m)*nvars;
+      //   }
+      // }
+    }
+    else if (jac){
+      for ( int jy = 0; jy < 2; jy++ ){
+        for ( int jx = 0; jx < 2; jx++ ){
+          double Nj = na[jx]*nb[jy];
+
+          const TacsScalar *jac1 = jac;
+          for ( int jm = 0; jm < rjac; jm++, jac1 += 2*cjac ){
+
+            for ( int iy = 0; iy < 2; iy++ ){
+              for ( int ix = 0; ix < 2; ix++ ){
+                double Nai = dna[ix]*nb[iy];
+                double Nbi = na[ix]*dnb[iy];
+
+                double Na1 = Nj*Nai;
+                double Nb1 = Nj*Nbi;
+
+                for ( int im = 0; im < cjac; im++ ){
+                  mat[im] += Na1*jac1[2*im] + Nb1*jac1[2*im+1];
+                }
+
+                mat += nbcols;
+              }
+            }
+          }
+
+          mat += (nbrows - rjac)*ncols;
+        }
+      }
+    }
+    else if (jacT){
+      // for ( int jy = 0; jy < 2; jy++ ){
+      //   for ( int jx = 0; jx < 2; jx++ ){
+      //     double Naj = dna[jx]*nb[jy];
+      //     double Nbj = na[jx]*dnb[jy];
+
+      //     for ( int jm = 0; jm < m; jm++ ){
+      //       for ( int iy = 0; iy < 2; iy++ ){
+      //         for ( int ix = 0; ix < 2; ix++ ){
+      //           double Ni = na[ix]*nb[iy];
+      //           double Na2 = Ni*Naj;
+      //           double Nb2 = Ni*Nbj;
+
+      //           const TacsScalar *jac2 = &jacT[2*jm];
+      //           for ( int im = 0; im < m; im++, jac2 += 2*m ){
+      //             mat[im] += Na2*jac2[0] + Nb2*jac2[1];
+      //           }
+
+      //           mat += vars_per_node;
+      //         }
+      //       }
+      //     }
+
+      //     mat += (vars_per_node - m)*nvars;
+      //   }
+      // }
     }
   }
 
@@ -1931,7 +2102,5 @@ class TACSShellTriQuadraticBasis {
     }
   }
 };
-
-
 
 #endif // TACS_SHELL_ELEMENT_BASIS_H
