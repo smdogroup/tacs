@@ -117,6 +117,6 @@ const double TacsGaussLobattoWts6[] = { 1.0/15.0,
                                         0.55485837703548635,
                                         0.55485837703548635,
                                         0.378474956297847,
-                               1.0/15.0 };
+                                        1.0/15.0 };
 
 #endif // TACS_GAUSS_QUADRATURE_H
