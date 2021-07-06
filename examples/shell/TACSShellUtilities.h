@@ -655,21 +655,21 @@ void addDispGradHessian( const double pt[],
   extractFrameMixedSens(d2u0du1d, d2d0xiu0xi, d2d0d0xi);
 
   // df/(d(u0d)d(u1d))
-  basis::template addInterpFieldsOuterProduct<3, 3>(pt, d2d0, d2d);
-  basis::template addInterpGradOuterProduct<3, 3>(pt, d2d0xi, d2d);
-  basis::template addInterpGradMixedOuterProduct<3, 3>(pt, d2d0d0xi, d2d0d0xi, d2d);
+  basis::template addInterpFieldsOuterProduct<3, 3, 3, 3>(pt, d2d0, d2d);
+  basis::template addInterpGradOuterProduct<3, 3, 3, 3>(pt, d2d0xi, d2d);
+  basis::template addInterpGradMixedOuterProduct<3, 3, 3, 3>(pt, d2d0d0xi, d2d0d0xi, d2d);
 
   // df/(d(d0)d(u0xi))
-  basis::template addInterpGradMixedOuterProduct<3, 3>(pt, d2d0u0xi, NULL, d2du);
-  basis::template addInterpGradOuterProduct<3, 3>(pt, d2d0xiu0xi, d2du);
+  basis::template addInterpGradMixedOuterProduct<3, 3, 3, 3>(pt, d2d0u0xi, NULL, d2du);
+  basis::template addInterpGradOuterProduct<3, 3, 3, 3>(pt, d2d0xiu0xi, d2du);
 
   // Add the contribution to the Jacobian matrix
-  basis::template addInterpGradOuterProduct<vars_per_node, 3>(pt, d2u0xi, mat);
+  basis::template addInterpGradOuterProduct<vars_per_node, 3, vars_per_node, 3>(pt, d2u0xi, mat);
 
   // Compute the second derivative w.r.t. Cpt
   TacsScalar d2Cpt[81];
   mat3x3TransMatMatHessian(T, T, d2Ct, d2Cpt);
-  basis::template addInterpFieldsOuterProduct<9, 9>(pt, d2Cpt, d2C);
+  basis::template addInterpFieldsOuterProduct<9, 9, 9, 9>(pt, d2Cpt, d2C);
 
   // d2C0u0d = Ctu0x*[d(u0x)/d(u0d)]*[d(Ct)/d(Cpt)]
   TacsScalar d2Cptu0d[81];
@@ -694,7 +694,6 @@ void addDispGradHessian( const double pt[],
       d2Cptd0[3*j + i] = d2Cptu0d[9*j + ii];
     }
   }
-
 
   basis::template addInterpGradMixedOuterProduct<9, 3, 9, 3>(pt, d2Cptu0xi, NULL, d2Cu);
   basis::template addInterpFieldsOuterProduct<9, 3, 9, 3>(pt, d2Cptd0, d2Cd);
