@@ -59,10 +59,11 @@ class TACSLinearizedRotation {
       q += vars_per_node;
       qd += vars_per_node;
     }
-
   }
 
+
   /*
+    Add the residual rotation matrix
   */
   template <int vars_per_node, int offset, int num_nodes>
   static void addRotationMatResidual( const TacsScalar vars[],
@@ -81,9 +82,39 @@ class TACSLinearizedRotation {
   }
 
   /*
-    Add the derivative w.r.t.
+    Add the
   */
+  template <int vars_per_node, int offset, int num_nodes>
+  static void addRotationMatJacobian( const TacsScalar vars[],
+                                      const TacsScalar d2C[],
+                                      TacsScalar mat[] ){
+    const int size = vars_per_node*num_nodes;
+    const int csize = 9*num_nodes;
 
+    for ( int i = 0; i < num_nodes; i++ ){
+      TacsScalar *m = &mat[offset*(size + 1)];
+
+      for ( int j = 0; j < num_nodes; j++ ){
+        // r[0] += -(dC[7] - dC[5]);
+        // r[1] += -(dC[2] - dC[6]);
+        // r[2] += -(dC[3] - dC[1]);
+        // r += vars_per_node;
+        // dC += 9;
+
+        // Add the non-zero entries
+        m[0] += d2C[];
+
+
+
+        m += vars_per_node;
+
+        d2C += 9;
+      }
+
+      mat += vars_per_node*size;
+      d2C += 8*csize;
+    }
+  }
 
   /**
     Compute the director and rates at all nodes.
@@ -363,137 +394,153 @@ class TACSLinearizedRotation {
   Given a reference vector, t, from the element geometry, the director computes
   the exact or approximate rate of change of the displacement t.
 */
-class TACSQuaternionDirector : public TACSObject {
- public:
 
-  static const int NUM_PARAMETERS = 5;
+/**
+  Compute the director at a point.
 
-  /**
-    Compute the director at a point.
+  d = Q(q)*t = (C(q)^{T} - I)*t
 
-    d = Q(q)*t = (C(q)^{T} - I)*t
+  @param q The input rotation parametrization
+  @param t The reference direction
+  @param d The director values
+*/
+// static void computeDirector( const TacsScalar q[],
+//                              const TacsScalar t[],
+//                              TacsScalar d[] ){
+//   // Compute Q = C^{T} - I
+//   TacsScalar Q[9];
+//   Q[0] =-2.0*(q[2]*q[2] + q[3]*q[3]);
+//   Q[1] = 2.0*(q[2]*q[1] - q[3]*q[0]);
+//   Q[2] = 2.0*(q[3]*q[1] + q[2]*q[0]);
 
-    @param q The input rotation parametrization
-    @param t The reference direction
-    @param d The director values
-  */
-  static void computeDirector( const TacsScalar q[],
-                               const TacsScalar t[],
-                               TacsScalar d[] ){
-    // Compute Q = C^{T} - I
-    TacsScalar Q[9];
-    Q[0] =-2.0*(q[2]*q[2] + q[3]*q[3]);
-    Q[1] = 2.0*(q[2]*q[1] - q[3]*q[0]);
-    Q[2] = 2.0*(q[3]*q[1] + q[2]*q[0]);
+//   Q[3] = 2.0*(q[1]*q[2] + q[3]*q[0]);
+//   Q[4] =-2.0*(q[1]*q[1] + q[3]*q[3]);
+//   Q[5] = 2.0*(q[3]*q[2] - q[1]*q[0]);
 
-    Q[3] = 2.0*(q[1]*q[2] + q[3]*q[0]);
-    Q[4] =-2.0*(q[1]*q[1] + q[3]*q[3]);
-    Q[5] = 2.0*(q[3]*q[2] - q[1]*q[0]);
+//   Q[6] = 2.0*(q[1]*q[3] - q[2]*q[0]);
+//   Q[7] = 2.0*(q[2]*q[3] + q[1]*q[0]);
+//   Q[8] =-2.0*(q[1]*q[1] + q[2]*q[2]);
 
-    Q[6] = 2.0*(q[1]*q[3] - q[2]*q[0]);
-    Q[7] = 2.0*(q[2]*q[3] + q[1]*q[0]);
-    Q[8] =-2.0*(q[1]*q[1] + q[2]*q[2]);
+//   // Compute d = Q*t
+//   d[0] = Q[0]*t[0] + Q[1]*t[1] + Q[2]*t[2];
+//   d[1] = Q[3]*t[0] + Q[4]*t[1] + Q[5]*t[2];
+//   d[2] = Q[6]*t[0] + Q[7]*t[1] + Q[8]*t[2];
+// }
 
-    // Compute d = Q*t
-    d[0] = Q[0]*t[0] + Q[1]*t[1] + Q[2]*t[2];
-    d[1] = Q[3]*t[0] + Q[4]*t[1] + Q[5]*t[2];
-    d[2] = Q[6]*t[0] + Q[7]*t[1] + Q[8]*t[2];
+template <int vars_per_node, int offset, int num_nodes, class director>
+int TacsTestDirector( double dh=1e-7,
+                      int test_print_level=2,
+                      double test_fail_atol=1e-5,
+                      double test_fail_rtol=1e-5 ){
+  const int size = vars_per_node*num_nodes;
+  const int dsize = 3*num_nodes;
+  const int csize = 9*num_nodes;
+
+  // Generate random arrays for the state variables and their time derivatives
+  TacsScalar vars[size], dvars[size], ddvars[size];
+  TacsGenerateRandomArray(vars, size);
+  TacsGenerateRandomArray(dvars, size);
+  TacsGenerateRandomArray(ddvars, size);
+
+  // Compute/normalize the normals
+  TacsScalar t[dsize];
+  for ( int i = 0; i < num_nodes; i++ ){
+    TacsScalar tnrm = sqrt(vec3Dot(&t[3*i], &t[3*i]));
+    vec3Scale(1.0/tnrm, &t[3*i]);
   }
 
-  /*
-    Compute the director and rates at a point.
+  // Compute the rotation matrices
+  TacsScalar C[csize];
+  director::template computeRotationMat<vars_per_node, offset, num_nodes>(vars, C);
 
-    d = Q(q)*t = (C(q)^{T} - I)*t
-    ddot = d/dt(Q(q))*t
-    dddot = d^2/dt^2(Q(q))*t
+  // Compute the director rates
+  TacsScalar d[dsize], ddot[dsize], dddot[dsize];
+  director::template computeDirectorRates<vars_per_node, offset, num_nodes>(vars, dvars, ddvars, t, d, ddot, dddot);
 
-    @param q The input rotation parametrization
-    @param t The reference direction
-    @param d The director values
-  */
-  // void computeDirectorRates( const TacsScalar q[],
-  //                            const TacsScalar qdot[],
-  //                            const TacsScalar qddot[],
-  //                            const TacsScalar t[],
-  //                            TacsScalar d[],
-  //                            TacsScalar ddot[],
-  //                            TacsScalar dddot[] ){
-  //   oid TACSShellQuaternion::getAngularAcceleration( const int num_nodes,
-  //                                                 const int vars_per_node,
-  //                                                 const TacsScalar fn[],
-  //                                                 const TacsScalar vars[],
-  //                                                 const TacsScalar dvars[],
-  //                                                 const TacsScalar ddvars[],
-  //                                                 TacsScalar omega[],
-  //                                                 TacsScalar domega[] )
+  // Create a random array
+  TacsScalar dC[csize], d2C[csize*csize];
+  TacsGenerateRandomArray(dC, csize);
+  TacsGenerateRandomArray(d2C, csize*csize);
+  for ( int i = 0; i < csize; i++ ){
+    for ( int j = 0; j < i; j++ ){
+      d2C[j + i*csize] = d2C[i + j*csize];
+    }
+  }
 
-  // for ( int i = 0; i < num_nodes; i++ ){
-  //   TacsScalar eta = vars[0];
-  //   const TacsScalar *eps = &vars[1];
-  //   TacsScalar deta = dvars[0];
-  //   const TacsScalar *deps = &dvars[1];
-  //   TacsScalar ddeta = ddvars[0];
-  //   const TacsScalar *ddeps = &ddvars[1];
+  // Compute the residual
+  TacsScalar res[size];
+  memset(res, 0, size*sizeof(TacsScalar));
+  director::template addRotationMatResidual<vars_per_node, offset, num_nodes>(vars, dC, res);
 
-  //   // omega = -2*eps^{x}*deps + 2*eta*deps - eps*deta
-  //   TacsScalar omeg[3];
-  //   crossProduct(-2.0, eps, deps, omega);
-  //   vecAxpy(2.0*eta, deps, omega);
-  //   vecAxpy(-2.0*deta, eps, omega);
+  TacsScalar mat[size*size];
+  memset(mat, 0, size*size*sizeof(TacsScalar));
+  director::template addRotationMatJacobian<vars_per_node, offset, num_nodes>(vars, d2C, mat);
 
-  //   // domega = S(q)*ddot{q}
-  //   TacsScalar domeg[3];
-  //   crossProduct(-2.0, eps, ddeps, domeg);
-  //   vecAxpy(2.0*eta, ddeps, domeg);
-  //   vecAxpy(-2.0*ddeta, eps, domeg);
+  //
+  TacsScalar fdmat[size*size];
+  for ( int k = 0; k < size; k++ ){
+    TacsScalar varst[size];
+    memcpy(varst, vars, size*sizeof(TacsScalar));
 
-  //   TacsScalar tmp = 0.0;
-  //   tmp = vecDot(omeg, fn);
-  //   omega[0] = omeg[0] - tmp*fn[0];
-  //   omega[1] = omeg[1] - tmp*fn[1];
-  //   omega[2] = omeg[2] - tmp*fn[2];
+#ifdef TACS_USE_COMPLEX
+    varst[k] = vars[k] + TacsScalar(0.0, dh);
+#else
+    varst[k] = vars[k] + dh;
+#endif // TACS_USE_COMPLEX
 
-  //   tmp = vecDot(domeg, fn);
-  //   domega[0] = domeg[0] - tmp*fn[0];
-  //   domega[1] = domeg[1] - tmp*fn[1];
-  //   domega[2] = domeg[2] - tmp*fn[2];
+    TacsScalar Ct[csize];
+    director::template computeRotationMat<vars_per_node, offset, num_nodes>(varst, Ct);
 
-  //   fn += 3;
-  //   vars += vars_per_node;
-  //   dvars += vars_per_node;
-  //   ddvars += vars_per_node;
-  //   omega += 3;
-  //   domega += 3;
-  // }
+    // Add the contributions from the
+    TacsScalar dCt[csize];
+    for ( int i = 0; i < csize; i++ ){
+      dCt[i] = dC[i];
 
-  // }
+      for ( int j = 0; j < csize; j++ ){
+        dCt[i] += d2C[j + i*csize]*(Ct[j] - C[j]);
+      }
+    }
 
-  /*
-    Given the derivatives of the kinetic energy expression with respect to time,
-    add the contributions to the derivative of the
+    TacsScalar rest[size];
+    memset(rest, 0, size*sizeof(TacsScalar));
+    director::template addRotationMatResidual<vars_per_node, offset, num_nodes>(varst, dCt, rest);
 
-    Given the partial derivatives of the Lagrangian with respect to the
-    director and the time derivative of the vector, compute
+    for ( int j = 0; j < size; j++ ){
+#ifdef TACS_USE_COMPLEX
+      fdmat[k + size*j] = TacsImagPart(rest[j])/dh;
+#else
+      fdmat[k + size*j] = (rest[j] - res[j])/dh;
+#endif // TACS_USE_COMPLEX
+    }
+  }
 
-    ddtdTddot = d/dt(dT/d(ddot))
-    dTddot = dT/d(dot)
+  // Variables to store the max error and indices
+  int max_err_index, max_rel_index;
+  double max_err, max_rel;
 
-    Compute:
+  // Keep track of the failure flag
+  int fail = 0;
 
-    res += scale*(d/dt(dT/d(ddot))*d(ddot)/d(qdot) + dT/d(ddot)*d/dt(d(ddot)/d(qdot)))
+  // Compute the error
+  max_err = TacsGetMaxError(mat, fdmat, size*size, &max_err_index);
+  max_rel = TacsGetMaxRelError(mat, fdmat, size*size, &max_rel_index);
 
-  */
-//  void addResidual( TacsScalar scale,
-//                    const TacsScalar ddtdTddot[],
-//                    const TacsScalar dTddot[],
-//                    const TacsScalar dLdd[],
-//                    const TacsScalar t[],
-//                    TacsScalar res[] ){
-//     TacsScalar ddot
+  if (test_print_level > 0){
+    fprintf(stderr, "Testing the derivative of the rotation matrix w.r.t. vars\n");
+    fprintf(stderr, "Max Err: %10.4e in component %d.\n",
+            max_err, max_err_index);
+    fprintf(stderr, "Max REr: %10.4e in component %d.\n",
+            max_rel, max_rel_index);
+  }
+  // Print the error if required
+  if (test_print_level > 1){
+    TacsPrintErrorComponents(stderr, "mat", mat, fdmat, size*size);
+  }
+  if (test_print_level){ fprintf(stderr, "\n"); }
 
+  fail = (max_err > test_fail_atol || max_rel > test_fail_rtol);
 
-//     res[0] +=
-//   }
-};
+  return fail;
+}
 
 #endif // TACS_DIRECTOR_H

@@ -67,6 +67,11 @@ int main( int argc, char *argv[] ){
   TacsTestElementJacobian(linear_shell, elemIndex, time, Xpts, vars, dvars, ddvars);
   TacsTestElementJacobian(quadratic_shell, elemIndex, time, Xpts, vars, dvars, ddvars);
 
+  TacsTestDirector<VARS_PER_NODE, VARS_PER_NODE - TACSLinearizedRotation::NUM_PARAMETERS, NUM_NODES, TACSLinearizedRotation>();
+
+
+
+
   // TacsTestShellTyingStrain<6, TACSShellQuadLinearBasis, TACSShellLinearModel>();
   // TacsTestShellTyingStrain<6, TACSShellQuadLinearBasis, TACSShellNonlinearModel>();
   // TacsTestShellTyingStrain<6, TACSShellQuadQuadraticBasis, TACSShellLinearModel>();

@@ -6,10 +6,11 @@ PY_INCLUDE = ${PYTHON_INCLUDE} -I${NUMPY_DIR} -I${MPI4PY_DIR}
 CYTHON_INCLUDE = -I${NUMPY_DIR} -I${MPI4PY_DIR}
 
 # ParOpt shared objects
-CYTHON_SO = shell_element.so
-OBJS = shell.o cylinder.o shell_jacobian.o
+# CYTHON_SO = shell_element.so
+# OBJS = shell.o cylinder.o shell_jacobian.o
+OBJS = shell_jacobian.o
 
-default: ${CYTHON_SO} shell cylinder shell_jacobian
+# default: ${CYTHON_SO} shell cylinder shell_jacobian
 default: shell_jacobian
 
 debug: TACS_CC_FLAGS=${TACS_DEBUG_CC_FLAGS}
