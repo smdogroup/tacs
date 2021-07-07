@@ -165,6 +165,10 @@ class TACSJacobiDavidson : public TACSObject {
   // Set tolerances to FGMRES
   void setTolerances( double _eig_rtol, double _eig_atol, double _rtol, double _atol );
 
+  // Set the paramter that decide whether the convergence check relies more on
+  // eig_atol or more on eig_rtol
+  void setThetaCutoff( double _theta_cutoff );
+
   // Set the number of vectors to recycle
   void setRecycle( int _recycle, JDRecycleType _recycle_type );
 
@@ -188,6 +192,10 @@ class TACSJacobiDavidson : public TACSObject {
 
   // The relative and absolute eigenvalue tolerances
   double eig_rtol, eig_atol;
+
+  // The paramter that decide whether the convergence check relies more on
+  // eig_atol or more on eig_rtol
+  double theta_cutoff;
 
   // The matrix of variables
   TacsScalar *M;

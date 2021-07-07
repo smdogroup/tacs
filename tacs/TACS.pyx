@@ -1121,6 +1121,20 @@ cdef class JacobiDavidson:
         self.ptr.setTolerances(eig_rtol, eig_atol, rtol, atol)
         return
 
+    def setThetaCutoff(self, theta_cutoff=0.1):
+        """
+        Set the paramter that decide whether the convergence check relies more on
+        eig_atol or more on eig_rtol.
+
+        Args:
+            theta_cutoff: between 0.0 and 1.0, usually is a small value e.g.
+                          0.1 or 0.01, the smaller it is, the convergence
+                          criterion behaves more like a step function
+                          between eig_atol and eig_rtol*||A*eigvec||
+        """
+        self.ptr.setThetaCutoff(theta_cutoff)
+        return
+
     def setRecycle(self, int num_recycle):
         """
         setRecycle(self, num_recycle)
