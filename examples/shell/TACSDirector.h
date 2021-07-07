@@ -1,7 +1,8 @@
 #ifndef TACS_DIRECTOR_H
 #define TACS_DIRECTOR_H
 
-#include "TACSObject.h"
+#include "TACSElementAlgebra.h"
+#include "TACSElementVerification.h"
 
 /*
   The director class.
@@ -102,7 +103,7 @@ class TACSLinearizedRotation {
         // dC += 9;
 
         // Add the non-zero entries
-        m[0] += d2C[];
+        // m[0] += d2C[];
 
 
 
@@ -247,34 +248,55 @@ class TACSLinearizedRotation {
     }
   }
 
-  /*
-    Given the derivatives of the kinetic energy expression with respect to time,
-    add the contributions to the derivative of the
+  /**
+    Given the derivatives of the kinetic energy expression with
+    respect to time, add the contributions to the derivative of the
 
     Given the partial derivatives of the Lagrangian with respect to the
     director and the time derivative of the vector, compute
 
-    ddtdTddot = d/dt(dT/d(ddot))
-    dTddot = dT/d(dot)
+    dTdot = d/dt(dT/d(dot{d}))
+    dT = dT/d(dot{d})
+    dd = -dL/dd
 
-    Compute:
+    In general, the residual contribution is:
 
-    res += scale*(d/dt(dT/d(ddot))*d(ddot)/d(qdot) + dT/d(ddot)*d/dt(d(ddot)/d(qdot)))
+    res += dTdot*d(dot{d})/d(dot{q}) + dT/d(dot{d})*d/dt(dot{d})/d(dot{q}) + dd*d(d)/d(q)
+
+    For the linearized rotation director these expressions are:
+
+    d = q^{x} t
+    dot{d} = - t^{x} \dot{q}
+    d(dot{d})/d(dot{q}) = - t^{x}
+    d/dt(d(dot{d})/d(dot{q})) = 0
+
+    @param vars The full variable vector
+    @param dvars The first time derivative of the variables
+    @param ddvars The second derivatives of the variables
+    @param t The normal direction
+    @param dTdot Time derivative of the derivative of the kinetic energy w.r.t. the director
+    @param dT The derivative of the kinetic energy w.r.t. director
+    @param dd The contribution from the derivative of the director
+    @param res The output residual
   */
   template <int vars_per_node, int offset, int num_nodes>
   static void addDirectorResidual( const TacsScalar vars[],
                                    const TacsScalar dvars[],
                                    const TacsScalar ddvars[],
                                    const TacsScalar t[],
+                                   const TacsScalar dTdot[],
+                                   const TacsScalar dT[],
                                    const TacsScalar dd[],
                                    TacsScalar res[] ){
     TacsScalar *r = &res[offset];
 
     for ( int i = 0; i < num_nodes; i++ ){
       crossProductAdd(1.0, t, dd, r);
+      crossProductAdd(1.0, t, dTdot, r);
 
       r += vars_per_node;
       dd += 3;
+      dTdot += 3;
       t += 3;
     }
   }
@@ -427,6 +449,248 @@ class TACSLinearizedRotation {
 //   d[2] = Q[6]*t[0] + Q[7]*t[1] + Q[8]*t[2];
 // }
 
+
+template <int dsize>
+void TacsTestEvalDirectorEnergy( const TacsScalar Tlin[],
+                                 const TacsScalar Tquad[],
+                                 const TacsScalar Plin[],
+                                 const TacsScalar Pquad[],
+                                 const TacsScalar d[],
+                                 const TacsScalar ddot[],
+                                 TacsScalar *_T,
+                                 TacsScalar *_P ){
+  TacsScalar T = 0.0;
+  TacsScalar P = 0.0;
+
+  for ( int j = 0; j < dsize; j++ ){
+    T += Tlin[j]*ddot[j];
+    P += Plin[j]*d[j];
+    for ( int i = 0; i < dsize; i++ ){
+      T += Tquad[i + j*dsize]*ddot[i]*ddot[j];
+      P += Pquad[i + j*dsize]*d[i]*d[j];
+    }
+  }
+
+  *_T = T;
+  *_P = P;
+}
+
+template <int dsize>
+void TacsTestEvalDirectorEnergyDerivatives( const TacsScalar Tlin[],
+                                            const TacsScalar Tquad[],
+                                            const TacsScalar Plin[],
+                                            const TacsScalar Pquad[],
+                                            const TacsScalar d[],
+                                            const TacsScalar ddot[],
+                                            const TacsScalar dddot[],
+                                            TacsScalar dTdot[],
+                                            TacsScalar dT[],
+                                            TacsScalar dd[] ){
+  for ( int j = 0; j < dsize; j++ ){
+    dT[j] = Tlin[j];
+    dTdot[j] = 0.0;
+    dd[j] = Plin[j];
+  }
+
+  for ( int j = 0; j < dsize; j++ ){
+    for ( int i = 0; i < dsize; i++ ){
+      dT[j] += Tquad[i + j*dsize]*ddot[i];
+      dT[i] += Tquad[i + j*dsize]*ddot[j];
+
+      dTdot[j] += Tquad[i + j*dsize]*dddot[i];
+      dTdot[i] += Tquad[i + j*dsize]*dddot[j];
+
+      dd[j] += Pquad[i + j*dsize]*d[i];
+      dd[i] += Pquad[i + j*dsize]*d[j];
+    }
+  }
+}
+
+template <int vars_per_node, int offset, int num_nodes, class director>
+int TacsTestDirectorResidual( double dh=1e-5,
+                              int test_print_level=2,
+                              double test_fail_atol=1e-5,
+                              double test_fail_rtol=1e-5 ){
+  const int size = vars_per_node*num_nodes;
+  const int dsize = 3*num_nodes;
+  const int csize = 9*num_nodes;
+
+  // Generate random arrays for the state variables and their time derivatives
+  TacsScalar vars[size], dvars[size], ddvars[size];
+  TacsGenerateRandomArray(vars, size);
+  TacsGenerateRandomArray(dvars, size);
+  TacsGenerateRandomArray(ddvars, size);
+
+  // Compute/normalize the normals
+  TacsScalar t[dsize];
+  TacsGenerateRandomArray(t, dsize);
+  for ( int i = 0; i < num_nodes; i++ ){
+    TacsScalar tnrm = sqrt(vec3Dot(&t[3*i], &t[3*i]));
+    vec3Scale(1.0/tnrm, &t[3*i]);
+  }
+
+  // Compute the director rates
+  TacsScalar d[dsize], ddot[dsize], dddot[dsize];
+  director::template
+    computeDirectorRates<vars_per_node, offset, num_nodes>(vars, dvars, ddvars, t, d, ddot, dddot);
+
+  // The kinetic energy is computed as
+  TacsScalar Tlin[dsize], Plin[dsize];
+  TacsGenerateRandomArray(Tlin, dsize);
+  TacsGenerateRandomArray(Plin, dsize);
+
+  TacsScalar Tquad[dsize*dsize], Pquad[dsize*dsize];
+  TacsGenerateRandomArray(Tquad, dsize*dsize);
+  TacsGenerateRandomArray(Pquad, dsize*dsize);
+
+  // Compute the derivatives of the kinetic and potential energies
+  TacsScalar dTdot[dsize], dT[dsize], dd[dsize];
+  TacsTestEvalDirectorEnergyDerivatives<dsize>(Tlin, Tquad, Plin, Pquad, d, ddot, dddot,
+                                               dTdot, dT, dd);
+
+  // Compute the residual
+  TacsScalar res[size];
+  memset(res, 0, size*sizeof(TacsScalar));
+  director::template addDirectorResidual<vars_per_node, offset, num_nodes>(vars, dvars, ddvars, t,
+                                                                           dTdot, dT, dd, res);
+
+  // Compute the values of the variables at (t + dt)
+  TacsScalar q[size], qdot[size];
+  for ( int i = 0; i < size; i++ ){
+    q[i] = vars[i] + dh*dvars[i];
+    qdot[i] = dvars[i] + dh*ddvars[i];
+  }
+
+  // Evaluate the derivative w.r.t. dot{q}
+  TacsScalar res1[size];
+  for ( int i = 0; i < size; i++ ){
+    // Evaluate the finite-difference for component i
+    TacsScalar dqtmp = qdot[i];
+#ifdef TACS_USE_COMPLEX
+    TacsScalar T1, P1;
+    qdot[i] = dqtmp + TacsScalar(0.0, dh);
+    director::template computeDirectorRates<vars_per_node, offset, num_nodes>(q, qdot, t, d, ddot);
+    TacsTestEvalDirectorEnergy<dsize>(Tlin, Tquad, Plin, Pquad, d, ddot, &T1, &P1);
+    res1[i] = TacsImagPart((T1 - P1))/dh;
+#else
+    TacsScalar T1, P1, T2, P2;
+    qdot[i] = dqtmp + dh;
+    director::template computeDirectorRates<vars_per_node, offset, num_nodes>(q, qdot, t, d, ddot);
+    TacsTestEvalDirectorEnergy<dsize>(Tlin, Tquad, Plin, Pquad, d, ddot, &T1, &P1);
+
+    qdot[i] = dqtmp - dh;
+    director::template computeDirectorRates<vars_per_node, offset, num_nodes>(q, qdot, t, d, ddot);
+    TacsTestEvalDirectorEnergy<dsize>(Tlin, Tquad, Plin, Pquad, d, ddot, &T2, &P2);
+    res1[i] = 0.5*((T1 - P1) - (T2 - P2))/dh;
+#endif
+    qdot[i] = dqtmp;
+  }
+
+  // Compute the values of the variables at (t - dt)
+  for ( int i = 0; i < size; i++ ){
+    q[i] = vars[i] - dh*dvars[i];
+    qdot[i] = dvars[i] - dh*ddvars[i];
+  }
+
+  // Evaluate the derivative w.r.t. dot{q}
+  TacsScalar res2[size];
+  for ( int i = 0; i < size; i++ ){
+    // Evaluate the finite-difference for component i
+    TacsScalar dqtmp = qdot[i];
+#ifdef TACS_USE_COMPLEX
+    TacsScalar T1, P1;
+    qdot[i] = dqtmp + TacsScalar(0.0, dh);
+    director::template computeDirectorRates<vars_per_node, offset, num_nodes>(q, qdot, t, d, ddot);
+    TacsTestEvalDirectorEnergy<dsize>(Tlin, Tquad, Plin, Pquad, d, ddot, &T1, &P1);
+    res2[i] = TacsImagPart((T1 - P1))/dh;
+#else
+    TacsScalar T1, P1, T2, P2;
+    qdot[i] = dqtmp + dh;
+    director::template computeDirectorRates<vars_per_node, offset, num_nodes>(q, qdot, t, d, ddot);
+    TacsTestEvalDirectorEnergy<dsize>(Tlin, Tquad, Plin, Pquad, d, ddot, &T1, &P1);
+
+    qdot[i] = dqtmp - dh;
+    director::template computeDirectorRates<vars_per_node, offset, num_nodes>(q, qdot, t, d, ddot);
+    TacsTestEvalDirectorEnergy<dsize>(Tlin, Tquad, Plin, Pquad, d, ddot, &T2, &P2);
+    res2[i] = 0.5*((T1 - P1) - (T2 - P2))/dh;
+#endif
+    qdot[i] = dqtmp;
+  }
+
+  // Evaluate the finite-difference for the first term in Largrange's
+  // equations of motion
+  TacsScalar fd[size];
+  for ( int i = 0; i < size; i++ ){
+    fd[i] = 0.5*(res1[i] - res2[i])/dh;
+  }
+
+  // Reset the values of q and dq at time t
+  for ( int i = 0; i < size; i++ ){
+    q[i] = vars[i];
+    qdot[i] = dvars[i];
+  }
+
+  // Compute the contribution from dL/dq^{T}
+  for ( int i = 0; i < size; i++ ){
+    // Evaluate the finite-difference for component i
+    TacsScalar qtmp = q[i];
+
+#ifdef TACS_USE_COMPLEX
+    TacsScalar T1, P1;
+    q[i] = qtmp + TacsScalar(0.0, dh);
+    director::template computeDirectorRates<vars_per_node, offset, num_nodes>(q, qdot, t, d, ddot);
+    TacsTestEvalDirectorEnergy<dsize>(Tlin, Tquad, Plin, Pquad, d, ddot, &T1, &P1);
+    res1[i] = TacsImagPart((T1 - P1))/dh;
+#else
+    TacsScalar T1, P1, T2, P2;
+    q[i] = qtmp + dh;
+    director::template computeDirectorRates<vars_per_node, offset, num_nodes>(q, qdot, t, d, ddot);
+    TacsTestEvalDirectorEnergy<dsize>(Tlin, Tquad, Plin, Pquad, d, ddot, &T1, &P1);
+
+    q[i] = qtmp - dh;
+    director::template computeDirectorRates<vars_per_node, offset, num_nodes>(q, qdot, t, d, ddot);
+    TacsTestEvalDirectorEnergy<dsize>(Tlin, Tquad, Plin, Pquad, d, ddot, &T2, &P2);
+
+    // Compute and store the approximation
+    res1[i] = 0.5*((T1 - P1) - (T2 - P2))/dh;
+#endif
+    q[i] = qtmp;
+  }
+
+  // Add the result to the finite-difference result
+  for ( int i = 0; i < size; i++ ){
+    fd[i] -= res1[i];
+  }
+
+  // Variables to store the max error and indices
+  int max_err_index, max_rel_index;
+  double max_err, max_rel;
+
+  // Keep track of the failure flag
+  int fail = 0;
+
+  // Compute the error
+  max_err = TacsGetMaxError(res, fd, size, &max_err_index);
+  max_rel = TacsGetMaxRelError(res, fd, size, &max_rel_index);
+
+  if (test_print_level > 0){
+    fprintf(stderr, "Testing the residual implementation\n");
+    fprintf(stderr, "Max Err: %10.4e in component %d.\n",
+            max_err, max_err_index);
+    fprintf(stderr, "Max REr: %10.4e in component %d.\n",
+            max_rel, max_rel_index);
+  }
+  // Print the error if required
+  if (test_print_level > 1){
+    TacsPrintErrorComponents(stderr, "res", res, fd, size);
+  }
+  if (test_print_level){ fprintf(stderr, "\n"); }
+
+  fail = (max_err > test_fail_atol || max_rel > test_fail_rtol);
+
+  return fail;
+}
+
 template <int vars_per_node, int offset, int num_nodes, class director>
 int TacsTestDirector( double dh=1e-7,
                       int test_print_level=2,
@@ -442,20 +706,9 @@ int TacsTestDirector( double dh=1e-7,
   TacsGenerateRandomArray(dvars, size);
   TacsGenerateRandomArray(ddvars, size);
 
-  // Compute/normalize the normals
-  TacsScalar t[dsize];
-  for ( int i = 0; i < num_nodes; i++ ){
-    TacsScalar tnrm = sqrt(vec3Dot(&t[3*i], &t[3*i]));
-    vec3Scale(1.0/tnrm, &t[3*i]);
-  }
-
   // Compute the rotation matrices
   TacsScalar C[csize];
   director::template computeRotationMat<vars_per_node, offset, num_nodes>(vars, C);
-
-  // Compute the director rates
-  TacsScalar d[dsize], ddot[dsize], dddot[dsize];
-  director::template computeDirectorRates<vars_per_node, offset, num_nodes>(vars, dvars, ddvars, t, d, ddot, dddot);
 
   // Create a random array
   TacsScalar dC[csize], d2C[csize*csize];

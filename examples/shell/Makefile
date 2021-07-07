@@ -29,7 +29,7 @@ cylinder: ${OBJS}
 	${CXX} -o cylinder cylinder.o ${TACS_LD_FLAGS}
 
 shell_jacobian: ${OBJS}
-	${CXX} -o shell_jacobian shell_jacobian.o -lprofiler ${TACS_LD_FLAGS}
+	${CXX} -o shell_jacobian shell_jacobian.o ${TACS_LD_FLAGS}
 
 %.cpp: %.pyx
 	cython -I${TACS_DIR}/tacs/ --cplus $*.pyx --include-dir ${TACS_DIR}/tacs/
