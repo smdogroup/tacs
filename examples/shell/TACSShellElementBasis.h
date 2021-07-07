@@ -68,7 +68,6 @@ class TACSQuadLinearQuadrature {
   }
 };
 
-
 class TACSQuadQuadraticQuadrature {
  public:
   static const int NUM_QUADRATURE_POINTS = 9;
