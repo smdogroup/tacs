@@ -75,13 +75,14 @@ class JDHistoryPlotter:
                        only the history for the last optimization step
         """
         # Set up plotting environment
-        try:
-            mpl_style_path = os.path.dirname(os.path.realpath(__file__)) \
-                + '/paper.mplstyle'
-            plt.style.use(mpl_style_path)
-        except:
-            print("[Warning] cannot load matplotlib style: paper.mplstyleFalse")
-        fig, ax = plt.subplots(1,1,figsize=(10.0, 4.8))
+        # try:
+        #     mpl_style_path = os.path.dirname(os.path.realpath(__file__)) \
+        #         + '/paper.mplstyle'
+        #     plt.style.use(mpl_style_path)
+        # except:
+        #     print("[Warning] cannot load matplotlib style: paper.mplstyleFalse")
+        fig, ax = plt.subplots(1,1,figsize=(6.4, 4.8))
+        ax2 = ax.twinx()
 
         if plot_type == 'last':
             entry = self.history[-1]
@@ -108,29 +109,19 @@ class JDHistoryPlotter:
                 ritz.extend(_ritz)
                 toler.extend(_toler)
 
-                offset = len(itr)
+                offset = _itr[-1]
                 vl_locs.append(offset)
 
         itr_converged = [itr[i] for i in range(len(itr)) if JDr[i] < toler[i]]
         JDr_converged = [JDr[i] for i in range(len(itr)) if JDr[i] < toler[i]]
         ritz_converged = [ritz[i] for i in range(len(itr)) if JDr[i] < toler[i]]
 
-        ax.semilogy(itr, JDr, '.', color='cornflowerblue',
-            label='JD residual')
-        ax.semilogy(itr_converged, JDr_converged, '.', color='red',
-            label='JD residual - converged')
-        ax.semilogy(itr, ritz, '+', color='gray',
-            label='Ritz value')
-        ax.semilogy(itr_converged, ritz_converged, '+', color='green',
-            label='Ritz value - converged')
-        ax.semilogy(itr, toler, lw=1.0, color='orange', label='toler')
-
         # Plot vertical lines
         if plot_type == 'all':
             iL = iR = 0
             xtic = []
             for vl_loc in vl_locs:
-                ax.axvline(x=vl_loc, linestyle='-', color='gray', lw=1.0)
+                ax.axvline(x=vl_loc, linestyle='-', color='gray', lw=0.5)
                 iL = iR
                 iR = vl_loc
                 xtic.append(int(iL+iR)/2)
@@ -140,9 +131,27 @@ class JDHistoryPlotter:
             ax.set_xticklabels(labels)
             ax.tick_params(axis='x', length=0)
 
+        l1 = ax.semilogy(itr, JDr, '.', color='cornflowerblue',
+            label='JD residual')
+        l2 = ax.semilogy(itr_converged, JDr_converged, '.', color='red',
+            label='JD residual - converged')
+        l3 = ax.semilogy(itr, toler, lw=1.0, color='orange', label='toler')
+
+        l4 = ax2.plot(itr, ritz, '+', color='gray',
+            label='Ritz value')
+        l5 = ax2.plot(itr_converged, ritz_converged, '+', color='green',
+            label='Ritz value - converged')
+
+        ax2.axhline(y=0.0, linestyle='-', color='gray', lw=1.0)
+
         ax.set_xlabel('JD iteration')
-        ax.set_ylabel('JD history')
-        ax.legend(loc='lower left')
+        ax.set_ylabel('Residual')
+        ax2.set_ylabel('Ritz value')
+        ax2.set_ylim(np.min(ritz_converged),np.max(ritz_converged))
+
+        lns = l1 + l2 + l3 + l4 + l5
+        labs = [l.get_label() for l in lns]
+        ax.legend(lns, labs, loc='upper right')
 
         if not savefig:
             plt.show()
