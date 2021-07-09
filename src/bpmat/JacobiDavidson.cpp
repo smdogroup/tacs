@@ -190,6 +190,7 @@ TACSJacobiDavidson::TACSJacobiDavidson( TACSJacobiDavidsonOperator *_oper,
   // The eigen tolerance
   eig_rtol = 1e-9;
   eig_atol = 1e-30;
+  theta_cutoff = 0.1;
 
   // The residual tolerances for the GMRES iterations
   rtol = 1e-9;
@@ -659,8 +660,8 @@ void TACSJacobiDavidson::solve( KSMPrint *ksm_print, int print_level ){
 
       // Compute the norm of the eigenvalue to check if it has converged
       double abs_theta = fabs(TacsRealPart(theta));
-      double toler = (eig_atol*(0.1/(0.1 + abs_theta)) +
-                      eig_rtol*(abs_theta/(0.1 + abs_theta))*TacsRealPart(Anorm));
+      double toler = (eig_atol*(theta_cutoff/(theta_cutoff + abs_theta)) +
+                      eig_rtol*(abs_theta/(theta_cutoff + abs_theta))*TacsRealPart(Anorm));
 
       if (ksm_print && print_level > 0){
         char line[256];
@@ -896,6 +897,19 @@ void TACSJacobiDavidson::setTolerances( double _eig_rtol,
   eig_atol = _eig_atol;
   rtol = _rtol;
   atol = _atol;
+}
+
+/*
+  Set the paramter that decide whether the convergence check relies more on
+  eig_atol or more on eig_rtol.
+
+  input:
+  theta_cutoff: between 0.0 and 1.0, usually is a small value e.g. 0.1 or 0.01,
+                the smaller it is, the convergence criterion behaves more like
+                a step function between eig_atol and eig_rtol*||A*eigvec||
+*/
+void TACSJacobiDavidson::setThetaCutoff( double _theta_cutoff ){
+  theta_cutoff = _theta_cutoff;
 }
 
 /*

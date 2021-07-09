@@ -533,6 +533,7 @@ cdef extern from "JacobiDavidson.h":
        TacsScalar extractEigenvector(int n, TACSVec*, TacsScalar*)
        void solve(KSMPrint*, int)
        void setTolerances(double, double, double, double)
+       void setThetaCutoff(double)
        void setRecycle(int, JDRecycleType)
 
 cdef class JacobiDavidsonOperator:
