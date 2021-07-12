@@ -49,10 +49,11 @@ int main( int argc, char *argv[] ){
   // TACSElement *quadratic_shell = new TACSQuadQuadraticShell(transform, con);
   // quadratic_shell->incref();
 
-  const int VARS_PER_NODE = 4;
+  // const int OFFSET = 1;
+  // const int VARS_PER_NODE = OFFSET + TACSLinearizedRotation::NUM_PARAMETERS;
   const int NUM_NODES = 3;
+
   // const int NUM_VARS = VARS_PER_NODE*NUM_NODES;
-  const int OFFSET = VARS_PER_NODE - TACSLinearizedRotation::NUM_PARAMETERS;
   // int elemIndex = 0;
   // double time = 0.0;
   // TacsScalar Xpts[3*NUM_NODES];
@@ -70,15 +71,18 @@ int main( int argc, char *argv[] ){
   // TacsTestElementJacobian(linear_shell, elemIndex, time, Xpts, vars, dvars, ddvars);
   // TacsTestElementJacobian(quadratic_shell, elemIndex, time, Xpts, vars, dvars, ddvars);
 
-  double dh_res = 1e-5;
-  TacsTestDirectorResidual<VARS_PER_NODE, OFFSET, NUM_NODES, TACSLinearizedRotation>(dh_res);
-  TacsTestDirectorResidual<VARS_PER_NODE, OFFSET, NUM_NODES, TACSQuadraticRotation>(dh_res);
+  static const int OFFSET = 1;
+  static const int VARS_PER_NODE = OFFSET + TACSQuaternionRotation::NUM_PARAMETERS;
 
   // double dh = 1e-30;
   // TacsTestDirector<VARS_PER_NODE, OFFSET, NUM_NODES, TACSLinearizedRotation>(dh);
   // TacsTestDirector<VARS_PER_NODE, OFFSET, NUM_NODES, TACSQuadraticRotation>(dh);
+  // TacsTestDirector<VARS_PER_NODE, OFFSET, NUM_NODES, TACSQuaternionRotation>(dh);
 
-
+  double dh_res = 1e-5;
+  TacsTestDirectorResidual<VARS_PER_NODE, OFFSET, NUM_NODES, TACSLinearizedRotation>(dh_res);
+  TacsTestDirectorResidual<VARS_PER_NODE, OFFSET, NUM_NODES, TACSQuadraticRotation>(dh_res);
+  TacsTestDirectorResidual<VARS_PER_NODE, OFFSET, NUM_NODES, TACSQuaternionRotation>(dh_res);
 
 
   // TacsTestShellTyingStrain<6, TACSShellQuadLinearBasis, TACSShellLinearModel>();
