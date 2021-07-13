@@ -67,7 +67,7 @@ class TACSLinearizedRotation {
   }
 
   /*
-    Add the residual rotation matrix to the output
+    Add the contribution to the residual from the rotation matrix
 
     This code adds the contribution to the residual via the derivative
 
@@ -97,36 +97,79 @@ class TACSLinearizedRotation {
     Add the
   */
   template <int vars_per_node, int offset, int num_nodes>
-  static void addRotationMatJacobian( const TacsScalar vars[],
+  static void addRotationMatJacobian( const TacsScalar alpha,
+                                      const TacsScalar vars[],
+                                      const TacsScalar dC[],
                                       const TacsScalar d2C[],
+                                      TacsScalar res[],
                                       TacsScalar mat[] ){
     const int size = vars_per_node*num_nodes;
     const int csize = 9*num_nodes;
 
+    TacsScalar *r = &res[offset];
+    TacsScalar *m = &mat[offset*size + offset];
+
     for ( int i = 0; i < num_nodes; i++ ){
-      TacsScalar *m = &mat[offset*(size + 1)];
+      r[0] += -(dC[7] - dC[5]);
+      r[1] += -(dC[2] - dC[6]);
+      r[2] += -(dC[3] - dC[1]);
 
       for ( int j = 0; j < num_nodes; j++ ){
-        // r[0] += -(dC[7] - dC[5]);
-        // r[1] += -(dC[2] - dC[6]);
-        // r[2] += -(dC[3] - dC[1]);
-        // r += vars_per_node;
-        // dC += 9;
+        m[vars_per_node*j] +=
+          d2C[csize*(9*i + 5) + 9*j + 5] - d2C[csize*(9*i + 5) + 9*j + 7] -
+          d2C[csize*(9*i + 7) + 9*j + 5] + d2C[csize*(9*i + 7) + 9*j + 7];
 
-        // Add the non-zero entries
-        // m[0] += d2C[];
+        m[vars_per_node*j+1] +=
+          -d2C[csize*(9*i + 5) + 9*j + 2] + d2C[csize*(9*i + 5) + 9*j + 6] +
+          d2C[csize*(9*i + 7) + 9*j + 2] - d2C[csize*(9*i + 7) + 9*j + 6];
 
+        m[vars_per_node*j+2] +=
+          d2C[csize*(9*i + 5) + 9*j + 1] - d2C[csize*(9*i + 5) + 9*j + 3] -
+          d2C[csize*(9*i + 7) + 9*j + 1] + d2C[csize*(9*i + 7) + 9*j + 3];
 
+        m[vars_per_node*j + size] +=
+          -d2C[csize*(9*i + 2) + 9*j + 5] + d2C[csize*(9*i + 2) + 9*j + 7] +
+          d2C[csize*(9*i + 6) + 9*j + 5] - d2C[csize*(9*i + 6) + 9*j + 7];
 
-        m += vars_per_node;
+        m[vars_per_node*j+1 + size] +=
+          d2C[csize*(9*i + 2) + 9*j + 2] - d2C[csize*(9*i + 2) + 9*j + 6] -
+          d2C[csize*(9*i + 6) + 9*j + 2] + d2C[csize*(9*i + 6) + 9*j + 6];
 
-        d2C += 9;
+        m[vars_per_node*j+2 + size] +=
+          -d2C[csize*(9*i + 2) + 9*j + 1] + d2C[csize*(9*i + 2) + 9*j + 3] +
+          d2C[csize*(9*i + 6) + 9*j + 1] - d2C[csize*(9*i + 6) + 9*j + 3];
+
+        m[vars_per_node*j + 2*size] +=
+          d2C[csize*(9*i + 1) + 9*j + 5] - d2C[csize*(9*i + 1) + 9*j + 7] -
+          d2C[csize*(9*i + 3) + 9*j + 5] + d2C[csize*(9*i + 3) + 9*j + 7];
+
+        m[vars_per_node*j+1 + 2*size] +=
+          -d2C[csize*(9*i + 1) + 9*j + 2] + d2C[csize*(9*i + 1) + 9*j + 6] +
+          d2C[csize*(9*i + 3) + 9*j + 2] - d2C[csize*(9*i + 3) + 9*j + 6];
+
+        m[vars_per_node*j+2 + 2*size] +=
+          d2C[csize*(9*i + 1) + 9*j + 1] - d2C[csize*(9*i + 1) + 9*j + 3] -
+          d2C[csize*(9*i + 3) + 9*j + 1] + d2C[csize*(9*i + 3) + 9*j + 3];
       }
 
-      mat += vars_per_node*size;
-      d2C += 8*csize;
+      r += vars_per_node;
+      m += vars_per_node*size;
+      dC += 9;
     }
   }
+
+  /**
+    The linearized rotation class is unconstrained
+  */
+  template <int vars_per_node, int offset, int num_nodes>
+  static void addRotationConstraint( const TacsScalar vars[],
+                                     TacsScalar res[] ){}
+
+  template <int vars_per_node, int offset, int num_nodes>
+  static void addRotationConstrJacobian( const TacsScalar alpha,
+                                         const TacsScalar vars[],
+                                         TacsScalar res[],
+                                         TacsScalar mat[] ){}
 
   /**
     Compute the director and rates at all nodes.
@@ -289,7 +332,6 @@ class TACSLinearizedRotation {
     @param ddvars The second derivatives of the variables
     @param t The normal direction
     @param dTdot Time deriv. of the deriv. of the kinetic energy w.r.t. d
-    @param dT The derivative of the kinetic energy w.r.t. director
     @param dd The contribution from the derivative of the director
     @param res The output residual
   */
@@ -299,7 +341,6 @@ class TACSLinearizedRotation {
                                    const TacsScalar ddvars[],
                                    const TacsScalar t[],
                                    const TacsScalar dTdot[],
-                                   const TacsScalar dT[],
                                    const TacsScalar dd[],
                                    TacsScalar res[] ){
     TacsScalar *r = &res[offset];
@@ -538,25 +579,60 @@ class TACSQuadraticRotation {
     Add the
   */
   template <int vars_per_node, int offset, int num_nodes>
-  static void addRotationMatJacobian( const TacsScalar vars[],
+  static void addRotationMatJacobian( const TacsScalar alpha,
+                                      const TacsScalar vars[],
+                                      const TacsScalar dC[],
                                       const TacsScalar d2C[],
+                                      TacsScalar res[],
                                       TacsScalar mat[] ){
     const int size = vars_per_node*num_nodes;
     const int csize = 9*num_nodes;
 
+    const TacsScalar *q = &vars[offset];
+    TacsScalar *r = &res[offset];
+    TacsScalar *m = &mat[offset*size + offset];
+
     for ( int i = 0; i < num_nodes; i++ ){
-      TacsScalar *m = &mat[offset*(size + 1)];
+      // Add the contribution to the residual
+      TacsScalar dCtr = (dC[0] + dC[4] + dC[8]);
+      r[0] -= dC[7] - dC[5] + dCtr*q[0];
+      r[1] -= dC[2] - dC[6] + dCtr*q[1];
+      r[2] -= dC[3] - dC[1] + dCtr*q[2];
 
-      for ( int j = 0; j < num_nodes; j++ ){
-        m += vars_per_node;
+      TacsScalar e1[3], e2[3];
+      mat3x3Mult(dC, q, e1);
+      mat3x3MultTrans(dC, q, e2);
 
-        d2C += 9;
+      r[0] += 0.5*(e1[0] + e2[0]);
+      r[1] += 0.5*(e1[1] + e2[1]);
+      r[2] += 0.5*(e1[2] + e2[2]);
+
+      const TacsScalar *qi = &vars[offset + i*vars_per_node];
+      const TacsScalar *qj = &vars[offset];
+
+      for ( int j = 0; j < num_nodes; j++, qj += vars_per_node ){
+
       }
 
-      mat += vars_per_node*size;
-      d2C += 8*csize;
+      r += vars_per_node;
+      m += vars_per_node*size;
+      q += vars_per_node;
+      dC += 9;
     }
   }
+
+  /**
+    The quadratic rotation matrix is unconstrained
+  */
+  template <int vars_per_node, int offset, int num_nodes>
+  static void addRotationConstraint( const TacsScalar vars[],
+                                     TacsScalar res[] ){}
+
+  template <int vars_per_node, int offset, int num_nodes>
+  static void addRotationConstrJacobian( const TacsScalar alpha,
+                                         const TacsScalar vars[],
+                                         TacsScalar res[],
+                                         TacsScalar mat[] ){}
 
   /**
     Compute the director and rates at all nodes.
@@ -780,7 +856,6 @@ class TACSQuadraticRotation {
                                    const TacsScalar ddvars[],
                                    const TacsScalar t[],
                                    const TacsScalar dTdot[],
-                                   const TacsScalar dT[],
                                    const TacsScalar dd[],
                                    TacsScalar res[] ){
     TacsScalar *r = &res[offset];
@@ -813,7 +888,6 @@ class TACSQuadraticRotation {
 
       dd += 3;
       dTdot += 3;
-      dT += 3;
       t += 3;
     }
   }
@@ -955,13 +1029,86 @@ class TACSQuaternionRotation {
   }
 
 
-  /*
-    Add the
-  */
   template <int vars_per_node, int offset, int num_nodes>
-  static void addRotationMatJacobian( const TacsScalar vars[],
+  static void addRotationMatJacobian( const TacsScalar alpha,
+                                      const TacsScalar vars[],
+                                      const TacsScalar dC[],
                                       const TacsScalar d2C[],
-                                      TacsScalar mat[] ){}
+                                      TacsScalar res[],
+                                      TacsScalar mat[] ){
+
+  }
+
+  template <int vars_per_node, int offset, int num_nodes>
+  static void addRotationtConstraint( const TacsScalar vars[],
+                                      TacsScalar res[] ){
+    const TacsScalar *q = &vars[offset];
+    TacsScalar *r = &res[offset];
+    for ( int i = 0; i < num_nodes; i++ ){
+      TacsScalar lamb = q[4];
+
+      // Add the result to the governing equations
+      r[0] += 2.0*q[0]*lamb;
+      r[1] += 2.0*q[1]*lamb;
+      r[2] += 2.0*q[2]*lamb;
+      r[3] += 2.0*q[3]*lamb;
+
+      // Enforce the quaternion constraint
+      r[4] += q[0]*q[0] + q[1]*q[1] + q[2]*q[2] + q[3]*q[3] - 1.0;
+
+      r += vars_per_node;
+      q += vars_per_node;
+    }
+  }
+
+  template <int vars_per_node, int offset, int num_nodes>
+  static void addRotationConstrJacobian( const TacsScalar alpha,
+                                         const TacsScalar vars[],
+                                         TacsScalar res[],
+                                         TacsScalar mat[] ){
+    const TacsScalar *q = &vars[offset];
+    TacsScalar *r = &res[offset];
+    const int size = vars_per_node*num_nodes;
+
+    // Add the constribution to the constraints from the quaternions
+    TacsScalar *m = &mat[offset*size + offset];
+    for ( int i = 0; i < num_nodes; i++ ){
+      TacsScalar lamb = q[4];
+
+      // Add the result to the governing equations
+      r[0] += 2.0*q[0]*lamb;
+      r[1] += 2.0*q[1]*lamb;
+      r[2] += 2.0*q[2]*lamb;
+      r[3] += 2.0*q[3]*lamb;
+
+      // Enforce the quaternion constraint
+      r[4] += q[0]*q[0] + q[1]*q[1] + q[2]*q[2] + q[3]*q[3] - 1.0;
+
+      // Add the constraint terms
+      m[4] += alpha*q[0];
+      m[4+size] += alpha*q[1];
+      m[4+2*size] += alpha*q[2];
+      m[4+3*size] += alpha*q[3];
+
+      // Enforce the quaternion constraint
+      m[4*size] += alpha*q[0];
+      m[4*size+1] += alpha*q[1];
+      m[4*size+2] += alpha*q[2];
+      m[4*size+3] += alpha*q[3];
+
+      // Add the terms to the diagonal
+      m[0] += alpha*lamb;
+      m[size+1] += alpha*lamb;
+      m[2*(size+1)] += alpha*lamb;
+      m[3*(size+1)] += alpha*lamb;
+
+      r += vars_per_node;
+      q += vars_per_node;
+
+      // Increment to the next block diagonal entry
+      m += vars_per_node*(size + 1);
+    }
+  }
 
   /**
     Compute the director and rates at all nodes.
@@ -1265,22 +1412,18 @@ class TACSQuaternionRotation {
     director and the time derivative of the vector, compute
 
     dTdot = d/dt(dT/d(dot{d}))
-    dT = dT/d(dot{d})
     dd = -dL/dd
 
     In general, the residual contribution is:
 
     res +=
-    dTdot*d(dot{d})/d(dot{q}) +
-    dT*d/dt(dot{d})/d(dot{q}) +
-    dd*d(d)/d(q)
+    dTdot*d(dot{d})/d(dot{q}) + dd*d(d)/d(q)
 
     @param vars The full variable vector
     @param dvars The first time derivative of the variables
     @param ddvars The second derivatives of the variables
     @param t The normal direction
     @param dTdot Time deriv. of the deriv. of the kinetic energy w.r.t. d
-    @param dT The derivative of the kinetic energy w.r.t. director
     @param dd The contribution from the derivative of the director
     @param res The output residual
   */
@@ -1290,7 +1433,6 @@ class TACSQuaternionRotation {
                                    const TacsScalar ddvars[],
                                    const TacsScalar t[],
                                    const TacsScalar dTdot[],
-                                   const TacsScalar dT[],
                                    const TacsScalar dd[],
                                    TacsScalar res[] ){
     TacsScalar *r = &res[offset];
@@ -1331,10 +1473,25 @@ class TACSQuaternionRotation {
 
       dd += 3;
       dTdot += 3;
-      dT += 3;
       t += 3;
     }
   }
+
+  // template <int vars_per_node, int offset, int num_nodes>
+  // static void addDirectorJacobian( TacsScalar alpha,
+  //                                  TacsScalar beta,
+  //                                  TacsScalar gamma,
+  //                                  const TacsScalar vars[],
+  //                                  const TacsScalar dvars[],
+  //                                  const TacsScalar ddvars[],
+  //                                  const TacsScalar t[],
+  //                                  const TacsScalar dTdotdq[],
+  //                                  const TacsScalar dTdotdqdot[],
+  //                                  const TacsScalar dTdotdqdot[],
+  //                                  const TacsScalar dddq[],
+  //                                  const TacsScalar dddqdot[],
+
+
 };
 
 
@@ -1380,15 +1537,11 @@ int TacsTestDirector( double dh=1e-7,
   TacsScalar C[csize];
   director::template computeRotationMat<vars_per_node, offset, num_nodes>(vars, C);
 
-  // Compute the residual
-  TacsScalar res[size];
+  // Compute the Jacobian and residual
+  TacsScalar res[size], mat[size*size];
   memset(res, 0, size*sizeof(TacsScalar));
-  director::template addRotationMatResidual<vars_per_node, offset, num_nodes>(vars, dC, res);
-
-  // Compute the Jacobian
-  TacsScalar mat[size*size];
   memset(mat, 0, size*size*sizeof(TacsScalar));
-  director::template addRotationMatJacobian<vars_per_node, offset, num_nodes>(vars, d2C, mat);
+  director::template addRotationMatJacobian<vars_per_node, offset, num_nodes>(1.0, vars, dC, d2C, res, mat);
 
   // Verify the implementation of the residual
   TacsScalar fd[size], C0 = 0.0;
@@ -1711,19 +1864,14 @@ void TacsTestEvalDirectorEnergyDerivatives( const TacsScalar Tlin[],
                                             const TacsScalar ddot[],
                                             const TacsScalar dddot[],
                                             TacsScalar dTdot[],
-                                            TacsScalar dT[],
                                             TacsScalar dd[] ){
   for ( int j = 0; j < dsize; j++ ){
-    dT[j] = Tlin[j]*(2.0*ddot[j] + d[j]);
     dTdot[j] = Tlin[j]*(2.0*dddot[j] + ddot[j]);
     dd[j] = Plin[j] - Tlin[j]*ddot[j];
   }
 
   for ( int j = 0; j < dsize; j++ ){
     for ( int i = 0; i < dsize; i++ ){
-      dT[j] += Tquad[i + j*dsize]*ddot[i];
-      dT[i] += Tquad[i + j*dsize]*ddot[j];
-
       dTdot[j] += Tquad[i + j*dsize]*dddot[i];
       dTdot[i] += Tquad[i + j*dsize]*dddot[j];
 
@@ -1770,15 +1918,15 @@ int TacsTestDirectorResidual( double dh=1e-5,
     computeDirectorRates<vars_per_node, offset, num_nodes>(vars, dvars, ddvars, t, d, ddot, dddot);
 
   // Compute the derivatives of the kinetic and potential energies
-  TacsScalar dTdot[dsize], dT[dsize], dd[dsize];
+  TacsScalar dTdot[dsize], dd[dsize];
   TacsTestEvalDirectorEnergyDerivatives<dsize>(Tlin, Tquad, Plin, Pquad, d, ddot, dddot,
-                                               dTdot, dT, dd);
+                                               dTdot, dd);
 
   // Compute the residual
   TacsScalar res[size];
   memset(res, 0, size*sizeof(TacsScalar));
   director::template addDirectorResidual<vars_per_node, offset, num_nodes>(vars, dvars, ddvars, t,
-                                                                           dTdot, dT, dd, res);
+                                                                           dTdot, dd, res);
 
   // Compute the values of the variables at (t + dt)
   TacsScalar q[size], qdot[size];

@@ -7,6 +7,8 @@
 // #include "TACSElementAlgebra.h"
 // #include "TACSIsoShellConstitutive.h"
 
+#include "TACSShellElementBasis.h"
+#include "TACSShellUtilities.h"
 #include "TACSDirector.h"
 
 // typedef TACSShellElement<TACSQuadLinearQuadrature, TACSShellQuadBasis<2>,
@@ -75,14 +77,14 @@ int main( int argc, char *argv[] ){
   static const int VARS_PER_NODE = OFFSET + TACSQuaternionRotation::NUM_PARAMETERS;
 
   double dh = 1e-30;
-  TacsTestDirector<VARS_PER_NODE, OFFSET, NUM_NODES, TACSLinearizedRotation>(dh);
+  // TacsTestDirector<VARS_PER_NODE, OFFSET, NUM_NODES, TACSLinearizedRotation>(dh);
   TacsTestDirector<VARS_PER_NODE, OFFSET, NUM_NODES, TACSQuadraticRotation>(dh);
-  TacsTestDirector<VARS_PER_NODE, OFFSET, NUM_NODES, TACSQuaternionRotation>(dh);
+  // TacsTestDirector<VARS_PER_NODE, OFFSET, NUM_NODES, TACSQuaternionRotation>(dh);
 
-  double dh_res = 1e-5;
-  TacsTestDirectorResidual<VARS_PER_NODE, OFFSET, NUM_NODES, TACSLinearizedRotation>(dh_res);
-  TacsTestDirectorResidual<VARS_PER_NODE, OFFSET, NUM_NODES, TACSQuadraticRotation>(dh_res);
-  TacsTestDirectorResidual<VARS_PER_NODE, OFFSET, NUM_NODES, TACSQuaternionRotation>(dh_res);
+  // double dh_res = 1e-5;
+  // TacsTestDirectorResidual<VARS_PER_NODE, OFFSET, NUM_NODES, TACSLinearizedRotation>(dh_res);
+  // TacsTestDirectorResidual<VARS_PER_NODE, OFFSET, NUM_NODES, TACSQuadraticRotation>(dh_res);
+  // TacsTestDirectorResidual<VARS_PER_NODE, OFFSET, NUM_NODES, TACSQuaternionRotation>(dh_res);
 
   // TacsTestShellTyingStrain<6, TACSShellQuadLinearBasis, TACSShellLinearModel>();
   // TacsTestShellTyingStrain<6, TACSShellQuadLinearBasis, TACSShellNonlinearModel>();
@@ -90,9 +92,8 @@ int main( int argc, char *argv[] ){
 
   // TacsTestShellModelDerivatives<6, TACSShellQuadLinearBasis, TACSShellNonlinearModel>();
 
-  // TacsTestShellUtilities<4, TACSShellQuadQuadraticBasis>(1e-30);
   // TacsTestShellUtilities<4, TACSShellQuadBasis<2>>(1e-6);
-  // TacsTestShellUtilities<4, TACSShellQuadBasis<3>>(1e-6);
+  TacsTestShellUtilities<4, TACSShellQuadBasis<3>>(1e-6);
 
   // TacsScalar alpha = 1.0, beta = 0.0, gamma = 0.0;
   // double t0;
