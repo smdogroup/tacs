@@ -807,12 +807,6 @@ class TACSQuadraticRotation {
       crossProduct(q, dTdot, v);
       crossProductAdd(-1.0, t, v, r);
 
-      // Add: (- t^x*qdot^{x} + 0.5*qdot^{x}*t^{x})*dT
-      crossProduct(t, dT, v);
-      crossProductAdd(0.5, qdot, v, r);
-      crossProduct(qdot, dT, v);
-      crossProductAdd(-1.0, t, v, r);
-
       r += vars_per_node;
       q += vars_per_node;
       qdot += vars_per_node;
@@ -1097,7 +1091,7 @@ class TACSQuaternionRotation {
       Qdot[7] = 2.0*(q[2]*qdot[3] + q[1]*qdot[0] + qdot[2]*q[3] + qdot[1]*q[0]);
       Qdot[8] =-4.0*(q[1]*qdot[1] + q[2]*qdot[2]);
 
-      // Compute d = Q*t
+      // Compute ddot = Qdot*t
       ddot[0] = Qdot[0]*t[0] + Qdot[1]*t[1] + Qdot[2]*t[2];
       ddot[1] = Qdot[3]*t[0] + Qdot[4]*t[1] + Qdot[5]*t[2];
       ddot[2] = Qdot[6]*t[0] + Qdot[7]*t[1] + Qdot[8]*t[2];
@@ -1130,7 +1124,7 @@ class TACSQuaternionRotation {
       Qddot[8] =-4.0*(q[1]*qddot[1] + q[2]*qddot[2] +
                       qdot[1]*qdot[1] + qdot[2]*qdot[2]);
 
-      // Compute d = Q*t
+      // Compute dddot = Qddot*t
       dddot[0] = Qddot[0]*t[0] + Qddot[1]*t[1] + Qddot[2]*t[2];
       dddot[1] = Qddot[3]*t[0] + Qddot[4]*t[1] + Qddot[5]*t[2];
       dddot[2] = Qddot[6]*t[0] + Qddot[7]*t[1] + Qddot[8]*t[2];
@@ -1201,18 +1195,18 @@ class TACSQuaternionRotation {
 
       TacsScalar Qdot[9];
       Qdot[0] =-4.0*(q[2]*qdot[2] + q[3]*qdot[3]);
-      Qdot[1] = 2.0*(q[1]*qdot[2] + q[3]*qdot[0] + qdot[1]*q[2] + qdot[3]*q[0]);
-      Qdot[2] = 2.0*(q[1]*qdot[3] - q[2]*qdot[0] + qdot[1]*q[3] - qdot[2]*q[0]);
+      Qdot[1] = 2.0*(q[2]*qdot[1] - q[3]*qdot[0] + qdot[2]*q[1] - qdot[3]*q[0]);
+      Qdot[2] = 2.0*(q[3]*qdot[1] + q[2]*qdot[0] + qdot[3]*q[1] + qdot[2]*q[0]);
 
-      Qdot[3] = 2.0*(q[2]*qdot[1] - q[3]*qdot[0] + qdot[2]*q[1] - qdot[3]*q[0]);
+      Qdot[3] = 2.0*(q[1]*qdot[2] + q[3]*qdot[0] + qdot[1]*q[2] + qdot[3]*q[0]);
       Qdot[4] =-4.0*(q[1]*qdot[1] + q[3]*qdot[3]);
-      Qdot[5] = 2.0*(q[2]*qdot[3] + q[1]*qdot[0] + qdot[2]*q[3] + qdot[1]*q[0]);
+      Qdot[5] = 2.0*(q[3]*qdot[2] - q[1]*qdot[0] + qdot[3]*q[2] - qdot[1]*q[0]);
 
-      Qdot[6] = 2.0*(q[3]*qdot[1] + q[2]*qdot[0] + qdot[3]*q[1] + qdot[2]*q[0]);
-      Qdot[7] = 2.0*(q[3]*qdot[2] - q[1]*qdot[0] + qdot[3]*q[2] - qdot[1]*q[0]);
+      Qdot[6] = 2.0*(q[1]*qdot[3] - q[2]*qdot[0] + qdot[1]*q[3] - qdot[2]*q[0]);
+      Qdot[7] = 2.0*(q[2]*qdot[3] + q[1]*qdot[0] + qdot[2]*q[3] + qdot[1]*q[0]);
       Qdot[8] =-4.0*(q[1]*qdot[1] + q[2]*qdot[2]);
 
-      // Compute d = Q*t
+      // Compute ddot = Qdot*t
       ddot[0] = Qdot[0]*t[0] + Qdot[1]*t[1] + Qdot[2]*t[2];
       ddot[1] = Qdot[3]*t[0] + Qdot[4]*t[1] + Qdot[5]*t[2];
       ddot[2] = Qdot[6]*t[0] + Qdot[7]*t[1] + Qdot[8]*t[2];
@@ -1245,7 +1239,7 @@ class TACSQuaternionRotation {
       Qddot[8] =-4.0*(q[1]*qddot[1] + q[2]*qddot[2] +
                       qdot[1]*qdot[1] + qdot[2]*qdot[2]);
 
-      // Compute d = Q*t
+      // Compute dddot = Qddot*t
       dddot[0] = Qddot[0]*t[0] + Qddot[1]*t[1] + Qddot[2]*t[2];
       dddot[1] = Qddot[3]*t[0] + Qddot[4]*t[1] + Qddot[5]*t[2];
       dddot[2] = Qddot[6]*t[0] + Qddot[7]*t[1] + Qddot[8]*t[2];
@@ -1326,47 +1320,10 @@ class TACSQuaternionRotation {
       r[2] += dTdot[0]*D[2] + dTdot[1]*D[6] + dTdot[2]*D[10];
       r[3] += dTdot[0]*D[3] + dTdot[1]*D[7] + dTdot[2]*D[11];
 
-      TacsScalar Ddot[12];
-      Ddot[0] = 2.0*(qdot[2]*t[2] - qdot[3]*t[1]);
-      Ddot[1] = 2.0*(qdot[2]*t[1] + qdot[3]*t[2]);
-      Ddot[2] = 2.0*(-2.0*qdot[2]*t[0] + qdot[1]*t[1] + qdot[0]*t[2]);
-      Ddot[3] = 2.0*(-2.0*qdot[3]*t[0] - qdot[0]*t[1] + qdot[1]*t[2]);
-
-      Ddot[4] = 2.0*(qdot[3]*t[0] - qdot[1]*t[2]);
-      Ddot[5] = 2.0*(qdot[2]*t[0] - 2.0*qdot[1]*t[1] - qdot[0]*t[2]);
-      Ddot[6] = 2.0*(qdot[1]*t[0] + qdot[3]*t[2]);
-      Ddot[7] = 2.0*(qdot[0]*t[0] - 2.0*qdot[3]*t[1] + qdot[2]*t[2]);
-
-      Ddot[8] = 2.0*(qdot[1]*t[1] - qdot[2]*t[0]);
-      Ddot[9] = 2.0*(qdot[3]*t[0] + qdot[0]*t[1] - 2.0*qdot[1]*t[2]);
-      Ddot[10] = 2.0*(qdot[3]*t[1] - qdot[0]*t[0] - 2.0*qdot[2]*t[2]);
-      Ddot[11] = 2.0*(qdot[1]*t[0] + qdot[2]*t[1]);
-
-      r[0] += dT[0]*Ddot[0] + dT[1]*Ddot[4] + dT[2]*Ddot[8];
-      r[1] += dT[0]*Ddot[1] + dT[1]*Ddot[5] + dT[2]*Ddot[9];
-      r[2] += dT[0]*Ddot[2] + dT[1]*Ddot[6] + dT[2]*Ddot[10];
-      r[3] += dT[0]*Ddot[3] + dT[1]*Ddot[7] + dT[2]*Ddot[11];
-
-      TacsScalar B[12];
-      B[0] = 2.0*(q[2]*t[2] - q[3]*t[1]);
-      B[1] = 2.0*(q[2]*t[1] + q[3]*t[2]);
-      B[2] = 2.0*(-2.0*q[2]*t[0] + q[1]*t[1] + q[0]*t[2]);
-      B[3] = 2.0*(-2.0*q[3]*t[0] - q[0]*t[1] + q[1]*t[2]);
-
-      B[4] = 2.0*(q[3]*t[0] - q[1]*t[2]);
-      B[5] = 2.0*(q[2]*t[0] - 2.0*q[1]*t[1] - q[0]*t[2]);
-      B[6] = 2.0*(q[1]*t[0] + q[3]*t[2]);
-      B[7] = 2.0*(q[0]*t[0] - 2.0*q[3]*t[1] + q[2]*t[2]);
-
-      B[8] = 2.0*(q[1]*t[1] - q[2]*t[0]);
-      B[9] = 2.0*(q[3]*t[0] + q[0]*t[1] - 2.0*q[1]*t[2]);
-      B[10] = 2.0*(q[3]*t[1] - q[0]*t[0] - 2.0*q[2]*t[2]);
-      B[11] = 2.0*(q[1]*t[0] + q[2]*t[1]);
-
-      r[0] += dd[0]*B[0] + dd[1]*B[4] + dd[2]*B[8];
-      r[1] += dd[0]*B[1] + dd[1]*B[5] + dd[2]*B[9];
-      r[2] += dd[0]*B[2] + dd[1]*B[6] + dd[2]*B[10];
-      r[3] += dd[0]*B[3] + dd[1]*B[7] + dd[2]*B[11];
+      r[0] += dd[0]*D[0] + dd[1]*D[4] + dd[2]*D[8];
+      r[1] += dd[0]*D[1] + dd[1]*D[5] + dd[2]*D[9];
+      r[2] += dd[0]*D[2] + dd[1]*D[6] + dd[2]*D[10];
+      r[3] += dd[0]*D[3] + dd[1]*D[7] + dd[2]*D[11];
 
       r += vars_per_node;
       q += vars_per_node;
@@ -1735,10 +1692,10 @@ void TacsTestEvalDirectorEnergy( const TacsScalar Tlin[],
     T += Tlin[j]*(ddot[j]*ddot[j] + ddot[j]*d[j]);
     P += Plin[j]*d[j];
 
-    // for ( int i = 0; i < dsize; i++ ){
-    //   T += Tquad[i + j*dsize]*ddot[i]*ddot[j];
-    //   P += Pquad[i + j*dsize]*d[i]*d[j];
-    // }
+    for ( int i = 0; i < dsize; i++ ){
+      T += Tquad[i + j*dsize]*ddot[i]*ddot[j];
+      P += Pquad[i + j*dsize]*d[i]*d[j];
+    }
   }
 
   *_T = T;
@@ -1762,18 +1719,18 @@ void TacsTestEvalDirectorEnergyDerivatives( const TacsScalar Tlin[],
     dd[j] = Plin[j] - Tlin[j]*ddot[j];
   }
 
-  // for ( int j = 0; j < dsize; j++ ){
-  //   for ( int i = 0; i < dsize; i++ ){
-  //     dT[j] += Tquad[i + j*dsize]*ddot[i];
-  //     dT[i] += Tquad[i + j*dsize]*ddot[j];
+  for ( int j = 0; j < dsize; j++ ){
+    for ( int i = 0; i < dsize; i++ ){
+      dT[j] += Tquad[i + j*dsize]*ddot[i];
+      dT[i] += Tquad[i + j*dsize]*ddot[j];
 
-  //     dTdot[j] += Tquad[i + j*dsize]*dddot[i];
-  //     dTdot[i] += Tquad[i + j*dsize]*dddot[j];
+      dTdot[j] += Tquad[i + j*dsize]*dddot[i];
+      dTdot[i] += Tquad[i + j*dsize]*dddot[j];
 
-  //     dd[j] += Pquad[i + j*dsize]*d[i];
-  //     dd[i] += Pquad[i + j*dsize]*d[j];
-  //   }
-  // }
+      dd[j] += Pquad[i + j*dsize]*d[i];
+      dd[i] += Pquad[i + j*dsize]*d[j];
+    }
+  }
 }
 
 template <int vars_per_node, int offset, int num_nodes, class director>
@@ -1851,7 +1808,7 @@ int TacsTestDirectorResidual( double dh=1e-5,
     director::template computeDirectorRates<vars_per_node, offset, num_nodes>(q, qdot, t, d, ddot);
     TacsTestEvalDirectorEnergy<dsize>(Tlin, Tquad, Plin, Pquad, d, ddot, &T2, &P2);
     res1[i] = 0.5*((T1 - P1) - (T2 - P2))/dh;
-#endif
+#endif // TACS_USE_COMPLEX
     qdot[i] = dqtmp;
   }
 
@@ -1882,7 +1839,7 @@ int TacsTestDirectorResidual( double dh=1e-5,
     director::template computeDirectorRates<vars_per_node, offset, num_nodes>(q, qdot, t, d, ddot);
     TacsTestEvalDirectorEnergy<dsize>(Tlin, Tquad, Plin, Pquad, d, ddot, &T2, &P2);
     res2[i] = 0.5*((T1 - P1) - (T2 - P2))/dh;
-#endif
+#endif // TACS_USE_COMPLEX
     qdot[i] = dqtmp;
   }
 
@@ -1922,7 +1879,7 @@ int TacsTestDirectorResidual( double dh=1e-5,
 
     // Compute and store the approximation
     res1[i] = 0.5*((T1 - P1) - (T2 - P2))/dh;
-#endif
+#endif // TACS_USE_COMPLEX
     q[i] = qtmp;
   }
 
