@@ -429,22 +429,22 @@ TacsScalar TacsShellComputeDispGrad( const double pt[],
   @param u1xd Derivative of u1x
 */
 template <int vars_per_node, class basis>
-TacsScalar computeDispGradDeriv( const double pt[],
-                                 const TacsScalar Xpts[],
-                                 const TacsScalar vars[],
-                                 const TacsScalar fn[],
-                                 const TacsScalar d[],
-                                 const TacsScalar Xxi[],
-                                 const TacsScalar n0[],
-                                 const TacsScalar T[],
-                                 const TacsScalar varsd[],
-                                 const TacsScalar dd[],
-                                 TacsScalar XdinvT[],
-                                 TacsScalar XdinvzT[],
-                                 TacsScalar u0x[],
-                                 TacsScalar u1x[],
-                                 TacsScalar u0xd[],
-                                 TacsScalar u1xd[] ){
+TacsScalar TacsShellComputeDispGradDeriv( const double pt[],
+                                          const TacsScalar Xpts[],
+                                          const TacsScalar vars[],
+                                          const TacsScalar fn[],
+                                          const TacsScalar d[],
+                                          const TacsScalar Xxi[],
+                                          const TacsScalar n0[],
+                                          const TacsScalar T[],
+                                          const TacsScalar varsd[],
+                                          const TacsScalar dd[],
+                                          TacsScalar XdinvT[],
+                                          TacsScalar XdinvzT[],
+                                          TacsScalar u0x[],
+                                          TacsScalar u1x[],
+                                          TacsScalar u0xd[],
+                                          TacsScalar u1xd[] ){
   // Compute n,xi = [dn/dxi1; dn/dxi2]
   TacsScalar nxi[6];
   basis::template interpFieldsGrad<3, 3>(pt, fn, nxi);
@@ -525,14 +525,14 @@ TacsScalar computeDispGradDeriv( const double pt[],
   @param dd Residual intermediate for the director field
 */
 template <int vars_per_node, class basis>
-void addDispGradSens( const double pt[],
-                      const TacsScalar T[],
-                      const TacsScalar XdinvT[],
-                      const TacsScalar XdinvzT[],
-                      const TacsScalar du0x[],
-                      const TacsScalar du1x[],
-                      TacsScalar res[],
-                      TacsScalar dd[] ){
+void TacsShellAddDispGradSens( const double pt[],
+                               const TacsScalar T[],
+                               const TacsScalar XdinvT[],
+                               const TacsScalar XdinvzT[],
+                               const TacsScalar du0x[],
+                               const TacsScalar du1x[],
+                               TacsScalar res[],
+                               TacsScalar dd[] ){
   // Compute du0d = T*du0x*XdinvT^{T} + T*du1x*XdinvzT^{T}
   TacsScalar du0d[9], tmp[9];
   mat3x3MatTransMult(du1x, XdinvzT, tmp);
@@ -576,16 +576,16 @@ void addDispGradSens( const double pt[],
   @param d2du The mixed Jacobian matrix intermediate for displacements/d
 */
 template <int vars_per_node, class basis>
-void addDispGradHessian( const double pt[],
-                         const TacsScalar T[],
-                         const TacsScalar XdinvT[],
-                         const TacsScalar XdinvzT[],
-                         const TacsScalar d2u0x[],
-                         const TacsScalar d2u1x[],
-                         const TacsScalar d2u0xu1x[],
-                         TacsScalar mat[],
-                         TacsScalar d2d[],
-                         TacsScalar d2du[] ){
+void TacsShellAddDispGradHessian( const double pt[],
+                                  const TacsScalar T[],
+                                  const TacsScalar XdinvT[],
+                                  const TacsScalar XdinvzT[],
+                                  const TacsScalar d2u0x[],
+                                  const TacsScalar d2u1x[],
+                                  const TacsScalar d2u0xu1x[],
+                                  TacsScalar mat[],
+                                  TacsScalar d2d[],
+                                  TacsScalar d2du[] ){
   // d2u0d = d2u0x*[d(u0x)/d(u0d)]^2 +
   //         d2u1x*[d(u1x)/d(u0d)]^2 +
   //         d2u0xu1x*[d(u0x)/d(u0d)*d(u1x)/d(u0x)]
@@ -764,11 +764,11 @@ int TacsTestShellUtilities( double dh=1e-7,
   TacsShellComputeDispGrad<vars_per_node, basis>(pt, Xpts, vars, fn, d, Xxi, n0, T,
                                                  XdinvT, XdinvzT, u0x, u1x);
 
-  addDispGradSens<vars_per_node, basis>(pt, T, XdinvT, XdinvzT,
-                                        du0x, du1x, res, dd);
-  addDispGradHessian<vars_per_node, basis>(pt, T, XdinvT, XdinvzT,
-                                           d2u0x, d2u1x, d2u0xu1x,
-                                           mat, d2d, d2du);
+  TacsShellAddDispGradSens<vars_per_node, basis>(pt, T, XdinvT, XdinvzT,
+                                                 du0x, du1x, res, dd);
+  TacsShellAddDispGradHessian<vars_per_node, basis>(pt, T, XdinvT, XdinvzT,
+                                                    d2u0x, d2u1x, d2u0xu1x,
+                                                    mat, d2d, d2du);
 
   // Now, check the result
   TacsScalar fdmat[size*size], fddu[dsize*usize];
@@ -807,8 +807,8 @@ int TacsTestShellUtilities( double dh=1e-7,
     TacsScalar rest[size], ddt[dsize];
     memset(rest, 0, size*sizeof(TacsScalar));
     memset(ddt, 0, dsize*sizeof(TacsScalar));
-    addDispGradSens<vars_per_node, basis>(pt, T, XdinvT, XdinvzT,
-                                          du0xt, du1xt, rest, ddt);
+    TacsShellAddDispGradSens<vars_per_node, basis>(pt, T, XdinvT, XdinvzT,
+                                                   du0xt, du1xt, rest, ddt);
 
     // Place the result in the arrays...
     for ( int j = 0; j < size; j++ ){
@@ -914,8 +914,8 @@ int TacsTestShellUtilities( double dh=1e-7,
     TacsScalar rest[size], ddt[dsize];
     memset(rest, 0, size*sizeof(TacsScalar));
     memset(ddt, 0, dsize*sizeof(TacsScalar));
-    addDispGradSens<vars_per_node, basis>(pt, T, XdinvT, XdinvzT,
-                                          du0xt, du1xt, rest, ddt);
+    TacsShellAddDispGradSens<vars_per_node, basis>(pt, T, XdinvT, XdinvzT,
+                                                   du0xt, du1xt, rest, ddt);
 
     for ( int j = 0; j < dsize; j++ ){
 #ifdef TACS_USE_COMPLEX

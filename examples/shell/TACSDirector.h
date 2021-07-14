@@ -1040,8 +1040,8 @@ class TACSQuaternionRotation {
   }
 
   template <int vars_per_node, int offset, int num_nodes>
-  static void addRotationtConstraint( const TacsScalar vars[],
-                                      TacsScalar res[] ){
+  static void addRotationConstraint( const TacsScalar vars[],
+                                     TacsScalar res[] ){
     const TacsScalar *q = &vars[offset];
     TacsScalar *r = &res[offset];
     for ( int i = 0; i < num_nodes; i++ ){

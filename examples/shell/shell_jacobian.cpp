@@ -1,18 +1,26 @@
 // #include "TACSElementAlgebra.h"
 // #include "TACSElementVerification.h"
 // #include "TACSShellElementBasis.h"
-// #include "TACSShellElement.h"
-// #include "TACSElementVerification.h"
+#include "TACSShellElement.h"
+#include "TACSElementVerification.h"
 // #include "TACSConstitutiveVerification.h"
 // #include "TACSElementAlgebra.h"
-// #include "TACSIsoShellConstitutive.h"
+#include "TACSIsoShellConstitutive.h"
 
 #include "TACSShellElementBasis.h"
 #include "TACSShellUtilities.h"
 #include "TACSDirector.h"
 
+typedef TACSShellElement<TACSQuadLinearQuadrature, TACSShellQuadBasis<2>,
+                         TACSLinearizedRotation, TACSShellNonlinearModel> TACSQuadLinearShell;
+
 // typedef TACSShellElement<TACSQuadLinearQuadrature, TACSShellQuadBasis<2>,
-//                          TACSLinearizedRotation, TACSShellLinearModel> TACSQuadLinearShell;
+//                          TACSQuadraticRotation, TACSShellNonlinearModel> TACSQuadLinearShell;
+
+// typedef TACSShellElement<TACSQuadLinearQuadrature, TACSShellQuadBasis<2>,
+//                          TACSQuaternionRotation, TACSShellNoninearModel> TACSQuadLinearShell;
+
+
 
 // typedef TACSShellElement<TACSQuadQuadraticQuadrature, TACSShellQuadBasis<3>,
 //                          TACSLinearizedRotation, TACSShellLinearModel> TACSQuadQuadraticShell;
@@ -48,12 +56,12 @@ int main( int argc, char *argv[] ){
   // TACSElement *linear_shell = new TACSQuadLinearShell(transform, con);
   // linear_shell->incref();
 
-  // TACSElement *quadratic_shell = new TACSQuadQuadraticShell(transform, con);
-  // quadratic_shell->incref();
+  // // TACSElement *quadratic_shell = new TACSQuadQuadraticShell(transform, con);
+  // // quadratic_shell->incref();
 
   // const int OFFSET = 1;
-  // const int VARS_PER_NODE = OFFSET + TACSLinearizedRotation::NUM_PARAMETERS;
-  const int NUM_NODES = 3;
+  // const int VARS_PER_NODE = TACSQuadLinearShell::vars_per_node;
+  // const int NUM_NODES = 3;
 
   // const int NUM_VARS = VARS_PER_NODE*NUM_NODES;
   // int elemIndex = 0;
@@ -61,24 +69,24 @@ int main( int argc, char *argv[] ){
   // TacsScalar Xpts[3*NUM_NODES];
   // TacsScalar vars[NUM_VARS], dvars[NUM_VARS], ddvars[NUM_VARS];
 
-  // // Set the values of the
+  // // // Set the values of the
   // TacsGenerateRandomArray(Xpts, 3*NUM_NODES);
-  // TacsGenerateRandomArray(vars, 6*NUM_NODES);
-  // TacsGenerateRandomArray(dvars, 6*NUM_NODES);
-  // TacsGenerateRandomArray(ddvars, 6*NUM_NODES);
-
+  // TacsGenerateRandomArray(vars, NUM_VARS);
+  // TacsGenerateRandomArray(dvars, NUM_VARS);
+  // TacsGenerateRandomArray(ddvars, NUM_VARS);
+  
   // TacsTestElementResidual(linear_shell, elemIndex, time, Xpts, vars, dvars, ddvars);
   // TacsTestElementResidual(quadratic_shell, elemIndex, time, Xpts, vars, dvars, ddvars);
 
   // TacsTestElementJacobian(linear_shell, elemIndex, time, Xpts, vars, dvars, ddvars);
   // TacsTestElementJacobian(quadratic_shell, elemIndex, time, Xpts, vars, dvars, ddvars);
 
-  static const int OFFSET = 1;
-  static const int VARS_PER_NODE = OFFSET + TACSQuaternionRotation::NUM_PARAMETERS;
+  // static const int OFFSET = 1;
+  // static const int VARS_PER_NODE = OFFSET + TACSQuaternionRotation::NUM_PARAMETERS;
 
-  double dh = 1e-30;
+  // double dh = 1e-30;
   // TacsTestDirector<VARS_PER_NODE, OFFSET, NUM_NODES, TACSLinearizedRotation>(dh);
-  TacsTestDirector<VARS_PER_NODE, OFFSET, NUM_NODES, TACSQuadraticRotation>(dh);
+  // TacsTestDirector<VARS_PER_NODE, OFFSET, NUM_NODES, TACSQuadraticRotation>(dh);
   // TacsTestDirector<VARS_PER_NODE, OFFSET, NUM_NODES, TACSQuaternionRotation>(dh);
 
   // double dh_res = 1e-5;
@@ -90,10 +98,10 @@ int main( int argc, char *argv[] ){
   // TacsTestShellTyingStrain<6, TACSShellQuadLinearBasis, TACSShellNonlinearModel>();
   // TacsTestShellTyingStrain<6, TACSShellQuadQuadraticBasis, TACSShellLinearModel>();
 
-  // TacsTestShellModelDerivatives<6, TACSShellQuadLinearBasis, TACSShellNonlinearModel>();
+  TacsTestShellModelDerivatives<6, TACSShellQuadLinearBasis, TACSShellLinearModel>();
 
   // TacsTestShellUtilities<4, TACSShellQuadBasis<2>>(1e-6);
-  TacsTestShellUtilities<4, TACSShellQuadBasis<3>>(1e-6);
+  // TacsTestShellUtilities<4, TACSShellQuadBasis<3>>(1e-6);
 
   // TacsScalar alpha = 1.0, beta = 0.0, gamma = 0.0;
   // double t0;
