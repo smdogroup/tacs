@@ -1,18 +1,18 @@
 // #include "TACSElementAlgebra.h"
 // #include "TACSElementVerification.h"
 // #include "TACSShellElementBasis.h"
-#include "TACSShellElement.h"
-#include "TACSElementVerification.h"
+// #include "TACSShellElement.h"
+// #include "TACSElementVerification.h"
 // #include "TACSConstitutiveVerification.h"
 // #include "TACSElementAlgebra.h"
-#include "TACSIsoShellConstitutive.h"
+// #include "TACSIsoShellConstitutive.h"
 
 #include "TACSShellElementBasis.h"
 #include "TACSShellUtilities.h"
 #include "TACSDirector.h"
 
-typedef TACSShellElement<TACSQuadLinearQuadrature, TACSShellQuadBasis<2>,
-                         TACSLinearizedRotation, TACSShellNonlinearModel> TACSQuadLinearShell;
+// typedef TACSShellElement<TACSQuadLinearQuadrature, TACSShellQuadBasis<2>,
+//                          TACSLinearizedRotation, TACSShellNonlinearModel> TACSQuadLinearShell;
 
 // typedef TACSShellElement<TACSQuadLinearQuadrature, TACSShellQuadBasis<2>,
 //                          TACSQuadraticRotation, TACSShellNonlinearModel> TACSQuadLinearShell;
@@ -59,9 +59,9 @@ int main( int argc, char *argv[] ){
   // // TACSElement *quadratic_shell = new TACSQuadQuadraticShell(transform, con);
   // // quadratic_shell->incref();
 
-  // const int OFFSET = 1;
-  // const int VARS_PER_NODE = TACSQuadLinearShell::vars_per_node;
-  // const int NUM_NODES = 3;
+  const int OFFSET = 1;
+  const int VARS_PER_NODE = TACSQuaternionRotation::NUM_PARAMETERS + OFFSET;
+  const int NUM_NODES = 3;
 
   // const int NUM_VARS = VARS_PER_NODE*NUM_NODES;
   // int elemIndex = 0;
@@ -74,7 +74,7 @@ int main( int argc, char *argv[] ){
   // TacsGenerateRandomArray(vars, NUM_VARS);
   // TacsGenerateRandomArray(dvars, NUM_VARS);
   // TacsGenerateRandomArray(ddvars, NUM_VARS);
-  
+
   // TacsTestElementResidual(linear_shell, elemIndex, time, Xpts, vars, dvars, ddvars);
   // TacsTestElementResidual(quadratic_shell, elemIndex, time, Xpts, vars, dvars, ddvars);
 
@@ -84,10 +84,10 @@ int main( int argc, char *argv[] ){
   // static const int OFFSET = 1;
   // static const int VARS_PER_NODE = OFFSET + TACSQuaternionRotation::NUM_PARAMETERS;
 
-  // double dh = 1e-30;
+  double dh = 1e-30;
   // TacsTestDirector<VARS_PER_NODE, OFFSET, NUM_NODES, TACSLinearizedRotation>(dh);
-  // TacsTestDirector<VARS_PER_NODE, OFFSET, NUM_NODES, TACSQuadraticRotation>(dh);
-  // TacsTestDirector<VARS_PER_NODE, OFFSET, NUM_NODES, TACSQuaternionRotation>(dh);
+  TacsTestDirector<VARS_PER_NODE, OFFSET, NUM_NODES, TACSQuadraticRotation>(dh);
+  TacsTestDirector<VARS_PER_NODE, OFFSET, NUM_NODES, TACSQuaternionRotation>(dh);
 
   // double dh_res = 1e-5;
   // TacsTestDirectorResidual<VARS_PER_NODE, OFFSET, NUM_NODES, TACSLinearizedRotation>(dh_res);
@@ -98,7 +98,7 @@ int main( int argc, char *argv[] ){
   // TacsTestShellTyingStrain<6, TACSShellQuadLinearBasis, TACSShellNonlinearModel>();
   // TacsTestShellTyingStrain<6, TACSShellQuadQuadraticBasis, TACSShellLinearModel>();
 
-  TacsTestShellModelDerivatives<6, TACSShellQuadLinearBasis, TACSShellLinearModel>();
+  // TacsTestShellModelDerivatives<6, TACSShellQuadLinearBasis, TACSShellLinearModel>();
 
   // TacsTestShellUtilities<4, TACSShellQuadBasis<2>>(1e-6);
   // TacsTestShellUtilities<4, TACSShellQuadBasis<3>>(1e-6);

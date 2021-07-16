@@ -497,7 +497,7 @@ class TACSShellLinearModel {
     du0x[6] = 0.0;
     du0x[7] = 0.0;
     du0x[8] = 0.0;
-    
+
     // Compute the derivative with respect to U1
     du1x[0] = scale*dfde[3];
     du1x[1] = scale*dfde[5];
@@ -655,7 +655,7 @@ class TACSShellLinearModel {
     d2[1] = 2.0*scale*B[5];
     d2[3] = 2.0*scale*B[5];
   }
-  
+
   static TacsScalar evalDrillStrain( const TacsScalar u0x[],
                                      const TacsScalar Ct[] ){
     // Compute the rotational penalty
@@ -688,49 +688,49 @@ class TACSShellLinearModel {
     du0x[8] = 0.0;
   }
 
-  static void evalDrillStrainHessian( TacsScalar det,
-                                      TacsScalar d2et,
-                                      const TacsScalar u0x[],
-                                      const TacsScalar Ct[],
-                                      TacsScalar d2u0x[],
-                                      TacsScalar d2Ct[],
-                                      TacsScalar d2Ctu0x[] ){
-    memset(d2u0x, 0, 81*sizeof(TacsScalar));
-    memset(d2Ct, 0, 81*sizeof(TacsScalar));
-    memset(d2Ctu0x, 0, 81*sizeof(TacsScalar));
+  // static void evalDrillStrainHessian( TacsScalar det,
+  //                                     TacsScalar d2et,
+  //                                     const TacsScalar u0x[],
+  //                                     const TacsScalar Ct[],
+  //                                     TacsScalar d2u0x[],
+  //                                     TacsScalar d2Ct[],
+  //                                     TacsScalar d2Ctu0x[] ){
+  //   memset(d2u0x, 0, 81*sizeof(TacsScalar));
+  //   memset(d2Ct, 0, 81*sizeof(TacsScalar));
+  //   memset(d2Ctu0x, 0, 81*sizeof(TacsScalar));
 
-    TacsScalar *d2;
+  //   TacsScalar *d2;
 
-    // Compute the contribution from the drilling strain
-    // e[8] = 0.5*(Ct[3] + u0x[3] - Ct[1] - u0x[1]);
-    d2 = &d2Ct[3*9];
-    d2[3] = 0.25*scale*drill;
-    d2[1] = -0.25*scale*drill;
+  //   // Compute the contribution from the drilling strain
+  //   // e[8] = 0.5*(Ct[3] + u0x[3] - Ct[1] - u0x[1]);
+  //   d2 = &d2Ct[3*9];
+  //   d2[3] = 0.25*scale*drill;
+  //   d2[1] = -0.25*scale*drill;
 
-    d2 = &d2Ct[9];
-    d2[3] = -0.25*scale*drill;
-    d2[1] = 0.25*scale*drill;
+  //   d2 = &d2Ct[9];
+  //   d2[3] = -0.25*scale*drill;
+  //   d2[1] = 0.25*scale*drill;
 
-    d2 = &d2u0x[3*9];
-    d2[3] = 0.25*scale*drill;
-    d2[1] = -0.25*scale*drill;
+  //   d2 = &d2u0x[3*9];
+  //   d2[3] = 0.25*scale*drill;
+  //   d2[1] = -0.25*scale*drill;
 
-    d2 = &d2u0x[9];
-    d2[3] = -0.25*scale*drill;
-    d2[1] = 0.25*scale*drill;
+  //   d2 = &d2u0x[9];
+  //   d2[3] = -0.25*scale*drill;
+  //   d2[1] = 0.25*scale*drill;
 
-    d2 = &d2Ctu0x[3*9];
-    d2[3] = 0.25*scale*drill;
-    d2[1] = -0.25*scale*drill;
+  //   d2 = &d2Ctu0x[3*9];
+  //   d2[3] = 0.25*scale*drill;
+  //   d2[1] = -0.25*scale*drill;
 
-    d2 = &d2Ctu0x[9];
-    d2[3] = -0.25*scale*drill;
-    d2[1] = 0.25*scale*drill;
-  }
+  //   d2 = &d2Ctu0x[9];
+  //   d2[3] = -0.25*scale*drill;
+  //   d2[1] = 0.25*scale*drill;
+  // }
 
 
 
-  
+
 
 };
 
@@ -1263,7 +1263,7 @@ class TACSShellNonlinearModel {
     du1x[7] = scale*(dfde[4]*u0x[7] + dfde[5]*u0x[6]);
     du1x[8] = 0.0;
   }
-  
+
   static TacsScalar evalDrillStrain( const TacsScalar u0x[],
                                      const TacsScalar Ct[] ){
     // e2^{T}*Ct*(e1 + u_{,x}*e1) - e1^{T}*Ct*(e2 + u_{,x}*e2)
@@ -1298,7 +1298,7 @@ class TACSShellNonlinearModel {
     dCt[7] = 0.0;
     dCt[8] = 0.0;
   }
-  
+
   static void evalStrainDeriv( const TacsScalar u0x[],
                                const TacsScalar u1x[],
                                const TacsScalar e0ty[],
