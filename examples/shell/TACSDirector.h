@@ -117,6 +117,7 @@ class TACSLinearizedRotation {
         r[0] += -(dC[7] - dC[5]);
         r[1] += -(dC[2] - dC[6]);
         r[2] += -(dC[3] - dC[1]);
+        r += vars_per_node;
       }
 
       for ( int j = 0; j < num_nodes; j++ ){
@@ -157,7 +158,6 @@ class TACSLinearizedRotation {
           d2C[csize*(9*i + 3) + 9*j + 1] + d2C[csize*(9*i + 3) + 9*j + 3];
       }
 
-      r += vars_per_node;
       m += vars_per_node*size;
       dC += 9;
     }
@@ -365,12 +365,20 @@ class TACSLinearizedRotation {
     Add terms from the Jacobian
   */
   template <int vars_per_node, int offset, int num_nodes>
-  static void addDirectorJacobian( const TacsScalar vars[],
+  static void addDirectorJacobian( TacsScalar alpha,
+                                   TacsScalar beta,
+                                   TacsScalar gamma,
+                                   const TacsScalar vars[],
                                    const TacsScalar dvars[],
                                    const TacsScalar ddvars[],
                                    const TacsScalar t[],
+                                   const TacsScalar dTdot[],
+                                   const TacsScalar dd[],
+                                   const TacsScalar d2Tdotd[],
+                                   const TacsScalar d2Tdotu[],
                                    const TacsScalar d2d[],
                                    const TacsScalar d2du[],
+                                   TacsScalar res[],
                                    TacsScalar mat[] ){
     // Add the derivative due to and d2d
     const int dsize = 3*num_nodes;
@@ -379,25 +387,25 @@ class TACSLinearizedRotation {
     // d = crossProduct(q, t, d)
     const TacsScalar *ti = t;
     for ( int i = 0; i < num_nodes; i++, ti += 3 ){
-      TacsScalar *jac1 = &mat[(offset + vars_per_node*i)*nvars + 3];
-      TacsScalar *jac2 = &mat[(offset + vars_per_node*i + 1)*nvars + 3];
-      TacsScalar *jac3 = &mat[(offset + vars_per_node*i + 2)*nvars + 3];
+      TacsScalar *jac1 = &mat[(offset + vars_per_node*i)*nvars + offset];
+      TacsScalar *jac2 = &mat[(offset + vars_per_node*i + 1)*nvars + offset];
+      TacsScalar *jac3 = &mat[(offset + vars_per_node*i + 2)*nvars + offset];
 
       const TacsScalar *tj = t;
       for ( int j = 0; j < num_nodes; j++, tj += 3 ){
         // Add the derivative
         TacsScalar d[9];
-        d[0] = d2d[0];
-        d[1] = d2d[1];
-        d[2] = d2d[2];
+        d[0] = alpha*d2d[0] + gamma*d2Tdotd[0];
+        d[1] = alpha*d2d[1] + gamma*d2Tdotd[1];
+        d[2] = alpha*d2d[2] + gamma*d2Tdotd[2];
 
-        d[3] = d2d[dsize];
-        d[4] = d2d[dsize+1];
-        d[5] = d2d[dsize+2];
+        d[3] = alpha*d2d[dsize] + gamma*d2Tdotd[dsize];
+        d[4] = alpha*d2d[dsize+1] + gamma*d2Tdotd[dsize+1];
+        d[5] = alpha*d2d[dsize+2] + gamma*d2Tdotd[dsize+2];
 
-        d[6] = d2d[2*dsize];
-        d[7] = d2d[2*dsize+1];
-        d[8] = d2d[2*dsize+2];
+        d[6] = alpha*d2d[2*dsize] + gamma*d2Tdotd[2*dsize];
+        d[7] = alpha*d2d[2*dsize+1] + gamma*d2Tdotd[2*dsize+1];
+        d[8] = alpha*d2d[2*dsize+2] + gamma*d2Tdotd[2*dsize+2];
 
         TacsScalar tmp[9];
         mat3x3SkewMatSkewTransform(ti, d, tj, tmp);
@@ -418,9 +426,11 @@ class TACSLinearizedRotation {
         jac2 += vars_per_node;
         jac3 += vars_per_node;
         d2d += 3;
+        d2Tdotd += 3;
       }
 
       d2d += 2*dsize;
+      d2Tdotd += 2*dsize;
     }
 
     for ( int i = 0; i < num_nodes; i++ ){
@@ -615,6 +625,7 @@ class TACSQuadraticRotation {
         r[0] += 0.5*(e1[0] + e2[0]);
         r[1] += 0.5*(e1[1] + e2[1]);
         r[2] += 0.5*(e1[2] + e2[2]);
+        r += vars_per_node;
       }
 
       const TacsScalar *qi = &vars[offset + i*vars_per_node];
@@ -681,7 +692,6 @@ class TACSQuadraticRotation {
         }
       }
 
-      r += vars_per_node;
       m += vars_per_node*size;
       q += vars_per_node;
       dC += 9;
@@ -905,7 +915,6 @@ class TACSQuadraticRotation {
     director and the time derivative of the vector, compute
 
     dTdot = d/dt(dT/d(dot{d}))
-    dT = dT/d(dot{d})
     dd = -dL/dd
 
     @param vars The full variable vector
@@ -930,24 +939,29 @@ class TACSQuadraticRotation {
     const TacsScalar *qdot = &dvars[offset];
 
     for ( int i = 0; i < num_nodes; i++ ){
-      TacsScalar v[3], qxt[3];
+      // D = (t^{x} + 0.5*(q^{x}t)^{x} - 0.5*t^{x}*q^{x})
+      //   = (t^{x} - t^x*q^{x} + 0.5*q^{x}*t^{x})
+      TacsScalar D[9];
+      D[0] = 0.5*(q[1]*t[1] + q[2]*t[2]);
+      D[1] = -q[0]*t[1] + 0.5*q[1]*t[0] - t[2];
+      D[2] = -q[0]*t[2] + 0.5*q[2]*t[0] + t[1];
 
-      // Compute the contribution to the residual
-      crossProductAdd(1.0, t, dd, r);
-      crossProduct(q, t, qxt);
-      crossProductAdd(0.5, qxt, dd, r);
-      crossProduct(q, dd, v);
-      crossProductAdd(-0.5, t, v, r);
+      D[3] = 0.5*q[0]*t[1] - q[1]*t[0] + t[2];
+      D[4] = 0.5*(q[0]*t[0] + q[2]*t[2]);
+      D[5] = -q[1]*t[2] + 0.5*q[2]*t[1] - t[0];
 
-      // Compute the contributions to the residual
-      // Add: (t^{x} - t^x*q^{x} + 0.5*q^{x}*t^{x})*dTdot
-      crossProduct(t, dTdot, v);
-      r[0] += v[0];
-      r[1] += v[1];
-      r[2] += v[2];
-      crossProductAdd(0.5, q, v, r);
-      crossProduct(q, dTdot, v);
-      crossProductAdd(-1.0, t, v, r);
+      D[6] = 0.5*q[0]*t[2] - q[2]*t[0] - t[1];
+      D[7] = 0.5*q[1]*t[2] - q[2]*t[1] + t[0];
+      D[8] = 0.5*(q[0]*t[0] + q[1]*t[1]);
+
+      // Add the contribution to the residual
+      r[0] += D[0]*dd[0] + D[1]*dd[1] + D[2]*dd[2];
+      r[1] += D[3]*dd[0] + D[4]*dd[1] + D[5]*dd[2];
+      r[2] += D[6]*dd[0] + D[7]*dd[1] + D[8]*dd[2];
+
+      r[0] += D[0]*dTdot[0] + D[1]*dTdot[1] + D[2]*dTdot[2];
+      r[1] += D[3]*dTdot[0] + D[4]*dTdot[1] + D[5]*dTdot[2];
+      r[2] += D[6]*dTdot[0] + D[7]*dTdot[1] + D[8]*dTdot[2];
 
       r += vars_per_node;
       q += vars_per_node;
@@ -963,20 +977,237 @@ class TACSQuadraticRotation {
     Add terms from the Jacobian
   */
   template <int vars_per_node, int offset, int num_nodes>
-  static void addDirectorJacobian( const TacsScalar vars[],
+  static void addDirectorJacobian( TacsScalar alpha,
+                                   TacsScalar beta,
+                                   TacsScalar gamma,
+                                   const TacsScalar vars[],
                                    const TacsScalar dvars[],
                                    const TacsScalar ddvars[],
                                    const TacsScalar t[],
+                                   const TacsScalar dTdot[],
+                                   const TacsScalar dd[],
+                                   const TacsScalar d2Tdotd[],
+                                   const TacsScalar d2Tdotu[],
                                    const TacsScalar d2d[],
                                    const TacsScalar d2du[],
+                                   TacsScalar res[],
                                    TacsScalar mat[] ){
+    const int size = vars_per_node*num_nodes;
+    const int dsize = 3*num_nodes;
+
+    // Pre-compute the Jacobian matrices
+    const TacsScalar *ti = t;
+    TacsScalar D[9*num_nodes], Ddot[9*num_nodes], Dddot[9*num_nodes];
+    for ( int i = 0; i < num_nodes; i++, ti += 3 ){
+      TacsScalar *Di = &D[9*i];
+      TacsScalar *Didot = &Ddot[9*i];
+      TacsScalar *Diddot = &Dddot[9*i];
+      const TacsScalar *qi = &vars[offset + vars_per_node*i];
+      const TacsScalar *qidot = &dvars[offset + vars_per_node*i];
+      const TacsScalar *qiddot = &ddvars[offset + vars_per_node*i];
+
+      Di[0] = 0.5*(qi[1]*ti[1] + qi[2]*ti[2]);
+      Di[1] = -qi[0]*ti[1] + 0.5*qi[1]*ti[0] - ti[2];
+      Di[2] = -qi[0]*ti[2] + 0.5*qi[2]*ti[0] + ti[1];
+
+      Di[3] = 0.5*qi[0]*ti[1] - qi[1]*ti[0] + ti[2];
+      Di[4] = 0.5*(qi[0]*ti[0] + qi[2]*ti[2]);
+      Di[5] = -qi[1]*ti[2] + 0.5*qi[2]*ti[1] - ti[0];
+
+      Di[6] = 0.5*qi[0]*ti[2] - qi[2]*ti[0] - ti[1];
+      Di[7] = 0.5*qi[1]*ti[2] - qi[2]*ti[1] + ti[0];
+      Di[8] = 0.5*(qi[0]*ti[0] + qi[1]*ti[1]);
+
+      Didot[0] = 0.5*(qidot[1]*ti[1] + qidot[2]*ti[2]);
+      Didot[1] = -qidot[0]*ti[1] + 0.5*qidot[1]*ti[0];
+      Didot[2] = -qidot[0]*ti[2] + 0.5*qidot[2]*ti[0];
+
+      Didot[3] = 0.5*qidot[0]*ti[1] - qidot[1]*ti[0];
+      Didot[4] = 0.5*(qidot[0]*ti[0] + qidot[2]*ti[2]);
+      Didot[5] = -qidot[1]*ti[2] + 0.5*qidot[2]*ti[1];
+
+      Didot[6] = 0.5*qidot[0]*ti[2] - qidot[2]*ti[0];
+      Didot[7] = 0.5*qidot[1]*ti[2] - qidot[2]*ti[1];
+      Didot[8] = 0.5*(qidot[0]*ti[0] + qidot[1]*ti[1]);
+
+      Diddot[0] = 0.5*(qiddot[1]*ti[1] + qiddot[2]*ti[2]);
+      Diddot[1] = -qiddot[0]*ti[1] + 0.5*qiddot[1]*ti[0];
+      Diddot[2] = -qiddot[0]*ti[2] + 0.5*qiddot[2]*ti[0];
+
+      Diddot[3] = 0.5*qiddot[0]*ti[1] - qiddot[1]*ti[0];
+      Diddot[4] = 0.5*(qiddot[0]*ti[0] + qiddot[2]*ti[2]);
+      Diddot[5] = -qiddot[1]*ti[2] + 0.5*qiddot[2]*ti[1];
+
+      Diddot[6] = 0.5*qiddot[0]*ti[2] - qiddot[2]*ti[0];
+      Diddot[7] = 0.5*qiddot[1]*ti[2] - qiddot[2]*ti[1];
+      Diddot[8] = 0.5*(qiddot[0]*ti[0] + qiddot[1]*ti[1]);
+    }
+
+    const TacsScalar *q = &vars[offset];
+    const TacsScalar *qdot = &dvars[offset];
+    TacsScalar *r = NULL;
+    if (res){
+      r = &res[offset];
+    }
+    TacsScalar *m = &mat[offset*size + offset];
+
+    // Re-set the pointer
+    const TacsScalar *Di = D;
+    for ( int i = 0; i < num_nodes; i++, Di += 9 ){
+      if (res){
+        r[0] += D[0]*dd[0] + D[1]*dd[1] + D[2]*dd[2];
+        r[1] += D[3]*dd[0] + D[4]*dd[1] + D[5]*dd[2];
+        r[2] += D[6]*dd[0] + D[7]*dd[1] + D[8]*dd[2];
+
+        r[0] += D[0]*dTdot[0] + D[1]*dTdot[1] + D[2]*dTdot[2];
+        r[1] += D[3]*dTdot[0] + D[4]*dTdot[1] + D[5]*dTdot[2];
+        r[2] += D[6]*dTdot[0] + D[7]*dTdot[1] + D[8]*dTdot[2];
+
+        r += vars_per_node;
+      }
+
+      const TacsScalar *Dj = D;
+      const TacsScalar *Djdot = Ddot;
+      const TacsScalar *Djddot = Dddot;
+      for ( int j = 0; j < num_nodes; j++, Dj += 9, Djdot += 9, Djddot += 9 ){
+        TacsScalar dfdq[9];
+        for ( int k = 0; k < 3; k++ ){
+          TacsScalar tmp[3];
+          tmp[0] =
+            alpha*d2d[dsize*(3*i + k) + 3*j] +
+            gamma*d2Tdotd[dsize*(3*i + k) + 3*j];
+          tmp[1] =
+            alpha*d2d[dsize*(3*i + k) + 3*j + 1] +
+            gamma*d2Tdotd[dsize*(3*i + k) + 3*j + 1];
+          tmp[2] =
+            alpha*d2d[dsize*(3*i + k) + 3*j + 2] +
+            gamma*d2Tdotd[dsize*(3*i + k) + 3*j + 2];
+
+          dfdq[k] = Dj[0]*tmp[0] + Dj[1]*tmp[1] + Dj[2]*tmp[2];
+          dfdq[3+k] = Dj[3]*tmp[0] + Dj[4]*tmp[1] + Dj[5]*tmp[2];
+          dfdq[6+k] = Dj[6]*tmp[0] + Dj[7]*tmp[1] + Dj[8]*tmp[2];
+
+          tmp[0] = beta*d2Tdotd[dsize*(3*i + k) + 3*j];
+          tmp[1] = beta*d2Tdotd[dsize*(3*i + k) + 3*j + 1];
+          tmp[2] = beta*d2Tdotd[dsize*(3*i + k) + 3*j + 2];
+
+          dfdq[k] += 2.0*(Djdot[0]*tmp[0] + Djdot[1]*tmp[1] + Djdot[2]*tmp[2]);
+          dfdq[3+k] += 2.0*(Djdot[3]*tmp[0] + Djdot[4]*tmp[1] + Djdot[5]*tmp[2]);
+          dfdq[6+k] += 2.0*(Djdot[6]*tmp[0] + Djdot[7]*tmp[1] + Djdot[8]*tmp[2]);
+
+          tmp[0] = alpha*d2Tdotd[dsize*(3*i + k) + 3*j];
+          tmp[1] = alpha*d2Tdotd[dsize*(3*i + k) + 3*j + 1];
+          tmp[2] = alpha*d2Tdotd[dsize*(3*i + k) + 3*j + 2];
+
+          dfdq[k] += Djddot[0]*tmp[0] + Djddot[1]*tmp[1] + Djddot[2]*tmp[2];
+          dfdq[3+k] += Djddot[3]*tmp[0] + Djddot[4]*tmp[1] + Djddot[5]*tmp[2];
+          dfdq[6+k] += Djddot[6]*tmp[0] + Djddot[7]*tmp[1] + Djddot[8]*tmp[2];
+        }
+
+        TacsScalar jac[9];
+        for ( int k = 0; k < 3; k++ ){
+          jac[k] = dfdq[3*k]*Di[0] + dfdq[3*k+1]*Di[1] + dfdq[3*k+2]*Di[2];
+          jac[3+k] = dfdq[3*k]*Di[3] + dfdq[3*k+1]*Di[4] + dfdq[3*k+2]*Di[5];
+          jac[6+k] = dfdq[3*k]*Di[6] + dfdq[3*k+1]*Di[7] + dfdq[3*k+2]*Di[8];
+        }
+
+        if (i == j){
+          TacsScalar tmp[3];
+          tmp[0] = alpha*(dd[0] + dTdot[0]);
+          tmp[1] = alpha*(dd[1] + dTdot[1]);
+          tmp[2] = alpha*(dd[2] + dTdot[2]);
+
+          jac[0] -= tmp[1]*t[1] + tmp[2]*t[2];
+          jac[1] += 0.5*(tmp[0]*t[1] + tmp[1]*t[0]);
+          jac[2] += 0.5*(tmp[0]*t[2] + tmp[2]*t[0]);
+
+          jac[3] += 0.5*(tmp[0]*t[1] + tmp[1]*t[0]);
+          jac[4] -= tmp[0]*t[0] + tmp[2]*t[2];
+          jac[5] += 0.5*(tmp[1]*t[2] + tmp[2]*t[1]);
+
+          jac[6] += 0.5*(tmp[0]*t[2] + tmp[2]*t[0]);
+          jac[7] += 0.5*(tmp[1]*t[2] + tmp[2]*t[1]);
+          jac[8] -= tmp[0]*t[0] + tmp[1]*t[1];
+        }
+
+        for ( int ii = 0; ii < 3; ii++ ){
+          for ( int jj = 0; jj < 3; jj++ ){
+            m[vars_per_node*j + ii*size + jj] += jac[3*ii + jj];
+          }
+        }
+      }
+
+      q += vars_per_node;
+      qdot += vars_per_node;
+
+      dd += 3;
+      dTdot += 3;
+      t += 3;
+      m += vars_per_node*size;
+    }
+
+    Di = D;
+    const TacsScalar *Didot = Ddot;
+    const TacsScalar *Diddot = Dddot;
+    for ( int i = 0; i < num_nodes; i++, Di += 9, Didot += 9, Diddot += 9 ){
+      for ( int j = 0; j < num_nodes; j++ ){
+        TacsScalar dfdq[9];
+        for ( int k = 0; k < 3; k++ ){
+          TacsScalar tmp[3];
+          tmp[0] =
+            alpha*d2du[dsize*(3*i) + 3*j + k] +
+            gamma*d2Tdotu[dsize*(3*i) + 3*j + k];
+          tmp[1] =
+            alpha*d2du[dsize*(3*i + 1) + 3*j + k] +
+            gamma*d2Tdotu[dsize*(3*i + 1) + 3*j + k];
+          tmp[2] =
+            alpha*d2du[dsize*(3*i + 2) + 3*j + k] +
+            gamma*d2Tdotu[dsize*(3*i + 2) + 3*j + k];
+
+          dfdq[k] = Di[0]*tmp[0] + Di[1]*tmp[1] + Di[2]*tmp[2];
+          dfdq[3+k] = Di[3]*tmp[0] + Di[4]*tmp[1] + Di[5]*tmp[2];
+          dfdq[6+k] = Di[6]*tmp[0] + Di[7]*tmp[1] + Di[8]*tmp[2];
+
+          tmp[0] = beta*d2Tdotu[dsize*(3*i + k) + 3*j];
+          tmp[1] = beta*d2Tdotu[dsize*(3*i + k) + 3*j + 1];
+          tmp[2] = beta*d2Tdotu[dsize*(3*i + k) + 3*j + 2];
+
+          dfdq[k] += 2.0*(Didot[0]*tmp[0] + Didot[1]*tmp[1] + Didot[2]*tmp[2]);
+          dfdq[3+k] += 2.0*(Didot[3]*tmp[0] + Didot[4]*tmp[1] + Didot[5]*tmp[2]);
+          dfdq[6+k] += 2.0*(Didot[6]*tmp[0] + Didot[7]*tmp[1] + Didot[8]*tmp[2]);
+
+          tmp[0] = alpha*d2Tdotu[dsize*(3*i + k) + 3*j];
+          tmp[1] = alpha*d2Tdotu[dsize*(3*i + k) + 3*j + 1];
+          tmp[2] = alpha*d2Tdotu[dsize*(3*i + k) + 3*j + 2];
+
+          dfdq[k] += Diddot[0]*tmp[0] + Diddot[1]*tmp[1] + Diddot[2]*tmp[2];
+          dfdq[3+k] += Diddot[3]*tmp[0] + Diddot[4]*tmp[1] + Diddot[5]*tmp[2];
+          dfdq[6+k] += Diddot[6]*tmp[0] + Diddot[7]*tmp[1] + Diddot[8]*tmp[2];
+        }
+
+        for ( int ii = 0; ii < 3; ii++ ){
+          for ( int jj = 0; jj < 3; jj++ ){
+            int index =
+              (vars_per_node*i + ii + offset)*size +
+              vars_per_node*j + jj;
+
+            mat[index] += dfdq[3*ii + jj];
+          }
+        }
+
+        for ( int ii = 0; ii < 3; ii++ ){
+          for ( int jj = 0; jj < 3; jj++ ){
+            int index =
+              (vars_per_node*j + jj)*size +
+              vars_per_node*i + ii + offset;
+
+            mat[index] += dfdq[3*ii + jj];
+          }
+        }
+      }
+    }
   }
-
 };
-
-
-
-
 
 
 class TACSQuaternionRotation {
@@ -1122,6 +1353,7 @@ class TACSQuaternionRotation {
                     2.0*q[2]*(dC[0] + dC[8]) + q[3]*(dC[7] + dC[5]));
         r[3] += 2.0*(q[0]*(dC[1] - dC[3]) + q[1]*(dC[2] + dC[6]) +
                     q[2]*(dC[5] + dC[7]) - 2.0*q[3]*(dC[0] + dC[4]));
+        r += vars_per_node;
       }
 
       const TacsScalar *qi = &vars[offset + i*vars_per_node];
@@ -1135,42 +1367,42 @@ class TACSQuaternionRotation {
             d2Ct[jj] = d2C[csize*(9*i + k) + 9*j + jj];
           }
 
-          dfdC[k] += 2.0*(qj[3]*(d2Ct[1] - d2Ct[3]) +
-                          qj[2]*(d2Ct[6] - d2Ct[2]) +
-                          qj[1]*(d2Ct[5] - d2Ct[7]));
-          dfdC[9+k] += 2.0*(qj[0]*(d2Ct[5] - d2Ct[7]) -
-                            2.0*qj[1]*(d2Ct[4] + d2Ct[8]) +
-                            qj[2]*(d2Ct[1] + d2Ct[3]) +
-                            qj[3]*(d2Ct[2] + d2Ct[6]));
-          dfdC[18+k] += 2.0*(qj[0]*(d2Ct[6] - d2Ct[2]) +
-                             qj[1]*(d2Ct[1] + d2Ct[3]) -
-                             2.0*qj[2]*(d2Ct[0] + d2Ct[8]) +
-                             qj[3]*(d2Ct[7] + d2Ct[5]));
-          dfdC[27+k] += 2.0*(qj[0]*(d2Ct[1] - d2Ct[3]) +
-                             qj[1]*(d2Ct[2] + d2Ct[6]) +
-                             qj[2]*(d2Ct[5] + d2Ct[7]) -
-                             2.0*qj[3]*(d2Ct[0] + d2Ct[4]));
+          dfdC[k] = 2.0*(qj[3]*(d2Ct[1] - d2Ct[3]) +
+                         qj[2]*(d2Ct[6] - d2Ct[2]) +
+                         qj[1]*(d2Ct[5] - d2Ct[7]));
+          dfdC[9+k] = 2.0*(qj[0]*(d2Ct[5] - d2Ct[7]) -
+                           2.0*qj[1]*(d2Ct[4] + d2Ct[8]) +
+                           qj[2]*(d2Ct[1] + d2Ct[3]) +
+                           qj[3]*(d2Ct[2] + d2Ct[6]));
+          dfdC[18+k] = 2.0*(qj[0]*(d2Ct[6] - d2Ct[2]) +
+                            qj[1]*(d2Ct[1] + d2Ct[3]) -
+                            2.0*qj[2]*(d2Ct[0] + d2Ct[8]) +
+                            qj[3]*(d2Ct[7] + d2Ct[5]));
+          dfdC[27+k] = 2.0*(qj[0]*(d2Ct[1] - d2Ct[3]) +
+                            qj[1]*(d2Ct[2] + d2Ct[6]) +
+                            qj[2]*(d2Ct[5] + d2Ct[7]) -
+                            2.0*qj[3]*(d2Ct[0] + d2Ct[4]));
         }
 
         TacsScalar jac[16];
         for ( int k = 0; k < 4; k++ ){
           TacsScalar *d2Ct = &dfdC[9*k];
 
-          jac[k] += 2.0*(qi[3]*(d2Ct[1] - d2Ct[3]) +
-                         qi[2]*(d2Ct[6] - d2Ct[2]) +
-                         qi[1]*(d2Ct[5] - d2Ct[7]));
-          jac[4+k] += 2.0*(qi[0]*(d2Ct[5] - d2Ct[7]) -
-                           2.0*qi[1]*(d2Ct[4] + d2Ct[8]) +
-                           qi[2]*(d2Ct[1] + d2Ct[3]) +
-                           qi[3]*(d2Ct[2] + d2Ct[6]));
-          jac[8+k] += 2.0*(qi[0]*(d2Ct[6] - d2Ct[2]) +
-                           qi[1]*(d2Ct[1] + d2Ct[3]) -
-                           2.0*qi[2]*(d2Ct[0] + d2Ct[8]) +
-                           qi[3]*(d2Ct[7] + d2Ct[5]));
-          jac[12+k] += 2.0*(qi[0]*(d2Ct[1] - d2Ct[3]) +
-                            qi[1]*(d2Ct[2] + d2Ct[6]) +
-                            qi[2]*(d2Ct[5] + d2Ct[7]) -
-                            2.0*qi[3]*(d2Ct[0] + d2Ct[4]));
+          jac[k] = 2.0*(qi[3]*(d2Ct[1] - d2Ct[3]) +
+                        qi[2]*(d2Ct[6] - d2Ct[2]) +
+                        qi[1]*(d2Ct[5] - d2Ct[7]));
+          jac[4+k] = 2.0*(qi[0]*(d2Ct[5] - d2Ct[7]) -
+                          2.0*qi[1]*(d2Ct[4] + d2Ct[8]) +
+                          qi[2]*(d2Ct[1] + d2Ct[3]) +
+                          qi[3]*(d2Ct[2] + d2Ct[6]));
+          jac[8+k] = 2.0*(qi[0]*(d2Ct[6] - d2Ct[2]) +
+                          qi[1]*(d2Ct[1] + d2Ct[3]) -
+                          2.0*qi[2]*(d2Ct[0] + d2Ct[8]) +
+                          qi[3]*(d2Ct[7] + d2Ct[5]));
+          jac[12+k] = 2.0*(qi[0]*(d2Ct[1] - d2Ct[3]) +
+                           qi[1]*(d2Ct[2] + d2Ct[6]) +
+                           qi[2]*(d2Ct[5] + d2Ct[7]) -
+                           2.0*qi[3]*(d2Ct[0] + d2Ct[4]));
         }
 
         if (i == j){
@@ -1201,7 +1433,6 @@ class TACSQuaternionRotation {
         }
       }
 
-      r += vars_per_node;
       m += vars_per_node*size;
       q += vars_per_node;
       dC += 9;
@@ -1235,41 +1466,46 @@ class TACSQuaternionRotation {
                                          const TacsScalar vars[],
                                          TacsScalar res[],
                                          TacsScalar mat[] ){
-    const TacsScalar *q = &vars[offset];
-    TacsScalar *r = &res[offset];
     const int size = vars_per_node*num_nodes;
+    const TacsScalar *q = &vars[offset];
+    TacsScalar *r = NULL;
+    if (res){
+      r = &res[offset];
+    }
 
     // Add the constribution to the constraints from the quaternions
     TacsScalar *m = &mat[offset*size + offset];
     for ( int i = 0; i < num_nodes; i++ ){
       TacsScalar lamb = q[4];
 
-      // Add the result to the governing equations
-      r[0] += 2.0*q[0]*lamb;
-      r[1] += 2.0*q[1]*lamb;
-      r[2] += 2.0*q[2]*lamb;
-      r[3] += 2.0*q[3]*lamb;
+      if (res){
+        // Add the result to the governing equations
+        r[0] += 2.0*q[0]*lamb;
+        r[1] += 2.0*q[1]*lamb;
+        r[2] += 2.0*q[2]*lamb;
+        r[3] += 2.0*q[3]*lamb;
 
-      // Enforce the quaternion constraint
-      r[4] += q[0]*q[0] + q[1]*q[1] + q[2]*q[2] + q[3]*q[3] - 1.0;
+        // Enforce the quaternion constraint
+        r[4] += q[0]*q[0] + q[1]*q[1] + q[2]*q[2] + q[3]*q[3] - 1.0;
+      }
 
       // Add the constraint terms
-      m[4] += alpha*q[0];
-      m[4+size] += alpha*q[1];
-      m[4+2*size] += alpha*q[2];
-      m[4+3*size] += alpha*q[3];
+      m[4] += 2.0*alpha*q[0];
+      m[4+size] += 2.0*alpha*q[1];
+      m[4+2*size] += 2.0*alpha*q[2];
+      m[4+3*size] += 2.0*alpha*q[3];
 
       // Enforce the quaternion constraint
-      m[4*size] += alpha*q[0];
-      m[4*size+1] += alpha*q[1];
-      m[4*size+2] += alpha*q[2];
-      m[4*size+3] += alpha*q[3];
+      m[4*size] += 2.0*alpha*q[0];
+      m[4*size+1] += 2.0*alpha*q[1];
+      m[4*size+2] += 2.0*alpha*q[2];
+      m[4*size+3] += 2.0*alpha*q[3];
 
       // Add the terms to the diagonal
-      m[0] += alpha*lamb;
-      m[size+1] += alpha*lamb;
-      m[2*(size+1)] += alpha*lamb;
-      m[3*(size+1)] += alpha*lamb;
+      m[0] += 2.0*alpha*lamb;
+      m[size+1] += 2.0*alpha*lamb;
+      m[2*(size+1)] += 2.0*alpha*lamb;
+      m[3*(size+1)] += 2.0*alpha*lamb;
 
       r += vars_per_node;
       q += vars_per_node;
@@ -1646,24 +1882,268 @@ class TACSQuaternionRotation {
     }
   }
 
-  // template <int vars_per_node, int offset, int num_nodes>
-  // static void addDirectorJacobian( TacsScalar alpha,
-  //                                  TacsScalar beta,
-  //                                  TacsScalar gamma,
-  //                                  const TacsScalar vars[],
-  //                                  const TacsScalar dvars[],
-  //                                  const TacsScalar ddvars[],
-  //                                  const TacsScalar t[],
-  //                                  const TacsScalar dTdotdq[],
-  //                                  const TacsScalar dTdotdqdot[],
-  //                                  const TacsScalar dTdotdqdot[],
-  //                                  const TacsScalar dddq[],
-  //                                  const TacsScalar dddqdot[],
+  /*
+    Add the contributions to the Jacobian matrix from the director
+  */
+  template <int vars_per_node, int offset, int num_nodes>
+  static void addDirectorJacobian( TacsScalar alpha,
+                                   TacsScalar beta,
+                                   TacsScalar gamma,
+                                   const TacsScalar vars[],
+                                   const TacsScalar dvars[],
+                                   const TacsScalar ddvars[],
+                                   const TacsScalar t[],
+                                   const TacsScalar dTdot[],
+                                   const TacsScalar dd[],
+                                   const TacsScalar d2Tdotd[],
+                                   const TacsScalar d2Tdotu[],
+                                   const TacsScalar d2d[],
+                                   const TacsScalar d2du[],
+                                   TacsScalar res[],
+                                   TacsScalar mat[] ){
+    const int size = vars_per_node*num_nodes;
+    const int dsize = 3*num_nodes;
+
+    // Pre-compute the Jacobian matrices
+    const TacsScalar *ti = t;
+    TacsScalar D[12*num_nodes], Ddot[12*num_nodes], Dddot[12*num_nodes];
+    for ( int i = 0; i < num_nodes; i++, ti += 3 ){
+      // D = d(Qdot*t)/d(qdot)
+      TacsScalar *Di = &D[12*i];
+      TacsScalar *Didot = &Ddot[12*i];
+      TacsScalar *Diddot = &Dddot[12*i];
+      const TacsScalar *qi = &vars[offset + vars_per_node*i];
+      const TacsScalar *qidot = &dvars[offset + vars_per_node*i];
+      const TacsScalar *qiddot = &ddvars[offset + vars_per_node*i];
+
+      Di[0] = 2.0*(qi[2]*ti[2] - qi[3]*ti[1]);
+      Di[1] = 2.0*(qi[2]*ti[1] + qi[3]*ti[2]);
+      Di[2] = 2.0*(-2.0*qi[2]*ti[0] + qi[1]*ti[1] + qi[0]*ti[2]);
+      Di[3] = 2.0*(-2.0*qi[3]*ti[0] - qi[0]*ti[1] + qi[1]*ti[2]);
+
+      Di[4] = 2.0*(qi[3]*ti[0] - qi[1]*ti[2]);
+      Di[5] = 2.0*(qi[2]*ti[0] - 2.0*qi[1]*ti[1] - qi[0]*ti[2]);
+      Di[6] = 2.0*(qi[1]*ti[0] + qi[3]*ti[2]);
+      Di[7] = 2.0*(qi[0]*ti[0] - 2.0*qi[3]*ti[1] + qi[2]*ti[2]);
+
+      Di[8] = 2.0*(qi[1]*ti[1] - qi[2]*ti[0]);
+      Di[9] = 2.0*(qi[3]*ti[0] + qi[0]*ti[1] - 2.0*qi[1]*ti[2]);
+      Di[10] = 2.0*(qi[3]*ti[1] - qi[0]*ti[0] - 2.0*qi[2]*ti[2]);
+      Di[11] = 2.0*(qi[1]*ti[0] + qi[2]*ti[1]);
+
+      Didot[0] = 2.0*(qidot[2]*ti[2] - qidot[3]*ti[1]);
+      Didot[1] = 2.0*(qidot[2]*ti[1] + qidot[3]*ti[2]);
+      Didot[2] = 2.0*(-2.0*qidot[2]*ti[0] + qidot[1]*ti[1] + qidot[0]*ti[2]);
+      Didot[3] = 2.0*(-2.0*qidot[3]*ti[0] - qidot[0]*ti[1] + qidot[1]*ti[2]);
+
+      Didot[4] = 2.0*(qidot[3]*ti[0] - qidot[1]*ti[2]);
+      Didot[5] = 2.0*(qidot[2]*ti[0] - 2.0*qidot[1]*ti[1] - qidot[0]*ti[2]);
+      Didot[6] = 2.0*(qidot[1]*ti[0] + qidot[3]*ti[2]);
+      Didot[7] = 2.0*(qidot[0]*ti[0] - 2.0*qidot[3]*ti[1] + qidot[2]*ti[2]);
+
+      Didot[8] = 2.0*(qidot[1]*ti[1] - qidot[2]*ti[0]);
+      Didot[9] = 2.0*(qidot[3]*ti[0] + qidot[0]*ti[1] - 2.0*qidot[1]*ti[2]);
+      Didot[10] = 2.0*(qidot[3]*ti[1] - qidot[0]*ti[0] - 2.0*qidot[2]*ti[2]);
+      Didot[11] = 2.0*(qidot[1]*ti[0] + qidot[2]*ti[1]);
+
+      Diddot[0] = 2.0*(qiddot[2]*ti[2] - qiddot[3]*ti[1]);
+      Diddot[1] = 2.0*(qiddot[2]*ti[1] + qiddot[3]*ti[2]);
+      Diddot[2] = 2.0*(-2.0*qiddot[2]*ti[0] + qiddot[1]*ti[1] + qiddot[0]*ti[2]);
+      Diddot[3] = 2.0*(-2.0*qiddot[3]*ti[0] - qiddot[0]*ti[1] + qiddot[1]*ti[2]);
+
+      Diddot[4] = 2.0*(qiddot[3]*ti[0] - qiddot[1]*ti[2]);
+      Diddot[5] = 2.0*(qiddot[2]*ti[0] - 2.0*qiddot[1]*ti[1] - qiddot[0]*ti[2]);
+      Diddot[6] = 2.0*(qiddot[1]*ti[0] + qiddot[3]*ti[2]);
+      Diddot[7] = 2.0*(qiddot[0]*ti[0] - 2.0*qiddot[3]*ti[1] + qiddot[2]*ti[2]);
+
+      Diddot[8] = 2.0*(qiddot[1]*ti[1] - qiddot[2]*ti[0]);
+      Diddot[9] = 2.0*(qiddot[3]*ti[0] + qiddot[0]*ti[1] - 2.0*qiddot[1]*ti[2]);
+      Diddot[10] = 2.0*(qiddot[3]*ti[1] - qiddot[0]*ti[0] - 2.0*qiddot[2]*ti[2]);
+      Diddot[11] = 2.0*(qiddot[1]*ti[0] + qiddot[2]*ti[1]);
+    }
+
+    const TacsScalar *q = &vars[offset];
+    const TacsScalar *qdot = &dvars[offset];
+    TacsScalar *r = NULL;
+    if (res){
+      r = &res[offset];
+    }
+    TacsScalar *m = &mat[offset*size + offset];
+
+    // Re-set the pointer
+    const TacsScalar *Di = D;
+    for ( int i = 0; i < num_nodes; i++, Di += 12 ){
+      if (res){
+        r[0] += dTdot[0]*Di[0] + dTdot[1]*Di[4] + dTdot[2]*Di[8];
+        r[1] += dTdot[0]*Di[1] + dTdot[1]*Di[5] + dTdot[2]*Di[9];
+        r[2] += dTdot[0]*Di[2] + dTdot[1]*Di[6] + dTdot[2]*Di[10];
+        r[3] += dTdot[0]*Di[3] + dTdot[1]*Di[7] + dTdot[2]*Di[11];
+
+        r[0] += dd[0]*Di[0] + dd[1]*Di[4] + dd[2]*Di[8];
+        r[1] += dd[0]*Di[1] + dd[1]*Di[5] + dd[2]*Di[9];
+        r[2] += dd[0]*Di[2] + dd[1]*Di[6] + dd[2]*Di[10];
+        r[3] += dd[0]*Di[3] + dd[1]*Di[7] + dd[2]*Di[11];
+
+        r += vars_per_node;
+      }
+
+      const TacsScalar *Dj = D;
+      const TacsScalar *Djdot = Ddot;
+      const TacsScalar *Djddot = Dddot;
+      for ( int j = 0; j < num_nodes; j++, Dj += 12, Djdot += 12, Djddot += 12 ){
+        TacsScalar dfdq[12];
+        for ( int k = 0; k < 3; k++ ){
+          TacsScalar tmp[3];
+          tmp[0] =
+            alpha*d2d[dsize*(3*i + k) + 3*j] +
+            gamma*d2Tdotd[dsize*(3*i + k) + 3*j];
+          tmp[1] =
+            alpha*d2d[dsize*(3*i + k) + 3*j + 1] +
+            gamma*d2Tdotd[dsize*(3*i + k) + 3*j + 1];
+          tmp[2] =
+            alpha*d2d[dsize*(3*i + k) + 3*j + 2] +
+            gamma*d2Tdotd[dsize*(3*i + k) + 3*j + 2];
+
+          dfdq[k] = Dj[0]*tmp[0] + Dj[4]*tmp[1] + Dj[8]*tmp[2];
+          dfdq[3 + k] = Dj[1]*tmp[0] + Dj[5]*tmp[1] + Dj[9]*tmp[2];
+          dfdq[6 + k] = Dj[2]*tmp[0] + Dj[6]*tmp[1] + Dj[10]*tmp[2];
+          dfdq[9 + k] = Dj[3]*tmp[0] + Dj[7]*tmp[1] + Dj[11]*tmp[2];
+
+          tmp[0] = beta*d2Tdotd[dsize*(3*i + k) + 3*j];
+          tmp[1] = beta*d2Tdotd[dsize*(3*i + k) + 3*j + 1];
+          tmp[2] = beta*d2Tdotd[dsize*(3*i + k) + 3*j + 2];
+
+          dfdq[k] += 2.0*(Djdot[0]*tmp[0] + Djdot[4]*tmp[1] + Djdot[8]*tmp[2]);
+          dfdq[3 + k] += 2.0*(Djdot[1]*tmp[0] + Djdot[5]*tmp[1] + Djdot[9]*tmp[2]);
+          dfdq[6 + k] += 2.0*(Djdot[2]*tmp[0] + Djdot[6]*tmp[1] + Djdot[10]*tmp[2]);
+          dfdq[9 + k] += 2.0*(Djdot[3]*tmp[0] + Djdot[7]*tmp[1] + Djdot[11]*tmp[2]);
+
+          tmp[0] = alpha*d2Tdotd[dsize*(3*i + k) + 3*j];
+          tmp[1] = alpha*d2Tdotd[dsize*(3*i + k) + 3*j + 1];
+          tmp[2] = alpha*d2Tdotd[dsize*(3*i + k) + 3*j + 2];
+
+          dfdq[k] += Djddot[0]*tmp[0] + Djddot[4]*tmp[1] + Djddot[8]*tmp[2];
+          dfdq[3 + k] += Djddot[1]*tmp[0] + Djddot[5]*tmp[1] + Djddot[9]*tmp[2];
+          dfdq[6 + k] += Djddot[2]*tmp[0] + Djddot[6]*tmp[1] + Djddot[10]*tmp[2];
+          dfdq[9 + k] += Djddot[3]*tmp[0] + Djddot[7]*tmp[1] + Djddot[11]*tmp[2];
+        }
+
+        TacsScalar jac[16];
+        for ( int k = 0; k < 4; k++ ){
+          jac[k] = dfdq[3*k]*Di[0] + dfdq[3*k+1]*Di[4] + dfdq[3*k+2]*Di[8];
+          jac[4+k] = dfdq[3*k]*Di[1] + dfdq[3*k+1]*Di[5] + dfdq[3*k+2]*Di[9];
+          jac[8+k] = dfdq[3*k]*Di[2] + dfdq[3*k+1]*Di[6] + dfdq[3*k+2]*Di[10];
+          jac[12+k] = dfdq[3*k]*Di[3] + dfdq[3*k+1]*Di[7] + dfdq[3*k+2]*Di[11];
+        }
+
+        if (i == j){
+          TacsScalar tmp[3];
+          tmp[0] = alpha*(dd[0] + dTdot[0]);
+          tmp[1] = alpha*(dd[1] + dTdot[1]);
+          tmp[2] = alpha*(dd[2] + dTdot[2]);
+
+          jac[1] += 2.0*(tmp[2]*t[1] - tmp[1]*t[2]);
+          jac[2] += 2.0*(tmp[0]*t[2] - tmp[2]*t[0]);
+          jac[3] += 2.0*(tmp[1]*t[0] - tmp[0]*t[1]);
+
+          jac[4] += 2.0*(tmp[2]*t[1] - tmp[1]*t[2]);
+          jac[5] -= 4.0*(tmp[1]*t[1] + tmp[2]*t[2]);
+          jac[6] += 2.0*(tmp[0]*t[1] + tmp[1]*t[0]);
+          jac[7] += 2.0*(tmp[0]*t[2] + tmp[2]*t[0]);
+
+          jac[8] += 2.0*(tmp[0]*t[2] - tmp[2]*t[0]);
+          jac[9] += 2.0*(tmp[0]*t[1] + tmp[1]*t[0]);
+          jac[10] -= 4.0*(tmp[0]*t[0] + tmp[2]*t[2]);
+          jac[11] += 2.0*(tmp[1]*t[2] + tmp[2]*t[1]);
+
+          jac[12] += 2.0*(tmp[1]*t[0] - tmp[0]*t[1]);
+          jac[13] += 2.0*(tmp[0]*t[2] + tmp[2]*t[0]);
+          jac[14] += 2.0*(tmp[1]*t[2] + tmp[2]*t[1]);
+          jac[15] -= 4.0*(tmp[0]*t[0] + tmp[1]*t[1]);
+        }
+
+        for ( int ii = 0; ii < 4; ii++ ){
+          for ( int jj = 0; jj < 4; jj++ ){
+            m[vars_per_node*j + ii*size + jj] += jac[4*ii + jj];
+          }
+        }
+      }
+
+      q += vars_per_node;
+      qdot += vars_per_node;
+
+      dd += 3;
+      dTdot += 3;
+      t += 3;
+      m += vars_per_node*size;
+    }
 
 
+    Di = D;
+    const TacsScalar *Didot = Ddot;
+    const TacsScalar *Diddot = Dddot;
+    for ( int i = 0; i < num_nodes; i++, Di += 12, Didot += 12, Diddot += 12 ){
+      for ( int j = 0; j < num_nodes; j++ ){
+        TacsScalar dfdq[12];
+        for ( int k = 0; k < 3; k++ ){
+          TacsScalar tmp[3];
+          tmp[0] =
+            alpha*d2du[dsize*(3*i) + 3*j + k] +
+            gamma*d2Tdotu[dsize*(3*i) + 3*j + k];
+          tmp[1] =
+            alpha*d2du[dsize*(3*i + 1) + 3*j + k] +
+            gamma*d2Tdotu[dsize*(3*i + 1) + 3*j + k];
+          tmp[2] =
+            alpha*d2du[dsize*(3*i + 2) + 3*j + k] +
+            gamma*d2Tdotu[dsize*(3*i + 2) + 3*j + k];
+
+          dfdq[k] = Di[0]*tmp[0] + Di[4]*tmp[1] + Di[8]*tmp[2];
+          dfdq[3 + k] = Di[1]*tmp[0] + Di[5]*tmp[1] + Di[9]*tmp[2];
+          dfdq[6 + k] = Di[2]*tmp[0] + Di[6]*tmp[1] + Di[10]*tmp[2];
+          dfdq[9 + k] = Di[3]*tmp[0] + Di[7]*tmp[1] + Di[11]*tmp[2];
+
+          tmp[0] = beta*d2Tdotd[dsize*(3*i + k) + 3*j];
+          tmp[1] = beta*d2Tdotd[dsize*(3*i + k) + 3*j + 1];
+          tmp[2] = beta*d2Tdotd[dsize*(3*i + k) + 3*j + 2];
+
+          dfdq[k] += 2.0*(Didot[0]*tmp[0] + Didot[4]*tmp[1] + Didot[8]*tmp[2]);
+          dfdq[3 + k] += 2.0*(Didot[1]*tmp[0] + Didot[5]*tmp[1] + Didot[9]*tmp[2]);
+          dfdq[6 + k] += 2.0*(Didot[2]*tmp[0] + Didot[6]*tmp[1] + Didot[10]*tmp[2]);
+          dfdq[9 + k] += 2.0*(Didot[3]*tmp[0] + Didot[7]*tmp[1] + Didot[11]*tmp[2]);
+
+          tmp[0] = alpha*d2Tdotd[dsize*(3*i + k) + 3*j];
+          tmp[1] = alpha*d2Tdotd[dsize*(3*i + k) + 3*j + 1];
+          tmp[2] = alpha*d2Tdotd[dsize*(3*i + k) + 3*j + 2];
+
+          dfdq[k] += Diddot[0]*tmp[0] + Diddot[4]*tmp[1] + Diddot[8]*tmp[2];
+          dfdq[3 + k] += Diddot[1]*tmp[0] + Diddot[5]*tmp[1] + Diddot[9]*tmp[2];
+          dfdq[6 + k] += Diddot[2]*tmp[0] + Diddot[6]*tmp[1] + Diddot[10]*tmp[2];
+          dfdq[9 + k] += Diddot[3]*tmp[0] + Diddot[7]*tmp[1] + Diddot[11]*tmp[2];
+        }
+
+        for ( int ii = 0; ii < 4; ii++ ){
+          for ( int jj = 0; jj < 3; jj++ ){
+            int index =
+              (vars_per_node*i + ii + offset)*size +
+              vars_per_node*j + jj;
+
+            mat[index] += dfdq[3*ii + jj];
+          }
+        }
+
+        for ( int ii = 0; ii < 4; ii++ ){
+          for ( int jj = 0; jj < 3; jj++ ){
+            int index =
+              (vars_per_node*j + jj)*size +
+              vars_per_node*i + ii + offset;
+
+            mat[index] += dfdq[3*ii + jj];
+          }
+        }
+      }
+    }
+  }
 };
-
-
 
 template <int vars_per_node, int offset, int num_nodes, class director>
 int TacsTestDirector( double dh=1e-7,
@@ -1710,7 +2190,8 @@ int TacsTestDirector( double dh=1e-7,
   TacsScalar res[size], mat[size*size];
   memset(res, 0, size*sizeof(TacsScalar));
   memset(mat, 0, size*size*sizeof(TacsScalar));
-  director::template addRotationMatJacobian<vars_per_node, offset, num_nodes>(1.0, vars, dC, d2C, res, mat);
+  director::template
+    addRotationMatJacobian<vars_per_node, offset, num_nodes>(1.0, vars, dC, d2C, res, mat);
 
   // Verify the implementation of the residual
   TacsScalar fd[size], C0 = 0.0;
@@ -1771,7 +2252,8 @@ int TacsTestDirector( double dh=1e-7,
 
   // Compute the derivative of the rotation matrix
   TacsScalar Cd[csize];
-  director::template computeRotationMatDeriv<vars_per_node, offset, num_nodes>(vars, varsd, C, Cd);
+  director::template
+    computeRotationMatDeriv<vars_per_node, offset, num_nodes>(vars, varsd, C, Cd);
 
   TacsScalar q[size];
   for ( int k = 0; k < size; k++ ){
@@ -1826,7 +2308,8 @@ int TacsTestDirector( double dh=1e-7,
 #endif // TACS_USE_COMPLEX
 
     TacsScalar Ct[csize];
-    director::template computeRotationMat<vars_per_node, offset, num_nodes>(varst, Ct);
+    director::template
+      computeRotationMat<vars_per_node, offset, num_nodes>(varst, Ct);
 
     // Add the contributions from the
     TacsScalar dCt[csize];
@@ -1840,7 +2323,8 @@ int TacsTestDirector( double dh=1e-7,
 
     TacsScalar rest[size];
     memset(rest, 0, size*sizeof(TacsScalar));
-    director::template addRotationMatResidual<vars_per_node, offset, num_nodes>(varst, dCt, rest);
+    director::template
+      addRotationMatResidual<vars_per_node, offset, num_nodes>(varst, dCt, rest);
 
     for ( int j = 0; j < size; j++ ){
 #ifdef TACS_USE_COMPLEX
@@ -1871,10 +2355,12 @@ int TacsTestDirector( double dh=1e-7,
   fail = (max_err > test_fail_atol || max_rel > test_fail_rtol);
 
   // Check for consistency between the director and C
-  director::template computeRotationMat<vars_per_node, offset, num_nodes>(vars, C);
+  director::template
+    computeRotationMat<vars_per_node, offset, num_nodes>(vars, C);
 
   TacsScalar d[dsize], ddot[dsize];
-  director::template computeDirectorRates<vars_per_node, offset, num_nodes>(vars, dvars, t, d, ddot);
+  director::template
+    computeDirectorRates<vars_per_node, offset, num_nodes>(vars, dvars, t, d, ddot);
 
   TacsScalar dcal[dsize];
   for ( int i = 0; i < num_nodes; i++ ){
@@ -1914,8 +2400,9 @@ int TacsTestDirector( double dh=1e-7,
 
   // Test the implementation of the director time derivative
   TacsScalar dddot[dsize];
-  director::template computeDirectorRates<vars_per_node, offset, num_nodes>(vars, dvars, ddvars,
-                                                                            t, d, ddot, dddot);
+  director::template
+    computeDirectorRates<vars_per_node, offset, num_nodes>(vars, dvars, ddvars, t,
+                                                           d, ddot, dddot);
 
   TacsScalar fddot[dsize], varst[size];
   for ( int k = 0; k < size; k++ ){
@@ -1927,7 +2414,8 @@ int TacsTestDirector( double dh=1e-7,
   }
 
   TacsScalar dt[dsize], dtdot[dsize];
-  director::template computeDirectorRates<vars_per_node, offset, num_nodes>(varst, dvars, t, dt, dtdot);
+  director::template
+    computeDirectorRates<vars_per_node, offset, num_nodes>(varst, dvars, t, dt, dtdot);
 
   for ( int k = 0; k < dsize; k++ ){
 #ifdef TACS_USE_COMPLEX
@@ -1967,7 +2455,8 @@ int TacsTestDirector( double dh=1e-7,
 #endif // TACS_USE_COMPLEX
   }
 
-  director::template computeDirectorRates<vars_per_node, offset, num_nodes>(varst, dvarst, t, dt, dtdot);
+  director::template
+    computeDirectorRates<vars_per_node, offset, num_nodes>(varst, dvarst, t, dt, dtdot);
 
   for ( int k = 0; k < dsize; k++ ){
 #ifdef TACS_USE_COMPLEX
@@ -2012,14 +2501,23 @@ int TacsTestDirector( double dh=1e-7,
   TacsGenerateRandomArray(d2d, dsize*dsize);
   TacsGenerateRandomArray(d2du, dsize*dsize);
 
-  TacsScalar res[size], mat[size*size];
+  memset(d2Tdotu, 0, dsize*dsize*sizeof(TacsScalar));
+  memset(d2du, 0, dsize*dsize*sizeof(TacsScalar));
+
+  // Compute the director rates
+  director::template
+    computeDirectorRates<vars_per_node, offset, num_nodes>(vars, dvars, ddvars, t,
+                                                           d, ddot, dddot);
+
+  // Compute the director Jacobian matrix
   memset(res, 0, size*sizeof(TacsScalar));
   memset(mat, 0, size*size*sizeof(TacsScalar));
-  director:: template addDirectorJacobian<vars_per_node, offset, num_nodes>(
-    alpha, beta, gamma, vars, dvars, ddvars, t,
-    dTdot, dd, d2Tdotd, d2Tdotu, d2d, d2du, res, mat);
+  director::template
+    addDirectorJacobian<vars_per_node, offset, num_nodes>(alpha, beta, gamma,
+                                                          vars, dvars, ddvars, t,
+                                                          dTdot, dd, d2Tdotd, d2Tdotu,
+                                                          d2d, d2du, res, mat);
 
-  TacsScalar fdmat[size*size];
   for ( int k = 0; k < size; k++ ){
     TacsScalar varst[size], dvarst[size], ddvarst[size];
     memcpy(varst, vars, size*sizeof(TacsScalar));
@@ -2027,22 +2525,37 @@ int TacsTestDirector( double dh=1e-7,
     memcpy(ddvarst, ddvars, size*sizeof(TacsScalar));
 
 #ifdef TACS_USE_COMPLEX
-    varst[k] = varts[k] + alpha*TacsScalar(0.0, dh);
-    dvarst[k] = dvarts[k] + beta*TacsScalar(0.0, dh);
-    ddvarst[k] = ddvarts[k] + gamma*TacsScalar(0.0, dh);
+    varst[k] = varst[k] + alpha*TacsScalar(0.0, dh);
+    dvarst[k] = dvarst[k] + beta*TacsScalar(0.0, dh);
+    ddvarst[k] = ddvarst[k] + gamma*TacsScalar(0.0, dh);
 #else
-    varst[k] = varts[k] + alpha*dh;
-    dvarst[k] = dvarts[k] + beta*dh;
-    ddvarst[k] = ddvarts[k] + gamma*dh;
+    varst[k] = varst[k] + alpha*dh;
+    dvarst[k] = dvarst[k] + beta*dh;
+    ddvarst[k] = ddvarst[k] + gamma*dh;
 #endif // TACS_USE_COMPLEX
 
-    TacsScalar dTdott[dsize], ddt[dsize];
+    // Compute the director rates at the perturbed value
+    TacsScalar dt[dsize], ddott[dsize], dddott[dsize];
+    director::template
+      computeDirectorRates<vars_per_node, offset, num_nodes>(varst, dvarst, ddvarst, t,
+                                                             dt, ddott, dddott);
 
+    // Add the change in coefficient
+    TacsScalar dTdott[dsize], ddt[dsize];
+    for ( int j = 0; j < dsize; j++ ){
+      dTdott[j] = dTdot[j];
+      ddt[j] = dd[j];
+      for ( int i = 0; i < dsize; i++ ){
+        dTdott[j] += d2Tdotd[j*dsize + i]*(dddott[i] - dddot[i]);
+        ddt[j] += d2d[j*dsize + i]*(dt[i] - d[i]);
+      }
+    }
 
     TacsScalar rest[size];
     memset(rest, 0, size*sizeof(TacsScalar));
-    director::template addDirectorResidual<vars_per_node, offset, num_nodes>(
-      varst, dvarst, ddvarst, t, dTdott, ddt, rest);
+    director::template
+      addDirectorResidual<vars_per_node, offset, num_nodes>(varst, dvarst, ddvarst, t,
+                                                            dTdott, ddt, rest);
 
 #ifdef TACS_USE_COMPLEX
     for ( int j = 0; j < size; j++ ){
@@ -2055,8 +2568,24 @@ int TacsTestDirector( double dh=1e-7,
 #endif // TACS_USE_COMPLEX
   }
 
+  // Compute the error
+  max_err = TacsGetMaxError(mat, fdmat, size*size, &max_err_index);
+  max_rel = TacsGetMaxRelError(mat, fdmat, size*size, &max_err_index);
 
+  if (test_print_level > 0){
+    fprintf(stderr, "Testing the Jacobian of the director\n");
+    fprintf(stderr, "Max Err: %10.4e in component %d.\n",
+            max_err, max_err_index);
+    fprintf(stderr, "Max REr: %10.4e in component %d.\n",
+            max_rel, max_rel_index);
+  }
+  // Print the error if required
+  if (test_print_level > 1){
+    TacsPrintErrorComponents(stderr, "mat", mat, fdmat, size*size);
+  }
+  if (test_print_level){ fprintf(stderr, "\n"); }
 
+  fail = (max_err > test_fail_atol || max_rel > test_fail_rtol);
 
   return fail;
 }
@@ -2147,7 +2676,8 @@ int TacsTestDirectorResidual( double dh=1e-5,
   // Compute the director rates
   TacsScalar d[dsize], ddot[dsize], dddot[dsize];
   director::template
-    computeDirectorRates<vars_per_node, offset, num_nodes>(vars, dvars, ddvars, t, d, ddot, dddot);
+    computeDirectorRates<vars_per_node, offset, num_nodes>(vars, dvars, ddvars, t,
+                                                           d, ddot, dddot);
 
   // Compute the derivatives of the kinetic and potential energies
   TacsScalar dTdot[dsize], dd[dsize];
@@ -2157,8 +2687,9 @@ int TacsTestDirectorResidual( double dh=1e-5,
   // Compute the residual
   TacsScalar res[size];
   memset(res, 0, size*sizeof(TacsScalar));
-  director::template addDirectorResidual<vars_per_node, offset, num_nodes>(vars, dvars, ddvars, t,
-                                                                           dTdot, dd, res);
+  director::template
+    addDirectorResidual<vars_per_node, offset, num_nodes>(vars, dvars, ddvars, t,
+                                                          dTdot, dd, res);
 
   // Compute the values of the variables at (t + dt)
   TacsScalar q[size], qdot[size];
@@ -2175,17 +2706,20 @@ int TacsTestDirectorResidual( double dh=1e-5,
 #ifdef TACS_USE_COMPLEX
     TacsScalar T1, P1;
     qdot[i] = dqtmp + TacsScalar(0.0, dh);
-    director::template computeDirectorRates<vars_per_node, offset, num_nodes>(q, qdot, t, d, ddot);
+    director::template
+      computeDirectorRates<vars_per_node, offset, num_nodes>(q, qdot, t, d, ddot);
     TacsTestEvalDirectorEnergy<dsize>(Tlin, Tquad, Plin, Pquad, d, ddot, &T1, &P1);
     res1[i] = TacsImagPart((T1 - P1))/dh;
 #else
     TacsScalar T1, P1, T2, P2;
     qdot[i] = dqtmp + dh;
-    director::template computeDirectorRates<vars_per_node, offset, num_nodes>(q, qdot, t, d, ddot);
+    director::template
+      computeDirectorRates<vars_per_node, offset, num_nodes>(q, qdot, t, d, ddot);
     TacsTestEvalDirectorEnergy<dsize>(Tlin, Tquad, Plin, Pquad, d, ddot, &T1, &P1);
 
     qdot[i] = dqtmp - dh;
-    director::template computeDirectorRates<vars_per_node, offset, num_nodes>(q, qdot, t, d, ddot);
+    director::template
+      computeDirectorRates<vars_per_node, offset, num_nodes>(q, qdot, t, d, ddot);
     TacsTestEvalDirectorEnergy<dsize>(Tlin, Tquad, Plin, Pquad, d, ddot, &T2, &P2);
     res1[i] = 0.5*((T1 - P1) - (T2 - P2))/dh;
 #endif // TACS_USE_COMPLEX
@@ -2206,17 +2740,20 @@ int TacsTestDirectorResidual( double dh=1e-5,
 #ifdef TACS_USE_COMPLEX
     TacsScalar T1, P1;
     qdot[i] = dqtmp + TacsScalar(0.0, dh);
-    director::template computeDirectorRates<vars_per_node, offset, num_nodes>(q, qdot, t, d, ddot);
+    director::template
+      computeDirectorRates<vars_per_node, offset, num_nodes>(q, qdot, t, d, ddot);
     TacsTestEvalDirectorEnergy<dsize>(Tlin, Tquad, Plin, Pquad, d, ddot, &T1, &P1);
     res2[i] = TacsImagPart((T1 - P1))/dh;
 #else
     TacsScalar T1, P1, T2, P2;
     qdot[i] = dqtmp + dh;
-    director::template computeDirectorRates<vars_per_node, offset, num_nodes>(q, qdot, t, d, ddot);
+    director::template
+      computeDirectorRates<vars_per_node, offset, num_nodes>(q, qdot, t, d, ddot);
     TacsTestEvalDirectorEnergy<dsize>(Tlin, Tquad, Plin, Pquad, d, ddot, &T1, &P1);
 
     qdot[i] = dqtmp - dh;
-    director::template computeDirectorRates<vars_per_node, offset, num_nodes>(q, qdot, t, d, ddot);
+    director::template
+      computeDirectorRates<vars_per_node, offset, num_nodes>(q, qdot, t, d, ddot);
     TacsTestEvalDirectorEnergy<dsize>(Tlin, Tquad, Plin, Pquad, d, ddot, &T2, &P2);
     res2[i] = 0.5*((T1 - P1) - (T2 - P2))/dh;
 #endif // TACS_USE_COMPLEX
@@ -2244,17 +2781,20 @@ int TacsTestDirectorResidual( double dh=1e-5,
 #ifdef TACS_USE_COMPLEX
     TacsScalar T1, P1;
     q[i] = qtmp + TacsScalar(0.0, dh);
-    director::template computeDirectorRates<vars_per_node, offset, num_nodes>(q, qdot, t, d, ddot);
+    director::template
+      computeDirectorRates<vars_per_node, offset, num_nodes>(q, qdot, t, d, ddot);
     TacsTestEvalDirectorEnergy<dsize>(Tlin, Tquad, Plin, Pquad, d, ddot, &T1, &P1);
     res1[i] = TacsImagPart((T1 - P1))/dh;
 #else
     TacsScalar T1, P1, T2, P2;
     q[i] = qtmp + dh;
-    director::template computeDirectorRates<vars_per_node, offset, num_nodes>(q, qdot, t, d, ddot);
+    director::template
+      computeDirectorRates<vars_per_node, offset, num_nodes>(q, qdot, t, d, ddot);
     TacsTestEvalDirectorEnergy<dsize>(Tlin, Tquad, Plin, Pquad, d, ddot, &T1, &P1);
 
     q[i] = qtmp - dh;
-    director::template computeDirectorRates<vars_per_node, offset, num_nodes>(q, qdot, t, d, ddot);
+    director::template
+      computeDirectorRates<vars_per_node, offset, num_nodes>(q, qdot, t, d, ddot);
     TacsTestEvalDirectorEnergy<dsize>(Tlin, Tquad, Plin, Pquad, d, ddot, &T2, &P2);
 
     // Compute and store the approximation
