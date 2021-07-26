@@ -723,6 +723,76 @@ class TACSShellQuadBasis {
     }
   }
 
+  /**
+    Evaluate the tensorial components of the strain tensor at the
+    specific quadrature point
+
+    gty = [g11  g12  g13]
+    .     [sym  g22  g23]
+    .     [sym  sym  g33]
+
+    As a result: gty[0] = g11, gty[1] = g12, gty[2] = g13, gty[3] = g22
+    and gty[4] = g23, with gty[5] = 0.0
+
+    @param pt The quadrature point
+    @param ety The strain computed at the tying points
+    @param gty The interpolated tying strain
+  */
+  static inline void interpTyingStrain( const double pt[],
+                                        const TacsScalar ety[],
+                                        TacsScalar gty[] ){
+    // Set the values into the strain tensor
+    const int index[] = {0, 3, 1, 4, 2};
+    const int num_tying_fields = 5;
+    for ( int field = 0; field < num_tying_fields; field++ ){
+      gty[index[field]] = interpTying(field, pt, ety);
+      ety += getNumTyingPoints(field);
+    }
+    gty[5] = 0.0;
+  }
+
+  /**
+    Add the derivative of the tying strain to the residual
+
+    @param pt The quadrature point
+    @param dgty The derivative of the interpolated strain
+    @param dety The output derivative of the strain at the tying points
+  */
+  static inline void addInterpTyingStrainTranspose( const double pt[],
+                                                    const TacsScalar dgty[],
+                                                    TacsScalar dety[] ){
+    // Set the values into the strain tensor
+    const int index[] = {0, 3, 1, 4, 2};
+    const int num_tying_fields = 5;
+    for ( int field = 0; field < num_tying_fields; field++ ){
+      addInterpTyingTranspose(field, pt, dgty[index[field]], dety);
+      dety += getNumTyingPoints(field);
+    }
+  }
+
+  /*
+    Add the second derivative of the tying strain at the tying points
+
+    @param pt The quadrature point
+    @param d2gty The second derivative of the interpolated strain
+    @param d2ety The second derivatives of the strain at the tying points
+  */
+  static inline void addInterpTyingStrainHessian( const double pt[],
+                                                  const TacsScalar d2gty[],
+                                                  TacsScalar d2ety[] ){
+    // Set the values into the strain tensor
+    const int index[] = {0, 3, 1, 4, 2};
+    const int num_strains = 6;
+    const int num_tying_fields = 5;
+    for ( int field1 = 0; field1 < num_tying_fields; field1++ ){
+      for ( int field2 = 0; field2 < num_tying_fields; field2++ ){
+        TacsScalar value = d2gty[num_strains*index[field1] + index[field2]];
+        addInterpTyingOuterProduct(field1, field2, pt, value, d2ety);
+        d2ety += getNumTyingPoints(field1)*getNumTyingPoints(field2);
+      }
+    }
+  }
+
   static inline void getTyingKnots( const double **ty_knots_order,
                                     const double **ty_knots_reduced ){
     if (order == 2){

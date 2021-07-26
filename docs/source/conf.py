@@ -49,8 +49,7 @@ extensions = ['breathe',
   'sphinx.ext.napoleon',
   'sphinx.ext.viewcode',
   'sphinx.ext.githubpages',
-  'sphinx.ext.mathjax',
-  'sphinxcontrib.bibtex']
+  'sphinx.ext.mathjax']
 
 # Breathe configuration
 breathe_projects = {'tacs': '../xml'}

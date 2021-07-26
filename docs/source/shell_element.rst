@@ -65,8 +65,12 @@ Assuming that the Lagrangian can be written as :math:`L = T(\dot{\mathbf{q}}, \d
     \mathbf{R}_{q} =& \dfrac{d}{dt} \left( \dfrac{\partial T}{\partial \dot{\mathbf{q}}}\right) - \dfrac{\partial L}{\partial \mathbf{q}} \\
     %
     =& \dfrac{d}{dt}\left( \dfrac{\partial T}{\partial \dot{\mathbf{d}}} \right) \dfrac{\partial \dot{\mathbf{d}}}{\partial \dot{\mathbf{q}}} +
-    \dfrac{\partial T}{\partial \dot{\mathbf{d}}} \dfrac{d}{dt} \left( \dfrac{\partial \dot{\mathbf{d}}}{\partial \dot{\mathbf{q}}} \right)
+    \dfrac{\partial T}{\partial \dot{\mathbf{d}}} \left( \dfrac{d}{dt} \left( \dfrac{\partial \dot{\mathbf{d}}}{\partial \dot{\mathbf{q}}} \right) -
+    \dfrac{\partial \dot{\mathbf{d}}}{\partial \mathbf{q}} \right)
     - \dfrac{\partial L}{\partial \mathbf{d}} \dfrac{\partial \mathbf{d}}{\partial \mathbf{q}}\\
+    %
+    =& \dfrac{d}{dt}\left( \dfrac{\partial T}{\partial \dot{\mathbf{d}}} \right) \dfrac{\partial \dot{\mathbf{d}}}{\partial \dot{\mathbf{q}}} -
+    \dfrac{\partial L}{\partial \mathbf{d}} \dfrac{\partial \mathbf{d}}{\partial \mathbf{q}}\\
     \end{aligned}
 
 
