@@ -446,7 +446,9 @@ TACSFrequencyAnalysis::TACSFrequencyAnalysis( TACSAssembler *_assembler,
   // Store the stiffness/mass matrices
   mmat = _mmat;
   kmat = _kmat;
-  mmat->incref();
+  if (mmat){
+    mmat->incref();
+  }
   kmat->incref();
 
   // Store the pointer to the KSM solver and ensure that the solver
@@ -473,11 +475,25 @@ TACSFrequencyAnalysis::TACSFrequencyAnalysis( TACSAssembler *_assembler,
   res->incref();
 
   // Allocate the eigenproblem operator
-  ep_op = new EPGeneralizedShiftInvert(sigma, solver, mmat);
-  ep_op->incref();
+  if (mmat){
+    ep_op = new EPGeneralizedShiftInvert(sigma, solver, mmat);
+    ep_op->incref();
+    simple_ep_op = NULL;
+  }
+  else{
+    printf("[TACSBuckling.cpp]Creating simple EPShiftInvert operator!\n");
+    simple_ep_op = new EPShiftInvert(sigma, solver);
+    simple_ep_op->incref();
+    ep_op = NULL;
+  }
 
   // Allocate the symmetric eigenproblem solver
-  sep = new SEP(ep_op, max_lanczos, SEP::FULL, assembler->getBcMap());
+  if (mmat){
+    sep = new SEP(ep_op, max_lanczos, SEP::FULL, assembler->getBcMap());
+  }
+  else{
+    sep = new SEP(simple_ep_op, max_lanczos, SEP::FULL, assembler->getBcMap());
+  }
   sep->incref();
   sep->setTolerances(eig_tol, SEP::SMALLEST_MAGNITUDE,
                      num_eigvals);
@@ -595,8 +611,13 @@ TACSFrequencyAnalysis::~TACSFrequencyAnalysis(){
   }
   else{
     solver->decref();
-    ep_op->decref();
     sep->decref();
+    if (ep_op){
+      ep_op->decref();
+    }
+    if (simple_ep_op){
+      simple_ep_op->decref();
+    }
   }
 }
 
@@ -667,7 +688,9 @@ void TACSFrequencyAnalysis::solve( KSMPrint *ksm_print,
       TacsScalar scale[2] = {1.0, -sigma};
 
       // Assemble the mass matrix
-      assembler->assembleMatType(TACS_MASS_MATRIX, mmat);
+      if (mmat){
+        assembler->assembleMatType(TACS_MASS_MATRIX, mmat);
+      }
 
       // Assemble the linear combination
       mg->assembleMatCombo(matTypes, scale, 2);
@@ -675,10 +698,14 @@ void TACSFrequencyAnalysis::solve( KSMPrint *ksm_print,
     else {
       // Assemble the stiffness and mass matrices
       assembler->assembleMatType(TACS_STIFFNESS_MATRIX, kmat);
-      assembler->assembleMatType(TACS_MASS_MATRIX, mmat);
+      if (mmat){
+        assembler->assembleMatType(TACS_MASS_MATRIX, mmat);
+      }
 
       // Form the shifted operator and factor it
-      kmat->axpy(-sigma, mmat);
+      if (mmat){
+        kmat->axpy(-sigma, mmat);
+      }
       kmat->applyBCs(assembler->getBcMap());
     }
 
@@ -784,7 +811,9 @@ void TACSFrequencyAnalysis::evalEigenDVSens( int n,
                                       eigvec, eigvec, dfdx);
 
   // Finish computing the derivative
-  mmat->mult(eigvec, res);
+  if (mmat){
+    mmat->mult(eigvec, res);
+  }
   TacsScalar scale = 1.0/res->dot(eigvec);
 
   dfdx->beginSetValues(TACS_ADD_VALUES);
@@ -799,7 +828,9 @@ void TACSFrequencyAnalysis::checkEigenvector( int n ){
   // Assemble the stiffness/mass matrices
   assembler->zeroVariables();
   assembler->assembleMatType(TACS_STIFFNESS_MATRIX, kmat);
-  assembler->assembleMatType(TACS_MASS_MATRIX, mmat);
+  if (mmat){
+    assembler->assembleMatType(TACS_MASS_MATRIX, mmat);
+  }
 
   // Create temporary arrays required
   TACSBVec *t1 = assembler->createVec();
@@ -813,7 +844,9 @@ void TACSFrequencyAnalysis::checkEigenvector( int n ){
 
   // Multiply to get the t
   kmat->mult(eigvec, t1);
-  mmat->mult(eigvec, t2);
+  if (mmat){
+    mmat->mult(eigvec, t2);
+  }
 
   // Print out the norms of the products K*eigvec and G*eigvec
   printf("|K*e| = %15.5e  \n|M*e| = %15.5e \n",

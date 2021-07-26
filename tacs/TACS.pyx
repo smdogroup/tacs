@@ -2639,16 +2639,25 @@ cdef class FrequencyAnalysis:
                   Mat PC=None, Pc pc=None, int fgmres_size=5,
                   double eig_atol=1e-30, int num_recycle=0,
                   JDRecycleType recycle_type=JD_NUM_RECYCLE):
+
+        # Call the constructor for the Jacobi-Davidson eigensolver
         if solver is None:
             self.ptr = new TACSFrequencyAnalysis(assembler.ptr, sigma, M.ptr,
                                                  K.ptr, PC.ptr, pc.ptr, max_lanczos,
                                                  fgmres_size, num_eigs, eig_tol,
                                                  eig_rtol, eig_atol,
                                                  num_recycle, recycle_type)
+        # Call the constructor for the Lanczos eigensolver
         else:
-            self.ptr = new TACSFrequencyAnalysis(assembler.ptr, sigma, M.ptr,
-                                                 K.ptr, solver.ptr, max_lanczos,
-                                                 num_eigs, eig_tol)
+            if M is None:
+                print("[TACS.pyx] M is None")
+                self.ptr = new TACSFrequencyAnalysis(assembler.ptr, sigma, NULL,
+                                                    K.ptr, solver.ptr, max_lanczos,
+                                                    num_eigs, eig_tol)
+            else:
+                self.ptr = new TACSFrequencyAnalysis(assembler.ptr, sigma, M.ptr,
+                                                    K.ptr, solver.ptr, max_lanczos,
+                                                    num_eigs, eig_tol)
         self.ptr.incref()
         return
 
