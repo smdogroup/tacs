@@ -481,7 +481,6 @@ TACSFrequencyAnalysis::TACSFrequencyAnalysis( TACSAssembler *_assembler,
     simple_ep_op = NULL;
   }
   else{
-    printf("[TACSBuckling.cpp]Creating simple EPShiftInvert operator!\n");
     simple_ep_op = new EPShiftInvert(sigma, solver);
     simple_ep_op->incref();
     ep_op = NULL;

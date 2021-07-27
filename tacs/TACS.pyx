@@ -2650,7 +2650,6 @@ cdef class FrequencyAnalysis:
         # Call the constructor for the Lanczos eigensolver
         else:
             if M is None:
-                print("[TACS.pyx] M is None")
                 self.ptr = new TACSFrequencyAnalysis(assembler.ptr, sigma, NULL,
                                                     K.ptr, solver.ptr, max_lanczos,
                                                     num_eigs, eig_tol)
