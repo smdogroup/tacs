@@ -2542,6 +2542,21 @@ void BCSRMat::addDiag( TacsScalar alpha ){
       }
     }
   }
+  else {
+    const int bsize = data->bsize;
+    const int b2 = bsize*bsize;
+    for ( int i = 0; i < data->nrows; i++ ){
+      for ( int jp = data->rowp[i]; jp < data->rowp[i+1]; jp++ ){
+        int j = data->cols[jp];
+        if (i == j){
+          TacsScalar *a = &(data->A[b2*jp]);
+          for ( int k = 0; k < bsize; k++ ){
+            a[(bsize+1)*k] += alpha;
+          }
+        }
+      }
+    }
+  }
 }
 
 /*!
@@ -2556,6 +2571,22 @@ void BCSRMat::addDiag( TacsScalar *alpha ){
       TacsScalar *a = &(data->A[b2*data->diag[i]]);
       for ( int k = 0; k < bsize; k++ ){
         a[(bsize+1)*k] += d[k];
+      }
+    }
+  }
+  else {
+    const int bsize = data->bsize;
+    const int b2 = bsize*bsize;
+    for ( int i = 0; i < data->nrows; i++ ){
+      TacsScalar *d = &alpha[bsize*i];
+      for ( int jp = data->rowp[i]; jp < data->rowp[i+1]; jp++ ){
+        int j = data->cols[jp];
+        if (i == j){
+          TacsScalar *a = &(data->A[b2*jp]);
+          for ( int k = 0; k < bsize; k++ ){
+            a[(bsize+1)*k] += d[k];
+          }
+        }
       }
     }
   }

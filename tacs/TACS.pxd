@@ -552,6 +552,8 @@ cdef extern from "GSEP.h":
         void solve(KSMPrint*, KSMPrint*)
         TacsScalar extractEigenvalue(int, TacsScalar*)
         TacsScalar extractEigenvector(int, TACSBVec*, TacsScalar*)
+        void printOrthogonality()
+        TacsScalar checkOrthogonality()
 
 cdef extern from "JacobiDavidson.h":
    # Set the type of recycling scheme

@@ -1259,6 +1259,13 @@ cdef class SEPsolver:
         eigval = self.ptr.extractEigenvector(index, vec.ptr, &err)
         return eigval, err
 
+    def printOrthogonality(self):
+        self.ptr.printOrthogonality()
+        return
+
+    def checkOrthogonality(self):
+        return self.ptr.checkOrthogonality()
+
 cdef class Assembler:
     def __cinit__(self):
         """
