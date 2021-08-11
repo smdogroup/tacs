@@ -176,6 +176,7 @@ class TACSMat : public TACSObject {
   virtual void copyValues( TACSMat *mat ){}
   virtual void scale( TacsScalar alpha ){}
   virtual void axpy( TacsScalar alpha, TACSMat *mat ){}
+  virtual void addDiag( TacsScalar alpha ){}
 
   // Return the name of the object
   // -----------------------------

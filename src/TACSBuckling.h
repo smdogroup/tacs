@@ -179,6 +179,7 @@ class TACSFrequencyAnalysis : public TACSObject {
   // The eigen solver
   TacsScalar sigma;
   EPGeneralizedShiftInvert *ep_op;
+  EPShiftInvert *simple_ep_op;
   SEP *sep;
 
   // Objects associated with the Jacobi-Davidson method

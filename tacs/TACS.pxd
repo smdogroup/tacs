@@ -128,6 +128,7 @@ cdef extern from "KSM.h":
         void copyValues(TACSMat *mat)
         void scale(TacsScalar alpha)
         void axpy(TacsScalar alpha, TACSMat *mat)
+        void addDiag(TacsScalar)
 
     cdef cppclass TACSPc(TACSObject):
         void factor()
@@ -152,6 +153,18 @@ cdef extern from "KSM.h":
         GMRES(TACSMat *_mat, TACSPc *_pc, int _m,
               int _nrestart, int _isFlexible )
         void setTimeMonitor()
+
+    cdef cppclass TACSBcMap(TACSObject):
+        TACSBcMap(int, int)
+
+cdef class BcMap:
+    cdef TACSBcMap *ptr
+
+cdef inline _init_BcMap(TACSBcMap *ptr):
+    bcmap = BcMap()
+    bcmap.ptr = ptr
+    bcmap.ptr.incref()
+    return bcmap
 
 cdef extern from "TACSBVec.h":
     cdef cppclass TACSBVec(TACSVec):
@@ -427,6 +440,7 @@ cdef extern from "TACSAssembler.h":
         int getNumOwnedNodes()
         int getNumElements()
         TACSNodeMap *getNodeMap()
+        TACSBcMap *getBcMap()
         TACSElement **getElements()
         TACSElement *getElement(int, TacsScalar*, TacsScalar*,
                                 TacsScalar*, TacsScalar*)
@@ -508,6 +522,38 @@ cdef inline _init_Assembler(TACSAssembler *ptr):
     tacs.ptr = ptr
     tacs.ptr.incref()
     return tacs
+
+cdef extern from "GSEP.h":
+    enum OrthoType"SEP::OrthoType":
+        FULL"SEP::FULL"
+        LOCAL"SEP::LOCAL"
+
+    enum EigenSpectrum"SEP::EigenSpectrum":
+        SMALLEST"SEP::SMALLEST"
+        LARGEST"SEP::LARGEST"
+        SMALLEST_MAGNITUDE"SEP::SMALLEST_MAGNITUDE"
+        LARGEST_MAGNITUDE"SEP::LARGEST_MAGNITUDE"
+
+    cdef cppclass EPOperator(TACSObject):
+        pass
+
+    cdef cppclass EPRegular(EPOperator):
+        EPRegular(TACSMat*)
+
+    cdef cppclass EPShiftInvert(EPOperator):
+        EPShiftInvert(TacsScalar, TACSKsm*)
+
+    cdef cppclass EPGeneralizedShiftInvert(EPOperator):
+        EPGeneralizedShiftInvert(TacsScalar, TACSKsm*, TACSMat*)
+
+    cdef cppclass SEP(TACSObject):
+        SEP(EPOperator*, int, OrthoType, TACSBcMap*)
+        void setTolerances(double, EigenSpectrum, int)
+        void solve(KSMPrint*, KSMPrint*)
+        TacsScalar extractEigenvalue(int, TacsScalar*)
+        TacsScalar extractEigenvector(int, TACSBVec*, TacsScalar*)
+        void printOrthogonality()
+        TacsScalar checkOrthogonality()
 
 cdef extern from "JacobiDavidson.h":
    # Set the type of recycling scheme

@@ -40,3 +40,4 @@ tacs/*.cpp
 *.pxi
 *.vtk
 *.cfg
+.vscode

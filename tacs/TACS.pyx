@@ -113,6 +113,16 @@ PENTA_ELEMENT = TACS_PENTA_ELEMENT
 PENTA_QUADRATIC_ELEMENT = TACS_PENTA_QUADRATIC_ELEMENT
 PENTA_CUBIC_ELEMENT = TACS_PENTA_CUBIC_ELEMENT
 
+# Orthogonal type for SEP
+SEP_FULL = FULL
+SEP_LOCAL = LOCAL
+
+# Spectrum type for SEP
+SEP_SMALLEST = SMALLEST
+SEP_LARGEST = LARGEST
+SEP_SMALLEST_MAGNITUDE = SMALLEST_MAGNITUDE
+SEP_LARGEST_MAGNITUDE = LARGEST_MAGNITUDE
+
 # This wraps a C++ array with a numpy array for later useage
 cdef inplace_array_1d(int nptype, int dim1, void *data_ptr,
                       PyObject *ptr):
@@ -631,6 +641,18 @@ cdef class NodeMap:
         if self.ptr:
             self.ptr.decref()
 
+cdef class BcMap:
+    def __cinit__(self, int bsize=-1, int num_bcs=-1):
+        if bsize == -1:
+            self.ptr = NULL
+        else:
+            self.ptr = new TACSBcMap(bsize, num_bcs)
+            self.ptr.incref()
+
+    def __dealloc__(self):
+        if self.ptr != NULL:
+            self.ptr.decref()
+
 cdef class VecInterp:
     def __cinit__(self, inobj=None, outobj=None,
                   int vars_per_node=1):
@@ -731,6 +753,12 @@ cdef class Mat:
         Compute y <- y + alpha * x
         """
         self.ptr.axpy(alpha, mat.ptr)
+
+    def addDiag(self, TacsScalar alpha):
+        """
+        Add value alpha to diagonal entries
+        """
+        self.ptr.addDiag(alpha)
 
     def getDenseMatrix(self):
         """
@@ -1144,6 +1172,97 @@ cdef class JacobiDavidson:
         """
         self.ptr.setRecycle(num_recycle, JD_NUM_RECYCLE)
         return
+
+cdef class EPOp:
+    cdef EPOperator *ptr
+    def __cinit__(self, *args, **kwargs):
+        self.ptr = NULL
+        return
+
+    def __dealloc__(self):
+        if self.ptr != NULL:
+            self.ptr.decref()
+        return
+
+cdef class EPRegularOp(EPOp):
+    def __cinit__(self, Mat mat):
+        self.ptr = new EPRegular(mat.ptr)
+        self.ptr.incref()
+        return
+
+cdef class EPShiftInvertOp(EPOp):
+    def __cinit__(self, TacsScalar sigma, KSM ksm):
+        self.ptr = new EPShiftInvert(sigma, ksm.ptr)
+        self.ptr.incref()
+        return
+
+cdef class EPGeneralizedShiftInvertOp(EPOp):
+    def __cinit__(self, TacsScalar sigma, KSM ksm, Mat inner):
+        self.ptr = new EPGeneralizedShiftInvert(sigma, ksm.ptr, inner.ptr)
+        self.ptr.incref()
+        return
+
+cdef class SEPsolver:
+    cdef SEP *ptr
+    def __cinit__(self, EPOp op, int max_iters,
+                  OrthoType otype, BcMap bcs):
+        self.ptr = new SEP(op.ptr, max_iters, otype, bcs.ptr)
+        self.ptr.incref()
+        return
+
+    def __dealloc__(self):
+        if self.ptr != NULL:
+            self.ptr.decref()
+        return
+
+    def setTolerances(self, double tol, EigenSpectrum spectrum,
+                      int neigvals):
+        """
+        Set the tolerances, desired eigenvalue spectrum and
+        the number of eigenvalues to solve
+        """
+        self.ptr.setTolerances(tol, spectrum, neigvals)
+        return
+
+    def solve(self, MPI.Comm comm, print_flag=False, int freq=1):
+        """
+        Solve the eigenvalue problem with SEP solver
+
+        Args:
+            print_flag(bool): indicates whether to print output
+            freq(int): the printout frequency
+        """
+        cdef int rank
+        cdef KSMPrint *ksm_print = NULL
+
+        if print_flag:
+            ksm_print = new KSMPrintStdout("SEP", comm.rank, freq)
+            ksm_print.incref()
+
+        self.ptr.solve(ksm_print, NULL)
+
+        if ksm_print != NULL:
+            ksm_print.decref()
+        return
+
+    def extractEigenvalue(self, int index):
+        cdef TacsScalar err = 0.0
+        cdef TacsScalar eig = 0.0
+        eig = self.ptr.extractEigenvalue(index, &err)
+        return eig, err
+
+    def extractEigenvector(self, int index, Vec vec):
+        cdef TacsScalar err = 0.0
+        cdef TacsScalar eigval = 0.0
+        eigval = self.ptr.extractEigenvector(index, vec.ptr, &err)
+        return eigval, err
+
+    def printOrthogonality(self):
+        self.ptr.printOrthogonality()
+        return
+
+    def checkOrthogonality(self):
+        return self.ptr.checkOrthogonality()
 
 cdef class Assembler:
     def __cinit__(self):
@@ -2019,6 +2138,12 @@ cdef class Assembler:
         self.ptr.testFunction(func.ptr, dh)
         return
 
+    def getBcMap(self):
+        """
+        Get boundary conditions.
+        """
+        return _init_BcMap(self.ptr.getBcMap())
+
 # Wrap the TACStoFH5 class
 cdef class ToFH5:
     cdef TACSToFH5 *ptr
@@ -2637,16 +2762,24 @@ cdef class FrequencyAnalysis:
                   Mat PC=None, Pc pc=None, int fgmres_size=5,
                   double eig_atol=1e-30, int num_recycle=0,
                   JDRecycleType recycle_type=JD_NUM_RECYCLE):
+
+        # Call the constructor for the Jacobi-Davidson eigensolver
         if solver is None:
             self.ptr = new TACSFrequencyAnalysis(assembler.ptr, sigma, M.ptr,
                                                  K.ptr, PC.ptr, pc.ptr, max_lanczos,
                                                  fgmres_size, num_eigs, eig_tol,
                                                  eig_rtol, eig_atol,
                                                  num_recycle, recycle_type)
+        # Call the constructor for the Lanczos eigensolver
         else:
-            self.ptr = new TACSFrequencyAnalysis(assembler.ptr, sigma, M.ptr,
-                                                 K.ptr, solver.ptr, max_lanczos,
-                                                 num_eigs, eig_tol)
+            if M is None:
+                self.ptr = new TACSFrequencyAnalysis(assembler.ptr, sigma, NULL,
+                                                    K.ptr, solver.ptr, max_lanczos,
+                                                    num_eigs, eig_tol)
+            else:
+                self.ptr = new TACSFrequencyAnalysis(assembler.ptr, sigma, M.ptr,
+                                                    K.ptr, solver.ptr, max_lanczos,
+                                                    num_eigs, eig_tol)
         self.ptr.incref()
         return
 
