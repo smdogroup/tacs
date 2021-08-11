@@ -566,6 +566,7 @@ void TacsShellAddDispGradSens( const double pt[],
   Add/accumulate the contribution to the Jacobian matrix from the coefficients
   of u0x, u1x
 
+  @param alpha Scale factor applied to the Jacobian entries
   @param pt The parametric point
   @param T The transformation to local coordinates
   @param XdinvT Product of inverse of the Jacobian trans. and T

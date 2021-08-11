@@ -36,7 +36,7 @@ default:
 	@if [ "${TACS_IS_COMPLEX}" = "true" ]; then \
 		echo "ctypedef complex TacsScalar" > tacs/TacsTypedefs.pxi; \
 		echo "TACS_NPY_SCALAR = np.NPY_CDOUBLE" > tacs/TacsDefs.pxi; \
-		echo "dtype = np.complex" >> tacs/TacsDefs.pxi; \
+		echo "dtype = complex" >> tacs/TacsDefs.pxi; \
 	else \
 		echo "ctypedef double TacsScalar" > tacs/TacsTypedefs.pxi; \
 		echo "TACS_NPY_SCALAR = np.NPY_DOUBLE" > tacs/TacsDefs.pxi; \
@@ -61,7 +61,7 @@ debug:
 	@if [ "${TACS_IS_COMPLEX}" = "true" ]; then \
 		echo "ctypedef complex TacsScalar" > tacs/TacsTypedefs.pxi; \
 		echo "TACS_NPY_SCALAR = np.NPY_CDOUBLE" > tacs/TacsDefs.pxi; \
-		echo "dtype = np.complex" >> tacs/TacsDefs.pxi; \
+		echo "dtype = complex" >> tacs/TacsDefs.pxi; \
 	else \
 		echo "ctypedef double TacsScalar" > tacs/TacsTypedefs.pxi; \
 		echo "TACS_NPY_SCALAR = np.NPY_DOUBLE" > tacs/TacsDefs.pxi; \

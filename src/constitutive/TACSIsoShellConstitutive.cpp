@@ -116,6 +116,32 @@ void TACSIsoShellConstitutive::addDensityDVSens( int elemIndex,
   }
 }
 
+// Evaluate the mass moments
+void TACSIsoShellConstitutive::evalMassMoments( int elemIndex,
+                                                const double pt[],
+                                                const TacsScalar X[],
+                                                TacsScalar moments[] ){
+  if (properties){
+    TacsScalar rho = properties->getDensity();
+    moments[0] = rho*t;
+    moments[1] = 0.0;
+    moments[2] = rho*t*t*t/12.0;
+  }
+}
+
+// Add the sensitivity of the mass moments
+void TACSIsoShellConstitutive::addMassMomentsDVSens( int elemIndex,
+                                                     const double pt[],
+                                                     const TacsScalar X[],
+                                                     const TacsScalar scale[],
+                                                     int dvLen,
+                                                     TacsScalar dfdx[] ){
+  if (properties && tNum >= 0){
+    TacsScalar rho = properties->getDensity();
+    dfdx[0] += rho*(scale[0] + 0.25*t*t*scale[2]);
+  }
+}
+
 // Evaluate the specific heat
 TacsScalar TACSIsoShellConstitutive::evalSpecificHeat( int elemIndex,
                                                        const double pt[],
@@ -153,7 +179,7 @@ void TACSIsoShellConstitutive::evalStress( int elemIndex,
     As[0] = As[2] = (5.0/6.0)*A[5];
     As[1] = 0.0;
 
-    drill = 0.5*DRILLING_REGULARIZATION*(As[0] + As[2]);
+    drill = 1.0; // 0.5*DRILLING_REGULARIZATION*(As[0] + As[2]);
 
     // Evaluate the stress
     computeStress(A, B, D, As, drill, e, s);
@@ -194,7 +220,7 @@ void TACSIsoShellConstitutive::evalTangentStiffness( int elemIndex,
     As[0] = As[2] = (5.0/6.0)*A[5];
     As[1] = 0.0;
 
-    C[21] = 0.5*DRILLING_REGULARIZATION*(As[0] + As[2]);
+    C[21] = 1.0; // 0.5*DRILLING_REGULARIZATION*(As[0] + As[2]);
   }
   else {
     memset(C, 0, 22*sizeof(TacsScalar));

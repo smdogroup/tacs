@@ -451,10 +451,10 @@ class TACSShellLinearModel {
     Evaluate the strain as a function of the displacement derivatives
     and interpolated strain from the tensorial components
   */
-  static void evalStrain( const TacsScalar u0x[],
-                          const TacsScalar u1x[],
-                          const TacsScalar e0ty[],
-                          TacsScalar e[] ){
+  static inline void evalStrain( const TacsScalar u0x[],
+                                 const TacsScalar u1x[],
+                                 const TacsScalar e0ty[],
+                                 TacsScalar e[] ){
     // Evaluate the in-plane strains from the tying strain expressions
     e[0] = e0ty[0];
     e[1] = e0ty[3];
@@ -473,13 +473,13 @@ class TACSShellLinearModel {
   /**
     Evaluate the derivative of the strain
   */
-  static void evalStrainSens( const TacsScalar scale,
-                              const TacsScalar dfde[],
-                              const TacsScalar u0x[],
-                              const TacsScalar u1x[],
-                              TacsScalar du0x[],
-                              TacsScalar du1x[],
-                              TacsScalar de0ty[] ){
+  static inline void evalStrainSens( const TacsScalar scale,
+                                     const TacsScalar dfde[],
+                                     const TacsScalar u0x[],
+                                     const TacsScalar u1x[],
+                                     TacsScalar du0x[],
+                                     TacsScalar du1x[],
+                                     TacsScalar de0ty[] ){
     // Evaluate the in-plane strains from the tying strain expressions
     de0ty[0] = scale*dfde[0];
     de0ty[1] = 2.0*scale*dfde[2];
@@ -510,16 +510,14 @@ class TACSShellLinearModel {
     du1x[8] = 0.0;
   }
 
-  static void evalStrainDeriv( const TacsScalar u0x[],
-                               const TacsScalar u1x[],
-                               const TacsScalar e0ty[],
-                               const TacsScalar Ct[],
-                               const TacsScalar u0xd[],
-                               const TacsScalar u1xd[],
-                               const TacsScalar e0tyd[],
-                               const TacsScalar Ctd[],
-                               TacsScalar e[],
-                               TacsScalar ed[] ){
+  static inline void evalStrainDeriv( const TacsScalar u0x[],
+                                      const TacsScalar u1x[],
+                                      const TacsScalar e0ty[],
+                                      const TacsScalar u0xd[],
+                                      const TacsScalar u1xd[],
+                                      const TacsScalar e0tyd[],
+                                      TacsScalar e[],
+                                      TacsScalar ed[] ){
     // Evaluate the in-plane strains from the tying strain expressions
     e[0] = e0ty[0];
     e[1] = e0ty[3];
@@ -534,9 +532,6 @@ class TACSShellLinearModel {
     e[6] = 2.0*e0ty[4];
     e[7] = 2.0*e0ty[2];
 
-    // Compute the rotational penalty
-    e[8] = 0.5*(Ct[3] + u0x[3] - Ct[1] - u0x[1]);
-
     // Evaluate the in-plane strains from the tying strain expressions
     ed[0] = e0tyd[0];
     ed[1] = e0tyd[3];
@@ -550,23 +545,20 @@ class TACSShellLinearModel {
     // Add the components of the shear strain
     ed[6] = 2.0*e0tyd[4];
     ed[7] = 2.0*e0tyd[2];
-
-    // Compute the rotational penalty
-    ed[8] = 0.5*(Ctd[3] + u0xd[3] - Ctd[1] - u0xd[1]);
   }
 
-  static void evalStrainHessian( const TacsScalar scale,
-                                 const TacsScalar dfde[],
-                                 const TacsScalar Cs[],
-                                 const TacsScalar u0x[],
-                                 const TacsScalar u1x[],
-                                 const TacsScalar e0ty[],
-                                 TacsScalar d2u0x[],
-                                 TacsScalar d2u1x[],
-                                 TacsScalar d2u0xu1x[],
-                                 TacsScalar d2e0ty[],
-                                 TacsScalar d2e0tyu0x[],
-                                 TacsScalar d2e0tyu1x[] ){
+  static inline void evalStrainHessian( const TacsScalar scale,
+                                        const TacsScalar dfde[],
+                                        const TacsScalar Cs[],
+                                        const TacsScalar u0x[],
+                                        const TacsScalar u1x[],
+                                        const TacsScalar e0ty[],
+                                        TacsScalar d2u0x[],
+                                        TacsScalar d2u1x[],
+                                        TacsScalar d2u0xu1x[],
+                                        TacsScalar d2e0ty[],
+                                        TacsScalar d2e0tyu0x[],
+                                        TacsScalar d2e0tyu1x[] ){
     TacsScalar drill;
     const TacsScalar *A, *B, *D, *As;
     TACSShellConstitutive::extractTangentStiffness(Cs, &A, &B, &D, &As, &drill);
@@ -688,50 +680,56 @@ class TACSShellLinearModel {
     du0x[8] = 0.0;
   }
 
-  // static void evalDrillStrainHessian( TacsScalar det,
-  //                                     TacsScalar d2et,
-  //                                     const TacsScalar u0x[],
-  //                                     const TacsScalar Ct[],
-  //                                     TacsScalar d2u0x[],
-  //                                     TacsScalar d2Ct[],
-  //                                     TacsScalar d2Ctu0x[] ){
-  //   memset(d2u0x, 0, 81*sizeof(TacsScalar));
-  //   memset(d2Ct, 0, 81*sizeof(TacsScalar));
-  //   memset(d2Ctu0x, 0, 81*sizeof(TacsScalar));
+  static TacsScalar evalDrillStrainDeriv( const TacsScalar u0x[],
+                                          const TacsScalar Ct[],
+                                          const TacsScalar u0xd[],
+                                          const TacsScalar Ctd[],
+                                          TacsScalar *ed ){
+    *ed = 0.5*(Ctd[3] + u0xd[3] - Ctd[1] - u0xd[1]);
 
-  //   TacsScalar *d2;
+    // Compute the rotational penalty
+    return 0.5*(Ct[3] + u0x[3] - Ct[1] - u0x[1]);
+  }
 
-  //   // Compute the contribution from the drilling strain
-  //   // e[8] = 0.5*(Ct[3] + u0x[3] - Ct[1] - u0x[1]);
-  //   d2 = &d2Ct[3*9];
-  //   d2[3] = 0.25*scale*drill;
-  //   d2[1] = -0.25*scale*drill;
+  static void evalDrillStrainHessian( TacsScalar det,
+                                      TacsScalar d2et,
+                                      const TacsScalar u0x[],
+                                      const TacsScalar Ct[],
+                                      TacsScalar d2u0x[],
+                                      TacsScalar d2Ct[],
+                                      TacsScalar d2Ctu0x[] ){
+    memset(d2u0x, 0, 81*sizeof(TacsScalar));
+    memset(d2Ct, 0, 81*sizeof(TacsScalar));
+    memset(d2Ctu0x, 0, 81*sizeof(TacsScalar));
 
-  //   d2 = &d2Ct[9];
-  //   d2[3] = -0.25*scale*drill;
-  //   d2[1] = 0.25*scale*drill;
+    TacsScalar *d2;
 
-  //   d2 = &d2u0x[3*9];
-  //   d2[3] = 0.25*scale*drill;
-  //   d2[1] = -0.25*scale*drill;
+    // Compute the contribution from the drilling strain
+    // e[8] = 0.5*(Ct[3] + u0x[3] - Ct[1] - u0x[1]);
+    d2 = &d2Ct[3*9];
+    d2[3] = 0.25*d2et;
+    d2[1] = -0.25*d2et;
 
-  //   d2 = &d2u0x[9];
-  //   d2[3] = -0.25*scale*drill;
-  //   d2[1] = 0.25*scale*drill;
+    d2 = &d2Ct[9];
+    d2[3] = -0.25*d2et;
+    d2[1] = 0.25*d2et;
 
-  //   d2 = &d2Ctu0x[3*9];
-  //   d2[3] = 0.25*scale*drill;
-  //   d2[1] = -0.25*scale*drill;
+    d2 = &d2u0x[3*9];
+    d2[3] = 0.25*d2et;
+    d2[1] = -0.25*d2et;
 
-  //   d2 = &d2Ctu0x[9];
-  //   d2[3] = -0.25*scale*drill;
-  //   d2[1] = 0.25*scale*drill;
-  // }
+    d2 = &d2u0x[9];
+    d2[3] = -0.25*d2et;
+    d2[1] = 0.25*d2et;
 
+    d2 = &d2Ctu0x[3*9];
+    d2[3] = 0.25*d2et;
+    d2[1] = -0.25*d2et;
 
-
-
-
+    d2 = &d2Ctu0x[9];
+    d2[3] = -0.25*d2et;
+    d2[1] = 0.25*d2et;
+  }
 };
 
 

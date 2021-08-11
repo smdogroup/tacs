@@ -238,7 +238,7 @@ int TacsTestElementResidual( TACSElement *element,
 #ifdef TACS_USE_COMPLEX
     dq[i] = dqtmp + TacsScalar(0.0, dh);
     element->computeEnergies(elemIndex, time, Xpts, q, dq, &T1, &P1);
-    res1[i] = TacsImagPart((T1 - P1))/dh;
+    res2[i] = TacsImagPart((T1 - P1))/dh;
 #else
     dq[i] = dqtmp + dh;
     element->computeEnergies(elemIndex, time, Xpts, q, dq, &T1, &P1);

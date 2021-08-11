@@ -10,7 +10,7 @@
 #
 #  http://www.apache.org/licenses/LICENSE-2.0
 
-# distutils: language=c++
+#distutils: language=c++
 
 # For MPI capabilities
 from mpi4py.libmpi cimport *

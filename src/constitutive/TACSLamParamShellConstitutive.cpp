@@ -250,6 +250,29 @@ void TACSLamParamShellConstitutive::addDensityDVSens( int elemIndex,
   }
 }
 
+// Evaluate the mass moments
+void TACSLamParamShellConstitutive::evalMassMoments( int elemIndex,
+                                                     const double pt[],
+                                                     const TacsScalar X[],
+                                                     TacsScalar moments[] ){
+  TacsScalar rho = orthoPly->getDensity();
+  moments[0] = rho*t;
+  moments[1] = 0.0;
+  moments[2] = rho*t*t*t/12.0;
+}
+
+// Add the sensitivity of the mass moments
+void TACSLamParamShellConstitutive::addMassMomentsDVSens( int elemIndex,
+                                                          const double pt[],
+                                                          const TacsScalar X[],
+                                                          const TacsScalar scale[],
+                                                          int dvLen,
+                                                          TacsScalar dfdx[] ){
+  if (tNum >= 0){
+    TacsScalar rho = orthoPly->getDensity();
+    dfdx[0] += rho*(scale[0] + 0.25*t*t*scale[2]);
+  }
+}
 
 // Evaluate the specific heat
 TacsScalar TACSLamParamShellConstitutive::evalSpecificHeat( int elemIndex,

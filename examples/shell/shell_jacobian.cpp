@@ -11,17 +11,14 @@
 #include "TACSShellUtilities.h"
 #include "TACSDirector.h"
 
+typedef TACSShellElement<TACSQuadLinearQuadrature, TACSShellQuadBasis<3>,
+                         TACSLinearizedRotation, TACSShellLinearModel> TACSQuadLinearShell;
 
-// typedef TACSShellElement<TACSQuadLinearQuadrature, TACSShellQuadBasis<2>,
-//                          TACSLinearizedRotation, TACSShellLinearModel> TACSQuadLinearShell;
-
-// typedef TACSShellElement<TACSQuadLinearQuadrature, TACSShellQuadBasis<2>,
+// typedef TACSShellElement<TACSQuadLinearQuadrature, TACSShellQuadBasis<3>,
 //                          TACSQuadraticRotation, TACSShellLinearModel> TACSQuadLinearShell;
 
-typedef TACSShellElement<TACSQuadLinearQuadrature, TACSShellQuadBasis<2>,
-                         TACSQuaternionRotation, TACSShellLinearModel> TACSQuadLinearShell;
-
-
+// typedef TACSShellElement<TACSQuadLinearQuadrature, TACSShellQuadBasis<3>,
+//                          TACSQuaternionRotation, TACSShellLinearModel> TACSQuadLinearShell;
 
 // typedef TACSShellElement<TACSQuadLinearQuadrature, TACSShellQuadBasis<2>,
 //                          TACSLinearizedRotation, TACSShellNonlinearModel> TACSQuadLinearShell;
@@ -47,9 +44,9 @@ int main( int argc, char *argv[] ){
   int rank;
   MPI_Comm_rank(comm, &rank);
 
-  TacsScalar rho = 2700.0;
+  TacsScalar rho = 0.0; // 2700.0;
   TacsScalar specific_heat = 921.096;
-  TacsScalar E = 70e3;
+  TacsScalar E = 0.0; // 70e3;
   TacsScalar nu = 0.3;
   TacsScalar ys = 270.0;
   TacsScalar cte = 24.0e-6;
@@ -66,9 +63,6 @@ int main( int argc, char *argv[] ){
 
   TACSElement *linear_shell = new TACSQuadLinearShell(transform, con);
   linear_shell->incref();
-
-  // TACSElement *quadratic_shell = new TACSQuadQuadraticShell(transform, con);
-  // quadratic_shell->incref();
 
   const int OFFSET = 3;
   // const int VARS_PER_NODE = TACSQuaternionRotation::NUM_PARAMETERS + OFFSET;
@@ -90,19 +84,17 @@ int main( int argc, char *argv[] ){
   // TacsTestElementResidual(linear_shell, elemIndex, time, Xpts, vars, dvars, ddvars);
   // TacsTestElementResidual(quadratic_shell, elemIndex, time, Xpts, vars, dvars, ddvars);
 
-  TacsTestElementJacobian(linear_shell, elemIndex, time, Xpts, vars, dvars, ddvars);
+  TacsTestElementJacobian(linear_shell, elemIndex, time, Xpts, vars, dvars, ddvars, 0);
   TacsTestElementJacobian(linear_shell, elemIndex, time, Xpts, vars, dvars, ddvars, 3);
   TacsTestElementJacobian(linear_shell, elemIndex, time, Xpts, vars, dvars, ddvars, 6);
 
   // TacsTestElementJacobian(linear_shell, elemIndex, time, Xpts, vars, dvars, ddvars, 9);
-
-
   // TacsTestElementJacobian(quadratic_shell, elemIndex, time, Xpts, vars, dvars, ddvars);
 
   // static const int OFFSET = 1;
   // static const int VARS_PER_NODE = OFFSET + TACSQuaternionRotation::NUM_PARAMETERS;
 
-  double dh = 1e-30;
+  // double dh = 1e-30;
   // TacsTestDirector<VARS_PER_NODE, OFFSET, 3, TACSLinearizedRotation>(dh);
   // TacsTestDirector<VARS_PER_NODE, OFFSET, 3, TACSQuadraticRotation>(dh);
   // TacsTestDirector<VARS_PER_NODE, OFFSET, 3, TACSQuaternionRotation>(dh);

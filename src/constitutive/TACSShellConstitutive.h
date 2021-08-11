@@ -39,8 +39,36 @@ class TACSShellConstitutive : public TACSConstitutive {
   // Get the number of stresses
   int getNumStresses();
 
-  // The name of the constitutive object
-  const char *getObjectName();
+  /*
+    Get the integrals of the density through the thickness
+
+    moments = int_{-t/2}^{t/2} [1, z, z^2] rho(z) dz
+
+    @param elemIndex The local element index
+    @param pt The parametric location
+    @param X The point location
+    @return The moments of the mass
+  */
+  virtual void evalMassMoments( int elemIndex,
+                                const double pt[],
+                                const TacsScalar X[],
+                                TacsScalar moments[] ) = 0;
+
+  /**
+    Add the derivative of the pointwise mass times the given scalar
+
+    @param elemIndex The local element index
+    @param pt The parametric location
+    @param X The point location
+    @param scale Scale factor for the moments
+    @param dvLen the length of the sensitivity array
+    @param dfdx The sensitivity array
+  */
+  virtual void addMassMomentsDVSens( int elemIndex,
+                                     const double pt[],
+                                     const TacsScalar X[],
+                                     const TacsScalar scale[],
+                                     int dvLen, TacsScalar dfdx[] ){}
 
   // Set the drilling regularization value
   static void setDrillingRegularization( double kval );
@@ -57,6 +85,9 @@ class TACSShellConstitutive : public TACSConstitutive {
                                     const TacsScalar D[], const TacsScalar As[],
                                     const TacsScalar drill, const TacsScalar e[],
                                     TacsScalar s[] );
+
+  // The name of the constitutive object
+  const char *getObjectName();
 
  protected:
   // The drilling regularization constant

@@ -10,7 +10,7 @@
 #
 #  http://www.apache.org/licenses/LICENSE-2.0
 
-# distutils: language=c++
+#distutils: language=c++
 
 # For MPI capabilities
 from mpi4py.libmpi cimport *
@@ -25,6 +25,7 @@ from libc.string cimport const_char
 from cpython cimport PyObject, Py_INCREF
 
 # Import from TACS for definitions
+cimport TACS
 from TACS cimport *
 
 cdef extern from "TACSMaterialProperties.h":

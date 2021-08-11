@@ -4,14 +4,13 @@
 #include "TACSLinearElasticity.h"
 #include "TACSHeatConduction.h"
 #include "TACSThermoelasticity.h"
-#include "TACSPlateModel.h"
-#include "TACSThermoelasticPlateModel.h"
 #include "TACSNeohookean.h"
 
 // Include the constitutive classes
 #include "TACSSolidConstitutive.h"
 #include "TACSPlaneStressConstitutive.h"
 #include "TACSSolidConstitutive.h"
+#include "TACSIsoShellConstitutive.h"
 
 // Include the basis functions
 #include "TACSHexaBasis.h"
@@ -149,38 +148,31 @@ int main( int argc, char *argv[] ){
   TACSPlaneStressConstitutive *con2d = new TACSPlaneStressConstitutive(props, 1.0, 0);
   con2d->incref();
 
-  TACSShellConstitutive *conShell = new TACSShellConstitutive(props, 1.0, 0);
+  TACSShellConstitutive *conShell = new TACSIsoShellConstitutive(props, 1.0, 0);
   conShell->incref();
 
   // Set the model type
-  const int NUM_3D_MODELS = 2;
+  const int NUM_3D_MODELS = 5;
   TACSElementModel *model3d[NUM_3D_MODELS];
   model3d[0] = new TACSHeatConduction3D(con3d);
-  model3d[1] = new TACSLinearThermoelasticity3D(con3d, TACS_LINEAR_STRAIN);
-
-  // const int NUM_3D_MODELS = 5;
-  // TACSElementModel *model3d[NUM_3D_MODELS];
-  // model3d[0] = new TACSHeatConduction3D(con3d);
-  // model3d[1] = new TACSLinearElasticity3D(con3d, TACS_LINEAR_STRAIN);
-  // model3d[2] = new TACSLinearElasticity3D(con3d, TACS_NONLINEAR_STRAIN);
-  // model3d[3] = new TACSLinearThermoelasticity3D(con3d, TACS_LINEAR_STRAIN);
-  // model3d[4] = new TACSNeohookean3D(2.34, 5.73);
+  model3d[1] = new TACSLinearElasticity3D(con3d, TACS_LINEAR_STRAIN);
+  model3d[2] = new TACSLinearElasticity3D(con3d, TACS_NONLINEAR_STRAIN);
+  model3d[3] = new TACSLinearThermoelasticity3D(con3d, TACS_LINEAR_STRAIN);
+  model3d[4] = new TACSNeohookean3D(2.34, 5.73);
   for ( int i = 0; i < NUM_3D_MODELS; i++ ){
     model3d[i]->incref();
   }
-/*
-  const int NUM_2D_MODELS = 6;
+
+  const int NUM_2D_MODELS = 4;
   TACSElementModel *model2d[NUM_2D_MODELS];
   model2d[0] = new TACSHeatConduction2D(con2d);
   model2d[1] = new TACSLinearElasticity2D(con2d, TACS_LINEAR_STRAIN);
   model2d[2] = new TACSLinearElasticity2D(con2d, TACS_NONLINEAR_STRAIN);
   model2d[3] = new TACSLinearThermoelasticity2D(con2d, TACS_LINEAR_STRAIN);
-  model2d[4] = new TACSPlateModel(conShell);
-  model2d[5] = new TACSThermoelasticPlateModel(conShell);
   for ( int i = 0; i < NUM_2D_MODELS; i++ ){
     model2d[i]->incref();
   }
-*/
+
   for ( int j = 0; j < NUM_3D_MODELS; j++ ){
     TacsTestElementModel(model3d[j], elemIndex, time, dh);
     for ( int i = NUM_3D_BASIS-1; i < NUM_3D_BASIS; i++ ){
@@ -192,7 +184,7 @@ int main( int argc, char *argv[] ){
       element->decref();
     }
   }
-/*
+
   for ( int j = 0; j < NUM_2D_MODELS; j++ ){
     TacsTestElementModel(model2d[j], elemIndex, time, dh);
     for ( int i = 0; i < NUM_2D_BASIS; i++ ){
@@ -204,7 +196,7 @@ int main( int argc, char *argv[] ){
       element->decref();
     }
   }
-*/
+
   MPI_Finalize();
   return (0);
 }

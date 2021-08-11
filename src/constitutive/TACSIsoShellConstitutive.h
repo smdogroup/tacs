@@ -57,6 +57,15 @@ class TACSIsoShellConstitutive : public TACSShellConstitutive {
                          const double pt[], const TacsScalar X[],
                          int dvLen, TacsScalar dfdx[] );
 
+  // Evaluate the mass moments
+  void evalMassMoments( int elemIndex, const double pt[],
+                        const TacsScalar X[], TacsScalar moments[] );
+
+  // Add the sensitivity of the mass moments
+  void addMassMomentsDVSens( int elemIndex, const double pt[],
+                             const TacsScalar X[], const TacsScalar scale[],
+                             int dvLen, TacsScalar dfdx[] );
+
   // Evaluate the specific heat
   TacsScalar evalSpecificHeat( int elemIndex, const double pt[],
                                const TacsScalar X[] );

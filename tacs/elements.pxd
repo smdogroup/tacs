@@ -10,7 +10,7 @@
 #
 #  http://www.apache.org/licenses/LICENSE-2.0
 
-# distutils: language=c++
+#distutils: language=c++
 
 # Import numpy
 from libc.string cimport const_char

@@ -395,17 +395,17 @@ class TACSLinearizedRotation {
       for ( int j = 0; j < num_nodes; j++, tj += 3 ){
         // Add the derivative
         TacsScalar d[9];
-        d[0] = alpha*d2d[0] + gamma*d2Tdotd[0];
-        d[1] = alpha*d2d[1] + gamma*d2Tdotd[1];
-        d[2] = alpha*d2d[2] + gamma*d2Tdotd[2];
+        d[0] = d2d[0] + gamma*d2Tdotd[0];
+        d[1] = d2d[1] + gamma*d2Tdotd[1];
+        d[2] = d2d[2] + gamma*d2Tdotd[2];
 
-        d[3] = alpha*d2d[dsize] + gamma*d2Tdotd[dsize];
-        d[4] = alpha*d2d[dsize+1] + gamma*d2Tdotd[dsize+1];
-        d[5] = alpha*d2d[dsize+2] + gamma*d2Tdotd[dsize+2];
+        d[3] = d2d[dsize] + gamma*d2Tdotd[dsize];
+        d[4] = d2d[dsize+1] + gamma*d2Tdotd[dsize+1];
+        d[5] = d2d[dsize+2] + gamma*d2Tdotd[dsize+2];
 
-        d[6] = alpha*d2d[2*dsize] + gamma*d2Tdotd[2*dsize];
-        d[7] = alpha*d2d[2*dsize+1] + gamma*d2Tdotd[2*dsize+1];
-        d[8] = alpha*d2d[2*dsize+2] + gamma*d2Tdotd[2*dsize+2];
+        d[6] = d2d[2*dsize] + gamma*d2Tdotd[2*dsize];
+        d[7] = d2d[2*dsize+1] + gamma*d2Tdotd[2*dsize+1];
+        d[8] = d2d[2*dsize+2] + gamma*d2Tdotd[2*dsize+2];
 
         TacsScalar tmp[9];
         mat3x3SkewMatSkewTransform(ti, d, tj, tmp);
@@ -437,17 +437,17 @@ class TACSLinearizedRotation {
       for ( int j = 0; j < num_nodes; j++ ){
         // Add the derivative
         TacsScalar d[9];
-        d[0] = d2du[0];
-        d[1] = d2du[1];
-        d[2] = d2du[2];
+        d[0] = d2du[0] + gamma*d2Tdotu[0];
+        d[1] = d2du[1] + gamma*d2Tdotu[1];
+        d[2] = d2du[2] + gamma*d2Tdotu[2];
 
-        d[3] = d2du[dsize];
-        d[4] = d2du[dsize+1];
-        d[5] = d2du[dsize+2];
+        d[3] = d2du[dsize] + gamma*d2Tdotu[dsize];
+        d[4] = d2du[dsize+1] + gamma*d2Tdotu[dsize+1];
+        d[5] = d2du[dsize+2] + gamma*d2Tdotu[dsize+2];
 
-        d[6] = d2du[2*dsize];
-        d[7] = d2du[2*dsize+1];
-        d[8] = d2du[2*dsize+2];
+        d[6] = d2du[2*dsize] + gamma*d2Tdotu[2*dsize];
+        d[7] = d2du[2*dsize+1] + gamma*d2Tdotu[2*dsize+1];
+        d[8] = d2du[2*dsize+2] + gamma*d2Tdotu[2*dsize+2];
 
         TacsScalar tmp[9];
         mat3x3SkewMatTransform(&t[3*i], d, tmp);
@@ -473,9 +473,11 @@ class TACSLinearizedRotation {
         }
 
         d2du += 3;
+        d2Tdotu += 3;
       }
 
       d2du += 2*dsize;
+      d2Tdotu += 2*dsize;
     }
   }
 };
@@ -1074,13 +1076,13 @@ class TACSQuadraticRotation {
         for ( int k = 0; k < 3; k++ ){
           TacsScalar tmp[3];
           tmp[0] =
-            alpha*d2d[dsize*(3*i + k) + 3*j] +
+            d2d[dsize*(3*i + k) + 3*j] +
             gamma*d2Tdotd[dsize*(3*i + k) + 3*j];
           tmp[1] =
-            alpha*d2d[dsize*(3*i + k) + 3*j + 1] +
+            d2d[dsize*(3*i + k) + 3*j + 1] +
             gamma*d2Tdotd[dsize*(3*i + k) + 3*j + 1];
           tmp[2] =
-            alpha*d2d[dsize*(3*i + k) + 3*j + 2] +
+            d2d[dsize*(3*i + k) + 3*j + 2] +
             gamma*d2Tdotd[dsize*(3*i + k) + 3*j + 2];
 
           dfdq[k] = Dj[0]*tmp[0] + Dj[1]*tmp[1] + Dj[2]*tmp[2];
@@ -1151,38 +1153,46 @@ class TACSQuadraticRotation {
     const TacsScalar *Diddot = Dddot;
     for ( int i = 0; i < num_nodes; i++, Di += 9, Didot += 9, Diddot += 9 ){
       for ( int j = 0; j < num_nodes; j++ ){
-        TacsScalar dfdq[9];
+        TacsScalar dfdq[9], dfdqT[9];
         for ( int k = 0; k < 3; k++ ){
           TacsScalar tmp[3];
           tmp[0] =
-            alpha*d2du[dsize*(3*i) + 3*j + k] +
+            d2du[dsize*(3*i) + 3*j + k] +
             gamma*d2Tdotu[dsize*(3*i) + 3*j + k];
           tmp[1] =
-            alpha*d2du[dsize*(3*i + 1) + 3*j + k] +
+            d2du[dsize*(3*i + 1) + 3*j + k] +
             gamma*d2Tdotu[dsize*(3*i + 1) + 3*j + k];
           tmp[2] =
-            alpha*d2du[dsize*(3*i + 2) + 3*j + k] +
+            d2du[dsize*(3*i + 2) + 3*j + k] +
             gamma*d2Tdotu[dsize*(3*i + 2) + 3*j + k];
 
           dfdq[k] = Di[0]*tmp[0] + Di[1]*tmp[1] + Di[2]*tmp[2];
           dfdq[3+k] = Di[3]*tmp[0] + Di[4]*tmp[1] + Di[5]*tmp[2];
           dfdq[6+k] = Di[6]*tmp[0] + Di[7]*tmp[1] + Di[8]*tmp[2];
 
-          tmp[0] = beta*d2Tdotu[dsize*(3*i + k) + 3*j];
-          tmp[1] = beta*d2Tdotu[dsize*(3*i + k) + 3*j + 1];
-          tmp[2] = beta*d2Tdotu[dsize*(3*i + k) + 3*j + 2];
+          tmp[0] = d2du[dsize*(3*i) + 3*j + k];
+          tmp[1] = d2du[dsize*(3*i + 1) + 3*j + k];
+          tmp[2] = d2du[dsize*(3*i + 2) + 3*j + k];
 
-          dfdq[k] += 2.0*(Didot[0]*tmp[0] + Didot[1]*tmp[1] + Didot[2]*tmp[2]);
-          dfdq[3+k] += 2.0*(Didot[3]*tmp[0] + Didot[4]*tmp[1] + Didot[5]*tmp[2]);
-          dfdq[6+k] += 2.0*(Didot[6]*tmp[0] + Didot[7]*tmp[1] + Didot[8]*tmp[2]);
+          dfdqT[k] = dfdq[k];
+          dfdqT[3 + k] = dfdq[3 + k];
+          dfdqT[6 + k] = dfdq[6 + k];
 
-          tmp[0] = alpha*d2Tdotu[dsize*(3*i + k) + 3*j];
-          tmp[1] = alpha*d2Tdotu[dsize*(3*i + k) + 3*j + 1];
-          tmp[2] = alpha*d2Tdotu[dsize*(3*i + k) + 3*j + 2];
+          tmp[0] = beta*d2Tdotu[dsize*(3*i) + 3*j + k];
+          tmp[1] = beta*d2Tdotu[dsize*(3*i + 1) + 3*j + k];
+          tmp[2] = beta*d2Tdotu[dsize*(3*i + 2) + 3*j + k];
 
-          dfdq[k] += Diddot[0]*tmp[0] + Diddot[1]*tmp[1] + Diddot[2]*tmp[2];
-          dfdq[3+k] += Diddot[3]*tmp[0] + Diddot[4]*tmp[1] + Diddot[5]*tmp[2];
-          dfdq[6+k] += Diddot[6]*tmp[0] + Diddot[7]*tmp[1] + Diddot[8]*tmp[2];
+          dfdqT[k] += 2.0*(Didot[0]*tmp[0] + Didot[1]*tmp[1] + Didot[2]*tmp[2]);
+          dfdqT[3+k] += 2.0*(Didot[3]*tmp[0] + Didot[4]*tmp[1] + Didot[5]*tmp[2]);
+          dfdqT[6+k] += 2.0*(Didot[6]*tmp[0] + Didot[7]*tmp[1] + Didot[8]*tmp[2]);
+
+          tmp[0] = alpha*d2Tdotu[dsize*(3*i) + 3*j + k];
+          tmp[1] = alpha*d2Tdotu[dsize*(3*i + 1) + 3*j + k];
+          tmp[2] = alpha*d2Tdotu[dsize*(3*i + 2) + 3*j + k];
+
+          dfdqT[k] += Diddot[0]*tmp[0] + Diddot[1]*tmp[1] + Diddot[2]*tmp[2];
+          dfdqT[3+k] += Diddot[3]*tmp[0] + Diddot[4]*tmp[1] + Diddot[5]*tmp[2];
+          dfdqT[6+k] += Diddot[6]*tmp[0] + Diddot[7]*tmp[1] + Diddot[8]*tmp[2];
         }
 
         for ( int ii = 0; ii < 3; ii++ ){
@@ -1201,7 +1211,7 @@ class TACSQuadraticRotation {
               (vars_per_node*j + jj)*size +
               vars_per_node*i + ii + offset;
 
-            mat[index] += dfdq[3*ii + jj];
+            mat[index] += dfdqT[3*ii + jj];
           }
         }
       }
@@ -1213,7 +1223,6 @@ class TACSQuadraticRotation {
 class TACSQuaternionRotation {
  public:
   static const int NUM_PARAMETERS = 5;
-
 
   /*
     Compute the rotation matrices at each node
@@ -1487,6 +1496,8 @@ class TACSQuaternionRotation {
 
         // Enforce the quaternion constraint
         r[4] += q[0]*q[0] + q[1]*q[1] + q[2]*q[2] + q[3]*q[3] - 1.0;
+
+        r += vars_per_node;
       }
 
       // Add the constraint terms
@@ -1507,7 +1518,6 @@ class TACSQuaternionRotation {
       m[2*(size+1)] += 2.0*alpha*lamb;
       m[3*(size+1)] += 2.0*alpha*lamb;
 
-      r += vars_per_node;
       q += vars_per_node;
 
       // Increment to the next block diagonal entry
@@ -1995,13 +2005,13 @@ class TACSQuaternionRotation {
         for ( int k = 0; k < 3; k++ ){
           TacsScalar tmp[3];
           tmp[0] =
-            alpha*d2d[dsize*(3*i + k) + 3*j] +
+            d2d[dsize*(3*i + k) + 3*j] +
             gamma*d2Tdotd[dsize*(3*i + k) + 3*j];
           tmp[1] =
-            alpha*d2d[dsize*(3*i + k) + 3*j + 1] +
+            d2d[dsize*(3*i + k) + 3*j + 1] +
             gamma*d2Tdotd[dsize*(3*i + k) + 3*j + 1];
           tmp[2] =
-            alpha*d2d[dsize*(3*i + k) + 3*j + 2] +
+            d2d[dsize*(3*i + k) + 3*j + 2] +
             gamma*d2Tdotd[dsize*(3*i + k) + 3*j + 2];
 
           dfdq[k] = Dj[0]*tmp[0] + Dj[4]*tmp[1] + Dj[8]*tmp[2];
@@ -2084,17 +2094,17 @@ class TACSQuaternionRotation {
     const TacsScalar *Diddot = Dddot;
     for ( int i = 0; i < num_nodes; i++, Di += 12, Didot += 12, Diddot += 12 ){
       for ( int j = 0; j < num_nodes; j++ ){
-        TacsScalar dfdq[12];
+        TacsScalar dfdq[12], dfdqT[12];
         for ( int k = 0; k < 3; k++ ){
           TacsScalar tmp[3];
           tmp[0] =
-            alpha*d2du[dsize*(3*i) + 3*j + k] +
+            d2du[dsize*(3*i) + 3*j + k] +
             gamma*d2Tdotu[dsize*(3*i) + 3*j + k];
           tmp[1] =
-            alpha*d2du[dsize*(3*i + 1) + 3*j + k] +
+            d2du[dsize*(3*i + 1) + 3*j + k] +
             gamma*d2Tdotu[dsize*(3*i + 1) + 3*j + k];
           tmp[2] =
-            alpha*d2du[dsize*(3*i + 2) + 3*j + k] +
+            d2du[dsize*(3*i + 2) + 3*j + k] +
             gamma*d2Tdotu[dsize*(3*i + 2) + 3*j + k];
 
           dfdq[k] = Di[0]*tmp[0] + Di[4]*tmp[1] + Di[8]*tmp[2];
@@ -2102,23 +2112,32 @@ class TACSQuaternionRotation {
           dfdq[6 + k] = Di[2]*tmp[0] + Di[6]*tmp[1] + Di[10]*tmp[2];
           dfdq[9 + k] = Di[3]*tmp[0] + Di[7]*tmp[1] + Di[11]*tmp[2];
 
-          tmp[0] = beta*d2Tdotd[dsize*(3*i + k) + 3*j];
-          tmp[1] = beta*d2Tdotd[dsize*(3*i + k) + 3*j + 1];
-          tmp[2] = beta*d2Tdotd[dsize*(3*i + k) + 3*j + 2];
+          tmp[0] = d2du[dsize*(3*i) + 3*j + k];
+          tmp[1] = d2du[dsize*(3*i + 1) + 3*j + k];
+          tmp[2] = d2du[dsize*(3*i + 2) + 3*j + k];
 
-          dfdq[k] += 2.0*(Didot[0]*tmp[0] + Didot[4]*tmp[1] + Didot[8]*tmp[2]);
-          dfdq[3 + k] += 2.0*(Didot[1]*tmp[0] + Didot[5]*tmp[1] + Didot[9]*tmp[2]);
-          dfdq[6 + k] += 2.0*(Didot[2]*tmp[0] + Didot[6]*tmp[1] + Didot[10]*tmp[2]);
-          dfdq[9 + k] += 2.0*(Didot[3]*tmp[0] + Didot[7]*tmp[1] + Didot[11]*tmp[2]);
+          dfdqT[k] = dfdq[k];
+          dfdqT[3 + k] = dfdq[3 + k];
+          dfdqT[6 + k] = dfdq[6 + k];
+          dfdqT[9 + k] = dfdq[9 + k];
 
-          tmp[0] = alpha*d2Tdotd[dsize*(3*i + k) + 3*j];
-          tmp[1] = alpha*d2Tdotd[dsize*(3*i + k) + 3*j + 1];
-          tmp[2] = alpha*d2Tdotd[dsize*(3*i + k) + 3*j + 2];
+          tmp[0] = beta*d2Tdotu[dsize*(3*i) + 3*j + k];
+          tmp[1] = beta*d2Tdotu[dsize*(3*i + 1) + 3*j + k];
+          tmp[2] = beta*d2Tdotu[dsize*(3*i + 2) + 3*j + k];
 
-          dfdq[k] += Diddot[0]*tmp[0] + Diddot[4]*tmp[1] + Diddot[8]*tmp[2];
-          dfdq[3 + k] += Diddot[1]*tmp[0] + Diddot[5]*tmp[1] + Diddot[9]*tmp[2];
-          dfdq[6 + k] += Diddot[2]*tmp[0] + Diddot[6]*tmp[1] + Diddot[10]*tmp[2];
-          dfdq[9 + k] += Diddot[3]*tmp[0] + Diddot[7]*tmp[1] + Diddot[11]*tmp[2];
+          dfdqT[k] += 2.0*(Didot[0]*tmp[0] + Didot[4]*tmp[1] + Didot[8]*tmp[2]);
+          dfdqT[3 + k] += 2.0*(Didot[1]*tmp[0] + Didot[5]*tmp[1] + Didot[9]*tmp[2]);
+          dfdqT[6 + k] += 2.0*(Didot[2]*tmp[0] + Didot[6]*tmp[1] + Didot[10]*tmp[2]);
+          dfdqT[9 + k] += 2.0*(Didot[3]*tmp[0] + Didot[7]*tmp[1] + Didot[11]*tmp[2]);
+
+          tmp[0] = alpha*d2Tdotu[dsize*(3*i) + 3*j + k];
+          tmp[1] = alpha*d2Tdotu[dsize*(3*i + 1) + 3*j + k];
+          tmp[2] = alpha*d2Tdotu[dsize*(3*i + 2) + 3*j + k];
+
+          dfdqT[k] += Diddot[0]*tmp[0] + Diddot[4]*tmp[1] + Diddot[8]*tmp[2];
+          dfdqT[3 + k] += Diddot[1]*tmp[0] + Diddot[5]*tmp[1] + Diddot[9]*tmp[2];
+          dfdqT[6 + k] += Diddot[2]*tmp[0] + Diddot[6]*tmp[1] + Diddot[10]*tmp[2];
+          dfdqT[9 + k] += Diddot[3]*tmp[0] + Diddot[7]*tmp[1] + Diddot[11]*tmp[2];
         }
 
         for ( int ii = 0; ii < 4; ii++ ){
@@ -2137,7 +2156,7 @@ class TACSQuaternionRotation {
               (vars_per_node*j + jj)*size +
               vars_per_node*i + ii + offset;
 
-            mat[index] += dfdq[3*ii + jj];
+            mat[index] += dfdqT[3*ii + jj];
           }
         }
       }
@@ -2501,9 +2520,6 @@ int TacsTestDirector( double dh=1e-7,
   TacsGenerateRandomArray(d2d, dsize*dsize);
   TacsGenerateRandomArray(d2du, dsize*dsize);
 
-  memset(d2Tdotu, 0, dsize*dsize*sizeof(TacsScalar));
-  memset(d2du, 0, dsize*dsize*sizeof(TacsScalar));
-
   // Compute the director rates
   director::template
     computeDirectorRates<vars_per_node, offset, num_nodes>(vars, dvars, ddvars, t,
@@ -2512,11 +2528,24 @@ int TacsTestDirector( double dh=1e-7,
   // Compute the director Jacobian matrix
   memset(res, 0, size*sizeof(TacsScalar));
   memset(mat, 0, size*size*sizeof(TacsScalar));
+
+  for ( int i = 0; i < dsize*dsize; i++ ){
+    d2d[i] *= alpha;
+    d2du[i] *= alpha;
+  }
+
   director::template
     addDirectorJacobian<vars_per_node, offset, num_nodes>(alpha, beta, gamma,
                                                           vars, dvars, ddvars, t,
                                                           dTdot, dd, d2Tdotd, d2Tdotu,
                                                           d2d, d2du, res, mat);
+
+  if (alpha != 0.0){
+    for ( int i = 0; i < dsize*dsize; i++ ){
+      d2d[i] *= 1.0/alpha;
+      d2du[i] *= 1.0/alpha;
+    }
+  }
 
   for ( int k = 0; k < size; k++ ){
     TacsScalar varst[size], dvarst[size], ddvarst[size];
@@ -2540,6 +2569,9 @@ int TacsTestDirector( double dh=1e-7,
       computeDirectorRates<vars_per_node, offset, num_nodes>(varst, dvarst, ddvarst, t,
                                                              dt, ddott, dddott);
 
+    TacsScalar rest[size];
+    memset(rest, 0, size*sizeof(TacsScalar));
+
     // Add the change in coefficient
     TacsScalar dTdott[dsize], ddt[dsize];
     for ( int j = 0; j < dsize; j++ ){
@@ -2551,8 +2583,19 @@ int TacsTestDirector( double dh=1e-7,
       }
     }
 
-    TacsScalar rest[size];
-    memset(rest, 0, size*sizeof(TacsScalar));
+    for ( int j = 0; j < dsize; j++ ){
+      for ( int ii = 0; ii < size; ii++ ){
+        if (ii % vars_per_node < 3){
+          int i = ii % vars_per_node + 3*(ii/vars_per_node);
+          dTdott[j] += d2Tdotu[j*dsize + i]*(ddvarst[ii] - ddvars[ii]);
+          rest[ii] += d2Tdotu[j*dsize + i]*(dddott[j] - dddot[j]);
+
+          ddt[j] += d2du[j*dsize + i]*(varst[ii] - vars[ii]);
+          rest[ii] += d2du[j*dsize + i]*(dt[j] - d[j]);
+        }
+      }
+    }
+
     director::template
       addDirectorResidual<vars_per_node, offset, num_nodes>(varst, dvarst, ddvarst, t,
                                                             dTdott, ddt, rest);

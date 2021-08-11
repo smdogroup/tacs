@@ -28,7 +28,6 @@ class TACSShellElement : public TACSElement {
   // parametrization.
   static const int vars_per_node = offset + director::NUM_PARAMETERS;
 
-
   // The number of nodes for this element. This is derived from the
   // basis function class. This is just a handy re-definition since
   // this constant is used in many locations within the element.
@@ -183,40 +182,32 @@ class TACSShellElement : public TACSElement {
   static const int dsize = 3*num_nodes;
   static const int csize = 9*num_nodes;
 
+  void computeDrillStrain( const TacsScalar Xdn[],
+                           const TacsScalar fn[],
+                           const TacsScalar vars[],
+                           TacsScalar XdinvTn[],
+                           TacsScalar Tn[],
+                           TacsScalar u0xn[],
+                           TacsScalar Ctn[],
+                           TacsScalar etn[] );
+
   TACSShellTransform *transform;
   TACSShellConstitutive *con;
 };
 
 /*
-  Compute the kinetic and potential energies of the shell
+  Compute the drilling strain penalty at each node
 */
 template <class quadrature, class basis, class director, class model>
 void TACSShellElement<quadrature, basis, director, model>::
-  computeEnergies( int elemIndex,
-                   double time,
-                   const TacsScalar *Xpts,
-                   const TacsScalar *vars,
-                   const TacsScalar *dvars,
-                   TacsScalar *_Te, TacsScalar *_Ue ){
-  // Zero the kinetic and potential energies
-  TacsScalar Te = 0.0;
-  TacsScalar Ue = 0.0;
-
-  // Compute the number of quadrature points
-  const int nquad = quadrature::getNumQuadraturePoints();
-
-  // Compute the node normal directions
-  TacsScalar fn[3*num_nodes], Xdn[9*num_nodes];
-  TacsShellComputeNodeNormals<basis>(Xpts, fn, Xdn);
-
-  // Compute the drill strain penalty at each node
-  TacsScalar etn[num_nodes];
-
-  // Store information about the transformation and derivatives at each node for
-  // the drilling degrees of freedom
-  TacsScalar Tn[9*num_nodes], XdinvTn[9*num_nodes];
-  TacsScalar u0xn[9*num_nodes], Ctn[csize];
-
+  computeDrillStrain( const TacsScalar Xdn[],
+                      const TacsScalar fn[],
+                      const TacsScalar vars[],
+                      TacsScalar XdinvTn[],
+                      TacsScalar Tn[],
+                      TacsScalar u0xn[],
+                      TacsScalar Ctn[],
+                      TacsScalar etn[] ){
   for ( int i = 0; i < num_nodes; i++ ){
     double pt[2];
     basis::getNodePoint(i, pt);
@@ -254,6 +245,38 @@ void TACSShellElement<quadrature, basis, director, model>::
 
     etn[i] = model::evalDrillStrain(&u0xn[9*i], &Ctn[9*i]);
   }
+}
+
+/*
+  Compute the kinetic and potential energies of the shell
+*/
+template <class quadrature, class basis, class director, class model>
+void TACSShellElement<quadrature, basis, director, model>::
+  computeEnergies( int elemIndex,
+                   double time,
+                   const TacsScalar *Xpts,
+                   const TacsScalar *vars,
+                   const TacsScalar *dvars,
+                   TacsScalar *_Te, TacsScalar *_Ue ){
+  // Zero the kinetic and potential energies
+  TacsScalar Te = 0.0;
+  TacsScalar Ue = 0.0;
+
+  // Compute the number of quadrature points
+  const int nquad = quadrature::getNumQuadraturePoints();
+
+  // Compute the node normal directions
+  TacsScalar fn[3*num_nodes], Xdn[9*num_nodes];
+  TacsShellComputeNodeNormals<basis>(Xpts, fn, Xdn);
+
+  // Compute the drill strain penalty at each node
+  TacsScalar etn[num_nodes];
+
+  // Store information about the transformation and derivatives at each node for
+  // the drilling degrees of freedom
+  TacsScalar XdinvTn[9*num_nodes], Tn[9*num_nodes];
+  TacsScalar u0xn[9*num_nodes], Ctn[csize];
+  computeDrillStrain(Xdn, fn, vars, XdinvTn, Tn, u0xn, Ctn, etn);
 
   // Compute the director rates
   TacsScalar d[dsize], ddot[dsize];
@@ -309,6 +332,19 @@ void TACSShellElement<quadrature, basis, director, model>::
     Ue += 0.5*detXd*(s[0]*e[0] + s[1]*e[1] + s[2]*e[2] +
                      s[3]*e[3] + s[4]*e[4] + s[5]*e[5] +
                      s[6]*e[6] + s[7]*e[7] + s[8]*e[8]);
+
+    // Evaluate the mass moments
+    TacsScalar moments[3];
+    con->evalMassMoments(elemIndex, pt, X, moments);
+
+    // Compute the velocities and the director velocities
+    TacsScalar u0dot[3], d0dot[3];
+    basis::template interpFields<vars_per_node, 3>(pt, dvars, u0dot);
+    basis::template interpFields<3, 3>(pt, ddot, d0dot);
+
+    Te += 0.5*detXd*(moments[0]*vec3Dot(u0dot, u0dot) +
+                     2.0*moments[1]*vec3Dot(u0dot, d0dot) +
+                     moments[2]*vec3Dot(d0dot, d0dot));
   }
 
   *_Te = Te;
@@ -349,46 +385,9 @@ void TACSShellElement<quadrature, basis, director, model>::
 
   // Store information about the transformation and derivatives at each node for
   // the drilling degrees of freedom
-  TacsScalar Tn[9*num_nodes], XdinvTn[9*num_nodes];
-  TacsScalar u0xn[9*num_nodes], Ctn[9*num_nodes];
-
-  for ( int i = 0; i < num_nodes; i++ ){
-    double pt[2];
-    basis::getNodePoint(i, pt);
-
-    // Compute the transformation at the node
-    TacsScalar Xxi[6];
-    TacsShellExtractFrame(&Xdn[9*i], Xxi);
-    transform->computeTransform(Xxi, &fn[3*i], &Tn[9*i]);
-
-    // Compute the field gradient at the node
-    TacsScalar u0xi[6];
-    basis::template interpFieldsGrad<vars_per_node, 3>(pt, vars, u0xi);
-
-    // Compute the inverse transformation
-    TacsScalar Xdinv[9];
-    inv3x3(&Xdn[9*i], Xdinv);
-
-    // Compute XdinvT = Xdinv*T
-    mat3x3MatMult(Xdinv, &Tn[9*i], &XdinvTn[9*i]);
-    TacsShellAssembleFrame(u0xi, &u0xn[9*i]); // Use u0x to store [u0,xi; 0]
-
-    // Compute the rotation matrix at this node
-    TacsScalar C[9], tmp[9];
-    director::template
-      computeRotationMat<vars_per_node, offset, 1>(&vars[vars_per_node*i], C);
-
-    // Compute Ct = T^{T}*C*T
-    mat3x3TransMatMult(&Tn[9*i], C, tmp);
-    mat3x3MatMult(tmp, &Tn[9*i], &Ctn[9*i]);
-
-    // Compute the transformation u0x = T^{T}*ueta*Xdinv*T
-    // u0x = T^{T}*u0d*Xdinv*T
-    mat3x3MatMult(&u0xn[9*i], &XdinvTn[9*i], tmp);
-    mat3x3TransMatMult(&Tn[9*i], tmp, &u0xn[9*i]);
-
-    etn[i] = model::evalDrillStrain(&u0xn[9*i], &Ctn[9*i]);
-  }
+  TacsScalar XdinvTn[9*num_nodes], Tn[9*num_nodes];
+  TacsScalar u0xn[9*num_nodes], Ctn[csize];
+  computeDrillStrain(Xdn, fn, vars, XdinvTn, Tn, u0xn, Ctn, etn);
 
   TacsScalar d[dsize], ddot[dsize], dddot[dsize];
   director::template
@@ -459,6 +458,28 @@ void TACSShellElement<quadrature, basis, director, model>::
 
     // Evaluate the tying strain
     basis::addInterpTyingStrainTranspose(pt, dgty, dety);
+
+    // Evaluate the mass moments
+    TacsScalar moments[3];
+    con->evalMassMoments(elemIndex, pt, X, moments);
+
+    // Evaluate the second time derivatives
+    TacsScalar u0ddot[3], d0ddot[3];
+    basis::template interpFields<vars_per_node, 3>(pt, ddvars, u0ddot);
+    basis::template interpFields<3, 3>(pt, dddot, d0ddot);
+
+    // Add the contributions to the derivative
+    TacsScalar du0dot[3];
+    du0dot[0] = detXd*(moments[0]*u0ddot[0] + moments[1]*d0ddot[0]);
+    du0dot[1] = detXd*(moments[0]*u0ddot[1] + moments[1]*d0ddot[1]);
+    du0dot[2] = detXd*(moments[0]*u0ddot[2] + moments[1]*d0ddot[2]);
+    basis::template addInterpFieldsTranspose<vars_per_node, 3>(pt, du0dot, res);
+
+    TacsScalar dd0dot[3];
+    dd0dot[0] = detXd*(moments[1]*u0ddot[0] + moments[2]*d0ddot[0]);
+    dd0dot[1] = detXd*(moments[1]*u0ddot[1] + moments[2]*d0ddot[1]);
+    dd0dot[2] = detXd*(moments[1]*u0ddot[2] + moments[2]*d0ddot[2]);
+    basis::template addInterpFieldsTranspose<3, 3>(pt, dd0dot, dTdot);
   }
 
   for ( int i = 0; i < num_nodes; i++ ){
@@ -491,11 +512,6 @@ void TACSShellElement<quadrature, basis, director, model>::
       addInterpFieldsGradTranspose<vars_per_node, 3>(pt, du0xi, res);
   }
 
-  // Add the contribution from the rotation constraint (defined by the
-  // rotational parametrization) - if any
-  director::template
-    addRotationConstraint<vars_per_node, offset, num_nodes>(vars, res);
-
   // Set the total number of tying points needed for this element
   model::template
     addComputeTyingStrainTranspose<vars_per_node, basis>(Xpts, fn, vars,
@@ -505,6 +521,11 @@ void TACSShellElement<quadrature, basis, director, model>::
   director::template
     addDirectorResidual<vars_per_node, offset, num_nodes>(vars, dvars, ddvars, fn,
                                                           dTdot, dd, res);
+
+  // Add the contribution from the rotation constraint (defined by the
+  // rotational parametrization) - if any
+  director::template
+    addRotationConstraint<vars_per_node, offset, num_nodes>(vars, res);
 }
 
 /*
@@ -550,52 +571,15 @@ void TACSShellElement<quadrature, basis, director, model>::
 
   // Compute the drill strain penalty at each node
   TacsScalar etn[num_nodes], detn[num_nodes];
-  TacsScalar d2etn[num_nodes];
+  TacsScalar d2etn[num_nodes*num_nodes];
   memset(detn, 0, num_nodes*sizeof(TacsScalar));
   memset(d2etn, 0, num_nodes*num_nodes*sizeof(TacsScalar));
 
   // Store information about the transformation and derivatives at each node for
   // the drilling degrees of freedom
-  TacsScalar Tn[9*num_nodes], XdinvTn[9*num_nodes];
-  TacsScalar u0xn[9*num_nodes], Ctn[9*num_nodes];
-
-  for ( int i = 0; i < num_nodes; i++ ){
-    double pt[2];
-    basis::getNodePoint(i, pt);
-
-    // Compute the transformation at the node
-    TacsScalar Xxi[6];
-    TacsShellExtractFrame(&Xdn[9*i], Xxi);
-    transform->computeTransform(Xxi, &fn[3*i], &Tn[9*i]);
-
-    // Compute the field gradient at the node
-    TacsScalar u0xi[6];
-    basis::template interpFieldsGrad<vars_per_node, 3>(pt, vars, u0xi);
-
-    // Compute the inverse transformation
-    TacsScalar Xdinv[9];
-    inv3x3(&Xdn[9*i], Xdinv);
-
-    // Compute XdinvT = Xdinv*T
-    mat3x3MatMult(Xdinv, &Tn[9*i], &XdinvTn[9*i]);
-    TacsShellAssembleFrame(u0xi, &u0xn[9*i]); // Use u0x to store [u0,xi; 0]
-
-    // Compute the rotation matrix at this node
-    TacsScalar C[9], tmp[9];
-    director::template
-      computeRotationMat<vars_per_node, offset, 1>(&vars[vars_per_node*i], C);
-
-    // Compute Ct = T^{T}*C*T
-    mat3x3TransMatMult(&Tn[9*i], C, tmp);
-    mat3x3MatMult(tmp, &Tn[9*i], &Ctn[9*i]);
-
-    // Compute the transformation u0x = T^{T}*ueta*Xdinv*T
-    // u0x = T^{T}*u0d*Xdinv*T
-    mat3x3MatMult(&u0xn[9*i], &XdinvTn[9*i], tmp);
-    mat3x3TransMatMult(&Tn[9*i], tmp, &u0xn[9*i]);
-
-    etn[i] = model::evalDrillStrain(&u0xn[9*i], &Ctn[9*i]);
-  }
+  TacsScalar XdinvTn[9*num_nodes], Tn[9*num_nodes];
+  TacsScalar u0xn[9*num_nodes], Ctn[csize];
+  computeDrillStrain(Xdn, fn, vars, XdinvTn, Tn, u0xn, Ctn, etn);
 
   TacsScalar d[dsize], ddot[dsize], dddot[dsize];
   director::template
@@ -663,7 +647,7 @@ void TACSShellElement<quadrature, basis, director, model>::
 
     TacsScalar d2u0x[81], d2u1x[81], d2u0xu1x[81];
     TacsScalar d2e0ty[36], d2e0tyu0x[54], d2e0tyu1x[54];
-    model::evalStrainHessian(detXd, s, Cs, u0x, u1x, e0ty,
+    model::evalStrainHessian(alpha*detXd, s, Cs, u0x, u1x, e0ty,
                              d2u0x, d2u1x, d2u0xu1x,
                              d2e0ty, d2e0tyu0x, d2e0tyu1x);
 
@@ -691,35 +675,98 @@ void TACSShellElement<quadrature, basis, director, model>::
     // Evaluate the tying strain
     basis::addInterpTyingStrainTranspose(pt, dgty, dety);
     basis::addInterpTyingStrainHessian(pt, d2gty, d2ety);
+
+    // Evaluate the mass moments
+    TacsScalar moments[3];
+    con->evalMassMoments(elemIndex, pt, X, moments);
+
+    // Evaluate the second time derivatives
+    TacsScalar u0ddot[3], d0ddot[3];
+    basis::template interpFields<vars_per_node, 3>(pt, ddvars, u0ddot);
+    basis::template interpFields<3, 3>(pt, dddot, d0ddot);
+
+    // Add the contributions to the derivative
+    TacsScalar du0dot[3];
+    du0dot[0] = detXd*(moments[0]*u0ddot[0] + moments[1]*d0ddot[0]);
+    du0dot[1] = detXd*(moments[0]*u0ddot[1] + moments[1]*d0ddot[1]);
+    du0dot[2] = detXd*(moments[0]*u0ddot[2] + moments[1]*d0ddot[2]);
+    basis::template addInterpFieldsTranspose<vars_per_node, 3>(pt, du0dot, res);
+
+    TacsScalar dd0dot[3];
+    dd0dot[0] = detXd*(moments[1]*u0ddot[0] + moments[2]*d0ddot[0]);
+    dd0dot[1] = detXd*(moments[1]*u0ddot[1] + moments[2]*d0ddot[1]);
+    dd0dot[2] = detXd*(moments[1]*u0ddot[2] + moments[2]*d0ddot[2]);
+    basis::template addInterpFieldsTranspose<3, 3>(pt, dd0dot, dTdot);
+
+    TacsScalar d2u0dot[9];
+    memset(d2u0dot, 0, 9*sizeof(TacsScalar));
+    d2u0dot[0] = d2u0dot[4] = d2u0dot[8] = gamma*detXd*moments[0];
+    basis::template addInterpFieldsOuterProduct<vars_per_node, vars_per_node, 3, 3>(pt, d2u0dot, mat);
+
+    TacsScalar d2Td[9];
+    d2Td[0] = d2Td[4] = d2Td[8] = detXd*moments[2];
+    basis::template addInterpFieldsOuterProduct<3, 3, 3, 3>(pt, d2Td, d2Tdotd);
+
+    d2Td[0] = d2Td[4] = d2Td[8] = detXd*moments[1];
+    basis::template addInterpFieldsOuterProduct<3, 3, 3, 3>(pt, d2Td, d2Tdotu);
   }
 
   for ( int i = 0; i < num_nodes; i++ ){
     double pt[2];
     basis::getNodePoint(i, pt);
 
-    TacsScalar du0x[9], dCt[9];
-    model::evalDrillStrainSens(detn[i], &u0xn[9*i], &Ctn[9*i], du0x, dCt);
+    if (res){
+      TacsScalar du0x[9], dCt[9];
+      model::evalDrillStrainSens(detn[i], &u0xn[9*i], &Ctn[9*i], du0x, dCt);
 
-    // Compute dCpt = T*dCt*T^{T}
-    TacsScalar dCpt[9], tmp[9];
-    mat3x3MatMult(&Tn[9*i], dCt, tmp);
-    mat3x3MatTransMult(tmp, &Tn[9*i], dCpt);
+      // Compute dCpt = T*dCt*T^{T}
+      TacsScalar dCpt[9], tmp[9];
+      mat3x3MatMult(&Tn[9*i], dCt, tmp);
+      mat3x3MatTransMult(tmp, &Tn[9*i], dCpt);
 
-    director::template
-      addRotationMatResidual<vars_per_node, offset, 1>(&vars[i*vars_per_node],
-                                                       dCpt, &res[i*vars_per_node]);
+      director::template
+        addRotationMatResidual<vars_per_node, offset, 1>(&vars[i*vars_per_node],
+                                                        dCpt, &res[i*vars_per_node]);
 
-    // Compute du0d = T*du0x*XdinvT^{T} + T*du1x*XdinvzT^{T}
-    TacsScalar du0d[9];
-    mat3x3MatTransMult(du0x, &XdinvTn[9*i], tmp);
-    mat3x3MatMult(&Tn[9*i], tmp, du0d);
+      // Compute du0d = T*du0x*XdinvT^{T} + T*du1x*XdinvzT^{T}
+      TacsScalar du0d[9];
+      mat3x3MatTransMult(du0x, &XdinvTn[9*i], tmp);
+      mat3x3MatMult(&Tn[9*i], tmp, du0d);
 
-    // du0d = [du0xi; dd0]
-    TacsScalar du0xi[6];
-    TacsShellExtractFrame(du0d, du0xi);
+      // du0d = [du0xi; dd0]
+      TacsScalar du0xi[6];
+      TacsShellExtractFrame(du0d, du0xi);
 
-    // Compute the gradient of the displacement solution at the quadrature points
-    basis::template addInterpFieldsGradTranspose<vars_per_node, 3>(pt, du0xi, res);
+      // Compute the gradient of the displacement solution at the quadrature points
+      basis::template
+        addInterpFieldsGradTranspose<vars_per_node, 3>(pt, du0xi, res);
+    }
+
+    for ( int j = 0; j < num_nodes; j++ ){
+      TacsScalar d2u0x[81], d2Ct[81], d2Ctu0x[81];
+      model::evalDrillStrainHessian(detn[i], d2etn[i*num_nodes + j], &u0xn[9*i], &Ctn[9*i],
+                                    d2u0x, d2Ct, d2Ctu0x);
+
+      // Compute the second derivative w.r.t. u0d
+      TacsScalar d2u0d[81];
+      mat3x3TransMatMatHessian(&Tn[9*i], &XdinvTn[9*i], d2u0x, d2u0d);
+
+      // Compute the second derivative w.r.t. Cpt
+      TacsScalar d2Cpt[81];
+      mat3x3TransMatMatHessian(&Tn[9*i], &Tn[9*i], d2Ct, d2Cpt);
+
+      // d2C0u0d = Ctu0x*[d(u0x)/d(u0d)]*[d(Ct)/d(Cpt)]
+      TacsScalar d2Cptu0d[81];
+      mat3x3TransMatMatHessianAdd(&Tn[9*i], &Tn[9*i], &XdinvTn[9*i], &Tn[9*i],
+                                  d2Ctu0x, d2Cptu0d);
+
+      // Extract the shell frame
+      TacsScalar d2u0xi[36];
+      TacsShellExtractFrameSens(d2u0d, d2u0xi);
+
+      basis::template
+        addInterpGradOuterProduct<vars_per_node, vars_per_node, 3, 3>(pt, d2u0xi, mat);
+    }
   }
 
   // Add the residual from the tying strain
@@ -736,7 +783,7 @@ void TACSShellElement<quadrature, basis, director, model>::
 
   // Add the contributions to the stiffness matrix
   director::template
-    addDirectorJacobian<vars_per_node, offset, num_nodes>(1.0, beta, gamma,
+    addDirectorJacobian<vars_per_node, offset, num_nodes>(alpha, beta, gamma,
                                                           vars, dvars, ddvars,
                                                           fn, dTdot, dd,
                                                           d2Tdotd, d2Tdotu, d2d, d2du,
@@ -1084,16 +1131,22 @@ void TACSShellElement<quadrature, basis, director, model>::
   int num_vis_nodes = TacsGetNumVisNodes(basis::getLayoutType());
 
   // Compute the node normal directions
-  TacsScalar fn[3*num_nodes];
-  TacsShellComputeNodeNormals<basis>(Xpts, fn);
+  TacsScalar fn[3*num_nodes], Xdn[9*num_nodes];
+  TacsShellComputeNodeNormals<basis>(Xpts, fn, Xdn);
 
-  // Compute the rotation matrix and directors at each node
-  TacsScalar C[csize];
-  director::template computeRotationMat<vars_per_node, offset, num_nodes>(vars, C);
+  // Compute the drill strain penalty at each node
+  TacsScalar etn[num_nodes];
+
+  // Store information about the transformation and derivatives at each node for
+  // the drilling degrees of freedom
+  TacsScalar XdinvTn[9*num_nodes], Tn[9*num_nodes];
+  TacsScalar u0xn[9*num_nodes], Ctn[csize];
+  computeDrillStrain(Xdn, fn, vars, XdinvTn, Tn, u0xn, Ctn, etn);
 
   TacsScalar d[dsize], ddot[dsize], dddot[dsize];
-  director::template computeDirectorRates<vars_per_node, offset, num_nodes>(
-    vars, dvars, ddvars, fn, d, ddot, dddot);
+  director::template
+    computeDirectorRates<vars_per_node, offset, num_nodes>(vars, dvars, ddvars, fn,
+                                                           d, ddot, dddot);
 
   // Set the total number of tying points needed for this element
   TacsScalar ety[basis::NUM_TYING_POINTS];
