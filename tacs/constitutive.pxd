@@ -121,4 +121,18 @@ cdef extern from "":
     TACSTimoshenkoConstitutive* _dynamicTimoshenkoConstitutive"dynamic_cast<TACSTimoshenkoConstitutive*>"(TACSConstitutive*)
 
 cdef extern from "TACSConstitutiveVerification.h":
+    int TacsTestConstitutiveDensity(TACSConstitutive*, int, const double*, const TacsScalar*, int,
+                                    const TacsScalar*, double, int, double, double)
+    int TacsTestConstitutiveSpecificHeat(TACSConstitutive*, int, const double*, const TacsScalar*, int,
+                                         const TacsScalar*, double, int, double, double)
+    int TacsTestConstitutiveHeatFlux(TACSConstitutive*, int, const double*, const TacsScalar*, int,
+                                     const TacsScalar*, double, int, double, double)
+    int TacsTestConstitutiveStress(TACSConstitutive*, int, const double*, const TacsScalar*, int,
+                                   const TacsScalar*, double, int, double, double)
+    int TacsTestConstitutiveThermalStrain(TACSConstitutive*, int, const double*, const TacsScalar*, int,
+                                          const TacsScalar*, double, int, double, double)
+    int TacsTestConstitutiveFailure(TACSConstitutive*, int, const double*, const TacsScalar*, int,
+                                    const TacsScalar*, double, int, double, double)
+    int TacsTestConstitutiveFailureStrainSens(TACSConstitutive*, int, const double*, const TacsScalar*,
+                                              double, int, double, double)
     int TacsTestConstitutive(TACSConstitutive*, int, double, int, double, double)

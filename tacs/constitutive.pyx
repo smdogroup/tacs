@@ -441,3 +441,85 @@ def TestConstitutive(Constitutive con, int elemIndex=0, double dh=1e-6,
                      double rtol=1e-5):
     return TacsTestConstitutive(con.ptr, elemIndex, dh,
                                 test_print_level, atol, rtol)
+
+def TestConstitutiveDensity(Constitutive con, int elem_index,
+                            np.ndarray[double, ndim=1, mode='c'] pt,
+                            np.ndarray[TacsScalar, ndim=1, mode='c'] x,
+                            np.ndarray[TacsScalar, ndim=1, mode='c'] dvs,
+                            double dh=1e-6, int test_print_level=2, double atol=1e-30,
+                            double rtol=1e-5):
+    ndvs = len(dvs)
+    assert len(pt) == 3
+    assert len(x) == 3
+    return TacsTestConstitutiveDensity(con.ptr, elem_index, <double*>pt.data, <TacsScalar*>x.data, ndvs,
+                                       <TacsScalar*>dvs.data, dh, test_print_level, atol, rtol)
+
+def TestConstitutiveSpecificHeat(Constitutive con, int elem_index,
+                                 np.ndarray[double, ndim=1, mode='c'] pt,
+                                 np.ndarray[TacsScalar, ndim=1, mode='c'] x,
+                                 np.ndarray[TacsScalar, ndim=1, mode='c'] dvs,
+                                 double dh=1e-6, int test_print_level=2, double atol=1e-30,
+                                 double rtol=1e-5):
+    ndvs = len(dvs)
+    assert len(pt) == 3
+    assert len(x) == 3
+    return TacsTestConstitutiveSpecificHeat(con.ptr, elem_index, <double*>pt.data, <TacsScalar*>x.data, ndvs,
+                                            <TacsScalar*>dvs.data, dh, test_print_level, atol, rtol)
+
+def TestConstitutiveHeatFlux(Constitutive con, int elem_index,
+                             np.ndarray[double, ndim=1, mode='c'] pt,
+                             np.ndarray[TacsScalar, ndim=1, mode='c'] x,
+                             np.ndarray[TacsScalar, ndim=1, mode='c'] dvs,
+                             double dh=1e-6, int test_print_level=2, double atol=1e-30,
+                             double rtol=1e-5):
+    ndvs = len(dvs)
+    assert len(pt) == 3
+    assert len(x) == 3
+    return TacsTestConstitutiveHeatFlux(con.ptr, elem_index, <double*>pt.data, <TacsScalar*>x.data, ndvs,
+                                        <TacsScalar*>dvs.data, dh, test_print_level, atol, rtol)
+
+def TestConstitutiveStress(Constitutive con, int elem_index,
+                           np.ndarray[double, ndim=1, mode='c'] pt,
+                           np.ndarray[TacsScalar, ndim=1, mode='c'] x,
+                           np.ndarray[TacsScalar, ndim=1, mode='c'] dvs,
+                           double dh=1e-6, int test_print_level=2, double atol=1e-30,
+                           double rtol=1e-5):
+    ndvs = len(dvs)
+    assert len(pt) == 3
+    assert len(x) == 3
+    return TacsTestConstitutiveStress(con.ptr, elem_index, <double*>pt.data, <TacsScalar*>x.data, ndvs,
+                                      <TacsScalar*>dvs.data, dh, test_print_level, atol, rtol)
+
+def TestConstitutiveThermalStrain(Constitutive con, int elem_index,
+                                  np.ndarray[double, ndim=1, mode='c'] pt,
+                                  np.ndarray[TacsScalar, ndim=1, mode='c'] x,
+                                  np.ndarray[TacsScalar, ndim=1, mode='c'] dvs,
+                                  double dh=1e-6, int test_print_level=2, double atol=1e-30,
+                                  double rtol=1e-5):
+    ndvs = len(dvs)
+    assert len(pt) == 3
+    assert len(x) == 3
+    return TacsTestConstitutiveThermalStrain(con.ptr, elem_index, <double*>pt.data, <TacsScalar*>x.data, ndvs,
+                                             <TacsScalar*>dvs.data, dh, test_print_level, atol, rtol)
+
+def TestConstitutiveFailure(Constitutive con, int elem_index,
+                            np.ndarray[double, ndim=1, mode='c'] pt,
+                            np.ndarray[TacsScalar, ndim=1, mode='c'] x,
+                            np.ndarray[TacsScalar, ndim=1, mode='c'] dvs,
+                            double dh=1e-6, int test_print_level=2, double atol=1e-30,
+                            double rtol=1e-5):
+    ndvs = len(dvs)
+    assert len(pt) == 3
+    assert len(x) == 3
+    return TacsTestConstitutiveFailure(con.ptr, elem_index, <double*>pt.data, <TacsScalar*>x.data, ndvs,
+                                             <TacsScalar*>dvs.data, dh, test_print_level, atol, rtol)
+
+def TestConstitutiveFailureStrainSens(Constitutive con, int elem_index,
+                            np.ndarray[double, ndim=1, mode='c'] pt,
+                            np.ndarray[TacsScalar, ndim=1, mode='c'] x,
+                            double dh=1e-6, int test_print_level=2, double atol=1e-30,
+                            double rtol=1e-5):
+    assert len(pt) == 3
+    assert len(x) == 3
+    return TacsTestConstitutiveFailureStrainSens(con.ptr, elem_index, <double*>pt.data, <TacsScalar*>x.data,
+                                                 dh, test_print_level, atol, rtol)
