@@ -62,6 +62,130 @@ def TestElementBasis(ElementBasis basis, double dh=1e-6,
                      double rtol=1e-5):
     return TacsTestElementBasis(basis.ptr, dh, test_print_level, atol, rtol)
 
+
+def TestElementJacobian(Element element, int elem_index,
+                        double time,
+                        np.ndarray[TacsScalar, ndim=1, mode='c'] xpts,
+                        np.ndarray[TacsScalar, ndim=1, mode='c'] vars,
+                        np.ndarray[TacsScalar, ndim=1, mode='c'] dvars,
+                        np.ndarray[TacsScalar, ndim=1, mode='c'] ddvars,
+                        int col,
+                        double dh=1e-6,
+                        int test_print_level=2,
+                        double atol=1e-5, double rtol=1e-5):
+    num_nodes = element.getNumNodes()
+    num_vars = element.getNumVariables()
+
+    # Make sure input arrays are large enough for element to avoid segfault
+    assert len(xpts) >= 3 * num_nodes
+    assert len(vars) >= num_vars
+    assert len(dvars) >= num_vars
+    assert len(ddvars) >= num_vars
+
+    return TacsTestElementJacobian(element.ptr, elem_index, time,
+                                   <TacsScalar*>xpts.data,
+                                   <TacsScalar*>vars.data,
+                                   <TacsScalar*>dvars.data,
+                                   <TacsScalar*>ddvars.data,
+                                   col, dh,
+                                   test_print_level, atol, rtol)
+
+def TestAdjResProduct(Element element, int elem_index,
+                        double time,
+                        np.ndarray[TacsScalar, ndim=1, mode='c'] xpts,
+                        np.ndarray[TacsScalar, ndim=1, mode='c'] vars,
+                        np.ndarray[TacsScalar, ndim=1, mode='c'] dvars,
+                        np.ndarray[TacsScalar, ndim=1, mode='c'] ddvars,
+                        np.ndarray[TacsScalar, ndim=1, mode='c'] design_vars,
+                        double dh=1e-6,
+                        int test_print_level=2,
+                        double atol=1e-5, double rtol=1e-5):
+    num_nodes = element.getNumNodes()
+    num_vars = element.getNumVariables()
+    num_dvs = len(element.getDesignVars(elem_index))
+
+    # Make sure input arrays are large enough for element to avoid segfault
+    assert len(xpts) >= 3 * num_nodes
+    assert len(vars) >= num_vars
+    assert len(dvars) >= num_vars
+    assert len(ddvars) >= num_vars
+    assert len(design_vars) >= num_dvs
+
+    return TacsTestAdjResProduct(element.ptr, elem_index, time,
+                                   <TacsScalar*>xpts.data,
+                                   <TacsScalar*>vars.data,
+                                   <TacsScalar*>dvars.data,
+                                   <TacsScalar*>ddvars.data,
+                                   num_dvs, <TacsScalar*>design_vars.data, dh,
+                                   test_print_level, atol, rtol)
+
+def TestAdjResXptProduct(Element element, int elem_index,
+                        double time,
+                        np.ndarray[TacsScalar, ndim=1, mode='c'] xpts,
+                        np.ndarray[TacsScalar, ndim=1, mode='c'] vars,
+                        np.ndarray[TacsScalar, ndim=1, mode='c'] dvars,
+                        np.ndarray[TacsScalar, ndim=1, mode='c'] ddvars,
+                        double dh=1e-6,
+                        int test_print_level=2,
+                        double atol=1e-5, double rtol=1e-5):
+    num_nodes = element.getNumNodes()
+    num_vars = element.getNumVariables()
+
+    # Make sure input arrays are large enough for element to avoid segfault
+    assert len(xpts) >= 3 * num_nodes
+    assert len(vars) >= num_vars
+    assert len(dvars) >= num_vars
+    assert len(ddvars) >= num_vars
+
+    return TacsTestAdjResXptProduct(element.ptr, elem_index, time,
+                                   <TacsScalar*>xpts.data,
+                                   <TacsScalar*>vars.data,
+                                   <TacsScalar*>dvars.data,
+                                   <TacsScalar*>ddvars.data, dh,
+                                   test_print_level, atol, rtol)
+
+def TestElementMatDVSens(Element element, ElementMatrixType mat_type,
+                         int elem_index, double time,
+                         np.ndarray[TacsScalar, ndim=1, mode='c'] xpts,
+                         np.ndarray[TacsScalar, ndim=1, mode='c'] vars,
+                         np.ndarray[TacsScalar, ndim=1, mode='c'] design_vars,
+                         double dh=1e-6,
+                         int test_print_level=2,
+                         double atol=1e-5, double rtol=1e-5):
+    num_nodes = element.getNumNodes()
+    num_vars = element.getNumVariables()
+    num_dvs = len(element.getDesignVars(elem_index))
+
+    # Make sure input arrays are large enough for element to avoid segfault
+    assert len(xpts) >= 3 * num_nodes
+    assert len(vars) >= num_vars
+    assert len(design_vars) >= num_dvs
+
+    return TacsTestElementMatDVSens(element.ptr, mat_type, elem_index, time,
+                                   <TacsScalar*>xpts.data,
+                                   <TacsScalar*>vars.data,
+                                   num_dvs, <TacsScalar*>design_vars.data, dh,
+                                   test_print_level, atol, rtol)
+
+def TestElementMatSVSens(Element element, ElementMatrixType mat_type,
+                         int elem_index, double time,
+                         np.ndarray[TacsScalar, ndim=1, mode='c'] xpts,
+                         np.ndarray[TacsScalar, ndim=1, mode='c'] vars,
+                         double dh=1e-6,
+                         int test_print_level=2,
+                         double atol=1e-5, double rtol=1e-5):
+    num_nodes = element.getNumNodes()
+    num_vars = element.getNumVariables()
+
+    # Make sure input arrays are large enough for element to avoid segfault
+    assert len(xpts) >= 3 * num_nodes
+    assert len(vars) >= num_vars
+
+    return TacsTestElementMatSVSens(element.ptr, mat_type, elem_index, time,
+                                   <TacsScalar*>xpts.data,
+                                   <TacsScalar*>vars.data, dh,
+                                   test_print_level, atol, rtol)
+
 cdef class LinearTetrahedralBasis(ElementBasis):
     def __cinit__(self):
         self.ptr = new TACSLinearTetrahedralBasis()

@@ -39,6 +39,21 @@ cdef extern from "TACSElementTypes.h":
 
 cdef extern from "TACSElementVerification.h":
     int TacsTestElementBasis(TACSElementBasis*, double, int, double, double)
+    int TacsTestElementJacobian(TACSElement*, int, double, const TacsScalar*,
+                                const TacsScalar*, const TacsScalar*,
+                                const TacsScalar*, int, double, int, double,
+                                double)
+    int TacsTestAdjResProduct(TACSElement*, int, double, const TacsScalar*,
+                              const TacsScalar*, const TacsScalar*, const TacsScalar*,
+                              int, const TacsScalar*, double, int, double, double)
+    int TacsTestAdjResXptProduct(TACSElement*, int, double, const TacsScalar*,
+                                const TacsScalar*, const TacsScalar*,
+                                const TacsScalar*, double, int, double,
+                                double)
+    int TacsTestElementMatDVSens(TACSElement*, ElementMatrixType, int, double, const TacsScalar*, const TacsScalar*,
+                                 int, const TacsScalar*, double, int, double, double)
+    int TacsTestElementMatSVSens(TACSElement*, ElementMatrixType, int, double, const TacsScalar*, const TacsScalar*,
+                                 double, int, double, double)
 
 cdef extern from "TACSTetrahedralBasis.h":
     cdef cppclass TACSLinearTetrahedralBasis(TACSElementBasis):
