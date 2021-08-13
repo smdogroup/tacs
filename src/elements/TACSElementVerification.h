@@ -248,6 +248,51 @@ int TacsTestElementMatSVSens( TACSElement *element,
   @param test_fail_atol The test absolute tolerance
   @param test_fail_rtol The test relative tolerance
 */
+int TacsTestElementBasisFunctions( TACSElementBasis *basis,
+                                   double dh,
+                                   int test_print_level,
+                                   double test_fail_atol,
+                                   double test_fail_rtol );
+
+/**
+  Test if the basis face normals are implemented correct
+
+  @param basis The TACSElementBasis to check
+  @param dh The finite-difference step size
+  @param test_print_level The output level
+  @param test_fail_atol The test absolute tolerance
+  @param test_fail_rtol The test relative tolerance
+*/
+int TacsTestElementBasisFaceNormals( TACSElementBasis *basis,
+                                     double dh,
+                                     int test_print_level,
+                                     double test_fail_atol,
+                                     double test_fail_rtol );
+
+/**
+  Test if the basis jacobian transform is implemented correct
+
+  @param basis The TACSElementBasis to check
+  @param dh The finite-difference step size
+  @param test_print_level The output level
+  @param test_fail_atol The test absolute tolerance
+  @param test_fail_rtol The test relative tolerance
+*/
+int TacsTestElementBasisJacobianTransform( TACSElementBasis *basis,
+                                           double dh,
+                                           int test_print_level,
+                                           double test_fail_atol,
+                                           double test_fail_rtol );
+
+/**
+  Test if the basis function derivatives are implemented correct
+
+  @param basis The TACSElementBasis to check
+  @param dh The finite-difference step size
+  @param test_print_level The output level
+  @param test_fail_atol The test absolute tolerance
+  @param test_fail_rtol The test relative tolerance
+*/
 int TacsTestElementBasis( TACSElementBasis *basis,
                           double dh=1e-7,
                           int test_print_level=2,
