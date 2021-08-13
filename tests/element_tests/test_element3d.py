@@ -9,7 +9,13 @@ class ElementTest(unittest.TestCase):
         max_vars_per_nodes = 8
         max_vars = max_nodes * max_vars_per_nodes
 
-        self.dh = 1e-6
+        # fd/cs step size
+        if TACS.dtype is complex:
+            self.dh = 1e-50
+        else:
+            self.dh = 1e-6
+        self.dtype = TACS.dtype
+
         # Basically, only check relative tolerance
         self.atol = 1e99
         self.rtol = 1e-5
@@ -21,10 +27,10 @@ class ElementTest(unittest.TestCase):
 
         # Set the variable arrays
         np.random.seed(30)  # Freeze random numbers for deterministic/repeatable tests
-        self.xpts = np.random.rand(3 * max_nodes)
-        self.vars = np.random.rand(max_vars)
-        self.dvars = np.random.rand(max_vars)
-        self.ddvars = np.random.rand(max_vars)
+        self.xpts = np.random.rand(3 * max_nodes).astype(self.dtype)
+        self.vars = np.random.rand(max_vars).astype(self.dtype)
+        self.dvars = np.random.rand(max_vars).astype(self.dtype)
+        self.ddvars = np.random.rand(max_vars).astype(self.dtype)
 
         # Create the isotropic material
         rho = 2700.0

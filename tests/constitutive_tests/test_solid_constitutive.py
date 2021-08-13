@@ -1,24 +1,29 @@
-from tacs import constitutive
+from tacs import TACS, constitutive
 import numpy as np
 import unittest
 
 
 class ConstitutiveTest(unittest.TestCase):
     def setUp(self):
-        # fd step size
-        self.dh = 1e-6
+        # fd/cs step size
+        if TACS.dtype is complex:
+            self.dh = 1e-50
+        else:
+            self.dh = 1e-6
+        self.dtype = TACS.dtype
+
         # Basically, only check relative tolerance
         self.atol = 1e99
         self.rtol = 5e-5
-        self.print_level = 1
+        self.print_level = 0
 
         # Set element index
         self.elem_index = 0
 
         # Set the variable arrays
-        self.x = np.ones(3)
+        self.x = np.ones(3, dtype=self.dtype)
         self.pt = np.zeros(3)
-        self.dvs = np.array([1.0])
+        self.dvs = np.array([1.0], dtype=self.dtype)
 
         # Create the isotropic material
         rho = 2700.0
