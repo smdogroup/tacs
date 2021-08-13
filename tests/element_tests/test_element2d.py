@@ -73,7 +73,7 @@ class ElementTest(unittest.TestCase):
                         if self.print_level > 0:
                             print("Testing with model %s with basis functions %s\n" % (
                                 type(model), type(basis)))
-                        element = elements.Element3D(model, basis)
+                        element = elements.Element2D(model, basis)
                         fail = elements.TestElementJacobian(element, self.elem_index, self.time, self.xpts,
                                                             self.vars, self.dvars, self.ddvars, -1, self.dh,
                                                             self.print_level, self.atol, self.rtol)
@@ -88,7 +88,7 @@ class ElementTest(unittest.TestCase):
                         if self.print_level > 0:
                             print("Testing with model %s with basis functions %s\n" % (
                                 type(model), type(basis)))
-                        element = elements.Element3D(model, basis)
+                        element = elements.Element2D(model, basis)
                         dvs = element.getDesignVars(self.elem_index)
                         fail = elements.TestAdjResProduct(element, self.elem_index, self.time, self.xpts,
                                                           self.vars, self.dvars, self.ddvars, dvs, self.dh,
@@ -104,7 +104,7 @@ class ElementTest(unittest.TestCase):
                         if self.print_level > 0:
                             print("Testing with model %s with basis functions %s\n" % (
                                 type(model), type(basis)))
-                        element = elements.Element3D(model, basis)
+                        element = elements.Element2D(model, basis)
                         fail = elements.TestAdjResXptProduct(element, self.elem_index, self.time, self.xpts,
                                                              self.vars, self.dvars, self.ddvars, self.dh,
                                                              self.print_level, self.atol, self.rtol)
@@ -116,7 +116,7 @@ class ElementTest(unittest.TestCase):
             with self.subTest(model=model):
                 for basis in self.bases:
                     with self.subTest(basis=basis):
-                        element = elements.Element3D(model, basis)
+                        element = elements.Element2D(model, basis)
                         dvs = element.getDesignVars(self.elem_index)
                         for matrix_type in self.matrix_types:
                             with self.subTest(matrix_type=matrix_type):
@@ -134,7 +134,7 @@ class ElementTest(unittest.TestCase):
             with self.subTest(model=model):
                 for basis in self.bases:
                     with self.subTest(basis=basis):
-                        element = elements.Element3D(model, basis)
+                        element = elements.Element2D(model, basis)
                         if self.print_level > 0:
                             print(
                                 "Testing with model %s with basis functions %s and matrix type GEOMETRIC_STIFFNESS\n" % (
