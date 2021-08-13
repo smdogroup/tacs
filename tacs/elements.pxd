@@ -42,6 +42,8 @@ cdef extern from "TACSElementVerification.h":
     int TacsTestElementBasisFaceNormals(TACSElementBasis*, double, int, double, double)
     int TacsTestElementBasisJacobianTransform(TACSElementBasis*, double, int, double, double)
     int TacsTestElementBasis(TACSElementBasis*, double, int, double, double)
+    int TacsTestElementModelJacobian(TACSElementModel*, int, const double, double, int, double, double)
+    int TacsTestElementModelAdjXptSensProduct(TACSElementModel*, int, const double, double, int, double, double)
     int TacsTestElementJacobian(TACSElement*, int, double, const TacsScalar*,
                                 const TacsScalar*, const TacsScalar*,
                                 const TacsScalar*, int, double, int, double,
