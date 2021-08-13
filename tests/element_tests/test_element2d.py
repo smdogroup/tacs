@@ -63,7 +63,7 @@ class ElementTest(unittest.TestCase):
         # Set matrix types
         self.matrix_types = [TACS.STIFFNESS_MATRIX, TACS.MASS_MATRIX, TACS.GEOMETRIC_STIFFNESS_MATRIX]
 
-    def testElementJacobian(self):
+    def test_element_jacobian(self):
         # Loop through every combination of model and basis class and test Jacobian
         for model in self.models:
             with self.subTest(model=model):
@@ -72,13 +72,13 @@ class ElementTest(unittest.TestCase):
                         if self.print_level > 0:
                             print("Testing with model %s with basis functions %s\n" % (
                                 type(model), type(basis)))
-                        element = elements.Element2D(model, basis)
+                        element = elements.Element3D(model, basis)
                         fail = elements.TestElementJacobian(element, self.elem_index, self.time, self.xpts,
                                                             self.vars, self.dvars, self.ddvars, -1, self.dh,
                                                             self.print_level, self.atol, self.rtol)
                         self.assertFalse(fail)
 
-    def testAdjResProduct(self):
+    def test_adj_res_product(self):
         # Loop through every combination of model and basis class and test adjoint residual-dvsens product
         for model in self.models:
             with self.subTest(model=model):
@@ -87,14 +87,14 @@ class ElementTest(unittest.TestCase):
                         if self.print_level > 0:
                             print("Testing with model %s with basis functions %s\n" % (
                                 type(model), type(basis)))
-                        element = elements.Element2D(model, basis)
+                        element = elements.Element3D(model, basis)
                         dvs = element.getDesignVars(self.elem_index)
                         fail = elements.TestAdjResProduct(element, self.elem_index, self.time, self.xpts,
                                                           self.vars, self.dvars, self.ddvars, dvs, self.dh,
                                                           self.print_level, self.atol, self.rtol)
                         self.assertFalse(fail)
 
-    def testAdjResXptProduct(self):
+    def test_adj_res_xpt_product(self):
         # Loop through every combination of model and basis class and test adjoint residual-xptsens product
         for model in self.models:
             with self.subTest(model=model):
@@ -103,19 +103,19 @@ class ElementTest(unittest.TestCase):
                         if self.print_level > 0:
                             print("Testing with model %s with basis functions %s\n" % (
                                 type(model), type(basis)))
-                        element = elements.Element2D(model, basis)
+                        element = elements.Element3D(model, basis)
                         fail = elements.TestAdjResXptProduct(element, self.elem_index, self.time, self.xpts,
                                                              self.vars, self.dvars, self.ddvars, self.dh,
                                                              self.print_level, self.atol, self.rtol)
                         self.assertFalse(fail)
 
-    def testElementMatDVSens(self):
+    def test_element_mat_dv_sens(self):
         # Loop through every combination of model and basis class and element matrix inner product sens
         for model in self.models:
             with self.subTest(model=model):
                 for basis in self.bases:
                     with self.subTest(basis=basis):
-                        element = elements.Element2D(model, basis)
+                        element = elements.Element3D(model, basis)
                         dvs = element.getDesignVars(self.elem_index)
                         for matrix_type in self.matrix_types:
                             with self.subTest(matrix_type=matrix_type):
@@ -127,16 +127,17 @@ class ElementTest(unittest.TestCase):
                                                                      self.print_level, self.atol, self.rtol)
                                 self.assertFalse(fail)
 
-    def testElementMatSVSens(self):
+    def test_element_mat_sv_sens(self):
         # Loop through every combination of model and basis class and test element matrix inner product sens
         for model in self.models:
             with self.subTest(model=model):
                 for basis in self.bases:
                     with self.subTest(basis=basis):
-                        element = elements.Element2D(model, basis)
+                        element = elements.Element3D(model, basis)
                         if self.print_level > 0:
-                            print("Testing with model %s with basis functions %s and matrix type GEOMETRIC_STIFFNESS\n"
-                                  % (type(model), type(basis)))
+                            print(
+                                "Testing with model %s with basis functions %s and matrix type GEOMETRIC_STIFFNESS\n" % (
+                                    type(model), type(basis)))
                         fail = elements.TestElementMatSVSens(element, TACS.GEOMETRIC_STIFFNESS_MATRIX, self.elem_index,
                                                              self.time, self.xpts, self.vars, self.dh,
                                                              self.print_level, self.atol, self.rtol)

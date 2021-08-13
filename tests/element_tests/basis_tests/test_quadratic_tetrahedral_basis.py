@@ -20,17 +20,17 @@ class BasisTest(unittest.TestCase):
         # Create the basis functions for 3D
         self.basis = elements.QuadraticTetrahedralBasis()
 
-    def testElementBasisFunctions(self):
+    def test_element_basis_functions(self):
         fail = elements.TestElementBasisFunctions(self.basis, self.dh, self.print_level,
                                                   self.atol, self.rtol)
         self.assertFalse(fail)
 
-    def testElementBasisFaceNormals(self):
+    def test_element_basis_face_normals(self):
         fail = elements.TestElementBasisFaceNormals(self.basis, self.dh, self.print_level,
                                                     self.atol, self.rtol)
         self.assertFalse(fail)
 
-    def testElementBasisJacobianTransform(self):
+    def test_element_basis_jacobian_transform(self):
         fail = elements.TestElementBasisJacobianTransform(self.basis, self.dh, self.print_level,
                                                           self.atol, self.rtol)
         self.assertFalse(fail)

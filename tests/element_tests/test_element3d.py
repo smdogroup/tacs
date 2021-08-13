@@ -63,7 +63,7 @@ class ElementTest(unittest.TestCase):
         # Set matrix types
         self.matrix_types = [TACS.STIFFNESS_MATRIX, TACS.MASS_MATRIX, TACS.GEOMETRIC_STIFFNESS_MATRIX]
 
-    def testElementJacobian(self):
+    def test_element_jacobian(self):
         # Loop through every combination of model and basis class and test Jacobian
         for model in self.models:
             with self.subTest(model=model):
@@ -78,7 +78,7 @@ class ElementTest(unittest.TestCase):
                                                             self.print_level, self.atol, self.rtol)
                         self.assertFalse(fail)
 
-    def testAdjResProduct(self):
+    def test_adj_res_product(self):
         # Loop through every combination of model and basis class and test adjoint residual-dvsens product
         for model in self.models:
             with self.subTest(model=model):
@@ -94,7 +94,7 @@ class ElementTest(unittest.TestCase):
                                                           self.print_level, self.atol, self.rtol)
                         self.assertFalse(fail)
 
-    def testAdjResXptProduct(self):
+    def test_adj_res_xpt_product(self):
         # Loop through every combination of model and basis class and test adjoint residual-xptsens product
         for model in self.models:
             with self.subTest(model=model):
@@ -109,7 +109,7 @@ class ElementTest(unittest.TestCase):
                                                              self.print_level, self.atol, self.rtol)
                         self.assertFalse(fail)
 
-    def testElementMatDVSens(self):
+    def test_element_mat_dv_sens(self):
         # Loop through every combination of model and basis class and element matrix inner product sens
         for model in self.models:
             with self.subTest(model=model):
@@ -127,7 +127,7 @@ class ElementTest(unittest.TestCase):
                                                                      self.print_level, self.atol, self.rtol)
                                 self.assertFalse(fail)
 
-    def testElementMatSVSens(self):
+    def test_element_mat_sv_sens(self):
         # Loop through every combination of model and basis class and test element matrix inner product sens
         for model in self.models:
             with self.subTest(model=model):
