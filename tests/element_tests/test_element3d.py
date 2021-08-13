@@ -27,11 +27,12 @@ class ElementTest(unittest.TestCase):
         self.time = 0.0
 
         # Set the variable arrays
-        np.random.seed(30)  # Freeze random numbers for deterministic/repeatable tests
+        np.random.seed(30)  # Seed random numbers for deterministic/repeatable tests
         self.xpts = np.random.rand(3 * max_nodes).astype(self.dtype)
+        np.random.seed(30) # Seed random numbers for deterministic/repeatable tests
         self.vars = np.random.rand(max_vars).astype(self.dtype)
-        self.dvars = np.random.rand(max_vars).astype(self.dtype)
-        self.ddvars = np.random.rand(max_vars).astype(self.dtype)
+        self.dvars = self.vars.copy()
+        self.ddvars = self.vars.copy()
 
         # Create the isotropic material
         rho = 2700.0
