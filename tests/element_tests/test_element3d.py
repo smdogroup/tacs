@@ -12,13 +12,14 @@ class ElementTest(unittest.TestCase):
         # fd/cs step size
         if TACS.dtype is complex:
             self.dh = 1e-50
+            self.rtol = 1e-11
         else:
             self.dh = 1e-6
+            self.rtol = 1e-2
         self.dtype = TACS.dtype
 
         # Basically, only check relative tolerance
         self.atol = 1e99
-        self.rtol = 1e-5
         self.print_level = 0
 
         # Set the simulation time
