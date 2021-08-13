@@ -515,10 +515,10 @@ def TestConstitutiveFailure(Constitutive con, int elem_index,
                                              <TacsScalar*>dvs.data, dh, test_print_level, atol, rtol)
 
 def TestConstitutiveFailureStrainSens(Constitutive con, int elem_index,
-                            np.ndarray[double, ndim=1, mode='c'] pt,
-                            np.ndarray[TacsScalar, ndim=1, mode='c'] x,
-                            double dh=1e-6, int test_print_level=2, double atol=1e-30,
-                            double rtol=1e-5):
+                                      np.ndarray[double, ndim=1, mode='c'] pt,
+                                      np.ndarray[TacsScalar, ndim=1, mode='c'] x,
+                                      double dh=1e-6, int test_print_level=2, double atol=1e-30,
+                                      double rtol=1e-5):
     assert len(pt) == 3
     assert len(x) == 3
     return TacsTestConstitutiveFailureStrainSens(con.ptr, elem_index, <double*>pt.data, <TacsScalar*>x.data,
