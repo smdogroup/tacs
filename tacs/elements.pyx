@@ -87,6 +87,32 @@ def TestElementModelAdjXptSensProduct(ElementModel model, int elem_index, double
                                       double rtol=1e-5):
     return TacsTestElementModelAdjXptSensProduct(model.ptr, elem_index, time, dh, test_print_level, atol, rtol)
 
+def TestElementResidual(Element element, int elem_index,
+                        double time,
+                        np.ndarray[TacsScalar, ndim=1, mode='c'] xpts,
+                        np.ndarray[TacsScalar, ndim=1, mode='c'] vars,
+                        np.ndarray[TacsScalar, ndim=1, mode='c'] dvars,
+                        np.ndarray[TacsScalar, ndim=1, mode='c'] ddvars,
+                        double dh=1e-6,
+                        int test_print_level=2,
+                        double atol=1e-5, double rtol=1e-5):
+    num_nodes = element.getNumNodes()
+    num_vars = element.getNumVariables()
+
+    # Make sure input arrays are large enough for element to avoid segfault
+    assert len(xpts) >= 3 * num_nodes
+    assert len(vars) >= num_vars
+    assert len(dvars) >= num_vars
+    assert len(ddvars) >= num_vars
+
+    return TacsTestElementResidual(element.ptr, elem_index, time,
+                                   <TacsScalar*>xpts.data,
+                                   <TacsScalar*>vars.data,
+                                   <TacsScalar*>dvars.data,
+                                   <TacsScalar*>ddvars.data,
+                                   dh,
+                                   test_print_level, atol, rtol)
+
 def TestElementJacobian(Element element, int elem_index,
                         double time,
                         np.ndarray[TacsScalar, ndim=1, mode='c'] xpts,
