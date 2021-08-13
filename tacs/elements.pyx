@@ -62,6 +62,20 @@ def TestElementBasis(ElementBasis basis, double dh=1e-6,
                      double rtol=1e-5):
     return TacsTestElementBasis(basis.ptr, dh, test_print_level, atol, rtol)
 
+def TestElementBasisFunctions(ElementBasis basis, double dh=1e-6,
+                                  int test_print_level=2, double atol=1e-5,
+                                  double rtol=1e-5):
+    return TacsTestElementBasisFunctions(basis.ptr, dh, test_print_level, atol, rtol)
+
+def TestElementBasisFaceNormals(ElementBasis basis, double dh=1e-6,
+                                    int test_print_level=2, double atol=1e-5,
+                                    double rtol=1e-5):
+    return TacsTestElementBasisFaceNormals(basis.ptr, dh, test_print_level, atol, rtol)
+
+def TestElementBasisJacobianTransform(ElementBasis basis, double dh=1e-6,
+                                      int test_print_level=2, double atol=1e-5,
+                                      double rtol=1e-5):
+    return TacsTestElementBasisJacobianTransform(basis.ptr, dh, test_print_level, atol, rtol)
 
 def TestElementJacobian(Element element, int elem_index,
                         double time,

@@ -38,6 +38,9 @@ cdef extern from "TACSElementTypes.h":
     const int TACS_ELEMENT_STRESS
 
 cdef extern from "TACSElementVerification.h":
+    int TacsTestElementBasisFunctions(TACSElementBasis*, double, int, double, double)
+    int TacsTestElementBasisFaceNormals(TACSElementBasis*, double, int, double, double)
+    int TacsTestElementBasisJacobianTransform(TACSElementBasis*, double, int, double, double)
     int TacsTestElementBasis(TACSElementBasis*, double, int, double, double)
     int TacsTestElementJacobian(TACSElement*, int, double, const TacsScalar*,
                                 const TacsScalar*, const TacsScalar*,
