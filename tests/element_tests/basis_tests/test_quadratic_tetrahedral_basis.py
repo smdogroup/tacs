@@ -2,7 +2,6 @@ from tacs import TACS, elements
 import numpy as np
 import unittest
 
-
 class BasisTest(unittest.TestCase):
     def setUp(self):
         # fd/cs step size

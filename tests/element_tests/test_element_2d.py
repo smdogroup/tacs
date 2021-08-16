@@ -22,8 +22,9 @@ class ElementTest(unittest.TestCase):
         self.atol = 1e99
         self.print_level = 0
 
-        # Set the simulation time
+        # Set element index
         self.elem_index = 0
+        # Set the simulation time
         self.time = 0.0
 
         # Set the variable arrays

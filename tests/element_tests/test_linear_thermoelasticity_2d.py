@@ -2,7 +2,6 @@ from tacs import TACS, elements, constitutive
 import numpy as np
 import unittest
 
-
 class ModelTest(unittest.TestCase):
     def setUp(self):
         # fd/cs step size
@@ -45,5 +44,5 @@ class ModelTest(unittest.TestCase):
 
     def test_element_model_adj_xpt_sens_product(self):
         fail = elements.TestElementModelAdjXptSensProduct(self.model, self.elem_index, self.time, self.dh,
-                                                              self.print_level, self.atol, self.rtol)
+                                                          self.print_level, self.atol, self.rtol)
         self.assertFalse(fail)

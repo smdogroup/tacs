@@ -2,7 +2,6 @@ from tacs import TACS, elements, constitutive
 import numpy as np
 import unittest
 
-
 class ModelTest(unittest.TestCase):
     def setUp(self):
         # fd/cs step size
@@ -17,8 +16,9 @@ class ModelTest(unittest.TestCase):
         self.atol = 1e99
         self.print_level = 0
 
-        # Set the simulation time
+        # Set element index
         self.elem_index = 0
+        # Set the simulation time
         self.time = 0.0
 
         # Create the isotropic material
@@ -45,5 +45,5 @@ class ModelTest(unittest.TestCase):
 
     def test_element_model_adj_xpt_sens_product(self):
         fail = elements.TestElementModelAdjXptSensProduct(self.model, self.elem_index, self.time, self.dh,
-                                                              self.print_level, self.atol, self.rtol)
+                                                          self.print_level, self.atol, self.rtol)
         self.assertFalse(fail)

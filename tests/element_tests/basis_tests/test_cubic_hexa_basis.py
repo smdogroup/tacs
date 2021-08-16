@@ -17,9 +17,6 @@ class BasisTest(unittest.TestCase):
         self.atol = 1e99
         self.print_level = 0
 
-        # Set the simulation time
-        self.elem_index = 0
-
         # Create the basis functions for 3D
         self.basis = elements.CubicHexaBasis()
 
