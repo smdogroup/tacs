@@ -54,6 +54,11 @@ jobs:
       - name: Install TACS
         run: |
           echo "=============================================================";
+          echo "Create conda environment";
+          echo "=============================================================";
+          source $CONDA/etc/profile.d/conda.sh;
+          echo $CONDA/bin >> $GITHUB_PATH;
+          echo "=============================================================";
           echo "Install TACS";
           echo "=============================================================";
           export TACS_DIR=${GITHUB_WORKSPACE};
