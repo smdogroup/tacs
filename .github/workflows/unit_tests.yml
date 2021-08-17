@@ -44,7 +44,7 @@ jobs:
           echo "=============================================================";
           echo "Install TACS";
           echo "=============================================================";
-          export TACS_DIR=/home/$USER/tacs
+          export TACS_DIR=${PWD}/tacs
           cd ..;
           pip install testflo;
           conda install -c anaconda openmpi -q -y;
