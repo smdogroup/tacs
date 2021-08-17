@@ -149,7 +149,7 @@ void TACSElementBasis::addFaceNormalXptSens( int face, int n,
     TacsScalar t[6] = {0.0, 0.0, 0.0,
                        0.0, 0.0, 0.0};
     if (dfdXd){
-      memcpy(t, dfdXd, 4*sizeof(TacsScalar));
+      memcpy(t, dfdXd, 6*sizeof(TacsScalar));
       vec2x2OuterAdd(1.0, dfdt, &tangents[0], t);
     }
     else {
@@ -248,7 +248,7 @@ void TACSElementBasis::addJacobianTransformXptSens( int n, const double pt[],
 
     // If dfdXd is supplied, add it to the derivative
     if (dfdXd){
-      for ( int i = 0; i < 4; i++ ){
+      for ( int i = 0; i < 6; i++ ){
         t[i] += dfdXd[i];
       }
     }

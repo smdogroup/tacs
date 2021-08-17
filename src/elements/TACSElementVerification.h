@@ -248,11 +248,90 @@ int TacsTestElementMatSVSens( TACSElement *element,
   @param test_fail_atol The test absolute tolerance
   @param test_fail_rtol The test relative tolerance
 */
+int TacsTestElementBasisFunctions( TACSElementBasis *basis,
+                                   double dh,
+                                   int test_print_level,
+                                   double test_fail_atol,
+                                   double test_fail_rtol );
+
+/**
+  Test if the basis face normals are implemented correct
+
+  @param basis The TACSElementBasis to check
+  @param dh The finite-difference step size
+  @param test_print_level The output level
+  @param test_fail_atol The test absolute tolerance
+  @param test_fail_rtol The test relative tolerance
+*/
+int TacsTestElementBasisFaceNormals( TACSElementBasis *basis,
+                                     double dh,
+                                     int test_print_level,
+                                     double test_fail_atol,
+                                     double test_fail_rtol );
+
+/**
+  Test if the basis jacobian transform is implemented correct
+
+  @param basis The TACSElementBasis to check
+  @param dh The finite-difference step size
+  @param test_print_level The output level
+  @param test_fail_atol The test absolute tolerance
+  @param test_fail_rtol The test relative tolerance
+*/
+int TacsTestElementBasisJacobianTransform( TACSElementBasis *basis,
+                                           double dh,
+                                           int test_print_level,
+                                           double test_fail_atol,
+                                           double test_fail_rtol );
+
+/**
+  Test if the basis function derivatives are implemented correct
+
+  @param basis The TACSElementBasis to check
+  @param dh The finite-difference step size
+  @param test_print_level The output level
+  @param test_fail_atol The test absolute tolerance
+  @param test_fail_rtol The test relative tolerance
+*/
 int TacsTestElementBasis( TACSElementBasis *basis,
                           double dh=1e-7,
                           int test_print_level=2,
                           double test_fail_atol=1e-5,
                           double test_fail_rtol=1e-5 );
+
+/**
+  Test the element model Jacobian
+
+  @param model The TACSElementModel instance to check
+  @param dh The finite-difference step size
+  @param test_print_level The output level
+  @param test_fail_atol The test absolute tolerance
+  @param test_fail_rtol The test relative tolerance
+*/
+int TacsTestElementModelJacobian( TACSElementModel *model,
+                                  int elemIndex,
+                                  const double time,
+                                  double dh,
+                                  int test_print_level,
+                                  double test_fail_atol,
+                                  double test_fail_rtol );
+
+/**
+  Test the element model adjoint xpt sens product
+
+  @param model The TACSElementModel instance to check
+  @param dh The finite-difference step size
+  @param test_print_level The output level
+  @param test_fail_atol The test absolute tolerance
+  @param test_fail_rtol The test relative tolerance
+*/
+int TacsTestElementModelAdjXptSensProduct( TACSElementModel *model,
+                                           int elemIndex,
+                                           const double time,
+                                           double dh,
+                                           int test_print_level,
+                                           double test_fail_atol,
+                                           double test_fail_rtol );
 
 /**
   Test the element model functions

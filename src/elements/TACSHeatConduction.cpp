@@ -211,7 +211,8 @@ void TACSHeatConduction2D::evalWeakAdjXptSensProduct( int elemIndex,
                                                       TacsScalar dfdPsix[] ){
   dfdX[0] = dfdX[1] = dfdX[2] = 0.0;
 
-  dfdXd[0] = dfdXd[1] = dfdXd[2] = dfdXd[3] = 0.0;
+  dfdXd[0] = dfdXd[1] = dfdXd[2] = 0.0;
+  dfdXd[3] = dfdXd[4] = dfdXd[5] = 0.0;
 
   TacsScalar rho = stiff->evalDensity(elemIndex, pt, X);
   TacsScalar c = stiff->evalSpecificHeat(elemIndex, pt, X);
