@@ -54,16 +54,10 @@ jobs:
       - name: Install TACS
         run: |
           echo "=============================================================";
-          echo "Create conda environment";
-          echo "=============================================================";
-          source $CONDA/etc/profile.d/conda.sh;
-          echo $CONDA/bin >> $GITHUB_PATH;
-          conda create -n TACS python=3.8 numpy=1.18 scipy=1.4 -q -y;
-          conda activate TACS;
-          echo "=============================================================";
           echo "Install TACS";
           echo "=============================================================";
           export TACS_DIR=${GITHUB_WORKSPACE};
+          conda install numpy scipy -q -y;
           pip install testflo;
           conda install -c anaconda openmpi -q -y;
           conda install gxx_linux-64 -q -y;
