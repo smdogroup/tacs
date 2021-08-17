@@ -202,7 +202,8 @@ void TACSLinearElasticity2D::evalWeakAdjXptSensProduct( int elemIndex,
   dfdX[0] = dfdX[1] = dfdX[2] = 0.0;
   dfdUx[0] = dfdUx[1] = dfdUx[2] = dfdUx[3] = 0.0;
   dfdPsix[0] = dfdPsix[1] = dfdPsix[2] = dfdPsix[3] = 0.0;
-  dfdXd[0] = dfdXd[1] = dfdXd[2] = dfdXd[3] = 0.0;
+  dfdXd[0] = dfdXd[1] = dfdXd[2] = 0.0;
+  dfdXd[3] = dfdXd[4] = dfdXd[5] = 0.0;
 
   TacsScalar e[3], phi[3];
   if (strain_type == TACS_LINEAR_STRAIN){
