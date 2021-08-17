@@ -17,6 +17,22 @@ jobs:
     # Run on Ubuntu
     runs-on: ubuntu-latest
 
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # real versions
+          - NAME: Real
+            OPTIONAL: ''
+            INTERFACE: ''
+
+          # latest versions
+          - NAME: Complex
+            OPTIONAL: 'complex'
+            INTERFACE: 'complex_interface'
+
+    name: TACS ${{ matrix.NAME }}
+
     steps:
 
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it.
@@ -44,12 +60,10 @@ jobs:
           echo "=============================================================";
           echo "Install TACS";
           echo "=============================================================";
-          export TACS_DIR=${GITHUB_WORKSPACE}
-          cd ..;
+          export TACS_DIR=${GITHUB_WORKSPACE};
           pip install testflo;
           conda install -c anaconda openmpi -q -y;
           conda install gxx_linux-64 -q -y;
-          which mpicxx;
           conda install -c anaconda openblas -q -y;
           conda install -c conda-forge lapack -q -y;
           conda install -c conda-forge metis -q -y;
@@ -57,6 +71,6 @@ jobs:
           pip install cython;
           cd $TACS_DIR;
           cp Makefile.in.info Makefile.in;
-          make TACS_DIR=$TACS_DIR METIS_INCLUDE=-I${CONDA_PREFIX}/include/ METIS_LIB="-L${CONDA_PREFIX}/lib/ -lmetis";
-          make interface;
+          make ${{ matrix.OPTIONAL }} TACS_DIR=$TACS_DIR METIS_INCLUDE=-I${CONDA_PREFIX}/include/ METIS_LIB="-L${CONDA_PREFIX}/lib/ -lmetis";
+          make ${{ matrix.INTERFACE }};
           testflo .
