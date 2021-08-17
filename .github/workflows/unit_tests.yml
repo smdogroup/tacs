@@ -56,5 +56,5 @@ jobs:
           pip install cython;
           cd $TACS_DIR;
           cp Makefile.in.info Makefile.in;
-          make TACS_DIR=$TACS_DIR METIS_INCLUDE=-I${CONDA}/include/ METIS_LIB=${CONDA}/lib/libmetis.a;
+          make TACS_DIR=$TACS_DIR METIS_INCLUDE=-I${CONDA_PREFIX}/include/ METIS_LIB=${CONDA_PREFIX}/lib/libmetis.a;
           make interface;
