@@ -85,7 +85,7 @@ jobs:
           testflo .;
 
       - name: Build docs
-        if: [ "${{ matrix.NAME }}" == "Real" ]]
+        if: [[ "${{ matrix.NAME }}" == "Real" ]]
         run: |
           echo "=============================================================";
           echo "Building docs";
