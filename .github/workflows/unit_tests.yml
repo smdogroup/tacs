@@ -31,7 +31,7 @@ jobs:
             OPTIONAL: 'complex'
             INTERFACE: 'complex_interface'
 
-    name: TACS ${{ matrix.NAME }}
+    name: TACS ${{ matrix.NAME }} Build/Test
 
     steps:
 
@@ -60,6 +60,7 @@ jobs:
           echo "=============================================================";
           echo "Install TACS";
           echo "=============================================================";
+          export TACS_DIR=${GITHUB_WORKSPACE};
           pip install testflo;
           conda install -c anaconda openmpi -q -y;
           conda install gxx_linux-64 -q -y;
@@ -68,14 +69,11 @@ jobs:
           conda install -c conda-forge metis -q -y;
           conda install -c conda-forge mpi4py  -q -y;
           pip install cython;
-          export TACS_DIR=${GITHUB_WORKSPACE};
-          export METIS_INCLUDE=-I${CONDA_PREFIX}/include/;
-          export METIS_LIB="-L${CONDA_PREFIX}/lib/ -lmetis";
           cd $TACS_DIR;
           cp Makefile.in.info Makefile.in;
-          make ${{ matrix.OPTIONAL }} TACS_DIR=$TACS_DIR METIS_INCLUDE=$METIS_INCLUDE METIS_LIB=$METIS_LIB;
+          make ${{ matrix.OPTIONAL }} TACS_DIR=$TACS_DIR METIS_INCLUDE=-I${CONDA_PREFIX}/include/ METIS_LIB="-L${CONDA_PREFIX}/lib/ -lmetis";
           cd ./examples;
-          make ${{ matrix.OPTIONAL }} TACS_DIR=$TACS_DIR METIS_INCLUDE=$METIS_INCLUDE METIS_LIB=$METIS_LIB;
+          make ${{ matrix.OPTIONAL }} TACS_DIR=$TACS_DIR METIS_INCLUDE=-I${CONDA_PREFIX}/include/ METIS_LIB="-L${CONDA_PREFIX}/lib/ -lmetis";
           cd $TACS_DIR;
           make ${{ matrix.INTERFACE }};
           echo "=============================================================";
