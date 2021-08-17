@@ -26,7 +26,7 @@ jobs:
             OPTIONAL: 'default'
             INTERFACE: 'interface'
 
-          # latest versions
+          # complex versions
           - NAME: Complex
             OPTIONAL: 'complex'
             INTERFACE: 'complex_interface'
@@ -41,7 +41,7 @@ jobs:
         with:
           python-version: 3.8
 
-      - name: Install, run unit test, build docs
+      - name: Display run details
         run: |
           echo "=============================================================";
           echo "Run #${GITHUB_RUN_NUMBER}";
@@ -50,6 +50,9 @@ jobs:
           echo "Triggered by: ${GITHUB_EVENT_NAME}";
           echo "Initiated by: ${GITHUB_ACTOR}";
           echo "=============================================================";
+
+      - name: Install TACS
+        run: |
           echo "=============================================================";
           echo "Create conda environment";
           echo "=============================================================";
@@ -73,4 +76,19 @@ jobs:
           cp Makefile.in.info Makefile.in;
           make ${{ matrix.OPTIONAL }} TACS_DIR=$TACS_DIR METIS_INCLUDE=-I${CONDA_PREFIX}/include/ METIS_LIB="-L${CONDA_PREFIX}/lib/ -lmetis";
           make ${{ matrix.INTERFACE }};
-          testflo .
+
+      - name: Run unit test
+        run: |
+          echo "=============================================================";
+          echo "Testing TACS";
+          echo "=============================================================";
+          testflo .;
+
+      - name: Build docs
+        if: [ "${{ matrix.NAME }}" == "Real" ]]
+        run: |
+          echo "=============================================================";
+          echo "Building docs";
+          echo "=============================================================";
+          cd ./docs;
+          make html;
