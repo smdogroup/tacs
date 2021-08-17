@@ -47,12 +47,11 @@ jobs:
           export TACS_DIR=/home/$USER/tacs
           cd ..;
           pip install testflo;
-          conda install -c anaconda openmpi;
-          conda install -c anaconda openblas;
-          conda install -c conda-forge lapack;
-          pip install mpi4py;
+          conda install -c anaconda openmpi -q -y;
+          conda install -c anaconda openblas -q -y;
+          conda install -c conda-forge lapack -q -y;
+          conda install -c conda-forge mpi4py  -q -y;
           pip install cython;
-          conda install -c anaconda openblas
           cd $TACS_DIR;
           cp Makefile.in.info Makefile.in;
           make TACS_DIR=$TACS_DIR;
