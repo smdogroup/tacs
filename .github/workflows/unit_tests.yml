@@ -1,0 +1,59 @@
+name: Unit tests and docs
+
+on:
+  # Triggers the workflow on push or pull request events but only for the main branch
+  # Remove push when finally merging.
+  push:
+    branches: [ adding-ci ]
+  pull_request:
+    branches: [ adding-ci ]
+
+  # Allows you to run this workflow manually from the Actions tab.
+  workflow_dispatch:
+
+jobs:
+  # This job is called test_docs.
+  unit_test_and_docs:
+    # Run on Ubuntu
+    runs-on: ubuntu-latest
+
+    steps:
+
+      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it.
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v2
+        with:
+          python-version: 3.8
+
+      - name: Install, run unit test, build docs
+        run: |
+          echo "=============================================================";
+          echo "Run #${GITHUB_RUN_NUMBER}";
+          echo "Run ID: ${GITHUB_RUN_ID}";
+          echo "Testing: ${GITHUB_REPOSITORY}";
+          echo "Triggered by: ${GITHUB_EVENT_NAME}";
+          echo "Initiated by: ${GITHUB_ACTOR}";
+          echo "=============================================================";
+          echo "=============================================================";
+          echo "Create conda environment";
+          echo "=============================================================";
+          source $CONDA/etc/profile.d/conda.sh;
+          echo $CONDA/bin >> $GITHUB_PATH;
+          conda create -n TACS python=3.8 numpy=1.18 scipy=1.4 -q -y;
+          conda activate TACS;
+          echo "=============================================================";
+          echo "Install TACS";
+          echo "=============================================================";
+          export TACS_DIR=/home/$USER/tacs
+          cd ..;
+          pip install testflo;
+          conda install -c anaconda openmpi;
+          conda install -c anaconda openblas;
+          conda install -c anaconda lapack;
+          pip install mpi4py;
+          pip install cython;
+          conda install -c anaconda openblas
+          cd $TACS_DIR;
+          cp Makefile.in.info Makefile.in;
+          make TACS_DIR=$TACS_DIR;
+          make interface;
