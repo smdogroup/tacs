@@ -1,0 +1,80 @@
+name: Build and unit tests
+
+on:
+  # Triggers the workflow on push or pull request events but only for the main branch
+  # Remove push when finally merging.
+  push:
+    branches: [ develop ]
+  pull_request:
+    branches: [ develop ]
+
+  # Allows you to run this workflow manually from the Actions tab.
+  workflow_dispatch:
+
+jobs:
+  # This job is called test_docs.
+  unit_test_and_docs:
+    # Run on Ubuntu
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # real versions
+          - NAME: Real
+            OPTIONAL: 'default'
+            INTERFACE: 'interface'
+
+          # complex versions
+          - NAME: Complex
+            OPTIONAL: 'complex'
+            INTERFACE: 'complex_interface'
+
+    name: TACS ${{ matrix.NAME }} Build/Test
+
+    steps:
+
+      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it.
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v2
+        with:
+          python-version: 3.8
+
+      - name: Install and run unit tests
+        run: |
+          echo "=============================================================";
+          echo "Run #${GITHUB_RUN_NUMBER}";
+          echo "Run ID: ${GITHUB_RUN_ID}";
+          echo "Testing: ${GITHUB_REPOSITORY}";
+          echo "Triggered by: ${GITHUB_EVENT_NAME}";
+          echo "Initiated by: ${GITHUB_ACTOR}";
+          echo "=============================================================";
+          echo "=============================================================";
+          echo "Create conda environment";
+          echo "=============================================================";
+          source $CONDA/etc/profile.d/conda.sh;
+          echo $CONDA/bin >> $GITHUB_PATH;
+          conda create -n TACS python=3.8 numpy=1.18 scipy=1.4 -q -y;
+          conda activate TACS;
+          echo "=============================================================";
+          echo "Install TACS";
+          echo "=============================================================";
+          export TACS_DIR=${GITHUB_WORKSPACE};
+          pip install testflo;
+          conda install -c anaconda openmpi -q -y;
+          conda install gxx_linux-64 -q -y;
+          conda install -c anaconda openblas -q -y;
+          conda install -c conda-forge lapack -q -y;
+          conda install -c conda-forge metis -q -y;
+          conda install -c conda-forge mpi4py  -q -y;
+          pip install cython;
+          cd $TACS_DIR;
+          cp Makefile.in.info Makefile.in;
+          make ${{ matrix.OPTIONAL }} TACS_DIR=$TACS_DIR METIS_INCLUDE=-I${CONDA_PREFIX}/include/ METIS_LIB="-L${CONDA_PREFIX}/lib/ -lmetis";
+          cd $TACS_DIR;
+          make ${{ matrix.INTERFACE }};
+          echo "=============================================================";
+          echo "running tests";
+          echo "=============================================================";
+          testflo .;
