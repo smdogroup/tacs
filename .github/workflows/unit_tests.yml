@@ -75,6 +75,7 @@ jobs:
           make ${{ matrix.INTERFACE }};
           testflo .;
           if [[ "${{ matrix.NAME }}" == "Real" ]]; then
+              echo "::set-env name=PYTHONPATH::$TACS_DIR";
               conda install -c anaconda sphinx -q -y;
               cd ./docs;
               make html;
