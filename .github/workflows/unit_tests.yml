@@ -41,7 +41,7 @@ jobs:
         with:
           python-version: 3.8
 
-      - name: Display run details
+      - name: Install, run unit test, build docs
         run: |
           echo "=============================================================";
           echo "Run #${GITHUB_RUN_NUMBER}";
@@ -50,19 +50,17 @@ jobs:
           echo "Triggered by: ${GITHUB_EVENT_NAME}";
           echo "Initiated by: ${GITHUB_ACTOR}";
           echo "=============================================================";
-
-      - name: Install TACS
-        run: |
           echo "=============================================================";
           echo "Create conda environment";
           echo "=============================================================";
           source $CONDA/etc/profile.d/conda.sh;
           echo $CONDA/bin >> $GITHUB_PATH;
+          conda create -n TACS python=3.8 numpy=1.18 scipy=1.4 -q -y;
+          conda activate TACS;
           echo "=============================================================";
           echo "Install TACS";
           echo "=============================================================";
           export TACS_DIR=${GITHUB_WORKSPACE};
-          conda install numpy scipy -q -y;
           pip install testflo;
           conda install -c anaconda openmpi -q -y;
           conda install gxx_linux-64 -q -y;
@@ -75,19 +73,46 @@ jobs:
           cp Makefile.in.info Makefile.in;
           make ${{ matrix.OPTIONAL }} TACS_DIR=$TACS_DIR METIS_INCLUDE=-I${CONDA_PREFIX}/include/ METIS_LIB="-L${CONDA_PREFIX}/lib/ -lmetis";
           make ${{ matrix.INTERFACE }};
+          testflo .;
+          if [[ "${{ matrix.NAME }}" == "Real" ]]; then
+              cd ./docs;
+              make html;
+          fi
 
       - name: Run unit test
         run: |
           echo "=============================================================";
+          echo "Run #${GITHUB_RUN_NUMBER}";
+          echo "Run ID: ${GITHUB_RUN_ID}";
+          echo "Testing: ${GITHUB_REPOSITORY}";
+          echo "Triggered by: ${GITHUB_EVENT_NAME}";
+          echo "Initiated by: ${GITHUB_ACTOR}";
+          echo "=============================================================";
+          echo "=============================================================";
+          echo "Create conda environment";
+          echo "=============================================================";
+          source $CONDA/etc/profile.d/conda.sh;
+          echo $CONDA/bin >> $GITHUB_PATH;
+          conda create -n TACS python=3.8 numpy=1.18 scipy=1.4 -q -y;
+          conda activate TACS;
+          echo "=============================================================";
           echo "Testing TACS";
           echo "=============================================================";
+          export TACS_DIR=${GITHUB_WORKSPACE};
+          pip install testflo;
+          conda install -c anaconda openmpi -q -y;
+          conda install gxx_linux-64 -q -y;
+          conda install -c anaconda openblas -q -y;
+          conda install -c conda-forge lapack -q -y;
+          conda install -c conda-forge metis -q -y;
+          conda install -c conda-forge mpi4py  -q -y;
+          pip install cython;
+          cd $TACS_DIR;
+          cp Makefile.in.info Makefile.in;
+          make ${{ matrix.OPTIONAL }} TACS_DIR=$TACS_DIR METIS_INCLUDE=-I${CONDA_PREFIX}/include/ METIS_LIB="-L${CONDA_PREFIX}/lib/ -lmetis";
+          make ${{ matrix.INTERFACE }};
           testflo .;
-
-      - name: Build docs
-        if: ${{ matrix.NAME == 'Real' }}
-        run: |
-          echo "=============================================================";
-          echo "Building docs";
-          echo "=============================================================";
-          cd ./docs;
-          make html;
+          if [[ "${{ matrix.NAME }}" == "Real" ]]; then
+              cd ./docs;
+              make html;
+          fi
