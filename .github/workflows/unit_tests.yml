@@ -41,7 +41,7 @@ jobs:
         with:
           python-version: 3.8
 
-      - name: Install, run unit test, build docs
+      - name: Install and run unit tests
         run: |
           echo "=============================================================";
           echo "Run #${GITHUB_RUN_NUMBER}";
