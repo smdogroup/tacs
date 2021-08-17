@@ -23,8 +23,8 @@ jobs:
         include:
           # real versions
           - NAME: Real
-            OPTIONAL: ''
-            INTERFACE: ''
+            OPTIONAL: 'default'
+            INTERFACE: 'interface'
 
           # latest versions
           - NAME: Complex
