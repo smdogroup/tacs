@@ -48,6 +48,7 @@ jobs:
           cd ..;
           pip install testflo;
           conda install -c anaconda openmpi -q -y;
+          which mpicxx;
           conda install -c anaconda openblas -q -y;
           conda install -c conda-forge lapack -q -y;
           conda install -c conda-forge mpi4py  -q -y;
