@@ -52,6 +52,7 @@ jobs:
           which mpicxx;
           conda install -c anaconda openblas -q -y;
           conda install -c conda-forge lapack -q -y;
+          conda install -c conda-forge metis -q -y;
           conda install -c conda-forge mpi4py  -q -y;
           pip install cython;
           cd $TACS_DIR;
