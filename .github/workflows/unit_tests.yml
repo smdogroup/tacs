@@ -49,7 +49,7 @@ jobs:
           pip install testflo;
           conda install -c anaconda openmpi;
           conda install -c anaconda openblas;
-          conda install -c anaconda lapack;
+          conda install -c conda-forge lapack;
           pip install mpi4py;
           pip install cython;
           conda install -c anaconda openblas
