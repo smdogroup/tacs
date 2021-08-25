@@ -10,7 +10,6 @@ and test KSFailure, StructuralMass, and Compliance functions and sensitivities
 
 FUNC_REFS = np.array([1.46051701859883, 25700.0, 1.75e+07])
 
-
 class ProblemTest(unittest.TestCase):
     def setUp(self):
         self.dtype = TACS.dtype
@@ -60,15 +59,15 @@ class ProblemTest(unittest.TestCase):
             # discretize plate
             x = np.linspace(0, Lx, nx + 1, self.dtype)
             y = np.linspace(0, Ly, ny + 1, self.dtype)
-            xyz = np.zeros([ny + 1, nx + 1, 3], self.dtype)
-            xyz[:, :, 0], xyz[:, :, 1] = np.meshgrid(x, y)
+            xyz = np.zeros([nx + 1, ny + 1, 3], self.dtype)
+            xyz[:, :, 0], xyz[:, :, 1] = np.meshgrid(x, y, indexing='ij')
 
-            node_ids = np.arange(num_nodes).reshape(ny + 1, nx + 1)
+            node_ids = np.arange(num_nodes).reshape(nx + 1, ny + 1)
 
             # Set connectivity for each element
             conn = []
-            for j in range(nx):
-                for i in range(ny):
+            for i in range(nx):
+                for j in range(ny):
                     conn.append([node_ids[i, j],
                                  node_ids[i + 1, j],
                                  node_ids[i, j + 1],
@@ -77,12 +76,11 @@ class ProblemTest(unittest.TestCase):
             conn = np.array(conn, dtype=np.intc).flatten()
             ptr = np.arange(0, 4 * num_elems + 1, 4, dtype=np.intc)
             comp_ids = np.zeros(num_elems, dtype=np.intc)
-            self.num_components = 1
 
             creator.setGlobalConnectivity(num_nodes, ptr, conn, comp_ids)
 
             # Set up the boundary conditions (fixed at bottom left corner, roller on top right)
-            bcnodes = np.array([node_ids[0, 0], node_ids[-1, 0]], dtype=np.intc)
+            bcnodes = np.array([node_ids[0, 0], node_ids[0, -1]], dtype=np.intc)
             bcvars = np.array([0, 1, 0], dtype=np.intc)
 
             # Set the boundary condition pointers
