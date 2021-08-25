@@ -2725,6 +2725,54 @@ int TACSAssembler::initialize(){
 }
 
 /*
+  Check the element Jacobian entries at each quadrature point to
+  see if they are positive. The code prints the rank and element
+  index on that rank if the check fails.
+*/
+void TACSAssembler::checkElementDeterminants(){
+  if (elements){
+    TacsScalar *vars, *dvars, *ddvars;
+    TacsScalar *elemXpts;
+    getDataPointers(elementData, &vars, &dvars, &ddvars, NULL,
+                    &elemXpts, NULL, NULL, NULL);
+
+    for ( int elemIndex = 0; elemIndex < numElements; elemIndex++ ){
+      TACSElement *element = elements[elemIndex];
+
+      // Determine the values of the state variables for the
+      // current element
+      int ptr = elementNodeIndex[elemIndex];
+      int len = elementNodeIndex[elemIndex+1] - ptr;
+      const int *nodes = &elementTacsNodes[ptr];
+      xptVec->getValues(len, nodes, elemXpts);
+      varsVec->getValues(len, nodes, vars);
+      dvarsVec->getValues(len, nodes, dvars);
+      ddvarsVec->getValues(len, nodes, ddvars);
+
+      for ( int n = 0; n < element->getNumQuadraturePoints(); n++ ){
+        double pt[3];
+        element->getQuadraturePoint(n, pt);
+
+        // Evaluate the pointwise element density
+        TacsScalar density = 0.0, detXd = 0.0;
+        int count = element->evalPointQuantity(elemIndex, TACS_ELEMENT_DENSITY,
+                                               time, n, pt,
+                                               elemXpts, vars, dvars, ddvars,
+                                               &detXd, &density);
+
+        if (count > 0){
+          if (TacsRealPart(detXd) <= 0.0){
+            printf("[%d] TACS Warning: Negative determinant of the Jacobian "
+                   "transformation for element %d of type %s. Flipped mesh?",
+                   mpiRank, elemIndex, element->getObjectName());
+          }
+        }
+      }
+    }
+  }
+}
+
+/*
   Scatter the boundary conditions that are shared between processors
 
   Note that we do not need to scatter the values along with the

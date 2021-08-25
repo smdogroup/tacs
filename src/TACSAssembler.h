@@ -163,6 +163,10 @@ class TACSAssembler : public TACSObject {
   void getNodes( TACSBVec *X );
   void getNodes( TACSBVec **X );
 
+  // Check for the elements for non-positive determinants
+  // ----------------------------------------------------
+  void checkElementDeterminants();
+
   // Set/get the simulation time
   // ---------------------------
   void setSimulationTime( double _time );
