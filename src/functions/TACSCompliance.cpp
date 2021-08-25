@@ -155,6 +155,27 @@ void TACSCompliance::getElementXptSens( int elemIndex,
   // locations
   int numNodes = element->getNumNodes();
   memset(dfdXpts, 0, 3*numNodes*sizeof(TacsScalar));
+
+  for ( int i = 0; i < element->getNumQuadraturePoints(); i++ ){
+    double pt[3];
+    double weight = element->getQuadraturePoint(i, pt);
+
+    // Evaluate the strain energy density
+    TacsScalar U0 = 0.0, detXd = 0.0;
+    int count = element->evalPointQuantity(elemIndex, compliance_type,
+                                            time, i, pt,
+                                            Xpts, vars, dvars, ddvars,
+                                            &detXd, &U0);
+
+    if (count >= 1){
+      TacsScalar dfdq = weight*detXd;
+      TacsScalar dfddetXd = weight*U0;
+      element->addPointQuantityXptSens(elemIndex, compliance_type,
+                                       time, scale, i, pt,
+                                       Xpts, vars, dvars, ddvars,
+                                       dfddetXd, &dfdq, dfdXpts);
+    }
+  }
 }
 
 /*
