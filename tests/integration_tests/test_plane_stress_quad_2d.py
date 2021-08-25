@@ -2,6 +2,7 @@ import numpy as np
 from mpi4py import MPI
 from tacs import TACS, elements, constitutive, functions
 import unittest
+
 '''
 Create a uniform plate under uniform plane stress 
 and test KSFailure, StructuralMass, and Compliance functions and sensitivities
@@ -21,7 +22,7 @@ class ProblemTest(unittest.TestCase):
         else:
             self.rtol = 1e-2
             self.atol = 1e-4
-            self.dh = 1e-4
+            self.dh = 1e-5
 
         # Length of plate in x/y direction
         Lx = 10.0
@@ -101,16 +102,11 @@ class ProblemTest(unittest.TestCase):
         # Get the design variable values
         self.dv0 = self.assembler.createDesignVec()
         self.assembler.getDesignVars(self.dv0)
-        self.dv0_array = self.dv0.getArray()
 
-        # Create temporary dv vec for doing fd/cs
-        self.dv_pert = self.assembler.createDesignVec()
-        self.dv_pert_array = self.dv_pert.getArray()
-
-        # Create tacs vectors and Matrix
+        # Create tacs vectors and Matrix for linear/adjoint solve
         self.f = self.assembler.createVec()
-        self.res = self.assembler.createVec()
-        self.ans = self.assembler.createVec()
+        self.res0 = self.assembler.createVec()
+        self.ans0 = self.assembler.createVec()
         self.mat = self.assembler.createSchurMat()
 
         # Jacobian matrix factors
@@ -122,19 +118,33 @@ class ProblemTest(unittest.TestCase):
         # Let's find which nodes this processor owns
         self.xpts0 = self.assembler.createNodeVec()
         self.assembler.getNodes(self.xpts0)
-        self.xpts0_array = self.xpts0.getArray()
+        xpts0_array = self.xpts0.getArray()
         # Split node vector into numpy arrays for easier parsing of vectors
-        local_num_nodes = len(self.xpts0_array) // 3
-        local_xyz = self.xpts0_array.reshape(local_num_nodes, 3)
+        local_num_nodes = len(xpts0_array) // 3
+        local_xyz = xpts0_array.reshape(local_num_nodes, 3)
         local_x, local_y, local_z = local_xyz[:, 0], local_xyz[:, 1], local_xyz[:, 2]
 
-        # Create temporary nodal vec for doing fd/cs
-        self.xpts_pert = self.assembler.createNodeVec()
+        # Create temporary dv vec for doing fd/cs
+        self.dv1 = self.assembler.createDesignVec()
+        self.dv_pert = self.assembler.createDesignVec()
+        dv_pert_array = self.dv_pert.getArray()
+        dv_pert_array[:] = 1.0
+
+        # Create temporary state variable vec for doing fd/cs
+        self.ans1 = self.assembler.createVec()
+        self.ans_pert = self.assembler.createVec()
+        ans_pert_array = self.ans_pert.getArray()
         # Define perturbation array that uniformly moves all nodes on right edge of plate to the right
-        self.pert = self.assembler.createNodeVec()
-        pert_array = self.pert.getArray()
-        pert_array = pert_array.reshape(local_num_nodes, 3)
-        pert_array[local_x == Lx, 0] = 1.0
+        ans_pert_array = ans_pert_array.reshape(local_num_nodes, vars_per_node)
+        ans_pert_array[local_x == Lx, 0] = 1.0
+
+        # Create temporary nodal vec for doing fd/cs
+        self.xpts1 = self.assembler.createNodeVec()
+        # Define perturbation array that uniformly moves all nodes on right edge of plate to the right
+        self.xpts_pert = self.assembler.createNodeVec()
+        xpts_pert_array = self.xpts_pert.getArray()
+        xpts_pert_array = xpts_pert_array.reshape(local_num_nodes, 3)
+        xpts_pert_array[local_x == Lx, 0] = 1.0
 
         # Create the preconditioner for the corresponding matrix
         self.pc = TACS.Pc(self.mat)
@@ -187,13 +197,108 @@ class ProblemTest(unittest.TestCase):
         '''
         Test linear solve and function evaluations
         '''
+        # Make sure vecs are initialized to zero
+        self.zero_tacs_vecs()
+
+        # solve
         func_vals = self.run_solve()
+
+        # Test functions values against historical values
         np.testing.assert_allclose(func_vals, FUNC_REFS, rtol=self.rtol, atol=self.atol)
 
-    def test_dv_sensitivities(self):
+    def test_partial_dv_sensitivities(self):
+        '''
+        Test partial dv sensitivity against fd/cs
+        '''
+        # Make sure vecs are initialized to zero
+        self.zero_tacs_vecs()
+
+        # Initial solve
+        func_vals = self.run_solve()
+
+        # Compute the partial derivative w.r.t. material design variables
+        self.assembler.addDVSens(self.func_list, self.dfddv_list, 1.0)
+
+        # Compute the total derivative w.r.t. material design variables using fd/cs
+        self.perturb_tacs_vec(self.dv1, self.dv0, self.dv_pert)
+        # Set the perturbed design variables
+        self.assembler.setDesignVars(self.dv1)
+        # Compute functions w/o resolving problem
+        func_vals_pert = self.assembler.evalFunctions(self.func_list)
+        # Compute approximate sens
+        fdv_sens_approx = self.compute_fdcs_approx(func_vals_pert, func_vals)
+
+        # Tests cs/fd against sensitivity from partial
+        for i in range(len(self.func_list)):
+            with self.subTest(function=self.func_list[i]):
+                dfddv_proj_i = self.dfddv_list[i].dot(self.dv_pert)
+                np.testing.assert_allclose(dfddv_proj_i, fdv_sens_approx[i],
+                                           rtol=self.rtol, atol=self.atol)
+
+    def test_partial_xpt_sensitivities(self):
+        '''
+        Test partial xpt sensitivity against fd/cs
+        '''
+        # Make sure vecs are initialized to zero
+        self.zero_tacs_vecs()
+
+        # Initial solve
+        func_vals = self.run_solve()
+
+        # Compute the total derivative w.r.t. nodal xpt locations
+        self.assembler.addXptSens(self.func_list, self.dfdx_list, 1.0)
+
+        # Compute the total derivative w.r.t. nodal xpt locations using fd/cs
+        self.perturb_tacs_vec(self.xpts1, self.xpts0, self.xpts_pert)
+        # Set the perturbed node locations
+        self.assembler.setNodes(self.xpts1)
+        # Compute functions w/o resolving problem
+        func_vals_pert = self.assembler.evalFunctions(self.func_list)
+        # Compute approximate sens
+        f_xpt_sens_approx = self.compute_fdcs_approx(func_vals_pert, func_vals)
+
+        # Tests cs/fd against sensitivity from partial
+        for i in range(len(self.func_list)):
+            with self.subTest(function=self.func_list[i]):
+                dfdx_proj_i = self.dfdx_list[i].dot(self.xpts_pert)
+                np.testing.assert_allclose(dfdx_proj_i, f_xpt_sens_approx[i], rtol=self.rtol, atol=self.atol)
+
+    def test_partial_sv_sensitivities(self):
+        '''
+        Test partial sv sensitivity against fd/cs
+        '''
+        # Make sure vecs are initialized to zero
+        self.zero_tacs_vecs()
+
+        # Initial solve
+        func_vals = self.run_solve()
+
+        # Compute the partial derivative w.r.t. state variables
+        self.assembler.addSVSens(self.func_list, self.dfdu_list, self.alpha, self.beta, self.gamma)
+
+        # Compute the total derivative w.r.t. material design variables using fd/cs
+        self.perturb_tacs_vec(self.ans1, self.ans0, self.ans_pert)
+        # Set the perturbed state variables
+        self.assembler.setVariables(self.ans1)
+        # Compute functions w/o resolving problem
+        func_vals_pert = self.assembler.evalFunctions(self.func_list)
+        # Compute approximate sens
+        f_u_sens_approx = self.compute_fdcs_approx(func_vals_pert, func_vals)
+
+        # Tests cs/fd against sensitivity from partial
+        for i in range(len(self.func_list)):
+            with self.subTest(function=self.func_list[i]):
+                dfdu_proj_i = self.dfdu_list[i].dot(self.ans_pert)
+                np.testing.assert_allclose(dfdu_proj_i, f_u_sens_approx[i],
+                                           rtol=self.rtol, atol=self.atol)
+
+    def test_total_dv_sensitivities(self):
         '''
         Test total dv sensitivity through adjoint against fd/cs
         '''
+        # Make sure vecs are initialized to zero
+        self.zero_tacs_vecs()
+
         # Initial solve
         func_vals = self.run_solve()
 
@@ -203,26 +308,26 @@ class ProblemTest(unittest.TestCase):
         self.assembler.addAdjointResProducts(self.adjoint_list, self.dfddv_list, -1.0)
 
         # Compute the total derivative w.r.t. material design variables using fd/cs
-        if self.dtype == complex:
-            self.dv_pert_array[:] = self.dv0_array[:] + self.dh * 1j
-        else:
-            self.dv_pert_array[:] = self.dv0_array[:] + self.dh
-        func_vals_pert = self.run_solve(dv=self.dv_pert)
-        if self.dtype == complex:
-            fdvSens_approx = np.imag(func_vals_pert) / self.dh
-        else:
-            fdvSens_approx = (func_vals_pert - func_vals) / self.dh
+        self.perturb_tacs_vec(self.dv1, self.dv0, self.dv_pert)
+        # Run perturbed solution
+        func_vals_pert = self.run_solve(dv=self.dv1)
+        # Compute approximate sens
+        fdv_sens_approx = self.compute_fdcs_approx(func_vals_pert, func_vals)
 
         # Tests cs/fd against sensitivity from adjoint
         for i in range(len(self.func_list)):
             with self.subTest(function=self.func_list[i]):
-                np.testing.assert_allclose(self.dfddv_list[i].getArray(), fdvSens_approx[i],
+                dfddv_proj_i = self.dfddv_list[i].dot(self.dv_pert)
+                np.testing.assert_allclose(dfddv_proj_i, fdv_sens_approx[i],
                                            rtol=self.rtol, atol=self.atol)
 
-    def test_xpt_sensitivities(self):
+    def test_total_xpt_sensitivities(self):
         '''
         Test total xpt sensitivity through adjoint against fd/cs
         '''
+        # Make sure vecs are initialized to zero
+        self.zero_tacs_vecs()
+
         # Initial solve
         func_vals = self.run_solve()
 
@@ -232,21 +337,16 @@ class ProblemTest(unittest.TestCase):
         self.assembler.addAdjointResXptSensProducts(self.adjoint_list, self.dfdx_list, -1.0)
 
         # Compute the total derivative w.r.t. nodal xpt locations using fd/cs
-        self.xpts_pert.copyValues(self.xpts0)
-        if self.dtype == complex:
-            self.xpts_pert.axpy(self.dh * 1j, self.pert)
-        else:
-            self.xpts_pert.axpy(self.dh, self.pert)
-        func_vals_pert = self.run_solve(xpts=self.xpts_pert)
-        if self.dtype == complex:
-            f_xpt_sens_approx = np.imag(func_vals_pert) / self.dh
-        else:
-            f_xpt_sens_approx = (func_vals_pert - func_vals) / self.dh
+        self.perturb_tacs_vec(self.xpts1, self.xpts0, self.xpts_pert)
+        # Run perturbed solution
+        func_vals_pert = self.run_solve(xpts=self.xpts1)
+        # Compute approximate sens
+        f_xpt_sens_approx = self.compute_fdcs_approx(func_vals_pert, func_vals)
 
         # Tests cs/fd against sensitivity from adjoint
         for i in range(len(self.func_list)):
             with self.subTest(function=self.func_list[i]):
-                dfdx_proj_i = self.dfdx_list[i].dot(self.pert)
+                dfdx_proj_i = self.dfdx_list[i].dot(self.xpts_pert)
                 np.testing.assert_allclose(dfdx_proj_i, f_xpt_sens_approx[i], rtol=self.rtol, atol=self.atol)
 
     def run_solve(self, dv=None, xpts=None):
@@ -267,20 +367,20 @@ class ProblemTest(unittest.TestCase):
 
         # Assemble the stiffness matrix
         self.assembler.zeroVariables()
-        self.assembler.assembleJacobian(self.alpha, self.beta, self.gamma, self.res, self.mat)
+        self.assembler.assembleJacobian(self.alpha, self.beta, self.gamma, self.res0, self.mat)
         self.pc.factor()
 
         # add force vector to residual (R = Ku - f)
-        self.res.axpy(-1.0, self.f)
+        self.res0.axpy(-1.0, self.f)
 
         # zero out bc terms in res and solve
-        self.assembler.applyBCs(self.res)
+        self.assembler.applyBCs(self.res0)
         # Solve the linear system
-        self.gmres.solve(self.res, self.ans)
-        self.ans.scale(-1.0)
+        self.gmres.solve(self.res0, self.ans0)
+        self.ans0.scale(-1.0)
 
         # Update state variables with solution
-        self.assembler.setVariables(self.ans)
+        self.assembler.setVariables(self.ans0)
 
         func_vals = self.assembler.evalFunctions(self.func_list)
 
@@ -304,3 +404,57 @@ class ProblemTest(unittest.TestCase):
         self.assembler.addSVSens(self.func_list, self.dfdu_list, self.alpha, self.beta, self.gamma)
         for i in range(len(self.func_list)):
             self.gmres.solve(self.dfdu_list[i], self.adjoint_list[i])
+
+    def zero_tacs_vecs(self):
+        '''
+        Reset all vectors associated with solution and adjoint
+        '''
+        # Zero solution vector
+        self.ans0.zeroEntries()
+
+        # Zero residual
+        self.res0.zeroEntries()
+
+        # Set state vars to zero
+        self.assembler.setVariables(self.ans0)
+
+        # Zero dv sens for each function
+        for dfddv in self.dfddv_list:
+            dfddv.zeroEntries()
+
+        # Zero xpt sens for each function
+        for dfdx in self.dfdx_list:
+            dfdx.zeroEntries()
+
+        # Zero sv sens for each function
+        for dfdu in self.dfdu_list:
+            dfdu.zeroEntries()
+
+    def perturb_tacs_vec(self, vec_out, vec_in, vec_pert):
+        '''
+        Perform fd/cs perturbation on tacs vector as follows
+        vec_out = vec_in + scale * vec_pert
+
+        where:
+            scale = dh * 1j, in complex mode
+            scale = dh, in real mode
+        '''
+        vec_out.copyValues(vec_in)
+        if self.dtype == complex:
+            vec_out.axpy(self.dh * 1j, vec_pert)
+        else:
+            vec_out.axpy(self.dh, vec_pert)
+
+    def compute_fdcs_approx(self, vec1, vec0):
+        '''
+        Perform fd/cs calculation to approximate sensitivities
+
+        difference performed as follows:
+            sens = imag(vec1) / dh, in complex mode
+            sens = (vec1 - vec0) / dh, in real mode
+        '''
+        if self.dtype == complex:
+            sens_approx = np.imag(vec1) / self.dh
+        else:
+            sens_approx = (vec1 - vec0) / self.dh
+        return sens_approx
