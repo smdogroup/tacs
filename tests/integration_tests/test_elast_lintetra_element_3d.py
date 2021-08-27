@@ -33,7 +33,7 @@ class ProblemTest(StaticTestCase.StaticTest):
         else:
             self.rtol = 1e-2
             self.atol = 1e-4
-            self.dh = 1e-8
+            self.dh = 1e-9
 
         # Set the MPI communicator
         comm = MPI.COMM_WORLD

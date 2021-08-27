@@ -31,6 +31,17 @@ class ProblemTest(StaticTestCase.StaticTest):
         """
         Setup mesh and tacs assembler for problem we will be testing.
         """
+
+        # Overwrite default tolerances from base class
+        if dtype == complex:
+            self.rtol = 1e-11
+            self.atol = 1e-8
+            self.dh = 1e-50
+        else:
+            self.rtol = 1e-2
+            self.atol = 1e-4
+            self.dh = 1e-6
+
         # Set the MPI communicator
         comm = MPI.COMM_WORLD
 
