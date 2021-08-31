@@ -1,6 +1,7 @@
 import numpy as np
 from tacs import TACS
 import unittest
+from mpi4py import MPI
 
 '''
 This is a base class for static problem unit test cases.
@@ -38,8 +39,12 @@ class StaticTestCase:
                 self.atol = 1e-4
                 self.dh = 1e-5
 
+            # Set the MPI communicator
+            if not hasattr(self, 'comm'):
+                self.comm = MPI.COMM_WORLD
+
             # Setup user-specified assembler for this test
-            self.assembler = self.setup_assembler(self.dtype)
+            self.assembler = self.setup_assembler(self.comm, self.dtype)
 
             # Get the design variable values
             self.dv0 = self.assembler.createDesignVec()
@@ -144,6 +149,8 @@ class StaticTestCase:
 
             # Compute the partial derivative w.r.t. material design variables
             self.assembler.addDVSens(self.func_list, self.dfddv_list, 1.0)
+            # Accumulate sensitivity across all procs
+            self.set_tacs_vec_values(self.dfddv_list)
 
             # Compute the total derivative w.r.t. material design variables using fd/cs
             self.perturb_tacs_vec(self.dv1, self.dv0, self.dv_pert)
@@ -173,6 +180,8 @@ class StaticTestCase:
 
             # Compute the total derivative w.r.t. nodal xpt locations
             self.assembler.addXptSens(self.func_list, self.dfdx_list, 1.0)
+            # Accumulate sensitivity across all procs
+            self.set_tacs_vec_values(self.dfdx_list)
 
             # Compute the total derivative w.r.t. nodal xpt locations using fd/cs
             self.perturb_tacs_vec(self.xpts1, self.xpts0, self.xpts_pert)
@@ -232,6 +241,8 @@ class StaticTestCase:
             self.run_adjoints()
             self.assembler.addDVSens(self.func_list, self.dfddv_list, 1.0)
             self.assembler.addAdjointResProducts(self.adjoint_list, self.dfddv_list, -1.0)
+            # Accumulate sensitivity across all procs
+            self.set_tacs_vec_values(self.dfddv_list)
 
             # Compute the total derivative w.r.t. material design variables using fd/cs
             self.perturb_tacs_vec(self.dv1, self.dv0, self.dv_pert)
@@ -261,6 +272,8 @@ class StaticTestCase:
             self.run_adjoints()
             self.assembler.addXptSens(self.func_list, self.dfdx_list, 1.0)
             self.assembler.addAdjointResXptSensProducts(self.adjoint_list, self.dfdx_list, -1.0)
+            # Accumulate sensitivity across all procs
+            self.set_tacs_vec_values(self.dfdx_list)
 
             # Compute the total derivative w.r.t. nodal xpt locations using fd/cs
             self.perturb_tacs_vec(self.xpts1, self.xpts0, self.xpts_pert)
@@ -342,7 +355,7 @@ class StaticTestCase:
             self.res0.zeroEntries()
 
             # Set state vars to zero
-            self.assembler.setVariables(self.ans0)
+            self.assembler.zeroVariables()
 
             # Zero dv sens for each function
             for dfddv in self.dfddv_list:
@@ -355,6 +368,14 @@ class StaticTestCase:
             # Zero sv sens for each function
             for dfdu in self.dfdu_list:
                 dfdu.zeroEntries()
+
+        def set_tacs_vec_values(self, tacs_vecs):
+            """
+            Begin setting the values: Collective on the TACS communicator
+            """
+            for vec in tacs_vecs:
+                vec.beginSetValues()
+                vec.endSetValues()
 
         def perturb_tacs_vec(self, vec_out, vec_in, vec_pert):
             """

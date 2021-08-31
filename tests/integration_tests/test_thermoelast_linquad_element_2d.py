@@ -35,7 +35,10 @@ ny = 10
 ksweight = 10.0
 
 class ProblemTest(StaticTestCase.StaticTest):
-    def setup_assembler(self, dtype):
+
+    N_PROCS = 2  # this is how many MPI processes to use for this TestCase.
+
+    def setup_assembler(self, comm, dtype):
         """
         Setup mesh and tacs assembler for problem we will be testing.
         """
@@ -50,8 +53,7 @@ class ProblemTest(StaticTestCase.StaticTest):
             self.atol = 1e-4
             self.dh = 1e-8
 
-        # Set the MPI communicator
-        comm = MPI.COMM_WORLD
+        # Get the MPI communicator size
         rank = comm.rank
         size = comm.size
 
