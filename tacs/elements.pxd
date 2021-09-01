@@ -259,6 +259,16 @@ cdef extern from "TACSKinematicConstraints.h":
         TACSAverageConstraint(TACSRigidBody*, TACSGibbsVector*,
                               TACSRefFrame*, int)
 
+cdef extern from "RBE2.h":
+    cdef cppclass RBE2(TACSElement):
+        RBE2(int, int*)
+        void setScalingParameters(double, double)
+
+cdef extern from "RBE3.h":
+    cdef cppclass RBE3(TACSElement):
+        RBE3(int, int*, int*)
+        void setScalingParameters(double, double)
+
 cdef extern from  "MITC3.h":
     cdef cppclass MITC3(TACSElement):
         MITC3(TACSTimoshenkoConstitutive *_stiff,

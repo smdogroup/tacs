@@ -47,7 +47,8 @@ enum ElementType { TACS_ELEMENT_NONE=0,
                    TACS_SCALAR_3D_ELEMENT=2,
                    TACS_BEAM_OR_SHELL_ELEMENT=4,
                    TACS_PLANE_STRESS_ELEMENT=5,
-                   TACS_SOLID_ELEMENT=6 };
+                   TACS_SOLID_ELEMENT=6,
+                   TACS_RIGID_ELEMENT=7 };
 
 /**
   Defines the element layout used for writing to an output file
