@@ -470,6 +470,36 @@ cdef class RigidBodyViz:
         if self.ptr:
             self.ptr.decref()
 
+cdef class RigidBodyElement2(Element):
+    cdef RBE2 *cptr
+    def __cinit__(self, int num_nodes,
+                  np.ndarray[int, ndim=1, mode='c'] constrained_dofs):
+        self.cptr = new RBE2(num_nodes, <int*>constrained_dofs.data)
+        # Increase the reference count to the underlying object
+        self.ptr = self.cptr
+        self.ptr.incref()
+        return
+
+    def setScalingParameters(self, double _C1, double _C2):
+        self.cptr.setScalingParameters(_C1, _C2)
+        return
+
+cdef class RigidBodyElement3(Element):
+    cdef RBE3 *cptr
+    def __cinit__(self, int num_nodes,
+                  np.ndarray[int, ndim=1, mode='c'] dep_constrained_dofs,
+                  np.ndarray[int, ndim=1, mode='c'] indep_constrained_dofs):
+        self.cptr = new RBE3(num_nodes, <int*>dep_constrained_dofs.data,
+                            <int*>indep_constrained_dofs.data)
+        # Increase the reference count to the underlying object
+        self.ptr = self.cptr
+        self.ptr.incref()
+        return
+
+    def setScalingParameters(self, double _C1, double _C2):
+        self.cptr.setScalingParameters(_C1, _C2)
+        return
+
 # cdef class RigidBody(Element):
 #     cdef TACSRigidBody *cptr
 #     def __cinit__(self, RefFrame frame, TacsScalar mass,
