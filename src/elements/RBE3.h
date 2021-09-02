@@ -21,13 +21,14 @@ class RBE3 : public TACSElement {
         double weights[], int _indep_dof_constrained[] );
   ~RBE3();
 
+  void setScalingParameters( double _C1, double _C2 );
+
   // Info for BDF writer
   // -------------------
   const int * getDependentDOFs(){ return dep_dof_constrained; }
   int const* const* getIndependentDOFs(){ return indep_dof_constrained; }
   const double * getWeights(){ return w; }
   int getNumIndependentNodes(){ return NUM_INDEP_NODES; }
-  void setScalingParameters( double _C1, double _C2 );
 
   // Get the element properties and names
   // ------------------------------------

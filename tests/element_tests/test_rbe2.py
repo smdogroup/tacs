@@ -54,7 +54,7 @@ class ElementTest(unittest.TestCase):
         self.dvars = self.vars.copy()
         self.ddvars = self.vars.copy()
 
-        # Create the basis functions for 3D
+        # Specify dofs for dependent nodes
         self.dep_dofs_constrained = [np.array([1, 1, 1, 1, 1, 1], np.intc),
                                      np.array([1, 1, 1, 0, 0, 0], np.intc)]
 
@@ -63,7 +63,7 @@ class ElementTest(unittest.TestCase):
 
 
     def test_element_jacobian(self):
-        # Loop through every combination of model and basis class and test Jacobian
+        # Loop through each combination of dof constraints and test Jacobian
         for dep_dofs in self.dep_dofs_constrained:
             with self.subTest(dep_dofs=dep_dofs):
                 element = elements.RigidBodyElement2(self.num_nodes, dep_dofs)
@@ -74,7 +74,7 @@ class ElementTest(unittest.TestCase):
                 self.assertFalse(fail)
 
     def test_adj_res_product(self):
-        # Loop through every combination of model and basis class and test adjoint residual-dvsens product
+        # Loop through each combination of dof constraints and test adjoint residual-dvsens product
         for dep_dofs in self.dep_dofs_constrained:
             with self.subTest(dep_dofs=dep_dofs):
                 element = elements.RigidBodyElement2(self.num_nodes, dep_dofs)
@@ -86,7 +86,7 @@ class ElementTest(unittest.TestCase):
                 self.assertFalse(fail)
 
     def test_adj_res_xpt_product(self):
-        # Loop through every combination of model and basis class and test adjoint residual-xptsens product
+        # Loop through each combination of dof constraints and test adjoint residual-xptsens product
         for dep_dofs in self.dep_dofs_constrained:
             with self.subTest(dep_dofs=dep_dofs):
                 element = elements.RigidBodyElement2(self.num_nodes, dep_dofs)
@@ -97,7 +97,7 @@ class ElementTest(unittest.TestCase):
                 self.assertFalse(fail)
 
     def test_element_mat_dv_sens(self):
-        # Loop through every combination of model and basis class and element matrix inner product sens
+        # Loop through each combination of dof constraints and element matrix inner product sens
         for dep_dofs in self.dep_dofs_constrained:
             with self.subTest(dep_dofs=dep_dofs):
                 element = elements.RigidBodyElement2(self.num_nodes, dep_dofs)
@@ -111,7 +111,7 @@ class ElementTest(unittest.TestCase):
                         self.assertFalse(fail)
 
     def test_element_mat_sv_sens(self):
-        # Loop through every combination of model and basis class and test element matrix inner product sens
+        # Loop through each combination of dof constraints and test element matrix inner product sens
         for dep_dofs in self.dep_dofs_constrained:
             with self.subTest(dep_dofs=dep_dofs):
                 element = elements.RigidBodyElement2(self.num_nodes, dep_dofs)
