@@ -239,7 +239,7 @@ cdef extern from "RBE2.h":
 
 cdef extern from "RBE3.h":
     cdef cppclass RBE3(TACSElement):
-        RBE3(int, int*, int*)
+        RBE3(int, int*, double*, int*)
         void setScalingParameters(double, double)
 
 cdef extern from  "MITC3.h":

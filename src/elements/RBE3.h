@@ -17,7 +17,8 @@
 class RBE3 : public TACSElement {
  public:
 
-  RBE3( int numNodes, int _dep_dof_constrained[], int _indep_dof_constrained[] );
+  RBE3( int numNodes, int _dep_dof_constrained[],
+        double weights[], int _indep_dof_constrained[] );
   ~RBE3();
 
   // Info for BDF writer
