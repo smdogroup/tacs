@@ -536,9 +536,22 @@ cdef class RigidBodyElement3(Element):
     cdef RBE3 *cptr
     def __cinit__(self, int num_nodes,
                   np.ndarray[int, ndim=1, mode='c'] dep_constrained_dofs,
+                  np.ndarray[double, ndim=1, mode='c'] weights,
                   np.ndarray[int, ndim=1, mode='c'] indep_constrained_dofs):
+        num_indep = num_nodes - 2
+
+        assert len(dep_constrained_dofs) == 6
+        assert len(weights) == 1 or len(weights) == num_indep
+        assert len(indep_constrained_dofs) == 6 or len(indep_constrained_dofs) == 6 * num_indep
+
+        # Pad the independent arrays, if necessary
+        if len(weights) == 1:
+            weights = np.tile(weights, num_indep)
+        if len(indep_constrained_dofs) == 6:
+            indep_constrained_dofs = np.tile(indep_constrained_dofs, num_indep)
+
         self.cptr = new RBE3(num_nodes, <int*>dep_constrained_dofs.data,
-                            <int*>indep_constrained_dofs.data)
+                            <double*>weights.data, <int*>indep_constrained_dofs.data)
         # Increase the reference count to the underlying object
         self.ptr = self.cptr
         self.ptr.incref()

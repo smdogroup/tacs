@@ -39,28 +39,23 @@
 /*
   Create the RBE3.
 */
-RBE3::RBE3( int numNodes, int _dep_dof_constrained[], int _indep_dof_constrained[] ){
+RBE3::RBE3( int numNodes, int _dep_dof_constrained[], double weights[], int _indep_dof_constrained[] ){
 
   NUM_NODES = numNodes; // Number of nodes (1 dep node + N indep nodes + 1 dummy node)
   NUM_INDEP_NODES = NUM_NODES - 2;
   NUM_VARIABLES = NUM_DISPS*NUM_NODES;
 
-  /* Setup DOF weights assuming uniform */
+  /* Setup DOF weights from user input */
   w = new double[NUM_INDEP_NODES];
-  for (int i = 0; i < NUM_INDEP_NODES; i++){
-    w[i] = 1.0;
-  }
+  memcpy(w, weights, NUM_INDEP_NODES*sizeof(double));
   /* Identify which dofs should be constrained for dependent node */
-  for ( int i = 0; i < NUM_DISPS; i++){
-    dep_dof_constrained[i] = _dep_dof_constrained[i];
-  }
+  memcpy(dep_dof_constrained, _dep_dof_constrained, NUM_DISPS*sizeof(int));
   /* Identify which dofs should be constrained for independent nodes */
   indep_dof_constrained = new int*[NUM_INDEP_NODES];
-
   for ( int j = 0; j < NUM_INDEP_NODES; j++){
       indep_dof_constrained[j] = new int[NUM_DISPS];
       for ( int i = 0; i < NUM_DISPS; i++){
-        indep_dof_constrained[j][i] = _indep_dof_constrained[i];
+        indep_dof_constrained[j][i] = _indep_dof_constrained[NUM_DISPS*j + i];
       }
   }
 
