@@ -22,7 +22,7 @@ class RBE2 : public TACSElement {
 
   // Info for BDF writer
   // -------------------
-  const int * getDependentDOFs(){ return dof_constrained; }
+  int const* const* getDependentDOFs(){ return dof_constrained; }
   int getNumDependentNodes(){ return NUM_DEP_NODES; }
   void setScalingParameters( double _C1, double _C2 );
 
@@ -104,7 +104,7 @@ class RBE2 : public TACSElement {
   static const char * extraNames[NUM_EXTRAS];
 
   // Flag which dependent dofs to include
-  int dof_constrained[NUM_DISPS];
+  int ** dof_constrained;
 
   // constraint matrix scaling factor, see ref [2]
   double C1;

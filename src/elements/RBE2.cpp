@@ -26,8 +26,6 @@
   Where B is the constraint matrix (i.e. B . u = 0) and lambda are the
   Lagrange multipliers. The Lagrange multipliers
   represent the reaction forces on the each dependent grid due to the RBE2.
-  This is a simplified implementation that assumes either DOF's 123 (translations only)
-  or DOFs 123456 (translation + rotation) of the dependent nodes.
 
   For reference on this implementation see:
 
@@ -45,8 +43,12 @@ RBE2::RBE2( int _numNodes, int _dof_constrained[] ){
   NUM_VARIABLES = NUM_DISPS*NUM_NODES;
 
   // Identify which dofs should be constrained for dependent nodes
-  for ( int i=0; i < NUM_DISPS; i++){
-    dof_constrained[i] = _dof_constrained[i];
+  dof_constrained = new int*[NUM_DEP_NODES];
+  for ( int j = 0; j < NUM_DEP_NODES; j++){
+      dof_constrained[j] = new int[NUM_DISPS];
+      for ( int i = 0; i < NUM_DISPS; i++){
+        dof_constrained[j][i] = _dof_constrained[NUM_DISPS*j + i];
+      }
   }
 
   // Default scaling and artificial stiffness parameters
@@ -56,6 +58,13 @@ RBE2::RBE2( int _numNodes, int _dof_constrained[] ){
 }
 
 RBE2::~RBE2(){
+    if (dof_constrained){
+
+      for ( int j = 0; j < NUM_DEP_NODES; j++){
+          delete [] dof_constrained[j];
+      }
+        delete [] dof_constrained;
+    }
 }
 
 /*
@@ -199,31 +208,31 @@ void RBE2::addResidual( int elemIndex, double time,
 
   for (int n = 0; n < NUM_DEP_NODES; n++){
       // displacements un = u0 + r x theta
-      if (dof_constrained[0]){
+      if (dof_constrained[n][0]){
         res[0] += C1*( un[0] - (u0[0] + (Xn[2] - X0[2]) * t0[1] - (Xn[1] - X0[1]) * t0[2] )); // u
       }
-      if (dof_constrained[1]){
+      if (dof_constrained[n][1]){
         res[1] += C1*( un[1] - (u0[1] - (Xn[2] - X0[2]) * t0[0] + (Xn[0] - X0[0]) * t0[2] )); // v
       }
-      if (dof_constrained[2]){
+      if (dof_constrained[n][2]){
         res[2] += C1*( un[2] - (u0[2] + (Xn[1] - X0[1]) * t0[0] - (Xn[0] - X0[0]) * t0[1]) ); // w
       }
 
       // rotations
-      if (dof_constrained[3]){
+      if (dof_constrained[n][3]){
           res[3] += C1*( tn[0] - t0[0] ); // thetax
       }
-      if (dof_constrained[4]){
+      if (dof_constrained[n][4]){
           res[4] += C1*( tn[1] - t0[1] ); // thetay
       }
-      if (dof_constrained[5]){
+      if (dof_constrained[n][5]){
           res[5] += C1*( tn[2] - t0[2] ); // thetaz
       }
 
       // For each unconstrained dof, set the residual to the
       // Lagrange multiplier forcing TACS to zero them
       for ( int k = 0; k < NUM_DISPS; k++ ){
-        if (!dof_constrained[k]){
+        if (!dof_constrained[n][k]){
             res[k] += C1 * actualLM[k];
         }
       }
@@ -370,9 +379,9 @@ void RBE2::addJacobian( int elemIndex, double time,
      Lagrange multiplier with zero and set its corresponding diagonal
      term to unity. This should give us a consistent matrix with the
      procedure in getRes */
-  for (ii = NUM_DISPS*(1 + NUM_DEP_NODES) ; ii < NUM_VARIABLES; ii += NUM_DISPS){
+  for (int n = 0, ii = NUM_DISPS*(1 + NUM_DEP_NODES); n < NUM_DEP_NODES; n++, ii += NUM_DISPS){
       for (int k = 0; k < NUM_DISPS; k++){
-        if (!dof_constrained[k]){
+        if (!dof_constrained[n][k]){
             for (int i = 0; i < NUM_VARIABLES; i++){
                 mat[i + (ii+k)*NUM_VARIABLES]  = 0.0;
                 mat[ii+k + (i)*NUM_VARIABLES]  = 0.0;
@@ -454,13 +463,13 @@ void RBE2::addAdjResXptProduct( int elemIndex, double time,
 
       for (int n = 0; n < NUM_DEP_NODES; n++){
           // displacements un = u0 + r x theta
-          if (dof_constrained[0]){
+          if (dof_constrained[n][0]){
             res[0] = C1*( - ( + (sXn[2] - sX0[2]) * t0[1] - (sXn[1] - sX0[1]) * t0[2] )); // u
           }
-          if (dof_constrained[1]){
+          if (dof_constrained[n][1]){
             res[1] = C1*( - ( - (sXn[2] - sX0[2]) * t0[0] + (sXn[0] - sX0[0]) * t0[2] )); // v
           }
-          if (dof_constrained[2]){
+          if (dof_constrained[n][2]){
             res[2] = C1*( - ( + (sXn[1] - sX0[1]) * t0[0] - (sXn[0] - sX0[0]) * t0[1]) ); // w
           }
 
@@ -494,7 +503,7 @@ void RBE2::getMaskedMultipliers( TacsScalar maskedLM[],
   // Mask forces
   for ( int j = 0; j < NUM_DEP_NODES; j++ ){
       for ( int i = 0; i < 6; i++ ){
-        if (dof_constrained[i]){
+        if (dof_constrained[j][i]){
             maskedLM[i] = actualLM[i];
         }
         else{

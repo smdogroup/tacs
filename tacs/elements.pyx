@@ -522,6 +522,14 @@ cdef class RigidBodyElement2(Element):
     cdef RBE2 *cptr
     def __cinit__(self, int num_nodes,
                   np.ndarray[int, ndim=1, mode='c'] constrained_dofs):
+        num_dep = (num_nodes - 1) / 2
+
+        assert len(constrained_dofs) == 6 or len(constrained_dofs) == 6 * num_dep
+
+        # Pad the dependent array, if necessary
+        if len(constrained_dofs) == 6:
+            constrained_dofs = np.tile(constrained_dofs, num_dep)
+
         self.cptr = new RBE2(num_nodes, <int*>constrained_dofs.data)
         # Increase the reference count to the underlying object
         self.ptr = self.cptr
