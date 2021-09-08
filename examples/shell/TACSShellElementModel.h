@@ -170,7 +170,10 @@ class TACSShellLinearModel {
                                             const TacsScalar fn[],
                                             const TacsScalar vars[],
                                             const TacsScalar d[],
+                                            const TacsScalar dety[],
                                             const TacsScalar d2ety[],
+                                            const TacsScalar d2etyu[],
+                                            const TacsScalar d2etyd[],
                                             TacsScalar mat[],
                                             TacsScalar d2d[],
                                             TacsScalar d2du[] ){
@@ -196,14 +199,13 @@ class TACSShellLinearModel {
     }
 
     TacsScalar *n01 = n0ty, *Xxi1 = Xxity;
-    for ( int f1 = 0, base = 0; f1 < num_tying_fields;
+    for ( int f1 = 0, base = 0, index = 0; f1 < num_tying_fields;
       base += basis::NUM_TYING_POINTS*basis::getNumTyingPoints(f1), f1++ ){
       const int nty1 = basis::getNumTyingPoints(f1);
 
-      for ( int ty1 = 0; ty1 < nty1; ty1++, n01 += 3, Xxi1 += 6 ){
+      for ( int ty1 = 0; ty1 < nty1; ty1++, index++, n01 += 3, Xxi1 += 6 ){
 
-        TacsScalar du2[3*basis::NUM_NODES];
-        TacsScalar dd2[3*basis::NUM_NODES];
+        TacsScalar du2[3*basis::NUM_NODES], dd2[3*basis::NUM_NODES];
         memset(du2, 0, 3*basis::NUM_NODES*sizeof(TacsScalar));
         memset(dd2, 0, 3*basis::NUM_NODES*sizeof(TacsScalar));
 
@@ -352,27 +354,37 @@ class TACSShellLinearModel {
 
           basis::template addInterpFieldsTranspose<3, 3>(pt1, dd01, dd1);
 
+          const TacsScalar *etd = &d2etyd[3*basis::NUM_NODES*index];
+          const TacsScalar *etu = &d2etyu[3*basis::NUM_NODES*index];
           for ( int i = 0; i < 3*basis::NUM_NODES; i++ ){
             for ( int j = 0; j < 3*basis::NUM_NODES; j++ ){
-              d2d[3*basis::NUM_NODES*i + j] += dd1[i]*dd2[j];
+              d2d[3*basis::NUM_NODES*i + j] += dd1[i]*dd2[j] + dd1[i]*etd[j] + etd[i]*dd1[j];
             }
           }
 
           for ( int i = 0; i < 3*basis::NUM_NODES; i++ ){
             for ( int j = 0; j < 3*basis::NUM_NODES; j++ ){
-              d2du[3*basis::NUM_NODES*i + j] += dd1[i]*du2[j];
+              d2du[3*basis::NUM_NODES*i + j] += dd1[i]*du2[j] + dd1[i]*etu[j];
             }
           }
         }
 
         basis::template addInterpFieldsGradTranspose<3, 3>(pt1, dUxi1, du1);
 
+        const TacsScalar *etd = &d2etyd[3*basis::NUM_NODES*index];
+        for ( int i = 0; i < 3*basis::NUM_NODES; i++ ){
+          for ( int j = 0; j < 3*basis::NUM_NODES; j++ ){
+            d2du[3*basis::NUM_NODES*i + j] += etd[i]*du1[j];
+          }
+        }
+
         const int nvars = vars_per_node*basis::NUM_NODES;
+        const TacsScalar *etu = &d2etyu[3*basis::NUM_NODES*index];
         for ( int i = 0; i < 3*basis::NUM_NODES; i++ ){
           int ii = vars_per_node*(i / 3) + i % 3;
           for ( int j = 0; j < 3*basis::NUM_NODES; j++ ){
             int jj = vars_per_node*(j / 3) + j % 3;
-            mat[nvars*ii + jj] += du1[i]*du2[j];
+            mat[nvars*ii + jj] += du1[i]*du2[j] + du1[i]*etu[j] + etu[i]*du1[j];
           }
         }
       }
@@ -691,8 +703,7 @@ class TACSShellLinearModel {
     return 0.5*(Ct[3] + u0x[3] - Ct[1] - u0x[1]);
   }
 
-  static void evalDrillStrainHessian( TacsScalar det,
-                                      TacsScalar d2et,
+  static void evalDrillStrainHessian( TacsScalar d2et,
                                       const TacsScalar u0x[],
                                       const TacsScalar Ct[],
                                       TacsScalar d2u0x[],
@@ -702,33 +713,33 @@ class TACSShellLinearModel {
     memset(d2Ct, 0, 81*sizeof(TacsScalar));
     memset(d2Ctu0x, 0, 81*sizeof(TacsScalar));
 
-    TacsScalar *d2;
+    // TacsScalar *d2;
 
-    // Compute the contribution from the drilling strain
-    // e[8] = 0.5*(Ct[3] + u0x[3] - Ct[1] - u0x[1]);
-    d2 = &d2Ct[3*9];
-    d2[3] = 0.25*d2et;
-    d2[1] = -0.25*d2et;
+    // // Compute the contribution from the drilling strain
+    // // e[8] = 0.5*(Ct[3] + u0x[3] - Ct[1] - u0x[1]);
+    // d2 = &d2Ct[3*9];
+    // d2[3] = 0.25*d2et;
+    // d2[1] = -0.25*d2et;
 
-    d2 = &d2Ct[9];
-    d2[3] = -0.25*d2et;
-    d2[1] = 0.25*d2et;
+    // d2 = &d2Ct[9];
+    // d2[3] = -0.25*d2et;
+    // d2[1] = 0.25*d2et;
 
-    d2 = &d2u0x[3*9];
-    d2[3] = 0.25*d2et;
-    d2[1] = -0.25*d2et;
+    // d2 = &d2u0x[3*9];
+    // d2[3] = 0.25*d2et;
+    // d2[1] = -0.25*d2et;
 
-    d2 = &d2u0x[9];
-    d2[3] = -0.25*d2et;
-    d2[1] = 0.25*d2et;
+    // d2 = &d2u0x[9];
+    // d2[3] = -0.25*d2et;
+    // d2[1] = 0.25*d2et;
 
-    d2 = &d2Ctu0x[3*9];
-    d2[3] = 0.25*d2et;
-    d2[1] = -0.25*d2et;
+    // d2 = &d2Ctu0x[3*9];
+    // d2[3] = 0.25*d2et;
+    // d2[1] = -0.25*d2et;
 
-    d2 = &d2Ctu0x[9];
-    d2[3] = -0.25*d2et;
-    d2[1] = 0.25*d2et;
+    // d2 = &d2Ctu0x[9];
+    // d2[3] = -0.25*d2et;
+    // d2[1] = 0.25*d2et;
   }
 };
 
@@ -904,7 +915,10 @@ class TACSShellNonlinearModel {
                                             const TacsScalar fn[],
                                             const TacsScalar vars[],
                                             const TacsScalar d[],
+                                            const TacsScalar dety[],
                                             const TacsScalar d2ety[],
+                                            const TacsScalar d2etyu[],
+                                            const TacsScalar d2etyd[],
                                             TacsScalar mat[],
                                             TacsScalar d2d[],
                                             TacsScalar d2du[] ){
@@ -934,14 +948,14 @@ class TACSShellNonlinearModel {
     }
 
     TacsScalar *n01 = n0ty, *Xxi1 = Xxity, *d01 = d0ty, *Uxi1 = Uxity;
-    for ( int f1 = 0, base = 0; f1 < num_tying_fields;
+    for ( int f1 = 0, base = 0, index = 0; f1 < num_tying_fields;
       base += basis::NUM_TYING_POINTS*basis::getNumTyingPoints(f1), f1++ ){
       const int nty1 = basis::getNumTyingPoints(f1);
 
-      for ( int ty1 = 0; ty1 < nty1; ty1++, n01 += 3, Xxi1 += 6, d01 += 3, Uxi1 += 6 ){
+      for ( int ty1 = 0; ty1 < nty1;
+          ty1++, index++, n01 += 3, Xxi1 += 6, d01 += 3, Uxi1 += 6 ){
 
-        TacsScalar du2[3*basis::NUM_NODES];
-        TacsScalar dd2[3*basis::NUM_NODES];
+        TacsScalar du2[3*basis::NUM_NODES], dd2[3*basis::NUM_NODES];
         memset(du2, 0, 3*basis::NUM_NODES*sizeof(TacsScalar));
         memset(dd2, 0, 3*basis::NUM_NODES*sizeof(TacsScalar));
 
@@ -950,7 +964,8 @@ class TACSShellNonlinearModel {
           offset += nty1*basis::getNumTyingPoints(f2), f2++ ){
           const int nty2 = basis::getNumTyingPoints(f2);
 
-          for ( int ty2 = 0; ty2 < nty2; ty2++, n02 += 3, Xxi2 += 6, d02 += 3, Uxi2 += 6 ){
+          for ( int ty2 = 0; ty2 < nty2;
+              ty2++, n02 += 3, Xxi2 += 6, d02 += 3, Uxi2 += 6 ){
             double pt2[2];
             basis::getTyingPoint(f2, ty2, pt2);
 
@@ -1028,6 +1043,8 @@ class TACSShellNonlinearModel {
 
         // Store the the derivative information for the first point
         TacsScalar dUxi1[6];
+        TacsScalar d2Uxi[36];
+        memset(d2Uxi, 0, 36*sizeof(TacsScalar));
 
         if (f1 == 0){
           // Compute g11 = e1^{T}*G*e1
@@ -1037,6 +1054,10 @@ class TACSShellNonlinearModel {
           dUxi1[3] = 0.0;
           dUxi1[4] = (Xxi1[4] + Uxi1[4]);
           dUxi1[5] = 0.0;
+
+          d2Uxi[0] = dety[index];
+          d2Uxi[14] = dety[index];
+          d2Uxi[28] = dety[index];
         }
         else if (f1 == 1){
           // Compute g22 = e2^{T}*G*e2
@@ -1046,6 +1067,10 @@ class TACSShellNonlinearModel {
           dUxi1[3] = (Xxi1[3] + Uxi1[3]);
           dUxi1[4] = 0.0;
           dUxi1[5] = (Xxi1[5] + Uxi1[5]);
+
+          d2Uxi[7] = dety[index];
+          d2Uxi[21] = dety[index];
+          d2Uxi[35] = dety[index];
         }
         else if (f1 == 2){
           // Compute g12 = e2^{T}*G*e1
@@ -1055,12 +1080,22 @@ class TACSShellNonlinearModel {
           dUxi1[3] = 0.5*(Xxi1[2] + Uxi1[2]);
           dUxi1[4] = 0.5*(Xxi1[5] + Uxi1[5]);
           dUxi1[5] = 0.5*(Xxi1[4] + Uxi1[4]);
+
+          d2Uxi[1] = 0.5*dety[index];
+          d2Uxi[6] = 0.5*dety[index];
+          d2Uxi[15] = 0.5*dety[index];
+          d2Uxi[20] = 0.5*dety[index];
+          d2Uxi[29] = 0.5*dety[index];
+          d2Uxi[34] = 0.5*dety[index];
         }
         else {
           TacsScalar dd1[3*basis::NUM_NODES];
           memset(dd1, 0, 3*basis::NUM_NODES*sizeof(TacsScalar));
 
           TacsScalar dd01[3];
+          TacsScalar d2dUxi[18];
+          memset(d2dUxi, 0, 18*sizeof(TacsScalar));
+
           if (f1 == 3){
             // Compute g23 = e2^{T}*G*e3
             dUxi1[0] = 0.0;
@@ -1073,6 +1108,10 @@ class TACSShellNonlinearModel {
             dd01[0] = 0.5*(Xxi1[1] + Uxi1[1]);
             dd01[1] = 0.5*(Xxi1[3] + Uxi1[3]);
             dd01[2] = 0.5*(Xxi1[5] + Uxi1[5]);
+
+            d2dUxi[1] = 0.5*dety[index];
+            d2dUxi[9] = 0.5*dety[index];
+            d2dUxi[17] = 0.5*dety[index];
           }
           else if (f1 == 4){
             // Compute g13 = e1^{T}*G*e3
@@ -1086,33 +1125,51 @@ class TACSShellNonlinearModel {
             dd01[0] = 0.5*(Xxi1[0] + Uxi1[0]);
             dd01[1] = 0.5*(Xxi1[2] + Uxi1[2]);
             dd01[2] = 0.5*(Xxi1[4] + Uxi1[4]);
+
+            d2dUxi[0] = 0.5*dety[index];
+            d2dUxi[8] = 0.5*dety[index];
+            d2dUxi[16] = 0.5*dety[index];
           }
 
           basis::template addInterpFieldsTranspose<3, 3>(pt1, dd01, dd1);
 
+          const TacsScalar *etd = &d2etyd[3*basis::NUM_NODES*index];
+          const TacsScalar *etu = &d2etyu[3*basis::NUM_NODES*index];
           for ( int i = 0; i < 3*basis::NUM_NODES; i++ ){
             for ( int j = 0; j < 3*basis::NUM_NODES; j++ ){
-              d2d[3*basis::NUM_NODES*i + j] += dd1[i]*dd2[j];
+              d2d[3*basis::NUM_NODES*i + j] += dd1[i]*dd2[j] + dd1[i]*etd[j] + etd[i]*dd1[j];
             }
           }
 
           for ( int i = 0; i < 3*basis::NUM_NODES; i++ ){
             for ( int j = 0; j < 3*basis::NUM_NODES; j++ ){
-              d2du[3*basis::NUM_NODES*i + j] += dd1[i]*du2[j];
+              d2du[3*basis::NUM_NODES*i + j] += dd1[i]*du2[j] + dd1[i]*etu[j];
             }
           }
+
+          basis::template addInterpGradMixedOuterProduct<3, 3, 3, 3>(pt1, d2dUxi, NULL, d2du);
         }
 
         basis::template addInterpFieldsGradTranspose<3, 3>(pt1, dUxi1, du1);
 
+        const TacsScalar *etd = &d2etyd[3*basis::NUM_NODES*index];
+        for ( int i = 0; i < 3*basis::NUM_NODES; i++ ){
+          for ( int j = 0; j < 3*basis::NUM_NODES; j++ ){
+            d2du[3*basis::NUM_NODES*i + j] += etd[i]*du1[j];
+          }
+        }
+
         const int nvars = vars_per_node*basis::NUM_NODES;
+        const TacsScalar *etu = &d2etyu[3*basis::NUM_NODES*index];
         for ( int i = 0; i < 3*basis::NUM_NODES; i++ ){
           int ii = vars_per_node*(i / 3) + i % 3;
           for ( int j = 0; j < 3*basis::NUM_NODES; j++ ){
             int jj = vars_per_node*(j / 3) + j % 3;
-            mat[nvars*ii + jj] += du1[i]*du2[j];
+            mat[nvars*ii + jj] += du1[i]*du2[j] + du1[i]*etu[j] + etu[i]*du1[j];
           }
         }
+
+        basis::template addInterpGradOuterProduct<vars_per_node, vars_per_node, 3, 3>(pt1, d2Uxi, mat);
       }
     }
   }
@@ -1262,49 +1319,12 @@ class TACSShellNonlinearModel {
     du1x[8] = 0.0;
   }
 
-  static TacsScalar evalDrillStrain( const TacsScalar u0x[],
-                                     const TacsScalar Ct[] ){
-    // e2^{T}*Ct*(e1 + u_{,x}*e1) - e1^{T}*Ct*(e2 + u_{,x}*e2)
-    return ((Ct[3]*(1.0 + u0x[0]) + Ct[4]*u0x[3] + Ct[5]*u0x[6]) -
-            (Ct[0]*u0x[1] + Ct[1]*(1.0 + u0x[4]) + Ct[2]*u0x[7]));
-  }
-
-
-  static void evalDrillStrainSens( TacsScalar scale,
-                                   const TacsScalar u0x[],
-                                   const TacsScalar Ct[],
-                                   TacsScalar du0x[],
-                                   TacsScalar dCt[] ){
-    // Derivative with respect to u0x
-    du0x[0] = scale*Ct[3];
-    du0x[1] = -scale*Ct[0];
-    du0x[2] = 0.0;
-    du0x[3] = scale*Ct[4];
-    du0x[4] = -scale*Ct[1];
-    du0x[5] = 0.0;
-    du0x[6] = scale*Ct[5];
-    du0x[7] = -scale*Ct[2];
-    du0x[8] = 0.0;
-
-    dCt[0] = -scale*u0x[1];
-    dCt[1] = -scale*(1.0 + u0x[4]);
-    dCt[2] = -scale*u0x[7];
-    dCt[3] = scale*(1.0 + u0x[0]);
-    dCt[4] = scale*u0x[3];
-    dCt[5] = scale*u0x[6];
-    dCt[6] = 0.0;
-    dCt[7] = 0.0;
-    dCt[8] = 0.0;
-  }
-
   static void evalStrainDeriv( const TacsScalar u0x[],
                                const TacsScalar u1x[],
                                const TacsScalar e0ty[],
-                               const TacsScalar Ct[],
                                const TacsScalar u0xd[],
                                const TacsScalar u1xd[],
                                const TacsScalar e0tyd[],
-                               const TacsScalar Ctd[],
                                TacsScalar e[],
                                TacsScalar ed[] ){
     // Evaluate the in-plane strains from the tying strain expressions
@@ -1321,11 +1341,6 @@ class TACSShellNonlinearModel {
     // Add the components of the shear strain
     e[6] = 2.0*e0ty[4];
     e[7] = 2.0*e0ty[2];
-
-    // e2^{T}*Ct*(e1 + u_{,x}*e1) - e1^{T}*Ct*(e2 + u_{,x}*e2)
-    e[8] =
-      (Ct[3]*(1.0 + u0x[0]) + Ct[4]*u0x[3] + Ct[5]*u0x[6]) -
-      (Ct[0]*u0x[1] + Ct[1]*(1.0 + u0x[4]) + Ct[2]*u0x[7]);
 
     // Evaluate the in-plane strains from the tying strain expressions
     ed[0] = e0tyd[0];
@@ -1345,13 +1360,6 @@ class TACSShellNonlinearModel {
     // Add the components of the shear strain
     ed[6] = 2.0*e0tyd[4];
     ed[7] = 2.0*e0tyd[2];
-
-    // e2^{T}*Ct*(e1 + u_{,x}*e1) - e1^{T}*Ct*(e2 + u_{,x}*e2)
-    ed[8] =
-      ((Ctd[3]*(1.0 + u0x[0]) + Ctd[4]*u0x[3] + Ctd[5]*u0x[6]) +
-       (Ct[3]*u0xd[0] + Ct[4]*u0xd[3] + Ct[5]*u0xd[6])) -
-      ((Ctd[0]*u0x[1] + Ctd[1]*(1.0 + u0x[4]) + Ctd[2]*u0x[7]) +
-       (Ct[0]*u0xd[1] + Ct[1]*u0xd[4] + Ct[2]*u0xd[7]));
   }
 
   static void evalStrainHessian( const TacsScalar scale,
@@ -1360,19 +1368,15 @@ class TACSShellNonlinearModel {
                                  const TacsScalar u0x[],
                                  const TacsScalar u1x[],
                                  const TacsScalar e0ty[],
-                                 const TacsScalar Ct[],
                                  TacsScalar d2u0x[],
                                  TacsScalar d2u1x[],
                                  TacsScalar d2u0xu1x[],
                                  TacsScalar d2e0ty[],
                                  TacsScalar d2e0tyu0x[],
-                                 TacsScalar d2e0tyu1x[],
-                                 TacsScalar d2Ct[],
-                                 TacsScalar d2Ctu0x[] ){
+                                 TacsScalar d2e0tyu1x[] ){
     TacsScalar drill;
     const TacsScalar *A, *B, *D, *As;
     TACSShellConstitutive::extractTangentStiffness(Cs, &A, &B, &D, &As, &drill);
-
 
     // Compute the second derivatives
     memset(d2e0ty, 0, 36*sizeof(TacsScalar));
@@ -1400,24 +1404,24 @@ class TACSShellNonlinearModel {
     d2[4] = 4.0*scale*As[1];
     d2[2] = 4.0*scale*As[2];
 
-    d2u0x[0] = scale*(Ct[3]*Ct[3]*drill + u1x[0]*(D[0]*u1x[0] + D[2]*u1x[1]) + u1x[1]*(D[2]*u1x[0] + D[5]*u1x[1]));
-    d2u0x[1] = scale*(-Ct[0]*Ct[3]*drill + D[1]*u1x[0]*u1x[1] + D[2]*u1x[0]*u1x[0] + D[4]*u1x[1]*u1x[1] + D[5]*u1x[0]*u1x[1]);
+    d2u0x[0] = scale*(u1x[0]*(D[0]*u1x[0] + D[2]*u1x[1]) + u1x[1]*(D[2]*u1x[0] + D[5]*u1x[1]));
+    d2u0x[1] = scale*(D[1]*u1x[0]*u1x[1] + D[2]*u1x[0]*u1x[0] + D[4]*u1x[1]*u1x[1] + D[5]*u1x[0]*u1x[1]);
     d2u0x[2] = 0.0;
-    d2u0x[3] = scale*(Ct[3]*Ct[4]*drill + D[0]*u1x[0]*u1x[3] + D[2]*u1x[0]*u1x[4] + D[2]*u1x[1]*u1x[3] + D[5]*u1x[1]*u1x[4]);
-    d2u0x[4] = scale*(-Ct[1]*Ct[3]*drill + D[1]*u1x[0]*u1x[4] + D[2]*u1x[0]*u1x[3] + D[4]*u1x[1]*u1x[4] + D[5]*u1x[1]*u1x[3]);
+    d2u0x[3] = scale*(D[0]*u1x[0]*u1x[3] + D[2]*u1x[0]*u1x[4] + D[2]*u1x[1]*u1x[3] + D[5]*u1x[1]*u1x[4]);
+    d2u0x[4] = scale*(D[1]*u1x[0]*u1x[4] + D[2]*u1x[0]*u1x[3] + D[4]*u1x[1]*u1x[4] + D[5]*u1x[1]*u1x[3]);
     d2u0x[5] = 0.0;
-    d2u0x[6] = scale*(Ct[3]*Ct[5]*drill + D[0]*u1x[0]*u1x[6] + D[2]*u1x[0]*u1x[7] + D[2]*u1x[1]*u1x[6] + D[5]*u1x[1]*u1x[7]);
-    d2u0x[7] = scale*(-Ct[2]*Ct[3]*drill + D[1]*u1x[0]*u1x[7] + D[2]*u1x[0]*u1x[6] + D[4]*u1x[1]*u1x[7] + D[5]*u1x[1]*u1x[6]);
+    d2u0x[6] = scale*(D[0]*u1x[0]*u1x[6] + D[2]*u1x[0]*u1x[7] + D[2]*u1x[1]*u1x[6] + D[5]*u1x[1]*u1x[7]);
+    d2u0x[7] = scale*(D[1]*u1x[0]*u1x[7] + D[2]*u1x[0]*u1x[6] + D[4]*u1x[1]*u1x[7] + D[5]*u1x[1]*u1x[6]);
     d2u0x[8] = 0.0;
 
-    d2u0x[9] = scale*(-Ct[0]*Ct[3]*drill + D[1]*u1x[0]*u1x[1] + D[2]*u1x[0]*u1x[0] + D[4]*u1x[1]*u1x[1] + D[5]*u1x[0]*u1x[1]);
-    d2u0x[10] = scale*(Ct[0]*Ct[0]*drill + u1x[0]*(D[4]*u1x[1] + D[5]*u1x[0]) + u1x[1]*(D[3]*u1x[1] + D[4]*u1x[0]));
+    d2u0x[9] = scale*(D[1]*u1x[0]*u1x[1] + D[2]*u1x[0]*u1x[0] + D[4]*u1x[1]*u1x[1] + D[5]*u1x[0]*u1x[1]);
+    d2u0x[10] = scale*(u1x[0]*(D[4]*u1x[1] + D[5]*u1x[0]) + u1x[1]*(D[3]*u1x[1] + D[4]*u1x[0]));
     d2u0x[11] = 0.0;
-    d2u0x[12] = scale*(-Ct[0]*Ct[4]*drill + D[1]*u1x[1]*u1x[3] + D[2]*u1x[0]*u1x[3] + D[4]*u1x[1]*u1x[4] + D[5]*u1x[0]*u1x[4]);
-    d2u0x[13] = scale*(Ct[0]*Ct[1]*drill + D[3]*u1x[1]*u1x[4] + D[4]*u1x[0]*u1x[4] + D[4]*u1x[1]*u1x[3] + D[5]*u1x[0]*u1x[3]);
+    d2u0x[12] = scale*(D[1]*u1x[1]*u1x[3] + D[2]*u1x[0]*u1x[3] + D[4]*u1x[1]*u1x[4] + D[5]*u1x[0]*u1x[4]);
+    d2u0x[13] = scale*(D[3]*u1x[1]*u1x[4] + D[4]*u1x[0]*u1x[4] + D[4]*u1x[1]*u1x[3] + D[5]*u1x[0]*u1x[3]);
     d2u0x[14] = 0.0;
-    d2u0x[15] = scale*(-Ct[0]*Ct[5]*drill + D[1]*u1x[1]*u1x[6] + D[2]*u1x[0]*u1x[6] + D[4]*u1x[1]*u1x[7] + D[5]*u1x[0]*u1x[7]);
-    d2u0x[16] = scale*(Ct[0]*Ct[2]*drill + D[3]*u1x[1]*u1x[7] + D[4]*u1x[0]*u1x[7] + D[4]*u1x[1]*u1x[6] + D[5]*u1x[0]*u1x[6]);
+    d2u0x[15] = scale*(D[1]*u1x[1]*u1x[6] + D[2]*u1x[0]*u1x[6] + D[4]*u1x[1]*u1x[7] + D[5]*u1x[0]*u1x[7]);
+    d2u0x[16] = scale*(D[3]*u1x[1]*u1x[7] + D[4]*u1x[0]*u1x[7] + D[4]*u1x[1]*u1x[6] + D[5]*u1x[0]*u1x[6]);
     d2u0x[17] = 0.0;
 
     d2u0x[18] = 0.0;
@@ -1430,24 +1434,24 @@ class TACSShellNonlinearModel {
     d2u0x[25] = 0.0;
     d2u0x[26] = 0.0;
 
-    d2u0x[27] = scale*(Ct[3]*Ct[4]*drill + D[0]*u1x[0]*u1x[3] + D[2]*u1x[0]*u1x[4] + D[2]*u1x[1]*u1x[3] + D[5]*u1x[1]*u1x[4]);
-    d2u0x[28] = scale*(-Ct[0]*Ct[4]*drill + D[1]*u1x[1]*u1x[3] + D[2]*u1x[0]*u1x[3] + D[4]*u1x[1]*u1x[4] + D[5]*u1x[0]*u1x[4]);
+    d2u0x[27] = scale*(D[0]*u1x[0]*u1x[3] + D[2]*u1x[0]*u1x[4] + D[2]*u1x[1]*u1x[3] + D[5]*u1x[1]*u1x[4]);
+    d2u0x[28] = scale*(D[1]*u1x[1]*u1x[3] + D[2]*u1x[0]*u1x[3] + D[4]*u1x[1]*u1x[4] + D[5]*u1x[0]*u1x[4]);
     d2u0x[29] = 0.0;
-    d2u0x[30] = scale*(Ct[4]*Ct[4]*drill + u1x[3]*(D[0]*u1x[3] + D[2]*u1x[4]) + u1x[4]*(D[2]*u1x[3] + D[5]*u1x[4]));
-    d2u0x[31] = scale*(-Ct[1]*Ct[4]*drill + D[1]*u1x[3]*u1x[4] + D[2]*u1x[3]*u1x[3] + D[4]*u1x[4]*u1x[4] + D[5]*u1x[3]*u1x[4]);
+    d2u0x[30] = scale*(u1x[3]*(D[0]*u1x[3] + D[2]*u1x[4]) + u1x[4]*(D[2]*u1x[3] + D[5]*u1x[4]));
+    d2u0x[31] = scale*(D[1]*u1x[3]*u1x[4] + D[2]*u1x[3]*u1x[3] + D[4]*u1x[4]*u1x[4] + D[5]*u1x[3]*u1x[4]);
     d2u0x[32] = 0.0;
-    d2u0x[33] = scale*(Ct[4]*Ct[5]*drill + D[0]*u1x[3]*u1x[6] + D[2]*u1x[3]*u1x[7] + D[2]*u1x[4]*u1x[6] + D[5]*u1x[4]*u1x[7]);
-    d2u0x[34] = scale*(-Ct[2]*Ct[4]*drill + D[1]*u1x[3]*u1x[7] + D[2]*u1x[3]*u1x[6] + D[4]*u1x[4]*u1x[7] + D[5]*u1x[4]*u1x[6]);
+    d2u0x[33] = scale*(D[0]*u1x[3]*u1x[6] + D[2]*u1x[3]*u1x[7] + D[2]*u1x[4]*u1x[6] + D[5]*u1x[4]*u1x[7]);
+    d2u0x[34] = scale*(D[1]*u1x[3]*u1x[7] + D[2]*u1x[3]*u1x[6] + D[4]*u1x[4]*u1x[7] + D[5]*u1x[4]*u1x[6]);
     d2u0x[35] = 0.0;
 
-    d2u0x[36] = scale*(-Ct[1]*Ct[3]*drill + D[1]*u1x[0]*u1x[4] + D[2]*u1x[0]*u1x[3] + D[4]*u1x[1]*u1x[4] + D[5]*u1x[1]*u1x[3]);
-    d2u0x[37] = scale*(Ct[0]*Ct[1]*drill + D[3]*u1x[1]*u1x[4] + D[4]*u1x[0]*u1x[4] + D[4]*u1x[1]*u1x[3] + D[5]*u1x[0]*u1x[3]);
+    d2u0x[36] = scale*(D[1]*u1x[0]*u1x[4] + D[2]*u1x[0]*u1x[3] + D[4]*u1x[1]*u1x[4] + D[5]*u1x[1]*u1x[3]);
+    d2u0x[37] = scale*(D[3]*u1x[1]*u1x[4] + D[4]*u1x[0]*u1x[4] + D[4]*u1x[1]*u1x[3] + D[5]*u1x[0]*u1x[3]);
     d2u0x[38] = 0.0;
-    d2u0x[39] = scale*(-Ct[1]*Ct[4]*drill + D[1]*u1x[3]*u1x[4] + D[2]*u1x[3]*u1x[3] + D[4]*u1x[4]*u1x[4] + D[5]*u1x[3]*u1x[4]);
-    d2u0x[40] = scale*(Ct[1]*Ct[1]*drill + u1x[3]*(D[4]*u1x[4] + D[5]*u1x[3]) + u1x[4]*(D[3]*u1x[4] + D[4]*u1x[3]));
+    d2u0x[39] = scale*(D[1]*u1x[3]*u1x[4] + D[2]*u1x[3]*u1x[3] + D[4]*u1x[4]*u1x[4] + D[5]*u1x[3]*u1x[4]);
+    d2u0x[40] = scale*(u1x[3]*(D[4]*u1x[4] + D[5]*u1x[3]) + u1x[4]*(D[3]*u1x[4] + D[4]*u1x[3]));
     d2u0x[41] = 0.0;
-    d2u0x[42] = scale*(-Ct[1]*Ct[5]*drill + D[1]*u1x[4]*u1x[6] + D[2]*u1x[3]*u1x[6] + D[4]*u1x[4]*u1x[7] + D[5]*u1x[3]*u1x[7]);
-    d2u0x[43] = scale*(Ct[1]*Ct[2]*drill + D[3]*u1x[4]*u1x[7] + D[4]*u1x[3]*u1x[7] + D[4]*u1x[4]*u1x[6] + D[5]*u1x[3]*u1x[6]);
+    d2u0x[42] = scale*(D[1]*u1x[4]*u1x[6] + D[2]*u1x[3]*u1x[6] + D[4]*u1x[4]*u1x[7] + D[5]*u1x[3]*u1x[7]);
+    d2u0x[43] = scale*(D[3]*u1x[4]*u1x[7] + D[4]*u1x[3]*u1x[7] + D[4]*u1x[4]*u1x[6] + D[5]*u1x[3]*u1x[6]);
     d2u0x[44] = 0.0;
 
     d2u0x[45] = 0.0;
@@ -1460,24 +1464,24 @@ class TACSShellNonlinearModel {
     d2u0x[52] = 0.0;
     d2u0x[53] = 0.0;
 
-    d2u0x[54] = scale*(Ct[3]*Ct[5]*drill + D[0]*u1x[0]*u1x[6] + D[2]*u1x[0]*u1x[7] + D[2]*u1x[1]*u1x[6] + D[5]*u1x[1]*u1x[7]);
-    d2u0x[55] = scale*(-Ct[0]*Ct[5]*drill + D[1]*u1x[1]*u1x[6] + D[2]*u1x[0]*u1x[6] + D[4]*u1x[1]*u1x[7] + D[5]*u1x[0]*u1x[7]);
+    d2u0x[54] = scale*(D[0]*u1x[0]*u1x[6] + D[2]*u1x[0]*u1x[7] + D[2]*u1x[1]*u1x[6] + D[5]*u1x[1]*u1x[7]);
+    d2u0x[55] = scale*(D[1]*u1x[1]*u1x[6] + D[2]*u1x[0]*u1x[6] + D[4]*u1x[1]*u1x[7] + D[5]*u1x[0]*u1x[7]);
     d2u0x[56] = 0.0;
-    d2u0x[57] = scale*(Ct[4]*Ct[5]*drill + D[0]*u1x[3]*u1x[6] + D[2]*u1x[3]*u1x[7] + D[2]*u1x[4]*u1x[6] + D[5]*u1x[4]*u1x[7]);
-    d2u0x[58] = scale*(-Ct[1]*Ct[5]*drill + D[1]*u1x[4]*u1x[6] + D[2]*u1x[3]*u1x[6] + D[4]*u1x[4]*u1x[7] + D[5]*u1x[3]*u1x[7]);
+    d2u0x[57] = scale*(D[0]*u1x[3]*u1x[6] + D[2]*u1x[3]*u1x[7] + D[2]*u1x[4]*u1x[6] + D[5]*u1x[4]*u1x[7]);
+    d2u0x[58] = scale*(D[1]*u1x[4]*u1x[6] + D[2]*u1x[3]*u1x[6] + D[4]*u1x[4]*u1x[7] + D[5]*u1x[3]*u1x[7]);
     d2u0x[59] = 0.0;
-    d2u0x[60] = scale*(Ct[5]*Ct[5]*drill + u1x[6]*(D[0]*u1x[6] + D[2]*u1x[7]) + u1x[7]*(D[2]*u1x[6] + D[5]*u1x[7]));
-    d2u0x[61] = scale*(-Ct[2]*Ct[5]*drill + D[1]*u1x[6]*u1x[7] + D[2]*u1x[6]*u1x[6] + D[4]*u1x[7]*u1x[7] + D[5]*u1x[6]*u1x[7]);
+    d2u0x[60] = scale*(u1x[6]*(D[0]*u1x[6] + D[2]*u1x[7]) + u1x[7]*(D[2]*u1x[6] + D[5]*u1x[7]));
+    d2u0x[61] = scale*(D[1]*u1x[6]*u1x[7] + D[2]*u1x[6]*u1x[6] + D[4]*u1x[7]*u1x[7] + D[5]*u1x[6]*u1x[7]);
     d2u0x[62] = 0.0;
 
-    d2u0x[63] = scale*(-Ct[2]*Ct[3]*drill + D[1]*u1x[0]*u1x[7] + D[2]*u1x[0]*u1x[6] + D[4]*u1x[1]*u1x[7] + D[5]*u1x[1]*u1x[6]);
-    d2u0x[64] = scale*(Ct[0]*Ct[2]*drill + D[3]*u1x[1]*u1x[7] + D[4]*u1x[0]*u1x[7] + D[4]*u1x[1]*u1x[6] + D[5]*u1x[0]*u1x[6]);
+    d2u0x[63] = scale*(D[1]*u1x[0]*u1x[7] + D[2]*u1x[0]*u1x[6] + D[4]*u1x[1]*u1x[7] + D[5]*u1x[1]*u1x[6]);
+    d2u0x[64] = scale*(D[3]*u1x[1]*u1x[7] + D[4]*u1x[0]*u1x[7] + D[4]*u1x[1]*u1x[6] + D[5]*u1x[0]*u1x[6]);
     d2u0x[65] = 0.0;
-    d2u0x[66] = scale*(-Ct[2]*Ct[4]*drill + D[1]*u1x[3]*u1x[7] + D[2]*u1x[3]*u1x[6] + D[4]*u1x[4]*u1x[7] + D[5]*u1x[4]*u1x[6]);
-    d2u0x[67] = scale*(Ct[1]*Ct[2]*drill + D[3]*u1x[4]*u1x[7] + D[4]*u1x[3]*u1x[7] + D[4]*u1x[4]*u1x[6] + D[5]*u1x[3]*u1x[6]);
+    d2u0x[66] = scale*(D[1]*u1x[3]*u1x[7] + D[2]*u1x[3]*u1x[6] + D[4]*u1x[4]*u1x[7] + D[5]*u1x[4]*u1x[6]);
+    d2u0x[67] = scale*(D[3]*u1x[4]*u1x[7] + D[4]*u1x[3]*u1x[7] + D[4]*u1x[4]*u1x[6] + D[5]*u1x[3]*u1x[6]);
     d2u0x[68] = 0.0;
-    d2u0x[69] = scale*(-Ct[2]*Ct[5]*drill + D[1]*u1x[6]*u1x[7] + D[2]*u1x[6]*u1x[6] + D[4]*u1x[7]*u1x[7] + D[5]*u1x[6]*u1x[7]);
-    d2u0x[70] = scale*(Ct[2]*Ct[2]*drill + u1x[6]*(D[4]*u1x[7] + D[5]*u1x[6]) + u1x[7]*(D[3]*u1x[7] + D[4]*u1x[6]));
+    d2u0x[69] = scale*(D[1]*u1x[6]*u1x[7] + D[2]*u1x[6]*u1x[6] + D[4]*u1x[7]*u1x[7] + D[5]*u1x[6]*u1x[7]);
+    d2u0x[70] = scale*(u1x[6]*(D[4]*u1x[7] + D[5]*u1x[6]) + u1x[7]*(D[3]*u1x[7] + D[4]*u1x[6]));
     d2u0x[71] = 0.0;
 
     d2u0x[72] = 0.0;
@@ -1789,186 +1793,330 @@ class TACSShellNonlinearModel {
     d2e0tyu1x[51] = 0.0;
     d2e0tyu1x[52] = 0.0;
     d2e0tyu1x[53] = 0.0;
+  }
 
-    d2Ct[0] = scale*(drill*u0x[1]*u0x[1]);
-    d2Ct[1] = scale*(drill*u0x[1]*(u0x[4] + 1.0));
-    d2Ct[2] = scale*(drill*u0x[1]*u0x[7]);
-    d2Ct[3] = scale*(-drill*u0x[1]*(u0x[0] + 1.0));
-    d2Ct[4] = scale*(-drill*u0x[1]*u0x[3]);
-    d2Ct[5] = scale*(-drill*u0x[1]*u0x[6]);
-    d2Ct[6] = 0.0;
-    d2Ct[7] = 0.0;
-    d2Ct[8] = 0.0;
+  static TacsScalar evalDrillStrain( const TacsScalar u0x[],
+                                     const TacsScalar Ct[] ){
+    // e2^{T}*Ct*(e1 + u_{,x}*e1) - e1^{T}*Ct*(e2 + u_{,x}*e2)
+    return ((Ct[3]*(1.0 + u0x[0]) + Ct[4]*u0x[3] + Ct[5]*u0x[6]) -
+            (Ct[0]*u0x[1] + Ct[1]*(1.0 + u0x[4]) + Ct[2]*u0x[7]));
+  }
 
-    d2Ct[9] = scale*(drill*u0x[1]*(u0x[4] + 1.0));
-    d2Ct[10] = scale*(0.5*drill*(u0x[4] + 1.0)*(2.0*u0x[4] + 2.0));
-    d2Ct[11] = scale*(drill*u0x[7]*(u0x[4] + 1.0));
-    d2Ct[12] = scale*(-0.5*drill*(u0x[0] + 1.0)*(2.0*u0x[4] + 2.0));
-    d2Ct[13] = scale*(-drill*u0x[3]*(u0x[4] + 1.0));
-    d2Ct[14] = scale*(-drill*u0x[6]*(u0x[4] + 1.0));
-    d2Ct[15] = 0.0;
-    d2Ct[16] = 0.0;
-    d2Ct[17] = 0.0;
+  static void evalDrillStrainSens( TacsScalar scale,
+                                   const TacsScalar u0x[],
+                                   const TacsScalar Ct[],
+                                   TacsScalar du0x[],
+                                   TacsScalar dCt[] ){
+    // Derivative with respect to u0x
+    du0x[0] = scale*Ct[3];
+    du0x[1] = -scale*Ct[0];
+    du0x[2] = 0.0;
+    du0x[3] = scale*Ct[4];
+    du0x[4] = -scale*Ct[1];
+    du0x[5] = 0.0;
+    du0x[6] = scale*Ct[5];
+    du0x[7] = -scale*Ct[2];
+    du0x[8] = 0.0;
 
-    d2Ct[18] = scale*(drill*u0x[1]*u0x[7]);
-    d2Ct[19] = scale*(drill*u0x[7]*(u0x[4] + 1.0));
-    d2Ct[20] = scale*(drill*u0x[7]*u0x[7]);
-    d2Ct[21] = scale*(-drill*u0x[7]*(u0x[0] + 1.0));
-    d2Ct[22] = scale*(-drill*u0x[3]*u0x[7]);
-    d2Ct[23] = scale*(-drill*u0x[6]*u0x[7]);
-    d2Ct[24] = 0.0;
-    d2Ct[25] = 0.0;
-    d2Ct[26] = 0.0;
+    dCt[0] = -scale*u0x[1];
+    dCt[1] = -scale*(1.0 + u0x[4]);
+    dCt[2] = -scale*u0x[7];
+    dCt[3] = scale*(1.0 + u0x[0]);
+    dCt[4] = scale*u0x[3];
+    dCt[5] = scale*u0x[6];
+    dCt[6] = 0.0;
+    dCt[7] = 0.0;
+    dCt[8] = 0.0;
+  }
 
-    d2Ct[27] = scale*(-drill*u0x[1]*(u0x[0] + 1.0));
-    d2Ct[28] = scale*(-0.5*drill*(2.0*u0x[0] + 2.0)*(u0x[4] + 1.0));
-    d2Ct[29] = scale*(-drill*u0x[7]*(u0x[0] + 1.0));
-    d2Ct[30] = scale*(0.5*drill*(u0x[0] + 1.0)*(2.0*u0x[0] + 2.0));
-    d2Ct[31] = scale*(drill*u0x[3]*(u0x[0] + 1.0));
-    d2Ct[32] = scale*(drill*u0x[6]*(u0x[0] + 1.0));
-    d2Ct[33] = 0.0;
-    d2Ct[34] = 0.0;
-    d2Ct[35] = 0.0;
+  static TacsScalar evalDrillStrainDeriv( const TacsScalar u0x[],
+                                          const TacsScalar Ct[],
+                                          const TacsScalar u0xd[],
+                                          const TacsScalar Ctd[],
+                                          TacsScalar *ed ){
+    // e2^{T}*Ct*(e1 + u_{,x}*e1) - e1^{T}*Ct*(e2 + u_{,x}*e2)
+    *ed =
+      ((Ctd[3]*(1.0 + u0x[0]) + Ctd[4]*u0x[3] + Ctd[5]*u0x[6]) +
+       (Ct[3]*u0xd[0] + Ct[4]*u0xd[3] + Ct[5]*u0xd[6])) -
+      ((Ctd[0]*u0x[1] + Ctd[1]*(1.0 + u0x[4]) + Ctd[2]*u0x[7]) +
+       (Ct[0]*u0xd[1] + Ct[1]*u0xd[4] + Ct[2]*u0xd[7]));
 
-    d2Ct[36] = scale*(-drill*u0x[1]*u0x[3]);
-    d2Ct[37] = scale*(-drill*u0x[3]*(u0x[4] + 1.0));
-    d2Ct[38] = scale*(-drill*u0x[3]*u0x[7]);
-    d2Ct[39] = scale*(drill*u0x[3]*(u0x[0] + 1.0));
-    d2Ct[40] = scale*(drill*u0x[3]*u0x[3]);
-    d2Ct[41] = scale*(drill*u0x[3]*u0x[6]);
-    d2Ct[42] = 0.0;
-    d2Ct[43] = 0.0;
-    d2Ct[44] = 0.0;
+    return ((Ct[3]*(1.0 + u0x[0]) + Ct[4]*u0x[3] + Ct[5]*u0x[6]) -
+        (Ct[0]*u0x[1] + Ct[1]*(1.0 + u0x[4]) + Ct[2]*u0x[7]));
+  }
 
-    d2Ct[45] = scale*(-drill*u0x[1]*u0x[6]);
-    d2Ct[46] = scale*(-drill*u0x[6]*(u0x[4] + 1.0));
-    d2Ct[47] = scale*(-drill*u0x[6]*u0x[7]);
-    d2Ct[48] = scale*(drill*u0x[6]*(u0x[0] + 1.0));
-    d2Ct[49] = scale*(drill*u0x[3]*u0x[6]);
-    d2Ct[50] = scale*(drill*u0x[6]*u0x[6]);
-    d2Ct[51] = 0.0;
-    d2Ct[52] = 0.0;
-    d2Ct[53] = 0.0;
+  static void evalDrillStrainHessian( TacsScalar det,
+                                      const TacsScalar u0x[],
+                                      const TacsScalar Ct[],
+                                      TacsScalar d2u0x[],
+                                      TacsScalar d2Ct[],
+                                      TacsScalar d2Ctu0x[] ){
+    memset(d2u0x, 0, 81*sizeof(TacsScalar));
+    memset(d2Ct, 0, 81*sizeof(TacsScalar));
+    memset(d2Ctu0x, 0, 81*sizeof(TacsScalar));
 
-    d2Ct[54] = 0.0;
-    d2Ct[55] = 0.0;
-    d2Ct[56] = 0.0;
-    d2Ct[57] = 0.0;
-    d2Ct[58] = 0.0;
-    d2Ct[59] = 0.0;
-    d2Ct[60] = 0.0;
-    d2Ct[61] = 0.0;
-    d2Ct[62] = 0.0;
+    // d2Ctu0x[0] = det*(0);
+    // d2Ctu0x[1] = det*(-1);
+    // d2Ctu0x[2] = det*(0);
+    // d2Ctu0x[3] = det*(0);
+    // d2Ctu0x[4] = det*(0);
+    // d2Ctu0x[5] = det*(0);
+    // d2Ctu0x[6] = det*(0);
+    // d2Ctu0x[7] = det*(0);
+    // d2Ctu0x[8] = det*(0);
+    // d2Ctu0x[9] = det*(0);
+    // d2Ctu0x[10] = det*(0);
+    // d2Ctu0x[11] = det*(0);
+    // d2Ctu0x[12] = det*(0);
+    // d2Ctu0x[13] = det*(-1);
+    // d2Ctu0x[14] = det*(0);
+    // d2Ctu0x[15] = det*(0);
+    // d2Ctu0x[16] = det*(0);
+    // d2Ctu0x[17] = det*(0);
+    // d2Ctu0x[18] = det*(0);
+    // d2Ctu0x[19] = det*(0);
+    // d2Ctu0x[20] = det*(0);
+    // d2Ctu0x[21] = det*(0);
+    // d2Ctu0x[22] = det*(0);
+    // d2Ctu0x[23] = det*(0);
+    // d2Ctu0x[24] = det*(0);
+    // d2Ctu0x[25] = det*(-1);
+    // d2Ctu0x[26] = det*(0);
+    // d2Ctu0x[27] = det*(1);
+    // d2Ctu0x[28] = det*(0);
+    // d2Ctu0x[29] = det*(0);
+    // d2Ctu0x[30] = det*(0);
+    // d2Ctu0x[31] = det*(0);
+    // d2Ctu0x[32] = det*(0);
+    // d2Ctu0x[33] = det*(0);
+    // d2Ctu0x[34] = det*(0);
+    // d2Ctu0x[35] = det*(0);
+    // d2Ctu0x[36] = det*(0);
+    // d2Ctu0x[37] = det*(0);
+    // d2Ctu0x[38] = det*(0);
+    // d2Ctu0x[39] = det*(1);
+    // d2Ctu0x[40] = det*(0);
+    // d2Ctu0x[41] = det*(0);
+    // d2Ctu0x[42] = det*(0);
+    // d2Ctu0x[43] = det*(0);
+    // d2Ctu0x[44] = det*(0);
+    // d2Ctu0x[45] = det*(0);
+    // d2Ctu0x[46] = det*(0);
+    // d2Ctu0x[47] = det*(0);
+    // d2Ctu0x[48] = det*(0);
+    // d2Ctu0x[49] = det*(0);
+    // d2Ctu0x[50] = det*(0);
+    // d2Ctu0x[51] = det*(1);
+    // d2Ctu0x[52] = det*(0);
+    // d2Ctu0x[53] = det*(0);
+    // d2Ctu0x[54] = det*(0);
+    // d2Ctu0x[55] = det*(0);
+    // d2Ctu0x[56] = det*(0);
+    // d2Ctu0x[57] = det*(0);
+    // d2Ctu0x[58] = det*(0);
+    // d2Ctu0x[59] = det*(0);
+    // d2Ctu0x[60] = det*(0);
+    // d2Ctu0x[61] = det*(0);
+    // d2Ctu0x[62] = det*(0);
+    // d2Ctu0x[63] = det*(0);
+    // d2Ctu0x[64] = det*(0);
+    // d2Ctu0x[65] = det*(0);
+    // d2Ctu0x[66] = det*(0);
+    // d2Ctu0x[67] = det*(0);
+    // d2Ctu0x[68] = det*(0);
+    // d2Ctu0x[69] = det*(0);
+    // d2Ctu0x[70] = det*(0);
+    // d2Ctu0x[71] = det*(0);
+    // d2Ctu0x[72] = det*(0);
+    // d2Ctu0x[73] = det*(0);
+    // d2Ctu0x[74] = det*(0);
+    // d2Ctu0x[75] = det*(0);
+    // d2Ctu0x[76] = det*(0);
+    // d2Ctu0x[77] = det*(0);
+    // d2Ctu0x[78] = det*(0);
+    // d2Ctu0x[79] = det*(0);
+    // d2Ctu0x[80] = det*(0);
 
-    d2Ct[63] = 0.0;
-    d2Ct[64] = 0.0;
-    d2Ct[65] = 0.0;
-    d2Ct[66] = 0.0;
-    d2Ct[67] = 0.0;
-    d2Ct[68] = 0.0;
-    d2Ct[69] = 0.0;
-    d2Ct[70] = 0.0;
-    d2Ct[71] = 0.0;
 
-    d2Ct[72] = 0.0;
-    d2Ct[73] = 0.0;
-    d2Ct[74] = 0.0;
-    d2Ct[75] = 0.0;
-    d2Ct[76] = 0.0;
-    d2Ct[77] = 0.0;
-    d2Ct[78] = 0.0;
-    d2Ct[79] = 0.0;
-    d2Ct[80] = 0.0;
+    // d2Ct[0] = scale*(drill*u0x[1]*u0x[1]);
+    // d2Ct[1] = scale*(drill*u0x[1]*(u0x[4] + 1.0));
+    // d2Ct[2] = scale*(drill*u0x[1]*u0x[7]);
+    // d2Ct[3] = scale*(-drill*u0x[1]*(u0x[0] + 1.0));
+    // d2Ct[4] = scale*(-drill*u0x[1]*u0x[3]);
+    // d2Ct[5] = scale*(-drill*u0x[1]*u0x[6]);
+    // d2Ct[6] = 0.0;
+    // d2Ct[7] = 0.0;
+    // d2Ct[8] = 0.0;
 
-    d2Ctu0x[0] = scale*(-Ct[3]*drill*u0x[1]);
-    d2Ctu0x[1] = scale*(drill*(2.0*Ct[0]*u0x[1] + Ct[1]*(u0x[4] + 1.0) + Ct[2]*u0x[7] - Ct[3]*(u0x[0] + 1.0) - Ct[4]*u0x[3] - Ct[5]*u0x[6]));
-    d2Ctu0x[2] = 0.0;
-    d2Ctu0x[3] = scale*(-Ct[4]*drill*u0x[1]);
-    d2Ctu0x[4] = scale*(Ct[1]*drill*u0x[1]);
-    d2Ctu0x[5] = 0.0;
-    d2Ctu0x[6] = scale*(-Ct[5]*drill*u0x[1]);
-    d2Ctu0x[7] = scale*(Ct[2]*drill*u0x[1]);
-    d2Ctu0x[8] = 0.0;
+    // d2Ct[9] = scale*(drill*u0x[1]*(u0x[4] + 1.0));
+    // d2Ct[10] = scale*(0.5*drill*(u0x[4] + 1.0)*(2.0*u0x[4] + 2.0));
+    // d2Ct[11] = scale*(drill*u0x[7]*(u0x[4] + 1.0));
+    // d2Ct[12] = scale*(-0.5*drill*(u0x[0] + 1.0)*(2.0*u0x[4] + 2.0));
+    // d2Ct[13] = scale*(-drill*u0x[3]*(u0x[4] + 1.0));
+    // d2Ct[14] = scale*(-drill*u0x[6]*(u0x[4] + 1.0));
+    // d2Ct[15] = 0.0;
+    // d2Ct[16] = 0.0;
+    // d2Ct[17] = 0.0;
 
-    d2Ctu0x[9] = scale*(-Ct[3]*drill*(u0x[4] + 1.0));
-    d2Ctu0x[10] = scale*(Ct[0]*drill*(u0x[4] + 1.0));
-    d2Ctu0x[11] = 0.0;
-    d2Ctu0x[12] = scale*(-Ct[4]*drill*(u0x[4] + 1.0));
-    d2Ctu0x[13] = scale*(drill*(Ct[0]*u0x[1] + Ct[1]*(u0x[4] + 1.0) + 0.5*Ct[1]*(2.0*u0x[4] + 2.0) + Ct[2]*u0x[7] - Ct[3]*(u0x[0] + 1.0) - Ct[4]*u0x[3] - Ct[5]*u0x[6]));
-    d2Ctu0x[14] = 0.0;
-    d2Ctu0x[15] = scale*(-Ct[5]*drill*(u0x[4] + 1.0));
-    d2Ctu0x[16] = scale*(Ct[2]*drill*(u0x[4] + 1.0));
-    d2Ctu0x[17] = 0.0;
+    // d2Ct[18] = scale*(drill*u0x[1]*u0x[7]);
+    // d2Ct[19] = scale*(drill*u0x[7]*(u0x[4] + 1.0));
+    // d2Ct[20] = scale*(drill*u0x[7]*u0x[7]);
+    // d2Ct[21] = scale*(-drill*u0x[7]*(u0x[0] + 1.0));
+    // d2Ct[22] = scale*(-drill*u0x[3]*u0x[7]);
+    // d2Ct[23] = scale*(-drill*u0x[6]*u0x[7]);
+    // d2Ct[24] = 0.0;
+    // d2Ct[25] = 0.0;
+    // d2Ct[26] = 0.0;
 
-    d2Ctu0x[18] = scale*(-Ct[3]*drill*u0x[7]);
-    d2Ctu0x[19] = scale*(Ct[0]*drill*u0x[7]);
-    d2Ctu0x[20] = 0.0;
-    d2Ctu0x[21] = scale*(-Ct[4]*drill*u0x[7]);
-    d2Ctu0x[22] = scale*(Ct[1]*drill*u0x[7]);
-    d2Ctu0x[23] = 0.0;
-    d2Ctu0x[24] = scale*(-Ct[5]*drill*u0x[7]);
-    d2Ctu0x[25] = scale*(drill*(Ct[0]*u0x[1] + Ct[1]*(u0x[4] + 1.0) + 2.0*Ct[2]*u0x[7] - Ct[3]*(u0x[0] + 1.0) - Ct[4]*u0x[3] - Ct[5]*u0x[6]));
-    d2Ctu0x[26] = 0.0;
+    // d2Ct[27] = scale*(-drill*u0x[1]*(u0x[0] + 1.0));
+    // d2Ct[28] = scale*(-0.5*drill*(2.0*u0x[0] + 2.0)*(u0x[4] + 1.0));
+    // d2Ct[29] = scale*(-drill*u0x[7]*(u0x[0] + 1.0));
+    // d2Ct[30] = scale*(0.5*drill*(u0x[0] + 1.0)*(2.0*u0x[0] + 2.0));
+    // d2Ct[31] = scale*(drill*u0x[3]*(u0x[0] + 1.0));
+    // d2Ct[32] = scale*(drill*u0x[6]*(u0x[0] + 1.0));
+    // d2Ct[33] = 0.0;
+    // d2Ct[34] = 0.0;
+    // d2Ct[35] = 0.0;
 
-    d2Ctu0x[27] = scale*(drill*(-Ct[0]*u0x[1] - Ct[1]*(u0x[4] + 1.0) - Ct[2]*u0x[7] + Ct[3]*(u0x[0] + 1.0) + 0.5*Ct[3]*(2.0*u0x[0] + 2.0) + Ct[4]*u0x[3] + Ct[5]*u0x[6]));
-    d2Ctu0x[28] = scale*(-Ct[0]*drill*(u0x[0] + 1.0));
-    d2Ctu0x[29] = 0.0;
-    d2Ctu0x[30] = scale*(Ct[4]*drill*(u0x[0] + 1.0));
-    d2Ctu0x[31] = scale*(-Ct[1]*drill*(u0x[0] + 1.0));
-    d2Ctu0x[32] = 0.0;
-    d2Ctu0x[33] = scale*(Ct[5]*drill*(u0x[0] + 1.0));
-    d2Ctu0x[34] = scale*(-Ct[2]*drill*(u0x[0] + 1.0));
-    d2Ctu0x[35] = 0.0;
+    // d2Ct[36] = scale*(-drill*u0x[1]*u0x[3]);
+    // d2Ct[37] = scale*(-drill*u0x[3]*(u0x[4] + 1.0));
+    // d2Ct[38] = scale*(-drill*u0x[3]*u0x[7]);
+    // d2Ct[39] = scale*(drill*u0x[3]*(u0x[0] + 1.0));
+    // d2Ct[40] = scale*(drill*u0x[3]*u0x[3]);
+    // d2Ct[41] = scale*(drill*u0x[3]*u0x[6]);
+    // d2Ct[42] = 0.0;
+    // d2Ct[43] = 0.0;
+    // d2Ct[44] = 0.0;
 
-    d2Ctu0x[36] = scale*(Ct[3]*drill*u0x[3]);
-    d2Ctu0x[37] = scale*(-Ct[0]*drill*u0x[3]);
-    d2Ctu0x[38] = 0.0;
-    d2Ctu0x[39] = scale*(drill*(-Ct[0]*u0x[1] - Ct[1]*(u0x[4] + 1.0) - Ct[2]*u0x[7] + Ct[3]*(u0x[0] + 1.0) + 2.0*Ct[4]*u0x[3] + Ct[5]*u0x[6]));
-    d2Ctu0x[40] = scale*(-Ct[1]*drill*u0x[3]);
-    d2Ctu0x[41] = 0.0;
-    d2Ctu0x[42] = scale*(Ct[5]*drill*u0x[3]);
-    d2Ctu0x[43] = scale*(-Ct[2]*drill*u0x[3]);
-    d2Ctu0x[44] = 0.0;
+    // d2Ct[45] = scale*(-drill*u0x[1]*u0x[6]);
+    // d2Ct[46] = scale*(-drill*u0x[6]*(u0x[4] + 1.0));
+    // d2Ct[47] = scale*(-drill*u0x[6]*u0x[7]);
+    // d2Ct[48] = scale*(drill*u0x[6]*(u0x[0] + 1.0));
+    // d2Ct[49] = scale*(drill*u0x[3]*u0x[6]);
+    // d2Ct[50] = scale*(drill*u0x[6]*u0x[6]);
+    // d2Ct[51] = 0.0;
+    // d2Ct[52] = 0.0;
+    // d2Ct[53] = 0.0;
 
-    d2Ctu0x[45] = scale*(Ct[3]*drill*u0x[6]);
-    d2Ctu0x[46] = scale*(-Ct[0]*drill*u0x[6]);
-    d2Ctu0x[47] = 0.0;
-    d2Ctu0x[48] = scale*(Ct[4]*drill*u0x[6]);
-    d2Ctu0x[49] = scale*(-Ct[1]*drill*u0x[6]);
-    d2Ctu0x[50] = 0.0;
-    d2Ctu0x[51] = scale*(drill*(-Ct[0]*u0x[1] - Ct[1]*(u0x[4] + 1.0) - Ct[2]*u0x[7] + Ct[3]*(u0x[0] + 1.0) + Ct[4]*u0x[3] + 2.0*Ct[5]*u0x[6]));
-    d2Ctu0x[52] = scale*(-Ct[2]*drill*u0x[6]);
-    d2Ctu0x[53] = 0.0;
+    // d2Ct[54] = 0.0;
+    // d2Ct[55] = 0.0;
+    // d2Ct[56] = 0.0;
+    // d2Ct[57] = 0.0;
+    // d2Ct[58] = 0.0;
+    // d2Ct[59] = 0.0;
+    // d2Ct[60] = 0.0;
+    // d2Ct[61] = 0.0;
+    // d2Ct[62] = 0.0;
 
-    d2Ctu0x[54] = 0.0;
-    d2Ctu0x[55] = 0.0;
-    d2Ctu0x[56] = 0.0;
-    d2Ctu0x[57] = 0.0;
-    d2Ctu0x[58] = 0.0;
-    d2Ctu0x[59] = 0.0;
-    d2Ctu0x[60] = 0.0;
-    d2Ctu0x[61] = 0.0;
+    // d2Ct[63] = 0.0;
+    // d2Ct[64] = 0.0;
+    // d2Ct[65] = 0.0;
+    // d2Ct[66] = 0.0;
+    // d2Ct[67] = 0.0;
+    // d2Ct[68] = 0.0;
+    // d2Ct[69] = 0.0;
+    // d2Ct[70] = 0.0;
+    // d2Ct[71] = 0.0;
 
-    d2Ctu0x[62] = 0.0;
-    d2Ctu0x[63] = 0.0;
-    d2Ctu0x[64] = 0.0;
-    d2Ctu0x[65] = 0.0;
-    d2Ctu0x[66] = 0.0;
-    d2Ctu0x[67] = 0.0;
-    d2Ctu0x[68] = 0.0;
-    d2Ctu0x[69] = 0.0;
-    d2Ctu0x[70] = 0.0;
-    d2Ctu0x[71] = 0.0;
+    // d2Ct[72] = 0.0;
+    // d2Ct[73] = 0.0;
+    // d2Ct[74] = 0.0;
+    // d2Ct[75] = 0.0;
+    // d2Ct[76] = 0.0;
+    // d2Ct[77] = 0.0;
+    // d2Ct[78] = 0.0;
+    // d2Ct[79] = 0.0;
+    // d2Ct[80] = 0.0;
 
-    d2Ctu0x[72] = 0.0;
-    d2Ctu0x[73] = 0.0;
-    d2Ctu0x[74] = 0.0;
-    d2Ctu0x[75] = 0.0;
-    d2Ctu0x[76] = 0.0;
-    d2Ctu0x[77] = 0.0;
-    d2Ctu0x[78] = 0.0;
-    d2Ctu0x[79] = 0.0;
-    d2Ctu0x[80] = 0.0;
+    // d2Ctu0x[0] = scale*(-Ct[3]*drill*u0x[1]);
+    // d2Ctu0x[1] = scale*(drill*(2.0*Ct[0]*u0x[1] + Ct[1]*(u0x[4] + 1.0) + Ct[2]*u0x[7] - Ct[3]*(u0x[0] + 1.0) - Ct[4]*u0x[3] - Ct[5]*u0x[6]));
+    // d2Ctu0x[2] = 0.0;
+    // d2Ctu0x[3] = scale*(-Ct[4]*drill*u0x[1]);
+    // d2Ctu0x[4] = scale*(Ct[1]*drill*u0x[1]);
+    // d2Ctu0x[5] = 0.0;
+    // d2Ctu0x[6] = scale*(-Ct[5]*drill*u0x[1]);
+    // d2Ctu0x[7] = scale*(Ct[2]*drill*u0x[1]);
+    // d2Ctu0x[8] = 0.0;
+
+    // d2Ctu0x[9] = scale*(-Ct[3]*drill*(u0x[4] + 1.0));
+    // d2Ctu0x[10] = scale*(Ct[0]*drill*(u0x[4] + 1.0));
+    // d2Ctu0x[11] = 0.0;
+    // d2Ctu0x[12] = scale*(-Ct[4]*drill*(u0x[4] + 1.0));
+    // d2Ctu0x[13] = scale*(drill*(Ct[0]*u0x[1] + Ct[1]*(u0x[4] + 1.0) + 0.5*Ct[1]*(2.0*u0x[4] + 2.0) + Ct[2]*u0x[7] - Ct[3]*(u0x[0] + 1.0) - Ct[4]*u0x[3] - Ct[5]*u0x[6]));
+    // d2Ctu0x[14] = 0.0;
+    // d2Ctu0x[15] = scale*(-Ct[5]*drill*(u0x[4] + 1.0));
+    // d2Ctu0x[16] = scale*(Ct[2]*drill*(u0x[4] + 1.0));
+    // d2Ctu0x[17] = 0.0;
+
+    // d2Ctu0x[18] = scale*(-Ct[3]*drill*u0x[7]);
+    // d2Ctu0x[19] = scale*(Ct[0]*drill*u0x[7]);
+    // d2Ctu0x[20] = 0.0;
+    // d2Ctu0x[21] = scale*(-Ct[4]*drill*u0x[7]);
+    // d2Ctu0x[22] = scale*(Ct[1]*drill*u0x[7]);
+    // d2Ctu0x[23] = 0.0;
+    // d2Ctu0x[24] = scale*(-Ct[5]*drill*u0x[7]);
+    // d2Ctu0x[25] = scale*(drill*(Ct[0]*u0x[1] + Ct[1]*(u0x[4] + 1.0) + 2.0*Ct[2]*u0x[7] - Ct[3]*(u0x[0] + 1.0) - Ct[4]*u0x[3] - Ct[5]*u0x[6]));
+    // d2Ctu0x[26] = 0.0;
+
+    // d2Ctu0x[27] = scale*(drill*(-Ct[0]*u0x[1] - Ct[1]*(u0x[4] + 1.0) - Ct[2]*u0x[7] + Ct[3]*(u0x[0] + 1.0) + 0.5*Ct[3]*(2.0*u0x[0] + 2.0) + Ct[4]*u0x[3] + Ct[5]*u0x[6]));
+    // d2Ctu0x[28] = scale*(-Ct[0]*drill*(u0x[0] + 1.0));
+    // d2Ctu0x[29] = 0.0;
+    // d2Ctu0x[30] = scale*(Ct[4]*drill*(u0x[0] + 1.0));
+    // d2Ctu0x[31] = scale*(-Ct[1]*drill*(u0x[0] + 1.0));
+    // d2Ctu0x[32] = 0.0;
+    // d2Ctu0x[33] = scale*(Ct[5]*drill*(u0x[0] + 1.0));
+    // d2Ctu0x[34] = scale*(-Ct[2]*drill*(u0x[0] + 1.0));
+    // d2Ctu0x[35] = 0.0;
+
+    // d2Ctu0x[36] = scale*(Ct[3]*drill*u0x[3]);
+    // d2Ctu0x[37] = scale*(-Ct[0]*drill*u0x[3]);
+    // d2Ctu0x[38] = 0.0;
+    // d2Ctu0x[39] = scale*(drill*(-Ct[0]*u0x[1] - Ct[1]*(u0x[4] + 1.0) - Ct[2]*u0x[7] + Ct[3]*(u0x[0] + 1.0) + 2.0*Ct[4]*u0x[3] + Ct[5]*u0x[6]));
+    // d2Ctu0x[40] = scale*(-Ct[1]*drill*u0x[3]);
+    // d2Ctu0x[41] = 0.0;
+    // d2Ctu0x[42] = scale*(Ct[5]*drill*u0x[3]);
+    // d2Ctu0x[43] = scale*(-Ct[2]*drill*u0x[3]);
+    // d2Ctu0x[44] = 0.0;
+
+    // d2Ctu0x[45] = scale*(Ct[3]*drill*u0x[6]);
+    // d2Ctu0x[46] = scale*(-Ct[0]*drill*u0x[6]);
+    // d2Ctu0x[47] = 0.0;
+    // d2Ctu0x[48] = scale*(Ct[4]*drill*u0x[6]);
+    // d2Ctu0x[49] = scale*(-Ct[1]*drill*u0x[6]);
+    // d2Ctu0x[50] = 0.0;
+    // d2Ctu0x[51] = scale*(drill*(-Ct[0]*u0x[1] - Ct[1]*(u0x[4] + 1.0) - Ct[2]*u0x[7] + Ct[3]*(u0x[0] + 1.0) + Ct[4]*u0x[3] + 2.0*Ct[5]*u0x[6]));
+    // d2Ctu0x[52] = scale*(-Ct[2]*drill*u0x[6]);
+    // d2Ctu0x[53] = 0.0;
+
+    // d2Ctu0x[54] = 0.0;
+    // d2Ctu0x[55] = 0.0;
+    // d2Ctu0x[56] = 0.0;
+    // d2Ctu0x[57] = 0.0;
+    // d2Ctu0x[58] = 0.0;
+    // d2Ctu0x[59] = 0.0;
+    // d2Ctu0x[60] = 0.0;
+    // d2Ctu0x[61] = 0.0;
+
+    // d2Ctu0x[62] = 0.0;
+    // d2Ctu0x[63] = 0.0;
+    // d2Ctu0x[64] = 0.0;
+    // d2Ctu0x[65] = 0.0;
+    // d2Ctu0x[66] = 0.0;
+    // d2Ctu0x[67] = 0.0;
+    // d2Ctu0x[68] = 0.0;
+    // d2Ctu0x[69] = 0.0;
+    // d2Ctu0x[70] = 0.0;
+    // d2Ctu0x[71] = 0.0;
+
+    // d2Ctu0x[72] = 0.0;
+    // d2Ctu0x[73] = 0.0;
+    // d2Ctu0x[74] = 0.0;
+    // d2Ctu0x[75] = 0.0;
+    // d2Ctu0x[76] = 0.0;
+    // d2Ctu0x[77] = 0.0;
+    // d2Ctu0x[78] = 0.0;
+    // d2Ctu0x[79] = 0.0;
+    // d2Ctu0x[80] = 0.0;
   }
 };
 
@@ -1995,7 +2143,7 @@ int TacsTestShellModelDerivatives( double dh=1e-7,
 
   // Compute the strain
   TacsScalar e[9];
-  model::evalStrain(u0x, u1x, e0ty, Ct, e);
+  model::evalStrain(u0x, u1x, e0ty, e);
 
   // Compute the stress
   TacsScalar s[9];
@@ -2007,8 +2155,7 @@ int TacsTestShellModelDerivatives( double dh=1e-7,
   // Compute the derivative of the product of the stress and strain
   // with respect to u0x, u1x and e0ty
   TacsScalar du0x[9], du1x[9], de0ty[6], dCt[9];
-  model::evalStrainSens(detXd, s, u0x, u1x, Ct,
-                        du0x, du1x, de0ty, dCt);
+  model::evalStrainSens(detXd, s, u0x, u1x, du0x, du1x, de0ty);
 
   TacsScalar f0 = 0.0;
   for ( int j = 0; j < 9; j++ ){
@@ -2026,7 +2173,7 @@ int TacsTestShellModelDerivatives( double dh=1e-7,
 #else
     u0xt[i] = u0x[i] + dh;
 #endif // TACS_USE_COMPLEX
-    model::evalStrain(u0xt, u1x, e0ty, Ct, et);
+    model::evalStrain(u0xt, u1x, e0ty, et);
     TACSShellConstitutive::computeStress(A, B, D, As, drill, et, st);
 
     TacsScalar f1 = 0.0;
@@ -2072,7 +2219,7 @@ int TacsTestShellModelDerivatives( double dh=1e-7,
 #else
     u1xt[i] = u1x[i] + dh;
 #endif // TACS_USE_COMPLEX
-    model::evalStrain(u0x, u1xt, e0ty, Ct, et);
+    model::evalStrain(u0x, u1xt, e0ty, et);
     TACSShellConstitutive::computeStress(A, B, D, As, drill, et, st);
 
     TacsScalar f1 = 0.0;
@@ -2117,7 +2264,7 @@ int TacsTestShellModelDerivatives( double dh=1e-7,
 #else
     e0tyt[i] = e0ty[i] + dh;
 #endif // TACS_USE_COMPLEX
-    model::evalStrain(u0x, u1x, e0tyt, Ct, et);
+    model::evalStrain(u0x, u1x, e0tyt, et);
     TACSShellConstitutive::computeStress(A, B, D, As, drill, et, st);
 
     TacsScalar f1 = 0.0;
@@ -2151,56 +2298,59 @@ int TacsTestShellModelDerivatives( double dh=1e-7,
 
   fail = (max_err > test_fail_atol || max_rel > test_fail_rtol);
 
-  // Compute against the derivatives for the strain
-  TacsScalar fdCt[9];
-  for ( int i = 0; i < 9; i++ ){
-    TacsScalar Ctt[9], et[9], st[9];
-    memcpy(Ctt, Ct, 9*sizeof(TacsScalar));
+//   // Compute against the derivatives for the strain
+//   TacsScalar fdCt[9];
+//   for ( int i = 0; i < 9; i++ ){
+//     TacsScalar Ctt[9], et[9], st[9];
+//     memcpy(Ctt, Ct, 9*sizeof(TacsScalar));
 
-#ifdef TACS_USE_COMPLEX
-    Ctt[i] = Ct[i] + TacsScalar(0.0, dh);
-#else
-    Ctt[i] = Ct[i] + dh;
-#endif // TACS_USE_COMPLEX
-    model::evalStrain(u0x, u1x, e0ty, Ctt, et);
-    TACSShellConstitutive::computeStress(A, B, D, As, drill, et, st);
+// #ifdef TACS_USE_COMPLEX
+//     Ctt[i] = Ct[i] + TacsScalar(0.0, dh);
+// #else
+//     Ctt[i] = Ct[i] + dh;
+// #endif // TACS_USE_COMPLEX
+//     model::evalStrain(u0x, u1x, e0ty, Ctt, et);
+//     TACSShellConstitutive::computeStress(A, B, D, As, drill, et, st);
 
-    TacsScalar f1 = 0.0;
-    for ( int j = 0; j < 9; j++ ){
-      f1 += 0.5*detXd*et[j]*st[j];
-    }
+//     TacsScalar f1 = 0.0;
+//     for ( int j = 0; j < 9; j++ ){
+//       f1 += 0.5*detXd*et[j]*st[j];
+//     }
 
-#ifdef TACS_USE_COMPLEX
-    fdCt[i] = TacsImagPart(f1)/dh;
-#else
-    fdCt[i] = (f1 - f0)/dh;
-#endif // TACS_USE_COMPLEX
-  }
+// #ifdef TACS_USE_COMPLEX
+//     fdCt[i] = TacsImagPart(f1)/dh;
+// #else
+//     fdCt[i] = (f1 - f0)/dh;
+// #endif // TACS_USE_COMPLEX
+//   }
 
-  // Compute the error
-  max_err = TacsGetMaxError(dCt, fdCt, 9, &max_err_index);
-  max_rel = TacsGetMaxRelError(dCt, fdCt, 9, &max_rel_index);
+//   // Compute the error
+//   max_err = TacsGetMaxError(dCt, fdCt, 9, &max_err_index);
+//   max_rel = TacsGetMaxRelError(dCt, fdCt, 9, &max_rel_index);
 
-  if (test_print_level > 0){
-    fprintf(stderr, "Testing the derivative w.r.t. Ct\n");
-    fprintf(stderr, "Max Err: %10.4e in component %d.\n",
-            max_err, max_err_index);
-    fprintf(stderr, "Max REr: %10.4e in component %d.\n",
-            max_rel, max_rel_index);
-  }
-  // Print the error if required
-  if (test_print_level > 1){
-    TacsPrintErrorComponents(stderr, "dCt", dCt, fdCt, 9);
-  }
-  if (test_print_level){ fprintf(stderr, "\n"); }
+//   if (test_print_level > 0){
+//     fprintf(stderr, "Testing the derivative w.r.t. Ct\n");
+//     fprintf(stderr, "Max Err: %10.4e in component %d.\n",
+//             max_err, max_err_index);
+//     fprintf(stderr, "Max REr: %10.4e in component %d.\n",
+//             max_rel, max_rel_index);
+//   }
+//   // Print the error if required
+//   if (test_print_level > 1){
+//     TacsPrintErrorComponents(stderr, "dCt", dCt, fdCt, 9);
+//   }
+//   if (test_print_level){ fprintf(stderr, "\n"); }
+
+
+  // TacsScalar d2Ct[81], d2Ctu0x[81];
+
+
 
   TacsScalar d2u0x[81], d2u1x[81], d2u0xu1x[81];
   TacsScalar d2e0ty[36], d2e0tyu0x[54], d2e0tyu1x[54];
-  TacsScalar d2Ct[81], d2Ctu0x[81];
-  model::evalStrainHessian(detXd, s, Cs, u0x, u1x, e0ty, Ct,
+  model::evalStrainHessian(detXd, s, Cs, u0x, u1x, e0ty,
                            d2u0x, d2u1x, d2u0xu1x,
-                           d2e0ty, d2e0tyu0x, d2e0tyu1x,
-                           d2Ct, d2Ctu0x);
+                           d2e0ty, d2e0tyu0x, d2e0tyu1x);
 
   // Compute against the derivatives for the strain
   TacsScalar fd2u0x[81], fd2u0xu1x[81];
@@ -2213,11 +2363,11 @@ int TacsTestShellModelDerivatives( double dh=1e-7,
 #else
     u0xt[i] = u0x[i] + dh;
 #endif // TACS_USE_COMPLEX
-    model::evalStrain(u0xt, u1x, e0ty, Ct, et);
+    model::evalStrain(u0xt, u1x, e0ty, et);
     TACSShellConstitutive::computeStress(A, B, D, As, drill, et, st);
 
-    TacsScalar du0xt[9], du1xt[9], de0tyt[6], dCtt[9];
-    model::evalStrainSens(detXd, st, u0xt, u1x, Ct, du0xt, du1xt, de0tyt, dCtt);
+    TacsScalar du0xt[9], du1xt[9], de0tyt[6];
+    model::evalStrainSens(detXd, st, u0xt, u1x, du0xt, du1xt, de0tyt);
 
     for ( int j = 0; j < 9; j++ ){
 #ifdef TACS_USE_COMPLEX
@@ -2275,11 +2425,11 @@ int TacsTestShellModelDerivatives( double dh=1e-7,
 #else
     u1xt[i] = u1x[i] + dh;
 #endif // TACS_USE_COMPLEX
-    model::evalStrain(u0x, u1xt, e0ty, Ct, et);
+    model::evalStrain(u0x, u1xt, e0ty,  et);
     TACSShellConstitutive::computeStress(A, B, D, As, drill, et, st);
 
-    TacsScalar du0xt[9], du1xt[9], de0tyt[6], dCtt[9];
-    model::evalStrainSens(detXd, st, u0x, u1xt, Ct, du0xt, du1xt, de0tyt, dCtt);
+    TacsScalar du0xt[9], du1xt[9], de0tyt[6];
+    model::evalStrainSens(detXd, st, u0x, u1xt, du0xt, du1xt, de0tyt);
 
     for ( int j = 0; j < 9; j++ ){
 #ifdef TACS_USE_COMPLEX
@@ -2317,11 +2467,11 @@ int TacsTestShellModelDerivatives( double dh=1e-7,
 #else
     e0tyt[i] = e0ty[i] + dh;
 #endif // TACS_USE_COMPLEX
-    model::evalStrain(u0x, u1x, e0tyt, Ct, et);
+    model::evalStrain(u0x, u1x, e0tyt, et);
     TACSShellConstitutive::computeStress(A, B, D, As, drill, et, st);
 
-    TacsScalar du0xt[9], du1xt[9], de0tyt[6], dCtt[9];
-    model::evalStrainSens(detXd, st, u0x, u1x, Ct, du0xt, du1xt, de0tyt, dCtt);
+    TacsScalar du0xt[9], du1xt[9], de0tyt[6];
+    model::evalStrainSens(detXd, st, u0x, u1x, du0xt, du1xt, de0tyt);
 
     for ( int j = 0; j < 6; j++ ){
 #ifdef TACS_USE_COMPLEX
@@ -2333,8 +2483,8 @@ int TacsTestShellModelDerivatives( double dh=1e-7,
 
     for ( int j = 0; j < 9; j++ ){
 #ifdef TACS_USE_COMPLEX
-      fd2e0tyu0x[9*i + j] = TacsImagPart(du0x[j])/dh;
-      fd2e0tyu1x[9*i + j] = TacsImagPart(du1x[j])/dh;
+      fd2e0tyu0x[9*i + j] = TacsImagPart(du0xt[j])/dh;
+      fd2e0tyu1x[9*i + j] = TacsImagPart(du1xt[j])/dh;
 #else
       fd2e0tyu0x[9*i + j] = (du0xt[j] - du0x[j])/dh;
       fd2e0tyu1x[9*i + j] = (du1xt[j] - du1x[j])/dh;
@@ -2393,72 +2543,72 @@ int TacsTestShellModelDerivatives( double dh=1e-7,
   }
   if (test_print_level){ fprintf(stderr, "\n"); }
 
-  TacsScalar fd2Ct[81], fd2Ctu0x[81];
-  for ( int i = 0; i < 9; i++ ){
-    TacsScalar Ctt[9], et[9], st[9];
-    memcpy(Ctt, Ct, 9*sizeof(TacsScalar));
+//   TacsScalar fd2Ct[81], fd2Ctu0x[81];
+//   for ( int i = 0; i < 9; i++ ){
+//     TacsScalar Ctt[9], et[9], st[9];
+//     memcpy(Ctt, Ct, 9*sizeof(TacsScalar));
 
-#ifdef TACS_USE_COMPLEX
-    Ctt[i] = Ct[i] + TacsScalar(0.0, dh);
-#else
-    Ctt[i] = Ct[i] + dh;
-#endif // TACS_USE_COMPLEX
-    model::evalStrain(u0x, u1x, e0ty, Ctt, et);
-    TACSShellConstitutive::computeStress(A, B, D, As, drill, et, st);
+// #ifdef TACS_USE_COMPLEX
+//     Ctt[i] = Ct[i] + TacsScalar(0.0, dh);
+// #else
+//     Ctt[i] = Ct[i] + dh;
+// #endif // TACS_USE_COMPLEX
+//     model::evalStrain(u0x, u1x, e0ty, et);
+//     TACSShellConstitutive::computeStress(A, B, D, As, drill, et, st);
 
-    TacsScalar du0xt[9], du1xt[9], de0tyt[6], dCtt[9];
-    model::evalStrainSens(detXd, st, u0x, u1x, Ctt, du0xt, du1xt, de0tyt, dCtt);
+//     TacsScalar du0xt[9], du1xt[9], de0tyt[6], dCtt[9];
+//     model::evalStrainSens(detXd, st, u0x, u1x, du0xt, du1xt, de0tyt);
 
-    for ( int j = 0; j < 9; j++ ){
-#ifdef TACS_USE_COMPLEX
-      fd2Ct[9*i + j] = TacsImagPart(dCtt[j])/dh;
-#else
-      fd2Ct[9*i + j] = (dCtt[j] - dCt[j])/dh;
-#endif // TACS_USE_COMPLEX
-    }
+//     for ( int j = 0; j < 9; j++ ){
+// #ifdef TACS_USE_COMPLEX
+//       fd2Ct[9*i + j] = TacsImagPart(dCtt[j])/dh;
+// #else
+//       fd2Ct[9*i + j] = (dCtt[j] - dCt[j])/dh;
+// #endif // TACS_USE_COMPLEX
+//     }
 
-    for ( int j = 0; j < 9; j++ ){
-#ifdef TACS_USE_COMPLEX
-      fd2Ctu0x[9*i + j] = TacsImagPart(du0x[j])/dh;
-#else
-      fd2Ctu0x[9*i + j] = (du0xt[j] - du0x[j])/dh;
-#endif // TACS_USE_COMPLEX
-    }
-  }
+//     for ( int j = 0; j < 9; j++ ){
+// #ifdef TACS_USE_COMPLEX
+//       fd2Ctu0x[9*i + j] = TacsImagPart(du0x[j])/dh;
+// #else
+//       fd2Ctu0x[9*i + j] = (du0xt[j] - du0x[j])/dh;
+// #endif // TACS_USE_COMPLEX
+//     }
+//   }
 
-  // Compute the error
-  max_err = TacsGetMaxError(d2Ct, fd2Ct, 81, &max_err_index);
-  max_rel = TacsGetMaxRelError(d2Ct, fd2Ct, 81, &max_rel_index);
+//   // Compute the error
+//   max_err = TacsGetMaxError(d2Ct, fd2Ct, 81, &max_err_index);
+//   max_rel = TacsGetMaxRelError(d2Ct, fd2Ct, 81, &max_rel_index);
 
-  if (test_print_level > 0){
-    fprintf(stderr, "Testing the second derivative w.r.t. Ct\n");
-    fprintf(stderr, "Max Err: %10.4e in component %d.\n",
-            max_err, max_err_index);
-    fprintf(stderr, "Max REr: %10.4e in component %d.\n",
-            max_rel, max_rel_index);
-  }
-  // Print the error if required
-  if (test_print_level > 1){
-    TacsPrintErrorComponents(stderr, "d2Ct", d2Ct, fd2Ct, 81);
-  }
-  if (test_print_level){ fprintf(stderr, "\n"); }
+//   if (test_print_level > 0){
+//     fprintf(stderr, "Testing the second derivative w.r.t. Ct\n");
+//     fprintf(stderr, "Max Err: %10.4e in component %d.\n",
+//             max_err, max_err_index);
+//     fprintf(stderr, "Max REr: %10.4e in component %d.\n",
+//             max_rel, max_rel_index);
+//   }
+//   // Print the error if required
+//   if (test_print_level > 1){
+//     TacsPrintErrorComponents(stderr, "d2Ct", d2Ct, fd2Ct, 81);
+//   }
+//   if (test_print_level){ fprintf(stderr, "\n"); }
 
-  // Compute the error
-  max_err = TacsGetMaxError(d2Ctu0x, fd2Ctu0x, 81, &max_err_index);
-  max_rel = TacsGetMaxRelError(d2Ctu0x, fd2Ctu0x, 81, &max_rel_index);
+//   // Compute the error
+//   max_err = TacsGetMaxError(d2Ctu0x, fd2Ctu0x, 81, &max_err_index);
+//   max_rel = TacsGetMaxRelError(d2Ctu0x, fd2Ctu0x, 81, &max_rel_index);
 
-  if (test_print_level > 0){
-    fprintf(stderr, "Testing the second derivative w.r.t. Ct and u0x\n");
-    fprintf(stderr, "Max Err: %10.4e in component %d.\n",
-            max_err, max_err_index);
-    fprintf(stderr, "Max REr: %10.4e in component %d.\n",
-            max_rel, max_rel_index);
-  }
-  // Print the error if required
-  if (test_print_level > 1){
-    TacsPrintErrorComponents(stderr, "d2Ctu0x", d2Ctu0x, fd2Ctu0x, 81);
-  }
-  if (test_print_level){ fprintf(stderr, "\n"); }
+//   if (test_print_level > 0){
+//     fprintf(stderr, "Testing the second derivative w.r.t. Ct and u0x\n");
+//     fprintf(stderr, "Max Err: %10.4e in component %d.\n",
+//             max_err, max_err_index);
+//     fprintf(stderr, "Max REr: %10.4e in component %d.\n",
+//             max_rel, max_rel_index);
+//   }
+//   // Print the error if required
+//   if (test_print_level > 1){
+//     TacsPrintErrorComponents(stderr, "d2Ctu0x", d2Ctu0x, fd2Ctu0x, 81);
+//   }
+//   if (test_print_level){ fprintf(stderr, "\n"); }
 
   return fail;
 }

@@ -179,7 +179,7 @@ void TACSIsoShellConstitutive::evalStress( int elemIndex,
     As[0] = As[2] = (5.0/6.0)*A[5];
     As[1] = 0.0;
 
-    drill = 1.0; // 0.5*DRILLING_REGULARIZATION*(As[0] + As[2]);
+    drill = 0.5*DRILLING_REGULARIZATION*(As[0] + As[2]);
 
     // Evaluate the stress
     computeStress(A, B, D, As, drill, e, s);
@@ -220,7 +220,7 @@ void TACSIsoShellConstitutive::evalTangentStiffness( int elemIndex,
     As[0] = As[2] = (5.0/6.0)*A[5];
     As[1] = 0.0;
 
-    C[21] = 1.0; // 0.5*DRILLING_REGULARIZATION*(As[0] + As[2]);
+    C[21] = 0.5*DRILLING_REGULARIZATION*(As[0] + As[2]);
   }
   else {
     memset(C, 0, 22*sizeof(TacsScalar));

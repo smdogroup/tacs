@@ -441,13 +441,73 @@ int TacsTestElementJacobian( TACSElement *element,
   }
   if (test_print_level){ fprintf(stderr, "\n"); }
 
+  fail = (max_err > test_fail_atol || max_rel > test_fail_rtol);
+
   delete [] temp;
   delete [] q;
   delete [] dq;
   delete [] ddq;
   delete [] mat;
+  delete [] pert;
+  delete [] res;
+  delete [] result;
 
-  fail = (max_err > test_fail_atol || max_rel > test_fail_rtol);
+  return fail;
+}
+
+/*
+  The following function tests the consistency between the
+  implementation of the residuals and the implementation of the system
+  Jacobian.
+
+  input:
+  col:   test only the specified column of the matrix
+*/
+int TacsTestElementMatFreeJacobian( TACSElement *element,
+                                    int elemIndex,
+                                    double time,
+                                    const TacsScalar Xpts[],
+                                    const TacsScalar vars[],
+                                    const TacsScalar dvars[],
+                                    const TacsScalar ddvars[],
+                                    int col,
+                                    double dh,
+                                    int test_print_level,
+                                    double test_fail_atol,
+                                    double test_fail_rtol ){
+  // Set the failure flag
+  int fail = 0;
+
+  // Retrieve the number of variables
+  int nvars = element->getNumVariables();
+
+  TacsScalar *result = new TacsScalar[ nvars ];
+  TacsScalar *pert = new TacsScalar[ nvars ];
+  TacsScalar *res = new TacsScalar[ nvars ];
+  TacsScalar *mat = new TacsScalar[ nvars*nvars ];
+
+  if (col >= 0 && col < nvars){
+    memset(pert, 0, nvars*sizeof(TacsScalar));
+    pert[col] = 1.0;
+  }
+  else {
+    TacsGenerateRandomArray(pert, nvars);
+  }
+
+  // Compute the Jacobian
+  double alpha = (1.0*rand())/RAND_MAX;
+  double beta = (1.0*rand())/RAND_MAX;
+  double gamma = (1.0*rand())/RAND_MAX;
+
+  memset(mat, 0, nvars*nvars*sizeof(TacsScalar));
+  element->addJacobian(elemIndex, time, alpha, beta, gamma,
+                       Xpts, vars, dvars, ddvars, res, mat);
+
+  // Evaluate the Jacobian
+  int one = 1;
+  TacsScalar a = 1.0, b = 0.0;
+  BLASgemv("T", &nvars, &nvars, &a, mat, &nvars,
+           pert, &one, &b, result, &one);
 
   // Get the size of the matrix
   int dsize, tsize;
@@ -463,8 +523,9 @@ int TacsTestElementJacobian( TACSElement *element,
   memset(res, 0, nvars*sizeof(TacsScalar));
   element->addMatVecProduct(TACS_JACOBIAN_MATRIX, elemIndex, data, tarray, pert, res);
 
-  max_err = TacsGetMaxError(result, res, nvars, &max_err_index);
-  max_rel = TacsGetMaxRelError(result, res, nvars, &max_rel_index);
+  int max_err_index, max_rel_index;
+  double max_err = TacsGetMaxError(result, res, nvars, &max_err_index);
+  double max_rel = TacsGetMaxRelError(result, res, nvars, &max_rel_index);
 
   if (test_print_level > 0){
     fprintf(stderr,
@@ -486,6 +547,7 @@ int TacsTestElementJacobian( TACSElement *element,
   delete [] pert;
   delete [] res;
   delete [] result;
+  delete [] mat;
   delete [] data;
   delete [] tarray;
 

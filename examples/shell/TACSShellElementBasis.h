@@ -126,6 +126,65 @@ class TACSQuadQuadraticQuadrature {
   }
 };
 
+
+class TACSQuadCubicQuadrature {
+ public:
+  static const int NUM_QUADRATURE_POINTS = 16;
+
+  static int getNumParameters(){
+    return 2;
+  }
+  static int getNumQuadraturePoints(){
+    return 16;
+  }
+  static double getQuadratureWeight( int n ){
+    return TacsGaussQuadWts4[n % 4]*TacsGaussQuadWts4[n / 4];
+  }
+  static double getQuadraturePoint( int n, double pt[] ){
+    pt[0] = TacsGaussQuadPts4[n % 4];
+    pt[1] = TacsGaussQuadPts4[n / 4];
+
+    return TacsGaussQuadWts4[n % 4]*TacsGaussQuadWts4[n / 4];
+  }
+  static int getNumElementFaces(){
+    return 4;
+  }
+  static int getNumFaceQuadraturePoints( int face ){
+    return 4;
+  }
+  static double getFaceQuadraturePoint( int face, int n,
+                                        double pt[],
+                                        double t[] ){
+    if (face/2 == 0){
+      pt[0] = -1.0 + 2.0*(face % 2);
+      pt[1] = TacsGaussQuadPts4[n];
+    }
+    else {
+      pt[0] = TacsGaussQuadPts4[n];
+      pt[1] = -1.0 + 2.0*(face % 2);
+    }
+
+    if (face == 0){
+      // -X edge
+      t[0] = 0.0;  t[1] = -1.0;
+    }
+    else if (face == 1){
+      // +X edge
+      t[0] = 0.0;  t[1] = 1.0;
+    }
+    else if (face == 2){
+      // -Y edge
+      t[0] = 1.0;  t[1] = 0.0;
+    }
+    else if (face == 3){
+      // +Y edge
+      t[0] = -1.0;  t[1] = 0.0;
+    }
+
+    return TacsGaussQuadWts4[n];
+  }
+};
+
 class TACSTriLinearQuadrature {
  public:
   static const int NUM_QUADRATURE_POINTS = 3;
@@ -770,7 +829,7 @@ class TACSShellQuadBasis {
     }
   }
 
-  /*
+  /**
     Add the second derivative of the tying strain at the tying points
 
     @param pt The quadrature point

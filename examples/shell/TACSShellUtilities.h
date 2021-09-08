@@ -3,6 +3,7 @@
 
 #include "TACSElementAlgebra.h"
 #include "TACSElementVerification.h"
+#include "TACSShellElementTransform.h"
 
 inline void TacsShellAssembleFrame( const TacsScalar Xxi[],
                                     const TacsScalar n[],
@@ -629,6 +630,213 @@ void TacsShellAddDispGradHessian( const double pt[],
   // Add the contribution to the Jacobian matrix
   if (mat){
     basis::template addInterpGradOuterProduct<vars_per_node, vars_per_node, 3, 3>(pt, d2u0xi, mat);
+  }
+}
+
+/*
+  Compute the drilling strain penalty at each node
+*/
+template <int vars_per_node, int offset, class basis, class director, class model>
+void TacsShellComputeDrillStrain( TACSShellTransform *transform,
+                                  const TacsScalar Xdn[],
+                                  const TacsScalar fn[],
+                                  const TacsScalar vars[],
+                                  TacsScalar XdinvTn[],
+                                  TacsScalar Tn[],
+                                  TacsScalar u0xn[],
+                                  TacsScalar Ctn[],
+                                  TacsScalar etn[] ){
+  for ( int i = 0; i < basis::NUM_NODES; i++ ){
+    double pt[2];
+    basis::getNodePoint(i, pt);
+
+    // Compute the transformation at the node
+    TacsScalar Xxi[6];
+    TacsShellExtractFrame(&Xdn[9*i], Xxi);
+    transform->computeTransform(Xxi, &fn[3*i], &Tn[9*i]);
+
+    // Compute the field gradient at the node
+    TacsScalar u0xi[6];
+    basis::template interpFieldsGrad<vars_per_node, 3>(pt, vars, u0xi);
+
+    // Compute the inverse transformation
+    TacsScalar Xdinv[9];
+    inv3x3(&Xdn[9*i], Xdinv);
+
+    // Compute XdinvT = Xdinv*T
+    mat3x3MatMult(Xdinv, &Tn[9*i], &XdinvTn[9*i]);
+    TacsShellAssembleFrame(u0xi, &u0xn[9*i]); // Use u0x to store [u0,xi; 0]
+
+    // Compute the rotation matrix at this node
+    TacsScalar C[9], tmp[9];
+    director::template
+      computeRotationMat<vars_per_node, offset, 1>(&vars[vars_per_node*i], C);
+
+    // Compute Ct = T^{T}*C*T
+    mat3x3TransMatMult(&Tn[9*i], C, tmp);
+    mat3x3MatMult(tmp, &Tn[9*i], &Ctn[9*i]);
+
+    // Compute the transformation u0x = T^{T}*ueta*Xdinv*T
+    // u0x = T^{T}*u0d*Xdinv*T
+    mat3x3MatMult(&u0xn[9*i], &XdinvTn[9*i], tmp);
+    mat3x3TransMatMult(&Tn[9*i], tmp, &u0xn[9*i]);
+
+    etn[i] = model::evalDrillStrain(&u0xn[9*i], &Ctn[9*i]);
+  }
+}
+
+template <int vars_per_node, int offset, class basis, class director, class model>
+void TacsShellAddDrillStrainSens( const TacsScalar Xdn[],
+                                  const TacsScalar fn[],
+                                  const TacsScalar vars[],
+                                  const TacsScalar XdinvTn[],
+                                  const TacsScalar Tn[],
+                                  const TacsScalar u0xn[],
+                                  const TacsScalar Ctn[],
+                                  const TacsScalar detn[],
+                                  TacsScalar res[] ){
+  for ( int i = 0; i < basis::NUM_NODES; i++ ){
+    double pt[2];
+    basis::getNodePoint(i, pt);
+
+    TacsScalar du0x[9], dCt[9];
+    model::evalDrillStrainSens(detn[i], &u0xn[9*i], &Ctn[9*i], du0x, dCt);
+
+    // Compute dCpt = T*dCt*T^{T}
+    TacsScalar dCpt[9], tmp[9];
+    mat3x3MatMult(&Tn[9*i], dCt, tmp);
+    mat3x3MatTransMult(tmp, &Tn[9*i], dCpt);
+
+    director::template
+      addRotationMatResidual<vars_per_node, offset, 1>(&vars[i*vars_per_node],
+                                                       dCpt, &res[i*vars_per_node]);
+
+    // Compute du0d = T*du0x*XdinvT^{T} + T*du1x*XdinvzT^{T}
+    TacsScalar du0d[9];
+    mat3x3MatTransMult(du0x, &XdinvTn[9*i], tmp);
+    mat3x3MatMult(&Tn[9*i], tmp, du0d);
+
+    // du0d = [du0xi; dd0]
+    TacsScalar du0xi[6];
+    TacsShellExtractFrame(du0d, du0xi);
+
+    // Compute the gradient of the displacement solution at the quadrature points
+    basis::template
+      addInterpFieldsGradTranspose<vars_per_node, 3>(pt, du0xi, res);
+  }
+}
+
+template <int vars_per_node, int offset, class basis, class director, class model>
+void TacsShellAddDrillStrainHessian( const TacsScalar Xdn[],
+                                     const TacsScalar fn[],
+                                     const TacsScalar vars[],
+                                     const TacsScalar XdinvTn[],
+                                     const TacsScalar Tn[],
+                                     const TacsScalar u0xn[],
+                                     const TacsScalar Ctn[],
+                                     const TacsScalar detn[],
+                                     const TacsScalar d2etn[],
+                                     TacsScalar res[],
+                                     TacsScalar mat[] ){
+  // Zero the derivative of the rotation
+  const int size = vars_per_node*basis::NUM_NODES;
+  const int num_nodes = basis::NUM_NODES;
+
+  TacsScalar drot[num_nodes*size];
+  memset(drot, 0, num_nodes*size*sizeof(TacsScalar));
+
+  for ( int i = 0; i < num_nodes; i++ ){
+    // Set the
+    TacsScalar *t = &drot[i*size];
+
+    // Get the node location
+    double pt[2];
+    basis::getNodePoint(i, pt);
+
+    TacsScalar du0x[9], dCt[9];
+    model::evalDrillStrainSens(1.0, &u0xn[9*i], &Ctn[9*i], du0x, dCt);
+
+    // Compute dCpt = T*dCt*T^{T}
+    TacsScalar dCpt[9], tmp[9];
+    mat3x3MatMult(&Tn[9*i], dCt, tmp);
+    mat3x3MatTransMult(tmp, &Tn[9*i], dCpt);
+
+    director::template
+      addRotationMatResidual<vars_per_node, offset, 1>(&vars[i*vars_per_node], dCpt,
+                                                       &t[i*vars_per_node]);
+
+    // Compute du0d = T*du0x*XdinvT^{T} + T*du1x*XdinvzT^{T}
+    TacsScalar du0d[9];
+    mat3x3MatTransMult(du0x, &XdinvTn[9*i], tmp);
+    mat3x3MatMult(&Tn[9*i], tmp, du0d);
+
+    // du0d = [du0xi; dd0]
+    TacsScalar du0xi[6];
+    TacsShellExtractFrame(du0d, du0xi);
+
+    // Compute the gradient of the displacement solution at the quadrature points
+    basis::template
+      addInterpFieldsGradTranspose<vars_per_node, 3>(pt, du0xi, t);
+  }
+
+  // Add the contribution to the residual from the drilling rotation
+  if (res){
+    for ( int i = 0; i < num_nodes; i++ ){
+      const TacsScalar *t = &drot[i*size];
+      for ( int j = 0; j < size; j++ ){
+        res[j] += detn[i]*t[j];
+      }
+    }
+  }
+
+  // Add the contributions to the Jacobian
+  for ( int i = 0; i < num_nodes; i++ ){
+    TacsScalar t[size];
+    memset(t, 0, size*sizeof(TacsScalar)); // *const TacsScalar *t1 = &drot[i*size];
+
+    for ( int j = 0; j < num_nodes; j++ ){
+      const TacsScalar *t1 = &drot[j*size];
+      for ( int ii = 0; ii < size; ii++ ){
+        t[ii] += d2etn[i*num_nodes + j]*t1[ii];
+      }
+    }
+
+    const TacsScalar *t2 = &drot[i*size];
+    for ( int ii = 0; ii < size; ii++ ){
+      for ( int jj = 0; jj < size; jj++ ){
+        mat[ii*size + jj] += t[ii]*t2[jj];
+      }
+    }
+  }
+
+  for ( int i = 0; i < num_nodes; i++ ){
+    // Get the node location
+    double pt[2];
+    basis::getNodePoint(i, pt);
+
+    TacsScalar d2u0x[81], d2Ct[81], d2Ctu0x[81];
+    model::evalDrillStrainHessian(detn[i], &u0xn[9*i], &Ctn[9*i],
+                                  d2u0x, d2Ct, d2Ctu0x);
+
+    // Compute the second derivative w.r.t. u0d
+    TacsScalar d2u0d[81];
+    mat3x3TransMatMatHessian(&Tn[9*i], &XdinvTn[9*i], d2u0x, d2u0d);
+
+    // // Compute the second derivative w.r.t. Cpt
+    TacsScalar d2Cpt[81];
+    mat3x3TransMatMatHessian(&Tn[9*i], &Tn[9*i], d2Ct, d2Cpt);
+
+    // d2C0u0d = Ctu0x*[d(u0x)/d(u0d)]*[d(Ct)/d(Cpt)]
+    TacsScalar d2Cptu0d[81];
+    mat3x3TransMatMatHessianAdd(&Tn[9*i], &Tn[9*i], &XdinvTn[9*i], &Tn[9*i],
+                                d2Ctu0x, d2Cptu0d);
+
+    // Extract the shell frame
+    TacsScalar d2u0xi[36];
+    TacsShellExtractFrameSens(d2u0d, d2u0xi);
+
+    basis::template
+      addInterpGradOuterProduct<vars_per_node, vars_per_node, 3, 3>(pt, d2u0xi, mat);
   }
 }
 
