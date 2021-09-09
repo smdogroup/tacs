@@ -31,27 +31,16 @@ typedef TACSThermalShellElement<TACSQuadQuadraticQuadrature, TACSShellQuadBasis<
 typedef TACSThermalShellElement<TACSQuadCubicQuadrature, TACSShellQuadBasis<4>,
                                 TACSLinearizedRotation, TACSShellLinearModel> TACSQuad4ThermalShell;
 
-// typedef TACSShellElement<TACSQuadQuadraticQuadrature, TACSShellQuadBasis<3>,
-//                          TACSQuadraticRotation, TACSShellLinearModel> TACSQuadLinearShell;
+/*
+  Shell elements with a linearized rotation and nonlinear strain expressions
+*/
+typedef TACSShellElement<TACSQuadLinearQuadrature, TACSShellQuadBasis<2>,
+                         TACSLinearizedRotation, TACSShellNonlinearModel> TACSQuad2NonlinearShell;
 
-// typedef TACSShellElement<TACSQuadLinearQuadrature, TACSShellQuadBasis<2>,
-//                          TACSQuaternionRotation, TACSShellLinearModel> TACSQuadLinearShell;
+typedef TACSShellElement<TACSQuadQuadraticQuadrature, TACSShellQuadBasis<3>,
+                         TACSLinearizedRotation, TACSShellNonlinearModel> TACSQuad3NonlinearShell;
 
-// typedef TACSShellElement<TACSQuadLinearQuadrature, TACSShellQuadBasis<2>,
-//                          TACSLinearizedRotation, TACSShellNonlinearModel> TACSQuadLinearShell;
-
-// typedef TACSShellElement<TACSQuadLinearQuadrature, TACSShellQuadBasis<2>,
-//                          TACSQuadraticRotation, TACSShellNonlinearModel> TACSQuadLinearShell;
-
-// typedef TACSShellElement<TACSQuadLinearQuadrature, TACSShellQuadBasis<2>,
-//                          TACSQuaternionRotation, TACSShellNoninearModel> TACSQuadLinearShell;
-
-
-// typedef TACSShellElement<TACSQuadQuadraticQuadrature, TACSShellQuadBasis<3>,
-//                          TACSLinearizedRotation, TACSShellLinearModel> TACSQuadQuadraticShell;
-
-// typedef TACSShellElement<TACSTriQuadraticQuadrature, TACSShellTriQuadraticBasis,
-//     TACSLinearizedRotation, TACSShellLinearModel> TACSTriQuadraticShell;
-
+typedef TACSShellElement<TACSQuadCubicQuadrature, TACSShellQuadBasis<4>,
+                         TACSLinearizedRotation, TACSShellNonlinearModel> TACSQuad4NonlinearShell;
 
 #endif // TACS_SHELL_ELEMENT_DEFS_H

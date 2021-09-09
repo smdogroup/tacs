@@ -45,7 +45,8 @@ runtime_lib_dirs = get_global_dir(['lib'])
 
 # Relative paths for the include/library directories
 rel_inc_dirs = ['src', 'src/bpmat', 'src/elements', 'src/elements/dynamics',
-                'src/elements/basis', 'src/constitutive', 'src/functions', 'src/io']
+                'src/elements/shell', 'src/elements/basis',
+                'src/constitutive', 'src/functions', 'src/io']
 rel_lib_dirs = ['lib']
 libs.extend(['tacs'])
 

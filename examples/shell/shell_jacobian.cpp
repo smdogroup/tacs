@@ -27,9 +27,11 @@ int main( int argc, char *argv[] ){
   int t_num = 0;
   TACSShellConstitutive *con = new TACSIsoShellConstitutive(props, t, t_num);
 
+  // Start and end column to test in the Jacobian matrix
+  int start = 0, end = 0;
+
   TACSElement *shell = NULL;
   if (argc > 1){
-    printf("argv[1] = %s", argv[1]);
     if (strcmp(argv[1], "TACSQuad2Shell") == 0){
       shell = new TACSQuad2Shell(transform, con);
     }
@@ -48,6 +50,15 @@ int main( int argc, char *argv[] ){
     else if (strcmp(argv[1], "TACSQuad4ThermalShell") == 0){
       shell = new TACSQuad4ThermalShell(transform, con);
     }
+    else if (strcmp(argv[1], "TACSQuad2NonlinearShell") == 0){
+      shell = new TACSQuad2NonlinearShell(transform, con);
+    }
+    else if (strcmp(argv[1], "TACSQuad3NonlinearShell") == 0){
+      shell = new TACSQuad3NonlinearShell(transform, con);
+    }
+    else if (strcmp(argv[1], "TACSQuad4NonlinearShell") == 0){
+      shell = new TACSQuad4NonlinearShell(transform, con);
+    }
     else {
       shell = new TACSQuad2Shell(transform, con);
     }
@@ -63,6 +74,27 @@ int main( int argc, char *argv[] ){
   int elemIndex = 0;
   double time = 0.0;
 
+  if (argc > 2){
+    int temp = 0;
+    if (sscanf(argv[2], "%d", &temp) == 1){
+      if (temp >= 0 && temp <= num_vars){
+        start = temp;
+        end = num_vars;
+      }
+    }
+  }
+  if (argc > 3){
+    int temp = 0;
+    if (sscanf(argv[3], "%d", &temp) == 1){
+      if (temp >= 0){
+        end = temp;
+        if (end > num_vars){
+          end = num_vars;
+        }
+      }
+    }
+  }
+
   TacsScalar *Xpts = new TacsScalar[ 3*num_nodes ];
   TacsScalar *vars = new TacsScalar[ num_vars ];
   TacsScalar *dvars = new TacsScalar[ num_vars ];
@@ -72,8 +104,18 @@ int main( int argc, char *argv[] ){
   TacsGenerateRandomArray(dvars, num_vars);
   TacsGenerateRandomArray(ddvars, num_vars);
 
+  // Check the residual formulation against Lagrange's equations. Not all elements
+  // will pass this test - for instance the thermal shell elements.
   TacsTestElementResidual(shell, elemIndex, time, Xpts, vars, dvars, ddvars);
+
+  // Check the implementation of the element Jacobian matrix against the implementation
+  // of the residual
   TacsTestElementJacobian(shell, elemIndex, time, Xpts, vars, dvars, ddvars);
+
+  // Check specific columns of the Jacobian matrix (if specified on the command line)
+  for ( int col = start; col < end; col++ ){
+    TacsTestElementJacobian(shell, elemIndex, time, Xpts, vars, dvars, ddvars, col);
+  }
 
   delete [] Xpts;
   delete [] vars;

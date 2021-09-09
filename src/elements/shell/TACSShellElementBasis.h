@@ -616,7 +616,7 @@ class TACSShellQuadBasis {
     njrows and nbcols <= njcols.
 
     @param pt The parametric location of the quadrature point
-    @param jac The 2m x 2m Jacobian matrix of coefficients
+    @param jac The 2*njrows x 2*njcols Jacobian matrix of coefficients
     @param mat The element matrix
   */
   template <int nbrows, int nbcols, int njrows, int njcols>

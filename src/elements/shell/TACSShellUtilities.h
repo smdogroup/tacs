@@ -633,8 +633,18 @@ void TacsShellAddDispGradHessian( const double pt[],
   }
 }
 
-/*
+/**
   Compute the drilling strain penalty at each node
+
+  @param transform Transformation object
+  @param Xdn The frame derivatives at each node
+  @param fn The frame normals at each node
+  @param vars The state variable values
+  @param XdinvTn Computed inverse frame times transformation at each node
+  @param Tn The transformation at each node
+  @param u0xn The derivative of the displacements at each node
+  @param Ctn The rotation matrix at each node
+  @param etn The drill strain penalty value at each node
 */
 template <int vars_per_node, int offset, class basis, class director, class model>
 void TacsShellComputeDrillStrain( TACSShellTransform *transform,
@@ -685,6 +695,20 @@ void TacsShellComputeDrillStrain( TACSShellTransform *transform,
   }
 }
 
+/**
+  Add the derivative of the drilling strain penalty to the residual
+
+  @param transform Transformation object
+  @param Xdn The frame derivatives at each node
+  @param fn The frame normals at each node
+  @param vars The state variable values
+  @param XdinvTn Computed inverse frame times transformation at each node
+  @param Tn The transformation at each node
+  @param u0xn The derivative of the displacements at each node
+  @param Ctn The rotation matrix at each node
+  @param detn The derivative of the drill strain penalty value at each node
+  @param res The element residual
+*/
 template <int vars_per_node, int offset, class basis, class director, class model>
 void TacsShellAddDrillStrainSens( const TacsScalar Xdn[],
                                   const TacsScalar fn[],
@@ -726,6 +750,22 @@ void TacsShellAddDrillStrainSens( const TacsScalar Xdn[],
   }
 }
 
+/**
+  Add the first and second derivatives of the drilling strain penalty
+  to the residual and Jacobian matrix
+
+  @param Xdn The frame derivatives at each node
+  @param fn The frame normals at each node
+  @param vars The state variable values
+  @param XdinvTn Computed inverse frame times transformation at each node
+  @param Tn The transformation at each node
+  @param u0xn The derivative of the displacements at each node
+  @param Ctn The rotation matrix at each node
+  @param detn The derivative of the drill strain penalty value at each node
+  @param d2etn The second derivative of the drill strain penalty value at each node
+  @param res The element residual
+  @param mat The element Jacobian matrix
+*/
 template <int vars_per_node, int offset, class basis, class director, class model>
 void TacsShellAddDrillStrainHessian( const TacsScalar Xdn[],
                                      const TacsScalar fn[],

@@ -753,325 +753,326 @@ void TACSShellElement<quadrature, basis, director, model>::
     addRotationConstrJacobian<vars_per_node, offset, num_nodes>(alpha, vars, res, mat);
 }
 
+// template <class quadrature, class basis, class director, class model>
+// void TACSShellElement<quadrature, basis, director, model>::
+//   addAdjResProduct( int elemIndex, double time,
+//                     TacsScalar scale,
+//                     const TacsScalar psi[],
+//                     const TacsScalar Xpts[],
+//                     const TacsScalar vars[],
+//                     const TacsScalar dvars[],
+//                     const TacsScalar ddvars[],
+//                     int dvLen,
+//                     TacsScalar dfdx[] ){
+//   // Compute the number of quadrature points
+//   const int nquad = quadrature::getNumQuadraturePoints();
 
-/*
-template <class quadrature, class basis, class director, class model>
-void TACSShellElement<quadrature, basis, director, model>::
-  addAdjResProduct( int elemIndex, double time,
-                    TacsScalar scale,
-                    const TacsScalar psi[],
-                    const TacsScalar Xpts[],
-                    const TacsScalar vars[],
-                    const TacsScalar dvars[],
-                    const TacsScalar ddvars[],
-                    int dvLen,
-                    TacsScalar dfdx[] ){
-  // Compute the number of quadrature points
-  const int nquad = quadrature::getNumQuadraturePoints();
+//   // Compute the node normal directions
+//   TacsScalar fn[3*num_nodes], Xdn[9*num_nodes];
+//   TacsShellComputeNodeNormals<basis>(Xpts, fn, Xdn);
 
-  // Compute the node normal directions
-  TacsScalar fn[3*num_nodes];
-  TacsShellComputeNodeNormals<basis>(Xpts, fn);
+//   // Store information about the transformation and derivatives at each node for
+//   // the drilling degrees of freedom
+//   TacsScalar XdinvTn[9*num_nodes], Tn[9*num_nodes];
+//   TacsScalar u0xn[9*num_nodes], Ctn[csize];
+//   TacsShellComputeDrillStrain<vars_per_node, offset, basis, director, model>(
+//     transform, Xdn, fn, vars, XdinvTn, Tn, u0xn, Ctn, etn);
 
-  // Compute the frame normal and directors at each node
-  // Compute the rotation matrix and directors at each node
-  TacsScalar C[csize], Cd[csize];
-  director::template computeRotationMatDeriv<vars_per_node, offset, num_nodes>(vars, psi, C, Cd);
+//   // Compute the derivative of the director rates
+//   TacsScalar d[dsize], ddot[dsize], dddot[dsize], dd[dsize];
+//   director::template computeDirectorRatesDeriv<vars_per_node, offset, num_nodes>(
+//     vars, dvars, ddvars, psi, fn, d, ddot, dddot, dd);
 
-  TacsScalar d[dsize], ddot[dsize], dddot[dsize], dd[dsize];
-  director::template computeDirectorRatesDeriv<vars_per_node, offset, num_nodes>(
-    vars, dvars, ddvars, psi, fn, d, ddot, dddot, dd);
+//   // Set the total number of tying points needed for this element
+//   TacsScalar ety[basis::NUM_TYING_POINTS], etyd[basis::NUM_TYING_POINTS];
+//   model::template computeTyingStrainDeriv<vars_per_node, basis>(
+//     Xpts, fn, vars, d, psi, dd, ety, etyd);
 
-  // Set the total number of tying points needed for this element
-  TacsScalar ety[basis::NUM_TYING_POINTS], etyd[basis::NUM_TYING_POINTS];
-  model::template computeTyingStrainDeriv<vars_per_node, basis>(
-    Xpts, fn, vars, d, psi, dd, ety, etyd);
+//   // Loop over each quadrature point and add the residual contribution
+//   for ( int quad_index = 0; quad_index < nquad; quad_index++ ){
+//     // Get the quadrature weight
+//     double pt[3];
+//     double weight = quadrature::getQuadraturePoint(quad_index, pt);
 
-  // Loop over each quadrature point and add the residual contribution
-  for ( int quad_index = 0; quad_index < nquad; quad_index++ ){
-    // Get the quadrature weight
-    double pt[3];
-    double weight = quadrature::getQuadraturePoint(quad_index, pt);
+//     // Compute X, X,xi and the interpolated normal n0
+//     TacsScalar X[3], Xxi[6], n0[3], T[9];
+//     basis::template interpFields<3, 3>(pt, Xpts, X);
+//     basis::template interpFieldsGrad<3, 3>(pt, Xpts, Xxi);
+//     basis::template interpFields<3, 3>(pt, fn, n0);
 
-    // Compute X, X,xi and the interpolated normal n0
-    TacsScalar X[3], Xxi[6], n0[3], T[9];
-    basis::template interpFields<3, 3>(pt, Xpts, X);
-    basis::template interpFieldsGrad<3, 3>(pt, Xpts, Xxi);
-    basis::template interpFields<3, 3>(pt, fn, n0);
+//     // Compute the transformation at the quadrature point
+//     transform->computeTransform(Xxi, n0, T);
 
-    // Compute the transformation at the quadrature point
-    transform->computeTransform(Xxi, n0, T);
+//     // Evaluate the displacement gradient at the point
+//     TacsScalar XdinvT[9], XdinvzT[9];
+//     TacsScalar u0x[9], u1x[9], Ct[9];
+//     TacsScalar u0xd[9], u1xd[9];
+//     TacsScalar detXd =
+//       computeDispGradDeriv<vars_per_node, basis>(pt, Xpts, vars, fn, d, Xxi, n0, T,
+//                                                  psi, dd, XdinvT, XdinvzT,
+//                                                  u0x, u1x, u0xd, u1xd);
+//     detXd *= weight;
 
-    // Evaluate the displacement gradient at the point
-    TacsScalar XdinvT[9], XdinvzT[9];
-    TacsScalar u0x[9], u1x[9], Ct[9];
-    TacsScalar u0xd[9], u1xd[9], Ctd[9];
-    TacsScalar detXd =
-      computeDispGradDeriv<vars_per_node, basis>(pt, Xpts, vars, fn, C, d, Xxi, n0, T,
-                                                 psi, dd, Cd, XdinvT, XdinvzT,
-                                                 u0x, u1x, Ct, u0xd, u1xd, Ctd);
-    detXd *= weight;
+//     // Evaluate the tying components of the strain
+//     TacsScalar gty[6], gtyd[6]; // The symmetric components of the tying strain
+//     basis::interpTyingStrain(pt, ety, gty);
+//     basis::interpTyingStrain(pt, etyd, gtyd);
 
-    // Evaluate the tying components of the strain
-    TacsScalar gty[6], gtyd[6]; // The symmetric components of the tying strain
-    basis::interpTyingStrain(pt, ety, gty);
-    basis::interpTyingStrain(pt, etyd, gtyd);
+//     // Compute the symmetric parts of the tying strain
+//     TacsScalar e0ty[6], e0tyd[6]; // e0ty = XdinvT^{T}*gty*XdinvT
+//     mat3x3SymmTransformTranspose(XdinvT, gty, e0ty);
+//     mat3x3SymmTransformTranspose(XdinvT, gtyd, e0tyd);
 
-    // Compute the symmetric parts of the tying strain
-    TacsScalar e0ty[6], e0tyd[6]; // e0ty = XdinvT^{T}*gty*XdinvT
-    mat3x3SymmTransformTranspose(XdinvT, gty, e0ty);
-    mat3x3SymmTransformTranspose(XdinvT, gtyd, e0tyd);
+//     // Compute the set of strain components
+//     TacsScalar e[9]; // The components of the strain
+//     TacsScalar ed[9]; // The directional derivative components of the strain
+//     model::evalStrainDeriv(u0x, u1x, e0ty, Ct, u0xd, u1xd, e0tyd, Ctd, e, ed);
 
-    // Compute the set of strain components
-    TacsScalar e[9]; // The components of the strain
-    TacsScalar ed[9]; // The directional derivative components of the strain
-    model::evalStrainDeriv(u0x, u1x, e0ty, Ct, u0xd, u1xd, e0tyd, Ctd, e, ed);
+//     // The directional derivative of the strain along the adjoint direction
+//     con->addStressDVSens(elemIndex, scale*detXd, pt, X, e, ed, dvLen, dfdx);
+//   }
+// }
 
-    // The directional derivative of the strain along the adjoint direction
-    con->addStressDVSens(elemIndex, scale*detXd, pt, X, e, ed, dvLen, dfdx);
-  }
-}
+// template <class quadrature, class basis, class director, class model>
+// int TACSShellElement<quadrature, basis, director, model>::
+//   evalPointQuantity( int elemIndex, int quantityType,
+//                      double time,
+//                      int n, double pt[],
+//                      const TacsScalar Xpts[],
+//                      const TacsScalar vars[],
+//                      const TacsScalar dvars[],
+//                      const TacsScalar ddvars[],
+//                      TacsScalar *detXd,
+//                      TacsScalar *quantity ){
+//   // Compute the node normal directions
+//   TacsScalar fn[3*num_nodes];
+//   TacsShellComputeNodeNormals<basis>(Xpts, fn);
 
-template <class quadrature, class basis, class director, class model>
-int TACSShellElement<quadrature, basis, director, model>::
-  evalPointQuantity( int elemIndex, int quantityType,
-                     double time,
-                     int n, double pt[],
-                     const TacsScalar Xpts[],
-                     const TacsScalar vars[],
-                     const TacsScalar dvars[],
-                     const TacsScalar ddvars[],
-                     TacsScalar *detXd,
-                     TacsScalar *quantity ){
-  // Compute the node normal directions
-  TacsScalar fn[3*num_nodes];
-  TacsShellComputeNodeNormals<basis>(Xpts, fn);
+//   if (quantityType == TACS_FAILURE_INDEX){
+//     // Compute the frame normal and directors at each node
+//     TacsScalar C[csize], d[dsize], ddot[dsize], dddot[dsize];
+//     director::template computeRotationMat<vars_per_node, offset, num_nodes>(vars, C);
+//     director::template computeDirectorRates<vars_per_node, offset, num_nodes>(
+//       vars, dvars, ddvars, fn, d, ddot, dddot);
 
-  if (quantityType == TACS_FAILURE_INDEX){
-    // Compute the frame normal and directors at each node
-    TacsScalar C[csize], d[dsize], ddot[dsize], dddot[dsize];
-    director::template computeRotationMat<vars_per_node, offset, num_nodes>(vars, C);
-    director::template computeDirectorRates<vars_per_node, offset, num_nodes>(
-      vars, dvars, ddvars, fn, d, ddot, dddot);
+//     // Set the total number of tying points needed for this element
+//     TacsScalar ety[basis::NUM_TYING_POINTS];
+//     model::template computeTyingStrain<vars_per_node, basis>(Xpts, fn, vars, d, ety);
 
-    // Set the total number of tying points needed for this element
-    TacsScalar ety[basis::NUM_TYING_POINTS];
-    model::template computeTyingStrain<vars_per_node, basis>(Xpts, fn, vars, d, ety);
+//     // Compute X, X,xi and the interpolated normal n0
+//     TacsScalar X[3], Xxi[6], n0[3], T[9];
+//     basis::template interpFields<3, 3>(pt, Xpts, X);
+//     basis::template interpFieldsGrad<3, 3>(pt, Xpts, Xxi);
+//     basis::template interpFields<3, 3>(pt, fn, n0);
 
-    // Compute X, X,xi and the interpolated normal n0
-    TacsScalar X[3], Xxi[6], n0[3], T[9];
-    basis::template interpFields<3, 3>(pt, Xpts, X);
-    basis::template interpFieldsGrad<3, 3>(pt, Xpts, Xxi);
-    basis::template interpFields<3, 3>(pt, fn, n0);
+//     // Compute the transformation at the quadrature point
+//     transform->computeTransform(Xxi, n0, T);
 
-    // Compute the transformation at the quadrature point
-    transform->computeTransform(Xxi, n0, T);
+//     // Evaluate the displacement gradient at the point
+//     TacsScalar XdinvT[9], XdinvzT[9];
+//     TacsScalar u0x[9], u1x[9], Ct[9];
+//     *detXd =
+//       TacsShellComputeDispGrad<vars_per_node, basis>(pt, Xpts, vars, fn, C, d, Xxi, n0, T,
+//                                                      XdinvT, XdinvzT, u0x, u1x, Ct);
 
-    // Evaluate the displacement gradient at the point
-    TacsScalar XdinvT[9], XdinvzT[9];
-    TacsScalar u0x[9], u1x[9], Ct[9];
-    *detXd =
-      TacsShellComputeDispGrad<vars_per_node, basis>(pt, Xpts, vars, fn, C, d, Xxi, n0, T,
-                                                     XdinvT, XdinvzT, u0x, u1x, Ct);
+//     // Evaluate the tying components of the strain
+//     TacsScalar gty[6]; // The symmetric components of the tying strain
+//     basis::interpTyingStrain(pt, ety, gty);
 
-    // Evaluate the tying components of the strain
-    TacsScalar gty[6]; // The symmetric components of the tying strain
-    basis::interpTyingStrain(pt, ety, gty);
+//     // Compute the symmetric parts of the tying strain
+//     TacsScalar e0ty[6]; // e0ty = XdinvT^{T}*gty*XdinvT
+//     mat3x3SymmTransformTranspose(XdinvT, gty, e0ty);
 
-    // Compute the symmetric parts of the tying strain
-    TacsScalar e0ty[6]; // e0ty = XdinvT^{T}*gty*XdinvT
-    mat3x3SymmTransformTranspose(XdinvT, gty, e0ty);
+//     // Compute the set of strain components
+//     TacsScalar e[9]; // The components of the strain
+//     model::evalStrain(u0x, u1x, e0ty, Ct, e);
 
-    // Compute the set of strain components
-    TacsScalar e[9]; // The components of the strain
-    model::evalStrain(u0x, u1x, e0ty, Ct, e);
+//     *quantity = con->evalFailure(elemIndex, pt, X, e);
 
-    *quantity = con->evalFailure(elemIndex, pt, X, e);
+//     return 1;
+//   }
+//   else if (quantityType == TACS_ELEMENT_DENSITY){
+//     TacsScalar Xxi[6], n0[3], X[3];
+//     basis::template interpFields<3, 3>(pt, Xpts, X);
+//     basis::template interpFieldsGrad<3, 3>(pt, Xpts, Xxi);
+//     basis::template interpFields<3, 3>(pt, fn, n0);
 
-    return 1;
-  }
-  else if (quantityType == TACS_ELEMENT_DENSITY){
-    TacsScalar Xxi[6], n0[3], X[3];
-    basis::template interpFields<3, 3>(pt, Xpts, X);
-    basis::template interpFieldsGrad<3, 3>(pt, Xpts, Xxi);
-    basis::template interpFields<3, 3>(pt, fn, n0);
+//     TacsScalar Xd[9];
+//     TacsShellAssembleFrame(Xxi, n0, Xd);
+//     *detXd = det3x3(Xd);
 
-    TacsScalar Xd[9];
-    TacsShellAssembleFrame(Xxi, n0, Xd);
-    *detXd = det3x3(Xd);
+//     *quantity = con->evalDensity(elemIndex, pt, X);
 
-    *quantity = con->evalDensity(elemIndex, pt, X);
+//     return 1;
+//   }
 
-    return 1;
-  }
+//   return 0;
+// }
 
-  return 0;
-}
+// template <class quadrature, class basis, class director, class model>
+// void TACSShellElement<quadrature, basis, director, model>::
+//   addPointQuantityDVSens( int elemIndex, int quantityType,
+//                           double time,
+//                           TacsScalar scale,
+//                           int n, double pt[],
+//                           const TacsScalar Xpts[],
+//                           const TacsScalar vars[],
+//                           const TacsScalar dvars[],
+//                           const TacsScalar ddvars[],
+//                           const TacsScalar dfdq[],
+//                           int dvLen,
+//                           TacsScalar dfdx[] ){
+//   if (quantityType == TACS_FAILURE_INDEX){
+//     // Compute the node normal directions
+//     TacsScalar fn[3*num_nodes];
+//     TacsShellComputeNodeNormals<basis>(Xpts, fn);
 
-template <class quadrature, class basis, class director, class model>
-void TACSShellElement<quadrature, basis, director, model>::
-  addPointQuantityDVSens( int elemIndex, int quantityType,
-                          double time,
-                          TacsScalar scale,
-                          int n, double pt[],
-                          const TacsScalar Xpts[],
-                          const TacsScalar vars[],
-                          const TacsScalar dvars[],
-                          const TacsScalar ddvars[],
-                          const TacsScalar dfdq[],
-                          int dvLen,
-                          TacsScalar dfdx[] ){
-  if (quantityType == TACS_FAILURE_INDEX){
-    // Compute the node normal directions
-    TacsScalar fn[3*num_nodes];
-    TacsShellComputeNodeNormals<basis>(Xpts, fn);
+//     // Compute the frame normal and directors at each node
+//     TacsScalar C[csize];
+//     director::template computeRotationMat<vars_per_node, offset, num_nodes>(vars, C);
 
-    // Compute the frame normal and directors at each node
-    TacsScalar C[csize];
-    director::template computeRotationMat<vars_per_node, offset, num_nodes>(vars, C);
+//     TacsScalar d[dsize], ddot[dsize], dddot[dsize];
+//     director::template computeDirectorRates<vars_per_node, offset, num_nodes>(
+//       vars, dvars, ddvars, fn, d, ddot, dddot);
 
-    TacsScalar d[dsize], ddot[dsize], dddot[dsize];
-    director::template computeDirectorRates<vars_per_node, offset, num_nodes>(
-      vars, dvars, ddvars, fn, d, ddot, dddot);
+//     // Set the total number of tying points needed for this element
+//     TacsScalar ety[basis::NUM_TYING_POINTS];
+//     model::template computeTyingStrain<vars_per_node, basis>(Xpts, fn, vars, d, ety);
 
-    // Set the total number of tying points needed for this element
-    TacsScalar ety[basis::NUM_TYING_POINTS];
-    model::template computeTyingStrain<vars_per_node, basis>(Xpts, fn, vars, d, ety);
+//     // Compute X, X,xi and the interpolated normal n0
+//     TacsScalar X[3], Xxi[6], n0[3], T[9];
+//     basis::template interpFields<3, 3>(pt, Xpts, X);
+//     basis::template interpFieldsGrad<3, 3>(pt, Xpts, Xxi);
+//     basis::template interpFields<3, 3>(pt, fn, n0);
 
-    // Compute X, X,xi and the interpolated normal n0
-    TacsScalar X[3], Xxi[6], n0[3], T[9];
-    basis::template interpFields<3, 3>(pt, Xpts, X);
-    basis::template interpFieldsGrad<3, 3>(pt, Xpts, Xxi);
-    basis::template interpFields<3, 3>(pt, fn, n0);
+//     // Compute the transformation at the quadrature point
+//     transform->computeTransform(Xxi, n0, T);
 
-    // Compute the transformation at the quadrature point
-    transform->computeTransform(Xxi, n0, T);
+//     // Evaluate the displacement gradient at the point
+//     TacsScalar XdinvT[9], XdinvzT[9];
+//     TacsScalar u0x[9], u1x[9], Ct[9];
+//     TacsShellComputeDispGrad<vars_per_node, basis>(pt, Xpts, vars, fn, C, d, Xxi, n0, T,
+//                                                    XdinvT, XdinvzT, u0x, u1x, Ct);
 
-    // Evaluate the displacement gradient at the point
-    TacsScalar XdinvT[9], XdinvzT[9];
-    TacsScalar u0x[9], u1x[9], Ct[9];
-    TacsShellComputeDispGrad<vars_per_node, basis>(pt, Xpts, vars, fn, C, d, Xxi, n0, T,
-                                                   XdinvT, XdinvzT, u0x, u1x, Ct);
+//     // Evaluate the tying components of the strain
+//     TacsScalar gty[6]; // The symmetric components of the tying strain
+//     basis::interpTyingStrain(pt, ety, gty);
 
-    // Evaluate the tying components of the strain
-    TacsScalar gty[6]; // The symmetric components of the tying strain
-    basis::interpTyingStrain(pt, ety, gty);
+//     // Compute the symmetric parts of the tying strain
+//     TacsScalar e0ty[6]; // e0ty = XdinvT^{T}*gty*XdinvT
+//     mat3x3SymmTransformTranspose(XdinvT, gty, e0ty);
 
-    // Compute the symmetric parts of the tying strain
-    TacsScalar e0ty[6]; // e0ty = XdinvT^{T}*gty*XdinvT
-    mat3x3SymmTransformTranspose(XdinvT, gty, e0ty);
+//     // Compute the set of strain components
+//     TacsScalar e[9]; // The components of the strain
+//     model::evalStrain(u0x, u1x, e0ty, Ct, e);
 
-    // Compute the set of strain components
-    TacsScalar e[9]; // The components of the strain
-    model::evalStrain(u0x, u1x, e0ty, Ct, e);
+//     con->addFailureDVSens(elemIndex, scale*dfdq[0], pt, X, e, dvLen, dfdx);
+//   }
+//   else if (quantityType == TACS_ELEMENT_DENSITY){
+//     TacsScalar X[3];
+//     basis::template interpFields<3, 3>(pt, Xpts, X);
 
-    con->addFailureDVSens(elemIndex, scale*dfdq[0], pt, X, e, dvLen, dfdx);
-  }
-  else if (quantityType == TACS_ELEMENT_DENSITY){
-    TacsScalar X[3];
-    basis::template interpFields<3, 3>(pt, Xpts, X);
+//     con->addDensityDVSens(elemIndex, scale*dfdq[0], pt, X, dvLen, dfdx);
+//   }
+// }
 
-    con->addDensityDVSens(elemIndex, scale*dfdq[0], pt, X, dvLen, dfdx);
-  }
-}
+// template <class quadrature, class basis, class director, class model>
+// void TACSShellElement<quadrature, basis, director, model>::
+//   addPointQuantitySVSens( int elemIndex, int quantityType,
+//                           double time,
+//                           TacsScalar alpha,
+//                           TacsScalar beta,
+//                           TacsScalar gamma,
+//                           int n, double pt[],
+//                           const TacsScalar Xpts[],
+//                           const TacsScalar vars[],
+//                           const TacsScalar dvars[],
+//                           const TacsScalar ddvars[],
+//                           const TacsScalar dfdq[],
+//                           TacsScalar dfdu[] ){
+//   if (quantityType == TACS_FAILURE_INDEX){
+//     // Derivative of the director field
+//     TacsScalar dd[dsize], dC[csize];
+//     memset(dd, 0, dsize*sizeof(TacsScalar));
+//     memset(dC, 0, csize*sizeof(TacsScalar));
 
-template <class quadrature, class basis, class director, class model>
-void TACSShellElement<quadrature, basis, director, model>::
-  addPointQuantitySVSens( int elemIndex, int quantityType,
-                          double time,
-                          TacsScalar alpha,
-                          TacsScalar beta,
-                          TacsScalar gamma,
-                          int n, double pt[],
-                          const TacsScalar Xpts[],
-                          const TacsScalar vars[],
-                          const TacsScalar dvars[],
-                          const TacsScalar ddvars[],
-                          const TacsScalar dfdq[],
-                          TacsScalar dfdu[] ){
-  if (quantityType == TACS_FAILURE_INDEX){
-    // Derivative of the director field
-    TacsScalar dd[dsize], dC[csize];
-    memset(dd, 0, dsize*sizeof(TacsScalar));
-    memset(dC, 0, csize*sizeof(TacsScalar));
+//     // Compute the node normal directions
+//     TacsScalar fn[3*num_nodes], Xdn[9*num_nodes];
+//     TacsShellComputeNodeNormals<basis>(Xpts, fn, Xdn);
 
-    // Compute the node normal directions
-    TacsScalar fn[3*num_nodes], Xdn[9*num_nodes];
-    TacsShellComputeNodeNormals<basis>(Xpts, fn, Xdn);
+//     // Compute the frame normal and directors at each node
+//     TacsScalar C[csize];
+//     director::template computeRotationMat<vars_per_node, offset, num_nodes>(vars, C);
 
-    // Compute the frame normal and directors at each node
-    TacsScalar C[csize];
-    director::template computeRotationMat<vars_per_node, offset, num_nodes>(vars, C);
+//     TacsScalar d[dsize], ddot[dsize], dddot[dsize];
+//     director::template computeDirectorRates<vars_per_node, offset, num_nodes>(
+//       vars, dvars, ddvars, fn, d, ddot, dddot);
 
-    TacsScalar d[dsize], ddot[dsize], dddot[dsize];
-    director::template computeDirectorRates<vars_per_node, offset, num_nodes>(
-      vars, dvars, ddvars, fn, d, ddot, dddot);
+//     // Set the total number of tying points needed for this element
+//     TacsScalar ety[basis::NUM_TYING_POINTS];
+//     model::template computeTyingStrain<vars_per_node, basis>(Xpts, fn, vars, d, ety);
 
-    // Set the total number of tying points needed for this element
-    TacsScalar ety[basis::NUM_TYING_POINTS];
-    model::template computeTyingStrain<vars_per_node, basis>(Xpts, fn, vars, d, ety);
+//     // Zero the contributions to the
+//     TacsScalar dety[basis::NUM_TYING_POINTS];
+//     memset(dety, 0, basis::NUM_TYING_POINTS*sizeof(TacsScalar));
 
-    // Zero the contributions to the
-    TacsScalar dety[basis::NUM_TYING_POINTS];
-    memset(dety, 0, basis::NUM_TYING_POINTS*sizeof(TacsScalar));
+//     // Compute X, X,xi and the interpolated normal n0
+//     TacsScalar X[3], Xxi[6], n0[3], T[9];
+//     basis::template interpFields<3, 3>(pt, Xpts, X);
+//     basis::template interpFieldsGrad<3, 3>(pt, Xpts, Xxi);
+//     basis::template interpFields<3, 3>(pt, fn, n0);
 
-    // Compute X, X,xi and the interpolated normal n0
-    TacsScalar X[3], Xxi[6], n0[3], T[9];
-    basis::template interpFields<3, 3>(pt, Xpts, X);
-    basis::template interpFieldsGrad<3, 3>(pt, Xpts, Xxi);
-    basis::template interpFields<3, 3>(pt, fn, n0);
+//     // Compute the transformation at the quadrature point
+//     transform->computeTransform(Xxi, n0, T);
 
-    // Compute the transformation at the quadrature point
-    transform->computeTransform(Xxi, n0, T);
+//     // Evaluate the displacement gradient at the point
+//     TacsScalar XdinvT[9], XdinvzT[9];
+//     TacsScalar u0x[9], u1x[9], Ct[9];
+//     TacsShellComputeDispGrad<vars_per_node, basis>(pt, Xpts, vars, fn, C, d, Xxi, n0, T,
+//                                                    XdinvT, XdinvzT, u0x, u1x, Ct);
 
-    // Evaluate the displacement gradient at the point
-    TacsScalar XdinvT[9], XdinvzT[9];
-    TacsScalar u0x[9], u1x[9], Ct[9];
-    TacsShellComputeDispGrad<vars_per_node, basis>(pt, Xpts, vars, fn, C, d, Xxi, n0, T,
-                                                   XdinvT, XdinvzT, u0x, u1x, Ct);
+//     // Evaluate the tying components of the strain
+//     TacsScalar gty[6]; // The symmetric components of the tying strain
+//     basis::interpTyingStrain(pt, ety, gty);
 
-    // Evaluate the tying components of the strain
-    TacsScalar gty[6]; // The symmetric components of the tying strain
-    basis::interpTyingStrain(pt, ety, gty);
+//     // Compute the symmetric parts of the tying strain
+//     TacsScalar e0ty[6]; // e0ty = XdinvT^{T}*gty*XdinvT
+//     mat3x3SymmTransformTranspose(XdinvT, gty, e0ty);
 
-    // Compute the symmetric parts of the tying strain
-    TacsScalar e0ty[6]; // e0ty = XdinvT^{T}*gty*XdinvT
-    mat3x3SymmTransformTranspose(XdinvT, gty, e0ty);
+//     // Compute the set of strain components
+//     TacsScalar e[9]; // The components of the strain
+//     model::evalStrain(u0x, u1x, e0ty, Ct, e);
 
-    // Compute the set of strain components
-    TacsScalar e[9]; // The components of the strain
-    model::evalStrain(u0x, u1x, e0ty, Ct, e);
+//     // Compute the sensitivity of the failure index w.r.t. the strain
+//     TacsScalar sens[9];
+//     con->evalFailureStrainSens(elemIndex, pt, X, e, sens);
 
-    // Compute the sensitivity of the failure index w.r.t. the strain
-    TacsScalar sens[9];
-    con->evalFailureStrainSens(elemIndex, pt, X, e, sens);
+//     // Compute the derivative of the product of the stress and strain
+//     // with respect to u0x, u1x and e0ty
+//     TacsScalar du0x[9], du1x[9], de0ty[6], dCt[9];
+//     model::evalStrainSens(alpha*dfdq[0], sens, u0x, u1x, Ct, du0x, du1x, de0ty, dCt);
 
-    // Compute the derivative of the product of the stress and strain
-    // with respect to u0x, u1x and e0ty
-    TacsScalar du0x[9], du1x[9], de0ty[6], dCt[9];
-    model::evalStrainSens(alpha*dfdq[0], sens, u0x, u1x, Ct, du0x, du1x, de0ty, dCt);
+//     addDispGradSens<vars_per_node, basis>(pt, T, XdinvT, XdinvzT,
+//                                           du0x, du1x, dCt, dfdu, dd, dC);
 
-    addDispGradSens<vars_per_node, basis>(pt, T, XdinvT, XdinvzT,
-                                          du0x, du1x, dCt, dfdu, dd, dC);
+//     // Compute the of the tying strain w.r.t. derivative w.r.t. the coefficients
+//     TacsScalar dgty[6];
+//     mat3x3SymmTransformTransSens(XdinvT, de0ty, dgty);
 
-    // Compute the of the tying strain w.r.t. derivative w.r.t. the coefficients
-    TacsScalar dgty[6];
-    mat3x3SymmTransformTransSens(XdinvT, de0ty, dgty);
+//     // Evaluate the tying strain
+//     basis::addInterpTyingStrainTranspose(pt, dgty, dety);
 
-    // Evaluate the tying strain
-    basis::addInterpTyingStrainTranspose(pt, dgty, dety);
+//     // Set the total number of tying points needed for this element
+//     model::template addComputeTyingStrainTranspose<vars_per_node, basis>(
+//       Xpts, fn, vars, d, dety, dfdu, dd);
 
-    // Set the total number of tying points needed for this element
-    model::template addComputeTyingStrainTranspose<vars_per_node, basis>(
-      Xpts, fn, vars, d, dety, dfdu, dd);
+//     // Add the contributions to the director field
+//     director::template addRotationMatResidual<vars_per_node, offset, num_nodes>(vars, dC, dfdu);
+//     director::template addDirectorResidual<vars_per_node, offset, num_nodes>(
+//       vars, dvars, ddvars, fn, dd, dfdu);
+//   }
+// }
 
-    // Add the contributions to the director field
-    director::template addRotationMatResidual<vars_per_node, offset, num_nodes>(vars, dC, dfdu);
-    director::template addDirectorResidual<vars_per_node, offset, num_nodes>(
-      vars, dvars, ddvars, fn, dd, dfdu);
-  }
-}
-*/
 /*
   Get the element data for the basis
 */
