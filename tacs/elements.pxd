@@ -179,6 +179,29 @@ cdef extern from "TACSConvectiveTraction3D.h":
                                  TacsScalar,
                                  TACSElementBasis*)
 
+cdef extern from "TACSShellElementTransform.h":
+    cdef cppclass TACSShellTransform(TACSObject):
+        pass
+
+    cdef cppclass TACSShellNaturalTransform(TACSShellTransform):
+        TACSShellNaturalTransform()
+
+    cdef cppclass TACSShellRefAxisTransform(TACSShellTransform):
+        TACSShellRefAxisTransform(TacsScalar*)
+
+cdef extern from "TACSShellElementDefs.h":
+    cdef cppclass TACSQuad2Shell(TACSElement):
+        TACSQuad2Shell(TACSShellTransform*,
+                       TACSShellConstitutive*)
+
+    cdef cppclass TACSQuad3Shell(TACSElement):
+        TACSQuad3Shell(TACSShellTransform*,
+                       TACSShellConstitutive*)
+
+    cdef cppclass TACSQuad4Shell(TACSElement):
+        TACSQuad4Shell(TACSShellTransform*,
+                       TACSShellConstitutive*)
+
 cdef extern from "TACSGibbsVector.h":
     cdef cppclass TACSGibbsVector(TACSObject):
         TACSGibbsVector(TacsScalar, TacsScalar, TacsScalar)
