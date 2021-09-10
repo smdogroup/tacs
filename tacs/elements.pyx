@@ -425,6 +425,45 @@ cdef class ConvectiveTraction3D(Element):
                                                 basis.ptr)
         self.ptr.incref()
 
+cdef class ShellTransform:
+    cdef TACSShellTransform *ptr
+    def __cinit__(self):
+        self.ptr = NULL
+        return
+
+    def __dealloc__(self):
+        if self.ptr != NULL:
+            self.ptr.decref()
+
+cdef class ShellNaturalTransform(ShellTransform):
+    def __cinit__(self):
+        self.ptr = new TACSShellNaturalTransform()
+        self.ptr.incref()
+
+cdef class ShellRefAxisTransform(ShellTransform):
+    def __cinit__(self, axis):
+        cdef TacsScalar a[3]
+        a[0] = axis[0]
+        a[1] = axis[1]
+        a[2] = axis[2]
+        self.ptr = new TACSShellRefAxisTransform(a)
+        self.ptr.incref()
+
+cdef class Quad2Shell(Element):
+    def __cinit__(self, ShellTransform transform, ShellConstitutive con):
+        self.ptr = new TACSQuad2Shell(transform.ptr, con.cptr)
+        self.ptr.incref()
+
+cdef class Quad3Shell(Element):
+    def __cinit__(self, ShellTransform transform, ShellConstitutive con):
+        self.ptr = new TACSQuad3Shell(transform.ptr, con.cptr)
+        self.ptr.incref()
+
+cdef class Quad4Shell(Element):
+    def __cinit__(self, ShellTransform transform, ShellConstitutive con):
+        self.ptr = new TACSQuad4Shell(transform.ptr, con.cptr)
+        self.ptr.incref()
+
 cdef class GibbsVector:
     cdef TACSGibbsVector *ptr
     def __cinit__(self, x, y, z):
