@@ -622,7 +622,7 @@ void TACSJacobiDavidson::solve( KSMPrint *ksm_print, int print_level ){
     // eigenproblem that are not Ritz vectors themselves but are used
     // to compute them.)
     int info;
-    int n = k+1;
+    int n = k + 1;
     LAPACKdsyev(jobz, uplo, &n, ritzvecs, &n, ritzvals,
                 rwork, &lwork, &info);
 
@@ -692,21 +692,28 @@ void TACSJacobiDavidson::solve( KSMPrint *ksm_print, int print_level ){
       // This eigenvalue has converged, store it in Q[nconverged] and
       // modify the remaining entries of V. Now we need to compute the
       // new starting vector for the next eigenvalue
-      int max_new_vecs = k+1 - num_new_eigvals;
-      if (max_new_vecs > max_gmres_size+1){
-        max_new_vecs = max_gmres_size+1;
+
+      // The number of vectors in the new sub-space. This new subspace
+      // is constructed from the Ritz problem from the old subspace stored
+      // currently in V.
+      int new_subspace_vecs = (k + 1) - num_new_eigvals;
+      if (new_subspace_vecs > max_gmres_size + 1){
+        new_subspace_vecs = max_gmres_size + 1;
       }
 
       // Reset the matrix to zero
       memset(M, 0, m*m*sizeof(TacsScalar));
 
       // Set the vectors that will be used
-      for ( int i = 0; i < max_new_vecs; i++ ){
+      for ( int i = 0; i < new_subspace_vecs; i++ ){
+        // Keep only the ritz values that are not yet converged
         int ritz_index = i + num_new_eigvals;
 
         // Set the ritz value
         M[i + i*m] = ritzvals[ritz_index];
 
+        // Build the new subspace vector from the old V subspace and
+        // store it temporarily in W
         W[i]->zeroEntries();
         for ( int j = 0; j <= k; j++ ){
           W[i]->axpy(ritzvecs[ritz_index*(k+1) + j], V[j]);
@@ -719,11 +726,13 @@ void TACSJacobiDavidson::solve( KSMPrint *ksm_print, int print_level ){
           W[i]->axpy(-h, Q[j]);
         }
 
+        // Orthogonalize the new subspace values against themselves
         for ( int j = 0; j < i; j++ ){
           TacsScalar h = oper->dot(W[i], W[j]);
           W[i]->axpy(-h, W[j]);
         }
 
+        // Apply the boundary conditions
         oper->applyBCs(W[i]);
 
         // Normalize the vector so that it is orthonormal
@@ -731,10 +740,46 @@ void TACSJacobiDavidson::solve( KSMPrint *ksm_print, int print_level ){
         W[i]->scale(1.0/vnorm);
       }
 
-      for ( int i = 0; i < max_new_vecs; i++ ){
+      // Copy the new subspace vectors to V
+      for ( int i = 0; i < new_subspace_vecs; i++ ){
         V[i]->copyValues(W[i]);
       }
-      k = max_new_vecs-2;
+
+      // Now add one new subspace vector that is randomly generated
+      if (new_subspace_vecs < m){
+        int index = new_subspace_vecs;
+
+        // Generate a new random vector to append to the space
+        V[index]->setRand(-1.0, 1.0);
+        oper->applyBCs(V[index]);
+
+        // B-orthogonalize the eigenvectors against the subspace
+        for ( int i = 0; i < new_subspace_vecs; i++ ){
+          TacsScalar h = oper->dot(V[index], V[i]);
+          V[index]->axpy(-h, V[i]);
+        }
+
+        // Apply the boundary conditions
+        oper->applyBCs(V[index]);
+
+        // Compute work = A*V[k]
+        oper->multA(V[index], work);
+
+        // Complete the entries in the symmetric matrix M that is formed by
+        // M = V^{T}*A*V
+        for ( int i = 0; i <= index; i++ ){
+          M[index*m + i] = V[i]->dot(work);
+          M[i*m + index] = M[index*m + i];
+        }
+
+        // Increment the number of new subspace vectors by one to account
+        // for the extra random vector
+        new_subspace_vecs++;
+      }
+
+      // Reset the iteration counter here to reflect the new size
+      // of the V subspace
+      k = new_subspace_vecs - 2;
 
       // Reset the iteration loop and continue
       continue;
