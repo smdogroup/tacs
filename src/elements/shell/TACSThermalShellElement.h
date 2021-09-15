@@ -134,6 +134,7 @@ class TACSThermalShellElement : public TACSElement {
 
  private:
   // Set sizes for the different components
+  static const int size = vars_per_node*num_nodes;
   static const int usize = 3*num_nodes;
   static const int dsize = 3*num_nodes;
   static const int csize = 9*num_nodes;
@@ -557,14 +558,23 @@ void TACSThermalShellElement<quadrature, basis, director, model>::
     TacsScalar Kt[3];
     con->evalTangentHeatFlux(elemIndex, pt, X, Kt);
 
-    // // Compute the terms
-    // TacsScalar q2d[16];
-    // q2d[0] = detXd*XdinvT[0]*XdinvT[0];
-    // q2d[0] = detXd*XdinvT[0]*XdinvT[1];
+    // Compute the terms for the thermal stiffness matrix
+    // [ XdinvT[0], XdinvT[3] ][ Kt[0], Kt[1] ][ XdinvT[0], XdinvT[1] ]
+    // [ XdinvT[1], XdinvT[4] ][ Kt[1], Kt[2] ][ XdinvT[3], XdinvT[4] ]
+    TacsScalar Ktmp[4];
+    Ktmp[0] = Kt[0]*XdinvT[0] + Kt[1]*XdinvT[3];
+    Ktmp[1] = Kt[0]*XdinvT[1] + Kt[1]*XdinvT[4];
+    Ktmp[2] = Kt[1]*XdinvT[0] + Kt[2]*XdinvT[3];
+    Ktmp[3] = Kt[1]*XdinvT[1] + Kt[2]*XdinvT[4];
 
-    // basis::template addInterpFieldsGradOuterProduct<vars_per_node, vars_per_node,
+    TacsScalar q2xi[4];
+    q2xi[0] = alpha*detXd*(XdinvT[0]*Ktmp[0] + XdinvT[3]*Ktmp[2]);
+    q2xi[1] = alpha*detXd*(XdinvT[0]*Ktmp[1] + XdinvT[3]*Ktmp[3]);
+    q2xi[2] = alpha*detXd*(XdinvT[1]*Ktmp[0] + XdinvT[4]*Ktmp[2]);
+    q2xi[3] = alpha*detXd*(XdinvT[1]*Ktmp[1] + XdinvT[4]*Ktmp[3]);
 
-
+    basis::template
+      addInterpGradOuterProduct<vars_per_node, vars_per_node, 1, 1>(pt, q2xi, &mat[3*(size + 1)]);
 
     // Compute the thermal strain
     TacsScalar eth[9];
@@ -621,95 +631,9 @@ void TACSThermalShellElement<quadrature, basis, director, model>::
     mat3x3SymmTransformTransSens(XdinvT, de0ty, dgty);
     mat3x3SymmTransformTransHessian(XdinvT, d2e0ty, d2gty);
 
-    // Compute d2gtyu0d, d2gtyu1d
-    TacsScalar d2gtyu0d[54], d2gtyu1d[54];
-    {
-      TacsScalar tmp0d[54], tmp1d[54];
-      for ( int k = 0; k < 6; k++ ){
-        // Compute du0d = T*du0x*XdinvT^{T} + T*du1x*XdinvzT^{T}
-        TacsScalar tmp[9];
-        mat3x3MatTransMult(&d2e0tyu1x[9*k], XdinvzT, tmp);
-        mat3x3MatTransMultAdd(&d2e0tyu0x[9*k], XdinvT, tmp);
-        mat3x3MatMult(T, tmp, &tmp0d[9*k]);
-
-        // Compute du1d = T*du1x*XdinvT^{T}
-        mat3x3MatTransMult(&d2e0tyu1x[9*k], XdinvT, tmp);
-        mat3x3MatMult(T, tmp, &tmp1d[9*k]);
-      }
-
-      // Perform the sensitivity transformation
-      for ( int k = 0; k < 9; k++ ){
-        TacsScalar t0[6], out[6];
-        for ( int kk = 0; kk < 6; kk++ ){
-          t0[kk] = tmp0d[9*kk + k];
-        }
-        mat3x3SymmTransformTransSens(XdinvT, t0, out);
-        for ( int kk = 0; kk < 6; kk++ ){
-          d2gtyu0d[9*kk + k] = out[kk];
-        }
-      }
-
-      for ( int k = 0; k < 9; k++ ){
-        TacsScalar t0[6], out[6];
-        for ( int kk = 0; kk < 6; kk++ ){
-          t0[kk] = tmp1d[9*kk + k];
-        }
-        mat3x3SymmTransformTransSens(XdinvT, t0, out);
-        for ( int kk = 0; kk < 6; kk++ ){
-          d2gtyu1d[9*kk + k] = out[kk];
-        }
-      }
-    }
-
-    TacsScalar d2gtyu[6*usize], d2gtyd[6*dsize];
-    memset(d2gtyu, 0, 6*usize*sizeof(TacsScalar));
-    memset(d2gtyd, 0, 6*dsize*sizeof(TacsScalar));
-
-    for ( int k = 0; k < 6; k++ ){
-      // du0d = [du0xi; dd0]
-      TacsScalar du0xi[6], dd0[3];
-      TacsShellExtractFrame(&d2gtyu0d[9*k], du0xi, dd0);
-
-      TacsScalar dd0xi[6];
-      TacsShellExtractFrame(&d2gtyu1d[9*k], dd0xi);
-
-      // Compute the director field and the gradient of the director
-      // field at the specified point
-      basis::template addInterpFieldsTranspose<3, 3>(pt, dd0, &d2gtyd[dsize*k]);
-      basis::template addInterpFieldsGradTranspose<3, 3>(pt, dd0xi, &d2gtyd[dsize*k]);
-      basis::template addInterpFieldsGradTranspose<3, 3>(pt, du0xi, &d2gtyu[usize*k]);
-    }
-
-    // Add the values into d2etyu and d2etyd
-    for ( int k = 0; k < usize; k++ ){
-      TacsScalar t1[6], t2[basis::NUM_TYING_POINTS];
-      memset(t2, 0, basis::NUM_TYING_POINTS*sizeof(TacsScalar));
-
-      for ( int kk = 0; kk < 6; kk++ ){
-        t1[kk] = d2gtyu[usize*kk + k];
-      }
-
-      basis::addInterpTyingStrainTranspose(pt, t1, t2);
-
-      for ( int kk = 0; kk < basis::NUM_TYING_POINTS; kk++ ){
-        d2etyu[kk*usize + k] += t2[kk];
-      }
-    }
-
-    for ( int k = 0; k < dsize; k++ ){
-      TacsScalar t1[6], t2[basis::NUM_TYING_POINTS];
-      memset(t2, 0, basis::NUM_TYING_POINTS*sizeof(TacsScalar));
-
-      for ( int kk = 0; kk < 6; kk++ ){
-        t1[kk] = d2gtyd[usize*kk + k];
-      }
-
-      basis::addInterpTyingStrainTranspose(pt, t1, t2);
-
-      for ( int kk = 0; kk < basis::NUM_TYING_POINTS; kk++ ){
-        d2etyd[kk*dsize + k] += t2[kk];
-      }
-    }
+    // Add the coupling between the displacement and tying strain
+    TacsShellAddTyingDispCoupling<basis>(pt, T, XdinvT, XdinvzT,
+                                         d2e0tyu0x, d2e0tyu1x, d2etyu, d2etyd);
 
     // Evaluate the tying strain
     basis::addInterpTyingStrainTranspose(pt, dgty, dety);

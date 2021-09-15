@@ -691,7 +691,7 @@ void TacsShellComputeDrillStrain( TACSShellTransform *transform,
     mat3x3MatMult(&u0xn[9*i], &XdinvTn[9*i], tmp);
     mat3x3TransMatMult(&Tn[9*i], tmp, &u0xn[9*i]);
 
-    etn[i] = model::evalDrillStrain(&u0xn[9*i], &Ctn[9*i]);
+    etn[i] = director::evalDrillStrain(&u0xn[9*i], &Ctn[9*i]);
   }
 }
 
@@ -724,7 +724,7 @@ void TacsShellAddDrillStrainSens( const TacsScalar Xdn[],
     basis::getNodePoint(i, pt);
 
     TacsScalar du0x[9], dCt[9];
-    model::evalDrillStrainSens(detn[i], &u0xn[9*i], &Ctn[9*i], du0x, dCt);
+    director::evalDrillStrainSens(detn[i], &u0xn[9*i], &Ctn[9*i], du0x, dCt);
 
     // Compute dCpt = T*dCt*T^{T}
     TacsScalar dCpt[9], tmp[9];
@@ -794,7 +794,7 @@ void TacsShellAddDrillStrainHessian( const TacsScalar Xdn[],
     basis::getNodePoint(i, pt);
 
     TacsScalar du0x[9], dCt[9];
-    model::evalDrillStrainSens(1.0, &u0xn[9*i], &Ctn[9*i], du0x, dCt);
+    director::evalDrillStrainSens(1.0, &u0xn[9*i], &Ctn[9*i], du0x, dCt);
 
     // Compute dCpt = T*dCt*T^{T}
     TacsScalar dCpt[9], tmp[9];
@@ -855,8 +855,8 @@ void TacsShellAddDrillStrainHessian( const TacsScalar Xdn[],
     basis::getNodePoint(i, pt);
 
     TacsScalar d2u0x[81], d2Ct[81], d2Ctu0x[81];
-    model::evalDrillStrainHessian(detn[i], &u0xn[9*i], &Ctn[9*i],
-                                  d2u0x, d2Ct, d2Ctu0x);
+    director::evalDrillStrainHessian(detn[i], &u0xn[9*i], &Ctn[9*i],
+                                     d2u0x, d2Ct, d2Ctu0x);
 
     // Compute the second derivative w.r.t. u0d
     TacsScalar d2u0d[81];
@@ -877,6 +877,120 @@ void TacsShellAddDrillStrainHessian( const TacsScalar Xdn[],
 
     basis::template
       addInterpGradOuterProduct<vars_per_node, vars_per_node, 3, 3>(pt, d2u0xi, mat);
+  }
+}
+
+/**
+  Add/accumulate the contribution to the Jacobians from the coupling between the
+  tying strain and the displacement gradient
+
+  @param pt The parametric point
+  @param T The transformation to local coordinates
+  @param XdinvT Product of inverse of the Jacobian trans. and T
+  @param XdinvzT Product of z-derivative of Jac. trans. inv. and T
+  @param d2e0tyu0x The second derivative of the tying strain and u0x
+  @param d2e0tyu1x The second derivative of the tying strain and u1x
+  @param d2etyu The second derivative of the tying strain and displacements
+  @param d2etyd The second derivative of the tying strain and the director
+*/
+template <class basis>
+void TacsShellAddTyingDispCoupling( const double pt[],
+                                    const TacsScalar T[],
+                                    const TacsScalar XdinvT[],
+                                    const TacsScalar XdinvzT[],
+                                    const TacsScalar d2e0tyu0x[],
+                                    const TacsScalar d2e0tyu1x[],
+                                    TacsScalar d2etyu[],
+                                    TacsScalar d2etyd[] ){
+  const int usize = 3*basis::NUM_NODES;
+  const int dsize = 3*basis::NUM_NODES;
+
+  // Compute d2gtyu0d, d2gtyu1d
+  TacsScalar d2gtyu0d[54], d2gtyu1d[54];
+  TacsScalar tmp0d[54], tmp1d[54];
+  for ( int k = 0; k < 6; k++ ){
+    // Compute du0d = T*du0x*XdinvT^{T} + T*du1x*XdinvzT^{T}
+    TacsScalar tmp[9];
+    mat3x3MatTransMult(&d2e0tyu1x[9*k], XdinvzT, tmp);
+    mat3x3MatTransMultAdd(&d2e0tyu0x[9*k], XdinvT, tmp);
+    mat3x3MatMult(T, tmp, &tmp0d[9*k]);
+
+    // Compute du1d = T*du1x*XdinvT^{T}
+    mat3x3MatTransMult(&d2e0tyu1x[9*k], XdinvT, tmp);
+    mat3x3MatMult(T, tmp, &tmp1d[9*k]);
+  }
+
+  // Perform the sensitivity transformation
+  for ( int k = 0; k < 9; k++ ){
+    TacsScalar t0[6], out[6];
+    for ( int kk = 0; kk < 6; kk++ ){
+      t0[kk] = tmp0d[9*kk + k];
+    }
+    mat3x3SymmTransformTransSens(XdinvT, t0, out);
+    for ( int kk = 0; kk < 6; kk++ ){
+      d2gtyu0d[9*kk + k] = out[kk];
+    }
+  }
+
+  for ( int k = 0; k < 9; k++ ){
+    TacsScalar t0[6], out[6];
+    for ( int kk = 0; kk < 6; kk++ ){
+      t0[kk] = tmp1d[9*kk + k];
+    }
+    mat3x3SymmTransformTransSens(XdinvT, t0, out);
+    for ( int kk = 0; kk < 6; kk++ ){
+      d2gtyu1d[9*kk + k] = out[kk];
+    }
+  }
+
+  TacsScalar d2gtyu[6*usize], d2gtyd[6*dsize];
+  memset(d2gtyu, 0, 6*usize*sizeof(TacsScalar));
+  memset(d2gtyd, 0, 6*dsize*sizeof(TacsScalar));
+
+  for ( int k = 0; k < 6; k++ ){
+    // du0d = [du0xi; dd0]
+    TacsScalar du0xi[6], dd0[3];
+    TacsShellExtractFrame(&d2gtyu0d[9*k], du0xi, dd0);
+
+    TacsScalar dd0xi[6];
+    TacsShellExtractFrame(&d2gtyu1d[9*k], dd0xi);
+
+    // Compute the director field and the gradient of the director
+    // field at the specified point
+    basis::template addInterpFieldsTranspose<3, 3>(pt, dd0, &d2gtyd[dsize*k]);
+    basis::template addInterpFieldsGradTranspose<3, 3>(pt, dd0xi, &d2gtyd[dsize*k]);
+    basis::template addInterpFieldsGradTranspose<3, 3>(pt, du0xi, &d2gtyu[usize*k]);
+  }
+
+  // Add the values into d2etyu and d2etyd
+  for ( int k = 0; k < usize; k++ ){
+    TacsScalar t1[6], t2[basis::NUM_TYING_POINTS];
+    memset(t2, 0, basis::NUM_TYING_POINTS*sizeof(TacsScalar));
+
+    for ( int kk = 0; kk < 6; kk++ ){
+      t1[kk] = d2gtyu[usize*kk + k];
+    }
+
+    basis::addInterpTyingStrainTranspose(pt, t1, t2);
+
+    for ( int kk = 0; kk < basis::NUM_TYING_POINTS; kk++ ){
+      d2etyu[kk*usize + k] += t2[kk];
+    }
+  }
+
+  for ( int k = 0; k < dsize; k++ ){
+    TacsScalar t1[6], t2[basis::NUM_TYING_POINTS];
+    memset(t2, 0, basis::NUM_TYING_POINTS*sizeof(TacsScalar));
+
+    for ( int kk = 0; kk < 6; kk++ ){
+      t1[kk] = d2gtyd[dsize*kk + k];
+    }
+
+    basis::addInterpTyingStrainTranspose(pt, t1, t2);
+
+    for ( int kk = 0; kk < basis::NUM_TYING_POINTS; kk++ ){
+      d2etyd[kk*dsize + k] += t2[kk];
+    }
   }
 }
 

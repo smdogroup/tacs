@@ -126,7 +126,6 @@ class TACSQuadQuadraticQuadrature {
   }
 };
 
-
 class TACSQuadCubicQuadrature {
  public:
   static const int NUM_QUADRATURE_POINTS = 16;
