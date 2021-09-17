@@ -119,7 +119,8 @@ class TACSShellInplaneLinearModel {
   }
 
   template <int vars_per_node, class basis>
-  static void addComputeTyingStrainHessian( const TacsScalar Xpts[],
+  static void addComputeTyingStrainHessian( const TacsScalar alpha,
+                                            const TacsScalar Xpts[],
                                             const TacsScalar fn[],
                                             const TacsScalar vars[],
                                             const TacsScalar d[],

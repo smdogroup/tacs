@@ -51,4 +51,28 @@ typedef TACSShellElement<TACSQuadQuadraticQuadrature, TACSShellQuadBasis<3>,
 typedef TACSShellElement<TACSQuadCubicQuadrature, TACSShellQuadBasis<4>,
                          TACSLinearizedRotation, TACSShellNonlinearModel> TACSQuad16NonlinearShell;
 
+/*
+  Moderate rotation shell elements with appropriate quadrature schemes
+*/
+typedef TACSShellElement<TACSQuadLinearQuadrature, TACSShellQuadBasis<2>,
+                         TACSQuadraticRotation, TACSShellLinearModel> TACSQuad4ShellModRot;
+
+typedef TACSShellElement<TACSQuadQuadraticQuadrature, TACSShellQuadBasis<3>,
+                         TACSQuadraticRotation, TACSShellLinearModel> TACSQuad9ShellModRot;
+
+typedef TACSShellElement<TACSQuadCubicQuadrature, TACSShellQuadBasis<4>,
+                         TACSQuadraticRotation, TACSShellLinearModel> TACSQuad16ShellModRot;
+
+typedef TACSShellElement<TACSTriLinearQuadrature, TACSShellTriLinearBasis,
+                         TACSQuadraticRotation, TACSShellInplaneLinearModel> TACSTri3ShellModRot;
+
+// typedef TACSShellElement<TACSQuadLinearQuadrature, TACSShellQuadBasis<2>,
+//                          TACSQuadraticRotation, TACSShellNonlinearModel> TACSQuad4NonlinearShellModRot;
+
+// typedef TACSShellElement<TACSQuadQuadraticQuadrature, TACSShellQuadBasis<3>,
+//                          TACSQuadraticRotation, TACSShellNonlinearModel> TACSQuad9NonlinearShellModRot;
+
+// typedef TACSShellElement<TACSQuadCubicQuadrature, TACSShellQuadBasis<4>,
+//                          TACSQuadraticRotation, TACSShellNonlinearModel> TACSQuad16NonlinearShellModRot;
+
 #endif // TACS_SHELL_ELEMENT_DEFS_H

@@ -678,15 +678,13 @@ void TACSThermalShellElement<quadrature, basis, director, model>::
     Xdn, fn, vars, XdinvTn, Tn, u0xn, Ctn, detn, d2etn, res, mat);
 
   // Add the residual from the tying strain
-  if (res){
-    model::template
-      addComputeTyingStrainTranspose<vars_per_node, basis>(Xpts, fn, vars, d,
-                                                           dety, res, dd);
-  }
+  model::template
+    addComputeTyingStrainTranspose<vars_per_node, basis>(Xpts, fn, vars, d,
+                                                          dety, res, dd);
 
   // Add the second order terms from the tying strain
   model::template
-    addComputeTyingStrainHessian<vars_per_node, basis>(Xpts, fn, vars, d,
+    addComputeTyingStrainHessian<vars_per_node, basis>(alpha, Xpts, fn, vars, d,
                                                        dety, d2ety, d2etyu, d2etyd,
                                                        mat, d2d, d2du);
 
