@@ -49,9 +49,9 @@ class ElementTest(unittest.TestCase):
         self.transforms = [elements.ShellNaturalTransform(), elements.ShellRefAxisTransform(ref_axis)]
 
         # TACS shell elements of various orders
-        self.elements = [elements.Quad2Shell,
-                         elements.Quad3Shell,
-                         elements.Quad4Shell]
+        self.elements = [elements.Quad4Shell,
+                         elements.Quad9Shell,
+                         elements.Quad16Shell]
 
         # Create stiffness (need class)
         self.con = constitutive.IsoShellConstitutive(self.props, t=1.0, tNum=0)
