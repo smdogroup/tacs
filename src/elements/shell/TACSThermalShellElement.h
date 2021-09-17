@@ -576,12 +576,12 @@ void TACSThermalShellElement<quadrature, basis, director, model>::
 
     // Compute the thermal strain
     TacsScalar eth[9];
-    con->evalThermalStrain(elemIndex, pt, X, t, eth);
+    con->evalThermalStrain(elemIndex, pt, X, 1.0, eth);
 
     // Compute the mechanical strain (and stress)
     TacsScalar em[9];
     for ( int i = 0; i < 9; i++ ){
-      em[i] = e[i] - eth[i];
+      em[i] = e[i] - t*eth[i];
     }
 
     // Compute the tangent stiffness matrix
@@ -593,8 +593,16 @@ void TACSThermalShellElement<quadrature, basis, director, model>::
     TACSShellConstitutive::extractTangentStiffness(Cs, &A, &B, &D, &As, &drill);
 
     // Compute the stress based on the tangent stiffness
-    TacsScalar s[9];
+    TacsScalar s[9], sth[9];
     TACSShellConstitutive::computeStress(A, B, D, As, drill, em, s);
+
+
+    TACSShellConstitutive::computeStress(A, B, D, As, drill, eth, sth);
+
+    for ( int k = 0; k < 9; k++ ){
+      sth[k] *= -alpha*detXd;
+    }
+    // basis::template addInterpFieldsOuterProduct<vars_per_node, vars_per_node, 1, 1>(pt, , mat)
 
     // Compute the derivative of the product of the stress and strain
     // with respect to u0x, u1x and e0ty
