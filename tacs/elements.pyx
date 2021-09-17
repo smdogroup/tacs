@@ -451,6 +451,8 @@ cdef class ShellRefAxisTransform(ShellTransform):
 
 cdef class Quad2Shell(Element):
     def __cinit__(self, ShellTransform transform, ShellConstitutive con):
+        if transform is None:
+            transform = ShellNaturalTransform()
         self.ptr = new TACSQuad2Shell(transform.ptr, con.cptr)
         self.ptr.incref()
 
