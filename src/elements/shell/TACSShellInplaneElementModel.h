@@ -2,8 +2,8 @@
 #define TACS_SHELL_INPLANE_ELEMENT_MODEL_H
 
 #include "TACSShellElementQuadBasis.h"
-#include "TACSShellConstitutive.h"
 #include "TACSElementAlgebra.h"
+#include "TACSShellConstitutive.h"
 
 class TACSShellInplaneLinearModel {
  public:

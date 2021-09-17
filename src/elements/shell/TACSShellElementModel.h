@@ -1,8 +1,9 @@
 #ifndef TACS_SHELL_ELEMENT_MODEL_H
 #define TACS_SHELL_ELEMENT_MODEL_H
 
-#include "TACSShellConstitutive.h"
+#include "TACSShellElementQuadBasis.h"
 #include "TACSElementAlgebra.h"
+#include "TACSShellConstitutive.h"
 #include "TACSElementVerification.h"
 
 class TACSShellLinearModel {

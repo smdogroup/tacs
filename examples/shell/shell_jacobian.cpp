@@ -1,7 +1,6 @@
 #include "TACSElementVerification.h"
 #include "TACSIsoShellConstitutive.h"
 #include "TACSShellElementDefs.h"
-#include "TACSPlateElementModel.h"
 
 int main( int argc, char *argv[] ){
   MPI_Init(&argc, &argv);
@@ -114,9 +113,6 @@ int main( int argc, char *argv[] ){
   TacsGenerateRandomArray(vars, num_vars);
   TacsGenerateRandomArray(dvars, num_vars);
   TacsGenerateRandomArray(ddvars, num_vars);
-
-  // double dh = 1e-30;
-  // TacsTestShellTyingStrain<6, TACSShellTriQuadraticBasis, TACSShellNonlinearModel>(dh);
 
   // Check the residual formulation against Lagrange's equations. Not all elements
   // will pass this test - for instance the thermal shell elements.

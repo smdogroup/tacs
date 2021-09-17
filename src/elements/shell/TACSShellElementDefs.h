@@ -5,7 +5,7 @@
 #include "TACSShellElementTriBasis.h"
 #include "TACSDirector.h"
 #include "TACSShellElementModel.h"
-#include "TACSPlateElementModel.h"
+#include "TACSShellInplaneElementModel.h"
 #include "TACSShellElement.h"
 #include "TACSThermalShellElement.h"
 
