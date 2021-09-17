@@ -10,10 +10,10 @@ class ElementTest(unittest.TestCase):
 
         # fd/cs step size
         if TACS.dtype is complex:
-            self.dh = 1e-50
-            self.rtol = 1e-10
+            self.dh = 1e-5
+            self.rtol = 1e-6
         else:
-            self.dh = 1e-6
+            self.dh = 1e-5
             self.rtol = 1e-2
         self.dtype = TACS.dtype
 
@@ -81,4 +81,59 @@ class ElementTest(unittest.TestCase):
                         fail = elements.TestElementJacobian(element, self.elem_index, self.time, self.xpts,
                                                             self.vars, self.dvars, self.ddvars, -1, self.dh,
                                                             self.print_level, self.atol, self.rtol)
+                        self.assertFalse(fail)
+
+    def test_adj_res_product(self):
+        # Loop through every combination of transform type and shell element class and test adjoint residual-dvsens product
+        for transform in self.transforms:
+            with self.subTest(transform=transform):
+                for element_handle in self.elements:
+                    with self.subTest(element=element_handle):
+                        element = element_handle(transform, self.con)
+                        dvs = element.getDesignVars(self.elem_index)
+                        fail = elements.TestAdjResProduct(element, self.elem_index, self.time, self.xpts,
+                                                          self.vars, self.dvars, self.ddvars, dvs, self.dh,
+                                                          self.print_level, self.atol, self.rtol)
+                        self.assertFalse(fail)
+
+    def test_adj_res_xpt_product(self):
+        # Loop through every combination of transform type and shell element class and test adjoint residual-xptsens product
+        for transform in self.transforms:
+            with self.subTest(transform=transform):
+                for element_handle in self.elements:
+                    with self.subTest(element=element_handle):
+                        element = element_handle(transform, self.con)
+                        fail = elements.TestAdjResXptProduct(element, self.elem_index, self.time, self.xpts,
+                                                             self.vars, self.dvars, self.ddvars, self.dh,
+                                                             self.print_level, self.atol, self.rtol)
+                        self.assertFalse(fail)
+
+    def test_element_mat_dv_sens(self):
+        # Loop through every combination of transform type and shell element class and element matrix inner product sens
+        for transform in self.transforms:
+            with self.subTest(transform=transform):
+                for element_handle in self.elements:
+                    with self.subTest(element=element_handle):
+                        element = element_handle(transform, self.con)
+                        dvs = element.getDesignVars(self.elem_index)
+                        for matrix_type in self.matrix_types:
+                            with self.subTest(matrix_type=matrix_type):
+                                if self.print_level > 0:
+                                    print("Testing with model %s with basis functions %s and matrix type %s\n" % (
+                                        type(model), type(basis), type(matrix_type)))
+                                fail = elements.TestElementMatDVSens(element, matrix_type, self.elem_index,
+                                                                     self.time, self.xpts, self.vars, dvs, self.dh,
+                                                                     self.print_level, self.atol, self.rtol)
+                                self.assertFalse(fail)
+
+    def test_element_mat_sv_sens(self):
+        # Loop through every combination of model and basis class and test element matrix inner product sens
+        for transform in self.transforms:
+            with self.subTest(transform=transform):
+                for element_handle in self.elements:
+                    with self.subTest(element=element_handle):
+                        element = element_handle(transform, self.con)
+                        fail = elements.TestElementMatSVSens(element, TACS.GEOMETRIC_STIFFNESS_MATRIX, self.elem_index,
+                                                             self.time, self.xpts, self.vars, self.dh,
+                                                             self.print_level, self.atol, self.rtol)
                         self.assertFalse(fail)
