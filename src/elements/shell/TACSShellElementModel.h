@@ -32,47 +32,47 @@ class TACSShellLinearModel {
                                   const TacsScalar vars[],
                                   const TacsScalar d[],
                                   TacsScalar ety[] ){
-    const int num_tying_fields = 5;
-    for ( int field = 0, index = 0; field < num_tying_fields; field++ ){
-      const int num_tying_points = basis::getNumTyingPoints(field);
-      for ( int ty = 0; ty < num_tying_points; ty++, index++ ){
-        double pt[2];
-        basis::getTyingPoint(field, ty, pt);
+    for ( int index = 0; index < basis::NUM_TYING_POINTS; index++ ){
+      // Get the field index
+      const TacsShellTyingStrainComponent field = basis::getTyingField(index);
 
-        // Interpolate the field value
-        TacsScalar Uxi[6], Xxi[6];
-        basis::template interpFieldsGrad<3, 3>(pt, Xpts, Xxi);
-        basis::template interpFieldsGrad<vars_per_node, 3>(pt, vars, Uxi);
+      // Get the tying point parametric location
+      double pt[2];
+      basis::getTyingPoint(index, pt);
 
-        ety[index] = 0.0;
-        if (field == 0){
-          // Compute g11 = e1^{T}*G*e1
-          ety[index] = (Uxi[0]*Xxi[0] + Uxi[2]*Xxi[2] + Uxi[4]*Xxi[4]);
-        }
-        else if (field == 1){
-          // Compute g22 = e2^{T}*G*e2
-          ety[index] = (Uxi[1]*Xxi[1] + Uxi[3]*Xxi[3] + Uxi[5]*Xxi[5]);
-        }
-        else if (field == 2){
-          // Compute g12 = e2^{T}*G*e1
-          ety[index] = 0.5*(Uxi[0]*Xxi[1] + Uxi[2]*Xxi[3] + Uxi[4]*Xxi[5] +
-                            Uxi[1]*Xxi[0] + Uxi[3]*Xxi[2] + Uxi[5]*Xxi[4]);
-        }
-        else {
-          TacsScalar d0[3], n0[3];
-          basis::template interpFields<3, 3>(pt, d, d0);
-          basis::template interpFields<3, 3>(pt, fn, n0);
+      // Interpolate the field value
+      TacsScalar Uxi[6], Xxi[6];
+      basis::template interpFieldsGrad<3, 3>(pt, Xpts, Xxi);
+      basis::template interpFieldsGrad<vars_per_node, 3>(pt, vars, Uxi);
 
-          if (field == 3){
-            // Compute g23 = e2^{T}*G*e3
-            ety[index] = 0.5*(Xxi[1]*d0[0] + Xxi[3]*d0[1] + Xxi[5]*d0[2] +
-                              n0[0]*Uxi[1] + n0[1]*Uxi[3] + n0[2]*Uxi[5]);
-          }
-          else if (field == 4){
-            // Compute g13 = e1^{T}*G*e3
-            ety[index] = 0.5*(Xxi[0]*d0[0] + Xxi[2]*d0[1] + Xxi[4]*d0[2] +
-                              n0[0]*Uxi[0] + n0[1]*Uxi[2] + n0[2]*Uxi[4]);
-          }
+      ety[index] = 0.0;
+      if (field == TACS_SHELL_G11_COMPONENT){
+        // Compute g11 = e1^{T}*G*e1
+        ety[index] = (Uxi[0]*Xxi[0] + Uxi[2]*Xxi[2] + Uxi[4]*Xxi[4]);
+      }
+      else if (field == TACS_SHELL_G22_COMPONENT){
+        // Compute g22 = e2^{T}*G*e2
+        ety[index] = (Uxi[1]*Xxi[1] + Uxi[3]*Xxi[3] + Uxi[5]*Xxi[5]);
+      }
+      else if (field == TACS_SHELL_G12_COMPONENT){
+        // Compute g12 = e2^{T}*G*e1
+        ety[index] = 0.5*(Uxi[0]*Xxi[1] + Uxi[2]*Xxi[3] + Uxi[4]*Xxi[5] +
+                          Uxi[1]*Xxi[0] + Uxi[3]*Xxi[2] + Uxi[5]*Xxi[4]);
+      }
+      else {
+        TacsScalar d0[3], n0[3];
+        basis::template interpFields<3, 3>(pt, d, d0);
+        basis::template interpFields<3, 3>(pt, fn, n0);
+
+        if (field == TACS_SHELL_G23_COMPONENT){
+          // Compute g23 = e2^{T}*G*e3
+          ety[index] = 0.5*(Xxi[1]*d0[0] + Xxi[3]*d0[1] + Xxi[5]*d0[2] +
+                            n0[0]*Uxi[1] + n0[1]*Uxi[3] + n0[2]*Uxi[5]);
+        }
+        else if (field == TACS_SHELL_G13_COMPONENT){
+          // Compute g13 = e1^{T}*G*e3
+          ety[index] = 0.5*(Xxi[0]*d0[0] + Xxi[2]*d0[1] + Xxi[4]*d0[2] +
+                            n0[0]*Uxi[0] + n0[1]*Uxi[2] + n0[2]*Uxi[4]);
         }
       }
     }
@@ -86,80 +86,82 @@ class TACSShellLinearModel {
                                               const TacsScalar dety[],
                                               TacsScalar res[],
                                               TacsScalar dd[] ){
-    const int num_tying_fields = 5;
-    for ( int field = 0, index = 0; field < num_tying_fields; field++ ){
-      const int num_tying_points = basis::getNumTyingPoints(field);
-      for ( int ty = 0; ty < num_tying_points; ty++, index++ ){
-        double pt[2];
-        basis::getTyingPoint(field, ty, pt);
+    for ( int index = 0; index < basis::NUM_TYING_POINTS; index++ ){
+      // Get the field index
+      const TacsShellTyingStrainComponent field = basis::getTyingField(index);
 
-        // Interpolate the field value
-        TacsScalar Uxi[6], Xxi[6], dUxi[6];
-        basis::template interpFieldsGrad<3, 3>(pt, Xpts, Xxi);
-        basis::template interpFieldsGrad<vars_per_node, 3>(pt, vars, Uxi);
+      // Get the tying point parametric location
+      double pt[2];
+      basis::getTyingPoint(index, pt);
 
-        if (field == 0){
-          // Compute g11 = e1^{T}*G*e1
-          dUxi[0] = dety[index]*Xxi[0];
-          dUxi[1] = 0.0;
-          dUxi[2] = dety[index]*Xxi[2];
-          dUxi[3] = 0.0;
-          dUxi[4] = dety[index]*Xxi[4];
-          dUxi[5] = 0.0;
-        }
-        else if (field == 1){
-          // Compute g22 = e2^{T}*G*e2
+      // Interpolate the field value
+      TacsScalar Uxi[6], Xxi[6], dUxi[6];
+      basis::template interpFieldsGrad<3, 3>(pt, Xpts, Xxi);
+      basis::template interpFieldsGrad<vars_per_node, 3>(pt, vars, Uxi);
+
+      if (field == TACS_SHELL_G11_COMPONENT){
+        // Compute g11 = e1^{T}*G*e1
+        dUxi[0] = dety[index]*Xxi[0];
+        dUxi[1] = 0.0;
+        dUxi[2] = dety[index]*Xxi[2];
+        dUxi[3] = 0.0;
+        dUxi[4] = dety[index]*Xxi[4];
+        dUxi[5] = 0.0;
+      }
+      else if (field == TACS_SHELL_G22_COMPONENT){
+        // Compute g22 = e2^{T}*G*e2
+        dUxi[0] = 0.0;
+        dUxi[1] = dety[index]*Xxi[1];
+        dUxi[2] = 0.0;
+        dUxi[3] = dety[index]*Xxi[3];
+        dUxi[4] = 0.0;
+        dUxi[5] = dety[index]*Xxi[5];
+      }
+      else if (field == TACS_SHELL_G12_COMPONENT){
+        // Compute g12 = e2^{T}*G*e1
+        dUxi[0] = 0.5*dety[index]*Xxi[1];
+        dUxi[1] = 0.5*dety[index]*Xxi[0];
+        dUxi[2] = 0.5*dety[index]*Xxi[3];
+        dUxi[3] = 0.5*dety[index]*Xxi[2];
+        dUxi[4] = 0.5*dety[index]*Xxi[5];
+        dUxi[5] = 0.5*dety[index]*Xxi[4];
+      }
+      else {
+        TacsScalar d0[3], dd0[3], n0[3];
+        basis::template interpFields<3, 3>(pt, d, d0);
+        basis::template interpFields<3, 3>(pt, fn, n0);
+
+        if (field == TACS_SHELL_G23_COMPONENT){
+          // Compute g23 = e2^{T}*G*e3
           dUxi[0] = 0.0;
-          dUxi[1] = dety[index]*Xxi[1];
+          dUxi[1] = 0.5*dety[index]*n0[0];
           dUxi[2] = 0.0;
-          dUxi[3] = dety[index]*Xxi[3];
+          dUxi[3] = 0.5*dety[index]*n0[1];
           dUxi[4] = 0.0;
-          dUxi[5] = dety[index]*Xxi[5];
+          dUxi[5] = 0.5*dety[index]*n0[2];
+
+          dd0[0] = 0.5*dety[index]*Xxi[1];
+          dd0[1] = 0.5*dety[index]*Xxi[3];
+          dd0[2] = 0.5*dety[index]*Xxi[5];
         }
-        else if (field == 2){
-          // Compute g12 = e2^{T}*G*e1
-          dUxi[0] = 0.5*dety[index]*Xxi[1];
-          dUxi[1] = 0.5*dety[index]*Xxi[0];
-          dUxi[2] = 0.5*dety[index]*Xxi[3];
-          dUxi[3] = 0.5*dety[index]*Xxi[2];
-          dUxi[4] = 0.5*dety[index]*Xxi[5];
-          dUxi[5] = 0.5*dety[index]*Xxi[4];
-        }
-        else {
-          TacsScalar d0[3], dd0[3], n0[3];
-          basis::template interpFields<3, 3>(pt, d, d0);
-          basis::template interpFields<3, 3>(pt, fn, n0);
+        else if (field == TACS_SHELL_G13_COMPONENT){
+          // Compute g13 = e1^{T}*G*e3
+          dUxi[0] = 0.5*dety[index]*n0[0];
+          dUxi[1] = 0.0;
+          dUxi[2] = 0.5*dety[index]*n0[1];
+          dUxi[3] = 0.0;
+          dUxi[4] = 0.5*dety[index]*n0[2];
+          dUxi[5] = 0.0;
 
-          if (field == 3){
-            // Compute g23 = e2^{T}*G*e3
-            dUxi[0] = 0.0;
-            dUxi[1] = 0.5*dety[index]*n0[0];
-            dUxi[2] = 0.0;
-            dUxi[3] = 0.5*dety[index]*n0[1];
-            dUxi[4] = 0.0;
-            dUxi[5] = 0.5*dety[index]*n0[2];
-
-            dd0[0] = 0.5*dety[index]*Xxi[1];
-            dd0[1] = 0.5*dety[index]*Xxi[3];
-            dd0[2] = 0.5*dety[index]*Xxi[5];
-          }
-          else if (field == 4){
-            // Compute g13 = e1^{T}*G*e3
-            dUxi[0] = 0.5*dety[index]*n0[0];
-            dUxi[1] = 0.0;
-            dUxi[2] = 0.5*dety[index]*n0[1];
-            dUxi[3] = 0.0;
-            dUxi[4] = 0.5*dety[index]*n0[2];
-            dUxi[5] = 0.0;
-
-            dd0[0] = 0.5*dety[index]*Xxi[0];
-            dd0[1] = 0.5*dety[index]*Xxi[2];
-            dd0[2] = 0.5*dety[index]*Xxi[4];
-          }
-
-          basis::template addInterpFieldsTranspose<3, 3>(pt, dd0, dd);
+          dd0[0] = 0.5*dety[index]*Xxi[0];
+          dd0[1] = 0.5*dety[index]*Xxi[2];
+          dd0[2] = 0.5*dety[index]*Xxi[4];
         }
 
+        basis::template addInterpFieldsTranspose<3, 3>(pt, dd0, dd);
+      }
+
+      if (res){
         basis::template addInterpFieldsGradTranspose<vars_per_node, 3>(pt, dUxi, res);
       }
     }
@@ -177,219 +179,213 @@ class TACSShellLinearModel {
                                             TacsScalar mat[],
                                             TacsScalar d2d[],
                                             TacsScalar d2du[] ){
-    // Set the number of tying fields
-    const int num_tying_fields = 5;
-
     // Initialize the data
     TacsScalar n0ty[3*basis::NUM_TYING_POINTS];
     TacsScalar Xxity[6*basis::NUM_TYING_POINTS];
     TacsScalar *n0 = n0ty, *Xxi = Xxity;
 
-    // Pre-compute terms needed at each tying point
-    for ( int f1 = 0; f1 < num_tying_fields; f1++ ){
-      const int nty1 = basis::getNumTyingPoints(f1);
+    for ( int index = 0; index < basis::NUM_TYING_POINTS; index++ ){
+      // Get the tying point parametric location
+      double pt[2];
+      basis::getTyingPoint(index, pt);
 
-      for ( int ty1 = 0; ty1 < nty1; ty1++, n0 += 3, Xxi += 6 ){
-        double pt[2];
-        basis::getTyingPoint(f1, ty1, pt);
+      basis::template interpFieldsGrad<3, 3>(pt, Xpts, Xxi);
+      basis::template interpFields<3, 3>(pt, fn, n0);
 
-        basis::template interpFieldsGrad<3, 3>(pt, Xpts, Xxi);
-        basis::template interpFields<3, 3>(pt, fn, n0);
-      }
+      n0 += 3;
+      Xxi += 6;
     }
 
     TacsScalar *n01 = n0ty, *Xxi1 = Xxity;
-    for ( int f1 = 0, base = 0, index = 0; f1 < num_tying_fields;
-      base += basis::NUM_TYING_POINTS*basis::getNumTyingPoints(f1), f1++ ){
-      const int nty1 = basis::getNumTyingPoints(f1);
+    for ( int i1 = 0; i1 < basis::NUM_TYING_POINTS; i1++, n01 += 3, Xxi1 += 6 ){
+      // Get the field index
+      const TacsShellTyingStrainComponent f1 = basis::getTyingField(i1);
 
-      for ( int ty1 = 0; ty1 < nty1; ty1++, index++, n01 += 3, Xxi1 += 6 ){
+      // Get the tying point parametric location
+      double pt1[2];
+      basis::getTyingPoint(i1, pt1);
 
-        TacsScalar du2[3*basis::NUM_NODES], dd2[3*basis::NUM_NODES];
-        memset(du2, 0, 3*basis::NUM_NODES*sizeof(TacsScalar));
-        memset(dd2, 0, 3*basis::NUM_NODES*sizeof(TacsScalar));
+      TacsScalar du2[3*basis::NUM_NODES], dd2[3*basis::NUM_NODES];
+      memset(du2, 0, 3*basis::NUM_NODES*sizeof(TacsScalar));
+      memset(dd2, 0, 3*basis::NUM_NODES*sizeof(TacsScalar));
 
-        TacsScalar *n02 = n0ty, *Xxi2 = Xxity;
-        for ( int f2 = 0, offset = base; f2 < num_tying_fields;
-          offset += nty1*basis::getNumTyingPoints(f2), f2++ ){
-          const int nty2 = basis::getNumTyingPoints(f2);
+      TacsScalar *n02 = n0ty, *Xxi2 = Xxity;
+      for ( int i2 = 0; i2 < basis::NUM_TYING_POINTS; i2++, n02 += 3, Xxi2 += 6 ){
+        // Get the field index
+        const TacsShellTyingStrainComponent f2 = basis::getTyingField(i2);
 
-          for ( int ty2 = 0; ty2 < nty2; ty2++, n02 += 3, Xxi2 += 6 ){
-            double pt2[2];
-            basis::getTyingPoint(f2, ty2, pt2);
+        // Get the tying point parametric location
+        double pt2[2];
+        basis::getTyingPoint(i2, pt2);
 
-            TacsScalar value = d2ety[offset + ty2 + ty1*nty2];
+        TacsScalar value = d2ety[basis::NUM_TYING_POINTS*i1 + i2];
 
-            TacsScalar dUxi2[6];
-            if (f2 == 0){
-              // Compute g11 = e1^{T}*G*e1
-              dUxi2[0] = value*Xxi2[0];
-              dUxi2[1] = 0.0;
-              dUxi2[2] = value*Xxi2[2];
-              dUxi2[3] = 0.0;
-              dUxi2[4] = value*Xxi2[4];
-              dUxi2[5] = 0.0;
-            }
-            else if (f2 == 1){
-              // Compute g22 = e2^{T}*G*e2
-              dUxi2[0] = 0.0;
-              dUxi2[1] = value*Xxi2[1];
-              dUxi2[2] = 0.0;
-              dUxi2[3] = value*Xxi2[3];
-              dUxi2[4] = 0.0;
-              dUxi2[5] = value*Xxi2[5];
-            }
-            else if (f2 == 2){
-              // Compute g12 = e2^{T}*G*e1
-              dUxi2[0] = 0.5*value*Xxi2[1];
-              dUxi2[1] = 0.5*value*Xxi2[0];
-              dUxi2[2] = 0.5*value*Xxi2[3];
-              dUxi2[3] = 0.5*value*Xxi2[2];
-              dUxi2[4] = 0.5*value*Xxi2[5];
-              dUxi2[5] = 0.5*value*Xxi2[4];
-            }
-            else {
-              TacsScalar dd02[3];
-              if (f2 == 3){
-                // Compute g23 = e2^{T}*G*e3
-                dUxi2[0] = 0.0;
-                dUxi2[1] = 0.5*value*n02[0];
-                dUxi2[2] = 0.0;
-                dUxi2[3] = 0.5*value*n02[1];
-                dUxi2[4] = 0.0;
-                dUxi2[5] = 0.5*value*n02[2];
-
-                dd02[0] = 0.5*value*Xxi2[1];
-                dd02[1] = 0.5*value*Xxi2[3];
-                dd02[2] = 0.5*value*Xxi2[5];
-              }
-              else if (f2 == 4){
-                // Compute g13 = e1^{T}*G*e3
-                dUxi2[0] = 0.5*value*n02[0];
-                dUxi2[1] = 0.0;
-                dUxi2[2] = 0.5*value*n02[1];
-                dUxi2[3] = 0.0;
-                dUxi2[4] = 0.5*value*n02[2];
-                dUxi2[5] = 0.0;
-
-                dd02[0] = 0.5*value*Xxi2[0];
-                dd02[1] = 0.5*value*Xxi2[2];
-                dd02[2] = 0.5*value*Xxi2[4];
-              }
-
-              basis::template addInterpFieldsTranspose<3, 3>(pt2, dd02, dd2);
-            }
-
-            basis::template addInterpFieldsGradTranspose<3, 3>(pt2, dUxi2, du2);
-          }
-        }
-
-        TacsScalar du1[3*basis::NUM_NODES];
-        memset(du1, 0, 3*basis::NUM_NODES*sizeof(TacsScalar));
-
-        double pt1[2];
-        basis::getTyingPoint(f1, ty1, pt1);
-
-        // Store the the derivative information for the first point
-        TacsScalar dUxi1[6];
-
-        if (f1 == 0){
+        TacsScalar dUxi2[6];
+        if (f2 == TACS_SHELL_G11_COMPONENT){
           // Compute g11 = e1^{T}*G*e1
-          dUxi1[0] = Xxi1[0];
-          dUxi1[1] = 0.0;
-          dUxi1[2] = Xxi1[2];
-          dUxi1[3] = 0.0;
-          dUxi1[4] = Xxi1[4];
-          dUxi1[5] = 0.0;
+          dUxi2[0] = value*Xxi2[0];
+          dUxi2[1] = 0.0;
+          dUxi2[2] = value*Xxi2[2];
+          dUxi2[3] = 0.0;
+          dUxi2[4] = value*Xxi2[4];
+          dUxi2[5] = 0.0;
         }
-        else if (f1 == 1){
+        else if (f2 == TACS_SHELL_G22_COMPONENT){
           // Compute g22 = e2^{T}*G*e2
-          dUxi1[0] = 0.0;
-          dUxi1[1] = Xxi1[1];
-          dUxi1[2] = 0.0;
-          dUxi1[3] = Xxi1[3];
-          dUxi1[4] = 0.0;
-          dUxi1[5] = Xxi1[5];
+          dUxi2[0] = 0.0;
+          dUxi2[1] = value*Xxi2[1];
+          dUxi2[2] = 0.0;
+          dUxi2[3] = value*Xxi2[3];
+          dUxi2[4] = 0.0;
+          dUxi2[5] = value*Xxi2[5];
         }
-        else if (f1 == 2){
+        else if (f2 == TACS_SHELL_G12_COMPONENT){
           // Compute g12 = e2^{T}*G*e1
-          dUxi1[0] = 0.5*Xxi1[1];
-          dUxi1[1] = 0.5*Xxi1[0];
-          dUxi1[2] = 0.5*Xxi1[3];
-          dUxi1[3] = 0.5*Xxi1[2];
-          dUxi1[4] = 0.5*Xxi1[5];
-          dUxi1[5] = 0.5*Xxi1[4];
+          dUxi2[0] = 0.5*value*Xxi2[1];
+          dUxi2[1] = 0.5*value*Xxi2[0];
+          dUxi2[2] = 0.5*value*Xxi2[3];
+          dUxi2[3] = 0.5*value*Xxi2[2];
+          dUxi2[4] = 0.5*value*Xxi2[5];
+          dUxi2[5] = 0.5*value*Xxi2[4];
         }
         else {
-          TacsScalar dd1[3*basis::NUM_NODES];
-          memset(dd1, 0, 3*basis::NUM_NODES*sizeof(TacsScalar));
-
-          TacsScalar dd01[3];
-          if (f1 == 3){
+          TacsScalar dd02[3];
+          if (f2 == TACS_SHELL_G23_COMPONENT){
             // Compute g23 = e2^{T}*G*e3
-            dUxi1[0] = 0.0;
-            dUxi1[1] = 0.5*n01[0];
-            dUxi1[2] = 0.0;
-            dUxi1[3] = 0.5*n01[1];
-            dUxi1[4] = 0.0;
-            dUxi1[5] = 0.5*n01[2];
+            dUxi2[0] = 0.0;
+            dUxi2[1] = 0.5*value*n02[0];
+            dUxi2[2] = 0.0;
+            dUxi2[3] = 0.5*value*n02[1];
+            dUxi2[4] = 0.0;
+            dUxi2[5] = 0.5*value*n02[2];
 
-            dd01[0] = 0.5*Xxi1[1];
-            dd01[1] = 0.5*Xxi1[3];
-            dd01[2] = 0.5*Xxi1[5];
+            dd02[0] = 0.5*value*Xxi2[1];
+            dd02[1] = 0.5*value*Xxi2[3];
+            dd02[2] = 0.5*value*Xxi2[5];
           }
-          else if (f1 == 4){
+          else if (f2 == TACS_SHELL_G13_COMPONENT){
             // Compute g13 = e1^{T}*G*e3
-            dUxi1[0] = 0.5*n01[0];
-            dUxi1[1] = 0.0;
-            dUxi1[2] = 0.5*n01[1];
-            dUxi1[3] = 0.0;
-            dUxi1[4] = 0.5*n01[2];
-            dUxi1[5] = 0.0;
+            dUxi2[0] = 0.5*value*n02[0];
+            dUxi2[1] = 0.0;
+            dUxi2[2] = 0.5*value*n02[1];
+            dUxi2[3] = 0.0;
+            dUxi2[4] = 0.5*value*n02[2];
+            dUxi2[5] = 0.0;
 
-            dd01[0] = 0.5*Xxi1[0];
-            dd01[1] = 0.5*Xxi1[2];
-            dd01[2] = 0.5*Xxi1[4];
+            dd02[0] = 0.5*value*Xxi2[0];
+            dd02[1] = 0.5*value*Xxi2[2];
+            dd02[2] = 0.5*value*Xxi2[4];
           }
 
-          basis::template addInterpFieldsTranspose<3, 3>(pt1, dd01, dd1);
+          basis::template addInterpFieldsTranspose<3, 3>(pt2, dd02, dd2);
+        }
 
-          const TacsScalar *etd = &d2etyd[3*basis::NUM_NODES*index];
-          const TacsScalar *etu = &d2etyu[3*basis::NUM_NODES*index];
-          for ( int i = 0; i < 3*basis::NUM_NODES; i++ ){
-            for ( int j = 0; j < 3*basis::NUM_NODES; j++ ){
-              d2d[3*basis::NUM_NODES*i + j] += dd1[i]*dd2[j] + dd1[i]*etd[j] + etd[i]*dd1[j];
-            }
-          }
+        basis::template addInterpFieldsGradTranspose<3, 3>(pt2, dUxi2, du2);
+      }
 
-          for ( int i = 0; i < 3*basis::NUM_NODES; i++ ){
-            for ( int j = 0; j < 3*basis::NUM_NODES; j++ ){
-              d2du[3*basis::NUM_NODES*i + j] += dd1[i]*du2[j] + dd1[i]*etu[j];
-            }
+      TacsScalar du1[3*basis::NUM_NODES];
+      memset(du1, 0, 3*basis::NUM_NODES*sizeof(TacsScalar));
+
+      // Store the the derivative information for the first point
+      TacsScalar dUxi1[6];
+
+      if (f1 == TACS_SHELL_G11_COMPONENT){
+        // Compute g11 = e1^{T}*G*e1
+        dUxi1[0] = Xxi1[0];
+        dUxi1[1] = 0.0;
+        dUxi1[2] = Xxi1[2];
+        dUxi1[3] = 0.0;
+        dUxi1[4] = Xxi1[4];
+        dUxi1[5] = 0.0;
+      }
+      else if (f1 == TACS_SHELL_G22_COMPONENT){
+        // Compute g22 = e2^{T}*G*e2
+        dUxi1[0] = 0.0;
+        dUxi1[1] = Xxi1[1];
+        dUxi1[2] = 0.0;
+        dUxi1[3] = Xxi1[3];
+        dUxi1[4] = 0.0;
+        dUxi1[5] = Xxi1[5];
+      }
+      else if (f1 == TACS_SHELL_G12_COMPONENT){
+        // Compute g12 = e2^{T}*G*e1
+        dUxi1[0] = 0.5*Xxi1[1];
+        dUxi1[1] = 0.5*Xxi1[0];
+        dUxi1[2] = 0.5*Xxi1[3];
+        dUxi1[3] = 0.5*Xxi1[2];
+        dUxi1[4] = 0.5*Xxi1[5];
+        dUxi1[5] = 0.5*Xxi1[4];
+      }
+      else {
+        TacsScalar dd1[3*basis::NUM_NODES];
+        memset(dd1, 0, 3*basis::NUM_NODES*sizeof(TacsScalar));
+
+        TacsScalar dd01[3];
+        if (f1 == TACS_SHELL_G23_COMPONENT){
+          // Compute g23 = e2^{T}*G*e3
+          dUxi1[0] = 0.0;
+          dUxi1[1] = 0.5*n01[0];
+          dUxi1[2] = 0.0;
+          dUxi1[3] = 0.5*n01[1];
+          dUxi1[4] = 0.0;
+          dUxi1[5] = 0.5*n01[2];
+
+          dd01[0] = 0.5*Xxi1[1];
+          dd01[1] = 0.5*Xxi1[3];
+          dd01[2] = 0.5*Xxi1[5];
+        }
+        else if (f1 == TACS_SHELL_G13_COMPONENT){
+          // Compute g13 = e1^{T}*G*e3
+          dUxi1[0] = 0.5*n01[0];
+          dUxi1[1] = 0.0;
+          dUxi1[2] = 0.5*n01[1];
+          dUxi1[3] = 0.0;
+          dUxi1[4] = 0.5*n01[2];
+          dUxi1[5] = 0.0;
+
+          dd01[0] = 0.5*Xxi1[0];
+          dd01[1] = 0.5*Xxi1[2];
+          dd01[2] = 0.5*Xxi1[4];
+        }
+
+        basis::template addInterpFieldsTranspose<3, 3>(pt1, dd01, dd1);
+
+        const TacsScalar *etd = &d2etyd[3*basis::NUM_NODES*i1];
+        const TacsScalar *etu = &d2etyu[3*basis::NUM_NODES*i1];
+        for ( int i = 0; i < 3*basis::NUM_NODES; i++ ){
+          for ( int j = 0; j < 3*basis::NUM_NODES; j++ ){
+            d2d[3*basis::NUM_NODES*i + j] += dd1[i]*dd2[j] + dd1[i]*etd[j] + etd[i]*dd1[j];
           }
         }
 
-        basis::template addInterpFieldsGradTranspose<3, 3>(pt1, dUxi1, du1);
-
-        const TacsScalar *etd = &d2etyd[3*basis::NUM_NODES*index];
         for ( int i = 0; i < 3*basis::NUM_NODES; i++ ){
           for ( int j = 0; j < 3*basis::NUM_NODES; j++ ){
-            d2du[3*basis::NUM_NODES*i + j] += etd[i]*du1[j];
+            d2du[3*basis::NUM_NODES*i + j] += dd1[i]*du2[j] + dd1[i]*etu[j];
           }
         }
+      }
 
-        const int nvars = vars_per_node*basis::NUM_NODES;
-        const TacsScalar *etu = &d2etyu[3*basis::NUM_NODES*index];
-        for ( int i = 0; i < 3*basis::NUM_NODES; i++ ){
-          int ii = vars_per_node*(i / 3) + (i % 3);
-          for ( int j = 0; j < 3*basis::NUM_NODES; j++ ){
-            int jj = vars_per_node*(j / 3) + (j % 3);
-            mat[nvars*ii + jj] += du1[i]*du2[j] + du1[i]*etu[j] + etu[i]*du1[j];
-          }
+      basis::template addInterpFieldsGradTranspose<3, 3>(pt1, dUxi1, du1);
+
+      const TacsScalar *etd = &d2etyd[3*basis::NUM_NODES*i1];
+      for ( int i = 0; i < 3*basis::NUM_NODES; i++ ){
+        for ( int j = 0; j < 3*basis::NUM_NODES; j++ ){
+          d2du[3*basis::NUM_NODES*i + j] += etd[i]*du1[j];
+        }
+      }
+
+      const int nvars = vars_per_node*basis::NUM_NODES;
+      const TacsScalar *etu = &d2etyu[3*basis::NUM_NODES*i1];
+      for ( int i = 0; i < 3*basis::NUM_NODES; i++ ){
+        int ii = vars_per_node*(i / 3) + (i % 3);
+        for ( int j = 0; j < 3*basis::NUM_NODES; j++ ){
+          int jj = vars_per_node*(j / 3) + (j % 3);
+          mat[nvars*ii + jj] += du1[i]*du2[j] + du1[i]*etu[j] + etu[i]*du1[j];
         }
       }
     }
   }
+
 
   /*
     Compute the directional derivative
@@ -403,57 +399,57 @@ class TACSShellLinearModel {
                                        const TacsScalar dd[],
                                        TacsScalar ety[],
                                        TacsScalar etyd[] ){
-    const int num_tying_fields = 5;
-    for ( int field = 0, index = 0; field < num_tying_fields; field++ ){
-      const int num_tying_points = basis::getNumTyingPoints(field);
-      for ( int ty = 0; ty < num_tying_points; ty++, index++ ){
-        double pt[2];
-        basis::getTyingPoint(field, ty, pt);
+    for ( int index = 0; index < basis::NUM_TYING_POINTS; index++ ){
+      // Get the field index
+      const TacsShellTyingStrainComponent field = basis::getTyingField(index);
 
-        // Interpolate the field value
-        TacsScalar Uxi[6], Xxi[6], Uxid[6];
-        basis::template interpFieldsGrad<3, 3>(pt, Xpts, Xxi);
-        basis::template interpFieldsGrad<vars_per_node, 3>(pt, vars, Uxi);
-        basis::template interpFieldsGrad<vars_per_node, 3>(pt, varsd, Uxid);
+      // Get the tying point parametric location
+      double pt[2];
+      basis::getTyingPoint(index, pt);
 
-        ety[index] = 0.0;
-        if (field == 0){
-          // Compute g11 = e1^{T}*G*e1
-          ety[index] = (Uxi[0]*Xxi[0] + Uxi[2]*Xxi[2] + Uxi[4]*Xxi[4]);
-          etyd[index] = (Uxid[0]*Xxi[0] + Uxid[2]*Xxi[2] + Uxid[4]*Xxi[4]);
-        }
-        else if (field == 1){
-          // Compute g22 = e2^{T}*G*e2
-          ety[index] = (Uxi[1]*Xxi[1] + Uxi[3]*Xxi[3] + Uxi[5]*Xxi[5]);
-          etyd[index] = (Uxid[1]*Xxi[1] + Uxid[3]*Xxi[3] + Uxid[5]*Xxi[5]);
-        }
-        else if (field == 2){
-          // Compute g12 = e2^{T}*G*e1
-          ety[index] = 0.5*(Uxi[0]*Xxi[1] + Uxi[2]*Xxi[3] + Uxi[4]*Xxi[5] +
-                            Uxi[1]*Xxi[0] + Uxi[3]*Xxi[2] + Uxi[5]*Xxi[4]);
-          etyd[index] = 0.5*(Uxid[0]*Xxi[1] + Uxid[2]*Xxi[3] + Uxid[4]*Xxi[5] +
-                             Uxid[1]*Xxi[0] + Uxid[3]*Xxi[2] + Uxid[5]*Xxi[4]);
-        }
-        else {
-          TacsScalar d0[3], d0d[3], n0[3];
-          basis::template interpFields<3, 3>(pt, d, d0);
-          basis::template interpFields<3, 3>(pt, dd, d0d);
-          basis::template interpFields<3, 3>(pt, fn, n0);
+      // Interpolate the field value
+      TacsScalar Uxi[6], Xxi[6], Uxid[6];
+      basis::template interpFieldsGrad<3, 3>(pt, Xpts, Xxi);
+      basis::template interpFieldsGrad<vars_per_node, 3>(pt, vars, Uxi);
+      basis::template interpFieldsGrad<vars_per_node, 3>(pt, varsd, Uxid);
 
-          if (field == 3){
-            // Compute g23 = e2^{T}*G*e3
-            ety[index] = 0.5*(Xxi[1]*d0[0] + Xxi[3]*d0[1] + Xxi[5]*d0[2] +
-                              n0[0]*Uxi[1] + n0[1]*Uxi[3] + n0[2]*Uxi[5]);
-            etyd[index] = 0.5*(Xxi[1]*d0d[0] + Xxi[3]*d0d[1] + Xxi[5]*d0d[2] +
-                               n0[0]*Uxid[1] + n0[1]*Uxid[3] + n0[2]*Uxid[5]);
-          }
-          else if (field == 4){
-            // Compute g13 = e1^{T}*G*e3
-            ety[index] = 0.5*(Xxi[0]*d0[0] + Xxi[2]*d0[1] + Xxi[4]*d0[2] +
-                              n0[0]*Uxi[0] + n0[1]*Uxi[2] + n0[2]*Uxi[4]);
-            etyd[index] = 0.5*(Xxi[0]*d0d[0] + Xxi[2]*d0d[1] + Xxi[4]*d0d[2] +
-                               n0[0]*Uxid[0] + n0[1]*Uxid[2] + n0[2]*Uxid[4]);
-          }
+      ety[index] = 0.0;
+      if (field == TACS_SHELL_G11_COMPONENT){
+        // Compute g11 = e1^{T}*G*e1
+        ety[index] = (Uxi[0]*Xxi[0] + Uxi[2]*Xxi[2] + Uxi[4]*Xxi[4]);
+        etyd[index] = (Uxid[0]*Xxi[0] + Uxid[2]*Xxi[2] + Uxid[4]*Xxi[4]);
+      }
+      else if (field == TACS_SHELL_G22_COMPONENT){
+        // Compute g22 = e2^{T}*G*e2
+        ety[index] = (Uxi[1]*Xxi[1] + Uxi[3]*Xxi[3] + Uxi[5]*Xxi[5]);
+        etyd[index] = (Uxid[1]*Xxi[1] + Uxid[3]*Xxi[3] + Uxid[5]*Xxi[5]);
+      }
+      else if (field == TACS_SHELL_G12_COMPONENT){
+        // Compute g12 = e2^{T}*G*e1
+        ety[index] = 0.5*(Uxi[0]*Xxi[1] + Uxi[2]*Xxi[3] + Uxi[4]*Xxi[5] +
+                          Uxi[1]*Xxi[0] + Uxi[3]*Xxi[2] + Uxi[5]*Xxi[4]);
+        etyd[index] = 0.5*(Uxid[0]*Xxi[1] + Uxid[2]*Xxi[3] + Uxid[4]*Xxi[5] +
+                            Uxid[1]*Xxi[0] + Uxid[3]*Xxi[2] + Uxid[5]*Xxi[4]);
+      }
+      else {
+        TacsScalar d0[3], d0d[3], n0[3];
+        basis::template interpFields<3, 3>(pt, d, d0);
+        basis::template interpFields<3, 3>(pt, dd, d0d);
+        basis::template interpFields<3, 3>(pt, fn, n0);
+
+        if (field == TACS_SHELL_G23_COMPONENT){
+          // Compute g23 = e2^{T}*G*e3
+          ety[index] = 0.5*(Xxi[1]*d0[0] + Xxi[3]*d0[1] + Xxi[5]*d0[2] +
+                            n0[0]*Uxi[1] + n0[1]*Uxi[3] + n0[2]*Uxi[5]);
+          etyd[index] = 0.5*(Xxi[1]*d0d[0] + Xxi[3]*d0d[1] + Xxi[5]*d0d[2] +
+                              n0[0]*Uxid[1] + n0[1]*Uxid[3] + n0[2]*Uxid[5]);
+        }
+        else if (field == TACS_SHELL_G13_COMPONENT){
+          // Compute g13 = e1^{T}*G*e3
+          ety[index] = 0.5*(Xxi[0]*d0[0] + Xxi[2]*d0[1] + Xxi[4]*d0[2] +
+                            n0[0]*Uxi[0] + n0[1]*Uxi[2] + n0[2]*Uxi[4]);
+          etyd[index] = 0.5*(Xxi[0]*d0d[0] + Xxi[2]*d0d[1] + Xxi[4]*d0d[2] +
+                              n0[0]*Uxid[0] + n0[1]*Uxid[2] + n0[2]*Uxid[4]);
         }
       }
     }
@@ -689,54 +685,54 @@ class TACSShellNonlinearModel {
                                   const TacsScalar vars[],
                                   const TacsScalar d[],
                                   TacsScalar ety[] ){
-    const int num_tying_fields = 5;
-    for ( int field = 0, index = 0; field < num_tying_fields; field++ ){
-      const int num_tying_points = basis::getNumTyingPoints(field);
-      for ( int ty = 0; ty < num_tying_points; ty++, index++ ){
-        double pt[2];
-        basis::getTyingPoint(field, ty, pt);
+    for ( int index = 0; index < basis::NUM_TYING_POINTS; index++ ){
+      // Get the field index
+      const TacsShellTyingStrainComponent field = basis::getTyingField(index);
 
-        // Interpolate the field value
-        TacsScalar Uxi[6], Xxi[6];
-        basis::template interpFieldsGrad<3, 3>(pt, Xpts, Xxi);
-        basis::template interpFieldsGrad<vars_per_node, 3>(pt, vars, Uxi);
+      // Get the tying point parametric location
+      double pt[2];
+      basis::getTyingPoint(index, pt);
 
-        ety[index] = 0.0;
-        if (field == 0){
-          // Compute g11 = e1^{T}*G*e1
-          ety[index] = (Uxi[0]*Xxi[0] + Uxi[2]*Xxi[2] + Uxi[4]*Xxi[4] +
-                        0.5*(Uxi[0]*Uxi[0] + Uxi[2]*Uxi[2] + Uxi[4]*Uxi[4]));
-        }
-        else if (field == 1){
-          // Compute g22 = e2^{T}*G*e2
-          ety[index] = (Uxi[1]*Xxi[1] + Uxi[3]*Xxi[3] + Uxi[5]*Xxi[5] +
-                        0.5*(Uxi[1]*Uxi[1] + Uxi[3]*Uxi[3] + Uxi[5]*Uxi[5]));
-        }
-        else if (field == 2){
-          // Compute g12 = e2^{T}*G*e1
-          ety[index] = 0.5*(Uxi[0]*Xxi[1] + Uxi[2]*Xxi[3] + Uxi[4]*Xxi[5] +
-                            Uxi[1]*Xxi[0] + Uxi[3]*Xxi[2] + Uxi[5]*Xxi[4] +
-                            Uxi[0]*Uxi[1] + Uxi[2]*Uxi[3] + Uxi[4]*Uxi[5]);
-        }
-        else {
-          TacsScalar d0[3], n0[3];
-          basis::template interpFields<3, 3>(pt, d, d0);
-          basis::template interpFields<3, 3>(pt, fn, n0);
+      // Interpolate the field value
+      TacsScalar Uxi[6], Xxi[6];
+      basis::template interpFieldsGrad<3, 3>(pt, Xpts, Xxi);
+      basis::template interpFieldsGrad<vars_per_node, 3>(pt, vars, Uxi);
 
-          if (field == 3){
-            // Compute g23 = e2^{T}*G*e3
-            ety[index] = 0.5*(Xxi[1]*d0[0] + Xxi[3]*d0[1] + Xxi[5]*d0[2] +
-                              (n0[0] + d0[0])*Uxi[1] +
-                              (n0[1] + d0[1])*Uxi[3] +
-                              (n0[2] + d0[2])*Uxi[5]);
-          }
-          else if (field == 4){
-            // Compute g13 = e1^{T}*G*e3
-            ety[index] = 0.5*(Xxi[0]*d0[0] + Xxi[2]*d0[1] + Xxi[4]*d0[2] +
-                              (n0[0] + d0[0])*Uxi[0] +
-                              (n0[1] + d0[1])*Uxi[2] +
-                              (n0[2] + d0[2])*Uxi[4]);
-          }
+      ety[index] = 0.0;
+      if (field == TACS_SHELL_G11_COMPONENT){
+        // Compute g11 = e1^{T}*G*e1
+        ety[index] = (Uxi[0]*Xxi[0] + Uxi[2]*Xxi[2] + Uxi[4]*Xxi[4] +
+                      0.5*(Uxi[0]*Uxi[0] + Uxi[2]*Uxi[2] + Uxi[4]*Uxi[4]));
+      }
+      else if (field == TACS_SHELL_G22_COMPONENT){
+        // Compute g22 = e2^{T}*G*e2
+        ety[index] = (Uxi[1]*Xxi[1] + Uxi[3]*Xxi[3] + Uxi[5]*Xxi[5] +
+                      0.5*(Uxi[1]*Uxi[1] + Uxi[3]*Uxi[3] + Uxi[5]*Uxi[5]));
+      }
+      else if (field == TACS_SHELL_G12_COMPONENT){
+        // Compute g12 = e2^{T}*G*e1
+        ety[index] = 0.5*(Uxi[0]*Xxi[1] + Uxi[2]*Xxi[3] + Uxi[4]*Xxi[5] +
+                          Uxi[1]*Xxi[0] + Uxi[3]*Xxi[2] + Uxi[5]*Xxi[4] +
+                          Uxi[0]*Uxi[1] + Uxi[2]*Uxi[3] + Uxi[4]*Uxi[5]);
+      }
+      else {
+        TacsScalar d0[3], n0[3];
+        basis::template interpFields<3, 3>(pt, d, d0);
+        basis::template interpFields<3, 3>(pt, fn, n0);
+
+        if (field == TACS_SHELL_G23_COMPONENT){
+          // Compute g23 = e2^{T}*G*e3
+          ety[index] = 0.5*(Xxi[1]*d0[0] + Xxi[3]*d0[1] + Xxi[5]*d0[2] +
+                            (n0[0] + d0[0])*Uxi[1] +
+                            (n0[1] + d0[1])*Uxi[3] +
+                            (n0[2] + d0[2])*Uxi[5]);
+        }
+        else if (field == TACS_SHELL_G13_COMPONENT){
+          // Compute g13 = e1^{T}*G*e3
+          ety[index] = 0.5*(Xxi[0]*d0[0] + Xxi[2]*d0[1] + Xxi[4]*d0[2] +
+                            (n0[0] + d0[0])*Uxi[0] +
+                            (n0[1] + d0[1])*Uxi[2] +
+                            (n0[2] + d0[2])*Uxi[4]);
         }
       }
     }
@@ -750,79 +746,81 @@ class TACSShellNonlinearModel {
                                               const TacsScalar dety[],
                                               TacsScalar res[],
                                               TacsScalar dd[] ){
-    const int num_tying_fields = 5;
-    for ( int field = 0, index = 0; field < num_tying_fields; field++ ){
-      const int num_tying_points = basis::getNumTyingPoints(field);
-      for ( int ty = 0; ty < num_tying_points; ty++, index++ ){
-        double pt[2];
-        basis::getTyingPoint(field, ty, pt);
+    for ( int index = 0; index < basis::NUM_TYING_POINTS; index++ ){
+      // Get the field index
+      const TacsShellTyingStrainComponent field = basis::getTyingField(index);
 
-        // Interpolate the field value
-        TacsScalar Uxi[6], Xxi[6], dUxi[6];
-        basis::template interpFieldsGrad<3, 3>(pt, Xpts, Xxi);
-        basis::template interpFieldsGrad<vars_per_node, 3>(pt, vars, Uxi);
+      // Get the tying point parametric location
+      double pt[2];
+      basis::getTyingPoint(index, pt);
 
-        if (field == 0){
-          // Compute g11 = e1^{T}*G*e1
-          dUxi[0] = dety[index]*(Xxi[0] + Uxi[0]);
-          dUxi[1] = 0.0;
-          dUxi[2] = dety[index]*(Xxi[2] + Uxi[2]);
-          dUxi[3] = 0.0;
-          dUxi[4] = dety[index]*(Xxi[4] + Uxi[4]);
-          dUxi[5] = 0.0;
-        }
-        else if (field == 1){
-          // Compute g22 = e2^{T}*G*e2
+      // Interpolate the field value
+      TacsScalar Uxi[6], Xxi[6], dUxi[6];
+      basis::template interpFieldsGrad<3, 3>(pt, Xpts, Xxi);
+      basis::template interpFieldsGrad<vars_per_node, 3>(pt, vars, Uxi);
+
+      if (field == TACS_SHELL_G11_COMPONENT){
+        // Compute g11 = e1^{T}*G*e1
+        dUxi[0] = dety[index]*(Xxi[0] + Uxi[0]);
+        dUxi[1] = 0.0;
+        dUxi[2] = dety[index]*(Xxi[2] + Uxi[2]);
+        dUxi[3] = 0.0;
+        dUxi[4] = dety[index]*(Xxi[4] + Uxi[4]);
+        dUxi[5] = 0.0;
+      }
+      else if (field == TACS_SHELL_G22_COMPONENT){
+        // Compute g22 = e2^{T}*G*e2
+        dUxi[0] = 0.0;
+        dUxi[1] = dety[index]*(Xxi[1] + Uxi[1]);
+        dUxi[2] = 0.0;
+        dUxi[3] = dety[index]*(Xxi[3] + Uxi[3]);
+        dUxi[4] = 0.0;
+        dUxi[5] = dety[index]*(Xxi[5] + Uxi[5]);
+      }
+      else if (field == TACS_SHELL_G12_COMPONENT){
+        // Compute g12 = e2^{T}*G*e1
+        dUxi[0] = 0.5*dety[index]*(Xxi[1] + Uxi[1]);
+        dUxi[1] = 0.5*dety[index]*(Xxi[0] + Uxi[0]);
+        dUxi[2] = 0.5*dety[index]*(Xxi[3] + Uxi[3]);
+        dUxi[3] = 0.5*dety[index]*(Xxi[2] + Uxi[2]);
+        dUxi[4] = 0.5*dety[index]*(Xxi[5] + Uxi[5]);
+        dUxi[5] = 0.5*dety[index]*(Xxi[4] + Uxi[4]);
+      }
+      else {
+        TacsScalar n0[3], d0[3], dd0[3];
+        basis::template interpFields<3, 3>(pt, d, d0);
+        basis::template interpFields<3, 3>(pt, fn, n0);
+
+        if (field == TACS_SHELL_G23_COMPONENT){
+          // Compute g23 = e2^{T}*G*e3
           dUxi[0] = 0.0;
-          dUxi[1] = dety[index]*(Xxi[1] + Uxi[1]);
+          dUxi[1] = 0.5*dety[index]*(n0[0] + d0[0]);
           dUxi[2] = 0.0;
-          dUxi[3] = dety[index]*(Xxi[3] + Uxi[3]);
+          dUxi[3] = 0.5*dety[index]*(n0[1] + d0[1]);
           dUxi[4] = 0.0;
-          dUxi[5] = dety[index]*(Xxi[5] + Uxi[5]);
+          dUxi[5] = 0.5*dety[index]*(n0[2] + d0[2]);
+
+          dd0[0] = 0.5*dety[index]*(Xxi[1] + Uxi[1]);
+          dd0[1] = 0.5*dety[index]*(Xxi[3] + Uxi[3]);
+          dd0[2] = 0.5*dety[index]*(Xxi[5] + Uxi[5]);
         }
-        else if (field == 2){
-          // Compute g12 = e2^{T}*G*e1
-          dUxi[0] = 0.5*dety[index]*(Xxi[1] + Uxi[1]);
-          dUxi[1] = 0.5*dety[index]*(Xxi[0] + Uxi[0]);
-          dUxi[2] = 0.5*dety[index]*(Xxi[3] + Uxi[3]);
-          dUxi[3] = 0.5*dety[index]*(Xxi[2] + Uxi[2]);
-          dUxi[4] = 0.5*dety[index]*(Xxi[5] + Uxi[5]);
-          dUxi[5] = 0.5*dety[index]*(Xxi[4] + Uxi[4]);
+        else if (field == TACS_SHELL_G13_COMPONENT){
+          // Compute g13 = e1^{T}*G*e3
+          dUxi[0] = 0.5*dety[index]*(n0[0] + d0[0]);
+          dUxi[1] = 0.0;
+          dUxi[2] = 0.5*dety[index]*(n0[1] + d0[1]);
+          dUxi[3] = 0.0;
+          dUxi[4] = 0.5*dety[index]*(n0[2] + d0[2]);
+          dUxi[5] = 0.0;
+
+          dd0[0] = 0.5*dety[index]*(Xxi[0] + Uxi[0]);
+          dd0[1] = 0.5*dety[index]*(Xxi[2] + Uxi[2]);
+          dd0[2] = 0.5*dety[index]*(Xxi[4] + Uxi[4]);
         }
-        else {
-          TacsScalar n0[3], d0[3], dd0[3];
-          basis::template interpFields<3, 3>(pt, d, d0);
-          basis::template interpFields<3, 3>(pt, fn, n0);
+        basis::template addInterpFieldsTranspose<3, 3>(pt, dd0, dd);
+      }
 
-          if (field == 3){
-            // Compute g23 = e2^{T}*G*e3
-            dUxi[0] = 0.0;
-            dUxi[1] = 0.5*dety[index]*(n0[0] + d0[0]);
-            dUxi[2] = 0.0;
-            dUxi[3] = 0.5*dety[index]*(n0[1] + d0[1]);
-            dUxi[4] = 0.0;
-            dUxi[5] = 0.5*dety[index]*(n0[2] + d0[2]);
-
-            dd0[0] = 0.5*dety[index]*(Xxi[1] + Uxi[1]);
-            dd0[1] = 0.5*dety[index]*(Xxi[3] + Uxi[3]);
-            dd0[2] = 0.5*dety[index]*(Xxi[5] + Uxi[5]);
-          }
-          else if (field == 4){
-            // Compute g13 = e1^{T}*G*e3
-            dUxi[0] = 0.5*dety[index]*(n0[0] + d0[0]);
-            dUxi[1] = 0.0;
-            dUxi[2] = 0.5*dety[index]*(n0[1] + d0[1]);
-            dUxi[3] = 0.0;
-            dUxi[4] = 0.5*dety[index]*(n0[2] + d0[2]);
-            dUxi[5] = 0.0;
-
-            dd0[0] = 0.5*dety[index]*(Xxi[0] + Uxi[0]);
-            dd0[1] = 0.5*dety[index]*(Xxi[2] + Uxi[2]);
-            dd0[2] = 0.5*dety[index]*(Xxi[4] + Uxi[4]);
-          }
-          basis::template addInterpFieldsTranspose<3, 3>(pt, dd0, dd);
-        }
-
+      if (res){
         basis::template addInterpFieldsGradTranspose<vars_per_node, 3>(pt, dUxi, res);
       }
     }
@@ -840,9 +838,6 @@ class TACSShellNonlinearModel {
                                             TacsScalar mat[],
                                             TacsScalar d2d[],
                                             TacsScalar d2du[] ){
-    // Set the number of tying fields
-    const int num_tying_fields = 5;
-
     // Initialize the data
     TacsScalar n0ty[3*basis::NUM_TYING_POINTS];
     TacsScalar Xxity[6*basis::NUM_TYING_POINTS];
@@ -851,244 +846,243 @@ class TACSShellNonlinearModel {
     TacsScalar *n0 = n0ty, *Xxi = Xxity, *d0 = d0ty, *Uxi = Uxity;
 
     // Pre-compute terms needed at each tying point
-    for ( int f1 = 0; f1 < num_tying_fields; f1++ ){
-      const int nty1 = basis::getNumTyingPoints(f1);
+    for ( int index = 0; index < basis::NUM_TYING_POINTS; index++ ){
+      // Get the tying point parametric location
+      double pt[2];
+      basis::getTyingPoint(index, pt);
 
-      for ( int ty1 = 0; ty1 < nty1; ty1++, n0 += 3, Xxi += 6, d0 += 3, Uxi += 6 ){
-        double pt[2];
-        basis::getTyingPoint(f1, ty1, pt);
+      basis::template interpFieldsGrad<3, 3>(pt, Xpts, Xxi);
+      basis::template interpFields<3, 3>(pt, fn, n0);
+      basis::template interpFieldsGrad<vars_per_node, 3>(pt, vars, Uxi);
+      basis::template interpFields<3, 3>(pt, d, d0);
 
-        basis::template interpFieldsGrad<3, 3>(pt, Xpts, Xxi);
-        basis::template interpFields<3, 3>(pt, fn, n0);
-        basis::template interpFieldsGrad<vars_per_node, 3>(pt, vars, Uxi);
-        basis::template interpFields<3, 3>(pt, d, d0);
-      }
+      n0 += 3;
+      Xxi += 6;
+      d0 += 3;
+      Uxi += 6;
     }
 
     TacsScalar *n01 = n0ty, *Xxi1 = Xxity, *d01 = d0ty, *Uxi1 = Uxity;
-    for ( int f1 = 0, base = 0, index = 0; f1 < num_tying_fields;
-      base += basis::NUM_TYING_POINTS*basis::getNumTyingPoints(f1), f1++ ){
-      const int nty1 = basis::getNumTyingPoints(f1);
+    for ( int i1 = 0; i1 < basis::NUM_TYING_POINTS; i1++,
+        n01 += 3, Xxi1 += 6, d01 += 3, Uxi1 += 6 ){
+      // Get the field index
+      const TacsShellTyingStrainComponent f1 = basis::getTyingField(i1);
 
-      for ( int ty1 = 0; ty1 < nty1;
-          ty1++, index++, n01 += 3, Xxi1 += 6, d01 += 3, Uxi1 += 6 ){
+      // Get the tying point parametric location
+      double pt1[2];
+      basis::getTyingPoint(i1, pt1);
 
-        TacsScalar du2[3*basis::NUM_NODES], dd2[3*basis::NUM_NODES];
-        memset(du2, 0, 3*basis::NUM_NODES*sizeof(TacsScalar));
-        memset(dd2, 0, 3*basis::NUM_NODES*sizeof(TacsScalar));
+      TacsScalar du2[3*basis::NUM_NODES], dd2[3*basis::NUM_NODES];
+      memset(du2, 0, 3*basis::NUM_NODES*sizeof(TacsScalar));
+      memset(dd2, 0, 3*basis::NUM_NODES*sizeof(TacsScalar));
 
-        TacsScalar *n02 = n0ty, *Xxi2 = Xxity, *d02 = d0ty, *Uxi2 = Uxity;
-        for ( int f2 = 0, offset = base; f2 < num_tying_fields;
-          offset += nty1*basis::getNumTyingPoints(f2), f2++ ){
-          const int nty2 = basis::getNumTyingPoints(f2);
+      TacsScalar *n02 = n0ty, *Xxi2 = Xxity, *d02 = d0ty, *Uxi2 = Uxity;
+      for ( int i2 = 0; i2 < basis::NUM_TYING_POINTS; i2++,
+          n02 += 3, Xxi2 += 6, d02 += 3, Uxi2 += 6  ){
+        // Get the field index
+        const TacsShellTyingStrainComponent f2 = basis::getTyingField(i2);
 
-          for ( int ty2 = 0; ty2 < nty2;
-              ty2++, n02 += 3, Xxi2 += 6, d02 += 3, Uxi2 += 6 ){
-            double pt2[2];
-            basis::getTyingPoint(f2, ty2, pt2);
+        // Get the tying point parametric location
+        double pt2[2];
+        basis::getTyingPoint(i2, pt2);
 
-            TacsScalar value = d2ety[offset + ty2 + ty1*nty2];
+        const TacsScalar value = d2ety[basis::NUM_TYING_POINTS*i1 + i2];
 
-            TacsScalar dUxi2[6];
-            if (f2 == 0){
-              // Compute g11 = e1^{T}*G*e1
-              dUxi2[0] = value*(Xxi2[0] + Uxi2[0]);
-              dUxi2[1] = 0.0;
-              dUxi2[2] = value*(Xxi2[2] + Uxi2[2]);
-              dUxi2[3] = 0.0;
-              dUxi2[4] = value*(Xxi2[4] + Uxi2[4]);
-              dUxi2[5] = 0.0;
-            }
-            else if (f2 == 1){
-              // Compute g22 = e2^{T}*G*e2
-              dUxi2[0] = 0.0;
-              dUxi2[1] = value*(Xxi2[1] + Uxi2[1]);
-              dUxi2[2] = 0.0;
-              dUxi2[3] = value*(Xxi2[3] + Uxi2[3]);
-              dUxi2[4] = 0.0;
-              dUxi2[5] = value*(Xxi2[5] + Uxi2[5]);
-            }
-            else if (f2 == 2){
-              // Compute g12 = e2^{T}*G*e1
-              dUxi2[0] = 0.5*value*(Xxi2[1] + Uxi2[1]);
-              dUxi2[1] = 0.5*value*(Xxi2[0] + Uxi2[0]);
-              dUxi2[2] = 0.5*value*(Xxi2[3] + Uxi2[3]);
-              dUxi2[3] = 0.5*value*(Xxi2[2] + Uxi2[2]);
-              dUxi2[4] = 0.5*value*(Xxi2[5] + Uxi2[5]);
-              dUxi2[5] = 0.5*value*(Xxi2[4] + Uxi2[4]);
-            }
-            else {
-              TacsScalar dd02[3];
-              if (f2 == 3){
-                // Compute g23 = e2^{T}*G*e3
-                dUxi2[0] = 0.0;
-                dUxi2[1] = 0.5*value*(n02[0] + d02[0]);
-                dUxi2[2] = 0.0;
-                dUxi2[3] = 0.5*value*(n02[1] + d02[1]);
-                dUxi2[4] = 0.0;
-                dUxi2[5] = 0.5*value*(n02[2] + d02[2]);
-
-                dd02[0] = 0.5*value*(Xxi2[1] + Uxi2[1]);
-                dd02[1] = 0.5*value*(Xxi2[3] + Uxi2[3]);
-                dd02[2] = 0.5*value*(Xxi2[5] + Uxi2[5]);
-              }
-              else if (f2 == 4){
-                // Compute g13 = e1^{T}*G*e3
-                dUxi2[0] = 0.5*value*(n02[0] + d02[0]);
-                dUxi2[1] = 0.0;
-                dUxi2[2] = 0.5*value*(n02[1] + d02[1]);
-                dUxi2[3] = 0.0;
-                dUxi2[4] = 0.5*value*(n02[2] + d02[2]);
-                dUxi2[5] = 0.0;
-
-                dd02[0] = 0.5*value*(Xxi2[0] + Uxi2[0]);
-                dd02[1] = 0.5*value*(Xxi2[2] + Uxi2[2]);
-                dd02[2] = 0.5*value*(Xxi2[4] + Uxi2[4]);
-              }
-
-              basis::template addInterpFieldsTranspose<3, 3>(pt2, dd02, dd2);
-            }
-
-            basis::template addInterpFieldsGradTranspose<3, 3>(pt2, dUxi2, du2);
-          }
-        }
-
-        TacsScalar du1[3*basis::NUM_NODES];
-        memset(du1, 0, 3*basis::NUM_NODES*sizeof(TacsScalar));
-
-        double pt1[2];
-        basis::getTyingPoint(f1, ty1, pt1);
-
-        // Store the the derivative information for the first point
-        TacsScalar dUxi1[6];
-        TacsScalar d2Uxi[36];
-        memset(d2Uxi, 0, 36*sizeof(TacsScalar));
-
-        if (f1 == 0){
+        TacsScalar dUxi2[6];
+        if (f2 == TACS_SHELL_G11_COMPONENT){
           // Compute g11 = e1^{T}*G*e1
-          dUxi1[0] = (Xxi1[0] + Uxi1[0]);
-          dUxi1[1] = 0.0;
-          dUxi1[2] = (Xxi1[2] + Uxi1[2]);
-          dUxi1[3] = 0.0;
-          dUxi1[4] = (Xxi1[4] + Uxi1[4]);
-          dUxi1[5] = 0.0;
-
-          d2Uxi[0] = dety[index];
-          d2Uxi[14] = dety[index];
-          d2Uxi[28] = dety[index];
+          dUxi2[0] = value*(Xxi2[0] + Uxi2[0]);
+          dUxi2[1] = 0.0;
+          dUxi2[2] = value*(Xxi2[2] + Uxi2[2]);
+          dUxi2[3] = 0.0;
+          dUxi2[4] = value*(Xxi2[4] + Uxi2[4]);
+          dUxi2[5] = 0.0;
         }
-        else if (f1 == 1){
+        else if (f2 == TACS_SHELL_G22_COMPONENT){
           // Compute g22 = e2^{T}*G*e2
-          dUxi1[0] = 0.0;
-          dUxi1[1] = (Xxi1[1] + Uxi1[1]);
-          dUxi1[2] = 0.0;
-          dUxi1[3] = (Xxi1[3] + Uxi1[3]);
-          dUxi1[4] = 0.0;
-          dUxi1[5] = (Xxi1[5] + Uxi1[5]);
-
-          d2Uxi[7] = dety[index];
-          d2Uxi[21] = dety[index];
-          d2Uxi[35] = dety[index];
+          dUxi2[0] = 0.0;
+          dUxi2[1] = value*(Xxi2[1] + Uxi2[1]);
+          dUxi2[2] = 0.0;
+          dUxi2[3] = value*(Xxi2[3] + Uxi2[3]);
+          dUxi2[4] = 0.0;
+          dUxi2[5] = value*(Xxi2[5] + Uxi2[5]);
         }
-        else if (f1 == 2){
+        else if (f2 == TACS_SHELL_G12_COMPONENT){
           // Compute g12 = e2^{T}*G*e1
-          dUxi1[0] = 0.5*(Xxi1[1] + Uxi1[1]);
-          dUxi1[1] = 0.5*(Xxi1[0] + Uxi1[0]);
-          dUxi1[2] = 0.5*(Xxi1[3] + Uxi1[3]);
-          dUxi1[3] = 0.5*(Xxi1[2] + Uxi1[2]);
-          dUxi1[4] = 0.5*(Xxi1[5] + Uxi1[5]);
-          dUxi1[5] = 0.5*(Xxi1[4] + Uxi1[4]);
-
-          d2Uxi[1] = 0.5*dety[index];
-          d2Uxi[6] = 0.5*dety[index];
-          d2Uxi[15] = 0.5*dety[index];
-          d2Uxi[20] = 0.5*dety[index];
-          d2Uxi[29] = 0.5*dety[index];
-          d2Uxi[34] = 0.5*dety[index];
+          dUxi2[0] = 0.5*value*(Xxi2[1] + Uxi2[1]);
+          dUxi2[1] = 0.5*value*(Xxi2[0] + Uxi2[0]);
+          dUxi2[2] = 0.5*value*(Xxi2[3] + Uxi2[3]);
+          dUxi2[3] = 0.5*value*(Xxi2[2] + Uxi2[2]);
+          dUxi2[4] = 0.5*value*(Xxi2[5] + Uxi2[5]);
+          dUxi2[5] = 0.5*value*(Xxi2[4] + Uxi2[4]);
         }
         else {
-          TacsScalar dd1[3*basis::NUM_NODES];
-          memset(dd1, 0, 3*basis::NUM_NODES*sizeof(TacsScalar));
-
-          TacsScalar dd01[3];
-          TacsScalar d2dUxi[18];
-          memset(d2dUxi, 0, 18*sizeof(TacsScalar));
-
-          if (f1 == 3){
+          TacsScalar dd02[3];
+          if (f2 == TACS_SHELL_G23_COMPONENT){
             // Compute g23 = e2^{T}*G*e3
-            dUxi1[0] = 0.0;
-            dUxi1[1] = 0.5*(n01[0] + d01[0]);
-            dUxi1[2] = 0.0;
-            dUxi1[3] = 0.5*(n01[1] + d01[1]);
-            dUxi1[4] = 0.0;
-            dUxi1[5] = 0.5*(n01[2] + d01[2]);
+            dUxi2[0] = 0.0;
+            dUxi2[1] = 0.5*value*(n02[0] + d02[0]);
+            dUxi2[2] = 0.0;
+            dUxi2[3] = 0.5*value*(n02[1] + d02[1]);
+            dUxi2[4] = 0.0;
+            dUxi2[5] = 0.5*value*(n02[2] + d02[2]);
 
-            dd01[0] = 0.5*(Xxi1[1] + Uxi1[1]);
-            dd01[1] = 0.5*(Xxi1[3] + Uxi1[3]);
-            dd01[2] = 0.5*(Xxi1[5] + Uxi1[5]);
-
-            d2dUxi[1] = 0.5*dety[index];
-            d2dUxi[9] = 0.5*dety[index];
-            d2dUxi[17] = 0.5*dety[index];
+            dd02[0] = 0.5*value*(Xxi2[1] + Uxi2[1]);
+            dd02[1] = 0.5*value*(Xxi2[3] + Uxi2[3]);
+            dd02[2] = 0.5*value*(Xxi2[5] + Uxi2[5]);
           }
-          else if (f1 == 4){
+          else if (f2 == TACS_SHELL_G13_COMPONENT){
             // Compute g13 = e1^{T}*G*e3
-            dUxi1[0] = 0.5*(n01[0] + d01[0]);
-            dUxi1[1] = 0.0;
-            dUxi1[2] = 0.5*(n01[1] + d01[1]);
-            dUxi1[3] = 0.0;
-            dUxi1[4] = 0.5*(n01[2] + d01[2]);
-            dUxi1[5] = 0.0;
+            dUxi2[0] = 0.5*value*(n02[0] + d02[0]);
+            dUxi2[1] = 0.0;
+            dUxi2[2] = 0.5*value*(n02[1] + d02[1]);
+            dUxi2[3] = 0.0;
+            dUxi2[4] = 0.5*value*(n02[2] + d02[2]);
+            dUxi2[5] = 0.0;
 
-            dd01[0] = 0.5*(Xxi1[0] + Uxi1[0]);
-            dd01[1] = 0.5*(Xxi1[2] + Uxi1[2]);
-            dd01[2] = 0.5*(Xxi1[4] + Uxi1[4]);
-
-            d2dUxi[0] = 0.5*dety[index];
-            d2dUxi[8] = 0.5*dety[index];
-            d2dUxi[16] = 0.5*dety[index];
+            dd02[0] = 0.5*value*(Xxi2[0] + Uxi2[0]);
+            dd02[1] = 0.5*value*(Xxi2[2] + Uxi2[2]);
+            dd02[2] = 0.5*value*(Xxi2[4] + Uxi2[4]);
           }
 
-          basis::template addInterpFieldsTranspose<3, 3>(pt1, dd01, dd1);
-
-          const TacsScalar *etd = &d2etyd[3*basis::NUM_NODES*index];
-          const TacsScalar *etu = &d2etyu[3*basis::NUM_NODES*index];
-          for ( int i = 0; i < 3*basis::NUM_NODES; i++ ){
-            for ( int j = 0; j < 3*basis::NUM_NODES; j++ ){
-              d2d[3*basis::NUM_NODES*i + j] += dd1[i]*dd2[j] + dd1[i]*etd[j] + etd[i]*dd1[j];
-            }
-          }
-
-          for ( int i = 0; i < 3*basis::NUM_NODES; i++ ){
-            for ( int j = 0; j < 3*basis::NUM_NODES; j++ ){
-              d2du[3*basis::NUM_NODES*i + j] += dd1[i]*du2[j] + dd1[i]*etu[j];
-            }
-          }
-
-          basis::template addInterpGradMixedOuterProduct<3, 3, 3, 3>(pt1, d2dUxi, NULL, d2du);
+          basis::template addInterpFieldsTranspose<3, 3>(pt2, dd02, dd2);
         }
 
-        basis::template addInterpFieldsGradTranspose<3, 3>(pt1, dUxi1, du1);
-
-        const TacsScalar *etd = &d2etyd[3*basis::NUM_NODES*index];
-        for ( int i = 0; i < 3*basis::NUM_NODES; i++ ){
-          for ( int j = 0; j < 3*basis::NUM_NODES; j++ ){
-            d2du[3*basis::NUM_NODES*i + j] += etd[i]*du1[j];
-          }
-        }
-
-        const int nvars = vars_per_node*basis::NUM_NODES;
-        const TacsScalar *etu = &d2etyu[3*basis::NUM_NODES*index];
-        for ( int i = 0; i < 3*basis::NUM_NODES; i++ ){
-          int ii = vars_per_node*(i / 3) + i % 3;
-          for ( int j = 0; j < 3*basis::NUM_NODES; j++ ){
-            int jj = vars_per_node*(j / 3) + j % 3;
-            mat[nvars*ii + jj] += du1[i]*du2[j] + du1[i]*etu[j] + etu[i]*du1[j];
-          }
-        }
-
-        basis::template addInterpGradOuterProduct<vars_per_node, vars_per_node, 3, 3>(pt1, d2Uxi, mat);
+        basis::template addInterpFieldsGradTranspose<3, 3>(pt2, dUxi2, du2);
       }
+
+      TacsScalar du1[3*basis::NUM_NODES];
+      memset(du1, 0, 3*basis::NUM_NODES*sizeof(TacsScalar));
+
+      // Store the the derivative information for the first point
+      TacsScalar dUxi1[6];
+      TacsScalar d2Uxi[36];
+      memset(d2Uxi, 0, 36*sizeof(TacsScalar));
+
+      if (f1 == TACS_SHELL_G11_COMPONENT){
+        // Compute g11 = e1^{T}*G*e1
+        dUxi1[0] = (Xxi1[0] + Uxi1[0]);
+        dUxi1[1] = 0.0;
+        dUxi1[2] = (Xxi1[2] + Uxi1[2]);
+        dUxi1[3] = 0.0;
+        dUxi1[4] = (Xxi1[4] + Uxi1[4]);
+        dUxi1[5] = 0.0;
+
+        d2Uxi[0] = dety[i1];
+        d2Uxi[14] = dety[i1];
+        d2Uxi[28] = dety[i1];
+      }
+      else if (f1 == TACS_SHELL_G22_COMPONENT){
+        // Compute g22 = e2^{T}*G*e2
+        dUxi1[0] = 0.0;
+        dUxi1[1] = (Xxi1[1] + Uxi1[1]);
+        dUxi1[2] = 0.0;
+        dUxi1[3] = (Xxi1[3] + Uxi1[3]);
+        dUxi1[4] = 0.0;
+        dUxi1[5] = (Xxi1[5] + Uxi1[5]);
+
+        d2Uxi[7] = dety[i1];
+        d2Uxi[21] = dety[i1];
+        d2Uxi[35] = dety[i1];
+      }
+      else if (f1 == TACS_SHELL_G12_COMPONENT){
+        // Compute g12 = e2^{T}*G*e1
+        dUxi1[0] = 0.5*(Xxi1[1] + Uxi1[1]);
+        dUxi1[1] = 0.5*(Xxi1[0] + Uxi1[0]);
+        dUxi1[2] = 0.5*(Xxi1[3] + Uxi1[3]);
+        dUxi1[3] = 0.5*(Xxi1[2] + Uxi1[2]);
+        dUxi1[4] = 0.5*(Xxi1[5] + Uxi1[5]);
+        dUxi1[5] = 0.5*(Xxi1[4] + Uxi1[4]);
+
+        d2Uxi[1] = 0.5*dety[i1];
+        d2Uxi[6] = 0.5*dety[i1];
+        d2Uxi[15] = 0.5*dety[i1];
+        d2Uxi[20] = 0.5*dety[i1];
+        d2Uxi[29] = 0.5*dety[i1];
+        d2Uxi[34] = 0.5*dety[i1];
+      }
+      else {
+        TacsScalar dd1[3*basis::NUM_NODES];
+        memset(dd1, 0, 3*basis::NUM_NODES*sizeof(TacsScalar));
+
+        TacsScalar dd01[3];
+        TacsScalar d2dUxi[18];
+        memset(d2dUxi, 0, 18*sizeof(TacsScalar));
+
+        if (f1 == TACS_SHELL_G23_COMPONENT){
+          // Compute g23 = e2^{T}*G*e3
+          dUxi1[0] = 0.0;
+          dUxi1[1] = 0.5*(n01[0] + d01[0]);
+          dUxi1[2] = 0.0;
+          dUxi1[3] = 0.5*(n01[1] + d01[1]);
+          dUxi1[4] = 0.0;
+          dUxi1[5] = 0.5*(n01[2] + d01[2]);
+
+          dd01[0] = 0.5*(Xxi1[1] + Uxi1[1]);
+          dd01[1] = 0.5*(Xxi1[3] + Uxi1[3]);
+          dd01[2] = 0.5*(Xxi1[5] + Uxi1[5]);
+
+          d2dUxi[1] = 0.5*dety[i1];
+          d2dUxi[9] = 0.5*dety[i1];
+          d2dUxi[17] = 0.5*dety[i1];
+        }
+        else if (f1 == TACS_SHELL_G13_COMPONENT){
+          // Compute g13 = e1^{T}*G*e3
+          dUxi1[0] = 0.5*(n01[0] + d01[0]);
+          dUxi1[1] = 0.0;
+          dUxi1[2] = 0.5*(n01[1] + d01[1]);
+          dUxi1[3] = 0.0;
+          dUxi1[4] = 0.5*(n01[2] + d01[2]);
+          dUxi1[5] = 0.0;
+
+          dd01[0] = 0.5*(Xxi1[0] + Uxi1[0]);
+          dd01[1] = 0.5*(Xxi1[2] + Uxi1[2]);
+          dd01[2] = 0.5*(Xxi1[4] + Uxi1[4]);
+
+          d2dUxi[0] = 0.5*dety[i1];
+          d2dUxi[8] = 0.5*dety[i1];
+          d2dUxi[16] = 0.5*dety[i1];
+        }
+
+        basis::template addInterpFieldsTranspose<3, 3>(pt1, dd01, dd1);
+
+        const TacsScalar *etd = &d2etyd[3*basis::NUM_NODES*i1];
+        const TacsScalar *etu = &d2etyu[3*basis::NUM_NODES*i1];
+        for ( int i = 0; i < 3*basis::NUM_NODES; i++ ){
+          for ( int j = 0; j < 3*basis::NUM_NODES; j++ ){
+            d2d[3*basis::NUM_NODES*i + j] += dd1[i]*dd2[j] + dd1[i]*etd[j] + etd[i]*dd1[j];
+          }
+        }
+
+        for ( int i = 0; i < 3*basis::NUM_NODES; i++ ){
+          for ( int j = 0; j < 3*basis::NUM_NODES; j++ ){
+            d2du[3*basis::NUM_NODES*i + j] += dd1[i]*du2[j] + dd1[i]*etu[j];
+          }
+        }
+
+        basis::template addInterpGradMixedOuterProduct<3, 3, 3, 3>(pt1, d2dUxi, NULL, d2du);
+      }
+
+      basis::template addInterpFieldsGradTranspose<3, 3>(pt1, dUxi1, du1);
+
+      const TacsScalar *etd = &d2etyd[3*basis::NUM_NODES*i1];
+      for ( int i = 0; i < 3*basis::NUM_NODES; i++ ){
+        for ( int j = 0; j < 3*basis::NUM_NODES; j++ ){
+          d2du[3*basis::NUM_NODES*i + j] += etd[i]*du1[j];
+        }
+      }
+
+      const int nvars = vars_per_node*basis::NUM_NODES;
+      const TacsScalar *etu = &d2etyu[3*basis::NUM_NODES*i1];
+      for ( int i = 0; i < 3*basis::NUM_NODES; i++ ){
+        int ii = vars_per_node*(i / 3) + i % 3;
+        for ( int j = 0; j < 3*basis::NUM_NODES; j++ ){
+          int jj = vars_per_node*(j / 3) + j % 3;
+          mat[nvars*ii + jj] += du1[i]*du2[j] + du1[i]*etu[j] + etu[i]*du1[j];
+        }
+      }
+
+      basis::template addInterpGradOuterProduct<vars_per_node, vars_per_node, 3, 3>(pt1, d2Uxi, mat);
     }
   }
 
@@ -1101,72 +1095,72 @@ class TACSShellNonlinearModel {
                                        const TacsScalar dd[],
                                        TacsScalar ety[],
                                        TacsScalar etyd[] ){
-    const int num_tying_fields = 5;
-    for ( int field = 0, index = 0; field < num_tying_fields; field++ ){
-      const int num_tying_points = basis::getNumTyingPoints(field);
-      for ( int ty = 0; ty < num_tying_points; ty++, index++ ){
-        double pt[2];
-        basis::getTyingPoint(field, ty, pt);
+    for ( int index = 0; index < basis::NUM_TYING_POINTS; index++ ){
+      // Get the field index
+      const TacsShellTyingStrainComponent field = basis::getTyingField(index);
 
-        // Interpolate the field value
-        TacsScalar Uxi[6], Xxi[6], Uxid[6];
-        basis::template interpFieldsGrad<3, 3>(pt, Xpts, Xxi);
-        basis::template interpFieldsGrad<vars_per_node, 3>(pt, vars, Uxi);
-        basis::template interpFieldsGrad<vars_per_node, 3>(pt, varsd, Uxid);
+      // Get the tying point parametric location
+      double pt[2];
+      basis::getTyingPoint(index, pt);
 
-        ety[index] = 0.0;
-        if (field == 0){
-          // Compute g11 = e1^{T}*G*e1
-          ety[index] = (Uxi[0]*Xxi[0] + Uxi[2]*Xxi[2] + Uxi[4]*Xxi[4] +
-                        0.5*(Uxi[0]*Uxi[0] + Uxi[2]*Uxi[2] + Uxi[4]*Uxi[4]));
-          etyd[index] = (Uxid[0]*Xxi[0] + Uxid[2]*Xxi[2] + Uxid[4]*Xxi[4] +
-                         Uxi[0]*Uxid[0] + Uxi[2]*Uxid[2] + Uxi[4]*Uxid[4]);
-        }
-        else if (field == 1){
-          // Compute g22 = e2^{T}*G*e2
-          ety[index] = (Uxi[1]*Xxi[1] + Uxi[3]*Xxi[3] + Uxi[5]*Xxi[5] +
-                        0.5*(Uxi[1]*Uxi[1] + Uxi[3]*Uxi[3] + Uxi[5]*Uxi[5]));
-          etyd[index] = (Uxid[1]*Xxi[1] + Uxid[3]*Xxi[3] + Uxid[5]*Xxi[5] +
-                         Uxi[1]*Uxid[1] + Uxi[3]*Uxid[3] + Uxi[5]*Uxid[5]);
-        }
-        else if (field == 2){
-          // Compute g12 = e2^{T}*G*e1
-          ety[index] = 0.5*(Uxi[0]*Xxi[1] + Uxi[2]*Xxi[3] + Uxi[4]*Xxi[5] +
-                            Uxi[1]*Xxi[0] + Uxi[3]*Xxi[2] + Uxi[5]*Xxi[4] +
-                            Uxi[0]*Uxi[1] + Uxi[2]*Uxi[3] + Uxi[4]*Uxi[5]);
-          etyd[index] = 0.5*(Uxid[0]*Xxi[1] + Uxid[2]*Xxi[3] + Uxid[4]*Xxi[5] +
-                             Uxid[1]*Xxi[0] + Uxid[3]*Xxi[2] + Uxid[5]*Xxi[4] +
-                             Uxid[0]*Uxi[1] + Uxid[2]*Uxi[3] + Uxid[4]*Uxi[5] +
-                             Uxi[0]*Uxid[1] + Uxi[2]*Uxid[3] + Uxi[4]*Uxid[5]);
-        }
-        else {
-          TacsScalar n0[3], d0[3], d0d[3];
-          basis::template interpFields<3, 3>(pt, d, d0);
-          basis::template interpFields<3, 3>(pt, dd, d0d);
-          basis::template interpFields<3, 3>(pt, fn, n0);
+      // Interpolate the field value
+      TacsScalar Uxi[6], Xxi[6], Uxid[6];
+      basis::template interpFieldsGrad<3, 3>(pt, Xpts, Xxi);
+      basis::template interpFieldsGrad<vars_per_node, 3>(pt, vars, Uxi);
+      basis::template interpFieldsGrad<vars_per_node, 3>(pt, varsd, Uxid);
 
-          if (field == 3){
-            // Compute g23 = e2^{T}*G*e3
-            ety[index] = 0.5*(Xxi[1]*d0[0] + Xxi[3]*d0[1] + Xxi[5]*d0[2] +
-                              (n0[0] + d0[0])*Uxi[1] +
-                              (n0[1] + d0[1])*Uxi[3] +
-                              (n0[2] + d0[2])*Uxi[5]);
-            etyd[index] = 0.5*(Xxi[1]*d0d[0] + Xxi[3]*d0d[1] + Xxi[5]*d0d[2] +
-                               (n0[0] + d0[0])*Uxid[1] + d0d[0]*Uxi[1] +
-                               (n0[1] + d0[1])*Uxid[3] + d0d[1]*Uxi[3] +
-                               (n0[2] + d0[2])*Uxid[5] + d0d[2]*Uxi[5]);
-          }
-          else if (field == 4){
-            // Compute g13 = e1^{T}*G*e3
-            ety[index] = 0.5*(Xxi[0]*d0[0] + Xxi[2]*d0[1] + Xxi[4]*d0[2] +
-                              (n0[0] + d0[0])*Uxi[0] +
-                              (n0[1] + d0[1])*Uxi[2] +
-                              (n0[2] + d0[2])*Uxi[4]);
-            etyd[index] = 0.5*(Xxi[0]*d0d[0] + Xxi[2]*d0d[1] + Xxi[4]*d0d[2] +
-                              (n0[0] + d0[0])*Uxid[0] + d0d[0]*Uxi[0] +
-                              (n0[1] + d0[1])*Uxid[2] + d0d[1]*Uxi[2] +
-                              (n0[2] + d0[2])*Uxid[4] + d0d[2]*Uxi[4]);
-          }
+      ety[index] = 0.0;
+      if (field == TACS_SHELL_G11_COMPONENT){
+        // Compute g11 = e1^{T}*G*e1
+        ety[index] = (Uxi[0]*Xxi[0] + Uxi[2]*Xxi[2] + Uxi[4]*Xxi[4] +
+                      0.5*(Uxi[0]*Uxi[0] + Uxi[2]*Uxi[2] + Uxi[4]*Uxi[4]));
+        etyd[index] = (Uxid[0]*Xxi[0] + Uxid[2]*Xxi[2] + Uxid[4]*Xxi[4] +
+                        Uxi[0]*Uxid[0] + Uxi[2]*Uxid[2] + Uxi[4]*Uxid[4]);
+      }
+      else if (field == TACS_SHELL_G22_COMPONENT){
+        // Compute g22 = e2^{T}*G*e2
+        ety[index] = (Uxi[1]*Xxi[1] + Uxi[3]*Xxi[3] + Uxi[5]*Xxi[5] +
+                      0.5*(Uxi[1]*Uxi[1] + Uxi[3]*Uxi[3] + Uxi[5]*Uxi[5]));
+        etyd[index] = (Uxid[1]*Xxi[1] + Uxid[3]*Xxi[3] + Uxid[5]*Xxi[5] +
+                        Uxi[1]*Uxid[1] + Uxi[3]*Uxid[3] + Uxi[5]*Uxid[5]);
+      }
+      else if (field == TACS_SHELL_G12_COMPONENT){
+        // Compute g12 = e2^{T}*G*e1
+        ety[index] = 0.5*(Uxi[0]*Xxi[1] + Uxi[2]*Xxi[3] + Uxi[4]*Xxi[5] +
+                          Uxi[1]*Xxi[0] + Uxi[3]*Xxi[2] + Uxi[5]*Xxi[4] +
+                          Uxi[0]*Uxi[1] + Uxi[2]*Uxi[3] + Uxi[4]*Uxi[5]);
+        etyd[index] = 0.5*(Uxid[0]*Xxi[1] + Uxid[2]*Xxi[3] + Uxid[4]*Xxi[5] +
+                            Uxid[1]*Xxi[0] + Uxid[3]*Xxi[2] + Uxid[5]*Xxi[4] +
+                            Uxid[0]*Uxi[1] + Uxid[2]*Uxi[3] + Uxid[4]*Uxi[5] +
+                            Uxi[0]*Uxid[1] + Uxi[2]*Uxid[3] + Uxi[4]*Uxid[5]);
+      }
+      else {
+        TacsScalar n0[3], d0[3], d0d[3];
+        basis::template interpFields<3, 3>(pt, d, d0);
+        basis::template interpFields<3, 3>(pt, dd, d0d);
+        basis::template interpFields<3, 3>(pt, fn, n0);
+
+        if (field == TACS_SHELL_G23_COMPONENT){
+          // Compute g23 = e2^{T}*G*e3
+          ety[index] = 0.5*(Xxi[1]*d0[0] + Xxi[3]*d0[1] + Xxi[5]*d0[2] +
+                            (n0[0] + d0[0])*Uxi[1] +
+                            (n0[1] + d0[1])*Uxi[3] +
+                            (n0[2] + d0[2])*Uxi[5]);
+          etyd[index] = 0.5*(Xxi[1]*d0d[0] + Xxi[3]*d0d[1] + Xxi[5]*d0d[2] +
+                              (n0[0] + d0[0])*Uxid[1] + d0d[0]*Uxi[1] +
+                              (n0[1] + d0[1])*Uxid[3] + d0d[1]*Uxi[3] +
+                              (n0[2] + d0[2])*Uxid[5] + d0d[2]*Uxi[5]);
+        }
+        else if (field == TACS_SHELL_G13_COMPONENT){
+          // Compute g13 = e1^{T}*G*e3
+          ety[index] = 0.5*(Xxi[0]*d0[0] + Xxi[2]*d0[1] + Xxi[4]*d0[2] +
+                            (n0[0] + d0[0])*Uxi[0] +
+                            (n0[1] + d0[1])*Uxi[2] +
+                            (n0[2] + d0[2])*Uxi[4]);
+          etyd[index] = 0.5*(Xxi[0]*d0d[0] + Xxi[2]*d0d[1] + Xxi[4]*d0d[2] +
+                            (n0[0] + d0[0])*Uxid[0] + d0d[0]*Uxi[0] +
+                            (n0[1] + d0[1])*Uxid[2] + d0d[1]*Uxi[2] +
+                            (n0[2] + d0[2])*Uxid[4] + d0d[2]*Uxi[4]);
         }
       }
     }
@@ -1892,54 +1886,6 @@ int TacsTestShellModelDerivatives( double dh=1e-7,
 
   fail = (max_err > test_fail_atol || max_rel > test_fail_rtol);
 
-//   // Compute against the derivatives for the strain
-//   TacsScalar fdCt[9];
-//   for ( int i = 0; i < 9; i++ ){
-//     TacsScalar Ctt[9], et[9], st[9];
-//     memcpy(Ctt, Ct, 9*sizeof(TacsScalar));
-
-// #ifdef TACS_USE_COMPLEX
-//     Ctt[i] = Ct[i] + TacsScalar(0.0, dh);
-// #else
-//     Ctt[i] = Ct[i] + dh;
-// #endif // TACS_USE_COMPLEX
-//     model::evalStrain(u0x, u1x, e0ty, Ctt, et);
-//     TACSShellConstitutive::computeStress(A, B, D, As, drill, et, st);
-
-//     TacsScalar f1 = 0.0;
-//     for ( int j = 0; j < 9; j++ ){
-//       f1 += 0.5*detXd*et[j]*st[j];
-//     }
-
-// #ifdef TACS_USE_COMPLEX
-//     fdCt[i] = TacsImagPart(f1)/dh;
-// #else
-//     fdCt[i] = (f1 - f0)/dh;
-// #endif // TACS_USE_COMPLEX
-//   }
-
-//   // Compute the error
-//   max_err = TacsGetMaxError(dCt, fdCt, 9, &max_err_index);
-//   max_rel = TacsGetMaxRelError(dCt, fdCt, 9, &max_rel_index);
-
-//   if (test_print_level > 0){
-//     fprintf(stderr, "Testing the derivative w.r.t. Ct\n");
-//     fprintf(stderr, "Max Err: %10.4e in component %d.\n",
-//             max_err, max_err_index);
-//     fprintf(stderr, "Max REr: %10.4e in component %d.\n",
-//             max_rel, max_rel_index);
-//   }
-//   // Print the error if required
-//   if (test_print_level > 1){
-//     TacsPrintErrorComponents(stderr, "dCt", dCt, fdCt, 9);
-//   }
-//   if (test_print_level){ fprintf(stderr, "\n"); }
-
-
-  // TacsScalar d2Ct[81], d2Ctu0x[81];
-
-
-
   TacsScalar d2u0x[81], d2u1x[81], d2u0xu1x[81];
   TacsScalar d2e0ty[36], d2e0tyu0x[54], d2e0tyu1x[54];
   model::evalStrainHessian(detXd, s, Cs, u0x, u1x, e0ty,
@@ -2136,73 +2082,6 @@ int TacsTestShellModelDerivatives( double dh=1e-7,
     TacsPrintErrorComponents(stderr, "d2e0tyu1x", d2e0tyu1x, fd2e0tyu1x, 54);
   }
   if (test_print_level){ fprintf(stderr, "\n"); }
-
-//   TacsScalar fd2Ct[81], fd2Ctu0x[81];
-//   for ( int i = 0; i < 9; i++ ){
-//     TacsScalar Ctt[9], et[9], st[9];
-//     memcpy(Ctt, Ct, 9*sizeof(TacsScalar));
-
-// #ifdef TACS_USE_COMPLEX
-//     Ctt[i] = Ct[i] + TacsScalar(0.0, dh);
-// #else
-//     Ctt[i] = Ct[i] + dh;
-// #endif // TACS_USE_COMPLEX
-//     model::evalStrain(u0x, u1x, e0ty, et);
-//     TACSShellConstitutive::computeStress(A, B, D, As, drill, et, st);
-
-//     TacsScalar du0xt[9], du1xt[9], de0tyt[6], dCtt[9];
-//     model::evalStrainSens(detXd, st, u0x, u1x, du0xt, du1xt, de0tyt);
-
-//     for ( int j = 0; j < 9; j++ ){
-// #ifdef TACS_USE_COMPLEX
-//       fd2Ct[9*i + j] = TacsImagPart(dCtt[j])/dh;
-// #else
-//       fd2Ct[9*i + j] = (dCtt[j] - dCt[j])/dh;
-// #endif // TACS_USE_COMPLEX
-//     }
-
-//     for ( int j = 0; j < 9; j++ ){
-// #ifdef TACS_USE_COMPLEX
-//       fd2Ctu0x[9*i + j] = TacsImagPart(du0x[j])/dh;
-// #else
-//       fd2Ctu0x[9*i + j] = (du0xt[j] - du0x[j])/dh;
-// #endif // TACS_USE_COMPLEX
-//     }
-//   }
-
-//   // Compute the error
-//   max_err = TacsGetMaxError(d2Ct, fd2Ct, 81, &max_err_index);
-//   max_rel = TacsGetMaxRelError(d2Ct, fd2Ct, 81, &max_rel_index);
-
-//   if (test_print_level > 0){
-//     fprintf(stderr, "Testing the second derivative w.r.t. Ct\n");
-//     fprintf(stderr, "Max Err: %10.4e in component %d.\n",
-//             max_err, max_err_index);
-//     fprintf(stderr, "Max REr: %10.4e in component %d.\n",
-//             max_rel, max_rel_index);
-//   }
-//   // Print the error if required
-//   if (test_print_level > 1){
-//     TacsPrintErrorComponents(stderr, "d2Ct", d2Ct, fd2Ct, 81);
-//   }
-//   if (test_print_level){ fprintf(stderr, "\n"); }
-
-//   // Compute the error
-//   max_err = TacsGetMaxError(d2Ctu0x, fd2Ctu0x, 81, &max_err_index);
-//   max_rel = TacsGetMaxRelError(d2Ctu0x, fd2Ctu0x, 81, &max_rel_index);
-
-//   if (test_print_level > 0){
-//     fprintf(stderr, "Testing the second derivative w.r.t. Ct and u0x\n");
-//     fprintf(stderr, "Max Err: %10.4e in component %d.\n",
-//             max_err, max_err_index);
-//     fprintf(stderr, "Max REr: %10.4e in component %d.\n",
-//             max_rel, max_rel_index);
-//   }
-//   // Print the error if required
-//   if (test_print_level > 1){
-//     TacsPrintErrorComponents(stderr, "d2Ctu0x", d2Ctu0x, fd2Ctu0x, 81);
-//   }
-//   if (test_print_level){ fprintf(stderr, "\n"); }
 
   return fail;
 }

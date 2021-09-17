@@ -2,8 +2,6 @@
 #define TACS_SHELL_ELEMENT_H
 
 #include "TACSShellElementModel.h"
-#include "TACSShellElementBasis.h"
-#include "TACSGaussQuadrature.h"
 #include "TACSElementAlgebra.h"
 #include "TACSShellUtilities.h"
 #include "TACSShellConstitutive.h"
@@ -427,7 +425,7 @@ void TACSShellElement<quadrature, basis, director, model>::
   TacsShellAddDrillStrainSens<vars_per_node, offset, basis, director, model>(
     Xdn, fn, vars, XdinvTn, Tn, u0xn, Ctn, detn, res);
 
-  // Set the total number of tying points needed for this element
+  // Add the contributions from the tying strain
   model::template
     addComputeTyingStrainTranspose<vars_per_node, basis>(Xpts, fn, vars,
                                                          d, dety, res, dd);
@@ -642,11 +640,9 @@ void TACSShellElement<quadrature, basis, director, model>::
     Xdn, fn, vars, XdinvTn, Tn, u0xn, Ctn, detn, d2etn, res, mat);
 
   // Add the residual from the tying strain
-  if (res){
-    model::template
-      addComputeTyingStrainTranspose<vars_per_node, basis>(Xpts, fn, vars, d,
-                                                           dety, res, dd);
-  }
+  model::template
+    addComputeTyingStrainTranspose<vars_per_node, basis>(Xpts, fn, vars, d,
+                                                          dety, res, dd);
 
   // Add the second order terms from the tying strain
   model::template
@@ -774,7 +770,7 @@ int TACSShellElement<quadrature, basis, director, model>::
       computeTyingStrain<vars_per_node, basis>(Xpts, fn, vars, d, ety);
 
     // Compute X, X,xi and the interpolated normal n0
-    TacsScalar X[3], Xxi[6], n0[3], T[9], et;
+    TacsScalar X[3], Xxi[6], n0[3], T[9];
     basis::template interpFields<3, 3>(pt, Xpts, X);
     basis::template interpFieldsGrad<3, 3>(pt, Xpts, Xxi);
     basis::template interpFields<3, 3>(pt, fn, n0);

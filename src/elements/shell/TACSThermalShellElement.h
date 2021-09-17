@@ -2,8 +2,6 @@
 #define TACS_THERMAL_SHELL_ELEMENT_H
 
 #include "TACSShellElementModel.h"
-#include "TACSShellElementBasis.h"
-#include "TACSGaussQuadrature.h"
 #include "TACSElementAlgebra.h"
 #include "TACSShellUtilities.h"
 #include "TACSShellConstitutive.h"

@@ -2,7 +2,6 @@
 #ifndef TACS_SHELL_TRACTION_H
 #define TACS_SHELL_TRACTION_H
 
-#include "TACSShellElementBasis.h"
 #include "TACSShellUtilities.h"
 #include "TACSElementAlgebra.h"
 

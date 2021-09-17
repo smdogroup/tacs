@@ -1,6 +1,7 @@
 #include "TACSElementVerification.h"
 #include "TACSIsoShellConstitutive.h"
 #include "TACSShellElementDefs.h"
+#include "TACSPlateElementModel.h"
 
 int main( int argc, char *argv[] ){
   MPI_Init(&argc, &argv);
@@ -27,54 +28,54 @@ int main( int argc, char *argv[] ){
   int t_num = 0;
   TACSShellConstitutive *con = new TACSIsoShellConstitutive(props, t, t_num);
 
-#ifdef TACS_USE_COMPLEX
-  const double dh = 1e-30;
-#else
-  const double dh = 1e-6;
-#endif
-
   // Start and end column to test in the Jacobian matrix
   int start = 0, end = 0;
   int islinear = 1;
 
   TACSElement *shell = NULL;
   if (argc > 1){
-    if (strcmp(argv[1], "TACSQuad2Shell") == 0){
-      shell = new TACSQuad2Shell(transform, con);
-    }
-    else if (strcmp(argv[1], "TACSQuad3Shell") == 0){
-      shell = new TACSQuad3Shell(transform, con);
-    }
-    else if (strcmp(argv[1], "TACSQuad4Shell") == 0){
+    if (strcmp(argv[1], "TACSQuad4Shell") == 0){
       shell = new TACSQuad4Shell(transform, con);
     }
-    else if (strcmp(argv[1], "TACSQuad2ThermalShell") == 0){
-      shell = new TACSQuad2ThermalShell(transform, con);
+    else if (strcmp(argv[1], "TACSQuad9Shell") == 0){
+      shell = new TACSQuad9Shell(transform, con);
     }
-    else if (strcmp(argv[1], "TACSQuad3ThermalShell") == 0){
-      shell = new TACSQuad3ThermalShell(transform, con);
+    else if (strcmp(argv[1], "TACSQuad16Shell") == 0){
+      shell = new TACSQuad16Shell(transform, con);
     }
+    else if (strcmp(argv[1], "TACSTri3Shell") == 0){
+      shell = new TACSTri3Shell(transform, con);
+    }
+    // else if (strcmp(argv[1], "TACSTri6Shell") == 0){
+    //   shell = new TACSTri6Shell(transform, con);
+    // }
     else if (strcmp(argv[1], "TACSQuad4ThermalShell") == 0){
       shell = new TACSQuad4ThermalShell(transform, con);
     }
-    else if (strcmp(argv[1], "TACSQuad2NonlinearShell") == 0){
-      shell = new TACSQuad2NonlinearShell(transform, con);
-      islinear = 0;
+    else if (strcmp(argv[1], "TACSQuad9ThermalShell") == 0){
+      shell = new TACSQuad9ThermalShell(transform, con);
     }
-    else if (strcmp(argv[1], "TACSQuad3NonlinearShell") == 0){
-      shell = new TACSQuad3NonlinearShell(transform, con);
-      islinear = 0;
+    else if (strcmp(argv[1], "TACSQuad16ThermalShell") == 0){
+      shell = new TACSQuad16ThermalShell(transform, con);
     }
     else if (strcmp(argv[1], "TACSQuad4NonlinearShell") == 0){
       shell = new TACSQuad4NonlinearShell(transform, con);
       islinear = 0;
     }
+    else if (strcmp(argv[1], "TACSQuad9NonlinearShell") == 0){
+      shell = new TACSQuad9NonlinearShell(transform, con);
+      islinear = 0;
+    }
+    else if (strcmp(argv[1], "TACSQuad16NonlinearShell") == 0){
+      shell = new TACSQuad16NonlinearShell(transform, con);
+      islinear = 0;
+    }
     else {
-      shell = new TACSQuad2Shell(transform, con);
+      shell = new TACSQuad4Shell(transform, con);
     }
   }
   else {
-    shell = new TACSQuad2Shell(transform, con);
+    shell = new TACSQuad4Shell(transform, con);
   }
   shell->incref();
 
@@ -114,14 +115,8 @@ int main( int argc, char *argv[] ){
   TacsGenerateRandomArray(dvars, num_vars);
   TacsGenerateRandomArray(ddvars, num_vars);
 
-  if (islinear){
-    TacsTestShellModelDerivatives<6, TACSShellQuadBasis<2>, TACSShellNonlinearModel>(dh);
-    TacsTestShellTyingStrain<6, TACSShellQuadBasis<2>, TACSShellNonlinearModel>(dh);
-  }
-  else {
-    TacsTestShellModelDerivatives<6, TACSShellQuadBasis<2>, TACSShellLinearModel>(dh);
-    TacsTestShellTyingStrain<6, TACSShellQuadBasis<2>, TACSShellLinearModel>(dh);
-  }
+  // double dh = 1e-30;
+  // TacsTestShellTyingStrain<6, TACSShellTriQuadraticBasis, TACSShellNonlinearModel>(dh);
 
   // Check the residual formulation against Lagrange's equations. Not all elements
   // will pass this test - for instance the thermal shell elements.
