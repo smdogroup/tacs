@@ -82,6 +82,7 @@ class ElementTest(unittest.TestCase):
                                                             self.vars, self.dvars, self.ddvars, -1, self.dh,
                                                             self.print_level, self.atol, self.rtol)
                         self.assertFalse(fail)
+<<<<<<< HEAD
 
     def test_adj_res_product(self):
         # Loop through every combination of transform type and shell element class and test adjoint residual-dvsens product
@@ -137,3 +138,5 @@ class ElementTest(unittest.TestCase):
                                                              self.time, self.xpts, self.vars, self.dh,
                                                              self.print_level, self.atol, self.rtol)
                         self.assertFalse(fail)
+=======
+>>>>>>> origin/adding-shell-tests
