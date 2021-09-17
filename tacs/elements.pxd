@@ -190,16 +190,16 @@ cdef extern from "TACSShellElementTransform.h":
         TACSShellRefAxisTransform(TacsScalar*)
 
 cdef extern from "TACSShellElementDefs.h":
-    cdef cppclass TACSQuad2Shell(TACSElement):
-        TACSQuad2Shell(TACSShellTransform*,
-                       TACSShellConstitutive*)
-
-    cdef cppclass TACSQuad3Shell(TACSElement):
-        TACSQuad3Shell(TACSShellTransform*,
-                       TACSShellConstitutive*)
-
     cdef cppclass TACSQuad4Shell(TACSElement):
         TACSQuad4Shell(TACSShellTransform*,
+                       TACSShellConstitutive*)
+
+    cdef cppclass TACSQuad9Shell(TACSElement):
+        TACSQuad9Shell(TACSShellTransform*,
+                       TACSShellConstitutive*)
+
+    cdef cppclass TACSQuad16Shell(TACSElement):
+        TACSQuad16Shell(TACSShellTransform*,
                        TACSShellConstitutive*)
 
 cdef extern from "TACSGibbsVector.h":

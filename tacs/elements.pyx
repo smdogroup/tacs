@@ -449,21 +449,21 @@ cdef class ShellRefAxisTransform(ShellTransform):
         self.ptr = new TACSShellRefAxisTransform(a)
         self.ptr.incref()
 
-cdef class Quad2Shell(Element):
+cdef class Quad4Shell(Element):
     def __cinit__(self, ShellTransform transform, ShellConstitutive con):
         if transform is None:
             transform = ShellNaturalTransform()
-        self.ptr = new TACSQuad2Shell(transform.ptr, con.cptr)
-        self.ptr.incref()
-
-cdef class Quad3Shell(Element):
-    def __cinit__(self, ShellTransform transform, ShellConstitutive con):
-        self.ptr = new TACSQuad3Shell(transform.ptr, con.cptr)
-        self.ptr.incref()
-
-cdef class Quad4Shell(Element):
-    def __cinit__(self, ShellTransform transform, ShellConstitutive con):
         self.ptr = new TACSQuad4Shell(transform.ptr, con.cptr)
+        self.ptr.incref()
+
+cdef class Quad9Shell(Element):
+    def __cinit__(self, ShellTransform transform, ShellConstitutive con):
+        self.ptr = new TACSQuad9Shell(transform.ptr, con.cptr)
+        self.ptr.incref()
+
+cdef class Quad16Shell(Element):
+    def __cinit__(self, ShellTransform transform, ShellConstitutive con):
+        self.ptr = new TACSQuad16Shell(transform.ptr, con.cptr)
         self.ptr.incref()
 
 cdef class GibbsVector:
