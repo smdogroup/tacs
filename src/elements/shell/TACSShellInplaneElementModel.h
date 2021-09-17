@@ -206,6 +206,7 @@ class TACSShellInplaneLinearModel {
 
       TacsScalar du1[3*basis::NUM_NODES], dd1[3*basis::NUM_NODES];
       memset(du1, 0, 3*basis::NUM_NODES*sizeof(TacsScalar));
+      memset(dd1, 0, 3*basis::NUM_NODES*sizeof(TacsScalar));
 
       // Store the the derivative information for the first point
       TacsScalar dUxi1[6], dd01[3];
