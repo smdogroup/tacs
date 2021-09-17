@@ -202,6 +202,10 @@ cdef extern from "TACSShellElementDefs.h":
         TACSQuad16Shell(TACSShellTransform*,
                        TACSShellConstitutive*)
 
+    cdef cppclass TACSTri3Shell(TACSElement):
+        TACSTri3Shell(TACSShellTransform*,
+                      TACSShellConstitutive*)
+
 cdef extern from "TACSGibbsVector.h":
     cdef cppclass TACSGibbsVector(TACSObject):
         TACSGibbsVector(TacsScalar, TacsScalar, TacsScalar)

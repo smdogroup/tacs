@@ -466,6 +466,13 @@ cdef class Quad16Shell(Element):
         self.ptr = new TACSQuad16Shell(transform.ptr, con.cptr)
         self.ptr.incref()
 
+cdef class Tri3Shell(Element):
+    def __cinit__(self, ShellTransform transform, ShellConstitutive con):
+        if transform is None:
+            transform = ShellNaturalTransform()
+        self.ptr = new TACSTri3Shell(transform.ptr, con.cptr)
+        self.ptr.incref()
+
 cdef class GibbsVector:
     cdef TACSGibbsVector *ptr
     def __cinit__(self, x, y, z):
