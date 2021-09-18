@@ -62,7 +62,7 @@ class TACSShellTraction : public TACSElement {
 
     // Compute the node normal directions
     TacsScalar fn[3*basis::NUM_NODES];
-    getNodeNormals<basis>(Xpts, fn);
+    TacsShellComputeNodeNormals<basis>(Xpts, fn);
 
     // Loop over each quadrature point and add the residual contribution
     for ( int quad_index = 0; quad_index < nquad; quad_index++ ){
@@ -76,7 +76,7 @@ class TACSShellTraction : public TACSElement {
 
       // Assemble the terms Xd = [Xxi; n] and Xdz
       TacsScalar Xd[9];
-      assembleFrame(Xxi, n, Xd);
+      TacsShellAssembleFrame(Xxi, n, Xd);
 
       // Compute the inverse of the 3x3 Jacobian transformation
       TacsScalar detXd = det3x3(Xd);

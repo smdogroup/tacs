@@ -1271,6 +1271,60 @@ class TACSQuadraticRotation {
       }
     }
   }
+
+  static TacsScalar evalDrillStrain( const TacsScalar u0x[],
+                                     const TacsScalar Ct[] ){
+    // Compute the rotational penalty
+    return 0.5*(Ct[3] + u0x[3] - Ct[1] - u0x[1]);
+  }
+
+  static void evalDrillStrainSens( TacsScalar scale,
+                                   const TacsScalar u0x[],
+                                   const TacsScalar Ct[],
+                                   TacsScalar du0x[],
+                                   TacsScalar dCt[] ){
+    dCt[0] = 0.0;
+    dCt[1] = -0.5*scale;
+    dCt[2] = 0.0;
+    dCt[3] = 0.5*scale;
+    dCt[4] = 0.0;
+    dCt[5] = 0.0;
+    dCt[6] = 0.0;
+    dCt[7] = 0.0;
+    dCt[8] = 0.0;
+
+    du0x[0] = 0.0;
+    du0x[1] = -0.5*scale;
+    du0x[2] = 0.0;
+    du0x[3] = 0.5*scale;
+    du0x[4] = 0.0;
+    du0x[5] = 0.0;
+    du0x[6] = 0.0;
+    du0x[7] = 0.0;
+    du0x[8] = 0.0;
+  }
+
+  static TacsScalar evalDrillStrainDeriv( const TacsScalar u0x[],
+                                          const TacsScalar Ct[],
+                                          const TacsScalar u0xd[],
+                                          const TacsScalar Ctd[],
+                                          TacsScalar *ed ){
+    *ed = 0.5*(Ctd[3] + u0xd[3] - Ctd[1] - u0xd[1]);
+
+    // Compute the rotational penalty
+    return 0.5*(Ct[3] + u0x[3] - Ct[1] - u0x[1]);
+  }
+
+  static void evalDrillStrainHessian( TacsScalar d2et,
+                                      const TacsScalar u0x[],
+                                      const TacsScalar Ct[],
+                                      TacsScalar d2u0x[],
+                                      TacsScalar d2Ct[],
+                                      TacsScalar d2Ctu0x[] ){
+    memset(d2u0x, 0, 81*sizeof(TacsScalar));
+    memset(d2Ct, 0, 81*sizeof(TacsScalar));
+    memset(d2Ctu0x, 0, 81*sizeof(TacsScalar));
+  }
 };
 
 

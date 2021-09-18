@@ -169,7 +169,8 @@ class TACSShellLinearModel {
   }
 
   template <int vars_per_node, class basis>
-  static void addComputeTyingStrainHessian( const TacsScalar Xpts[],
+  static void addComputeTyingStrainHessian( const TacsScalar alpha,
+                                            const TacsScalar Xpts[],
                                             const TacsScalar fn[],
                                             const TacsScalar vars[],
                                             const TacsScalar d[],
@@ -828,7 +829,8 @@ class TACSShellNonlinearModel {
   }
 
   template <int vars_per_node, class basis>
-  static void addComputeTyingStrainHessian( const TacsScalar Xpts[],
+  static void addComputeTyingStrainHessian( const TacsScalar alpha,
+                                            const TacsScalar Xpts[],
                                             const TacsScalar fn[],
                                             const TacsScalar vars[],
                                             const TacsScalar d[],
@@ -969,9 +971,9 @@ class TACSShellNonlinearModel {
         dUxi1[4] = (Xxi1[4] + Uxi1[4]);
         dUxi1[5] = 0.0;
 
-        d2Uxi[0] = dety[i1];
-        d2Uxi[14] = dety[i1];
-        d2Uxi[28] = dety[i1];
+        d2Uxi[0] = alpha*dety[i1];
+        d2Uxi[14] = alpha*dety[i1];
+        d2Uxi[28] = alpha*dety[i1];
       }
       else if (f1 == TACS_SHELL_G22_COMPONENT){
         // Compute g22 = e2^{T}*G*e2
@@ -982,9 +984,9 @@ class TACSShellNonlinearModel {
         dUxi1[4] = 0.0;
         dUxi1[5] = (Xxi1[5] + Uxi1[5]);
 
-        d2Uxi[7] = dety[i1];
-        d2Uxi[21] = dety[i1];
-        d2Uxi[35] = dety[i1];
+        d2Uxi[7] = alpha*dety[i1];
+        d2Uxi[21] = alpha*dety[i1];
+        d2Uxi[35] = alpha*dety[i1];
       }
       else if (f1 == TACS_SHELL_G12_COMPONENT){
         // Compute g12 = e2^{T}*G*e1
@@ -995,12 +997,12 @@ class TACSShellNonlinearModel {
         dUxi1[4] = 0.5*(Xxi1[5] + Uxi1[5]);
         dUxi1[5] = 0.5*(Xxi1[4] + Uxi1[4]);
 
-        d2Uxi[1] = 0.5*dety[i1];
-        d2Uxi[6] = 0.5*dety[i1];
-        d2Uxi[15] = 0.5*dety[i1];
-        d2Uxi[20] = 0.5*dety[i1];
-        d2Uxi[29] = 0.5*dety[i1];
-        d2Uxi[34] = 0.5*dety[i1];
+        d2Uxi[1] = 0.5*alpha*dety[i1];
+        d2Uxi[6] = 0.5*alpha*dety[i1];
+        d2Uxi[15] = 0.5*alpha*dety[i1];
+        d2Uxi[20] = 0.5*alpha*dety[i1];
+        d2Uxi[29] = 0.5*alpha*dety[i1];
+        d2Uxi[34] = 0.5*alpha*dety[i1];
       }
       else {
         TacsScalar dd1[3*basis::NUM_NODES];
@@ -1023,9 +1025,9 @@ class TACSShellNonlinearModel {
           dd01[1] = 0.5*(Xxi1[3] + Uxi1[3]);
           dd01[2] = 0.5*(Xxi1[5] + Uxi1[5]);
 
-          d2dUxi[1] = 0.5*dety[i1];
-          d2dUxi[9] = 0.5*dety[i1];
-          d2dUxi[17] = 0.5*dety[i1];
+          d2dUxi[1] = 0.5*alpha*dety[i1];
+          d2dUxi[9] = 0.5*alpha*dety[i1];
+          d2dUxi[17] = 0.5*alpha*dety[i1];
         }
         else if (f1 == TACS_SHELL_G13_COMPONENT){
           // Compute g13 = e1^{T}*G*e3
@@ -1040,9 +1042,9 @@ class TACSShellNonlinearModel {
           dd01[1] = 0.5*(Xxi1[2] + Uxi1[2]);
           dd01[2] = 0.5*(Xxi1[4] + Uxi1[4]);
 
-          d2dUxi[0] = 0.5*dety[i1];
-          d2dUxi[8] = 0.5*dety[i1];
-          d2dUxi[16] = 0.5*dety[i1];
+          d2dUxi[0] = 0.5*alpha*dety[i1];
+          d2dUxi[8] = 0.5*alpha*dety[i1];
+          d2dUxi[16] = 0.5*alpha*dety[i1];
         }
 
         basis::template addInterpFieldsTranspose<3, 3>(pt1, dd01, dd1);

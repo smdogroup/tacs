@@ -1,18 +1,12 @@
-#include "TACSShellElement.h"
-#include "TACSElementVerification.h"
-#include "TACSConstitutiveVerification.h"
-#include "TACSElementAlgebra.h"
 #include "TACSIsoShellConstitutive.h"
-
+#include "TACSShellElementDefs.h"
+#include "TACSElementVerification.h"
+#include "TACSElementAlgebra.h"
+#include "TACSShellTraction.h"
 #include "TACSAssembler.h"
 #include "TACSCreator.h"
 #include "TACSToFH5.h"
-
-typedef TACSShellElement<TACSQuadLinearQuadrature, TACSShellQuadLinearBasis,
-    TACSLinearizedRotation, TACSShellLinearModel> TACSQuadLinearShell;
-
-typedef TACSShellElement<TACSQuadQuadraticQuadrature, TACSShellQuadQuadraticBasis,
-    TACSLinearizedRotation, TACSShellLinearModel> TACSQuadQuadraticShell;
+#include "tacslapack.h"
 
 /*
   Create the TACSAssembler object and return the associated TACS
@@ -133,7 +127,6 @@ int main( int argc, char *argv[] ){
   TACSMaterialProperties *props =
     new TACSMaterialProperties(rho, specific_heat, E, nu, ys, cte, kappa);
 
-  // TACSShellTransform *transform = new TACSShellNaturalTransform();
   TacsScalar axis[] = {0.0, 1.0, 0.0};
   TACSShellTransform *transform = new TACSShellRefAxisTransform(axis);
 
@@ -141,41 +134,13 @@ int main( int argc, char *argv[] ){
   int t_num = 0;
   TACSShellConstitutive *con = new TACSIsoShellConstitutive(props, t, t_num);
 
-  TacsTestConstitutive(con, 0);
-
-  TACSElement *linear_shell = new TACSQuadLinearShell(transform, con);
-  linear_shell->incref();
-
-  TACSElement *quadratic_shell = new TACSQuadQuadraticShell(transform, con);
-  quadratic_shell->incref();
-
-  const int VARS_PER_NODE = 7;
-  const int NUM_NODES = 9;
-  const int NUM_VARS = VARS_PER_NODE*NUM_NODES;
-  int elemIndex = 0;
-  double time = 0.0;
-  TacsScalar Xpts[3*NUM_NODES];
-  TacsScalar vars[NUM_VARS], dvars[NUM_VARS], ddvars[NUM_VARS];
-
-  // Set the values of the
-  TacsGenerateRandomArray(Xpts, 3*NUM_NODES);
-  TacsGenerateRandomArray(vars, 6*NUM_NODES);
-  TacsGenerateRandomArray(dvars, 6*NUM_NODES);
-  TacsGenerateRandomArray(ddvars, 6*NUM_NODES);
-
-  TacsTestElementResidual(linear_shell, elemIndex, time, Xpts, vars, dvars, ddvars);
-  TacsTestElementResidual(quadratic_shell, elemIndex, time, Xpts, vars, dvars, ddvars);
-
-  int dvLen = 10;
-  TacsScalar x[10];
-  con->getDesignVars(elemIndex, dvLen, x);
-  TacsTestAdjResProduct(linear_shell, elemIndex, time, Xpts, vars, dvars, ddvars, dvLen, x);
-  TacsTestAdjResProduct(quadratic_shell, elemIndex, time, Xpts, vars, dvars, ddvars, dvLen, x);
+  TACSElement *shell9 = new TACSQuad9Shell(transform, con);
+  shell9->incref();
 
   int nx = 20, ny = 20;
   TACSAssembler *assembler;
   TACSCreator *creator;
-  createAssembler(comm, nx, ny, quadratic_shell, &assembler, &creator);
+  createAssembler(comm, nx, ny, shell9, &assembler, &creator);
   assembler->incref();
   creator->incref();
 
@@ -231,11 +196,10 @@ int main( int argc, char *argv[] ){
                     TACS_OUTPUT_EXTRAS);
   TACSToFH5 *f5 = new TACSToFH5(assembler, etype, write_flag);
   f5->incref();
-  f5->writeToFile("plate.f5");
+  f5->writeToFile("plate_solution.f5");
   assembler->decref();
 
-  linear_shell->decref();
-  quadratic_shell->decref();
+  shell9->decref();
 
   MPI_Finalize();
 }

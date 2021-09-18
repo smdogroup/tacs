@@ -1,22 +1,12 @@
 #include "TACSIsoShellConstitutive.h"
-#include "TACSShellElement.h"
+#include "TACSShellElementDefs.h"
 #include "TACSElementVerification.h"
 #include "TACSElementAlgebra.h"
 #include "TACSShellTraction.h"
-
 #include "TACSAssembler.h"
 #include "TACSCreator.h"
 #include "TACSToFH5.h"
 #include "tacslapack.h"
-
-typedef TACSShellElement<TACSQuadLinearQuadrature, TACSShellQuadLinearBasis,
-    TACSLinearizedRotation, TACSShellLinearModel> TACSQuadLinearShell;
-
-typedef TACSShellElement<TACSQuadQuadraticQuadrature, TACSShellQuadQuadraticBasis,
-    TACSLinearizedRotation, TACSShellLinearModel> TACSQuadQuadraticShell;
-
-typedef TACSShellElement<TACSTriQuadraticQuadrature, TACSShellTriQuadraticBasis,
-    TACSLinearizedRotation, TACSShellLinearModel> TACSTriQuadraticShell;
 
 /*
   Take the difference between what's in the vector and what the exact
@@ -471,10 +461,10 @@ void createAssembler( MPI_Comm comm, int order, int nx, int ny,
 
     TACSElement *trac = NULL;
     if (order == 2){
-      trac = new TACSShellTraction<6, TACSQuadLinearQuadrature, TACSShellQuadLinearBasis>(tr);
+      trac = new TACSShellTraction<6, TACSQuadLinearQuadrature, TACSShellQuadBasis<2> >(tr);
     }
     else if (order == 3){
-      trac = new TACSShellTraction<6, TACSQuadQuadraticQuadrature, TACSShellQuadQuadraticBasis>(tr);
+      trac = new TACSShellTraction<6, TACSQuadQuadraticQuadrature, TACSShellQuadBasis<3> >(tr);
     }
 
     aux->addElement(elem, trac);
@@ -494,13 +484,12 @@ void createAssembler( MPI_Comm comm, int order, int nx, int ny,
   Create the TACSAssembler object and return the associated TACS
   creator object
 */
-void createTriAssembler( MPI_Comm comm, int nx, int ny,
+void createTriAssembler( MPI_Comm comm, int order, int nx, int ny,
                          TACSElement *element,
                          TACSAssembler **_assembler, TACSCreator **_creator ){
   int rank;
   MPI_Comm_rank(comm, &rank);
 
-  const int order = 3;
   double load = 1.0;
   double L = 100.0;
   double R = 100.0/M_PI;
@@ -553,23 +542,38 @@ void createTriAssembler( MPI_Comm comm, int nx, int ny,
       }
 
       // Set the connectivity from the nodes
-      int *c = &conn[12*k];
-      c[0] = nodes[0];
-      c[1] = nodes[2];
-      c[2] = nodes[8];
-      c[3] = nodes[1];
-      c[4] = nodes[5];
-      c[5] = nodes[4];
-      ptr[2*k+1] = 6*(2*k+1);
+      if (order == 2){
+        int *c = &conn[6*k];
+        c[0] = nodes[0];
+        c[1] = nodes[1];
+        c[2] = nodes[3];
+        ptr[2*k+1] = 3*(2*k+1);
 
-      c = &conn[12*k+6];
-      c[0] = nodes[0];
-      c[1] = nodes[8];
-      c[2] = nodes[6];
-      c[3] = nodes[4];
-      c[4] = nodes[7];
-      c[5] = nodes[3];
-      ptr[2*k+2] = 6*(2*k+2);
+        c = &conn[6*k+3];
+        c[0] = nodes[0];
+        c[1] = nodes[3];
+        c[2] = nodes[2];
+        ptr[2*k+2] = 3*(2*k+2);
+      }
+      else if (order == 3){
+        int *c = &conn[12*k];
+        c[0] = nodes[0];
+        c[1] = nodes[2];
+        c[2] = nodes[8];
+        c[3] = nodes[1];
+        c[4] = nodes[5];
+        c[5] = nodes[4];
+        ptr[2*k+1] = 6*(2*k+1);
+
+        c = &conn[12*k+6];
+        c[0] = nodes[0];
+        c[1] = nodes[8];
+        c[2] = nodes[6];
+        c[3] = nodes[4];
+        c[4] = nodes[7];
+        c[5] = nodes[3];
+        ptr[2*k+2] = 6*(2*k+2);
+      }
     }
 
     // Set the connectivity
@@ -693,7 +697,12 @@ void createTriAssembler( MPI_Comm comm, int nx, int ny,
     }
 
     TACSElement *trac = NULL;
-    trac = new TACSShellTraction<6, TACSTriQuadraticQuadrature, TACSShellTriQuadraticBasis>(tr);
+    if (order == 2){
+      trac = new TACSShellTraction<6, TACSTriLinearQuadrature, TACSShellTriLinearBasis>(tr);
+    }
+    else if (order == 3){
+      trac = new TACSShellTraction<6, TACSTriQuadraticQuadrature, TACSShellTriQuadraticBasis>(tr);
+    }
 
     aux->addElement(elem, trac);
   }
@@ -708,7 +717,6 @@ void createTriAssembler( MPI_Comm comm, int nx, int ny,
   *_creator = creator;
 }
 
-
 int main( int argc, char *argv[] ){
   MPI_Init(&argc, &argv);
 
@@ -716,6 +724,42 @@ int main( int argc, char *argv[] ){
   MPI_Comm comm = MPI_COMM_WORLD;
   int rank;
   MPI_Comm_rank(comm, &rank);
+
+  // Parameters optionally set from the command line
+  int order = 3;
+  int nx = 20, ny = 40;
+  int mesh_type = 0;
+
+  // Parse the command line arguments
+  for ( int k = 0; k < argc; k++ ){
+    if (strcmp(argv[k], "triangle") == 0){
+      mesh_type = 1;
+    }
+    if (sscanf(argv[k], "nx=%d", &nx) == 1){
+      if (nx < 10){
+        nx = 10;
+      }
+      if (nx > 200){
+        nx = 200;
+      }
+    }
+    if (sscanf(argv[k], "ny=%d", &ny) == 1){
+      if (ny < 10){
+        ny = 10;
+      }
+      if (ny > 200){
+        ny = 200;
+      }
+    }
+    if (sscanf(argv[k], "order=%d", &order) == 1){
+      if (order < 2){
+        order = 2;
+      }
+      if (order > 3){
+        order = 3;
+      }
+    }
+  }
 
   double load = 1.0;
   double t = 1.0;
@@ -736,55 +780,35 @@ int main( int argc, char *argv[] ){
   TACSMaterialProperties *props =
     new TACSMaterialProperties(rho, specific_heat, E, nu, ys, cte, kappa);
 
-  // TACSShellTransform *transform = new TACSShellNaturalTransform();
   TacsScalar axis[] = {1.0, 0.0, 0.0};
   TACSShellTransform *transform = new TACSShellRefAxisTransform(axis);
 
   TACSShellConstitutive *con = new TACSIsoShellConstitutive(props, t);
 
-  TACSElement *linear_shell = new TACSQuadLinearShell(transform, con);
-  linear_shell->incref();
-
-  TACSElement *quadratic_shell = new TACSQuadQuadraticShell(transform, con);
-  quadratic_shell->incref();
-
-  TACSElement *tri_shell = new TACSTriQuadraticShell(transform, con);
-  tri_shell->incref();
-
-  const int NUM_NODES = 9;
-  const int VARS_PER_NODE = 6;
-  const int NUM_VARS = VARS_PER_NODE*NUM_NODES;
-  int elemIndex = 0;
-  double time = 0.0;
-  TacsScalar Xpts[3*NUM_NODES];
-  TacsScalar vars[NUM_VARS], dvars[NUM_VARS], ddvars[NUM_VARS];
-
-  // Set the values of the
-  TacsGenerateRandomArray(Xpts, 3*NUM_NODES);
-  TacsGenerateRandomArray(vars, 6*NUM_NODES);
-  TacsGenerateRandomArray(dvars, 6*NUM_NODES);
-  TacsGenerateRandomArray(ddvars, 6*NUM_NODES);
-
-  // TacsTestElementResidual(linear_shell, elemIndex, time, Xpts, vars, dvars, ddvars);
-  // TacsTestElementResidual(quadratic_shell, elemIndex, time, Xpts, vars, dvars, ddvars);
-  // TacsTestElementResidual(tri_shell, elemIndex, time, Xpts, vars, dvars, ddvars);
-  // TacsTestElementJacobian(linear_shell, elemIndex, time, Xpts, vars, dvars, ddvars);
-  // TacsTestElementJacobian(quadratic_shell, elemIndex, time, Xpts, vars, dvars, ddvars);
-
-  int order = 3;
-  int nx = 20, ny = 40;
-  TACSAssembler *assembler;
-  TACSCreator *creator;
-
+  TACSAssembler *assembler = NULL;
+  TACSCreator *creator = NULL;
   TACSElement *shell = NULL;
-  if (order == 2){
-    shell = linear_shell;
+  if (mesh_type == 0){ // Quadrilateral mesh
+    if (order == 2){
+      shell = new TACSQuad4Shell(transform, con);
+    }
+    else { // order == 3
+      shell = new TACSQuad9Shell(transform, con);
+    }
+    shell->incref();
+    createAssembler(comm, order, nx, ny, shell, &assembler, &creator);
   }
-  else if (order == 3){
-    shell = quadratic_shell;
+  else {
+    if (order == 2){
+      shell = new TACSTri3Shell(transform, con);
+    }
+    else { // order == 3
+      shell = NULL; // This will cause a segfault
+    }
+    shell->incref();
+    createTriAssembler(comm, order, nx, ny, shell, &assembler, &creator);
   }
-  // createAssembler(comm, order, nx, ny, shell, &assembler, &creator);
-  createTriAssembler(comm, nx, ny, tri_shell, &assembler, &creator);
+
   assembler->incref();
   creator->incref();
 
@@ -825,18 +849,7 @@ int main( int argc, char *argv[] ){
                     TACS_OUTPUT_EXTRAS);
   TACSToFH5 *f5 = new TACSToFH5(assembler, etype, write_flag);
   f5->incref();
-  f5->writeToFile("cyl.f5");
-
-  // Set the force vector
-  res->scale(-1.0);
-  assembler->setVariables(res);
-  // f5->writeToFile("cyl_forces.f5");
-
-  // Set all the variables to 1.0
-  res->set(1.0);
-  assembler->applyBCs(res);
-  assembler->setVariables(res);
-  // f5->writeToFile("cyl_bcs.f5");
+  f5->writeToFile("cylinder_solution.f5");
 
   // Compute the tangent stiffness
   TacsScalar Cs[TACSShellConstitutive::NUM_TANGENT_STIFFNESS_ENTRIES];
@@ -863,24 +876,9 @@ int main( int argc, char *argv[] ){
 
   // Set the force vector
   assembler->setVariables(ans);
-  f5->writeToFile("cyl_exact.f5");
+  f5->writeToFile("cylinder_exact_solution.f5");
 
-  // assembler->assembleRes(res);
-  // assembler->setVariables(res);
-  // f5->writeToFile("cyl_res.f5");
-
-  // // Set a linear solution to check the behavior of the shell
-  // TacsScalar coef[15];
-  // memset(coef, 0, 15*sizeof(TacsScalar));
-  // coef[1] = 1.0;
-  // setLinearSolution(assembler, ans, R, coef);
-
-  // // Set the force vector
-  // assembler->setVariables(ans);
-  // f5->writeToFile("cyl_linear.f5");
-
-  linear_shell->decref();
-  quadratic_shell->decref();
+  shell->decref();
   assembler->decref();
 
   MPI_Finalize();

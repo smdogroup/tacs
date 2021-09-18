@@ -646,7 +646,7 @@ void TACSShellElement<quadrature, basis, director, model>::
 
   // Add the second order terms from the tying strain
   model::template
-    addComputeTyingStrainHessian<vars_per_node, basis>(Xpts, fn, vars, d,
+    addComputeTyingStrainHessian<vars_per_node, basis>(alpha, Xpts, fn, vars, d,
                                                        dety, d2ety, d2etyu, d2etyd,
                                                        mat, d2d, d2du);
 
@@ -1172,7 +1172,7 @@ int TacsTestShellTyingStrain( double dh=1e-7,
   model::template
     addComputeTyingStrainTranspose<vars_per_node, basis>(Xpts, fn, vars, d, dety, res, dd);
   model::template
-    addComputeTyingStrainHessian<vars_per_node, basis>(Xpts, fn, vars, d, dety, d2ety,
+    addComputeTyingStrainHessian<vars_per_node, basis>(1.0, Xpts, fn, vars, d, dety, d2ety,
                                                        d2etyu, d2etyd, mat, d2d, d2du);
 
   TacsScalar fdmat[size*size], fdd2du[dsize*usize];
