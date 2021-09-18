@@ -484,219 +484,238 @@ void createAssembler( MPI_Comm comm, int order, int nx, int ny,
   Create the TACSAssembler object and return the associated TACS
   creator object
 */
-// void createTriAssembler( MPI_Comm comm, int nx, int ny,
-//                          TACSElement *element,
-//                          TACSAssembler **_assembler, TACSCreator **_creator ){
-//   int rank;
-//   MPI_Comm_rank(comm, &rank);
+void createTriAssembler( MPI_Comm comm, int order, int nx, int ny,
+                         TACSElement *element,
+                         TACSAssembler **_assembler, TACSCreator **_creator ){
+  int rank;
+  MPI_Comm_rank(comm, &rank);
 
-//   const int order = 3;
-//   double load = 1.0;
-//   double L = 100.0;
-//   double R = 100.0/M_PI;
-//   double defect = 0.1;
+  double load = 1.0;
+  double L = 100.0;
+  double R = 100.0/M_PI;
+  double defect = 0.1;
 
-//   // Set the alpha and beta parameters
-//   double alpha = 4.0/R;
-//   double beta = 3*M_PI/L;
+  // Set the alpha and beta parameters
+  double alpha = 4.0/R;
+  double beta = 3*M_PI/L;
 
-//   // Set the number of nodes/elements on this proc
-//   int varsPerNode = element->getVarsPerNode();
+  // Set the number of nodes/elements on this proc
+  int varsPerNode = element->getVarsPerNode();
 
-//   // Set up the creator object
-//   TACSCreator *creator = new TACSCreator(comm, varsPerNode);
+  // Set up the creator object
+  TACSCreator *creator = new TACSCreator(comm, varsPerNode);
 
-//   if (rank == 0){
-//     // Set the number of elements
-//     int nnx = (order-1)*nx + 1;
-//     int nny = (order-1)*ny;
-//     int numNodes = nnx*nny;
-//     int numElements = 2*nx*ny;
+  if (rank == 0){
+    // Set the number of elements
+    int nnx = (order-1)*nx + 1;
+    int nny = (order-1)*ny;
+    int numNodes = nnx*nny;
+    int numElements = 2*nx*ny;
 
-//     // Allocate the input arrays into the creator object
-//     int *ids = new int[ numElements ];
-//     int *ptr = new int[ numElements+1 ];
-//     int *conn = new int[ 6*numElements ];
+    // Allocate the input arrays into the creator object
+    int *ids = new int[ numElements ];
+    int *ptr = new int[ numElements+1 ];
+    int *conn = new int[ 6*numElements ];
 
-//     // Set the element identifiers to all zero
-//     memset(ids, 0, numElements*sizeof(int));
+    // Set the element identifiers to all zero
+    memset(ids, 0, numElements*sizeof(int));
 
-//     ptr[0] = 0;
-//     for ( int k = 0; k < numElements/2; k++ ){
-//       // Back out the i, j coordinates from the corresponding
-//       // element number
-//       int i = k % nx;
-//       int j = k / nx;
+    ptr[0] = 0;
+    for ( int k = 0; k < numElements/2; k++ ){
+      // Back out the i, j coordinates from the corresponding
+      // element number
+      int i = k % nx;
+      int j = k / nx;
 
-//       // Set the node connectivity
-//       int nodes[9];
-//       for ( int jj = 0; jj < order; jj++ ){
-//         for ( int ii = 0; ii < order; ii++ ){
-//           if (j == ny-1 && jj == order-1){
-//             nodes[ii + order*jj] = ((order-1)*i + ii);
-//           }
-//           else {
-//             nodes[ii + order*jj] =
-//               ((order-1)*i + ii) + ((order-1)*j + jj)*nnx;
-//           }
-//         }
-//       }
+      // Set the node connectivity
+      int nodes[9];
+      for ( int jj = 0; jj < order; jj++ ){
+        for ( int ii = 0; ii < order; ii++ ){
+          if (j == ny-1 && jj == order-1){
+            nodes[ii + order*jj] = ((order-1)*i + ii);
+          }
+          else {
+            nodes[ii + order*jj] =
+              ((order-1)*i + ii) + ((order-1)*j + jj)*nnx;
+          }
+        }
+      }
 
-//       // Set the connectivity from the nodes
-//       int *c = &conn[12*k];
-//       c[0] = nodes[0];
-//       c[1] = nodes[2];
-//       c[2] = nodes[8];
-//       c[3] = nodes[1];
-//       c[4] = nodes[5];
-//       c[5] = nodes[4];
-//       ptr[2*k+1] = 6*(2*k+1);
+      // Set the connectivity from the nodes
+      if (order == 2){
+        int *c = &conn[6*k];
+        c[0] = nodes[0];
+        c[1] = nodes[1];
+        c[2] = nodes[3];
+        ptr[2*k+1] = 3*(2*k+1);
 
-//       c = &conn[12*k+6];
-//       c[0] = nodes[0];
-//       c[1] = nodes[8];
-//       c[2] = nodes[6];
-//       c[3] = nodes[4];
-//       c[4] = nodes[7];
-//       c[5] = nodes[3];
-//       ptr[2*k+2] = 6*(2*k+2);
-//     }
+        c = &conn[6*k+3];
+        c[0] = nodes[0];
+        c[1] = nodes[3];
+        c[2] = nodes[2];
+        ptr[2*k+2] = 3*(2*k+2);
+      }
+      else if (order == 3){
+        int *c = &conn[12*k];
+        c[0] = nodes[0];
+        c[1] = nodes[2];
+        c[2] = nodes[8];
+        c[3] = nodes[1];
+        c[4] = nodes[5];
+        c[5] = nodes[4];
+        ptr[2*k+1] = 6*(2*k+1);
 
-//     // Set the connectivity
-//     creator->setGlobalConnectivity(numNodes, numElements,
-//                                    ptr, conn, ids);
-//     delete [] conn;
-//     delete [] ptr;
-//     delete [] ids;
+        c = &conn[12*k+6];
+        c[0] = nodes[0];
+        c[1] = nodes[8];
+        c[2] = nodes[6];
+        c[3] = nodes[4];
+        c[4] = nodes[7];
+        c[5] = nodes[3];
+        ptr[2*k+2] = 6*(2*k+2);
+      }
+    }
 
-//     int numBcs = 2*nny;
-//     int *bcNodes = new int[ numBcs ];
-//     int k = 0;
+    // Set the connectivity
+    creator->setGlobalConnectivity(numNodes, numElements,
+                                   ptr, conn, ids);
+    delete [] conn;
+    delete [] ptr;
+    delete [] ids;
 
-//     for ( int j = 0; j < nny; j++ ){
-//       int node = j*nnx;
-//       bcNodes[k] = node;
-//       k++;
+    int numBcs = 2*nny;
+    int *bcNodes = new int[ numBcs ];
+    int k = 0;
 
-//       node = nnx-1 + j*nnx;
-//       bcNodes[k] = node;
-//       k++;
-//     }
+    for ( int j = 0; j < nny; j++ ){
+      int node = j*nnx;
+      bcNodes[k] = node;
+      k++;
 
-//     // Following copied from TACSCreator
-//     int *bc_ptr = new int[ numBcs+1 ];
+      node = nnx-1 + j*nnx;
+      bcNodes[k] = node;
+      k++;
+    }
 
-//     // Since the bc_vars array is input as NULL, assume that
-//     // all the variables at this node are fully restrained.
-//     int *bc_vars = new int[ numBcs*3 + 1];
-//     bc_ptr[0] = 0;
+    // Following copied from TACSCreator
+    int *bc_ptr = new int[ numBcs+1 ];
 
-//     for ( int i = 0; i < numBcs; i++ ){
-//       bc_ptr[i+1] = bc_ptr[i];
-//       if (i == 0){
-//         // Fix u, v, w, and rotx
-//         for ( int j = 0; j < 4; j++ ){
-//           bc_vars[bc_ptr[i+1]] = j;
-//           bc_ptr[i+1]++;
-//         }
-//       }
-//       else {
-//         // Fix v, w, and rotx
-//         for ( int j = 0; j < 3; j++ ){
-//           bc_vars[bc_ptr[i+1]] = j+1;
-//           bc_ptr[i+1]++;
-//         }
-//       }
-//     }
+    // Since the bc_vars array is input as NULL, assume that
+    // all the variables at this node are fully restrained.
+    int *bc_vars = new int[ numBcs*3 + 1];
+    bc_ptr[0] = 0;
 
-//     TacsScalar *bc_vals = new TacsScalar[ bc_ptr[numBcs] ];
-//     memset(bc_vals, 0, bc_ptr[numBcs]*sizeof(TacsScalar));
+    for ( int i = 0; i < numBcs; i++ ){
+      bc_ptr[i+1] = bc_ptr[i];
+      if (i == 0){
+        // Fix u, v, w, and rotx
+        for ( int j = 0; j < 4; j++ ){
+          bc_vars[bc_ptr[i+1]] = j;
+          bc_ptr[i+1]++;
+        }
+      }
+      else {
+        // Fix v, w, and rotx
+        for ( int j = 0; j < 3; j++ ){
+          bc_vars[bc_ptr[i+1]] = j+1;
+          bc_ptr[i+1]++;
+        }
+      }
+    }
 
-//     // Set the boundary conditions
-//     creator->setBoundaryConditions(numBcs, bcNodes, bc_ptr, bc_vars, bc_vals);
+    TacsScalar *bc_vals = new TacsScalar[ bc_ptr[numBcs] ];
+    memset(bc_vals, 0, bc_ptr[numBcs]*sizeof(TacsScalar));
 
-//     delete [] bcNodes;
-//     delete [] bc_ptr;
-//     delete [] bc_vars;
-//     delete [] bc_vals;
+    // Set the boundary conditions
+    creator->setBoundaryConditions(numBcs, bcNodes, bc_ptr, bc_vars, bc_vals);
 
-//     // Set the node locations
-//     TacsScalar *Xpts = new TacsScalar[ 3*numNodes ];
+    delete [] bcNodes;
+    delete [] bc_ptr;
+    delete [] bc_vars;
+    delete [] bc_vals;
 
-//     for ( int j = 0; j < nny; j++ ){
-//       double v = -M_PI + (2.0*M_PI*j)/nny;
-//       for ( int i = 0; i < nnx; i++ ){
-//         double u = 1.0*i/(nnx - 1);
-//         double theta = v + 0.25*M_PI*u + defect*sin(v)*cos(2*M_PI*u);
-//         double x = L*(u + defect*cos(v)*sin(2*M_PI*u));
+    // Set the node locations
+    TacsScalar *Xpts = new TacsScalar[ 3*numNodes ];
 
-//         int node = i + j*nnx;
-//         Xpts[3*node]   =  x;
-//         Xpts[3*node+1] =  R*cos(theta);
-//         Xpts[3*node+2] = -R*sin(theta);
-//       }
-//     }
+    for ( int j = 0; j < nny; j++ ){
+      double v = -M_PI + (2.0*M_PI*j)/nny;
+      for ( int i = 0; i < nnx; i++ ){
+        double u = 1.0*i/(nnx - 1);
+        double theta = v + 0.25*M_PI*u + defect*sin(v)*cos(2*M_PI*u);
+        double x = L*(u + defect*cos(v)*sin(2*M_PI*u));
 
-//     // Set the nodal locations
-//     creator->setNodes(Xpts);
-//     delete [] Xpts;
-//   }
+        int node = i + j*nnx;
+        Xpts[3*node]   =  x;
+        Xpts[3*node+1] =  R*cos(theta);
+        Xpts[3*node+2] = -R*sin(theta);
+      }
+    }
 
-//   // Set the one element
-//   creator->setElements(1, &element);
+    // Set the nodal locations
+    creator->setNodes(Xpts);
+    delete [] Xpts;
+  }
 
-//   // Set the reordering type
-//   creator->setReorderingType(TACSAssembler::MULTICOLOR_ORDER,
-//                              TACSAssembler::GAUSS_SEIDEL);
+  // Set the one element
+  creator->setElements(1, &element);
 
-//   // Create TACS
-//   TACSAssembler *assembler = creator->createTACS();
+  // Set the reordering type
+  creator->setReorderingType(TACSAssembler::MULTICOLOR_ORDER,
+                             TACSAssembler::GAUSS_SEIDEL);
 
-//   // Set the elements the node vector
-//   TACSBVec *X = assembler->createNodeVec();
-//   X->incref();
-//   assembler->getNodes(X);
+  // Create TACS
+  TACSAssembler *assembler = creator->createTACS();
 
-//   TACSAuxElements *aux = new TACSAuxElements();
+  // Set the elements the node vector
+  TACSBVec *X = assembler->createNodeVec();
+  X->incref();
+  assembler->getNodes(X);
 
-//   for ( int elem = 0; elem < assembler->getNumElements(); elem++ ){
-//     TacsScalar Xelem[3*9];
-//     TacsScalar tr[3*9];
+  TACSAuxElements *aux = new TACSAuxElements();
 
-//     int nnodes;
-//     const int *nodes;
-//     assembler->getElement(elem, &nnodes, &nodes);
-//     X->getValues(nnodes, nodes, Xelem);
+  for ( int elem = 0; elem < assembler->getNumElements(); elem++ ){
+    TacsScalar Xelem[3*9];
+    TacsScalar tr[3*9];
 
-//     for ( int node = 0; node < nnodes; node++ ){
-//       // Compute the pressure at this point in the shell
-//       double x = TacsRealPart(Xelem[3*node]);
-//       double y = -R*atan2(TacsRealPart(Xelem[3*node+2]), TacsRealPart(Xelem[3*node+1]));
+    int nnodes;
+    const int *nodes;
+    assembler->getElement(elem, &nnodes, &nodes);
+    X->getValues(nnodes, nodes, Xelem);
 
-//       TacsScalar pval = load*sin(beta*x)*sin(alpha*y);
-//       TacsScalar ynorm = Xelem[3*node+1] / R;
-//       TacsScalar znorm = Xelem[3*node+2] / R;
+    for ( int node = 0; node < nnodes; node++ ){
+      // Compute the pressure at this point in the shell
+      double x = TacsRealPart(Xelem[3*node]);
+      double y = -R*atan2(TacsRealPart(Xelem[3*node+2]), TacsRealPart(Xelem[3*node+1]));
 
-//       tr[3*node] = 0.0;
-//       tr[3*node+1] = ynorm * pval;
-//       tr[3*node+2] = znorm * pval;
-//     }
+      TacsScalar pval = load*sin(beta*x)*sin(alpha*y);
+      TacsScalar ynorm = Xelem[3*node+1] / R;
+      TacsScalar znorm = Xelem[3*node+2] / R;
 
-//     TACSElement *trac = NULL;
-//     trac = new TACSShellTraction<6, TACSTriQuadraticQuadrature, TACSShellTriQuadraticBasis>(tr);
+      tr[3*node] = 0.0;
+      tr[3*node+1] = ynorm * pval;
+      tr[3*node+2] = znorm * pval;
+    }
 
-//     aux->addElement(elem, trac);
-//   }
+    TACSElement *trac = NULL;
+    if (order == 2){
+      trac = new TACSShellTraction<6, TACSTriLinearQuadrature, TACSShellTriLinearBasis>(tr);
+    }
+    else if (order == 3){
+      trac = new TACSShellTraction<6, TACSTriQuadraticQuadrature, TACSShellTriQuadraticBasis>(tr);
+    }
 
-//   X->decref();
+    aux->addElement(elem, trac);
+  }
 
-//   // Set the auxiliary elements
-//   assembler->setAuxElements(aux);
+  X->decref();
 
-//   // Set the pointers
-//   *_assembler = assembler;
-//   *_creator = creator;
-// }
+  // Set the auxiliary elements
+  assembler->setAuxElements(aux);
+
+  // Set the pointers
+  *_assembler = assembler;
+  *_creator = creator;
+}
 
 int main( int argc, char *argv[] ){
   MPI_Init(&argc, &argv);
@@ -705,6 +724,42 @@ int main( int argc, char *argv[] ){
   MPI_Comm comm = MPI_COMM_WORLD;
   int rank;
   MPI_Comm_rank(comm, &rank);
+
+  // Parameters optionally set from the command line
+  int order = 3;
+  int nx = 20, ny = 40;
+  int mesh_type = 0;
+
+  // Parse the command line arguments
+  for ( int k = 0; k < argc; k++ ){
+    if (strcmp(argv[k], "triangle") == 0){
+      mesh_type = 1;
+    }
+    if (sscanf(argv[k], "nx=%d", &nx) == 1){
+      if (nx < 10){
+        nx = 10;
+      }
+      if (nx > 200){
+        nx = 200;
+      }
+    }
+    if (sscanf(argv[k], "ny=%d", &ny) == 1){
+      if (ny < 10){
+        ny = 10;
+      }
+      if (ny > 200){
+        ny = 200;
+      }
+    }
+    if (sscanf(argv[k], "order=%d", &order) == 1){
+      if (order < 2){
+        order = 2;
+      }
+      if (order > 3){
+        order = 3;
+      }
+    }
+  }
 
   double load = 1.0;
   double t = 1.0;
@@ -730,29 +785,30 @@ int main( int argc, char *argv[] ){
 
   TACSShellConstitutive *con = new TACSIsoShellConstitutive(props, t);
 
-  TACSElement *shell4 = new TACSQuad4Shell(transform, con);
-  shell4->incref();
-
-  TACSElement *shell9 = new TACSQuad9Shell(transform, con);
-  shell9->incref();
-
-  TACSElement *shell3 = new TACSTri3Shell(transform, con);
-  shell3->incref();
-
-  int order = 3;
-  int nx = 20, ny = 40;
-  TACSAssembler *assembler;
-  TACSCreator *creator;
-
+  TACSAssembler *assembler = NULL;
+  TACSCreator *creator = NULL;
   TACSElement *shell = NULL;
-  if (order == 2){
-    shell = shell4;
+  if (mesh_type == 0){ // Quadrilateral mesh
+    if (order == 2){
+      shell = new TACSQuad4Shell(transform, con);
+    }
+    else { // order == 3
+      shell = new TACSQuad9Shell(transform, con);
+    }
+    shell->incref();
+    createAssembler(comm, order, nx, ny, shell, &assembler, &creator);
   }
-  else if (order == 3){
-    shell = shell9;
+  else {
+    if (order == 2){
+      shell = new TACSTri3Shell(transform, con);
+    }
+    else { // order == 3
+      shell = NULL; // This will cause a segfault
+    }
+    shell->incref();
+    createTriAssembler(comm, order, nx, ny, shell, &assembler, &creator);
   }
-  createAssembler(comm, order, nx, ny, shell, &assembler, &creator);
-  // createTriAssembler(comm, nx, ny, tri_shell, &assembler, &creator);
+
   assembler->incref();
   creator->incref();
 
@@ -822,9 +878,7 @@ int main( int argc, char *argv[] ){
   assembler->setVariables(ans);
   f5->writeToFile("cylinder_exact_solution.f5");
 
-  shell4->decref();
-  shell9->decref();
-  shell3->decref();
+  shell->decref();
   assembler->decref();
 
   MPI_Finalize();
