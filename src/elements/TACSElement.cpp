@@ -37,12 +37,6 @@ void TACSElement::addJacobian( int elemIndex,
                                const TacsScalar ddvars[],
                                TacsScalar res[],
                                TacsScalar J[] ){
-  // Call the residual implementation
-  addResidual(elemIndex, time, Xpts, vars, dvars, ddvars, res);
-
-  // Get the number of variables
-  int nvars = getNumVariables();
-
   // The step length
 #ifdef TACS_USE_COMPLEX
   const double dh = 1e-30;
@@ -50,15 +44,20 @@ void TACSElement::addJacobian( int elemIndex,
   const double dh = 1e-7;
 #endif // TACS_USE_COMPLEX
 
+  // Get the number of variables
+  int nvars = getNumVariables();
+
+  // Call the residual implementation
+  addResidual(elemIndex, time, Xpts, vars, dvars, ddvars, res);
+
   // Original and perturbed residual vectors
-  TacsScalar *Rtmp1 = new TacsScalar[nvars];
-  TacsScalar *Rtmp2 = new TacsScalar[nvars];
+  TacsScalar *Rtmp1 = new TacsScalar[ nvars ];
+  TacsScalar *Rtmp2 = new TacsScalar[ nvars ];
 
   // Perturbed state vectors
-  // TacsScalar *pstate = new TacsScalar[nvars];
-  TacsScalar *qTmp = new TacsScalar[nvars];
-  TacsScalar *qdotTmp = new TacsScalar[nvars];
-  TacsScalar *qddotTmp = new TacsScalar[nvars];
+  TacsScalar *qTmp = new TacsScalar[ nvars ];
+  TacsScalar *qdotTmp = new TacsScalar[ nvars ];
+  TacsScalar *qddotTmp = new TacsScalar[ nvars ];
 
   // Copy the state variables into pstate
   memcpy(qTmp, vars, nvars*sizeof(TacsScalar));
@@ -187,4 +186,303 @@ void TACSElement::addJacobian( int elemIndex,
   delete [] qTmp;
   delete [] qdotTmp;
   delete [] qddotTmp;
+}
+
+void TACSElement::addAdjResProduct( int elemIndex, double time,
+                                    TacsScalar scale,
+                                    const TacsScalar psi[],
+                                    const TacsScalar Xpts[],
+                                    const TacsScalar vars[],
+                                    const TacsScalar dvars[],
+                                    const TacsScalar ddvars[],
+                                    int dvLen,
+                                    TacsScalar dfdx[] ){
+  // The step length
+#ifdef TACS_USE_COMPLEX
+  const double dh = 1e-30;
+#else
+  const double dh = 1e-7;
+#endif // TACS_USE_COMPLEX
+
+  TacsScalar *x = new TacsScalar[ dvLen ];
+  getDesignVars(elemIndex, dvLen, x);
+
+  int nvars = getNumVariables();
+  TacsScalar *res = new TacsScalar[ nvars ];
+  TacsScalar *tmp = new TacsScalar[ nvars ];
+
+  memset(res, 0, nvars*sizeof(TacsScalar));
+  addResidual(elemIndex, time, Xpts, vars, dvars, ddvars, res);
+
+  for ( int k = 0; k < dvLen; k++ ){
+    TacsScalar xt = x[k];
+
+#ifdef TACS_USE_COMPLEX
+    x[k] = xt + TacsScalar(0.0, dh);
+#else
+    x[k] = xt + dh;
+#endif // TACS_USE_COMPLEX
+    setDesignVars(elemIndex, dvLen, x);
+
+    memset(tmp, 0, nvars*sizeof(TacsScalar));
+    addResidual(elemIndex, time, Xpts, vars, dvars, ddvars, tmp);
+
+    TacsScalar product = 0.0;
+#ifdef TACS_USE_COMPLEX
+    for ( int i = 0; i < nvars; i++ ){
+      product += psi[i]*TacsImagPart(tmp[i])/dh;
+    }
+#else
+    for ( int i = 0; i < nvars; i++ ){
+      product += psi[i]*(tmp[i] - res[i])/dh;
+    }
+#endif // TACS_USE_COMPLEX
+
+    dfdx[k] += scale*product;
+    x[k] = xt;
+  }
+
+  // Reset the design variable values
+  setDesignVars(elemIndex, dvLen, x);
+
+  delete [] x;
+  delete [] res;
+  delete [] tmp;
+}
+
+void TACSElement::addAdjResXptProduct( int elemIndex, double time,
+                                       TacsScalar scale,
+                                       const TacsScalar psi[],
+                                       const TacsScalar Xpts[],
+                                       const TacsScalar vars[],
+                                       const TacsScalar dvars[],
+                                       const TacsScalar ddvars[],
+                                       TacsScalar fXptSens[] ){
+  // The step length
+#ifdef TACS_USE_COMPLEX
+  const double dh = 1e-30;
+#else
+  const double dh = 1e-7;
+#endif // TACS_USE_COMPLEX
+
+  int nnodes = getNumNodes();
+  TacsScalar *X = new TacsScalar[ 3*nnodes ];
+  memcpy(X, Xpts, 3*nnodes*sizeof(TacsScalar));
+
+  int nvars = getNumVariables();
+  TacsScalar *res = new TacsScalar[ nvars ];
+  TacsScalar *tmp = new TacsScalar[ nvars ];
+
+  memset(res, 0, nvars*sizeof(TacsScalar));
+  addResidual(elemIndex, time, Xpts, vars, dvars, ddvars, res);
+
+  for ( int k = 0; k < 3*nnodes; k++ ){
+#ifdef TACS_USE_COMPLEX
+    X[k] = Xpts[k] + TacsScalar(0.0, dh);
+#else
+    X[k] = Xpts[k] + dh;
+#endif // TACS_USE_COMPLEX
+    memset(tmp, 0, nvars*sizeof(TacsScalar));
+    addResidual(elemIndex, time, X, vars, dvars, ddvars, tmp);
+
+    TacsScalar product = 0.0;
+#ifdef TACS_USE_COMPLEX
+    for ( int i = 0; i < nvars; i++ ){
+      product += psi[i]*TacsImagPart(tmp[i])/dh;
+    }
+#else
+    for ( int i = 0; i < nvars; i++ ){
+      product += psi[i]*(tmp[i] - res[i])/dh;
+    }
+#endif // TACS_USE_COMPLEX
+
+    fXptSens[k] += scale*product;
+
+    X[k] = Xpts[k];
+  }
+
+  delete [] X;
+  delete [] res;
+  delete [] tmp;
+}
+
+void TACSElement::addPointQuantityDVSens( int elemIndex,
+                                          int quantityType,
+                                          double time,
+                                          TacsScalar scale,
+                                          int n, double pt[],
+                                          const TacsScalar Xpts[],
+                                          const TacsScalar vars[],
+                                          const TacsScalar dvars[],
+                                          const TacsScalar ddvars[],
+                                          const TacsScalar dfdq[],
+                                          int dvLen,
+                                          TacsScalar dfdx[] ){
+  // The step length
+#ifdef TACS_USE_COMPLEX
+  const double dh = 1e-30;
+#else
+  const double dh = 1e-7;
+#endif // TACS_USE_COMPLEX
+
+  TacsScalar *x = new TacsScalar[ dvLen ];
+  getDesignVars(elemIndex, dvLen, x);
+
+  if (evalPointQuantity(elemIndex, quantityType, time, n, pt,
+                        Xpts, vars, dvars, ddvars, NULL, NULL) == 1){
+    TacsScalar detXd = 0.0, q0 = 0.0;
+    evalPointQuantity(elemIndex, quantityType, time, n, pt,
+                      Xpts, vars, dvars, ddvars, &detXd, &q0);
+
+    for ( int k = 0; k < dvLen; k++ ){
+      TacsScalar xt = x[k];
+
+#ifdef TACS_USE_COMPLEX
+      x[k] = xt + TacsScalar(0.0, dh);
+#else
+      x[k] = xt + dh;
+#endif // TACS_USE_COMPLEX
+      setDesignVars(elemIndex, dvLen, x);
+
+      TacsScalar q1 = 0.0;
+      evalPointQuantity(elemIndex, quantityType, time, n, pt,
+                          Xpts, vars, dvars, ddvars, &detXd, &q1);
+
+      TacsScalar fd = 0.0;
+#ifdef TACS_USE_COMPLEX
+      fd = TacsImagPart(q1)/dh;
+#else
+      fd += (q1 - q0)/dh;
+#endif // TACS_USE_COMPLEX
+
+      dfdx[k] += scale*dfdq[0]*fd;
+
+      x[k] = xt;
+    }
+
+    // Reset the design variable values
+    setDesignVars(elemIndex, dvLen, x);
+  }
+}
+
+void TACSElement::addPointQuantitySVSens( int elemIndex,
+                                          int quantityType,
+                                          double time,
+                                          TacsScalar alpha,
+                                          TacsScalar beta,
+                                          TacsScalar gamma,
+                                          int n, double pt[],
+                                          const TacsScalar Xpts[],
+                                          const TacsScalar vars[],
+                                          const TacsScalar dvars[],
+                                          const TacsScalar ddvars[],
+                                          const TacsScalar dfdq[],
+                                          TacsScalar dfdu[] ){
+  // The step length
+#ifdef TACS_USE_COMPLEX
+  const double dh = 1e-30;
+#else
+  const double dh = 1e-7;
+#endif // TACS_USE_COMPLEX
+  if (evalPointQuantity(elemIndex, quantityType, time, n, pt,
+                        Xpts, vars, dvars, ddvars, NULL, NULL) == 1){
+    int nvars = getNumVariables();
+    TacsScalar *v = new TacsScalar[ nvars ];
+    TacsScalar *dv = new TacsScalar[ nvars ];
+    TacsScalar *ddv = new TacsScalar[ nvars ];
+    memcpy(v, vars, nvars*sizeof(TacsScalar));
+    memcpy(dv, dvars, nvars*sizeof(TacsScalar));
+    memcpy(ddv, ddvars, nvars*sizeof(TacsScalar));
+
+    TacsScalar detXd = 0.0, q0 = 0.0;
+    evalPointQuantity(elemIndex, quantityType, time, n, pt,
+                      Xpts, vars, dvars, ddvars, &detXd, &q0);
+
+    for ( int k = 0; k < nvars; k++ ){
+#ifdef TACS_USE_COMPLEX
+      v[k] = vars[k] + alpha*TacsScalar(0.0, dh);
+      dv[k] = dvars[k] + beta*TacsScalar(0.0, dh);
+      ddv[k] = ddvars[k] + gamma*TacsScalar(0.0, dh);
+#else
+      v[k] = vars[k] + alpha*dh;
+      dv[k] = dvars[k] + beta*dh;
+      ddv[k] = ddvars[k] + gamma*dh;
+#endif // TACS_USE_COMPLEX
+      TacsScalar q1 = 0.0;
+      evalPointQuantity(elemIndex, quantityType, time, n, pt,
+                        Xpts, vars, dvars, ddvars, &detXd, &q1);
+
+      TacsScalar fd = 0.0;
+#ifdef TACS_USE_COMPLEX
+      fd = TacsImagPart(q1)/dh;
+#else
+      fd += (q1 - q0)/dh;
+#endif // TACS_USE_COMPLEX
+
+      dfdu[k] += dfdq[0]*fd;
+
+      v[k] = vars[k];
+      dv[k] = dvars[k];
+      ddv[k] = ddvars[k];
+    }
+
+    delete [] v;
+    delete [] dv;
+    delete [] ddv;
+  }
+}
+
+void TACSElement::addPointQuantityXptSens( int elemIndex,
+                                           int quantityType,
+                                           double time,
+                                           TacsScalar scale,
+                                           int n, double pt[],
+                                           const TacsScalar Xpts[],
+                                           const TacsScalar vars[],
+                                           const TacsScalar dvars[],
+                                           const TacsScalar ddvars[],
+                                           const TacsScalar dfddetXd,
+                                           const TacsScalar dfdq[],
+                                           TacsScalar dfdXpts[] ){
+  // The step length
+#ifdef TACS_USE_COMPLEX
+  const double dh = 1e-30;
+#else
+  const double dh = 1e-7;
+#endif // TACS_USE_COMPLEX
+
+  if (evalPointQuantity(elemIndex, quantityType, time, n, pt,
+                        Xpts, vars, dvars, ddvars, NULL, NULL) == 1){
+    int nnodes = getNumNodes();
+    TacsScalar *X = new TacsScalar[ 3*nnodes ];
+    memcpy(X, Xpts, 3*nnodes*sizeof(TacsScalar));
+
+    TacsScalar detXd = 0.0, q0 = 0.0;
+    evalPointQuantity(elemIndex, quantityType, time, n, pt,
+                      Xpts, vars, dvars, ddvars, &detXd, &q0);
+
+    for ( int k = 0; k < 3*nnodes; k++ ){
+#ifdef TACS_USE_COMPLEX
+      X[k] = Xpts[k] + TacsScalar(0.0, dh);
+#else
+      X[k] = Xpts[k] + dh;
+#endif // TACS_USE_COMPLEX
+      TacsScalar q1 = 0.0;
+      evalPointQuantity(elemIndex, quantityType, time, n, pt,
+                        X, vars, dvars, ddvars, &detXd, &q1);
+
+      TacsScalar fd = 0.0;
+#ifdef TACS_USE_COMPLEX
+      fd = TacsImagPart(q1)/dh;
+#else
+      fd += (q1 - q0)/dh;
+#endif // TACS_USE_COMPLEX
+
+      dfdXpts[k] += scale*fd;
+
+      X[k] = Xpts[k];
+    }
+
+    delete [] X;
+  }
 }
