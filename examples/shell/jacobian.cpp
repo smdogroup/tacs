@@ -10,7 +10,7 @@ int main( int argc, char *argv[] ){
   int rank;
   MPI_Comm_rank(comm, &rank);
 
-  TacsScalar rho = 0.0; // 2700.0;
+  TacsScalar rho = 2700.0;
   TacsScalar specific_heat = 921.096;
   TacsScalar E = 70e3;
   TacsScalar nu = 0.3;
@@ -134,6 +134,15 @@ int main( int argc, char *argv[] ){
   for ( int col = start; col < end; col++ ){
     TacsTestElementJacobian(shell, elemIndex, time, Xpts, vars, dvars, ddvars, col);
   }
+
+  // Test the implementation of the derivative of the adjoint-residual product
+  const int dvLen = 1;
+  TacsScalar x[dvLen];
+  shell->getDesignVars(elemIndex, dvLen, x);
+  TacsTestAdjResProduct(shell, elemIndex, time, Xpts, vars, dvars, ddvars, dvLen, x);
+
+  // Test the implementation of the derivative of the adjoint-residual product w.r.t. nodes
+  TacsTestAdjResXptProduct(shell, elemIndex, time, Xpts, vars, dvars, ddvars);
 
   delete [] Xpts;
   delete [] vars;

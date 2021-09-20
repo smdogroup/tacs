@@ -35,7 +35,7 @@ class TACSLinearizedRotation {
     }
   }
 
-  /*
+  /**
     Compute the derivative of the rotation matrices at each node
 
     @param vars The full variable vector
@@ -66,7 +66,7 @@ class TACSLinearizedRotation {
     }
   }
 
-  /*
+  /**
     Add the contribution to the residual from the rotation matrix
 
     This code adds the contribution to the residual via the derivative
@@ -549,7 +549,7 @@ class TACSQuadraticRotation {
  public:
   static const int NUM_PARAMETERS = 3;
 
-  /*
+  /**
     Compute the rotation matrices at each node
 
     @param vars The full variable vector
@@ -570,7 +570,7 @@ class TACSQuadraticRotation {
     }
   }
 
-  /*
+  /**
     Compute the derivative of the rotation matrices at each node
 
     @param vars The full variable vector
@@ -607,7 +607,7 @@ class TACSQuadraticRotation {
     }
   }
 
-  /*
+  /**
     Add the residual rotation matrix to the output
 
     This code adds the contribution to the residual via the derivative
@@ -1327,12 +1327,11 @@ class TACSQuadraticRotation {
   }
 };
 
-
 class TACSQuaternionRotation {
  public:
   static const int NUM_PARAMETERS = 5;
 
-  /*
+  /**
     Compute the rotation matrices at each node
 
     @param vars The full variable vector
@@ -1361,7 +1360,7 @@ class TACSQuaternionRotation {
     }
   }
 
-  /*
+  /**
     Compute the derivative of the rotation matrices at each node
 
     @param vars The full variable vector
@@ -1410,7 +1409,7 @@ class TACSQuaternionRotation {
     }
   }
 
-  /*
+  /**
     Add the residual rotation matrix to the output
 
     This code adds the contribution to the residual via the derivative
@@ -1442,7 +1441,6 @@ class TACSQuaternionRotation {
       dC += 9;
     }
   }
-
 
   template <int vars_per_node, int offset, int num_nodes>
   static void addRotationMatJacobian( const TacsScalar alpha,
@@ -2635,7 +2633,8 @@ int TacsTestDirector( double dh=1e-7,
 
   // Compute the rotation matrices
   TacsScalar C[csize];
-  director::template computeRotationMat<vars_per_node, offset, num_nodes>(vars, C);
+  director::template
+    computeRotationMat<vars_per_node, offset, num_nodes>(vars, C);
 
   // Compute the Jacobian and residual
   TacsScalar res[size], mat[size*size];
@@ -2661,7 +2660,8 @@ int TacsTestDirector( double dh=1e-7,
 #endif // TACS_USE_COMPLEX
 
     TacsScalar Ct[csize];
-    director::template computeRotationMat<vars_per_node, offset, num_nodes>(varst, Ct);
+    director::template
+      computeRotationMat<vars_per_node, offset, num_nodes>(varst, Ct);
 
     TacsScalar C1 = 0.0;
     for ( int i = 0; i < csize; i++ ){
@@ -2716,7 +2716,8 @@ int TacsTestDirector( double dh=1e-7,
   }
 
   TacsScalar Ctemp[csize];
-  director::template computeRotationMat<vars_per_node, offset, num_nodes>(q, Ctemp);
+  director::template
+    computeRotationMat<vars_per_node, offset, num_nodes>(q, Ctemp);
 
   TacsScalar fdC[csize];
   for ( int k = 0; k < csize; k++ ){

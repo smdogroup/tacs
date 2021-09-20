@@ -433,7 +433,7 @@ class TACSElement : public TACSObject {
                                  const TacsScalar dvars[],
                                  const TacsScalar ddvars[],
                                  int dvLen,
-                                 TacsScalar dfdx[] ){}
+                                 TacsScalar dfdx[] );
 
   /**
     Add the derivative of the adjoint-residual product to the output vector
@@ -464,7 +464,7 @@ class TACSElement : public TACSObject {
                                     const TacsScalar vars[],
                                     const TacsScalar dvars[],
                                     const TacsScalar ddvars[],
-                                    TacsScalar fXptSens[] ){}
+                                    TacsScalar fXptSens[] );
 
   /**
     Compute a specific type of element matrix (mass, stiffness, geometric
@@ -661,7 +661,7 @@ class TACSElement : public TACSObject {
                                        const TacsScalar ddvars[],
                                        const TacsScalar dfdq[],
                                        int dvLen,
-                                       TacsScalar dfdx[] ){}
+                                       TacsScalar dfdx[] );
 
   /**
     Add the derivative of the point quantity w.r.t. the state variables
@@ -693,7 +693,7 @@ class TACSElement : public TACSObject {
                                        const TacsScalar dvars[],
                                        const TacsScalar ddvars[],
                                        const TacsScalar dfdq[],
-                                       TacsScalar dfdu[] ){}
+                                       TacsScalar dfdu[] );
 
   /**
     Add the derivative of the point quantity w.r.t. the node locations
@@ -722,7 +722,7 @@ class TACSElement : public TACSObject {
                                         const TacsScalar ddvars[],
                                         const TacsScalar dfddetXd,
                                         const TacsScalar dfdq[],
-                                        TacsScalar dfdXpts[] ){}
+                                        TacsScalar dfdXpts[] );
 
   /**
     Compute the output data for visualization
