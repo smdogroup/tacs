@@ -696,6 +696,82 @@ void TacsShellComputeDrillStrain( TACSShellTransform *transform,
 }
 
 /**
+  Compute the drilling strain penalty at each node
+
+  @param transform Transformation object
+  @param Xdn The frame derivatives at each node
+  @param fn The frame normals at each node
+  @param vars The state variable values
+  @param varsd The derivative of the state variable values
+  @param XdinvTn Computed inverse frame times transformation at each node
+  @param Tn The transformation at each node
+  @param u0xn The derivative of the displacements at each node
+  @param Ctn The rotation matrix at each node
+  @param etn The drill strain penalty value at each node
+*/
+template <int vars_per_node, int offset, class basis, class director, class model>
+void TacsShellComputeDrillStrainDeriv( TACSShellTransform *transform,
+                                       const TacsScalar Xdn[],
+                                       const TacsScalar fn[],
+                                       const TacsScalar vars[],
+                                       const TacsScalar varsd[],
+                                       TacsScalar XdinvTn[],
+                                       TacsScalar Tn[],
+                                       TacsScalar u0xn[],
+                                       TacsScalar Ctn[],
+                                       TacsScalar etn[],
+                                       TacsScalar etnd[] ){
+  for ( int i = 0; i < basis::NUM_NODES; i++ ){
+    double pt[2];
+    basis::getNodePoint(i, pt);
+
+    // Compute the transformation at the node
+    TacsScalar Xxi[6];
+    TacsShellExtractFrame(&Xdn[9*i], Xxi);
+    transform->computeTransform(Xxi, &fn[3*i], &Tn[9*i]);
+
+    // Compute the field gradient at the node
+    TacsScalar u0xi[6], u0xid[6];
+    basis::template interpFieldsGrad<vars_per_node, 3>(pt, vars, u0xi);
+    basis::template interpFieldsGrad<vars_per_node, 3>(pt, varsd, u0xid);
+
+    // Compute the inverse transformation
+    TacsScalar Xdinv[9];
+    inv3x3(&Xdn[9*i], Xdinv);
+
+    // Compute XdinvT = Xdinv*T
+    TacsScalar u0xnd[9];
+    mat3x3MatMult(Xdinv, &Tn[9*i], &XdinvTn[9*i]);
+    TacsShellAssembleFrame(u0xi, &u0xn[9*i]); // Use u0x to store [u0,xi; 0]
+    TacsShellAssembleFrame(u0xid, u0xnd);
+
+    // Compute the rotation matrix at this node
+    TacsScalar C[9], Cd[9], tmp[9];
+    director::template
+      computeRotationMatDeriv<vars_per_node, offset, 1>(&vars[vars_per_node*i],
+                                                        &varsd[vars_per_node*i], C, Cd);
+
+    // Compute Ct = T^{T}*C*T
+    mat3x3TransMatMult(&Tn[9*i], C, tmp);
+    mat3x3MatMult(tmp, &Tn[9*i], &Ctn[9*i]);
+
+    TacsScalar Ctnd[9];
+    mat3x3TransMatMult(&Tn[9*i], Cd, tmp);
+    mat3x3MatMult(tmp, &Tn[9*i], Ctnd);
+
+    // Compute the transformation u0x = T^{T}*ueta*Xdinv*T
+    // u0x = T^{T}*u0d*Xdinv*T
+    mat3x3MatMult(&u0xn[9*i], &XdinvTn[9*i], tmp);
+    mat3x3TransMatMult(&Tn[9*i], tmp, &u0xn[9*i]);
+
+    mat3x3MatMult(u0xnd, &XdinvTn[9*i], tmp);
+    mat3x3TransMatMult(&Tn[9*i], tmp, u0xnd);
+
+    etn[i] = director::evalDrillStrainDeriv(&u0xn[9*i], &Ctn[9*i], u0xnd, Ctnd, &etnd[i]);
+  }
+}
+
+/**
   Add the derivative of the drilling strain penalty to the residual
 
   @param transform Transformation object

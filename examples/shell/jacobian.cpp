@@ -135,6 +135,12 @@ int main( int argc, char *argv[] ){
     TacsTestElementJacobian(shell, elemIndex, time, Xpts, vars, dvars, ddvars, col);
   }
 
+  // Test the implementation of the adjoint-residual product
+  const int dvLen = 1;
+  TacsScalar x[dvLen];
+  shell->getDesignVars(elemIndex, dvLen, x);
+  TacsTestAdjResProduct(shell, elemIndex, time, Xpts, vars, dvars, ddvars, dvLen, x);
+
   delete [] Xpts;
   delete [] vars;
   delete [] dvars;
