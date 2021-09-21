@@ -458,11 +458,15 @@ cdef class Quad4Shell(Element):
 
 cdef class Quad9Shell(Element):
     def __cinit__(self, ShellTransform transform, ShellConstitutive con):
+        if transform is None:
+            transform = ShellNaturalTransform()
         self.ptr = new TACSQuad9Shell(transform.ptr, con.cptr)
         self.ptr.incref()
 
 cdef class Quad16Shell(Element):
     def __cinit__(self, ShellTransform transform, ShellConstitutive con):
+        if transform is None:
+            transform = ShellNaturalTransform()
         self.ptr = new TACSQuad16Shell(transform.ptr, con.cptr)
         self.ptr.incref()
 
@@ -471,6 +475,34 @@ cdef class Tri3Shell(Element):
         if transform is None:
             transform = ShellNaturalTransform()
         self.ptr = new TACSTri3Shell(transform.ptr, con.cptr)
+        self.ptr.incref()
+
+cdef class Quad4ThermalShell(Element):
+    def __cinit__(self, ShellTransform transform, ShellConstitutive con):
+        if transform is None:
+            transform = ShellNaturalTransform()
+        self.ptr = new TACSQuad4ThermalShell(transform.ptr, con.cptr)
+        self.ptr.incref()
+
+cdef class Quad9ThermalShell(Element):
+    def __cinit__(self, ShellTransform transform, ShellConstitutive con):
+        if transform is None:
+            transform = ShellNaturalTransform()
+        self.ptr = new TACSQuad9ThermalShell(transform.ptr, con.cptr)
+        self.ptr.incref()
+
+cdef class Quad16ThermalShell(Element):
+    def __cinit__(self, ShellTransform transform, ShellConstitutive con):
+        if transform is None:
+            transform = ShellNaturalTransform()
+        self.ptr = new TACSQuad16ThermalShell(transform.ptr, con.cptr)
+        self.ptr.incref()
+
+cdef class Tri3ThermalShell(Element):
+    def __cinit__(self, ShellTransform transform, ShellConstitutive con):
+        if transform is None:
+            transform = ShellNaturalTransform()
+        self.ptr = new TACSTri3ThermalShell(transform.ptr, con.cptr)
         self.ptr.incref()
 
 cdef class GibbsVector:

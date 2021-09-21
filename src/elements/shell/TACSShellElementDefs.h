@@ -39,6 +39,9 @@ typedef TACSThermalShellElement<TACSQuadQuadraticQuadrature, TACSShellQuadBasis<
 typedef TACSThermalShellElement<TACSQuadCubicQuadrature, TACSShellQuadBasis<4>,
                                 TACSLinearizedRotation, TACSShellLinearModel> TACSQuad16ThermalShell;
 
+typedef TACSThermalShellElement<TACSTriLinearQuadrature, TACSShellTriLinearBasis,
+                                TACSLinearizedRotation, TACSShellInplaneLinearModel> TACSTri3ThermalShell;
+
 /*
   Shell elements with a linearized rotation and nonlinear strain expressions
 */
@@ -66,13 +69,20 @@ typedef TACSShellElement<TACSQuadCubicQuadrature, TACSShellQuadBasis<4>,
 typedef TACSShellElement<TACSTriLinearQuadrature, TACSShellTriLinearBasis,
                          TACSQuadraticRotation, TACSShellInplaneLinearModel> TACSTri3ShellModRot;
 
-// typedef TACSShellElement<TACSQuadLinearQuadrature, TACSShellQuadBasis<2>,
-//                          TACSQuadraticRotation, TACSShellNonlinearModel> TACSQuad4NonlinearShellModRot;
 
-// typedef TACSShellElement<TACSQuadQuadraticQuadrature, TACSShellQuadBasis<3>,
-//                          TACSQuadraticRotation, TACSShellNonlinearModel> TACSQuad9NonlinearShellModRot;
+/*
+  Quaternion shell elements
+*/
+typedef TACSShellElement<TACSQuadLinearQuadrature, TACSShellQuadBasis<2>,
+                         TACSQuaternionRotation, TACSShellLinearModel> TACSQuad4ShellQuaternion;
 
-// typedef TACSShellElement<TACSQuadCubicQuadrature, TACSShellQuadBasis<4>,
-//                          TACSQuadraticRotation, TACSShellNonlinearModel> TACSQuad16NonlinearShellModRot;
+typedef TACSShellElement<TACSQuadQuadraticQuadrature, TACSShellQuadBasis<3>,
+                         TACSQuaternionRotation, TACSShellLinearModel> TACSQuad9ShellQuaternion;
+
+typedef TACSShellElement<TACSQuadCubicQuadrature, TACSShellQuadBasis<4>,
+                         TACSQuaternionRotation, TACSShellLinearModel> TACSQuad16ShellQuaternion;
+
+typedef TACSShellElement<TACSTriLinearQuadrature, TACSShellTriLinearBasis,
+                         TACSQuaternionRotation, TACSShellInplaneLinearModel> TACSTri3ShellQuaternion;
 
 #endif // TACS_SHELL_ELEMENT_DEFS_H
