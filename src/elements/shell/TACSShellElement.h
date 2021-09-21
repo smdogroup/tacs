@@ -686,11 +686,13 @@ void TACSShellElement<quadrature, basis, director, model>::
   TacsShellComputeDrillStrainDeriv<vars_per_node, offset, basis, director, model>(
     transform, Xdn, fn, vars, psi, XdinvTn, Tn, u0xn, Ctn, etn, etnd);
 
-  // Compute the director rates
-  TacsScalar d[dsize], ddot[dsize], dddot[dsize], dd[dsize];
+  // Compute the director rates and their derivatives
+  TacsScalar d[dsize], ddot[dsize], dddot[dsize];
+  TacsScalar dd[dsize], ddt[dsize], ddtt[dsize];
   director::template
     computeDirectorRatesDeriv<vars_per_node, offset, num_nodes>(vars, dvars, ddvars, psi, fn,
-                                                                d, ddot, dddot, dd);
+                                                                d, ddot, dddot,
+                                                                dd, ddt, ddtt);
 
   // Set the total number of tying points needed for this element
   TacsScalar ety[basis::NUM_TYING_POINTS], etyd[basis::NUM_TYING_POINTS];
@@ -742,6 +744,23 @@ void TACSShellElement<quadrature, basis, director, model>::
 
     // The directional derivative of the strain along the adjoint direction
     con->addStressDVSens(elemIndex, scale*detXd, pt, X, e, ed, dvLen, dfdx);
+
+    // Evaluate the second time derivatives
+    TacsScalar u0ddot[3], d0ddot[3];
+    basis::template interpFields<vars_per_node, 3>(pt, ddvars, u0ddot);
+    basis::template interpFields<3, 3>(pt, dddot, d0ddot);
+
+    TacsScalar du0ddot[3], dd0ddot[3];
+    basis::template interpFields<vars_per_node, 3>(pt, psi, du0ddot);
+    basis::template interpFields<3, 3>(pt, ddtt, dd0ddot);
+
+    TacsScalar coef[3];
+    coef[0] = scale*detXd*vec3Dot(u0ddot, du0ddot);
+    coef[1] = scale*detXd*(vec3Dot(u0ddot, dd0ddot) + vec3Dot(du0ddot, d0ddot));
+    coef[2] = scale*detXd*vec3Dot(d0ddot, dd0ddot);
+
+    // Add the contribution from the dynamics
+    con->addMassMomentsDVSens(elemIndex, pt, X, coef, dvLen, dfdx);
   }
 }
 

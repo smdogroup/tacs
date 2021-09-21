@@ -269,8 +269,9 @@ class TACSLinearizedRotation {
     @param d The director values
     @param ddot The first time derivative of the director
     @param dddot The second time derivative of the director
-    @param Cd The derivative of the rotation matrices at each point
-    @param dd The derivator of the director values
+    @param dd The derivative of the director values
+    @param ddt The derivative of the first time derivative of the director
+    @param ddtt The derivative of the second time derivative of the director
   */
   template <int vars_per_node, int offset, int num_nodes>
   static void computeDirectorRatesDeriv( const TacsScalar vars[],
@@ -281,7 +282,9 @@ class TACSLinearizedRotation {
                                          TacsScalar d[],
                                          TacsScalar ddot[],
                                          TacsScalar dddot[],
-                                         TacsScalar dd[] ){
+                                         TacsScalar dd[],
+                                         TacsScalar ddt[],
+                                         TacsScalar ddtt[] ){
     const TacsScalar *q = &vars[offset];
     const TacsScalar *qdot = &dvars[offset];
     const TacsScalar *qddot = &ddvars[offset];
@@ -293,12 +296,16 @@ class TACSLinearizedRotation {
 
       // Cd = - qd^{x}
       crossProduct(qd, t, dd);
+      crossProduct(qd, t, ddt);
+      crossProduct(qd, t, ddtt);
 
       t += 3;
       d += 3;
       dd += 3;
       ddot += 3;
+      ddt += 3;
       dddot += 3;
+      ddtt += 3;
 
       q += vars_per_node;
       qdot += vars_per_node;
@@ -900,8 +907,9 @@ class TACSQuadraticRotation {
     @param d The director values
     @param ddot The first time derivative of the director
     @param dddot The second time derivative of the director
-    @param Cd The derivative of the rotation matrices at each point
-    @param dd The derivator of the director values
+    @param dd The derivative of the director values
+    @param ddt The derivative of the first time derivative of the director
+    @param ddtt The derivative of the second time derivative of the director
   */
   template <int vars_per_node, int offset, int num_nodes>
   static void computeDirectorRatesDeriv( const TacsScalar vars[],
@@ -912,7 +920,9 @@ class TACSQuadraticRotation {
                                          TacsScalar d[],
                                          TacsScalar ddot[],
                                          TacsScalar dddot[],
-                                         TacsScalar dd[] ){
+                                         TacsScalar dd[],
+                                         TacsScalar ddt[],
+                                         TacsScalar ddtt[] ){
     const TacsScalar *q = &vars[offset];
     const TacsScalar *qdot = &dvars[offset];
     const TacsScalar *qddot = &ddvars[offset];
@@ -1824,8 +1834,9 @@ class TACSQuaternionRotation {
     @param d The director values
     @param ddot The first time derivative of the director
     @param dddot The second time derivative of the director
-    @param Cd The derivative of the rotation matrices at each point
-    @param dd The derivator of the director values
+    @param dd The derivative of the director values
+    @param ddt The derivative of the first time derivative of the director
+    @param ddtt The derivative of the second time derivative of the director
   */
   template <int vars_per_node, int offset, int num_nodes>
   static void computeDirectorRatesDeriv( const TacsScalar vars[],
@@ -1836,7 +1847,9 @@ class TACSQuaternionRotation {
                                          TacsScalar d[],
                                          TacsScalar ddot[],
                                          TacsScalar dddot[],
-                                         TacsScalar dd[] ){
+                                         TacsScalar dd[],
+                                         TacsScalar ddt[],
+                                         TacsScalar ddtt[] ){
     const TacsScalar *q = &vars[offset];
     const TacsScalar *qdot = &dvars[offset];
     const TacsScalar *qddot = &ddvars[offset];
