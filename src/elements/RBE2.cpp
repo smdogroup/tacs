@@ -52,8 +52,8 @@ RBE2::RBE2( int _numNodes, int _dof_constrained[] ){
   }
 
   // Default scaling and artificial stiffness parameters
-  C1 = 1e6;
-  C2 = 1e0;
+  C1 = 1e3;
+  C2 = 1e-3;
 
 }
 

@@ -47,7 +47,7 @@ class RBE3 : public TACSElement {
   int getNumFaceQuadraturePoints( int face ){ return 0; }
   double getFaceQuadraturePoint( int face, int n, double pt[],
                                  double tangent[] ){ return 0.0; }
-  //void getMultiplierIndex( int *multiplier );
+  void getMultiplierIndex( int *multiplier );
 
   // Functions for analysis
   // ----------------------

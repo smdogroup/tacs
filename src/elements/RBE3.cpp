@@ -61,7 +61,7 @@ RBE3::RBE3( int numNodes, int _dep_dof_constrained[], double weights[], int _ind
 
   // Default scaling and artificial stiffness parameters
   C1 = 1e3;
-  C2 = 1e-9;
+  C2 = 1e-3;
 
  }
 
@@ -118,11 +118,11 @@ void RBE3::setScalingParameters( double _C1, double _C2 ){
 
 /*
   Returns the multiplier index
-
+*/
 void RBE3::getMultiplierIndex( int *multiplier ){
   *multiplier = NUM_INDEP_NODES + 1;
 }
-*/
+
 /*
   The element name, variable, stress and strain names.
 */
