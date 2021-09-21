@@ -23,6 +23,7 @@ class ElementTest(unittest.TestCase):
 
         # Set element index
         self.elem_index = 0
+
         # Set the simulation time
         self.time = 0.0
 
@@ -48,11 +49,22 @@ class ElementTest(unittest.TestCase):
         ref_axis = np.array([0.0, 1.0, 1.0], dtype=self.dtype)
         self.transforms = [elements.ShellNaturalTransform(), elements.ShellRefAxisTransform(ref_axis)]
 
-        # TACS shell elements of various orders
+        # TACS shell elements of various orders and types
         self.elements = [elements.Tri3Shell,
                          elements.Quad4Shell,
                          elements.Quad9Shell,
-                         elements.Quad16Shell]
+                         elements.Quad16Shell,
+                         elements.Tri3ThermalShell,
+                         elements.Quad4ThermalShell,
+                         elements.Quad9ThermalShell,
+                         elements.Quad16ThermalShell]
+
+        # The thermal elements will not pass the residual test since they are not derived
+        # from Lagrange's equations due to the presence of the thermal coupling equations.
+        self.thermal_elements = [elements.Tri3ThermalShell,
+                                 elements.Quad4ThermalShell,
+                                 elements.Quad9ThermalShell,
+                                 elements.Quad16ThermalShell]
 
         # Create stiffness (need class)
         self.con = constitutive.IsoShellConstitutive(self.props, t=1.0, tNum=0)
@@ -65,12 +77,13 @@ class ElementTest(unittest.TestCase):
         for transform in self.transforms:
             with self.subTest(transform=transform):
                 for element_handle in self.elements:
-                    with self.subTest(element=element_handle):
-                        element = element_handle(transform, self.con)
-                        fail = elements.TestElementResidual(element, self.elem_index, self.time, self.xpts,
-                                                            self.vars, self.dvars, self.ddvars, self.dh,
-                                                            self.print_level, self.atol, self.rtol)
-                        self.assertFalse(fail)
+                    if not (element_handle in self.thermal_elements):
+                        with self.subTest(element=element_handle):
+                            element = element_handle(transform, self.con)
+                            fail = elements.TestElementResidual(element, self.elem_index, self.time, self.xpts,
+                                                                self.vars, self.dvars, self.ddvars, self.dh,
+                                                                self.print_level, self.atol, self.rtol)
+                            self.assertFalse(fail)
 
     def test_element_jacobian(self):
         # Loop through every combination of transform type and shell element class and test Jacobian

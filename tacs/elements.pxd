@@ -200,11 +200,27 @@ cdef extern from "TACSShellElementDefs.h":
 
     cdef cppclass TACSQuad16Shell(TACSElement):
         TACSQuad16Shell(TACSShellTransform*,
-                       TACSShellConstitutive*)
+                        TACSShellConstitutive*)
 
     cdef cppclass TACSTri3Shell(TACSElement):
         TACSTri3Shell(TACSShellTransform*,
                       TACSShellConstitutive*)
+
+    cdef cppclass TACSQuad4ThermalShell(TACSElement):
+        TACSQuad4ThermalShell(TACSShellTransform*,
+                              TACSShellConstitutive*)
+
+    cdef cppclass TACSQuad9ThermalShell(TACSElement):
+        TACSQuad9ThermalShell(TACSShellTransform*,
+                              TACSShellConstitutive*)
+
+    cdef cppclass TACSQuad16ThermalShell(TACSElement):
+        TACSQuad16ThermalShell(TACSShellTransform*,
+                               TACSShellConstitutive*)
+
+    cdef cppclass TACSTri3ThermalShell(TACSElement):
+        TACSTri3ThermalShell(TACSShellTransform*,
+                             TACSShellConstitutive*)
 
 cdef extern from "TACSGibbsVector.h":
     cdef cppclass TACSGibbsVector(TACSObject):

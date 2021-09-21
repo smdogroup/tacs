@@ -270,8 +270,6 @@ class TACSLinearizedRotation {
     @param ddot The first time derivative of the director
     @param dddot The second time derivative of the director
     @param dd The derivative of the director values
-    @param ddt The derivative of the first time derivative of the director
-    @param ddtt The derivative of the second time derivative of the director
   */
   template <int vars_per_node, int offset, int num_nodes>
   static void computeDirectorRatesDeriv( const TacsScalar vars[],
@@ -282,9 +280,7 @@ class TACSLinearizedRotation {
                                          TacsScalar d[],
                                          TacsScalar ddot[],
                                          TacsScalar dddot[],
-                                         TacsScalar dd[],
-                                         TacsScalar ddt[],
-                                         TacsScalar ddtt[] ){
+                                         TacsScalar dd[] ){
     const TacsScalar *q = &vars[offset];
     const TacsScalar *qdot = &dvars[offset];
     const TacsScalar *qddot = &ddvars[offset];
@@ -296,16 +292,12 @@ class TACSLinearizedRotation {
 
       // Cd = - qd^{x}
       crossProduct(qd, t, dd);
-      crossProduct(qd, t, ddt);
-      crossProduct(qd, t, ddtt);
 
       t += 3;
       d += 3;
-      dd += 3;
       ddot += 3;
-      ddt += 3;
       dddot += 3;
-      ddtt += 3;
+      dd += 3;
 
       q += vars_per_node;
       qdot += vars_per_node;
@@ -908,8 +900,6 @@ class TACSQuadraticRotation {
     @param ddot The first time derivative of the director
     @param dddot The second time derivative of the director
     @param dd The derivative of the director values
-    @param ddt The derivative of the first time derivative of the director
-    @param ddtt The derivative of the second time derivative of the director
   */
   template <int vars_per_node, int offset, int num_nodes>
   static void computeDirectorRatesDeriv( const TacsScalar vars[],
@@ -920,15 +910,13 @@ class TACSQuadraticRotation {
                                          TacsScalar d[],
                                          TacsScalar ddot[],
                                          TacsScalar dddot[],
-                                         TacsScalar dd[],
-                                         TacsScalar ddt[],
-                                         TacsScalar ddtt[] ){
+                                         TacsScalar dd[] ){
     const TacsScalar *q = &vars[offset];
     const TacsScalar *qdot = &dvars[offset];
     const TacsScalar *qddot = &ddvars[offset];
     const TacsScalar *qd = &varsd[offset];
     for ( int i = 0; i < num_nodes; i++ ){
-      TacsScalar qxt[3], qxtdot[3], qxtddot[3];
+      TacsScalar qxt[3], qxtdot[3], qxtddot[3], qdxt[3];
 
       // Compute d = q^{x}*t + 0.5*q^{x}*q^{x}*t
       crossProduct(q, t, qxt);
@@ -957,14 +945,19 @@ class TACSQuadraticRotation {
       crossProductAdd(1.0, qdot, qxtdot, dddot);
       crossProductAdd(0.5, q, qxtddot, dddot);
 
-      // Cd = - qd^{x}
-      crossProduct(qd, t, dd);
+      // Compute dd = (qd^{x} + 0.5*qd^{x}*q^{x} + 0.5*q^{x}*qd^{x})*t
+      crossProduct(qd, t, qdxt);
+      dd[0] = qdxt[0];
+      dd[1] = qdxt[1];
+      dd[2] = qdxt[2];
+      crossProductAdd(0.5, qd, qxt, dd);
+      crossProductAdd(0.5, q, qdxt, dd);
 
       t += 3;
       d += 3;
-      dd += 3;
       ddot += 3;
       dddot += 3;
+      dd += 3;
 
       q += vars_per_node;
       qdot += vars_per_node;
@@ -1835,8 +1828,6 @@ class TACSQuaternionRotation {
     @param ddot The first time derivative of the director
     @param dddot The second time derivative of the director
     @param dd The derivative of the director values
-    @param ddt The derivative of the first time derivative of the director
-    @param ddtt The derivative of the second time derivative of the director
   */
   template <int vars_per_node, int offset, int num_nodes>
   static void computeDirectorRatesDeriv( const TacsScalar vars[],
@@ -1847,9 +1838,7 @@ class TACSQuaternionRotation {
                                          TacsScalar d[],
                                          TacsScalar ddot[],
                                          TacsScalar dddot[],
-                                         TacsScalar dd[],
-                                         TacsScalar ddt[],
-                                         TacsScalar ddtt[] ){
+                                         TacsScalar dd[] ){
     const TacsScalar *q = &vars[offset];
     const TacsScalar *qdot = &dvars[offset];
     const TacsScalar *qddot = &ddvars[offset];
@@ -1925,11 +1914,28 @@ class TACSQuaternionRotation {
       dddot[1] = Qddot[3]*t[0] + Qddot[4]*t[1] + Qddot[5]*t[2];
       dddot[2] = Qddot[6]*t[0] + Qddot[7]*t[1] + Qddot[8]*t[2];
 
+      Q[0] =-4.0*(q[2]*qd[2] + q[3]*qd[3]);
+      Q[1] = 2.0*(q[2]*qd[1] - q[3]*qd[0] + qd[2]*q[1] - qd[3]*q[0]);
+      Q[2] = 2.0*(q[3]*qd[1] + q[2]*qd[0] + qd[3]*q[1] + qd[2]*q[0]);
+
+      Q[3] = 2.0*(q[1]*qd[2] + q[3]*qd[0] + qd[1]*q[2] + qd[3]*q[0]);
+      Q[4] =-4.0*(q[1]*qd[1] + q[3]*qd[3]);
+      Q[5] = 2.0*(q[3]*qd[2] - q[1]*qd[0] + qd[3]*q[2] - qd[1]*q[0]);
+
+      Q[6] = 2.0*(q[1]*qd[3] - q[2]*qd[0] + qd[1]*q[3] - qd[2]*q[0]);
+      Q[7] = 2.0*(q[2]*qd[3] + q[1]*qd[0] + qd[2]*q[3] + qd[1]*q[0]);
+      Q[8] =-4.0*(q[1]*qd[1] + q[2]*qd[2]);
+
+      // Compute d = Q*t
+      dd[0] = Q[0]*t[0] + Q[1]*t[1] + Q[2]*t[2];
+      dd[1] = Q[3]*t[0] + Q[4]*t[1] + Q[5]*t[2];
+      dd[2] = Q[6]*t[0] + Q[7]*t[1] + Q[8]*t[2];
+
       t += 3;
       d += 3;
-      dd += 3;
       ddot += 3;
       dddot += 3;
+      dd += 3;
 
       q += vars_per_node;
       qdot += vars_per_node;

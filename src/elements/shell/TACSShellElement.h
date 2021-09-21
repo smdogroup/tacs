@@ -687,12 +687,10 @@ void TACSShellElement<quadrature, basis, director, model>::
     transform, Xdn, fn, vars, psi, XdinvTn, Tn, u0xn, Ctn, etn, etnd);
 
   // Compute the director rates and their derivatives
-  TacsScalar d[dsize], ddot[dsize], dddot[dsize];
-  TacsScalar dd[dsize], ddt[dsize], ddtt[dsize];
+  TacsScalar d[dsize], ddot[dsize], dddot[dsize], dd[dsize];
   director::template
     computeDirectorRatesDeriv<vars_per_node, offset, num_nodes>(vars, dvars, ddvars, psi, fn,
-                                                                d, ddot, dddot,
-                                                                dd, ddt, ddtt);
+                                                                d, ddot, dddot, dd);
 
   // Set the total number of tying points needed for this element
   TacsScalar ety[basis::NUM_TYING_POINTS], etyd[basis::NUM_TYING_POINTS];
@@ -752,7 +750,7 @@ void TACSShellElement<quadrature, basis, director, model>::
 
     TacsScalar du0ddot[3], dd0ddot[3];
     basis::template interpFields<vars_per_node, 3>(pt, psi, du0ddot);
-    basis::template interpFields<3, 3>(pt, ddtt, dd0ddot);
+    basis::template interpFields<3, 3>(pt, dd, dd0ddot);
 
     TacsScalar coef[3];
     coef[0] = scale*detXd*vec3Dot(u0ddot, du0ddot);
