@@ -313,9 +313,7 @@ class TACSLinearizedRotation {
     Given the partial derivatives of the Lagrangian with respect to the
     director and the time derivative of the vector, compute
 
-    dTdot = d/dt(dT/d(dot{d}))
-    dT = dT/d(dot{d})
-    dd = -dL/dd
+    dd = d/dt(dT/d(dot{d})) - dL/dd
 
     In general, the residual contribution is:
 
@@ -327,7 +325,7 @@ class TACSLinearizedRotation {
     For the linearized rotation director these expressions are:
 
     d = q^{x} t
-    dot{d} = - t^{x} \dot{q}
+    dot{d} = - t^{x} dot{q}
     d(dot{d})/d(dot{q}) = - t^{x}
     d/dt(d(dot{d})/d(dot{q})) = 0
 
@@ -335,7 +333,6 @@ class TACSLinearizedRotation {
     @param dvars The first time derivative of the variables
     @param ddvars The second derivatives of the variables
     @param t The normal direction
-    @param dTdot Time deriv. of the deriv. of the kinetic energy w.r.t. d
     @param dd The contribution from the derivative of the director
     @param res The output residual
   */
@@ -344,18 +341,15 @@ class TACSLinearizedRotation {
                                    const TacsScalar dvars[],
                                    const TacsScalar ddvars[],
                                    const TacsScalar t[],
-                                   const TacsScalar dTdot[],
                                    const TacsScalar dd[],
                                    TacsScalar res[] ){
     TacsScalar *r = &res[offset];
 
     for ( int i = 0; i < num_nodes; i++ ){
       crossProductAdd(1.0, t, dd, r);
-      crossProductAdd(1.0, t, dTdot, r);
 
       r += vars_per_node;
       dd += 3;
-      dTdot += 3;
       t += 3;
     }
   }
@@ -371,7 +365,6 @@ class TACSLinearizedRotation {
                                    const TacsScalar dvars[],
                                    const TacsScalar ddvars[],
                                    const TacsScalar t[],
-                                   const TacsScalar dTdot[],
                                    const TacsScalar dd[],
                                    const TacsScalar d2Tdotd[],
                                    const TacsScalar d2Tdotu[],
@@ -980,8 +973,6 @@ class TACSQuadraticRotation {
     @param dvars The first time derivative of the variables
     @param ddvars The second derivatives of the variables
     @param t The normal direction
-    @param dTdot Time deriv. of the deriv. of the kinetic energy w.r.t. d
-    @param dT The derivative of the kinetic energy w.r.t. director
     @param dd The contribution from the derivative of the director
     @param res The output residual
   */
@@ -990,7 +981,6 @@ class TACSQuadraticRotation {
                                    const TacsScalar dvars[],
                                    const TacsScalar ddvars[],
                                    const TacsScalar t[],
-                                   const TacsScalar dTdot[],
                                    const TacsScalar dd[],
                                    TacsScalar res[] ){
     TacsScalar *r = &res[offset];
@@ -1018,16 +1008,11 @@ class TACSQuadraticRotation {
       r[1] += D[3]*dd[0] + D[4]*dd[1] + D[5]*dd[2];
       r[2] += D[6]*dd[0] + D[7]*dd[1] + D[8]*dd[2];
 
-      r[0] += D[0]*dTdot[0] + D[1]*dTdot[1] + D[2]*dTdot[2];
-      r[1] += D[3]*dTdot[0] + D[4]*dTdot[1] + D[5]*dTdot[2];
-      r[2] += D[6]*dTdot[0] + D[7]*dTdot[1] + D[8]*dTdot[2];
-
       r += vars_per_node;
       q += vars_per_node;
       qdot += vars_per_node;
 
       dd += 3;
-      dTdot += 3;
       t += 3;
     }
   }
@@ -1043,7 +1028,6 @@ class TACSQuadraticRotation {
                                    const TacsScalar dvars[],
                                    const TacsScalar ddvars[],
                                    const TacsScalar t[],
-                                   const TacsScalar dTdot[],
                                    const TacsScalar dd[],
                                    const TacsScalar d2Tdotd[],
                                    const TacsScalar d2Tdotu[],
@@ -1118,10 +1102,6 @@ class TACSQuadraticRotation {
         r[1] += D[3]*dd[0] + D[4]*dd[1] + D[5]*dd[2];
         r[2] += D[6]*dd[0] + D[7]*dd[1] + D[8]*dd[2];
 
-        r[0] += D[0]*dTdot[0] + D[1]*dTdot[1] + D[2]*dTdot[2];
-        r[1] += D[3]*dTdot[0] + D[4]*dTdot[1] + D[5]*dTdot[2];
-        r[2] += D[6]*dTdot[0] + D[7]*dTdot[1] + D[8]*dTdot[2];
-
         r += vars_per_node;
       }
 
@@ -1172,9 +1152,9 @@ class TACSQuadraticRotation {
 
         if (i == j){
           TacsScalar tmp[3];
-          tmp[0] = alpha*(dd[0] + dTdot[0]);
-          tmp[1] = alpha*(dd[1] + dTdot[1]);
-          tmp[2] = alpha*(dd[2] + dTdot[2]);
+          tmp[0] = alpha*dd[0];
+          tmp[1] = alpha*dd[1];
+          tmp[2] = alpha*dd[2];
 
           jac[0] -= tmp[1]*t[1] + tmp[2]*t[2];
           jac[1] += 0.5*(tmp[0]*t[1] + tmp[1]*t[0]);
@@ -1200,7 +1180,6 @@ class TACSQuadraticRotation {
       qdot += vars_per_node;
 
       dd += 3;
-      dTdot += 3;
       t += 3;
       m += vars_per_node*size;
     }
@@ -1951,8 +1930,7 @@ class TACSQuaternionRotation {
     Given the partial derivatives of the Lagrangian with respect to the
     director and the time derivative of the vector, compute
 
-    dTdot = d/dt(dT/d(dot{d}))
-    dd = -dL/dd
+    dd =  d/dt(dT/d(dot{d})) - dL/dd
 
     In general, the residual contribution is:
 
@@ -1963,7 +1941,6 @@ class TACSQuaternionRotation {
     @param dvars The first time derivative of the variables
     @param ddvars The second derivatives of the variables
     @param t The normal direction
-    @param dTdot Time deriv. of the deriv. of the kinetic energy w.r.t. d
     @param dd The contribution from the derivative of the director
     @param res The output residual
   */
@@ -1972,7 +1949,6 @@ class TACSQuaternionRotation {
                                    const TacsScalar dvars[],
                                    const TacsScalar ddvars[],
                                    const TacsScalar t[],
-                                   const TacsScalar dTdot[],
                                    const TacsScalar dd[],
                                    TacsScalar res[] ){
     TacsScalar *r = &res[offset];
@@ -1997,11 +1973,6 @@ class TACSQuaternionRotation {
       D[10] = 2.0*(q[3]*t[1] - q[0]*t[0] - 2.0*q[2]*t[2]);
       D[11] = 2.0*(q[1]*t[0] + q[2]*t[1]);
 
-      r[0] += dTdot[0]*D[0] + dTdot[1]*D[4] + dTdot[2]*D[8];
-      r[1] += dTdot[0]*D[1] + dTdot[1]*D[5] + dTdot[2]*D[9];
-      r[2] += dTdot[0]*D[2] + dTdot[1]*D[6] + dTdot[2]*D[10];
-      r[3] += dTdot[0]*D[3] + dTdot[1]*D[7] + dTdot[2]*D[11];
-
       r[0] += dd[0]*D[0] + dd[1]*D[4] + dd[2]*D[8];
       r[1] += dd[0]*D[1] + dd[1]*D[5] + dd[2]*D[9];
       r[2] += dd[0]*D[2] + dd[1]*D[6] + dd[2]*D[10];
@@ -2012,7 +1983,6 @@ class TACSQuaternionRotation {
       qdot += vars_per_node;
 
       dd += 3;
-      dTdot += 3;
       t += 3;
     }
   }
@@ -2028,7 +1998,6 @@ class TACSQuaternionRotation {
                                    const TacsScalar dvars[],
                                    const TacsScalar ddvars[],
                                    const TacsScalar t[],
-                                   const TacsScalar dTdot[],
                                    const TacsScalar dd[],
                                    const TacsScalar d2Tdotd[],
                                    const TacsScalar d2Tdotu[],
@@ -2109,11 +2078,6 @@ class TACSQuaternionRotation {
     const TacsScalar *Di = D;
     for ( int i = 0; i < num_nodes; i++, Di += 12 ){
       if (res){
-        r[0] += dTdot[0]*Di[0] + dTdot[1]*Di[4] + dTdot[2]*Di[8];
-        r[1] += dTdot[0]*Di[1] + dTdot[1]*Di[5] + dTdot[2]*Di[9];
-        r[2] += dTdot[0]*Di[2] + dTdot[1]*Di[6] + dTdot[2]*Di[10];
-        r[3] += dTdot[0]*Di[3] + dTdot[1]*Di[7] + dTdot[2]*Di[11];
-
         r[0] += dd[0]*Di[0] + dd[1]*Di[4] + dd[2]*Di[8];
         r[1] += dd[0]*Di[1] + dd[1]*Di[5] + dd[2]*Di[9];
         r[2] += dd[0]*Di[2] + dd[1]*Di[6] + dd[2]*Di[10];
@@ -2173,9 +2137,9 @@ class TACSQuaternionRotation {
 
         if (i == j){
           TacsScalar tmp[3];
-          tmp[0] = alpha*(dd[0] + dTdot[0]);
-          tmp[1] = alpha*(dd[1] + dTdot[1]);
-          tmp[2] = alpha*(dd[2] + dTdot[2]);
+          tmp[0] = alpha*dd[0];
+          tmp[1] = alpha*dd[1];
+          tmp[2] = alpha*dd[2];
 
           jac[1] += 2.0*(tmp[2]*t[1] - tmp[1]*t[2]);
           jac[2] += 2.0*(tmp[0]*t[2] - tmp[2]*t[0]);
@@ -2208,7 +2172,6 @@ class TACSQuaternionRotation {
       qdot += vars_per_node;
 
       dd += 3;
-      dTdot += 3;
       t += 3;
       m += vars_per_node*size;
     }
@@ -2989,7 +2952,7 @@ int TacsTestDirector( double dh=1e-7,
   director::template
     addDirectorJacobian<vars_per_node, offset, num_nodes>(alpha, beta, gamma,
                                                           vars, dvars, ddvars, t,
-                                                          dTdot, dd, d2Tdotd, d2Tdotu,
+                                                          dd, d2Tdotd, d2Tdotu,
                                                           d2d, d2du, res, mat);
 
   if (alpha != 0.0){
