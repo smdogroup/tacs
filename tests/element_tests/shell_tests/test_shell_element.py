@@ -35,7 +35,7 @@ class ElementTest(unittest.TestCase):
         self.ddvars = self.vars.copy()
 
         # Create the isotropic material
-        rho = 2700.0
+        rho = 0.0 # 2700.0
         specific_heat = 921.096
         E = 70e3
         nu = 0.3
