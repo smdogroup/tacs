@@ -4,18 +4,18 @@
 /*!
   Continuation methods for bifurcation analysis/path following.
 
-  Copyright (c) 2010 Graeme Kennedy. All rights reserved. 
+  Copyright (c) 2010 Graeme Kennedy. All rights reserved.
   Not for commercial purposes.
 */
 
 #include "TACSAssembler.h"
 
-/*!
+/**
   Matrix type required for continuation methods.
-  
+
   This solves a system of equations that takes the following
   form:
-  
+
   [ A | r ][x]
   .        [y] = [b]
 
@@ -27,15 +27,15 @@
   The advantage of this approach is that the constraint is satisified
   exactly, even if the system of equations is only solved approximately.
 */
-class PathMat : public TACSMat {
+class TACSContinuationPathMat : public TACSMat {
  public:
-  PathMat( TACSMat * _A, 
-	   TACSVec * _r, TACSVec * _t, TacsScalar s );
-  ~PathMat();
+  TACSContinuationPathMat( TACSMat *_A,
+                           TACSVec *_r, TACSVec *_t, TacsScalar s );
+  ~TACSContinuationPathMat();
 
   // Return the vectors associated with the constraint
   // -------------------------------------------------
-  void getVectors( TACSVec ** _r, TACSVec ** _t );
+  void getVectors( TACSVec **_r, TACSVec **_t );
 
   // Reset the constraint values based on the value s
   // ------------------------------------------------
@@ -43,69 +43,51 @@ class PathMat : public TACSMat {
 
   // Multiply x <-- Qx, return the value of the n+1-th row
   // -----------------------------------------------------
-  TacsScalar extract( TACSVec * x );
+  TacsScalar extract( TACSVec *x );
 
   // The required TACSMat implementation - performs no operations
   // ------------------------------------------------------------
   void zeroEntries(){}
-  void addValues( int nrow, const int * row, int ncol, const int * col,
-			  int nv, int mv, const TacsScalar * values ){}
-  void applyBCs(){}
+  void addValues( int nrow, const int *row, int ncol, const int *col,
+                  int nv, int mv, const TacsScalar *values ){}
   void beginAssembly(){}
   void endAssembly(){}
 
   // Specific implementation for PathMath
   // ------------------------------------
-  void getSize( int * _nr, int * _nc );
-  void mult( TACSVec * x, TACSVec * y );
-  TACSVec * createVec();
+  void getSize( int *_nr, int *_nc );
+  void mult( TACSVec *x, TACSVec *y );
+  TACSVec* createVec();
 
  private:
   TACSMat *A;
   TACSVec *r, *t, *xtmp;
   TacsScalar tn, wn;
-  TacsScalar s, w;
 };
 
-/*!
+/**
   Callback class for the continuation solver.  This outputs a monitor
   file and/or solution file at every iteration. Passing in NULL file
-  names/object values is legal.  
+  names/object values is legal.
 */
-class TACSContCallback : public TACSObject {
+class TACSContinuationCallback : public TACSObject {
  public:
-  TACSContCallback( MPI_Comm _comm,
-		    const char * file_prefix,
-		    const char * monitor_file,
-		    int * _var_nums, int _nvars );
-  ~TACSContCallback();
+  TACSContinuationCallback( MPI_Comm comm,
+                            const char *filename );
+  virtual ~TACSContinuationCallback();
 
-  void setUnitBCDisplacement( BVec * unit );
+  virtual void iteration( int iter,
+                          TACSBVec *vars,
+                          TacsScalar lambda,
+                          TacsScalar dlambda_ds,
+                          TACSAssembler *assembler );
 
-  void initialize();
-  void iteration( int iter, TacsScalar lambda, TacsScalar dlambda_ds, 
-		  int loadCase, TACSAssembler * tacs,
-		  BVec * ans );
-  void finalize();
  private:
   MPI_Comm comm;
-  char * file_prefix;
-  char * monitor_file;
-
-  // What variables to output to the file
-  int nvars; 
-  int *var_nums;
-  TacsScalar *var_values;
-
-  FILE * mfp;
-
-  // Information for computing the force exherted by an imposed
-  // boundary displacement
-  BVec * unit_bc_displacement;
-  BVec * res_no_bcs;
+  FILE *fp;
 };
 
-/*!
+/**
   Arc-length continuation algorithm. This method is based on a
   constant displacement per iteration. The initial increment in
   displacement is determined based on a linearized estimate of the
@@ -128,42 +110,43 @@ class TACSContCallback : public TACSObject {
 
   3. The maximum number of iterations is exceeded.
 */
-class TACSContinuation : public TACSObject { 
+class TACSContinuation : public TACSObject {
  public:
-  TACSContinuation( TACSAssembler * _tacs, int _max_continuation_ters );
+  TACSContinuation( TACSAssembler *_assembler,
+                    int _max_continuation_ters=100,
+                    int _max_correction_iters=25,
+                    int _max_correction_restarts=4,
+                    double corr_rtol=1e-8,
+                    double corr_dtol=1e3,
+                    double krylov_rtol=1e-3,
+                    double krylov_atol=1e-30,
+                    double _tangent_rtol=1e-8,
+                    double _tangent_atol=1e-30 );
   ~TACSContinuation();
-
-  // Set the callback for monitoring purposes
-  // ----------------------------------------
-  void setCallback( TACSContCallback * _callback );
-
-  // Set iteration limits/tolerances for the modified Newton iteration
-  // -----------------------------------------------------------------
-  void setCorrectionIters( int _max_correction_iters,
-			   int _max_correction_restarts );
-  void setCorrectionTol( double rtol, double dtol );
 
   // Set the termination conditions
   // ------------------------------
-  void setTermFunction( TACSFunction * func, 
-			TacsScalar term_value );
+  void setTermFunction( TACSFunction *func,
+                        TacsScalar term_value );
   void setTermLambdaRate( TacsScalar term_dlambda_ds );
 
   // Perform a continuation solve using a linearized arc-length constraint
   // ---------------------------------------------------------------------
-  void solve_tangent( int loadCase,
-		      TACSMat * mat, TACSPc * pc, 
-		      TACSKsm * ksm,
+  void solve_tangent( TACSMat *mat,
+                      TACSPc *pc,
+                      TACSKsm *ksm,
+                      TACSBVec *load,
                       TacsScalar lambda_init,
-		      TacsScalar target_delta_lambda,
-                      KSMPrint * ksm_print = NULL );
+                      TacsScalar target_delta_lambda,
+                      KSMPrint *ksm_print=NULL,
+                      TACSContinuationCallback *_callback=NULL );
 
   // Retrieve information about the solve
   // ------------------------------------
   int getNumIterations();
-  void getSolution( int iter, TacsScalar * lambda, 
+  void getSolution( int iter, TacsScalar * lambda,
                     TacsScalar * dlambda_ds );
-  
+
  private:
   // Solution parameters
   int max_continuation_iters;
@@ -179,22 +162,19 @@ class TACSContinuation : public TACSObject {
 
   // relative and absolute tolerances for the tangent computation
   double tangent_rtol, tangent_atol;
-  
-  // Solution variables
-  TACSAssembler * tacs; 
 
-  // Callback used to output information at every iteration
-  TACSContCallback * callback;
+  // Solution variables
+  TACSAssembler *assembler;
 
   // Information to store the iteration history
   int iteration_count; // The number of iterations actually used
-  TacsScalar * lambda_history;     // The history of the parameter
-  TacsScalar * dlambda_ds_history; // The history of dlambda/ds
+  TacsScalar *lambda_history;     // The history of the parameter
+  TacsScalar *dlambda_ds_history; // The history of dlambda/ds
 
   // Termination condition information
-  TACSFunction * term_function;
-  TacsScalar term_function_value;  
+  TACSFunction *term_function;
+  TacsScalar term_function_value;
   TacsScalar dlambda_ds_term_value;
 };
 
-#endif
+#endif // TACS_CONTINUATION_H
