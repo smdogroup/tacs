@@ -142,8 +142,6 @@ TACSCreator::~TACSCreator(){
 /*
   Set the global element connectivity arrays into the class.
 
-  This call 
-
   @param _num_nodes The number of nodes in the mesh
   @param _num_elements The number of
 */
