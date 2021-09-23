@@ -122,7 +122,7 @@ class ElementTest(unittest.TestCase):
                         element = element_handle(transform, self.con)
                         fail = elements.TestAdjResXptProduct(element, self.elem_index, self.time, self.xpts,
                                                              self.vars, self.dvars, self.ddvars, self.dh,
-                                                             self.print_level, self.atol, self.rtol)
+                                                             2, self.atol, self.rtol)
                         self.assertFalse(fail)
 
     def test_element_mat_dv_sens(self):
