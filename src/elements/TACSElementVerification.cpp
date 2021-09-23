@@ -22,6 +22,7 @@
 void TacsSeedRandomGenerator( int seed  ){
   srand(seed);
 }
+
 /*
   Assign variables randomly to an array. This is useful for
   testing various things.
