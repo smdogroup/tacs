@@ -10,13 +10,16 @@ int main( int argc, char *argv[] ){
   int rank;
   MPI_Comm_rank(comm, &rank);
 
-  int no_drill = 0, no_dynamics = 0;
+  int no_drill = 0, no_dynamics = 0, test_models = 0;
   for ( int k = 0; k < argc; k++ ){
     if (strcmp(argv[k], "no_drill") == 0){
       no_drill = 1;
     }
     if (strcmp(argv[k], "no_dynamics") == 0){
       no_drill = 1;
+    }
+    if (strcmp(argv[k], "test_models") == 0){
+      test_models = 1;
     }
   }
 
@@ -48,6 +51,14 @@ int main( int argc, char *argv[] ){
   if (no_drill){
     printf("Setting the drilling regularization to zero\n");
     con->setDrillingRegularization(0.0);
+  }
+
+  // Test the different shell element model expressions
+  if (test_models){
+    TacsTestShellModelDerivatives<6, TACSShellQuadBasis<2>, TACSShellLinearModel>();
+    TacsTestShellModelDerivatives<6, TACSShellQuadBasis<2>, TACSShellNonlinearModel>();
+    TacsTestShellModelDerivatives<6, TACSShellQuadBasis<2>, TACSShellInplaneLinearModel>();
+    TacsTestShellModelDerivatives<6, TACSShellQuadBasis<2>, TACSShellInplaneNonlinearModel>();
   }
 
   // Start and end column to test in the Jacobian matrix
