@@ -99,6 +99,9 @@ cdef class KSTemperature(Function):
             self.kstptr.setKSTemperatureType(PNORM_TEMPERATURE_CONTINUOUS)
         return
 
+    def setLoadFactor(self, TacsScalar loadFactor):
+        self.ksptr.setLoadFactor(loadFactor)
+
     def setParameter(self, double ksparam):
         self.kstptr.setParameter(ksparam)
 
