@@ -71,8 +71,8 @@ class ElementTest(unittest.TestCase):
             with self.subTest(dep_dofs=dep_dofs):
                 for indep_dofs in self.indep_dofs_constrained:
                     with self.subTest(indep_dofs=indep_dofs):
-                        element = elements.RigidBodyElement3(self.num_nodes, dep_dofs, self.indep_weights, indep_dofs)
-                        element.setScalingParameters(self.C1, self.C2)
+                        element = elements.RigidBodyElement3(self.num_nodes, dep_dofs,
+                                                             self.indep_weights, indep_dofs, self.C1, self.C2)
                         fail = elements.TestElementJacobian(element, self.elem_index, self.time, self.xpts,
                                                             self.vars, self.dvars, self.ddvars, -1, self.dh,
                                                             self.print_level, self.atol, self.rtol)
@@ -84,8 +84,8 @@ class ElementTest(unittest.TestCase):
             with self.subTest(dep_dofs=dep_dofs):
                 for indep_dofs in self.indep_dofs_constrained:
                     with self.subTest(indep_dofs=indep_dofs):
-                        element = elements.RigidBodyElement3(self.num_nodes, dep_dofs, self.indep_weights, indep_dofs)
-                        element.setScalingParameters(self.C1, self.C2)
+                        element = elements.RigidBodyElement3(self.num_nodes, dep_dofs,
+                                                             self.indep_weights, indep_dofs, self.C1, self.C2)
                         dvs = element.getDesignVars(self.elem_index)
                         fail = elements.TestAdjResProduct(element, self.elem_index, self.time, self.xpts,
                                                           self.vars, self.dvars, self.ddvars, dvs, self.dh,
@@ -98,8 +98,8 @@ class ElementTest(unittest.TestCase):
             with self.subTest(dep_dofs=dep_dofs):
                 for indep_dofs in self.indep_dofs_constrained:
                     with self.subTest(indep_dofs=indep_dofs):
-                        element = elements.RigidBodyElement3(self.num_nodes, dep_dofs, self.indep_weights, indep_dofs)
-                        element.setScalingParameters(self.C1, self.C2)
+                        element = elements.RigidBodyElement3(self.num_nodes, dep_dofs,
+                                                             self.indep_weights, indep_dofs, self.C1, self.C2)
                         fail = elements.TestAdjResXptProduct(element, self.elem_index, self.time, self.xpts,
                                                              self.vars, self.dvars, self.ddvars, self.dh,
                                                              self.print_level, self.atol, self.rtol)
@@ -111,8 +111,8 @@ class ElementTest(unittest.TestCase):
             with self.subTest(dep_dofs=dep_dofs):
                 for indep_dofs in self.indep_dofs_constrained:
                     with self.subTest(indep_dofs=indep_dofs):
-                        element = elements.RigidBodyElement3(self.num_nodes, dep_dofs, self.indep_weights, indep_dofs)
-                        element.setScalingParameters(self.C1, self.C2)
+                        element = elements.RigidBodyElement3(self.num_nodes, dep_dofs,
+                                                             self.indep_weights, indep_dofs, self.C1, self.C2)
                         dvs = element.getDesignVars(self.elem_index)
                         for matrix_type in self.matrix_types:
                             with self.subTest(matrix_type=matrix_type):
@@ -127,8 +127,8 @@ class ElementTest(unittest.TestCase):
             with self.subTest(dep_dofs=dep_dofs):
                 for indep_dofs in self.indep_dofs_constrained:
                     with self.subTest(indep_dofs=indep_dofs):
-                        element = elements.RigidBodyElement3(self.num_nodes, dep_dofs, self.indep_weights, indep_dofs)
-                        element.setScalingParameters(self.C1, self.C2)
+                        element = elements.RigidBodyElement3(self.num_nodes, dep_dofs,
+                                                             self.indep_weights, indep_dofs, self.C1, self.C2)
                         fail = elements.TestElementMatSVSens(element, TACS.GEOMETRIC_STIFFNESS_MATRIX, self.elem_index,
                                                              self.time, self.xpts, self.vars, self.dh,
                                                              self.print_level, self.atol, self.rtol)

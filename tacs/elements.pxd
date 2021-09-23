@@ -261,13 +261,11 @@ cdef extern from "TACSKinematicConstraints.h":
 
 cdef extern from "RBE2.h":
     cdef cppclass RBE2(TACSElement):
-        RBE2(int, int*)
-        void setScalingParameters(double, double)
+        RBE2(int, int*, double, double)
 
 cdef extern from "RBE3.h":
     cdef cppclass RBE3(TACSElement):
-        RBE3(int, int*, double*, int*)
-        void setScalingParameters(double, double)
+        RBE3(int, int*, double*, int*, double, double)
 
 cdef extern from  "MITC3.h":
     cdef cppclass MITC3(TACSElement):

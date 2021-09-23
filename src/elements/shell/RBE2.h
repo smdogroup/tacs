@@ -17,14 +17,14 @@
 class RBE2 : public TACSElement {
  public:
 
-  RBE2( int _numNodes, int _dof_constrained[] );
+  RBE2( int _numNodes, int _dof_constrained[],
+        double _C1=1e3, double _C2=1e-3 );
   ~RBE2();
 
   // Info for BDF writer
   // -------------------
   int const* const* getDependentDOFs(){ return dof_constrained; }
   int getNumDependentNodes(){ return NUM_DEP_NODES; }
-  void setScalingParameters( double _C1, double _C2 );
 
   // Get the element properties and names
   // ------------------------------------

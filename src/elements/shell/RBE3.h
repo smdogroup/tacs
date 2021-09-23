@@ -18,10 +18,9 @@ class RBE3 : public TACSElement {
  public:
 
   RBE3( int numNodes, int _dep_dof_constrained[],
-        double weights[], int _indep_dof_constrained[] );
+        double weights[], int _indep_dof_constrained[],
+        double _C1=1e3, double _C2=1e-3 );
   ~RBE3();
-
-  void setScalingParameters( double _C1, double _C2 );
 
   // Info for BDF writer
   // -------------------

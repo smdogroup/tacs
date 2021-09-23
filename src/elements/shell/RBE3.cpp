@@ -39,7 +39,9 @@
 /*
   Create the RBE3.
 */
-RBE3::RBE3( int numNodes, int _dep_dof_constrained[], double weights[], int _indep_dof_constrained[] ){
+RBE3::RBE3( int numNodes, int _dep_dof_constrained[],
+            double weights[], int _indep_dof_constrained[],
+            double _C1, double _C2 ){
 
   NUM_NODES = numNodes; // Number of nodes (1 dep node + N indep nodes + 1 dummy node)
   NUM_INDEP_NODES = NUM_NODES - 2;
@@ -60,8 +62,8 @@ RBE3::RBE3( int numNodes, int _dep_dof_constrained[], double weights[], int _ind
   }
 
   // Default scaling and artificial stiffness parameters
-  C1 = 1e3;
-  C2 = 1e-3;
+  C1 = _C1;
+  C2 = _C2;
 
  }
 
@@ -110,11 +112,6 @@ int RBE3::getNumNodes() { return NUM_NODES; }
 int RBE3::numExtras() { return NUM_EXTRAS; }
 
 enum ElementType RBE3::getElementType(){ return TACS_RIGID_ELEMENT; }
-
-void RBE3::setScalingParameters( double _C1, double _C2 ){
-    C1 = _C1;
-    C2 = _C2;
-}
 
 /*
   Returns the multiplier index
