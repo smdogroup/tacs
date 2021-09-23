@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/gjkennedy/tacs.svg?branch=master)](https://travis-ci.org/gjkennedy/tacs)
+[![Build and unit tests](https://github.com/smdogroup/tacs/actions/workflows/unit_tests.yml/badge.svg)](https://github.com/smdogroup/tacs/actions/workflows/unit_tests.yml)
 
 # TACS Overview #
 
