@@ -95,15 +95,15 @@ class RBE3 : public TACSElement {
  // Functions to compute the centroid and moments of inertia of independent nodes
  void getCG( TacsScalar Xcg[], TacsScalar W[], const double w[], const TacsScalar Xpts[] );
  void getCGSens( TacsScalar sXcg[], TacsScalar Xcg[], TacsScalar W[], const double w[],
-    const TacsScalar Xpts[], const int component );
+                 const TacsScalar Xpts[], const int component );
  TacsScalar getMomentsOfInertia( TacsScalar Jcg[3][3], const double w[],
-    const TacsScalar Xpts[], const TacsScalar Xcg[] );
+                                 const TacsScalar Xpts[], const TacsScalar Xcg[] );
  TacsScalar getMomentsOfInertiaSens( TacsScalar sJcg[3][3], TacsScalar Jcg[3][3], TacsScalar* sLc,
-    const double w[],
-    const TacsScalar Xpts[], const TacsScalar Xcg[], const TacsScalar sXcg[],
-    const int component );
+                                     const double w[],
+                                     const TacsScalar Xpts[], const TacsScalar Xcg[], const TacsScalar sXcg[],
+                                     const int component );
  void getMaskedVars( TacsScalar maskedVars[],
-		     const TacsScalar vars[] );
+		             const TacsScalar vars[] );
 
   static const int NUM_DISPS = 6;
   int NUM_NODES; // Number of nodes (1 dep node + N indep nodes + 1 dummy node)

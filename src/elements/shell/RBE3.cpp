@@ -1079,9 +1079,9 @@ void RBE3::addAdjResXptProduct( int elemIndex, double time,
 
 /* Find centroid of dependent nodes */
 void RBE3::getCG( TacsScalar Xcg[],
-                TacsScalar W[],
-		     const double w[],
-		     const TacsScalar Xpts[] ){
+                  TacsScalar W[],
+		          const double w[],
+		          const TacsScalar Xpts[] ){
 
   Xcg[0] = Xcg[1] = Xcg[2] = 0.0;
   W[0] = W[1] = W[2] = 0.0;
@@ -1112,11 +1112,11 @@ void RBE3::getCG( TacsScalar Xcg[],
 }
 
 void RBE3::getCGSens( TacsScalar sXcg[],
-                   TacsScalar Xcg[],
-                   TacsScalar W[],
-		     const double w[],
-		     const TacsScalar Xpts[],
-		     const int component){
+                      TacsScalar Xcg[],
+                      TacsScalar W[],
+		              const double w[],
+		              const TacsScalar Xpts[],
+		              const int component ){
 
   sXcg[0] = sXcg[1] = sXcg[2] = 0.0;
   getCG(Xcg, W, w, Xpts);
@@ -1133,9 +1133,9 @@ void RBE3::getCGSens( TacsScalar sXcg[],
 
 /* Find inverse moment of inertia of dependent nodes about centroid */
 TacsScalar RBE3::getMomentsOfInertia( TacsScalar IcgInv[3][3],
-		     const double w[],
-		     const TacsScalar Xpts[],
-		     const TacsScalar Xcg[] ){
+		                              const double w[],
+		                              const TacsScalar Xpts[],
+		                              const TacsScalar Xcg[] ){
 
   TacsScalar Icg[9], r[3], temp[9], c[6], Lc;
   Lc = 0.0;
@@ -1209,13 +1209,13 @@ TacsScalar RBE3::getMomentsOfInertia( TacsScalar IcgInv[3][3],
 
 /* Find sensitivity of inverse moment of inertia tensor of dependent nodes about centroid */
 TacsScalar RBE3::getMomentsOfInertiaSens( TacsScalar sIcgInv[3][3],
-		     TacsScalar IcgInv[3][3],
-		     TacsScalar* sLc,
-		     const double w[],
-		     const TacsScalar Xpts[],
-		     const TacsScalar Xcg[],
-		     const TacsScalar sXcg[],
-		     const int component ){
+                                          TacsScalar IcgInv[3][3],
+                                          TacsScalar* sLc,
+                                          const double w[],
+                                          const TacsScalar Xpts[],
+                                          const TacsScalar Xcg[],
+                                          const TacsScalar sXcg[],
+                                          const int component ){
 
   TacsScalar Icg[9], r[3], sr[3], temp[9], sIcg[9], stemp[9], c[6], Lc;
   Lc = 0.0; *sLc = 0.0;
