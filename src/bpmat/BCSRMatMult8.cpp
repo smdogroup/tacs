@@ -12,8 +12,8 @@
   TACS is licensed under the Apache License, Version 2.0 (the
   "License"); you may not use this software except in compliance with
   the License.  You may obtain a copy of the License at
-  
-  http://www.apache.org/licenses/LICENSE-2.0 
+
+  http://www.apache.org/licenses/LICENSE-2.0
 */
 
 #include "BCSRMatImpl.h"
@@ -41,17 +41,17 @@ void * BCSRMatVecMultAdd8_thread( void * t ){
   while (tdata->num_completed_rows < nrows){
     int row = -1;
     tdata->mat_mult_sched_job(group_size, &row);
-    
+
     if (row >= 0){
       TacsScalar * y = &tdata->output[8*row];
       int k = rowp[row];
       for ( int ii = row; ii < nrows && (ii < row + group_size); ii++ ){
         int end = rowp[ii+1];
         const TacsScalar * a = &A[64*k];
-        
+
         for ( ; k < end; k++ ){
           int j = 8*cols[k];
-          
+
           y[0] += a[0 ]*x[j] + a[1 ]*x[j+1] + a[2 ]*x[j+2] + a[3 ]*x[j+3] + a[4 ]*x[j+4] + a[5 ]*x[j+5] + a[6 ]*x[j+6] + a[7 ]*x[j+7];
           y[1] += a[8 ]*x[j] + a[9 ]*x[j+1] + a[10]*x[j+2] + a[11]*x[j+3] + a[12]*x[j+4] + a[13]*x[j+5] + a[14]*x[j+6] + a[15]*x[j+7];
           y[2] += a[16]*x[j] + a[17]*x[j+1] + a[18]*x[j+2] + a[19]*x[j+3] + a[20]*x[j+4] + a[21]*x[j+5] + a[22]*x[j+6] + a[23]*x[j+7];
@@ -60,29 +60,29 @@ void * BCSRMatVecMultAdd8_thread( void * t ){
           y[5] += a[40]*x[j] + a[41]*x[j+1] + a[42]*x[j+2] + a[43]*x[j+3] + a[44]*x[j+4] + a[45]*x[j+5] + a[46]*x[j+6] + a[47]*x[j+7];
           y[6] += a[48]*x[j] + a[49]*x[j+1] + a[50]*x[j+2] + a[51]*x[j+3] + a[52]*x[j+4] + a[53]*x[j+5] + a[54]*x[j+6] + a[55]*x[j+7];
           y[7] += a[56]*x[j] + a[57]*x[j+1] + a[58]*x[j+2] + a[59]*x[j+3] + a[60]*x[j+4] + a[61]*x[j+5] + a[62]*x[j+6] + a[63]*x[j+7];
-	  
+
           a += 64;
         }
-        
-        y += 8; 
+
+        y += 8;
       }
     }
   }
-  
+
   pthread_exit(NULL);
 }
 
 /*!
   Compute the matrix-vector product: y = A * x
 */
-void BCSRMatVecMult8( BCSRMatData * data, 
-		      TacsScalar * x, TacsScalar * y ){
+void BCSRMatVecMult8( BCSRMatData * data,
+                      TacsScalar * x, TacsScalar * y ){
   // Retrieve the data required from the matrix
   const int nrows = data->nrows;
   const int * rowp = data->rowp;
   const int * cols = data->cols;
   TacsScalar * a = data->A;
-  
+
   for ( int i = 0; i < nrows; i++ ){
     int end = rowp[i+1];
 
@@ -95,7 +95,7 @@ void BCSRMatVecMult8( BCSRMatData * data,
     y[6] = 0.0;
     y[7] = 0.0;
 
-    
+
     for ( int k = rowp[i]; k < end; k++ ){
       int j = 8*cols[k];
 
@@ -107,10 +107,10 @@ void BCSRMatVecMult8( BCSRMatData * data,
       y[5] += a[40]*x[j] + a[41]*x[j+1] + a[42]*x[j+2] + a[43]*x[j+3] + a[44]*x[j+4] + a[45]*x[j+5] + a[46]*x[j+6] + a[47]*x[j+7];
       y[6] += a[48]*x[j] + a[49]*x[j+1] + a[50]*x[j+2] + a[51]*x[j+3] + a[52]*x[j+4] + a[53]*x[j+5] + a[54]*x[j+6] + a[55]*x[j+7];
       y[7] += a[56]*x[j] + a[57]*x[j+1] + a[58]*x[j+2] + a[59]*x[j+3] + a[60]*x[j+4] + a[61]*x[j+5] + a[62]*x[j+6] + a[63]*x[j+7];
-      
+
       a += 64;
     }
-    
+
     y += 8;
   }
 
@@ -121,17 +121,17 @@ void BCSRMatVecMult8( BCSRMatData * data,
   Compute the matrix vector product plus addition: z = A * x + y
 */
 
-void BCSRMatVecMultAdd8( BCSRMatData * data, 
-			 TacsScalar * x, TacsScalar * y, TacsScalar * z ){
+void BCSRMatVecMultAdd8( BCSRMatData * data,
+                         TacsScalar * x, TacsScalar * y, TacsScalar * z ){
   // Retrieve the data required from the matrix
   const int nrows = data->nrows;
   const int * rowp = data->rowp;
   const int * cols = data->cols;
   TacsScalar * a = data->A;
-  
+
   for ( int i = 0; i < nrows; i++ ){
     int end = rowp[i+1];
-    
+
     z[0] = y[0];
     z[1] = y[1];
     z[2] = y[2];
@@ -143,7 +143,7 @@ void BCSRMatVecMultAdd8( BCSRMatData * data,
 
     for ( int k = rowp[i]; k < end; k++ ){
       int j = 8*cols[k];
-      
+
       z[0] += a[0 ]*x[j] + a[1 ]*x[j+1] + a[2 ]*x[j+2] + a[3 ]*x[j+3] + a[4 ]*x[j+4] + a[5 ]*x[j+5] + a[6 ]*x[j+6] + a[7 ]*x[j+7];
       z[1] += a[8 ]*x[j] + a[9 ]*x[j+1] + a[10]*x[j+2] + a[11]*x[j+3] + a[12]*x[j+4] + a[13]*x[j+5] + a[14]*x[j+6] + a[15]*x[j+7];
       z[2] += a[16]*x[j] + a[17]*x[j+1] + a[18]*x[j+2] + a[19]*x[j+3] + a[20]*x[j+4] + a[21]*x[j+5] + a[22]*x[j+6] + a[23]*x[j+7];
@@ -154,7 +154,7 @@ void BCSRMatVecMultAdd8( BCSRMatData * data,
       z[7] += a[56]*x[j] + a[57]*x[j+1] + a[58]*x[j+2] + a[59]*x[j+3] + a[60]*x[j+4] + a[61]*x[j+5] + a[62]*x[j+6] + a[63]*x[j+7];
       a += 64;
     }
-    
+
     y += 8;
     z += 8;
   }
@@ -191,16 +191,16 @@ void * BCSRMatApplyLower8_thread( void * t ){
 
     if (irow >= 0){
       TacsScalar * z = &y[8*irow];
-      
+
       for ( int i = irow; (i < nrows) && (i < irow + group_size); i++ ){
         int end = diag[i];
         int k = rowp[i];
         while ((k < end) && (cols[k] < jstart)){ k++; }
-        
+
         const TacsScalar * a = &A[64*k];
         for ( ; (k < end) && (cols[k] < jend); k++ ){
           int j = 6*cols[k];
-          
+
           z[0] -= a[0 ]*y[j] + a[1 ]*y[j+1] + a[2 ]*y[j+2] + a[3 ]*y[j+3] + a[4 ]*y[j+4] + a[5 ]*y[j+5] + a[6 ]*y[j+6] + a[7 ]*y[j+7];
           z[1] -= a[8 ]*y[j] + a[9 ]*y[j+1] + a[10]*y[j+2] + a[11]*y[j+3] + a[12]*y[j+4] + a[13]*y[j+5] + a[14]*y[j+6] + a[15]*y[j+7];
           z[2] -= a[16]*y[j] + a[17]*y[j+1] + a[18]*y[j+2] + a[19]*y[j+3] + a[20]*y[j+4] + a[21]*y[j+5] + a[22]*y[j+6] + a[23]*y[j+7];
@@ -211,7 +211,7 @@ void * BCSRMatApplyLower8_thread( void * t ){
           z[7] -= a[56]*y[j] + a[57]*y[j+1] + a[58]*y[j+2] + a[59]*y[j+3] + a[60]*y[j+4] + a[61]*y[j+5] + a[62]*y[j+6] + a[63]*y[j+7];
           a += 64;
         }
-        
+
         z += 8;
       }
 
@@ -248,10 +248,10 @@ void * BCSRMatApplyUpper8_thread( void * t ){
       for ( int i = irow-1; (i >= 0) && (i >= irow - group_size); i-- ){
         int start = diag[i]+1;
         int end = rowp[i+1];
-        
+
         int k = end-1;
         while ((k >= start) && (cols[k] >= jend)){ k--; }
-        
+
         TacsScalar * z = &y[8*i];
         const TacsScalar * a = &A[64*k];
         for ( ; (k >= start) && (cols[k] >= jstart); k-- ){
@@ -300,7 +300,7 @@ void BCSRMatApplyLower8( BCSRMatData * data, TacsScalar * x, TacsScalar * y ){
   const int * rowp = data->rowp;
   const int * cols = data->cols;
 
-  TacsScalar * z = y;  
+  TacsScalar * z = y;
   for ( int i = 0; i < nrows; i++ ){
     z[0] = x[0];
     z[1] = x[1];
@@ -310,13 +310,13 @@ void BCSRMatApplyLower8( BCSRMatData * data, TacsScalar * x, TacsScalar * y ){
     z[5] = x[5];
     z[6] = x[6];
     z[7] = x[7];
-    
+
     int end = diag[i];
     int k = rowp[i];
     const TacsScalar * a = &(data->A[64*k]);
     for ( ; k < end; k++ ){
       int j = 8*cols[k];
-      
+
       z[0] -= a[0 ]*y[j] + a[1 ]*y[j+1] + a[2 ]*y[j+2] + a[3 ]*y[j+3] + a[4 ]*y[j+4] + a[5 ]*y[j+5] + a[6 ]*y[j+6] + a[7 ]*y[j+7];
       z[1] -= a[8 ]*y[j] + a[9 ]*y[j+1] + a[10]*y[j+2] + a[11]*y[j+3] + a[12]*y[j+4] + a[13]*y[j+5] + a[14]*y[j+6] + a[15]*y[j+7];
       z[2] -= a[16]*y[j] + a[17]*y[j+1] + a[18]*y[j+2] + a[19]*y[j+3] + a[20]*y[j+4] + a[21]*y[j+5] + a[22]*y[j+6] + a[23]*y[j+7];
@@ -348,7 +348,7 @@ void BCSRMatApplyUpper8( BCSRMatData * data, TacsScalar * x, TacsScalar * y ){
     TacsScalar y0 = x[0], y1 = x[1], y2 = x[2];
     TacsScalar y3 = x[3], y4 = x[4], y5 = x[5];
     TacsScalar y6 = x[6], y7 = x[7];
-    
+
     int end = rowp[i+1];
     int k = diag[i]+1;
     TacsScalar * a = &(data->A[64*k]);
@@ -366,7 +366,7 @@ void BCSRMatApplyUpper8( BCSRMatData * data, TacsScalar * x, TacsScalar * y ){
 
       a += 64;
     }
-    
+
     int bi = 8*i;
     a = &(data->A[64*diag[i]]);
 
@@ -378,7 +378,7 @@ void BCSRMatApplyUpper8( BCSRMatData * data, TacsScalar * x, TacsScalar * y ){
     y[bi+5] = a[40]*y0 + a[41]*y1 + a[42]*y2 + a[43]*y3 + a[44]*y4 + a[45]*y5 + a[46]*y6 + a[47]*y7;
     y[bi+6] = a[48]*y0 + a[49]*y1 + a[50]*y2 + a[51]*y3 + a[52]*y4 + a[53]*y5 + a[54]*y6 + a[55]*y7;
     y[bi+7] = a[56]*y0 + a[57]*y1 + a[58]*y2 + a[59]*y3 + a[60]*y4 + a[61]*y5 + a[62]*y6 + a[63]*y7;
-    
+
     x -= 8;
     TacsAddFlops(2*64*nz + 120);
   }
@@ -388,8 +388,8 @@ void BCSRMatApplyUpper8( BCSRMatData * data, TacsScalar * x, TacsScalar * y ){
   Apply a portion of the lower factorization x = L^{-1} x
 */
 
-void BCSRMatApplyPartialLower8( BCSRMatData * data, TacsScalar * x, 
-				int var_offset ){
+void BCSRMatApplyPartialLower8( BCSRMatData * data, TacsScalar * x,
+                                int var_offset ){
   const int nrows = data->nrows;
   const int * rowp = data->rowp;
   const int * cols = data->cols;
@@ -426,15 +426,15 @@ void BCSRMatApplyPartialLower8( BCSRMatData * data, TacsScalar * x,
   Apply a portion of he upper factorization x = U^{-1} x
 */
 
-void BCSRMatApplyPartialUpper8( BCSRMatData * data, TacsScalar * x, 
-				int var_offset ){
+void BCSRMatApplyPartialUpper8( BCSRMatData * data, TacsScalar * x,
+                                int var_offset ){
   const int nrows = data->nrows;
   const int * rowp = data->rowp;
   const int * cols = data->cols;
   const int * diag = data->diag;
   const TacsScalar * A = data->A;
-  
-  TacsScalar y0, y1, y2, y3, y4, y5, y6, y7;  
+
+  TacsScalar y0, y1, y2, y3, y4, y5, y6, y7;
   TacsScalar * xx = &x[8*(nrows-var_offset-1)];
   int off = 8*var_offset;
 
@@ -476,15 +476,15 @@ void BCSRMatApplyPartialUpper8( BCSRMatData * data, TacsScalar * x,
     xx[7] = a[56]*y0 + a[57]*y1 + a[58]*y2 + a[59]*y3 + a[60]*y4 + a[61]*y5 + a[62]*y6 + a[63]*y7;
     xx -= 8;
     TacsAddFlops(2*64*nz + 120);
-  }  
+  }
 }
 
 /*!
   Function for the approximate Schur preconditioner
 */
 
-void BCSRMatApplyFactorSchur8( BCSRMatData * data, TacsScalar * x, 
-			       int var_offset ){  
+void BCSRMatApplyFactorSchur8( BCSRMatData * data, TacsScalar * x,
+                               int var_offset ){
   const int * rowp = data->rowp;
   const int * cols = data->cols;
   const int * diag = data->diag;
@@ -531,7 +531,7 @@ void BCSRMatApplyFactorSchur8( BCSRMatData * data, TacsScalar * x,
     xx[7] = a[56]*y0 + a[57]*y1 + a[58]*y2 + a[59]*y3 + a[60]*y4 + a[61]*y5 + a[62]*y6 + a[63]*y7;
     xx -= 8;
     TacsAddFlops(2*64*nz + 120);
-  } 
+  }
 }
 
 /*
@@ -540,7 +540,7 @@ void BCSRMatApplyFactorSchur8( BCSRMatData * data, TacsScalar * x,
 void * BCSRMatMatMultAdd8_thread( void * t ){
   BCSRMatThread * tdata = static_cast<BCSRMatThread*>(t);
   const double alpha = tdata->alpha;
-  
+
   // Retrieve the data required from the matrix
   const int nrows_a = tdata->Amat->nrows;
   const int * arowp = tdata->Amat->rowp;
@@ -551,13 +551,13 @@ void * BCSRMatMatMultAdd8_thread( void * t ){
   const int * browp = tdata->Bmat->rowp;
   const int * bcols = tdata->Bmat->cols;
   const TacsScalar * B = tdata->Bmat->A;
-  
+
   // The matrix being written to
   const int nrows_c = tdata->mat->nrows;
   const int * crowp = tdata->mat->rowp;
   const int * ccols = tdata->mat->cols;
   TacsScalar * C = tdata->mat->A;
-  
+
   while (tdata->num_completed_rows < nrows_c){
     int row = -1;
     tdata->mat_mult_sched_job(group_size, &row);
@@ -570,110 +570,110 @@ void * BCSRMatMatMultAdd8_thread( void * t ){
         for ( int jp = arowp[i]; jp < arowp[i+1]; jp++ ){
           int j = acols[jp];
           const TacsScalar * a = &A[64*jp];
-	
+
           int kp = browp[j];
           int kp_end = browp[j+1];
           const TacsScalar * b = &B[64*kp];
-	
+
           int cp = crowp[i];
           int cp_end = crowp[i+1];
           TacsScalar * c = &C[64*cp];
-          
+
           for ( ; kp < kp_end; kp++ ){
             while ((cp < cp_end) && (ccols[cp] < bcols[kp])){ cp++; c+= 64; }
             if (cp >= cp_end){ break; }
-            
+
             if (bcols[kp] == ccols[cp]){
               // Compute the matrix-matrix multiplication
               TacsScalar b0, b1, b2, b3, b4, b5, b6, b7;
 
-	      // first
+              // first
               b0 = b[0 ]; b1 = b[8 ]; b2 = b[16]; b3 = b[24]; b4 = b[32]; b5 = b[40];  b6 = b[48]; b7 = b[56];
-	      c[0]  += a[0 ]*b0 + a[1 ]*b1 + a[2 ]*b2 + a[3 ]*b3 + a[4 ]*b4 + a[5 ]*b5 + a[6 ]*b6 + a[7 ]*b7;
-	      c[8]  += a[8 ]*b0 + a[9 ]*b1 + a[10]*b2 + a[11]*b3 + a[12]*b4 + a[13]*b5 + a[14]*b6 + a[15]*b7;
-	      c[16] += a[16]*b0 + a[17]*b1 + a[18]*b2 + a[19]*b3 + a[20]*b4 + a[21]*b5 + a[22]*b6 + a[23]*b7;
-	      c[24] += a[24]*b0 + a[25]*b1 + a[26]*b2 + a[27]*b3 + a[28]*b4 + a[29]*b5 + a[30]*b6 + a[31]*b7;
-	      c[32] += a[32]*b0 + a[33]*b1 + a[34]*b2 + a[35]*b3 + a[36]*b4 + a[37]*b5 + a[38]*b6 + a[39]*b7;
-	      c[40] += a[40]*b0 + a[41]*b1 + a[42]*b2 + a[43]*b3 + a[44]*b4 + a[45]*b5 + a[46]*b6 + a[47]*b7;
-	      c[48] += a[48]*b0 + a[49]*b1 + a[50]*b2 + a[51]*b3 + a[52]*b4 + a[53]*b5 + a[54]*b6 + a[55]*b7;
-	      c[56] += a[56]*b0 + a[57]*b1 + a[58]*b2 + a[59]*b3 + a[60]*b4 + a[61]*b5 + a[62]*b6 + a[63]*b7;
-	      
-	      // second	      
+              c[0]  += a[0 ]*b0 + a[1 ]*b1 + a[2 ]*b2 + a[3 ]*b3 + a[4 ]*b4 + a[5 ]*b5 + a[6 ]*b6 + a[7 ]*b7;
+              c[8]  += a[8 ]*b0 + a[9 ]*b1 + a[10]*b2 + a[11]*b3 + a[12]*b4 + a[13]*b5 + a[14]*b6 + a[15]*b7;
+              c[16] += a[16]*b0 + a[17]*b1 + a[18]*b2 + a[19]*b3 + a[20]*b4 + a[21]*b5 + a[22]*b6 + a[23]*b7;
+              c[24] += a[24]*b0 + a[25]*b1 + a[26]*b2 + a[27]*b3 + a[28]*b4 + a[29]*b5 + a[30]*b6 + a[31]*b7;
+              c[32] += a[32]*b0 + a[33]*b1 + a[34]*b2 + a[35]*b3 + a[36]*b4 + a[37]*b5 + a[38]*b6 + a[39]*b7;
+              c[40] += a[40]*b0 + a[41]*b1 + a[42]*b2 + a[43]*b3 + a[44]*b4 + a[45]*b5 + a[46]*b6 + a[47]*b7;
+              c[48] += a[48]*b0 + a[49]*b1 + a[50]*b2 + a[51]*b3 + a[52]*b4 + a[53]*b5 + a[54]*b6 + a[55]*b7;
+              c[56] += a[56]*b0 + a[57]*b1 + a[58]*b2 + a[59]*b3 + a[60]*b4 + a[61]*b5 + a[62]*b6 + a[63]*b7;
+
+              // second
               b0 = b[1 ]; b1 = b[9 ]; b2 = b[17]; b3 = b[25]; b4 = b[33]; b5 = b[41];  b6 = b[49]; b7 = b[57];
-	      c[1]  += a[0 ]*b0 + a[1 ]*b1 + a[2 ]*b2 + a[3 ]*b3 + a[4 ]*b4 + a[5 ]*b5 + a[6 ]*b6 + a[7 ]*b7;
-	      c[9]  += a[8 ]*b0 + a[9 ]*b1 + a[10]*b2 + a[11]*b3 + a[12]*b4 + a[13]*b5 + a[14]*b6 + a[15]*b7;
-	      c[17] += a[16]*b0 + a[17]*b1 + a[18]*b2 + a[19]*b3 + a[20]*b4 + a[21]*b5 + a[22]*b6 + a[23]*b7;
-	      c[25] += a[24]*b0 + a[25]*b1 + a[26]*b2 + a[27]*b3 + a[28]*b4 + a[29]*b5 + a[30]*b6 + a[31]*b7;
-	      c[33] += a[32]*b0 + a[33]*b1 + a[34]*b2 + a[35]*b3 + a[36]*b4 + a[37]*b5 + a[38]*b6 + a[39]*b7;
-	      c[41] += a[40]*b0 + a[41]*b1 + a[42]*b2 + a[43]*b3 + a[44]*b4 + a[45]*b5 + a[46]*b6 + a[47]*b7;
-	      c[49] += a[48]*b0 + a[49]*b1 + a[50]*b2 + a[51]*b3 + a[52]*b4 + a[53]*b5 + a[54]*b6 + a[55]*b7;
-	      c[57] += a[56]*b0 + a[57]*b1 + a[58]*b2 + a[59]*b3 + a[60]*b4 + a[61]*b5 + a[62]*b6 + a[63]*b7;
+              c[1]  += a[0 ]*b0 + a[1 ]*b1 + a[2 ]*b2 + a[3 ]*b3 + a[4 ]*b4 + a[5 ]*b5 + a[6 ]*b6 + a[7 ]*b7;
+              c[9]  += a[8 ]*b0 + a[9 ]*b1 + a[10]*b2 + a[11]*b3 + a[12]*b4 + a[13]*b5 + a[14]*b6 + a[15]*b7;
+              c[17] += a[16]*b0 + a[17]*b1 + a[18]*b2 + a[19]*b3 + a[20]*b4 + a[21]*b5 + a[22]*b6 + a[23]*b7;
+              c[25] += a[24]*b0 + a[25]*b1 + a[26]*b2 + a[27]*b3 + a[28]*b4 + a[29]*b5 + a[30]*b6 + a[31]*b7;
+              c[33] += a[32]*b0 + a[33]*b1 + a[34]*b2 + a[35]*b3 + a[36]*b4 + a[37]*b5 + a[38]*b6 + a[39]*b7;
+              c[41] += a[40]*b0 + a[41]*b1 + a[42]*b2 + a[43]*b3 + a[44]*b4 + a[45]*b5 + a[46]*b6 + a[47]*b7;
+              c[49] += a[48]*b0 + a[49]*b1 + a[50]*b2 + a[51]*b3 + a[52]*b4 + a[53]*b5 + a[54]*b6 + a[55]*b7;
+              c[57] += a[56]*b0 + a[57]*b1 + a[58]*b2 + a[59]*b3 + a[60]*b4 + a[61]*b5 + a[62]*b6 + a[63]*b7;
 
-	      // third
+              // third
               b0 = b[2 ]; b1 = b[10]; b2 = b[18]; b3 = b[26]; b4 = b[34]; b5 = b[42];  b6 = b[50]; b7 = b[58];
-	      c[2]  += a[0 ]*b0 + a[1 ]*b1 + a[2 ]*b2 + a[3 ]*b3 + a[4 ]*b4 + a[5 ]*b5 + a[6 ]*b6 + a[7 ]*b7;
-	      c[10] += a[8 ]*b0 + a[9 ]*b1 + a[10]*b2 + a[11]*b3 + a[12]*b4 + a[13]*b5 + a[14]*b6 + a[15]*b7;
-	      c[18] += a[16]*b0 + a[17]*b1 + a[18]*b2 + a[19]*b3 + a[20]*b4 + a[21]*b5 + a[22]*b6 + a[23]*b7;
-	      c[26] += a[24]*b0 + a[25]*b1 + a[26]*b2 + a[27]*b3 + a[28]*b4 + a[29]*b5 + a[30]*b6 + a[31]*b7;
-	      c[34] += a[32]*b0 + a[33]*b1 + a[34]*b2 + a[35]*b3 + a[36]*b4 + a[37]*b5 + a[38]*b6 + a[39]*b7;
-	      c[42] += a[40]*b0 + a[41]*b1 + a[42]*b2 + a[43]*b3 + a[44]*b4 + a[45]*b5 + a[46]*b6 + a[47]*b7;
-	      c[50] += a[48]*b0 + a[49]*b1 + a[50]*b2 + a[51]*b3 + a[52]*b4 + a[53]*b5 + a[54]*b6 + a[55]*b7;
-	      c[58] += a[56]*b0 + a[57]*b1 + a[58]*b2 + a[59]*b3 + a[60]*b4 + a[61]*b5 + a[62]*b6 + a[63]*b7;
+              c[2]  += a[0 ]*b0 + a[1 ]*b1 + a[2 ]*b2 + a[3 ]*b3 + a[4 ]*b4 + a[5 ]*b5 + a[6 ]*b6 + a[7 ]*b7;
+              c[10] += a[8 ]*b0 + a[9 ]*b1 + a[10]*b2 + a[11]*b3 + a[12]*b4 + a[13]*b5 + a[14]*b6 + a[15]*b7;
+              c[18] += a[16]*b0 + a[17]*b1 + a[18]*b2 + a[19]*b3 + a[20]*b4 + a[21]*b5 + a[22]*b6 + a[23]*b7;
+              c[26] += a[24]*b0 + a[25]*b1 + a[26]*b2 + a[27]*b3 + a[28]*b4 + a[29]*b5 + a[30]*b6 + a[31]*b7;
+              c[34] += a[32]*b0 + a[33]*b1 + a[34]*b2 + a[35]*b3 + a[36]*b4 + a[37]*b5 + a[38]*b6 + a[39]*b7;
+              c[42] += a[40]*b0 + a[41]*b1 + a[42]*b2 + a[43]*b3 + a[44]*b4 + a[45]*b5 + a[46]*b6 + a[47]*b7;
+              c[50] += a[48]*b0 + a[49]*b1 + a[50]*b2 + a[51]*b3 + a[52]*b4 + a[53]*b5 + a[54]*b6 + a[55]*b7;
+              c[58] += a[56]*b0 + a[57]*b1 + a[58]*b2 + a[59]*b3 + a[60]*b4 + a[61]*b5 + a[62]*b6 + a[63]*b7;
 
-	      // four
+              // four
               b0 = b[3 ]; b1 = b[11]; b2 = b[19]; b3 = b[27]; b4 = b[35]; b5 = b[43];  b6 = b[51]; b7 = b[59];
-	      c[3]  += a[0 ]*b0 + a[1 ]*b1 + a[2 ]*b2 + a[3 ]*b3 + a[4 ]*b4 + a[5 ]*b5 + a[6 ]*b6 + a[7 ]*b7;
-	      c[11] += a[8 ]*b0 + a[9 ]*b1 + a[10]*b2 + a[11]*b3 + a[12]*b4 + a[13]*b5 + a[14]*b6 + a[15]*b7;
-	      c[19] += a[16]*b0 + a[17]*b1 + a[18]*b2 + a[19]*b3 + a[20]*b4 + a[21]*b5 + a[22]*b6 + a[23]*b7;
-	      c[27] += a[24]*b0 + a[25]*b1 + a[26]*b2 + a[27]*b3 + a[28]*b4 + a[29]*b5 + a[30]*b6 + a[31]*b7;
-	      c[35] += a[32]*b0 + a[33]*b1 + a[34]*b2 + a[35]*b3 + a[36]*b4 + a[37]*b5 + a[38]*b6 + a[39]*b7;
-	      c[43] += a[40]*b0 + a[41]*b1 + a[42]*b2 + a[43]*b3 + a[44]*b4 + a[45]*b5 + a[46]*b6 + a[47]*b7;
-	      c[51] += a[48]*b0 + a[49]*b1 + a[50]*b2 + a[51]*b3 + a[52]*b4 + a[53]*b5 + a[54]*b6 + a[55]*b7;
-	      c[59] += a[56]*b0 + a[57]*b1 + a[58]*b2 + a[59]*b3 + a[60]*b4 + a[61]*b5 + a[62]*b6 + a[63]*b7;
+              c[3]  += a[0 ]*b0 + a[1 ]*b1 + a[2 ]*b2 + a[3 ]*b3 + a[4 ]*b4 + a[5 ]*b5 + a[6 ]*b6 + a[7 ]*b7;
+              c[11] += a[8 ]*b0 + a[9 ]*b1 + a[10]*b2 + a[11]*b3 + a[12]*b4 + a[13]*b5 + a[14]*b6 + a[15]*b7;
+              c[19] += a[16]*b0 + a[17]*b1 + a[18]*b2 + a[19]*b3 + a[20]*b4 + a[21]*b5 + a[22]*b6 + a[23]*b7;
+              c[27] += a[24]*b0 + a[25]*b1 + a[26]*b2 + a[27]*b3 + a[28]*b4 + a[29]*b5 + a[30]*b6 + a[31]*b7;
+              c[35] += a[32]*b0 + a[33]*b1 + a[34]*b2 + a[35]*b3 + a[36]*b4 + a[37]*b5 + a[38]*b6 + a[39]*b7;
+              c[43] += a[40]*b0 + a[41]*b1 + a[42]*b2 + a[43]*b3 + a[44]*b4 + a[45]*b5 + a[46]*b6 + a[47]*b7;
+              c[51] += a[48]*b0 + a[49]*b1 + a[50]*b2 + a[51]*b3 + a[52]*b4 + a[53]*b5 + a[54]*b6 + a[55]*b7;
+              c[59] += a[56]*b0 + a[57]*b1 + a[58]*b2 + a[59]*b3 + a[60]*b4 + a[61]*b5 + a[62]*b6 + a[63]*b7;
 
-	      // five
+              // five
               b0 = b[4 ]; b1 = b[12]; b2 = b[20]; b3 = b[28]; b4 = b[36]; b5 = b[44];  b6 = b[52]; b7 = b[60];
-	      c[4]  += a[0 ]*b0 + a[1 ]*b1 + a[2 ]*b2 + a[3 ]*b3 + a[4 ]*b4 + a[5 ]*b5 + a[6 ]*b6 + a[7 ]*b7;
-	      c[12] += a[8 ]*b0 + a[9 ]*b1 + a[10]*b2 + a[11]*b3 + a[12]*b4 + a[13]*b5 + a[14]*b6 + a[15]*b7;
-	      c[20] += a[16]*b0 + a[17]*b1 + a[18]*b2 + a[19]*b3 + a[20]*b4 + a[21]*b5 + a[22]*b6 + a[23]*b7;
-	      c[28] += a[24]*b0 + a[25]*b1 + a[26]*b2 + a[27]*b3 + a[28]*b4 + a[29]*b5 + a[30]*b6 + a[31]*b7;
-	      c[36] += a[32]*b0 + a[33]*b1 + a[34]*b2 + a[35]*b3 + a[36]*b4 + a[37]*b5 + a[38]*b6 + a[39]*b7;
-	      c[44] += a[40]*b0 + a[41]*b1 + a[42]*b2 + a[43]*b3 + a[44]*b4 + a[45]*b5 + a[46]*b6 + a[47]*b7;
-	      c[52] += a[48]*b0 + a[49]*b1 + a[50]*b2 + a[51]*b3 + a[52]*b4 + a[53]*b5 + a[54]*b6 + a[55]*b7;
-	      c[60] += a[56]*b0 + a[57]*b1 + a[58]*b2 + a[59]*b3 + a[60]*b4 + a[61]*b5 + a[62]*b6 + a[63]*b7;
+              c[4]  += a[0 ]*b0 + a[1 ]*b1 + a[2 ]*b2 + a[3 ]*b3 + a[4 ]*b4 + a[5 ]*b5 + a[6 ]*b6 + a[7 ]*b7;
+              c[12] += a[8 ]*b0 + a[9 ]*b1 + a[10]*b2 + a[11]*b3 + a[12]*b4 + a[13]*b5 + a[14]*b6 + a[15]*b7;
+              c[20] += a[16]*b0 + a[17]*b1 + a[18]*b2 + a[19]*b3 + a[20]*b4 + a[21]*b5 + a[22]*b6 + a[23]*b7;
+              c[28] += a[24]*b0 + a[25]*b1 + a[26]*b2 + a[27]*b3 + a[28]*b4 + a[29]*b5 + a[30]*b6 + a[31]*b7;
+              c[36] += a[32]*b0 + a[33]*b1 + a[34]*b2 + a[35]*b3 + a[36]*b4 + a[37]*b5 + a[38]*b6 + a[39]*b7;
+              c[44] += a[40]*b0 + a[41]*b1 + a[42]*b2 + a[43]*b3 + a[44]*b4 + a[45]*b5 + a[46]*b6 + a[47]*b7;
+              c[52] += a[48]*b0 + a[49]*b1 + a[50]*b2 + a[51]*b3 + a[52]*b4 + a[53]*b5 + a[54]*b6 + a[55]*b7;
+              c[60] += a[56]*b0 + a[57]*b1 + a[58]*b2 + a[59]*b3 + a[60]*b4 + a[61]*b5 + a[62]*b6 + a[63]*b7;
 
-	      // sixth 
+              // sixth
               b0 = b[5 ]; b1 = b[13]; b2 = b[21]; b3 = b[29]; b4 = b[37]; b5 = b[45];  b6 = b[53]; b7 = b[61];
-	      c[5]  += a[0 ]*b0 + a[1 ]*b1 + a[2 ]*b2 + a[3 ]*b3 + a[4 ]*b4 + a[5 ]*b5 + a[6 ]*b6 + a[7 ]*b7;
-	      c[13] += a[8 ]*b0 + a[9 ]*b1 + a[10]*b2 + a[11]*b3 + a[12]*b4 + a[13]*b5 + a[14]*b6 + a[15]*b7;
-	      c[21] += a[16]*b0 + a[17]*b1 + a[18]*b2 + a[19]*b3 + a[20]*b4 + a[21]*b5 + a[22]*b6 + a[23]*b7;
-	      c[29] += a[24]*b0 + a[25]*b1 + a[26]*b2 + a[27]*b3 + a[28]*b4 + a[29]*b5 + a[30]*b6 + a[31]*b7;
-	      c[37] += a[32]*b0 + a[33]*b1 + a[34]*b2 + a[35]*b3 + a[36]*b4 + a[37]*b5 + a[38]*b6 + a[39]*b7;
-	      c[45] += a[40]*b0 + a[41]*b1 + a[42]*b2 + a[43]*b3 + a[44]*b4 + a[45]*b5 + a[46]*b6 + a[47]*b7;
-	      c[53] += a[48]*b0 + a[49]*b1 + a[50]*b2 + a[51]*b3 + a[52]*b4 + a[53]*b5 + a[54]*b6 + a[55]*b7;
-	      c[61] += a[56]*b0 + a[57]*b1 + a[58]*b2 + a[59]*b3 + a[60]*b4 + a[61]*b5 + a[62]*b6 + a[63]*b7;
+              c[5]  += a[0 ]*b0 + a[1 ]*b1 + a[2 ]*b2 + a[3 ]*b3 + a[4 ]*b4 + a[5 ]*b5 + a[6 ]*b6 + a[7 ]*b7;
+              c[13] += a[8 ]*b0 + a[9 ]*b1 + a[10]*b2 + a[11]*b3 + a[12]*b4 + a[13]*b5 + a[14]*b6 + a[15]*b7;
+              c[21] += a[16]*b0 + a[17]*b1 + a[18]*b2 + a[19]*b3 + a[20]*b4 + a[21]*b5 + a[22]*b6 + a[23]*b7;
+              c[29] += a[24]*b0 + a[25]*b1 + a[26]*b2 + a[27]*b3 + a[28]*b4 + a[29]*b5 + a[30]*b6 + a[31]*b7;
+              c[37] += a[32]*b0 + a[33]*b1 + a[34]*b2 + a[35]*b3 + a[36]*b4 + a[37]*b5 + a[38]*b6 + a[39]*b7;
+              c[45] += a[40]*b0 + a[41]*b1 + a[42]*b2 + a[43]*b3 + a[44]*b4 + a[45]*b5 + a[46]*b6 + a[47]*b7;
+              c[53] += a[48]*b0 + a[49]*b1 + a[50]*b2 + a[51]*b3 + a[52]*b4 + a[53]*b5 + a[54]*b6 + a[55]*b7;
+              c[61] += a[56]*b0 + a[57]*b1 + a[58]*b2 + a[59]*b3 + a[60]*b4 + a[61]*b5 + a[62]*b6 + a[63]*b7;
 
-	      // seventh
+              // seventh
               b0 = b[6 ]; b1 = b[14]; b2 = b[22]; b3 = b[30]; b4 = b[38]; b5 = b[46];  b6 = b[54]; b7 = b[62];
-	      c[6]  += a[0 ]*b0 + a[1 ]*b1 + a[2 ]*b2 + a[3 ]*b3 + a[4 ]*b4 + a[5 ]*b5 + a[6 ]*b6 + a[7 ]*b7;
-	      c[14] += a[8 ]*b0 + a[9 ]*b1 + a[10]*b2 + a[11]*b3 + a[12]*b4 + a[13]*b5 + a[14]*b6 + a[15]*b7;
-	      c[22] += a[16]*b0 + a[17]*b1 + a[18]*b2 + a[19]*b3 + a[20]*b4 + a[21]*b5 + a[22]*b6 + a[23]*b7;
-	      c[30] += a[24]*b0 + a[25]*b1 + a[26]*b2 + a[27]*b3 + a[28]*b4 + a[29]*b5 + a[30]*b6 + a[31]*b7;
-	      c[38] += a[32]*b0 + a[33]*b1 + a[34]*b2 + a[35]*b3 + a[36]*b4 + a[37]*b5 + a[38]*b6 + a[39]*b7;
-	      c[46] += a[40]*b0 + a[41]*b1 + a[42]*b2 + a[43]*b3 + a[44]*b4 + a[45]*b5 + a[46]*b6 + a[47]*b7;
-	      c[54] += a[48]*b0 + a[49]*b1 + a[50]*b2 + a[51]*b3 + a[52]*b4 + a[53]*b5 + a[54]*b6 + a[55]*b7;
-	      c[62] += a[56]*b0 + a[57]*b1 + a[58]*b2 + a[59]*b3 + a[60]*b4 + a[61]*b5 + a[62]*b6 + a[63]*b7;
+              c[6]  += a[0 ]*b0 + a[1 ]*b1 + a[2 ]*b2 + a[3 ]*b3 + a[4 ]*b4 + a[5 ]*b5 + a[6 ]*b6 + a[7 ]*b7;
+              c[14] += a[8 ]*b0 + a[9 ]*b1 + a[10]*b2 + a[11]*b3 + a[12]*b4 + a[13]*b5 + a[14]*b6 + a[15]*b7;
+              c[22] += a[16]*b0 + a[17]*b1 + a[18]*b2 + a[19]*b3 + a[20]*b4 + a[21]*b5 + a[22]*b6 + a[23]*b7;
+              c[30] += a[24]*b0 + a[25]*b1 + a[26]*b2 + a[27]*b3 + a[28]*b4 + a[29]*b5 + a[30]*b6 + a[31]*b7;
+              c[38] += a[32]*b0 + a[33]*b1 + a[34]*b2 + a[35]*b3 + a[36]*b4 + a[37]*b5 + a[38]*b6 + a[39]*b7;
+              c[46] += a[40]*b0 + a[41]*b1 + a[42]*b2 + a[43]*b3 + a[44]*b4 + a[45]*b5 + a[46]*b6 + a[47]*b7;
+              c[54] += a[48]*b0 + a[49]*b1 + a[50]*b2 + a[51]*b3 + a[52]*b4 + a[53]*b5 + a[54]*b6 + a[55]*b7;
+              c[62] += a[56]*b0 + a[57]*b1 + a[58]*b2 + a[59]*b3 + a[60]*b4 + a[61]*b5 + a[62]*b6 + a[63]*b7;
 
-	      // eight
+              // eight
               b0 = b[7 ]; b1 = b[15]; b2 = b[23]; b3 = b[31]; b4 = b[39]; b5 = b[47];  b6 = b[55]; b7 = b[63];
-	      c[7]  += a[0 ]*b0 + a[1 ]*b1 + a[2 ]*b2 + a[3 ]*b3 + a[4 ]*b4 + a[5 ]*b5 + a[6 ]*b6 + a[7 ]*b7;
-	      c[15] += a[8 ]*b0 + a[9 ]*b1 + a[10]*b2 + a[11]*b3 + a[12]*b4 + a[13]*b5 + a[14]*b6 + a[15]*b7;
-	      c[23] += a[16]*b0 + a[17]*b1 + a[18]*b2 + a[19]*b3 + a[20]*b4 + a[21]*b5 + a[22]*b6 + a[23]*b7;
-	      c[31] += a[24]*b0 + a[25]*b1 + a[26]*b2 + a[27]*b3 + a[28]*b4 + a[29]*b5 + a[30]*b6 + a[31]*b7;
-	      c[39] += a[32]*b0 + a[33]*b1 + a[34]*b2 + a[35]*b3 + a[36]*b4 + a[37]*b5 + a[38]*b6 + a[39]*b7;
-	      c[47] += a[40]*b0 + a[41]*b1 + a[42]*b2 + a[43]*b3 + a[44]*b4 + a[45]*b5 + a[46]*b6 + a[47]*b7;
-	      c[55] += a[48]*b0 + a[49]*b1 + a[50]*b2 + a[51]*b3 + a[52]*b4 + a[53]*b5 + a[54]*b6 + a[55]*b7;
-	      c[63] += a[56]*b0 + a[57]*b1 + a[58]*b2 + a[59]*b3 + a[60]*b4 + a[61]*b5 + a[62]*b6 + a[63]*b7;
+              c[7]  += a[0 ]*b0 + a[1 ]*b1 + a[2 ]*b2 + a[3 ]*b3 + a[4 ]*b4 + a[5 ]*b5 + a[6 ]*b6 + a[7 ]*b7;
+              c[15] += a[8 ]*b0 + a[9 ]*b1 + a[10]*b2 + a[11]*b3 + a[12]*b4 + a[13]*b5 + a[14]*b6 + a[15]*b7;
+              c[23] += a[16]*b0 + a[17]*b1 + a[18]*b2 + a[19]*b3 + a[20]*b4 + a[21]*b5 + a[22]*b6 + a[23]*b7;
+              c[31] += a[24]*b0 + a[25]*b1 + a[26]*b2 + a[27]*b3 + a[28]*b4 + a[29]*b5 + a[30]*b6 + a[31]*b7;
+              c[39] += a[32]*b0 + a[33]*b1 + a[34]*b2 + a[35]*b3 + a[36]*b4 + a[37]*b5 + a[38]*b6 + a[39]*b7;
+              c[47] += a[40]*b0 + a[41]*b1 + a[42]*b2 + a[43]*b3 + a[44]*b4 + a[45]*b5 + a[46]*b6 + a[47]*b7;
+              c[55] += a[48]*b0 + a[49]*b1 + a[50]*b2 + a[51]*b3 + a[52]*b4 + a[53]*b5 + a[54]*b6 + a[55]*b7;
+              c[63] += a[56]*b0 + a[57]*b1 + a[58]*b2 + a[59]*b3 + a[60]*b4 + a[61]*b5 + a[62]*b6 + a[63]*b7;
 
             }
             b += 64;
@@ -687,15 +687,15 @@ void * BCSRMatMatMultAdd8_thread( void * t ){
         for ( int jp = arowp[i]; jp < arowp[i+1]; jp++ ){
           int j = acols[jp];
           const TacsScalar * a = &A[64*jp];
-	
+
           int kp = browp[j];
           int kp_end = browp[j+1];
           const TacsScalar * b = &B[64*kp];
-	
+
           int cp = crowp[i];
           int cp_end = crowp[i+1];
           TacsScalar * c = &C[64*cp];
-	
+
           for ( ; kp < kp_end; kp++ ){
             while ((cp < cp_end) && (ccols[cp] < bcols[kp])){ cp++; c += 64; }
             if (cp >= cp_end){ break; }
@@ -704,93 +704,93 @@ void * BCSRMatMatMultAdd8_thread( void * t ){
               // Compute the matrix-matrix multiplication
               TacsScalar b0, b1, b2, b3, b4, b5, b6, b7;
 
-	      // first
+              // first
               b0 = b[0 ]; b1 = b[8 ]; b2 = b[16]; b3 = b[24]; b4 = b[32]; b5 = b[40];  b6 = b[48]; b7 = b[56];
-	      c[0]  -= a[0 ]*b0 + a[1 ]*b1 + a[2 ]*b2 + a[3 ]*b3 + a[4 ]*b4 + a[5 ]*b5 + a[6 ]*b6 + a[7 ]*b7;
-	      c[8]  -= a[8 ]*b0 + a[9 ]*b1 + a[10]*b2 + a[11]*b3 + a[12]*b4 + a[13]*b5 + a[14]*b6 + a[15]*b7;
-	      c[16] -= a[16]*b0 + a[17]*b1 + a[18]*b2 + a[19]*b3 + a[20]*b4 + a[21]*b5 + a[22]*b6 + a[23]*b7;
-	      c[24] -= a[24]*b0 + a[25]*b1 + a[26]*b2 + a[27]*b3 + a[28]*b4 + a[29]*b5 + a[30]*b6 + a[31]*b7;
-	      c[32] -= a[32]*b0 + a[33]*b1 + a[34]*b2 + a[35]*b3 + a[36]*b4 + a[37]*b5 + a[38]*b6 + a[39]*b7;
-	      c[40] -= a[40]*b0 + a[41]*b1 + a[42]*b2 + a[43]*b3 + a[44]*b4 + a[45]*b5 + a[46]*b6 + a[47]*b7;
-	      c[48] -= a[48]*b0 + a[49]*b1 + a[50]*b2 + a[51]*b3 + a[52]*b4 + a[53]*b5 + a[54]*b6 + a[55]*b7;
-	      c[56] -= a[56]*b0 + a[57]*b1 + a[58]*b2 + a[59]*b3 + a[60]*b4 + a[61]*b5 + a[62]*b6 + a[63]*b7;
+              c[0]  -= a[0 ]*b0 + a[1 ]*b1 + a[2 ]*b2 + a[3 ]*b3 + a[4 ]*b4 + a[5 ]*b5 + a[6 ]*b6 + a[7 ]*b7;
+              c[8]  -= a[8 ]*b0 + a[9 ]*b1 + a[10]*b2 + a[11]*b3 + a[12]*b4 + a[13]*b5 + a[14]*b6 + a[15]*b7;
+              c[16] -= a[16]*b0 + a[17]*b1 + a[18]*b2 + a[19]*b3 + a[20]*b4 + a[21]*b5 + a[22]*b6 + a[23]*b7;
+              c[24] -= a[24]*b0 + a[25]*b1 + a[26]*b2 + a[27]*b3 + a[28]*b4 + a[29]*b5 + a[30]*b6 + a[31]*b7;
+              c[32] -= a[32]*b0 + a[33]*b1 + a[34]*b2 + a[35]*b3 + a[36]*b4 + a[37]*b5 + a[38]*b6 + a[39]*b7;
+              c[40] -= a[40]*b0 + a[41]*b1 + a[42]*b2 + a[43]*b3 + a[44]*b4 + a[45]*b5 + a[46]*b6 + a[47]*b7;
+              c[48] -= a[48]*b0 + a[49]*b1 + a[50]*b2 + a[51]*b3 + a[52]*b4 + a[53]*b5 + a[54]*b6 + a[55]*b7;
+              c[56] -= a[56]*b0 + a[57]*b1 + a[58]*b2 + a[59]*b3 + a[60]*b4 + a[61]*b5 + a[62]*b6 + a[63]*b7;
 
-	      // second	      
+              // second
               b0 = b[1 ]; b1 = b[9 ]; b2 = b[17]; b3 = b[25]; b4 = b[33]; b5 = b[41];  b6 = b[49]; b7 = b[57];
-	      c[1]  -= a[0 ]*b0 + a[1 ]*b1 + a[2 ]*b2 + a[3 ]*b3 + a[4 ]*b4 + a[5 ]*b5 + a[6 ]*b6 + a[7 ]*b7;
-	      c[9]  -= a[8 ]*b0 + a[9 ]*b1 + a[10]*b2 + a[11]*b3 + a[12]*b4 + a[13]*b5 + a[14]*b6 + a[15]*b7;
-	      c[17] -= a[16]*b0 + a[17]*b1 + a[18]*b2 + a[19]*b3 + a[20]*b4 + a[21]*b5 + a[22]*b6 + a[23]*b7;
-	      c[25] -= a[24]*b0 + a[25]*b1 + a[26]*b2 + a[27]*b3 + a[28]*b4 + a[29]*b5 + a[30]*b6 + a[31]*b7;
-	      c[33] -= a[32]*b0 + a[33]*b1 + a[34]*b2 + a[35]*b3 + a[36]*b4 + a[37]*b5 + a[38]*b6 + a[39]*b7;
-	      c[41] -= a[40]*b0 + a[41]*b1 + a[42]*b2 + a[43]*b3 + a[44]*b4 + a[45]*b5 + a[46]*b6 + a[47]*b7;
-	      c[49] -= a[48]*b0 + a[49]*b1 + a[50]*b2 + a[51]*b3 + a[52]*b4 + a[53]*b5 + a[54]*b6 + a[55]*b7;
-	      c[57] -= a[56]*b0 + a[57]*b1 + a[58]*b2 + a[59]*b3 + a[60]*b4 + a[61]*b5 + a[62]*b6 + a[63]*b7;
+              c[1]  -= a[0 ]*b0 + a[1 ]*b1 + a[2 ]*b2 + a[3 ]*b3 + a[4 ]*b4 + a[5 ]*b5 + a[6 ]*b6 + a[7 ]*b7;
+              c[9]  -= a[8 ]*b0 + a[9 ]*b1 + a[10]*b2 + a[11]*b3 + a[12]*b4 + a[13]*b5 + a[14]*b6 + a[15]*b7;
+              c[17] -= a[16]*b0 + a[17]*b1 + a[18]*b2 + a[19]*b3 + a[20]*b4 + a[21]*b5 + a[22]*b6 + a[23]*b7;
+              c[25] -= a[24]*b0 + a[25]*b1 + a[26]*b2 + a[27]*b3 + a[28]*b4 + a[29]*b5 + a[30]*b6 + a[31]*b7;
+              c[33] -= a[32]*b0 + a[33]*b1 + a[34]*b2 + a[35]*b3 + a[36]*b4 + a[37]*b5 + a[38]*b6 + a[39]*b7;
+              c[41] -= a[40]*b0 + a[41]*b1 + a[42]*b2 + a[43]*b3 + a[44]*b4 + a[45]*b5 + a[46]*b6 + a[47]*b7;
+              c[49] -= a[48]*b0 + a[49]*b1 + a[50]*b2 + a[51]*b3 + a[52]*b4 + a[53]*b5 + a[54]*b6 + a[55]*b7;
+              c[57] -= a[56]*b0 + a[57]*b1 + a[58]*b2 + a[59]*b3 + a[60]*b4 + a[61]*b5 + a[62]*b6 + a[63]*b7;
 
-	      // third
+              // third
               b0 = b[2 ]; b1 = b[10]; b2 = b[18]; b3 = b[26]; b4 = b[34]; b5 = b[42];  b6 = b[50]; b7 = b[58];
-	      c[2]  -= a[0 ]*b0 + a[1 ]*b1 + a[2 ]*b2 + a[3 ]*b3 + a[4 ]*b4 + a[5 ]*b5 + a[6 ]*b6 + a[7 ]*b7;
-	      c[10] -= a[8 ]*b0 + a[9 ]*b1 + a[10]*b2 + a[11]*b3 + a[12]*b4 + a[13]*b5 + a[14]*b6 + a[15]*b7;
-	      c[18] -= a[16]*b0 + a[17]*b1 + a[18]*b2 + a[19]*b3 + a[20]*b4 + a[21]*b5 + a[22]*b6 + a[23]*b7;
-	      c[26] -= a[24]*b0 + a[25]*b1 + a[26]*b2 + a[27]*b3 + a[28]*b4 + a[29]*b5 + a[30]*b6 + a[31]*b7;
-	      c[34] -= a[32]*b0 + a[33]*b1 + a[34]*b2 + a[35]*b3 + a[36]*b4 + a[37]*b5 + a[38]*b6 + a[39]*b7;
-	      c[42] -= a[40]*b0 + a[41]*b1 + a[42]*b2 + a[43]*b3 + a[44]*b4 + a[45]*b5 + a[46]*b6 + a[47]*b7;
-	      c[50] -= a[48]*b0 + a[49]*b1 + a[50]*b2 + a[51]*b3 + a[52]*b4 + a[53]*b5 + a[54]*b6 + a[55]*b7;
-	      c[58] -= a[56]*b0 + a[57]*b1 + a[58]*b2 + a[59]*b3 + a[60]*b4 + a[61]*b5 + a[62]*b6 + a[63]*b7;
+              c[2]  -= a[0 ]*b0 + a[1 ]*b1 + a[2 ]*b2 + a[3 ]*b3 + a[4 ]*b4 + a[5 ]*b5 + a[6 ]*b6 + a[7 ]*b7;
+              c[10] -= a[8 ]*b0 + a[9 ]*b1 + a[10]*b2 + a[11]*b3 + a[12]*b4 + a[13]*b5 + a[14]*b6 + a[15]*b7;
+              c[18] -= a[16]*b0 + a[17]*b1 + a[18]*b2 + a[19]*b3 + a[20]*b4 + a[21]*b5 + a[22]*b6 + a[23]*b7;
+              c[26] -= a[24]*b0 + a[25]*b1 + a[26]*b2 + a[27]*b3 + a[28]*b4 + a[29]*b5 + a[30]*b6 + a[31]*b7;
+              c[34] -= a[32]*b0 + a[33]*b1 + a[34]*b2 + a[35]*b3 + a[36]*b4 + a[37]*b5 + a[38]*b6 + a[39]*b7;
+              c[42] -= a[40]*b0 + a[41]*b1 + a[42]*b2 + a[43]*b3 + a[44]*b4 + a[45]*b5 + a[46]*b6 + a[47]*b7;
+              c[50] -= a[48]*b0 + a[49]*b1 + a[50]*b2 + a[51]*b3 + a[52]*b4 + a[53]*b5 + a[54]*b6 + a[55]*b7;
+              c[58] -= a[56]*b0 + a[57]*b1 + a[58]*b2 + a[59]*b3 + a[60]*b4 + a[61]*b5 + a[62]*b6 + a[63]*b7;
 
-	      // four
+              // four
               b0 = b[3 ]; b1 = b[11]; b2 = b[19]; b3 = b[27]; b4 = b[35]; b5 = b[43];  b6 = b[51]; b7 = b[59];
-	      c[3]  -= a[0 ]*b0 + a[1 ]*b1 + a[2 ]*b2 + a[3 ]*b3 + a[4 ]*b4 + a[5 ]*b5 + a[6 ]*b6 + a[7 ]*b7;
-	      c[11] -= a[8 ]*b0 + a[9 ]*b1 + a[10]*b2 + a[11]*b3 + a[12]*b4 + a[13]*b5 + a[14]*b6 + a[15]*b7;
-	      c[19] -= a[16]*b0 + a[17]*b1 + a[18]*b2 + a[19]*b3 + a[20]*b4 + a[21]*b5 + a[22]*b6 + a[23]*b7;
-	      c[27] -= a[24]*b0 + a[25]*b1 + a[26]*b2 + a[27]*b3 + a[28]*b4 + a[29]*b5 + a[30]*b6 + a[31]*b7;
-	      c[35] -= a[32]*b0 + a[33]*b1 + a[34]*b2 + a[35]*b3 + a[36]*b4 + a[37]*b5 + a[38]*b6 + a[39]*b7;
-	      c[43] -= a[40]*b0 + a[41]*b1 + a[42]*b2 + a[43]*b3 + a[44]*b4 + a[45]*b5 + a[46]*b6 + a[47]*b7;
-	      c[51] -= a[48]*b0 + a[49]*b1 + a[50]*b2 + a[51]*b3 + a[52]*b4 + a[53]*b5 + a[54]*b6 + a[55]*b7;
-	      c[59] -= a[56]*b0 + a[57]*b1 + a[58]*b2 + a[59]*b3 + a[60]*b4 + a[61]*b5 + a[62]*b6 + a[63]*b7;
+              c[3]  -= a[0 ]*b0 + a[1 ]*b1 + a[2 ]*b2 + a[3 ]*b3 + a[4 ]*b4 + a[5 ]*b5 + a[6 ]*b6 + a[7 ]*b7;
+              c[11] -= a[8 ]*b0 + a[9 ]*b1 + a[10]*b2 + a[11]*b3 + a[12]*b4 + a[13]*b5 + a[14]*b6 + a[15]*b7;
+              c[19] -= a[16]*b0 + a[17]*b1 + a[18]*b2 + a[19]*b3 + a[20]*b4 + a[21]*b5 + a[22]*b6 + a[23]*b7;
+              c[27] -= a[24]*b0 + a[25]*b1 + a[26]*b2 + a[27]*b3 + a[28]*b4 + a[29]*b5 + a[30]*b6 + a[31]*b7;
+              c[35] -= a[32]*b0 + a[33]*b1 + a[34]*b2 + a[35]*b3 + a[36]*b4 + a[37]*b5 + a[38]*b6 + a[39]*b7;
+              c[43] -= a[40]*b0 + a[41]*b1 + a[42]*b2 + a[43]*b3 + a[44]*b4 + a[45]*b5 + a[46]*b6 + a[47]*b7;
+              c[51] -= a[48]*b0 + a[49]*b1 + a[50]*b2 + a[51]*b3 + a[52]*b4 + a[53]*b5 + a[54]*b6 + a[55]*b7;
+              c[59] -= a[56]*b0 + a[57]*b1 + a[58]*b2 + a[59]*b3 + a[60]*b4 + a[61]*b5 + a[62]*b6 + a[63]*b7;
 
-	      // five
+              // five
               b0 = b[4 ]; b1 = b[12]; b2 = b[20]; b3 = b[28]; b4 = b[36]; b5 = b[44];  b6 = b[52]; b7 = b[60];
-	      c[4]  -= a[0 ]*b0 + a[1 ]*b1 + a[2 ]*b2 + a[3 ]*b3 + a[4 ]*b4 + a[5 ]*b5 + a[6 ]*b6 + a[7 ]*b7;
-	      c[12] -= a[8 ]*b0 + a[9 ]*b1 + a[10]*b2 + a[11]*b3 + a[12]*b4 + a[13]*b5 + a[14]*b6 + a[15]*b7;
-	      c[20] -= a[16]*b0 + a[17]*b1 + a[18]*b2 + a[19]*b3 + a[20]*b4 + a[21]*b5 + a[22]*b6 + a[23]*b7;
-	      c[28] -= a[24]*b0 + a[25]*b1 + a[26]*b2 + a[27]*b3 + a[28]*b4 + a[29]*b5 + a[30]*b6 + a[31]*b7;
-	      c[36] -= a[32]*b0 + a[33]*b1 + a[34]*b2 + a[35]*b3 + a[36]*b4 + a[37]*b5 + a[38]*b6 + a[39]*b7;
-	      c[44] -= a[40]*b0 + a[41]*b1 + a[42]*b2 + a[43]*b3 + a[44]*b4 + a[45]*b5 + a[46]*b6 + a[47]*b7;
-	      c[52] -= a[48]*b0 + a[49]*b1 + a[50]*b2 + a[51]*b3 + a[52]*b4 + a[53]*b5 + a[54]*b6 + a[55]*b7;
-	      c[60] -= a[56]*b0 + a[57]*b1 + a[58]*b2 + a[59]*b3 + a[60]*b4 + a[61]*b5 + a[62]*b6 + a[63]*b7;
+              c[4]  -= a[0 ]*b0 + a[1 ]*b1 + a[2 ]*b2 + a[3 ]*b3 + a[4 ]*b4 + a[5 ]*b5 + a[6 ]*b6 + a[7 ]*b7;
+              c[12] -= a[8 ]*b0 + a[9 ]*b1 + a[10]*b2 + a[11]*b3 + a[12]*b4 + a[13]*b5 + a[14]*b6 + a[15]*b7;
+              c[20] -= a[16]*b0 + a[17]*b1 + a[18]*b2 + a[19]*b3 + a[20]*b4 + a[21]*b5 + a[22]*b6 + a[23]*b7;
+              c[28] -= a[24]*b0 + a[25]*b1 + a[26]*b2 + a[27]*b3 + a[28]*b4 + a[29]*b5 + a[30]*b6 + a[31]*b7;
+              c[36] -= a[32]*b0 + a[33]*b1 + a[34]*b2 + a[35]*b3 + a[36]*b4 + a[37]*b5 + a[38]*b6 + a[39]*b7;
+              c[44] -= a[40]*b0 + a[41]*b1 + a[42]*b2 + a[43]*b3 + a[44]*b4 + a[45]*b5 + a[46]*b6 + a[47]*b7;
+              c[52] -= a[48]*b0 + a[49]*b1 + a[50]*b2 + a[51]*b3 + a[52]*b4 + a[53]*b5 + a[54]*b6 + a[55]*b7;
+              c[60] -= a[56]*b0 + a[57]*b1 + a[58]*b2 + a[59]*b3 + a[60]*b4 + a[61]*b5 + a[62]*b6 + a[63]*b7;
 
-	      // sixth 
+              // sixth
               b0 = b[5 ]; b1 = b[13]; b2 = b[21]; b3 = b[29]; b4 = b[37]; b5 = b[45];  b6 = b[53]; b7 = b[61];
-	      c[5]  -= a[0 ]*b0 + a[1 ]*b1 + a[2 ]*b2 + a[3 ]*b3 + a[4 ]*b4 + a[5 ]*b5 + a[6 ]*b6 + a[7 ]*b7;
-	      c[13] -= a[8 ]*b0 + a[9 ]*b1 + a[10]*b2 + a[11]*b3 + a[12]*b4 + a[13]*b5 + a[14]*b6 + a[15]*b7;
-	      c[21] -= a[16]*b0 + a[17]*b1 + a[18]*b2 + a[19]*b3 + a[20]*b4 + a[21]*b5 + a[22]*b6 + a[23]*b7;
-	      c[29] -= a[24]*b0 + a[25]*b1 + a[26]*b2 + a[27]*b3 + a[28]*b4 + a[29]*b5 + a[30]*b6 + a[31]*b7;
-	      c[37] -= a[32]*b0 + a[33]*b1 + a[34]*b2 + a[35]*b3 + a[36]*b4 + a[37]*b5 + a[38]*b6 + a[39]*b7;
-	      c[45] -= a[40]*b0 + a[41]*b1 + a[42]*b2 + a[43]*b3 + a[44]*b4 + a[45]*b5 + a[46]*b6 + a[47]*b7;
-	      c[53] -= a[48]*b0 + a[49]*b1 + a[50]*b2 + a[51]*b3 + a[52]*b4 + a[53]*b5 + a[54]*b6 + a[55]*b7;
-	      c[61] -= a[56]*b0 + a[57]*b1 + a[58]*b2 + a[59]*b3 + a[60]*b4 + a[61]*b5 + a[62]*b6 + a[63]*b7;
+              c[5]  -= a[0 ]*b0 + a[1 ]*b1 + a[2 ]*b2 + a[3 ]*b3 + a[4 ]*b4 + a[5 ]*b5 + a[6 ]*b6 + a[7 ]*b7;
+              c[13] -= a[8 ]*b0 + a[9 ]*b1 + a[10]*b2 + a[11]*b3 + a[12]*b4 + a[13]*b5 + a[14]*b6 + a[15]*b7;
+              c[21] -= a[16]*b0 + a[17]*b1 + a[18]*b2 + a[19]*b3 + a[20]*b4 + a[21]*b5 + a[22]*b6 + a[23]*b7;
+              c[29] -= a[24]*b0 + a[25]*b1 + a[26]*b2 + a[27]*b3 + a[28]*b4 + a[29]*b5 + a[30]*b6 + a[31]*b7;
+              c[37] -= a[32]*b0 + a[33]*b1 + a[34]*b2 + a[35]*b3 + a[36]*b4 + a[37]*b5 + a[38]*b6 + a[39]*b7;
+              c[45] -= a[40]*b0 + a[41]*b1 + a[42]*b2 + a[43]*b3 + a[44]*b4 + a[45]*b5 + a[46]*b6 + a[47]*b7;
+              c[53] -= a[48]*b0 + a[49]*b1 + a[50]*b2 + a[51]*b3 + a[52]*b4 + a[53]*b5 + a[54]*b6 + a[55]*b7;
+              c[61] -= a[56]*b0 + a[57]*b1 + a[58]*b2 + a[59]*b3 + a[60]*b4 + a[61]*b5 + a[62]*b6 + a[63]*b7;
 
-	      // seventh
+              // seventh
               b0 = b[6 ]; b1 = b[14]; b2 = b[22]; b3 = b[30]; b4 = b[38]; b5 = b[46];  b6 = b[54]; b7 = b[62];
-	      c[6]  -= a[0 ]*b0 + a[1 ]*b1 + a[2 ]*b2 + a[3 ]*b3 + a[4 ]*b4 + a[5 ]*b5 + a[6 ]*b6 + a[7 ]*b7;
-	      c[14] -= a[8 ]*b0 + a[9 ]*b1 + a[10]*b2 + a[11]*b3 + a[12]*b4 + a[13]*b5 + a[14]*b6 + a[15]*b7;
-	      c[22] -= a[16]*b0 + a[17]*b1 + a[18]*b2 + a[19]*b3 + a[20]*b4 + a[21]*b5 + a[22]*b6 + a[23]*b7;
-	      c[30] -= a[24]*b0 + a[25]*b1 + a[26]*b2 + a[27]*b3 + a[28]*b4 + a[29]*b5 + a[30]*b6 + a[31]*b7;
-	      c[38] -= a[32]*b0 + a[33]*b1 + a[34]*b2 + a[35]*b3 + a[36]*b4 + a[37]*b5 + a[38]*b6 + a[39]*b7;
-	      c[46] -= a[40]*b0 + a[41]*b1 + a[42]*b2 + a[43]*b3 + a[44]*b4 + a[45]*b5 + a[46]*b6 + a[47]*b7;
-	      c[54] -= a[48]*b0 + a[49]*b1 + a[50]*b2 + a[51]*b3 + a[52]*b4 + a[53]*b5 + a[54]*b6 + a[55]*b7;
-	      c[62] -= a[56]*b0 + a[57]*b1 + a[58]*b2 + a[59]*b3 + a[60]*b4 + a[61]*b5 + a[62]*b6 + a[63]*b7;
+              c[6]  -= a[0 ]*b0 + a[1 ]*b1 + a[2 ]*b2 + a[3 ]*b3 + a[4 ]*b4 + a[5 ]*b5 + a[6 ]*b6 + a[7 ]*b7;
+              c[14] -= a[8 ]*b0 + a[9 ]*b1 + a[10]*b2 + a[11]*b3 + a[12]*b4 + a[13]*b5 + a[14]*b6 + a[15]*b7;
+              c[22] -= a[16]*b0 + a[17]*b1 + a[18]*b2 + a[19]*b3 + a[20]*b4 + a[21]*b5 + a[22]*b6 + a[23]*b7;
+              c[30] -= a[24]*b0 + a[25]*b1 + a[26]*b2 + a[27]*b3 + a[28]*b4 + a[29]*b5 + a[30]*b6 + a[31]*b7;
+              c[38] -= a[32]*b0 + a[33]*b1 + a[34]*b2 + a[35]*b3 + a[36]*b4 + a[37]*b5 + a[38]*b6 + a[39]*b7;
+              c[46] -= a[40]*b0 + a[41]*b1 + a[42]*b2 + a[43]*b3 + a[44]*b4 + a[45]*b5 + a[46]*b6 + a[47]*b7;
+              c[54] -= a[48]*b0 + a[49]*b1 + a[50]*b2 + a[51]*b3 + a[52]*b4 + a[53]*b5 + a[54]*b6 + a[55]*b7;
+              c[62] -= a[56]*b0 + a[57]*b1 + a[58]*b2 + a[59]*b3 + a[60]*b4 + a[61]*b5 + a[62]*b6 + a[63]*b7;
 
-	      // eight
+              // eight
               b0 = b[7 ]; b1 = b[15]; b2 = b[23]; b3 = b[31]; b4 = b[39]; b5 = b[47];  b6 = b[55]; b7 = b[63];
-	      c[7]  -= a[0 ]*b0 + a[1 ]*b1 + a[2 ]*b2 + a[3 ]*b3 + a[4 ]*b4 + a[5 ]*b5 + a[6 ]*b6 + a[7 ]*b7;
-	      c[15] -= a[8 ]*b0 + a[9 ]*b1 + a[10]*b2 + a[11]*b3 + a[12]*b4 + a[13]*b5 + a[14]*b6 + a[15]*b7;
-	      c[23] -= a[16]*b0 + a[17]*b1 + a[18]*b2 + a[19]*b3 + a[20]*b4 + a[21]*b5 + a[22]*b6 + a[23]*b7;
-	      c[31] -= a[24]*b0 + a[25]*b1 + a[26]*b2 + a[27]*b3 + a[28]*b4 + a[29]*b5 + a[30]*b6 + a[31]*b7;
-	      c[39] -= a[32]*b0 + a[33]*b1 + a[34]*b2 + a[35]*b3 + a[36]*b4 + a[37]*b5 + a[38]*b6 + a[39]*b7;
-	      c[47] -= a[40]*b0 + a[41]*b1 + a[42]*b2 + a[43]*b3 + a[44]*b4 + a[45]*b5 + a[46]*b6 + a[47]*b7;
-	      c[55] -= a[48]*b0 + a[49]*b1 + a[50]*b2 + a[51]*b3 + a[52]*b4 + a[53]*b5 + a[54]*b6 + a[55]*b7;
-	      c[63] -= a[56]*b0 + a[57]*b1 + a[58]*b2 + a[59]*b3 + a[60]*b4 + a[61]*b5 + a[62]*b6 + a[63]*b7;
+              c[7]  -= a[0 ]*b0 + a[1 ]*b1 + a[2 ]*b2 + a[3 ]*b3 + a[4 ]*b4 + a[5 ]*b5 + a[6 ]*b6 + a[7 ]*b7;
+              c[15] -= a[8 ]*b0 + a[9 ]*b1 + a[10]*b2 + a[11]*b3 + a[12]*b4 + a[13]*b5 + a[14]*b6 + a[15]*b7;
+              c[23] -= a[16]*b0 + a[17]*b1 + a[18]*b2 + a[19]*b3 + a[20]*b4 + a[21]*b5 + a[22]*b6 + a[23]*b7;
+              c[31] -= a[24]*b0 + a[25]*b1 + a[26]*b2 + a[27]*b3 + a[28]*b4 + a[29]*b5 + a[30]*b6 + a[31]*b7;
+              c[39] -= a[32]*b0 + a[33]*b1 + a[34]*b2 + a[35]*b3 + a[36]*b4 + a[37]*b5 + a[38]*b6 + a[39]*b7;
+              c[47] -= a[40]*b0 + a[41]*b1 + a[42]*b2 + a[43]*b3 + a[44]*b4 + a[45]*b5 + a[46]*b6 + a[47]*b7;
+              c[55] -= a[48]*b0 + a[49]*b1 + a[50]*b2 + a[51]*b3 + a[52]*b4 + a[53]*b5 + a[54]*b6 + a[55]*b7;
+              c[63] -= a[56]*b0 + a[57]*b1 + a[58]*b2 + a[59]*b3 + a[60]*b4 + a[61]*b5 + a[62]*b6 + a[63]*b7;
             }
 
             b += 64;
@@ -804,15 +804,15 @@ void * BCSRMatMatMultAdd8_thread( void * t ){
         for ( int jp = arowp[i]; jp < arowp[i+1]; jp++ ){
           int j = acols[jp];
           const TacsScalar * a = &A[36*jp];
-	
+
           int kp = browp[j];
           int kp_end = browp[j+1];
           const TacsScalar * b = &B[36*kp];
-	
+
           int cp = crowp[i];
           int cp_end = crowp[i+1];
           TacsScalar * c = &C[36*cp];
-	
+
           for ( ; kp < kp_end; kp++ ){
             while ((cp < cp_end) && (ccols[cp] < bcols[kp])){ cp++; c += 36; }
             if (cp >= cp_end){ break; }
@@ -821,93 +821,93 @@ void * BCSRMatMatMultAdd8_thread( void * t ){
               // Compute the matrix-matrix multiplication
               TacsScalar b0, b1, b2, b3, b4, b5, b6, b7;
 
-	      // first
+              // first
               b0 = b[0 ]; b1 = b[8 ]; b2 = b[16]; b3 = b[24]; b4 = b[32]; b5 = b[40];  b6 = b[48]; b7 = b[56];
-	      c[0]  += a[0 ]*b0 + a[1 ]*b1 + a[2 ]*b2 + a[3 ]*b3 + a[4 ]*b4 + a[5 ]*b5 + a[6 ]*b6 + a[7 ]*b7;
-	      c[8]  += a[8 ]*b0 + a[9 ]*b1 + a[10]*b2 + a[11]*b3 + a[12]*b4 + a[13]*b5 + a[14]*b6 + a[15]*b7;
-	      c[16] += a[16]*b0 + a[17]*b1 + a[18]*b2 + a[19]*b3 + a[20]*b4 + a[21]*b5 + a[22]*b6 + a[23]*b7;
-	      c[24] += a[24]*b0 + a[25]*b1 + a[26]*b2 + a[27]*b3 + a[28]*b4 + a[29]*b5 + a[30]*b6 + a[31]*b7;
-	      c[32] += a[32]*b0 + a[33]*b1 + a[34]*b2 + a[35]*b3 + a[36]*b4 + a[37]*b5 + a[38]*b6 + a[39]*b7;
-	      c[40] += a[40]*b0 + a[41]*b1 + a[42]*b2 + a[43]*b3 + a[44]*b4 + a[45]*b5 + a[46]*b6 + a[47]*b7;
-	      c[48] += a[48]*b0 + a[49]*b1 + a[50]*b2 + a[51]*b3 + a[52]*b4 + a[53]*b5 + a[54]*b6 + a[55]*b7;
-	      c[56] += a[56]*b0 + a[57]*b1 + a[58]*b2 + a[59]*b3 + a[60]*b4 + a[61]*b5 + a[62]*b6 + a[63]*b7;
+              c[0]  += a[0 ]*b0 + a[1 ]*b1 + a[2 ]*b2 + a[3 ]*b3 + a[4 ]*b4 + a[5 ]*b5 + a[6 ]*b6 + a[7 ]*b7;
+              c[8]  += a[8 ]*b0 + a[9 ]*b1 + a[10]*b2 + a[11]*b3 + a[12]*b4 + a[13]*b5 + a[14]*b6 + a[15]*b7;
+              c[16] += a[16]*b0 + a[17]*b1 + a[18]*b2 + a[19]*b3 + a[20]*b4 + a[21]*b5 + a[22]*b6 + a[23]*b7;
+              c[24] += a[24]*b0 + a[25]*b1 + a[26]*b2 + a[27]*b3 + a[28]*b4 + a[29]*b5 + a[30]*b6 + a[31]*b7;
+              c[32] += a[32]*b0 + a[33]*b1 + a[34]*b2 + a[35]*b3 + a[36]*b4 + a[37]*b5 + a[38]*b6 + a[39]*b7;
+              c[40] += a[40]*b0 + a[41]*b1 + a[42]*b2 + a[43]*b3 + a[44]*b4 + a[45]*b5 + a[46]*b6 + a[47]*b7;
+              c[48] += a[48]*b0 + a[49]*b1 + a[50]*b2 + a[51]*b3 + a[52]*b4 + a[53]*b5 + a[54]*b6 + a[55]*b7;
+              c[56] += a[56]*b0 + a[57]*b1 + a[58]*b2 + a[59]*b3 + a[60]*b4 + a[61]*b5 + a[62]*b6 + a[63]*b7;
 
-	      // second	      
+              // second
               b0 = b[1 ]; b1 = b[9 ]; b2 = b[17]; b3 = b[25]; b4 = b[33]; b5 = b[41];  b6 = b[49]; b7 = b[57];
-	      c[1]  += a[0 ]*b0 + a[1 ]*b1 + a[2 ]*b2 + a[3 ]*b3 + a[4 ]*b4 + a[5 ]*b5 + a[6 ]*b6 + a[7 ]*b7;
-	      c[9]  += a[8 ]*b0 + a[9 ]*b1 + a[10]*b2 + a[11]*b3 + a[12]*b4 + a[13]*b5 + a[14]*b6 + a[15]*b7;
-	      c[17] += a[16]*b0 + a[17]*b1 + a[18]*b2 + a[19]*b3 + a[20]*b4 + a[21]*b5 + a[22]*b6 + a[23]*b7;
-	      c[25] += a[24]*b0 + a[25]*b1 + a[26]*b2 + a[27]*b3 + a[28]*b4 + a[29]*b5 + a[30]*b6 + a[31]*b7;
-	      c[33] += a[32]*b0 + a[33]*b1 + a[34]*b2 + a[35]*b3 + a[36]*b4 + a[37]*b5 + a[38]*b6 + a[39]*b7;
-	      c[41] += a[40]*b0 + a[41]*b1 + a[42]*b2 + a[43]*b3 + a[44]*b4 + a[45]*b5 + a[46]*b6 + a[47]*b7;
-	      c[49] += a[48]*b0 + a[49]*b1 + a[50]*b2 + a[51]*b3 + a[52]*b4 + a[53]*b5 + a[54]*b6 + a[55]*b7;
-	      c[57] += a[56]*b0 + a[57]*b1 + a[58]*b2 + a[59]*b3 + a[60]*b4 + a[61]*b5 + a[62]*b6 + a[63]*b7;
+              c[1]  += a[0 ]*b0 + a[1 ]*b1 + a[2 ]*b2 + a[3 ]*b3 + a[4 ]*b4 + a[5 ]*b5 + a[6 ]*b6 + a[7 ]*b7;
+              c[9]  += a[8 ]*b0 + a[9 ]*b1 + a[10]*b2 + a[11]*b3 + a[12]*b4 + a[13]*b5 + a[14]*b6 + a[15]*b7;
+              c[17] += a[16]*b0 + a[17]*b1 + a[18]*b2 + a[19]*b3 + a[20]*b4 + a[21]*b5 + a[22]*b6 + a[23]*b7;
+              c[25] += a[24]*b0 + a[25]*b1 + a[26]*b2 + a[27]*b3 + a[28]*b4 + a[29]*b5 + a[30]*b6 + a[31]*b7;
+              c[33] += a[32]*b0 + a[33]*b1 + a[34]*b2 + a[35]*b3 + a[36]*b4 + a[37]*b5 + a[38]*b6 + a[39]*b7;
+              c[41] += a[40]*b0 + a[41]*b1 + a[42]*b2 + a[43]*b3 + a[44]*b4 + a[45]*b5 + a[46]*b6 + a[47]*b7;
+              c[49] += a[48]*b0 + a[49]*b1 + a[50]*b2 + a[51]*b3 + a[52]*b4 + a[53]*b5 + a[54]*b6 + a[55]*b7;
+              c[57] += a[56]*b0 + a[57]*b1 + a[58]*b2 + a[59]*b3 + a[60]*b4 + a[61]*b5 + a[62]*b6 + a[63]*b7;
 
-	      // third
+              // third
               b0 = b[2 ]; b1 = b[10]; b2 = b[18]; b3 = b[26]; b4 = b[34]; b5 = b[42];  b6 = b[50]; b7 = b[58];
-	      c[2]  += a[0 ]*b0 + a[1 ]*b1 + a[2 ]*b2 + a[3 ]*b3 + a[4 ]*b4 + a[5 ]*b5 + a[6 ]*b6 + a[7 ]*b7;
-	      c[10] += a[8 ]*b0 + a[9 ]*b1 + a[10]*b2 + a[11]*b3 + a[12]*b4 + a[13]*b5 + a[14]*b6 + a[15]*b7;
-	      c[18] += a[16]*b0 + a[17]*b1 + a[18]*b2 + a[19]*b3 + a[20]*b4 + a[21]*b5 + a[22]*b6 + a[23]*b7;
-	      c[26] += a[24]*b0 + a[25]*b1 + a[26]*b2 + a[27]*b3 + a[28]*b4 + a[29]*b5 + a[30]*b6 + a[31]*b7;
-	      c[34] += a[32]*b0 + a[33]*b1 + a[34]*b2 + a[35]*b3 + a[36]*b4 + a[37]*b5 + a[38]*b6 + a[39]*b7;
-	      c[42] += a[40]*b0 + a[41]*b1 + a[42]*b2 + a[43]*b3 + a[44]*b4 + a[45]*b5 + a[46]*b6 + a[47]*b7;
-	      c[50] += a[48]*b0 + a[49]*b1 + a[50]*b2 + a[51]*b3 + a[52]*b4 + a[53]*b5 + a[54]*b6 + a[55]*b7;
-	      c[58] += a[56]*b0 + a[57]*b1 + a[58]*b2 + a[59]*b3 + a[60]*b4 + a[61]*b5 + a[62]*b6 + a[63]*b7;
+              c[2]  += a[0 ]*b0 + a[1 ]*b1 + a[2 ]*b2 + a[3 ]*b3 + a[4 ]*b4 + a[5 ]*b5 + a[6 ]*b6 + a[7 ]*b7;
+              c[10] += a[8 ]*b0 + a[9 ]*b1 + a[10]*b2 + a[11]*b3 + a[12]*b4 + a[13]*b5 + a[14]*b6 + a[15]*b7;
+              c[18] += a[16]*b0 + a[17]*b1 + a[18]*b2 + a[19]*b3 + a[20]*b4 + a[21]*b5 + a[22]*b6 + a[23]*b7;
+              c[26] += a[24]*b0 + a[25]*b1 + a[26]*b2 + a[27]*b3 + a[28]*b4 + a[29]*b5 + a[30]*b6 + a[31]*b7;
+              c[34] += a[32]*b0 + a[33]*b1 + a[34]*b2 + a[35]*b3 + a[36]*b4 + a[37]*b5 + a[38]*b6 + a[39]*b7;
+              c[42] += a[40]*b0 + a[41]*b1 + a[42]*b2 + a[43]*b3 + a[44]*b4 + a[45]*b5 + a[46]*b6 + a[47]*b7;
+              c[50] += a[48]*b0 + a[49]*b1 + a[50]*b2 + a[51]*b3 + a[52]*b4 + a[53]*b5 + a[54]*b6 + a[55]*b7;
+              c[58] += a[56]*b0 + a[57]*b1 + a[58]*b2 + a[59]*b3 + a[60]*b4 + a[61]*b5 + a[62]*b6 + a[63]*b7;
 
-	      // four
+              // four
               b0 = b[3 ]; b1 = b[11]; b2 = b[19]; b3 = b[27]; b4 = b[35]; b5 = b[43];  b6 = b[51]; b7 = b[59];
-	      c[3]  += a[0 ]*b0 + a[1 ]*b1 + a[2 ]*b2 + a[3 ]*b3 + a[4 ]*b4 + a[5 ]*b5 + a[6 ]*b6 + a[7 ]*b7;
-	      c[11] += a[8 ]*b0 + a[9 ]*b1 + a[10]*b2 + a[11]*b3 + a[12]*b4 + a[13]*b5 + a[14]*b6 + a[15]*b7;
-	      c[19] += a[16]*b0 + a[17]*b1 + a[18]*b2 + a[19]*b3 + a[20]*b4 + a[21]*b5 + a[22]*b6 + a[23]*b7;
-	      c[27] += a[24]*b0 + a[25]*b1 + a[26]*b2 + a[27]*b3 + a[28]*b4 + a[29]*b5 + a[30]*b6 + a[31]*b7;
-	      c[35] += a[32]*b0 + a[33]*b1 + a[34]*b2 + a[35]*b3 + a[36]*b4 + a[37]*b5 + a[38]*b6 + a[39]*b7;
-	      c[43] += a[40]*b0 + a[41]*b1 + a[42]*b2 + a[43]*b3 + a[44]*b4 + a[45]*b5 + a[46]*b6 + a[47]*b7;
-	      c[51] += a[48]*b0 + a[49]*b1 + a[50]*b2 + a[51]*b3 + a[52]*b4 + a[53]*b5 + a[54]*b6 + a[55]*b7;
-	      c[59] += a[56]*b0 + a[57]*b1 + a[58]*b2 + a[59]*b3 + a[60]*b4 + a[61]*b5 + a[62]*b6 + a[63]*b7;
+              c[3]  += a[0 ]*b0 + a[1 ]*b1 + a[2 ]*b2 + a[3 ]*b3 + a[4 ]*b4 + a[5 ]*b5 + a[6 ]*b6 + a[7 ]*b7;
+              c[11] += a[8 ]*b0 + a[9 ]*b1 + a[10]*b2 + a[11]*b3 + a[12]*b4 + a[13]*b5 + a[14]*b6 + a[15]*b7;
+              c[19] += a[16]*b0 + a[17]*b1 + a[18]*b2 + a[19]*b3 + a[20]*b4 + a[21]*b5 + a[22]*b6 + a[23]*b7;
+              c[27] += a[24]*b0 + a[25]*b1 + a[26]*b2 + a[27]*b3 + a[28]*b4 + a[29]*b5 + a[30]*b6 + a[31]*b7;
+              c[35] += a[32]*b0 + a[33]*b1 + a[34]*b2 + a[35]*b3 + a[36]*b4 + a[37]*b5 + a[38]*b6 + a[39]*b7;
+              c[43] += a[40]*b0 + a[41]*b1 + a[42]*b2 + a[43]*b3 + a[44]*b4 + a[45]*b5 + a[46]*b6 + a[47]*b7;
+              c[51] += a[48]*b0 + a[49]*b1 + a[50]*b2 + a[51]*b3 + a[52]*b4 + a[53]*b5 + a[54]*b6 + a[55]*b7;
+              c[59] += a[56]*b0 + a[57]*b1 + a[58]*b2 + a[59]*b3 + a[60]*b4 + a[61]*b5 + a[62]*b6 + a[63]*b7;
 
-	      // five
+              // five
               b0 = b[4 ]; b1 = b[12]; b2 = b[20]; b3 = b[28]; b4 = b[36]; b5 = b[44];  b6 = b[52]; b7 = b[60];
-	      c[4]  += a[0 ]*b0 + a[1 ]*b1 + a[2 ]*b2 + a[3 ]*b3 + a[4 ]*b4 + a[5 ]*b5 + a[6 ]*b6 + a[7 ]*b7;
-	      c[12] += a[8 ]*b0 + a[9 ]*b1 + a[10]*b2 + a[11]*b3 + a[12]*b4 + a[13]*b5 + a[14]*b6 + a[15]*b7;
-	      c[20] += a[16]*b0 + a[17]*b1 + a[18]*b2 + a[19]*b3 + a[20]*b4 + a[21]*b5 + a[22]*b6 + a[23]*b7;
-	      c[28] += a[24]*b0 + a[25]*b1 + a[26]*b2 + a[27]*b3 + a[28]*b4 + a[29]*b5 + a[30]*b6 + a[31]*b7;
-	      c[36] += a[32]*b0 + a[33]*b1 + a[34]*b2 + a[35]*b3 + a[36]*b4 + a[37]*b5 + a[38]*b6 + a[39]*b7;
-	      c[44] += a[40]*b0 + a[41]*b1 + a[42]*b2 + a[43]*b3 + a[44]*b4 + a[45]*b5 + a[46]*b6 + a[47]*b7;
-	      c[52] += a[48]*b0 + a[49]*b1 + a[50]*b2 + a[51]*b3 + a[52]*b4 + a[53]*b5 + a[54]*b6 + a[55]*b7;
-	      c[60] += a[56]*b0 + a[57]*b1 + a[58]*b2 + a[59]*b3 + a[60]*b4 + a[61]*b5 + a[62]*b6 + a[63]*b7;
+              c[4]  += a[0 ]*b0 + a[1 ]*b1 + a[2 ]*b2 + a[3 ]*b3 + a[4 ]*b4 + a[5 ]*b5 + a[6 ]*b6 + a[7 ]*b7;
+              c[12] += a[8 ]*b0 + a[9 ]*b1 + a[10]*b2 + a[11]*b3 + a[12]*b4 + a[13]*b5 + a[14]*b6 + a[15]*b7;
+              c[20] += a[16]*b0 + a[17]*b1 + a[18]*b2 + a[19]*b3 + a[20]*b4 + a[21]*b5 + a[22]*b6 + a[23]*b7;
+              c[28] += a[24]*b0 + a[25]*b1 + a[26]*b2 + a[27]*b3 + a[28]*b4 + a[29]*b5 + a[30]*b6 + a[31]*b7;
+              c[36] += a[32]*b0 + a[33]*b1 + a[34]*b2 + a[35]*b3 + a[36]*b4 + a[37]*b5 + a[38]*b6 + a[39]*b7;
+              c[44] += a[40]*b0 + a[41]*b1 + a[42]*b2 + a[43]*b3 + a[44]*b4 + a[45]*b5 + a[46]*b6 + a[47]*b7;
+              c[52] += a[48]*b0 + a[49]*b1 + a[50]*b2 + a[51]*b3 + a[52]*b4 + a[53]*b5 + a[54]*b6 + a[55]*b7;
+              c[60] += a[56]*b0 + a[57]*b1 + a[58]*b2 + a[59]*b3 + a[60]*b4 + a[61]*b5 + a[62]*b6 + a[63]*b7;
 
-	      // sixth 
+              // sixth
               b0 = b[5 ]; b1 = b[13]; b2 = b[21]; b3 = b[29]; b4 = b[37]; b5 = b[45];  b6 = b[53]; b7 = b[61];
-	      c[5]  += a[0 ]*b0 + a[1 ]*b1 + a[2 ]*b2 + a[3 ]*b3 + a[4 ]*b4 + a[5 ]*b5 + a[6 ]*b6 + a[7 ]*b7;
-	      c[13] += a[8 ]*b0 + a[9 ]*b1 + a[10]*b2 + a[11]*b3 + a[12]*b4 + a[13]*b5 + a[14]*b6 + a[15]*b7;
-	      c[21] += a[16]*b0 + a[17]*b1 + a[18]*b2 + a[19]*b3 + a[20]*b4 + a[21]*b5 + a[22]*b6 + a[23]*b7;
-	      c[29] += a[24]*b0 + a[25]*b1 + a[26]*b2 + a[27]*b3 + a[28]*b4 + a[29]*b5 + a[30]*b6 + a[31]*b7;
-	      c[37] += a[32]*b0 + a[33]*b1 + a[34]*b2 + a[35]*b3 + a[36]*b4 + a[37]*b5 + a[38]*b6 + a[39]*b7;
-	      c[45] += a[40]*b0 + a[41]*b1 + a[42]*b2 + a[43]*b3 + a[44]*b4 + a[45]*b5 + a[46]*b6 + a[47]*b7;
-	      c[53] += a[48]*b0 + a[49]*b1 + a[50]*b2 + a[51]*b3 + a[52]*b4 + a[53]*b5 + a[54]*b6 + a[55]*b7;
-	      c[61] += a[56]*b0 + a[57]*b1 + a[58]*b2 + a[59]*b3 + a[60]*b4 + a[61]*b5 + a[62]*b6 + a[63]*b7;
+              c[5]  += a[0 ]*b0 + a[1 ]*b1 + a[2 ]*b2 + a[3 ]*b3 + a[4 ]*b4 + a[5 ]*b5 + a[6 ]*b6 + a[7 ]*b7;
+              c[13] += a[8 ]*b0 + a[9 ]*b1 + a[10]*b2 + a[11]*b3 + a[12]*b4 + a[13]*b5 + a[14]*b6 + a[15]*b7;
+              c[21] += a[16]*b0 + a[17]*b1 + a[18]*b2 + a[19]*b3 + a[20]*b4 + a[21]*b5 + a[22]*b6 + a[23]*b7;
+              c[29] += a[24]*b0 + a[25]*b1 + a[26]*b2 + a[27]*b3 + a[28]*b4 + a[29]*b5 + a[30]*b6 + a[31]*b7;
+              c[37] += a[32]*b0 + a[33]*b1 + a[34]*b2 + a[35]*b3 + a[36]*b4 + a[37]*b5 + a[38]*b6 + a[39]*b7;
+              c[45] += a[40]*b0 + a[41]*b1 + a[42]*b2 + a[43]*b3 + a[44]*b4 + a[45]*b5 + a[46]*b6 + a[47]*b7;
+              c[53] += a[48]*b0 + a[49]*b1 + a[50]*b2 + a[51]*b3 + a[52]*b4 + a[53]*b5 + a[54]*b6 + a[55]*b7;
+              c[61] += a[56]*b0 + a[57]*b1 + a[58]*b2 + a[59]*b3 + a[60]*b4 + a[61]*b5 + a[62]*b6 + a[63]*b7;
 
-	      // seventh
+              // seventh
               b0 = b[6 ]; b1 = b[14]; b2 = b[22]; b3 = b[30]; b4 = b[38]; b5 = b[46];  b6 = b[54]; b7 = b[62];
-	      c[6]  += a[0 ]*b0 + a[1 ]*b1 + a[2 ]*b2 + a[3 ]*b3 + a[4 ]*b4 + a[5 ]*b5 + a[6 ]*b6 + a[7 ]*b7;
-	      c[14] += a[8 ]*b0 + a[9 ]*b1 + a[10]*b2 + a[11]*b3 + a[12]*b4 + a[13]*b5 + a[14]*b6 + a[15]*b7;
-	      c[22] += a[16]*b0 + a[17]*b1 + a[18]*b2 + a[19]*b3 + a[20]*b4 + a[21]*b5 + a[22]*b6 + a[23]*b7;
-	      c[30] += a[24]*b0 + a[25]*b1 + a[26]*b2 + a[27]*b3 + a[28]*b4 + a[29]*b5 + a[30]*b6 + a[31]*b7;
-	      c[38] += a[32]*b0 + a[33]*b1 + a[34]*b2 + a[35]*b3 + a[36]*b4 + a[37]*b5 + a[38]*b6 + a[39]*b7;
-	      c[46] += a[40]*b0 + a[41]*b1 + a[42]*b2 + a[43]*b3 + a[44]*b4 + a[45]*b5 + a[46]*b6 + a[47]*b7;
-	      c[54] += a[48]*b0 + a[49]*b1 + a[50]*b2 + a[51]*b3 + a[52]*b4 + a[53]*b5 + a[54]*b6 + a[55]*b7;
-	      c[62] += a[56]*b0 + a[57]*b1 + a[58]*b2 + a[59]*b3 + a[60]*b4 + a[61]*b5 + a[62]*b6 + a[63]*b7;
+              c[6]  += a[0 ]*b0 + a[1 ]*b1 + a[2 ]*b2 + a[3 ]*b3 + a[4 ]*b4 + a[5 ]*b5 + a[6 ]*b6 + a[7 ]*b7;
+              c[14] += a[8 ]*b0 + a[9 ]*b1 + a[10]*b2 + a[11]*b3 + a[12]*b4 + a[13]*b5 + a[14]*b6 + a[15]*b7;
+              c[22] += a[16]*b0 + a[17]*b1 + a[18]*b2 + a[19]*b3 + a[20]*b4 + a[21]*b5 + a[22]*b6 + a[23]*b7;
+              c[30] += a[24]*b0 + a[25]*b1 + a[26]*b2 + a[27]*b3 + a[28]*b4 + a[29]*b5 + a[30]*b6 + a[31]*b7;
+              c[38] += a[32]*b0 + a[33]*b1 + a[34]*b2 + a[35]*b3 + a[36]*b4 + a[37]*b5 + a[38]*b6 + a[39]*b7;
+              c[46] += a[40]*b0 + a[41]*b1 + a[42]*b2 + a[43]*b3 + a[44]*b4 + a[45]*b5 + a[46]*b6 + a[47]*b7;
+              c[54] += a[48]*b0 + a[49]*b1 + a[50]*b2 + a[51]*b3 + a[52]*b4 + a[53]*b5 + a[54]*b6 + a[55]*b7;
+              c[62] += a[56]*b0 + a[57]*b1 + a[58]*b2 + a[59]*b3 + a[60]*b4 + a[61]*b5 + a[62]*b6 + a[63]*b7;
 
-	      // eight
+              // eight
               b0 = b[7 ]; b1 = b[15]; b2 = b[23]; b3 = b[31]; b4 = b[39]; b5 = b[47];  b6 = b[55]; b7 = b[63];
-	      c[7]  += a[0 ]*b0 + a[1 ]*b1 + a[2 ]*b2 + a[3 ]*b3 + a[4 ]*b4 + a[5 ]*b5 + a[6 ]*b6 + a[7 ]*b7;
-	      c[15] += a[8 ]*b0 + a[9 ]*b1 + a[10]*b2 + a[11]*b3 + a[12]*b4 + a[13]*b5 + a[14]*b6 + a[15]*b7;
-	      c[23] += a[16]*b0 + a[17]*b1 + a[18]*b2 + a[19]*b3 + a[20]*b4 + a[21]*b5 + a[22]*b6 + a[23]*b7;
-	      c[31] += a[24]*b0 + a[25]*b1 + a[26]*b2 + a[27]*b3 + a[28]*b4 + a[29]*b5 + a[30]*b6 + a[31]*b7;
-	      c[39] += a[32]*b0 + a[33]*b1 + a[34]*b2 + a[35]*b3 + a[36]*b4 + a[37]*b5 + a[38]*b6 + a[39]*b7;
-	      c[47] += a[40]*b0 + a[41]*b1 + a[42]*b2 + a[43]*b3 + a[44]*b4 + a[45]*b5 + a[46]*b6 + a[47]*b7;
-	      c[55] += a[48]*b0 + a[49]*b1 + a[50]*b2 + a[51]*b3 + a[52]*b4 + a[53]*b5 + a[54]*b6 + a[55]*b7;
-	      c[63] += a[56]*b0 + a[57]*b1 + a[58]*b2 + a[59]*b3 + a[60]*b4 + a[61]*b5 + a[62]*b6 + a[63]*b7;
+              c[7]  += a[0 ]*b0 + a[1 ]*b1 + a[2 ]*b2 + a[3 ]*b3 + a[4 ]*b4 + a[5 ]*b5 + a[6 ]*b6 + a[7 ]*b7;
+              c[15] += a[8 ]*b0 + a[9 ]*b1 + a[10]*b2 + a[11]*b3 + a[12]*b4 + a[13]*b5 + a[14]*b6 + a[15]*b7;
+              c[23] += a[16]*b0 + a[17]*b1 + a[18]*b2 + a[19]*b3 + a[20]*b4 + a[21]*b5 + a[22]*b6 + a[23]*b7;
+              c[31] += a[24]*b0 + a[25]*b1 + a[26]*b2 + a[27]*b3 + a[28]*b4 + a[29]*b5 + a[30]*b6 + a[31]*b7;
+              c[39] += a[32]*b0 + a[33]*b1 + a[34]*b2 + a[35]*b3 + a[36]*b4 + a[37]*b5 + a[38]*b6 + a[39]*b7;
+              c[47] += a[40]*b0 + a[41]*b1 + a[42]*b2 + a[43]*b3 + a[44]*b4 + a[45]*b5 + a[46]*b6 + a[47]*b7;
+              c[55] += a[48]*b0 + a[49]*b1 + a[50]*b2 + a[51]*b3 + a[52]*b4 + a[53]*b5 + a[54]*b6 + a[55]*b7;
+              c[63] += a[56]*b0 + a[57]*b1 + a[58]*b2 + a[59]*b3 + a[60]*b4 + a[61]*b5 + a[62]*b6 + a[63]*b7;
 
             }
 
@@ -924,18 +924,18 @@ void * BCSRMatMatMultAdd8_thread( void * t ){
 /*!
   Perform a matrix-matrix multiplication
 */
-void BCSRMatMatMultAdd8( double alpha, BCSRMatData * Adata, 
+void BCSRMatMatMultAdd8( double alpha, BCSRMatData * Adata,
                          BCSRMatData * Bdata, BCSRMatData * Cdata ){
   // Retrieve the data required from the matrix
   const int nrows_a = Adata->nrows;
   const int * arowp = Adata->rowp;
   const int * acols = Adata->cols;
   const TacsScalar * A = Adata->A;
-    
+
   const int * browp = Bdata->rowp;
   const int * bcols = Bdata->cols;
   const TacsScalar * B = Bdata->A;
-    
+
   // The matrix being written to
   const int * crowp = Cdata->rowp;
   const int * ccols = Cdata->cols;
@@ -948,15 +948,15 @@ void BCSRMatMatMultAdd8( double alpha, BCSRMatData * Adata,
       for ( int jp = arowp[i]; jp < arowp[i+1]; jp++ ){
         int j = acols[jp];
         const TacsScalar * a = &A[64*jp];
-	
+
         int kp = browp[j];
         int kp_end = browp[j+1];
         const TacsScalar * b = &B[64*kp];
-	
+
         int cp = crowp[i];
         int cp_end = crowp[i+1];
         TacsScalar * c = &C[64*cp];
-	
+
         for ( ; kp < kp_end; kp++ ){
           while ((cp < cp_end) && (ccols[cp] < bcols[kp])){ cp++; c+= 64; }
           if (cp >= cp_end){ break; }
@@ -964,94 +964,94 @@ void BCSRMatMatMultAdd8( double alpha, BCSRMatData * Adata,
           if (bcols[kp] == ccols[cp]){
             // Compute the matrix-matrix multiplication
             TacsScalar b0, b1, b2, b3, b4, b5, b6, b7;
-	    
-	    // first
-	    b0 = b[0 ]; b1 = b[8 ]; b2 = b[16]; b3 = b[24]; b4 = b[32]; b5 = b[40];  b6 = b[48]; b7 = b[56];
-	    c[0]  += a[0 ]*b0 + a[1 ]*b1 + a[2 ]*b2 + a[3 ]*b3 + a[4 ]*b4 + a[5 ]*b5 + a[6 ]*b6 + a[7 ]*b7;
-	    c[8]  += a[8 ]*b0 + a[9 ]*b1 + a[10]*b2 + a[11]*b3 + a[12]*b4 + a[13]*b5 + a[14]*b6 + a[15]*b7;
-	    c[16] += a[16]*b0 + a[17]*b1 + a[18]*b2 + a[19]*b3 + a[20]*b4 + a[21]*b5 + a[22]*b6 + a[23]*b7;
-	    c[24] += a[24]*b0 + a[25]*b1 + a[26]*b2 + a[27]*b3 + a[28]*b4 + a[29]*b5 + a[30]*b6 + a[31]*b7;
-	    c[32] += a[32]*b0 + a[33]*b1 + a[34]*b2 + a[35]*b3 + a[36]*b4 + a[37]*b5 + a[38]*b6 + a[39]*b7;
-	    c[40] += a[40]*b0 + a[41]*b1 + a[42]*b2 + a[43]*b3 + a[44]*b4 + a[45]*b5 + a[46]*b6 + a[47]*b7;
-	    c[48] += a[48]*b0 + a[49]*b1 + a[50]*b2 + a[51]*b3 + a[52]*b4 + a[53]*b5 + a[54]*b6 + a[55]*b7;
-	    c[56] += a[56]*b0 + a[57]*b1 + a[58]*b2 + a[59]*b3 + a[60]*b4 + a[61]*b5 + a[62]*b6 + a[63]*b7;
 
-	    // second	      
-	    b0 = b[1 ]; b1 = b[9 ]; b2 = b[17]; b3 = b[25]; b4 = b[33]; b5 = b[41];  b6 = b[49]; b7 = b[57];
-	    c[1]  += a[0 ]*b0 + a[1 ]*b1 + a[2 ]*b2 + a[3 ]*b3 + a[4 ]*b4 + a[5 ]*b5 + a[6 ]*b6 + a[7 ]*b7;
-	    c[9]  += a[8 ]*b0 + a[9 ]*b1 + a[10]*b2 + a[11]*b3 + a[12]*b4 + a[13]*b5 + a[14]*b6 + a[15]*b7;
-	    c[17] += a[16]*b0 + a[17]*b1 + a[18]*b2 + a[19]*b3 + a[20]*b4 + a[21]*b5 + a[22]*b6 + a[23]*b7;
-	    c[25] += a[24]*b0 + a[25]*b1 + a[26]*b2 + a[27]*b3 + a[28]*b4 + a[29]*b5 + a[30]*b6 + a[31]*b7;
-	    c[33] += a[32]*b0 + a[33]*b1 + a[34]*b2 + a[35]*b3 + a[36]*b4 + a[37]*b5 + a[38]*b6 + a[39]*b7;
-	    c[41] += a[40]*b0 + a[41]*b1 + a[42]*b2 + a[43]*b3 + a[44]*b4 + a[45]*b5 + a[46]*b6 + a[47]*b7;
-	    c[49] += a[48]*b0 + a[49]*b1 + a[50]*b2 + a[51]*b3 + a[52]*b4 + a[53]*b5 + a[54]*b6 + a[55]*b7;
-	    c[57] += a[56]*b0 + a[57]*b1 + a[58]*b2 + a[59]*b3 + a[60]*b4 + a[61]*b5 + a[62]*b6 + a[63]*b7;
+            // first
+            b0 = b[0 ]; b1 = b[8 ]; b2 = b[16]; b3 = b[24]; b4 = b[32]; b5 = b[40];  b6 = b[48]; b7 = b[56];
+            c[0]  += a[0 ]*b0 + a[1 ]*b1 + a[2 ]*b2 + a[3 ]*b3 + a[4 ]*b4 + a[5 ]*b5 + a[6 ]*b6 + a[7 ]*b7;
+            c[8]  += a[8 ]*b0 + a[9 ]*b1 + a[10]*b2 + a[11]*b3 + a[12]*b4 + a[13]*b5 + a[14]*b6 + a[15]*b7;
+            c[16] += a[16]*b0 + a[17]*b1 + a[18]*b2 + a[19]*b3 + a[20]*b4 + a[21]*b5 + a[22]*b6 + a[23]*b7;
+            c[24] += a[24]*b0 + a[25]*b1 + a[26]*b2 + a[27]*b3 + a[28]*b4 + a[29]*b5 + a[30]*b6 + a[31]*b7;
+            c[32] += a[32]*b0 + a[33]*b1 + a[34]*b2 + a[35]*b3 + a[36]*b4 + a[37]*b5 + a[38]*b6 + a[39]*b7;
+            c[40] += a[40]*b0 + a[41]*b1 + a[42]*b2 + a[43]*b3 + a[44]*b4 + a[45]*b5 + a[46]*b6 + a[47]*b7;
+            c[48] += a[48]*b0 + a[49]*b1 + a[50]*b2 + a[51]*b3 + a[52]*b4 + a[53]*b5 + a[54]*b6 + a[55]*b7;
+            c[56] += a[56]*b0 + a[57]*b1 + a[58]*b2 + a[59]*b3 + a[60]*b4 + a[61]*b5 + a[62]*b6 + a[63]*b7;
 
-	    // third
-	    b0 = b[2 ]; b1 = b[10]; b2 = b[18]; b3 = b[26]; b4 = b[34]; b5 = b[42];  b6 = b[50]; b7 = b[58];
-	    c[2]  += a[0 ]*b0 + a[1 ]*b1 + a[2 ]*b2 + a[3 ]*b3 + a[4 ]*b4 + a[5 ]*b5 + a[6 ]*b6 + a[7 ]*b7;
-	    c[10] += a[8 ]*b0 + a[9 ]*b1 + a[10]*b2 + a[11]*b3 + a[12]*b4 + a[13]*b5 + a[14]*b6 + a[15]*b7;
-	    c[18] += a[16]*b0 + a[17]*b1 + a[18]*b2 + a[19]*b3 + a[20]*b4 + a[21]*b5 + a[22]*b6 + a[23]*b7;
-	    c[26] += a[24]*b0 + a[25]*b1 + a[26]*b2 + a[27]*b3 + a[28]*b4 + a[29]*b5 + a[30]*b6 + a[31]*b7;
-	    c[34] += a[32]*b0 + a[33]*b1 + a[34]*b2 + a[35]*b3 + a[36]*b4 + a[37]*b5 + a[38]*b6 + a[39]*b7;
-	    c[42] += a[40]*b0 + a[41]*b1 + a[42]*b2 + a[43]*b3 + a[44]*b4 + a[45]*b5 + a[46]*b6 + a[47]*b7;
-	    c[50] += a[48]*b0 + a[49]*b1 + a[50]*b2 + a[51]*b3 + a[52]*b4 + a[53]*b5 + a[54]*b6 + a[55]*b7;
-	    c[58] += a[56]*b0 + a[57]*b1 + a[58]*b2 + a[59]*b3 + a[60]*b4 + a[61]*b5 + a[62]*b6 + a[63]*b7;
+            // second
+            b0 = b[1 ]; b1 = b[9 ]; b2 = b[17]; b3 = b[25]; b4 = b[33]; b5 = b[41];  b6 = b[49]; b7 = b[57];
+            c[1]  += a[0 ]*b0 + a[1 ]*b1 + a[2 ]*b2 + a[3 ]*b3 + a[4 ]*b4 + a[5 ]*b5 + a[6 ]*b6 + a[7 ]*b7;
+            c[9]  += a[8 ]*b0 + a[9 ]*b1 + a[10]*b2 + a[11]*b3 + a[12]*b4 + a[13]*b5 + a[14]*b6 + a[15]*b7;
+            c[17] += a[16]*b0 + a[17]*b1 + a[18]*b2 + a[19]*b3 + a[20]*b4 + a[21]*b5 + a[22]*b6 + a[23]*b7;
+            c[25] += a[24]*b0 + a[25]*b1 + a[26]*b2 + a[27]*b3 + a[28]*b4 + a[29]*b5 + a[30]*b6 + a[31]*b7;
+            c[33] += a[32]*b0 + a[33]*b1 + a[34]*b2 + a[35]*b3 + a[36]*b4 + a[37]*b5 + a[38]*b6 + a[39]*b7;
+            c[41] += a[40]*b0 + a[41]*b1 + a[42]*b2 + a[43]*b3 + a[44]*b4 + a[45]*b5 + a[46]*b6 + a[47]*b7;
+            c[49] += a[48]*b0 + a[49]*b1 + a[50]*b2 + a[51]*b3 + a[52]*b4 + a[53]*b5 + a[54]*b6 + a[55]*b7;
+            c[57] += a[56]*b0 + a[57]*b1 + a[58]*b2 + a[59]*b3 + a[60]*b4 + a[61]*b5 + a[62]*b6 + a[63]*b7;
 
-	    // four
-	    b0 = b[3 ]; b1 = b[11]; b2 = b[19]; b3 = b[27]; b4 = b[35]; b5 = b[43];  b6 = b[51]; b7 = b[59];
-	    c[3]  += a[0 ]*b0 + a[1 ]*b1 + a[2 ]*b2 + a[3 ]*b3 + a[4 ]*b4 + a[5 ]*b5 + a[6 ]*b6 + a[7 ]*b7;
-	    c[11] += a[8 ]*b0 + a[9 ]*b1 + a[10]*b2 + a[11]*b3 + a[12]*b4 + a[13]*b5 + a[14]*b6 + a[15]*b7;
-	    c[19] += a[16]*b0 + a[17]*b1 + a[18]*b2 + a[19]*b3 + a[20]*b4 + a[21]*b5 + a[22]*b6 + a[23]*b7;
-	    c[27] += a[24]*b0 + a[25]*b1 + a[26]*b2 + a[27]*b3 + a[28]*b4 + a[29]*b5 + a[30]*b6 + a[31]*b7;
-	    c[35] += a[32]*b0 + a[33]*b1 + a[34]*b2 + a[35]*b3 + a[36]*b4 + a[37]*b5 + a[38]*b6 + a[39]*b7;
-	    c[43] += a[40]*b0 + a[41]*b1 + a[42]*b2 + a[43]*b3 + a[44]*b4 + a[45]*b5 + a[46]*b6 + a[47]*b7;
-	    c[51] += a[48]*b0 + a[49]*b1 + a[50]*b2 + a[51]*b3 + a[52]*b4 + a[53]*b5 + a[54]*b6 + a[55]*b7;
-	    c[59] += a[56]*b0 + a[57]*b1 + a[58]*b2 + a[59]*b3 + a[60]*b4 + a[61]*b5 + a[62]*b6 + a[63]*b7;
+            // third
+            b0 = b[2 ]; b1 = b[10]; b2 = b[18]; b3 = b[26]; b4 = b[34]; b5 = b[42];  b6 = b[50]; b7 = b[58];
+            c[2]  += a[0 ]*b0 + a[1 ]*b1 + a[2 ]*b2 + a[3 ]*b3 + a[4 ]*b4 + a[5 ]*b5 + a[6 ]*b6 + a[7 ]*b7;
+            c[10] += a[8 ]*b0 + a[9 ]*b1 + a[10]*b2 + a[11]*b3 + a[12]*b4 + a[13]*b5 + a[14]*b6 + a[15]*b7;
+            c[18] += a[16]*b0 + a[17]*b1 + a[18]*b2 + a[19]*b3 + a[20]*b4 + a[21]*b5 + a[22]*b6 + a[23]*b7;
+            c[26] += a[24]*b0 + a[25]*b1 + a[26]*b2 + a[27]*b3 + a[28]*b4 + a[29]*b5 + a[30]*b6 + a[31]*b7;
+            c[34] += a[32]*b0 + a[33]*b1 + a[34]*b2 + a[35]*b3 + a[36]*b4 + a[37]*b5 + a[38]*b6 + a[39]*b7;
+            c[42] += a[40]*b0 + a[41]*b1 + a[42]*b2 + a[43]*b3 + a[44]*b4 + a[45]*b5 + a[46]*b6 + a[47]*b7;
+            c[50] += a[48]*b0 + a[49]*b1 + a[50]*b2 + a[51]*b3 + a[52]*b4 + a[53]*b5 + a[54]*b6 + a[55]*b7;
+            c[58] += a[56]*b0 + a[57]*b1 + a[58]*b2 + a[59]*b3 + a[60]*b4 + a[61]*b5 + a[62]*b6 + a[63]*b7;
 
-	    // five
-	    b0 = b[4 ]; b1 = b[12]; b2 = b[20]; b3 = b[28]; b4 = b[36]; b5 = b[44];  b6 = b[52]; b7 = b[60];
-	    c[4]  += a[0 ]*b0 + a[1 ]*b1 + a[2 ]*b2 + a[3 ]*b3 + a[4 ]*b4 + a[5 ]*b5 + a[6 ]*b6 + a[7 ]*b7;
-	    c[12] += a[8 ]*b0 + a[9 ]*b1 + a[10]*b2 + a[11]*b3 + a[12]*b4 + a[13]*b5 + a[14]*b6 + a[15]*b7;
-	    c[20] += a[16]*b0 + a[17]*b1 + a[18]*b2 + a[19]*b3 + a[20]*b4 + a[21]*b5 + a[22]*b6 + a[23]*b7;
-	    c[28] += a[24]*b0 + a[25]*b1 + a[26]*b2 + a[27]*b3 + a[28]*b4 + a[29]*b5 + a[30]*b6 + a[31]*b7;
-	    c[36] += a[32]*b0 + a[33]*b1 + a[34]*b2 + a[35]*b3 + a[36]*b4 + a[37]*b5 + a[38]*b6 + a[39]*b7;
-	    c[44] += a[40]*b0 + a[41]*b1 + a[42]*b2 + a[43]*b3 + a[44]*b4 + a[45]*b5 + a[46]*b6 + a[47]*b7;
-	    c[52] += a[48]*b0 + a[49]*b1 + a[50]*b2 + a[51]*b3 + a[52]*b4 + a[53]*b5 + a[54]*b6 + a[55]*b7;
-	    c[60] += a[56]*b0 + a[57]*b1 + a[58]*b2 + a[59]*b3 + a[60]*b4 + a[61]*b5 + a[62]*b6 + a[63]*b7;
+            // four
+            b0 = b[3 ]; b1 = b[11]; b2 = b[19]; b3 = b[27]; b4 = b[35]; b5 = b[43];  b6 = b[51]; b7 = b[59];
+            c[3]  += a[0 ]*b0 + a[1 ]*b1 + a[2 ]*b2 + a[3 ]*b3 + a[4 ]*b4 + a[5 ]*b5 + a[6 ]*b6 + a[7 ]*b7;
+            c[11] += a[8 ]*b0 + a[9 ]*b1 + a[10]*b2 + a[11]*b3 + a[12]*b4 + a[13]*b5 + a[14]*b6 + a[15]*b7;
+            c[19] += a[16]*b0 + a[17]*b1 + a[18]*b2 + a[19]*b3 + a[20]*b4 + a[21]*b5 + a[22]*b6 + a[23]*b7;
+            c[27] += a[24]*b0 + a[25]*b1 + a[26]*b2 + a[27]*b3 + a[28]*b4 + a[29]*b5 + a[30]*b6 + a[31]*b7;
+            c[35] += a[32]*b0 + a[33]*b1 + a[34]*b2 + a[35]*b3 + a[36]*b4 + a[37]*b5 + a[38]*b6 + a[39]*b7;
+            c[43] += a[40]*b0 + a[41]*b1 + a[42]*b2 + a[43]*b3 + a[44]*b4 + a[45]*b5 + a[46]*b6 + a[47]*b7;
+            c[51] += a[48]*b0 + a[49]*b1 + a[50]*b2 + a[51]*b3 + a[52]*b4 + a[53]*b5 + a[54]*b6 + a[55]*b7;
+            c[59] += a[56]*b0 + a[57]*b1 + a[58]*b2 + a[59]*b3 + a[60]*b4 + a[61]*b5 + a[62]*b6 + a[63]*b7;
 
-	    // sixth 
-	    b0 = b[5 ]; b1 = b[13]; b2 = b[21]; b3 = b[29]; b4 = b[37]; b5 = b[45];  b6 = b[53]; b7 = b[61];
-	    c[5]  += a[0 ]*b0 + a[1 ]*b1 + a[2 ]*b2 + a[3 ]*b3 + a[4 ]*b4 + a[5 ]*b5 + a[6 ]*b6 + a[7 ]*b7;
-	    c[13] += a[8 ]*b0 + a[9 ]*b1 + a[10]*b2 + a[11]*b3 + a[12]*b4 + a[13]*b5 + a[14]*b6 + a[15]*b7;
-	    c[21] += a[16]*b0 + a[17]*b1 + a[18]*b2 + a[19]*b3 + a[20]*b4 + a[21]*b5 + a[22]*b6 + a[23]*b7;
-	    c[29] += a[24]*b0 + a[25]*b1 + a[26]*b2 + a[27]*b3 + a[28]*b4 + a[29]*b5 + a[30]*b6 + a[31]*b7;
-	    c[37] += a[32]*b0 + a[33]*b1 + a[34]*b2 + a[35]*b3 + a[36]*b4 + a[37]*b5 + a[38]*b6 + a[39]*b7;
-	    c[45] += a[40]*b0 + a[41]*b1 + a[42]*b2 + a[43]*b3 + a[44]*b4 + a[45]*b5 + a[46]*b6 + a[47]*b7;
-	    c[53] += a[48]*b0 + a[49]*b1 + a[50]*b2 + a[51]*b3 + a[52]*b4 + a[53]*b5 + a[54]*b6 + a[55]*b7;
-	    c[61] += a[56]*b0 + a[57]*b1 + a[58]*b2 + a[59]*b3 + a[60]*b4 + a[61]*b5 + a[62]*b6 + a[63]*b7;
+            // five
+            b0 = b[4 ]; b1 = b[12]; b2 = b[20]; b3 = b[28]; b4 = b[36]; b5 = b[44];  b6 = b[52]; b7 = b[60];
+            c[4]  += a[0 ]*b0 + a[1 ]*b1 + a[2 ]*b2 + a[3 ]*b3 + a[4 ]*b4 + a[5 ]*b5 + a[6 ]*b6 + a[7 ]*b7;
+            c[12] += a[8 ]*b0 + a[9 ]*b1 + a[10]*b2 + a[11]*b3 + a[12]*b4 + a[13]*b5 + a[14]*b6 + a[15]*b7;
+            c[20] += a[16]*b0 + a[17]*b1 + a[18]*b2 + a[19]*b3 + a[20]*b4 + a[21]*b5 + a[22]*b6 + a[23]*b7;
+            c[28] += a[24]*b0 + a[25]*b1 + a[26]*b2 + a[27]*b3 + a[28]*b4 + a[29]*b5 + a[30]*b6 + a[31]*b7;
+            c[36] += a[32]*b0 + a[33]*b1 + a[34]*b2 + a[35]*b3 + a[36]*b4 + a[37]*b5 + a[38]*b6 + a[39]*b7;
+            c[44] += a[40]*b0 + a[41]*b1 + a[42]*b2 + a[43]*b3 + a[44]*b4 + a[45]*b5 + a[46]*b6 + a[47]*b7;
+            c[52] += a[48]*b0 + a[49]*b1 + a[50]*b2 + a[51]*b3 + a[52]*b4 + a[53]*b5 + a[54]*b6 + a[55]*b7;
+            c[60] += a[56]*b0 + a[57]*b1 + a[58]*b2 + a[59]*b3 + a[60]*b4 + a[61]*b5 + a[62]*b6 + a[63]*b7;
 
-	    // seventh
-	    b0 = b[6 ]; b1 = b[14]; b2 = b[22]; b3 = b[30]; b4 = b[38]; b5 = b[46];  b6 = b[54]; b7 = b[62];
-	    c[6]  += a[0 ]*b0 + a[1 ]*b1 + a[2 ]*b2 + a[3 ]*b3 + a[4 ]*b4 + a[5 ]*b5 + a[6 ]*b6 + a[7 ]*b7;
-	    c[14] += a[8 ]*b0 + a[9 ]*b1 + a[10]*b2 + a[11]*b3 + a[12]*b4 + a[13]*b5 + a[14]*b6 + a[15]*b7;
-	    c[22] += a[16]*b0 + a[17]*b1 + a[18]*b2 + a[19]*b3 + a[20]*b4 + a[21]*b5 + a[22]*b6 + a[23]*b7;
-	    c[30] += a[24]*b0 + a[25]*b1 + a[26]*b2 + a[27]*b3 + a[28]*b4 + a[29]*b5 + a[30]*b6 + a[31]*b7;
-	    c[38] += a[32]*b0 + a[33]*b1 + a[34]*b2 + a[35]*b3 + a[36]*b4 + a[37]*b5 + a[38]*b6 + a[39]*b7;
-	    c[46] += a[40]*b0 + a[41]*b1 + a[42]*b2 + a[43]*b3 + a[44]*b4 + a[45]*b5 + a[46]*b6 + a[47]*b7;
-	    c[54] += a[48]*b0 + a[49]*b1 + a[50]*b2 + a[51]*b3 + a[52]*b4 + a[53]*b5 + a[54]*b6 + a[55]*b7;
-	    c[62] += a[56]*b0 + a[57]*b1 + a[58]*b2 + a[59]*b3 + a[60]*b4 + a[61]*b5 + a[62]*b6 + a[63]*b7;
+            // sixth
+            b0 = b[5 ]; b1 = b[13]; b2 = b[21]; b3 = b[29]; b4 = b[37]; b5 = b[45];  b6 = b[53]; b7 = b[61];
+            c[5]  += a[0 ]*b0 + a[1 ]*b1 + a[2 ]*b2 + a[3 ]*b3 + a[4 ]*b4 + a[5 ]*b5 + a[6 ]*b6 + a[7 ]*b7;
+            c[13] += a[8 ]*b0 + a[9 ]*b1 + a[10]*b2 + a[11]*b3 + a[12]*b4 + a[13]*b5 + a[14]*b6 + a[15]*b7;
+            c[21] += a[16]*b0 + a[17]*b1 + a[18]*b2 + a[19]*b3 + a[20]*b4 + a[21]*b5 + a[22]*b6 + a[23]*b7;
+            c[29] += a[24]*b0 + a[25]*b1 + a[26]*b2 + a[27]*b3 + a[28]*b4 + a[29]*b5 + a[30]*b6 + a[31]*b7;
+            c[37] += a[32]*b0 + a[33]*b1 + a[34]*b2 + a[35]*b3 + a[36]*b4 + a[37]*b5 + a[38]*b6 + a[39]*b7;
+            c[45] += a[40]*b0 + a[41]*b1 + a[42]*b2 + a[43]*b3 + a[44]*b4 + a[45]*b5 + a[46]*b6 + a[47]*b7;
+            c[53] += a[48]*b0 + a[49]*b1 + a[50]*b2 + a[51]*b3 + a[52]*b4 + a[53]*b5 + a[54]*b6 + a[55]*b7;
+            c[61] += a[56]*b0 + a[57]*b1 + a[58]*b2 + a[59]*b3 + a[60]*b4 + a[61]*b5 + a[62]*b6 + a[63]*b7;
 
-	    // eight
-	    b0 = b[7 ]; b1 = b[15]; b2 = b[23]; b3 = b[31]; b4 = b[39]; b5 = b[47];  b6 = b[55]; b7 = b[63];
-	    c[7]  += a[0 ]*b0 + a[1 ]*b1 + a[2 ]*b2 + a[3 ]*b3 + a[4 ]*b4 + a[5 ]*b5 + a[6 ]*b6 + a[7 ]*b7;
-	    c[15] += a[8 ]*b0 + a[9 ]*b1 + a[10]*b2 + a[11]*b3 + a[12]*b4 + a[13]*b5 + a[14]*b6 + a[15]*b7;
-	    c[23] += a[16]*b0 + a[17]*b1 + a[18]*b2 + a[19]*b3 + a[20]*b4 + a[21]*b5 + a[22]*b6 + a[23]*b7;
-	    c[31] += a[24]*b0 + a[25]*b1 + a[26]*b2 + a[27]*b3 + a[28]*b4 + a[29]*b5 + a[30]*b6 + a[31]*b7;
-	    c[39] += a[32]*b0 + a[33]*b1 + a[34]*b2 + a[35]*b3 + a[36]*b4 + a[37]*b5 + a[38]*b6 + a[39]*b7;
-	    c[47] += a[40]*b0 + a[41]*b1 + a[42]*b2 + a[43]*b3 + a[44]*b4 + a[45]*b5 + a[46]*b6 + a[47]*b7;
-	    c[55] += a[48]*b0 + a[49]*b1 + a[50]*b2 + a[51]*b3 + a[52]*b4 + a[53]*b5 + a[54]*b6 + a[55]*b7;
-	    c[63] += a[56]*b0 + a[57]*b1 + a[58]*b2 + a[59]*b3 + a[60]*b4 + a[61]*b5 + a[62]*b6 + a[63]*b7;
+            // seventh
+            b0 = b[6 ]; b1 = b[14]; b2 = b[22]; b3 = b[30]; b4 = b[38]; b5 = b[46];  b6 = b[54]; b7 = b[62];
+            c[6]  += a[0 ]*b0 + a[1 ]*b1 + a[2 ]*b2 + a[3 ]*b3 + a[4 ]*b4 + a[5 ]*b5 + a[6 ]*b6 + a[7 ]*b7;
+            c[14] += a[8 ]*b0 + a[9 ]*b1 + a[10]*b2 + a[11]*b3 + a[12]*b4 + a[13]*b5 + a[14]*b6 + a[15]*b7;
+            c[22] += a[16]*b0 + a[17]*b1 + a[18]*b2 + a[19]*b3 + a[20]*b4 + a[21]*b5 + a[22]*b6 + a[23]*b7;
+            c[30] += a[24]*b0 + a[25]*b1 + a[26]*b2 + a[27]*b3 + a[28]*b4 + a[29]*b5 + a[30]*b6 + a[31]*b7;
+            c[38] += a[32]*b0 + a[33]*b1 + a[34]*b2 + a[35]*b3 + a[36]*b4 + a[37]*b5 + a[38]*b6 + a[39]*b7;
+            c[46] += a[40]*b0 + a[41]*b1 + a[42]*b2 + a[43]*b3 + a[44]*b4 + a[45]*b5 + a[46]*b6 + a[47]*b7;
+            c[54] += a[48]*b0 + a[49]*b1 + a[50]*b2 + a[51]*b3 + a[52]*b4 + a[53]*b5 + a[54]*b6 + a[55]*b7;
+            c[62] += a[56]*b0 + a[57]*b1 + a[58]*b2 + a[59]*b3 + a[60]*b4 + a[61]*b5 + a[62]*b6 + a[63]*b7;
+
+            // eight
+            b0 = b[7 ]; b1 = b[15]; b2 = b[23]; b3 = b[31]; b4 = b[39]; b5 = b[47];  b6 = b[55]; b7 = b[63];
+            c[7]  += a[0 ]*b0 + a[1 ]*b1 + a[2 ]*b2 + a[3 ]*b3 + a[4 ]*b4 + a[5 ]*b5 + a[6 ]*b6 + a[7 ]*b7;
+            c[15] += a[8 ]*b0 + a[9 ]*b1 + a[10]*b2 + a[11]*b3 + a[12]*b4 + a[13]*b5 + a[14]*b6 + a[15]*b7;
+            c[23] += a[16]*b0 + a[17]*b1 + a[18]*b2 + a[19]*b3 + a[20]*b4 + a[21]*b5 + a[22]*b6 + a[23]*b7;
+            c[31] += a[24]*b0 + a[25]*b1 + a[26]*b2 + a[27]*b3 + a[28]*b4 + a[29]*b5 + a[30]*b6 + a[31]*b7;
+            c[39] += a[32]*b0 + a[33]*b1 + a[34]*b2 + a[35]*b3 + a[36]*b4 + a[37]*b5 + a[38]*b6 + a[39]*b7;
+            c[47] += a[40]*b0 + a[41]*b1 + a[42]*b2 + a[43]*b3 + a[44]*b4 + a[45]*b5 + a[46]*b6 + a[47]*b7;
+            c[55] += a[48]*b0 + a[49]*b1 + a[50]*b2 + a[51]*b3 + a[52]*b4 + a[53]*b5 + a[54]*b6 + a[55]*b7;
+            c[63] += a[56]*b0 + a[57]*b1 + a[58]*b2 + a[59]*b3 + a[60]*b4 + a[61]*b5 + a[62]*b6 + a[63]*b7;
 
             nz++;
           }
@@ -1068,15 +1068,15 @@ void BCSRMatMatMultAdd8( double alpha, BCSRMatData * Adata,
       for ( int jp = arowp[i]; jp < arowp[i+1]; jp++ ){
         int j = acols[jp];
         const TacsScalar * a = &A[64*jp];
-	
+
         int kp = browp[j];
         int kp_end = browp[j+1];
         const TacsScalar * b = &B[64*kp];
-	
+
         int cp = crowp[i];
         int cp_end = crowp[i+1];
         TacsScalar * c = &C[64*cp];
-	
+
         for ( ; kp < kp_end; kp++ ){
           while ((cp < cp_end) && (ccols[cp] < bcols[kp])){ cp++; c += 64; }
           if (cp >= cp_end){ break; }
@@ -1085,93 +1085,93 @@ void BCSRMatMatMultAdd8( double alpha, BCSRMatData * Adata,
             // Compute the matrix-matrix multiplication
             TacsScalar b0, b1, b2, b3, b4, b5, b6, b7;
 
-	    // first
-	    b0 = b[0 ]; b1 = b[8 ]; b2 = b[16]; b3 = b[24]; b4 = b[32]; b5 = b[40];  b6 = b[48]; b7 = b[56];
-	    c[0]  -= a[0 ]*b0 + a[1 ]*b1 + a[2 ]*b2 + a[3 ]*b3 + a[4 ]*b4 + a[5 ]*b5 + a[6 ]*b6 + a[7 ]*b7;
-	    c[8]  -= a[8 ]*b0 + a[9 ]*b1 + a[10]*b2 + a[11]*b3 + a[12]*b4 + a[13]*b5 + a[14]*b6 + a[15]*b7;
-	    c[16] -= a[16]*b0 + a[17]*b1 + a[18]*b2 + a[19]*b3 + a[20]*b4 + a[21]*b5 + a[22]*b6 + a[23]*b7;
-	    c[24] -= a[24]*b0 + a[25]*b1 + a[26]*b2 + a[27]*b3 + a[28]*b4 + a[29]*b5 + a[30]*b6 + a[31]*b7;
-	    c[32] -= a[32]*b0 + a[33]*b1 + a[34]*b2 + a[35]*b3 + a[36]*b4 + a[37]*b5 + a[38]*b6 + a[39]*b7;
-	    c[40] -= a[40]*b0 + a[41]*b1 + a[42]*b2 + a[43]*b3 + a[44]*b4 + a[45]*b5 + a[46]*b6 + a[47]*b7;
-	    c[48] -= a[48]*b0 + a[49]*b1 + a[50]*b2 + a[51]*b3 + a[52]*b4 + a[53]*b5 + a[54]*b6 + a[55]*b7;
-	    c[56] -= a[56]*b0 + a[57]*b1 + a[58]*b2 + a[59]*b3 + a[60]*b4 + a[61]*b5 + a[62]*b6 + a[63]*b7;
+            // first
+            b0 = b[0 ]; b1 = b[8 ]; b2 = b[16]; b3 = b[24]; b4 = b[32]; b5 = b[40];  b6 = b[48]; b7 = b[56];
+            c[0]  -= a[0 ]*b0 + a[1 ]*b1 + a[2 ]*b2 + a[3 ]*b3 + a[4 ]*b4 + a[5 ]*b5 + a[6 ]*b6 + a[7 ]*b7;
+            c[8]  -= a[8 ]*b0 + a[9 ]*b1 + a[10]*b2 + a[11]*b3 + a[12]*b4 + a[13]*b5 + a[14]*b6 + a[15]*b7;
+            c[16] -= a[16]*b0 + a[17]*b1 + a[18]*b2 + a[19]*b3 + a[20]*b4 + a[21]*b5 + a[22]*b6 + a[23]*b7;
+            c[24] -= a[24]*b0 + a[25]*b1 + a[26]*b2 + a[27]*b3 + a[28]*b4 + a[29]*b5 + a[30]*b6 + a[31]*b7;
+            c[32] -= a[32]*b0 + a[33]*b1 + a[34]*b2 + a[35]*b3 + a[36]*b4 + a[37]*b5 + a[38]*b6 + a[39]*b7;
+            c[40] -= a[40]*b0 + a[41]*b1 + a[42]*b2 + a[43]*b3 + a[44]*b4 + a[45]*b5 + a[46]*b6 + a[47]*b7;
+            c[48] -= a[48]*b0 + a[49]*b1 + a[50]*b2 + a[51]*b3 + a[52]*b4 + a[53]*b5 + a[54]*b6 + a[55]*b7;
+            c[56] -= a[56]*b0 + a[57]*b1 + a[58]*b2 + a[59]*b3 + a[60]*b4 + a[61]*b5 + a[62]*b6 + a[63]*b7;
 
-	    // second	      
-	    b0 = b[1 ]; b1 = b[9 ]; b2 = b[17]; b3 = b[25]; b4 = b[33]; b5 = b[41];  b6 = b[49]; b7 = b[57];
-	    c[1]  -= a[0 ]*b0 + a[1 ]*b1 + a[2 ]*b2 + a[3 ]*b3 + a[4 ]*b4 + a[5 ]*b5 + a[6 ]*b6 + a[7 ]*b7;
-	    c[9]  -= a[8 ]*b0 + a[9 ]*b1 + a[10]*b2 + a[11]*b3 + a[12]*b4 + a[13]*b5 + a[14]*b6 + a[15]*b7;
-	    c[17] -= a[16]*b0 + a[17]*b1 + a[18]*b2 + a[19]*b3 + a[20]*b4 + a[21]*b5 + a[22]*b6 + a[23]*b7;
-	    c[25] -= a[24]*b0 + a[25]*b1 + a[26]*b2 + a[27]*b3 + a[28]*b4 + a[29]*b5 + a[30]*b6 + a[31]*b7;
-	    c[33] -= a[32]*b0 + a[33]*b1 + a[34]*b2 + a[35]*b3 + a[36]*b4 + a[37]*b5 + a[38]*b6 + a[39]*b7;
-	    c[41] -= a[40]*b0 + a[41]*b1 + a[42]*b2 + a[43]*b3 + a[44]*b4 + a[45]*b5 + a[46]*b6 + a[47]*b7;
-	    c[49] -= a[48]*b0 + a[49]*b1 + a[50]*b2 + a[51]*b3 + a[52]*b4 + a[53]*b5 + a[54]*b6 + a[55]*b7;
-	    c[57] -= a[56]*b0 + a[57]*b1 + a[58]*b2 + a[59]*b3 + a[60]*b4 + a[61]*b5 + a[62]*b6 + a[63]*b7;
+            // second
+            b0 = b[1 ]; b1 = b[9 ]; b2 = b[17]; b3 = b[25]; b4 = b[33]; b5 = b[41];  b6 = b[49]; b7 = b[57];
+            c[1]  -= a[0 ]*b0 + a[1 ]*b1 + a[2 ]*b2 + a[3 ]*b3 + a[4 ]*b4 + a[5 ]*b5 + a[6 ]*b6 + a[7 ]*b7;
+            c[9]  -= a[8 ]*b0 + a[9 ]*b1 + a[10]*b2 + a[11]*b3 + a[12]*b4 + a[13]*b5 + a[14]*b6 + a[15]*b7;
+            c[17] -= a[16]*b0 + a[17]*b1 + a[18]*b2 + a[19]*b3 + a[20]*b4 + a[21]*b5 + a[22]*b6 + a[23]*b7;
+            c[25] -= a[24]*b0 + a[25]*b1 + a[26]*b2 + a[27]*b3 + a[28]*b4 + a[29]*b5 + a[30]*b6 + a[31]*b7;
+            c[33] -= a[32]*b0 + a[33]*b1 + a[34]*b2 + a[35]*b3 + a[36]*b4 + a[37]*b5 + a[38]*b6 + a[39]*b7;
+            c[41] -= a[40]*b0 + a[41]*b1 + a[42]*b2 + a[43]*b3 + a[44]*b4 + a[45]*b5 + a[46]*b6 + a[47]*b7;
+            c[49] -= a[48]*b0 + a[49]*b1 + a[50]*b2 + a[51]*b3 + a[52]*b4 + a[53]*b5 + a[54]*b6 + a[55]*b7;
+            c[57] -= a[56]*b0 + a[57]*b1 + a[58]*b2 + a[59]*b3 + a[60]*b4 + a[61]*b5 + a[62]*b6 + a[63]*b7;
 
-	    // third
-	    b0 = b[2 ]; b1 = b[10]; b2 = b[18]; b3 = b[26]; b4 = b[34]; b5 = b[42];  b6 = b[50]; b7 = b[58];
-	    c[2]  -= a[0 ]*b0 + a[1 ]*b1 + a[2 ]*b2 + a[3 ]*b3 + a[4 ]*b4 + a[5 ]*b5 + a[6 ]*b6 + a[7 ]*b7;
-	    c[10] -= a[8 ]*b0 + a[9 ]*b1 + a[10]*b2 + a[11]*b3 + a[12]*b4 + a[13]*b5 + a[14]*b6 + a[15]*b7;
-	    c[18] -= a[16]*b0 + a[17]*b1 + a[18]*b2 + a[19]*b3 + a[20]*b4 + a[21]*b5 + a[22]*b6 + a[23]*b7;
-	    c[26] -= a[24]*b0 + a[25]*b1 + a[26]*b2 + a[27]*b3 + a[28]*b4 + a[29]*b5 + a[30]*b6 + a[31]*b7;
-	    c[34] -= a[32]*b0 + a[33]*b1 + a[34]*b2 + a[35]*b3 + a[36]*b4 + a[37]*b5 + a[38]*b6 + a[39]*b7;
-	    c[42] -= a[40]*b0 + a[41]*b1 + a[42]*b2 + a[43]*b3 + a[44]*b4 + a[45]*b5 + a[46]*b6 + a[47]*b7;
-	    c[50] -= a[48]*b0 + a[49]*b1 + a[50]*b2 + a[51]*b3 + a[52]*b4 + a[53]*b5 + a[54]*b6 + a[55]*b7;
-	    c[58] -= a[56]*b0 + a[57]*b1 + a[58]*b2 + a[59]*b3 + a[60]*b4 + a[61]*b5 + a[62]*b6 + a[63]*b7;
+            // third
+            b0 = b[2 ]; b1 = b[10]; b2 = b[18]; b3 = b[26]; b4 = b[34]; b5 = b[42];  b6 = b[50]; b7 = b[58];
+            c[2]  -= a[0 ]*b0 + a[1 ]*b1 + a[2 ]*b2 + a[3 ]*b3 + a[4 ]*b4 + a[5 ]*b5 + a[6 ]*b6 + a[7 ]*b7;
+            c[10] -= a[8 ]*b0 + a[9 ]*b1 + a[10]*b2 + a[11]*b3 + a[12]*b4 + a[13]*b5 + a[14]*b6 + a[15]*b7;
+            c[18] -= a[16]*b0 + a[17]*b1 + a[18]*b2 + a[19]*b3 + a[20]*b4 + a[21]*b5 + a[22]*b6 + a[23]*b7;
+            c[26] -= a[24]*b0 + a[25]*b1 + a[26]*b2 + a[27]*b3 + a[28]*b4 + a[29]*b5 + a[30]*b6 + a[31]*b7;
+            c[34] -= a[32]*b0 + a[33]*b1 + a[34]*b2 + a[35]*b3 + a[36]*b4 + a[37]*b5 + a[38]*b6 + a[39]*b7;
+            c[42] -= a[40]*b0 + a[41]*b1 + a[42]*b2 + a[43]*b3 + a[44]*b4 + a[45]*b5 + a[46]*b6 + a[47]*b7;
+            c[50] -= a[48]*b0 + a[49]*b1 + a[50]*b2 + a[51]*b3 + a[52]*b4 + a[53]*b5 + a[54]*b6 + a[55]*b7;
+            c[58] -= a[56]*b0 + a[57]*b1 + a[58]*b2 + a[59]*b3 + a[60]*b4 + a[61]*b5 + a[62]*b6 + a[63]*b7;
 
-	    // four
-	    b0 = b[3 ]; b1 = b[11]; b2 = b[19]; b3 = b[27]; b4 = b[35]; b5 = b[43];  b6 = b[51]; b7 = b[59];
-	    c[3]  -= a[0 ]*b0 + a[1 ]*b1 + a[2 ]*b2 + a[3 ]*b3 + a[4 ]*b4 + a[5 ]*b5 + a[6 ]*b6 + a[7 ]*b7;
-	    c[11] -= a[8 ]*b0 + a[9 ]*b1 + a[10]*b2 + a[11]*b3 + a[12]*b4 + a[13]*b5 + a[14]*b6 + a[15]*b7;
-	    c[19] -= a[16]*b0 + a[17]*b1 + a[18]*b2 + a[19]*b3 + a[20]*b4 + a[21]*b5 + a[22]*b6 + a[23]*b7;
-	    c[27] -= a[24]*b0 + a[25]*b1 + a[26]*b2 + a[27]*b3 + a[28]*b4 + a[29]*b5 + a[30]*b6 + a[31]*b7;
-	    c[35] -= a[32]*b0 + a[33]*b1 + a[34]*b2 + a[35]*b3 + a[36]*b4 + a[37]*b5 + a[38]*b6 + a[39]*b7;
-	    c[43] -= a[40]*b0 + a[41]*b1 + a[42]*b2 + a[43]*b3 + a[44]*b4 + a[45]*b5 + a[46]*b6 + a[47]*b7;
-	    c[51] -= a[48]*b0 + a[49]*b1 + a[50]*b2 + a[51]*b3 + a[52]*b4 + a[53]*b5 + a[54]*b6 + a[55]*b7;
-	    c[59] -= a[56]*b0 + a[57]*b1 + a[58]*b2 + a[59]*b3 + a[60]*b4 + a[61]*b5 + a[62]*b6 + a[63]*b7;
+            // four
+            b0 = b[3 ]; b1 = b[11]; b2 = b[19]; b3 = b[27]; b4 = b[35]; b5 = b[43];  b6 = b[51]; b7 = b[59];
+            c[3]  -= a[0 ]*b0 + a[1 ]*b1 + a[2 ]*b2 + a[3 ]*b3 + a[4 ]*b4 + a[5 ]*b5 + a[6 ]*b6 + a[7 ]*b7;
+            c[11] -= a[8 ]*b0 + a[9 ]*b1 + a[10]*b2 + a[11]*b3 + a[12]*b4 + a[13]*b5 + a[14]*b6 + a[15]*b7;
+            c[19] -= a[16]*b0 + a[17]*b1 + a[18]*b2 + a[19]*b3 + a[20]*b4 + a[21]*b5 + a[22]*b6 + a[23]*b7;
+            c[27] -= a[24]*b0 + a[25]*b1 + a[26]*b2 + a[27]*b3 + a[28]*b4 + a[29]*b5 + a[30]*b6 + a[31]*b7;
+            c[35] -= a[32]*b0 + a[33]*b1 + a[34]*b2 + a[35]*b3 + a[36]*b4 + a[37]*b5 + a[38]*b6 + a[39]*b7;
+            c[43] -= a[40]*b0 + a[41]*b1 + a[42]*b2 + a[43]*b3 + a[44]*b4 + a[45]*b5 + a[46]*b6 + a[47]*b7;
+            c[51] -= a[48]*b0 + a[49]*b1 + a[50]*b2 + a[51]*b3 + a[52]*b4 + a[53]*b5 + a[54]*b6 + a[55]*b7;
+            c[59] -= a[56]*b0 + a[57]*b1 + a[58]*b2 + a[59]*b3 + a[60]*b4 + a[61]*b5 + a[62]*b6 + a[63]*b7;
 
-	    // five
-	    b0 = b[4 ]; b1 = b[12]; b2 = b[20]; b3 = b[28]; b4 = b[36]; b5 = b[44];  b6 = b[52]; b7 = b[60];
-	    c[4]  -= a[0 ]*b0 + a[1 ]*b1 + a[2 ]*b2 + a[3 ]*b3 + a[4 ]*b4 + a[5 ]*b5 + a[6 ]*b6 + a[7 ]*b7;
-	    c[12] -= a[8 ]*b0 + a[9 ]*b1 + a[10]*b2 + a[11]*b3 + a[12]*b4 + a[13]*b5 + a[14]*b6 + a[15]*b7;
-	    c[20] -= a[16]*b0 + a[17]*b1 + a[18]*b2 + a[19]*b3 + a[20]*b4 + a[21]*b5 + a[22]*b6 + a[23]*b7;
-	    c[28] -= a[24]*b0 + a[25]*b1 + a[26]*b2 + a[27]*b3 + a[28]*b4 + a[29]*b5 + a[30]*b6 + a[31]*b7;
-	    c[36] -= a[32]*b0 + a[33]*b1 + a[34]*b2 + a[35]*b3 + a[36]*b4 + a[37]*b5 + a[38]*b6 + a[39]*b7;
-	    c[44] -= a[40]*b0 + a[41]*b1 + a[42]*b2 + a[43]*b3 + a[44]*b4 + a[45]*b5 + a[46]*b6 + a[47]*b7;
-	    c[52] -= a[48]*b0 + a[49]*b1 + a[50]*b2 + a[51]*b3 + a[52]*b4 + a[53]*b5 + a[54]*b6 + a[55]*b7;
-	    c[60] -= a[56]*b0 + a[57]*b1 + a[58]*b2 + a[59]*b3 + a[60]*b4 + a[61]*b5 + a[62]*b6 + a[63]*b7;
+            // five
+            b0 = b[4 ]; b1 = b[12]; b2 = b[20]; b3 = b[28]; b4 = b[36]; b5 = b[44];  b6 = b[52]; b7 = b[60];
+            c[4]  -= a[0 ]*b0 + a[1 ]*b1 + a[2 ]*b2 + a[3 ]*b3 + a[4 ]*b4 + a[5 ]*b5 + a[6 ]*b6 + a[7 ]*b7;
+            c[12] -= a[8 ]*b0 + a[9 ]*b1 + a[10]*b2 + a[11]*b3 + a[12]*b4 + a[13]*b5 + a[14]*b6 + a[15]*b7;
+            c[20] -= a[16]*b0 + a[17]*b1 + a[18]*b2 + a[19]*b3 + a[20]*b4 + a[21]*b5 + a[22]*b6 + a[23]*b7;
+            c[28] -= a[24]*b0 + a[25]*b1 + a[26]*b2 + a[27]*b3 + a[28]*b4 + a[29]*b5 + a[30]*b6 + a[31]*b7;
+            c[36] -= a[32]*b0 + a[33]*b1 + a[34]*b2 + a[35]*b3 + a[36]*b4 + a[37]*b5 + a[38]*b6 + a[39]*b7;
+            c[44] -= a[40]*b0 + a[41]*b1 + a[42]*b2 + a[43]*b3 + a[44]*b4 + a[45]*b5 + a[46]*b6 + a[47]*b7;
+            c[52] -= a[48]*b0 + a[49]*b1 + a[50]*b2 + a[51]*b3 + a[52]*b4 + a[53]*b5 + a[54]*b6 + a[55]*b7;
+            c[60] -= a[56]*b0 + a[57]*b1 + a[58]*b2 + a[59]*b3 + a[60]*b4 + a[61]*b5 + a[62]*b6 + a[63]*b7;
 
-	    // sixth 
-	    b0 = b[5 ]; b1 = b[13]; b2 = b[21]; b3 = b[29]; b4 = b[37]; b5 = b[45];  b6 = b[53]; b7 = b[61];
-	    c[5]  -= a[0 ]*b0 + a[1 ]*b1 + a[2 ]*b2 + a[3 ]*b3 + a[4 ]*b4 + a[5 ]*b5 + a[6 ]*b6 + a[7 ]*b7;
-	    c[13] -= a[8 ]*b0 + a[9 ]*b1 + a[10]*b2 + a[11]*b3 + a[12]*b4 + a[13]*b5 + a[14]*b6 + a[15]*b7;
-	    c[21] -= a[16]*b0 + a[17]*b1 + a[18]*b2 + a[19]*b3 + a[20]*b4 + a[21]*b5 + a[22]*b6 + a[23]*b7;
-	    c[29] -= a[24]*b0 + a[25]*b1 + a[26]*b2 + a[27]*b3 + a[28]*b4 + a[29]*b5 + a[30]*b6 + a[31]*b7;
-	    c[37] -= a[32]*b0 + a[33]*b1 + a[34]*b2 + a[35]*b3 + a[36]*b4 + a[37]*b5 + a[38]*b6 + a[39]*b7;
-	    c[45] -= a[40]*b0 + a[41]*b1 + a[42]*b2 + a[43]*b3 + a[44]*b4 + a[45]*b5 + a[46]*b6 + a[47]*b7;
-	    c[53] -= a[48]*b0 + a[49]*b1 + a[50]*b2 + a[51]*b3 + a[52]*b4 + a[53]*b5 + a[54]*b6 + a[55]*b7;
-	    c[61] -= a[56]*b0 + a[57]*b1 + a[58]*b2 + a[59]*b3 + a[60]*b4 + a[61]*b5 + a[62]*b6 + a[63]*b7;
+            // sixth
+            b0 = b[5 ]; b1 = b[13]; b2 = b[21]; b3 = b[29]; b4 = b[37]; b5 = b[45];  b6 = b[53]; b7 = b[61];
+            c[5]  -= a[0 ]*b0 + a[1 ]*b1 + a[2 ]*b2 + a[3 ]*b3 + a[4 ]*b4 + a[5 ]*b5 + a[6 ]*b6 + a[7 ]*b7;
+            c[13] -= a[8 ]*b0 + a[9 ]*b1 + a[10]*b2 + a[11]*b3 + a[12]*b4 + a[13]*b5 + a[14]*b6 + a[15]*b7;
+            c[21] -= a[16]*b0 + a[17]*b1 + a[18]*b2 + a[19]*b3 + a[20]*b4 + a[21]*b5 + a[22]*b6 + a[23]*b7;
+            c[29] -= a[24]*b0 + a[25]*b1 + a[26]*b2 + a[27]*b3 + a[28]*b4 + a[29]*b5 + a[30]*b6 + a[31]*b7;
+            c[37] -= a[32]*b0 + a[33]*b1 + a[34]*b2 + a[35]*b3 + a[36]*b4 + a[37]*b5 + a[38]*b6 + a[39]*b7;
+            c[45] -= a[40]*b0 + a[41]*b1 + a[42]*b2 + a[43]*b3 + a[44]*b4 + a[45]*b5 + a[46]*b6 + a[47]*b7;
+            c[53] -= a[48]*b0 + a[49]*b1 + a[50]*b2 + a[51]*b3 + a[52]*b4 + a[53]*b5 + a[54]*b6 + a[55]*b7;
+            c[61] -= a[56]*b0 + a[57]*b1 + a[58]*b2 + a[59]*b3 + a[60]*b4 + a[61]*b5 + a[62]*b6 + a[63]*b7;
 
-	    // seventh
-	    b0 = b[6 ]; b1 = b[14]; b2 = b[22]; b3 = b[30]; b4 = b[38]; b5 = b[46];  b6 = b[54]; b7 = b[62];
-	    c[6]  -= a[0 ]*b0 + a[1 ]*b1 + a[2 ]*b2 + a[3 ]*b3 + a[4 ]*b4 + a[5 ]*b5 + a[6 ]*b6 + a[7 ]*b7;
-	    c[14] -= a[8 ]*b0 + a[9 ]*b1 + a[10]*b2 + a[11]*b3 + a[12]*b4 + a[13]*b5 + a[14]*b6 + a[15]*b7;
-	    c[22] -= a[16]*b0 + a[17]*b1 + a[18]*b2 + a[19]*b3 + a[20]*b4 + a[21]*b5 + a[22]*b6 + a[23]*b7;
-	    c[30] -= a[24]*b0 + a[25]*b1 + a[26]*b2 + a[27]*b3 + a[28]*b4 + a[29]*b5 + a[30]*b6 + a[31]*b7;
-	    c[38] -= a[32]*b0 + a[33]*b1 + a[34]*b2 + a[35]*b3 + a[36]*b4 + a[37]*b5 + a[38]*b6 + a[39]*b7;
-	    c[46] -= a[40]*b0 + a[41]*b1 + a[42]*b2 + a[43]*b3 + a[44]*b4 + a[45]*b5 + a[46]*b6 + a[47]*b7;
-	    c[54] -= a[48]*b0 + a[49]*b1 + a[50]*b2 + a[51]*b3 + a[52]*b4 + a[53]*b5 + a[54]*b6 + a[55]*b7;
-	    c[62] -= a[56]*b0 + a[57]*b1 + a[58]*b2 + a[59]*b3 + a[60]*b4 + a[61]*b5 + a[62]*b6 + a[63]*b7;
+            // seventh
+            b0 = b[6 ]; b1 = b[14]; b2 = b[22]; b3 = b[30]; b4 = b[38]; b5 = b[46];  b6 = b[54]; b7 = b[62];
+            c[6]  -= a[0 ]*b0 + a[1 ]*b1 + a[2 ]*b2 + a[3 ]*b3 + a[4 ]*b4 + a[5 ]*b5 + a[6 ]*b6 + a[7 ]*b7;
+            c[14] -= a[8 ]*b0 + a[9 ]*b1 + a[10]*b2 + a[11]*b3 + a[12]*b4 + a[13]*b5 + a[14]*b6 + a[15]*b7;
+            c[22] -= a[16]*b0 + a[17]*b1 + a[18]*b2 + a[19]*b3 + a[20]*b4 + a[21]*b5 + a[22]*b6 + a[23]*b7;
+            c[30] -= a[24]*b0 + a[25]*b1 + a[26]*b2 + a[27]*b3 + a[28]*b4 + a[29]*b5 + a[30]*b6 + a[31]*b7;
+            c[38] -= a[32]*b0 + a[33]*b1 + a[34]*b2 + a[35]*b3 + a[36]*b4 + a[37]*b5 + a[38]*b6 + a[39]*b7;
+            c[46] -= a[40]*b0 + a[41]*b1 + a[42]*b2 + a[43]*b3 + a[44]*b4 + a[45]*b5 + a[46]*b6 + a[47]*b7;
+            c[54] -= a[48]*b0 + a[49]*b1 + a[50]*b2 + a[51]*b3 + a[52]*b4 + a[53]*b5 + a[54]*b6 + a[55]*b7;
+            c[62] -= a[56]*b0 + a[57]*b1 + a[58]*b2 + a[59]*b3 + a[60]*b4 + a[61]*b5 + a[62]*b6 + a[63]*b7;
 
-	    // eight
-	    b0 = b[7 ]; b1 = b[15]; b2 = b[23]; b3 = b[31]; b4 = b[39]; b5 = b[47];  b6 = b[55]; b7 = b[63];
-	    c[7]  -= a[0 ]*b0 + a[1 ]*b1 + a[2 ]*b2 + a[3 ]*b3 + a[4 ]*b4 + a[5 ]*b5 + a[6 ]*b6 + a[7 ]*b7;
-	    c[15] -= a[8 ]*b0 + a[9 ]*b1 + a[10]*b2 + a[11]*b3 + a[12]*b4 + a[13]*b5 + a[14]*b6 + a[15]*b7;
-	    c[23] -= a[16]*b0 + a[17]*b1 + a[18]*b2 + a[19]*b3 + a[20]*b4 + a[21]*b5 + a[22]*b6 + a[23]*b7;
-	    c[31] -= a[24]*b0 + a[25]*b1 + a[26]*b2 + a[27]*b3 + a[28]*b4 + a[29]*b5 + a[30]*b6 + a[31]*b7;
-	    c[39] -= a[32]*b0 + a[33]*b1 + a[34]*b2 + a[35]*b3 + a[36]*b4 + a[37]*b5 + a[38]*b6 + a[39]*b7;
-	    c[47] -= a[40]*b0 + a[41]*b1 + a[42]*b2 + a[43]*b3 + a[44]*b4 + a[45]*b5 + a[46]*b6 + a[47]*b7;
-	    c[55] -= a[48]*b0 + a[49]*b1 + a[50]*b2 + a[51]*b3 + a[52]*b4 + a[53]*b5 + a[54]*b6 + a[55]*b7;
-	    c[63] -= a[56]*b0 + a[57]*b1 + a[58]*b2 + a[59]*b3 + a[60]*b4 + a[61]*b5 + a[62]*b6 + a[63]*b7;
+            // eight
+            b0 = b[7 ]; b1 = b[15]; b2 = b[23]; b3 = b[31]; b4 = b[39]; b5 = b[47];  b6 = b[55]; b7 = b[63];
+            c[7]  -= a[0 ]*b0 + a[1 ]*b1 + a[2 ]*b2 + a[3 ]*b3 + a[4 ]*b4 + a[5 ]*b5 + a[6 ]*b6 + a[7 ]*b7;
+            c[15] -= a[8 ]*b0 + a[9 ]*b1 + a[10]*b2 + a[11]*b3 + a[12]*b4 + a[13]*b5 + a[14]*b6 + a[15]*b7;
+            c[23] -= a[16]*b0 + a[17]*b1 + a[18]*b2 + a[19]*b3 + a[20]*b4 + a[21]*b5 + a[22]*b6 + a[23]*b7;
+            c[31] -= a[24]*b0 + a[25]*b1 + a[26]*b2 + a[27]*b3 + a[28]*b4 + a[29]*b5 + a[30]*b6 + a[31]*b7;
+            c[39] -= a[32]*b0 + a[33]*b1 + a[34]*b2 + a[35]*b3 + a[36]*b4 + a[37]*b5 + a[38]*b6 + a[39]*b7;
+            c[47] -= a[40]*b0 + a[41]*b1 + a[42]*b2 + a[43]*b3 + a[44]*b4 + a[45]*b5 + a[46]*b6 + a[47]*b7;
+            c[55] -= a[48]*b0 + a[49]*b1 + a[50]*b2 + a[51]*b3 + a[52]*b4 + a[53]*b5 + a[54]*b6 + a[55]*b7;
+            c[63] -= a[56]*b0 + a[57]*b1 + a[58]*b2 + a[59]*b3 + a[60]*b4 + a[61]*b5 + a[62]*b6 + a[63]*b7;
 
             nz++;
           }
@@ -1189,15 +1189,15 @@ void BCSRMatMatMultAdd8( double alpha, BCSRMatData * Adata,
       for ( int jp = arowp[i]; jp < arowp[i+1]; jp++ ){
         int j = acols[jp];
         const TacsScalar * a = &A[64*jp];
-	
+
         int kp = browp[j];
         int kp_end = browp[j+1];
         const TacsScalar * b = &B[64*kp];
-	
+
         int cp = crowp[i];
         int cp_end = crowp[i+1];
         TacsScalar * c = &C[64*cp];
-	
+
         for ( ; kp < kp_end; kp++ ){
           while ((cp < cp_end) && (ccols[cp] < bcols[kp])){ cp++; c += 64; }
           if (cp >= cp_end){ break; }
@@ -1206,93 +1206,93 @@ void BCSRMatMatMultAdd8( double alpha, BCSRMatData * Adata,
             // Compute the matrix-matrix multiplication
             TacsScalar b0, b1, b2, b3, b4, b5, b6, b7;
 
-	    // first
-	    b0 = b[0 ]; b1 = b[8 ]; b2 = b[16]; b3 = b[24]; b4 = b[32]; b5 = b[40];  b6 = b[48]; b7 = b[56];
-	    c[0]  += alpha*(a[0 ]*b0 + a[1 ]*b1 + a[2 ]*b2 + a[3 ]*b3 + a[4 ]*b4 + a[5 ]*b5 + a[6 ]*b6 + a[7 ]*b7);
-	    c[8]  += alpha*(a[8 ]*b0 + a[9 ]*b1 + a[10]*b2 + a[11]*b3 + a[12]*b4 + a[13]*b5 + a[14]*b6 + a[15]*b7);
-	    c[16] += alpha*(a[16]*b0 + a[17]*b1 + a[18]*b2 + a[19]*b3 + a[20]*b4 + a[21]*b5 + a[22]*b6 + a[23]*b7);
-	    c[24] += alpha*(a[24]*b0 + a[25]*b1 + a[26]*b2 + a[27]*b3 + a[28]*b4 + a[29]*b5 + a[30]*b6 + a[31]*b7);
-	    c[32] += alpha*(a[32]*b0 + a[33]*b1 + a[34]*b2 + a[35]*b3 + a[36]*b4 + a[37]*b5 + a[38]*b6 + a[39]*b7);
-	    c[40] += alpha*(a[40]*b0 + a[41]*b1 + a[42]*b2 + a[43]*b3 + a[44]*b4 + a[45]*b5 + a[46]*b6 + a[47]*b7);
-	    c[48] += alpha*(a[48]*b0 + a[49]*b1 + a[50]*b2 + a[51]*b3 + a[52]*b4 + a[53]*b5 + a[54]*b6 + a[55]*b7);
-	    c[56] += alpha*(a[56]*b0 + a[57]*b1 + a[58]*b2 + a[59]*b3 + a[60]*b4 + a[61]*b5 + a[62]*b6 + a[63]*b7);
+            // first
+            b0 = b[0 ]; b1 = b[8 ]; b2 = b[16]; b3 = b[24]; b4 = b[32]; b5 = b[40];  b6 = b[48]; b7 = b[56];
+            c[0]  += alpha*(a[0 ]*b0 + a[1 ]*b1 + a[2 ]*b2 + a[3 ]*b3 + a[4 ]*b4 + a[5 ]*b5 + a[6 ]*b6 + a[7 ]*b7);
+            c[8]  += alpha*(a[8 ]*b0 + a[9 ]*b1 + a[10]*b2 + a[11]*b3 + a[12]*b4 + a[13]*b5 + a[14]*b6 + a[15]*b7);
+            c[16] += alpha*(a[16]*b0 + a[17]*b1 + a[18]*b2 + a[19]*b3 + a[20]*b4 + a[21]*b5 + a[22]*b6 + a[23]*b7);
+            c[24] += alpha*(a[24]*b0 + a[25]*b1 + a[26]*b2 + a[27]*b3 + a[28]*b4 + a[29]*b5 + a[30]*b6 + a[31]*b7);
+            c[32] += alpha*(a[32]*b0 + a[33]*b1 + a[34]*b2 + a[35]*b3 + a[36]*b4 + a[37]*b5 + a[38]*b6 + a[39]*b7);
+            c[40] += alpha*(a[40]*b0 + a[41]*b1 + a[42]*b2 + a[43]*b3 + a[44]*b4 + a[45]*b5 + a[46]*b6 + a[47]*b7);
+            c[48] += alpha*(a[48]*b0 + a[49]*b1 + a[50]*b2 + a[51]*b3 + a[52]*b4 + a[53]*b5 + a[54]*b6 + a[55]*b7);
+            c[56] += alpha*(a[56]*b0 + a[57]*b1 + a[58]*b2 + a[59]*b3 + a[60]*b4 + a[61]*b5 + a[62]*b6 + a[63]*b7);
 
-	    // second	      
-	    b0 = b[1 ]; b1 = b[9 ]; b2 = b[17]; b3 = b[25]; b4 = b[33]; b5 = b[41];  b6 = b[49]; b7 = b[57];
-	    c[1]  += alpha*(a[0 ]*b0 + a[1 ]*b1 + a[2 ]*b2 + a[3 ]*b3 + a[4 ]*b4 + a[5 ]*b5 + a[6 ]*b6 + a[7 ]*b7);
-	    c[9]  += alpha*(a[8 ]*b0 + a[9 ]*b1 + a[10]*b2 + a[11]*b3 + a[12]*b4 + a[13]*b5 + a[14]*b6 + a[15]*b7);
-	    c[17] += alpha*(a[16]*b0 + a[17]*b1 + a[18]*b2 + a[19]*b3 + a[20]*b4 + a[21]*b5 + a[22]*b6 + a[23]*b7);
-	    c[25] += alpha*(a[24]*b0 + a[25]*b1 + a[26]*b2 + a[27]*b3 + a[28]*b4 + a[29]*b5 + a[30]*b6 + a[31]*b7);
-	    c[33] += alpha*(a[32]*b0 + a[33]*b1 + a[34]*b2 + a[35]*b3 + a[36]*b4 + a[37]*b5 + a[38]*b6 + a[39]*b7);
-	    c[41] += alpha*(a[40]*b0 + a[41]*b1 + a[42]*b2 + a[43]*b3 + a[44]*b4 + a[45]*b5 + a[46]*b6 + a[47]*b7);
-	    c[49] += alpha*(a[48]*b0 + a[49]*b1 + a[50]*b2 + a[51]*b3 + a[52]*b4 + a[53]*b5 + a[54]*b6 + a[55]*b7);
-	    c[57] += alpha*(a[56]*b0 + a[57]*b1 + a[58]*b2 + a[59]*b3 + a[60]*b4 + a[61]*b5 + a[62]*b6 + a[63]*b7);
+            // second
+            b0 = b[1 ]; b1 = b[9 ]; b2 = b[17]; b3 = b[25]; b4 = b[33]; b5 = b[41];  b6 = b[49]; b7 = b[57];
+            c[1]  += alpha*(a[0 ]*b0 + a[1 ]*b1 + a[2 ]*b2 + a[3 ]*b3 + a[4 ]*b4 + a[5 ]*b5 + a[6 ]*b6 + a[7 ]*b7);
+            c[9]  += alpha*(a[8 ]*b0 + a[9 ]*b1 + a[10]*b2 + a[11]*b3 + a[12]*b4 + a[13]*b5 + a[14]*b6 + a[15]*b7);
+            c[17] += alpha*(a[16]*b0 + a[17]*b1 + a[18]*b2 + a[19]*b3 + a[20]*b4 + a[21]*b5 + a[22]*b6 + a[23]*b7);
+            c[25] += alpha*(a[24]*b0 + a[25]*b1 + a[26]*b2 + a[27]*b3 + a[28]*b4 + a[29]*b5 + a[30]*b6 + a[31]*b7);
+            c[33] += alpha*(a[32]*b0 + a[33]*b1 + a[34]*b2 + a[35]*b3 + a[36]*b4 + a[37]*b5 + a[38]*b6 + a[39]*b7);
+            c[41] += alpha*(a[40]*b0 + a[41]*b1 + a[42]*b2 + a[43]*b3 + a[44]*b4 + a[45]*b5 + a[46]*b6 + a[47]*b7);
+            c[49] += alpha*(a[48]*b0 + a[49]*b1 + a[50]*b2 + a[51]*b3 + a[52]*b4 + a[53]*b5 + a[54]*b6 + a[55]*b7);
+            c[57] += alpha*(a[56]*b0 + a[57]*b1 + a[58]*b2 + a[59]*b3 + a[60]*b4 + a[61]*b5 + a[62]*b6 + a[63]*b7);
 
-	    // third
-	    b0 = b[2 ]; b1 = b[10]; b2 = b[18]; b3 = b[26]; b4 = b[34]; b5 = b[42];  b6 = b[50]; b7 = b[58];
-	    c[2]  += alpha*(a[0 ]*b0 + a[1 ]*b1 + a[2 ]*b2 + a[3 ]*b3 + a[4 ]*b4 + a[5 ]*b5 + a[6 ]*b6 + a[7 ]*b7);
-	    c[10] += alpha*(a[8 ]*b0 + a[9 ]*b1 + a[10]*b2 + a[11]*b3 + a[12]*b4 + a[13]*b5 + a[14]*b6 + a[15]*b7);
-	    c[18] += alpha*(a[16]*b0 + a[17]*b1 + a[18]*b2 + a[19]*b3 + a[20]*b4 + a[21]*b5 + a[22]*b6 + a[23]*b7);
-	    c[26] += alpha*(a[24]*b0 + a[25]*b1 + a[26]*b2 + a[27]*b3 + a[28]*b4 + a[29]*b5 + a[30]*b6 + a[31]*b7);
-	    c[34] += alpha*(a[32]*b0 + a[33]*b1 + a[34]*b2 + a[35]*b3 + a[36]*b4 + a[37]*b5 + a[38]*b6 + a[39]*b7);
-	    c[42] += alpha*(a[40]*b0 + a[41]*b1 + a[42]*b2 + a[43]*b3 + a[44]*b4 + a[45]*b5 + a[46]*b6 + a[47]*b7);
-	    c[50] += alpha*(a[48]*b0 + a[49]*b1 + a[50]*b2 + a[51]*b3 + a[52]*b4 + a[53]*b5 + a[54]*b6 + a[55]*b7);
-	    c[58] += alpha*(a[56]*b0 + a[57]*b1 + a[58]*b2 + a[59]*b3 + a[60]*b4 + a[61]*b5 + a[62]*b6 + a[63]*b7);
+            // third
+            b0 = b[2 ]; b1 = b[10]; b2 = b[18]; b3 = b[26]; b4 = b[34]; b5 = b[42];  b6 = b[50]; b7 = b[58];
+            c[2]  += alpha*(a[0 ]*b0 + a[1 ]*b1 + a[2 ]*b2 + a[3 ]*b3 + a[4 ]*b4 + a[5 ]*b5 + a[6 ]*b6 + a[7 ]*b7);
+            c[10] += alpha*(a[8 ]*b0 + a[9 ]*b1 + a[10]*b2 + a[11]*b3 + a[12]*b4 + a[13]*b5 + a[14]*b6 + a[15]*b7);
+            c[18] += alpha*(a[16]*b0 + a[17]*b1 + a[18]*b2 + a[19]*b3 + a[20]*b4 + a[21]*b5 + a[22]*b6 + a[23]*b7);
+            c[26] += alpha*(a[24]*b0 + a[25]*b1 + a[26]*b2 + a[27]*b3 + a[28]*b4 + a[29]*b5 + a[30]*b6 + a[31]*b7);
+            c[34] += alpha*(a[32]*b0 + a[33]*b1 + a[34]*b2 + a[35]*b3 + a[36]*b4 + a[37]*b5 + a[38]*b6 + a[39]*b7);
+            c[42] += alpha*(a[40]*b0 + a[41]*b1 + a[42]*b2 + a[43]*b3 + a[44]*b4 + a[45]*b5 + a[46]*b6 + a[47]*b7);
+            c[50] += alpha*(a[48]*b0 + a[49]*b1 + a[50]*b2 + a[51]*b3 + a[52]*b4 + a[53]*b5 + a[54]*b6 + a[55]*b7);
+            c[58] += alpha*(a[56]*b0 + a[57]*b1 + a[58]*b2 + a[59]*b3 + a[60]*b4 + a[61]*b5 + a[62]*b6 + a[63]*b7);
 
-	    // four
-	    b0 = b[3 ]; b1 = b[11]; b2 = b[19]; b3 = b[27]; b4 = b[35]; b5 = b[43];  b6 = b[51]; b7 = b[59];
-	    c[3]  += alpha*(a[0 ]*b0 + a[1 ]*b1 + a[2 ]*b2 + a[3 ]*b3 + a[4 ]*b4 + a[5 ]*b5 + a[6 ]*b6 + a[7 ]*b7);
-	    c[11] += alpha*(a[8 ]*b0 + a[9 ]*b1 + a[10]*b2 + a[11]*b3 + a[12]*b4 + a[13]*b5 + a[14]*b6 + a[15]*b7);
-	    c[19] += alpha*(a[16]*b0 + a[17]*b1 + a[18]*b2 + a[19]*b3 + a[20]*b4 + a[21]*b5 + a[22]*b6 + a[23]*b7);
-	    c[27] += alpha*(a[24]*b0 + a[25]*b1 + a[26]*b2 + a[27]*b3 + a[28]*b4 + a[29]*b5 + a[30]*b6 + a[31]*b7);
-	    c[35] += alpha*(a[32]*b0 + a[33]*b1 + a[34]*b2 + a[35]*b3 + a[36]*b4 + a[37]*b5 + a[38]*b6 + a[39]*b7);
-	    c[43] += alpha*(a[40]*b0 + a[41]*b1 + a[42]*b2 + a[43]*b3 + a[44]*b4 + a[45]*b5 + a[46]*b6 + a[47]*b7);
-	    c[51] += alpha*(a[48]*b0 + a[49]*b1 + a[50]*b2 + a[51]*b3 + a[52]*b4 + a[53]*b5 + a[54]*b6 + a[55]*b7);
-	    c[59] += alpha*(a[56]*b0 + a[57]*b1 + a[58]*b2 + a[59]*b3 + a[60]*b4 + a[61]*b5 + a[62]*b6 + a[63]*b7);
+            // four
+            b0 = b[3 ]; b1 = b[11]; b2 = b[19]; b3 = b[27]; b4 = b[35]; b5 = b[43];  b6 = b[51]; b7 = b[59];
+            c[3]  += alpha*(a[0 ]*b0 + a[1 ]*b1 + a[2 ]*b2 + a[3 ]*b3 + a[4 ]*b4 + a[5 ]*b5 + a[6 ]*b6 + a[7 ]*b7);
+            c[11] += alpha*(a[8 ]*b0 + a[9 ]*b1 + a[10]*b2 + a[11]*b3 + a[12]*b4 + a[13]*b5 + a[14]*b6 + a[15]*b7);
+            c[19] += alpha*(a[16]*b0 + a[17]*b1 + a[18]*b2 + a[19]*b3 + a[20]*b4 + a[21]*b5 + a[22]*b6 + a[23]*b7);
+            c[27] += alpha*(a[24]*b0 + a[25]*b1 + a[26]*b2 + a[27]*b3 + a[28]*b4 + a[29]*b5 + a[30]*b6 + a[31]*b7);
+            c[35] += alpha*(a[32]*b0 + a[33]*b1 + a[34]*b2 + a[35]*b3 + a[36]*b4 + a[37]*b5 + a[38]*b6 + a[39]*b7);
+            c[43] += alpha*(a[40]*b0 + a[41]*b1 + a[42]*b2 + a[43]*b3 + a[44]*b4 + a[45]*b5 + a[46]*b6 + a[47]*b7);
+            c[51] += alpha*(a[48]*b0 + a[49]*b1 + a[50]*b2 + a[51]*b3 + a[52]*b4 + a[53]*b5 + a[54]*b6 + a[55]*b7);
+            c[59] += alpha*(a[56]*b0 + a[57]*b1 + a[58]*b2 + a[59]*b3 + a[60]*b4 + a[61]*b5 + a[62]*b6 + a[63]*b7);
 
-	    // five
-	    b0 = b[4 ]; b1 = b[12]; b2 = b[20]; b3 = b[28]; b4 = b[36]; b5 = b[44];  b6 = b[52]; b7 = b[60];
-	    c[4]  += alpha*(a[0 ]*b0 + a[1 ]*b1 + a[2 ]*b2 + a[3 ]*b3 + a[4 ]*b4 + a[5 ]*b5 + a[6 ]*b6 + a[7 ]*b7);
-	    c[12] += alpha*(a[8 ]*b0 + a[9 ]*b1 + a[10]*b2 + a[11]*b3 + a[12]*b4 + a[13]*b5 + a[14]*b6 + a[15]*b7);
-	    c[20] += alpha*(a[16]*b0 + a[17]*b1 + a[18]*b2 + a[19]*b3 + a[20]*b4 + a[21]*b5 + a[22]*b6 + a[23]*b7);
-	    c[28] += alpha*(a[24]*b0 + a[25]*b1 + a[26]*b2 + a[27]*b3 + a[28]*b4 + a[29]*b5 + a[30]*b6 + a[31]*b7);
-	    c[36] += alpha*(a[32]*b0 + a[33]*b1 + a[34]*b2 + a[35]*b3 + a[36]*b4 + a[37]*b5 + a[38]*b6 + a[39]*b7);
-	    c[44] += alpha*(a[40]*b0 + a[41]*b1 + a[42]*b2 + a[43]*b3 + a[44]*b4 + a[45]*b5 + a[46]*b6 + a[47]*b7);
-	    c[52] += alpha*(a[48]*b0 + a[49]*b1 + a[50]*b2 + a[51]*b3 + a[52]*b4 + a[53]*b5 + a[54]*b6 + a[55]*b7);
-	    c[60] += alpha*(a[56]*b0 + a[57]*b1 + a[58]*b2 + a[59]*b3 + a[60]*b4 + a[61]*b5 + a[62]*b6 + a[63]*b7);
+            // five
+            b0 = b[4 ]; b1 = b[12]; b2 = b[20]; b3 = b[28]; b4 = b[36]; b5 = b[44];  b6 = b[52]; b7 = b[60];
+            c[4]  += alpha*(a[0 ]*b0 + a[1 ]*b1 + a[2 ]*b2 + a[3 ]*b3 + a[4 ]*b4 + a[5 ]*b5 + a[6 ]*b6 + a[7 ]*b7);
+            c[12] += alpha*(a[8 ]*b0 + a[9 ]*b1 + a[10]*b2 + a[11]*b3 + a[12]*b4 + a[13]*b5 + a[14]*b6 + a[15]*b7);
+            c[20] += alpha*(a[16]*b0 + a[17]*b1 + a[18]*b2 + a[19]*b3 + a[20]*b4 + a[21]*b5 + a[22]*b6 + a[23]*b7);
+            c[28] += alpha*(a[24]*b0 + a[25]*b1 + a[26]*b2 + a[27]*b3 + a[28]*b4 + a[29]*b5 + a[30]*b6 + a[31]*b7);
+            c[36] += alpha*(a[32]*b0 + a[33]*b1 + a[34]*b2 + a[35]*b3 + a[36]*b4 + a[37]*b5 + a[38]*b6 + a[39]*b7);
+            c[44] += alpha*(a[40]*b0 + a[41]*b1 + a[42]*b2 + a[43]*b3 + a[44]*b4 + a[45]*b5 + a[46]*b6 + a[47]*b7);
+            c[52] += alpha*(a[48]*b0 + a[49]*b1 + a[50]*b2 + a[51]*b3 + a[52]*b4 + a[53]*b5 + a[54]*b6 + a[55]*b7);
+            c[60] += alpha*(a[56]*b0 + a[57]*b1 + a[58]*b2 + a[59]*b3 + a[60]*b4 + a[61]*b5 + a[62]*b6 + a[63]*b7);
 
-	    // sixth 
-	    b0 = b[5 ]; b1 = b[13]; b2 = b[21]; b3 = b[29]; b4 = b[37]; b5 = b[45];  b6 = b[53]; b7 = b[61];
-	    c[5]  += alpha*(a[0 ]*b0 + a[1 ]*b1 + a[2 ]*b2 + a[3 ]*b3 + a[4 ]*b4 + a[5 ]*b5 + a[6 ]*b6 + a[7 ]*b7);
-	    c[13] += alpha*(a[8 ]*b0 + a[9 ]*b1 + a[10]*b2 + a[11]*b3 + a[12]*b4 + a[13]*b5 + a[14]*b6 + a[15]*b7);
-	    c[21] += alpha*(a[16]*b0 + a[17]*b1 + a[18]*b2 + a[19]*b3 + a[20]*b4 + a[21]*b5 + a[22]*b6 + a[23]*b7);
-	    c[29] += alpha*(a[24]*b0 + a[25]*b1 + a[26]*b2 + a[27]*b3 + a[28]*b4 + a[29]*b5 + a[30]*b6 + a[31]*b7);
-	    c[37] += alpha*(a[32]*b0 + a[33]*b1 + a[34]*b2 + a[35]*b3 + a[36]*b4 + a[37]*b5 + a[38]*b6 + a[39]*b7);
-	    c[45] += alpha*(a[40]*b0 + a[41]*b1 + a[42]*b2 + a[43]*b3 + a[44]*b4 + a[45]*b5 + a[46]*b6 + a[47]*b7);
-	    c[53] += alpha*(a[48]*b0 + a[49]*b1 + a[50]*b2 + a[51]*b3 + a[52]*b4 + a[53]*b5 + a[54]*b6 + a[55]*b7);
-	    c[61] += alpha*(a[56]*b0 + a[57]*b1 + a[58]*b2 + a[59]*b3 + a[60]*b4 + a[61]*b5 + a[62]*b6 + a[63]*b7);
+            // sixth
+            b0 = b[5 ]; b1 = b[13]; b2 = b[21]; b3 = b[29]; b4 = b[37]; b5 = b[45];  b6 = b[53]; b7 = b[61];
+            c[5]  += alpha*(a[0 ]*b0 + a[1 ]*b1 + a[2 ]*b2 + a[3 ]*b3 + a[4 ]*b4 + a[5 ]*b5 + a[6 ]*b6 + a[7 ]*b7);
+            c[13] += alpha*(a[8 ]*b0 + a[9 ]*b1 + a[10]*b2 + a[11]*b3 + a[12]*b4 + a[13]*b5 + a[14]*b6 + a[15]*b7);
+            c[21] += alpha*(a[16]*b0 + a[17]*b1 + a[18]*b2 + a[19]*b3 + a[20]*b4 + a[21]*b5 + a[22]*b6 + a[23]*b7);
+            c[29] += alpha*(a[24]*b0 + a[25]*b1 + a[26]*b2 + a[27]*b3 + a[28]*b4 + a[29]*b5 + a[30]*b6 + a[31]*b7);
+            c[37] += alpha*(a[32]*b0 + a[33]*b1 + a[34]*b2 + a[35]*b3 + a[36]*b4 + a[37]*b5 + a[38]*b6 + a[39]*b7);
+            c[45] += alpha*(a[40]*b0 + a[41]*b1 + a[42]*b2 + a[43]*b3 + a[44]*b4 + a[45]*b5 + a[46]*b6 + a[47]*b7);
+            c[53] += alpha*(a[48]*b0 + a[49]*b1 + a[50]*b2 + a[51]*b3 + a[52]*b4 + a[53]*b5 + a[54]*b6 + a[55]*b7);
+            c[61] += alpha*(a[56]*b0 + a[57]*b1 + a[58]*b2 + a[59]*b3 + a[60]*b4 + a[61]*b5 + a[62]*b6 + a[63]*b7);
 
-	    // seventh
-	    b0 = b[6 ]; b1 = b[14]; b2 = b[22]; b3 = b[30]; b4 = b[38]; b5 = b[46];  b6 = b[54]; b7 = b[62];
-	    c[6]  += alpha*(a[0 ]*b0 + a[1 ]*b1 + a[2 ]*b2 + a[3 ]*b3 + a[4 ]*b4 + a[5 ]*b5 + a[6 ]*b6 + a[7 ]*b7);
-	    c[14] += alpha*(a[8 ]*b0 + a[9 ]*b1 + a[10]*b2 + a[11]*b3 + a[12]*b4 + a[13]*b5 + a[14]*b6 + a[15]*b7);
-	    c[22] += alpha*(a[16]*b0 + a[17]*b1 + a[18]*b2 + a[19]*b3 + a[20]*b4 + a[21]*b5 + a[22]*b6 + a[23]*b7);
-	    c[30] += alpha*(a[24]*b0 + a[25]*b1 + a[26]*b2 + a[27]*b3 + a[28]*b4 + a[29]*b5 + a[30]*b6 + a[31]*b7);
-	    c[38] += alpha*(a[32]*b0 + a[33]*b1 + a[34]*b2 + a[35]*b3 + a[36]*b4 + a[37]*b5 + a[38]*b6 + a[39]*b7);
-	    c[46] += alpha*(a[40]*b0 + a[41]*b1 + a[42]*b2 + a[43]*b3 + a[44]*b4 + a[45]*b5 + a[46]*b6 + a[47]*b7);
-	    c[54] += alpha*(a[48]*b0 + a[49]*b1 + a[50]*b2 + a[51]*b3 + a[52]*b4 + a[53]*b5 + a[54]*b6 + a[55]*b7);
-	    c[62] += alpha*(a[56]*b0 + a[57]*b1 + a[58]*b2 + a[59]*b3 + a[60]*b4 + a[61]*b5 + a[62]*b6 + a[63]*b7);
+            // seventh
+            b0 = b[6 ]; b1 = b[14]; b2 = b[22]; b3 = b[30]; b4 = b[38]; b5 = b[46];  b6 = b[54]; b7 = b[62];
+            c[6]  += alpha*(a[0 ]*b0 + a[1 ]*b1 + a[2 ]*b2 + a[3 ]*b3 + a[4 ]*b4 + a[5 ]*b5 + a[6 ]*b6 + a[7 ]*b7);
+            c[14] += alpha*(a[8 ]*b0 + a[9 ]*b1 + a[10]*b2 + a[11]*b3 + a[12]*b4 + a[13]*b5 + a[14]*b6 + a[15]*b7);
+            c[22] += alpha*(a[16]*b0 + a[17]*b1 + a[18]*b2 + a[19]*b3 + a[20]*b4 + a[21]*b5 + a[22]*b6 + a[23]*b7);
+            c[30] += alpha*(a[24]*b0 + a[25]*b1 + a[26]*b2 + a[27]*b3 + a[28]*b4 + a[29]*b5 + a[30]*b6 + a[31]*b7);
+            c[38] += alpha*(a[32]*b0 + a[33]*b1 + a[34]*b2 + a[35]*b3 + a[36]*b4 + a[37]*b5 + a[38]*b6 + a[39]*b7);
+            c[46] += alpha*(a[40]*b0 + a[41]*b1 + a[42]*b2 + a[43]*b3 + a[44]*b4 + a[45]*b5 + a[46]*b6 + a[47]*b7);
+            c[54] += alpha*(a[48]*b0 + a[49]*b1 + a[50]*b2 + a[51]*b3 + a[52]*b4 + a[53]*b5 + a[54]*b6 + a[55]*b7);
+            c[62] += alpha*(a[56]*b0 + a[57]*b1 + a[58]*b2 + a[59]*b3 + a[60]*b4 + a[61]*b5 + a[62]*b6 + a[63]*b7);
 
-	    // eight
-	    b0 = b[7 ]; b1 = b[15]; b2 = b[23]; b3 = b[31]; b4 = b[39]; b5 = b[47];  b6 = b[55]; b7 = b[63];
-	    c[7]  += alpha*(a[0 ]*b0 + a[1 ]*b1 + a[2 ]*b2 + a[3 ]*b3 + a[4 ]*b4 + a[5 ]*b5 + a[6 ]*b6 + a[7 ]*b7);
-	    c[15] += alpha*(a[8 ]*b0 + a[9 ]*b1 + a[10]*b2 + a[11]*b3 + a[12]*b4 + a[13]*b5 + a[14]*b6 + a[15]*b7);
-	    c[23] += alpha*(a[16]*b0 + a[17]*b1 + a[18]*b2 + a[19]*b3 + a[20]*b4 + a[21]*b5 + a[22]*b6 + a[23]*b7);
-	    c[31] += alpha*(a[24]*b0 + a[25]*b1 + a[26]*b2 + a[27]*b3 + a[28]*b4 + a[29]*b5 + a[30]*b6 + a[31]*b7);
-	    c[39] += alpha*(a[32]*b0 + a[33]*b1 + a[34]*b2 + a[35]*b3 + a[36]*b4 + a[37]*b5 + a[38]*b6 + a[39]*b7);
-	    c[47] += alpha*(a[40]*b0 + a[41]*b1 + a[42]*b2 + a[43]*b3 + a[44]*b4 + a[45]*b5 + a[46]*b6 + a[47]*b7);
-	    c[55] += alpha*(a[48]*b0 + a[49]*b1 + a[50]*b2 + a[51]*b3 + a[52]*b4 + a[53]*b5 + a[54]*b6 + a[55]*b7);
-	    c[63] += alpha*(a[56]*b0 + a[57]*b1 + a[58]*b2 + a[59]*b3 + a[60]*b4 + a[61]*b5 + a[62]*b6 + a[63]*b7);
+            // eight
+            b0 = b[7 ]; b1 = b[15]; b2 = b[23]; b3 = b[31]; b4 = b[39]; b5 = b[47];  b6 = b[55]; b7 = b[63];
+            c[7]  += alpha*(a[0 ]*b0 + a[1 ]*b1 + a[2 ]*b2 + a[3 ]*b3 + a[4 ]*b4 + a[5 ]*b5 + a[6 ]*b6 + a[7 ]*b7);
+            c[15] += alpha*(a[8 ]*b0 + a[9 ]*b1 + a[10]*b2 + a[11]*b3 + a[12]*b4 + a[13]*b5 + a[14]*b6 + a[15]*b7);
+            c[23] += alpha*(a[16]*b0 + a[17]*b1 + a[18]*b2 + a[19]*b3 + a[20]*b4 + a[21]*b5 + a[22]*b6 + a[23]*b7);
+            c[31] += alpha*(a[24]*b0 + a[25]*b1 + a[26]*b2 + a[27]*b3 + a[28]*b4 + a[29]*b5 + a[30]*b6 + a[31]*b7);
+            c[39] += alpha*(a[32]*b0 + a[33]*b1 + a[34]*b2 + a[35]*b3 + a[36]*b4 + a[37]*b5 + a[38]*b6 + a[39]*b7);
+            c[47] += alpha*(a[40]*b0 + a[41]*b1 + a[42]*b2 + a[43]*b3 + a[44]*b4 + a[45]*b5 + a[46]*b6 + a[47]*b7);
+            c[55] += alpha*(a[48]*b0 + a[49]*b1 + a[50]*b2 + a[51]*b3 + a[52]*b4 + a[53]*b5 + a[54]*b6 + a[55]*b7);
+            c[63] += alpha*(a[56]*b0 + a[57]*b1 + a[58]*b2 + a[59]*b3 + a[60]*b4 + a[61]*b5 + a[62]*b6 + a[63]*b7);
             nz++;
           }
           b += 64;
@@ -1309,10 +1309,10 @@ void BCSRMatMatMultAdd8( double alpha, BCSRMatData * Adata,
 */
 void BCSRMatApplySOR8( BCSRMatData *Adata, BCSRMatData *Bdata,
                        const int start, const int end,
-                       const int var_offset, 
+                       const int var_offset,
                        const TacsScalar *Adiag,
-                       const TacsScalar omega, 
-                       const TacsScalar *b, 
+                       const TacsScalar omega,
+                       const TacsScalar *b,
                        const TacsScalar *xext, TacsScalar *x ){
   const int *Arowp = Adata->rowp;
   const int *Acols = Adata->cols;
@@ -1358,7 +1358,7 @@ void BCSRMatApplySOR8( BCSRMatData *Adata, BCSRMatData *Bdata,
         t7 -= a[48]*y[0] + a[49]*y[1] + a[50]*y[2] + a[51]*y[3] + a[52]*y[4] + a[53]*y[5] + a[54]*y[6] + a[55]*y[7];
         t8 -= a[56]*y[0] + a[57]*y[1] + a[58]*y[2] + a[59]*y[3] + a[60]*y[4] + a[61]*y[5] + a[62]*y[6] + a[63]*y[7];
       }
-        
+
       // Increment the block pointer by bsize^2
       a += 64;
     }
@@ -1367,7 +1367,7 @@ void BCSRMatApplySOR8( BCSRMatData *Adata, BCSRMatData *Bdata,
       const int row = i - var_offset;
 
       // Set the pointer to the row in B
-      a = &Bdata->A[64*Browp[row]];       
+      a = &Bdata->A[64*Browp[row]];
       end = Browp[row+1];
       for ( int k = Browp[row]; k < end; k++ ){
         int j = Bcols[k];
@@ -1381,7 +1381,7 @@ void BCSRMatApplySOR8( BCSRMatData *Adata, BCSRMatData *Bdata,
         t6 -= a[40]*y[0] + a[41]*y[1] + a[42]*y[2] + a[43]*y[3] + a[44]*y[4] + a[45]*y[5] + a[46]*y[6] + a[47]*y[7];
         t7 -= a[48]*y[0] + a[49]*y[1] + a[50]*y[2] + a[51]*y[3] + a[52]*y[4] + a[53]*y[5] + a[54]*y[6] + a[55]*y[7];
         t8 -= a[56]*y[0] + a[57]*y[1] + a[58]*y[2] + a[59]*y[3] + a[60]*y[4] + a[61]*y[5] + a[62]*y[6] + a[63]*y[7];
-        
+
         a += 64;
       }
     }

@@ -13,8 +13,8 @@
   TACS is licensed under the Apache License, Version 2.0 (the
   "License"); you may not use this software except in compliance with
   the License.  You may obtain a copy of the License at
-  
-  http://www.apache.org/licenses/LICENSE-2.0 
+
+  http://www.apache.org/licenses/LICENSE-2.0
 */
 
 #ifndef TACS_MG_H
@@ -25,8 +25,8 @@
 */
 
 #include "TACSAssembler.h"
-#include "BVec.h"
-#include "BVecInterp.h"
+#include "TACSBVec.h"
+#include "TACSBVecInterp.h"
 
 /*
   This class implements a geometric multi-grid solution method as
@@ -35,8 +35,8 @@
   This uses geometric multigrid where a number of related
   finite-element models are used to assemble a related series of
   linear systems. The interpolation/prolongation operators transfer
-  the solution between different grid levels. 
-  
+  the solution between different grid levels.
+
   This automates the recursive application of multi-grid, but the
   requirement to formulate the nested series of TACS models remains
   with the user. This is automated somewhat with the TACSMesh class.
@@ -56,32 +56,33 @@
 */
 class TACSMg : public TACSPc {
  public:
-  TACSMg( MPI_Comm comm, int _nlevels, double _sor_omega=1.0, 
+  TACSMg( MPI_Comm comm, int _nlevels, double _sor_omega=1.0,
           int _sor_iters=1, int _sor_symmetric=0 );
   ~TACSMg();
 
   // Set the data for the multi-grid level
   // -------------------------------------
-  void setLevel( int level, TACSAssembler *_tacs,
+  void setLevel( int level, TACSAssembler *_assembler,
                  TACSBVecInterp *interp=NULL,
-                 int _iters=1, TACSMat *_mat=NULL, 
-                 TACSPc *_smoother=NULL );
-    
+                 int _iters=1, int _use_galerkin=0,
+                 TACSMat *_mat=NULL, TACSPc *_smoother=NULL );
+
   // Set the state/design variables of all lower finite-element models
   // -----------------------------------------------------------------
-  void setVariables( TACSBVec * vec ); 
-  void setDesignVars( const TacsScalar dvs[], int numDVs );
+  void setVariables( TACSBVec *vec );
+  void setDesignVars( TACSBVec *x );
 
   // Assemble the given finite-element matrix at all levels
   // ------------------------------------------------------
   void assembleJacobian( double alpha, double beta, double gamma,
-                         TACSBVec *res=NULL, 
-                         MatrixOrientation matOr=NORMAL );
-  void assembleMatType( ElementMatrixType matType=STIFFNESS_MATRIX, 
-                        MatrixOrientation matOr=NORMAL );
+                         TACSBVec *res=NULL,
+                         MatrixOrientation matOr=TACS_MAT_NORMAL );
+  void assembleMatType( ElementMatrixType matType=TACS_STIFFNESS_MATRIX,
+                        MatrixOrientation matOr=TACS_MAT_NORMAL );
   void assembleMatCombo( ElementMatrixType matTypes[],
                          TacsScalar scale[], int nmats,
-                         MatrixOrientation matOr=NORMAL );
+                         MatrixOrientation matOr=TACS_MAT_NORMAL );
+  int assembleGalerkinMat();
 
   // Methods required by the TACSPc class
   // ------------------------------------
@@ -90,14 +91,14 @@ class TACSMg : public TACSPc {
 
   // Solve the problem using the full multi-grid method
   // --------------------------------------------------
-  void solve( TACSBVec *bvec, TACSBVec *xvec, int max_iters=200, 
+  void solve( TACSBVec *bvec, TACSBVec *xvec, int max_iters=200,
               double rtol=1e-8, double atol=1e-30 );
 
   // Retrieve the matrix from the specified level
   // --------------------------------------------
   void getMat( TACSMat **_mat );
-  TACSMat *getMat( int level );  
-  TACSAssembler *getTACS( int level );
+  TACSMat *getMat( int level );
+  TACSAssembler *getAssembler( int level );
   TACSBVecInterp *getInterpolation( int level );
 
   // Set the solution monitor context
@@ -106,7 +107,7 @@ class TACSMg : public TACSPc {
 
  private:
   // Recursive function to apply multi-grid at each level
-  void applyMg( int level ); 
+  void applyMg( int level );
 
   // The MPI communicator for this object
   MPI_Comm comm;
@@ -114,15 +115,19 @@ class TACSMg : public TACSPc {
   // Monitor the solution
   KSMPrint *monitor;
 
-  // The SOR data 
+  // The SOR data
   int sor_iters, sor_symmetric;
   double sor_omega;
+
+  // Flag to indicate whether to form the coarse grid operators
+  // via Galerkin projection coarse = P^{T}*A*P
+  int *use_galerkin;
 
   // The number of multi-grid levels
   int nlevels;
 
   // The TACSAssembler object for each level
-  TACSAssembler **tacs;
+  TACSAssembler **assembler;
   int *iters;
 
   // The solution, right-hand-side and residual on each level
@@ -135,7 +140,7 @@ class TACSMg : public TACSPc {
   double *cumulative_level_time;
 
   // The matrices/preconditioner objects required for multigrid
-  TACSMat *root_mat; // The root matrix 
+  TACSMat *root_mat; // The root matrix
   TACSPc *root_pc; // The root direct solver
   TACSMat **mat; // The matrices associated with each level
   TACSPc **pc; // The smoothers for all but the lowest level

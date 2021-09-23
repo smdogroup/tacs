@@ -42,7 +42,7 @@
 */
 class TACSLinearBuckling : public TACSObject {
  public:
-  TACSLinearBuckling( TACSAssembler *_tacs,
+  TACSLinearBuckling( TACSAssembler *_assembler,
                       TacsScalar _sigma,
                       TACSMat *_gmat, TACSMat *_kmat,
                       TACSMat *_aux_mat, TACSKsm *_solver,
@@ -52,7 +52,7 @@ class TACSLinearBuckling : public TACSObject {
 
   // Retrieve the instance of TACSAssembler
   // --------------------------------------
-  TACSAssembler* getTACS(){ return tacs; }
+  TACSAssembler* getAssembler(){ return assembler; }
 
   // Functions to set the shift value
   // --------------------------------
@@ -62,7 +62,7 @@ class TACSLinearBuckling : public TACSObject {
   // Solve the eigenvalue problem
   // ----------------------------
   void solve( TACSVec *rhs=NULL, KSMPrint *ksm_print=NULL );
-  void evalEigenDVSens( int n, TacsScalar fdvSens[], int numDVs );
+  void evalEigenDVSens( int n, TACSBVec *dfdx );
 
   // Extract the eigenvalue or check the solution
   // --------------------------------------------
@@ -80,7 +80,7 @@ class TACSLinearBuckling : public TACSObject {
   SEP *sep;
 
   // The tacs object
-  TACSAssembler *tacs;
+  TACSAssembler *assembler;
 
   // Tolerances/required number of eigenvalues
   int max_lanczos_vecs;
@@ -123,36 +123,36 @@ class TACSLinearBuckling : public TACSObject {
 */
 class TACSFrequencyAnalysis : public TACSObject {
  public:
-  TACSFrequencyAnalysis( TACSAssembler *_tacs,
+  TACSFrequencyAnalysis( TACSAssembler *_assembler,
                          TacsScalar _sigma,
                          TACSMat *_mmat, TACSMat *_kmat,
                          TACSKsm *_solver, int max_lanczos,
                          int num_eigvals, double _eig_tol );
 
-  TACSFrequencyAnalysis( TACSAssembler *_tacs,
+  TACSFrequencyAnalysis( TACSAssembler *_assembler,
                          TacsScalar _sigma,
                          TACSMat *_mmat, TACSMat *_kmat,
                          TACSMat *_pcmat, TACSPc *_pc,
-                         int max_jd_size, 
+                         int max_jd_size,
                          int fgmres_size, int num_eigvals,
                          double eigtol=1e-9,
-                         double eig_rtol=1e-9, 
+                         double eig_rtol=1e-9,
                          double eig_atol=1e-30,
                          int num_recycle=0,
                          JDRecycleType recycle_type=JD_NUM_RECYCLE );
-  
+
   ~TACSFrequencyAnalysis();
 
   // Retrieve the instance of TACSAssembler
   // --------------------------------------
-  TACSAssembler* getTACS(){ return tacs; }
+  TACSAssembler* getAssembler(){ return assembler; }
 
   // Solve the generalized eigenvalue problem
   // ----------------------------------------
   TacsScalar getSigma();
   void setSigma( TacsScalar _sigma );
-  void solve( KSMPrint *ksm_print=NULL, KSMPrint *ksm_file=NULL );
-  void evalEigenDVSens( int n, TacsScalar fdvSens[], int numDVs );
+  void solve( KSMPrint *ksm_print=NULL, int print_level=0 );
+  void evalEigenDVSens( int n, TACSBVec *dfdx );
 
   // Extract and check the solution
   // ------------------------------
@@ -163,7 +163,7 @@ class TACSFrequencyAnalysis : public TACSObject {
 
  private:
   // The TACS assembler object
-  TACSAssembler *tacs;
+  TACSAssembler *assembler;
 
   // The matrices used in the analysis
   TACSMat *mmat; // The mass matrix
@@ -179,6 +179,7 @@ class TACSFrequencyAnalysis : public TACSObject {
   // The eigen solver
   TacsScalar sigma;
   EPGeneralizedShiftInvert *ep_op;
+  EPShiftInvert *simple_ep_op;
   SEP *sep;
 
   // Objects associated with the Jacobi-Davidson method

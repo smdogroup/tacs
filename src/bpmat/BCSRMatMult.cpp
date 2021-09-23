@@ -12,8 +12,8 @@
   TACS is licensed under the Apache License, Version 2.0 (the
   "License"); you may not use this software except in compliance with
   the License.  You may obtain a copy of the License at
-  
-  http://www.apache.org/licenses/LICENSE-2.0 
+
+  http://www.apache.org/licenses/LICENSE-2.0
 */
 
 #include "BCSRMatImpl.h"
@@ -30,12 +30,12 @@ BCSRMatData::BCSRMatData( int _bsize, int _nrows, int _ncols ){
   bsize = _bsize;
   nrows = _nrows;
   ncols = _ncols;
-  
+
   diag = NULL;
   rowp = NULL;
   cols = NULL;
   A = NULL;
-  
+
   // The sizes of the groups of procs
   matvec_group_size = 1;
   matmat_group_size = 1;
@@ -54,17 +54,17 @@ BCSRMatData::~BCSRMatData(){
 BCSRMatThread::BCSRMatThread( BCSRMatData *_mat ){
   mat = _mat;
   mat->incref();
-  
+
   Amat = NULL;
   Bmat = NULL;
   input = NULL;
   output = NULL;
-  
+
   int nrows = mat->nrows;
-  
+
   assigned_row_index = new int[ nrows ];
   completed_row_index = new int[ nrows ];
-  
+
   num_completed_rows = 0;
   pthread_mutex_init(&mutex, NULL);
   pthread_cond_init(&cond, NULL);
@@ -72,17 +72,17 @@ BCSRMatThread::BCSRMatThread( BCSRMatData *_mat ){
 
 BCSRMatThread::~BCSRMatThread(){
   mat->decref();
-  
+
   pthread_mutex_destroy(&mutex);
   pthread_cond_destroy(&cond);
-  
+
   if (assigned_row_index){ delete [] assigned_row_index; }
   if (completed_row_index){ delete [] completed_row_index; }
 }
 
 /*
   Schedule the jobs for matrix-vector and matrix-matrix products with
-  a given group size 
+  a given group size
 */
 void BCSRMatThread::init_mat_mult_sched(){
   num_completed_rows = 0;
@@ -134,10 +134,10 @@ void BCSRMatThread::init_apply_lower_sched(){
   and what tasks are yet to be performed.
 
   Note that a row cannot be assigned unless all processes are
-  completed on that row.  
+  completed on that row.
 */
 void BCSRMatThread::apply_lower_sched_job( const int group_size,
-                                           int *index, int *irow, 
+                                           int *index, int *irow,
                                            int *jstart, int *jend ){
   // Obtain the mutex lock now
   pthread_mutex_lock(&mutex);
@@ -152,7 +152,7 @@ void BCSRMatThread::apply_lower_sched_job( const int group_size,
   while (num_completed_rows < nrows && *index < 0){
     int ii = num_completed_rows/group_size;
     int i = num_completed_rows;
-  
+
     for ( ; i < nrows; i += group_size, ii++ ){
       if ((completed_row_index[ii] == assigned_row_index[ii]) &&
           (completed_row_index[ii] == i)){
@@ -163,17 +163,17 @@ void BCSRMatThread::apply_lower_sched_job( const int group_size,
         *jend = completed_row_index[ii] + group_size;
 
         assigned_row_index[ii] = completed_row_index[ii] + group_size;
-        break;     
+        break;
       }
-      else if ((completed_row_index[ii] < i + group_size) && 
-               (completed_row_index[ii] < num_completed_rows) && 
+      else if ((completed_row_index[ii] < i + group_size) &&
+               (completed_row_index[ii] < num_completed_rows) &&
                (completed_row_index[ii] == assigned_row_index[ii])){
         // Assign the remainder of the avaiable row for completion by a thread
         *index = ii;
         *irow = i;
         *jstart = completed_row_index[ii];
         *jend = num_completed_rows;
-        
+
         assigned_row_index[ii] = num_completed_rows;
         break;
       }
@@ -193,7 +193,7 @@ void BCSRMatThread::apply_lower_sched_job( const int group_size,
   to mark that the operation is completed final values
 */
 void BCSRMatThread::apply_lower_mark_completed( const int group_size,
-                                                int index, int irow, 
+                                                int index, int irow,
                                                 int jstart, int jend ){
   // Obtain the mutex lock now
   pthread_mutex_lock(&mutex);
@@ -223,25 +223,25 @@ void BCSRMatThread::init_apply_upper_sched(){
   and what tasks are yet to be performed.
 
   Note that a row cannot be assigned unless all processes are
-  completed on that row.  
+  completed on that row.
 */
 void BCSRMatThread::apply_upper_sched_job( const int group_size,
-                                           int *index, int *irow, 
+                                           int *index, int *irow,
                                            int *jstart, int *jend ){
   // Obtain the mutex lock now
   pthread_mutex_lock(&mutex);
-  
+
   *index = -1;
   *irow = -1;
   *jstart = -1;
   *jend = -1;
 
-  const int nrows = mat->nrows; 
+  const int nrows = mat->nrows;
 
   while (num_completed_rows < nrows && *index < 0){
     int ii = num_completed_rows/group_size;
     int i = num_completed_rows;
-  
+
     for ( ; i < nrows; i += group_size, ii++ ){
       if ((completed_row_index[ii] == assigned_row_index[ii]) &&
           (completed_row_index[ii] == i)){
@@ -250,19 +250,19 @@ void BCSRMatThread::apply_upper_sched_job( const int group_size,
         *irow = nrows - i;
         *jend = nrows - completed_row_index[ii];
         *jstart = nrows - (completed_row_index[ii] + group_size);
-        
+
         assigned_row_index[ii] = completed_row_index[ii] + group_size;
-        break;     
+        break;
       }
-      else if ((completed_row_index[ii] < i + group_size) && 
-               (completed_row_index[ii] < num_completed_rows) && 
+      else if ((completed_row_index[ii] < i + group_size) &&
+               (completed_row_index[ii] < num_completed_rows) &&
                (completed_row_index[ii] == assigned_row_index[ii])){
         // Assign the remainder of the avaiable row for completion by a thread
         *index = ii;
         *irow = nrows - i;
         *jstart = nrows - num_completed_rows;
         *jend = nrows - completed_row_index[ii];
-        
+
         assigned_row_index[ii] = num_completed_rows;
         break;
       }
@@ -281,11 +281,11 @@ void BCSRMatThread::apply_upper_sched_job( const int group_size,
   to mark that the operation is completed final values
 */
 void BCSRMatThread::apply_upper_mark_completed( const int group_size,
-                                                int index, int irow, 
+                                                int index, int irow,
                                                 int jstart, int jend ){
   // Obtain the mutex lock now
   pthread_mutex_lock(&mutex);
-  const int nrows = mat->nrows; 
+  const int nrows = mat->nrows;
 
   if (irow >= 0){
     completed_row_index[index] = nrows - jstart;
@@ -307,7 +307,7 @@ void BCSRMatThread::apply_upper_mark_completed( const int group_size,
 */
 int BMatComputeInverse( TacsScalar *Ainv, TacsScalar *A, int *ipiv, int n ){
   int fail = 0;
-  
+
   for ( int k = 0; k < n-1; k++ ){
     int nk = n*k;
 
@@ -319,7 +319,7 @@ int BMatComputeInverse( TacsScalar *Ainv, TacsScalar *A, int *ipiv, int n ){
       if (t > maxv){
         maxv = t;
         r = j;
-      }      
+      }
     }
 
     ipiv[k] = r;
@@ -346,7 +346,7 @@ int BMatComputeInverse( TacsScalar *Ainv, TacsScalar *A, int *ipiv, int n ){
     for ( int i = k+1; i < n; i++ ){
       int ni = n*i;
       for ( int j = k+1; j < n; j++ ){
-        A[ni + j] -= A[ni + k]*A[nk + j]; 
+        A[ni + j] -= A[ni + k]*A[nk + j];
       }
     }
   }
@@ -365,14 +365,14 @@ int BMatComputeInverse( TacsScalar *Ainv, TacsScalar *A, int *ipiv, int n ){
 
     Ainv[n*ip + k] = 1.0;
 
-    for ( int i = ip+1; i < n; i++ ){      
+    for ( int i = ip+1; i < n; i++ ){
       int ni = n*i;
       Ainv[ni + k] = 0.0;
       for ( int j = ip; j < i; j++ ){
         Ainv[ni + k] -= A[ni + j]*Ainv[n*j + k];
       }
     }
-    
+
     for ( int i = n-1; i >= 0; i-- ){
       int ni = n*i;
       for ( int j = i+1; j < n; j++ ){
@@ -384,12 +384,12 @@ int BMatComputeInverse( TacsScalar *Ainv, TacsScalar *A, int *ipiv, int n ){
 
   return fail;
 }
-  
+
 /*!
   Compute the matrix-vector product: y = A * x
 */
 
-void BCSRMatVecMult( BCSRMatData *data, 
+void BCSRMatVecMult( BCSRMatData *data,
                      TacsScalar *x, TacsScalar *y ){
   const int nrows = data->nrows;
   const int *rowp = data->rowp;
@@ -407,9 +407,9 @@ void BCSRMatVecMult( BCSRMatData *data,
 
     int end = rowp[i+1];
     for ( int k = rowp[i]; k < end; k++ ){
-      int bj = bsize*cols[k];      
+      int bj = bsize*cols[k];
 
-      BLASgemv("T", &bsize, &bsize, &alpha, a, &bsize, &x[bj], &one, 
+      BLASgemv("T", &bsize, &bsize, &alpha, a, &bsize, &x[bj], &one,
                &beta, y, &one);
       a += b2;
     }
@@ -422,7 +422,7 @@ void BCSRMatVecMult( BCSRMatData *data,
   Compute the matrix vector product plus addition: z = A * x + y
 */
 
-void BCSRMatVecMultAdd( BCSRMatData *data, 
+void BCSRMatVecMultAdd( BCSRMatData *data,
                         TacsScalar *x, TacsScalar *y, TacsScalar *z ){
   const int nrows = data->nrows;
   const int *rowp = data->rowp;
@@ -435,15 +435,17 @@ void BCSRMatVecMultAdd( BCSRMatData *data,
   TacsScalar beta = 1.0;
 
   for ( int i = 0; i < nrows; i++ ){
-    memcpy(z, y, bsize*sizeof(TacsScalar));
+    if (z != y){
+      memcpy(z, y, bsize*sizeof(TacsScalar));
+    }
 
     int end = rowp[i+1];
     int j = rowp[i];
     TacsScalar *a = &data->A[b2*j];
     for ( ; j < end; j++ ){
-      int bj = bsize*cols[j];   
+      int bj = bsize*cols[j];
 
-      BLASgemv("T", &bsize, &bsize, &alpha, a, &bsize, &x[bj], &one, 
+      BLASgemv("T", &bsize, &bsize, &alpha, a, &bsize, &x[bj], &one,
                &beta, y, &one);
       a += b2;
     }
@@ -456,7 +458,7 @@ void BCSRMatVecMultAdd( BCSRMatData *data,
 /*!
   Compute the matrix-vector product: y = A^{T} * x
 */
-void BCSRMatVecMultTranspose( BCSRMatData *data, 
+void BCSRMatVecMultTranspose( BCSRMatData *data,
                               TacsScalar *x, TacsScalar *y ){
   const int nrows = data->nrows;
   const int *rowp = data->rowp;
@@ -472,9 +474,9 @@ void BCSRMatVecMultTranspose( BCSRMatData *data,
   for ( int i = 0; i < nrows; i++ ){
     int end = rowp[i+1];
     for ( int k = rowp[i]; k < end; k++ ){
-      int bj = bsize*cols[k];      
+      int bj = bsize*cols[k];
 
-      BLASgemv("N", &bsize, &bsize, &alpha, a, &bsize, x, &one, 
+      BLASgemv("N", &bsize, &bsize, &alpha, a, &bsize, x, &one,
                &beta, &y[bj], &one);
       a += b2;
     }
@@ -501,9 +503,11 @@ void BCSRMatApplyLower( BCSRMatData *data,
 
   TacsScalar *yy = y;
   TacsScalar *xx = x;
-  
+
   for ( int i = 0; i < nrows; i++ ){
-    memcpy(yy, xx, bsize*sizeof(TacsScalar));
+    if (x != y){
+      memcpy(yy, xx, bsize*sizeof(TacsScalar));
+    }
 
     int end = diag[i];
     int j = rowp[i];
@@ -511,13 +515,13 @@ void BCSRMatApplyLower( BCSRMatData *data,
     for ( ; j < end; j++ ){
       int bj = bsize*cols[j];
 
-      BLASgemv("T", &bsize, &bsize, &alpha, a, &bsize, &y[bj], &one, 
+      BLASgemv("T", &bsize, &bsize, &alpha, a, &bsize, &y[bj], &one,
                &beta, yy, &one);
       a += b2;
     }
 
     yy += bsize;
-    xx += bsize;    
+    xx += bsize;
   }
 }
 
@@ -554,12 +558,12 @@ void BCSRMatApplyUpper( BCSRMatData *data,
     for ( int j = diag[i]+1; j < end; j++ ){
       int bj = bsize*cols[j];
 
-      BLASgemv("T", &bsize, &bsize, &alpha, a, &bsize, &y[bj], &one, 
+      BLASgemv("T", &bsize, &bsize, &alpha, a, &bsize, &y[bj], &one,
                &beta, ty, &one);
       a += b2;
     }
 
-    BLASgemv("T", &bsize, &bsize, &beta, adiag, &bsize, ty, &one, 
+    BLASgemv("T", &bsize, &bsize, &beta, adiag, &bsize, ty, &one,
              &zero, yy, &one);
 
     x  -= bsize;
@@ -572,7 +576,7 @@ void BCSRMatApplyUpper( BCSRMatData *data,
 /*!
   Apply the lower factorization y = L^{-1} x
 */
-void BCSRMatApplyPartialLower( BCSRMatData *data, TacsScalar *x, 
+void BCSRMatApplyPartialLower( BCSRMatData *data, TacsScalar *x,
                                int var_offset ){
   const int nrows = data->nrows;
   const int *rowp = data->rowp;
@@ -587,7 +591,7 @@ void BCSRMatApplyPartialLower( BCSRMatData *data, TacsScalar *x,
     int bi = bsize*i - off;
     int k = rowp[i];
     while ( cols[k] < var_offset ){
-      k++; 
+      k++;
     }
 
     int end = diag[i];
@@ -608,7 +612,7 @@ void BCSRMatApplyPartialLower( BCSRMatData *data, TacsScalar *x,
 /*!
   Apply the upper factorization y = U^{-1} x
 */
-void BCSRMatApplyPartialUpper( BCSRMatData *data, TacsScalar *x, 
+void BCSRMatApplyPartialUpper( BCSRMatData *data, TacsScalar *x,
                                int var_offset ){
   const int nrows = data->nrows;
   const int *rowp = data->rowp;
@@ -658,7 +662,7 @@ void BCSRMatApplyPartialUpper( BCSRMatData *data, TacsScalar *x,
 
   Given the input vector x = f, and y
 
-  Compute x = U_b^{-1} ( L_b^{-1} f - (L_b^{-1} E) y ) 
+  Compute x = U_b^{-1} ( L_b^{-1} f - (L_b^{-1} E) y )
 
   The matrix is factorized into the following form:
   A     = [ L_b          0   ][ U_b  L_b^{-1} E ]
@@ -666,7 +670,7 @@ void BCSRMatApplyPartialUpper( BCSRMatData *data, TacsScalar *x,
 
   where the division is set by the variable var_offset.
 */
-void BCSRMatApplyFactorSchur( BCSRMatData *data, TacsScalar *x, 
+void BCSRMatApplyFactorSchur( BCSRMatData *data, TacsScalar *x,
                               int var_offset ){
   const int *rowp = data->rowp;
   const int *cols = data->cols;
@@ -716,19 +720,30 @@ void BCSRMatApplyFactorSchur( BCSRMatData *data, TacsScalar *x,
 /*!
   Apply a given number of steps of SOR to the system A*x = b.
 */
-void BCSRMatApplySOR( BCSRMatData *data, TacsScalar *Adiag,
-                      TacsScalar omega, int iters, TacsScalar *b, 
-                      TacsScalar *x ){
-  const int nrows = data->nrows;
-  const int *rowp = data->rowp;
-  const int *cols = data->cols;
-  int bsize = data->bsize;
+void BCSRMatApplySOR( BCSRMatData *Adata, BCSRMatData *Bdata,
+                      const int start, const int end,
+                      const int var_offset,
+                      const TacsScalar *Adiag,
+                      const TacsScalar omega,
+                      const TacsScalar *b,
+                      const TacsScalar *xext, TacsScalar *x ){
+  const int *Arowp = Adata->rowp;
+  const int *Acols = Adata->cols;
+
+  const int *Browp = NULL;
+  const int *Bcols = NULL;
+  if (Bdata){
+    Browp = Bdata->rowp;
+    Bcols = Bdata->cols;
+  }
+
+  int bsize = Adata->bsize;
   const int b2 = bsize*bsize;
 
   TacsScalar *tx = new TacsScalar[ bsize ];
 
-  for ( int iter = 0; iter < iters; iter++ ){
-    for ( int i = 0; i < nrows; i++ ){
+  if (start < end){
+    for ( int i = start; i < end; i++ ){
       int bi = bsize*i;
 
       // Copy the right-hand-side to the temporary vector
@@ -736,16 +751,16 @@ void BCSRMatApplySOR( BCSRMatData *data, TacsScalar *Adiag,
       for ( int n = 0; n < bsize; n++ ){
         tx[n] = b[bi + n];
       }
-        
+
       // Set the pointer to the beginning of the current
       // row
-      TacsScalar *a = &data->A[b2*rowp[i]];
+      TacsScalar *a = &Adata->A[b2*Arowp[i]];
 
       // Scan through the row and compute the result:
       // tx <- b_i - A_{ij}*x_{j} for j != i
-      int end = rowp[i+1];
-      for ( int k = rowp[i]; k < end; k++ ){
-        int j = cols[k];
+      int end = Arowp[i+1];
+      for ( int k = Arowp[i]; k < end; k++ ){
+        int j = Acols[k];
         int bj = bsize*j;
 
         if (i != j){
@@ -756,9 +771,32 @@ void BCSRMatApplySOR( BCSRMatData *data, TacsScalar *Adiag,
             }
           }
         }
-        
+
         // Increment the block pointer by bsize^2
         a += b2;
+      }
+
+      if (Bdata && i >= var_offset){
+        const int row = i - var_offset;
+
+        // Set the pointer to the row in B
+        a = &Bdata->A[36*Browp[row]];
+        end = Browp[row+1];
+
+        for ( int k = Browp[row]; k < end; k++ ){
+          int j = Bcols[k];
+          const TacsScalar *y = &xext[bsize*j];
+
+          for ( int m = 0; m < bsize; m++ ){
+            int bm = bsize*m;
+            for ( int n = 0; n < bsize; n++ ){
+              tx[m] -= a[bm + n]*y[n];
+            }
+          }
+
+          // Increment the block pointer by bsize^2
+          a += b2;
+        }
       }
 
       // Compute the first term in the update:
@@ -769,7 +807,7 @@ void BCSRMatApplySOR( BCSRMatData *data, TacsScalar *Adiag,
 
       // Apply the diagonal inverse and add the result to
       // the matrix
-      TacsScalar *adiag = &Adiag[b2*i];
+      const TacsScalar *adiag = &Adiag[b2*i];
       for ( int m = 0; m < bsize; m++ ){
         int bm = bsize*m;
         for ( int n = 0; n < bsize; n++ ){
@@ -777,7 +815,82 @@ void BCSRMatApplySOR( BCSRMatData *data, TacsScalar *Adiag,
         }
       }
     }
-  }  
+  }
+  else {
+    // Go through the matrix with the forward ordering
+    for ( int i = start; i < end; i++ ){
+      int bi = bsize*i;
+
+      // Copy the right-hand-side to the temporary vector
+      // for this row
+      for ( int n = 0; n < bsize; n++ ){
+        tx[n] = b[bi + n];
+      }
+
+      // Set the pointer to the beginning of the current
+      // row
+      TacsScalar *a = &Adata->A[b2*Arowp[i]];
+
+      // Scan through the row and compute the result:
+      // tx <- b_i - A_{ij}*x_{j} for j != i
+      int end = Arowp[i+1];
+      for ( int k = Arowp[i]; k < end; k++ ){
+        int j = Acols[k];
+        int bj = bsize*j;
+
+        if (i != j){
+          for ( int m = 0; m < bsize; m++ ){
+            int bm = bsize*m;
+            for ( int n = 0; n < bsize; n++ ){
+              tx[m] -= a[bm + n]*x[bj + n];
+            }
+          }
+        }
+
+        // Increment the block pointer by bsize^2
+        a += b2;
+      }
+
+      if (Bdata && i >= var_offset){
+        const int row = i - var_offset;
+
+        // Set the pointer to the row in B
+        a = &Bdata->A[36*Browp[row]];
+        end = Browp[row+1];
+
+        for ( int k = Browp[row]; k < end; k++ ){
+          int j = Bcols[k];
+          const TacsScalar *y = &xext[bsize*j];
+
+          for ( int m = 0; m < bsize; m++ ){
+            int bm = bsize*m;
+            for ( int n = 0; n < bsize; n++ ){
+              tx[m] -= a[bm + n]*y[n];
+            }
+          }
+
+          // Increment the block pointer by bsize^2
+          a += b2;
+        }
+      }
+
+      // Compute the first term in the update:
+      // x[i] = (1.0 - omega)*x[i] + omega*D^{-1}tx
+      for ( int n = 0; n < bsize; n++ ){
+        x[bi + n] = (1.0 - omega)*x[bi + n];
+      }
+
+      // Apply the diagonal inverse and add the result to
+      // the matrix
+      const TacsScalar *adiag = &Adiag[b2*i];
+      for ( int m = 0; m < bsize; m++ ){
+        int bm = bsize*m;
+        for ( int n = 0; n < bsize; n++ ){
+          x[bi + m] += omega*adiag[bm + n]*tx[n];
+        }
+      }
+    }
+  }
 
   delete [] tx;
 }
@@ -786,7 +899,7 @@ void BCSRMatApplySOR( BCSRMatData *data, TacsScalar *Adiag,
   Apply a given number of steps of Symmetric-SOR to the system A*x = b.
 */
 void BCSRMatApplySSOR( BCSRMatData *data, TacsScalar *Adiag,
-                       TacsScalar omega, int iters, TacsScalar *b, 
+                       TacsScalar omega, int iters, TacsScalar *b,
                        TacsScalar *x ){
   const int nrows = data->nrows;
   const int *rowp = data->rowp;
@@ -805,7 +918,7 @@ void BCSRMatApplySSOR( BCSRMatData *data, TacsScalar *Adiag,
       for ( int n = 0; n < bsize; n++ ){
         tx[n] = b[bi + n];
       }
-      
+
       // Scan through the row and compute the result:
       // tx <- b_i - A_{ij}*x_{j} for j != i
       int end = rowp[i+1];
@@ -824,7 +937,7 @@ void BCSRMatApplySSOR( BCSRMatData *data, TacsScalar *Adiag,
         }
       }
 
-      // x[i] = (1.0 - omega)*x[i] + D^{-1} delta x      
+      // x[i] = (1.0 - omega)*x[i] + D^{-1} delta x
       for ( int n = 0; n < bsize; n++ ){
         x[bi + n] = (1.0 - omega) *x[bi + n];
       }
@@ -846,7 +959,7 @@ void BCSRMatApplySSOR( BCSRMatData *data, TacsScalar *Adiag,
       for ( int n = 0; n < bsize; n++ ){
         tx[n] = b[bi + n];
       }
-      
+
       int end = rowp[i+1];
       for ( int k = rowp[i]; k < end; k++ ){
         int j = cols[k];
@@ -863,7 +976,7 @@ void BCSRMatApplySSOR( BCSRMatData *data, TacsScalar *Adiag,
         }
       }
 
-      // x[i] = (1.0 - omega)*x[i] + D^{-1} delta x      
+      // x[i] = (1.0 - omega)*x[i] + D^{-1} delta x
       for ( int n = 0; n < bsize; n++ ){
         x[bi + n] = (1.0 - omega)*x[bi + n];
       }
@@ -877,7 +990,7 @@ void BCSRMatApplySSOR( BCSRMatData *data, TacsScalar *Adiag,
         }
       }
     }
-  }  
+  }
 
   delete [] tx;
 }
@@ -887,7 +1000,7 @@ void BCSRMatApplySSOR( BCSRMatData *data, TacsScalar *Adiag,
 */
 void BCSRMatApplySOR( BCSRMatData *data, TacsScalar *Adiag,
                       const int *pairs, int npairs,
-                      TacsScalar omega, int iters, TacsScalar *b, 
+                      TacsScalar omega, int iters, TacsScalar *b,
                       TacsScalar *x ){
   const int nrows = data->nrows;
   const int *rowp = data->rowp;
@@ -909,7 +1022,7 @@ void BCSRMatApplySOR( BCSRMatData *data, TacsScalar *Adiag,
         for ( int n = 0; n < 2*bsize; n++ ){
           tx[n] = b[bi + n];
         }
-        
+
         // Set the pointer to the beginning of the current
         // row
         const TacsScalar *a = &data->A[b2*rowp[i]];
@@ -929,7 +1042,7 @@ void BCSRMatApplySOR( BCSRMatData *data, TacsScalar *Adiag,
               }
             }
           }
-        
+
           // Increment the block pointer by bsize^2
           a += b2;
         }
@@ -947,7 +1060,7 @@ void BCSRMatApplySOR( BCSRMatData *data, TacsScalar *Adiag,
               }
             }
           }
-        
+
           // Increment the block pointer by bsize^2
           a += b2;
         }
@@ -979,7 +1092,7 @@ void BCSRMatApplySOR( BCSRMatData *data, TacsScalar *Adiag,
         for ( int n = 0; n < bsize; n++ ){
           tx[n] = b[bi + n];
         }
-        
+
         // Set the pointer to the beginning of the current
         // row
         TacsScalar *a = &data->A[b2*rowp[i]];
@@ -999,7 +1112,7 @@ void BCSRMatApplySOR( BCSRMatData *data, TacsScalar *Adiag,
               }
             }
           }
-        
+
           // Increment the block pointer by bsize^2
           a += b2;
         }
@@ -1023,7 +1136,7 @@ void BCSRMatApplySOR( BCSRMatData *data, TacsScalar *Adiag,
       }
     }
   }
-  
+
   delete [] tx;
 }
 
@@ -1032,7 +1145,7 @@ void BCSRMatApplySOR( BCSRMatData *data, TacsScalar *Adiag,
 */
 void BCSRMatApplySSOR( BCSRMatData *data, TacsScalar *Adiag,
                        const int *pairs, int npairs,
-                       TacsScalar omega, int iters, TacsScalar *b, 
+                       TacsScalar omega, int iters, TacsScalar *b,
                        TacsScalar *x ){
   const int nrows = data->nrows;
   const int *rowp = data->rowp;
@@ -1054,7 +1167,7 @@ void BCSRMatApplySSOR( BCSRMatData *data, TacsScalar *Adiag,
         for ( int n = 0; n < 2*bsize; n++ ){
           tx[n] = b[bi + n];
         }
-      
+
         // Scan through the row and compute the result:
         // tx <- b_i - A_{ij}*x_{j} for j != i
         int end = rowp[i+1];
@@ -1089,7 +1202,7 @@ void BCSRMatApplySSOR( BCSRMatData *data, TacsScalar *Adiag,
           }
         }
 
-        // x[i] = (1.0 - omega)*x[i] + D^{-1} delta x      
+        // x[i] = (1.0 - omega)*x[i] + D^{-1} delta x
         for ( int n = 0; n < 2*bsize; n++ ){
           x[bi + n] = (1.0 - omega) *x[bi + n];
         }
@@ -1113,7 +1226,7 @@ void BCSRMatApplySSOR( BCSRMatData *data, TacsScalar *Adiag,
         for ( int n = 0; n < bsize; n++ ){
           tx[n] = b[bi + n];
         }
-      
+
         // Scan through the row and compute the result:
         // tx <- b_i - A_{ij}*x_{j} for j != i
         int end = rowp[i+1];
@@ -1132,7 +1245,7 @@ void BCSRMatApplySSOR( BCSRMatData *data, TacsScalar *Adiag,
           }
         }
 
-        // x[i] = (1.0 - omega)*x[i] + D^{-1} delta x      
+        // x[i] = (1.0 - omega)*x[i] + D^{-1} delta x
         for ( int n = 0; n < bsize; n++ ){
           x[bi + n] = (1.0 - omega) *x[bi + n];
         }
@@ -1146,7 +1259,7 @@ void BCSRMatApplySSOR( BCSRMatData *data, TacsScalar *Adiag,
         }
       }
     }
-    
+
     // Apply the backward sweep
     for ( int i = nrows-1, p = npairs-1; i >= 0; i-- ){
       if (p >= 0 && i-1 == pairs[p]){
@@ -1187,8 +1300,8 @@ void BCSRMatApplySSOR( BCSRMatData *data, TacsScalar *Adiag,
             }
           }
         }
-        
-        // x[i] = (1.0 - omega)*x[i] + D^{-1} delta x      
+
+        // x[i] = (1.0 - omega)*x[i] + D^{-1} delta x
         for ( int n = 0; n < 2*bsize; n++ ){
           x[bi + n] = (1.0 - omega)*x[bi + n];
         }
@@ -1211,12 +1324,12 @@ void BCSRMatApplySSOR( BCSRMatData *data, TacsScalar *Adiag,
         for ( int n = 0; n < bsize; n++ ){
           tx[n] = b[bi + n];
         }
-      
+
         int end = rowp[i+1];
         for ( int k = rowp[i]; k < end; k++ ){
           int j = cols[k];
           int bj = bsize*j;
-          
+
           if (i != j){
             TacsScalar *a = &data->A[b2*k];
             for ( int m = 0; m < bsize; m++ ){
@@ -1227,8 +1340,8 @@ void BCSRMatApplySSOR( BCSRMatData *data, TacsScalar *Adiag,
             }
           }
         }
-        
-        // x[i] = (1.0 - omega)*x[i] + D^{-1} delta x      
+
+        // x[i] = (1.0 - omega)*x[i] + D^{-1} delta x
         for ( int n = 0; n < bsize; n++ ){
           x[bi + n] = (1.0 - omega)*x[bi + n];
         }
@@ -1243,7 +1356,7 @@ void BCSRMatApplySSOR( BCSRMatData *data, TacsScalar *Adiag,
         }
       }
     }
-  }  
+  }
 
   delete [] tx;
 }
@@ -1251,7 +1364,7 @@ void BCSRMatApplySSOR( BCSRMatData *data, TacsScalar *Adiag,
 /*!
   Perform a matrix-matrix multiplication
 */
-void BCSRMatMatMultAdd( double alpha, BCSRMatData *Adata, 
+void BCSRMatMatMultAdd( double alpha, BCSRMatData *Adata,
                         BCSRMatData *Bdata, BCSRMatData *Cdata ){
 
   // Retrieve the data required from the matrix
@@ -1271,7 +1384,7 @@ void BCSRMatMatMultAdd( double alpha, BCSRMatData *Adata,
 
   const int bsize = Adata->bsize;
   const int b2 = bsize*bsize;
-  
+
   // C_{ik} = A_{ij} B_{jk}
   for ( int i = 0; i < nrows_a; i++ ){
     for ( int jp = arowp[i]; jp < arowp[i+1]; jp++ ){
@@ -1286,8 +1399,8 @@ void BCSRMatMatMultAdd( double alpha, BCSRMatData *Adata,
 
       for ( ; kp < kp_end; kp++ ){
         while ((cp < cp_end) && (ccols[cp] < bcols[kp])){ cp++; }
-        if (cp >= cp_end){ 
-          break; 
+        if (cp >= cp_end){
+          break;
         }
 
         if (bcols[kp] == ccols[cp]){
@@ -1314,7 +1427,7 @@ void BCSRMatMatMultAdd( double alpha, BCSRMatData *Adata,
 
   A = B^{T}*s*B
 */
-void BCSRMatMatMultNormal( BCSRMatData *Adata, TacsScalar *scale, 
+void BCSRMatMatMultNormal( BCSRMatData *Adata, TacsScalar *scale,
                            BCSRMatData *Bdata ){
   // Retrieve the data required from the matrix
   const int nrows_a = Adata->nrows;
@@ -1332,9 +1445,9 @@ void BCSRMatMatMultNormal( BCSRMatData *Adata, TacsScalar *scale,
 
   int *kptr = new int[ nrows_b ];
   memcpy(kptr, browp, nrows_b*sizeof(int));
-  
+
   // A_{ij} = B_{ki}*s{k}*B_{kj}
-  for ( int i = 0; i < nrows_a; i++ ){    
+  for ( int i = 0; i < nrows_a; i++ ){
     // Scan through column i of the matrix B_{*i}
     for ( int k = 0; k < nrows_b; k++ ){
       if ((kptr[k] < browp[k+1]) &&
@@ -1342,8 +1455,8 @@ void BCSRMatMatMultNormal( BCSRMatData *Adata, TacsScalar *scale,
         const TacsScalar *bi = &B[b2*kptr[k]];
         kptr[k]++;
 
-        // Add the non-zero pattern to 
-        // for j = 1, n do 
+        // Add the non-zero pattern to
+        // for j = 1, n do
         //    A_{ij} += B_{ki}*s_{k}*B_{kj}
         int jpa = arowp[i];
         int jpa_end = arowp[i+1];
@@ -1353,11 +1466,11 @@ void BCSRMatMatMultNormal( BCSRMatData *Adata, TacsScalar *scale,
 
         // Locate j such that (k,j) in nz(B_{kj}) and (i,j) in nz(A_{ij})
         for ( ; jpa < jpa_end; jpa++ ){
-          while ((jpb < jpb_end) && (bcols[jpb] < acols[jpa])){ 
-            jpb++; 
+          while ((jpb < jpb_end) && (bcols[jpb] < acols[jpa])){
+            jpb++;
           }
-          if (jpb >= jpb_end){ 
-            break; 
+          if (jpb >= jpb_end){
+            break;
           }
 
           if (acols[jpa] == bcols[jpb]){

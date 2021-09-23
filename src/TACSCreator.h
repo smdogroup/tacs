@@ -8,8 +8,8 @@
   TACS is licensed under the Apache License, Version 2.0 (the
   "License"); you may not use this software except in compliance with
   the License.  You may obtain a copy of the License at
-  
-  http://www.apache.org/licenses/LICENSE-2.0 
+
+  http://www.apache.org/licenses/LICENSE-2.0
 */
 
 #ifndef TACS_CREATOR_H
@@ -17,12 +17,12 @@
 
 #include "TACSAssembler.h"
 
-/*
+/**
   The following file contains the TACSCreator object which can be used
   to create TACSAssembler object for finite-element analysis.
 
   This code automatically redistributes a serial mesh in parallel. It cannot
-  handle extremely large meshes, but is useful for many moderate-scale 
+  handle extremely large meshes, but is useful for many moderate-scale
   applications.
 
   The user must specify the connectivity, boundary conditions,
@@ -49,23 +49,23 @@ class TACSCreator : public TACSObject {
   // Set the connectivity for the global mesh
   // ----------------------------------------
   void setGlobalConnectivity( int _num_nodes, int _num_elements,
-                              const int *_elem_node_ptr, 
+                              const int *_elem_node_ptr,
                               const int *_elem_node_conn,
                               const int *_elem_id_nums );
 
   // Set the boundary conditions
   // ---------------------------
-  void setBoundaryConditions( int _num_bcs, 
-                              const int *_bc_nodes, 
+  void setBoundaryConditions( int _num_bcs,
+                              const int *_bc_nodes,
                               const int *_bc_ptr=NULL,
                               const int *_bc_vars=NULL,
                               const TacsScalar *_bc_vals=NULL );
 
   // Set the dependent node connectivity and weights
   // -----------------------------------------------
-  void setDependentNodes( int num_dep_nodes, 
+  void setDependentNodes( int num_dep_nodes,
                           const int *_dep_node_ptr,
-                          const int *_dep_node_conn, 
+                          const int *_dep_node_conn,
                           const double *_dep_node_weights );
 
   // Set the nodal locations
@@ -77,13 +77,13 @@ class TACSCreator : public TACSObject {
   void setReorderingType( TACSAssembler::OrderingType _order_type,
                           TACSAssembler::MatrixOrderingType _mat_type );
 
-  // Partition the mesh 
+  // Partition the mesh
   // ------------------
   void partitionMesh( int split_size=0, const int *part=NULL );
 
   // Set the elements into TACS creator
   // ----------------------------------
-  void setElements( TACSElement **_elements, int _num_elems );
+  void setElements( int _num_elems, TACSElement **_elements );
   void setElementCreator( TACSElement* (*func)(int, int) );
 
   // Create the TACSAssembler object
@@ -92,14 +92,15 @@ class TACSCreator : public TACSObject {
 
   // Get local element numbers with the given set of element-id numbers
   // ------------------------------------------------------------------
-  int getElementIdNums( int ids[], int num_ids, 
-                        int **elem_nums );
+  int getElementIdNums( int num_ids, int *ids, int **elem_nums );
 
   // Convert from the list of nodes from the original serial ordering
   // ----------------------------------------------------------------
-  void getTacsNodeNums( TACSAssembler *tacs, 
-                        const int *orig_nodes, int num_orig_nodes,
-                        int **new_nodes, int *num_dist_nodes );
+  void getAssemblerNodeNums( TACSAssembler *tacs,
+                              int num_orig_nodes,
+                              const int *orig_nodes,
+                              int *num_dist_nodes,
+                              int **new_nodes );
 
   // Get the new node numbers and element partition on the root proc
   // ---------------------------------------------------------------
@@ -108,7 +109,7 @@ class TACSCreator : public TACSObject {
   void getNumOwnedNodes( int **_owned_nodes );
   void getNumOwnedElements( int **_owned_elements );
 
- private:  
+ private:
   // The magic element-generator function pointer
   TACSElement* (*element_creator)( int local, int elem_id );
 
@@ -134,9 +135,9 @@ class TACSCreator : public TACSObject {
 
   // The element connectivity
   int *elem_node_ptr, *elem_node_conn;
-  
+
   // Unique global element identifier
-  int *elem_id_nums; 
+  int *elem_id_nums;
 
   // Boundary conditions
   int num_bcs;

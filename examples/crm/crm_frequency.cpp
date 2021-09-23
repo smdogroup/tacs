@@ -16,7 +16,7 @@ int main( int argc, char **argv ){
       use_lanczos = 0;
     }
     if (strcmp(argv[i], "jd_freq") == 0){
-      use_lanczos = 0; 
+      use_lanczos = 0;
       use_tacs_freq = 1;
     }
   }
@@ -136,7 +136,7 @@ int main( int argc, char **argv ){
       eigvalue = sqrt(eigvalue);
       freq = TacsRealPart(eigvalue)/(2.0*3.14159);
 
-      printf("TACS frequency[%2d]: %15.6f %15.6f\n", 
+      printf("TACS frequency[%2d]: %15.6f %15.6f\n",
              k, TacsRealPart(eigvalue), TacsRealPart(freq));
     }
 
@@ -149,7 +149,7 @@ int main( int argc, char **argv ){
     FEMat *pcmat = tacs->createFEMat();
     PcScMat *pc = new PcScMat(pcmat, lev_fill, fill, 1);
     pc->incref();
-    
+
     int num_eigvals = 20;
     int jd_size = 25;
     int fgmres_size = 5;
@@ -160,7 +160,7 @@ int main( int argc, char **argv ){
       TACSFrequencyAnalysis *freq_analysis = new TACSFrequencyAnalysis(tacs, sigma, mmat,
                                                                        kmat, pcmat, pc,
                                                                        jd_size,
-                                                                       fgmres_size, 
+                                                                       fgmres_size,
                                                                        num_eigvals, rtol,
                                                                        atol);
       freq_analysis->incref();
@@ -175,7 +175,7 @@ int main( int argc, char **argv ){
         eigvalue = sqrt(eigvalue);
         TacsScalar freq = TacsRealPart(eigvalue)/(2.0*3.14159);
 
-        printf("TACS frequency[%2d]: %15.6f %15.6f\n", 
+        printf("TACS frequency[%2d]: %15.6f %15.6f\n",
                k, TacsRealPart(eigvalue), TacsRealPart(freq));
       }
       freq_analysis->decref();
@@ -184,12 +184,12 @@ int main( int argc, char **argv ){
       tacs->assembleMatType(MASS_MATRIX, mmat);
       tacs->assembleMatType(STIFFNESS_MATRIX, kmat);
 
-      TACSJDFrequencyOperator *oper = 
+      TACSJDFrequencyOperator *oper =
         new TACSJDFrequencyOperator(tacs, kmat, mmat, pcmat, pc);
       oper->setEigenvalueEstimate(0.0);
 
-    
-      TACSJacobiDavidson *jd = 
+
+      TACSJacobiDavidson *jd =
         new TACSJacobiDavidson(oper, num_eigvals, jd_size, fgmres_size);
       jd->incref();
 
@@ -205,7 +205,7 @@ int main( int argc, char **argv ){
         eigvalue = sqrt(eigvalue);
         TacsScalar freq = TacsRealPart(eigvalue)/(2.0*3.14159);
 
-        printf("TACS frequency[%2d]: %15.6f %15.6f\n", 
+        printf("TACS frequency[%2d]: %15.6f %15.6f\n",
                k, TacsRealPart(eigvalue), TacsRealPart(freq));
       }
 

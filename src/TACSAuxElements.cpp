@@ -12,8 +12,8 @@
   TACS is licensed under the Apache License, Version 2.0 (the
   "License"); you may not use this software except in compliance with
   the License.  You may obtain a copy of the License at
-  
-  http://www.apache.org/licenses/LICENSE-2.0 
+
+  http://www.apache.org/licenses/LICENSE-2.0
 */
 
 #include "TACSAuxElements.h"
@@ -21,7 +21,7 @@
 static int compare_elems( const void *a, const void *b ){
   const TACSAuxElem *ao = static_cast<const TACSAuxElem*>(a);
   const TACSAuxElem *bo = static_cast<const TACSAuxElem*>(b);
-  
+
   return ao->num - bo->num;
 }
 
@@ -72,7 +72,7 @@ void TACSAuxElements::sort(){
   element must be identical.
 
   input:
-  num:   the TACSAssembler element number 
+  num:   the TACSAssembler element number
   elem:  the TACSElement pointer
 */
 void TACSAuxElements::addElement( int num, TACSElement *elem ){
@@ -101,14 +101,14 @@ void TACSAuxElements::addElement( int num, TACSElement *elem ){
 
   This function adds a number of TACSElement objects to the auxiliary
   list of elements all at the same time. The code automatically
-  extends the internally stored array if it is not long enough. 
+  extends the internally stored array if it is not long enough.
 
   input:
   nums:        an array of the TACSAssembler element numbers
   elem:        an array of axuiliary elements
   num_elems:   the number of elements in the arrays
 */
-void TACSAuxElements::addElements( int nums[], TACSElement **elem, 
+void TACSAuxElements::addElements( int nums[], TACSElement **elem,
                                    int num_elems ){
   // The array is not large enough to handle a new element
   // Create a new array and copy over the values
@@ -143,27 +143,27 @@ int TACSAuxElements::getAuxElements( TACSAuxElem **_elems ){
 /*
   Get the design variables from all auxiliary elements
 */
-void TACSAuxElements::getDesignVars( TacsScalar dvs[], int numDVs ){
+void TACSAuxElements::getDesignVars( int numDVs, TacsScalar dvs[] ){
   for ( int i = 0; i < num_elements; i++ ){
-    aux[i].elem->getDesignVars(dvs, numDVs);
+    aux[i].elem->getDesignVars(i, numDVs, dvs);
   }
 }
 
 /*
   Set the design variables from all auxiliary elements
 */
-void TACSAuxElements::setDesignVars( const TacsScalar dvs[], int numDVs ){
+void TACSAuxElements::setDesignVars( int numDVs, const TacsScalar dvs[] ){
   for ( int i = 0; i < num_elements; i++ ){
-    aux[i].elem->setDesignVars(dvs, numDVs);
+    aux[i].elem->setDesignVars(i, numDVs, dvs);
   }
 }
 
 /*
   Get the range of design variable values from all auxiliary elements
 */
-void TACSAuxElements::getDesignVarRange( TacsScalar lb[], 
-                                         TacsScalar ub[], int numDVs ){
+void TACSAuxElements::getDesignVarRange( int numDVs, TacsScalar lb[],
+                                         TacsScalar ub[] ){
   for ( int i = 0; i < num_elements; i++ ){
-    aux[i].elem->getDesignVarRange(lb, ub, numDVs);
+    aux[i].elem->getDesignVarRange(i, numDVs, lb, ub);
   }
 }

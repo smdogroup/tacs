@@ -9,7 +9,7 @@
 #include "tacslapack.h"
 
 /*
-  An FSDTStiffness class of it's own! 
+  An FSDTStiffness class of it's own!
 
   This class is specifically for testing the cylinder - it's required
   so that the failure criterion is evaluated only at the upper surface
@@ -17,11 +17,11 @@
 */
 class specialFSDTStiffness : public FSDTStiffness {
  public:
-  specialFSDTStiffness( OrthoPly *_ply, int _orthotropic_flag, 
+  specialFSDTStiffness( OrthoPly *_ply, int _orthotropic_flag,
                         TacsScalar _t, TacsScalar _kcorr ){
-    ply = _ply; 
+    ply = _ply;
     ply->incref();
-    
+
     orthotropic_flag = _orthotropic_flag;
     t = _t;
     kcorr = _kcorr;
@@ -30,7 +30,7 @@ class specialFSDTStiffness : public FSDTStiffness {
     ply->decref();
   }
 
-  void getPointwiseMass( const double pt[], 
+  void getPointwiseMass( const double pt[],
                          TacsScalar mass[] ){
     mass[0] = t*ply->getRho();
     mass[1] = (t*t*t*ply->getRho())/12.0;
@@ -55,13 +55,13 @@ class specialFSDTStiffness : public FSDTStiffness {
     TacsScalar a = (t1 - t0);
     TacsScalar b = 0.5*(t1*t1 - t0*t0);
     TacsScalar d = 1.0/3.0*(t1*t1*t1 - t0*t0*t0);
-    
+
     for ( int i = 0; i < 6; i++ ){
       A[i] += a*Qbar[i];
       B[i] += b*Qbar[i];
       D[i] += d*Qbar[i];
     }
-    
+
     for ( int i = 0; i < 3; i++ ){
       As[i] += kcorr*a*Abar[i];
     }
@@ -70,10 +70,10 @@ class specialFSDTStiffness : public FSDTStiffness {
   }
 
   // Compute the failure function at the given point
-  void failure( const double pt[], const TacsScalar strain[], 
+  void failure( const double pt[], const TacsScalar strain[],
                 TacsScalar * fail ){
     TacsScalar z = 0.5*t;
-    
+
     TacsScalar e[3];
     e[0] = strain[0] + z*strain[3];
     e[1] = strain[1] + z*strain[4];
@@ -103,7 +103,7 @@ class specialFSDTStiffness : public FSDTStiffness {
   Note that y = r*theta
 
   The coefficients U, V, W, theta and phi are for the expressions:
-  
+
   u(x,y) = U*sin(alpha*y)*cos(beta*x)
   v(x,y) = V*cos(alpha*y)*sin(beta*x)
   w(x,y) = W*sin(alpha*y)*sin(beta*x)
@@ -116,14 +116,14 @@ class specialFSDTStiffness : public FSDTStiffness {
   frame. Likewise, psi_x and psi_y are the rotations of the normal
   along the x-direction and the tangential y-direction.
 */
-void compute_coefficients( TacsScalar *U, TacsScalar *V, 
-                           TacsScalar *W, TacsScalar *theta, 
+void compute_coefficients( TacsScalar *U, TacsScalar *V,
+                           TacsScalar *W, TacsScalar *theta,
                            TacsScalar *phi,
-                           double alpha, double beta, 
-                           TacsScalar ainv, 
-                           TacsScalar A11, TacsScalar A12, 
+                           double alpha, double beta,
+                           TacsScalar ainv,
+                           TacsScalar A11, TacsScalar A12,
                            TacsScalar A22, TacsScalar A33,
-                           TacsScalar D11, TacsScalar D12, 
+                           TacsScalar D11, TacsScalar D12,
                            TacsScalar D22, TacsScalar D33,
                            TacsScalar bA11, TacsScalar bA22, TacsScalar load ){
 
@@ -131,7 +131,7 @@ void compute_coefficients( TacsScalar *U, TacsScalar *V,
   int ipiv[5];
   TacsScalar rhs[5] = {0.0, 0.0, 0.0, 0.0, 0.0};
   rhs[2] = - load;
- 
+
   TacsScalar B[8*5];
   memset(B, 0, sizeof(B));
   TacsScalar *b = B;
@@ -163,7 +163,7 @@ void compute_coefficients( TacsScalar *U, TacsScalar *V,
   b += 8;
 
   // Assign the columns for psi_y
-  b[4] = -alpha; 
+  b[4] = -alpha;
   b[5] = beta;
   b[6] = 1.0;
 
@@ -172,8 +172,8 @@ void compute_coefficients( TacsScalar *U, TacsScalar *V,
     for ( int i = 0; i < 5; i++ ){
       TacsScalar *bi = &B[8*i];
 
-      A2[i + 5*j] = 
-        - ((bi[0]*(A11*bj[0] + A12*bj[1]) +  
+      A2[i + 5*j] =
+        - ((bi[0]*(A11*bj[0] + A12*bj[1]) +
             bi[1]*(A12*bj[0] + A22*bj[1]) + bi[2]*A33*bj[2]) +
            (bi[3]*(D11*bj[3] + D12*bj[4]) +
             bi[4]*(D12*bj[3] + D22*bj[4]) + bi[5]*D33*bj[5]) +
@@ -182,7 +182,7 @@ void compute_coefficients( TacsScalar *U, TacsScalar *V,
   }
 
   // The first equation for u
-  A[0]  = -(A11*beta*beta + A33*alpha*alpha) 
+  A[0]  = -(A11*beta*beta + A33*alpha*alpha)
     - D33*ainv*ainv*alpha*alpha;
   A[5]  = -(A33 + A12)*alpha*beta;
   A[10] = A12*beta*ainv;
@@ -191,7 +191,7 @@ void compute_coefficients( TacsScalar *U, TacsScalar *V,
 
   // The second equation for v
   A[1]  = -(A12 + A33)*alpha*beta;
-  A[6]  = -(A33*beta*beta + A22*alpha*alpha) 
+  A[6]  = -(A33*beta*beta + A22*alpha*alpha)
     - ainv*ainv*bA11 - D22*ainv*ainv*alpha*alpha;
   A[11] = (A22 + bA11)*ainv*alpha + D22*alpha*ainv*ainv*ainv;
   A[16] = D12*ainv*alpha*beta;
@@ -200,7 +200,7 @@ void compute_coefficients( TacsScalar *U, TacsScalar *V,
   // The third equation for w
   A[2]  = A12*beta*ainv;
   A[7]  = (bA11 + A22)*alpha*ainv + D22*alpha*ainv*ainv*ainv;
-  A[12] = -(bA11*alpha*alpha + bA22*beta*beta) 
+  A[12] = -(bA11*alpha*alpha + bA22*beta*beta)
     - A22*ainv*ainv - D22*ainv*ainv*ainv*ainv;
   A[17] = -bA22*beta - D12*beta*ainv*ainv;
   A[22] = -bA11*alpha - D22*alpha*ainv*ainv;
@@ -225,7 +225,7 @@ void compute_coefficients( TacsScalar *U, TacsScalar *V,
     for ( int k = 0; k < 5; k++ ){
       printf("Equation %d\n", k);
       for ( int j = 0; j < 5; j++ ){
-        printf(" %15.5f %s", TacsRealPart(A[k + 5*j] - A2[k + 5*j]), 
+        printf(" %15.5f %s", TacsRealPart(A[k + 5*j] - A2[k + 5*j]),
                variables[j]);
       }
       printf("\n");
@@ -237,7 +237,7 @@ void compute_coefficients( TacsScalar *U, TacsScalar *V,
   int nrhs = 1;
   LAPACKgesv(&n, &nrhs, A2, &n, ipiv, rhs, &n, &info);
 
-  // Solve for the coefficients 
+  // Solve for the coefficients
   *U = rhs[0];
   *V = rhs[1];
   *W = rhs[2];
@@ -260,11 +260,11 @@ TACSAssembler *create_tacs_cylinder_model( FSDTStiffness *stiffness,
   int nelems = nx*ny;
   int nnodes = ((order-1)*nx + 1)*(order-1)*ny;
   int vars_per_node = 6;
-  
+
   // For now create a complete cylinder
   TACSAssembler *tacs = new TACSAssembler(MPI_COMM_SELF, vars_per_node,
                                           nnodes, nelems);
-  
+
   TACSElement * shell = NULL;
   if (order == 2){ shell = new MITCShell<2>(stiffness); }
   else if (order == 3){ shell = new MITCShell<3>(stiffness); }
@@ -337,7 +337,7 @@ TACSAssembler *create_tacs_cylinder_model( FSDTStiffness *stiffness,
   X->incref();
   TacsScalar *Xpts;
   X->getArray(&Xpts);
-  
+
   // Set the node locations
   double defect = 0.1;
   for ( int j = 0; j < nny; j++ ){
@@ -374,10 +374,10 @@ TACSAssembler *create_tacs_cylinder_model( FSDTStiffness *stiffness,
           if (j == ny-1 && jj == order-1){
             node = ((order-1)*i + ii);
           }
-          
+
           // Compute the pressure at this point in the shell
           double x = TacsRealPart(Xpts[3*node]);
-          double y =-R*atan2(TacsRealPart(Xpts[3*node+2]), 
+          double y =-R*atan2(TacsRealPart(Xpts[3*node+2]),
                              TacsRealPart(Xpts[3*node+1]));
           pval[ii + order*jj] = load*sin(beta*x)*sin(alpha*y);
         }
@@ -404,15 +404,15 @@ TACSAssembler *create_tacs_cylinder_model( FSDTStiffness *stiffness,
 
   error = sqrt( int_{A} (w_{TACS} - w_{exact})^2 dA )
 */
-TacsScalar compute_tacs_error( int order, TACSAssembler *tacs, 
+TacsScalar compute_tacs_error( int order, TACSAssembler *tacs,
                                TacsScalar R, double alpha, double beta,
-                               TacsScalar U, TacsScalar V, TacsScalar W, 
+                               TacsScalar U, TacsScalar V, TacsScalar W,
                                TacsScalar theta, TacsScalar phi ){
   TacsScalar error = 0.0;
   const double *gauss_pts, *gauss_wts;
-  int num_gauss = 
+  int num_gauss =
     FElibrary::getGaussPtsWts(order+1, &gauss_pts, &gauss_wts);
-  
+
   int nelems = tacs->getNumElements();
   for ( int k = 0; k < nelems; k++ ){
     TacsScalar vars[6*16], Xpts[3*16];
@@ -429,7 +429,7 @@ TacsScalar compute_tacs_error( int order, TACSAssembler *tacs,
         // Get the shape functions
         double N[16];
         shell->getShapeFunctions(N, pt);
-   
+
         TacsScalar h = shell->getDetJacobian(pt, Xpts);
         TacsScalar Xp[3] = {0.0, 0.0, 0.0};
         for ( int i = 0; i < num_nodes; i++ ){
@@ -438,15 +438,15 @@ TacsScalar compute_tacs_error( int order, TACSAssembler *tacs,
           Xp[2] += Xpts[3*i+2]*N[i];
         }
 
-        // Determine the coordinates on the shell 
+        // Determine the coordinates on the shell
         TacsScalar x = Xp[0];
-        TacsScalar y =-R*atan2(TacsRealPart(Xp[2]), 
+        TacsScalar y =-R*atan2(TacsRealPart(Xp[2]),
                                TacsRealPart(Xp[1]));
-        
+
         // Evaluate the radial displacement at this point from
         // the exact solution
-        
-        TacsScalar u[6] = {0.0, 0.0, 0.0, 
+
+        TacsScalar u[6] = {0.0, 0.0, 0.0,
                            0.0, 0.0, 0.0};
         for ( int i = 0; i < num_nodes; i++ ){
           u[0] += N[i]*vars[6*i];
@@ -456,13 +456,13 @@ TacsScalar compute_tacs_error( int order, TACSAssembler *tacs,
           u[4] += N[i]*vars[6*i+4];
           u[5] += N[i]*vars[6*i+5];
         }
-        
+
         // Compute the normal displacement
         TacsScalar ny = cos(y/R);
         TacsScalar nz =-sin(y/R);
         TacsScalar w_tacs = ny*u[1] + nz*u[2];
 
-        // Evaluate the exact solution      
+        // Evaluate the exact solution
         TacsScalar w_exact = W*sin(beta*x)*sin(alpha*y);
 
         // Compute the error
@@ -482,20 +482,20 @@ TacsScalar compute_tacs_error( int order, TACSAssembler *tacs,
   b = -(beta*Q12(U + z*theta) + Q22*(alpha*(V + z*phi) + W*(ainv + z*ainv*ainv)))
   c = Q33*(alpha*(U + z*theta) + beta*(V + z*phi))
 
-  sigma_vm^2 = 
-  (a^2 + b^2 + a*b)*sin^2(alpha*y)*sin^2(beta*x) + 
+  sigma_vm^2 =
+  (a^2 + b^2 + a*b)*sin^2(alpha*y)*sin^2(beta*x) +
   3*c^2*cos^2(alpha*y)*cos^2(beta*x)
-  
+
   ||sigma_vm||_p = sqrt(|| sigma_vm^2 ||_(P/2))
 
-  || sigma_vm^2 ||_{K}^{K} = sum_k=0^K (K k)  
+  || sigma_vm^2 ||_{K}^{K} = sum_k=0^K (K k)
 */
 TacsScalar evaluate_vm_pnorm( int P, TacsScalar z,
-                              TacsScalar Q11, TacsScalar Q12, 
-                              TacsScalar Q22, TacsScalar Q33, 
-                              double alpha, double beta, 
+                              TacsScalar Q11, TacsScalar Q12,
+                              TacsScalar Q22, TacsScalar Q33,
+                              double alpha, double beta,
                               TacsScalar ainv, TacsScalar R, TacsScalar L,
-                              TacsScalar U, TacsScalar V, TacsScalar W, 
+                              TacsScalar U, TacsScalar V, TacsScalar W,
                               TacsScalar theta, TacsScalar phi,
                               TacsScalar *_vm_max ){
   int K = P/2;
@@ -513,23 +513,23 @@ TacsScalar evaluate_vm_pnorm( int P, TacsScalar z,
   TacsScalar vm_max1 = sqrt(x*y/(x + y));
   TacsScalar vm_max2 = sqrt(x);
   TacsScalar vm_max3 = sqrt(y);
-  
+
   printf("Max 1: %25.10f\n", TacsRealPart(vm_max1));
   printf("Max 2: %25.10f\n", TacsRealPart(vm_max2));
   printf("Max 3: %25.10f\n", TacsRealPart(vm_max3));
 
-  TacsScalar vm_max = vm_max1; 
-  if (TacsRealPart(vm_max2) >= TacsRealPart(vm_max)){ 
-    vm_max = vm_max2; 
+  TacsScalar vm_max = vm_max1;
+  if (TacsRealPart(vm_max2) >= TacsRealPart(vm_max)){
+    vm_max = vm_max2;
   }
-  if (TacsRealPart(vm_max3) >= TacsRealPart(vm_max)){ 
-    vm_max = vm_max3; 
+  if (TacsRealPart(vm_max3) >= TacsRealPart(vm_max)){
+    vm_max = vm_max3;
   }
   *_vm_max = vm_max;
 
   // Compute the area of the cylinder
   TacsScalar A = 2*M_PI*R*L;
-  
+
   TacsScalar pnorm = 0.0;
   for ( int i = 0; i <= K; i++ ){
     // The exponents in the binomial expansion
@@ -549,7 +549,7 @@ TacsScalar evaluate_vm_pnorm( int P, TacsScalar z,
     for ( int j = 1; j <= q; j++ ){
       bterm *= y;
     }
-    
+
     // Evaluate the integral
     // sin^{2*p}(x)*sin^{2*p}(y)*cos^{2*q}(x)*cos^(2q)(y)
     TacsScalar sc = A;
@@ -566,25 +566,25 @@ TacsScalar evaluate_vm_pnorm( int P, TacsScalar z,
   }
 
   return pow(pnorm, 1.0/P);
-} 
+}
 
 /*
   Evaluate the p-norm of the Tsai--Wu failure criterion
 
-  F(s_1, s_2, s_12) = 
-  F1*s_1 + F2*s_2 + 
+  F(s_1, s_2, s_12) =
+  F1*s_1 + F2*s_2 +
   F11*s_1**2 + F22*s_2**2 + 2.0*F12*s_1*s_2 + F66*s_12**2
 */
 TacsScalar evaluate_tsai_wu_pnorm( int P, int M, int N, TacsScalar z,
-                                   TacsScalar Q11, TacsScalar Q12, 
-                                   TacsScalar Q22, TacsScalar Q33, 
+                                   TacsScalar Q11, TacsScalar Q12,
+                                   TacsScalar Q22, TacsScalar Q33,
                                    TacsScalar F1, TacsScalar F2,
-                                   TacsScalar F11, TacsScalar F12, 
+                                   TacsScalar F11, TacsScalar F12,
                                    TacsScalar F22, TacsScalar F66,
                                    double alpha, double beta, TacsScalar ainv,
                                    TacsScalar R, TacsScalar L,
-                                   TacsScalar U, TacsScalar V, TacsScalar W, 
-                                   TacsScalar theta, TacsScalar phi, 
+                                   TacsScalar U, TacsScalar V, TacsScalar W,
+                                   TacsScalar theta, TacsScalar phi,
                                    TacsScalar *tw_max,
                                    TacsScalar *unit_load ){
   if (P % 2 != 0){
@@ -606,7 +606,7 @@ TacsScalar evaluate_tsai_wu_pnorm( int P, int M, int N, TacsScalar z,
 
   int cos_pow[3] = {0, 0, 2};
   int sin_pow[3] = {1, 2, 0};
-  
+
   // Compute all the permutations such that sum t_{k} = P
   int power[3] = {0, 0, 0};
 
@@ -619,34 +619,34 @@ TacsScalar evaluate_tsai_wu_pnorm( int P, int M, int N, TacsScalar z,
   printf("Max 2: %25.8f\n", TacsRealPart(tw_max2));
   printf("Max 3: %25.8f\n", TacsRealPart(tw_max3));
   printf("Max 4: %25.8f\n", TacsRealPart(tw_max4));
-  
+
   *tw_max = tw_max1;
 
   // Solve the quadratic equation: alpha*coef[0] + alpha**2*coef[1] - 1.0 = 0
   TacsScalar r1, r2;
   TacsScalar one = 1.0;
   FElibrary::solveQERoots(&r1, &r2, coef[1], coef[0], -one);
-  if (TacsRealPart(r1) > TacsRealPart(r2)){ 
-    *unit_load = r1; 
+  if (TacsRealPart(r1) > TacsRealPart(r2)){
+    *unit_load = r1;
   }
   else { *unit_load = r2; }
 
-  if (TacsRealPart(tw_max2) > TacsRealPart(*tw_max)){ 
-    *tw_max = tw_max2; 
+  if (TacsRealPart(tw_max2) > TacsRealPart(*tw_max)){
+    *tw_max = tw_max2;
 
     // Solve the quadratic equation: alpha*coef[0] - alpha**2*coef[1] - 1.0 = 0
     FElibrary::solveQERoots(&r1, &r2, coef[1], -coef[0], one);
-    if (TacsRealPart(r1) > TacsRealPart(r2)){ 
-      *unit_load = r1; 
+    if (TacsRealPart(r1) > TacsRealPart(r2)){
+      *unit_load = r1;
     }
     else { *unit_load = r2; }
   }
-  if (TacsRealPart(tw_max3) > TacsRealPart(*tw_max)){ 
-    *tw_max = tw_max3; 
+  if (TacsRealPart(tw_max3) > TacsRealPart(*tw_max)){
+    *tw_max = tw_max3;
     *unit_load = 1.0/sqrt(tw_max3);
   }
-  if (TacsRealPart(tw_max4) > TacsRealPart(*tw_max)){ 
-    *tw_max = tw_max4; 
+  if (TacsRealPart(tw_max4) > TacsRealPart(*tw_max)){
+    *tw_max = tw_max4;
   }
 
   // There is probably a better way to do this, but this was the fastest to code
@@ -662,39 +662,39 @@ TacsScalar evaluate_tsai_wu_pnorm( int P, int M, int N, TacsScalar z,
           TacsScalar bterm = 1.0;
           int SK = 0; // The running sum of the powers
           for ( int k = 0; k < 3; k++ ){
-            SK += power[k]; 
-            
+            SK += power[k];
+
             // Multiply by (SK choose power[k])
             for ( int j = 1; j <= power[k]; j++ ){
               bterm *= (1.0*(SK - (power[k] - j)))/j;
             }
           }
-          
-          // Compute the polynomial term 
+
+          // Compute the polynomial term
           for ( int j = 0; j < 3; j++ ){
             for ( int k = 1; k <= power[j]; k++ ){
               bterm *= coef[j];
             }
           }
-                
+
           // Compute the sum of the sin and cosine powers
           int sp = 0, cp = 0;
-                
+
           for ( int j = 0; j < 3; j++ ){
             sp += sin_pow[j]*power[j];
             cp += cos_pow[j]*power[j];
           }
-                
-          // Compute the integral of int_{Omega} sin^{sp}(x) cos^{cp}(x) 
+
+          // Compute the integral of int_{Omega} sin^{sp}(x) cos^{cp}(x)
           TacsScalar sc = 0.0;
           if (sp % 2 == 1){
             sc = 1.0/(alpha*beta);
-            
+
             for ( int k = 0; k < (sp-1)/2; k++ ){
               TacsScalar t = (sp - 1.0 - 2.0*k)/(cp + sp - 2.0*k);
               sc *= t*t;
             }
-            
+
             // Multiply by the product with
             // int sin(x) cos^{cp}(x) = -cos^{cp+1}(x)/(cp+1)
             if (cp % 2 == 0){
@@ -704,7 +704,7 @@ TacsScalar evaluate_tsai_wu_pnorm( int P, int M, int N, TacsScalar z,
               else {
                 sc = 0.0;
               }
-              
+
               if (M % 2 == 1){
                 sc *= 2.0/(cp + 1.0);
               }
@@ -715,7 +715,7 @@ TacsScalar evaluate_tsai_wu_pnorm( int P, int M, int N, TacsScalar z,
           }
           else if (sp % 2 == 0 && cp % 2 == 0){
             sc = 2*M_PI*R*L;
-            
+
             for ( int k = 1; 2*k <= sp; k++ ){
               TacsScalar t = (2.0*k - 1.0)/(cp + 2.0*k);
               sc *= t*t;
@@ -725,7 +725,7 @@ TacsScalar evaluate_tsai_wu_pnorm( int P, int M, int N, TacsScalar z,
               sc *= t*t;
             }
           }
-          
+
           pnorm += bterm*sc;
         }
       }
@@ -734,18 +734,18 @@ TacsScalar evaluate_tsai_wu_pnorm( int P, int M, int N, TacsScalar z,
 
   return pow(pnorm, 1.0/P);
 }
-            
+
 /*
   Take the difference between what's in the vector and what the exact
   solution is at each point in the mesh.
 */
-void set_tacs_exact( TACSAssembler *tacs, TACSBVec *ans, 
-                     TacsScalar R, double alpha, double beta, 
-                     TacsScalar U, TacsScalar V, TacsScalar W, 
+void set_tacs_exact( TACSAssembler *tacs, TACSBVec *ans,
+                     TacsScalar R, double alpha, double beta,
+                     TacsScalar U, TacsScalar V, TacsScalar W,
                      TacsScalar theta, TacsScalar phi ){
   // Get the x,y,z locations of the nodes from TACS
   int nnodes = tacs->getNumNodes();
-  
+
   TACSBVec *X = tacs->createNodeVec();
   X->incref();
   tacs->getNodes(X);
@@ -762,7 +762,7 @@ void set_tacs_exact( TACSAssembler *tacs, TACSBVec *ans,
     // Compute the u, v, w, theta, phi solution at this point within
     // the shell
     TacsScalar x = Xpts[3*node];
-    TacsScalar y =-R*atan2(TacsRealPart(Xpts[3*node+2]), 
+    TacsScalar y =-R*atan2(TacsRealPart(Xpts[3*node+2]),
                            TacsRealPart(Xpts[3*node+1]));
 
     TacsScalar u = U*sin(alpha*y)*cos(beta*x);
@@ -770,7 +770,7 @@ void set_tacs_exact( TACSAssembler *tacs, TACSBVec *ans,
     TacsScalar w = W*sin(alpha*y)*sin(beta*x);
     TacsScalar psi_x = theta*sin(alpha*y)*cos(beta*x);
     TacsScalar psi_y = phi*cos(alpha*y)*sin(beta*x);
-    
+
     TacsScalar n[2], t[2];
     n[0] =  cos(y/R);
     n[1] = -sin(y/R);
@@ -793,11 +793,11 @@ void set_tacs_exact( TACSAssembler *tacs, TACSBVec *ans,
 }
 
 /*
-  Set the solution to be a linearly varying solution. 
+  Set the solution to be a linearly varying solution.
 
   This can be used to check the strain expressions for the cylinder.
 */
-void set_tacs_linear_solution( TACSAssembler *tacs, TACSBVec *ans, 
+void set_tacs_linear_solution( TACSAssembler *tacs, TACSBVec *ans,
                                TacsScalar R, double alpha, double beta,
                                TacsScalar coef[] ){
   TACSBVec *X = tacs->createNodeVec();
@@ -812,7 +812,7 @@ void set_tacs_linear_solution( TACSAssembler *tacs, TACSBVec *ans,
   // Get the finite-element solution from TACS
   TacsScalar * u_tacs;
   ans->getArray(&u_tacs);
-  
+
   // Set the coefficients from the array
   TacsScalar u0, ux, uy, v0, vx, vy, w0, wx, wy;
   TacsScalar psi_x0, psi_xx, psi_xy;
@@ -828,9 +828,9 @@ void set_tacs_linear_solution( TACSAssembler *tacs, TACSBVec *ans,
     // Compute the u, v, w, theta, phi solution at this point within
     // the shell
     TacsScalar x = Xpts[3*node];
-    TacsScalar y =-R*atan2(TacsRealPart(Xpts[3*node+2]), 
+    TacsScalar y =-R*atan2(TacsRealPart(Xpts[3*node+2]),
                            TacsRealPart(Xpts[3*node+1]));
-    
+
     TacsScalar n[2], t[2];
     n[0] =  cos(y/R);
     n[1] = -sin(y/R);
@@ -852,7 +852,7 @@ void set_tacs_linear_solution( TACSAssembler *tacs, TACSBVec *ans,
 }
 
 void write_all_linear_solutions( TACSAssembler *tacs,
-                                 TACSToFH5 *f5, TacsScalar R, 
+                                 TACSToFH5 *f5, TacsScalar R,
                                  double alpha, double beta ){
   // Create a temporary vector
   TACSBVec *ans = tacs->createVec();
@@ -876,15 +876,15 @@ void write_all_linear_solutions( TACSAssembler *tacs,
 
   ans->decref();
 }
-                                 
+
 /*
   Print the exact solution to an ASCII file
 */
-void write_exact_solution( const char * file_name, 
-                           int nnx, int nny, 
-                           double R, double L, 
+void write_exact_solution( const char * file_name,
+                           int nnx, int nny,
+                           double R, double L,
                            double alpha, double beta,
-                           double U, double V, double W, 
+                           double U, double V, double W,
                            double theta, double phi ){
   FILE * fp = fopen(file_name, "w");
 
@@ -902,52 +902,52 @@ void write_exact_solution( const char * file_name,
         double w = W*sin(alpha*y)*sin(beta*x);
         double psi_x = theta*sin(alpha*y)*cos(beta*x);
         double psi_y = phi*cos(alpha*y)*sin(beta*x);
-        
+
         double X = x;
         double Y = R*cos(y/R);
         double Z =-R*sin(y/R);
-        
+
         double n[2], t[2];
-        n[0] = Y/R;    
+        n[0] = Y/R;
         n[1] = Z/R;
 
         t[0] = -sin(y/R);
         t[1] = -cos(y/R);
-        
+
         // Print the global displacements
         fprintf(fp, "%e %e %e %e %e %e %e %e %e ",
-                X, Y, Z, u, w*n[0] + v*t[0], w*n[1] + v*t[1], -psi_y, 
+                X, Y, Z, u, w*n[0] + v*t[0], w*n[1] + v*t[1], -psi_y,
                 psi_x*t[0], psi_x*t[1]);
-        
+
         // Print the local strains
         double ex0 = -U*beta*sin(alpha*y)*sin(beta*x);
         double ey0 = -V*alpha*sin(alpha*y)*sin(beta*x) + w/R;
         double exy0 = (alpha*U + beta*V)*cos(alpha*y)*cos(beta*x);
-        
+
         double kx = -theta*beta*sin(alpha*y)*sin(beta*x);
         double ky = (-phi + V/R)*alpha*sin(alpha*y)*sin(beta*x) + w/(R*R);
         double kxy = (alpha*(theta + U/R) + beta*phi)*cos(alpha*y)*cos(beta*x);
-        
+
         double gyz = (alpha*W + phi)*cos(alpha*y)*sin(beta*x) - v/R;
         double gxz = (beta*W + theta)*sin(alpha*y)*cos(beta*x);
-        
+
         fprintf(fp, "%e %e %e %e %e %e %e %e\n",
                 ex0, ey0, exy0, kx, ky, kxy, gyz, gxz);
       }
     }
     fclose(fp);
   }
-}                          
+}
 
 /*
   Perform a grid study using a series of nx values. Write the results
   to a file.
 */
-void grid_study( const char *file_name, 
-		 double P, FSDTStiffness *stiffness, 
-		 TacsScalar load, double R, double L, 
-		 double alpha, double beta, int order, 
-		 int max_quad_elev ){
+void grid_study( const char *file_name,
+                 double P, FSDTStiffness *stiffness,
+                 TacsScalar load, double R, double L,
+                 double alpha, double beta, int order,
+                 int max_quad_elev ){
 
   FILE * fp = fopen(file_name, "w");
   fprintf(fp, "Variables = nx, KS, DKS, IE, DE, ");
@@ -957,7 +957,7 @@ void grid_study( const char *file_name,
     // Set the size of the finite-element mesh to use
     int ny = (int)(((2*M_PI*R)*nx)/L);
 
-    TACSAssembler * tacs = 
+    TACSAssembler * tacs =
       create_tacs_cylinder_model(stiffness, alpha, beta,
                                  order, nx, ny, L, R, load);
     tacs->incref();
@@ -969,7 +969,7 @@ void grid_study( const char *file_name,
     mat->incref();
     ans->incref();
     rhs->incref();
-    
+
     // Create the preconditioner
     int lev = 4500;
     double fill = 10.0;
@@ -977,27 +977,27 @@ void grid_study( const char *file_name,
     PcScMat * pc = new PcScMat(mat, lev, fill, reorder_schur);
     pc->setMonitorFactorFlag(0);
     pc->setAlltoallAssemblyFlag(1);
-    
+
     // Create GMRES object
     int gmres_iters = 15, nrestart = 5, isflexible = 0;
     GMRES * gmres = new GMRES(mat, pc, gmres_iters, nrestart, isflexible);
     gmres->incref();
-    
+
     // Set the GMRES tolerances
     double rtol = 1e-12, atol = 1e-30;
     gmres->setTolerances(rtol, atol);
-    
+
     tacs->zeroVariables();
     tacs->assembleJacobian(1.0, 0.0, 0.0, rhs, mat);
     pc->factor();
     gmres->solve(rhs, ans);
     ans->scale(-1.0);
     tacs->setVariables(ans);
-    
+
     // Set up the KS functional
     TACSKSFailure *ks_func = new TACSKSFailure(tacs, P);
     ks_func->incref();
-  
+
     // Set up the induced function
     TACSInducedFailure *ind_func = new TACSInducedFailure(tacs, P);
     ind_func->incref();
@@ -1007,55 +1007,55 @@ void grid_study( const char *file_name,
 
     // Evaluate the KS functionals
     TacsScalar dks_tacs, ks_tacs;
-    ks_func->setKSFailureType(TACSKSFailure::DISCRETE); 
+    ks_func->setKSFailureType(TACSKSFailure::DISCRETE);
     tacs->evalFunctions(&ks, 1, &dks_tacs);
-    
+
     ks_func->setKSFailureType(TACSKSFailure::CONTINUOUS);
     tacs->evalFunctions(&ks, 1, &ks_tacs);
-      
+
     // Evaluate the induced norms
     TacsScalar ind_exp_tacs, ind_dexp_tacs;
     ind_func->setInducedType(TACSInducedFailure::EXPONENTIAL);
     tacs->evalFunctions(&ind, 1, &ind_exp_tacs);
-      
+
     ind_func->setInducedType(TACSInducedFailure::DISCRETE_EXPONENTIAL);
     tacs->evalFunctions(&ind, 1, &ind_dexp_tacs);
-    
+
     TacsScalar ind_exp2_tacs, ind_dexp2_tacs;
     ind_func->setInducedType(TACSInducedFailure::EXPONENTIAL_SQUARED);
     tacs->evalFunctions(&ind, 1, &ind_exp2_tacs);
-    
+
     ind_func->setInducedType(TACSInducedFailure::DISCRETE_EXPONENTIAL_SQUARED);
     tacs->evalFunctions(&ind, 1, &ind_dexp2_tacs);
-    
+
     // Compute the induced power norms
     TacsScalar ind_pow_tacs, ind_dpow_tacs;
     ind_func->setInducedType(TACSInducedFailure::POWER);
     tacs->evalFunctions(&ind, 1, &ind_pow_tacs);
-    
+
     ind_func->setInducedType(TACSInducedFailure::DISCRETE_POWER);
     tacs->evalFunctions(&ind, 1, &ind_dpow_tacs);
-    
-    TacsScalar ind_pow2_tacs, ind_dpow2_tacs; 
+
+    TacsScalar ind_pow2_tacs, ind_dpow2_tacs;
     ind_func->setInducedType(TACSInducedFailure::POWER_SQUARED);
     tacs->evalFunctions(&ind, 1, &ind_pow2_tacs);
-    
+
     ind_func->setInducedType(TACSInducedFailure::DISCRETE_POWER_SQUARED);
     tacs->evalFunctions(&ind, 1, &ind_dpow2_tacs);
 
     // Print all the variables to the file
     // P, elev, KS, DKS, IE, DE,
     fprintf(fp, "%d %e %e %e %e ", nx,
-            TacsRealPart(ks_tacs), TacsRealPart(dks_tacs), 
+            TacsRealPart(ks_tacs), TacsRealPart(dks_tacs),
             TacsRealPart(ind_exp_tacs), TacsRealPart(ind_dexp_tacs));
-      
-    double SOC = 
-      TacsRealPart(ind_exp_tacs + 0.5*P*(ind_exp2_tacs - 
+
+    double SOC =
+      TacsRealPart(ind_exp_tacs + 0.5*P*(ind_exp2_tacs -
                                      ind_exp_tacs*ind_exp_tacs));
-    
+
     // IE2, DE2, IP, DP, IP2, DP2, SOC\n");
-    fprintf(fp, "%e %e %e %e %e %e %e \n", 
-            TacsRealPart(sqrt(ind_exp2_tacs)), 
+    fprintf(fp, "%e %e %e %e %e %e %e \n",
+            TacsRealPart(sqrt(ind_exp2_tacs)),
             TacsRealPart(sqrt(ind_dexp2_tacs)),
             TacsRealPart(ind_pow_tacs), TacsRealPart(ind_dpow_tacs),
             TacsRealPart(sqrt(ind_pow2_tacs)),
@@ -1151,8 +1151,8 @@ int main( int argc, char * argv[] ){
     TacsScalar Yc = 10.0;
     TacsScalar S12 = 8.0;
 
-    ply = new OrthoPly(t, rho, E1, E2, nu12, 
-                       G12, G23, G13, 
+    ply = new OrthoPly(t, rho, E1, E2, nu12,
+                       G12, G23, G13,
                        Xt, Xc, Yt, Yc, S12);
     printf("Using orthotropic material properties: \n");
   }
@@ -1162,7 +1162,7 @@ int main( int argc, char * argv[] ){
     TacsScalar E = 70e3;
     TacsScalar nu = 0.3;
     TacsScalar ys = 1.0;
-  
+
     ply = new OrthoPly(t, rho, E, nu, ys);
     printf("Using isotropic material properties: \n");
   }
@@ -1171,7 +1171,7 @@ int main( int argc, char * argv[] ){
 
   // Create the stiffness relationship
   TacsScalar kcorr = 5.0/6.0;
-  FSDTStiffness * stiffness = 
+  FSDTStiffness * stiffness =
     new specialFSDTStiffness(ply, orthotropic_flag, t, kcorr);
   stiffness->incref();
 
@@ -1187,11 +1187,11 @@ int main( int argc, char * argv[] ){
   TacsScalar ainv = 1.0/R;
   TacsScalar A[6], B[6], D[6], As[3];
   double pt[] = {0.0, 0.0};
-  stiffness->getStiffness(pt, A, B, D, As); 
+  stiffness->getStiffness(pt, A, B, D, As);
 
   compute_coefficients(&U, &V, &W, &theta, &phi,
-                       alpha, beta, ainv, 
-                       A[0], A[1], A[3], A[5], 
+                       alpha, beta, ainv,
+                       A[0], A[1], A[3], A[5],
                        D[0], D[1], D[3], D[5],
                        As[0], As[2], 1.0);
 
@@ -1204,21 +1204,21 @@ int main( int argc, char * argv[] ){
   if (!orthotropic_flag){
     TacsScalar vm_max;
     evaluate_vm_pnorm(P, 0.5*t, Q11, Q12, Q22, Q66,
-                      alpha, beta, ainv, R, L, 
+                      alpha, beta, ainv, R, L,
                       U, V, W, theta, phi, &vm_max);
     load = 1.0/vm_max;
   }
   else {
     TacsScalar tw_max;
     evaluate_tsai_wu_pnorm(P, M, N, 0.5*t, Q11, Q12, Q22, Q66,
-                           F1, F2, F11, F12, F22, F66, 
+                           F1, F2, F11, F12, F22, F66,
                            alpha, beta, ainv, R, L, U, V, W, theta, phi,
                            &tw_max, &load);
   }
 
   compute_coefficients(&U, &V, &W, &theta, &phi,
-                       alpha, beta, ainv, 
-                       A[0], A[1], A[3], A[5], 
+                       alpha, beta, ainv,
+                       A[0], A[1], A[3], A[5],
                        D[0], D[1], D[3], D[5],
                        As[0], As[2], load);
 
@@ -1226,14 +1226,14 @@ int main( int argc, char * argv[] ){
     char file_name[128];
     if (orthotropic_flag){
       sprintf(file_name, "ortho_grid_study_order=%d_P=%d.dat",
-	      order, P);
+              order, P);
     }
     else {
       sprintf(file_name, "iso_grid_study_order=%d_P=%d.dat",
-	      order, P);
+              order, P);
     }
     grid_study(file_name, P, stiffness,
-	       load, R, L, alpha, beta, order, 8-order);
+               load, R, L, alpha, beta, order, 8-order);
   }
 
 
@@ -1267,7 +1267,7 @@ int main( int argc, char * argv[] ){
   PcScMat * pc = new PcScMat(mat, lev, fill, reorder_schur);
   pc->setMonitorFactorFlag(0);
   pc->setAlltoallAssemblyFlag(1);
-  
+
   // Create GMRES object
   int gmres_iters = 15, nrestart = 5, isflexible = 0;
   GMRES * gmres = new GMRES(mat, pc, gmres_iters, nrestart, isflexible);
@@ -1283,11 +1283,11 @@ int main( int argc, char * argv[] ){
   gmres->solve(rhs, ans);
   ans->scale(-1.0);
   tacs->setVariables(ans);
-  f5->writeToFile("cylindrical_solution.f5");  
+  f5->writeToFile("cylindrical_solution.f5");
 
   // Compute the error associated with the normal displacement
   TacsScalar err = compute_tacs_error(order, tacs,
-                                      R, alpha, beta, 
+                                      R, alpha, beta,
                                       U, V, W, theta, phi);
   printf("The error in the L2 norm is:   %15.8e\n", TacsRealPart(err));
 
@@ -1306,7 +1306,7 @@ int main( int argc, char * argv[] ){
   // Set up the KS functional
   TACSKSFailure *ks_func = new TACSKSFailure(tacs, P);
   ks_func->incref();
-  
+
   // Set up the induced function
   TACSInducedFailure *ind_func = new TACSInducedFailure(tacs, P);
   ind_func->incref();
@@ -1316,87 +1316,87 @@ int main( int argc, char * argv[] ){
 
   // Evaluate the KS functionals
   TacsScalar dks_tacs, ks_tacs;
-  ks_func->setKSFailureType(TACSKSFailure::DISCRETE); 
+  ks_func->setKSFailureType(TACSKSFailure::DISCRETE);
   tacs->evalFunctions(&ks, 1, &dks_tacs);
-    
+
   ks_func->setKSFailureType(TACSKSFailure::CONTINUOUS);
   tacs->evalFunctions(&ks, 1, &ks_tacs);
-      
+
   // Evaluate the induced norms
   TacsScalar ind_exp_tacs, ind_dexp_tacs;
   ind_func->setInducedType(TACSInducedFailure::EXPONENTIAL);
   tacs->evalFunctions(&ind, 1, &ind_exp_tacs);
-      
+
   ind_func->setInducedType(TACSInducedFailure::DISCRETE_EXPONENTIAL);
   tacs->evalFunctions(&ind, 1, &ind_dexp_tacs);
-    
+
   TacsScalar ind_exp2_tacs, ind_dexp2_tacs;
   ind_func->setInducedType(TACSInducedFailure::EXPONENTIAL_SQUARED);
   tacs->evalFunctions(&ind, 1, &ind_exp2_tacs);
-    
+
   ind_func->setInducedType(TACSInducedFailure::DISCRETE_EXPONENTIAL_SQUARED);
   tacs->evalFunctions(&ind, 1, &ind_dexp2_tacs);
-    
+
   // Compute the induced power norms
   TacsScalar ind_pow_tacs, ind_dpow_tacs;
   ind_func->setInducedType(TACSInducedFailure::POWER);
   tacs->evalFunctions(&ind, 1, &ind_pow_tacs);
-    
+
   ind_func->setInducedType(TACSInducedFailure::DISCRETE_POWER);
   tacs->evalFunctions(&ind, 1, &ind_dpow_tacs);
-    
-  TacsScalar ind_pow2_tacs, ind_dpow2_tacs; 
+
+  TacsScalar ind_pow2_tacs, ind_dpow2_tacs;
   ind_func->setInducedType(TACSInducedFailure::POWER_SQUARED);
   tacs->evalFunctions(&ind, 1, &ind_pow2_tacs);
-    
+
   ind_func->setInducedType(TACSInducedFailure::DISCRETE_POWER_SQUARED);
   tacs->evalFunctions(&ind, 1, &ind_dpow2_tacs);
-    
-  printf("TACS discrete KS function with P = %d: %15.8e\n", 
+
+  printf("TACS discrete KS function with P = %d: %15.8e\n",
          P, fabs(TacsRealPart(dks_tacs-1.0)));
-  printf("TACS KS-functional with P = %d:        %15.8e\n", 
-         P, fabs(TacsRealPart(ks_tacs-1.0)));    
-  printf("TACS exponential with P = %d:          %15.8e\n", 
+  printf("TACS KS-functional with P = %d:        %15.8e\n",
+         P, fabs(TacsRealPart(ks_tacs-1.0)));
+  printf("TACS exponential with P = %d:          %15.8e\n",
          P, fabs(TacsRealPart(ind_exp_tacs-1.0)));
-  printf("TACS discrete exp with P = %d:         %15.8e\n", 
+  printf("TACS discrete exp with P = %d:         %15.8e\n",
          P, fabs(TacsRealPart(ind_dexp_tacs-1.0)));
-  printf("TACS exponential2 with P = %d:         %15.8e\n", 
+  printf("TACS exponential2 with P = %d:         %15.8e\n",
          P, fabs(TacsRealPart(sqrt(ind_exp2_tacs)-1.0)));
-  printf("TACS discrete exp2 with P = %d:        %15.8e\n", 
+  printf("TACS discrete exp2 with P = %d:        %15.8e\n",
          P, fabs(TacsRealPart(sqrt(ind_dexp2_tacs)-1.0)));
-  printf("TACS pow with P = %d:                  %15.8e\n", 
+  printf("TACS pow with P = %d:                  %15.8e\n",
          P, fabs(TacsRealPart(ind_pow_tacs-1.0)));
-  printf("TACS discrete pow with P = %d:         %15.8e\n", 
-         P, fabs(TacsRealPart(ind_dpow_tacs-1.0))); 
-  printf("TACS pow2 with P = %d:                 %15.8e\n", 
+  printf("TACS discrete pow with P = %d:         %15.8e\n",
+         P, fabs(TacsRealPart(ind_dpow_tacs-1.0)));
+  printf("TACS pow2 with P = %d:                 %15.8e\n",
          P, fabs(TacsRealPart(sqrt(ind_pow2_tacs)-1.0)));
-  printf("TACS discrete pow2 with P = %d:        %15.8e\n", 
+  printf("TACS discrete pow2 with P = %d:        %15.8e\n",
          P, fabs(TacsRealPart(sqrt(ind_dpow2_tacs)-1.0)));
-    
-  printf("Second-order correction P = %d:        %15.8e\n", P, 
-	 fabs(TacsRealPart(ind_exp_tacs + 0.5*P*(ind_exp2_tacs - 
+
+  printf("Second-order correction P = %d:        %15.8e\n", P,
+         fabs(TacsRealPart(ind_exp_tacs + 0.5*P*(ind_exp2_tacs -
                                              ind_exp_tacs*ind_exp_tacs)-1.0)));
 
   if (!orthotropic_flag){
     TacsScalar vm_max;
     TacsScalar pnorm = evaluate_vm_pnorm(P, 0.5*t, Q11, Q12, Q22, Q66,
-					 alpha, beta, ainv, R, L, 
-					 U, V, W, theta, phi, &vm_max);
-    printf("The maximum von Mises stress:  %15.8e\n", 
+                                         alpha, beta, ainv, R, L,
+                                         U, V, W, theta, phi, &vm_max);
+    printf("The maximum von Mises stress:  %15.8e\n",
            TacsRealPart(vm_max));
     printf("Analytic top p-norm P = %d:    %15.8e\n",
            P, TacsRealPart(pnorm));
   }
   else {
     TacsScalar tw_max, unit_load;
-    TacsScalar pnorm = 
+    TacsScalar pnorm =
       evaluate_tsai_wu_pnorm(P, M, N, 0.5*t, Q11, Q12, Q22, Q66,
-			     F1, F2, F11, F12, F22, F66, 
-			     alpha, beta, ainv, R, L, U, V, W, theta, phi, 
-			     &tw_max, &unit_load);
-    printf("The maximum value of Tsai-Wu:  %15.8e\n", 
+                             F1, F2, F11, F12, F22, F66,
+                             alpha, beta, ainv, R, L, U, V, W, theta, phi,
+                             &tw_max, &unit_load);
+    printf("The maximum value of Tsai-Wu:  %15.8e\n",
            TacsRealPart(tw_max));
-    printf("Analytic top p-norm P = %d:    %15.8e\n", 
+    printf("Analytic top p-norm P = %d:    %15.8e\n",
            P, TacsRealPart(pnorm));
   }
 

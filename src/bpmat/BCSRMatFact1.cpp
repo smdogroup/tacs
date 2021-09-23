@@ -12,8 +12,8 @@
   TACS is licensed under the Apache License, Version 2.0 (the
   "License"); you may not use this software except in compliance with
   the License.  You may obtain a copy of the License at
-  
-  http://www.apache.org/licenses/LICENSE-2.0 
+
+  http://www.apache.org/licenses/LICENSE-2.0
 */
 
 #include "BCSRMatImpl.h"
@@ -23,7 +23,7 @@
 */
 
 /*!
-  Perform an ILU factorization of the matrix using the existing 
+  Perform an ILU factorization of the matrix using the existing
   non-zero pattern. The entries are over-written and all operations
   are performed in place. This is for an arbitrary block size.
 */
@@ -47,7 +47,7 @@ for row %d\n", i);
     int row_end = rowp[i+1];
 
     for ( int j = rowp[i]; cols[j] < i; j++ ){
-      int cj = cols[j];   
+      int cj = cols[j];
 
       // D = A[j] * A[diag[cj]]
       TacsScalar d11 = A[j]*A[diag[cj]];
@@ -112,14 +112,14 @@ void BCSRMatFactorLower1( BCSRMatData * data, BCSRMatData * Edata ){
     int j_end = diag[i];
 
     for ( int j = rowp[i]; j < j_end; j++ ){
-      int cj = cols[j];      
+      int cj = cols[j];
       const TacsScalar * d = &A[j];
 
       int k     = erowp[i];
       int k_end = erowp[i+1];
       TacsScalar * a = &E[k];
 
-      int p     = erowp[cj]; 
+      int p     = erowp[cj];
       int p_end = erowp[cj+1];
       TacsScalar * b = &E[p];
 
@@ -160,17 +160,17 @@ void BCSRMatFactorUpper1( BCSRMatData * data, BCSRMatData * Fdata ){
     int j_end = frowp[i+1];
 
     for ( int j = frowp[i]; j < j_end; j++ ){
-      int cj = fcols[j];      
+      int cj = fcols[j];
       TacsScalar * a = &F[j];
       const TacsScalar * b = &A[diag[cj]];
 
       // D = A[j] * A[diag[cj]]
       TacsScalar d11 = a[0]*b[0];
-      
-      int k     = j+1;      
+
+      int k     = j+1;
       int k_end = frowp[i+1];
       a = &F[k];
-      
+
       int p     = diag[cj]+1;
       int p_end = rowp[cj+1];
       b = &A[p];

@@ -1,2 +1,0 @@
-default:
-	pdflatex install.tex

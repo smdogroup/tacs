@@ -12,8 +12,8 @@
   TACS is licensed under the Apache License, Version 2.0 (the
   "License"); you may not use this software except in compliance with
   the License.  You may obtain a copy of the License at
-  
-  http://www.apache.org/licenses/LICENSE-2.0 
+
+  http://www.apache.org/licenses/LICENSE-2.0
 */
 
 #ifndef TACS_OBJECT_H
@@ -25,10 +25,10 @@
 
   The following assumptions are made about references:
   - References returned from functions are always borrowed
-  (except for constructors which own the new reference -- this is 
+  (except for constructors which own the new reference -- this is
   the way I'd like to do it, but SWIG doesn't seem to support it easily)
-  - References passed into functions have no effect - 
-  references are never stolen.  
+  - References passed into functions have no effect -
+  references are never stolen.
 */
 
 #include <stdlib.h>
@@ -63,13 +63,13 @@ typedef double TacsScalar;
 
   Note that this may only log FLOPs from certain parts of the code.
   I've tried to log all operations within the linear algebra portions of
-  the code, but the analysis (e.g. residual/matrix computation) is much 
+  the code, but the analysis (e.g. residual/matrix computation) is much
   more difficult.
 */
 extern double tacs_local_flop_count;
 
 // Zero the number of counted flops
-void TacsZeroNumFlops(); 
+void TacsZeroNumFlops();
 
 // Retrieve the total number of counted flops
 double TacsGetNumFlops();
@@ -78,102 +78,67 @@ double TacsGetNumFlops();
 #ifdef TACS_LOG_FLOPS
 #define TacsAddFlops(flop) (tacs_local_flop_count += (flop));
 #else
-#define TacsAddFlops(flop) 
+#define TacsAddFlops(flop)
 #endif
 
 /*
   Set up the define statements for beginning/ending a namespace
-  environment 
+  environment
 */
 #define TACS_BEGIN_NAMESPACE(a) namespace a {
 #define TACS_END_NAMESPACE }
 
-/*!
+/**
   Initialize some static variables related to MPI
 */
 void TacsInitialize();
 
-/*!
+/**
   Check if TacsInitialize has been called
 */
 int TacsIsInitialized();
 
-/*!
+/**
   Clean up from the Tacs initialization
 */
 void TacsFinalize();
 
-/*!
+/**
   TACSObject: The base class for all TACS objects to enable reference
-  counting. In most cases this is sufficient to free any allocated 
-  memory. 
+  counting. In most cases this is sufficient to free any allocated
+  memory.
 */
 class TACSObject {
  public:
   TACSObject();
   virtual ~TACSObject();
 
-  // Increase the reference count functions
-  // --------------------------------------
+  /**
+    Increase the reference count function
+  */
   void incref();
 
-  // Decrease the reference count
-  // ----------------------------
+  /**
+    Decrease the reference count
+  */
   void decref();
 
-  // Return the reference count
-  // --------------------------
+  /**
+    Return the reference count
+  */
   int refcount();
 
-  // Return the name of the object
-  // -----------------------------
-  virtual const char *TACSObjectName();
+  /**
+    Return the name of the object
+  */
+  virtual const char *getObjectName();
 
  private:
   int ref_count;
   static const char *tacsDefault;
 };
 
-/*!  
-  TACSOptObject: Base class for objects that contain design
-  variable information 
-*/
-class TACSOptObject : public TACSObject {
- public:
-  TACSOptObject() : TACSObject() {}
-
-  virtual ~TACSOptObject(){}
-
-  /*!
-    Set the design variable numbers owned by this object to those passed 
-    into the object in dvs[]
-    
-    dvs:    An array of the design variable values 
-    numDVs: The size of the array dvs
-  */
-  virtual void setDesignVars( const TacsScalar dvs[], 
-                              int numDVs ){}
-
-  /*!
-    Get the current values of the design variables
-
-    dvs:    An array of the design variable values 
-    numDVs: The size of the array dvs
-  */ 
-  virtual void getDesignVars( TacsScalar dvs[], int numDVs ){}
-
-  /*!
-    Get the range of allowable design variable values
-    
-    lowerBound:  The design variable lower bounds
-    upperBound:  The design variable upper bounds
-    numDVs:      The size of the arrays lowerBound and upperBound
-  */
-  virtual void getDesignVarRange( TacsScalar lowerBound[], 
-                                  TacsScalar upperBound[], int numDVs ){}
-};
-
-/*!  
+/**
   Information about the number of threads to use in a computation.
   This should only be allocated by the TACSAssembler object. The
   number of threads is volitile in the sense that it can change
@@ -190,7 +155,7 @@ class TACSThreadInfo : public TACSObject {
   int getNumThreads();
 
  private:
-  int num_threads;  
+  int num_threads;
 };
 
 #endif

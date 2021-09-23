@@ -7,16 +7,16 @@
 #  TACS is licensed under the Apache License, Version 2.0 (the
 #  "License"); you may not use this software except in compliance with
 #  the License.  You may obtain a copy of the License at
-#  
-#  http://www.apache.org/licenses/LICENSE-2.0 
+#
+#  http://www.apache.org/licenses/LICENSE-2.0
 
-# distutils: language=c++
+#distutils: language=c++
 
 # For the use of MPI
 from mpi4py.libmpi cimport *
 cimport mpi4py.MPI as MPI
 
-# Import numpy 
+# Import numpy
 import numpy as np
 cimport numpy as np
 
@@ -40,553 +40,486 @@ include "TacsDefs.pxi"
 cdef extern from "mpi-compat.h":
     pass
 
-# This wraps a C++ array with a numpy array for later useage
-cdef inplace_array_1d(int nptype, int dim1, void *data_ptr):
-    '''Return a numpy version of the array'''
-    # Set the shape of the array
-    cdef int size = 1
-    cdef np.npy_intp shape[1]
-    cdef np.ndarray ndarray
+cdef class MaterialProperties:
+    def __cinit__(self, **kwargs):
+        # Set the density and specific heat value
+        cdef TacsScalar rho = 2700.0
+        cdef TacsScalar specific_heat = 921.0
 
-    # Set the first entry of the shape array
-    shape[0] = <np.npy_intp>dim1
-        
-    # Create the array itself - Note that this function will not
-    # delete the data once the ndarray goes out of scope
-    ndarray = np.PyArray_SimpleNewFromData(size, shape,
-                                           nptype, data_ptr)
-    
-    return ndarray
+        # Stiffness properties
+        cdef TacsScalar E = 70e9
+        cdef TacsScalar E1 = 70e9
+        cdef TacsScalar E2 = 70e9
+        cdef TacsScalar E3 = 70e9
 
-cdef class Timoshenko(Constitutive):
-    ## def __cinit__(self,
-    ##               np.ndarray[TacsScalar, ndim=1, mode='c'] axis,
-    ##               EA, EIy, EIz, EIyz,
-    ##               GJ, kGy, kGz, kGyz,
-    ##               rho, Iyy, Izz, Iyz,
-    ##               xm2, xm3,
-    ##               xc2, xc3,
-    ##               xk2, xk3,
-    ##               muS):        
-    ##     self.ptr = new TimoshenkoStiffness(<TacsScalar*>axis.data,
-    ##                                        EA, EIy, EIz, EIyz,
-    ##                                        GJ, kGy, kGz, kGyz,
-    ##                                        rho, Iyy, Izz, Iyz,
-    ##                                        xm2, xm3,
-    ##                                        xc2, xc3,
-    ##                                        xk2, xk3,
-    ##                                        muS)
-    ##     return
-                  
+        cdef TacsScalar nu = 0.3
+        cdef TacsScalar nu12 = 0.3
+        cdef TacsScalar nu13 = 0.3
+        cdef TacsScalar nu23 = 0.3
+
+        cdef TacsScalar G12 = 0.5*70e9/(1.0 + 0.3)
+        cdef TacsScalar G13 = 0.5*70e9/(1.0 + 0.3)
+        cdef TacsScalar G23 = 0.5*70e9/(1.0 + 0.3)
+
+        # Strength properties
+        cdef TacsScalar ys = 270e6
+        cdef TacsScalar T1 = 0.0
+        cdef TacsScalar C1 = 0.0
+        cdef TacsScalar T2 = 0.0
+        cdef TacsScalar C2 = 0.0
+        cdef TacsScalar T3 = 0.0
+        cdef TacsScalar C3 = 0.0
+        cdef TacsScalar S12 = 0.0
+        cdef TacsScalar S13 = 0.0
+        cdef TacsScalar S23 = 0.0
+
+        # Set the thermal coefficient of expansion
+        cdef TacsScalar alpha = 24e-6
+        cdef TacsScalar alpha1 = 24e-6
+        cdef TacsScalar alpha2 = 24e-6
+        cdef TacsScalar alpha3 = 24e-6
+
+        # Set the thermal conductivity
+        cdef TacsScalar kappa = 230.0
+        cdef TacsScalar kappa1 = 230.0
+        cdef TacsScalar kappa2 = 230.0
+        cdef TacsScalar kappa3 = 230.0
+
+        if 'rho' in kwargs:
+            rho = kwargs['rho']
+        if 'specific_heat' in kwargs:
+            specific_heat = kwargs['specific_heat']
+
+        # Set the isotropic properties if they are defined
+        if 'E' in kwargs:
+            E = kwargs['E']
+            E1 = E
+            E2 = E
+            E3 = E
+        if 'nu' in kwargs:
+            nu = kwargs['nu']
+            nu12 = nu
+            nu23 = nu
+            nu13 = nu
+        if 'ys' in kwargs:
+            ys = kwargs['ys']
+        if 'alpha' in kwargs:
+            alpha = kwargs['alpha']
+            alpha1 = alpha
+            alpha2 = alpha
+            alpha3 = alpha
+        if 'kappa' in kwargs:
+            kappa = kwargs['kappa']
+            kappa1 = kappa
+            kappa2 = kappa
+            kappa3 = kappa
+
+        # Stiffness properties
+        if 'E1' in kwargs:
+            E1 = kwargs['E1']
+        if 'E2' in kwargs:
+            E2 = kwargs['E2']
+        if 'E3' in kwargs:
+            E3 = kwargs['E3']
+        if 'nu12' in kwargs:
+            nu12 = kwargs['nu12']
+        if 'nu13' in kwargs:
+            nu13 = kwargs['nu13']
+        if 'nu23' in kwargs:
+            nu23 = kwargs['nu23']
+        if 'G12' in kwargs:
+            G12 = kwargs['G12']
+        if 'G13' in kwargs:
+            G13 = kwargs['G13']
+        if 'G23' in kwargs:
+            G23 = kwargs['G23']
+
+        # Strength properties
+        if 'T1' in kwargs:
+            T1 = kwargs['T1']
+        if 'Xt' in kwargs:
+            T1 = kwargs['Xt']
+        if 'C1' in kwargs:
+            C1 = kwargs['C1']
+        if 'Xc' in kwargs:
+            C1 = kwargs['Xc']
+
+        if 'T2' in kwargs:
+            T2 = kwargs['T2']
+        if 'Yt' in kwargs:
+            T2 = kwargs['Yt']
+        if 'C2' in kwargs:
+            C2 = kwargs['C2']
+        if 'Yc' in kwargs:
+            C2 = kwargs['Yc']
+
+        if 'T3' in kwargs:
+            T3 = kwargs['T3']
+        if 'C3' in kwargs:
+            C3 = kwargs['C3']
+
+        if 'S12' in kwargs:
+            S12 = kwargs['S12']
+        if 'S' in kwargs:
+            S12 = kwargs['S']
+        if 'S13' in kwargs:
+            S13 = kwargs['S13']
+        if 'S23' in kwargs:
+            S23 = kwargs['S23']
+
+        # Set the thermal coefficient of expansion
+        if 'alpha1' in kwargs:
+            alpha1 = kwargs['alpha1']
+        if 'alpha2' in kwargs:
+            alpha2 = kwargs['alpha2']
+        if 'alpha3' in kwargs:
+            alpha3 = kwargs['alpha3']
+
+        # Set the thermal conductivity
+        if 'kappa1' in kwargs:
+            kappa1 = kwargs['kappa1']
+        if 'kappa2' in kwargs:
+            kappa2 = kwargs['kappa2']
+        if 'kappa3' in kwargs:
+            kappa3 = kwargs['kappa3']
+
+        if 'E1' in kwargs:
+            self.ptr = new TACSMaterialProperties(rho, specific_heat, E1, E2, E3,
+                                                  nu12, nu13, nu23, G12, G13, G23,
+                                                  T1, C1, T2, C2, T3, C3, S12, S13, S23,
+                                                  alpha1, alpha2, alpha3,
+                                                  kappa1, kappa2, kappa3)
+        else:
+            self.ptr = new TACSMaterialProperties(rho, specific_heat,
+                                                  E, nu, ys, alpha, kappa)
+        self.ptr.incref()
+
+    def __dealloc__(self):
+        if self.ptr:
+            self.ptr.decref()
+
+    def getMaterialProperties(self):
+        """
+        Return a dictionary of the material properties
+        """
+
+        cdef TacsScalar E1, E2, E3, nu12, nu13, nu23, G12, G13, G23
+        cdef TacsScalar T1, C1, T2, C2, T3, C3, S12, S13, S23
+        cdef TacsScalar alpha1, alpha2, alpha3
+        cdef TacsScalar kappa1, kappa2, kappa3
+
+        self.ptr.getOrthotropicProperties(&E1, &E2, &E3, &nu12, &nu13, &nu23, &G12, &G13, &G23)
+        self.ptr.getStrengthProperties(&T1, &C1, &T2, &C2, &T3, &C3,
+                                       &S12, &S13, &S23)
+        self.ptr.getCoefThermalExpansion(&alpha1, &alpha2, &alpha3)
+        self.ptr.getThermalConductivity(&kappa1, &kappa2, &kappa3)
+
+        mat = {}
+        mat['E1'] = E1
+        mat['E2'] = E2
+        mat['E3'] = E3
+        mat['nu12'] = nu12
+        mat['nu13'] = nu13
+        mat['nu23'] = nu23
+        mat['G12'] = G12
+        mat['G13'] = G13
+        mat['G23'] = G23
+
+        mat['T1'] = T1
+        mat['C1'] = C1
+        mat['T2'] = T2
+        mat['C2'] = C2
+        mat['T3'] = T3
+        mat['C3'] = C3
+        mat['S12'] = S12
+        mat['S13'] = S13
+        mat['S23'] = S23
+
+        mat['alpha1'] = alpha1
+        mat['alpha2'] = alpha2
+        mat['alpha3'] = alpha3
+
+        mat['kappa1'] = kappa1
+        mat['kappa2'] = kappa2
+        mat['kappa3'] = kappa3
+
+        return mat
+
+    def setDensity(self, TacsScalar rho):
+        self.ptr.setDensity(rho)
+
+    def setSpecificHeat(self, TacsScalar specific_heat):
+        self.ptr.setSpecificHeat(specific_heat)
+
+cdef class OrthotropicPly:
+    cdef TACSOrthotropicPly *ptr
+    def __cinit__(self, TacsScalar ply_thickness, MaterialProperties props,
+                  max_strain_criterion=False):
+        self.ptr = new TACSOrthotropicPly(ply_thickness, props.ptr)
+        self.ptr.incref()
+        if max_strain_criterion:
+            self.ptr.setUseMaxStrainCriterion()
+        else:
+            self.ptr.setUseTsaiWuCriterion()
+
+    def __dealloc__(self):
+        self.ptr.decref()
+
+cdef class PlaneStressConstitutive(Constitutive):
+    def __cinit__(self, *args, **kwargs):
+        cdef TACSMaterialProperties *props = NULL
+        cdef TacsScalar t = 1.0
+        cdef int tNum = -1
+        cdef TacsScalar tlb = 0.0
+        cdef TacsScalar tub = 10.0
+
+        if len(args) >= 1:
+            props = (<MaterialProperties>args[0]).ptr
+        if 't' in kwargs:
+            t = kwargs['t']
+        if 'tNum' in kwargs:
+            tNum = kwargs['tNum']
+        if 'tlb' in kwargs:
+            tlb = kwargs['tlb']
+        if 'tub' in kwargs:
+            tub = kwargs['tub']
+
+        if props is not NULL:
+            self.cptr = new TACSPlaneStressConstitutive(props, t, tNum,
+                                                        tlb, tub)
+            self.ptr = self.cptr
+            self.ptr.incref()
+        else:
+            self.ptr = NULL
+            self.cptr = NULL
+
+cdef class SolidConstitutive(Constitutive):
+    def __cinit__(self, *args, **kwargs):
+        cdef TACSMaterialProperties *props = NULL
+        cdef TacsScalar t = 1.0
+        cdef int tNum = -1
+        cdef TacsScalar tlb = 0.0
+        cdef TacsScalar tub = 10.0
+
+        if len(args) >= 1:
+            props = (<MaterialProperties>args[0]).ptr
+        if 't' in kwargs:
+            t = kwargs['t']
+        if 'tNum' in kwargs:
+            tNum = kwargs['tNum']
+        if 'tlb' in kwargs:
+            tlb = kwargs['tlb']
+        if 'tub' in kwargs:
+            tub = kwargs['tub']
+
+        if props is not NULL:
+            self.cptr = new TACSSolidConstitutive(props, t, tNum,
+                                                  tlb, tub)
+            self.ptr = self.cptr
+            self.ptr.incref()
+        else:
+            self.ptr = NULL
+            self.cptr = NULL
+
+    def getMaterialProperties(self):
+        if self.cptr:
+            return _init_MaterialProperties(self.cptr.getMaterialProperties())
+        return None
+
+cdef class IsoShellConstitutive(ShellConstitutive):
+    def __cinit__(self, *args, **kwargs):
+        cdef TACSMaterialProperties *props = NULL
+        cdef TacsScalar t = 1.0
+        cdef int tNum = -1
+        cdef TacsScalar tlb = 0.0
+        cdef TacsScalar tub = 10.0
+
+        if len(args) >= 1:
+            props = (<MaterialProperties>args[0]).ptr
+        if 't' in kwargs:
+            t = kwargs['t']
+        if 'tNum' in kwargs:
+            tNum = kwargs['tNum']
+        if 'tlb' in kwargs:
+            tlb = kwargs['tlb']
+        if 'tub' in kwargs:
+            tub = kwargs['tub']
+
+        if props is not NULL:
+            self.cptr = new TACSIsoShellConstitutive(props, t, tNum,
+                                                     tlb, tub)
+            self.ptr = self.cptr
+            self.ptr.incref()
+        else:
+            self.ptr = NULL
+            self.cptr = NULL
+
+cdef class LamParamShellConstitutive(ShellConstitutive):
+    def __cinit__(self, OrthotropicPly ply, **kwargs):
+        cdef TacsScalar t = 1.0
+        cdef int t_num = -1
+        cdef TacsScalar min_t = 1.0
+        cdef TacsScalar max_t = 1.0
+        cdef TacsScalar f0 = 0.25
+        cdef TacsScalar f45 = 0.5
+        cdef TacsScalar f90 = 0.25
+        cdef int f0_num = -1
+        cdef int f45_num = -1
+        cdef int f90_num = -1
+        cdef TacsScalar min_f0 = 0.125
+        cdef TacsScalar min_f45 = 0.125
+        cdef TacsScalar min_f90 = 0.125
+        cdef TacsScalar W1 = 0.0
+        cdef TacsScalar W3 = 0.0
+        cdef int W1_num = -1
+        cdef int W3_num = -3
+        cdef TacsScalar ksWeight = 30.0
+        cdef TacsScalar epsilon = 0.0
+
+        if 't' in kwargs:
+            t = kwargs['t']
+        if 't_num' in kwargs:
+            t_num = kwargs['t_num']
+        if 'min_t' in kwargs:
+            min_t = kwargs['min_t']
+        if 'max_t' in kwargs:
+            max_t = kwargs['max_t']
+
+        if 'f0' in kwargs:
+            f0 = kwargs['f0']
+        if 'f45' in kwargs:
+            f45 = kwargs['f45']
+        if 'f90' in kwargs:
+            f90 = kwargs['f90']
+
+        if 'f0_num' in kwargs:
+            f0_num = kwargs['f0_num']
+        if 'f45_num' in kwargs:
+            f45_num = kwargs['f45_num']
+        if 'f90_num' in kwargs:
+            f90_num = kwargs['f90_num']
+
+        if 'min_f0' in kwargs:
+            min_f0 = kwargs['min_f0']
+        if 'min_f45' in kwargs:
+            min_f45 = kwargs['min_f45']
+        if 'min_f90' in kwargs:
+            min_f90 = kwargs['min_f90']
+
+        if 'W1' in kwargs:
+            W1 = kwargs['W1']
+        if 'W3' in kwargs:
+            W3 = kwargs['W3']
+        if 'W1_num' in kwargs:
+            W1_num = kwargs['W1_num']
+        if 'W3_num' in kwargs:
+            W3_num = kwargs['W3_num']
+        if 'ksWeight' in kwargs:
+            ksWeight = kwargs['ksWeight']
+        if 'epsilon' in kwargs:
+            epsilon = kwargs['epsilon']
+
+        self.cptr = new TACSLamParamShellConstitutive(ply.ptr, t, t_num, min_t, max_t,
+                                                      f0, f45, f90, f0_num, f45_num, f90_num,
+                                                      min_f0, min_f45, min_f90,
+                                                      W1, W3, W1_num, W3_num, ksWeight, epsilon)
+        self.ptr = self.cptr
+        self.ptr.incref()
+
+cdef class TimoshenkoConstitutive(Constitutive):
     def __cinit__(self, rhoA, rhoIy, rhoIz, rhoIyz,
                       EA, GJ, EIy, EIz, kGAy, kGAz,
                       np.ndarray[TacsScalar, ndim=1, mode='c'] axis):
-        self.ptr = new TimoshenkoStiffness(rhoA, rhoIy, rhoIz, rhoIyz,
-                                           EA, GJ, EIy, EIz, kGAy, kGAz,
-                                           <TacsScalar*>axis.data)
-        return
-
-cdef class FSDT(Constitutive):
-    def __cinit__(self, *args, **kwargs):
-        self.ptr = NULL
-        return
-
-    def setRefAxis(self, np.ndarray[TacsScalar, ndim=1, mode='c'] axis):
-        cdef FSDTStiffness *stiff = NULL
-        stiff = _dynamicFSDT(self.ptr)
-        if stiff:
-            stiff.setRefAxis(<TacsScalar*>axis.data)
-        return
-
-    def printStiffness(self):
-        stiff = _dynamicFSDT(self.ptr)
-        if stiff:
-            stiff.printStiffness()
-        return
-
-    def setDrillingRegularization(self, double krel):
-        cdef FSDTStiffness *stiff = NULL
-        stiff = _dynamicFSDT(self.ptr)
-        if stiff:
-            stiff.setDrillingRegularization(krel)
-        return
-
-cdef class isoFSDT(FSDT):
-    def __cinit__(self, rho, E, nu, kcorr, ys, t, tNum, minT, maxT):
-        '''
-        Wraps the isoFSDTStiffness class that is used with shell elements
-        '''
-        self.ptr = new isoFSDTStiffness(rho, E, nu, kcorr, ys, 
-                                        t, tNum, minT, maxT)
+        self.cptr = new TACSTimoshenkoConstitutive(rhoA, rhoIy, rhoIz, rhoIyz,
+                                                  EA, GJ, EIy, EIz, kGAy, kGAz,
+                                                  <TacsScalar*>axis.data)
+        self.ptr = self.cptr
         self.ptr.incref()
-        return
 
-cdef class PlaneStress(Constitutive):
-    def __cinit__(self, *args, **kwargs):
-        self.ptr = NULL
-        return
-
-cdef class CoupledPlaneStress(Constitutive):
-    def __cinit__(self, *args, **kwargs):
-        self.ptr = NULL
-        return
-
-cdef class CoupledSolid(Constitutive):
-    def __cinit__(self, *args, **kwargs):
-        self.ptr = NULL
-        return
-    
-cdef class SimplePlaneStress(PlaneStress):
-    def __cinit__(self, *args, **kwargs):
-        '''
-        Wraps the PlaneStressStiffness class that is used with 2D elements
-        '''
-        if len(args) == 3:
-            rho = args[0]
-            E = args[1]
-            nu = args[2]
-            self.ptr = new PlaneStressStiffness(rho, E, nu)
-        else:
-            self.ptr = new PlaneStressStiffness()
-            
-        self.ptr.incref()
-        return
-
-cdef class SolidStiff(Constitutive):
-    def __cinit__(self, *args, **kwargs):
-        '''
-        Wraps the SolidStiffness class that is used with 3D elements
-        '''
-        self.ptr = NULL
-        return
-    
-cdef class isoSolidStiff(SolidStiff):
-    def __cinit__(self, rho, E, nu, ys=1.0, eNum=-1, *args, **kwargs):
-        '''
-        Wraps the SolidStiffness class that is used with 3D elements
-        '''
-        self.ptr = new SolidStiffness(rho, E, nu, ys, eNum)
-        self.ptr.incref()
-        return
-
-cdef void getdesignvars(void *_self, TacsScalar *x, int dvLen):
-    '''Get the design variable values'''
-    xvals = inplace_array_1d(np.NPY_DOUBLE, dvLen, <void*>x)
-    (<object>_self).getDesignVars(xvals)
-    return
-
-cdef void setdesignvars(void *_self, const TacsScalar *x, int dvLen):
-    '''Set the design variable values'''
-    cdef np.ndarray xvals = np.zeros(dvLen)
-    for i in range(dvLen):
-        xvals[i] = x[i]
-    (<object>_self).setDesignVars(xvals)
-    return
-
-cdef void getdesignvarrange(void *_self, TacsScalar *lb,
-                            TacsScalar *ub, int dvLen):
-    '''Get the design variable range'''
-    xlb = inplace_array_1d(np.NPY_DOUBLE, dvLen, <void*>lb)
-    xub = inplace_array_1d(np.NPY_DOUBLE, dvLen, <void*>ub)
-    (<object>_self).getDesignVarRange(xlb, xub)
-    return
-
-# Callbacks for the python-level implementation of the
-# PlaneStressStiffness object.
-cdef void ps_calculatestress(void *_self, const double *pt,
-                             const TacsScalar *strain,
-                             TacsScalar *stress):
-    # Extract the strain
-    e = np.zeros(3)
-    e[0] = strain[0]
-    e[1] = strain[1]
-    e[2] = strain[2]
-
-    # Extract the parametric point
-    p = np.zeros(2)
-    p[0] = pt[0]
-    p[1] = pt[1]
-    
-    s = (<object>_self).calculateStress(p, e)
-
-    # Conver the stress values
-    stress[0] = s[0]
-    stress[1] = s[1]
-    stress[2] = s[2]
-    return
-
-cdef void ps_addstressdvsens(void *_self, const double *pt,
-                             const TacsScalar *strain,
-                             TacsScalar alpha, const TacsScalar *psi,
-                             TacsScalar *fdvSens, int dvLen):
-    # Extract the strain
-    e = np.zeros(3)
-    e[0] = strain[0]
-    e[1] = strain[1]
-    e[2] = strain[2]
-
-    # Extract the sensitivity input vector
-    ps = np.zeros(3)
-    ps[0] = psi[0]
-    ps[1] = psi[1]
-    ps[2] = psi[2]
-
-    # Extract the parametric point
-    p = np.zeros(2)
-    p[0] = pt[0]
-    p[1] = pt[1]
-
-    # Wrap the python array
-    fdvs = inplace_array_1d(np.NPY_DOUBLE, dvLen, <void*>fdvSens)
-
-    s = (<object>_self).addStressDVSens(p, e, alpha, ps, fdvs)
-
-    return
-
-cdef void ps_getpointwisemass(void *_self, const double *pt,
-                              TacsScalar *mass):
-    # Extract the parametric point
-    p = np.zeros(2)
-    p[0] = pt[0]
-    p[1] = pt[1]
-
-    mass[0] = (<object>_self).getPointwiseMass(p)
-    return
-
-cdef void ps_addpointwisemassdvsens(void *_self, const double *pt,
-                                    const TacsScalar *alpha,
-                                    TacsScalar *fdvSens, int dvLen):
-    # Extract the parametric point
-    p = np.zeros(2)
-    p[0] = pt[0]
-    p[1] = pt[1]
-
-    # Set the scalar
-    cdef TacsScalar ascalar = alpha[0]
-
-    # Wrap the python array
-    fdvs = inplace_array_1d(np.NPY_DOUBLE, dvLen, <void*>fdvSens)
-
-    (<object>_self).addPointwiseMassDVSens(p, ascalar, fdvs)
-    
-    return
-
-cdef TacsScalar ps_fail(void *_self, const double *pt,
-                        const TacsScalar *strain):
-    cdef TacsScalar fval = 0.0
-
-    # Extract the strain
-    e = np.zeros(3)
-    e[0] = strain[0]
-    e[1] = strain[1]
-    e[2] = strain[2]
-
-    # Extract the parametric point
-    p = np.zeros(2)
-    p[0] = pt[0]
-    p[1] = pt[1]
-    
-    fval = (<object>_self).failure(p, e)
-
-    return fval
-
-cdef void ps_failstrainsens(void *_self, const double *pt,
-                            const TacsScalar *strain,
-                            TacsScalar *sens):
-    # Extract the strain
-    e = np.zeros(3)
-    e[0] = strain[0]
-    e[1] = strain[1]
-    e[2] = strain[2]
-
-    # Extract the parametric point
-    p = np.zeros(2)
-    p[0] = pt[0]
-    p[1] = pt[1]
-    
-    fsens = (<object>_self).failureStrainSens(p, e)
-
-    sens[0] = fsens[0]
-    sens[1] = fsens[1]
-    sens[2] = fsens[2]
-    return
-
-cdef void ps_addfaildvsens(void *_self, const double *pt,
-                           const TacsScalar *strain, 
-                           TacsScalar alpha,
-                           TacsScalar *fdvSens, int dvLen):
-    # Extract the strain
-    e = np.zeros(3)
-    e[0] = strain[0]
-    e[1] = strain[1]
-    e[2] = strain[2]
-
-    # Extract the parametric point
-    p = np.zeros(2)
-    p[0] = pt[0]
-    p[1] = pt[1]
-
-    # Wrap the python array
-    fdvs = inplace_array_1d(np.NPY_DOUBLE, dvLen, <void*>fdvSens)
-    
-    (<object>_self).addFailureDVSens(p, e, alpha, fdvs)
-
-    return
-
-# Python-level interface for the plane stress constitutive object
-cdef class pyPlaneStress(PlaneStress):
-    def __cinit__(self, *args, **kwargs):
-        cdef PSStiffnessWrapper *pointer
-        pointer = new PSStiffnessWrapper(<PyObject*>self)
-        pointer.incref()
-        
-        # Set the function pointers
-        pointer.setdesignvars = setdesignvars
-        pointer.getdesignvars = getdesignvars
-        pointer.getdesignvarrange = getdesignvarrange
-        pointer.calculatestress = ps_calculatestress
-        pointer.addstressdvsens = ps_addstressdvsens
-        pointer.getpointwisemass = ps_getpointwisemass
-        pointer.addpointwisemassdvsens = ps_addpointwisemassdvsens
-        pointer.fail = ps_fail
-        pointer.failstrainsens = ps_failstrainsens
-        pointer.addfaildvsens = ps_addfaildvsens
-
-        self.ptr = pointer
-        return
-
-    def __dealloc__(self):
-        self.ptr.decref()
-        return
-
-    def setDesignVars(self, x):
-        return
-
-    def getDesignVars(self, x):
-        return
-
-    def getDesignVarRange(self, lb, ub):
-        return
-
-    def calculateStress(self, pt, e):
-        return np.zeros(3)
-
-    def addStressDVSens(self, pt, e, alpha, psi, fdvs):
-        return
-
-    def getPointwiseMass(self, pt):
-        return 0.0
-
-    def addPointwiseMassDVSens(p, ascale, fdvs):
-        return
-
-    def failure(self, pt, e):
-        return 0.0
-
-    def failureStrainSens(self, pt, e):
-        return np.zeros(3)
-
-    def addFailureDVSens(self, pt, e, alpha, fdvs):
-        return
-
-# Callbacks for the python-level implementation of the
-# PlaneStressStiffness object.
-cdef TacsScalar fsdt_getstiffness(void *_self, const double *pt,
-                                  TacsScalar *a, TacsScalar *b,
-                                  TacsScalar *d, TacsScalar *as):
-    # Extract the parametric point
-    p = np.zeros(2)
-    p[0] = pt[0]
-    p[1] = pt[1]
-
-    # Get the numpy arrays for the stiffness object
-    A, B, D, As, rot = (<object>_self).getStiffness(p)
-
-    # Copy over the stiffness values
-    for i in range(6):
-        a[i] = A[i]
-        b[i] = B[i]
-        d[i] = D[i]
-
-    # Set the out-of-plane shear stiffness
-    as[0] = As[0]
-    as[1] = As[1]
-    as[2] = As[2]
-    
-    return rot
-
-cdef void fsdt_addstiffnessdvsens(void *_self, const double *pt,
-                                  const TacsScalar *strain,
-                                  const TacsScalar *psi,
-                                  TacsScalar rotPsi,
-                                  TacsScalar *fdvSens, int dvLen):
-    # Extract the strain
-    cdef np.ndarray e = np.zeros(8)
-    for i in range(8):
-        e[i] = strain[i]
-    cdef np.ndarray ps = np.zeros(8)
-    for i in range(8):
-        ps[i] = psi[i]
-        
-    # Extract the parametric point
-    cdef np.ndarray p = np.zeros(2)
-    p[0] = pt[0]
-    p[1] = pt[1]
-
-    # Wrap the python array
-    fdvs = inplace_array_1d(TACS_NPY_SCALAR, dvLen, <void*>fdvSens)
-
-    # Add the derivative to the array
-    (<object>_self).addStiffnessDVSens(p, e, ps, rotPsi, fdvs)
-
-    return
-
-cdef void fsdt_getpointwisemass(void *_self, const double *pt,
-                                TacsScalar *mass):
-    # Extract the parametric point
-    cdef np.ndarray p = np.zeros(2)
-    p[0] = pt[0]
-    p[1] = pt[1]
-
-    rho = (<object>_self).getPointwiseMass(p)
-    mass[0] = rho[0]
-    mass[1] = rho[1]
-
-    return
-
-cdef void fsdt_addpointwisemassdvsens(void *_self, const double *pt,
-                                      const TacsScalar *alpha,
-                                      TacsScalar *fdvSens, int dvLen):
-    # Extract the parametric point
-    cdef np.ndarray p = np.zeros(2)
-    p[0] = pt[0]
-    p[1] = pt[1]
-
-    # Set the scalar
-    cdef np.ndarray avals = np.zeros(2)
-    avals[0] = alpha[0]
-    avals[1] = alpha[1]
-
-    # Wrap the python array
-    fdvs = inplace_array_1d(TACS_NPY_SCALAR, dvLen, <void*>fdvSens)
-
-    (<object>_self).addPointwiseMassDVSens(p, avals, fdvs)
-    
-    return
-
-cdef TacsScalar fsdt_fail(void *_self, const double *pt,
-                          const TacsScalar *strain):
-    cdef TacsScalar fval = 0.0
-
-    # Extract the strain
-    cdef np.ndarray e = np.zeros(8)
-    for i in range(8):
-        e[i] = strain[i]
-        
-    # Extract the parametric point
-    cdef np.ndarray p = np.zeros(2)
-    p[0] = pt[0]
-    p[1] = pt[1]
-    
-    fval = (<object>_self).failure(p, e)
-
-    return fval
-
-cdef void fsdt_failstrainsens(void *_self, const double *pt,
-                              const TacsScalar *strain,
-                              TacsScalar *sens):
-    # Extract the strain
-    cdef np.ndarray e = np.zeros(8)
-    for i in range(8):
-        e[i] = strain[i]
-
-    # Extract the parametric point
-    cdef np.ndarray p = np.zeros(2)
-    p[0] = pt[0]
-    p[1] = pt[1]
-    
-    fsens = (<object>_self).failureStrainSens(p, e)
-
-    for i in range(8):
-        sens[i] = fsens[i]
-
-    return
-
-cdef void fsdt_addfaildvsens(void *_self, const double *pt,
-                             const TacsScalar *strain, 
-                             TacsScalar alpha,
-                             TacsScalar *fdvSens, int dvLen):
-    # Extract the strain
-    cdef np.ndarray e = np.zeros(8)
-    for i in range(8):
-        e[i] = strain[i]
-    
-    # Extract the parametric point
-    cdef np.ndarray p = np.zeros(2)
-    p[0] = pt[0]
-    p[1] = pt[1]
-
-    # Wrap the python array
-    fdvs = inplace_array_1d(TACS_NPY_SCALAR, dvLen, <void*>fdvSens)
-    
-    (<object>_self).addFailureDVSens(p, e, alpha, fdvs)
-
-    return
-
-# Python-level interface for the plane stress constitutive object
-cdef class pyFSDT(FSDT):
-    def __cinit__(self, *args, **kwargs):
-        cdef FSDTStiffnessWrapper *pointer
-        pointer = new FSDTStiffnessWrapper(<PyObject*>self)
-        pointer.incref()
-        
-        # Set the function pointers
-        pointer.setdesignvars = setdesignvars
-        pointer.getdesignvars = getdesignvars
-        pointer.getdesignvarrange = getdesignvarrange
-        pointer.getstiffness = fsdt_getstiffness
-        pointer.addstiffnessdvsens = fsdt_addstiffnessdvsens
-        pointer.getpointwisemass = fsdt_getpointwisemass
-        pointer.addpointwisemassdvsens = fsdt_addpointwisemassdvsens
-        pointer.fail = fsdt_fail
-        pointer.failstrainsens = fsdt_failstrainsens
-        pointer.addfaildvsens = fsdt_addfaildvsens
-
-        self.ptr = pointer
-        return
-
-    def __dealloc__(self):
-        self.ptr.decref()
-        return
-
-    def setDesignVars(self, x):
-        return
-
-    def getDesignVars(self, x):
-        return
-
-    def getDesignVarRange(self, lb, ub):
-        return
-
-    def getStiffness(self, pt):
-        '''Return the A, B, D, As matrices and the rotational stiffness'''
-        return np.zeros(6), np.zeros(6), np.zeros(6), np.zeros(3), 0.0
-
-    def addStiffnessDVSens(self, pt, e, psi, rot, fdvs):
-        '''Add the derivative of the inner product to the fdvs array'''
-        return
-
-    def getPointwiseMass(self, pt):
-        return np.zeros(2)
-
-    def addPointwiseMassDVSens(p, alpha, fdvs):
-        return
-
-    def failure(self, pt, e):
-        return 0.0
-
-    def failureStrainSens(self, pt, e):
-        return np.zeros(8)
-
-    def addFailureDVSens(self, pt, e, alpha, fdvs):
-        return
+def TestConstitutive(Constitutive con, int elemIndex=0, double dh=1e-6,
+                     int test_print_level=2, double atol=1e-30,
+                     double rtol=1e-5):
+    return TacsTestConstitutive(con.ptr, elemIndex, dh,
+                                test_print_level, atol, rtol)
+
+def TestConstitutiveDensity(Constitutive con, int elem_index,
+                            np.ndarray[double, ndim=1, mode='c'] pt,
+                            np.ndarray[TacsScalar, ndim=1, mode='c'] x,
+                            np.ndarray[TacsScalar, ndim=1, mode='c'] dvs,
+                            double dh=1e-6, int test_print_level=2, double atol=1e-30,
+                            double rtol=1e-5):
+    ndvs = len(dvs)
+    assert len(pt) == 3
+    assert len(x) == 3
+    return TacsTestConstitutiveDensity(con.ptr, elem_index, <double*>pt.data, <TacsScalar*>x.data, ndvs,
+                                       <TacsScalar*>dvs.data, dh, test_print_level, atol, rtol)
+
+def TestConstitutiveSpecificHeat(Constitutive con, int elem_index,
+                                 np.ndarray[double, ndim=1, mode='c'] pt,
+                                 np.ndarray[TacsScalar, ndim=1, mode='c'] x,
+                                 np.ndarray[TacsScalar, ndim=1, mode='c'] dvs,
+                                 double dh=1e-6, int test_print_level=2, double atol=1e-30,
+                                 double rtol=1e-5):
+    ndvs = len(dvs)
+    assert len(pt) == 3
+    assert len(x) == 3
+    return TacsTestConstitutiveSpecificHeat(con.ptr, elem_index, <double*>pt.data, <TacsScalar*>x.data, ndvs,
+                                            <TacsScalar*>dvs.data, dh, test_print_level, atol, rtol)
+
+def TestConstitutiveHeatFlux(Constitutive con, int elem_index,
+                             np.ndarray[double, ndim=1, mode='c'] pt,
+                             np.ndarray[TacsScalar, ndim=1, mode='c'] x,
+                             np.ndarray[TacsScalar, ndim=1, mode='c'] dvs,
+                             double dh=1e-6, int test_print_level=2, double atol=1e-30,
+                             double rtol=1e-5):
+    ndvs = len(dvs)
+    assert len(pt) == 3
+    assert len(x) == 3
+    return TacsTestConstitutiveHeatFlux(con.ptr, elem_index, <double*>pt.data, <TacsScalar*>x.data, ndvs,
+                                        <TacsScalar*>dvs.data, dh, test_print_level, atol, rtol)
+
+def TestConstitutiveStress(Constitutive con, int elem_index,
+                           np.ndarray[double, ndim=1, mode='c'] pt,
+                           np.ndarray[TacsScalar, ndim=1, mode='c'] x,
+                           np.ndarray[TacsScalar, ndim=1, mode='c'] dvs,
+                           double dh=1e-6, int test_print_level=2, double atol=1e-30,
+                           double rtol=1e-5):
+    ndvs = len(dvs)
+    assert len(pt) == 3
+    assert len(x) == 3
+    return TacsTestConstitutiveStress(con.ptr, elem_index, <double*>pt.data, <TacsScalar*>x.data, ndvs,
+                                      <TacsScalar*>dvs.data, dh, test_print_level, atol, rtol)
+
+def TestConstitutiveThermalStrain(Constitutive con, int elem_index,
+                                  np.ndarray[double, ndim=1, mode='c'] pt,
+                                  np.ndarray[TacsScalar, ndim=1, mode='c'] x,
+                                  np.ndarray[TacsScalar, ndim=1, mode='c'] dvs,
+                                  double dh=1e-6, int test_print_level=2, double atol=1e-30,
+                                  double rtol=1e-5):
+    ndvs = len(dvs)
+    assert len(pt) == 3
+    assert len(x) == 3
+    return TacsTestConstitutiveThermalStrain(con.ptr, elem_index, <double*>pt.data, <TacsScalar*>x.data, ndvs,
+                                             <TacsScalar*>dvs.data, dh, test_print_level, atol, rtol)
+
+def TestConstitutiveFailure(Constitutive con, int elem_index,
+                            np.ndarray[double, ndim=1, mode='c'] pt,
+                            np.ndarray[TacsScalar, ndim=1, mode='c'] x,
+                            np.ndarray[TacsScalar, ndim=1, mode='c'] dvs,
+                            double dh=1e-6, int test_print_level=2, double atol=1e-30,
+                            double rtol=1e-5):
+    ndvs = len(dvs)
+    assert len(pt) == 3
+    assert len(x) == 3
+    return TacsTestConstitutiveFailure(con.ptr, elem_index, <double*>pt.data, <TacsScalar*>x.data, ndvs,
+                                             <TacsScalar*>dvs.data, dh, test_print_level, atol, rtol)
+
+def TestConstitutiveFailureStrainSens(Constitutive con, int elem_index,
+                                      np.ndarray[double, ndim=1, mode='c'] pt,
+                                      np.ndarray[TacsScalar, ndim=1, mode='c'] x,
+                                      double dh=1e-6, int test_print_level=2, double atol=1e-30,
+                                      double rtol=1e-5):
+    assert len(pt) == 3
+    assert len(x) == 3
+    return TacsTestConstitutiveFailureStrainSens(con.ptr, elem_index, <double*>pt.data, <TacsScalar*>x.data,
+                                                 dh, test_print_level, atol, rtol)

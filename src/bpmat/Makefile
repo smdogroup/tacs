@@ -7,7 +7,8 @@
 include ../../Makefile.in
 include ../../TACS_Common.mk
 
-CXX_OBJS = BCSRMat.o \
+CXX_OBJS = AMDInterface.o \
+	BCSRMat.o \
 	BCSRMatFact.o \
 	BCSRMatMult.o \
 	BCSRMatFact1.o \
@@ -24,21 +25,19 @@ CXX_OBJS = BCSRMat.o \
 	BCSRMatMult6.o \
 	BCSRMatFact8.o \
 	BCSRMatMult8.o \
-	BVec.o \
-	BVecDist.o \
-	BVecInterp.o \
-	PMat.o \
-	KSM.o \
-	MatUtils.o \
-	DistMat.o \
-	ScMat.o \
-	FEMat.o \
-	GSEP.o \
-	JacobiDavidson.o \
-	PDMat.o \
-	AMDInterface.o \
 	BCSCMatPivot.o \
-	SerialBCSCMat.o
+	TACSNodeMap.o \
+	TACSBVec.o \
+	TACSBVecDistribute.o \
+	TACSBVecInterp.o \
+	TACSMatDistribute.o \
+	TACSParallelMat.o \
+	TACSBlockCyclicMat.o \
+	TACSSerialPivotMat.o \
+	TACSSchurMat.o \
+	KSM.o \
+	GSEP.o \
+	JacobiDavidson.o
 
 DIR=${TACS_DIR}/src/bpmat
 

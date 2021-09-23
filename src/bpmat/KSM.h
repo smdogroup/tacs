@@ -12,8 +12,8 @@
   TACS is licensed under the Apache License, Version 2.0 (the
   "License"); you may not use this software except in compliance with
   the License.  You may obtain a copy of the License at
-  
-  http://www.apache.org/licenses/LICENSE-2.0 
+
+  http://www.apache.org/licenses/LICENSE-2.0
 */
 
 #ifndef TACS_KSM_H
@@ -30,11 +30,12 @@
   The following enumeration defines whether the matrix is either the
   normal or the transpose orientation.
 */
-enum MatrixOrientation { NORMAL, TRANSPOSE };
+enum MatrixOrientation { TACS_MAT_NORMAL,
+                         TACS_MAT_TRANSPOSE };
 
 /*
   Define boundary conditions that are applied after all the
-  matrix/vector values have been set.  
+  matrix/vector values have been set.
 
   BCMap should only be instantiated once for a given analysis.  All
   other classes in this file should point that instance.
@@ -46,12 +47,12 @@ class TACSBcMap : public TACSObject {
 
   // Add/get the boundary conditions stored in this object
   // -----------------------------------------------------
-  void addBC( int node, int nvals, 
-              const int *bc_nums=NULL, 
+  void addBC( int node, int nvals,
+              const int *bc_nums=NULL,
               const TacsScalar *bc_vals=NULL );
   int getBCs( const int **_nodes,
-              const int **_vars, 
-              const TacsScalar **_values );
+              const int **_vars,
+              TacsScalar **_values );
 
   // Get the node numbers associated with the BCs for reordering
   // -----------------------------------------------------------
@@ -81,14 +82,14 @@ class TACSBcMap : public TACSObject {
 };
 
 /*!
-  The abstract vector class. 
+  The abstract vector class.
 
   All TACS KSM objects use this interface for matrix-vector products
   and preconditioning operations. In practice, within TACS itself,
   most of the matricies require the BVec base class. However, when
   coupling to other disciplines it is frequently convenient to define
   a hybrid vector consisting of multiple components. In these cases,
-  it is handy to have a base vector class. 
+  it is handy to have a base vector class.
 */
 class TACSVec : public TACSObject {
  public:
@@ -99,12 +100,12 @@ class TACSVec : public TACSObject {
   virtual TacsScalar norm() = 0; // Compute the Cartesian 2 norm
   virtual void scale( TacsScalar alpha ) = 0; // Scale the vector by a value
   virtual TacsScalar dot( TACSVec *x ) = 0;  // Compute x^{T} * y
-  virtual void mdot( TACSVec **x, 
+  virtual void mdot( TACSVec **x,
                      TacsScalar *ans, int m ); // Multiple dot product
   virtual void axpy( TacsScalar alpha, TACSVec *x ) = 0; // y <- y + alpha * x
   virtual void copyValues( TACSVec *x ) = 0; // Copy values from x to this
-  virtual void axpby( TacsScalar alpha, TacsScalar beta, 
-                      TACSVec *x ) = 0; // Compute y <- alpha * x + beta * y 
+  virtual void axpby( TacsScalar alpha, TacsScalar beta,
+                      TACSVec *x ) = 0; // Compute y <- alpha * x + beta * y
   virtual void zeroEntries() = 0; // Zero all the entries
 
   // Additional useful member functions
@@ -114,7 +115,7 @@ class TACSVec : public TACSObject {
   virtual void setBCs( TACSBcMap *map ){}
 };
 
-/*!  
+/*!
   The abstract matrix base class for all TACS matrices. All of
   these operations must be defined to be utilized by TACSAssembler.
 
@@ -147,18 +148,19 @@ class TACSVec : public TACSObject {
 class TACSMat : public TACSObject {
  public:
   virtual ~TACSMat(){}
-  
+
   // Operations for assembly/setting values
-  // --------------------------------------  
+  // --------------------------------------
   virtual void zeroEntries(){}
-  virtual void addValues( int nrow, const int *row, 
+  virtual void addValues( int nrow, const int *row,
                           int ncol, const int *col,
                           int nv, int mv, const TacsScalar *values ){}
   virtual void addWeightValues( int nvars, const int *varp, const int *vars,
                                 const TacsScalar *weights,
                                 int nv, int mv, const TacsScalar *values,
-                                MatrixOrientation matOr=NORMAL ){}
+                                MatrixOrientation matOr=TACS_MAT_NORMAL ){}
   virtual void applyBCs( TACSBcMap *bcmap ){}
+  virtual void applyTransposeBCs( TACSBcMap *bcmap ){}
   virtual void beginAssembly(){}
   virtual void endAssembly(){}
 
@@ -174,10 +176,11 @@ class TACSMat : public TACSObject {
   virtual void copyValues( TACSMat *mat ){}
   virtual void scale( TacsScalar alpha ){}
   virtual void axpy( TacsScalar alpha, TACSMat *mat ){}
+  virtual void addDiag( TacsScalar alpha ){}
 
   // Return the name of the object
   // -----------------------------
-  const char *TACSObjectName();
+  const char *getObjectName();
 
  private:
   static const char *matName;
@@ -200,7 +203,7 @@ class TACSPc : public TACSObject {
   // -------------------------------------------
   virtual void applyFactor( TACSVec *x, TACSVec *y ) = 0;
 
-  // Factor (or set up) the preconditioner 
+  // Factor (or set up) the preconditioner
   // -------------------------------------
   virtual void factor() = 0;
 
@@ -211,7 +214,7 @@ class TACSPc : public TACSObject {
 
   // Retrieve the object name
   // ------------------------
-  const char *TACSObjectName();
+  const char *getObjectName();
 
  private:
   static const char *pcName;
@@ -229,7 +232,7 @@ class KSMPrint : public TACSObject {
 
   virtual void printResidual( int iter, TacsScalar res ) = 0;
   virtual void print( const char *cstr ) = 0;
-  const char *TACSObjectName();
+  const char *getObjectName();
 
  private:
   static const char *printName;
@@ -237,7 +240,7 @@ class KSMPrint : public TACSObject {
 
 /*!
   The abstract Krylov-subspace method class
-  
+
   Solve the linear system A*x = b with a Krylov subspace method,
   possibly using some preconditioner.
 
@@ -263,10 +266,10 @@ class TACSKsm : public TACSObject {
   virtual TACSVec *createVec() = 0;
   virtual void setOperators( TACSMat *_mat, TACSPc *_pc ) = 0;
   virtual void getOperators( TACSMat **_mat, TACSPc **_pc ) = 0;
-  virtual void solve( TACSVec *b, TACSVec *x, int zero_guess = 1 ) = 0;
+  virtual void solve( TACSVec *b, TACSVec *x, int zero_guess=1 ) = 0;
   virtual void setTolerances( double _rtol, double _atol ) = 0;
   virtual void setMonitor( KSMPrint *_monitor ) = 0;
-  const char *TACSObjectName();
+  const char *getObjectName();
 
  private:
   static const char *ksmName;
@@ -280,7 +283,7 @@ class KSMPrintStdout : public KSMPrint {
  public:
   KSMPrintStdout( const char *_descript, int _rank, int _freq );
   ~KSMPrintStdout();
-  
+
   void printResidual( int iter, TacsScalar res );
   void print( const char *cstr );
 
@@ -295,10 +298,10 @@ class KSMPrintStdout : public KSMPrint {
 */
 class KSMPrintFile : public KSMPrint {
  public:
-  KSMPrintFile( const char *filename, const char *_descript, 
+  KSMPrintFile( const char *filename, const char *_descript,
                 int _rank, int _freq );
   ~KSMPrintFile();
-  
+
   void printResidual( int iter, TacsScalar res );
   void print( const char *cstr );
 
@@ -331,10 +334,10 @@ class PCG : public TACSKsm {
 
   // The relative/absolute tolerances
   double rtol, atol;
-  
+
   // Reset parameters
   int nouter, reset;
-  
+
   // Vectors required for the solution method
   TACSVec *work;
   TACSVec *R;
@@ -345,7 +348,7 @@ class PCG : public TACSKsm {
 };
 
 /*!
-  Right-preconditioned GMRES 
+  Right-preconditioned GMRES
 
   This class handles both right-preconditioned GMRES and the flexible
   variant of GMRES. Either the classical or modified Gram Schmidt
@@ -382,7 +385,7 @@ class GMRES : public TACSKsm {
   GMRES( TACSMat *_mat, int _m, int _nrestart );
   ~GMRES();
 
-  TACSVec *createVec(){ return mat->createVec(); }  
+  TACSVec *createVec(){ return mat->createVec(); }
   void solve( TACSVec *b, TACSVec *x, int zero_guess = 1 );
   void setOperators( TACSMat *_mat, TACSPc *_pc );
   void getOperators( TACSMat **_mat, TACSPc **_pc );
@@ -390,19 +393,18 @@ class GMRES : public TACSKsm {
   void setMonitor( KSMPrint *_monitor );
   void setOrthoType( enum OrthoType otype );
   void setTimeMonitor();
-
-  const char *TACSObjectName();
+  const char *getObjectName();
 
  private:
   // Initialize the class
-  void init( TACSMat *_mat, TACSPc *_pc, int _m, 
+  void init( TACSMat *_mat, TACSPc *_pc, int _m,
              int _nrestart, int _isFlexible );
 
   // Orthogonalize a vector against a set of vectors
   void (*orthogonalize)(TacsScalar *, TACSVec *, TACSVec **, int);
 
-  TACSMat *mat; 
-  TACSPc *pc; 
+  TACSMat *mat;
+  TACSPc *pc;
   int msub;
   int nrestart;
   int isFlexible;
@@ -444,7 +446,7 @@ class GMRES : public TACSKsm {
 */
 class GCROT : public TACSKsm {
  public:
-  GCROT( TACSMat *_mat, TACSPc *_pc, int _outer, int _max_outer, 
+  GCROT( TACSMat *_mat, TACSPc *_pc, int _outer, int _max_outer,
          int _msub, int _isFlexible );
   GCROT( TACSMat *_mat, int _outer, int _max_outer, int _msub );
   ~GCROT();
@@ -455,16 +457,15 @@ class GCROT : public TACSKsm {
   void getOperators( TACSMat **_mat, TACSPc **_pc );
   void setTolerances( double _rtol, double _atol );
   void setMonitor( KSMPrint *_monitor );
-
-  const char *TACSObjectName();
+  const char *getObjectName();
 
  private:
 
-  void init( TACSMat *_mat, TACSPc *_pc, int _outer, int _max_outer, 
+  void init( TACSMat *_mat, TACSPc *_pc, int _outer, int _max_outer,
              int _msub, int _isFlexible );
 
-  TACSMat *mat; 
-  TACSPc *pc; 
+  TACSMat *mat;
+  TACSPc *pc;
   int msub;             // Size of the GMRES subspace
   int outer, max_outer; // Number of outer vectors
   int isFlexible;

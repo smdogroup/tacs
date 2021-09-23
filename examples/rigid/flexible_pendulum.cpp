@@ -14,7 +14,7 @@
 /*
   Code for testing adjoints with plate example. Use command line
   arguments as necessary.
- 
+
   BDF1 BDF2 BDF3    : for BDF integrators
   DIRK2 DIRK3 DIRK4 : for DIRK integrators
   ABM1-6            : for ABM integrators
@@ -22,7 +22,7 @@
 
   test_gradient : to do a complex step verification of the adjoint gradient
   test_element  : to test the element implementation
-  num_funcs     : 1 to 3 for the adjoint 
+  num_funcs     : 1 to 3 for the adjoint
   num_threads   : number of threads
   write_solution: write solution to f5 frequency
   print_level: 0, 1, 2
@@ -33,8 +33,8 @@ int main( int argc, char **argv ){
   MPI_Init(&argc, &argv);
 
   MPI_Comm comm = MPI_COMM_WORLD;
-  int rank; 
-  MPI_Comm_rank(comm, &rank); 
+  int rank;
+  MPI_Comm_rank(comm, &rank);
 
   // Default values for important parameters
   int scale = 2;
@@ -49,7 +49,7 @@ int main( int argc, char **argv ){
     if (sscanf(argv[i], "scale=%d", &scale) == 1){
       if (scale < 0){ scale = 1; }
       if (scale > 100){ scale = 100; }
-      printf("Problem scale = %d\n", scale); 
+      printf("Problem scale = %d\n", scale);
     }
     // Determine the number of functions for adjoint
     if (sscanf(argv[i], "num_funcs=%d", &num_funcs) == 1){
@@ -124,13 +124,13 @@ int main( int argc, char **argv ){
     // bar.
     int nrigid = 0;
     int num_elements = 4*nl_elems*nw_elems + nrigid;
-    
-    // Set the total number of nodes 
+
+    // Set the total number of nodes
     int num_nodes = (2*nl_elems+1)*(8*nw_elems) + nrigid;
 
     // Set the node locations
     TacsScalar *Xpts = new TacsScalar[ 3*num_nodes ];
-    
+
     // Allocate the connectivity
     int conn_size = 9*num_elements;
     int *elem_ptr = new int[ num_elements+1 ];
@@ -147,7 +147,7 @@ int main( int argc, char **argv ){
         ptr++;
 
         for ( int jj = 0; jj < 3; jj++ ){
-          for ( int ii = 0; ii < 3; ii++ ){          
+          for ( int ii = 0; ii < 3; ii++ ){
             if (2*j + jj == 8*nw_elems){
               conn[ii + 3*jj] = 2*i + ii;
             }
@@ -158,7 +158,7 @@ int main( int argc, char **argv ){
         }
         conn += 9;
       }
-    }    
+    }
     ptr[0] = conn - elem_conn;
 
     // Set the length of the flexible bar
@@ -199,9 +199,9 @@ int main( int argc, char **argv ){
 
     // Set the connectivity
     creator->setGlobalConnectivity(num_nodes, num_elements,
-  				   elem_ptr, elem_conn,
-  				   elem_id_nums);
-    
+                                   elem_ptr, elem_conn,
+                                   elem_id_nums);
+
     // Set the nodal locations
     creator->setNodes(Xpts);
 
@@ -210,7 +210,7 @@ int main( int argc, char **argv ){
     delete [] elem_ptr;
     delete [] elem_conn;
     delete [] elem_id_nums;
-  } 
+  }
 
   // Create the objects associated with the rigid-bodies
   // ---------------------------------------------------
@@ -224,11 +224,11 @@ int main( int argc, char **argv ){
   TacsScalar kcorr = 5.0/6.0;
   TacsScalar yield_stress = 464.0e6;
   TacsScalar thickness = 0.01;
-  
+
   // Create the stiffness object
-  isoFSDTStiffness *stiff = new isoFSDTStiffness(rho, E, nu, kcorr, 
+  isoFSDTStiffness *stiff = new isoFSDTStiffness(rho, E, nu, kcorr,
                                                  yield_stress, thickness, 0);
-  
+
   // Create the element class
   TACSElement *elem = new MITC9(stiff, gravVec);
 
@@ -259,7 +259,7 @@ int main( int argc, char **argv ){
 
   int num_dvs = 1;
 
-  // Create functions of interest  
+  // Create functions of interest
   TACSFunction * func[num_funcs];
   if (num_funcs == 1){
     func[0] = new TACSCompliance(tacs);
@@ -273,7 +273,7 @@ int main( int argc, char **argv ){
     func[1] = ifunc;
 
     // func[1] = new TACSCompliance(tacs);
-  } 
+  }
   else if (num_funcs == 3){
     func[0] = new TACSKSFailure(tacs, 100.0);
     func[1] = new TACSCompliance(tacs);
@@ -325,7 +325,7 @@ int main( int argc, char **argv ){
     ifunc->setInducedType(TACSInducedFailure::DISCRETE_POWER_SQUARED);
     func[11] = ifunc;
   }
-  
+
   for ( int i = 0; i < num_funcs; i++){
     func[i]->incref();
   }
@@ -339,8 +339,8 @@ int main( int argc, char **argv ){
   TacsScalar *dfdxTmp = new TacsScalar[num_funcs*num_dvs]; // forward/reverse
 
   // Create an array of design variables
-  TacsScalar *x = new TacsScalar[ num_dvs ]; 
-  x[0] = 0.01; 
+  TacsScalar *x = new TacsScalar[ num_dvs ];
+  x[0] = 0.01;
 
   // Set paramters for time marching
   double tinit             = 0.0;
@@ -351,11 +351,11 @@ int main( int argc, char **argv ){
   }
   int num_steps_per_sec = 10000;
 
-  TACSIntegrator *obj = TACSIntegrator::getInstance(tacs, tinit, tfinal, 
-                                                    num_steps_per_sec, 
+  TACSIntegrator *obj = TACSIntegrator::getInstance(tacs, tinit, tfinal,
+                                                    num_steps_per_sec,
                                                     type);
   obj->incref();
-  
+
   // Set optional parameters
   obj->setOrderingType(TACSAssembler::RCM_ORDER);
   obj->setRelTol(1.0e-8);
@@ -365,7 +365,7 @@ int main( int argc, char **argv ){
   obj->setJacAssemblyFreq(1);
   obj->setOutputFrequency(0);
   obj->setShellOutput(0);
-  
+
   // Set functions of interest for adjoint solve
   obj->setFunction(func, num_funcs);
 
@@ -415,11 +415,11 @@ int main( int argc, char **argv ){
         printf("%25s %25s %25s %25s\n",
                "Adjoint", "FD/CS", "Abs. error", "Rel. error");
         for ( int k = 0; k < num_dvs; k++ ){
-          printf("%25.15e %25.15e %25.15e %25.15e\n", 
+          printf("%25.15e %25.15e %25.15e %25.15e\n",
                  TacsRealPart(dfdx[k + j*num_dvs]),
                  TacsRealPart(dfdxTmp[k + j*num_dvs]),
                  TacsRealPart(dfdx[k + j*num_dvs]) -
-                 TacsRealPart(dfdxTmp[k + j*num_dvs]), 
+                 TacsRealPart(dfdxTmp[k + j*num_dvs]),
                  (TacsRealPart(dfdx[k + j*num_dvs]) -
                   TacsRealPart(dfdxTmp[k + j*num_dvs]))/
                  TacsRealPart(dfdxTmp[k + j*num_dvs]));
@@ -427,7 +427,7 @@ int main( int argc, char **argv ){
       }
     }
   }
-  
+
 
   /*
   // Delete objects
@@ -476,9 +476,9 @@ int main( int argc, char **argv ){
   const TacsScalar JA[6] = {1.0/3.0, 0.0, 0.0,
   1.0/3.0, 0.0,
   1.0/3.0};
-  
+
   // Define dynamics properties
-  TACSGibbsVector *rAInitVec = new TACSGibbsVector(0.0, 2.5, 0.0); 
+  TACSGibbsVector *rAInitVec = new TACSGibbsVector(0.0, 2.5, 0.0);
 
   // Create visualization
   TACSRigidBodyViz *vizA = new TACSRigidBodyViz(0.5, 5.0, 0.5);

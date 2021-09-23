@@ -1,21 +1,22 @@
 #include <stdio.h>
 #include <math.h>
-#include "FElibrary.h"
+#include <stdlib.h>
+#include <string.h>
 
 /*
   Get the coordinates of the deformed plate
 */
-void get_coordinates( double * x, double * y, 
+void get_coordinates( double * x, double * y,
                       const double a, const double b,
                       const double beta, double u, double v ){
-  double uvals[] = { 
-    0.0, 0.5, 1.0, 
-    0.0, 0.5, 1.0, 
+  double uvals[] = {
+    0.0, 0.5, 1.0,
+    0.0, 0.5, 1.0,
     0.0, 0.5, 1.0 };
 
-  double vvals[] = { 
-    0.0, 0.0, 0.0, 
-    0.5, 0.5, 0.5, 
+  double vvals[] = {
+    0.0, 0.0, 0.0,
+    0.5, 0.5, 0.5,
     1.0, 1.0, 1.0 };
 
   double defect = 0.08;
@@ -26,7 +27,7 @@ void get_coordinates( double * x, double * y,
 
   vvals[3] = 0.5-defect;
   vvals[4] = 0.5+defect;
-  vvals[5] = 0.5-defect; 
+  vvals[5] = 0.5-defect;
 
   int ii = 0;
   if (u < 0.5){
@@ -37,7 +38,7 @@ void get_coordinates( double * x, double * y,
     u = 4.0*(u - 0.5) - 1.0;
     ii = 1;
   }
-  
+
   int jj = 0;
   if (v < 0.5){
     v = 4.0*v - 1.0;
@@ -47,22 +48,22 @@ void get_coordinates( double * x, double * y,
     v = 4.0*(v - 0.5) - 1.0;
     jj = 1;
   }
-  
-  double N[4];
-  double pt[2];
-  pt[0] = u;  pt[1] = v;
-  FElibrary::biLagrangeSF(N, pt, 2);
-  
+
+  double N[4] = {0.25*(1.0 + u)*(1.0 + v),
+                 0.25*(1.0 - u)*(1.0 + v),
+                 0.25*(1.0 + u)*(1.0 - v),
+                 0.25*(1.0 - u)*(1.0 - v)};
+
   u = (N[0]*uvals[ii   + 3*jj] +
        N[1]*uvals[ii+1 + 3*jj] +
        N[2]*uvals[ii   + 3*(jj+1)] +
        N[3]*uvals[ii+1 + 3*(jj+1)]);
-  
+
   v = (N[0]*vvals[ii   + 3*jj] +
        N[1]*vvals[ii+1 + 3*jj] +
        N[2]*vvals[ii   + 3*(jj+1)] +
        N[3]*vvals[ii+1 + 3*(jj+1)]);
-  
+
   // Compute the coordinates
   *y = b*v;
   *x = a*u + beta*b*v;
@@ -83,7 +84,7 @@ void write_skewed_plate_file( const char * file_name,
                               double a, double b, double theta, double gamma,
                               const char * bc_type ){
   double beta = tan(theta);
-  
+
   const int elem_order = 4;
   int nx = (elem_order-1)*Nx + 1;
   int ny = (elem_order-1)*Ny + 1;
@@ -113,22 +114,22 @@ void write_skewed_plate_file( const char * file_name,
               0.0, coord_disp, spc, seid);
     }
   }
-   
+
   // Write the elements out to the file
   int nodes[16], elem = 1;
-  for ( int j = 0; j < Ny; j++ ){    
+  for ( int j = 0; j < Ny; j++ ){
     for ( int i = 0; i < Nx; i++ ){
       for ( int n = 0; n < elem_order; n++ ){
         for ( int m = 0; m < elem_order; m++ ){
-          nodes[elem_order*n + m] = 
+          nodes[elem_order*n + m] =
             (elem_order-1)*i + m + ((elem_order-1)*j + n)*nx + 1;
         }
       }
 
-      int part_id = 1;        
+      int part_id = 1;
       fprintf(fp, "%-8s%8d%8d%8d%8d%8d%8d%8d%8d\n",
-              "CQUAD16", elem, part_id, 
-              nodes[0], nodes[1], nodes[2], 
+              "CQUAD16", elem, part_id,
+              nodes[0], nodes[1], nodes[2],
               nodes[3], nodes[4], nodes[5]);
       fprintf(fp, "        %8d%8d%8d%8d%8d%8d%8d%8d\n",
               nodes[6], nodes[7], nodes[8], nodes[9],
@@ -140,14 +141,14 @@ void write_skewed_plate_file( const char * file_name,
   }
 
   if (strcmp(bc_type, "shear") == 0){
-    // The shear boundary conditions  
+    // The shear boundary conditions
     // Set the BCs at the x = 0 edge
     for ( int j = 0; j < ny; j++ ){
       int node_num = j*nx + 1;
 
       // w, rotx, roty, rotz
       fprintf(fp, "%-8s%8d%8d%8s%8.6f\n",
-              "SPC", 1, node_num, "3", 0.0); 
+              "SPC", 1, node_num, "3", 0.0);
 
       // Calculate the displacements u, v
       double x = 0.0, y = 0.0;
@@ -158,9 +159,9 @@ void write_skewed_plate_file( const char * file_name,
       u = 0.5*gamma*y;
       v = 0.5*gamma*x;
       fprintf(fp, "%-8s%8d%8d%8s%8.6f\n",
-              "SPC", 1, node_num, "1", u); 
+              "SPC", 1, node_num, "1", u);
       fprintf(fp, "%-8s%8d%8d%8s%8.6f\n",
-              "SPC", 1, node_num, "2", v); 
+              "SPC", 1, node_num, "2", v);
     }
 
     // Set the BCs at the x = a edge
@@ -169,7 +170,7 @@ void write_skewed_plate_file( const char * file_name,
 
       // w, rotx, roty, rotz
       fprintf(fp, "%-8s%8d%8d%8s%8.6f\n",
-              "SPC", 1, node_num, "3", 0.0); 
+              "SPC", 1, node_num, "3", 0.0);
 
       // Calculate the displacements u, v
       double x = 0.0, y = 0.0;
@@ -180,9 +181,9 @@ void write_skewed_plate_file( const char * file_name,
       u = 0.5*gamma*y;
       v = 0.5*gamma*x;
       fprintf(fp, "%-8s%8d%8d%8s%8.6f\n",
-              "SPC", 1, node_num, "1", u); 
+              "SPC", 1, node_num, "1", u);
       fprintf(fp, "%-8s%8d%8d%8s%8.6f\n",
-              "SPC", 1, node_num, "2", v); 
+              "SPC", 1, node_num, "2", v);
     }
 
     // Set the BCs at the y = 0 edge
@@ -191,7 +192,7 @@ void write_skewed_plate_file( const char * file_name,
 
       // w, rotx, roty, rotz
       fprintf(fp, "%-8s%8d%8d%8s%8.6f\n",
-              "SPC", 1, node_num, "35", 0.0); 
+              "SPC", 1, node_num, "35", 0.0);
 
       // Calculate the displacements u, v
       double x = 0.0, y = 0.0;
@@ -202,9 +203,9 @@ void write_skewed_plate_file( const char * file_name,
       u = 0.5*gamma*y;
       v = 0.5*gamma*x;
       fprintf(fp, "%-8s%8d%8d%8s%8.6f\n",
-              "SPC", 1, node_num, "1", u); 
+              "SPC", 1, node_num, "1", u);
       fprintf(fp, "%-8s%8d%8d%8s%8.6f\n",
-              "SPC", 1, node_num, "2", v); 
+              "SPC", 1, node_num, "2", v);
     }
 
     // Set the BCs at the y = b edge
@@ -213,7 +214,7 @@ void write_skewed_plate_file( const char * file_name,
 
       // w, rotx, roty, rotz
       fprintf(fp, "%-8s%8d%8d%8s%8.6f\n",
-              "SPC", 1, node_num, "35", 0.0); 
+              "SPC", 1, node_num, "35", 0.0);
 
       // Calculate the displacements u, v
       double x = 0.0, y = 0.0;
@@ -224,9 +225,9 @@ void write_skewed_plate_file( const char * file_name,
       u = 0.5*gamma*y;
       v = 0.5*gamma*x;
       fprintf(fp, "%-8s%8d%8d%8s%8.6f\n",
-              "SPC", 1, node_num, "1", u); 
+              "SPC", 1, node_num, "1", u);
       fprintf(fp, "%-8s%8d%8d%8s%8.6f\n",
-              "SPC", 1, node_num, "2", v); 
+              "SPC", 1, node_num, "2", v);
     }
   }
   else {
@@ -234,14 +235,14 @@ void write_skewed_plate_file( const char * file_name,
     // Set the BCs at the x = 0 edge
     // u, v, w, rotx, roty, rotz
     fprintf(fp, "%-8s%8d%8d%8s%8.6f\n",
-            "SPC", 1, 1, "12345", 0.0); 
+            "SPC", 1, 1, "12345", 0.0);
 
     for ( int j = 1; j < ny; j++ ){
       int node_num = j*nx + 1;
 
       // w, rotx, roty, rotz
       fprintf(fp, "%-8s%8d%8d%8s%8.6f\n",
-              "SPC", 1, node_num, "345", 0.0); 
+              "SPC", 1, node_num, "345", 0.0);
 
       double y = (b*j)/(ny-1);
       double x = beta*y;
@@ -257,13 +258,13 @@ void write_skewed_plate_file( const char * file_name,
 
       // w, rotx, roty, rotz
       fprintf(fp, "%-8s%8d%8d%8s%8.6f\n",
-              "SPC", 1, node_num, "345", 0.0); 
+              "SPC", 1, node_num, "345", 0.0);
 
       double y = (b*j)/(ny-1);
       double x = beta*y + a;
       double u = gamma*x;
       fprintf(fp, "%-8s%8d%8d%8s%8.6f\n",
-              "SPC", 1, node_num, "1", u); 
+              "SPC", 1, node_num, "1", u);
     }
 
     // Set the BCs at the y = 0 edge
@@ -272,7 +273,7 @@ void write_skewed_plate_file( const char * file_name,
 
       // w, rotx, roty, rotz
       fprintf(fp, "%-8s%8d%8d%8s%8.6f\n",
-              "SPC", 1, node_num, "345", 0.0); 
+              "SPC", 1, node_num, "345", 0.0);
     }
 
     // Set the BCs at the y = b edge
@@ -281,7 +282,7 @@ void write_skewed_plate_file( const char * file_name,
 
       // w, rotx, roty, rotz
       fprintf(fp, "%-8s%8d%8d%8s%8.6f\n",
-              "SPC", 1, node_num, "345", 0.0); 
+              "SPC", 1, node_num, "345", 0.0);
     }
   }
 
@@ -312,15 +313,15 @@ int main( int argc, char * argv[] ){
   // else if (id == 2){ Nx = 0.0, Nxy = -1.0; }
 
   if (id == 0){
-    write_skewed_plate_file("skewed_plate.bdf", 
+    write_skewed_plate_file("skewed_plate.bdf",
                             Nx, Ny, a, b, theta, gamma, "normal");
   }
   else if (id == 1){
-    write_skewed_plate_file("skewed_plate.bdf", 
+    write_skewed_plate_file("skewed_plate.bdf",
                             Nx, Ny, a, b, theta, gamma, "shear");
   }
   else if (id == 2){
-    write_skewed_plate_file("skewed_plate.bdf", 
+    write_skewed_plate_file("skewed_plate.bdf",
                             Nx, Ny, a, b, theta, -gamma, "shear");
   }
   return (0);

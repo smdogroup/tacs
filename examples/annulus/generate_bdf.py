@@ -49,13 +49,13 @@ y = np.zeros((nx, ny))
 nodes[:] = np.arange(1, nx*ny+1).reshape((nx, ny))
 
 # Set the locations of theta/u
-theta = np.linspace(0.0, np.pi/2.0, nx)
-u = np.linspace(0.0, 1.0, ny)
+theta = np.linspace(np.pi/2.0, 0.0, nx)
+u = np.linspace(Rinner, Router, ny)
 
 # Set the nodal coordinates the coordinates for the center section
 for j in range(ny):
     for i in range(nx):       
-        r = Rinner*(1.0 - u[j]) + Router*u[j]
+        r = u[j]
         x[i,j] = r*np.cos(theta[i])
         y[i,j] = r*np.sin(theta[i])
 
@@ -83,8 +83,8 @@ if order == 2:
             # Write the connectivity data
             fp.write('%-8s%8d%8d%8d%8d%8d%8d\n'%
                      ('CQUAD4', elem, elem, 
-                      nodes[i, j], nodes[i, j+1], 
-                      nodes[i+1, j+1], nodes[i+1, j]))
+                      nodes[i, j], nodes[i+1, j],
+                      nodes[i+1, j+1], nodes[i, j+1]))
 elif order == 3:
     # Output 3rd order elements                
     for j in range(0, nodes.shape[1]-1, order-1):
@@ -94,34 +94,12 @@ elif order == 3:
             #        n7   n8 n9
             fp.write('%-8s%8d%8d%8d%8d%8d%8d%8d%8d\n'%
                      ('CQUAD9', elem, elem, 
-                      nodes[i,   j],   nodes[i+1, j], 
-                      nodes[i+2, j],   nodes[i,   j+1], 
-                      nodes[i+1, j+1], nodes[i+2, j+1]))
+                      nodes[i,   j],   nodes[i+2, j],
+                      nodes[i+2, j+2], nodes[i,   j+2],
+                      nodes[i+1, j],   nodes[i+2, j+1]))
             fp.write('        %8d%8d%8d\n'%
-                     (nodes[i,   j+2], nodes[i+1, j+2], 
-                      nodes[i+2, j+2]))
-            elem += 1
-elif order == 4:
-    # Output 4th order elements
-    for j in range(0, nodes.shape[1]-1, order-1):
-        for i in range(0, nodes.shape[0]-1, order-1):
-            # Write the connectivity data
-            # CQUAD16 elem id  n1  n2  n3  n4  n5  n6
-            #         n7   n8  n9  n10 n11 n12 n13 n14
-            #         n15  n16
-            
-            fp.write('%-8s%8d%8d%8d%8d%8d%8d%8d%8d\n'%
-                     ('CQUAD16', elem, elem,
-                      nodes[i  , j  ], nodes[i+1, j  ], 
-                      nodes[i+2, j  ], nodes[i+3, j  ], 
-                      nodes[i  , j+1], nodes[i+1, j+1]))
-            fp.write('        %8d%8d%8d%8d%8d%8d%8d%8d\n'%
-                     (nodes[i+2, j+1], nodes[i+3, j+1], 
-                      nodes[i  , j+2], nodes[i+1, j+2], 
-                      nodes[i+2, j+2], nodes[i+3, j+2], 
-                      nodes[i  , j+3], nodes[i+1, j+3]))
-            fp.write('        %8d%8d\n'%
-                     (nodes[i+2, j+3], nodes[i+3, j+3]))
+                     (nodes[i+1, j+2], nodes[i, j+1],
+                      nodes[i+1, j+1]))
             elem += 1
 
 # Set up the plate so that it is fully clamped

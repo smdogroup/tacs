@@ -13,25 +13,86 @@
 */
 
 #include "tacslapack.h"
+#include "TacsUtilities.h"
 #include "JacobiDavidson.h"
 
+TACSJDSimpleOperator::TACSJDSimpleOperator( TACSAssembler *_assembler,
+                                            TACSMat *_mat,
+                                            TACSPc *_pc ){
+  assembler = _assembler;  assembler->incref();
+  mat = _mat;  mat->incref();
+  pc = _pc;  pc->incref();
+}
 
-TACSJDFrequencyOperator::TACSJDFrequencyOperator( TACSAssembler *_tacs, 
+TACSJDSimpleOperator::~TACSJDSimpleOperator(){
+  assembler->decref();
+  mat->decref();
+  pc->decref();
+}
+
+// Get the MPI_Comm
+MPI_Comm TACSJDSimpleOperator::getMPIComm(){
+  return assembler->getMPIComm();
+}
+
+// Create a vector
+TACSVec *TACSJDSimpleOperator::createVec(){
+  return assembler->createVec();
+}
+
+// Set the eigenvalue estimate (and reset the factorization)
+// pc = K in this case
+void TACSJDSimpleOperator::setEigenvalueEstimate( double estimate ){
+  pc->factor();
+}
+
+// Apply the preconditioner
+void TACSJDSimpleOperator::applyFactor( TACSVec *x, TACSVec *y ){
+  pc->applyFactor(x, y);
+  assembler->applyBCs(y);
+}
+
+// Apply boundary conditions associated with the matrix
+void TACSJDSimpleOperator::applyBCs( TACSVec *x ){
+  assembler->applyBCs(x);
+}
+
+// Perform a dot-product of two vectors in the operator space e.g.
+// output <- x^{T}*y
+TacsScalar TACSJDSimpleOperator::dot( TACSVec *x, TACSVec *y ){
+  return y->dot(x);
+}
+
+// Matrix-vector products with either the A or B operators.
+void TACSJDSimpleOperator::multA( TACSVec *x, TACSVec * y ){
+  mat->mult(x, y);
+  assembler->applyBCs(y);
+}
+
+void TACSJDSimpleOperator::multB( TACSVec *x, TACSVec * y ){
+  y->copyValues(x);
+  assembler->applyBCs(y);
+}
+
+/*
+  JD operator class for frequency analysis
+*/
+TACSJDFrequencyOperator::TACSJDFrequencyOperator( TACSAssembler *_assembler,
                                                   TACSMat *_kmat,
                                                   TACSMat *_mmat,
                                                   TACSMat *_pc_mat,
                                                   TACSPc *_pc ){
-  tacs = _tacs;  tacs->incref();
+  assembler = _assembler;  assembler->incref();
   kmat = _kmat;  kmat->incref();
   mmat = _mmat;  mmat->incref();
   pc_mat = _pc_mat;  pc_mat->incref();
   pc = _pc;  pc->incref();
-  work = tacs->createVec();
+  work = assembler->createVec();
   work->incref();
 }
 
 TACSJDFrequencyOperator::~TACSJDFrequencyOperator(){
-  tacs->decref();
+  assembler->decref();
   kmat->decref();
   mmat->decref();
   pc_mat->decref();
@@ -39,9 +100,14 @@ TACSJDFrequencyOperator::~TACSJDFrequencyOperator(){
   work->decref();
 }
 
+// Get the MPI_Comm
+MPI_Comm TACSJDFrequencyOperator::getMPIComm(){
+  return assembler->getMPIComm();
+}
+
 // Create a vector
 TACSVec *TACSJDFrequencyOperator::createVec(){
-  return tacs->createVec();
+  return assembler->createVec();
 }
 
 // Set the eigenvalue estimate (and reset the factorization)
@@ -52,19 +118,19 @@ void TACSJDFrequencyOperator::setEigenvalueEstimate( double estimate ){
   if (estimate != 0.0){
     pc_mat->axpy(-estimate, mmat);
   }
-  tacs->applyBCs(pc_mat);
+  assembler->applyBCs(pc_mat);
   pc->factor();
 }
 
 // Apply the preconditioner
 void TACSJDFrequencyOperator::applyFactor( TACSVec *x, TACSVec *y ){
   pc->applyFactor(x, y);
-  tacs->applyBCs(y);
+  assembler->applyBCs(y);
 }
 
 // Apply boundary conditions associated with the matrix
 void TACSJDFrequencyOperator::applyBCs( TACSVec *x ){
-  tacs->applyBCs(x);
+  assembler->applyBCs(x);
 }
 
 // Perform a dot-product of two vectors in the operator space e.g.
@@ -77,12 +143,12 @@ TacsScalar TACSJDFrequencyOperator::dot( TACSVec *x, TACSVec *y ){
 // Matrix-vector products with either the A or B operators.
 void TACSJDFrequencyOperator::multA( TACSVec *x, TACSVec * y ){
   kmat->mult(x, y);
-  tacs->applyBCs(y);
+  assembler->applyBCs(y);
 }
 
 void TACSJDFrequencyOperator::multB( TACSVec *x, TACSVec * y ){
   mmat->mult(x, y);
-  tacs->applyBCs(y);
+  assembler->applyBCs(y);
 }
 
 /*
@@ -118,11 +184,13 @@ TACSJacobiDavidson::TACSJacobiDavidson( TACSJacobiDavidsonOperator *_oper,
   nconverged = 0;
 
   // Set the number of vectors to recycle (0 by default)
-  recycle = 0;
+  num_recycle_vecs = 0;
   recycle_type = JD_NUM_RECYCLE;
 
   // The eigen tolerance
-  eigtol = 1e-9;
+  eig_rtol = 1e-9;
+  eig_atol = 1e-30;
+  theta_cutoff = 0.1;
 
   // The residual tolerances for the GMRES iterations
   rtol = 1e-9;
@@ -138,6 +206,8 @@ TACSJacobiDavidson::TACSJacobiDavidson( TACSJacobiDavidsonOperator *_oper,
   Q = new TACSVec*[ max_eigen_vectors+1 ];
   P = new TACSVec*[ max_eigen_vectors+1 ];
   eigvals = new TacsScalar[ max_eigen_vectors ];
+  eigerror = new TacsScalar[ max_eigen_vectors ];
+  eigindex = new int[ max_eigen_vectors ];
 
   // Allocate the variables
   for ( int i = 0; i < max_jd_size+1; i++ ){
@@ -212,6 +282,8 @@ TACSJacobiDavidson::~TACSJacobiDavidson(){
   delete [] ritzvecs;
   delete [] ritzvals;
   delete [] eigvals;
+  delete [] eigerror;
+  delete [] eigindex;
 
   // Free the GMRES subspace vectors
   W[0]->decref();
@@ -228,6 +300,18 @@ TACSJacobiDavidson::~TACSJacobiDavidson(){
   work->decref();
 }
 
+// Get the MPI_Comm
+MPI_Comm TACSJacobiDavidson::getMPIComm(){
+  return oper->getMPIComm();
+}
+
+/*
+  Get the number of converged eigenvalues
+*/
+int TACSJacobiDavidson::getNumConvergedEigenvalues(){
+  return nconverged;
+}
+
 /*!
   Extract the eigenvalue from the analysis
 */
@@ -237,14 +321,49 @@ TacsScalar TACSJacobiDavidson::extractEigenvalue( int n,
     *error = 0.0;
   }
 
-  if (n >= 0 && n < max_eigen_vectors){
+  if (n >= 0 && n < nconverged){
+    int index = eigindex[n];
     if (error){
-      oper->multA(Q[n], work);
-      work->axpy(-eigvals[n], P[n]);
+      oper->multA(Q[index], work);
+      work->axpy(-eigvals[index], P[index]);
       *error = work->norm();
     }
 
-    return eigvals[n];
+    return eigvals[index];
+  }
+  else if (n >= 0 && n < max_eigen_vectors){
+    int index = n - nconverged;
+
+    // Get the Ritz value
+    TacsScalar theta = ritzvals[index];
+
+    // Assemble the predicted Ritz vector
+    if (error){
+      // Set the temporary vector space
+      TACSVec *qvec = Q[n];
+      TACSVec *pvec = P[n];
+      qvec->zeroEntries();
+      for ( int j = 0; j <= max_jd_size; j++ ){
+        qvec->axpy(ritzvecs[n*(max_jd_size+1) + j], V[j]);
+      }
+      oper->applyBCs(qvec);
+
+      // Normalize the predicted eigenvalue
+      TacsScalar qnorm = sqrt(oper->dot(qvec, qvec));
+      qvec->scale(1.0/qnorm);
+
+      // Compute the residual: work = A*q - theta*B*q
+      // and store it in the work vector
+      oper->multA(qvec, work);
+      oper->multB(qvec, pvec);
+      work->axpy(-theta, pvec);
+      oper->applyBCs(work);
+
+      // Set the error
+      *error = work->norm();
+    }
+
+    return theta;
   }
 
   return 0.0;
@@ -259,17 +378,61 @@ TacsScalar TACSJacobiDavidson::extractEigenvector( int n, TACSVec *ans,
     *error = 0.0;
   }
 
-  if (n >= 0 && n < max_eigen_vectors){
+  if (n >= 0 && n < nconverged){
+    int index = eigindex[n];
     if (error){
-      oper->multA(Q[n], work);
-      work->axpy(-eigvals[n], P[n]);
+      oper->multA(Q[index], work);
+      work->axpy(-eigvals[index], P[index]);
       *error = work->norm();
     }
     if (ans){
-      ans->copyValues(Q[n]);
+      ans->copyValues(Q[index]);
     }
 
-    return eigvals[n];
+    return eigvals[index];
+  }
+  else if (n >= 0 && n < max_eigen_vectors){
+    int index = n - nconverged;
+
+    // Get the Ritz value
+    TacsScalar theta = ritzvals[index];
+
+    // Assemble the predicted Ritz vector
+    if (error || ans){
+      // Set which vectors to use
+      TACSVec *qvec = Q[n];
+      if (ans){
+        qvec = ans;
+      }
+      TACSVec *pvec = P[n];
+
+      qvec->zeroEntries();
+      for ( int j = 0; j <= max_jd_size; j++ ){
+        qvec->axpy(ritzvecs[n*(max_jd_size+1) + j], V[j]);
+      }
+      oper->applyBCs(qvec);
+
+      // Normalize the predicted eigenvalue
+      TacsScalar qnorm = sqrt(oper->dot(qvec, qvec));
+      qvec->scale(1.0/qnorm);
+
+      if (error){
+        // Compute the residual: work = A*q - theta*B*q
+        // and store it in the work vector
+        oper->multA(qvec, work);
+        oper->multB(qvec, pvec);
+        work->axpy(-theta, pvec);
+        oper->applyBCs(work);
+
+        // Set the error
+        *error = work->norm();
+      }
+      if (Q[n] != ans){
+        Q[n]->copyValues(ans);
+      }
+    }
+
+    return theta;
   }
 
   return 0.0;
@@ -278,28 +441,27 @@ TacsScalar TACSJacobiDavidson::extractEigenvector( int n, TACSVec *ans,
 /*
   Solve the general eigenproblem using the Jacobi-Davidson method.
 
-  This code implements a technique to find the absolute smallest 
+  This code implements a technique to find the absolute smallest
   eigenvalues. The code maintains a B-orthonormal basis V that
   is used to form a Galerkin approximation of the eigenvalue problem
 
   V^{T}*A*V*y - theta*V^{T}*B*V*y = M*y - theta*y = 0.
 
-  The updates to the subspace V are obtained by seeking a 
+  The updates to the subspace V are obtained by seeking a
   Jacobi-Davidson update that is B-orthogonal to the current
   eigenvector estimate. To obtain multiple eigenvectors the code
-  uses a deflation subspace Q which consists of orthogonal 
+  uses a deflation subspace Q which consists of orthogonal
   eigenvectors that have converged. In addition, the current estimate
   of the eigenvector is maintained in the same array of vectors.
-  At each iteration, we seek a new vector t that approximately 
+  At each iteration, we seek a new vector t that approximately
   satisfies the following equation
 
-  (I - P*Q^{T})*A*(I - Q*P^{T})*t = -r 
+  (I - P*Q^{T})*A*(I - Q*P^{T})*t = -r
 
   where r is orthogonal to the subspace Q and t is orthogonal to the
   subspace t by construction. FGMRES builds the subspaces W and Z.
 */
-void TACSJacobiDavidson::solve( KSMPrint *ksm_print, 
-                                KSMPrint *ksm_file ){
+void TACSJacobiDavidson::solve( KSMPrint *ksm_print, int print_level ){
   // Keep track of the current subspace
   V[0]->setRand(-1.0, 1.0);
   oper->applyBCs(V[0]);
@@ -312,14 +474,15 @@ void TACSJacobiDavidson::solve( KSMPrint *ksm_print,
   int lwork = 16*max_jd_size;
   double *rwork = new double[ lwork ];
 
-  // Store the number of converged eigenvalues
+  // Store the number of iterations of the inner GMRES algorithm
   int iteration = 0;
+  int gmres_iteration = 0;
 
   // Check if the recycle flag is set
   int kstart = 0;
-  if (recycle > 0){
+  if (num_recycle_vecs > 0){
     // Set the actual number of recycled eigenvectors
-    int num_recycle = recycle;
+    int num_recycle = num_recycle_vecs;
     if (num_recycle > nconverged){
       num_recycle = nconverged;
     }
@@ -330,31 +493,34 @@ void TACSJacobiDavidson::solve( KSMPrint *ksm_print,
         for (int i = 0; i < nconverged; i++){
           V[1]->axpy(1.0, Q[i]);
         }
+
         for ( int k = 0; k < 2; k++ ){
           // B-orthogonalize the eigenvectors
           for ( int i = 0; i < k; i++ ){
             TacsScalar h = oper->dot(V[k], V[i]);
             V[k]->axpy(-h, V[i]);
           }
+
           // Apply boundary conditions for this vector
           oper->applyBCs(V[k]);
-          
+
           // Normalize the vector so that it is orthonormal
           TacsScalar vnorm = sqrt(oper->dot(V[k], V[k]));
           V[k]->scale(1.0/vnorm);
+
           // Compute work = A*V[k]
           oper->multA(V[k], work);
-          
-          // Complete the entries in the symmetric matrix M that is formed by 
+
+          // Complete the entries in the symmetric matrix M that is formed by
           // M = V^{T}*A*V
           for ( int i = 0; i <= k; i++ ){
             M[k*m + i] = V[i]->dot(work);
             M[i*m + k] = M[k*m + i];
           }
         }
-        kstart = 2;      
+        kstart = 2;
       }
-      else if (recycle_type == JD_NUM_RECYCLE){ 
+      else if (recycle_type == JD_NUM_RECYCLE){
         // B-orthogonalize the old eigenvectors with respect to the
         // new matrix for all but the last recycled eigenvector which
         // will be orthogonalized by the first iteration through the
@@ -381,7 +547,7 @@ void TACSJacobiDavidson::solve( KSMPrint *ksm_print,
           // Compute work = A*V[k]
           oper->multA(V[k], work);
 
-          // Complete the entries in the symmetric matrix M that is formed by 
+          // Complete the entries in the symmetric matrix M that is formed by
           // M = V^{T}*A*V
           for ( int i = 0; i <= k; i++ ){
             M[k*m + i] = V[i]->dot(work);
@@ -398,6 +564,13 @@ void TACSJacobiDavidson::solve( KSMPrint *ksm_print,
 
   // Reset the number of converged eigenvectors/eigenvalues
   nconverged = 0;
+
+  if (ksm_print && print_level > 0){
+    char line[256];
+    sprintf(line, "%4s %15s %15s %10s\n",
+            "Iter", "JD Residual", "Ritz value", "toler");
+    ksm_print->print(line);
+  }
 
   for ( int k = kstart; k < m; k++ ){
     // Orthogonalize against converged eigenvectors as well (if any)...
@@ -442,14 +615,14 @@ void TACSJacobiDavidson::solve( KSMPrint *ksm_print,
     // The input arguments required for LAPACK
     const char *jobz = "V", *uplo = "U";
 
-    // Compute the eigenvalues and eigenvectors of a (small) symmetric 
+    // Compute the eigenvalues and eigenvectors of a (small) symmetric
     // matrix using lapack. The eigenvalues are the ritzvalues. The
     // eigenvectors can be used to construct the Ritz vectors (in the
-    // code the ritzvecs array contains the vectors of the reduced 
+    // code the ritzvecs array contains the vectors of the reduced
     // eigenproblem that are not Ritz vectors themselves but are used
     // to compute them.)
     int info;
-    int n = k+1;
+    int n = k + 1;
     LAPACKdsyev(jobz, uplo, &n, ritzvecs, &n, ritzvals,
                 rwork, &lwork, &info);
 
@@ -458,7 +631,7 @@ void TACSJacobiDavidson::solve( KSMPrint *ksm_print,
     double theta = ritzvals[0];
 
     int num_new_eigvals = 0;
-    for ( int i = 0; i < k+1 && nconverged < max_eigen_vectors; 
+    for ( int i = 0; i < k+1 && nconverged < max_eigen_vectors;
           i++, num_new_eigvals++ ){
       // Set the Ritz value
       theta = ritzvals[i];
@@ -474,26 +647,33 @@ void TACSJacobiDavidson::solve( KSMPrint *ksm_print,
       TacsScalar qnorm = sqrt(oper->dot(Q[nconverged], Q[nconverged]));
       Q[nconverged]->scale(1.0/qnorm);
 
-      // Compute the residual: work = A*q - theta*B*q 
+      // Compute the residual: work = A*q - theta*B*q
       // and store it in the work vector
       oper->multA(Q[nconverged], work);
       TacsScalar Anorm = work->norm();
       oper->multB(Q[nconverged], P[nconverged]);
       work->axpy(-theta, P[nconverged]);
       oper->applyBCs(work);
-      
+
+      // Compute the norm of the residual: ||A*q - theta*B*q||
       TacsScalar w_norm = work->norm();
-      if (ksm_print){
+
+      // Compute the norm of the eigenvalue to check if it has converged
+      double abs_theta = fabs(TacsRealPart(theta));
+      double toler = (eig_atol*(theta_cutoff/(theta_cutoff + abs_theta)) +
+                      eig_rtol*(abs_theta/(theta_cutoff + abs_theta))*TacsRealPart(Anorm));
+
+      if (ksm_print && print_level > 0){
         char line[256];
-        sprintf(line, "JD Residual[%2d]: %15.5e  Eigenvalue[%2d]: %20.10e\n", 
-                iteration, TacsRealPart(w_norm), nconverged, theta);
+        sprintf(line, "%4d %15.5e %15.5e %10.2e\n",
+                iteration, TacsRealPart(w_norm), theta, toler);
         ksm_print->print(line);
       }
 
-      // Compute the norm of the eigenvalue to check if it has converged
-      if (TacsRealPart(w_norm) <= TacsRealPart(eigtol*Anorm)){
+      if (TacsRealPart(w_norm) <= toler){
         // Record the Ritz value as the eigenvalue
         eigvals[nconverged] = theta;
+        eigerror[nconverged] = w_norm;
 
         nconverged++;
       }
@@ -512,21 +692,28 @@ void TACSJacobiDavidson::solve( KSMPrint *ksm_print,
       // This eigenvalue has converged, store it in Q[nconverged] and
       // modify the remaining entries of V. Now we need to compute the
       // new starting vector for the next eigenvalue
-      int max_new_vecs = k+1 - num_new_eigvals;
-      if (max_new_vecs > max_gmres_size+1){
-        max_new_vecs = max_gmres_size+1;
+
+      // The number of vectors in the new sub-space. This new subspace
+      // is constructed from the Ritz problem from the old subspace stored
+      // currently in V.
+      int new_subspace_vecs = (k + 1) - num_new_eigvals;
+      if (new_subspace_vecs > max_gmres_size + 1){
+        new_subspace_vecs = max_gmres_size + 1;
       }
 
       // Reset the matrix to zero
       memset(M, 0, m*m*sizeof(TacsScalar));
 
       // Set the vectors that will be used
-      for ( int i = 0; i < max_new_vecs; i++ ){
+      for ( int i = 0; i < new_subspace_vecs; i++ ){
+        // Keep only the ritz values that are not yet converged
         int ritz_index = i + num_new_eigvals;
 
         // Set the ritz value
         M[i + i*m] = ritzvals[ritz_index];
 
+        // Build the new subspace vector from the old V subspace and
+        // store it temporarily in W
         W[i]->zeroEntries();
         for ( int j = 0; j <= k; j++ ){
           W[i]->axpy(ritzvecs[ritz_index*(k+1) + j], V[j]);
@@ -539,11 +726,13 @@ void TACSJacobiDavidson::solve( KSMPrint *ksm_print,
           W[i]->axpy(-h, Q[j]);
         }
 
+        // Orthogonalize the new subspace values against themselves
         for ( int j = 0; j < i; j++ ){
           TacsScalar h = oper->dot(W[i], W[j]);
           W[i]->axpy(-h, W[j]);
         }
-        
+
+        // Apply the boundary conditions
         oper->applyBCs(W[i]);
 
         // Normalize the vector so that it is orthonormal
@@ -551,10 +740,46 @@ void TACSJacobiDavidson::solve( KSMPrint *ksm_print,
         W[i]->scale(1.0/vnorm);
       }
 
-      for ( int i = 0; i < max_new_vecs; i++ ){
+      // Copy the new subspace vectors to V
+      for ( int i = 0; i < new_subspace_vecs; i++ ){
         V[i]->copyValues(W[i]);
       }
-      k = max_new_vecs-2;
+
+      // Now add one new subspace vector that is randomly generated
+      if (new_subspace_vecs < m){
+        int index = new_subspace_vecs;
+
+        // Generate a new random vector to append to the space
+        V[index]->setRand(-1.0, 1.0);
+        oper->applyBCs(V[index]);
+
+        // B-orthogonalize the eigenvectors against the subspace
+        for ( int i = 0; i < new_subspace_vecs; i++ ){
+          TacsScalar h = oper->dot(V[index], V[i]);
+          V[index]->axpy(-h, V[i]);
+        }
+
+        // Apply the boundary conditions
+        oper->applyBCs(V[index]);
+
+        // Compute work = A*V[k]
+        oper->multA(V[index], work);
+
+        // Complete the entries in the symmetric matrix M that is formed by
+        // M = V^{T}*A*V
+        for ( int i = 0; i <= index; i++ ){
+          M[index*m + i] = V[i]->dot(work);
+          M[i*m + index] = M[index*m + i];
+        }
+
+        // Increment the number of new subspace vectors by one to account
+        // for the extra random vector
+        new_subspace_vecs++;
+      }
+
+      // Reset the iteration counter here to reflect the new size
+      // of the V subspace
+      k = new_subspace_vecs - 2;
 
       // Reset the iteration loop and continue
       continue;
@@ -578,7 +803,7 @@ void TACSJacobiDavidson::solve( KSMPrint *ksm_print,
       // Note that we compute the product in this way since
       // it is numerical more stable and equivalent to the form above
       // since Q^{T}P = 0 so that: (since Q is a B-orthogonal subspace)
-      // (I - q1*p1^{T})*(I - q2*p2^{T}) = 
+      // (I - q1*p1^{T})*(I - q2*p2^{T}) =
       // (I - q1*p1^{T} - q2*p2^{T} - q1*p1^{T}*q2*p2^{T}) =
       // (I - q1*p1^{T} - q2*p2^{T})
 
@@ -637,11 +862,12 @@ void TACSJacobiDavidson::solve( KSMPrint *ksm_print,
       res[i]   =   h1*Qcos[i];
       res[i+1] = - h1*Qsin[i];
 
-      // if (ksm_print){
-      //   ksm_print->printResidual(niters, fabs(TacsRealPart(res[i+1])));
-      // }
+      if (ksm_print && print_level > 1){
+        ksm_print->printResidual(niters, fabs(TacsRealPart(res[i+1])));
+      }
 
-      niters++;
+      niters++; // Number of iterations for this GMRES solve
+      gmres_iteration++; // Total number of GMRES iterations
 
       if (fabs(TacsRealPart(res[i+1])) < atol ||
           fabs(TacsRealPart(res[i+1])) < rtol*beta){
@@ -664,7 +890,7 @@ void TACSJacobiDavidson::solve( KSMPrint *ksm_print,
     for ( int i = 0; i < niters; i++ ){
       V[k+1]->axpy(-res[i], Z[i]);
     }
-  
+
     // Compute the product to test the error
     // (1 - P*Q^{T})*(A - theta*B)*(1 - Q*P^{T})
     W[0]->copyValues(V[k+1]);
@@ -676,20 +902,25 @@ void TACSJacobiDavidson::solve( KSMPrint *ksm_print,
     iteration++;
   }
 
+  // Sort the indices for the converged eigenvalues
+  TacsArgSort(nconverged, eigvals, eigindex);
+
   if (ksm_print){
+    char line[256];
     for ( int i = 0; i < nconverged; i++ ){
-      char line[256];
-      sprintf(line, "Eigenvalue[%2d]: %25.10e\n",
-              i, TacsRealPart(eigvals[i]));
+      int index = eigindex[i];
+      sprintf(line, "Eigenvalue[%2d]: %25.10e Eig. error[%2d]: %25.10e\n",
+              i, TacsRealPart(eigvals[index]),
+              i, TacsRealPart(eigerror[index]));
       ksm_print->print(line);
     }
+
+    sprintf(line, "JD number of outer iterations: %2d\n", iteration);
+    ksm_print->print(line);
+    sprintf(line, "JD number of inner GMRES iterations: %2d\n", gmres_iteration);
+    ksm_print->print(line);
   }
-  // Print the iteration count to file
-  if (ksm_file){
-    char line[256];
-    sprintf(line, "%2d\n", iteration);
-    ksm_file->print(line);
-  }
+
   delete [] rwork;
 }
 
@@ -698,24 +929,42 @@ void TACSJacobiDavidson::solve( KSMPrint *ksm_print,
   criterion.
 
   input:
+  eig_rtol: the eigenvector tolerance ||(A - theta*B)*eigvec|| < eig_rtol*||A*eigvec||
+  eig_atol: the eigenvector tolerance ||(A - theta*B)*eigvec|| < eig_atol
   rtol: the relative tolerance ||r_k|| < rtol*||r_0||
   atol: the absolute tolerancne ||r_k|| < atol
 */
-void TACSJacobiDavidson::setTolerances( double _eigtol,
-                                        double _rtol, 
+void TACSJacobiDavidson::setTolerances( double _eig_rtol,
+                                        double _eig_atol,
+                                        double _rtol,
                                         double _atol ){
-  eigtol = _eigtol;
+  eig_rtol = _eig_rtol;
+  eig_atol = _eig_atol;
   rtol = _rtol;
   atol = _atol;
 }
+
 /*
-  Set the number of vectors to recycle if the eigenvectors are converged 
+  Set the paramter that decide whether the convergence check relies more on
+  eig_atol or more on eig_rtol.
 
   input:
-  recycle: number of vectors to recycle
+  theta_cutoff: between 0.0 and 1.0, usually is a small value e.g. 0.1 or 0.01,
+                the smaller it is, the convergence criterion behaves more like
+                a step function between eig_atol and eig_rtol*||A*eigvec||
 */
-void TACSJacobiDavidson::setRecycle( int _recycle, 
-                                     JDRecycleType _recycle_type ){ 
-  recycle = _recycle;
-  recycle_type = _recycle_type;  
+void TACSJacobiDavidson::setThetaCutoff( double _theta_cutoff ){
+  theta_cutoff = _theta_cutoff;
+}
+
+/*
+  Set the number of vectors to recycle if the eigenvectors are converged
+
+  input:
+  num_recycle_vecs: number of vectors to recycle
+*/
+void TACSJacobiDavidson::setRecycle( int _num_recycle_vecs,
+                                     JDRecycleType _recycle_type ){
+  num_recycle_vecs = _num_recycle_vecs;
+  recycle_type = _recycle_type;
 }

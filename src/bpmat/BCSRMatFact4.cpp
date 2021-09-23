@@ -12,8 +12,8 @@
   TACS is licensed under the Apache License, Version 2.0 (the
   "License"); you may not use this software except in compliance with
   the License.  You may obtain a copy of the License at
-  
-  http://www.apache.org/licenses/LICENSE-2.0 
+
+  http://www.apache.org/licenses/LICENSE-2.0
 */
 
 #include "BCSRMatImpl.h"
@@ -24,7 +24,7 @@
 
 /*!
   Perform an ILU factorization in place for the block size = 4.
-  The entries are over-written, all operations are performed in place. 
+  The entries are over-written, all operations are performed in place.
 */
 
 void BCSRMatFactor4( BCSRMatData * data ){
@@ -39,7 +39,7 @@ void BCSRMatFactor4( BCSRMatData * data ){
   TacsScalar d10, d11, d12, d13;
   TacsScalar d20, d21, d22, d23;
   TacsScalar d30, d31, d32, d33;
-  
+
   for ( int i = 0; i < nrows; i++ ){
     // variable = i
     if ( diag[i] < 0 ){
@@ -74,13 +74,13 @@ row %d \n", i);
       d13 = a[4]*b[3] + a[5]*b[7] + a[6]*b[11] + a[7]*b[15];
       d23 = a[8]*b[3] + a[9]*b[7] + a[10]*b[11] + a[11]*b[15];
       d33 = a[12]*b[3] + a[13]*b[7] + a[14]*b[11] + a[15]*b[15];
-  
+
       // Scan through the remainder of the row
       int k = j+1;
       int p = diag[cj] + 1;
       a = &A[16*k];
       b = &A[16*p];
-          
+
       // The final entry for row: cols[j]
       int end = rowp[cj + 1];
 
@@ -99,7 +99,7 @@ row %d \n", i);
           a[4 ] -= d10*b0 + d11*b1 + d12*b2 + d13*b3;
           a[8 ] -= d20*b0 + d21*b1 + d22*b2 + d23*b3;
           a[12] -= d30*b0 + d31*b1 + d32*b2 + d33*b3;
-         
+
           b0 = b[1 ]; b1 = b[5 ]; b2 = b[9 ]; b3 = b[13];
           a[1 ] -= d00*b0 + d01*b1 + d02*b2 + d03*b3;
           a[5 ] -= d10*b0 + d11*b1 + d12*b2 + d13*b3;
@@ -118,7 +118,7 @@ row %d \n", i);
           a[11] -= d20*b0 + d21*b1 + d22*b2 + d23*b3;
           a[15] -= d30*b0 + d31*b1 + d32*b2 + d33*b3;
         }
-         
+
         b += 16;
       }
 
@@ -170,14 +170,14 @@ void BCSRMatFactorLower4( BCSRMatData * data, BCSRMatData * Edata ){
     int j_end = diag[i];
 
     for ( int j = rowp[i]; j < j_end; j++ ){
-      int cj = cols[j];      
+      int cj = cols[j];
       const TacsScalar * d = &A[16*j];
 
       int k     = erowp[i];
       int k_end = erowp[i+1];
       TacsScalar * a = &E[16*k];
 
-      int p     = erowp[cj]; 
+      int p     = erowp[cj];
       int p_end = erowp[cj+1];
       TacsScalar * b = &E[16*p];
 
@@ -195,13 +195,13 @@ void BCSRMatFactorLower4( BCSRMatData * data, BCSRMatData * Edata ){
           a[4 ] -= d[4 ]*b0 + d[5 ]*b1 + d[6 ]*b2 + d[7 ]*b3;
           a[8 ] -= d[8 ]*b0 + d[9 ]*b1 + d[10]*b2 + d[11]*b3;
           a[12] -= d[12]*b0 + d[13]*b1 + d[14]*b2 + d[15]*b3;
-          
+
           b0 = b[1 ]; b1 = b[5 ]; b2 = b[9 ]; b3 = b[13];
           a[1 ] -= d[0 ]*b0 + d[1 ]*b1 + d[2 ]*b2 + d[3 ]*b3;
           a[5 ] -= d[4 ]*b0 + d[5 ]*b1 + d[6 ]*b2 + d[7 ]*b3;
           a[9 ] -= d[8 ]*b0 + d[9 ]*b1 + d[10]*b2 + d[11]*b3;
           a[13] -= d[12]*b0 + d[13]*b1 + d[14]*b2 + d[15]*b3;
-          
+
           b0 = b[2 ]; b1 = b[6 ]; b2 = b[10]; b3 = b[14];
           a[2 ] -= d[0 ]*b0 + d[1 ]*b1 + d[2 ]*b2 + d[3 ]*b3;
           a[6 ] -= d[4 ]*b0 + d[5 ]*b1 + d[6 ]*b2 + d[7 ]*b3;
@@ -246,11 +246,11 @@ void BCSRMatFactorUpper4( BCSRMatData * data, BCSRMatData * Fdata ){
     int j_end = frowp[i+1];
 
     for ( int j = frowp[i]; j < j_end; j++ ){
-      int cj = fcols[j];      
+      int cj = fcols[j];
       TacsScalar * a = &F[16*j];
       const TacsScalar * b = &A[16*diag[cj]];
-      
-      // Multiply d = F[j] * A[diag[cj]] 
+
+      // Multiply d = F[j] * A[diag[cj]]
       TacsScalar b0, b1, b2, b3;
 
       b0 = b[0 ]; b1 = b[4 ]; b2 = b[8 ]; b3 = b[12];
@@ -277,7 +277,7 @@ void BCSRMatFactorUpper4( BCSRMatData * data, BCSRMatData * Fdata ){
       d23 = a[8 ]*b0 + a[9 ]*b1 + a[10]*b2 + a[11]*b3;
       d33 = a[12]*b0 + a[13]*b1 + a[14]*b2 + a[15]*b3;
 
-      int k     = j+1;      
+      int k     = j+1;
       int k_end = frowp[i+1];
       a = &F[16*k];
 
@@ -316,7 +316,7 @@ void BCSRMatFactorUpper4( BCSRMatData * data, BCSRMatData * Fdata ){
           a[3 ] -= d00*b0 + d01*b1 + d02*b2 + d03*b3;
           a[7 ] -= d10*b0 + d11*b1 + d12*b2 + d13*b3;
           a[11] -= d20*b0 + d21*b1 + d22*b2 + d23*b3;
-          a[15] -= d30*b0 + d31*b1 + d32*b2 + d33*b3;    
+          a[15] -= d30*b0 + d31*b1 + d32*b2 + d33*b3;
         }
         b += 16;
       }

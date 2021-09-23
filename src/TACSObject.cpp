@@ -12,8 +12,8 @@
   TACS is licensed under the Apache License, Version 2.0 (the
   "License"); you may not use this software except in compliance with
   the License.  You may obtain a copy of the License at
-  
-  http://www.apache.org/licenses/LICENSE-2.0 
+
+  http://www.apache.org/licenses/LICENSE-2.0
 */
 
 #include "TACSObject.h"
@@ -42,7 +42,7 @@ void TacsZeroNumFlops(){
   These definite the min/max operations for complex values
 */
 #ifdef TACS_USE_COMPLEX
-void TacsMPIComplexMax( void *_in, void *_out, int *count, 
+void TacsMPIComplexMax( void *_in, void *_out, int *count,
                         MPI_Datatype *data ){
   if (*data == MPI_DOUBLE_COMPLEX){
     TacsScalar *in = (TacsScalar*) _in;
@@ -57,7 +57,7 @@ void TacsMPIComplexMax( void *_in, void *_out, int *count,
   }
 }
 
-void TacsMPIComplexMin( void *_in, void *_out, int *count, 
+void TacsMPIComplexMin( void *_in, void *_out, int *count,
                         MPI_Datatype *data ){
   if (*data == MPI_DOUBLE_COMPLEX){
     TacsScalar *in = (TacsScalar*) _in;
@@ -74,7 +74,7 @@ void TacsMPIComplexMin( void *_in, void *_out, int *count,
 #endif
 
 // Static flag to test if TacsInitialize has been called
-static int TacsInitialized = 0; 
+static int TacsInitialized = 0;
 
 MPI_Op TACS_MPI_MIN = MPI_MAX;
 MPI_Op TACS_MPI_MAX = MPI_MIN;
@@ -107,20 +107,20 @@ void TacsFinalize(){
   }
 }
 
-TACSObject::TACSObject(){ 
-  ref_count = 0; 
+TACSObject::TACSObject(){
+  ref_count = 0;
 }
 
 TACSObject::~TACSObject(){}
 
-/*!
+/*
   Increase the reference count functions
 */
-void TACSObject::incref(){ 
-  ref_count++; 
+void TACSObject::incref(){
+  ref_count++;
 }
 
-/*!
+/*
   Decrease the reference count
 */
 void TACSObject::decref(){
@@ -129,21 +129,25 @@ void TACSObject::decref(){
   if (ref_count == 0){
 #ifdef TACS_DEBUG
     fprintf(stderr, "Deleting object %s\n",
-            this->TACSObjectName());
+            this->getObjectName());
 #endif
     delete this;
   }
   else if (ref_count < 0){
     fprintf(stderr, "Encountered a negative reference count for %s\n",
-            this->TACSObjectName());
+            this->getObjectName());
   }
 }
 
 //! Return the reference count
-int TACSObject::refcount(){ return ref_count; }
+int TACSObject::refcount(){
+  return ref_count;
+}
 
 //! Return the name of the object
-const char *TACSObject::TACSObjectName(){ return tacsDefault; }
+const char *TACSObject::getObjectName(){
+  return tacsDefault;
+}
 
 const char *TACSObject::tacsDefault = "TACSObject";
 
@@ -172,5 +176,5 @@ void TACSThreadInfo::setNumThreads( int _num_threads ){
 }
 
 int TACSThreadInfo::getNumThreads(){
-  return num_threads; 
+  return num_threads;
 }
