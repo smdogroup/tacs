@@ -10,8 +10,8 @@ class ElementTest(unittest.TestCase):
 
         # fd/cs step size
         if TACS.dtype is complex:
-            self.dh = 1e-5
-            self.rtol = 1e-6
+            self.dh = 1e-50
+            self.rtol = 1e-10
         else:
             self.dh = 1e-5
             self.rtol = 1e-2
@@ -132,9 +132,6 @@ class ElementTest(unittest.TestCase):
                         dvs = element.getDesignVars(self.elem_index)
                         for matrix_type in self.matrix_types:
                             with self.subTest(matrix_type=matrix_type):
-                                if self.print_level > 0:
-                                    print("Testing with model %s with basis functions %s and matrix type %s\n" % (
-                                        type(model), type(basis), type(matrix_type)))
                                 fail = elements.TestElementMatDVSens(element, matrix_type, self.elem_index,
                                                                      self.time, self.xpts, self.vars, dvs, self.dh,
                                                                      self.print_level, self.atol, self.rtol)
