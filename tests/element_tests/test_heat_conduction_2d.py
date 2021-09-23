@@ -38,6 +38,9 @@ class ModelTest(unittest.TestCase):
         # Create the model for 2D
         self.model = elements.HeatConduction2D(con)
 
+        # Seed random number generator in tacs for consistent test results
+        elements.SeedRandomGenerator(0)
+
     def test_element_model_jacobian(self):
         fail = elements.TestElementModelJacobian(self.model, self.elem_index, self.time, self.dh,
                                                  self.print_level, self.atol, self.rtol)

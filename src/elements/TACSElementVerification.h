@@ -23,6 +23,7 @@
   Assign variables randomly to an array. This is useful for
   testing various things.
  */
+void TacsSeedRandomGenerator( int seed  );
 void TacsGenerateRandomArray( TacsReal *array, int size,
                               TacsReal lower=-1.0,
                               TacsReal upper=1.0 );

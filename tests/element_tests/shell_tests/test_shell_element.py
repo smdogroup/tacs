@@ -10,8 +10,8 @@ class ElementTest(unittest.TestCase):
 
         # fd/cs step size
         if TACS.dtype is complex:
-            self.dh = 1e-50
-            self.rtol = 1e-10
+            self.dh = 1e-5
+            self.rtol = 1e-6
         else:
             self.dh = 1e-5
             self.rtol = 1e-2
@@ -71,6 +71,9 @@ class ElementTest(unittest.TestCase):
 
         # Set matrix types
         self.matrix_types = [TACS.STIFFNESS_MATRIX, TACS.MASS_MATRIX, TACS.GEOMETRIC_STIFFNESS_MATRIX]
+
+        # Seed random number generator in tacs for consistent test results
+        elements.SeedRandomGenerator(0)
 
     def test_element_residual(self):
         # Loop through every combination of transform type and shell element class and test residual
