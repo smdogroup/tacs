@@ -46,7 +46,7 @@ void panel_test( FSDTStiffness *skin, FSDTStiffness *base,
 
   // Create the TACSPanaelAnalysis object
   TACSPanelAnalysis *panel = new TACSPanelAnalysis(nnodes, nseg,
-                                                   nbeams, nmodes, Lx, 
+                                                   nbeams, nmodes, Lx,
                                                    theta);
   panel->incref();
 
@@ -62,7 +62,7 @@ void panel_test( FSDTStiffness *skin, FSDTStiffness *base,
 
   // For each repeating geometry segment (which incorporates a
   // stiffener) set the nodal locations from the geometry parameters
-  // 
+  //
   for ( int k = 0; k < nrepeat; k++ ){
     // Set the nodal locations
     Xpts[2*node] = b*k;
@@ -71,10 +71,10 @@ void panel_test( FSDTStiffness *skin, FSDTStiffness *base,
     Xpts[2*(node+3)] = b*k + 0.5*(b - wb);
     Xpts[2*(node+4)] = 0.5*b*(2*k + 1);
 
-    Xpts[2*(node+5)] = 0.5*b*(2*k + 1); 
+    Xpts[2*(node+5)] = 0.5*b*(2*k + 1);
     Xpts[2*(node+5)+1] = - hs/2.0;
 
-    Xpts[2*(node+6)] = 0.5*b*(2*k + 1); 
+    Xpts[2*(node+6)] = 0.5*b*(2*k + 1);
     Xpts[2*(node+6)+1] = - hs;
 
     Xpts[2*(node+7)] = 0.5*b*(2*k + 1) + 0.5*wb;
@@ -82,7 +82,7 @@ void panel_test( FSDTStiffness *skin, FSDTStiffness *base,
     Xpts[2*(node+9)] = 0.5*b*(2*k + 1) + 0.5*wb + (1.0/3.0)*(b - wb);
     Xpts[2*(node+10)] = 0.5*b*(2*k + 1) + 0.5*wb + 0.5*(b - wb);
 
-    // Set the connectivity and set the constitutive objects 
+    // Set the connectivity and set the constitutive objects
     panel->setSegment(seg, TACSPanelAnalysis::SKIN_SEGMENT,
                       skin, node, node+1);
     panel->setSegment(seg+1, TACSPanelAnalysis::SKIN_SEGMENT,
@@ -115,7 +115,7 @@ void panel_test( FSDTStiffness *skin, FSDTStiffness *base,
 
   // Set the node locations into the panel object
   panel->setPoints(Xpts, nnodes);
-  
+
   // Set which boundary conditions to use within the model
   int bc = (4 | 8);
   panel->setFirstNodeBC(0, bc);
@@ -133,9 +133,9 @@ void panel_test( FSDTStiffness *skin, FSDTStiffness *base,
   if (Nx == 0.0){
     t0 = MPI_Wtime();
     panel->computeBucklingLoads(Nx, Nxy,
-				pos_loads, nloads, "results/pos_");
+                                pos_loads, nloads, "results/pos_");
     panel->computeBucklingLoads(Nx, -Nxy,
-				neg_loads, nloads, "results/neg_");
+                                neg_loads, nloads, "results/neg_");
     t0 = MPI_Wtime() - t0;
 
     for ( int k = 0; k < nloads; k++ ){
@@ -148,7 +148,7 @@ void panel_test( FSDTStiffness *skin, FSDTStiffness *base,
   else {
     t0 = MPI_Wtime();
     panel->computeBucklingLoads(Nx, Nxy,
-				pos_loads, nloads, "results/");
+                                pos_loads, nloads, "results/");
     t0 = MPI_Wtime() - t0;
 
     for ( int k = 0; k < nloads; k++ ){
@@ -181,17 +181,17 @@ void panel_test( FSDTStiffness *skin, FSDTStiffness *base,
   shear:  use the input file for shear
   lapack: use LAPACK routines for the TACSPanelAnalysis
 
-  Note: 
+  Note:
 
   1. You must generate a .bdf file first by using the other code in
-  this directory.  
+  this directory.
   2. The results will be written to files in the ./results/ directory.
   If no such directory exists, then no results will be written.
 */
 int main( int argc, char *argv[] ){
   MPI_Init(&argc, &argv);
 
-  // Depending on the arguments, load in a different 
+  // Depending on the arguments, load in a different
   const char *bdf_file = "axial_stiffened_panel.bdf";
   const char *shear_file = "shear_stiffened_panel.bdf";
 
@@ -208,10 +208,10 @@ int main( int argc, char *argv[] ){
       use_lapack = 1;
     }
     if (sscanf(argv[k], "fd=%le", &dh) == 1){
-      if (dh > 0.1){ 
-	dh = 0.1;
+      if (dh > 0.1){
+        dh = 0.1;
       }
-      printf("Using difference step size: %le\n", dh);      
+      printf("Using difference step size: %le\n", dh);
     }
   }
 
@@ -223,26 +223,26 @@ int main( int argc, char *argv[] ){
   TacsScalar tskin = 1.0;
   TacsScalar tbase = tskin;
   TacsScalar tstiff = 1.2*tskin;
-  
+
   // The material properties used for the skin/base and stiffener
   TacsScalar rho = 2750.0, E = 70.0e3, nu = 0.3;
   TacsScalar kcorr = 5.0/6.0, yield_stress = 464e3;
   TacsScalar G = 0.5*E/(1.0 + nu);
 
   // Create the stiffness objects for the skin/base and stiffener
-  FSDTStiffness *stiff_skin = 
-    new isoFSDTStiffness(rho, E, nu, kcorr, 
-			 yield_stress, tskin, 0);
-  FSDTStiffness *stiff_base = 
-    new isoFSDTStiffness(rho, E, nu, kcorr, 
-			 yield_stress, tbase, 1);
-  FSDTStiffness *stiff_stiffener = 
-    new isoFSDTStiffness(rho, E, nu, kcorr, 
-			 yield_stress, tstiff, 2);
+  FSDTStiffness *stiff_skin =
+    new isoFSDTStiffness(rho, E, nu, kcorr,
+                         yield_stress, tskin, 0);
+  FSDTStiffness *stiff_base =
+    new isoFSDTStiffness(rho, E, nu, kcorr,
+                         yield_stress, tbase, 1);
+  FSDTStiffness *stiff_stiffener =
+    new isoFSDTStiffness(rho, E, nu, kcorr,
+                         yield_stress, tstiff, 2);
 
   // Set the number of design variables in the problem
   int ndvs = 3;
-  
+
   // Allocate the elements associated with the skin/stiffener/base
   TACSElement *skin = NULL, *base = NULL, *stiffener = NULL;
   skin = new MITCShell<4>(stiff_skin, LINEAR, 0);
@@ -277,7 +277,7 @@ int main( int argc, char *argv[] ){
   // Set the skin/base/stiffener elements
   mesh->setElement(0, skin);
   mesh->setElement(1, base);
-  mesh->setElement(2, stiffener);      
+  mesh->setElement(2, stiffener);
 
   // Create the TACSAssembler object
   int vars_per_node = 6;
@@ -286,15 +286,15 @@ int main( int argc, char *argv[] ){
 
   // Output for visualization
   int write_flag = (TACSElement::OUTPUT_NODES |
-		    TACSElement::OUTPUT_DISPLACEMENTS |
-		    TACSElement::OUTPUT_STRAINS |
-		    TACSElement::OUTPUT_STRESSES |
-		    TACSElement::OUTPUT_EXTRAS);
-  
+                    TACSElement::OUTPUT_DISPLACEMENTS |
+                    TACSElement::OUTPUT_STRAINS |
+                    TACSElement::OUTPUT_STRESSES |
+                    TACSElement::OUTPUT_EXTRAS);
+
   // Create a TACSToFH5 object
   TACSToFH5 *f5 = new TACSToFH5(tacs, TACS_SHELL, write_flag);
   f5->incref();
-    
+
   int lev_fill = 5000; // ILU(k) fill in
   int fill = 8.0; // Expected number of non-zero entries
 
@@ -306,32 +306,32 @@ int main( int argc, char *argv[] ){
   pc->incref();
 
   // Now, set up the solver
-  int gmres_iters = 15; 
+  int gmres_iters = 15;
   int nrestart = 0; // Number of allowed restarts
   int is_flexible = 0; // Is a flexible preconditioner?
 
   GMRES *ksm = new GMRES(aux_mat, pc, gmres_iters, nrestart, is_flexible);
   ksm->setTolerances(1e-12, 1e-30);
-  ksm->incref();  
-    
+  ksm->incref();
+
   // Compute the linearized buckling mode
   int max_lanczos = 50;
   int neigvals = 4;
   double eig_tol = 1e-8;
-  TacsScalar sigma = 0.15; 
+  TacsScalar sigma = 0.15;
 
   // Allocate matrices for the stiffness/geometric stiffness matrix
   FEMat *kmat = tacs->createFEMat();
   FEMat *gmat = tacs->createFEMat();
-  
+
   // Create a print object for writing output to the screen
   int freq = 1;
   KSMPrint *ksm_print = new KSMPrintStdout("KSM", rank, freq);
-  
+
   // Allocate the linear buckling analysis object
-  TACSLinearBuckling *linear_buckling 
-    = new TACSLinearBuckling(tacs, sigma, gmat, kmat, aux_mat, ksm, 
-			     max_lanczos, neigvals, eig_tol);
+  TACSLinearBuckling *linear_buckling
+    = new TACSLinearBuckling(tacs, sigma, gmat, kmat, aux_mat, ksm,
+                             max_lanczos, neigvals, eig_tol);
   linear_buckling->incref();
   linear_buckling->solve(NULL, ksm_print);
   f5->writeToFile("results/load_path.f5");
@@ -378,12 +378,12 @@ int main( int argc, char *argv[] ){
   }
 #endif // TACS_USE_COMPLEX
 
-  // Set the new design variable values 
+  // Set the new design variable values
   tacs->setDesignVars(x, ndvs);
-  
+
   // Solve the buckling problem again
   linear_buckling->solve(NULL, ksm_print);
-  TacsScalar eigvalue1 = 
+  TacsScalar eigvalue1 =
     linear_buckling->extractEigenvalue(0, &error);
 
   // Evaluate the finite-difference or complex-step approximation
@@ -396,10 +396,10 @@ int main( int argc, char *argv[] ){
   // Write out the projected error
   if (rank == 0){
     printf("%15s %15s %15s %15s\n",
-	   "<p, df/dx>", "FD", "Err", "Rel err");
-    printf("%15.8e %15.8e %15.8e %15.8e\n", 
-	   TacsRealPart(proj), TacsRealPart(pfd), TacsRealPart(proj - pfd), 
-	   TacsRealPart((proj - pfd)/proj));
+           "<p, df/dx>", "FD", "Err", "Rel err");
+    printf("%15.8e %15.8e %15.8e %15.8e\n",
+           TacsRealPart(proj), TacsRealPart(pfd), TacsRealPart(proj - pfd),
+           TacsRealPart((proj - pfd)/proj));
   }
 
   delete [] fdvSens;
@@ -413,26 +413,26 @@ int main( int argc, char *argv[] ){
   for ( int k = 0; k < neigvals; k++ ){
     TacsScalar error = 0.0, eigvalue = 0.0;
     eigvalue = linear_buckling->extractEigenvector(k, vec, &error);
-    
+
     double Lx = 450.0;
     double b = 110.0;
     double hs = 20.0;
     double wb = 35.0;
 
     if (shear_flag){
-      TacsScalar Nxy_crit = G*((tskin*(b - wb) + 
-				tbase*wb)/b)*(eigvalue/Lx);
-      
+      TacsScalar Nxy_crit = G*((tskin*(b - wb) +
+                                tbase*wb)/b)*(eigvalue/Lx);
+
       if (rank == 0){
-	printf("TACS eigs[%2d]: %15.6f\n", k, TacsRealPart(Nxy_crit));
+        printf("TACS eigs[%2d]: %15.6f\n", k, TacsRealPart(Nxy_crit));
       }
     }
     else {
-      TacsScalar Nx_crit = E*((tskin*(b - wb) + 
-			       tbase*wb + tstiff*hs)/b)*(eigvalue/Lx);
-      
+      TacsScalar Nx_crit = E*((tskin*(b - wb) +
+                               tbase*wb + tstiff*hs)/b)*(eigvalue/Lx);
+
       if (rank == 0){
-	printf("TACS eigs[%2d]: %15.6f\n", k, TacsRealPart(Nx_crit));
+        printf("TACS eigs[%2d]: %15.6f\n", k, TacsRealPart(Nx_crit));
       }
     }
 

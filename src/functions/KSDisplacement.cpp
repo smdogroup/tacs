@@ -237,7 +237,7 @@ void TACSKSDisplacement::elementWiseEval( EvaluationType ftype,
           ctx->ksSum += exp(ksWeight*(value - maxValue));
         }
         else if (ksType == PNORM_CONTINUOUS){
-          ctx->ksSum += 
+          ctx->ksSum +=
             h*weight*pow(fabs(TacsRealPart(value/maxValue)), ksWeight);
         }
         else if (ksType == PNORM_DISCRETE){

@@ -12,8 +12,8 @@
   TACS is licensed under the Apache License, Version 2.0 (the
   "License"); you may not use this software except in compliance with
   the License.  You may obtain a copy of the License at
-  
-  http://www.apache.org/licenses/LICENSE-2.0 
+
+  http://www.apache.org/licenses/LICENSE-2.0
 */
 
 #include "BCSRMatImpl.h"
@@ -51,7 +51,7 @@ void *BCSRMatFactor8_thread( void *t ){
     if (row >= 0){
       // variable = row
       if (diag[row] < 0){
-        fprintf(stderr, 
+        fprintf(stderr,
                 "Error in factorization: no diagonal entry for row %d", row);
         pthread_exit(NULL);
         return NULL;
@@ -67,10 +67,10 @@ void *BCSRMatFactor8_thread( void *t ){
         int j = cols[jp];
         TacsScalar *a = &A[64*jp];
         TacsScalar *b = &A[64*diag[j]];
-        
-        // Multiply d = A[j] *A[diag[cj]]      
+
+        // Multiply d = A[j] *A[diag[cj]]
         TacsScalar b0, b1, b2, b3, b4, b5, b6, b7;
-        
+
         b0 = b[0 ]; b1 = b[8 ]; b2 = b[16]; b3 = b[24]; b4 = b[32]; b5 = b[40]; b6 = b[48]; b7 = b[56];
         d00 = a[0 ]*b0 + a[1 ]*b1 + a[2 ]*b2 + a[3 ]*b3 + a[4 ]*b4 + a[5 ]*b5 + a[6 ]*b6 + a[7 ]*b7;
         d10 = a[8 ]*b0 + a[9 ]*b1 + a[10]*b2 + a[11]*b3 + a[12]*b4 + a[13]*b5 + a[14]*b6 + a[15]*b7;
@@ -80,7 +80,7 @@ void *BCSRMatFactor8_thread( void *t ){
         d50 = a[40]*b0 + a[41]*b1 + a[42]*b2 + a[43]*b3 + a[44]*b4 + a[45]*b5 + a[46]*b6 + a[47]*b7;
         d60 = a[48]*b0 + a[49]*b1 + a[50]*b2 + a[51]*b3 + a[52]*b4 + a[53]*b5 + a[54]*b6 + a[55]*b7;
         d70 = a[56]*b0 + a[57]*b1 + a[58]*b2 + a[59]*b3 + a[60]*b4 + a[61]*b5 + a[62]*b6 + a[63]*b7;
-        
+
         b0 = b[1 ]; b1 = b[9 ]; b2 = b[17]; b3 = b[25]; b4 = b[33]; b5 = b[41]; b6 = b[49]; b7 = b[57];
         d01 = a[0 ]*b0 + a[1 ]*b1 + a[2 ]*b2 + a[3 ]*b3 + a[4 ]*b4 + a[5 ]*b5 + a[6 ]*b6 + a[7 ]*b7;
         d11 = a[8 ]*b0 + a[9 ]*b1 + a[10]*b2 + a[11]*b3 + a[12]*b4 + a[13]*b5 + a[14]*b6 + a[15]*b7;
@@ -90,7 +90,7 @@ void *BCSRMatFactor8_thread( void *t ){
         d51 = a[40]*b0 + a[41]*b1 + a[42]*b2 + a[43]*b3 + a[44]*b4 + a[45]*b5 + a[46]*b6 + a[47]*b7;
         d61 = a[48]*b0 + a[49]*b1 + a[50]*b2 + a[51]*b3 + a[52]*b4 + a[53]*b5 + a[54]*b6 + a[55]*b7;
         d71 = a[56]*b0 + a[57]*b1 + a[58]*b2 + a[59]*b3 + a[60]*b4 + a[61]*b5 + a[62]*b6 + a[63]*b7;
-        
+
         b0 = b[2 ]; b1 = b[10]; b2 = b[18]; b3 = b[26]; b4 = b[34]; b5 = b[42]; b6 = b[50]; b7 = b[58];
         d02 = a[0 ]*b0 + a[1 ]*b1 + a[2 ]*b2 + a[3 ]*b3 + a[4 ]*b4 + a[5 ]*b5 + a[6 ]*b6 + a[7 ]*b7;
         d12 = a[8 ]*b0 + a[9 ]*b1 + a[10]*b2 + a[11]*b3 + a[12]*b4 + a[13]*b5 + a[14]*b6 + a[15]*b7;
@@ -100,7 +100,7 @@ void *BCSRMatFactor8_thread( void *t ){
         d52 = a[40]*b0 + a[41]*b1 + a[42]*b2 + a[43]*b3 + a[44]*b4 + a[45]*b5 + a[46]*b6 + a[47]*b7;
         d62 = a[48]*b0 + a[49]*b1 + a[50]*b2 + a[51]*b3 + a[52]*b4 + a[53]*b5 + a[54]*b6 + a[55]*b7;
         d72 = a[56]*b0 + a[57]*b1 + a[58]*b2 + a[59]*b3 + a[60]*b4 + a[61]*b5 + a[62]*b6 + a[63]*b7;
-        
+
         b0 = b[3 ]; b1 = b[11]; b2 = b[19]; b3 = b[27]; b4 = b[35]; b5 = b[43]; b6 = b[51]; b7 = b[59];
         d03 = a[0 ]*b0 + a[1 ]*b1 + a[2 ]*b2 + a[3 ]*b3 + a[4 ]*b4 + a[5 ]*b5 + a[6 ]*b6 + a[7 ]*b7;
         d13 = a[8 ]*b0 + a[9 ]*b1 + a[10]*b2 + a[11]*b3 + a[12]*b4 + a[13]*b5 + a[14]*b6 + a[15]*b7;
@@ -110,7 +110,7 @@ void *BCSRMatFactor8_thread( void *t ){
         d53 = a[40]*b0 + a[41]*b1 + a[42]*b2 + a[43]*b3 + a[44]*b4 + a[45]*b5 + a[46]*b6 + a[47]*b7;
         d63 = a[48]*b0 + a[49]*b1 + a[50]*b2 + a[51]*b3 + a[52]*b4 + a[53]*b5 + a[54]*b6 + a[55]*b7;
         d73 = a[56]*b0 + a[57]*b1 + a[58]*b2 + a[59]*b3 + a[60]*b4 + a[61]*b5 + a[62]*b6 + a[63]*b7;
-        
+
         b0 = b[4 ]; b1 = b[12]; b2 = b[20]; b3 = b[28]; b4 = b[36]; b5 = b[44]; b6 = b[52]; b7 = b[60];
         d04 = a[0 ]*b0 + a[1 ]*b1 + a[2 ]*b2 + a[3 ]*b3 + a[4 ]*b4 + a[5 ]*b5 + a[6 ]*b6 + a[7 ]*b7;
         d14 = a[8 ]*b0 + a[9 ]*b1 + a[10]*b2 + a[11]*b3 + a[12]*b4 + a[13]*b5 + a[14]*b6 + a[15]*b7;
@@ -120,7 +120,7 @@ void *BCSRMatFactor8_thread( void *t ){
         d54 = a[40]*b0 + a[41]*b1 + a[42]*b2 + a[43]*b3 + a[44]*b4 + a[45]*b5 + a[46]*b6 + a[47]*b7;
         d64 = a[48]*b0 + a[49]*b1 + a[50]*b2 + a[51]*b3 + a[52]*b4 + a[53]*b5 + a[54]*b6 + a[55]*b7;
         d74 = a[56]*b0 + a[57]*b1 + a[58]*b2 + a[59]*b3 + a[60]*b4 + a[61]*b5 + a[62]*b6 + a[63]*b7;
-        
+
         b0 = b[5 ]; b1 = b[13]; b2 = b[21]; b3 = b[29]; b4 = b[37]; b5 = b[45]; b6 = b[53]; b7 = b[61];
         d05 = a[0 ]*b0 + a[1 ]*b1 + a[2 ]*b2 + a[3 ]*b3 + a[4 ]*b4 + a[5 ]*b5 + a[6 ]*b6 + a[7 ]*b7;
         d15 = a[8 ]*b0 + a[9 ]*b1 + a[10]*b2 + a[11]*b3 + a[12]*b4 + a[13]*b5 + a[14]*b6 + a[15]*b7;
@@ -130,7 +130,7 @@ void *BCSRMatFactor8_thread( void *t ){
         d55 = a[40]*b0 + a[41]*b1 + a[42]*b2 + a[43]*b3 + a[44]*b4 + a[45]*b5 + a[46]*b6 + a[47]*b7;
         d65 = a[48]*b0 + a[49]*b1 + a[50]*b2 + a[51]*b3 + a[52]*b4 + a[53]*b5 + a[54]*b6 + a[55]*b7;
         d75 = a[56]*b0 + a[57]*b1 + a[58]*b2 + a[59]*b3 + a[60]*b4 + a[61]*b5 + a[62]*b6 + a[63]*b7;
-        
+
         b0 = b[6 ]; b1 = b[14]; b2 = b[22]; b3 = b[30]; b4 = b[38]; b5 = b[46]; b6 = b[54]; b7 = b[62];
         d06 = a[0 ]*b0 + a[1 ]*b1 + a[2 ]*b2 + a[3 ]*b3 + a[4 ]*b4 + a[5 ]*b5 + a[6 ]*b6 + a[7 ]*b7;
         d16 = a[8 ]*b0 + a[9 ]*b1 + a[10]*b2 + a[11]*b3 + a[12]*b4 + a[13]*b5 + a[14]*b6 + a[15]*b7;
@@ -156,17 +156,17 @@ void *BCSRMatFactor8_thread( void *t ){
         int p = diag[j] + 1;
         a = &A[64*k];
         b = &A[64*p];
-        
+
         // The final entry for row: cols[j]
         int pend = rowp[j + 1];
-        
+
         // Now, scan through row cj starting at the first entry past the diagonal
         for ( ; (p < pend) && (k < kend); p++ ){
           // Determine where the two rows have the same elements
           while (k < kend && cols[k] < cols[p]){
             k++; a += 64;
           }
-          
+
           // A[k] = A[k] - A[j] * A[p]
           if (k < kend && cols[k] == cols[p]){
             b0 = b[0 ]; b1 = b[8 ]; b2 = b[16]; b3 = b[24]; b4 = b[32]; b5 = b[40], b6 = b[48], b7 = b[56];
@@ -250,12 +250,12 @@ void *BCSRMatFactor8_thread( void *t ){
             a[63] -= d70*b0 + d71*b1 + d72*b2 + d73*b3 + d74*b4 + d75*b5 + d76*b6 + d77*b7;
 
           }
-            
+
           b += 64;
         }
-          
+
         // Copy the matrix back into the row
-        a = &A[64*jp];     
+        a = &A[64*jp];
         a[0 ] = d00; a[1 ] = d01; a[2 ] = d02; a[3 ] = d03; a[4 ] = d04; a[5 ] = d05; a[6 ] = d06; a[7 ] = d07;
         a[8 ] = d10; a[9 ] = d11; a[10] = d12; a[11] = d13; a[12] = d14; a[13] = d15; a[14] = d16; a[15] = d17;
         a[16] = d20; a[17] = d21; a[18] = d22; a[19] = d23; a[20] = d24; a[21] = d25; a[22] = d26; a[23] = d27;
@@ -281,12 +281,12 @@ void *BCSRMatFactor8_thread( void *t ){
 
         int ipiv[8];
         int info = BMatComputeInverse(a, D, ipiv, 8);
-        
+
         if (info > 0){
           fprintf(stderr, "Error during factorization of diagonal %d in block row %d \n", row+1, info);
         }
       }
-      
+
       tdata->apply_lower_mark_completed(group_size, index, row, low, high);
     }
   }
@@ -321,18 +321,18 @@ void *BCSRMatFactorLower8_thread( void *t ){
       // diagonal entry.
       int j_end = diag[row];
 
-      int jp = rowp[row]; 
+      int jp = rowp[row];
       while (jp < j_end && cols[jp] < low){ jp++; }
 
       for ( ; (cols[jp] < high) && (jp < j_end); jp++ ){
-        int j = cols[jp];      
+        int j = cols[jp];
         const TacsScalar *d = &A[64*jp];
 
         int k = erowp[row];
         int k_end = erowp[row+1];
         TacsScalar *a = &E[64*k];
 
-        int p = erowp[j]; 
+        int p = erowp[j];
         int p_end = erowp[j+1];
         TacsScalar *b = &E[64*p];
 
@@ -345,7 +345,7 @@ void *BCSRMatFactorLower8_thread( void *t ){
           }
 
           if (k < k_end && ecols[k] == ecols[p]){
-            TacsScalar b0, b1, b2, b3, b4, b5, b6, b7;  
+            TacsScalar b0, b1, b2, b3, b4, b5, b6, b7;
             b0 = b[0 ]; b1 = b[8 ]; b2 = b[16]; b3 = b[24]; b4 = b[32]; b5 = b[40]; b6 = b[48]; b7 = b[56];
             a[0 ] -= d[0 ]*b0 + d[1 ]*b1 + d[2 ]*b2 + d[3 ]*b3 + d[4 ]*b4 + d[5 ]*b5 + d[6 ]*b6 + d[7 ]*b7;
             a[8 ] -= d[8 ]*b0 + d[9 ]*b1 + d[10]*b2 + d[11]*b3 + d[12]*b4 + d[13]*b5 + d[14]*b6 + d[15]*b7;
@@ -355,7 +355,7 @@ void *BCSRMatFactorLower8_thread( void *t ){
             a[40] -= d[40]*b0 + d[41]*b1 + d[42]*b2 + d[43]*b3 + d[44]*b4 + d[45]*b5 + d[46]*b6 + d[47]*b7;
             a[48] -= d[48]*b0 + d[49]*b1 + d[50]*b2 + d[51]*b3 + d[52]*b4 + d[53]*b5 + d[54]*b6 + d[55]*b7;
             a[56] -= d[56]*b0 + d[57]*b1 + d[58]*b2 + d[59]*b3 + d[60]*b4 + d[61]*b5 + d[62]*b6 + d[63]*b7;
-            
+
             b0 = b[1 ]; b1 = b[9 ]; b2 = b[17]; b3 = b[25]; b4 = b[33]; b5 = b[41]; b6 = b[49]; b7 = b[57];
             a[1 ] -= d[0 ]*b0 + d[1 ]*b1 + d[2 ]*b2 + d[3 ]*b3 + d[4 ]*b4 + d[5 ]*b5 + d[6 ]*b6 + d[7 ]*b7;
             a[9 ] -= d[8 ]*b0 + d[9 ]*b1 + d[10]*b2 + d[11]*b3 + d[12]*b4 + d[13]*b5 + d[14]*b6 + d[15]*b7;
@@ -429,11 +429,11 @@ void *BCSRMatFactorLower8_thread( void *t ){
           b += 64;
         }
       }
-      
+
       tdata->apply_lower_mark_completed(group_size, index, row, low, high);
     }
   }
-  
+
   pthread_exit(NULL);
 }
 
@@ -472,16 +472,16 @@ void *BCSRMatFactorUpper8_thread( void *t ){
 
     if (row >= 0){
       int j_end = frowp[row+1];
-      int jp = frowp[row]; 
+      int jp = frowp[row];
 
       for ( ; jp < j_end; jp++ ){
-        int j = fcols[jp];      
+        int j = fcols[jp];
         TacsScalar *a = &F[64*jp];
         const TacsScalar *b = &A[64*diag[j]];
-      
-        // Multiply d = F[j] *A[diag[cj]]   
+
+        // Multiply d = F[j] *A[diag[cj]]
         TacsScalar b0, b1, b2, b3, b4, b5, b6, b7;
-        
+
         b0 = b[0 ]; b1 = b[8 ]; b2 = b[16]; b3 = b[24]; b4 = b[32]; b5 = b[40]; b6 = b[48]; b7 = b[56];
         d00 = a[0 ]*b0 + a[1 ]*b1 + a[2 ]*b2 + a[3 ]*b3 + a[4 ]*b4 + a[5 ]*b5 + a[6 ]*b6 + a[7 ]*b7;
         d10 = a[8 ]*b0 + a[9 ]*b1 + a[10]*b2 + a[11]*b3 + a[12]*b4 + a[13]*b5 + a[14]*b6 + a[15]*b7;
@@ -491,7 +491,7 @@ void *BCSRMatFactorUpper8_thread( void *t ){
         d50 = a[40]*b0 + a[41]*b1 + a[42]*b2 + a[43]*b3 + a[44]*b4 + a[45]*b5 + a[46]*b6 + a[47]*b7;
         d60 = a[48]*b0 + a[49]*b1 + a[50]*b2 + a[51]*b3 + a[52]*b4 + a[53]*b5 + a[54]*b6 + a[55]*b7;
         d70 = a[56]*b0 + a[57]*b1 + a[58]*b2 + a[59]*b3 + a[60]*b4 + a[61]*b5 + a[62]*b6 + a[63]*b7;
-        
+
         b0 = b[1 ]; b1 = b[9 ]; b2 = b[17]; b3 = b[25]; b4 = b[33]; b5 = b[41]; b6 = b[49]; b7 = b[57];
         d01 = a[0 ]*b0 + a[1 ]*b1 + a[2 ]*b2 + a[3 ]*b3 + a[4 ]*b4 + a[5 ]*b5 + a[6 ]*b6 + a[7 ]*b7;
         d11 = a[8 ]*b0 + a[9 ]*b1 + a[10]*b2 + a[11]*b3 + a[12]*b4 + a[13]*b5 + a[14]*b6 + a[15]*b7;
@@ -501,7 +501,7 @@ void *BCSRMatFactorUpper8_thread( void *t ){
         d51 = a[40]*b0 + a[41]*b1 + a[42]*b2 + a[43]*b3 + a[44]*b4 + a[45]*b5 + a[46]*b6 + a[47]*b7;
         d61 = a[48]*b0 + a[49]*b1 + a[50]*b2 + a[51]*b3 + a[52]*b4 + a[53]*b5 + a[54]*b6 + a[55]*b7;
         d71 = a[56]*b0 + a[57]*b1 + a[58]*b2 + a[59]*b3 + a[60]*b4 + a[61]*b5 + a[62]*b6 + a[63]*b7;
-        
+
         b0 = b[2 ]; b1 = b[10]; b2 = b[18]; b3 = b[26]; b4 = b[34]; b5 = b[42]; b6 = b[50]; b7 = b[58];
         d02 = a[0 ]*b0 + a[1 ]*b1 + a[2 ]*b2 + a[3 ]*b3 + a[4 ]*b4 + a[5 ]*b5 + a[6 ]*b6 + a[7 ]*b7;
         d12 = a[8 ]*b0 + a[9 ]*b1 + a[10]*b2 + a[11]*b3 + a[12]*b4 + a[13]*b5 + a[14]*b6 + a[15]*b7;
@@ -511,7 +511,7 @@ void *BCSRMatFactorUpper8_thread( void *t ){
         d52 = a[40]*b0 + a[41]*b1 + a[42]*b2 + a[43]*b3 + a[44]*b4 + a[45]*b5 + a[46]*b6 + a[47]*b7;
         d62 = a[48]*b0 + a[49]*b1 + a[50]*b2 + a[51]*b3 + a[52]*b4 + a[53]*b5 + a[54]*b6 + a[55]*b7;
         d72 = a[56]*b0 + a[57]*b1 + a[58]*b2 + a[59]*b3 + a[60]*b4 + a[61]*b5 + a[62]*b6 + a[63]*b7;
-        
+
         b0 = b[3 ]; b1 = b[11]; b2 = b[19]; b3 = b[27]; b4 = b[35]; b5 = b[43]; b6 = b[51]; b7 = b[59];
         d03 = a[0 ]*b0 + a[1 ]*b1 + a[2 ]*b2 + a[3 ]*b3 + a[4 ]*b4 + a[5 ]*b5 + a[6 ]*b6 + a[7 ]*b7;
         d13 = a[8 ]*b0 + a[9 ]*b1 + a[10]*b2 + a[11]*b3 + a[12]*b4 + a[13]*b5 + a[14]*b6 + a[15]*b7;
@@ -521,7 +521,7 @@ void *BCSRMatFactorUpper8_thread( void *t ){
         d53 = a[40]*b0 + a[41]*b1 + a[42]*b2 + a[43]*b3 + a[44]*b4 + a[45]*b5 + a[46]*b6 + a[47]*b7;
         d63 = a[48]*b0 + a[49]*b1 + a[50]*b2 + a[51]*b3 + a[52]*b4 + a[53]*b5 + a[54]*b6 + a[55]*b7;
         d73 = a[56]*b0 + a[57]*b1 + a[58]*b2 + a[59]*b3 + a[60]*b4 + a[61]*b5 + a[62]*b6 + a[63]*b7;
-        
+
         b0 = b[4 ]; b1 = b[12]; b2 = b[20]; b3 = b[28]; b4 = b[36]; b5 = b[44]; b6 = b[52]; b7 = b[60];
         d04 = a[0 ]*b0 + a[1 ]*b1 + a[2 ]*b2 + a[3 ]*b3 + a[4 ]*b4 + a[5 ]*b5 + a[6 ]*b6 + a[7 ]*b7;
         d14 = a[8 ]*b0 + a[9 ]*b1 + a[10]*b2 + a[11]*b3 + a[12]*b4 + a[13]*b5 + a[14]*b6 + a[15]*b7;
@@ -531,7 +531,7 @@ void *BCSRMatFactorUpper8_thread( void *t ){
         d54 = a[40]*b0 + a[41]*b1 + a[42]*b2 + a[43]*b3 + a[44]*b4 + a[45]*b5 + a[46]*b6 + a[47]*b7;
         d64 = a[48]*b0 + a[49]*b1 + a[50]*b2 + a[51]*b3 + a[52]*b4 + a[53]*b5 + a[54]*b6 + a[55]*b7;
         d74 = a[56]*b0 + a[57]*b1 + a[58]*b2 + a[59]*b3 + a[60]*b4 + a[61]*b5 + a[62]*b6 + a[63]*b7;
-        
+
         b0 = b[5 ]; b1 = b[13]; b2 = b[21]; b3 = b[29]; b4 = b[37]; b5 = b[45]; b6 = b[53]; b7 = b[61];
         d05 = a[0 ]*b0 + a[1 ]*b1 + a[2 ]*b2 + a[3 ]*b3 + a[4 ]*b4 + a[5 ]*b5 + a[6 ]*b6 + a[7 ]*b7;
         d15 = a[8 ]*b0 + a[9 ]*b1 + a[10]*b2 + a[11]*b3 + a[12]*b4 + a[13]*b5 + a[14]*b6 + a[15]*b7;
@@ -541,7 +541,7 @@ void *BCSRMatFactorUpper8_thread( void *t ){
         d55 = a[40]*b0 + a[41]*b1 + a[42]*b2 + a[43]*b3 + a[44]*b4 + a[45]*b5 + a[46]*b6 + a[47]*b7;
         d65 = a[48]*b0 + a[49]*b1 + a[50]*b2 + a[51]*b3 + a[52]*b4 + a[53]*b5 + a[54]*b6 + a[55]*b7;
         d75 = a[56]*b0 + a[57]*b1 + a[58]*b2 + a[59]*b3 + a[60]*b4 + a[61]*b5 + a[62]*b6 + a[63]*b7;
-        
+
         b0 = b[6 ]; b1 = b[14]; b2 = b[22]; b3 = b[30]; b4 = b[38]; b5 = b[46]; b6 = b[54]; b7 = b[62];
         d06 = a[0 ]*b0 + a[1 ]*b1 + a[2 ]*b2 + a[3 ]*b3 + a[4 ]*b4 + a[5 ]*b5 + a[6 ]*b6 + a[7 ]*b7;
         d16 = a[8 ]*b0 + a[9 ]*b1 + a[10]*b2 + a[11]*b3 + a[12]*b4 + a[13]*b5 + a[14]*b6 + a[15]*b7;
@@ -551,7 +551,7 @@ void *BCSRMatFactorUpper8_thread( void *t ){
         d56 = a[40]*b0 + a[41]*b1 + a[42]*b2 + a[43]*b3 + a[44]*b4 + a[45]*b5 + a[46]*b6 + a[47]*b7;
         d66 = a[48]*b0 + a[49]*b1 + a[50]*b2 + a[51]*b3 + a[52]*b4 + a[53]*b5 + a[54]*b6 + a[55]*b7;
         d76 = a[56]*b0 + a[57]*b1 + a[58]*b2 + a[59]*b3 + a[60]*b4 + a[61]*b5 + a[62]*b6 + a[63]*b7;
-         
+
         b0 = b[7 ]; b1 = b[15]; b2 = b[23]; b3 = b[31]; b4 = b[39]; b5 = b[47]; b6 = b[55]; b7 = b[63];
         d07 = a[0 ]*b0 + a[1 ]*b1 + a[2 ]*b2 + a[3 ]*b3 + a[4 ]*b4 + a[5 ]*b5 + a[6 ]*b6 + a[7 ]*b7;
         d17 = a[8 ]*b0 + a[9 ]*b1 + a[10]*b2 + a[11]*b3 + a[12]*b4 + a[13]*b5 + a[14]*b6 + a[15]*b7;
@@ -562,21 +562,21 @@ void *BCSRMatFactorUpper8_thread( void *t ){
         d67 = a[48]*b0 + a[49]*b1 + a[50]*b2 + a[51]*b3 + a[52]*b4 + a[53]*b5 + a[54]*b6 + a[55]*b7;
         d77 = a[56]*b0 + a[57]*b1 + a[58]*b2 + a[59]*b3 + a[60]*b4 + a[61]*b5 + a[62]*b6 + a[63]*b7;
 
-        int k = jp+1;      
+        int k = jp+1;
         int k_end = frowp[row+1];
         a = &F[64*k];
-        
+
         int p = diag[j]+1;
         int p_end = rowp[j+1];
         b = &A[64*p];
-        
+
         // Now, scan through row j starting at the first entry past the diagonal
         for ( ; (p < p_end) && (k < k_end); p++ ){
           // Determine where the two rows have the same elements
           while (k < k_end && fcols[k] < cols[p]){
             k++; a += 64;
           }
-          
+
           if (k < k_end && fcols[k] == cols[p]){
             b0 = b[0 ]; b1 = b[8 ]; b2 = b[16]; b3 = b[24]; b4 = b[32]; b5 = b[40], b6 = b[48], b7 = b[56];
             a[0 ] -= d00*b0 + d01*b1 + d02*b2 + d03*b3 + d04*b4 + d05*b5 + d06*b6 + d07*b7;
@@ -587,7 +587,7 @@ void *BCSRMatFactorUpper8_thread( void *t ){
             a[40] -= d50*b0 + d51*b1 + d52*b2 + d53*b3 + d54*b4 + d55*b5 + d56*b6 + d57*b7;
             a[48] -= d60*b0 + d61*b1 + d62*b2 + d63*b3 + d64*b4 + d65*b5 + d66*b6 + d67*b7;
             a[56] -= d70*b0 + d71*b1 + d72*b2 + d73*b3 + d74*b4 + d75*b5 + d76*b6 + d77*b7;
-            
+
             b0 = b[1 ]; b1 = b[9 ]; b2 = b[17]; b3 = b[25]; b4 = b[33]; b5 = b[41], b6 = b[49], b7 = b[57];
             a[1 ] -= d00*b0 + d01*b1 + d02*b2 + d03*b3 + d04*b4 + d05*b5 + d06*b6 + d07*b7;
             a[9 ] -= d10*b0 + d11*b1 + d12*b2 + d13*b3 + d14*b4 + d15*b5 + d16*b6 + d17*b7;
@@ -597,7 +597,7 @@ void *BCSRMatFactorUpper8_thread( void *t ){
             a[41] -= d50*b0 + d51*b1 + d52*b2 + d53*b3 + d54*b4 + d55*b5 + d56*b6 + d57*b7;
             a[49] -= d60*b0 + d61*b1 + d62*b2 + d63*b3 + d64*b4 + d65*b5 + d66*b6 + d67*b7;
             a[57] -= d70*b0 + d71*b1 + d72*b2 + d73*b3 + d74*b4 + d75*b5 + d76*b6 + d77*b7;
-            
+
             b0 = b[2 ]; b1 = b[10]; b2 = b[18]; b3 = b[26]; b4 = b[34]; b5 = b[42], b6 = b[50], b7 = b[58];
             a[2 ] -= d00*b0 + d01*b1 + d02*b2 + d03*b3 + d04*b4 + d05*b5 + d06*b6 + d07*b7;
             a[10] -= d10*b0 + d11*b1 + d12*b2 + d13*b3 + d14*b4 + d15*b5 + d16*b6 + d17*b7;
@@ -607,7 +607,7 @@ void *BCSRMatFactorUpper8_thread( void *t ){
             a[42] -= d50*b0 + d51*b1 + d52*b2 + d53*b3 + d54*b4 + d55*b5 + d56*b6 + d57*b7;
             a[50] -= d60*b0 + d61*b1 + d62*b2 + d63*b3 + d64*b4 + d65*b5 + d66*b6 + d67*b7;
             a[58] -= d70*b0 + d71*b1 + d72*b2 + d73*b3 + d74*b4 + d75*b5 + d76*b6 + d77*b7;
-            
+
             b0 = b[3 ]; b1 = b[11]; b2 = b[19]; b3 = b[27]; b4 = b[35]; b5 = b[43], b6 = b[51], b7 = b[59];
             a[3 ] -= d00*b0 + d01*b1 + d02*b2 + d03*b3 + d04*b4 + d05*b5 + d06*b6 + d07*b7;
             a[11] -= d10*b0 + d11*b1 + d12*b2 + d13*b3 + d14*b4 + d15*b5 + d16*b6 + d17*b7;
@@ -678,7 +678,7 @@ void *BCSRMatFactorUpper8_thread( void *t ){
   pthread_exit(NULL);
 }
 
-/*!  
+/*!
   Perform an ILU factorization of the matrix using the existing
   non-zero pattern.  The entries are over-written, all operations are
   performed in place.
@@ -702,7 +702,7 @@ void BCSRMatFactor8( BCSRMatData *data ){
   for ( int i = 0; i < nrows; i++ ){
     // variable = i
     if (diag[i] < 0){
-      fprintf(stderr, 
+      fprintf(stderr,
               "Error in factorization: no diagonal entry for row %d", i);
       return;
     }
@@ -714,8 +714,8 @@ void BCSRMatFactor8( BCSRMatData *data ){
       int cj = cols[j];
       TacsScalar *a = &(data->A[64*j]);
       TacsScalar *b = &(data->A[64*diag[cj]]);
-      
-      // Multiply d = A[j] *A[diag[cj]]      
+
+      // Multiply d = A[j] *A[diag[cj]]
       TacsScalar b0, b1, b2, b3, b4, b5, b6, b7;
 
       b0 = b[0 ]; b1 = b[8 ]; b2 = b[16]; b3 = b[24]; b4 = b[32]; b5 = b[40]; b6 = b[48]; b7 = b[56];
@@ -727,7 +727,7 @@ void BCSRMatFactor8( BCSRMatData *data ){
       d50 = a[40]*b0 + a[41]*b1 + a[42]*b2 + a[43]*b3 + a[44]*b4 + a[45]*b5 + a[46]*b6 + a[47]*b7;
       d60 = a[48]*b0 + a[49]*b1 + a[50]*b2 + a[51]*b3 + a[52]*b4 + a[53]*b5 + a[54]*b6 + a[55]*b7;
       d70 = a[56]*b0 + a[57]*b1 + a[58]*b2 + a[59]*b3 + a[60]*b4 + a[61]*b5 + a[62]*b6 + a[63]*b7;
-        
+
       b0 = b[1 ]; b1 = b[9 ]; b2 = b[17]; b3 = b[25]; b4 = b[33]; b5 = b[41]; b6 = b[49]; b7 = b[57];
       d01 = a[0 ]*b0 + a[1 ]*b1 + a[2 ]*b2 + a[3 ]*b3 + a[4 ]*b4 + a[5 ]*b5 + a[6 ]*b6 + a[7 ]*b7;
       d11 = a[8 ]*b0 + a[9 ]*b1 + a[10]*b2 + a[11]*b3 + a[12]*b4 + a[13]*b5 + a[14]*b6 + a[15]*b7;
@@ -737,7 +737,7 @@ void BCSRMatFactor8( BCSRMatData *data ){
       d51 = a[40]*b0 + a[41]*b1 + a[42]*b2 + a[43]*b3 + a[44]*b4 + a[45]*b5 + a[46]*b6 + a[47]*b7;
       d61 = a[48]*b0 + a[49]*b1 + a[50]*b2 + a[51]*b3 + a[52]*b4 + a[53]*b5 + a[54]*b6 + a[55]*b7;
       d71 = a[56]*b0 + a[57]*b1 + a[58]*b2 + a[59]*b3 + a[60]*b4 + a[61]*b5 + a[62]*b6 + a[63]*b7;
-        
+
       b0 = b[2 ]; b1 = b[10]; b2 = b[18]; b3 = b[26]; b4 = b[34]; b5 = b[42]; b6 = b[50]; b7 = b[58];
       d02 = a[0 ]*b0 + a[1 ]*b1 + a[2 ]*b2 + a[3 ]*b3 + a[4 ]*b4 + a[5 ]*b5 + a[6 ]*b6 + a[7 ]*b7;
       d12 = a[8 ]*b0 + a[9 ]*b1 + a[10]*b2 + a[11]*b3 + a[12]*b4 + a[13]*b5 + a[14]*b6 + a[15]*b7;
@@ -747,7 +747,7 @@ void BCSRMatFactor8( BCSRMatData *data ){
       d52 = a[40]*b0 + a[41]*b1 + a[42]*b2 + a[43]*b3 + a[44]*b4 + a[45]*b5 + a[46]*b6 + a[47]*b7;
       d62 = a[48]*b0 + a[49]*b1 + a[50]*b2 + a[51]*b3 + a[52]*b4 + a[53]*b5 + a[54]*b6 + a[55]*b7;
       d72 = a[56]*b0 + a[57]*b1 + a[58]*b2 + a[59]*b3 + a[60]*b4 + a[61]*b5 + a[62]*b6 + a[63]*b7;
-        
+
       b0 = b[3 ]; b1 = b[11]; b2 = b[19]; b3 = b[27]; b4 = b[35]; b5 = b[43]; b6 = b[51]; b7 = b[59];
       d03 = a[0 ]*b0 + a[1 ]*b1 + a[2 ]*b2 + a[3 ]*b3 + a[4 ]*b4 + a[5 ]*b5 + a[6 ]*b6 + a[7 ]*b7;
       d13 = a[8 ]*b0 + a[9 ]*b1 + a[10]*b2 + a[11]*b3 + a[12]*b4 + a[13]*b5 + a[14]*b6 + a[15]*b7;
@@ -757,7 +757,7 @@ void BCSRMatFactor8( BCSRMatData *data ){
       d53 = a[40]*b0 + a[41]*b1 + a[42]*b2 + a[43]*b3 + a[44]*b4 + a[45]*b5 + a[46]*b6 + a[47]*b7;
       d63 = a[48]*b0 + a[49]*b1 + a[50]*b2 + a[51]*b3 + a[52]*b4 + a[53]*b5 + a[54]*b6 + a[55]*b7;
       d73 = a[56]*b0 + a[57]*b1 + a[58]*b2 + a[59]*b3 + a[60]*b4 + a[61]*b5 + a[62]*b6 + a[63]*b7;
-        
+
       b0 = b[4 ]; b1 = b[12]; b2 = b[20]; b3 = b[28]; b4 = b[36]; b5 = b[44]; b6 = b[52]; b7 = b[60];
       d04 = a[0 ]*b0 + a[1 ]*b1 + a[2 ]*b2 + a[3 ]*b3 + a[4 ]*b4 + a[5 ]*b5 + a[6 ]*b6 + a[7 ]*b7;
       d14 = a[8 ]*b0 + a[9 ]*b1 + a[10]*b2 + a[11]*b3 + a[12]*b4 + a[13]*b5 + a[14]*b6 + a[15]*b7;
@@ -767,7 +767,7 @@ void BCSRMatFactor8( BCSRMatData *data ){
       d54 = a[40]*b0 + a[41]*b1 + a[42]*b2 + a[43]*b3 + a[44]*b4 + a[45]*b5 + a[46]*b6 + a[47]*b7;
       d64 = a[48]*b0 + a[49]*b1 + a[50]*b2 + a[51]*b3 + a[52]*b4 + a[53]*b5 + a[54]*b6 + a[55]*b7;
       d74 = a[56]*b0 + a[57]*b1 + a[58]*b2 + a[59]*b3 + a[60]*b4 + a[61]*b5 + a[62]*b6 + a[63]*b7;
-        
+
       b0 = b[5 ]; b1 = b[13]; b2 = b[21]; b3 = b[29]; b4 = b[37]; b5 = b[45]; b6 = b[53]; b7 = b[61];
       d05 = a[0 ]*b0 + a[1 ]*b1 + a[2 ]*b2 + a[3 ]*b3 + a[4 ]*b4 + a[5 ]*b5 + a[6 ]*b6 + a[7 ]*b7;
       d15 = a[8 ]*b0 + a[9 ]*b1 + a[10]*b2 + a[11]*b3 + a[12]*b4 + a[13]*b5 + a[14]*b6 + a[15]*b7;
@@ -777,7 +777,7 @@ void BCSRMatFactor8( BCSRMatData *data ){
       d55 = a[40]*b0 + a[41]*b1 + a[42]*b2 + a[43]*b3 + a[44]*b4 + a[45]*b5 + a[46]*b6 + a[47]*b7;
       d65 = a[48]*b0 + a[49]*b1 + a[50]*b2 + a[51]*b3 + a[52]*b4 + a[53]*b5 + a[54]*b6 + a[55]*b7;
       d75 = a[56]*b0 + a[57]*b1 + a[58]*b2 + a[59]*b3 + a[60]*b4 + a[61]*b5 + a[62]*b6 + a[63]*b7;
-        
+
       b0 = b[6 ]; b1 = b[14]; b2 = b[22]; b3 = b[30]; b4 = b[38]; b5 = b[46]; b6 = b[54]; b7 = b[62];
       d06 = a[0 ]*b0 + a[1 ]*b1 + a[2 ]*b2 + a[3 ]*b3 + a[4 ]*b4 + a[5 ]*b5 + a[6 ]*b6 + a[7 ]*b7;
       d16 = a[8 ]*b0 + a[9 ]*b1 + a[10]*b2 + a[11]*b3 + a[12]*b4 + a[13]*b5 + a[14]*b6 + a[15]*b7;
@@ -803,7 +803,7 @@ void BCSRMatFactor8( BCSRMatData *data ){
       int p = diag[cj] + 1;
       a = &(data->A[64*k]);
       b = &(data->A[64*p]);
-          
+
       // The final entry for row: cols[j]
       int pend = rowp[cj + 1];
 
@@ -934,12 +934,12 @@ void BCSRMatFactor8( BCSRMatData *data ){
 
     int ipiv[8];
     int info = BMatComputeInverse(a, D, ipiv, 8);
-    
+
     if (info > 0){
       fprintf(stderr, "Error during factorization of diagonal %d in block row %d \n", i+1, info);
     }
   }
-  
+
   // Add flops from the diagonal inversion
   TacsAddFlops(1.333333*8*8*8*nrows);
 }
@@ -967,14 +967,14 @@ void BCSRMatFactorLower8( BCSRMatData *data, BCSRMatData *Edata ){
     int j_end = diag[i];
 
     for ( int j = rowp[i]; j < j_end; j++ ){
-      int cj = cols[j];      
+      int cj = cols[j];
       TacsScalar *d = &(data->A[64*j]);
 
       int k     = erowp[i];
       int k_end = erowp[i+1];
       TacsScalar *a = &(Edata->A[64*k]);
 
-      int p     = erowp[cj]; 
+      int p     = erowp[cj];
       int p_end = erowp[cj+1];
       TacsScalar *b = &(Edata->A[64*p]);
 
@@ -987,7 +987,7 @@ void BCSRMatFactorLower8( BCSRMatData *data, BCSRMatData *Edata ){
         }
 
         if (k < k_end && ecols[k] == ecols[p]){
-          TacsScalar b0, b1, b2, b3, b4, b5, b6, b7;  
+          TacsScalar b0, b1, b2, b3, b4, b5, b6, b7;
           b0 = b[0 ]; b1 = b[8 ]; b2 = b[16]; b3 = b[24]; b4 = b[32]; b5 = b[40]; b6 = b[48]; b7 = b[56];
           a[0 ] -= d[0 ]*b0 + d[1 ]*b1 + d[2 ]*b2 + d[3 ]*b3 + d[4 ]*b4 + d[5 ]*b5 + d[6 ]*b6 + d[7 ]*b7;
           a[8 ] -= d[8 ]*b0 + d[9 ]*b1 + d[10]*b2 + d[11]*b3 + d[12]*b4 + d[13]*b5 + d[14]*b6 + d[15]*b7;
@@ -1105,11 +1105,11 @@ void BCSRMatFactorUpper8( BCSRMatData *data, BCSRMatData *Fdata ){
     int j_end = frowp[i+1];
 
     for ( int j = frowp[i]; j < j_end; j++ ){
-      int cj = fcols[j];      
+      int cj = fcols[j];
       TacsScalar *a = &(Fdata->A[64*j]);
       const TacsScalar *b = &(data->A[64*diag[cj]]);
-      
-      // Multiply d = F[j]*A[diag[cj]]      
+
+      // Multiply d = F[j]*A[diag[cj]]
       TacsScalar b0, b1, b2, b3, b4, b5, b6, b7;
 
       b0 = b[0 ]; b1 = b[8 ]; b2 = b[16]; b3 = b[24]; b4 = b[32]; b5 = b[40]; b6 = b[48]; b7 = b[56];
@@ -1121,7 +1121,7 @@ void BCSRMatFactorUpper8( BCSRMatData *data, BCSRMatData *Fdata ){
       d50 = a[40]*b0 + a[41]*b1 + a[42]*b2 + a[43]*b3 + a[44]*b4 + a[45]*b5 + a[46]*b6 + a[47]*b7;
       d60 = a[48]*b0 + a[49]*b1 + a[50]*b2 + a[51]*b3 + a[52]*b4 + a[53]*b5 + a[54]*b6 + a[55]*b7;
       d70 = a[56]*b0 + a[57]*b1 + a[58]*b2 + a[59]*b3 + a[60]*b4 + a[61]*b5 + a[62]*b6 + a[63]*b7;
-        
+
       b0 = b[1 ]; b1 = b[9 ]; b2 = b[17]; b3 = b[25]; b4 = b[33]; b5 = b[41]; b6 = b[49]; b7 = b[57];
       d01 = a[0 ]*b0 + a[1 ]*b1 + a[2 ]*b2 + a[3 ]*b3 + a[4 ]*b4 + a[5 ]*b5 + a[6 ]*b6 + a[7 ]*b7;
       d11 = a[8 ]*b0 + a[9 ]*b1 + a[10]*b2 + a[11]*b3 + a[12]*b4 + a[13]*b5 + a[14]*b6 + a[15]*b7;
@@ -1131,7 +1131,7 @@ void BCSRMatFactorUpper8( BCSRMatData *data, BCSRMatData *Fdata ){
       d51 = a[40]*b0 + a[41]*b1 + a[42]*b2 + a[43]*b3 + a[44]*b4 + a[45]*b5 + a[46]*b6 + a[47]*b7;
       d61 = a[48]*b0 + a[49]*b1 + a[50]*b2 + a[51]*b3 + a[52]*b4 + a[53]*b5 + a[54]*b6 + a[55]*b7;
       d71 = a[56]*b0 + a[57]*b1 + a[58]*b2 + a[59]*b3 + a[60]*b4 + a[61]*b5 + a[62]*b6 + a[63]*b7;
-        
+
       b0 = b[2 ]; b1 = b[10]; b2 = b[18]; b3 = b[26]; b4 = b[34]; b5 = b[42]; b6 = b[50]; b7 = b[58];
       d02 = a[0 ]*b0 + a[1 ]*b1 + a[2 ]*b2 + a[3 ]*b3 + a[4 ]*b4 + a[5 ]*b5 + a[6 ]*b6 + a[7 ]*b7;
       d12 = a[8 ]*b0 + a[9 ]*b1 + a[10]*b2 + a[11]*b3 + a[12]*b4 + a[13]*b5 + a[14]*b6 + a[15]*b7;
@@ -1141,7 +1141,7 @@ void BCSRMatFactorUpper8( BCSRMatData *data, BCSRMatData *Fdata ){
       d52 = a[40]*b0 + a[41]*b1 + a[42]*b2 + a[43]*b3 + a[44]*b4 + a[45]*b5 + a[46]*b6 + a[47]*b7;
       d62 = a[48]*b0 + a[49]*b1 + a[50]*b2 + a[51]*b3 + a[52]*b4 + a[53]*b5 + a[54]*b6 + a[55]*b7;
       d72 = a[56]*b0 + a[57]*b1 + a[58]*b2 + a[59]*b3 + a[60]*b4 + a[61]*b5 + a[62]*b6 + a[63]*b7;
-        
+
       b0 = b[3 ]; b1 = b[11]; b2 = b[19]; b3 = b[27]; b4 = b[35]; b5 = b[43]; b6 = b[51]; b7 = b[59];
       d03 = a[0 ]*b0 + a[1 ]*b1 + a[2 ]*b2 + a[3 ]*b3 + a[4 ]*b4 + a[5 ]*b5 + a[6 ]*b6 + a[7 ]*b7;
       d13 = a[8 ]*b0 + a[9 ]*b1 + a[10]*b2 + a[11]*b3 + a[12]*b4 + a[13]*b5 + a[14]*b6 + a[15]*b7;
@@ -1151,7 +1151,7 @@ void BCSRMatFactorUpper8( BCSRMatData *data, BCSRMatData *Fdata ){
       d53 = a[40]*b0 + a[41]*b1 + a[42]*b2 + a[43]*b3 + a[44]*b4 + a[45]*b5 + a[46]*b6 + a[47]*b7;
       d63 = a[48]*b0 + a[49]*b1 + a[50]*b2 + a[51]*b3 + a[52]*b4 + a[53]*b5 + a[54]*b6 + a[55]*b7;
       d73 = a[56]*b0 + a[57]*b1 + a[58]*b2 + a[59]*b3 + a[60]*b4 + a[61]*b5 + a[62]*b6 + a[63]*b7;
-        
+
       b0 = b[4 ]; b1 = b[12]; b2 = b[20]; b3 = b[28]; b4 = b[36]; b5 = b[44]; b6 = b[52]; b7 = b[60];
       d04 = a[0 ]*b0 + a[1 ]*b1 + a[2 ]*b2 + a[3 ]*b3 + a[4 ]*b4 + a[5 ]*b5 + a[6 ]*b6 + a[7 ]*b7;
       d14 = a[8 ]*b0 + a[9 ]*b1 + a[10]*b2 + a[11]*b3 + a[12]*b4 + a[13]*b5 + a[14]*b6 + a[15]*b7;
@@ -1161,7 +1161,7 @@ void BCSRMatFactorUpper8( BCSRMatData *data, BCSRMatData *Fdata ){
       d54 = a[40]*b0 + a[41]*b1 + a[42]*b2 + a[43]*b3 + a[44]*b4 + a[45]*b5 + a[46]*b6 + a[47]*b7;
       d64 = a[48]*b0 + a[49]*b1 + a[50]*b2 + a[51]*b3 + a[52]*b4 + a[53]*b5 + a[54]*b6 + a[55]*b7;
       d74 = a[56]*b0 + a[57]*b1 + a[58]*b2 + a[59]*b3 + a[60]*b4 + a[61]*b5 + a[62]*b6 + a[63]*b7;
-        
+
       b0 = b[5 ]; b1 = b[13]; b2 = b[21]; b3 = b[29]; b4 = b[37]; b5 = b[45]; b6 = b[53]; b7 = b[61];
       d05 = a[0 ]*b0 + a[1 ]*b1 + a[2 ]*b2 + a[3 ]*b3 + a[4 ]*b4 + a[5 ]*b5 + a[6 ]*b6 + a[7 ]*b7;
       d15 = a[8 ]*b0 + a[9 ]*b1 + a[10]*b2 + a[11]*b3 + a[12]*b4 + a[13]*b5 + a[14]*b6 + a[15]*b7;
@@ -1171,7 +1171,7 @@ void BCSRMatFactorUpper8( BCSRMatData *data, BCSRMatData *Fdata ){
       d55 = a[40]*b0 + a[41]*b1 + a[42]*b2 + a[43]*b3 + a[44]*b4 + a[45]*b5 + a[46]*b6 + a[47]*b7;
       d65 = a[48]*b0 + a[49]*b1 + a[50]*b2 + a[51]*b3 + a[52]*b4 + a[53]*b5 + a[54]*b6 + a[55]*b7;
       d75 = a[56]*b0 + a[57]*b1 + a[58]*b2 + a[59]*b3 + a[60]*b4 + a[61]*b5 + a[62]*b6 + a[63]*b7;
-        
+
       b0 = b[6 ]; b1 = b[14]; b2 = b[22]; b3 = b[30]; b4 = b[38]; b5 = b[46]; b6 = b[54]; b7 = b[62];
       d06 = a[0 ]*b0 + a[1 ]*b1 + a[2 ]*b2 + a[3 ]*b3 + a[4 ]*b4 + a[5 ]*b5 + a[6 ]*b6 + a[7 ]*b7;
       d16 = a[8 ]*b0 + a[9 ]*b1 + a[10]*b2 + a[11]*b3 + a[12]*b4 + a[13]*b5 + a[14]*b6 + a[15]*b7;
@@ -1192,14 +1192,14 @@ void BCSRMatFactorUpper8( BCSRMatData *data, BCSRMatData *Fdata ){
       d67 = a[48]*b0 + a[49]*b1 + a[50]*b2 + a[51]*b3 + a[52]*b4 + a[53]*b5 + a[54]*b6 + a[55]*b7;
       d77 = a[56]*b0 + a[57]*b1 + a[58]*b2 + a[59]*b3 + a[60]*b4 + a[61]*b5 + a[62]*b6 + a[63]*b7;
 
-      int k = j+1;      
+      int k = j+1;
       int k_end = frowp[i+1];
       a = &(Fdata->A[64*k]);
 
       int p = diag[cj]+1;
       int p_end = rowp[cj+1];
       b = &(data->A[64*p]);
-      
+
       // Keep track of the number of block matrix-matrix products
       int nz = 0;
 
@@ -1297,7 +1297,7 @@ void BCSRMatFactorUpper8( BCSRMatData *data, BCSRMatData *Fdata ){
       }
 
       TacsAddFlops(2*64*8*nz + 15*64);
-      
+
       // Copy over the matrix
       a = &(Fdata->A[64*j]);
       a[0 ] = d00; a[1 ] = d01; a[2 ] = d02; a[3 ] = d03; a[4 ] = d04; a[5 ] = d05; a[6 ] = d06; a[7 ] = d07;

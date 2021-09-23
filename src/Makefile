@@ -8,13 +8,16 @@ include ../Makefile.in
 include ../TACS_Common.mk
 
 CXX_OBJS = TACSObject.o \
+	TacsUtilities.o \
 	TACSAssembler.o \
 	TACSAuxElements.o \
 	TACSCreator.o \
 	TACSMg.o \
 	TACSBuckling.o \
 	TACSAssembler_thread.o \
-	TACSIntegrator.o
+	TACSIntegrator.o \
+	TACSMatrixFreeMat.o \
+	TACSContinuation.o
 
 DIR=${TACS_DIR}/src
 

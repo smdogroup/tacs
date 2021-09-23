@@ -1,7 +1,7 @@
 include ../../Makefile.in
 include ../../TACS_Common.mk
 
-OBJS = triangle.o
+OBJS = triangle.o 
 
 default: ${OBJS}
 	${CXX} -o triangle triangle.o ${TACS_LD_FLAGS}

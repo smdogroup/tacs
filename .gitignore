@@ -22,6 +22,7 @@ extern/
 *.h5
 *.f5
 *.bdf
+*.su2
 *.tar.gz
 *.png
 *.plt
@@ -38,3 +39,5 @@ extern/
 tacs/*.cpp
 *.pxi
 *.vtk
+*.cfg
+.vscode

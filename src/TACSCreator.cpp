@@ -8,18 +8,18 @@
   TACS is licensed under the Apache License, Version 2.0 (the
   "License"); you may not use this software except in compliance with
   the License.  You may obtain a copy of the License at
-  
-  http://www.apache.org/licenses/LICENSE-2.0 
+
+  http://www.apache.org/licenses/LICENSE-2.0
 */
 
 #include "TACSCreator.h"
-#include "FElibrary.h"
+#include "TacsUtilities.h"
 #include "tacsmetis.h"
 
 /*
-  Extend an integer array 
+  Extend an integer array
 */
-static void extend_int_array( int ** array, int old_len, 
+static void extend_int_array( int ** array, int old_len,
                               int new_len ){
   int * temp = new int[ new_len ];
   memcpy(temp, *array, sizeof(int)*old_len);
@@ -42,14 +42,17 @@ static int compare_arg_sort( const void * a, const void * b ){
   if (aval == bval){
     return *(const int*)(a) - *(const int*)(b);
   }
-  
+
   return aval - bval;
 }
 
-/*
+/**
   Allocate the TACSCreator object
+
+  @param _comm The MPI_Comm object
+  @param _vars_per_node The number of variables at each node
 */
-TACSCreator::TACSCreator( MPI_Comm _comm, 
+TACSCreator::TACSCreator( MPI_Comm _comm,
                           int _vars_per_node ){
   // Set the communicator
   comm = _comm;
@@ -68,7 +71,7 @@ TACSCreator::TACSCreator( MPI_Comm _comm,
   num_nodes = 0;
   num_elements = 0;
   num_dependent_nodes = 0;
-  
+
   // Set the element connectivity and nodes
   elem_id_nums = NULL;
   elem_node_ptr = NULL;
@@ -107,7 +110,7 @@ TACSCreator::TACSCreator( MPI_Comm _comm,
   local_elem_id_nums = NULL;
 }
 
-/*
+/**
   Deallocate the TACSCreator object
 */
 TACSCreator::~TACSCreator(){
@@ -137,10 +140,13 @@ TACSCreator::~TACSCreator(){
 }
 
 /*
-  Set the global element connectivity arrays into the class
+  Set the global element connectivity arrays into the class.
+
+  @param _num_nodes The number of nodes in the mesh
+  @param _num_elements The number of
 */
 void TACSCreator::setGlobalConnectivity( int _num_nodes, int _num_elements,
-                                         const int *_elem_node_ptr, 
+                                         const int *_elem_node_ptr,
                                          const int *_elem_node_conn,
                                          const int *_elem_id_nums ){
   num_elements = _num_elements;
@@ -152,7 +158,7 @@ void TACSCreator::setGlobalConnectivity( int _num_nodes, int _num_elements,
 
   // Copy over the element node connectivity
   elem_node_conn = new int[ elem_node_ptr[num_elements] ];
-  memcpy(elem_node_conn, _elem_node_conn, 
+  memcpy(elem_node_conn, _elem_node_conn,
          elem_node_ptr[num_elements]*sizeof(int));
 
   // Copy over the element ids
@@ -167,9 +173,9 @@ void TACSCreator::setDependentNodes( int num_dep_nodes,
                                      const int *_dep_node_ptr,
                                      const int *_dep_node_conn,
                                      const double *_dep_node_weights ){
-  // Set the number of dependent nodes 
+  // Set the number of dependent nodes
   num_dependent_nodes = num_dep_nodes;
-  
+
   // Allocate space for the dependent node pointer data
   dep_node_ptr = new int[ num_dependent_nodes+1 ];
   memcpy(dep_node_ptr, _dep_node_ptr, (num_dependent_nodes+1)*sizeof(int));
@@ -185,8 +191,8 @@ void TACSCreator::setDependentNodes( int num_dep_nodes,
 /*
   Set the boundary condition data
 */
-void TACSCreator::setBoundaryConditions( int _num_bcs, 
-                                         const int *_bc_nodes, 
+void TACSCreator::setBoundaryConditions( int _num_bcs,
+                                         const int *_bc_nodes,
                                          const int *_bc_ptr,
                                          const int *_bc_vars,
                                          const TacsScalar *_bc_vals ){
@@ -195,14 +201,14 @@ void TACSCreator::setBoundaryConditions( int _num_bcs,
   num_bcs = _num_bcs;
   bc_nodes = new int[ num_bcs ];
   memcpy(bc_nodes, _bc_nodes, num_bcs*sizeof(int));
-  
+
   // Allocate space for the boundary condition pointer
   bc_ptr = new int[ num_bcs+1 ];
 
   if (_bc_ptr && _bc_vars){
     // Copy over the boundary condition variable pointer
     memcpy(bc_ptr, _bc_ptr, (num_bcs+1)*sizeof(int));
-  
+
     // Allocate the number of variables
     bc_vars = new int[ bc_ptr[num_bcs] ];
     memcpy(bc_vars, _bc_vars, bc_ptr[num_bcs]*sizeof(int));
@@ -239,7 +245,7 @@ void TACSCreator::setBoundaryConditions( int _num_bcs,
 /*
   Set the elements with an array indexed by element id
 */
-void TACSCreator::setElements( TACSElement **_elements, int _num_elem_ids ){
+void TACSCreator::setElements( int _num_elem_ids, TACSElement **_elements ){
   num_elem_ids = _num_elem_ids;
   elements = new TACSElement*[ num_elem_ids ];
   memcpy(elements, _elements, num_elem_ids*sizeof(TACSElement*));
@@ -276,9 +282,9 @@ void TACSCreator::setReorderingType( TACSAssembler::OrderingType _order_type,
 /*
   Get the new node numbers
 */
-int TACSCreator::getNodeNums( const int **_new_nodes ){ 
+int TACSCreator::getNodeNums( const int **_new_nodes ){
   *_new_nodes = new_nodes;
-  return num_nodes; 
+  return num_nodes;
 }
 
 /*
@@ -307,9 +313,11 @@ void TACSCreator::getNumOwnedElements( int **_owned_elements ){
   Input the node numbers on the root processor in the original order,
   and get out the distributed node numbers on the final mesh
 */
-void TACSCreator::getTacsNodeNums( TACSAssembler *tacs,
-                                   const int *_orig_nodes, int num_orig_nodes,
-                                   int **_tacs_nodes, int *num_dist_nodes ){
+void TACSCreator::getAssemblerNodeNums( TACSAssembler *assembler,
+                                        int num_orig_nodes,
+                                        const int *_orig_nodes,
+                                        int *num_dist_nodes,
+                                        int **_tacs_nodes ){
   // Figure out how to distribute the nodes
   int size, rank;
   MPI_Comm_size(comm, &size);
@@ -323,15 +331,15 @@ void TACSCreator::getTacsNodeNums( TACSAssembler *tacs,
   int *tacs_nodes = NULL;
 
   // Get the variable map from TACSAssembler
-  TACSVarMap *varMap = tacs->getVarMap();
+  TACSNodeMap *nodeMap = assembler->getNodeMap();
   const int *owner_range = NULL;
-  varMap->getOwnerRange(&owner_range);
+  nodeMap->getOwnerRange(&owner_range);
 
   if (rank == root_rank){
-    // First allocate an array of nodes that we will overwrite 
+    // First allocate an array of nodes that we will overwrite
     orig_nodes = new int[ num_orig_nodes ];
     memcpy(orig_nodes, _orig_nodes, num_orig_nodes*sizeof(int));
-  
+
     // Convert the original node ordering to the new node ordering
     for ( int i = 0; i < num_orig_nodes; i++ ){
       if (orig_nodes[i] >= 0 && orig_nodes[i] < num_nodes){
@@ -342,14 +350,13 @@ void TACSCreator::getTacsNodeNums( TACSAssembler *tacs,
       }
     }
 
-    // Sort the nodes uniquely 
-    num_orig_nodes = FElibrary::uniqueSort(orig_nodes, num_orig_nodes);
+    // Sort the nodes uniquely
+    num_orig_nodes = TacsUniqueSort(num_orig_nodes, orig_nodes);
 
     // Match the intervals for the external node numbers
     ext_ptr = new int[ size+1 ];
-    FElibrary::matchIntervals(size, owner_range, 
-                              num_orig_nodes, orig_nodes, ext_ptr);
- 
+    TacsMatchIntervals(size, owner_range, num_orig_nodes, orig_nodes, ext_ptr);
+
     // Send the processors the information, one at a time
     for ( int i = 0; i < size; i++ ){
       if (i != root_rank){
@@ -361,7 +368,7 @@ void TACSCreator::getTacsNodeNums( TACSAssembler *tacs,
 
     // Get the number of distributed nodes for the root proc
     int count = ext_ptr[root_rank+1] - ext_ptr[root_rank];
-    *num_dist_nodes = count; 
+    *num_dist_nodes = count;
 
     // Copy the nodes on the root proc
     tacs_nodes = new int[ count ];
@@ -380,12 +387,12 @@ void TACSCreator::getTacsNodeNums( TACSAssembler *tacs,
     }
 
     // Recv the nodes from the root
-    MPI_Recv(tacs_nodes, count, MPI_INT, root_rank, tag, comm, 
+    MPI_Recv(tacs_nodes, count, MPI_INT, root_rank, tag, comm,
              MPI_STATUS_IGNORE);
   }
 
   // Apply the reordering in TACS
-  tacs->reorderNodes(tacs_nodes, *num_dist_nodes);
+  assembler->reorderNodes(*num_dist_nodes, tacs_nodes);
 
   *_tacs_nodes = tacs_nodes;
 }
@@ -401,29 +408,29 @@ TACSAssembler* TACSCreator::createTACS(){
   MPI_Comm_size(comm, &size);
   MPI_Comm_rank(comm, &rank);
 
-  if (rank == root_rank && !partition){   
+  if (rank == root_rank && !partition){
     // Partition the mesh using the serial code on the root
     // processor.
     partitionMesh(size);
   }
-  
+
   // The number of local and owned nodes and the number of
   // elements for each processor in the mesh
   num_owned_nodes = 0;
-  num_owned_elements = 0; 
-  MPI_Scatter(owned_nodes, 1, MPI_INT, 
+  num_owned_elements = 0;
+  MPI_Scatter(owned_nodes, 1, MPI_INT,
               &num_owned_nodes, 1, MPI_INT, root_rank, comm);
-  MPI_Scatter(owned_elements, 1, MPI_INT, 
+  MPI_Scatter(owned_elements, 1, MPI_INT,
               &num_owned_elements, 1, MPI_INT, root_rank, comm);
 
   // The number of local nodes
   int num_local_dep_nodes = 0;
 
-  // Allocate space for the portion of the element connectivity on 
+  // Allocate space for the portion of the element connectivity on
   // this processor
   int *local_elem_node_ptr = new int[ num_owned_elements+1 ];
   int *local_elem_node_conn = NULL;
-  
+
   // This will be used later to determine which elements belong to
   // which domain within the finite-element mesh
   local_elem_id_nums = new int[ num_owned_elements ];
@@ -443,7 +450,7 @@ TACSAssembler* TACSCreator::createTACS(){
     for ( int j = 0; j < num_bcs; j++ ){
       bc_nodes[j] = new_nodes[bc_nodes[j]];
     }
-    
+
     // Find the inverse mapping between the new and old node
     // numbers so that it's faster to access
     int *inv_new_nodes = new int[ num_nodes ];
@@ -489,7 +496,7 @@ TACSAssembler* TACSCreator::createTACS(){
     // Allocate space for the locally-reduced dependent node data
     int *dep_ptr = NULL;
     int *dep_conn = NULL;
-    double *dep_weights = NULL;    
+    double *dep_weights = NULL;
     if (num_dependent_nodes > 0){
       dep_ptr = new int[ num_dependent_nodes+1 ];
       dep_conn = new int[ dep_node_ptr[num_dependent_nodes] ];
@@ -501,7 +508,7 @@ TACSAssembler* TACSCreator::createTACS(){
       dep_node_flags[i] = -1;
     }
 
-    // Loop over all the processors on the root processor and 
+    // Loop over all the processors on the root processor and
     // create the local connectivity, element info, and dependent node
     // data for the k-th processor. Then send it to processor k, except
     // in the case when k == root_rank in which case make a local
@@ -545,7 +552,7 @@ TACSAssembler* TACSCreator::createTACS(){
             // Convert to the dependent node index
             node = -node-1;
 
-            // If this dependent node has not been assigned, 
+            // If this dependent node has not been assigned,
             // create a new number for it
             if (dep_node_flags[node] != k){
               dep_node_flags[node] = k;
@@ -560,7 +567,7 @@ TACSAssembler* TACSCreator::createTACS(){
           }
         }
 
-        // Set the element 
+        // Set the element
         elem_ids[n] = elem_id_nums[elem];
         elem_ptr[n+1] = local_conn_size;
       }
@@ -575,7 +582,7 @@ TACSAssembler* TACSCreator::createTACS(){
 
         for ( int j = 0; j < local_dep_node_size; j++ ){
           int dep_node = inv_dep_nodes[j];
-          
+
           // Loop over the dependent nodes within this list
           for ( int i = dep_node_ptr[dep_node];
                 i < dep_node_ptr[dep_node+1]; i++ ){
@@ -584,7 +591,7 @@ TACSAssembler* TACSCreator::createTACS(){
             dep_conn_len++;
           }
 
-          // Set the depdendent node pointer data 
+          // Set the depdendent node pointer data
           dep_ptr[j+1] = dep_conn_len;
         }
       }
@@ -596,20 +603,20 @@ TACSAssembler* TACSCreator::createTACS(){
         xpts[3*i+1] = Xpts[3*node+1];
         xpts[3*i+2] = Xpts[3*node+2];
       }
-    
+
       // Create the CSR data structure required
       if (k == root_rank){
         // Copy the values over from the nodes
-        num_local_dep_nodes = local_dep_node_size;      
+        num_local_dep_nodes = local_dep_node_size;
         Xpts_local = new TacsScalar[ 3*num_owned_nodes ];
         memcpy(Xpts_local, xpts, 3*num_owned_nodes*sizeof(TacsScalar));
 
         if (num_local_dep_nodes > 0){
           // Copy over the data for the dependent nodes
           local_dep_node_ptr = new int[ num_local_dep_nodes+1 ];
-          memcpy(local_dep_node_ptr, dep_ptr, 
+          memcpy(local_dep_node_ptr, dep_ptr,
                  (num_local_dep_nodes+1)*sizeof(int));
-          
+
           // Allocate the local dependent node connectivity and weights
           int conn_len = local_dep_node_ptr[num_local_dep_nodes];
           local_dep_node_conn = new int[ conn_len ];
@@ -619,9 +626,9 @@ TACSAssembler* TACSCreator::createTACS(){
         }
 
         // Copy over values for the elements
-        memcpy(local_elem_id_nums, elem_ids, 
+        memcpy(local_elem_id_nums, elem_ids,
                num_owned_elements*sizeof(int));
-        memcpy(local_elem_node_ptr, elem_ptr, 
+        memcpy(local_elem_node_ptr, elem_ptr,
                (num_owned_elements+1)*sizeof(int));
         local_elem_node_conn = new int[local_elem_node_ptr[num_owned_elements]];
         memcpy(local_elem_node_conn, elem_conn,
@@ -681,7 +688,7 @@ TACSAssembler* TACSCreator::createTACS(){
       local_dep_node_ptr = new int[ num_local_dep_nodes+1 ];
       MPI_Recv(local_dep_node_ptr, num_local_dep_nodes+1, MPI_INT,
                root_rank, 5, comm, &status);
-      
+
       // Allocate the local connectivity and weight arrays
       int conn_len = local_dep_node_ptr[num_local_dep_nodes];
       local_dep_node_conn = new int[ conn_len ];
@@ -693,14 +700,14 @@ TACSAssembler* TACSCreator::createTACS(){
     }
 
     // Receive the element data
-    MPI_Recv(local_elem_id_nums, num_owned_elements, MPI_INT, 
+    MPI_Recv(local_elem_id_nums, num_owned_elements, MPI_INT,
              root_rank, 8, comm, &status);
-    MPI_Recv(local_elem_node_ptr, num_owned_elements+1, MPI_INT, 
+    MPI_Recv(local_elem_node_ptr, num_owned_elements+1, MPI_INT,
              root_rank, 9, comm, &status);
 
     int con_size = local_elem_node_ptr[num_owned_elements];
     local_elem_node_conn = new int[con_size];
-    MPI_Recv(local_elem_node_conn, con_size, MPI_INT, 
+    MPI_Recv(local_elem_node_conn, con_size, MPI_INT,
              root_rank, 10, comm, &status);
   }
 
@@ -714,28 +721,28 @@ TACSAssembler* TACSCreator::createTACS(){
       bc_nodes = new int[ num_bcs ];
     }
     MPI_Bcast(bc_nodes, num_bcs, MPI_INT, root_rank, comm);
-    
-    // Broacast the boundary condition pointer array 
+
+    // Broacast the boundary condition pointer array
     if (rank != root_rank){
       if (bc_ptr){ delete [] bc_ptr; }
       bc_ptr = new int[ num_bcs+1 ];
     }
     MPI_Bcast(bc_ptr, num_bcs+1, MPI_INT, root_rank, comm);
-    
+
     if (rank != root_rank){
       if (bc_vars){ delete [] bc_vars; }
-      bc_vars = new int[ bc_ptr[num_bcs] ]; 
+      bc_vars = new int[ bc_ptr[num_bcs] ];
     }
     MPI_Bcast(bc_vars, bc_ptr[num_bcs], MPI_INT, root_rank, comm);
-    
+
     if (rank != root_rank){
       if (bc_vals){ delete [] bc_vals; }
-      bc_vals = new TacsScalar[ bc_ptr[num_bcs] ]; 
+      bc_vals = new TacsScalar[ bc_ptr[num_bcs] ];
     }
     MPI_Bcast(bc_vals, bc_ptr[num_bcs], TACS_MPI_TYPE, root_rank, comm);
   }
 
-  TACSAssembler * tacs = 
+  TACSAssembler * tacs =
     new TACSAssembler(comm, vars_per_node, num_owned_nodes,
                       num_owned_elements, num_local_dep_nodes);
 
@@ -747,8 +754,8 @@ TACSAssembler* TACSCreator::createTACS(){
   }
 
   // Set the connectivity
-  tacs->setElementConnectivity(local_elem_node_conn,
-                               local_elem_node_ptr);
+  tacs->setElementConnectivity(local_elem_node_ptr,
+                               local_elem_node_conn);
 
   // Add the elements
   if (elements){
@@ -756,14 +763,14 @@ TACSAssembler* TACSCreator::createTACS(){
     for ( int k = 0; k < num_owned_elements; k++ ){
       elems[k] = elements[local_elem_id_nums[k]];
       if (!elems[k]){
-        fprintf(stderr, 
+        fprintf(stderr,
                 "[%d] TACSCreator: Element undefined for element ID %d\n",
                 rank, local_elem_id_nums[k]);
         MPI_Abort(comm, 1);
         return NULL;
       }
     }
-    
+
     // Set the elements and free the array
     tacs->setElements(elems);
     delete [] elems;
@@ -773,7 +780,7 @@ TACSAssembler* TACSCreator::createTACS(){
     for ( int k = 0; k < num_owned_elements; k++ ){
       elems[k] = element_creator(k, local_elem_id_nums[k]);
       if (!elems[k]){
-        fprintf(stderr, 
+        fprintf(stderr,
                 "[%d] TACSCreator: Callback failed for element ID %d\n",
                 rank, local_elem_id_nums[k]);
         MPI_Abort(comm, 1);
@@ -786,7 +793,7 @@ TACSAssembler* TACSCreator::createTACS(){
     delete [] elems;
   }
   else {
-    fprintf(stderr, 
+    fprintf(stderr,
             "[%d] TACSCreator: Elements and callback not defined\n",
             rank);
     MPI_Abort(comm, 1);
@@ -872,7 +879,7 @@ TACSAssembler* TACSCreator::createTACS(){
   split_size:      the number of segments in the partition
   part:            (optional) the specified partition
 */
-void TACSCreator::partitionMesh( int split_size, 
+void TACSCreator::partitionMesh( int split_size,
                                  const int *part ){
   int rank;
   MPI_Comm_rank(comm, &rank);
@@ -880,7 +887,7 @@ void TACSCreator::partitionMesh( int split_size,
     return;
   }
 
-  // Deallocate data that may have been allocated on a 
+  // Deallocate data that may have been allocated on a
   // previous call
   if (new_nodes){ delete [] new_nodes; }
   if (owned_elements){ delete [] owned_elements; }
@@ -891,7 +898,7 @@ void TACSCreator::partitionMesh( int split_size,
   int mpi_size;
   MPI_Comm_size(comm, &mpi_size);
 
-  // Set the split size to ensure that it is less than the 
+  // Set the split size to ensure that it is less than the
   // comm size
   if (split_size <= 0 || split_size > mpi_size){
     split_size = mpi_size;
@@ -903,7 +910,7 @@ void TACSCreator::partitionMesh( int split_size,
     if (partition){ delete [] partition; }
     partition = NULL;
 
-    // Check whether the suggested partition is legitimate 
+    // Check whether the suggested partition is legitimate
     int legit = 1;
     for ( int i = 0; i < num_elements; i++ ){
       if (part[i] < 0 || part[i] >= split_size){
@@ -923,14 +930,14 @@ void TACSCreator::partitionMesh( int split_size,
     // Allocate space for the new node numbers and the new dependent
     // node numbers
     partition = new int[ num_elements ];
- 
+
     // Compute the node to element CSR data structure for both
     // the indepedent and dependent nodes
     int *node_elem_ptr = new int[ num_nodes+1 ];
     memset(node_elem_ptr, 0, (num_nodes+1)*sizeof(int));
-    
+
     for ( int i = 0; i < num_elements; i++ ){
-      int end = elem_node_ptr[i+1]; 
+      int end = elem_node_ptr[i+1];
       for ( int j = elem_node_ptr[i]; j < end; j++ ){
         int node = elem_node_conn[j];
         if (node >= 0){
@@ -958,14 +965,14 @@ void TACSCreator::partitionMesh( int split_size,
         }
       }
     }
-  
+
     // Reset the node_elem_ptr array to the correct values
     for ( int i = num_nodes; i > 0; i-- ){
       node_elem_ptr[i] = node_elem_ptr[i-1];
     }
     node_elem_ptr[0] = 0;
 
-    // Now we set up the element to element connectivity using the 
+    // Now we set up the element to element connectivity using the
     // set of maksed elements. For this to work within METIS, we have
     // to remove the diagonal contribution so that there is no
     // self-reference in the graph.
@@ -987,7 +994,7 @@ void TACSCreator::partitionMesh( int split_size,
       // Set the size of the new row in the data structure to zero
       int row_size = 0;
 
-      // From the element number, find the independent nodes 
+      // From the element number, find the independent nodes
       // that are associated with this element number
       int jpend = elem_node_ptr[i+1];
       for ( int jp = elem_node_ptr[i]; jp < jpend; jp++ ){
@@ -1002,10 +1009,10 @@ void TACSCreator::partitionMesh( int split_size,
 
             // Check if adding another element will exceed the size
             // of the array. If it will, sort the array and remove
-            // duplicates. This is guaranteed to make additional 
+            // duplicates. This is guaranteed to make additional
             // room.
             if (row_size >= num_elements){
-              row_size = FElibrary::uniqueSort(row, row_size);
+              row_size = TacsUniqueSort(row_size, row);
             }
 
             // Append the element index to the list
@@ -1014,10 +1021,10 @@ void TACSCreator::partitionMesh( int split_size,
           }
         }
       }
-    
+
       // Sort the element indices and remove duplicates from the
       // array
-      row_size = FElibrary::uniqueSort(row, row_size);
+      row_size = TacsUniqueSort(row_size, row);
 
       // Check if adding this new row to the data structure will excee
       if (elem_conn_size + row_size > max_elem_conn_size){
@@ -1025,13 +1032,13 @@ void TACSCreator::partitionMesh( int split_size,
         if (max_elem_conn_size < elem_conn_size + row_size){
           max_elem_conn_size += elem_conn_size + row_size;
         }
-        extend_int_array(&elem_conn, elem_conn_size, 
+        extend_int_array(&elem_conn, elem_conn_size,
                          max_elem_conn_size);
       }
 
       // Add the elements - minus the diagonal entry
       for ( int j = 0; j < row_size; j++ ){
-        if (row[j] != i){ // Not the diagonal 
+        if (row[j] != i){ // Not the diagonal
           elem_conn[elem_conn_size] = row[j];
           elem_conn_size++;
         }
@@ -1039,9 +1046,9 @@ void TACSCreator::partitionMesh( int split_size,
       elem_ptr[i+1] = elem_conn_size;
     }
 
-    // Free the memory for data that is not needed 
+    // Free the memory for data that is not needed
     delete [] row;
-  
+
     // Free the node to element pointer
     delete [] node_elem_ptr;
     delete [] node_elem_conn;
@@ -1049,29 +1056,29 @@ void TACSCreator::partitionMesh( int split_size,
     // Partition the mesh using METIS.
     if (split_size > 1){
       int ncon = 1; // "It should be at least 1"??
-      
+
       // Set the default options
       int options[METIS_NOPTIONS];
       METIS_SetDefaultOptions(options);
 
       // Use 0-based numbering
       options[METIS_OPTION_NUMBERING] = 0;
-        
+
       // The objective value in METIS
       int objval = 0;
 
       if (split_size < 8){
-        METIS_PartGraphRecursive(&num_elements, &ncon, 
+        METIS_PartGraphRecursive(&num_elements, &ncon,
                                  elem_ptr, elem_conn,
-                                 NULL, NULL, NULL, &split_size, 
-                                 NULL, NULL, options, &objval, 
+                                 NULL, NULL, NULL, &split_size,
+                                 NULL, NULL, options, &objval,
                                  partition);
       }
       else {
-        METIS_PartGraphKway(&num_elements, &ncon, 
+        METIS_PartGraphKway(&num_elements, &ncon,
                             elem_ptr, elem_conn,
-                            NULL, NULL, NULL, &split_size, 
-                            NULL, NULL, options, &objval, 
+                            NULL, NULL, NULL, &split_size,
+                            NULL, NULL, options, &objval,
                             partition);
       }
     }
@@ -1089,11 +1096,11 @@ void TACSCreator::partitionMesh( int split_size,
   }
 
   // Now, re-order the node numbers so that they are almost contiguous
-  // over each processor 
+  // over each processor
   new_nodes = new int[ num_nodes ];
   owned_elements = new int[ mpi_size ];
   owned_nodes = new int[ mpi_size ];
-  
+
   // Set the number of nodes/elements to zero
   memset(new_nodes, 0, num_nodes*sizeof(int));
   memset(owned_elements, 0, mpi_size*sizeof(int));
@@ -1164,30 +1171,29 @@ void TACSCreator::partitionMesh( int split_size,
   Retrieve the element numbers on each processor corresponding to the
   given component numbers.
 */
-int TACSCreator::getElementIdNums( int ids[], int num_ids, 
+int TACSCreator::getElementIdNums( int num_ids, int ids[],
                                    int **elem_nums ){
   int rank;
   MPI_Comm_rank(comm, &rank);
   if (!local_elem_id_nums){
-    fprintf(stderr, "[%d] TACSCreator: Cannot get elements until \
-mesh is partitioned\n", rank);
+    fprintf(stderr, "[%d] TACSCreator: Cannot get elements until "
+            "mesh is partitioned\n", rank);
     *elem_nums = NULL;
     return 0;
   }
 
   // Sort the component numbers on input
-  num_ids = FElibrary::uniqueSort(ids, num_ids);
+  num_ids = TacsUniqueSort(num_ids, ids);
 
   int *all_elems = new int[ num_owned_elements ];
   int elem_size = 0;
   for ( int k = 0; k < num_owned_elements; k++ ){
-    if (bsearch(&local_elem_id_nums[k], ids, num_ids,
-                sizeof(int), FElibrary::comparator)){
+    if (TacsSearchArray(local_elem_id_nums[k], num_ids, ids)){
       all_elems[elem_size] = k;
       elem_size++;
     }
   }
-  
+
   // Truncate the array to the correct size
   *elem_nums = new int[ elem_size ];
   memcpy(*elem_nums, all_elems, elem_size*sizeof(int));

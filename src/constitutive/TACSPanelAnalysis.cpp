@@ -12,8 +12,8 @@
   TACS is licensed under the Apache License, Version 2.0 (the
   "License"); you may not use this software except in compliance with
   the License.  You may obtain a copy of the License at
-  
-  http://www.apache.org/licenses/LICENSE-2.0 
+
+  http://www.apache.org/licenses/LICENSE-2.0
 */
 
 #ifdef TACS_USE_COMPLEX
@@ -38,7 +38,7 @@
   but, the laminates must be balanced such that the in-plane stiffness
   takes the following form:
 
-  A = 
+  A =
   [ A11,  A12,  0   ]
   [ A12,  A22,  0   ]
   [ 0,    0,    A66 ]
@@ -80,7 +80,7 @@
   information. Next, the geometry, segments and constitutive objects
   are initialized through a series of calls. Finally, once all the
   data has been passed to TACSPanelAnalysis, the call to finialize()
-  is made to finalize data internally in TACSPanelAnalysis. 
+  is made to finalize data internally in TACSPanelAnalysis.
 
   Note that the way the geometry is specified is a projection onto the
   y-z plane. This projection is then sheared according to the
@@ -96,7 +96,7 @@
   Lx:        the length of the panel in the x-direction
   theta:     the angle of geometric shearing
 */
-TACSPanelAnalysis::TACSPanelAnalysis( int _nnodes, int _nsegments, 
+TACSPanelAnalysis::TACSPanelAnalysis( int _nnodes, int _nsegments,
                                       int _nbeams, int _nmodes,
                                       TacsScalar _Lx, TacsScalar theta ){
   nnodes = _nnodes;
@@ -110,7 +110,7 @@ TACSPanelAnalysis::TACSPanelAnalysis( int _nnodes, int _nsegments,
 
   // Set the flag about whether to use the LAPACK eigenvalue solver
   // or not. It is slow b/c it computes the full spectrum, rather than
-  // the selected spectrum, which the explicitly restarted Lanczos 
+  // the selected spectrum, which the explicitly restarted Lanczos
   // code does - the default solver.
   use_lapack_eigensolver = 0;
 
@@ -119,8 +119,8 @@ TACSPanelAnalysis::TACSPanelAnalysis( int _nnodes, int _nsegments,
   // problems are not convering, try modifying this, especially if you
   // require many eigenvalues
   lanczos_subspace_size = 100;
-  
-  // Set the eigenvalue tolerance 
+
+  // Set the eigenvalue tolerance
   lanczos_eigen_tol = 1e-12;
 
   // The slope of the line x = - beta*y, that defines the rib locations
@@ -230,7 +230,7 @@ TACSPanelAnalysis::~TACSPanelAnalysis(){
 
   if (geoLb){
     delete [] geoLb;
-    delete [] geoUb; 
+    delete [] geoUb;
   }
 }
 
@@ -249,7 +249,7 @@ void TACSPanelAnalysis::setLanczosSubspaceSize( int subspace_size ){
 }
 
 /*
-  Set the nodal locations. 
+  Set the nodal locations.
 
   This code simply copies over the input data
 
@@ -257,7 +257,7 @@ void TACSPanelAnalysis::setLanczosSubspaceSize( int subspace_size ){
   Xpts:    the nodal locatiosn
   npoints: the number of points in the y-z plane
 */
-void TACSPanelAnalysis::setPoints( TacsScalar *_Xpts, 
+void TACSPanelAnalysis::setPoints( TacsScalar *_Xpts,
                                    int npoints ){
   memcpy(Xpts, _Xpts, 2*nnodes*sizeof(TacsScalar));
 }
@@ -271,14 +271,14 @@ void TACSPanelAnalysis::setPoints( TacsScalar *_Xpts,
   stiff:    the constitutive object for this segment
   n1, n2:   the start and end nodes for this segment
 */
-void TACSPanelAnalysis::setSegment( int seg, int seg_type, 
+void TACSPanelAnalysis::setSegment( int seg, int seg_type,
                                     FSDTStiffness *stiff,
                                     int n1, int n2 ){
   if (seg >= 0 && seg < nsegments){
     if (stiff){ stiff->incref(); }
     if (panels[seg]){ panels[seg]->decref(); }
     segmentType[seg] = seg_type;
-    panels[seg] = stiff;    
+    panels[seg] = stiff;
     nodes[2*seg] = n1;
     nodes[2*seg+1] = n2;
   }
@@ -290,13 +290,13 @@ void TACSPanelAnalysis::setSegment( int seg, int seg_type,
   input:
   beam:  the beam number
   stiff: the stiffness object associated with the beam
-  n:     the node number at which to place the beam 
+  n:     the node number at which to place the beam
 */
 void TACSPanelAnalysis::setBeam( int beam, EBStiffness *stiff, int n ){
   if (beam >= 0 && beam < nbeams){
     if (stiff){ stiff->incref(); }
     if (beams[beam]){ beams[beam]->decref(); }
-    beams[beam] = stiff; 
+    beams[beam] = stiff;
     bnodes[beam] = n;
   }
 }
@@ -311,8 +311,8 @@ void TACSPanelAnalysis::setBeam( int beam, EBStiffness *stiff, int n ){
   first_node:     the node number to constrain
   first_node_bc:  bitwise integer indicating which variables to constrain
 */
-void TACSPanelAnalysis::setFirstNodeBC( int _first_node, 
-					int _first_node_bc ){
+void TACSPanelAnalysis::setFirstNodeBC( int _first_node,
+                                        int _first_node_bc ){
   if (_first_node >= 0 && _first_node < nnodes){
     first_node = _first_node;
     first_node_bc = _first_node_bc;
@@ -329,8 +329,8 @@ void TACSPanelAnalysis::setFirstNodeBC( int _first_node,
   last_node:     the node number to constrain
   last_node_bc:  bitwise integer indicating which variables to constrain
 */
-void TACSPanelAnalysis::setLastNodeBC( int _last_node, 
-				       int _last_node_bc ){
+void TACSPanelAnalysis::setLastNodeBC( int _last_node,
+                                       int _last_node_bc ){
   if (_last_node >= 0 && _last_node < nnodes){
     last_node = _last_node;
     last_node_bc = _last_node_bc;
@@ -338,27 +338,27 @@ void TACSPanelAnalysis::setLastNodeBC( int _last_node,
 }
 
 /*
-  Set the design variable-dependence of the geometry. 
+  Set the design variable-dependence of the geometry.
 
   The geometry must depend linearly on the design variables. This
   can actually produce very general geometry modifications and covers
-  most common design modifications. 
+  most common design modifications.
 
   The nodal locations are computed as follows:
 
   Xpts = XptConst + XptLin*x[:nDvGeo]
 
-  where x[:nDvGeo] are the geometric design variables. 
+  where x[:nDvGeo] are the geometric design variables.
 
   input:
-  XptConst:  the constant terms 
+  XptConst:  the constant terms
   XptLin:    the linear terms in the geometry
   geoDvs:    the initial value of the geometric design variables
   dvNums:    the geometric design variable numbers
   nDvGeo:    the number of geometric design variables
 */
-void TACSPanelAnalysis::setGeoDesignDependence( TacsScalar *_XptConst, 
-                                                TacsScalar *_XptLin, 
+void TACSPanelAnalysis::setGeoDesignDependence( TacsScalar *_XptConst,
+                                                TacsScalar *_XptLin,
                                                 TacsScalar *_geoDvs,
                                                 int *_dvNums, int _nDvGeo ){
   if (!XptConst){
@@ -370,7 +370,7 @@ void TACSPanelAnalysis::setGeoDesignDependence( TacsScalar *_XptConst,
 
     XptConst = new TacsScalar[2*nnodes];
     XptLin = new TacsScalar[2*nnodes*nDvGeo];
-    
+
     memcpy(geoDvNums, _dvNums, nDvGeo*sizeof(int));
     memcpy(XptConst, _XptConst, 2*nnodes*sizeof(TacsScalar));
     memcpy(XptLin, _XptLin, 2*nnodes*nDvGeo*sizeof(TacsScalar));
@@ -387,7 +387,7 @@ void TACSPanelAnalysis::setGeoDesignDependence( TacsScalar *_XptConst,
   lb, ub:  the lower/upper bounds on the geometric design variables
 */
 void TACSPanelAnalysis::setGeoDVBounds( TacsScalar *lb,
-					TacsScalar *ub ){
+                                        TacsScalar *ub ){
   if (!geoLb || !geoUb){
     geoLb = new TacsScalar[nDvGeo];
     geoUb = new TacsScalar[nDvGeo];
@@ -410,7 +410,7 @@ void TACSPanelAnalysis::setGeoDVBounds( TacsScalar *lb,
   LxLb:     lower bound on the panel length
   LxUb:     upper bound on the panel length
 */
-void TACSPanelAnalysis::setLxDvBounds( int _LxDvNum, TacsScalar _LxLb, 
+void TACSPanelAnalysis::setLxDvBounds( int _LxDvNum, TacsScalar _LxLb,
                                        TacsScalar _LxUb ){
   LxDvNum = _LxDvNum;
   LxLb = _LxLb;
@@ -431,7 +431,7 @@ void TACSPanelAnalysis::setLxDvBounds( int _LxDvNum, TacsScalar _LxLb,
   geometric design variables
 */
 void TACSPanelAnalysis::initialize(){
-  // Perform a Cuthill McKee reordering of the nodes to minimize 
+  // Perform a Cuthill McKee reordering of the nodes to minimize
   // the bandwidth of the matrix
   int *work = new int[ 2*nnodes ];
   int *node_order = &work[0];
@@ -442,7 +442,7 @@ void TACSPanelAnalysis::initialize(){
     node_flag[k] = 0; // Indicate whether the node is ordered
   }
 
-  // Mark the segment of nodes that 
+  // Mark the segment of nodes that
   int first = 0, last = 1;
   node_order[0] = 0;
   node_flag[0] = 1;
@@ -454,36 +454,36 @@ void TACSPanelAnalysis::initialize(){
     int new_nodes = 0;
     for ( int n = 0; n < nsegments; n++ ){
       for ( int k = first; k < last; k++ ){
-	// Get the node from the list
-	int node = node_order[k];
+        // Get the node from the list
+        int node = node_order[k];
 
-	// Check if the other node for this segment has not yet
-	// been ordered, or is not yet set
-	if (nodes[2*n] == node && !node_flag[nodes[2*n+1]]){
-	  node_order[last + new_nodes] = nodes[2*n+1];
-	  node_flag[nodes[2*n+1]] = 1;
-	  new_nodes++;
-	}
-	else if (nodes[2*n+1] == node && !node_flag[nodes[2*n]]){
-	  node_order[last + new_nodes] = nodes[2*n];
-	  node_flag[nodes[2*n]] = 1;
-	  new_nodes++;
-	}
+        // Check if the other node for this segment has not yet
+        // been ordered, or is not yet set
+        if (nodes[2*n] == node && !node_flag[nodes[2*n+1]]){
+          node_order[last + new_nodes] = nodes[2*n+1];
+          node_flag[nodes[2*n+1]] = 1;
+          new_nodes++;
+        }
+        else if (nodes[2*n+1] == node && !node_flag[nodes[2*n]]){
+          node_order[last + new_nodes] = nodes[2*n];
+          node_flag[nodes[2*n]] = 1;
+          new_nodes++;
+        }
       }
     }
 
     if (new_nodes == 0){
       // If no new nodes are added, then we have two disconnected
-      // segments of the mesh - we can continue, but this 
+      // segments of the mesh - we can continue, but this
       // should never happen
       for ( int k = 0; k < nnodes; k++ ){
-	if (!node_flag[k]){
-	  node_order[last] = k;
-	  node_flag[k] = 1;
-	  first = last;
-	  last += 1;
-	  break;
-	}
+        if (!node_flag[k]){
+          node_order[last] = k;
+          node_flag[k] = 1;
+          first = last;
+          last += 1;
+          break;
+        }
       }
     }
     else {
@@ -504,25 +504,25 @@ void TACSPanelAnalysis::initialize(){
 
       // Set the boundary conditions
       for ( int j = 0; j < 4; j++ ){
-	if (bc & (1 << j)){
-	  for ( int k = 0; k < nmodes; k++ ){
-	    vars[4*nmodes*node + 4*k + j] = -1;
-	  }
-	}
-	else {
-	  for ( int k = 0; k < nmodes; k++ ){
-	    vars[4*nmodes*node + 4*k + j] = nvars;
-	    nvars++;
-	  }
-	}
+        if (bc & (1 << j)){
+          for ( int k = 0; k < nmodes; k++ ){
+            vars[4*nmodes*node + 4*k + j] = -1;
+          }
+        }
+        else {
+          for ( int k = 0; k < nmodes; k++ ){
+            vars[4*nmodes*node + 4*k + j] = nvars;
+            nvars++;
+          }
+        }
       }
     }
     else {
       for ( int j = 0; j < 4; j++ ){
-	for ( int k = 0; k < nmodes; k++ ){
-	  vars[4*nmodes*node + 4*k + j] = nvars;
-	  nvars++;
-	}
+        for ( int k = 0; k < nmodes; k++ ){
+          vars[4*nmodes*node + 4*k + j] = nvars;
+          nvars++;
+        }
       }
     }
   }
@@ -547,7 +547,7 @@ void TACSPanelAnalysis::initialize(){
   nband = 4*nmodes*nband-1;
 
   delete [] work;
-  
+
 }
 
 /*
@@ -558,27 +558,27 @@ void TACSPanelAnalysis::initialize(){
   dvs:    the design variable values
   numDVs: the length of the design variable array
 */
-void TACSPanelAnalysis::setDesignVars( const TacsScalar dvs[], 
-				       int numDVs ){
+void TACSPanelAnalysis::setDesignVars( const TacsScalar dvs[],
+                                       int numDVs ){
   for ( int k = 0; k < nsegments; k++ ){
     panels[k]->setDesignVars(dvs, numDVs);
   }
-  
+
   for ( int k = 0; k < nbeams; k++ ){
     beams[k]->setDesignVars(dvs, numDVs);
   }
-  
+
   // Set the geometric design variables
   for ( int k = 0; k < nDvGeo; k++ ){
     if (geoDvNums[k] < numDVs){
       geoDvs[k] = dvs[geoDvNums[k]];
     }
   }
-  
+
   if (LxDvNum >= 0 && LxDvNum < numDVs){
     Lx = dvs[LxDvNum];
   }
-  
+
   updateGeometry();
 }
 
@@ -589,16 +589,16 @@ void TACSPanelAnalysis::setDesignVars( const TacsScalar dvs[],
 
   input:
   numDVs:  the length of the design variable array
-  
+
   output:
   dvs:     the internal design variable values
 */
-void TACSPanelAnalysis::getDesignVars( TacsScalar dvs[], 
-				       int numDVs ) const {
+void TACSPanelAnalysis::getDesignVars( TacsScalar dvs[],
+                                       int numDVs ) const {
   for ( int k = 0; k < nsegments; k++ ){
     panels[k]->getDesignVars(dvs, numDVs);
   }
-  
+
   for ( int k = 0; k < nbeams; k++ ){
     beams[k]->getDesignVars(dvs, numDVs);
   }
@@ -620,19 +620,19 @@ void TACSPanelAnalysis::getDesignVars( TacsScalar dvs[],
 
   Retrieve the range of allowable design variable values from the
   stiffness objects, geometric variables and panel length variable.
-  
+
   input:
   numDVs:  the length of the bound arrays
-  
+
   output:
   lb, ub:  the lower and upper variable bounds
 */
-void TACSPanelAnalysis::getDesignVarRange( TacsScalar lb[], TacsScalar ub[], 
+void TACSPanelAnalysis::getDesignVarRange( TacsScalar lb[], TacsScalar ub[],
                                            int numDVs ) const {
   for ( int k = 0; k < nsegments; k++ ){
     panels[k]->getDesignVarRange(lb, ub, numDVs);
   }
-  
+
   for ( int k = 0; k < nbeams; k++ ){
     beams[k]->getDesignVarRange(lb, ub, numDVs);
   }
@@ -685,7 +685,7 @@ TacsScalar TACSPanelAnalysis::computePtMass(){
   for ( int k = 0; k < nsegments; k++ ){
     int n1 = nodes[2*k];
     int n2 = nodes[2*k+1];
-    
+
     TacsScalar c = (Xpts[2*n2] - Xpts[2*n1]);
     TacsScalar s = (Xpts[2*n2+1] - Xpts[2*n1+1]);
     TacsScalar Le = sqrt(c*c + s*s);
@@ -714,13 +714,13 @@ TacsScalar TACSPanelAnalysis::computePtMass(){
 
   input:
   scale:  scale the design sensitivity by this value
-  
+
   in/out:
   fdvSens:  the derivative array
   numDVs:   the length of the derivative array
 */
-void TACSPanelAnalysis::addPtMassDVSens(  TacsScalar scale, 
-                                          TacsScalar fdvSens[], 
+void TACSPanelAnalysis::addPtMassDVSens(  TacsScalar scale,
+                                          TacsScalar fdvSens[],
                                           int numDVs ){
   // Compute the full panel length in the y-direction
   TacsScalar cy = Xpts[2*last_node] - Xpts[2*first_node];
@@ -731,7 +731,7 @@ void TACSPanelAnalysis::addPtMassDVSens(  TacsScalar scale,
   for ( int k = 0; k < nsegments; k++ ){
     int n1 = nodes[2*k];
     int n2 = nodes[2*k+1];
-    
+
     TacsScalar c = (Xpts[2*n2] - Xpts[2*n1]);
     TacsScalar s = (Xpts[2*n2+1] - Xpts[2*n1+1]);
     TacsScalar Le = sqrt(c*c + s*s);
@@ -740,7 +740,7 @@ void TACSPanelAnalysis::addPtMassDVSens(  TacsScalar scale,
     TacsScalar alpha[2] = {scale*Le*invLy, 0.0};
     panels[k]->addPointwiseMassDVSens(pt, alpha,
                                       fdvSens, numDVs);
-  
+
     // Add the contribution to the pointmass
     TacsScalar mass[2];
     panels[k]->getPointwiseMass(pt, mass);
@@ -754,9 +754,9 @@ void TACSPanelAnalysis::addPtMassDVSens(  TacsScalar scale,
   // Now, loop over all of the geometric design variables
   for ( int dv = 0; dv < nDvGeo; dv++ ){
     // Compute the sensitivity from the y-direction
-    TacsScalar scy = (XptLin[2*nnodes*dv + 2*last_node] - 
+    TacsScalar scy = (XptLin[2*nnodes*dv + 2*last_node] -
                       XptLin[2*nnodes*dv + 2*first_node]);
-    TacsScalar ssy = (XptLin[2*nnodes*dv + 2*last_node+1] - 
+    TacsScalar ssy = (XptLin[2*nnodes*dv + 2*last_node+1] -
                       XptLin[2*nnodes*dv + 2*first_node+1]);
     TacsScalar sLy = (cy*scy + sy*ssy)*invLy;
 
@@ -765,16 +765,16 @@ void TACSPanelAnalysis::addPtMassDVSens(  TacsScalar scale,
     for ( int k = 0; k < nsegments; k++ ){
       int n1 = nodes[2*k];
       int n2 = nodes[2*k+1];
-      
+
       TacsScalar c = (Xpts[2*n2] - Xpts[2*n1]);
       TacsScalar s = (Xpts[2*n2+1] - Xpts[2*n1+1]);
-      TacsScalar sc = (XptLin[2*nnodes*dv + 2*n2] - 
+      TacsScalar sc = (XptLin[2*nnodes*dv + 2*n2] -
                        XptLin[2*nnodes*dv + 2*n1]);
-      TacsScalar ss = (XptLin[2*nnodes*dv + 2*n2+1] - 
+      TacsScalar ss = (XptLin[2*nnodes*dv + 2*n2+1] -
                        XptLin[2*nnodes*dv + 2*n1+1]);
       TacsScalar Le = sqrt(c*c + s*s);
       TacsScalar sLe = (c*sc + s*ss)/Le;
-        
+
       double pt[2] = {0.0, 0.0};
       TacsScalar mass[2];
       panels[k]->getPointwiseMass(pt, mass);
@@ -802,12 +802,12 @@ void TACSPanelAnalysis::addPtMassDVSens(  TacsScalar scale,
   input:
   npoints:    the number of points to test < MAX_NUM_FAIL_POINTS
   fail_segs:  an array of the failure segments (index of stiffness objs)
-  fail_nodes: an array of node numbers to test the failure 
+  fail_nodes: an array of node numbers to test the failure
   is_skin:    is the segment a skin segment?
 */
 void TACSPanelAnalysis::setFailurePoints( int npoints,
-                                          int fail_segs[], 
-					  int fail_nodes[],
+                                          int fail_segs[],
+                                          int fail_nodes[],
                                           int is_skin[] ){
   numFailPoints = npoints;
   if (numFailPoints > MAX_NUM_FAIL_POINTS){
@@ -833,26 +833,26 @@ Node out of range\n");
 }
 
 /*
-  Compute the failure function over the segments 
+  Compute the failure function over the segments
 
   The strain in the local segment coordinate system can be obtained
   by the strain in the global coordinate system as follows:
 
   ex'  = ex
   ey'  = ey * cos(t)**2 + ez * sin(t)**2 + gyz * sin(t)*cos(t)
-  gxy' = gxy * cos(t) + gxz * sin(t)  
+  gxy' = gxy * cos(t) + gxz * sin(t)
 
   The local in-plane components of the panel strain tensor are given
   as follows:
 
   e[0] = strain[0] + z*strain[3];
-  e[1] = (strain[1] + z*strain[4])*cos(t)**2 
+  e[1] = (strain[1] + z*strain[4])*cos(t)**2
   e[2] = (strain[2] + z*strain[5])*cos(t)
 
   The bending strain requires an additional multiplication by cos(t)
   because they represent the local through-thickness variation of the
   strain. This local through-thickness direction varies as the angle
-  changes. As a result the local bending strain is:  
+  changes. As a result the local bending strain is:
 
   e[3] = strain[3]*cos(t)
   e[4] = strain[4]*cos(t)**3
@@ -869,23 +869,23 @@ void TACSPanelAnalysis::failure( const TacsScalar strain[],
     }
     else {
       // Compute the strain at the midpoint of the segment
-      TacsScalar e[8];    
+      TacsScalar e[8];
       TacsScalar z = Xpts[2*failNodes[k]+1];
-      
+
       int n1 = nodes[2*seg];
-      int n2 = nodes[2*seg+1];   
+      int n2 = nodes[2*seg+1];
       TacsScalar c = (Xpts[2*n2] - Xpts[2*n1]);
       TacsScalar s = (Xpts[2*n2+1] - Xpts[2*n1+1]);
       TacsScalar Le = sqrt(c*c + s*s);
       c = c/Le;
       s = s/Le;
-      
+
       e[0] = (strain[0] + z*strain[3]);
       e[1] = e[2] = 0.0;
-      
+
       e[3] = strain[3]*c;
       e[4] = e[5] = e[6] = e[7] = 0.0;
-      
+
       panels[seg]->failure(pt, e, &fail[k]);
     }
   }
@@ -895,7 +895,7 @@ void TACSPanelAnalysis::failure( const TacsScalar strain[],
   Compute the derivative of the failure function with respect to the
   given design variable number. Add the result times the weight vector
   to the array failDVSens.
-  
+
   This function can be used to compute the derivative of an aggregated
   failure function w.r.t. the design variables.
 
@@ -907,7 +907,7 @@ void TACSPanelAnalysis::failure( const TacsScalar strain[],
 
   output:
   failDVSens:  the derivative of the failure function w.r.t. design vars
-*/ 
+*/
 void TACSPanelAnalysis::addFailureDVSens( const TacsScalar strain[],
                                           const TacsScalar weights[], int nfail,
                                           TacsScalar fdvSens[], int dvLen ){
@@ -922,29 +922,29 @@ void TACSPanelAnalysis::addFailureDVSens( const TacsScalar strain[],
         TacsScalar e[8];
         TacsScalar z = Xpts[2*failNodes[k]+1];
         TacsScalar sz = XptLin[2*nnodes*dv + 2*failNodes[k]+1];
-        
+
         // Compute the sensitivity of the locations
         int n1 = nodes[2*seg];
-        int n2 = nodes[2*seg+1];   
+        int n2 = nodes[2*seg+1];
         TacsScalar c = (Xpts[2*n2] - Xpts[2*n1]);
         TacsScalar s = (Xpts[2*n2+1] - Xpts[2*n1+1]);
-        TacsScalar sc = (XptLin[2*nnodes*dv + 2*n2] - 
+        TacsScalar sc = (XptLin[2*nnodes*dv + 2*n2] -
                            XptLin[2*nnodes*dv + 2*n1]);
-        TacsScalar ss = (XptLin[2*nnodes*dv + 2*n2+1] - 
+        TacsScalar ss = (XptLin[2*nnodes*dv + 2*n2+1] -
                          XptLin[2*nnodes*dv + 2*n1+1]);
         TacsScalar Le = sqrt(c*c + s*s);
         TacsScalar sLe = (c*sc + s*ss)/Le;
         sc = (sc*Le - sLe*c)/(Le*Le);
         c = c/Le;
-        
+
         e[0] = (strain[0] + z*strain[3]);
         e[1] = e[2] = 0.0;
-        
+
         e[3] = strain[3]*c;
         e[4] = e[5] = e[6] = e[7] = 0.0;
-        
+
         TacsScalar eSens[8];
-        panels[seg]->failureStrainSens(pt, e, eSens);          
+        panels[seg]->failureStrainSens(pt, e, eSens);
         failDVSens += weights[k]*(eSens[0]*sz*strain[3] +
                                   eSens[3]*sc*strain[3]);
       }
@@ -965,23 +965,23 @@ void TACSPanelAnalysis::addFailureDVSens( const TacsScalar strain[],
     }
     else {
       // Compute the strain at the midpoint of the segment
-      TacsScalar e[8];    
+      TacsScalar e[8];
       TacsScalar z = Xpts[2*failNodes[k]+1];
-      
+
       int n1 = nodes[2*seg];
-      int n2 = nodes[2*seg+1];   
+      int n2 = nodes[2*seg+1];
       TacsScalar c = (Xpts[2*n2] - Xpts[2*n1]);
       TacsScalar s = (Xpts[2*n2+1] - Xpts[2*n1+1]);
       TacsScalar Le = sqrt(c*c + s*s);
       c = c/Le;
       s = s/Le;
-      
+
       e[0] = (strain[0] + z*strain[3]);
       e[1] = e[2] = 0.0;
-      
+
       e[3] = strain[3]*c;
       e[4] = e[5] = e[6] = e[7] = 0.0;
-      
+
       panels[seg]->addFailureDVSens(pt, e, weights[k],
                                     fdvSens, dvLen);
     }
@@ -991,7 +991,7 @@ void TACSPanelAnalysis::addFailureDVSens( const TacsScalar strain[],
 /*
   Compute the derivative of the failure function with respect to the
   input strain. This takes into account the weights from the KS
-  aggregation of all the failure points. 
+  aggregation of all the failure points.
 
   input:
   strain:  the strain at the parametric point in the constitutive obj.
@@ -1002,7 +1002,7 @@ void TACSPanelAnalysis::addFailureDVSens( const TacsScalar strain[],
   failSens: the derivative of the aggregated failure loads w.r.t. strain
 */
 void TACSPanelAnalysis::failureStrainSens( const TacsScalar strain[],
-                                           const TacsScalar weights[], 
+                                           const TacsScalar weights[],
                                            int nfail, TacsScalar failSens[] ){
   const double pt[3] = {0.0, 0.0, 0.0};
 
@@ -1018,22 +1018,22 @@ void TACSPanelAnalysis::failureStrainSens( const TacsScalar strain[],
       failSens[0] += weights[k]*eSens[0];
       failSens[1] += weights[k]*eSens[1];
       failSens[2] += weights[k]*eSens[2];
-      
+
       failSens[3] += weights[k]*eSens[3];
       failSens[4] += weights[k]*eSens[4];
       failSens[5] += weights[k]*eSens[5];
-      
+
       failSens[6] += weights[k]*eSens[6];
       failSens[7] += weights[k]*eSens[7];
     }
     else {
       // Compute the strain at the midpoint of the segment
-      TacsScalar e[8];    
+      TacsScalar e[8];
       int seg = failSegments[k];
       TacsScalar z = Xpts[2*failNodes[k]+1];
-      
+
       int n1 = nodes[2*seg];
-      int n2 = nodes[2*seg+1];   
+      int n2 = nodes[2*seg+1];
       TacsScalar c = (Xpts[2*n2] - Xpts[2*n1]);
       TacsScalar s = (Xpts[2*n2+1] - Xpts[2*n1+1]);
       TacsScalar Le = sqrt(c*c + s*s);
@@ -1042,13 +1042,13 @@ void TACSPanelAnalysis::failureStrainSens( const TacsScalar strain[],
 
       e[0] = (strain[0] + z*strain[3]);
       e[1] = e[2] = 0.0;
-      
+
       e[3] = strain[3]*c;
       e[4] = e[5] = e[6] = e[7] = 0.0;
-      
+
       TacsScalar eSens[8];
       panels[seg]->failureStrainSens(pt, e, eSens);
-      
+
       failSens[0] += weights[k]*eSens[0];
       failSens[3] += weights[k]*(z*eSens[0] + c*eSens[3]);
     }
@@ -1064,8 +1064,8 @@ void TACSPanelAnalysis::failureStrainSens( const TacsScalar strain[],
   A = 1/Ly*( sum_i A_i*L_i )
 
   B = 1/Ly*( sum_i 0.5*A_i*(z1 + z2)*L_i^2 + B_i cos(t)*L_i )
-  
-  D = 1/Ly*( sum_i 1/3*A_i*(z1^2 + z1*z2 + z2^2)*L_i^3 + 
+
+  D = 1/Ly*( sum_i 1/3*A_i*(z1^2 + z1*z2 + z2^2)*L_i^3 +
                    B_i*cos(t)*(z1 + z2)*L_i^2 +
                    D_i*cos(t)^2*L_i )
 
@@ -1097,7 +1097,7 @@ void TACSPanelAnalysis::computeStiffness( TacsScalar A[], TacsScalar B[],
 
     if (segmentType[k] == STIFFENER_SEGMENT){
       TacsScalar A11 = (At[0]*At[3] - At[1]*At[1])/At[3];
-    
+
       TacsScalar z1 = Xpts[2*n1+1];
       TacsScalar z2 = Xpts[2*n2+1];
 
@@ -1148,10 +1148,10 @@ void TACSPanelAnalysis::computeStiffness( TacsScalar A[], TacsScalar B[],
   object w.r.t. the design variables
 */
 /*
-void TACSPanelAnalysis::computeStiffnessDVSens( int dvNum, 
-                                                TacsScalar sA[], 
+void TACSPanelAnalysis::computeStiffnessDVSens( int dvNum,
+                                                TacsScalar sA[],
                                                 TacsScalar sB[],
-                                                TacsScalar sD[], 
+                                                TacsScalar sD[],
                                                 TacsScalar sAs[] ){
   double pt[3] = {0.0, 0.0, 0.0};
   TacsScalar A[6], B[6], D[6], As[3];
@@ -1175,16 +1175,16 @@ void TACSPanelAnalysis::computeStiffnessDVSens( int dvNum,
           break;
         }
       }
-    
+
       for ( int k = 0; k < nsegments; k++ ){
         int n1 = nodes[2*k];
         int n2 = nodes[2*k+1];
 
         TacsScalar c = (Xpts[2*n2] - Xpts[2*n1]);
         TacsScalar s = (Xpts[2*n2+1] - Xpts[2*n1+1]);
-        TacsScalar sc = (XptLin[2*nnodes*dv + 2*n2] - 
+        TacsScalar sc = (XptLin[2*nnodes*dv + 2*n2] -
                          XptLin[2*nnodes*dv + 2*n1]);
-        TacsScalar ss = (XptLin[2*nnodes*dv + 2*n2+1] - 
+        TacsScalar ss = (XptLin[2*nnodes*dv + 2*n2+1] -
                          XptLin[2*nnodes*dv + 2*n1+1]);
         TacsScalar Le = sqrt(c*c + s*s);
         TacsScalar sLe = (c*sc + s*ss)/Le;
@@ -1197,17 +1197,17 @@ void TACSPanelAnalysis::computeStiffnessDVSens( int dvNum,
 
         if (segmentType[k] == STIFFENER_SEGMENT){
           TacsScalar A11 = (At[0]*At[3] - At[1]*At[1])/At[3];
-    
+
           TacsScalar z1 = Xpts[2*n1+1];
           TacsScalar z2 = Xpts[2*n2+1];
           TacsScalar sz1 = XptLin[2*nnodes*dv + 2*n1+1];
           TacsScalar sz2 = XptLin[2*nnodes*dv + 2*n2+1];
 
-	  A[0] += Le*A11;
-	  B[0] += 0.5*(z1 + z2)*Le*A11;
-	  D[0] += (z1*z1 + z1*z2 + z2*z2)*Le*A11/3.0;
-	  
-	  As[0] += kcorr*At[5]*Le;
+          A[0] += Le*A11;
+          B[0] += 0.5*(z1 + z2)*Le*A11;
+          D[0] += (z1*z1 + z1*z2 + z2*z2)*Le*A11/3.0;
+
+          As[0] += kcorr*At[5]*Le;
 
           sA[0] += sLe*A11;
           sB[0] += 0.5*((sz1 + sz2)*Le + (z1 + z2)*sLe)*A11;
@@ -1218,17 +1218,17 @@ void TACSPanelAnalysis::computeStiffnessDVSens( int dvNum,
         }
         else {
           for ( int i = 0; i < 6; i++ ){
-	    A[i] += At[i]*Le;
-	    B[i] += Bt[i]*Le;
-	    D[i] += Dt[i]*Le;
+            A[i] += At[i]*Le;
+            B[i] += Bt[i]*Le;
+            D[i] += Dt[i]*Le;
 
             sA[i] += At[i]*sLe;
             sB[i] += Bt[i]*sLe;
             sD[i] += Dt[i]*sLe;
           }
-          
+
           for ( int i = 0; i < 3; i++ ){
-	    As[i] += Le*Ast[i];
+            As[i] += Le*Ast[i];
             sAs[i] += Ast[i]*sLe;
           }
         }
@@ -1236,22 +1236,22 @@ void TACSPanelAnalysis::computeStiffnessDVSens( int dvNum,
 
       TacsScalar cy = Xpts[2*last_node] - Xpts[2*first_node];
       TacsScalar sy = Xpts[2*last_node+1] - Xpts[2*first_node+1];
-      TacsScalar scy = (XptLin[2*nnodes*dv + 2*last_node] - 
+      TacsScalar scy = (XptLin[2*nnodes*dv + 2*last_node] -
                         XptLin[2*nnodes*dv + 2*first_node]);
-      TacsScalar ssy = (XptLin[2*nnodes*dv + 2*last_node+1] - 
+      TacsScalar ssy = (XptLin[2*nnodes*dv + 2*last_node+1] -
                         XptLin[2*nnodes*dv + 2*first_node+1]);
       TacsScalar invLy = 1.0/sqrt(cy*cy + sy*sy);
       TacsScalar sinvLy = - invLy*invLy*invLy*(scy*cy + ssy*sy);
 
       for ( int i = 0; i < 6; i++ ){
-	sA[i] = invLy*sA[i] + sinvLy*A[i];
-	sB[i] = invLy*sB[i] + sinvLy*B[i];
-	sD[i] = invLy*sD[i] + sinvLy*D[i];
+        sA[i] = invLy*sA[i] + sinvLy*A[i];
+        sB[i] = invLy*sB[i] + sinvLy*B[i];
+        sD[i] = invLy*sD[i] + sinvLy*D[i];
       }
-      
+
       for ( int i = 0; i < 3; i++ ){
-	sAs[i] = invLy*sAs[i] + sinvLy*As[i];
-      }    
+        sAs[i] = invLy*sAs[i] + sinvLy*As[i];
+      }
     }
     else if (designVarTypes[queryIndex] == 0){
       for ( int k = 0; k < nsegments; k++ ){
@@ -1271,17 +1271,17 @@ void TACSPanelAnalysis::computeStiffnessDVSens( int dvNum,
 
         if (segmentType[k] == STIFFENER_SEGMENT){
           TacsScalar A11 = (At[0]*At[3] - At[1]*At[1])/At[3];
-          TacsScalar sA11 = (At[0]*sAt[3] + sAt[0]*At[3] - 
+          TacsScalar sA11 = (At[0]*sAt[3] + sAt[0]*At[3] -
                              2.0*At[1]*sAt[1])/At[3];
           sA11 -= (A11/At[3])*sAt[3];
-    
+
           TacsScalar z1 = Xpts[2*n1+1];
           TacsScalar z2 = Xpts[2*n2+1];
 
           sA[0] += Le*sA11;
           sB[0] += 0.5*(z1 + z2)*Le*sA11;
           sD[0] += (z1*z1 + z1*z2 + z2*z2)*Le*sA11/3.0;
-          
+
           sAs[0] += kcorr*sAt[5]*Le;
         }
         else {
@@ -1290,7 +1290,7 @@ void TACSPanelAnalysis::computeStiffnessDVSens( int dvNum,
             sB[i] += sBt[i]*Le;
             sD[i] += sDt[i]*Le;
           }
-          
+
           for ( int i = 0; i < 3; i++ ){
             sAs[i] += sAst[i]*Le;
           }
@@ -1300,16 +1300,16 @@ void TACSPanelAnalysis::computeStiffnessDVSens( int dvNum,
       TacsScalar cy = Xpts[2*last_node] - Xpts[2*first_node];
       TacsScalar sy = Xpts[2*last_node+1] - Xpts[2*first_node+1];
       TacsScalar invLy = 1.0/sqrt(cy*cy + sy*sy);
-      
+
       for ( int i = 0; i < 6; i++ ){
-	sA[i] *= invLy;
-	sB[i] *= invLy;
-	sD[i] *= invLy;
+        sA[i] *= invLy;
+        sB[i] *= invLy;
+        sD[i] *= invLy;
       }
-      
+
       for ( int i = 0; i < 3; i++ ){
-	sAs[i] *= invLy;
-      }      
+        sAs[i] *= invLy;
+      }
     }
   }
 }
@@ -1336,15 +1336,15 @@ void TACSPanelAnalysis::computeStiffnessDVSens( int dvNum,
   The explicitly restarted Lanczos method provides a fast way to find
   the few largest eigenvalues of a generalized eigenvalue problem
   without computing the full spectrum.
-  
+
   The Lanczos method builds an orthogonal subspace starting with a
   random initial vector. The subspace utilizes m vectors.  A good
   starting point is to set m = 4*k, or some small multiple of the
   number of desired eigenvectors. Large m leads to a larger subspace
   and since we use full orthogonalization, a more expensive iteration,
   but smaller m usually requires more restarts.
-  
-  Note that the size of the work space required is: n*(m+2) + 4*m + m*m 
+
+  Note that the size of the work space required is: n*(m+2) + 4*m + m*m
 
   Note that if lm is set to true, we find the largest magnitude
   eigenvalues: those corresponding to both the largest and smallest
@@ -1363,19 +1363,19 @@ void TACSPanelAnalysis::computeStiffnessDVSens( int dvNum,
   ldb:    the leading dimension of B (>= kb + 1)
   k:      the number of requested converged eigenvalues
   m:      the size of the Lanczos factorization
-  work:   the work array - at least of size n*(m+2) + 4*m + m*m 
+  work:   the work array - at least of size n*(m+2) + 4*m + m*m
 
   output:
   eigs:    the k (or 2*k if (lm == True)) converged eigenvalues
   eigvecs: the k (or 2*k if (lm == True)) converged eigenvectors
 */
-int TACSPanelAnalysis::computeEigenvalues( int lm, const char *auplo, 
-					   const char *buplo, int n,
-					   int ka, TacsScalar *A, int lda,
-					   int kb, TacsScalar *B, int ldb,
-					   int k, int m, TacsScalar *work,
-					   double tol, TacsScalar *eigs,
-					   TacsScalar *eigvecs ){
+int TACSPanelAnalysis::computeEigenvalues( int lm, const char *auplo,
+                                           const char *buplo, int n,
+                                           int ka, TacsScalar *A, int lda,
+                                           int kb, TacsScalar *B, int ldb,
+                                           int k, int m, TacsScalar *work,
+                                           double tol, TacsScalar *eigs,
+                                           TacsScalar *eigvecs ){
   if (k >= m || (lm && 2*k >= m)){
     fprintf(stderr, "TACSPanelAnalysis: Error, Lanczos method \
 requires a larger subspace\n");
@@ -1406,7 +1406,7 @@ factorizaiton failed: %d\n", info);
   for ( int i = 0; i < n; i++ ){
     v0[i] = -1.0 + 2.0*rand()/RAND_MAX;
   }
-  
+
   // Normalize the initial estimate
   int incx = 1;
   double vnrm = BLASnrm2(&n, v0, &incx);
@@ -1434,50 +1434,50 @@ factorizaiton failed: %d\n", info);
       // Apply the left factor - note that the third string denotes
       // whether or not to use a unit normal
       if (buplo[0] == 'L'){
-	BLAStbsv(buplo, "T", "N", &n, &kb, B, &ldb, tmp, &incx);
+        BLAStbsv(buplo, "T", "N", &n, &kb, B, &ldb, tmp, &incx);
       }
       else {
-	BLAStbsv(buplo, "N", "N", &n, &kb, B, &ldb, tmp, &incx);
+        BLAStbsv(buplo, "N", "N", &n, &kb, B, &ldb, tmp, &incx);
       }
 
       // Compute V[i+1] <- A*tmp
       TacsScalar a = 1.0, b = 0.0;
-      BLASsbmv(auplo, &n, &ka, &a, A, &lda, 
-	       tmp, &incx, &b, &V[n*(i+1)], &incx);
+      BLASsbmv(auplo, &n, &ka, &a, A, &lda,
+               tmp, &incx, &b, &V[n*(i+1)], &incx);
 
       // Apply the right factor V[i+1] <- L^{-1}
       if (buplo[0] == 'L'){
-	BLAStbsv(buplo, "N", "N", &n, &kb, B, &ldb, &V[n*(i+1)], &incx);
+        BLAStbsv(buplo, "N", "N", &n, &kb, B, &ldb, &V[n*(i+1)], &incx);
       }
       else {
-	BLAStbsv(buplo, "T", "N", &n, &kb, B, &ldb, &V[n*(i+1)], &incx);
+        BLAStbsv(buplo, "T", "N", &n, &kb, B, &ldb, &V[n*(i+1)], &incx);
       }
 
       // Orthogonalize the vector V[i+1] against all previous vectors
       for ( int j = i; j >= 0; j-- ){
-	// Compute the dot product h = dot(V[i+1], V[j])
-	TacsScalar h = BLASdot(&n, &V[n*(i+1)], &incx, &V[n*j], &incx);
-	if (i == j){
-	  diag[i] = h;
-	}
+        // Compute the dot product h = dot(V[i+1], V[j])
+        TacsScalar h = BLASdot(&n, &V[n*(i+1)], &incx, &V[n*j], &incx);
+        if (i == j){
+          diag[i] = h;
+        }
 
-	// Remove the component of V[j] from V[i+1]
-	h *= -1.0;
-	BLASaxpy(&n, &h, &V[n*j], &incx, &V[n*(i+1)], &incx);
+        // Remove the component of V[j] from V[i+1]
+        h *= -1.0;
+        BLASaxpy(&n, &h, &V[n*j], &incx, &V[n*(i+1)], &incx);
       }
-      
+
       if (i == m-1){
-	herr = BLASnrm2(&n, &V[n*(i+1)], &incx);
+        herr = BLASnrm2(&n, &V[n*(i+1)], &incx);
       }
       else {
-	// Normalize the vector
-	subdiag[i] = BLASnrm2(&n, &V[n*(i+1)], &incx);
-	vnrm = 1.0/subdiag[i];
-	BLASscal(&n, &vnrm, &V[n*(i+1)], &incx);
+        // Normalize the vector
+        subdiag[i] = BLASnrm2(&n, &V[n*(i+1)], &incx);
+        vnrm = 1.0/subdiag[i];
+        BLASscal(&n, &vnrm, &V[n*(i+1)], &incx);
       }
     }
 
-    // Set pointers to the required data 
+    // Set pointers to the required data
     TacsScalar *Z = &work[n*(m+2) + 2*m]; // m*m locations
     TacsScalar *W = &work[n*(m+2) + 2*m + m*m]; // 2*m locations
 
@@ -1494,10 +1494,10 @@ did not converge to zero\n", vinfo);
     for ( int i = 0; (i < m) && (nconv < k); i++ ){
       // Apply the convergence criteria
       if (fabs(herr*Z[(i+1)*m-1]) < tol){
-	nconv++;
+        nconv++;
       }
       else {
-	break;
+        break;
       }
     }
 
@@ -1506,20 +1506,20 @@ did not converge to zero\n", vinfo);
     npconv = 0;
     if (lm){
       for ( int i = 0; (i < m) && (npconv < k); i++ ){
-	// Apply the convergence criteria
-	if (fabs(herr*Z[(m-i)*m-1]) < tol){
-	  npconv++;
-	}
-	else {
-	  break;
-	}
+        // Apply the convergence criteria
+        if (fabs(herr*Z[(m-i)*m-1]) < tol){
+          npconv++;
+        }
+        else {
+          break;
+        }
       }
     }
 
     // Check to see if we've converged or not
     converged = 0;
-    if (lm){ 
-      converged = ((nconv >= k) && (npconv >= k)); 
+    if (lm){
+      converged = ((nconv >= k) && (npconv >= k));
     }
     else {
       converged = (nconv >= k);
@@ -1536,17 +1536,17 @@ did not converge to zero\n", vinfo);
     // adjust the range
     if (lm && npconv > 0){
       for ( int i = 0; i < npconv; i++ ){
-	// Swap the eigenvectors for the projection
-	for ( int j = 0; j < m; j++ ){
-	  TacsScalar t = Z[(nconv+i)*m + j];
-	  Z[(nconv+i)*m + j] = Z[(m-npconv+i)*m + j];
-	  Z[(m-npconv+i)*m + j] = t;
-	}
+        // Swap the eigenvectors for the projection
+        for ( int j = 0; j < m; j++ ){
+          TacsScalar t = Z[(nconv+i)*m + j];
+          Z[(nconv+i)*m + j] = Z[(m-npconv+i)*m + j];
+          Z[(m-npconv+i)*m + j] = t;
+        }
 
-	// Swap the eigenvalues
-	TacsScalar t = diag[nconv+i];
-	diag[nconv+i] = diag[m-npconv+i];
-	diag[m-npconv+i] = t;
+        // Swap the eigenvalues
+        TacsScalar t = diag[nconv+i];
+        diag[nconv+i] = diag[m-npconv+i];
+        diag[m-npconv+i] = t;
       }
     }
 
@@ -1555,26 +1555,26 @@ did not converge to zero\n", vinfo);
       int nev = nconv + npconv;
 
       for ( int i = 0; i < nev; i++ ){
-	// Copy over the eigenvalues from the diagonal
-	eigs[i] = diag[i];
+        // Copy over the eigenvalues from the diagonal
+        eigs[i] = diag[i];
       }
 
       // Compute the linear combination of the Lanczos vectors
-      // that creates the k-desired eigenvectors 
+      // that creates the k-desired eigenvectors
       TacsScalar a = 1.0, b = 0.0;
       BLASgemm("N", "N", &n, &nev, &m, &a, V, &n, Z, &ldz,
-	       &b, eigvecs, &n);
+               &b, eigvecs, &n);
 
       // Compute the transform x = LB^{-T}*y   or   x = UB^{-1}*y
       if (buplo[0] == 'L'){
-	for ( int i = 0; i < nev; i++ ){
-	  BLAStbsv(buplo, "T", "N", &n, &kb, B, &ldb, &eigvecs[n*i], &incx);
-	}
+        for ( int i = 0; i < nev; i++ ){
+          BLAStbsv(buplo, "T", "N", &n, &kb, B, &ldb, &eigvecs[n*i], &incx);
+        }
       }
       else {
-	for ( int i = 0; i < nev; i++ ){ 
-	  BLAStbsv(buplo, "N", "N", &n, &kb, B, &ldb, &eigvecs[n*i], &incx);
-	}
+        for ( int i = 0; i < nev; i++ ){
+          BLAStbsv(buplo, "N", "N", &n, &kb, B, &ldb, &eigvecs[n*i], &incx);
+        }
       }
     }
     else {
@@ -1582,20 +1582,20 @@ did not converge to zero\n", vinfo);
       // entries an identity
       int nev = nconv + npconv;
       for ( int i = 0; i < nev; i++ ){
-	subdiag[i] = 0.0;
+        subdiag[i] = 0.0;
       }
 
       // If the positive eigenvalues have not converged yet, work on
       // them
       if (nconv >= k && npconv < k){
-	memcpy(&Z[m*nev], &Z[m*(m-npconv-1)], m*sizeof(TacsScalar));
+        memcpy(&Z[m*nev], &Z[m*(m-npconv-1)], m*sizeof(TacsScalar));
       }
 
       // Compute the linear combination of vectors
       int nv = nev+1;
       TacsScalar a = 1.0, b = 0.0;
       BLASgemm("N", "N", &n, &nv, &m, &a, V, &n, Z, &ldz,
-	       &b, eigvecs, &n);
+               &b, eigvecs, &n);
 
       // Copy over the new, frozen, converged eigenvalues
       memcpy(V, eigvecs, n*nv*sizeof(TacsScalar));
@@ -1621,13 +1621,13 @@ did not converge to zero\n", vinfo);
 
 /*
   Compute the solution with a uniform pressure load on the skin
-  panels.  
+  panels.
 
   Solve the system of equations:
 
   K*x = f
 */
-int TACSPanelAnalysis::computePressureLoad( TacsScalar p, 
+int TACSPanelAnalysis::computePressureLoad( TacsScalar p,
                                             const char *file_name ){
   double pt[3] = {0.0, 0.0, 0.0};
 
@@ -1637,7 +1637,7 @@ int TACSPanelAnalysis::computePressureLoad( TacsScalar p,
 
   memset(K, 0, nentries*sizeof(TacsScalar));
   memset(f, 0, nvars*sizeof(TacsScalar));
-  
+
   for ( int k = 0; k < nsegments; k++ ){
     // Compute the stiffness matrix and geometric stiffness matrix
     // corresponding to this segment node
@@ -1658,7 +1658,7 @@ int TACSPanelAnalysis::computePressureLoad( TacsScalar p,
     TacsScalar Ct[10];
     beams[k]->getStiffness(pt, Ct);
     addStiffMatBeam(K, bnodes[k], Ct);
-  }  
+  }
 
   int info, one = 1;
   int ldk = nband+1;
@@ -1682,7 +1682,7 @@ int TACSPanelAnalysis::computePressureLoad( TacsScalar p,
 
 /*
   Compute the first 'nloads' critical buckling loads using a linear
-  eigenvalue analysis. 
+  eigenvalue analysis.
 
   If a prefix is provided, a file is created for each of the nloads
   buckling modes, otherwise no files are produced.
@@ -1692,14 +1692,14 @@ int TACSPanelAnalysis::computePressureLoad( TacsScalar p,
   Nxy:    the shear force per unit length
   nloads: the number of loads to compute
   prefix: the directory to put the output file
-  
+
   output:
   loads:  an array of the first nloads critical buckling loads
 */
-int TACSPanelAnalysis::computeBucklingLoads( TacsScalar Nx, 
-					     TacsScalar Nxy, 
-                                             TacsScalar loads[], 
-					     int nloads,
+int TACSPanelAnalysis::computeBucklingLoads( TacsScalar Nx,
+                                             TacsScalar Nxy,
+                                             TacsScalar loads[],
+                                             int nloads,
                                              const char *prefix ){
   // Allocate space for the eigenvalues and eigenvectors
   TacsScalar *eigvals = new TacsScalar[ nloads ];
@@ -1711,10 +1711,10 @@ int TACSPanelAnalysis::computeBucklingLoads( TacsScalar Nx,
 
   // Compute the segment loads
   computeSegmentLoads(Nx, Nxy, segmentLoads, beamLoads);
-  
+
   // Compute the critical buckling eigenvalues
-  int info = computeBucklingLoads(segmentLoads, beamLoads, 
-				  nloads, eigvals, eigvecs, 0);
+  int info = computeBucklingLoads(segmentLoads, beamLoads,
+                                  nloads, eigvals, eigvecs, 0);
 
   // Compute the actual buckling load, since we apply a transform
   // to the original buckling problem
@@ -1742,11 +1742,11 @@ int TACSPanelAnalysis::computeBucklingLoads( TacsScalar Nx,
   delete [] eigvecs;
 
   return info;
-} 
+}
 
 /*
   Compute the maximum magnitude positive and negative critical
-  buckling modes. 
+  buckling modes.
 
   Positive and negative buckling loads may be different is there is an
   asymmetry in the problem. For instance, if the panel is skewed at an
@@ -1755,13 +1755,13 @@ int TACSPanelAnalysis::computeBucklingLoads( TacsScalar Nx,
   input:
   Nxy:    the shear force per unit length
   nloads: the number of required loads
-  
+
   output:
   posLoad: the positive critical buckling loads
   negLoad: the negative critical buckling loads
 */
-int TACSPanelAnalysis::computeBucklingLoads( TacsScalar Nxy, 
-                                             TacsScalar posLoads[], 
+int TACSPanelAnalysis::computeBucklingLoads( TacsScalar Nxy,
+                                             TacsScalar posLoads[],
                                              TacsScalar negLoads[],
                                              int nloads ){
   // Set the axial load per unit length to zero
@@ -1779,9 +1779,9 @@ int TACSPanelAnalysis::computeBucklingLoads( TacsScalar Nxy,
   computeSegmentLoads(Nx, Nxy, segmentLoads, beamLoads);
 
   // Compute the critical buckling loads
-  int info = computeBucklingLoads(segmentLoads, beamLoads, 
-				  nloads, eigvals, eigvecs,
-				  (posLoads && negLoads));
+  int info = computeBucklingLoads(segmentLoads, beamLoads,
+                                  nloads, eigvals, eigvecs,
+                                  (posLoads && negLoads));
 
   // Calculate the positive and negative critical loads
   // based on the spectral transformation
@@ -1802,8 +1802,8 @@ int TACSPanelAnalysis::computeBucklingLoads( TacsScalar Nxy,
 }
 
 /*
-  This code computes the eigenvalues associated with a 
-  buckling problem. 
+  This code computes the eigenvalues associated with a
+  buckling problem.
 
   The code forms the stiffness matrix K, the geometric stiffness
   matrix G and computes the eigenvalues and eigenvectors of the
@@ -1823,17 +1823,17 @@ int TACSPanelAnalysis::computeBucklingLoads( TacsScalar Nxy,
   segmentLoads:  the loads in each segment
   beamLoads:     the loads in the beams
   neigs:         the number of eigenvalues to compute
-  
+
   output:
   eigvals:       an array of length neigs of the eigenvalues
   eigvecs:       an array of length nvars*neigs of the eigenvectors
 */
-int TACSPanelAnalysis::computeBucklingLoads( const TacsScalar segmentLoads[], 
+int TACSPanelAnalysis::computeBucklingLoads( const TacsScalar segmentLoads[],
                                              const TacsScalar beamLoads[],
                                              int neigs,
-					     TacsScalar eigvals[],
+                                             TacsScalar eigvals[],
                                              TacsScalar eigvecs[],
-					     int two_sided ){
+                                             int two_sided ){
   // The parametric point where we evaluate the stiffness
   double pt[3] = {0.0, 0.0, 0.0};
 
@@ -1866,22 +1866,22 @@ int TACSPanelAnalysis::computeBucklingLoads( const TacsScalar segmentLoads[],
     TacsScalar Ct[10];
     beams[k]->getStiffness(pt, Ct);
     addStiffMatBeam(K, bnodes[k], Ct);
-  }  
+  }
 
   int info = 0;
   if (use_lapack_eigensolver){
     int ldz = nvars;
     int ldk = nband+1, ldg = nband+1;
-    
+
     // Allocate space for the matrices required
     TacsScalar *eigs = new TacsScalar[ nvars ];
     TacsScalar *Z = new TacsScalar[ nvars*nvars ];
     TacsScalar *work = new TacsScalar[ 3*nvars ];
 
-    LAPACKdsbgv("V", "U", &nvars, &nband, &nband, 
-		G, &ldg, K, &ldk,
-		eigs, Z, &ldz, work, &info); 
-    
+    LAPACKdsbgv("V", "U", &nvars, &nband, &nband,
+                G, &ldg, K, &ldk,
+                eigs, Z, &ldz, work, &info);
+
     // Copy over the eigenvalues and eigenvectors that are required
     memcpy(eigvals, eigs, neigs*sizeof(TacsScalar));
     memcpy(eigvecs, Z, neigs*nvars*sizeof(TacsScalar));
@@ -1889,16 +1889,16 @@ int TACSPanelAnalysis::computeBucklingLoads( const TacsScalar segmentLoads[],
     if (two_sided){
       // Copy the remaining eigenvalues if required - two sided problem
       memcpy(&eigvals[neigs], &eigs[nvars-neigs], neigs*sizeof(TacsScalar));
-      memcpy(&eigvecs[neigs*nvars], &Z[(nvars-neigs)*nvars], 
-	     neigs*nvars*sizeof(TacsScalar));
+      memcpy(&eigvecs[neigs*nvars], &Z[(nvars-neigs)*nvars],
+             neigs*nvars*sizeof(TacsScalar));
     }
 
     if (info != 0){
       fprintf(stderr, "TACSPanelAnalysis: Error in LAPACK eigenvalue solver\
  info = %d\n", info);
       if (info > nvars){
-	fprintf(stderr, "TACSPanelAnalysis: Stiffness matrix is not \
-positive definite\n");      
+        fprintf(stderr, "TACSPanelAnalysis: Stiffness matrix is not \
+positive definite\n");
       }
     }
 
@@ -1908,14 +1908,14 @@ positive definite\n");
   }
   else {
     // Solve the eigenvalue problem K*u + load*G*u = 0
-    int m = lanczos_subspace_size;    
+    int m = lanczos_subspace_size;
     double tol = lanczos_eigen_tol;
     int lwork = nvars*(m+2) + m*m + 4*m;
     TacsScalar *work = new TacsScalar[ lwork ];
 
     info = computeEigenvalues(two_sided, "U", "U", nvars, nband, G, nband+1,
-			      nband, K, nband+1,
-			      neigs, m, work, tol, eigvals, eigvecs);
+                              nband, K, nband+1,
+                              neigs, m, work, tol, eigvals, eigvecs);
     delete [] work;
   }
 
@@ -1939,12 +1939,12 @@ positive definite\n");
   loadsDVSens: the derivative of the critical load w.r.t. design vars
 */
 /*
-int TACSPanelAnalysis::computeBucklingLoadsDVSens( TacsScalar Nx, 
-                                                   TacsScalar Nxy, 
-                                                   TacsScalar loads[], 
+int TACSPanelAnalysis::computeBucklingLoadsDVSens( TacsScalar Nx,
+                                                   TacsScalar Nxy,
+                                                   TacsScalar loads[],
                                                    TacsScalar loadDVSens[],
                                                    int nloads ){
-  return computeBucklingLoadsDVSens(Nx, Nxy, loads, 
+  return computeBucklingLoadsDVSens(Nx, Nxy, loads,
                                     NULL, loadDVSens, NULL, nloads);
 }
 */
@@ -1955,20 +1955,20 @@ int TACSPanelAnalysis::computeBucklingLoadsDVSens( TacsScalar Nx,
   input:
   Nxy:    the shear load per unit length
   nloads: the number of critical buckling loads
-  
+
   output:
   loads:       the critical buckling load
   loadsDVSens: the derivative of the critical load w.r.t. design vars
 */
 /*
 int TACSPanelAnalysis::computeBucklingLoadsDVSens( TacsScalar Nxy,
-                                                   TacsScalar posLoads[], 
-                                                   TacsScalar negLoads[], 
+                                                   TacsScalar posLoads[],
+                                                   TacsScalar negLoads[],
                                                    TacsScalar posLoadDVSens[],
                                                    TacsScalar negLoadDVSens[],
                                                    int nloads ){
-  return computeBucklingLoadsDVSens(0.0, Nxy, posLoads, negLoads, 
-				    posLoadDVSens, negLoadDVSens, nloads);
+  return computeBucklingLoadsDVSens(0.0, Nxy, posLoads, negLoads,
+                                    posLoadDVSens, negLoadDVSens, nloads);
 }
 */
 /*
@@ -1992,7 +1992,7 @@ int TACSPanelAnalysis::computeBucklingLoadsDVSens( TacsScalar Nxy,
   input:
   Nx:   the axial load per unit length
   Nxy:  the shear load per unit length
-  
+
   output:
   posLoads:      the positive critical buckling loads
   negLoads:      the negative critical buckling loads (possibly NULL)
@@ -2000,10 +2000,10 @@ int TACSPanelAnalysis::computeBucklingLoadsDVSens( TacsScalar Nxy,
   negLoadDVSens: the derivative of the negative loads w.r.t. dvs (pos. NULL)
 */
 /*
-int TACSPanelAnalysis::computeBucklingLoadsDVSens( TacsScalar Nx, 
-                                                   TacsScalar Nxy, 
-                                                   TacsScalar posLoads[], 
-                                                   TacsScalar negLoads[], 
+int TACSPanelAnalysis::computeBucklingLoadsDVSens( TacsScalar Nx,
+                                                   TacsScalar Nxy,
+                                                   TacsScalar posLoads[],
+                                                   TacsScalar negLoads[],
                                                    TacsScalar posLoadDVSens[],
                                                    TacsScalar negLoadDVSens[],
                                                    int nloads ){
@@ -2017,13 +2017,13 @@ int TACSPanelAnalysis::computeBucklingLoadsDVSens( TacsScalar Nx,
   TacsScalar *segmentLoads = new TacsScalar[ 3*nsegments ];
   TacsScalar *beamLoads = new TacsScalar[ nbeams ];
 
-  // Compute the segment loads 
+  // Compute the segment loads
   computeSegmentLoads(Nx, Nxy, segmentLoads, beamLoads);
 
   // Compute the eigenvalues
-  int info = computeBucklingLoads(segmentLoads, beamLoads, 
-				  nloads, eigvals, eigvecs,
-				  (posLoads && negLoads));
+  int info = computeBucklingLoads(segmentLoads, beamLoads,
+                                  nloads, eigvals, eigvecs,
+                                  (posLoads && negLoads));
 
   // Compute the positive and negative critical loads
   for ( int k = 0; k < nloads; k++ ){
@@ -2064,7 +2064,7 @@ int TACSPanelAnalysis::computeBucklingLoadsDVSens( TacsScalar Nx,
         }
       }
 
-      computeSegmentLoadsGeoSens(Nx, Nxy, dv, 
+      computeSegmentLoadsGeoSens(Nx, Nxy, dv,
                                  segmentLoadsSens, beamLoadsSens);
 
       for ( int k = 0; k < nsegments; k++ ){
@@ -2076,7 +2076,7 @@ int TACSPanelAnalysis::computeBucklingLoadsDVSens( TacsScalar Nx,
         addStiffMatGeoSens(posKSens, dv, eigvecs, nvars, nloads,
                            nodes[2*k], nodes[2*k+1], At, Bt, Dt);
         addGeoStiffMatGeoSens(posGSens, dv, eigvecs, nvars, nloads,
-                              nodes[2*k], nodes[2*k+1], 
+                              nodes[2*k], nodes[2*k+1],
                               &segmentLoads[3*k], &segmentLoadsSens[3*k]);
 
         // Add the negative load contribution
@@ -2085,7 +2085,7 @@ int TACSPanelAnalysis::computeBucklingLoadsDVSens( TacsScalar Nx,
           addStiffMatGeoSens(negKSens, dv, &eigvecs[offset], nvars, nloads,
                              nodes[2*k], nodes[2*k+1], At, Bt, Dt);
           addGeoStiffMatGeoSens(negGSens, dv, &eigvecs[offset], nvars, nloads,
-                                nodes[2*k], nodes[2*k+1], 
+                                nodes[2*k], nodes[2*k+1],
                                 &segmentLoads[3*k], &segmentLoadsSens[3*k]);
         }
       }
@@ -2094,12 +2094,12 @@ int TACSPanelAnalysis::computeBucklingLoadsDVSens( TacsScalar Nx,
       for ( int k = 0; k < nsegments; k++ ){
         TacsScalar At[6], Bt[6], Dt[6], Ast[3];
         panels[k]->getStiffness(pt, At, Bt, Dt, Ast);
-        
+
         // Add the positive load contribution
         addStiffMatLxSens(posKSens, eigvecs, nvars, nloads,
                           nodes[2*k], nodes[2*k+1], At, Bt, Dt);
         addGeoStiffMatLxSens(posGSens, eigvecs, nvars, nloads,
-                             nodes[2*k], nodes[2*k+1], 
+                             nodes[2*k], nodes[2*k+1],
                              &segmentLoads[3*k]);
 
           // Add the negative load contribution
@@ -2108,49 +2108,49 @@ int TACSPanelAnalysis::computeBucklingLoadsDVSens( TacsScalar Nx,
           addStiffMatLxSens(negKSens, &eigvecs[offset], nvars, nloads,
                             nodes[2*k], nodes[2*k+1], At, Bt, Dt);
           addGeoStiffMatLxSens(negGSens, &eigvecs[offset], nvars, nloads,
-                               nodes[2*k], nodes[2*k+1], 
+                               nodes[2*k], nodes[2*k+1],
                                &segmentLoads[3*k]);
         }
       }
     }
     else {
-      computeSegmentLoadsDVSens(dvNum, Nx, Nxy, 
+      computeSegmentLoadsDVSens(dvNum, Nx, Nxy,
                                 segmentLoadsSens, beamLoadsSens);
 
       for ( int k = 0; k < nsegments; k++ ){
         // Material design variable
         TacsScalar sAt[6], sBt[6], sDt[6], sAst[3];
         panels[k]->getStiffnessDVSens(dvNum, pt, sAt, sBt, sDt, sAst);
-        
+
         // Add the positive load contribution
-        addStiffMatDVSens(posKSens, eigvecs, nvars, nloads, 
+        addStiffMatDVSens(posKSens, eigvecs, nvars, nloads,
                           nodes[2*k], nodes[2*k+1], sAt, sBt, sDt);
-        addGeoStiffMatDVSens(posGSens, eigvecs, nvars, nloads, 
-                             nodes[2*k], nodes[2*k+1], 
+        addGeoStiffMatDVSens(posGSens, eigvecs, nvars, nloads,
+                             nodes[2*k], nodes[2*k+1],
                              &segmentLoadsSens[3*k]);
-        
+
           // Add the negative load contribution
         if (negLoadDVSens){
           int offset = nvars*nloads;
-          addStiffMatDVSens(negKSens, &eigvecs[offset], nvars, nloads, 
+          addStiffMatDVSens(negKSens, &eigvecs[offset], nvars, nloads,
                             nodes[2*k], nodes[2*k+1], sAt, sBt, sDt);
-          addGeoStiffMatDVSens(negGSens, &eigvecs[offset], nvars, nloads, 
-                               nodes[2*k], nodes[2*k+1], 
+          addGeoStiffMatDVSens(negGSens, &eigvecs[offset], nvars, nloads,
+                               nodes[2*k], nodes[2*k+1],
                                &segmentLoadsSens[3*k]);
         }
       }
     }
-    
+
     // Store the current sensitivity into the matrix loadDVSens
     for ( int k = 0; k < nloads; k++ ){
       TacsScalar eig = eigvals[k];
-      posLoadDVSens[k*numDesignVars + n] = 
+      posLoadDVSens[k*numDesignVars + n] =
         (posGSens[k] - eig*posKSens[k])/(eig*eig);
 
       // Compute the sensitivity of the negative components
       if (negLoadDVSens){
         eig = eigvals[2*nloads-k-1];
-        negLoadDVSens[k*numDesignVars + n] = 
+        negLoadDVSens[k*numDesignVars + n] =
           -(negGSens[nloads-k-1] - eig*negKSens[nloads-k-1])/(eig*eig);
       }
     }
@@ -2174,8 +2174,8 @@ int TACSPanelAnalysis::computeBucklingLoadsDVSens( TacsScalar Nx,
   Set up the stiffness matrices and the mass matrix and compute the
   eigenvalues of the modal decomposition problem.
 */
-int TACSPanelAnalysis::computeFrequencies( TacsScalar freq[], 
-					   int nfreq,
+int TACSPanelAnalysis::computeFrequencies( TacsScalar freq[],
+                                           int nfreq,
                                            const char *prefix ){
   TacsScalar *eigvecs = new TacsScalar[ nvars*nfreq ];
 
@@ -2200,7 +2200,7 @@ int TACSPanelAnalysis::computeFrequencies( TacsScalar freq[],
   delete [] eigvecs;
 
   return info;
-} 
+}
 
 /*
   Form the stiffness matrix K, the mass matrix M and compute the
@@ -2209,11 +2209,11 @@ int TACSPanelAnalysis::computeFrequencies( TacsScalar freq[],
   K*x = lambda*M*x
 
   The frequencies are given by
-  
+
   freq = sqrt(lambda)
 */
-int TACSPanelAnalysis::computeFrequencies( int neigs, 
-					   TacsScalar eigvals[],
+int TACSPanelAnalysis::computeFrequencies( int neigs,
+                                           TacsScalar eigvals[],
                                            TacsScalar eigvecs[] ){
   double pt[3] = {0.0, 0.0, 0.0};
 
@@ -2249,7 +2249,7 @@ int TACSPanelAnalysis::computeFrequencies( int neigs,
     TacsScalar Ct[10];
     beams[k]->getStiffness(pt, Ct);
     addStiffMatBeam(K, bnodes[k], Ct);
-    
+
     // Add the contribution to the mass matrix
     double pt[2] = {0.0, 0.0};
     TacsScalar mass[6];
@@ -2267,9 +2267,9 @@ int TACSPanelAnalysis::computeFrequencies( int neigs,
     TacsScalar *Z = new TacsScalar[ nvars*nvars ];
     TacsScalar *work = new TacsScalar[ 3*nvars ];
 
-    LAPACKdsbgv("V", "U", &nvars, &nband, &nband, 
-		K, &ldk, M, &ldm,
-		eigs, Z, &nvars, work, &info); 
+    LAPACKdsbgv("V", "U", &nvars, &nband, &nband,
+                K, &ldk, M, &ldm,
+                eigs, Z, &nvars, work, &info);
 
     // Copy over the eigenvalues and eigenvectors that are required
     memcpy(eigvals, eigs, neigs*sizeof(TacsScalar));
@@ -2279,7 +2279,7 @@ int TACSPanelAnalysis::computeFrequencies( int neigs,
       fprintf(stderr, "TACSPanelAnalysis: Error in LAPACK eigenvalue solver\
  info = %d\n", info);
       if (info > nvars){
-	fprintf(stderr, "TACSPanelAnalysis: Mass matrix not positive definite\n");
+        fprintf(stderr, "TACSPanelAnalysis: Mass matrix not positive definite\n");
       }
     }
 
@@ -2289,15 +2289,15 @@ int TACSPanelAnalysis::computeFrequencies( int neigs,
   }
   else {
     // Solve the eigenvalue problem K*u + eig*M*u = 0
-    int m = lanczos_subspace_size;    
+    int m = lanczos_subspace_size;
     double tol = lanczos_eigen_tol;
     int lwork = nvars*(m+2) + m*m + 4*m;
     TacsScalar *work = new TacsScalar[ lwork ];
     int two_sided = 0;
 
     info = computeEigenvalues(two_sided, "U", "U", nvars, nband, K, nband+1,
-			      nband, M, nband+1,
-			      neigs, m, work, tol, eigvals, eigvecs);
+                              nband, M, nband+1,
+                              neigs, m, work, tol, eigvals, eigvecs);
     delete [] work;
   }
 
@@ -2308,7 +2308,7 @@ int TACSPanelAnalysis::computeFrequencies( int neigs,
 }
 
 /*
-  Compute the derivative of the frequencies w.r.t. the design 
+  Compute the derivative of the frequencies w.r.t. the design
   variables.
 
   The original eigenvalue problem is:
@@ -2399,16 +2399,16 @@ int TACSPanelAnalysis::computeFrequenciesDVSens( TacsScalar freq[],
         TacsScalar mass[2];
         panels[k]->getPointwiseMassDVSens(dvNum, pt, mass);
 
-        addStiffMatDVSens(KSens, eigvecs, nvars, nfreq, 
+        addStiffMatDVSens(KSens, eigvecs, nvars, nfreq,
                           nodes[2*k], nodes[2*k+1], sAt, sBt, sDt);
-        addMassMatDVSens(MSens, eigvecs, nvars, nfreq, 
+        addMassMatDVSens(MSens, eigvecs, nvars, nfreq,
                          nodes[2*k], nodes[2*k+1], mass);
       }
     }
-    
+
     // Store the current sensitivity into the matrix loadDVSens
     for ( int k = 0; k < nfreq; k++ ){
-      freqDVSens[k*numDesignVars + n] = 
+      freqDVSens[k*numDesignVars + n] =
         0.5*(KSens[k] - freq[k]*freq[k]*MSens[k])/freq[k];
     }
   }
@@ -2422,12 +2422,12 @@ int TACSPanelAnalysis::computeFrequenciesDVSens( TacsScalar freq[],
 */
 
 /*
-  Compute the contribution to the stiffness matrix from the given 
+  Compute the contribution to the stiffness matrix from the given
   segment.
 */
 void TACSPanelAnalysis::addStiffMat( TacsScalar mat[],
                                      int n1, int n2,
-                                     const TacsScalar At[], 
+                                     const TacsScalar At[],
                                      const TacsScalar Bt[],
                                      const TacsScalar Dt[] ){
   double N[NUM_NODES], Na[NUM_NODES];
@@ -2446,7 +2446,7 @@ void TACSPanelAnalysis::addStiffMat( TacsScalar mat[],
   TacsScalar Le = sqrt(c*c + s*s);
   c = c/Le;
   s = s/Le;
-  
+
   // Transformation between coordinate frames
   // local vars = t *global vars
   TacsScalar t[4];
@@ -2470,27 +2470,27 @@ void TACSPanelAnalysis::addStiffMat( TacsScalar mat[],
     for ( int k = 0; k < numGauss; k++ ){
       // Evaluate the shape functions
       FElibrary::lagrangeSF(N, Na, gaussPts[k], NUM_NODES);
-      FElibrary::cubicHP(Nhp, Nahp, Naahp, gaussPts[k]); 
-      
+      FElibrary::cubicHP(Nhp, Nahp, Naahp, gaussPts[k]);
+
       TacsScalar h = 2.0/Le;
       TacsScalar detJ = 0.5*gaussWts[k]*Le*Lx;
 
-      computeBsin(Bs, lambda_m, h, 
+      computeBsin(Bs, lambda_m, h,
                   N, Na, Nhp, Nahp, Naahp);
-      computeBcos(Bc, lambda_m, h, 
+      computeBcos(Bc, lambda_m, h,
                   N, Na, Nhp, Nahp, Naahp);
-            
+
       // Compute the sin and cos-coefficient contributions
       for ( int i = 0; i < 4*NUM_NODES; i++ ){
         computeStress(stress, &Bs[6*i], At, Bt, Dt);
         for ( int j = 0; j < 4*NUM_NODES; j++ ){
           Ks[4*NUM_NODES*i + j] += 0.5*detJ*innerProduct(stress, &Bs[6*j]);
         }
-               
+
         computeStress(stress, &Bc[6*i], At, Bt, Dt);
         for ( int j = 0; j < 4*NUM_NODES; j++ ){
           Ks[4*NUM_NODES*i + j] += 0.5*detJ*innerProduct(stress, &Bc[6*j]);
-        }        
+        }
       }
     }
 
@@ -2515,22 +2515,22 @@ void TACSPanelAnalysis::addStiffMat( TacsScalar mat[],
         for ( int k = 0; k < numGauss; k++ ){
           // Evaluate the shape functions
           FElibrary::lagrangeSF(N, Na, gaussPts[k], NUM_NODES);
-          FElibrary::cubicHP(Nhp, Nahp, Naahp, gaussPts[k]); 
-          
+          FElibrary::cubicHP(Nhp, Nahp, Naahp, gaussPts[k]);
+
           TacsScalar h = 2.0/Le;
           TacsScalar detJ = 0.5*gaussWts[k]*Le*Lx;
 
-          computeBsin(Bs, lambda_n, h, 
+          computeBsin(Bs, lambda_n, h,
                       N, Na, Nhp, Nahp, Naahp);
-          computeBcos(Bc, lambda_m, h, 
+          computeBcos(Bc, lambda_m, h,
                       N, Na, Nhp, Nahp, Naahp);
-          
+
           // Compute the sin-coefficient contribution
           for ( int i = 0; i < 4*NUM_NODES; i++ ){
             computeStress(stress, &Bs[6*i], At, Bt, Dt);
             for ( int j = 0; j < 4*NUM_NODES; j++ ){
               Ks[4*NUM_NODES*i + j] += sc*detJ*innerProduct(stress, &Bc[6*j]);
-            }            
+            }
           }
         }
 
@@ -2546,7 +2546,7 @@ void TACSPanelAnalysis::addStiffMat( TacsScalar mat[],
 }
 
 /*
-  Compute the contribution to the stiffness matrix from the given 
+  Compute the contribution to the stiffness matrix from the given
   segment.
 */
 void TACSPanelAnalysis::addPressureLoad( TacsScalar F[],
@@ -2561,7 +2561,7 @@ void TACSPanelAnalysis::addPressureLoad( TacsScalar F[],
   TacsScalar Le = sqrt(c*c + s*s);
   c = c/Le;
   s = s/Le;
-  
+
   // Transformation between coordinate frames
   // local vars = t * global vars
   TacsScalar t[4];
@@ -2584,12 +2584,12 @@ void TACSPanelAnalysis::addPressureLoad( TacsScalar F[],
     // Calculate the stiffness matrix contributions
     for ( int k = 0; k < numGauss; k++ ){
       // Evaluate the shape functions
-      FElibrary::cubicHP(Nhp, Nahp, Naahp, gaussPts[k]); 
-      
+      FElibrary::cubicHP(Nhp, Nahp, Naahp, gaussPts[k]);
+
       TacsScalar h = 2.0/Le;
       TacsScalar hinv = 1.0/h;
       TacsScalar detJ = 0.5*gaussWts[k]*Le*Lx;
-            
+
       // Compute the sin and cos-coefficient contributions
       for ( int i = 0; i < 2; i++ ){
         Fs[4*i + 2] += scale*detJ*Nhp[2*i];
@@ -2612,7 +2612,7 @@ void TACSPanelAnalysis::addPressureLoad( TacsScalar F[],
   Add the contributions to the stiffness matrix from a longitudinal
   beam
 */
-void TACSPanelAnalysis::addStiffMatBeam( TacsScalar mat[], int n1, 
+void TACSPanelAnalysis::addStiffMatBeam( TacsScalar mat[], int n1,
                                          const TacsScalar Ct[] ){
   TacsScalar stress[4];
   TacsScalar Bs[16], Bc[16];
@@ -2634,10 +2634,10 @@ void TACSPanelAnalysis::addStiffMatBeam( TacsScalar mat[], int n1,
     for ( int k = 0; k < 4; k++ ){
       m_vars[k] = vars[(4*nmodes)*n1 + 4*(m-1) + k];
     }
-      
+
     computeBeamBsin(Bs, lambda_m);
     computeBeamBcos(Bc, lambda_m);
-     
+
     // Compute the sin and cos-coefficient contributions
     for ( int i = 0; i < 4; i++ ){
       computeBeamStress(stress, &Bs[4*i], Ct);
@@ -2667,7 +2667,7 @@ void TACSPanelAnalysis::addStiffMatBeam( TacsScalar mat[], int n1,
 
         computeBeamBsin(Bs, lambda_n);
         computeBeamBcos(Bc, lambda_m);
-          
+
         // Compute the sin-coefficient contribution
         for ( int i = 0; i < 4; i++ ){
           computeBeamStress(stress, &Bs[4*i], Ct);
@@ -2705,7 +2705,7 @@ void TACSPanelAnalysis::addMassMat( TacsScalar mat[],
   TacsScalar Le = sqrt(c*c + s*s);
   c = c/Le;
   s = s/Le;
-  
+
   // Transformation between coordinate frames
   // local vars = t * global vars
   TacsScalar t[4];
@@ -2730,25 +2730,25 @@ void TACSPanelAnalysis::addMassMat( TacsScalar mat[],
     for ( int k = 0; k < numGauss; k++ ){
       // Evaluate the shape functions
       FElibrary::lagrangeSF(N, Na, gaussPts[k], NUM_NODES);
-      FElibrary::cubicHP(Nhp, Nahp, Naahp, gaussPts[k]); 
-      
+      FElibrary::cubicHP(Nhp, Nahp, Naahp, gaussPts[k]);
+
       TacsScalar h = 2.0/Le;
       TacsScalar detJ = 0.5*gaussWts[k]*Le*Lx;
 
       computeMsin(ks, lambda_m, h, N, Nhp, Nahp);
       computeMcos(kc, lambda_m, h, N, Nhp, Nahp);
-      
+
       // Compute the sin and cos-coefficient contributions
       for ( int i = 0; i < 4*NUM_NODES; i++ ){
         for ( int j = 0; j < 4*NUM_NODES; j++ ){
-          Ms[4*NUM_NODES*i + j] += 
+          Ms[4*NUM_NODES*i + j] +=
             0.5*detJ*innerMassProduct(mass, &ks[5*i], &ks[5*j]);
         }
-       
+
         for ( int j = 0; j < 4*NUM_NODES; j++ ){
-          Ms[4*NUM_NODES*i + j] += 
+          Ms[4*NUM_NODES*i + j] +=
             0.5*detJ*innerMassProduct(mass, &kc[5*i], &kc[5*j]);
-        }        
+        }
       }
     }
 
@@ -2773,20 +2773,20 @@ void TACSPanelAnalysis::addMassMat( TacsScalar mat[],
         for ( int k = 0; k < numGauss; k++ ){
           // Evaluate the shape functions
           FElibrary::lagrangeSF(N, Na, gaussPts[k], NUM_NODES);
-          FElibrary::cubicHP(Nhp, Nahp, Naahp, gaussPts[k]); 
-          
+          FElibrary::cubicHP(Nhp, Nahp, Naahp, gaussPts[k]);
+
           TacsScalar h = 2.0/Le;
           TacsScalar detJ = 0.5*gaussWts[k]*Le*Lx;
 
           computeMsin(ks, lambda_n, h, N, Nhp, Nahp);
           computeMcos(kc, lambda_m, h, N, Nhp, Nahp);
-          
+
           // Compute the sine-coefficient contribution
           for ( int i = 0; i < 4*NUM_NODES; i++ ){
             for ( int j = 0; j < 4*NUM_NODES; j++ ){
-              Ms[4*NUM_NODES*i + j] += 
+              Ms[4*NUM_NODES*i + j] +=
                 sc*detJ*innerMassProduct(mass, &ks[5*i], &kc[5*j]);
-            }            
+            }
           }
         }
 
@@ -2805,7 +2805,7 @@ void TACSPanelAnalysis::addMassMat( TacsScalar mat[],
   Add the contributions to the stiffness matrix from a longitudinal
   beam
 */
-void TACSPanelAnalysis::addMassMatBeam( TacsScalar mat[], int n1, 
+void TACSPanelAnalysis::addMassMatBeam( TacsScalar mat[], int n1,
                                         const TacsScalar mass[] ){
   TacsScalar ks[20], kc[20];
   memset(ks, 0, 20*sizeof(TacsScalar));
@@ -2825,7 +2825,7 @@ void TACSPanelAnalysis::addMassMatBeam( TacsScalar mat[], int n1,
     for ( int k = 0; k < 4; k++ ){
       m_vars[k] = vars[(4*nmodes)*n1 + 4*(m-1) + k];
     }
-      
+
     computeBeamMsin(ks, lambda_m);
     computeBeamMcos(kc, lambda_m);
 
@@ -2856,11 +2856,11 @@ void TACSPanelAnalysis::addMassMatBeam( TacsScalar mat[], int n1,
 
         computeBeamMsin(ks, lambda_n);
         computeBeamMcos(kc, lambda_m);
-          
+
         // Compute the sin-coefficient contribution
         for ( int i = 0; i < 4; i++ ){
           for ( int j = 0; j < 4; j++ ){
-            Ms[4*i + j] += sc*Lx*innerBeamMassProduct(mass, 
+            Ms[4*i + j] += sc*Lx*innerBeamMassProduct(mass,
                                                       &ks[5*i], &kc[5*j]);
           }
         }
@@ -2877,7 +2877,7 @@ void TACSPanelAnalysis::addMassMatBeam( TacsScalar mat[], int n1,
   Add a segment to the geometric stiffness matrix
 */
 void TACSPanelAnalysis::addGeoStiffMat( TacsScalar mat[],
-                                        const TacsScalar stress[], 
+                                        const TacsScalar stress[],
                                         int n1, int n2 ){
   double N[NUM_NODES], Na[NUM_NODES];
   double Nhp[2*NUM_NODES], Nahp[2*NUM_NODES], Naahp[2*NUM_NODES];
@@ -2890,7 +2890,7 @@ void TACSPanelAnalysis::addGeoStiffMat( TacsScalar mat[],
   TacsScalar Le = sqrt(c*c + s*s);
   c = c/Le;
   s = s/Le;
-  
+
   // Transformation between coordinate frames
   // local vars = t * global vars
   TacsScalar t[4];
@@ -2915,12 +2915,12 @@ void TACSPanelAnalysis::addGeoStiffMat( TacsScalar mat[],
     for ( int k = 0; k < numGauss; k++ ){
       // Evaluate the shape functions
       FElibrary::lagrangeSF(N, Na, gaussPts[k], NUM_NODES);
-      FElibrary::cubicHP(Nhp, Nahp, Naahp, gaussPts[k]); 
-      
+      FElibrary::cubicHP(Nhp, Nahp, Naahp, gaussPts[k]);
+
       TacsScalar h = 2.0/Le;
       TacsScalar detJ = 0.5*gaussWts[k]*Le*Lx;
 
-      addGs(Gs, 0.5*detJ, stress, lambda_m, h, N, Na, Nhp, Nahp);      
+      addGs(Gs, 0.5*detJ, stress, lambda_m, h, N, Na, Nhp, Nahp);
     }
 
     transformMat(Gs, t, NUM_NODES, NUM_NODES);
@@ -2936,24 +2936,24 @@ void TACSPanelAnalysis::addGeoStiffMat( TacsScalar mat[],
 
         TacsScalar lambda_n = (M_PI*n)/Lx;
         TacsScalar sc = (2.0*n)/(M_PI*(n*n - m*m));
-          
+
         memset(Gs, 0, 16*NUM_NODES*NUM_NODES*sizeof(TacsScalar));
-          
+
         for ( int k = 0; k < numGauss; k++ ){
           // Evaluate the shape functions
           FElibrary::lagrangeSF(N, Na, gaussPts[k], NUM_NODES);
-          FElibrary::cubicHP(Nhp, Nahp, Naahp, gaussPts[k]); 
-            
+          FElibrary::cubicHP(Nhp, Nahp, Naahp, gaussPts[k]);
+
           TacsScalar h = 2.0/Le;
           TacsScalar detJ = 0.5*gaussWts[k]*Le*Lx;
-            
-          addGcs(Gs, sc*detJ, stress, lambda_n, lambda_m, 
+
+          addGcs(Gs, sc*detJ, stress, lambda_n, lambda_m,
                  h, N, Na, Nhp, Nahp);
         }
-          
+
         // Transform the result to the global reference frame
         transformMat(Gs, t, NUM_NODES, NUM_NODES);
-        
+
         // Add values to the matrix
         addValues(mat, nband, 4*NUM_NODES, n_vars, 4*NUM_NODES, m_vars, Gs);
         addValuesTranspose(mat, nband, 4*NUM_NODES, m_vars, 4*NUM_NODES, n_vars, Gs);
@@ -2974,7 +2974,7 @@ void TACSPanelAnalysis::addGeoStiffMat( TacsScalar mat[],
 void TACSPanelAnalysis::addStiffMatDVSens( TacsScalar smat[],
                                            const TacsScalar Z[], int ldz, int nz,
                                            int n1, int n2,
-                                           const TacsScalar sAt[], 
+                                           const TacsScalar sAt[],
                                            const TacsScalar sBt[],
                                            const TacsScalar sDt[] ){
   double N[NUM_NODES], Na[NUM_NODES];
@@ -2993,7 +2993,7 @@ void TACSPanelAnalysis::addStiffMatDVSens( TacsScalar smat[],
   TacsScalar Le = sqrt(c*c + s*s);
   c = c/Le;
   s = s/Le;
-  
+
   // Transformation between coordinate frames
   // local vars = t * global vars
   TacsScalar t[4];
@@ -3018,33 +3018,33 @@ void TACSPanelAnalysis::addStiffMatDVSens( TacsScalar smat[],
     for ( int k = 0; k < numGauss; k++ ){
       // Evaluate the shape functions
       FElibrary::lagrangeSF(N, Na, gaussPts[k], NUM_NODES);
-      FElibrary::cubicHP(Nhp, Nahp, Naahp, gaussPts[k]); 
-      
+      FElibrary::cubicHP(Nhp, Nahp, Naahp, gaussPts[k]);
+
       TacsScalar h = 2.0/Le;
       TacsScalar detJ = 0.5*gaussWts[k]*Le*Lx;
 
-      computeBsin(Bs, lambda_m, h, 
+      computeBsin(Bs, lambda_m, h,
                   N, Na, Nhp, Nahp, Naahp);
-      computeBcos(Bc, lambda_m, h, 
+      computeBcos(Bc, lambda_m, h,
                   N, Na, Nhp, Nahp, Naahp);
-            
+
       // Compute the sin and cos-coefficient contributions
       for ( int i = 0; i < 4*NUM_NODES; i++ ){
         computeStress(stress, &Bs[6*i], sAt, sBt, sDt);
         for ( int j = 0; j < 4*NUM_NODES; j++ ){
           Ks[4*NUM_NODES*i + j] += 0.5*detJ*innerProduct(stress, &Bs[6*j]);
         }
-               
+
         computeStress(stress, &Bc[6*i], sAt, sBt, sDt);
         for ( int j = 0; j < 4*NUM_NODES; j++ ){
           Ks[4*NUM_NODES*i + j] += 0.5*detJ*innerProduct(stress, &Bc[6*j]);
-        }        
+        }
       }
     }
 
     // Transform the matrices to the global reference frame
     transformMat(Ks, t, NUM_NODES, NUM_NODES);
-    addSensMatValues(smat, Z, ldz, nz, 
+    addSensMatValues(smat, Z, ldz, nz,
                      4*NUM_NODES, m_vars, 4*NUM_NODES, m_vars, Ks);
 
     for ( int n = 1; n <= nmodes; n++ ){
@@ -3064,22 +3064,22 @@ void TACSPanelAnalysis::addStiffMatDVSens( TacsScalar smat[],
         for ( int k = 0; k < numGauss; k++ ){
           // Evaluate the shape functions
           FElibrary::lagrangeSF(N, Na, gaussPts[k], NUM_NODES);
-          FElibrary::cubicHP(Nhp, Nahp, Naahp, gaussPts[k]); 
-          
+          FElibrary::cubicHP(Nhp, Nahp, Naahp, gaussPts[k]);
+
           TacsScalar h = 2.0/Le;
           TacsScalar detJ = 0.5*gaussWts[k]*Le*Lx;
 
-          computeBsin(Bs, lambda_n, h, 
+          computeBsin(Bs, lambda_n, h,
                       N, Na, Nhp, Nahp, Naahp);
-          computeBcos(Bc, lambda_m, h, 
+          computeBcos(Bc, lambda_m, h,
                       N, Na, Nhp, Nahp, Naahp);
-          
+
           // Compute the sin-coefficient contribution
           for ( int i = 0; i < 4*NUM_NODES; i++ ){
             computeStress(stress, &Bs[6*i], sAt, sBt, sDt);
             for ( int j = 0; j < 4*NUM_NODES; j++ ){
               Ks[4*NUM_NODES*i + j] += sc*detJ*innerProduct(stress, &Bc[6*j]);
-            }            
+            }
           }
         }
 
@@ -3087,9 +3087,9 @@ void TACSPanelAnalysis::addStiffMatDVSens( TacsScalar smat[],
         transformMat(Ks, t, NUM_NODES, NUM_NODES);
 
         // Add values to the matrix
-        addSensMatValues(smat, Z, ldz, nz, 
+        addSensMatValues(smat, Z, ldz, nz,
                          4*NUM_NODES, n_vars, 4*NUM_NODES, m_vars, Ks);
-        addSensMatValuesTranspose(smat, Z, ldz, nz, 
+        addSensMatValuesTranspose(smat, Z, ldz, nz,
                                   4*NUM_NODES, m_vars, 4*NUM_NODES, n_vars, Ks);
       }
     }
@@ -3101,7 +3101,7 @@ void TACSPanelAnalysis::addStiffMatDVSens( TacsScalar smat[],
 */
 void TACSPanelAnalysis::addMassMatDVSens( TacsScalar smat[],
                                           const TacsScalar Z[], int ldz, int nz,
-                                          int n1, int n2, 
+                                          int n1, int n2,
                                           const TacsScalar smass[] ){
 
   double N[NUM_NODES], Na[NUM_NODES];
@@ -3119,7 +3119,7 @@ void TACSPanelAnalysis::addMassMatDVSens( TacsScalar smat[],
   TacsScalar Le = sqrt(c*c + s*s);
   c = c/Le;
   s = s/Le;
-  
+
   // Transformation between coordinate frames
   // local vars = t * global vars
   TacsScalar t[4];
@@ -3144,31 +3144,31 @@ void TACSPanelAnalysis::addMassMatDVSens( TacsScalar smat[],
     for ( int k = 0; k < numGauss; k++ ){
       // Evaluate the shape functions
       FElibrary::lagrangeSF(N, Na, gaussPts[k], NUM_NODES);
-      FElibrary::cubicHP(Nhp, Nahp, Naahp, gaussPts[k]); 
-      
+      FElibrary::cubicHP(Nhp, Nahp, Naahp, gaussPts[k]);
+
       TacsScalar h = 2.0/Le;
       TacsScalar detJ = 0.5*gaussWts[k]*Le*Lx;
 
       computeMsin(ks, lambda_m, h, N, Nhp, Nahp);
       computeMcos(kc, lambda_m, h, N, Nhp, Nahp);
-      
+
       // Compute the sin and cos-coefficient contributions
       for ( int i = 0; i < 4*NUM_NODES; i++ ){
         for ( int j = 0; j < 4*NUM_NODES; j++ ){
-          Ms[4*NUM_NODES*i + j] += 
+          Ms[4*NUM_NODES*i + j] +=
             0.5*detJ*innerMassProduct(smass, &ks[5*i], &ks[5*j]);
         }
-       
+
         for ( int j = 0; j < 4*NUM_NODES; j++ ){
-          Ms[4*NUM_NODES*i + j] += 
+          Ms[4*NUM_NODES*i + j] +=
             0.5*detJ*innerMassProduct(smass, &kc[5*i], &kc[5*j]);
-        }        
+        }
       }
     }
 
     // Transform the matrices to the global reference frame
     transformMat(Ms, t, NUM_NODES, NUM_NODES);
-    addSensMatValues(smat, Z, ldz, nz, 
+    addSensMatValues(smat, Z, ldz, nz,
                      4*NUM_NODES, m_vars, 4*NUM_NODES, m_vars, Ms);
 
     for ( int n = 1; n <= nmodes; n++ ){
@@ -3188,20 +3188,20 @@ void TACSPanelAnalysis::addMassMatDVSens( TacsScalar smat[],
         for ( int k = 0; k < numGauss; k++ ){
           // Evaluate the shape functions
           FElibrary::lagrangeSF(N, Na, gaussPts[k], NUM_NODES);
-          FElibrary::cubicHP(Nhp, Nahp, Naahp, gaussPts[k]); 
-          
+          FElibrary::cubicHP(Nhp, Nahp, Naahp, gaussPts[k]);
+
           TacsScalar h = 2.0/Le;
           TacsScalar detJ = 0.5*gaussWts[k]*Le*Lx;
 
           computeMsin(ks, lambda_n, h, N, Nhp, Nahp);
           computeMcos(kc, lambda_m, h, N, Nhp, Nahp);
-          
+
           // Compute the sine-coefficient contribution
           for ( int i = 0; i < 4*NUM_NODES; i++ ){
             for ( int j = 0; j < 4*NUM_NODES; j++ ){
-              Ms[4*NUM_NODES*i + j] += 
+              Ms[4*NUM_NODES*i + j] +=
                 sc*detJ*innerMassProduct(smass, &ks[5*i], &kc[5*j]);
-            }            
+            }
           }
         }
 
@@ -3209,9 +3209,9 @@ void TACSPanelAnalysis::addMassMatDVSens( TacsScalar smat[],
         transformMat(Ms, t, NUM_NODES, NUM_NODES);
 
         // Add values to the matrix
-        addSensMatValues(smat, Z, ldz, nz, 
+        addSensMatValues(smat, Z, ldz, nz,
                          4*NUM_NODES, m_vars, 4*NUM_NODES, n_vars, Ms);
-        addSensMatValuesTranspose(smat, Z, ldz, nz, 
+        addSensMatValuesTranspose(smat, Z, ldz, nz,
                                   4*NUM_NODES, n_vars, 4*NUM_NODES, m_vars, Ms);
       }
     }
@@ -3223,7 +3223,7 @@ void TACSPanelAnalysis::addMassMatDVSens( TacsScalar smat[],
   geometric stiffness matrix
 */
 void TACSPanelAnalysis::addGeoStiffMatDVSens( TacsScalar smat[],
-                                              const TacsScalar Z[], 
+                                              const TacsScalar Z[],
                                               int ldz, int nz,
                                               int n1, int n2,
                                               const TacsScalar sstress[] ){
@@ -3238,7 +3238,7 @@ void TACSPanelAnalysis::addGeoStiffMatDVSens( TacsScalar smat[],
   TacsScalar Le = sqrt(c*c + s*s);
   c = c/Le;
   s = s/Le;
-  
+
   // Transformation between coordinate frames
   // local vars = t * global vars
   TacsScalar t[4];
@@ -3263,18 +3263,18 @@ void TACSPanelAnalysis::addGeoStiffMatDVSens( TacsScalar smat[],
     for ( int k = 0; k < numGauss; k++ ){
       // Evaluate the shape functions
       FElibrary::lagrangeSF(N, Na, gaussPts[k], NUM_NODES);
-      FElibrary::cubicHP(Nhp, Nahp, Naahp, gaussPts[k]); 
-      
+      FElibrary::cubicHP(Nhp, Nahp, Naahp, gaussPts[k]);
+
       TacsScalar h = 2.0/Le;
       TacsScalar detJ = 0.5*gaussWts[k]*Le*Lx;
 
-      addGs(Gs, 0.5*detJ, sstress, lambda_m, h, N, Na, Nhp, Nahp);      
+      addGs(Gs, 0.5*detJ, sstress, lambda_m, h, N, Na, Nhp, Nahp);
     }
 
     transformMat(Gs, t, NUM_NODES, NUM_NODES);
-    addSensMatValues(smat, Z, ldz, nz, 
+    addSensMatValues(smat, Z, ldz, nz,
                      4*NUM_NODES, m_vars, 4*NUM_NODES, m_vars, Gs);
-  
+
     for ( int n = 1; n <= nmodes; n++ ){
       if (n % 2 != m % 2){
         // Determine the variables for the n-th mode
@@ -3291,8 +3291,8 @@ void TACSPanelAnalysis::addGeoStiffMatDVSens( TacsScalar smat[],
         for ( int k = 0; k < numGauss; k++ ){
           // Evaluate the shape functions
           FElibrary::lagrangeSF(N, Na, gaussPts[k], NUM_NODES);
-          FElibrary::cubicHP(Nhp, Nahp, Naahp, gaussPts[k]); 
-          
+          FElibrary::cubicHP(Nhp, Nahp, Naahp, gaussPts[k]);
+
           TacsScalar h = 2.0/Le;
           TacsScalar detJ = 0.5*gaussWts[k]*Le*Lx;
 
@@ -3304,9 +3304,9 @@ void TACSPanelAnalysis::addGeoStiffMatDVSens( TacsScalar smat[],
         transformMat(Gs, t, NUM_NODES, NUM_NODES);
 
         // Add values to the matrix
-        addSensMatValues(smat, Z, ldz, nz, 
+        addSensMatValues(smat, Z, ldz, nz,
                          4*NUM_NODES, n_vars, 4*NUM_NODES, m_vars, Gs);
-        addSensMatValuesTranspose(smat, Z, ldz, nz, 
+        addSensMatValuesTranspose(smat, Z, ldz, nz,
                                   4*NUM_NODES, m_vars, 4*NUM_NODES, n_vars, Gs);
       }
     }
@@ -3314,14 +3314,14 @@ void TACSPanelAnalysis::addGeoStiffMatDVSens( TacsScalar smat[],
 }
 
 /*
-  Add the geometric design variable sensitivity contributions to the 
+  Add the geometric design variable sensitivity contributions to the
   sensitivity matrix.
 */
 void TACSPanelAnalysis::addStiffMatGeoSens( TacsScalar smat[], int dv,
-                                            const TacsScalar Z[], 
+                                            const TacsScalar Z[],
                                             int ldz, int nz,
                                             int n1, int n2,
-                                            const TacsScalar At[], 
+                                            const TacsScalar At[],
                                             const TacsScalar Bt[],
                                             const TacsScalar Dt[] ){
   double N[NUM_NODES], Na[NUM_NODES];
@@ -3350,7 +3350,7 @@ void TACSPanelAnalysis::addStiffMatGeoSens( TacsScalar smat[], int dv,
   ss = (ss*Le - sLe*s)/(Le*Le);
   c = c/Le;
   s = s/Le;
-  
+
   // Transformation between coordinate frames
   // local vars = t * global vars
   TacsScalar t[4], st[4];
@@ -3378,23 +3378,23 @@ void TACSPanelAnalysis::addStiffMatGeoSens( TacsScalar smat[], int dv,
     for ( int k = 0; k < numGauss; k++ ){
       // Evaluate the shape functions
       FElibrary::lagrangeSF(N, Na, gaussPts[k], NUM_NODES);
-      FElibrary::cubicHP(Nhp, Nahp, Naahp, gaussPts[k]); 
-      
+      FElibrary::cubicHP(Nhp, Nahp, Naahp, gaussPts[k]);
+
       TacsScalar h = 2.0/Le;
       TacsScalar sh = - 2.0*sLe/(Le*Le);
       TacsScalar detJ = 0.5*gaussWts[k]*Le*Lx;
       TacsScalar sdetJ = 0.5*gaussWts[k]*sLe*Lx;
 
-      computeBsin(Bs, lambda_m, h, 
+      computeBsin(Bs, lambda_m, h,
                   N, Na, Nhp, Nahp, Naahp);
-      computeBcos(Bc, lambda_m, h, 
+      computeBcos(Bc, lambda_m, h,
                   N, Na, Nhp, Nahp, Naahp);
 
       computeBsinGeoSens(sBs, lambda_m, 0.0, h, sh,
                          N, Na, Nhp, Nahp, Naahp);
       computeBcosGeoSens(sBc, lambda_m, 0.0, h, sh,
                          N, Na, Nhp, Nahp, Naahp);
-            
+
       // Compute the sin and cos-coefficient contributions
       for ( int i = 0; i < 4*NUM_NODES; i++ ){
         computeStress(stress, &Bs[6*i], At, Bt, Dt);
@@ -3403,25 +3403,25 @@ void TACSPanelAnalysis::addStiffMatGeoSens( TacsScalar smat[], int dv,
           TacsScalar p = innerProduct(stress, &Bs[6*j]);
           Ks[4*NUM_NODES*i + j] += 0.5*detJ*p;
           sKs[4*NUM_NODES*i + j] += 0.5*sdetJ*p +
-            0.5*detJ*(innerProduct(sstress, &Bs[6*j]) + 
+            0.5*detJ*(innerProduct(sstress, &Bs[6*j]) +
                       innerProduct(stress, &sBs[6*j]));
         }
-               
+
         computeStress(stress, &Bc[6*i], At, Bt, Dt);
         computeStress(sstress, &sBc[6*i], At, Bt, Dt);
         for ( int j = 0; j < 4*NUM_NODES; j++ ){
           TacsScalar p = innerProduct(stress, &Bc[6*j]);
           Ks[4*NUM_NODES*i + j] += 0.5*detJ*p;
           sKs[4*NUM_NODES*i + j] += 0.5*sdetJ*p +
-            0.5*detJ*(innerProduct(sstress, &Bc[6*j]) + 
+            0.5*detJ*(innerProduct(sstress, &Bc[6*j]) +
                       innerProduct(stress, &sBc[6*j]));
-        }        
+        }
       }
     }
 
     // Transform the matrices to the global reference frame
     transformMatGeoSens(Ks, sKs, t, st, NUM_NODES, NUM_NODES);
-    addSensMatValues(smat, Z, ldz, nz, 
+    addSensMatValues(smat, Z, ldz, nz,
                      4*NUM_NODES, m_vars, 4*NUM_NODES, m_vars, sKs);
 
     for ( int n = 1; n <= nmodes; n++ ){
@@ -3442,23 +3442,23 @@ void TACSPanelAnalysis::addStiffMatGeoSens( TacsScalar smat[], int dv,
         for ( int k = 0; k < numGauss; k++ ){
           // Evaluate the shape functions
           FElibrary::lagrangeSF(N, Na, gaussPts[k], NUM_NODES);
-          FElibrary::cubicHP(Nhp, Nahp, Naahp, gaussPts[k]); 
-          
+          FElibrary::cubicHP(Nhp, Nahp, Naahp, gaussPts[k]);
+
           TacsScalar h = 2.0/Le;
           TacsScalar sh = - 2.0*sLe/(Le*Le);
           TacsScalar detJ = 0.5*gaussWts[k]*Le*Lx;
           TacsScalar sdetJ = 0.5*gaussWts[k]*sLe*Lx;
 
-          computeBsin(Bs, lambda_n, h, 
+          computeBsin(Bs, lambda_n, h,
                       N, Na, Nhp, Nahp, Naahp);
-          computeBcos(Bc, lambda_m, h, 
+          computeBcos(Bc, lambda_m, h,
                       N, Na, Nhp, Nahp, Naahp);
 
           computeBsinGeoSens(sBs, lambda_n, 0.0, h, sh,
                              N, Na, Nhp, Nahp, Naahp);
           computeBcosGeoSens(sBc, lambda_m, 0.0, h, sh,
                              N, Na, Nhp, Nahp, Naahp);
-          
+
           // Compute the sin-coefficient contribution
           for ( int i = 0; i < 4*NUM_NODES; i++ ){
             computeStress(stress, &Bs[6*i], At, Bt, Dt);
@@ -3467,9 +3467,9 @@ void TACSPanelAnalysis::addStiffMatGeoSens( TacsScalar smat[], int dv,
               TacsScalar p = innerProduct(stress, &Bc[6*j]);
               Ks[4*NUM_NODES*i + j] += sc*detJ*p;
               sKs[4*NUM_NODES*i + j] += sc*sdetJ*p +
-                sc*detJ*(innerProduct(sstress, &Bc[6*j]) + 
+                sc*detJ*(innerProduct(sstress, &Bc[6*j]) +
                          innerProduct(stress, &sBc[6*j]));
-            }            
+            }
           }
         }
 
@@ -3477,9 +3477,9 @@ void TACSPanelAnalysis::addStiffMatGeoSens( TacsScalar smat[], int dv,
         transformMatGeoSens(Ks, sKs, t, st, NUM_NODES, NUM_NODES);
 
         // Add values to the matrix
-        addSensMatValues(smat, Z, ldz, nz, 
+        addSensMatValues(smat, Z, ldz, nz,
                          4*NUM_NODES, n_vars, 4*NUM_NODES, m_vars, sKs);
-        addSensMatValuesTranspose(smat, Z, ldz, nz, 
+        addSensMatValuesTranspose(smat, Z, ldz, nz,
                                   4*NUM_NODES, m_vars, 4*NUM_NODES, n_vars, sKs);
       }
     }
@@ -3491,7 +3491,7 @@ void TACSPanelAnalysis::addStiffMatGeoSens( TacsScalar smat[], int dv,
   matrix
 */
 void TACSPanelAnalysis::addMassMatGeoSens( TacsScalar smat[], int dv,
-                                           const TacsScalar Z[], 
+                                           const TacsScalar Z[],
                                            int ldz, int nz,
                                            int n1, int n2,
                                            const TacsScalar mass[] ){
@@ -3520,7 +3520,7 @@ void TACSPanelAnalysis::addMassMatGeoSens( TacsScalar smat[], int dv,
   ss = (ss*Le - sLe*s)/(Le*Le);
   c = c/Le;
   s = s/Le;
-  
+
   // Transformation between coordinate frames
   // local vars = t * global vars
   TacsScalar t[4], st[4];
@@ -3548,8 +3548,8 @@ void TACSPanelAnalysis::addMassMatGeoSens( TacsScalar smat[], int dv,
     for ( int k = 0; k < numGauss; k++ ){
       // Evaluate the shape functions
       FElibrary::lagrangeSF(N, Na, gaussPts[k], NUM_NODES);
-      FElibrary::cubicHP(Nhp, Nahp, Naahp, gaussPts[k]); 
-      
+      FElibrary::cubicHP(Nhp, Nahp, Naahp, gaussPts[k]);
+
       TacsScalar h = 2.0/Le;
       TacsScalar sh = -2.0*sLe/(Le*Le);
       TacsScalar detJ = 0.5*gaussWts[k]*Le*Lx;
@@ -3559,28 +3559,28 @@ void TACSPanelAnalysis::addMassMatGeoSens( TacsScalar smat[], int dv,
       computeMcos(kc, lambda_m, h, N, Nhp, Nahp);
       computeMsinGeoSens(sks, lambda_m, 0.0, h, sh, N, Nhp, Nahp);
       computeMcosGeoSens(skc, lambda_m, 0.0, h, sh, N, Nhp, Nahp);
-      
+
       // Compute the sin and cos-coefficient contributions
       for ( int i = 0; i < 4*NUM_NODES; i++ ){
         for ( int j = 0; j < 4*NUM_NODES; j++ ){
           TacsScalar p = innerMassProduct(mass, &ks[5*i], &ks[5*j]);
-          Ms[4*NUM_NODES*i + j] += 0.5*detJ*p;          
-          sMs[4*NUM_NODES*i + j] += 
+          Ms[4*NUM_NODES*i + j] += 0.5*detJ*p;
+          sMs[4*NUM_NODES*i + j] +=
             0.5*sdetJ*p + detJ*innerMassProduct(mass, &ks[5*i], &sks[5*j]);
         }
-        
+
         for ( int j = 0; j < 4*NUM_NODES; j++ ){
           TacsScalar p = innerMassProduct(mass, &kc[5*i], &kc[5*j]);
           Ms[4*NUM_NODES*i + j] += 0.5*detJ*p;
-          sMs[4*NUM_NODES*i + j] += 
+          sMs[4*NUM_NODES*i + j] +=
             0.5*sdetJ*p + detJ*innerMassProduct(mass, &kc[5*i], &skc[5*j]);
-        }        
+        }
       }
     }
 
     // Transform the matrices to the global reference frame
     transformMatGeoSens(Ms, sMs, t, st, NUM_NODES, NUM_NODES);
-    addSensMatValues(smat, Z, ldz, nz, 
+    addSensMatValues(smat, Z, ldz, nz,
                      4*NUM_NODES, m_vars, 4*NUM_NODES, m_vars, sMs);
 
     for ( int n = 1; n <= nmodes; n++ ){
@@ -3601,8 +3601,8 @@ void TACSPanelAnalysis::addMassMatGeoSens( TacsScalar smat[], int dv,
         for ( int k = 0; k < numGauss; k++ ){
           // Evaluate the shape functions
           FElibrary::lagrangeSF(N, Na, gaussPts[k], NUM_NODES);
-          FElibrary::cubicHP(Nhp, Nahp, Naahp, gaussPts[k]); 
-          
+          FElibrary::cubicHP(Nhp, Nahp, Naahp, gaussPts[k]);
+
           TacsScalar h = 2.0/Le;
           TacsScalar sh = -2.0*sLe/(Le*Le);
           TacsScalar detJ = 0.5*gaussWts[k]*Le*Lx;
@@ -3612,16 +3612,16 @@ void TACSPanelAnalysis::addMassMatGeoSens( TacsScalar smat[], int dv,
           computeMcos(kc, lambda_m, h, N, Nhp, Nahp);
           computeMsinGeoSens(sks, lambda_n, 0.0, h, sh, N, Nhp, Nahp);
           computeMcosGeoSens(skc, lambda_m, 0.0, h, sh, N, Nhp, Nahp);
-          
+
           // Compute the sine-coefficient contribution
           for ( int i = 0; i < 4*NUM_NODES; i++ ){
             for ( int j = 0; j < 4*NUM_NODES; j++ ){
               TacsScalar p = innerMassProduct(mass, &ks[5*i], &kc[5*j]);
               Ms[4*NUM_NODES*i + j] += sc*detJ*p;
-              sMs[4*NUM_NODES*i + j] += sc*sdetJ*p + 
+              sMs[4*NUM_NODES*i + j] += sc*sdetJ*p +
                 sc*detJ*(innerMassProduct(mass, &ks[5*i], &skc[5*j]) +
                          innerMassProduct(mass, &sks[5*i], &kc[5*j]));
-            }            
+            }
           }
         }
 
@@ -3629,9 +3629,9 @@ void TACSPanelAnalysis::addMassMatGeoSens( TacsScalar smat[], int dv,
         transformMatGeoSens(Ms, sMs, t, st, NUM_NODES, NUM_NODES);
 
         // Add values to the matrix
-        addSensMatValues(smat, Z, ldz, nz, 
+        addSensMatValues(smat, Z, ldz, nz,
                          4*NUM_NODES, n_vars, 4*NUM_NODES, m_vars, sMs);
-        addSensMatValuesTranspose(smat, Z, ldz, nz, 
+        addSensMatValuesTranspose(smat, Z, ldz, nz,
                                   4*NUM_NODES, m_vars, 4*NUM_NODES, n_vars, sMs);
       }
     }
@@ -3642,7 +3642,7 @@ void TACSPanelAnalysis::addMassMatGeoSens( TacsScalar smat[], int dv,
   Add the contribution from a segment to the geometric stiffness matrix
 */
 void TACSPanelAnalysis::addGeoStiffMatGeoSens( TacsScalar smat[], int dv,
-                                               const TacsScalar Z[], 
+                                               const TacsScalar Z[],
                                                int ldz, int nz,
                                                int n1, int n2,
                                                const TacsScalar stress[],
@@ -3665,7 +3665,7 @@ void TACSPanelAnalysis::addGeoStiffMatGeoSens( TacsScalar smat[], int dv,
   ss = (ss*Le - sLe*s)/(Le*Le);
   c = c/Le;
   s = s/Le;
-  
+
   // Transformation between coordinate frames
   // local vars = t * global vars
   TacsScalar t[4], st[4];
@@ -3693,8 +3693,8 @@ void TACSPanelAnalysis::addGeoStiffMatGeoSens( TacsScalar smat[], int dv,
     for ( int k = 0; k < numGauss; k++ ){
       // Evaluate the shape functions
       FElibrary::lagrangeSF(N, Na, gaussPts[k], NUM_NODES);
-      FElibrary::cubicHP(Nhp, Nahp, Naahp, gaussPts[k]); 
-      
+      FElibrary::cubicHP(Nhp, Nahp, Naahp, gaussPts[k]);
+
       TacsScalar h = 2.0/Le;
       TacsScalar sh = - 2.0*sLe/(Le*Le);
       TacsScalar detJ = 0.5*gaussWts[k]*Le*Lx;
@@ -3702,14 +3702,14 @@ void TACSPanelAnalysis::addGeoStiffMatGeoSens( TacsScalar smat[], int dv,
 
       addGs(Gs, 0.5*detJ, stress, lambda_m, h, N, Na, Nhp, Nahp);
       addGs(sGs, 0.5*detJ, sstress, lambda_m, h, N, Na, Nhp, Nahp);
-      addGsGeoSens(sGs, 0.5*detJ, 0.5*sdetJ, 
+      addGsGeoSens(sGs, 0.5*detJ, 0.5*sdetJ,
                    stress, lambda_m, 0.0, h, sh, N, Na, Nhp, Nahp);
     }
 
     transformMatGeoSens(Gs, sGs, t, st, NUM_NODES, NUM_NODES);
-    addSensMatValues(smat, Z, ldz, nz, 
+    addSensMatValues(smat, Z, ldz, nz,
                      4*NUM_NODES, m_vars, 4*NUM_NODES, m_vars, sGs);
-  
+
     for ( int n = 1; n <= nmodes; n++ ){
       if (n % 2 != m % 2){
         // Determine the variables for the n-th mode
@@ -3728,8 +3728,8 @@ void TACSPanelAnalysis::addGeoStiffMatGeoSens( TacsScalar smat[], int dv,
         for ( int k = 0; k < numGauss; k++ ){
           // Evaluate the shape functions
           FElibrary::lagrangeSF(N, Na, gaussPts[k], NUM_NODES);
-          FElibrary::cubicHP(Nhp, Nahp, Naahp, gaussPts[k]); 
-          
+          FElibrary::cubicHP(Nhp, Nahp, Naahp, gaussPts[k]);
+
           TacsScalar h = 2.0/Le;
           TacsScalar sh = - 2.0*sLe/(Le*Le);
           TacsScalar detJ = 0.5*gaussWts[k]*Le*Lx;
@@ -3737,10 +3737,10 @@ void TACSPanelAnalysis::addGeoStiffMatGeoSens( TacsScalar smat[], int dv,
 
           addGcs(Gs, sc*detJ, stress, lambda_n, lambda_m,
                  h, N, Na, Nhp, Nahp);
-          addGcs(sGs, sc*detJ, sstress, lambda_n, lambda_m, 
+          addGcs(sGs, sc*detJ, sstress, lambda_n, lambda_m,
                  h, N, Na, Nhp, Nahp);
 
-          addGcsGeoSens(sGs, sc*detJ, sc*sdetJ, stress, 
+          addGcsGeoSens(sGs, sc*detJ, sc*sdetJ, stress,
                         lambda_n, 0.0, lambda_m, 0.0,
                         h, sh, N, Na, Nhp, Nahp);
         }
@@ -3749,9 +3749,9 @@ void TACSPanelAnalysis::addGeoStiffMatGeoSens( TacsScalar smat[], int dv,
         transformMatGeoSens(Gs, sGs, t, st, NUM_NODES, NUM_NODES);
 
         // Add values to the matrix
-        addSensMatValues(smat, Z, ldz, nz, 
+        addSensMatValues(smat, Z, ldz, nz,
                          4*NUM_NODES, n_vars, 4*NUM_NODES, m_vars, sGs);
-        addSensMatValuesTranspose(smat, Z, ldz, nz, 
+        addSensMatValuesTranspose(smat, Z, ldz, nz,
                                   4*NUM_NODES, m_vars, 4*NUM_NODES, n_vars, sGs);
       }
     }
@@ -3760,13 +3760,13 @@ void TACSPanelAnalysis::addGeoStiffMatGeoSens( TacsScalar smat[], int dv,
 
 /*
   Add the sensitivity of the stiffness matrix w.r.t. the length of the
-  panel 
+  panel
 */
 void TACSPanelAnalysis::addStiffMatLxSens( TacsScalar smat[],
-                                           const TacsScalar Z[], 
+                                           const TacsScalar Z[],
                                            int ldz, int nz,
                                            int n1, int n2,
-                                           const TacsScalar At[], 
+                                           const TacsScalar At[],
                                            const TacsScalar Bt[],
                                            const TacsScalar Dt[] ){
   double N[NUM_NODES], Na[NUM_NODES];
@@ -3789,7 +3789,7 @@ void TACSPanelAnalysis::addStiffMatLxSens( TacsScalar smat[],
   TacsScalar Le = sqrt(c*c + s*s);
   c = c/Le;
   s = s/Le;
-  
+
   // Transformation between coordinate frames
   // local vars = t * global vars
   TacsScalar t[4];
@@ -3815,17 +3815,17 @@ void TACSPanelAnalysis::addStiffMatLxSens( TacsScalar smat[],
     for ( int k = 0; k < numGauss; k++ ){
       // Evaluate the shape functions
       FElibrary::lagrangeSF(N, Na, gaussPts[k], NUM_NODES);
-      FElibrary::cubicHP(Nhp, Nahp, Naahp, gaussPts[k]); 
-      
+      FElibrary::cubicHP(Nhp, Nahp, Naahp, gaussPts[k]);
+
       TacsScalar h = 2.0/Le;
       TacsScalar detJ = 0.5*gaussWts[k]*Le*Lx;
       TacsScalar sdetJ = 0.5*gaussWts[k]*Le;
 
-      computeBsin(Bs, lambda_m, h, 
+      computeBsin(Bs, lambda_m, h,
                   N, Na, Nhp, Nahp, Naahp);
-      computeBcos(Bc, lambda_m, h, 
+      computeBcos(Bc, lambda_m, h,
                   N, Na, Nhp, Nahp, Naahp);
-            
+
       computeBsinGeoSens(sBs, lambda_m, slambda_m, h, 0.0,
                          N, Na, Nhp, Nahp, Naahp);
       computeBcosGeoSens(sBc, lambda_m, slambda_m, h, 0.0,
@@ -3838,24 +3838,24 @@ void TACSPanelAnalysis::addStiffMatLxSens( TacsScalar smat[],
         for ( int j = 0; j < 4*NUM_NODES; j++ ){
           TacsScalar p = innerProduct(stress, &Bs[6*j]);
           sKs[4*NUM_NODES*i + j] += 0.5*sdetJ*p +
-            0.5*detJ*(innerProduct(sstress, &Bs[6*j]) + 
+            0.5*detJ*(innerProduct(sstress, &Bs[6*j]) +
                       innerProduct(stress, &sBs[6*j]));
         }
-               
+
         computeStress(stress, &Bc[6*i], At, Bt, Dt);
         computeStress(sstress, &sBc[6*i], At, Bt, Dt);
         for ( int j = 0; j < 4*NUM_NODES; j++ ){
           TacsScalar p = innerProduct(stress, &Bc[6*j]);
           sKs[4*NUM_NODES*i + j] += 0.5*sdetJ*p +
-            0.5*detJ*(innerProduct(sstress, &Bc[6*j]) + 
+            0.5*detJ*(innerProduct(sstress, &Bc[6*j]) +
                       innerProduct(stress, &sBc[6*j]));
-        }        
+        }
       }
     }
 
     // Transform the matrices to the global reference frame
     transformMat(sKs, t, NUM_NODES, NUM_NODES);
-    addSensMatValues(smat, Z, ldz, nz, 
+    addSensMatValues(smat, Z, ldz, nz,
                      4*NUM_NODES, m_vars, 4*NUM_NODES, m_vars, sKs);
 
     for ( int n = 1; n <= nmodes; n++ ){
@@ -3876,22 +3876,22 @@ void TACSPanelAnalysis::addStiffMatLxSens( TacsScalar smat[],
         for ( int k = 0; k < numGauss; k++ ){
           // Evaluate the shape functions
           FElibrary::lagrangeSF(N, Na, gaussPts[k], NUM_NODES);
-          FElibrary::cubicHP(Nhp, Nahp, Naahp, gaussPts[k]); 
-          
+          FElibrary::cubicHP(Nhp, Nahp, Naahp, gaussPts[k]);
+
           TacsScalar h = 2.0/Le;
           TacsScalar detJ = 0.5*gaussWts[k]*Le*Lx;
           TacsScalar sdetJ = 0.5*gaussWts[k]*Le;
 
-          computeBsin(Bs, lambda_n, h, 
+          computeBsin(Bs, lambda_n, h,
                       N, Na, Nhp, Nahp, Naahp);
-          computeBcos(Bc, lambda_m, h, 
+          computeBcos(Bc, lambda_m, h,
                       N, Na, Nhp, Nahp, Naahp);
 
           computeBsinGeoSens(sBs, lambda_n, slambda_n, h, 0.0,
                              N, Na, Nhp, Nahp, Naahp);
           computeBcosGeoSens(sBc, lambda_m, slambda_m, h, 0.0,
                              N, Na, Nhp, Nahp, Naahp);
-                    
+
           // Compute the sin-coefficient contribution
           for ( int i = 0; i < 4*NUM_NODES; i++ ){
             computeStress(stress, &Bs[6*i], At, Bt, Dt);
@@ -3900,7 +3900,7 @@ void TACSPanelAnalysis::addStiffMatLxSens( TacsScalar smat[],
             for ( int j = 0; j < 4*NUM_NODES; j++ ){
               TacsScalar p = innerProduct(stress, &Bc[6*j]);
               sKs[4*NUM_NODES*i + j] += sc*sdetJ*p +
-                sc*detJ*(innerProduct(sstress, &Bc[6*j]) + 
+                sc*detJ*(innerProduct(sstress, &Bc[6*j]) +
                          innerProduct(stress, &sBc[6*j]));
             }
           }
@@ -3910,9 +3910,9 @@ void TACSPanelAnalysis::addStiffMatLxSens( TacsScalar smat[],
         transformMat(sKs, t, NUM_NODES, NUM_NODES);
 
         // Add values to the matrix
-        addSensMatValues(smat, Z, ldz, nz, 
+        addSensMatValues(smat, Z, ldz, nz,
                          4*NUM_NODES, n_vars, 4*NUM_NODES, m_vars, sKs);
-        addSensMatValuesTranspose(smat, Z, ldz, nz, 
+        addSensMatValuesTranspose(smat, Z, ldz, nz,
                                   4*NUM_NODES, m_vars, 4*NUM_NODES, n_vars, sKs);
       }
     }
@@ -3921,10 +3921,10 @@ void TACSPanelAnalysis::addStiffMatLxSens( TacsScalar smat[],
 
 /*
   Add the sensitivity contribution from this segment to the mass
-  matrix 
+  matrix
 */
 void TACSPanelAnalysis::addMassMatLxSens( TacsScalar smat[],
-                                          const TacsScalar Z[], 
+                                          const TacsScalar Z[],
                                           int ldz, int nz,
                                           int n1, int n2,
                                           const TacsScalar mass[] ){
@@ -3947,7 +3947,7 @@ void TACSPanelAnalysis::addMassMatLxSens( TacsScalar smat[],
   TacsScalar Le = sqrt(c*c + s*s);
   c = c/Le;
   s = s/Le;
-  
+
   // Transformation between coordinate frames
   // local vars = t * global vars
   TacsScalar t[4];
@@ -3973,8 +3973,8 @@ void TACSPanelAnalysis::addMassMatLxSens( TacsScalar smat[],
     for ( int k = 0; k < numGauss; k++ ){
       // Evaluate the shape functions
       FElibrary::lagrangeSF(N, Na, gaussPts[k], NUM_NODES);
-      FElibrary::cubicHP(Nhp, Nahp, Naahp, gaussPts[k]); 
-      
+      FElibrary::cubicHP(Nhp, Nahp, Naahp, gaussPts[k]);
+
       TacsScalar h = 2.0/Le;
       TacsScalar detJ = 0.5*gaussWts[k]*Le*Lx;
       TacsScalar sdetJ = 0.5*gaussWts[k]*Le;
@@ -3996,13 +3996,13 @@ void TACSPanelAnalysis::addMassMatLxSens( TacsScalar smat[],
           TacsScalar p = innerMassProduct(mass, &kc[5*i], &kc[5*j]);
           sMs[4*NUM_NODES*i + j] += 0.5*sdetJ*p +
             detJ*(innerMassProduct(mass, &kc[5*i], &skc[5*j]));
-        }        
+        }
       }
     }
 
     // Transform the matrices to the global reference frame
     transformMat(sMs, t, NUM_NODES, NUM_NODES);
-    addSensMatValues(smat, Z, ldz, nz, 
+    addSensMatValues(smat, Z, ldz, nz,
                      4*NUM_NODES, m_vars, 4*NUM_NODES, m_vars, sMs);
 
     for ( int n = 1; n <= nmodes; n++ ){
@@ -4023,8 +4023,8 @@ void TACSPanelAnalysis::addMassMatLxSens( TacsScalar smat[],
         for ( int k = 0; k < numGauss; k++ ){
           // Evaluate the shape functions
           FElibrary::lagrangeSF(N, Na, gaussPts[k], NUM_NODES);
-          FElibrary::cubicHP(Nhp, Nahp, Naahp, gaussPts[k]); 
-          
+          FElibrary::cubicHP(Nhp, Nahp, Naahp, gaussPts[k]);
+
           TacsScalar h = 2.0/Le;
           TacsScalar detJ = 0.5*gaussWts[k]*Le*Lx;
           TacsScalar sdetJ = 0.5*gaussWts[k]*Le;
@@ -4033,7 +4033,7 @@ void TACSPanelAnalysis::addMassMatLxSens( TacsScalar smat[],
           computeMcos(kc, lambda_m, h, N, Nhp, Nahp);
           computeMsinGeoSens(sks, lambda_n, slambda_n, h, 0.0, N, Nhp, Nahp);
           computeMcosGeoSens(skc, lambda_m, slambda_m, h, 0.0, N, Nhp, Nahp);
-                    
+
           // Compute the sin-coefficient contribution
           for ( int i = 0; i < 4*NUM_NODES; i++ ){
             for ( int j = 0; j < 4*NUM_NODES; j++ ){
@@ -4049,9 +4049,9 @@ void TACSPanelAnalysis::addMassMatLxSens( TacsScalar smat[],
         transformMat(sMs, t, NUM_NODES, NUM_NODES);
 
         // Add values to the matrix
-        addSensMatValues(smat, Z, ldz, nz, 
+        addSensMatValues(smat, Z, ldz, nz,
                          4*NUM_NODES, n_vars, 4*NUM_NODES, m_vars, sMs);
-        addSensMatValuesTranspose(smat, Z, ldz, nz, 
+        addSensMatValuesTranspose(smat, Z, ldz, nz,
                                   4*NUM_NODES, m_vars, 4*NUM_NODES, n_vars, sMs);
       }
     }
@@ -4062,7 +4062,7 @@ void TACSPanelAnalysis::addMassMatLxSens( TacsScalar smat[],
   Add the contribution from a segment to the geometric stiffness matrix
 */
 void TACSPanelAnalysis::addGeoStiffMatLxSens( TacsScalar smat[],
-                                              const TacsScalar Z[], 
+                                              const TacsScalar Z[],
                                               int ldz, int nz,
                                               int n1, int n2,
                                               const TacsScalar stress[] ){
@@ -4077,7 +4077,7 @@ void TACSPanelAnalysis::addGeoStiffMatLxSens( TacsScalar smat[],
   TacsScalar Le = sqrt(c*c + s*s);
   c = c/Le;
   s = s/Le;
-  
+
   // Transformation between coordinate frames
   // local vars = t * global vars
   TacsScalar t[4];
@@ -4103,20 +4103,20 @@ void TACSPanelAnalysis::addGeoStiffMatLxSens( TacsScalar smat[],
     for ( int k = 0; k < numGauss; k++ ){
       // Evaluate the shape functions
       FElibrary::lagrangeSF(N, Na, gaussPts[k], NUM_NODES);
-      FElibrary::cubicHP(Nhp, Nahp, Naahp, gaussPts[k]); 
-      
+      FElibrary::cubicHP(Nhp, Nahp, Naahp, gaussPts[k]);
+
       TacsScalar h = 2.0/Le;
       TacsScalar detJ = 0.5*gaussWts[k]*Le*Lx;
       TacsScalar sdetJ = 0.5*gaussWts[k]*Le;
 
-      addGsGeoSens(Gs, 0.5*detJ, 0.5*sdetJ, 
+      addGsGeoSens(Gs, 0.5*detJ, 0.5*sdetJ,
                    stress, lambda_m, slambda_m, h, 0.0, N, Na, Nhp, Nahp);
     }
 
     transformMat(Gs, t, NUM_NODES, NUM_NODES);
-    addSensMatValues(smat, Z, ldz, nz, 
+    addSensMatValues(smat, Z, ldz, nz,
                      4*NUM_NODES, m_vars, 4*NUM_NODES, m_vars, Gs);
-  
+
     for ( int n = 1; n <= nmodes; n++ ){
       if (n % 2 != m % 2){
         // Determine the variables for the n-th mode
@@ -4135,8 +4135,8 @@ void TACSPanelAnalysis::addGeoStiffMatLxSens( TacsScalar smat[],
         for ( int k = 0; k < numGauss; k++ ){
           // Evaluate the shape functions
           FElibrary::lagrangeSF(N, Na, gaussPts[k], NUM_NODES);
-          FElibrary::cubicHP(Nhp, Nahp, Naahp, gaussPts[k]); 
-          
+          FElibrary::cubicHP(Nhp, Nahp, Naahp, gaussPts[k]);
+
           TacsScalar h = 2.0/Le;
           TacsScalar detJ = 0.5*gaussWts[k]*Le*Lx;
           TacsScalar sdetJ = 0.5*gaussWts[k]*Le;
@@ -4149,9 +4149,9 @@ void TACSPanelAnalysis::addGeoStiffMatLxSens( TacsScalar smat[],
         transformMat(Gs, t, NUM_NODES, NUM_NODES);
 
         // Add values to the matrix
-        addSensMatValues(smat, Z, ldz, nz, 
+        addSensMatValues(smat, Z, ldz, nz,
                          4*NUM_NODES, n_vars, 4*NUM_NODES, m_vars, Gs);
-        addSensMatValuesTranspose(smat, Z, ldz, nz, 
+        addSensMatValuesTranspose(smat, Z, ldz, nz,
                                   4*NUM_NODES, m_vars, 4*NUM_NODES, n_vars, Gs);
       }
     }
@@ -4165,14 +4165,14 @@ void TACSPanelAnalysis::addGeoStiffMatLxSens( TacsScalar smat[],
   mat[]: the matrix stored in the following packed format:
   mat_{i,j} = mat[i + j*(j+1)/2]
 */
-void TACSPanelAnalysis::addValues( TacsScalar mat[], int kband, 
+void TACSPanelAnalysis::addValues( TacsScalar mat[], int kband,
                                    int n, const int rows[],
                                    int m, const int cols[],
                                    const TacsScalar values[] ){
   for ( int i = 0; i < n; i++ ){
     if (rows[i] >= 0){
       for ( int j = 0; j < m; j++ ){
-        // Store only the upper diagonal    
+        // Store only the upper diagonal
         if (cols[j] >= 0 && cols[j] >= rows[i]){
           // Banded storage format
           mat[(kband + rows[i] - cols[j]) + cols[j]*(kband+1)] +=
@@ -4190,14 +4190,14 @@ void TACSPanelAnalysis::addValues( TacsScalar mat[], int kband,
   mat[]: the matrix stored in the following packed format:
   mat_{i,j} = mat[i + j*(j+1)/2]
 */
-void TACSPanelAnalysis::addValuesTranspose( TacsScalar mat[], int kband, 
+void TACSPanelAnalysis::addValuesTranspose( TacsScalar mat[], int kband,
                                             int n, const int rows[],
                                             int m, const int cols[],
                                             const TacsScalar values[] ){
   for ( int i = 0; i < n; i++ ){
     if (rows[i] >= 0){
       for ( int j = 0; j < m; j++ ){
-        // Store only the upper diagonal 
+        // Store only the upper diagonal
         if (cols[j] >= 0 && cols[j] >= rows[i]){
           // Banded storage format
           mat[(kband + rows[i] - cols[j]) + cols[j]*(kband+1)] +=
@@ -4250,13 +4250,13 @@ void TACSPanelAnalysis::addSensMatValuesTranspose( TacsScalar smat[],
     for ( int i = 0; i < n; i++ ){
       if (rows[i] >= 0){
         TacsScalar Zi = Z[ldz*ii + rows[i]];
-        
+
         TacsScalar val = 0.0;
         for ( int j = 0; j < m; j++ ){
           if (cols[j] >= 0){
             val += values[n*j + i]*Z[ldz*ii + cols[j]];
           }
-        }        
+        }
         smat[ii] += Zi*val;
       }
     }
@@ -4264,20 +4264,20 @@ void TACSPanelAnalysis::addSensMatValuesTranspose( TacsScalar smat[],
 }
 
 /*
-  Transform the vector from the local coordinate frame to the 
+  Transform the vector from the local coordinate frame to the
   global coordinate frame.
 
-  Compute T^{T} * Fs 
+  Compute T^{T} * Fs
 */
 void TACSPanelAnalysis::transformVec( TacsScalar vec[],
                                       const TacsScalar t[],
-                                      int nn ){ 
+                                      int nn ){
   for ( int i = 0; i < nn; i++ ){
     TacsScalar fw = vec[4*i + 2];
     TacsScalar ft = vec[4*i + 3];
 
     vec[4*i + 2] = t[0]*fw + t[2]*ft;
-    vec[4*i + 3] = t[1]*fw + t[3]*ft;    
+    vec[4*i + 3] = t[1]*fw + t[3]*ft;
   }
 }
 
@@ -4287,11 +4287,11 @@ void TACSPanelAnalysis::transformVec( TacsScalar vec[],
 
   Compute T^{T} * mat * T
 
-  Note that here, mat is stored in a dense format. 
+  Note that here, mat is stored in a dense format.
 */
 void TACSPanelAnalysis::transformMat( TacsScalar mat[],
                                       const TacsScalar t[],
-                                      int nn, int mm ){  
+                                      int nn, int mm ){
   for ( int i = 0; i < nn; i++ ){
     for ( int j = 0; j < mm; j++ ){
       // Record the matrix entries
@@ -4300,7 +4300,7 @@ void TACSPanelAnalysis::transformMat( TacsScalar mat[],
         m[k]    = mat[4*mm*(4*i)   + 4*j+k];
         m[12+k] = mat[4*mm*(4*i+3) + 4*j+k];
       }
-      
+
       // Compute m = T^{T} * mat
       for ( int k = 0; k < 4; k++ ){
         m[4+k] = (t[0]*mat[4*mm*(4*i+1) + 4*j+k] +
@@ -4331,13 +4331,13 @@ void TACSPanelAnalysis::transformMat( TacsScalar mat[],
   smat = sT^{T}*mat*T + T^{T}*smat*T + T^{T}*mat*sT
   mat = T^{T}*mat*T
 
-  Note that here, mat is stored in a full dense format. 
+  Note that here, mat is stored in a full dense format.
 */
-void TACSPanelAnalysis::transformMatGeoSens( TacsScalar mat[], 
+void TACSPanelAnalysis::transformMatGeoSens( TacsScalar mat[],
                                              TacsScalar smat[],
-                                             const TacsScalar t[], 
+                                             const TacsScalar t[],
                                              const TacsScalar st[],
-                                             int nn, int mm ){  
+                                             int nn, int mm ){
   for ( int i = 0; i < nn; i++ ){
     for ( int j = 0; j < mm; j++ ){
       // Record the matrix entries
@@ -4348,7 +4348,7 @@ void TACSPanelAnalysis::transformMatGeoSens( TacsScalar mat[],
         sm[k]    = smat[4*mm*(4*i)   + 4*j+k];
         sm[12+k] = smat[4*mm*(4*i+3) + 4*j+k];
       }
-      
+
       // Compute m = T^{T} * mat
       for ( int k = 0; k < 4; k++ ){
         // compute the matrix entries
@@ -4357,10 +4357,10 @@ void TACSPanelAnalysis::transformMatGeoSens( TacsScalar mat[],
 
         m[8+k] = (t[1]*mat[4*mm*(4*i+1) + 4*j+k] +
                   t[3]*mat[4*mm*(4*i+2) + 4*j+k]);
-        
-        // compute the sensitivity of m 
+
+        // compute the sensitivity of m
         sm[4+k] = (t[0]*smat[4*mm*(4*i+1) + 4*j+k] +
-                   t[2]*smat[4*mm*(4*i+2) + 4*j+k] + 
+                   t[2]*smat[4*mm*(4*i+2) + 4*j+k] +
                    st[0]*mat[4*mm*(4*i+1) + 4*j+k] +
                    st[2]*mat[4*mm*(4*i+2) + 4*j+k]);
 
@@ -4389,10 +4389,10 @@ void TACSPanelAnalysis::transformMatGeoSens( TacsScalar mat[],
     }
   }
 }
- 
+
 /*
   Compute the derivatives of the strain coefficient of sin w.r.t. to
-  the nodal displacements. 
+  the nodal displacements.
 
   The displacement field takes the form:
 
@@ -4406,25 +4406,25 @@ void TACSPanelAnalysis::transformMatGeoSens( TacsScalar mat[],
   This expression is used in conjunction with the constitutive matrix
   to evaluate the stiffness matrix as follows:
 
-  K = 
-  int_{A} Bs_n^{T}*Bs_n * sin^2(lambda_n*(x + beta*y)) dA + 
-  int_{A} Bc_n^{T}*Bc_n * cos^2(lambda_n*(x + beta*y)) dA + 
-  int_{A} Bs_n^{T}*Bc_m * sin(lambda_n*(x + beta*y))*cos(lambda_m*(x + beta*y)) dA + 
+  K =
+  int_{A} Bs_n^{T}*Bs_n * sin^2(lambda_n*(x + beta*y)) dA +
+  int_{A} Bc_n^{T}*Bc_n * cos^2(lambda_n*(x + beta*y)) dA +
+  int_{A} Bs_n^{T}*Bc_m * sin(lambda_n*(x + beta*y))*cos(lambda_m*(x + beta*y)) dA +
   int_{A} Bs_m^{T}*Bc_n * sin(lambda_m*(x + beta*y))*cos(lambda_n*(x + beta*y)) dA
-  
+
   Note that the integrals can be evaluated by first integrating along
   x then y as follows:
-  
+
   int_{y} c(y) int_{x} sin^2(lambda_n*(x + beta*y)) dxdy
 
   where c(y) depends arbitrarily on y. Note that the limits of
   integration are:
-  
-  x = -beta*y        and 
+
+  x = -beta*y        and
   x = -beta*y + Lx
 
   As a result, we can make the substitution: xi = x + beta*y, and the
-  lower and upper limits become: 
+  lower and upper limits become:
 
   xi = 0   and
   xi = Lx
@@ -4453,7 +4453,7 @@ void TACSPanelAnalysis::transformMatGeoSens( TacsScalar mat[],
   B:       the derivative of the strain w.r.t. the given modal coefficients
 */
 void TACSPanelAnalysis::computeBsin( TacsScalar B[], TacsScalar lambda,
-                                     TacsScalar h, 
+                                     TacsScalar h,
                                      const double N[], const double Na[],
                                      const double Nhp[], const double Nahp[],
                                      const double Naahp[] ){
@@ -4463,20 +4463,20 @@ void TACSPanelAnalysis::computeBsin( TacsScalar B[], TacsScalar lambda,
     // Compute the derivative w.r.t. the displacement coefficients of sin
     // u0
     B[0] = 0.0;
-    B[2] = h*Na[k];       
+    B[2] = h*Na[k];
     B += 6;
-  
+
     // v0
     B[1] = h*Na[k];
     B[2] = 0.0;
     B += 6;
-    
+
     // w0
-    B[3] = lambda*lambda*Nhp[2*k];   
+    B[3] = lambda*lambda*Nhp[2*k];
     B[4] = - h*h*Naahp[2*k] + beta*beta*lambda*lambda*Nhp[2*k];
     B[5] = 2.0*beta*lambda*lambda*Nhp[2*k];
     B += 6;
-    
+
     // theta
     B[3] = hinv*lambda*lambda*Nhp[2*k+1];
     B[4] = - h*Naahp[2*k+1] + hinv*beta*beta*lambda*lambda*Nhp[2*k+1];
@@ -4506,7 +4506,7 @@ void TACSPanelAnalysis::computeBsin( TacsScalar B[], TacsScalar lambda,
   B:       the derivative of the strain w.r.t. the given modal coefficients
 */
 void TACSPanelAnalysis::computeBcos( TacsScalar B[], TacsScalar lambda,
-                                     TacsScalar h, 
+                                     TacsScalar h,
                                      const double N[], const double Na[],
                                      const double Nhp[], const double Nahp[],
                                      const double Naahp[] ){
@@ -4516,10 +4516,10 @@ void TACSPanelAnalysis::computeBcos( TacsScalar B[], TacsScalar lambda,
     B[0] = lambda*N[k];
     B[2] = beta*lambda*N[k];
     B += 6;
-    
+
     // v0
     B[1] = beta*lambda*N[k];
-    B[2] = lambda*N[k];    
+    B[2] = lambda*N[k];
     B += 6;
 
     // w0
@@ -4527,14 +4527,14 @@ void TACSPanelAnalysis::computeBcos( TacsScalar B[], TacsScalar lambda,
     B[4] = -2.0*beta*lambda*h*Nahp[2*k];
     B[5] = -2.0*lambda*h*Nahp[2*k];
     B += 6;
-    
+
     // theta
     B[3] = 0.0;
     B[4] = -2.0*beta*lambda*Nahp[2*k+1];
     B[5] = -2.0*lambda*Nahp[2*k+1];
-    B += 6;  
+    B += 6;
   }
-}  
+}
 
 /*
   Compute the derivatives of the strain coefficient of sin w.r.t. to
@@ -4544,7 +4544,7 @@ void TACSPanelAnalysis::computeBsinGeoSens( TacsScalar B[], TacsScalar lambda,
                                             TacsScalar slambda,
                                             TacsScalar h, TacsScalar sh,
                                             const double N[], const double Na[],
-                                            const double Nhp[], 
+                                            const double Nhp[],
                                             const double Nahp[],
                                             const double Naahp[] ){
   TacsScalar hinv = 1.0/h;
@@ -4554,20 +4554,20 @@ void TACSPanelAnalysis::computeBsinGeoSens( TacsScalar B[], TacsScalar lambda,
     // u0
     B[2] = sh*Na[k];
     B += 6;
-  
+
     // v0
     B[1] = sh*Na[k];
     B += 6;
-    
+
     // w0
-    B[3] = 2.0*slambda*lambda*Nhp[2*k];   
+    B[3] = 2.0*slambda*lambda*Nhp[2*k];
     B[4] = - 2.0*sh*h*Naahp[2*k] + 2.0*beta*beta*lambda*slambda*Nhp[2*k];
     B[5] = 4.0*beta*lambda*slambda*Nhp[2*k];
     B += 6;
-    
+
     // theta
     B[3] = hinv*lambda*Nhp[2*k+1]*(2.0*slambda - lambda*hinv*sh);
-    B[4] = - sh*Naahp[2*k+1] + 
+    B[4] = - sh*Naahp[2*k+1] +
       hinv*beta*beta*lambda*Nhp[2*k+1]*(2.0*slambda - lambda*hinv*sh);
     B[5] = 2.0*hinv*beta*lambda*Nhp[2*k+1]*(2.0*slambda - lambda*hinv*sh);
     B += 6;
@@ -4579,10 +4579,10 @@ void TACSPanelAnalysis::computeBsinGeoSens( TacsScalar B[], TacsScalar lambda,
   the nodal displacements
 */
 void TACSPanelAnalysis::computeBcosGeoSens( TacsScalar B[], TacsScalar lambda,
-                                            TacsScalar slambda, TacsScalar h, 
+                                            TacsScalar slambda, TacsScalar h,
                                             TacsScalar sh,
                                             const double N[], const double Na[],
-                                            const double Nhp[], 
+                                            const double Nhp[],
                                             const double Nahp[],
                                             const double Naahp[] ){
   for ( int k = 0; k < NUM_NODES; k++ ){
@@ -4591,7 +4591,7 @@ void TACSPanelAnalysis::computeBcosGeoSens( TacsScalar B[], TacsScalar lambda,
     B[0] = slambda*N[k];
     B[2] = beta*slambda*N[k];
     B += 6;
-    
+
     // v0
     B[1] = beta*slambda*N[k];
     B[2] = slambda*N[k];
@@ -4601,13 +4601,13 @@ void TACSPanelAnalysis::computeBcosGeoSens( TacsScalar B[], TacsScalar lambda,
     B[4] = -2.0*beta*(lambda*sh + slambda*h)*Nahp[2*k];
     B[5] = -2.0*(lambda*sh + slambda*h)*Nahp[2*k];
     B += 6;
-    
+
     // theta
     B[4] = -2.0*beta*slambda*Nahp[2*k+1];
     B[5] = -2.0*slambda*Nahp[2*k+1];
-    B += 6;  
+    B += 6;
   }
-}  
+}
 
 // Compute the derivative of the strain for a longitudinal beam
 // ------------------------------------------------------------
@@ -4666,7 +4666,7 @@ void TACSPanelAnalysis::computeBeamBcos( TacsScalar B[], TacsScalar lambda ){
   The derivatives of u(x, y) with respect to x and y-coordinates are:
 
   du/dx = lambda_n*u_n(y)*cos(lambda_n*(x + beta*y))
-  du/dy = u_n'(y)*sin(lambda_n*(x + beta*y)) + 
+  du/dy = u_n'(y)*sin(lambda_n*(x + beta*y)) +
           beta*lambda_n*u_n(y)*cos(lambda_n*(x + beta*y))
 
   The geometric stiffness contribution can be evaluated as follows:
@@ -4689,9 +4689,9 @@ void TACSPanelAnalysis::computeBeamBcos( TacsScalar B[], TacsScalar lambda ){
   output:
   G:       the geometric stiffness matrix
 */
-void TACSPanelAnalysis::addGs( TacsScalar G[], TacsScalar scale, 
-                               const TacsScalar s[], 
-                               TacsScalar lambda, TacsScalar h, 
+void TACSPanelAnalysis::addGs( TacsScalar G[], TacsScalar scale,
+                               const TacsScalar s[],
+                               TacsScalar lambda, TacsScalar h,
                                const double N[], const double Na[],
                                const double Nhp[], const double Nahp[] ){
   TacsScalar a = scale*lambda*lambda*(s[0] + 2.0*beta*s[2] + beta*beta*s[1]);
@@ -4707,22 +4707,22 @@ void TACSPanelAnalysis::addGs( TacsScalar G[], TacsScalar scale,
       G[8*(4*i+1) + 4*j+1] += a*N[i]*N[j] + b*h*h*Na[i]*Na[j];
 
       // w
-      G[8*(4*i+2) + 4*j+2] += (a*Nhp[2*i]*Nhp[2*j] + 
-			       b*h*h*Nahp[2*i]*Nahp[2*j]);
-      G[8*(4*i+2) + 4*j+3] += (a*hinv*Nhp[2*i]*Nhp[2*j+1] + 
-			       b*h*Nahp[2*i]*Nahp[2*j+1]);
+      G[8*(4*i+2) + 4*j+2] += (a*Nhp[2*i]*Nhp[2*j] +
+                               b*h*h*Nahp[2*i]*Nahp[2*j]);
+      G[8*(4*i+2) + 4*j+3] += (a*hinv*Nhp[2*i]*Nhp[2*j+1] +
+                               b*h*Nahp[2*i]*Nahp[2*j+1]);
 
       // theta
       G[8*(4*i+3) + 4*j+2] += (a*hinv*Nhp[2*i+1]*Nhp[2*j] +
-			       b*h*Nahp[2*i+1]*Nahp[2*j]);
-      G[8*(4*i+3) + 4*j+3] += (a*hinv*hinv*Nhp[2*i+1]*Nhp[2*j+1] + 
-			       b*Nahp[2*i+1]*Nahp[2*j+1]);
+                               b*h*Nahp[2*i+1]*Nahp[2*j]);
+      G[8*(4*i+3) + 4*j+3] += (a*hinv*hinv*Nhp[2*i+1]*Nhp[2*j+1] +
+                               b*Nahp[2*i+1]*Nahp[2*j+1]);
     }
   }
 }
 
 /*
-  Compute the contributions to the geometric stiffness matrix from 
+  Compute the contributions to the geometric stiffness matrix from
   the terms that contain products: sin(lambda_n*x)*cos(lambda_m*x)
 
   The geometric stiffness contribution is evaluated as follows:
@@ -4733,12 +4733,12 @@ void TACSPanelAnalysis::addGs( TacsScalar G[], TacsScalar scale,
   to the x/y directions are:
 
   du/dx = lambda_n*u_n(y)*cos(lambda_n*(x + beta*y))
-  du/dy = u_n'(y)*sin(lambda_n*(x + beta*y)) + 
+  du/dy = u_n'(y)*sin(lambda_n*(x + beta*y)) +
           beta*lambda_n*u_n(y)*cos(lambda_n*(x + beta*y))
 
   If we set Nx = 0, Nxy = 0, and consider only the axial
   contributions, we arrive at this expression:
-  
+
   Gu = 0.5*Ny*(du/dy)^2
 
   This term can be written as follows, where summation is
@@ -4766,10 +4766,10 @@ void TACSPanelAnalysis::addGs( TacsScalar G[], TacsScalar scale,
   output:
   G:       the geometric stiffness matrix
 */
-void TACSPanelAnalysis::addGcs( TacsScalar G[], TacsScalar scale, 
-                                const TacsScalar s[], 
+void TACSPanelAnalysis::addGcs( TacsScalar G[], TacsScalar scale,
+                                const TacsScalar s[],
                                 TacsScalar lambda_n, TacsScalar lambda_m,
-                                TacsScalar h, 
+                                TacsScalar h,
                                 const double N[], const double Na[],
                                 const double Nhp[], const double Nahp[] ){
   // Set the scalar multipliers
@@ -4818,15 +4818,15 @@ void TACSPanelAnalysis::addGcs( TacsScalar G[], TacsScalar scale,
   output:
   G:       the geometric stiffness matrix
 */
-void TACSPanelAnalysis::addGsGeoSens( TacsScalar G[], TacsScalar scale, 
-                                      TacsScalar sscale, const TacsScalar s[], 
+void TACSPanelAnalysis::addGsGeoSens( TacsScalar G[], TacsScalar scale,
+                                      TacsScalar sscale, const TacsScalar s[],
                                       TacsScalar lambda, TacsScalar slambda,
-                                      TacsScalar h, TacsScalar sh, 
+                                      TacsScalar h, TacsScalar sh,
                                       const double N[], const double Na[],
                                       const double Nhp[], const double Nahp[] ){
   TacsScalar a = scale*lambda*lambda*(s[0] + 2.0*beta*s[2] + beta*beta*s[1]);
-  TacsScalar sa = 
-    (sscale*lambda*lambda + 
+  TacsScalar sa =
+    (sscale*lambda*lambda +
      2.0*scale*lambda*slambda)*(s[0] + 2.0*beta*s[2] + beta*beta*s[1]);
   TacsScalar b = scale*s[1];
   TacsScalar sb = sscale*s[1];
@@ -4837,39 +4837,39 @@ void TACSPanelAnalysis::addGsGeoSens( TacsScalar G[], TacsScalar scale,
   for ( int i = 0; i < 2; i++ ){
     for ( int j = 0; j < 2; j++ ){
       // u
-      G[8*4*i + 4*j] += 
-	sa*N[i]*N[j] + (sb*h*h + 2.0*b*h*sh)*Na[i]*Na[j];
+      G[8*4*i + 4*j] +=
+        sa*N[i]*N[j] + (sb*h*h + 2.0*b*h*sh)*Na[i]*Na[j];
 
       // v
-      G[8*(4*i+1) + 4*j+1] += 
-	sa*N[i]*N[j] + (sb*h*h + 2.0*b*h*sh)*Na[i]*Na[j];
+      G[8*(4*i+1) + 4*j+1] +=
+        sa*N[i]*N[j] + (sb*h*h + 2.0*b*h*sh)*Na[i]*Na[j];
 
       // w
-      G[8*(4*i+2) + 4*j+2] += 
-	sa*Nhp[2*i]*Nhp[2*j] + 
-	(sb*h*h + 2.0*b*h*sh)*Nahp[2*i]*Nahp[2*j];
-      G[8*(4*i+2) + 4*j+3] += 
-	(sa*hinv + a*shinv)*Nhp[2*i]*Nhp[2*j+1] +
-	(sb*h + h*sh)*Nahp[2*i]*Nahp[2*j+1];
+      G[8*(4*i+2) + 4*j+2] +=
+        sa*Nhp[2*i]*Nhp[2*j] +
+        (sb*h*h + 2.0*b*h*sh)*Nahp[2*i]*Nahp[2*j];
+      G[8*(4*i+2) + 4*j+3] +=
+        (sa*hinv + a*shinv)*Nhp[2*i]*Nhp[2*j+1] +
+        (sb*h + h*sh)*Nahp[2*i]*Nahp[2*j+1];
 
       // theta
-      G[8*(4*i+3) + 4*j+2] += 
-	(sa*hinv + a*shinv)*Nhp[2*i+1]*Nhp[2*j] + 
-	(sb*h + h*sh)*Nahp[2*i]*Nahp[2*j+1];
-      G[8*(4*i+3) + 4*j+3] += 
+      G[8*(4*i+3) + 4*j+2] +=
+        (sa*hinv + a*shinv)*Nhp[2*i+1]*Nhp[2*j] +
+        (sb*h + h*sh)*Nahp[2*i]*Nahp[2*j+1];
+      G[8*(4*i+3) + 4*j+3] +=
         (sa*hinv*hinv + 2.0*a*shinv*hinv)*Nhp[2*i+1]*Nhp[2*j+1] +
-	sb*Nahp[2*i+1]*Nahp[2*j+1];
+        sb*Nahp[2*i+1]*Nahp[2*j+1];
     }
   }
 }
 
 /*
   Add terms to the geometric stiffness matrix that are proportional to
-  sin(lambda_n*x)*cos(lambda_m*x) 
+  sin(lambda_n*x)*cos(lambda_m*x)
 
   This function adds the contribution to the derivative computed by
-  the function addGcs(). 
-  
+  the function addGcs().
+
   input:
   scale:     scalar to multiply the matrix contributions
   sscale:    derivative of the scalar multiplier for the matrix
@@ -4887,17 +4887,17 @@ void TACSPanelAnalysis::addGsGeoSens( TacsScalar G[], TacsScalar scale,
   output:
   G:       the geometric stiffness matrix
 */
-void TACSPanelAnalysis::addGcsGeoSens( TacsScalar G[], TacsScalar scale, 
-                                       TacsScalar sscale, const TacsScalar s[], 
+void TACSPanelAnalysis::addGcsGeoSens( TacsScalar G[], TacsScalar scale,
+                                       TacsScalar sscale, const TacsScalar s[],
                                        TacsScalar lambda_n, TacsScalar slambda_n,
                                        TacsScalar lambda_m, TacsScalar slambda_m,
                                        TacsScalar h, TacsScalar sh,
                                        const double N[], const double Na[],
-                                       const double Nhp[], 
+                                       const double Nhp[],
                                        const double Nahp[] ){
   TacsScalar g = scale*lambda_m*(s[2] + 0.5*beta*s[1]);
   TacsScalar sg = (sscale*lambda_m + scale*slambda_m)*(s[2] + 0.5*beta*s[1]);
-    
+
   TacsScalar hinv = 1.0/h;
   TacsScalar shinv = - sh*hinv*hinv;
 
@@ -4941,9 +4941,9 @@ void TACSPanelAnalysis::computeMsin( TacsScalar M[], TacsScalar lambda,
     M[2] = Nhp[2*k];
     M[4] = h*Nahp[2*k];
     M += 5;
-    
+
     // theta
-    M[2] = Nhp[2*k+1]/h;    
+    M[2] = Nhp[2*k+1]/h;
     M[4] = Nahp[2*k+1];
     M += 5;
   }
@@ -4968,22 +4968,22 @@ void TACSPanelAnalysis::computeMcos( TacsScalar M[], TacsScalar lambda,
     M[3] = lambda*Nhp[2*k];
     M[4] = beta*lambda*Nhp[2*k];
     M += 5;
-    
+
     // theta
-    M[3] = lambda*Nhp[2*k+1]/h; 
-    M[4] = beta*lambda*Nhp[2*k]/h;   
+    M[3] = lambda*Nhp[2*k+1]/h;
+    M[4] = beta*lambda*Nhp[2*k]/h;
     M += 5;
   }
 }
 
 /*
   Compute the terms required for the mass matrix that are a function
-  of sin 
+  of sin
 */
 void TACSPanelAnalysis::computeMsinGeoSens( TacsScalar M[], TacsScalar lambda,
                                             TacsScalar slambda, TacsScalar h,
                                             TacsScalar sh,
-                                            const double N[], 
+                                            const double N[],
                                             const double Nhp[],
                                             const double Nahp[] ){
   for ( int k = 0; k < NUM_NODES; k++ ){
@@ -4996,7 +4996,7 @@ void TACSPanelAnalysis::computeMsinGeoSens( TacsScalar M[], TacsScalar lambda,
     // w0
     M[4] = sh*Nahp[2*k];
     M += 5;
-    
+
     // theta
     M[2] = - sh*Nhp[2*k+1]/(h*h);
     M += 5;
@@ -5009,8 +5009,8 @@ void TACSPanelAnalysis::computeMsinGeoSens( TacsScalar M[], TacsScalar lambda,
 */
 void TACSPanelAnalysis::computeMcosGeoSens( TacsScalar M[], TacsScalar lambda,
                                             TacsScalar slambda, TacsScalar h,
-                                            TacsScalar sh, 
-                                            const double N[], 
+                                            TacsScalar sh,
+                                            const double N[],
                                             const double Nhp[],
                                             const double Nahp[] ){
   for ( int k = 0; k < NUM_NODES; k++ ){
@@ -5024,9 +5024,9 @@ void TACSPanelAnalysis::computeMcosGeoSens( TacsScalar M[], TacsScalar lambda,
     M[3] = slambda*Nhp[2*k];
     M[4] = beta*slambda*Nhp[2*k];
     M += 5;
-    
+
     // theta
-    M[3] = (slambda*h - lambda*sh)*Nhp[2*k+1]/(h*h);    
+    M[3] = (slambda*h - lambda*sh)*Nhp[2*k+1]/(h*h);
     M[4] = beta*(slambda*h - lambda*sh)*Nhp[2*k+1]/(h*h);
     M += 5;
   }
@@ -5043,7 +5043,7 @@ void TACSPanelAnalysis::computeBeamMsin( TacsScalar M[], TacsScalar lambda ){
   // v
   M[1] = 1.0;
   M += 5;
-  
+
   // w
   M[2] = 1.0;
   M += 5;
@@ -5078,7 +5078,7 @@ void TACSPanelAnalysis::computeBeamMcos( TacsScalar M[], TacsScalar lambda ){
 
   Nx = Nx*Ly
 */
-void TACSPanelAnalysis::computeSegmentLoads( TacsScalar Nx, 
+void TACSPanelAnalysis::computeSegmentLoads( TacsScalar Nx,
                                              TacsScalar Nxy,
                                              TacsScalar segmentLoads[],
                                              TacsScalar beamLoads[] ){
@@ -5096,7 +5096,7 @@ void TACSPanelAnalysis::computeSegmentLoads( TacsScalar Nx,
   for ( int k = 0; k < nsegments; k++ ){
     int n1 = nodes[2*k];
     int n2 = nodes[2*k+1];
-    
+
     TacsScalar c = (Xpts[2*n2] - Xpts[2*n1]);
     TacsScalar s = (Xpts[2*n2+1] - Xpts[2*n1+1]);
     TacsScalar Le = sqrt(c*c + s*s);
@@ -5125,7 +5125,7 @@ void TACSPanelAnalysis::computeSegmentLoads( TacsScalar Nx,
   for ( int k = 0; k < nsegments; k++ ){
     int n1 = nodes[2*k];
     int n2 = nodes[2*k+1];
-    
+
     TacsScalar c = (Xpts[2*n2] - Xpts[2*n1]);
     TacsScalar s = (Xpts[2*n2+1] - Xpts[2*n1+1]);
     TacsScalar Le = sqrt(c*c + s*s);
@@ -5151,7 +5151,7 @@ void TACSPanelAnalysis::computeSegmentLoads( TacsScalar Nx,
 */
 /*
 void TACSPanelAnalysis::computeSegmentLoadsDVSens( int dvNum,
-                                                   TacsScalar Nx, 
+                                                   TacsScalar Nx,
                                                    TacsScalar Nxy,
                                                    TacsScalar segmentLoads[],
                                                    TacsScalar beamLoads[] ){
@@ -5170,7 +5170,7 @@ void TACSPanelAnalysis::computeSegmentLoadsDVSens( int dvNum,
   for ( int k = 0; k < nsegments; k++ ){
     int n1 = nodes[2*k];
     int n2 = nodes[2*k+1];
-    
+
     TacsScalar c = (Xpts[2*n2] - Xpts[2*n1]);
     TacsScalar s = (Xpts[2*n2+1] - Xpts[2*n1+1]);
     TacsScalar Le = sqrt(c*c + s*s);
@@ -5205,11 +5205,11 @@ void TACSPanelAnalysis::computeSegmentLoadsDVSens( int dvNum,
   TacsScalar sepx = -sEA*Nx*Ly/(EA*EA);
   TacsScalar sgamma = -sG*Nxy*Ly/(G*G);
 
-  // Set the stiffnesses 
+  // Set the stiffnesses
   for ( int k = 0; k < nsegments; k++ ){
     int n1 = nodes[2*k];
     int n2 = nodes[2*k+1];
-    
+
     TacsScalar c = (Xpts[2*n2] - Xpts[2*n1]);
     TacsScalar s = (Xpts[2*n2+1] - Xpts[2*n1+1]);
     TacsScalar Le = sqrt(c*c + s*s);
@@ -5236,10 +5236,10 @@ void TACSPanelAnalysis::computeSegmentLoadsDVSens( int dvNum,
 }
 */
 /*
-  Determine the sensitivity of the segment loads to a given geometric 
+  Determine the sensitivity of the segment loads to a given geometric
   design variable
 */
-void TACSPanelAnalysis::computeSegmentLoadsGeoSens( TacsScalar Nx, 
+void TACSPanelAnalysis::computeSegmentLoadsGeoSens( TacsScalar Nx,
                                                     TacsScalar Nxy, int dv,
                                                     TacsScalar segmentLoads[],
                                                     TacsScalar beamLoads[] ){
@@ -5252,9 +5252,9 @@ void TACSPanelAnalysis::computeSegmentLoadsGeoSens( TacsScalar Nx,
   TacsScalar sy = Xpts[2*last_node+1] - Xpts[2*first_node+1];
   TacsScalar Ly = sqrt(cy*cy + sy*sy);
 
-  TacsScalar scy = (XptLin[2*nnodes*dv + 2*last_node] - 
+  TacsScalar scy = (XptLin[2*nnodes*dv + 2*last_node] -
                     XptLin[2*nnodes*dv + 2*first_node]);
-  TacsScalar ssy = (XptLin[2*nnodes*dv + 2*last_node+1] - 
+  TacsScalar ssy = (XptLin[2*nnodes*dv + 2*last_node+1] -
                     XptLin[2*nnodes*dv + 2*first_node+1]);
   TacsScalar sLy = (cy*scy + sy*ssy)/Ly;
 
@@ -5264,12 +5264,12 @@ void TACSPanelAnalysis::computeSegmentLoadsGeoSens( TacsScalar Nx,
   for ( int k = 0; k < nsegments; k++ ){
     int n1 = nodes[2*k];
     int n2 = nodes[2*k+1];
-    
+
     TacsScalar c = (Xpts[2*n2] - Xpts[2*n1]);
     TacsScalar s = (Xpts[2*n2+1] - Xpts[2*n1+1]);
-    TacsScalar sc = (XptLin[2*nnodes*dv + 2*n2] - 
+    TacsScalar sc = (XptLin[2*nnodes*dv + 2*n2] -
                      XptLin[2*nnodes*dv + 2*n1]);
-    TacsScalar ss = (XptLin[2*nnodes*dv + 2*n2+1] - 
+    TacsScalar ss = (XptLin[2*nnodes*dv + 2*n2+1] -
                      XptLin[2*nnodes*dv + 2*n1+1]);
 
     TacsScalar Le = sqrt(c*c + s*s);
@@ -5299,16 +5299,16 @@ void TACSPanelAnalysis::computeSegmentLoadsGeoSens( TacsScalar Nx,
   TacsScalar sepx = Nx*(EA*sLy - sEA*Ly)/(EA*EA);
   TacsScalar sgamma = Nxy*(G*sLy - sG*Ly)/(G*G);
 
-  // Set the stiffnesses 
+  // Set the stiffnesses
   for ( int k = 0; k < nsegments; k++ ){
     int n1 = nodes[2*k];
     int n2 = nodes[2*k+1];
-    
+
     TacsScalar c = (Xpts[2*n2] - Xpts[2*n1]);
     TacsScalar s = (Xpts[2*n2+1] - Xpts[2*n1+1]);
-    TacsScalar sc = (XptLin[2*nnodes*dv + 2*n2] - 
+    TacsScalar sc = (XptLin[2*nnodes*dv + 2*n2] -
                      XptLin[2*nnodes*dv + 2*n1]);
-    TacsScalar ss = (XptLin[2*nnodes*dv + 2*n2+1] - 
+    TacsScalar ss = (XptLin[2*nnodes*dv + 2*n2+1] -
                      XptLin[2*nnodes*dv + 2*n1+1]);
 
     TacsScalar Le = sqrt(c*c + s*s);
@@ -5326,7 +5326,7 @@ void TACSPanelAnalysis::computeSegmentLoadsGeoSens( TacsScalar Nx,
 }
 
 /*
-  Print the panel mode to a file. 
+  Print the panel mode to a file.
 
   This code can be used to write out, buckling or natural modes of the
   stiffened panel, or even the displaced panel shape due to a pressure
@@ -5337,13 +5337,13 @@ void TACSPanelAnalysis::computeSegmentLoadsGeoSens( TacsScalar Nx,
   x:          the variables
   nx:         the level of the discretization in the x-direction
 */
-void TACSPanelAnalysis::printPanelMode( const char * file_name, 
-                                        const TacsScalar * x, 
+void TACSPanelAnalysis::printPanelMode( const char * file_name,
+                                        const TacsScalar * x,
                                         int nx ){
 
-  // Go through each segment and plot the 
+  // Go through each segment and plot the
   int ns = 5; // Number of segments per panel to use
-  
+
   int tnodes = (ns+1)*nsegments*(nx+1);
   int telems = ns*nsegments*nx;
 
@@ -5355,23 +5355,23 @@ void TACSPanelAnalysis::printPanelMode( const char * file_name,
     TacsScalar * local_vars = new TacsScalar[8*nmodes];
     TacsScalar * v1 = &local_vars[0];
     TacsScalar * v2 = &local_vars[4*nmodes];
-  
+
     fprintf(fp, "Variables = x, y, z, u, v, w\n");
     fprintf(fp, "Zone T = Panel, N=%d, E=%d, ", tnodes, telems);
     fprintf(fp, "DATAPACKING=POINT, ZONETYPE=FEQUADRILATERAL\n");
-    
+
     // Print out the nodal locations and variables
     for ( int k = 0; k < nsegments; k++ ){
       int n1 = nodes[2*k];
       int n2 = nodes[2*k+1];
-      
+
       TacsScalar c = (Xpts[2*n2] - Xpts[2*n1]);
       TacsScalar s = (Xpts[2*n2+1] - Xpts[2*n1+1]);
 
       TacsScalar Le = sqrt(c*c + s*s);
       c = c/Le;
       s = s/Le;
-      
+
       // Transformation between coordinate frames
       // local vars = t * global vars
       TacsScalar t[4];
@@ -5398,7 +5398,7 @@ void TACSPanelAnalysis::printPanelMode( const char * file_name,
       for ( int i = 0; i < 2*nmodes; i++ ){
         TacsScalar v = local_vars[4*i+1];
         TacsScalar w = local_vars[4*i+2];
-      
+
         local_vars[4*i+1] = t[0]*v + t[1]*w;
         local_vars[4*i+2] = t[2]*v + t[3]*w;
       }
@@ -5412,7 +5412,7 @@ void TACSPanelAnalysis::printPanelMode( const char * file_name,
           x[1] = 0.5*(Xpts[2*n1  ]*(1.0 - xi) + Xpts[2*n2  ]*(1.0 + xi));
           x[2] = 0.5*(Xpts[2*n1+1]*(1.0 - xi) + Xpts[2*n2+1]*(1.0 + xi));
           x[0] = (Lx*i)/nx - beta*x[1];
-      
+
           FElibrary::lagrangeSF(N, Na, xi, NUM_NODES);
           FElibrary::cubicHP(Nhp, Nahp, Naahp, xi);
 
@@ -5421,14 +5421,14 @@ void TACSPanelAnalysis::printPanelMode( const char * file_name,
           // Compute the local variable values
           for ( int n = 1; n <= nmodes; n++ ){
             TacsScalar lambda_n = (M_PI*n)/Lx;
-          
+
             TacsScalar us[3];
             us[0] = N[0]*v1[4*(n-1)] + N[1]*v2[4*(n-1)];
             us[1] = N[0]*v1[4*(n-1)+1] + N[1]*v2[4*(n-1)+1];
-            us[2] = (Nhp[0]*v1[4*(n-1)+2] + Nhp[1]*v1[4*(n-1)+3]/h + 
+            us[2] = (Nhp[0]*v1[4*(n-1)+2] + Nhp[1]*v1[4*(n-1)+3]/h +
                      Nhp[2]*v2[4*(n-1)+2] + Nhp[3]*v2[4*(n-1)+3]/h);
             s = sin(lambda_n*(x[0] + beta*x[1]));
-          
+
             u[0] += s*us[0];
             u[1] += s*us[1];
             u[2] += s*us[2];
@@ -5452,12 +5452,12 @@ void TACSPanelAnalysis::printPanelMode( const char * file_name,
     for ( int k = 0; k < nsegments; k++ ){
       for ( int i = 0; i < nx; i++ ){
         for ( int j = 0; j < ns; j++ ){
-          fprintf(fp, "%d %d %d %d\n", 
-                  n + i*(ns+1) + j, 
-                  n + i*(ns+1) + j+1, 
-                  n + (i+1)*(ns+1) + j+1, 
+          fprintf(fp, "%d %d %d %d\n",
+                  n + i*(ns+1) + j,
+                  n + i*(ns+1) + j+1,
+                  n + (i+1)*(ns+1) + j+1,
                   n + (i+1)*(ns+1) + j);
-                
+
         }
       }
 
@@ -5474,7 +5474,7 @@ void TACSPanelAnalysis::printPanelMode( const char * file_name,
 /*
 void TACSPanelAnalysis::testStiffnessDVSens( double dh ){
   int ndvs = 0;
-  
+
   for ( int k = 0; k < numDesignVars; k++ ){
     if (designVarNums[k] >= ndvs){
       ndvs = designVarNums[k];
@@ -5503,7 +5503,7 @@ void TACSPanelAnalysis::testStiffnessDVSens( double dh ){
     x[dvNum] = xt + dh;
     setDesignVars(x, ndvs);
     computeStiffness(fA, fB, fD, fAs);
-  
+
     x[dvNum] = xt - dh;
     setDesignVars(x, ndvs);
     computeStiffness(bA, bB, bD, bAs);
@@ -5514,8 +5514,8 @@ void TACSPanelAnalysis::testStiffnessDVSens( double dh ){
       TacsScalar fd = 0.5*(fA[i] - bA[i])/dh;
       if (fd != 0.0 || sA[i] != 0.0){
         TacsScalar rel_err = (fd - sA[i])/fd;
-        printf(" sA[%2d] = %15.6e  FD[%2d] = %15.6e Rel Err: %10.2e\n", 
-               i, sA[i], i, fd, rel_err);    
+        printf(" sA[%2d] = %15.6e  FD[%2d] = %15.6e Rel Err: %10.2e\n",
+               i, sA[i], i, fd, rel_err);
       }
     }
 
@@ -5523,7 +5523,7 @@ void TACSPanelAnalysis::testStiffnessDVSens( double dh ){
       TacsScalar fd = 0.5*(fB[i] - bB[i])/dh;
       if (fd != 0.0 || sB[i] != 0.0){
         TacsScalar rel_err = (fd - sB[i])/fd;
-        printf(" sB[%2d] = %15.6e  FD[%2d] = %15.6e Rel Err: %10.2e\n", 
+        printf(" sB[%2d] = %15.6e  FD[%2d] = %15.6e Rel Err: %10.2e\n",
                i, sB[i], i, fd, rel_err);
       }
     }
@@ -5532,8 +5532,8 @@ void TACSPanelAnalysis::testStiffnessDVSens( double dh ){
       TacsScalar fd = 0.5*(fD[i] - bD[i])/dh;
       if (fd != 0.0 || sD[i] != 0.0){
         TacsScalar rel_err = (fd - sD[i])/fd;
-        printf(" sD[%2d] = %15.6e  FD[%2d] = %15.6e Rel Err: %10.2e\n", 
-               i, sD[i], i, fd, rel_err);  
+        printf(" sD[%2d] = %15.6e  FD[%2d] = %15.6e Rel Err: %10.2e\n",
+               i, sD[i], i, fd, rel_err);
       }
     }
 
@@ -5541,8 +5541,8 @@ void TACSPanelAnalysis::testStiffnessDVSens( double dh ){
       TacsScalar fd = 0.5*(fAs[i] - bAs[i])/dh;
       if (fd != 0.0 || sAs[i] != 0.0){
         TacsScalar rel_err = (fd - sAs[i])/fd;
-        printf("sAs[%2d] = %15.6e  FD[%2d] = %15.6e Rel Err: %10.2e\n", 
-               i, sAs[i], i, fd, rel_err); 
+        printf("sAs[%2d] = %15.6e  FD[%2d] = %15.6e Rel Err: %10.2e\n",
+               i, sAs[i], i, fd, rel_err);
       }
     }
   }
@@ -5561,12 +5561,12 @@ void TACSPanelAnalysis::testStiffnessDVSens( double dh ){
   nfail:   the number of failure points
 */
 /*
-void TACSPanelAnalysis::testFailureSens( double dh, 
+void TACSPanelAnalysis::testFailureSens( double dh,
                                          const TacsScalar strain[],
                                          const TacsScalar weights[],
                                          int nfail ){
   int ndvs = 0;
-  
+
   for ( int k = 0; k < numDesignVars; k++ ){
     if (designVarNums[k] >= ndvs){
       ndvs = designVarNums[k];
@@ -5580,7 +5580,7 @@ void TACSPanelAnalysis::testFailureSens( double dh,
 
   TacsScalar * fail = new TacsScalar[nfail];
   TacsScalar strainSens[8];
-  
+
   printf("failureDVSens\n");
 
   for ( int k = 0; k < numDesignVars; k++ ){
@@ -5598,7 +5598,7 @@ void TACSPanelAnalysis::testFailureSens( double dh,
     for ( int i = 0; i < nfail; i++ ){
       ffval += weights[i]*fail[i];
     }
-  
+
     x[dvNum] = xt - dh;
     setDesignVars(x, ndvs);
     failure(strain, fail, nfail);
@@ -5608,11 +5608,11 @@ void TACSPanelAnalysis::testFailureSens( double dh,
     }
 
     x[dvNum] = xt;
-  
+
     TacsScalar fd = 0.5*(ffval - bfval)/dh;
     TacsScalar rel_err = (fd - failSens)/fd;
-    printf("Analytic[%2d] = %15.6e  FD[%2d] = %15.6e Rel Err: %10.2e\n", 
-           k, failSens, k, fd, rel_err);    
+    printf("Analytic[%2d] = %15.6e  FD[%2d] = %15.6e Rel Err: %10.2e\n",
+           k, failSens, k, fd, rel_err);
   }
 
   failureStrainSens(strain, weights, nfail, strainSens);
@@ -5629,7 +5629,7 @@ void TACSPanelAnalysis::testFailureSens( double dh,
     for ( int i = 0; i < nfail; i++ ){
       ffval += weights[i]*fail[i];
     }
-  
+
     e[k] = xt - dh;
     failure(e, fail, nfail);
     TacsScalar bfval = 0.0;
@@ -5638,11 +5638,11 @@ void TACSPanelAnalysis::testFailureSens( double dh,
     }
 
     e[k] = xt;
-  
+
     TacsScalar fd = 0.5*(ffval - bfval)/dh;
     TacsScalar rel_err = (fd - strainSens[k])/fd;
-    printf("Analytic[%2d] = %15.6e  FD[%2d] = %15.6e Rel Err: %10.2e\n", 
-           k, strainSens[k], k, fd, rel_err);    
+    printf("Analytic[%2d] = %15.6e  FD[%2d] = %15.6e Rel Err: %10.2e\n",
+           k, strainSens[k], k, fd, rel_err);
   }
 
   delete [] x;
@@ -5663,9 +5663,9 @@ void TACSPanelAnalysis::testFailureSens( double dh,
   nloads: the number of critical buckling loads
 */
 /*
-void TACSPanelAnalysis::testBucklingDVSens( double dh, 
-                                            TacsScalar Nx, 
-					    TacsScalar Nxy,
+void TACSPanelAnalysis::testBucklingDVSens( double dh,
+                                            TacsScalar Nx,
+                                            TacsScalar Nxy,
                                             int nloads ){
   // Find the maximum number of design variables
   int ndvs = 0;
@@ -5694,12 +5694,12 @@ void TACSPanelAnalysis::testBucklingDVSens( double dh,
   TacsScalar * segLoadDVSens = new TacsScalar[3*nsegments];
 
   if (Nx == 0.0){
-    computeBucklingLoadsDVSens(Nxy, fposLoads, fnegLoads, 
-			       posLoadDVSens, negLoadDVSens, nloads);
+    computeBucklingLoadsDVSens(Nxy, fposLoads, fnegLoads,
+                               posLoadDVSens, negLoadDVSens, nloads);
   }
   else {
-    computeBucklingLoadsDVSens(Nx, Nxy, fposLoads, 
-			       posLoadDVSens, nloads);
+    computeBucklingLoadsDVSens(Nx, Nxy, fposLoads,
+                               posLoadDVSens, nloads);
   }
 
   printf("Test buckling design variable sensitivities, beta = %5.3f\n",
@@ -5707,7 +5707,7 @@ void TACSPanelAnalysis::testBucklingDVSens( double dh,
 
   for ( int k = 0; k < numDesignVars; k++ ){
     int dvNum = designVarNums[k];
-    printf("Testing sensitivity w.r.t. design variable %d type = %d\n", 
+    printf("Testing sensitivity w.r.t. design variable %d type = %d\n",
            dvNum, designVarTypes[k]);
 
     computeSegmentLoads(Nx, Nxy, fsegLoads, beamLoads);
@@ -5722,14 +5722,14 @@ void TACSPanelAnalysis::testBucklingDVSens( double dh,
         }
       }
 
-      computeSegmentLoadsGeoSens(Nx, Nxy, dv, 
+      computeSegmentLoadsGeoSens(Nx, Nxy, dv,
                                  segLoadDVSens, beamLoads);
     }
     else if (designVarTypes[k] != 2){
-      computeSegmentLoadsDVSens(dvNum, Nx, Nxy, 
-				segLoadDVSens, beamLoads);
+      computeSegmentLoadsDVSens(dvNum, Nx, Nxy,
+                                segLoadDVSens, beamLoads);
     }
-        
+
     TacsScalar xt = x[dvNum];
     x[dvNum] = xt + dh;
     setDesignVars(x, ndvs);
@@ -5758,7 +5758,7 @@ void TACSPanelAnalysis::testBucklingDVSens( double dh,
       TacsScalar fd = 0.5*(fsegLoads[i] - bsegLoads[i])/dh;
       if (fd != 0.0 || segLoadDVSens[i] != 0.0){
         TacsScalar rel_err = (fd - segLoadDVSens[i])/fd;
-        printf("segmentDVSens[%3d] = %15.6f  FD[%3d] = %15.6f Rel Err: %10.2e\n", 
+        printf("segmentDVSens[%3d] = %15.6f  FD[%3d] = %15.6f Rel Err: %10.2e\n",
                i, segLoadDVSens[i], i, fd, rel_err);
       }
     }
@@ -5766,16 +5766,16 @@ void TACSPanelAnalysis::testBucklingDVSens( double dh,
     for ( int i = 0; i < nloads; i++ ){
       TacsScalar fd = 0.5*(fposLoads[i] - bposLoads[i])/dh;
       TacsScalar rel_err = (fd - posLoadDVSens[numDesignVars*i + k])/fd;
-      printf("posDVSens[%2d]: %15.6e  FD[%2d]: %15.6e Rel Err: %10.2e\n", 
+      printf("posDVSens[%2d]: %15.6e  FD[%2d]: %15.6e Rel Err: %10.2e\n",
              i, posLoadDVSens[numDesignVars*i + k], i, fd, rel_err);
     }
 
     if (Nx == 0.0){
       for ( int i = 0; i < nloads; i++ ){
-	TacsScalar fd = 0.5*(fnegLoads[i] - bnegLoads[i])/dh;
-	TacsScalar rel_err = (fd - negLoadDVSens[numDesignVars*i + k])/fd;
-	printf("negDVSens[%2d]: %15.6e  FD[%2d]: %15.6e Rel Err: %10.2e\n", 
-	       i, negLoadDVSens[numDesignVars*i + k], i, fd, rel_err);
+        TacsScalar fd = 0.5*(fnegLoads[i] - bnegLoads[i])/dh;
+        TacsScalar rel_err = (fd - negLoadDVSens[numDesignVars*i + k])/fd;
+        printf("negDVSens[%2d]: %15.6e  FD[%2d]: %15.6e Rel Err: %10.2e\n",
+               i, negLoadDVSens[numDesignVars*i + k], i, fd, rel_err);
       }
     }
   }

@@ -7,9 +7,11 @@
 include ../../Makefile.in
 include ../../TACS_Common.mk
 
-CXX_OBJS = FH5.o \
+CXX_OBJS = TACSFH5.o \
 	TACSToFH5.o \
-	TACSMeshLoader.o
+	TACSFH5Loader.o \
+	TACSMeshLoader.o \
+	TACSMarchingCubes.o
 
 DIR=${TACS_DIR}/src/io
 

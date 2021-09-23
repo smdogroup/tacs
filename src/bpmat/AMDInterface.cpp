@@ -12,8 +12,8 @@
   TACS is licensed under the Apache License, Version 2.0 (the
   "License"); you may not use this software except in compliance with
   the License.  You may obtain a copy of the License at
-  
-  http://www.apache.org/licenses/LICENSE-2.0 
+
+  http://www.apache.org/licenses/LICENSE-2.0
 */
 
 #include <string.h>
@@ -37,7 +37,7 @@ static int amd_remove_duplicates( int *array, int len ){
 
   // Remove any negative numbers
   int i = 0; // location to take entries from
-  int j = 0; // location to place entries 
+  int j = 0; // location to place entries
 
   while (i < len && array[i] < 0) i++;
 
@@ -48,18 +48,18 @@ static int amd_remove_duplicates( int *array, int len ){
       array[j] = array[i];
     }
   }
-  
+
   return j; // The new length of the array
 }
 
 /*
   Check the formatting of the AMD data structure to ensure that things
-  are still ordered correctly.  
+  are still ordered correctly.
 
-  If there is a problem with one of the rows of the data structure, 
+  If there is a problem with one of the rows of the data structure,
   return row+1, otherwise, return 0;
 */
-static int amd_check_format( int nvars, int *rowp, int *cols, 
+static int amd_check_format( int nvars, int *rowp, int *cols,
                              int *elen, int *alen ){
   int flag = 0;
   for ( int i = 0; i < nvars; i++ ){
@@ -79,7 +79,7 @@ static int amd_check_format( int nvars, int *rowp, int *cols,
     }
     if (flag){ break; }
   }
-  
+
   return flag;
 }
 
@@ -100,10 +100,10 @@ static int amd_check_format( int nvars, int *rowp, int *cols,
   Compress the required number of rows to free up the required amount
   of space.
 */
-static void amd_add_space( int nvars, int *rowp, int *cols, 
-                           const int *alen, const int r, 
+static void amd_add_space( int nvars, int *rowp, int *cols,
+                           const int *alen, const int r,
                            int required_space ){
-  
+
   // First, try and collect the space required from the rows preceeding r
   int new_space = 0;
 
@@ -137,7 +137,7 @@ static void amd_add_space( int nvars, int *rowp, int *cols,
 
     // Cannot exceed the size of the matrix - print an error here
     if (start >= nvars){
-      start = nvars-1; 
+      start = nvars-1;
       fprintf(stderr, "Error, not enough memory found\n");
     }
 
@@ -155,24 +155,24 @@ static void amd_add_space( int nvars, int *rowp, int *cols,
 }
 
 /*
-  Compare two variables to see if they are indistinguishable 
+  Compare two variables to see if they are indistinguishable
 
   This checks to see if the variables i and j form the same adjacency
   structure. If so, then they will be used to form a supervariable.
   This function first checks if the nodes are the same, and then
   checks that the { adj[j], i } is equal to { adj[i], j }. This makes
-  things a bit more interesting. 
+  things a bit more interesting.
 
   Input:
   i, j: the nodes to be compared
 
   elen, alen: The length of the elements, and total number variables
   and nodes respectively
-  
+
   rowp, cols: The quotient graph data structure.
 */
-static int amd_compare_variables( const int i, const int j, 
-                                  const int *elen, const int *alen, 
+static int amd_compare_variables( const int i, const int j,
+                                  const int *elen, const int *alen,
                                   const int *rowp, const int *cols ){
   // First, check if they are the same length
   if (i == j){
@@ -204,16 +204,16 @@ static int amd_compare_variables( const int i, const int j,
 /*
   Remove the references to a variable from the data structure.
 
-  This is used when removing an indistinguishable variable. 
+  This is used when removing an indistinguishable variable.
 */
-void amd_remove_variable( int var, int *elen, int *alen, 
+void amd_remove_variable( int var, int *elen, int *alen,
                           int *rowp, int *cols, int nvars ){
-  int i = rowp[var]; 
-  
+  int i = rowp[var];
+
   // First, visit all the elements pointed to by var
   for ( ; i < rowp[var] + elen[var]; i++ ){
     int e = cols[i]; // The element number
-    
+
     int j = rowp[e];
     int jend = (rowp[e] + alen[e])-1;
     for ( ; j < jend; j++ ){
@@ -256,10 +256,10 @@ void amd_remove_variable( int var, int *elen, int *alen,
   The following function performs an approximate minimum degree
   reordering of the input matrix.  This code follows the description
   of (Amestoy, Davis and Duff, An Approximate Minimum Degree
-  Reordering Algorithm, SIAM J. Mat. Anl. 1996). The advantage of 
-  the method implemented below, is that the ordering of the 
-  interface unknowns, used in the global Schur complement system, 
-  can be delayed until all other variables are ordered. This allows 
+  Reordering Algorithm, SIAM J. Mat. Anl. 1996). The advantage of
+  the method implemented below, is that the ordering of the
+  interface unknowns, used in the global Schur complement system,
+  can be delayed until all other variables are ordered. This allows
   a the full Schur method to be used efficiently within TACS.
 
   This uses a quotient graph representation of the elimination graph.
@@ -282,7 +282,7 @@ void amd_remove_variable( int var, int *elen, int *alen,
 
   Output:
   -------
-  
+
   perm: The permutation array for the new ordering.
 
   Data allocated within the function:
@@ -322,7 +322,7 @@ void amd_remove_variable( int var, int *elen, int *alen,
 */
 void amd_order_interface( int nvars, int *rowp, int *cols, int *perm,
                           int *interface_nodes, int ninterface_nodes,
-                          int ndep_vars, const int *dep_vars, 
+                          int ndep_vars, const int *dep_vars,
                           const int *indep_ptr, const int *indep_vars,
                           int use_exact_degree ){
   int *alen = new int[ nvars ]; // Number of entries in a row
@@ -343,7 +343,7 @@ void amd_order_interface( int nvars, int *rowp, int *cols, int *perm,
   // All independent nodes associated with a dependent node must
   // be ordered before the dependent.
   if (ndep_vars > 0){
-    // Count up number of times that the indepdnent variables are 
+    // Count up number of times that the indepdnent variables are
     // referenced by each dependent variable
     dep_count = new int[ nvars ];
     memset(dep_count, 0, nvars*sizeof(int));
@@ -376,12 +376,12 @@ void amd_order_interface( int nvars, int *rowp, int *cols, int *perm,
     }
 
     // Reset the vars_to_dep_ptr array
-    int offset = 0; 
+    int offset = 0;
     for ( int i = 0; i <= nvars; i++ ){
       int tmp = vars_to_dep_ptr[i];
       vars_to_dep_ptr[i] = offset;
       offset = tmp;
-    } 
+    }
   }
 
   for ( int i = 0; i < nvars; i++ ){
@@ -394,7 +394,7 @@ void amd_order_interface( int nvars, int *rowp, int *cols, int *perm,
   }
 
   // Sort the interface nodes
-  if (ninterface_nodes != amd_remove_duplicates(interface_nodes, 
+  if (ninterface_nodes != amd_remove_duplicates(interface_nodes,
                                                 ninterface_nodes)){
     fprintf(stderr, "amd_order_interace: Interface nodes must be unique\n");
   }
@@ -410,8 +410,8 @@ void amd_order_interface( int nvars, int *rowp, int *cols, int *perm,
 initial data structure\n");
     return;
   }
-  
-  // Perform the elimination 
+
+  // Perform the elimination
   int nsvars = 0; // Keep track of the number of supervariables
   for ( int i = 0; i < nvars; nsvars++ ){
     // Select the pivots
@@ -440,7 +440,7 @@ initial data structure\n");
       }
 
       if (piv < 0){
-        fprintf(stderr, 
+        fprintf(stderr,
                 "amd_order_interface: Negative pivot encountered at %d\n", i);
         fflush(stderr);
       }
@@ -477,12 +477,12 @@ initial data structure\n");
       state[piv] = 0; // Eliminated variable
     }
 
-    // Determine the set of variables Lp U { piv } - the non-zeros 
+    // Determine the set of variables Lp U { piv } - the non-zeros
     // in the column of L
     int lenlp = 0;
     Lp[lenlp] = piv;
     lenlp++;
-    
+
     // Add the contributions from the row piv
     for ( int j = rowp[piv] + elen[piv]; j < rowp[piv] + alen[piv]; j++ ){
       if (piv != cols[j]){
@@ -521,7 +521,7 @@ initial data structure\n");
       // Absorb elements that are no longer required
       int nre = 0; // Number of removed elements
       int end = rowp[piv] + elen[piv];
-      for ( int k = rowp[piv], ck = rowp[lj]; 
+      for ( int k = rowp[piv], ck = rowp[lj];
             ((k < end) && (ck < rowp[lj] + elen[lj])); ck++ ){
         while ((k < end) && (cols[k] < cols[ck])){
           k++;
@@ -535,7 +535,7 @@ initial data structure\n");
       // Remove Lp[j], Lp[k] if it exists in cols
       int nrv = 0; // Number of removed variables
       // Remove Lp U { piv } from the columns
-      for ( int k = 0, ck = rowp[lj] + elen[lj]; 
+      for ( int k = 0, ck = rowp[lj] + elen[lj];
             (k < lenlp) && (ck < rowp[lj] + alen[lj]); ck++ ){
         while ((k < lenlp) && (Lp[k] < cols[ck])){
           k++;
@@ -559,14 +559,14 @@ initial data structure\n");
             cols[nk] = cols[k];
           }
         }
-      
+
         // Adjust the number of variables and elements within the list
         elen[lj] = elen[lj] - nre;
         alen[lj] = alen[lj] - nre - nrv;
       }
     }
 
-    // Now, add piv to the elements in rows Lp \ {piv}    
+    // Now, add piv to the elements in rows Lp \ {piv}
     for ( int j = 0; j < lenlp; j++ ){
       int lj = Lp[j];
 
@@ -610,20 +610,20 @@ initial data structure\n");
 
     // Test to see if new space is requried
     if (lenlp-1 > rsize){
-      amd_add_space(nvars, rowp, cols, alen, piv, 
+      amd_add_space(nvars, rowp, cols, alen, piv,
                     lenlp-1 - (rowp[piv+1] - rowp[piv]));
     }
 
     elen[piv] = 0;
     alen[piv] = lenlp-1;
     for ( int j = rowp[piv], k = 0; k < lenlp; k++, j++ ){
-      if (Lp[k] == piv){ 
-        k++; 
+      if (Lp[k] == piv){
+        k++;
         if (k == lenlp){
           break;
         }
       }
-      cols[j] = Lp[k];      
+      cols[j] = Lp[k];
     }
 
     if (use_exact_degree){
@@ -634,20 +634,20 @@ initial data structure\n");
           fprintf(stderr, "Error, the pivot row %d should contain only \
 variables, not element %d\n", piv, cols[j]);
         }
-      
+
         lenlp = 0;
         int var = cols[j];
-        
+
         // Add the contributions from A
         for ( int k = rowp[var] + elen[var]; k < rowp[var] + alen[var]; k++ ){
           Lp[lenlp] = cols[k];
           lenlp++;
         }
-        
+
         // Add the sets from the elements in this row
         for ( int k = rowp[var]; k < rowp[var] + elen[var]; k++ ){
           int e = cols[k]; // Take the elements belonging to var
-          
+
           // Now, add in the variables corresponding to the element e
           for ( int p = rowp[e] + elen[e]; p < rowp[e] + alen[e]; p++ ){
             if (cols[p] != var){
@@ -672,11 +672,11 @@ variables, not element %d\n", piv, cols[j]);
     else { // Approximate degree
       // The worst cases are:
       // The trailing submatrix is dense: degree = N-i
-      // All nodes in k, result in new fill in: d^{i+1} = d^{i} + lenlp      
+      // All nodes in k, result in new fill in: d^{i+1} = d^{i} + lenlp
       // The approximate degree is:
       //          |A_{i} \ i| + |L_p \ i| + sum_{e} | L_{e} \ L_p|
 
-      // Determine the degrees of the un-eliminated elements 
+      // Determine the degrees of the un-eliminated elements
       for ( int j = 0; j < nvars; j++ ){
         elem_degree[j] = -1;
       }
@@ -684,7 +684,7 @@ variables, not element %d\n", piv, cols[j]);
       // For each supervariable in Lp
       for ( int j = 0; j < lenlp; j++ ){
         int lj = Lp[j];
-        int end = rowp[lj] + elen[lj]; 
+        int end = rowp[lj] + elen[lj];
         // For all elements pointed to by row Lp[j] = lj
         for ( int k = rowp[lj]; k < end; k++ ){
           // Find all the elements
@@ -699,7 +699,7 @@ variables, not element %d\n", piv, cols[j]);
           elem_degree[e] -= slen[lj];
         }
       }
-      
+
       // Compute | Lp |
       int deg_Lp = 0;
       for ( int j = 0; j < lenlp; j++ ){
@@ -711,12 +711,12 @@ variables, not element %d\n", piv, cols[j]);
       for ( int j = 0; j < lenlp; j++ ){
         int lj = Lp[j];
 
-        if (lj == piv){ 
+        if (lj == piv){
           continue;
         }
 
         // Add the contributions from A
-        int deg_estimate = deg_Lp; 
+        int deg_estimate = deg_Lp;
         for ( int k = rowp[lj] + elen[lj]; k < rowp[lj] + alen[lj]; k++ ){
           deg_estimate += slen[cols[k]];
         }
@@ -734,13 +734,13 @@ variables, not element %d\n", piv, cols[j]);
         if (bsearch(&lj, Lp, lenlp, sizeof(int), compare_ints)){
           deg_estimate -= slen[lj];
         }
-        
+
         for ( int k = rowp[lj]; k < rowp[lj] + elen[lj]; k++ ){
           int e = cols[k];
-          if (e == piv){ 
+          if (e == piv){
             continue;
           }
-          
+
           if (elem_degree[e] < 0){
             elem_degree[e] = 0;
             for ( int p = rowp[e]; p < rowp[e] + alen[e]; p++ ){
@@ -755,7 +755,7 @@ variables, not element %d\n", piv, cols[j]);
 
         // Now, compute the degree estimate
         deg_estimate = (deg_estimate < nvars-i ? deg_estimate : nvars-i);
-        degree[lj] = (deg_estimate < degree[lj] + deg_Lp ? 
+        degree[lj] = (deg_estimate < degree[lj] + deg_Lp ?
                       deg_estimate : degree[lj] + deg_Lp);
       }
     }
@@ -771,26 +771,26 @@ variables, not element %d\n", piv, cols[j]);
         // been ordered yet
         int dep_check = 0;
         if (dep_count){
-          dep_check = (dep_count[lj] > 0); 
+          dep_check = (dep_count[lj] > 0);
         }
-        if (dep_check || lj == piv || slen[lj] < 0 || 
-            bsearch(&lj, interface_nodes, ninterface_nodes, 
-                    sizeof(int), compare_ints)){ 
-          continue; 
+        if (dep_check || lj == piv || slen[lj] < 0 ||
+            bsearch(&lj, interface_nodes, ninterface_nodes,
+                    sizeof(int), compare_ints)){
+          continue;
         }
-        
+
         for ( int k = j+1; k < lenlp; k++ ){
           int lk = Lp[k];
 
           // Check if this is a dependent variable
           dep_check = 0;
           if (dep_count){
-            dep_check = (dep_count[lk] > 0); 
+            dep_check = (dep_count[lk] > 0);
           }
-          if (dep_check || lk == piv || slen[lk] < 0 || 
-              bsearch(&lk, interface_nodes, ninterface_nodes, 
-                      sizeof(int), compare_ints)){ 
-            continue; 
+          if (dep_check || lk == piv || slen[lk] < 0 ||
+              bsearch(&lk, interface_nodes, ninterface_nodes,
+                      sizeof(int), compare_ints)){
+            continue;
           }
 
           // Quick check to see if the nodes are the same
@@ -807,9 +807,9 @@ variables, not element %d\n", piv, cols[j]);
             degree[lj] -= slen[lk];
             slen[lk] = -(lj+1);
             state[lk] = -1;
-            
+
             // Remove lj from the quotient graph
-            amd_remove_variable(lk, elen, alen, rowp, cols, nvars);     
+            amd_remove_variable(lk, elen, alen, rowp, cols, nvars);
           }
         }
       }
@@ -822,21 +822,21 @@ variables, not element %d\n", piv, cols[j]);
         // Check if this is a dependent variable
         int dep_check = 0;
         if (dep_count){
-          dep_check = (dep_count[lj] > 0); 
+          dep_check = (dep_count[lj] > 0);
         }
-        if (dep_check || lj == piv || slen[lj] < 0){ 
-          continue; 
+        if (dep_check || lj == piv || slen[lj] < 0){
+          continue;
         }
-        
+
         for ( int k = j+1; k < lenlp; k++ ){
           int lk = Lp[k];
           // Check if this is a dependent variable
           int dep_check = 0;
           if (dep_count){
-            dep_check = (dep_count[lk] > 0); 
+            dep_check = (dep_count[lk] > 0);
           }
-          if (dep_check || lk == piv || slen[lk] < 0){ 
-            continue; 
+          if (dep_check || lk == piv || slen[lk] < 0){
+            continue;
           }
 
           // Quick check to see if the nodes are the same
@@ -853,9 +853,9 @@ variables, not element %d\n", piv, cols[j]);
             degree[lj] -= slen[lk];
             slen[lk] = -(lj+1);
             state[lk] = -1;
-            
+
             // Remove lj from the quotient graph
-            amd_remove_variable(lk, elen, alen, rowp, cols, nvars);     
+            amd_remove_variable(lk, elen, alen, rowp, cols, nvars);
           }
         }
       }
@@ -865,7 +865,7 @@ variables, not element %d\n", piv, cols[j]);
     i = i + slen[piv];
   }
 
-  // We have the following situation... 
+  // We have the following situation...
   // perm[0:nsvars] = piv, contains the supernodal pivots
   // slen[i] > 0 means i is a principal supervariable
   // slen[i] < 0 means variable i was collapsed into supervariable (slen[i]-1)
@@ -873,7 +873,7 @@ variables, not element %d\n", piv, cols[j]);
   // First arrange the principal supervariables in the permutation array
   int end = nvars;
   for ( int j = nsvars-1; j >= 0; j-- ){
-    int sv = perm[j]; // Get the supervariable selected last    
+    int sv = perm[j]; // Get the supervariable selected last
     end -= slen[sv]; // Figure out where it should start
     perm[end] = sv;  // Place the principal variable at the beginning
     state[sv] = end+1; // Increment the pointer into the array

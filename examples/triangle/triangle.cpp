@@ -1,31 +1,73 @@
-#include "PlaneStressTri6.h"
+#include "TACSLinearElasticity.h"
+#include "TACSThermoelasticity.h"
+#include "TACSTriangularBasis.h"
+#include "TACSElement2D.h"
 #include "TACSCreator.h"
 #include "TACSToFH5.h"
+#include "TACSFH5Loader.h"
 
 int main( int argc, char *argv[] ){
   MPI_Init(&argc, &argv);
 
+  // Check whether to use elasticity or thoermoelasticity
+  int use_thermoelasticity = 0;
+  for ( int i = 0; i < argc; i++ ){
+    if (strcmp(argv[i], "thermoelasticity") == 0){
+      use_thermoelasticity = 1;
+    }
+  }
+
   // Get the rank of the processor
-  int rank; 
+  int rank;
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
+  int vars_per_node = 2;
+  if (use_thermoelasticity){
+    vars_per_node = 3;
+  }
+
   // Allocate the TACS creator
-  TACSCreator *creator = new TACSCreator(MPI_COMM_WORLD, 2);
+  TACSCreator *creator = new TACSCreator(MPI_COMM_WORLD, vars_per_node);
   creator->incref();
 
+  // Create the isotropic material class
+  TacsScalar rho = 2700.0;
+  TacsScalar specific_heat = 921.096;
+  TacsScalar E = 70e3;
+  TacsScalar nu = 0.3;
+  TacsScalar ys = 270.0;
+  TacsScalar cte = 24.0e-6;
+  TacsScalar kappa = 230.0;
+  TACSMaterialProperties *props =
+    new TACSMaterialProperties(rho, specific_heat, E, nu, ys, cte, kappa);
+
   // Create the stiffness object
-  PlaneStressStiffness *stiff = new PlaneStressStiffness(1.0, 70e3, 0.3);
+  TACSPlaneStressConstitutive *stiff =
+    new TACSPlaneStressConstitutive(props);
   stiff->incref();
 
-  // Create the plane stress 
-  TACSElement *elem = new PlaneStressTri6(stiff);
+  // Create the model class
+  TACSElementModel *model = NULL;
+  if (use_thermoelasticity){
+    model = new TACSLinearThermoelasticity2D(stiff, TACS_LINEAR_STRAIN);
+  }
+  else {
+    model = new TACSLinearElasticity2D(stiff, TACS_LINEAR_STRAIN);
+  }
+  model->incref();
+
+  // Create the basis
+  TACSElementBasis *basis = new TACSQuadraticTriangleBasis();
+
+  // Create the element type
+  TACSElement2D *elem = new TACSElement2D(model, basis);
   elem->incref();
-  
+
   // Only set the mesh/boundary conditions etc. on the
   // root processor
   if (rank == 0){
     // Create a regular mesh of triangular elements
-    int nx = 10, ny = 10;
+    int nx = 20, ny = 20;
     int num_elements = 10*nx*ny;
 
     // Allocate the two halfs of the mesh
@@ -99,14 +141,14 @@ int main( int argc, char *argv[] ){
       dep_conn[3*j] = anodes[4*nx + 4*jj*(4*nx+1)];
       dep_conn[3*j+1] = anodes[4*nx + (4*jj+2)*(4*nx+1)];
       dep_conn[3*j+2] = anodes[4*nx + (4*jj+4)*(4*nx+1)];
-   
+
       // Set the dependent nodes
       dep_ptr[j+1] = dep_ptr[j] + 3;
     }
 
     // Set the lengths along the x and y directions
     double Lx = 10.0, Ly = 10.0;
-    
+
     // Create the nodes
     TacsScalar *Xpts = new TacsScalar[ 3*num_nodes ];
 
@@ -132,7 +174,7 @@ int main( int argc, char *argv[] ){
         }
       }
     }
-    
+
     // Set up the element connectivity arrays
     int *elem_node_conn = new int[ 6*num_elements ];
     int *elem_node_ptr = new int[ num_elements+1 ];
@@ -160,7 +202,7 @@ int main( int argc, char *argv[] ){
         conn += 6;
         elem_node_ptr[n+1] = elem_node_ptr[n] + 6;
         n++;
-        
+
         conn[0] = anodes[2*i   + N*(2*j+2)];
         conn[1] = anodes[2*i   + N*(2*j)];
         conn[2] = anodes[2*i+2 + N*(2*j+2)];
@@ -185,7 +227,7 @@ int main( int argc, char *argv[] ){
         conn += 6;
         elem_node_ptr[n+1] = elem_node_ptr[n] + 6;
         n++;
-        
+
         conn[0] = bnodes[2*i + (2*nx+1)*(2*j+2)];
         conn[1] = bnodes[2*i + (2*nx+1)*(2*j)];
         conn[2] = bnodes[2*i+2 + (2*nx+1)*(2*j+2)];
@@ -201,29 +243,29 @@ int main( int argc, char *argv[] ){
     // Set the identity numbers
     int *elem_id_nums = new int[ num_elements ];
     memset(elem_id_nums, 0, num_elements*sizeof(int));
-    
+
     // Set the boundary conditions
     int num_bcs = 4*ny+1;
     int *bc_nodes = new int[ num_bcs ];
     for ( int j = 0; j < 4*ny+1; j++ ){
       bc_nodes[j] = anodes[j*(4*nx+1)];
     }
-    
+
     // Set the connectivity
     creator->setGlobalConnectivity(num_nodes, num_elements,
                                    elem_node_ptr, elem_node_conn,
                                    elem_id_nums);
-    
+
     // Set the boundary conditions
     creator->setBoundaryConditions(num_bcs, bc_nodes);
-    
+
     // Set the nodal locations
     creator->setNodes(Xpts);
 
     // Set the dependent nodes
     creator->setDependentNodes(dep_nodes, dep_ptr,
                                dep_conn, dep_weights);
- 
+
     // Free all the allocated data
     delete [] Xpts;
     delete [] elem_node_ptr;
@@ -238,74 +280,105 @@ int main( int argc, char *argv[] ){
   }
 
   // This call must occur on all processor
-  creator->setElements(&elem, 1);
+  TACSElement *element = elem;
+  creator->setElements(1, &element);
 
   // Set the reordering type
   creator->setReorderingType(TACSAssembler::TACS_AMD_ORDER,
                              TACSAssembler::APPROXIMATE_SCHUR);
 
   // Create the TACSAssembler object
-  TACSAssembler *tacs = creator->createTACS();
-  tacs->incref();
+  TACSAssembler *assembler = creator->createTACS();
+  assembler->incref();
 
   // Create the preconditioner
-  TACSBVec *res = tacs->createVec();
-  TACSBVec *ans = tacs->createVec();
-  FEMat *mat = tacs->createFEMat();
+  TACSBVec *res = assembler->createVec();
+  TACSBVec *ans = assembler->createVec();
 
   // Increment the reference count to the matrix/vectors
   res->incref();
   ans->incref();
-  mat->incref();
 
-  // Allocate the factorization
+  // Set the parameters for the stiffness/Jacobian matrix
+  double alpha = 1.0, beta = 0.0, gamma = 0.0;
+
+  // Allocate, assemble and factor the TACSSchurMat and preconditioner
+  TACSSchurMat *schur_mat = assembler->createSchurMat();
+  schur_mat->incref();
+
   int lev = 4500;
   double fill = 10.0;
   int reorder_schur = 1;
-  PcScMat *pc = new PcScMat(mat, lev, fill, reorder_schur);
-  pc->incref();
+  TACSSchurPc *schur_pc = new TACSSchurPc(schur_mat, lev, fill, reorder_schur);
+  schur_pc->incref();
 
-  // Assemble and factor the stiffness/Jacobian matrix
-  double alpha = 1.0, beta = 0.0, gamma = 0.0;
-  tacs->assembleJacobian(alpha, beta, gamma, res, mat);
-  pc->factor();
+  double schur_time = MPI_Wtime();
+  assembler->assembleJacobian(alpha, beta, gamma, res, schur_mat);
+  schur_pc->factor();
+  schur_time = MPI_Wtime() - schur_time;
 
-  int gmres_iters = 10; // Number of GMRES iterations 
+  if (rank == 0){
+    printf("TACSSchurMat/TACSSchurPc assembly and factorization time: %15.5e\n",
+           schur_time);
+  }
+
+  // Allocate, assemble and factor the TACSParallelMat using the
+  // block-cyclic preconditioner
+  TACSParallelMat *par_mat = assembler->createMat();
+  par_mat->incref();
+
+  TACSBlockCyclicPc *par_pc = new TACSBlockCyclicPc(par_mat, 4, 1);
+  par_pc->incref();
+
+  double par_time = MPI_Wtime();
+  assembler->assembleJacobian(alpha, beta, gamma, res, par_mat);
+  par_pc->factor();
+  par_time = MPI_Wtime() - par_time;
+
+  if (rank == 0){
+    printf("TACSParallelMat/TACSBlockCyclicPc assembly and factorization time: %15.5e\n",
+           par_time);
+  }
+
+  // Allocate the GMRES object with the TACSSchurMat matrix
+  int gmres_iters = 10; // Number of GMRES iterations
   int nrestart = 2; // Number of allowed restarts
   int is_flexible = 1; // Is a flexible preconditioner?
-  GMRES *gmres = new GMRES(mat, pc, gmres_iters, 
-                           nrestart, is_flexible);
+  GMRES *schur_gmres = new GMRES(schur_mat, schur_pc, gmres_iters,
+                                 nrestart, is_flexible);
 
   res->set(1.0);
-  tacs->applyBCs(res);
-  gmres->solve(res, ans);
-  tacs->setVariables(ans);
+  assembler->applyBCs(res);
+  schur_gmres->solve(res, ans);
+  assembler->setVariables(ans);
 
   // Create an TACSToFH5 object for writing output to files
-  unsigned int write_flag = (TACSElement::OUTPUT_NODES |
-                             TACSElement::OUTPUT_DISPLACEMENTS |
-                             TACSElement::OUTPUT_STRAINS |
-                             TACSElement::OUTPUT_STRESSES |
-                             TACSElement::OUTPUT_EXTRAS);
-  TACSToFH5 * f5 = new TACSToFH5(tacs, TACS_PLANE_STRESS, write_flag);
+  ElementType etype = TACS_PLANE_STRESS_ELEMENT;
+  int write_flag = (TACS_OUTPUT_CONNECTIVITY |
+                    TACS_OUTPUT_NODES |
+                    TACS_OUTPUT_DISPLACEMENTS |
+                    TACS_OUTPUT_STRAINS |
+                    TACS_OUTPUT_STRESSES |
+                    TACS_OUTPUT_EXTRAS);
+  TACSToFH5 *f5 = new TACSToFH5(assembler, etype, write_flag);
   f5->incref();
   f5->writeToFile("triangle.f5");
-
-  // Free everything
   f5->decref();
- 
+
   // Decrease the reference count to the linear algebra objects
-  pc->decref();
-  mat->decref();
+  schur_pc->decref();
+  schur_mat->decref();
+  par_pc->decref();
+  par_mat->decref();
   ans->decref();
   res->decref();
-  
+
   // Decrease the reference count to everything else
   stiff->decref();
   elem->decref();
-  tacs->decref();
+  assembler->decref();
   creator->decref();
- 
+
   MPI_Finalize();
   return (0);
 }

@@ -1,362 +1,203 @@
-#include "TACSIntegrator.h"
-
-#include "TACSMeshLoader.h"
-#include "MITC9.h"
-#include "isoFSDTStiffness.h"
-#include "TACSShellTraction.h"
-
-#include "KSFailure.h"
-#include "StructuralMass.h"
-#include "Compliance.h"
-#include "InducedFailure.h"
-
 /*
-  Code for testing adjoints with plate example. Use command line
-  arguments as necessary.
- 
-  BDF1 BDF2 BDF3    : for BDF integrators
-  DIRK2 DIRK3 DIRK4 : for DIRK integrators
-  ABM1-6            : for ABM integrators
-  NBG               : for Newmark integrator
-
-  num_funcs     : 1 to 3 for the adjoint 
-  num_threads   : number of threads
-  write_solution: write solution to f5 frequency
-  print_level: 0, 1, 2
+  Pressure loaded plate
 */
-const char *help_string[] = {
-  "TACS time-dependent analysis of a plate located in plate.bdf",
-  "num_funcs=1,2,3 and 12  : Number of functions for adjoint problem",
-  "num_threads=1,2,3...    : Number of threads to use",
-  "print_level=0,1,2       : Controls the amount of information to print",
-  "write_solution=0,1,2... : Controls the frequency of f5 file output",
-  "convert_mesh=0,1        : Converts the mesh to coordinate ordering" };
+#include "TACSMITCPlateModel.h"
+#include "TACSMITCThermoelasticPlateModel.h"
+#include "TACSMITCQuadBasis.h"
+#include "TACSMITCElement2D.h"
 
-int main( int argc, char **argv ){
+#include "TACSAssembler.h"
+#include "TACSCreator.h"
+#include "TACSToFH5.h"
 
-  // Intialize MPI and declare communicator
+int main( int argc, char *argv[] ){
   MPI_Init(&argc, &argv);
 
   MPI_Comm comm = MPI_COMM_WORLD;
-  int rank; 
-  MPI_Comm_rank(comm, &rank); 
-  
-  // Parse command line arguments
-  int num_funcs = 1;
-  int num_threads = 1;
-  int write_solution = 0;
-  int print_level = 1;
-  int convert_mesh = 0;
-  double dh = 1e-7;
 
-  for ( int i = 0; i < argc; i++ ){
+  int rank;
+  MPI_Comm_rank(comm, &rank);
 
-    // Determine whether or not to test gradients with complex step
-    if (strcmp("--help", argv[i]) == 0){
-      if (rank == 0){ 
-        for ( int k = 0; k < 6; k++ ){
-          printf("%s\n", help_string[k]);
+  int useThermoelasticAnalysis = 1;
+
+  // Set the number of nodes/elements on this proc
+  int varsPerNode = -1;
+  if (useThermoelasticAnalysis){
+    varsPerNode = 6;
+  }
+  else {
+    varsPerNode = 5;
+  }
+
+  // Set the number of elements in the x/y direction
+  int order = 3;
+  int nx = 25, ny = 25;
+
+  // Set up the creator object
+  TACSCreator *creator = new TACSCreator(comm, varsPerNode);
+  creator->incref();
+
+  if (rank == 0){
+    int numNodes = ((order-1)*nx + 1)*((order-1)*ny + 1);
+    int numElements = nx*ny;
+
+    // The elements are ordered as (i + j*nx)
+    int *ptr = new int[ numElements+1 ];
+    int *conn = new int[ order*order*numElements ];
+    int *ids = new int[ numElements ];
+    memset(ids, 0, numElements*sizeof(int));
+
+    ptr[0] = 0;
+    int *c = conn;
+    for ( int j = 0, k = 0; j < ny; j++ ){
+      for ( int i = 0; i < nx; i++, k++ ){
+        // Set the node connectivity
+        for ( int jj = 0, kk = 0; jj < order; jj++ ){
+          for ( int ii = 0; ii < order; ii++, kk++ ){
+            c[kk] =
+              ((order-1)*i + ii) +
+              ((order-1)*j + jj)*((order-1)*nx+1);
+          }
         }
-      }
-      MPI_Finalize();
-      return 0;
-    }
-
-    // Determine the complex/finite-difference step interval
-    if (sscanf(argv[i], "dh=%lf", &dh) == 1){
-      if (rank == 0){
-        printf("Difference interval : %g\n", dh);
+        c += order*order;
+        ptr[k+1] = order*order*(k+1);
       }
     }
 
-    // Determine the number of functions for adjoint
-    if (sscanf(argv[i], "num_funcs=%d", &num_funcs) == 1){
-      if (num_funcs < 0){ num_funcs = 1; }
-      if (rank == 0){ 
-        printf("Number of functions : %d\n", num_funcs); 
+    creator->setGlobalConnectivity(numNodes, numElements,
+                                   ptr, conn, ids);
+
+    // We're over-counting one of the nodes on each edge
+    int numBcs = 4*((order-1)*nx+1);
+    int *bcNodes = new int[ numBcs ];
+
+    for ( int i = 0; i < ((order-1)*nx+1); i++ ){
+      bcNodes[4*i] = i;
+      bcNodes[4*i+1] = i + ((order-1)*nx+1)*(order-1)*ny;
+      bcNodes[4*i+2] = i*((order-1)*nx+1);
+      bcNodes[4*i+3] = (i+1)*((order-1)*nx+1)-1;
+    }
+
+    // Set the boundary conditions
+    creator->setBoundaryConditions(numBcs, bcNodes);
+    delete [] bcNodes;
+
+    // Set the node locations
+    TacsScalar *Xpts = new TacsScalar[ 3*numNodes ];
+    for ( int j = 0; j < (order-1)*ny+1; j++ ){
+      for ( int i = 0; i < (order-1)*nx+1; i++ ){
+        int node = i + ((order-1)*nx+1)*j;
+        Xpts[3*node] = (1.0*i)/((order-1)*nx);
+        Xpts[3*node+1] = (1.0*j)/((order-1)*ny);
+        Xpts[3*node+2] = 0.0;
       }
     }
 
-    // How frequent to write the f5 files
-    if (sscanf(argv[i], "write_solution=%d", &write_solution) == 1){
-      if (write_solution < 0){ write_solution = 0; }
-      if (rank == 0){ 
-        printf("Write solution freq : %d\n", write_solution); 
-      }
-    }
-
-    // Set the print level
-    if (sscanf(argv[i], "print_level=%d", &print_level) == 1){
-      if (print_level < 0){ print_level = 1; }
-      if (print_level > 3){ print_level = 3; }
-      if (rank == 0){ 
-        printf("Print level : %d\n", print_level); 
-      }
-    }
-
-    // Determine the number of threads
-    if (sscanf(argv[i], "num_threads=%d", &num_threads) == 1){
-      if (num_threads < 0){ num_threads = 1; }
-      if (num_threads > 24){ num_threads = 24; }
-      if (rank == 0){ 
-        printf("Number of threads : %d\n", num_threads); 
-      }
-    }
-
-    // Determine whether or not to convert the 
-    // connectivities to coordinate ordering
-    if (sscanf(argv[i], "convert_mesh=%d", &convert_mesh) == 1){
-      if (convert_mesh != 1){ 
-        convert_mesh = 0; 
-      } else {
-        convert_mesh = 1; 
-      }
-      if (rank == 0){ 
-        printf("Convert mesh to coordinate order : %d\n", convert_mesh); 
-      }
-    }
+    // Set the nodal locations
+    creator->setNodes(Xpts);
+    delete [] Xpts;
   }
 
-  // Write name of BDF file to be load to char array
-  const char *filename = "plate.bdf";
+  // Create the isotropic material class
+  TacsScalar rho = 2700.0;
+  TacsScalar specific_heat = 921.096;
+  TacsScalar E = 70e3;
+  TacsScalar nu = 0.3;
+  TacsScalar ys = 270.0;
+  TacsScalar cte = 24.0e-6;
+  TacsScalar kappa = 230.0;
+  TACSMaterialProperties *props =
+    new TACSMaterialProperties(rho, specific_heat, E, nu, ys, cte, kappa);
 
-  // Create the mesh loader object and load file
-  TACSMeshLoader *mesh = new TACSMeshLoader(comm);
-  mesh->incref();
-  mesh->setConvertToCoordinate(convert_mesh);
-  mesh->scanBDFFile(filename);
-
-  // Get number of components prescribed in BDF file
-  int num_components = mesh->getNumComponents();
-
-  // Set properties for structural elements
-  double rho   = 2500.0;  // density, kg/m^3
-  double E     = 70e9;    // elastic modulus, Pa
-  double nu    = 0.3;     // poisson's ratio
-  double kcorr = 5.0/6.0; // shear correction factor
-  double ys    = 350e6;   // yield stress, Pa
-
-  // Set properties for dynamics
-  TacsScalar g[] = {0.0, 0.0, -9.81};
-  TacsScalar v_init[] = {0.0, 0.0, 0.0}; 
-  TacsScalar omega_init[] = {0.0, 0.0, 0.0};
-
-  /* TacsScalar v_init[] = {0.1, 0.1, 0.1};  */
-  /* TacsScalar omega_init[] = {0.3, 0.1, 0.2}; */
-
-  TACSGibbsVector *gravity = new TACSGibbsVector(g);  gravity->incref();
-  TACSGibbsVector *v0 = new TACSGibbsVector(v_init); v0->incref();
-  TACSGibbsVector *omega0  = new TACSGibbsVector(omega_init); omega0->incref();
-
-  // Variables per node
-  int vars_per_node = 0;
-
-  // Loop over components, creating constituitive object for each
-  for ( int i = 0; i < num_components; i++ ) {
-    const char *descriptor    = mesh->getElementDescript(i);
-    double min_thickness = 5.0e-3;
-    double max_thickness = 2.0e-2;
-    double thickness = 5.0e-3;
-    isoFSDTStiffness *stiff 
-      = new isoFSDTStiffness(rho, E, nu, kcorr, ys,
-                             thickness, i, 
-                             min_thickness, max_thickness); 
-    stiff->incref();
-
-    TacsScalar axis[] = {1.0, 0.0, 0.0};
-    stiff->setRefAxis(axis);
-    
-    // Initialize element object
-    TACSElement *element = NULL;
-
-    // Create element object using constituitive information and type
-    // defined in the descriptor
-    if (strcmp(descriptor, "CQUAD9") == 0 ||
-        strcmp(descriptor, "CQUAD") == 0 ){
-      element = new MITC9(stiff, gravity, v0, omega0);
-      element->incref();
-
-      // Set the number of displacements
-      vars_per_node = element->numDisplacements();
-      mesh->setElement(i, element);
-
-      stiff->decref();
-      element->decref();
-    }
-    else {
-      printf("[%d] TACS Warning: Unsupported element %s in BDF file\n", 
-            rank, descriptor);
-    }
+  TACSShellConstitutive *stiff = new TACSShellConstitutive(props);
+  TACSMITCModel *model = NULL;
+  if (useThermoelasticAnalysis){
+    model = new TACSMITCThermoelasticPlateModel(stiff);
+  }
+  else {
+    model = new TACSMITCPlateModel(stiff);
   }
 
-  // Create tacs assembler from mesh loader object
-  TACSAssembler *tacs = mesh->createTACS(vars_per_node);
-  tacs->incref();
+  // Create the element class
+  TACSMITCBasis *basis = NULL;
+  if (order == 2){
+    basis = new TACSLinearMITCQuadBasis();
+  }
+  else if (order == 3){
+    basis = new TACSQuadraticMITCQuadBasis();
+  }
+  TACSElement *element = new TACSMITCElement2D(model, basis);
+
+  // Set the elements
+  creator->setElements(1, &element);
+
+  // Create the TACSAssembler object
+  TACSAssembler *assembler = creator->createTACS();
+  creator->decref();
+  assembler->incref();
+
+  // Create the preconditioner
+  TACSBVec *res = assembler->createVec();
+  TACSBVec *ans = assembler->createVec();
+
+  // Increment the reference count to the matrix/vectors
+  res->incref();
+  ans->incref();
+
+  // Set the parameters for the stiffness/Jacobian matrix
+  double alpha = 1.0, beta = 0.0, gamma = 0.0;
+
+  // Allocate, assemble and factor the TACSSchurMat and preconditioner
+  TACSSchurMat *schur_mat = assembler->createSchurMat();
+  schur_mat->incref();
+
+  int lev = 4500;
+  double fill = 10.0;
+  int reorder_schur = 1;
+  TACSSchurPc *schur_pc = new TACSSchurPc(schur_mat, lev, fill, reorder_schur);
+  schur_pc->incref();
+
+  double schur_time = MPI_Wtime();
+  assembler->assembleJacobian(alpha, beta, gamma, res, schur_mat);
+  schur_pc->factor();
+  schur_time = MPI_Wtime() - schur_time;
+
+  if (rank == 0){
+    printf("TACSSchurMat/TACSSchurPc assembly and factorization time: %15.5e\n",
+           schur_time);
+  }
+
+  // Allocate the GMRES object with the TACSSchurMat matrix
+  int gmres_iters = 10; // Number of GMRES iterations
+  int nrestart = 2; // Number of allowed restarts
+  int is_flexible = 1; // Is a flexible preconditioner?
+  GMRES *schur_gmres = new GMRES(schur_mat, schur_pc, gmres_iters,
+                                 nrestart, is_flexible);
+  TacsScalar *res_array;
+  int size = res->getArray(&res_array);
+  for ( int i = 2; i < size; i += varsPerNode ){
+    res_array[i] = 1.0;
+  }
+
+  assembler->applyBCs(res);
+  schur_gmres->solve(res, ans);
+  assembler->setVariables(ans);
 
   // Create an TACSToFH5 object for writing output to files
-  unsigned int write_flag = (TACSElement::OUTPUT_NODES |
-                             TACSElement::OUTPUT_DISPLACEMENTS |
-                             TACSElement::OUTPUT_STRAINS |
-                             TACSElement::OUTPUT_STRESSES |
-                             TACSElement::OUTPUT_EXTRAS);
-
-  TACSToFH5 * f5 = new TACSToFH5(tacs, TACS_SHELL, write_flag);
+  ElementType etype = TACS_BEAM_OR_SHELL_ELEMENT;
+  int write_flag = (TACS_OUTPUT_CONNECTIVITY |
+                    TACS_OUTPUT_NODES |
+                    TACS_OUTPUT_DISPLACEMENTS |
+                    TACS_OUTPUT_STRAINS |
+                    TACS_OUTPUT_STRESSES |
+                    TACS_OUTPUT_EXTRAS);
+  TACSToFH5 *f5 = new TACSToFH5(assembler, etype, write_flag);
   f5->incref();
+  f5->writeToFile("plate.f5");
+  f5->decref();
 
-  /*-----------------------------------------------------------------*/
-  /*------------------ Time Integration and Adjoint Solve -----------*/
-  /*-----------------------------------------------------------------*/
-
-  int num_dvs = num_components;
-
-  // Create functions of interest  
-  TACSFunction * func[num_funcs];
-  if (num_funcs == 1){
-    func[0] = new TACSCompliance(tacs);
-  }
-  else if (num_funcs == 2){
-    func[0] = new TACSKSFailure(tacs, 100.0);
-
-    // Set the induced norm failure types
-    TACSInducedFailure *ifunc = new TACSInducedFailure(tacs, 20.0);
-    ifunc->setInducedType(TACSInducedFailure::EXPONENTIAL);
-    func[1] = ifunc;
-  } 
-  else if (num_funcs == 3){
-    func[0] = new TACSKSFailure(tacs, 100.0);
-    func[1] = new TACSCompliance(tacs);
-    func[2] = new TACSStructuralMass(tacs);
-  } 
-  else if (num_funcs == 12){
-    // Place functions into the func list
-    func[0] = new TACSStructuralMass(tacs);
-    func[1] = new TACSCompliance(tacs);
-
-    // Set the discrete and continuous KS functions
-    TACSKSFailure *ksfunc = new TACSKSFailure(tacs, 20.0);
-    ksfunc->setKSFailureType(TACSKSFailure::DISCRETE);
-    func[2] = ksfunc;
-
-    ksfunc = new TACSKSFailure(tacs, 20.0);
-    ksfunc->setKSFailureType(TACSKSFailure::CONTINUOUS);
-    func[3] = ksfunc;
-
-    // Set the induced norm failure types
-    TACSInducedFailure * ifunc = new TACSInducedFailure(tacs, 20.0);
-    ifunc->setInducedType(TACSInducedFailure::EXPONENTIAL);
-    func[4] = ifunc;
-
-    ifunc = new TACSInducedFailure(tacs, 20.0);
-    ifunc->setInducedType(TACSInducedFailure::DISCRETE_EXPONENTIAL);
-    func[5] = ifunc;
-
-    ifunc = new TACSInducedFailure(tacs, 20.0);
-    ifunc->setInducedType(TACSInducedFailure::DISCRETE_EXPONENTIAL_SQUARED);
-    func[6] = ifunc;
-
-    ifunc = new TACSInducedFailure(tacs, 20.0);
-    ifunc->setInducedType(TACSInducedFailure::EXPONENTIAL_SQUARED);
-    func[7] = ifunc;
-
-    ifunc = new TACSInducedFailure(tacs, 20.0);
-    ifunc->setInducedType(TACSInducedFailure::POWER);
-    func[8] = ifunc;
-
-    ifunc = new TACSInducedFailure(tacs, 20.0);
-    ifunc->setInducedType(TACSInducedFailure::DISCRETE_POWER);
-    func[9] = ifunc;
-
-    ifunc = new TACSInducedFailure(tacs, 20.0);
-    ifunc->setInducedType(TACSInducedFailure::POWER_SQUARED);
-    func[10] = ifunc;
-
-    ifunc = new TACSInducedFailure(tacs, 20.0);
-    ifunc->setInducedType(TACSInducedFailure::DISCRETE_POWER_SQUARED);
-    func[11] = ifunc;
-  }
-  
-  for ( int i = 0; i < num_funcs; i++){
-    func[i]->incref();
-  }
-
-  TacsScalar *funcVals     = new TacsScalar[num_funcs]; // adjoint
-  TacsScalar *funcValsTmp  = new TacsScalar[num_funcs]; // CSD
-  TacsScalar *funcVals1    = new TacsScalar[num_funcs]; // forward/reverse
-
-  TacsScalar *dfdx    = new TacsScalar[num_funcs*num_dvs]; // adjoint
-  TacsScalar *dfdx1   = new TacsScalar[num_funcs*num_dvs]; // CSD
-  TacsScalar *dfdxTmp = new TacsScalar[num_funcs*num_dvs]; // forward/reverse
-
-  // Create an array of design variables
-  TacsScalar *x = new TacsScalar[ num_dvs ]; 
-  x[0] = 0.02; 
-
-  // Set paramters for time marching
-  double tinit             = 0.0;
-  double tfinal            = 0.005;
-  for ( int k = 0; k < argc; k++ ){
-    if (sscanf(argv[k], "tfinal=%lf", &tfinal) == 1){
-    }
-  }
-  int num_steps_per_sec = 1000;
-
-  int start_plane = 2;
-  int end_plane = 5;
-
-  // Check the BDF integrator
-  int bdf_order = 3;
-  TACSIntegrator *bdf = new TACSBDFIntegrator(tacs, tinit, tfinal, 
-                                              num_steps_per_sec, bdf_order);
-  bdf->incref();
-  
-  // Set options
-  bdf->setPrintLevel(print_level);
-  bdf->setOutputFrequency(write_solution);
-  
-  // Set functions of interest for adjoint solve
-  bdf->setFunctions(func, num_funcs, num_dvs, start_plane, end_plane);
-  bdf->checkGradients(dh);
-  bdf->decref();
-
-  // Check the DIRK integrator
-  int num_stages = 2;
-  TACSIntegrator *dirk = new TACSDIRKIntegrator(tacs, tinit, tfinal, 
-                                                num_steps_per_sec, 
-                                                num_stages);
-  dirk->incref();
-
-  // Set options
-  dirk->setPrintLevel(print_level);
-  dirk->setOutputFrequency(write_solution);
-  
-  // Set functions of interest for adjoint solve
-  dirk->setFunctions(func, num_funcs, num_dvs, start_plane, end_plane);
-  dirk->checkGradients(dh);
-  dirk->decref();
-
-  mesh->decref();
-  gravity->decref();
-  v0->decref();
-  omega0->decref();
-
-  for ( int i = 0; i < num_funcs; i++){
-    func[i]->decref();
-  }
-
-  tacs->decref();
-  
-  delete [] dfdx;
-  delete [] dfdx1;
-  delete [] dfdxTmp;
-
-  delete [] x;
-
-  delete [] funcVals;
-  delete [] funcVals1;
-  delete [] funcValsTmp;
+  assembler->decref();
 
   MPI_Finalize();
   return 0;
 }
-
- 

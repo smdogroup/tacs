@@ -17,14 +17,15 @@ def get_include():
     '''
     root_path, tail = os.path.split(os.path.abspath(os.path.dirname(__file__)))
 
-    rel_inc_dirs = ['src', 'src/bpmat', 'src/elements', 
+    rel_inc_dirs = ['src', 'src/bpmat', 'src/elements',
+                    'src/elements/dynamics', 'src/elements/basis',
                     'src/constitutive', 'src/functions', 'src/io',
-                    'extern/AMD/Include', 'extern/UFconfig', 
+                    'extern/AMD/Include', 'extern/UFconfig',
                     'extern/metis/include']
 
     inc_dirs = []
     for path in rel_inc_dirs:
-    	inc_dirs.append(os.path.join(root_path, path))
+        inc_dirs.append(os.path.join(root_path, path))
 
     return inc_dirs
 
@@ -38,6 +39,6 @@ def get_libraries():
     libs = ['tacs']
     lib_dirs = []
     for path in rel_lib_dirs:
-    	lib_dirs.append(os.path.join(root_path, path))
+        lib_dirs.append(os.path.join(root_path, path))
 
     return lib_dirs, libs

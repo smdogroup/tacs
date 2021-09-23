@@ -26,8 +26,8 @@ class TACSKSMatTemperature : public TACSFunction {
   /*                          PNORM_DISCRETE, PNORM_CONTINUOUS }; */
 
   TACSKSMatTemperature( TACSAssembler *_tacs, double _ksWeight,
-			TACSKSTemperature::KSTemperatureType _ksType=TACSKSTemperature::CONTINUOUS,
-			int _nmats=1 );
+                        TACSKSTemperature::KSTemperatureType _ksType=TACSKSTemperature::CONTINUOUS,
+                        int _nmats=1 );
   ~TACSKSMatTemperature();
 
   // Retrieve the name of the function
@@ -110,7 +110,7 @@ class TACSKSMatTemperature : public TACSFunction {
 
   // The max number of nodes
   int maxNumNodes;
-  
+
   // Whether the domain is a plane stress or 3d
   int is_2d, is_3d;
   int nmats;

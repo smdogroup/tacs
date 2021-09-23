@@ -7,60 +7,22 @@ from mpi4py import MPI
 # Import TACS and assorted repositories
 from tacs import TACS, elements, constitutive, functions
 
-class PS(constitutive.pyPlaneStress):
-    def __init__(self, rho, E, nu, ys):
-        self.rho = rho
-        self.nu = nu
-        self.D = E/(1.0 - nu**2)
-        self.G = 0.5*E/(1.0 + nu)
-        self.ys = ys
-        return
-
-    def calculateStress(self, pt, e):
-        '''Compute the stress at the point'''
-
-        # Compute the stresses
-        s = np.zeros(e.shape)
-        s[0] = self.D*(e[0] + self.nu*e[1])
-        s[1] = self.D*(e[1] + self.nu*e[0])
-        s[2] = self.G*e[2]
-        return s
-
-    def getPointwiseMass(self, pt):
-        '''Return the pointwise mass'''
-        return self.rho
-
-    def failure(self, pt, e):
-        '''Evaluate the stress'''
-
-        # Compute the stresses
-        s = np.zeros(e.shape)
-        s[0] = self.D*(e[0] + self.nu*e[1])
-        s[1] = self.D*(e[1] + self.nu*e[0])
-        s[2] = self.G*e[2]
-
-        # Compute the valure of the failure function
-        fval = (s[0]**2 + s[1]**2 - s[0]*s[1] + 3*s[2]**2)/self.ys**2 
-
-        return fval
-
-# Allocate the TACS creator
+# Set the MPI communicator
 comm = MPI.COMM_WORLD
-creator = TACS.Creator(comm, 2)
 
 # Create the stiffness object
-rho = 2570.0
-E = 70e9
-nu = 0.3
-ys = 350e6
+props = constitutive.MaterialProperties(rho=2570.0, E=70e9, nu=0.3, ys=350e6)
+stiff = constitutive.PlaneStressConstitutive(props)
 
-# stiff = constitutive.PlaneStress(rho, E, nu)
-stiff = PS(rho, E, nu, ys) 
+# Set up the basis function
+model = elements.LinearThermoelasticity2D(stiff)
+basis = elements.QuadraticTriangleBasis()
+elem = elements.Element2D(model, basis)
 
-# Create the elements
-elem_order = 2
-elem = elements.PlaneTri6(stiff)
-    
+# Allocate the TACSCreator object
+varsPerNode = model.getVarsPerNode()
+creator = TACS.Creator(comm, varsPerNode)
+
 if comm.rank == 0:
     # Create the elements
     nx = 25
@@ -126,11 +88,11 @@ elements = [ elem ]
 creator.setElements(elements)
 
 # Create the tacs assembler object
-tacs = creator.createTACS()
+assembler = creator.createTACS()
 
-res = tacs.createVec()
-ans = tacs.createVec()
-mat = tacs.createFEMat()
+res = assembler.createVec()
+ans = assembler.createVec()
+mat = assembler.createSchurMat()
 
 # Create the preconditioner for the corresponding matrix
 pc = TACS.Pc(mat)
@@ -139,17 +101,15 @@ pc = TACS.Pc(mat)
 alpha = 1.0
 beta = 0.0
 gamma = 0.0
-tacs.assembleJacobian(alpha, beta, gamma, res, mat)
+assembler.assembleJacobian(alpha, beta, gamma, res, mat)
 pc.factor()
 
-res.setRand(1.0, 1.0)
-tacs.applyBCs(res)
+res.getArray()[:] = 1.0
+assembler.applyBCs(res)
 pc.applyFactor(res, ans)
 ans.scale(-1.0)
 
-tacs.setVariables(ans)
-
-tacs.setSimulationTime(0.15)
+assembler.setVariables(ans)
 
 # Create the function list
 funcs = []
@@ -157,13 +117,14 @@ funcs = []
 # Create the KS function
 ksweight = 100.0
 for i in range(1):
-    funcs.append(functions.KSFailure(tacs, ksweight))
+    funcs.append(functions.KSFailure(assembler, ksweight))
 
-func_vals = tacs.evalFunctions(funcs)
+func_vals = assembler.evalFunctions(funcs)
 
 # Set the element flag
-flag = (TACS.ToFH5.NODES |
-        TACS.ToFH5.DISPLACEMENTS |
-        TACS.ToFH5.STRAINS)
-f5 = TACS.ToFH5(tacs, TACS.PY_PLANE_STRESS, flag)
+flag = (TACS.OUTPUT_CONNECTIVITY |
+        TACS.OUTPUT_NODES |
+        TACS.OUTPUT_DISPLACEMENTS |
+        TACS.OUTPUT_STRAINS)
+f5 = TACS.ToFH5(assembler, TACS.PLANE_STRESS_ELEMENT, flag)
 f5.writeToFile('triangle_test.f5')

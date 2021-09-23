@@ -51,23 +51,11 @@ The :class:`~TACS.Assembler` object can be created using the :class:`~TACS.MeshL
 #. Evaluate structural functions (e.g. Structural Mass, KSFailure) using the
    :func:`~TACS.Assembler.evalFunctions` call.
 #. The gradients of the functions with respect to the design variables can
-   be evaluated using the adjoint method with the :func:`~TACS.Assembler.evalDVSens`,
-   :func:`~TACS.Assembler.evalSVSens`, and :func:`~TACS.Assembler.evalAdjointResProduct` functions.
+   be evaluated using the adjoint method with the :func:`~TACS.Assembler.addDVSens`,
+   :func:`~TACS.Assembler.addSVSens`, and :func:`~TACS.Assembler.addAdjointResProducts` functions.
 
-.. container:: toggle
-
-	.. container:: header
-
-		**Assembler Class Methods**
-
-	.. automodule:: TACS
-	.. autoclass:: Assembler
-		:members: createFEMat, setDesignVars, initialize, createVec,
-			assembleMatType, evalFunctions, evalDVSens, evalSVSens,
-			evalAdjointResProduct
-
-
-
+.. autoclass:: TACS.Assembler
+	:members:
 
 MeshLoader
 ----------
@@ -80,19 +68,11 @@ The typical usage for a :class:`~TACS.MeshLoader` class is as follows:
    the desired NASTRAN .bdf file.
 #. Retrieve the number of components using :func:`~TACS.MeshLoader.getNumComponents`
 #. Iterate through each component, create elements with desired constitutive properties
-   and design variables. Set elements into the :class:`~TACS.MeshLoader` object and 
+   and design variables. Set elements into the :class:`~TACS.MeshLoader` object and
    create the :class:`~TACS.Assembler` object.
 
-.. container:: toggle
-
-	.. container:: header
-
-		**MeshLoader Class Methods**
-
-  	.. autoclass:: MeshLoader
-		:members: scanBDFFile, getNumComponents, setElement,
-		        createTACS, getBCs
-
+.. autoclass:: TACS.MeshLoader
+	:members:
 
 Creator
 -------
@@ -104,15 +84,8 @@ from a NASTRAN-style file. This involves the use of the :func:`~TACS.Creator.set
 and finally the :func:`~TACS.Creator.createTACS` function which creates the :class:`~TACS.Assembler`
 object.
 
-.. container:: toggle
-
-	.. container:: header
-
-		**Creator Class Methods**
-
-	.. autoclass:: Creator
-		:members: setNodes, setElements, setBoundaryConditions, createTACS
-
+.. autoclass:: TACS.Creator
+	:members:
 
 FrequencyAnalysis
 -----------------
@@ -129,3 +102,5 @@ Integrator
 
 The :class:`~TACS.Integrator` class contains functions for solving the adjoint equations and governing equations forward in time. Classes for BDF, DIRK, ABM, and NBG integration inherit from this class.
 
+.. autoclass:: TACS.Integrator
+	:members:

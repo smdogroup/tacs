@@ -12,8 +12,8 @@
   TACS is licensed under the Apache License, Version 2.0 (the
   "License"); you may not use this software except in compliance with
   the License.  You may obtain a copy of the License at
-  
-  http://www.apache.org/licenses/LICENSE-2.0 
+
+  http://www.apache.org/licenses/LICENSE-2.0
 */
 
 #include "BCSRMatImpl.h"
@@ -22,7 +22,7 @@
   Block size = 5 code
 */
 
-/*!  
+/*!
   Perform an ILU factorization of the matrix using the existing
   non-zero pattern.  The entries are over-written, all operations are
   performed in place.
@@ -45,7 +45,7 @@ void BCSRMatFactor5( BCSRMatData * data ){
   for ( int i = 0; i < nrows; i++ ){
     // variable = i
     if ( diag[i] < 0 ){
-      fprintf(stderr, 
+      fprintf(stderr,
               "Error in factorization: no diagonal entry for row %d", i);
       return;
     }
@@ -58,7 +58,7 @@ void BCSRMatFactor5( BCSRMatData * data ){
       TacsScalar * a = &A[25*j];
       TacsScalar * b = &A[25*diag[cj]];
 
-      // Multiply d = A[j] * A[diag[cj]]      
+      // Multiply d = A[j] * A[diag[cj]]
       TacsScalar b0, b1, b2, b3, b4;
 
       b0 = b[0 ]; b1 = b[5 ]; b2 = b[10]; b3 = b[15]; b4 = b[20];
@@ -101,7 +101,7 @@ void BCSRMatFactor5( BCSRMatData * data ){
       int p = diag[cj] + 1;
       a = &A[25*k];
       b = &A[25*p];
-          
+
       // The final entry for row: cols[j]
       int end = rowp[cj + 1];
 
@@ -204,14 +204,14 @@ void BCSRMatFactorLower5( BCSRMatData * data, BCSRMatData * Edata ){
     int j_end = diag[i];
 
     for ( int j = rowp[i]; j < j_end; j++ ){
-      int cj = cols[j];      
+      int cj = cols[j];
       const TacsScalar * d = &A[25*j];
 
       int k     = erowp[i];
       int k_end = erowp[i+1];
       TacsScalar * a = &E[25*k];
 
-      int p     = erowp[cj]; 
+      int p     = erowp[cj];
       int p_end = erowp[cj+1];
       TacsScalar * b = &E[25*p];
 
@@ -292,11 +292,11 @@ void BCSRMatFactorUpper5( BCSRMatData * data, BCSRMatData * Fdata ){
     int j_end = frowp[i+1];
 
     for ( int j = frowp[i]; j < j_end; j++ ){
-      int cj = fcols[j];      
+      int cj = fcols[j];
       TacsScalar * a = &F[25*j];
       const TacsScalar * b = &A[25*diag[cj]];
-      
-      // Multiply d = F[j] * A[diag[cj]]      
+
+      // Multiply d = F[j] * A[diag[cj]]
       TacsScalar b0, b1, b2, b3, b4;
 
       b0 = b[0 ]; b1 = b[5 ]; b2 = b[10]; b3 = b[15]; b4 = b[20];
@@ -334,7 +334,7 @@ void BCSRMatFactorUpper5( BCSRMatData * data, BCSRMatData * Fdata ){
       d34 = a[15]*b0 + a[16]*b1 + a[17]*b2 + a[18]*b3 + a[19]*b4;
       d44 = a[20]*b0 + a[21]*b1 + a[22]*b2 + a[23]*b3 + a[24]*b4;
 
-      int k     = j+1;      
+      int k     = j+1;
       int k_end = frowp[i+1];
       a = &F[25*k];
 
