@@ -47,7 +47,7 @@ class ProblemTest(StaticTestCase.StaticTest):
         props = constitutive.MaterialProperties(rho=2570.0, E=70e9, nu=0.3, ys=350e6)
         stiff = constitutive.IsoShellConstitutive(props, t=0.1, tNum=0)
 
-        # Set up the basis function
+        # Set up the element transform function
         transform = elements.ShellNaturalTransform()
         elem = elements.Quad4Shell(transform, stiff)
 
