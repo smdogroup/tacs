@@ -17,6 +17,13 @@
 #include "TACSElementAlgebra.h"
 
 /*
+  Seed random number generator for repeatable test results
+*/
+void TacsSeedRandomGenerator( int seed  ){
+  srand(seed);
+}
+
+/*
   Assign variables randomly to an array. This is useful for
   testing various things.
 */

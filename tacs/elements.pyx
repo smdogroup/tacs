@@ -236,6 +236,11 @@ def TestElementMatSVSens(Element element, ElementMatrixType mat_type,
                                    <TacsScalar*>vars.data, dh,
                                    test_print_level, atol, rtol)
 
+# Function for setting random seeds for all element tests
+def SeedRandomGenerator(int seed=0):
+    TacsSeedRandomGenerator(seed)
+    return
+
 cdef class LinearTetrahedralBasis(ElementBasis):
     def __cinit__(self):
         self.ptr = new TACSLinearTetrahedralBasis()

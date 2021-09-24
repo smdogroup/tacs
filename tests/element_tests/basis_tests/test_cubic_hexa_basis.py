@@ -1,5 +1,4 @@
 from tacs import TACS, elements
-import numpy as np
 import unittest
 
 
@@ -19,6 +18,9 @@ class BasisTest(unittest.TestCase):
 
         # Create the basis functions for 3D
         self.basis = elements.CubicHexaBasis()
+
+        # Seed random number generator in tacs for consistent test results
+        elements.SeedRandomGenerator(0)
 
     def test_element_basis_functions(self):
         fail = elements.TestElementBasisFunctions(self.basis, self.dh, self.print_level,
