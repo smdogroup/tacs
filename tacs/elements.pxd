@@ -259,13 +259,13 @@ cdef extern from "TACSKinematicConstraints.h":
         TACSAverageConstraint(TACSRigidBody*, TACSGibbsVector*,
                               TACSRefFrame*, int)
 
-cdef extern from "RBE2.h":
-    cdef cppclass RBE2(TACSElement):
-        RBE2(int, int*, double, double)
+cdef extern from "RigidBodyElement2.h":
+    cdef cppclass RigidBodyElement2(TACSElement):
+        RigidBodyElement2(int, int*, double, double)
 
-cdef extern from "RBE3.h":
-    cdef cppclass RBE3(TACSElement):
-        RBE3(int, int*, double*, int*, double, double)
+cdef extern from "RigidBodyElement3.h":
+    cdef cppclass RigidBodyElement3(TACSElement):
+        RigidBodyElement3(int, int*, double*, int*, double, double)
 
 cdef extern from  "MITC3.h":
     cdef cppclass MITC3(TACSElement):

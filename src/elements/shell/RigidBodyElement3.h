@@ -1,8 +1,8 @@
-#ifndef TACS_RBE2_H
-#define TACS_RBE2_H
+#ifndef TACS_RBE3_H
+#define TACS_RBE3_H
 
 /*
-  The RBE2 element.
+  The RBE3 element.
 
   Copyright (C) 2010 University of Toronto
   Copyright (C) 2012 University of Michigan
@@ -14,24 +14,25 @@
 
 #include "TACSElement.h"
 
-class RBE2 : public TACSElement {
+class RigidBodyElement3 : public TACSElement {
  public:
 
-  RBE2( int _numNodes, int _dof_constrained[],
-        double _C1=1e3, double _C2=1e-3 );
-  ~RBE2();
+  RigidBodyElement3( int numNodes, int _dep_dof_constrained[],
+                     double weights[], int _indep_dof_constrained[],
+                     double _C1=1e3, double _C2=1e-3 );
+  ~RigidBodyElement3();
 
   // Info for BDF writer
   // -------------------
-  int const* const* getDependentDOFs(){ return dof_constrained; }
-  int getNumDependentNodes(){ return NUM_DEP_NODES; }
+  const int * getDependentDOFs(){ return dep_dof_constrained; }
+  int const* const* getIndependentDOFs(){ return indep_dof_constrained; }
+  const double * getWeights(){ return w; }
+  int getNumIndependentNodes(){ return NUM_INDEP_NODES; }
 
   // Get the element properties and names
   // ------------------------------------
   const char * elementName();
   const char * displacementName( int i );
-  const char * stressName( int i );
-  const char * strainName( int i );
   const char * extraName( int i );
   int getVarsPerNode();
   int getNumNodes();
@@ -45,7 +46,7 @@ class RBE2 : public TACSElement {
   int getNumFaceQuadraturePoints( int face ){ return 0; }
   double getFaceQuadraturePoint( int face, int n, double pt[],
                                  double tangent[] ){ return 0.0; }
-  /*void getMultiplierIndex( int *multiplier );*/
+  void getMultiplierIndex( int *multiplier );
 
   // Functions for analysis
   // ----------------------
@@ -79,23 +80,32 @@ class RBE2 : public TACSElement {
 
   // Functions for post-processing
   // -----------------------------
-  void addOutputCount( int * nelems, int * nnodes, int * ncsr );
-  void getOutputData( int elemIndex,
+  /*void getOutputData( int elemIndex,
                       ElementType etype, int write_flag,
                       const TacsScalar Xpts[],
                       const TacsScalar vars[],
                       const TacsScalar dvars[],
                       const TacsScalar ddvars[],
-                      int ld_data, TacsScalar *data );
-  void getOutputConnectivity( int * con, int node );
+                      int ld_data, TacsScalar *data );*/
 
  private:
 
- void getMaskedMultipliers( TacsScalar maskedLM[], const TacsScalar actualLM[] );
+ // Functions to compute the centroid and moments of inertia of independent nodes
+ void getCG( TacsScalar Xcg[], TacsScalar W[], const double w[], const TacsScalar Xpts[] );
+ void getCGSens( TacsScalar sXcg[], TacsScalar Xcg[], TacsScalar W[], const double w[],
+                 const TacsScalar Xpts[], const int component );
+ TacsScalar getMomentsOfInertia( TacsScalar Jcg[3][3], const double w[],
+                                 const TacsScalar Xpts[], const TacsScalar Xcg[] );
+ TacsScalar getMomentsOfInertiaSens( TacsScalar sJcg[3][3], TacsScalar Jcg[3][3], TacsScalar* sLc,
+                                     const double w[],
+                                     const TacsScalar Xpts[], const TacsScalar Xcg[], const TacsScalar sXcg[],
+                                     const int component );
+ void getMaskedVars( TacsScalar maskedVars[],
+		             const TacsScalar vars[] );
 
   static const int NUM_DISPS = 6;
-  int NUM_NODES; // Number of nodes (1 indep node + N dep nodes + N dummy nodes)
-  int NUM_DEP_NODES;
+  int NUM_NODES; // Number of nodes (1 dep node + N indep nodes + 1 dummy node)
+  int NUM_INDEP_NODES;
   int NUM_VARIABLES;
   static const int NUM_EXTRAS = 6;
 
@@ -103,13 +113,18 @@ class RBE2 : public TACSElement {
   static const char * dispNames[NUM_DISPS];
   static const char * extraNames[NUM_EXTRAS];
 
+  // Independent node weights
+  double * w;
   // Flag which dependent dofs to include
-  int ** dof_constrained;
+  int dep_dof_constrained[NUM_DISPS];
+  int ** indep_dof_constrained;
 
   // constraint matrix scaling factor, see ref [2]
   double C1;
   // artificial stiffness scaling factor, see ref [2]
   double C2;
+  // Tolerance used in colinearity test
+  const double SMALL_NUM = 1e-8;
 
 };
 

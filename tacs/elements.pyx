@@ -518,8 +518,8 @@ cdef class RigidBodyViz:
         if self.ptr:
             self.ptr.decref()
 
-cdef class RigidBodyElement2(Element):
-    cdef RBE2 *cptr
+cdef class RBE2(Element):
+    cdef RigidBodyElement2 *cptr
     def __cinit__(self, int num_nodes,
                   np.ndarray[int, ndim=1, mode='c'] constrained_dofs,
                   double C1=1e3, double C2=1e-3):
@@ -531,14 +531,14 @@ cdef class RigidBodyElement2(Element):
         if len(constrained_dofs) == 6:
             constrained_dofs = np.tile(constrained_dofs, num_dep)
 
-        self.cptr = new RBE2(num_nodes, <int*>constrained_dofs.data, C1, C2)
+        self.cptr = new RigidBodyElement2(num_nodes, <int*>constrained_dofs.data, C1, C2)
         # Increase the reference count to the underlying object
         self.ptr = self.cptr
         self.ptr.incref()
         return
 
-cdef class RigidBodyElement3(Element):
-    cdef RBE3 *cptr
+cdef class RBE3(Element):
+    cdef RigidBodyElement3 *cptr
     def __cinit__(self, int num_nodes,
                   np.ndarray[int, ndim=1, mode='c'] dep_constrained_dofs,
                   np.ndarray[double, ndim=1, mode='c'] weights,
@@ -556,8 +556,8 @@ cdef class RigidBodyElement3(Element):
         if len(indep_constrained_dofs) == 6:
             indep_constrained_dofs = np.tile(indep_constrained_dofs, num_indep)
 
-        self.cptr = new RBE3(num_nodes, <int*>dep_constrained_dofs.data,
-                            <double*>weights.data, <int*>indep_constrained_dofs.data, C1, C2)
+        self.cptr = new RigidBodyElement3(num_nodes, <int*>dep_constrained_dofs.data,
+                                          <double*>weights.data, <int*>indep_constrained_dofs.data, C1, C2)
         # Increase the reference count to the underlying object
         self.ptr = self.cptr
         self.ptr.incref()

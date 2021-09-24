@@ -55,6 +55,7 @@ cdef extern from "TACSElementTypes.h":
         TACS_BEAM_OR_SHELL_ELEMENT
         TACS_PLANE_STRESS_ELEMENT
         TACS_SOLID_ELEMENT
+        TACS_RIGID_ELEMENT
 
     enum ElementLayout:
         TACS_LAYOUT_NONE
