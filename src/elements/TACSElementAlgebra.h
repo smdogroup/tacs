@@ -1979,6 +1979,67 @@ static inline void inv3x3Sens( const TacsScalar Ainv[],
 }
 
 /*
+  Compute the sensitivity of the 3x3 inverse matrix
+  input:
+  A: a 3x3 matrix in row major order
+  sA: the sensitivity of the input matrix
+  output:
+  Ainv: the inverse of the matrix
+  sAinv: the sensitivity of the matrix
+  sh: the sensitivity of the determinant of the matrix
+  returns the determinant of A
+*/
+static inline TacsScalar inv3x3Sens( const TacsScalar A[],
+                                     const TacsScalar sA[],
+                                     TacsScalar Ainv[], TacsScalar sAinv[],
+                                     TacsScalar * _sh ){
+
+  TacsScalar h = (A[8]*(A[0]*A[4] - A[3]*A[1])
+                  - A[7]*(A[0]*A[5] - A[3]*A[2])
+                  + A[6]*(A[1]*A[5] - A[2]*A[4]));
+  TacsScalar hinv = 1.0/h;
+
+  TacsScalar sh;
+  sh= sA[8]*(A[0]*A[4] - A[3]*A[1]) +
+    A[8]*(A[0]*sA[4] + sA[0]*A[4] - A[3]*sA[1] - sA[3]*A[1])
+    - sA[7]*(A[0]*A[5] - A[3]*A[2]) -
+    A[7]*(A[0]*sA[5] + sA[0]*A[5] - A[3]*sA[2] - sA[3]*A[2])
+    + sA[6]*(A[1]*A[5] - A[2]*A[4]) +
+    A[6]*(A[1]*sA[5] + sA[1]*A[5] - A[2]*sA[4] - sA[2]*A[4]);
+
+  Ainv[0] =   (A[4]*A[8] - A[5]*A[7])*hinv;
+  Ainv[1] = - (A[1]*A[8] - A[2]*A[7])*hinv;
+  Ainv[2] =   (A[1]*A[5] - A[2]*A[4])*hinv;
+
+  Ainv[3] = - (A[3]*A[8] - A[5]*A[6])*hinv;
+  Ainv[4] =   (A[0]*A[8] - A[2]*A[6])*hinv;
+  Ainv[5] = - (A[0]*A[5] - A[2]*A[3])*hinv;
+
+  Ainv[6] =   (A[3]*A[7] - A[4]*A[6])*hinv;
+  Ainv[7] = - (A[0]*A[7] - A[1]*A[6])*hinv;
+  Ainv[8] =   (A[0]*A[4] - A[1]*A[3])*hinv;
+
+  for ( int i = 0; i < 9; i++ ){
+    sAinv[i] = - Ainv[i]*hinv*sh;
+  }
+
+  sAinv[0] +=  (A[4]*sA[8] + sA[4]*A[8] - A[5]*sA[7] - sA[5]*A[7])*hinv;
+  sAinv[1] += -(A[1]*sA[8] + sA[1]*A[8] - A[2]*sA[7] - sA[2]*A[7])*hinv;
+  sAinv[2] +=  (A[1]*sA[5] + sA[1]*A[5] - A[2]*sA[4] - sA[2]*A[4])*hinv;
+
+  sAinv[3] += -(A[3]*sA[8] + sA[3]*A[8] - A[5]*sA[6] - sA[5]*A[6])*hinv;
+  sAinv[4] +=  (A[0]*sA[8] + sA[0]*A[8] - A[2]*sA[6] - sA[2]*A[6])*hinv;
+  sAinv[5] += -(A[0]*sA[5] + sA[0]*A[5] - A[2]*sA[3] - sA[2]*A[3])*hinv;
+
+  sAinv[6] +=  (A[3]*sA[7] + sA[3]*A[7] - A[4]*sA[6] - sA[4]*A[6])*hinv;
+  sAinv[7] += -(A[0]*sA[7] + sA[0]*A[7] - A[1]*sA[6] - sA[1]*A[6])*hinv;
+  sAinv[8] +=  (A[0]*sA[4] + sA[0]*A[4] - A[1]*sA[3] - sA[1]*A[3])*hinv;
+
+  *_sh = sh;
+  return h;
+}
+
+/*
   Compute the determinant of a 3x3 matrix
 
   input:

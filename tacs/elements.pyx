@@ -554,6 +554,51 @@ cdef class RigidBodyViz:
         if self.ptr:
             self.ptr.decref()
 
+cdef class RBE2(Element):
+    cdef RigidBodyElement2 *cptr
+    def __cinit__(self, int num_nodes,
+                  np.ndarray[int, ndim=1, mode='c'] constrained_dofs,
+                  double C1=1e3, double C2=1e-3):
+        num_dep = (num_nodes - 1) / 2
+
+        assert len(constrained_dofs) == 6 or len(constrained_dofs) == 6 * num_dep
+
+        # Pad the dependent array, if necessary
+        if len(constrained_dofs) == 6:
+            constrained_dofs = np.tile(constrained_dofs, num_dep)
+
+        self.cptr = new RigidBodyElement2(num_nodes, <int*>constrained_dofs.data, C1, C2)
+        # Increase the reference count to the underlying object
+        self.ptr = self.cptr
+        self.ptr.incref()
+        return
+
+cdef class RBE3(Element):
+    cdef RigidBodyElement3 *cptr
+    def __cinit__(self, int num_nodes,
+                  np.ndarray[int, ndim=1, mode='c'] dep_constrained_dofs,
+                  np.ndarray[double, ndim=1, mode='c'] weights,
+                  np.ndarray[int, ndim=1, mode='c'] indep_constrained_dofs,
+                  double C1=1e3, double C2=1e-3):
+        num_indep = num_nodes - 2
+
+        assert len(dep_constrained_dofs) == 6
+        assert len(weights) == 1 or len(weights) == num_indep
+        assert len(indep_constrained_dofs) == 6 or len(indep_constrained_dofs) == 6 * num_indep
+
+        # Pad the independent arrays, if necessary
+        if len(weights) == 1:
+            weights = np.tile(weights, num_indep)
+        if len(indep_constrained_dofs) == 6:
+            indep_constrained_dofs = np.tile(indep_constrained_dofs, num_indep)
+
+        self.cptr = new RigidBodyElement3(num_nodes, <int*>dep_constrained_dofs.data,
+                                          <double*>weights.data, <int*>indep_constrained_dofs.data, C1, C2)
+        # Increase the reference count to the underlying object
+        self.ptr = self.cptr
+        self.ptr.incref()
+        return
+
 # cdef class RigidBody(Element):
 #     cdef TACSRigidBody *cptr
 #     def __cinit__(self, RefFrame frame, TacsScalar mass,

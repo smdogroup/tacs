@@ -12,6 +12,7 @@ TACS_SUBDIRS = src \
 	src/elements \
 	src/elements/dynamics \
 	src/elements/basis \
+	src/elements/shell \
 	src/constitutive \
 	src/functions \
 	src/io
