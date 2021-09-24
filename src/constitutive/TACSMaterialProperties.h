@@ -108,7 +108,7 @@ class TACSMaterialProperties : public TACSObject {
   TacsScalar vonMisesFailure3DStressSens( const TacsScalar stress[],
                                           TacsScalar sens[] );
 
-  //  The von Mises failure criteria for plane stress problems
+  // The von Mises failure criteria for plane stress problems
   TacsScalar vonMisesFailure2D( const TacsScalar stress[] );
   TacsScalar vonMisesFailure2DStressSens( const TacsScalar stress[],
                                           TacsScalar sens[] );
@@ -274,7 +274,7 @@ class TACSOrthotropicPly : public TACSObject {
   const char* getObjectName();
 
  private:
-  static const char * name;
+  static const char *name;
 
   TACSMaterialProperties *properties;
 

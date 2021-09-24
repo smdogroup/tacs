@@ -105,14 +105,17 @@ class ProblemTest(StaticTestCase.StaticTest):
         f_array[:] = -10.0
 
         # Create temporary dv vec for doing fd/cs
-        dv_pert_array = dv_pert_vec.getArray()
-        dv_pert_array[:] = 1.0
+        dv_pert_vec.getArray()[:] = 1.0
 
         # Create temporary state variable vec for doing fd/cs
-        ans_pert_vec.setRand()
+        np.random.seed(30)  # Seed random numbers for deterministic/repeatable tests
+        rand_data = np.random.rand(vars_per_node * local_num_nodes).astype(self.dtype)
+        ans_pert_vec.getArray()[:] = rand_data
 
         # Define perturbation array that uniformly moves all nodes on right edge of plate to the right
-        xpts_pert_vec.setRand()
+        np.random.seed(30)  # Seed random numbers for deterministic/repeatable tests
+        rand_data = np.random.rand(3 * local_num_nodes).astype(self.dtype)
+        xpts_pert_vec.getArray()[:] = rand_data
 
         return
 

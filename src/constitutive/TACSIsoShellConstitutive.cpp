@@ -234,7 +234,8 @@ void TACSIsoShellConstitutive::addStressDVSens( int elemIndex,
                                                 const TacsScalar X[],
                                                 const TacsScalar e[],
                                                 const TacsScalar psi[],
-                                                int dvLen, TacsScalar dfdx[] ){
+                                                int dvLen,
+                                                TacsScalar dfdx[] ){
   if (properties && tNum >= 0){
     // Compute the tangent stiffness matrix
     TacsScalar A[6];
@@ -247,6 +248,162 @@ void TACSIsoShellConstitutive::addStressDVSens( int elemIndex,
       dI*mat3x3SymmInner(A, &psi[3], &e[3]) +
       (5.0/6.0)*A[5]*(psi[6]*e[6] + psi[7]*e[7] +
         DRILLING_REGULARIZATION*psi[8]*e[8]));
+  }
+}
+
+// Calculate the point-wise failure criteria
+TacsScalar TACSIsoShellConstitutive::evalFailure( int elemIndex,
+                                                  const double pt[],
+                                                  const TacsScalar X[],
+                                                  const TacsScalar e[] ){
+  if (properties){
+    TacsScalar et[3], eb[3];
+    TacsScalar ht = 0.5*t;
+
+    et[0] = e[0] + ht*e[3];
+    et[1] = e[1] + ht*e[4];
+    et[2] = e[2] + ht*e[5];
+
+    eb[0] = e[0] - ht*e[3];
+    eb[1] = e[1] - ht*e[4];
+    eb[2] = e[2] - ht*e[5];
+
+    TacsScalar C[6];
+    properties->evalTangentStiffness2D(C);
+
+    TacsScalar st[3], sb[3];
+    mat3x3SymmMult(C, et, st);
+    mat3x3SymmMult(C, eb, sb);
+
+    TacsScalar top = properties->vonMisesFailure2D(st);
+    TacsScalar bottom = properties->vonMisesFailure2D(sb);
+
+    if (TacsRealPart(top) > TacsRealPart(bottom)){
+      return top;
+    }
+    else {
+      return bottom;
+    }
+  }
+
+  return 0.0;
+}
+
+// Evaluate the derivative of the failure criteria w.r.t. the strain
+TacsScalar TACSIsoShellConstitutive::evalFailureStrainSens( int elemIndex,
+                                                            const double pt[],
+                                                            const TacsScalar X[],
+                                                            const TacsScalar e[],
+                                                            TacsScalar sens[] ){
+  sens[0] = sens[1] = sens[2] = 0.0;
+  sens[3] = sens[4] = sens[5] = 0.0;
+  sens[6] = sens[7] = sens[8] = 0.0;
+
+  if (properties){
+    TacsScalar et[3], eb[3];
+    TacsScalar ht = 0.5*t;
+
+    et[0] = e[0] + ht*e[3];
+    et[1] = e[1] + ht*e[4];
+    et[2] = e[2] + ht*e[5];
+
+    eb[0] = e[0] - ht*e[3];
+    eb[1] = e[1] - ht*e[4];
+    eb[2] = e[2] - ht*e[5];
+
+    TacsScalar C[6];
+    properties->evalTangentStiffness2D(C);
+
+    TacsScalar st[3], sb[3];
+    mat3x3SymmMult(C, et, st);
+    mat3x3SymmMult(C, eb, sb);
+
+    TacsScalar top = properties->vonMisesFailure2D(st);
+    TacsScalar bottom = properties->vonMisesFailure2D(sb);
+
+    if (TacsRealPart(top) > TacsRealPart(bottom)){
+      TacsScalar psi[3], phi[3];
+      properties->vonMisesFailure2DStressSens(st, psi);
+      mat3x3SymmMult(C, psi, phi);
+
+      sens[0] = phi[0];
+      sens[1] = phi[1];
+      sens[2] = phi[2];
+
+      sens[3] = ht*phi[0];
+      sens[4] = ht*phi[1];
+      sens[5] = ht*phi[2];
+
+      sens[6] = sens[7] = sens[8] = 0.0;
+
+      return top;
+    }
+    else {
+      TacsScalar psi[3], phi[3];
+      properties->vonMisesFailure2DStressSens(sb, psi);
+      mat3x3SymmMult(C, psi, phi);
+
+      sens[0] = phi[0];
+      sens[1] = phi[1];
+      sens[2] = phi[2];
+
+      sens[3] = -ht*phi[0];
+      sens[4] = -ht*phi[1];
+      sens[5] = -ht*phi[2];
+
+      sens[6] = sens[7] = sens[8] = 0.0;
+
+      return bottom;
+    }
+  }
+
+  return 0.0;
+}
+
+// Add the derivative of the failure criteria w.r.t. the design variables
+void TACSIsoShellConstitutive::addFailureDVSens( int elemIndex,
+                                                 TacsScalar scale,
+                                                 const double pt[],
+                                                 const TacsScalar X[],
+                                                 const TacsScalar e[],
+                                                 int dvLen,
+                                                 TacsScalar dfdx[] ){
+  if (properties && tNum >= 0 && dvLen >= 1){
+    TacsScalar et[3], eb[3];
+    TacsScalar ht = 0.5*t;
+
+    et[0] = e[0] + ht*e[3];
+    et[1] = e[1] + ht*e[4];
+    et[2] = e[2] + ht*e[5];
+
+    eb[0] = e[0] - ht*e[3];
+    eb[1] = e[1] - ht*e[4];
+    eb[2] = e[2] - ht*e[5];
+
+    TacsScalar C[6];
+    properties->evalTangentStiffness2D(C);
+
+    TacsScalar st[3], sb[3];
+    mat3x3SymmMult(C, et, st);
+    mat3x3SymmMult(C, eb, sb);
+
+    TacsScalar top = properties->vonMisesFailure2D(st);
+    TacsScalar bottom = properties->vonMisesFailure2D(sb);
+
+    if (TacsRealPart(top) > TacsRealPart(bottom)){
+      TacsScalar psi[3], phi[3];
+      properties->vonMisesFailure2DStressSens(st, psi);
+      mat3x3SymmMult(C, psi, phi);
+
+      dfdx[0] += 0.5*scale*(phi[0]*e[3] + phi[1]*e[4] + phi[2]*e[5]);
+    }
+    else {
+      TacsScalar psi[3], phi[3];
+      properties->vonMisesFailure2DStressSens(sb, psi);
+      mat3x3SymmMult(C, psi, phi);
+
+      dfdx[0] -= 0.5*scale*(phi[0]*e[3] + phi[1]*e[4] + phi[2]*e[5]);
+    }
   }
 }
 
@@ -303,169 +460,3 @@ void TACSIsoShellConstitutive::evalTangentHeatFlux( int elemIndex,
 const char* TACSIsoShellConstitutive::getObjectName(){
   return constName;
 }
-
-/*
-  Add the derivative of the product of the stress to the design
-  derivative array
-*/
-/*
-  void isoFSDTStiffness::addStiffnessDVSens( const double pt[],
-  const TacsScalar e[],
-  const TacsScalar psi[],
-  TacsScalar rotPsi,
-  TacsScalar fdvSens[], int dvLen ){
-  if (tNum >= 0 && tNum < dvLen){
-  // Compute the derivative of the stiffness coefficients
-  TacsScalar A = E/(1.0 - nu*nu);
-  TacsScalar D = t*t*A/4.0;
-
-  // Store the derivative of the stress values
-  TacsScalar s[8];
-
-  // Compute the in-plane resultants
-  s[0] = A*(e[0] + nu*e[1]);
-  s[1] = A*(e[1] + nu*e[0]);
-  s[2] = G*e[2];
-
-  // Compute the bending moments
-  s[3] = D*(e[3] + nu*e[4]);
-  s[4] = D*(e[4] + nu*e[3]);
-  s[5] = 0.5*D*(1.0 - nu)*e[5];
-
-  // Compute the shear resultants
-  s[6] = kcorr*G*e[6];
-  s[7] = kcorr*G*e[7];
-
-  TacsScalar ksens = DRILLING_REGULARIZATION*G;
-
-  // Add the result to the design variable vector
-  fdvSens[tNum] +=
-  (s[0]*psi[0] + s[1]*psi[1] + s[2]*psi[2] +
-  s[3]*psi[3] + s[4]*psi[4] + s[5]*psi[5] +
-  s[6]*psi[6] + s[7]*psi[7] + rotPsi*ksens);
-  }
-  }
-*/
-
-/*
-  Compute the von Mises failure criterion on the upper and lower
-  surfaces of the plate model
-*/
-/*
-  void isoFSDTStiffness::failure( const double gpt[],
-  const TacsScalar strain[],
-  TacsScalar * fail ){
-  TacsScalar stress[3];
-  TacsScalar ht = 0.5*t;
-
-  // Determine whether the failure will occur on the top or the bottom
-  // Test the top of the plate
-  calculatePlaneStress(stress, ht, strain);
-  TacsScalar failTop = VonMisesFailurePlaneStress(stress, yieldStress);
-
-  // Test the bottom of the plate
-  calculatePlaneStress(stress, -ht, strain);
-  TacsScalar failBot = VonMisesFailurePlaneStress(stress, yieldStress);
-
-  *fail = (TacsRealPart(failTop) > TacsRealPart(failBot) ?
-  failTop : failBot);
-  }
-*/
-/*
-  Compute the derivative of the von Mises failure criterion on the
-  upper/lower surfaces with respect to the strain values
-*/
-/*
-  void isoFSDTStiffness::failureStrainSens( const double gpt[],
-  const TacsScalar strain[],
-  TacsScalar sens[] ){
-  TacsScalar stress[3];
-  TacsScalar ht = 0.5*t;
-
-  // Determine whether the failure will occur on the top or the bottom
-  // Test the top of the plate
-  calculatePlaneStress(stress, ht, strain);
-  TacsScalar failTop = VonMisesFailurePlaneStress(stress, yieldStress);
-
-  // Test the bottom of the plate
-  calculatePlaneStress(stress, -ht, strain);
-  TacsScalar failBot = VonMisesFailurePlaneStress(stress, yieldStress);
-
-  if (TacsRealPart(failTop) > TacsRealPart(failBot)){
-  // Test the top of the plate
-  TacsScalar stressSens[3];
-  calculatePlaneStress(stress, ht, strain);
-  VonMisesFailurePlaneStressSens(stressSens, stress,
-  yieldStress);
-
-  calculatePlaneStressTranspose(sens, ht, stressSens);
-  }
-  else {
-  // Test the bottom of the plate
-  TacsScalar stressSens[3];
-  calculatePlaneStress(stress, -ht, strain);
-  VonMisesFailurePlaneStressSens(stressSens, stress,
-  yieldStress);
-
-  calculatePlaneStressTranspose(sens, -ht, stressSens);
-  }
-  }
-*/
-/*
-  Add the derivative of the failure sensitivity on the upper and lower
-  surfaces with respect to the design variable
-*/
-/*
-  void isoFSDTStiffness::addFailureDVSens( const double pt[],
-  const TacsScalar strain[],
-  TacsScalar alpha,
-  TacsScalar dvSens[], int dvLen ){
-  if (tNum >= 0 && tNum < dvLen){
-  TacsScalar stress[3];
-  TacsScalar ht = 0.5*t;
-
-  // Determine whether the failure will occur on the top or the bottom
-  // Test the top of the plate
-  calculatePlaneStress(stress, ht, strain);
-  TacsScalar failTop = VonMisesFailurePlaneStress(stress, yieldStress);
-
-  // Test the bottom of the plate
-  calculatePlaneStress(stress, -ht, strain);
-  TacsScalar failBot = VonMisesFailurePlaneStress(stress, yieldStress);
-
-  if (TacsRealPart(failTop) > TacsRealPart(failBot)){
-  // Test the top of the plate
-  TacsScalar stressSens[3];
-  calculatePlaneStress(stress, ht, strain);
-  VonMisesFailurePlaneStressSens(stressSens, stress,
-  yieldStress);
-  dvSens[tNum] +=
-  0.5*alpha*(calculatePlaneStressTSensProduct(stressSens, strain));
-  }
-  else {
-  TacsScalar stressSens[3];
-  calculatePlaneStress(stress, -ht, strain);
-  VonMisesFailurePlaneStressSens(stressSens, stress,
-  yieldStress);
-  dvSens[tNum] +=
-  -0.5*alpha*(calculatePlaneStressTSensProduct(stressSens, strain));
-  }
-  }
-  }
-*/
-
-/*
-  Return the thickness as the design variable for this constitutive object
-*/
-/*
-  TacsScalar isoFSDTStiffness::getDVOutputValue( int dv_index,
-  const double pt[] ){
-  if (dv_index == 0){
-  return t;
-  }
-  if (dv_index == 1){
-  return tNum;
-  }
-  return 0.0;
-  }
-*/

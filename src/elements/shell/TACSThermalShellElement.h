@@ -635,7 +635,7 @@ void TACSThermalShellElement<quadrature, basis, director, model>::
     TACSShellConstitutive::extractTangentStiffness(Cs, &A, &B, &D, &As, &drill);
 
     // Compute the stress based on the tangent stiffness
-    TacsScalar s[9], sth[9];
+    TacsScalar s[9];
     TACSShellConstitutive::computeStress(A, B, D, As, drill, em, s);
 
     {

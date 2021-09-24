@@ -217,7 +217,10 @@ class ProblemTest(StaticTestCase.StaticTest):
         dv_pert_array[:] = 1.0
 
         # Define uniform random state variable perturbation array
-        ans_pert_vec.setRand()
+        # Set the variable arrays
+        np.random.seed(30)  # Seed random numbers for deterministic/repeatable tests
+        rand_data = np.random.rand(vars_per_node * local_num_nodes).astype(self.dtype)
+        ans_pert_vec.getArray()[:] = rand_data
 
         # Define perturbation array that uniformly moves all nodes on right edge of plate to the right
         xpts_pert_array = xpts_pert_vec.getArray()

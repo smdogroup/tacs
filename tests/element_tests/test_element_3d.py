@@ -65,6 +65,9 @@ class ElementTest(unittest.TestCase):
         # Set matrix types
         self.matrix_types = [TACS.STIFFNESS_MATRIX, TACS.MASS_MATRIX, TACS.GEOMETRIC_STIFFNESS_MATRIX]
 
+        # Seed random number generator in tacs for consistent test results
+        elements.SeedRandomGenerator(0)
+
     def test_element_jacobian(self):
         # Loop through every combination of model and basis class and test Jacobian
         for model in self.models:

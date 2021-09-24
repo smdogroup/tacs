@@ -1278,7 +1278,7 @@ class TACSShellNonlinearModel {
   }
 
   static void evalStrainHessian( const TacsScalar scale,
-                                 const TacsScalar dfde[],
+                                 const TacsScalar s[],
                                  const TacsScalar Cs[],
                                  const TacsScalar u0x[],
                                  const TacsScalar u1x[],
@@ -1319,24 +1319,100 @@ class TACSShellNonlinearModel {
     d2[4] = 4.0*scale*As[1];
     d2[2] = 4.0*scale*As[2];
 
-    d2u0x[0] = scale*(u1x[0]*(D[0]*u1x[0] + D[2]*u1x[1]) + u1x[1]*(D[2]*u1x[0] + D[5]*u1x[1]));
-    d2u0x[1] = scale*(D[1]*u1x[0]*u1x[1] + D[2]*u1x[0]*u1x[0] + D[4]*u1x[1]*u1x[1] + D[5]*u1x[0]*u1x[1]);
+    TacsScalar Du0x[36];
+    Du0x[0] = B[0]*u1x[0] + B[2]*u1x[1];
+    Du0x[1] = B[1]*u1x[0] + B[4]*u1x[1];
+    Du0x[2] = B[2]*u1x[0] + B[5]*u1x[1];
+    Du0x[3] = D[0]*u1x[0] + D[2]*u1x[1];
+    Du0x[4] = D[1]*u1x[0] + D[4]*u1x[1];
+    Du0x[5] = D[2]*u1x[0] + D[5]*u1x[1];
+    Du0x[6] = B[1]*u1x[1] + B[2]*u1x[0];
+    Du0x[7] = B[3]*u1x[1] + B[4]*u1x[0];
+    Du0x[8] = B[4]*u1x[1] + B[5]*u1x[0];
+    Du0x[9] = D[1]*u1x[1] + D[2]*u1x[0];
+    Du0x[10] = D[3]*u1x[1] + D[4]*u1x[0];
+    Du0x[11] = D[4]*u1x[1] + D[5]*u1x[0];
+    Du0x[12] = B[0]*u1x[3] + B[2]*u1x[4];
+    Du0x[13] = B[1]*u1x[3] + B[4]*u1x[4];
+    Du0x[14] = B[2]*u1x[3] + B[5]*u1x[4];
+    Du0x[15] = D[0]*u1x[3] + D[2]*u1x[4];
+    Du0x[16] = D[1]*u1x[3] + D[4]*u1x[4];
+    Du0x[17] = D[2]*u1x[3] + D[5]*u1x[4];
+    Du0x[18] = B[1]*u1x[4] + B[2]*u1x[3];
+    Du0x[19] = B[3]*u1x[4] + B[4]*u1x[3];
+    Du0x[20] = B[4]*u1x[4] + B[5]*u1x[3];
+    Du0x[21] = D[1]*u1x[4] + D[2]*u1x[3];
+    Du0x[22] = D[3]*u1x[4] + D[4]*u1x[3];
+    Du0x[23] = D[4]*u1x[4] + D[5]*u1x[3];
+    Du0x[24] = B[0]*u1x[6] + B[2]*u1x[7];
+    Du0x[25] = B[1]*u1x[6] + B[4]*u1x[7];
+    Du0x[26] = B[2]*u1x[6] + B[5]*u1x[7];
+    Du0x[27] = D[0]*u1x[6] + D[2]*u1x[7];
+    Du0x[28] = D[1]*u1x[6] + D[4]*u1x[7];
+    Du0x[29] = D[2]*u1x[6] + D[5]*u1x[7];
+    Du0x[30] = B[1]*u1x[7] + B[2]*u1x[6];
+    Du0x[31] = B[3]*u1x[7] + B[4]*u1x[6];
+    Du0x[32] = B[4]*u1x[7] + B[5]*u1x[6];
+    Du0x[33] = D[1]*u1x[7] + D[2]*u1x[6];
+    Du0x[34] = D[3]*u1x[7] + D[4]*u1x[6];
+    Du0x[35] = D[4]*u1x[7] + D[5]*u1x[6];
+
+    TacsScalar Du1x[36];
+    Du1x[0] = B[0]*(u0x[0] + 1.0) + B[2]*u0x[1];
+    Du1x[1] = B[1]*(u0x[0] + 1.0) + B[4]*u0x[1];
+    Du1x[2] = B[2]*(u0x[0] + 1.0) + B[5]*u0x[1];
+    Du1x[3] = D[0]*(u0x[0] + 1.0) + D[2]*u0x[1];
+    Du1x[4] = D[1]*(u0x[0] + 1.0) + D[4]*u0x[1];
+    Du1x[5] = D[2]*(u0x[0] + 1.0) + D[5]*u0x[1];
+    Du1x[6] = B[1]*u0x[1] + B[2]*(u0x[0] + 1.0);
+    Du1x[7] = B[3]*u0x[1] + B[4]*(u0x[0] + 1.0);
+    Du1x[8] = B[4]*u0x[1] + B[5]*(u0x[0] + 1.0);
+    Du1x[9] = D[1]*u0x[1] + D[2]*(u0x[0] + 1.0);
+    Du1x[10] = D[3]*u0x[1] + D[4]*(u0x[0] + 1.0);
+    Du1x[11] = D[4]*u0x[1] + D[5]*(u0x[0] + 1.0);
+    Du1x[12] = B[0]*u0x[3] + B[2]*(u0x[4] + 1.0);
+    Du1x[13] = B[1]*u0x[3] + B[4]*(u0x[4] + 1.0);
+    Du1x[14] = B[2]*u0x[3] + B[5]*(u0x[4] + 1.0);
+    Du1x[15] = D[0]*u0x[3] + D[2]*(u0x[4] + 1.0);
+    Du1x[16] = D[1]*u0x[3] + D[4]*(u0x[4] + 1.0);
+    Du1x[17] = D[2]*u0x[3] + D[5]*(u0x[4] + 1.0);
+    Du1x[18] = B[1]*(u0x[4] + 1.0) + B[2]*u0x[3];
+    Du1x[19] = B[3]*(u0x[4] + 1.0) + B[4]*u0x[3];
+    Du1x[20] = B[4]*(u0x[4] + 1.0) + B[5]*u0x[3];
+    Du1x[21] = D[1]*(u0x[4] + 1.0) + D[2]*u0x[3];
+    Du1x[22] = D[3]*(u0x[4] + 1.0) + D[4]*u0x[3];
+    Du1x[23] = D[4]*(u0x[4] + 1.0) + D[5]*u0x[3];
+    Du1x[24] = B[0]*u0x[6] + B[2]*u0x[7];
+    Du1x[25] = B[1]*u0x[6] + B[4]*u0x[7];
+    Du1x[26] = B[2]*u0x[6] + B[5]*u0x[7];
+    Du1x[27] = D[0]*u0x[6] + D[2]*u0x[7];
+    Du1x[28] = D[1]*u0x[6] + D[4]*u0x[7];
+    Du1x[29] = D[2]*u0x[6] + D[5]*u0x[7];
+    Du1x[30] = B[1]*u0x[7] + B[2]*u0x[6];
+    Du1x[31] = B[3]*u0x[7] + B[4]*u0x[6];
+    Du1x[32] = B[4]*u0x[7] + B[5]*u0x[6];
+    Du1x[33] = D[1]*u0x[7] + D[2]*u0x[6];
+    Du1x[34] = D[3]*u0x[7] + D[4]*u0x[6];
+    Du1x[35] = D[4]*u0x[7] + D[5]*u0x[6];
+
+    d2u0x[0] = scale*(Du0x[3]*u1x[0] + Du0x[5]*u1x[1]);
+    d2u0x[1] = scale*(Du0x[4]*u1x[1] + Du0x[5]*u1x[0]);
     d2u0x[2] = 0.0;
-    d2u0x[3] = scale*(D[0]*u1x[0]*u1x[3] + D[2]*u1x[0]*u1x[4] + D[2]*u1x[1]*u1x[3] + D[5]*u1x[1]*u1x[4]);
-    d2u0x[4] = scale*(D[1]*u1x[0]*u1x[4] + D[2]*u1x[0]*u1x[3] + D[4]*u1x[1]*u1x[4] + D[5]*u1x[1]*u1x[3]);
+    d2u0x[3] = scale*(Du0x[3]*u1x[3] + Du0x[5]*u1x[4]);
+    d2u0x[4] = scale*(Du0x[4]*u1x[4] + Du0x[5]*u1x[3]);
     d2u0x[5] = 0.0;
-    d2u0x[6] = scale*(D[0]*u1x[0]*u1x[6] + D[2]*u1x[0]*u1x[7] + D[2]*u1x[1]*u1x[6] + D[5]*u1x[1]*u1x[7]);
-    d2u0x[7] = scale*(D[1]*u1x[0]*u1x[7] + D[2]*u1x[0]*u1x[6] + D[4]*u1x[1]*u1x[7] + D[5]*u1x[1]*u1x[6]);
+    d2u0x[6] = scale*(Du0x[3]*u1x[6] + Du0x[5]*u1x[7]);
+    d2u0x[7] = scale*(Du0x[4]*u1x[7] + Du0x[5]*u1x[6]);
     d2u0x[8] = 0.0;
 
-    d2u0x[9] = scale*(D[1]*u1x[0]*u1x[1] + D[2]*u1x[0]*u1x[0] + D[4]*u1x[1]*u1x[1] + D[5]*u1x[0]*u1x[1]);
-    d2u0x[10] = scale*(u1x[0]*(D[4]*u1x[1] + D[5]*u1x[0]) + u1x[1]*(D[3]*u1x[1] + D[4]*u1x[0]));
+    d2u0x[9] = scale*(Du0x[11]*u1x[1] + Du0x[9]*u1x[0]);
+    d2u0x[10] = scale*(Du0x[10]*u1x[1] + Du0x[11]*u1x[0]);
     d2u0x[11] = 0.0;
-    d2u0x[12] = scale*(D[1]*u1x[1]*u1x[3] + D[2]*u1x[0]*u1x[3] + D[4]*u1x[1]*u1x[4] + D[5]*u1x[0]*u1x[4]);
-    d2u0x[13] = scale*(D[3]*u1x[1]*u1x[4] + D[4]*u1x[0]*u1x[4] + D[4]*u1x[1]*u1x[3] + D[5]*u1x[0]*u1x[3]);
+    d2u0x[12] = scale*(Du0x[11]*u1x[4] + Du0x[9]*u1x[3]);
+    d2u0x[13] = scale*(Du0x[10]*u1x[4] + Du0x[11]*u1x[3]);
     d2u0x[14] = 0.0;
-    d2u0x[15] = scale*(D[1]*u1x[1]*u1x[6] + D[2]*u1x[0]*u1x[6] + D[4]*u1x[1]*u1x[7] + D[5]*u1x[0]*u1x[7]);
-    d2u0x[16] = scale*(D[3]*u1x[1]*u1x[7] + D[4]*u1x[0]*u1x[7] + D[4]*u1x[1]*u1x[6] + D[5]*u1x[0]*u1x[6]);
+    d2u0x[15] = scale*(Du0x[11]*u1x[7] + Du0x[9]*u1x[6]);
+    d2u0x[16] = scale*(Du0x[10]*u1x[7] + Du0x[11]*u1x[6]);
     d2u0x[17] = 0.0;
 
     d2u0x[18] = 0.0;
@@ -1349,24 +1425,24 @@ class TACSShellNonlinearModel {
     d2u0x[25] = 0.0;
     d2u0x[26] = 0.0;
 
-    d2u0x[27] = scale*(D[0]*u1x[0]*u1x[3] + D[2]*u1x[0]*u1x[4] + D[2]*u1x[1]*u1x[3] + D[5]*u1x[1]*u1x[4]);
-    d2u0x[28] = scale*(D[1]*u1x[1]*u1x[3] + D[2]*u1x[0]*u1x[3] + D[4]*u1x[1]*u1x[4] + D[5]*u1x[0]*u1x[4]);
+    d2u0x[27] = scale*(Du0x[15]*u1x[0] + Du0x[17]*u1x[1]);
+    d2u0x[28] = scale*(Du0x[16]*u1x[1] + Du0x[17]*u1x[0]);
     d2u0x[29] = 0.0;
-    d2u0x[30] = scale*(u1x[3]*(D[0]*u1x[3] + D[2]*u1x[4]) + u1x[4]*(D[2]*u1x[3] + D[5]*u1x[4]));
-    d2u0x[31] = scale*(D[1]*u1x[3]*u1x[4] + D[2]*u1x[3]*u1x[3] + D[4]*u1x[4]*u1x[4] + D[5]*u1x[3]*u1x[4]);
+    d2u0x[30] = scale*(Du0x[15]*u1x[3] + Du0x[17]*u1x[4]);
+    d2u0x[31] = scale*(Du0x[16]*u1x[4] + Du0x[17]*u1x[3]);
     d2u0x[32] = 0.0;
-    d2u0x[33] = scale*(D[0]*u1x[3]*u1x[6] + D[2]*u1x[3]*u1x[7] + D[2]*u1x[4]*u1x[6] + D[5]*u1x[4]*u1x[7]);
-    d2u0x[34] = scale*(D[1]*u1x[3]*u1x[7] + D[2]*u1x[3]*u1x[6] + D[4]*u1x[4]*u1x[7] + D[5]*u1x[4]*u1x[6]);
+    d2u0x[33] = scale*(Du0x[15]*u1x[6] + Du0x[17]*u1x[7]);
+    d2u0x[34] = scale*(Du0x[16]*u1x[7] + Du0x[17]*u1x[6]);
     d2u0x[35] = 0.0;
 
-    d2u0x[36] = scale*(D[1]*u1x[0]*u1x[4] + D[2]*u1x[0]*u1x[3] + D[4]*u1x[1]*u1x[4] + D[5]*u1x[1]*u1x[3]);
-    d2u0x[37] = scale*(D[3]*u1x[1]*u1x[4] + D[4]*u1x[0]*u1x[4] + D[4]*u1x[1]*u1x[3] + D[5]*u1x[0]*u1x[3]);
+    d2u0x[36] = scale*(Du0x[21]*u1x[0] + Du0x[23]*u1x[1]);
+    d2u0x[37] = scale*(Du0x[22]*u1x[1] + Du0x[23]*u1x[0]);
     d2u0x[38] = 0.0;
-    d2u0x[39] = scale*(D[1]*u1x[3]*u1x[4] + D[2]*u1x[3]*u1x[3] + D[4]*u1x[4]*u1x[4] + D[5]*u1x[3]*u1x[4]);
-    d2u0x[40] = scale*(u1x[3]*(D[4]*u1x[4] + D[5]*u1x[3]) + u1x[4]*(D[3]*u1x[4] + D[4]*u1x[3]));
+    d2u0x[39] = scale*(Du0x[21]*u1x[3] + Du0x[23]*u1x[4]);
+    d2u0x[40] = scale*(Du0x[22]*u1x[4] + Du0x[23]*u1x[3]);
     d2u0x[41] = 0.0;
-    d2u0x[42] = scale*(D[1]*u1x[4]*u1x[6] + D[2]*u1x[3]*u1x[6] + D[4]*u1x[4]*u1x[7] + D[5]*u1x[3]*u1x[7]);
-    d2u0x[43] = scale*(D[3]*u1x[4]*u1x[7] + D[4]*u1x[3]*u1x[7] + D[4]*u1x[4]*u1x[6] + D[5]*u1x[3]*u1x[6]);
+    d2u0x[42] = scale*(Du0x[21]*u1x[6] + Du0x[23]*u1x[7]);
+    d2u0x[43] = scale*(Du0x[22]*u1x[7] + Du0x[23]*u1x[6]);
     d2u0x[44] = 0.0;
 
     d2u0x[45] = 0.0;
@@ -1379,24 +1455,24 @@ class TACSShellNonlinearModel {
     d2u0x[52] = 0.0;
     d2u0x[53] = 0.0;
 
-    d2u0x[54] = scale*(D[0]*u1x[0]*u1x[6] + D[2]*u1x[0]*u1x[7] + D[2]*u1x[1]*u1x[6] + D[5]*u1x[1]*u1x[7]);
-    d2u0x[55] = scale*(D[1]*u1x[1]*u1x[6] + D[2]*u1x[0]*u1x[6] + D[4]*u1x[1]*u1x[7] + D[5]*u1x[0]*u1x[7]);
+    d2u0x[54] = scale*(Du0x[27]*u1x[0] + Du0x[29]*u1x[1]);
+    d2u0x[55] = scale*(Du0x[28]*u1x[1] + Du0x[29]*u1x[0]);
     d2u0x[56] = 0.0;
-    d2u0x[57] = scale*(D[0]*u1x[3]*u1x[6] + D[2]*u1x[3]*u1x[7] + D[2]*u1x[4]*u1x[6] + D[5]*u1x[4]*u1x[7]);
-    d2u0x[58] = scale*(D[1]*u1x[4]*u1x[6] + D[2]*u1x[3]*u1x[6] + D[4]*u1x[4]*u1x[7] + D[5]*u1x[3]*u1x[7]);
+    d2u0x[57] = scale*(Du0x[27]*u1x[3] + Du0x[29]*u1x[4]);
+    d2u0x[58] = scale*(Du0x[28]*u1x[4] + Du0x[29]*u1x[3]);
     d2u0x[59] = 0.0;
-    d2u0x[60] = scale*(u1x[6]*(D[0]*u1x[6] + D[2]*u1x[7]) + u1x[7]*(D[2]*u1x[6] + D[5]*u1x[7]));
-    d2u0x[61] = scale*(D[1]*u1x[6]*u1x[7] + D[2]*u1x[6]*u1x[6] + D[4]*u1x[7]*u1x[7] + D[5]*u1x[6]*u1x[7]);
+    d2u0x[60] = scale*(Du0x[27]*u1x[6] + Du0x[29]*u1x[7]);
+    d2u0x[61] = scale*(Du0x[28]*u1x[7] + Du0x[29]*u1x[6]);
     d2u0x[62] = 0.0;
 
-    d2u0x[63] = scale*(D[1]*u1x[0]*u1x[7] + D[2]*u1x[0]*u1x[6] + D[4]*u1x[1]*u1x[7] + D[5]*u1x[1]*u1x[6]);
-    d2u0x[64] = scale*(D[3]*u1x[1]*u1x[7] + D[4]*u1x[0]*u1x[7] + D[4]*u1x[1]*u1x[6] + D[5]*u1x[0]*u1x[6]);
+    d2u0x[63] = scale*(Du0x[33]*u1x[0] + Du0x[35]*u1x[1]);
+    d2u0x[64] = scale*(Du0x[34]*u1x[1] + Du0x[35]*u1x[0]);
     d2u0x[65] = 0.0;
-    d2u0x[66] = scale*(D[1]*u1x[3]*u1x[7] + D[2]*u1x[3]*u1x[6] + D[4]*u1x[4]*u1x[7] + D[5]*u1x[4]*u1x[6]);
-    d2u0x[67] = scale*(D[3]*u1x[4]*u1x[7] + D[4]*u1x[3]*u1x[7] + D[4]*u1x[4]*u1x[6] + D[5]*u1x[3]*u1x[6]);
+    d2u0x[66] = scale*(Du0x[33]*u1x[3] + Du0x[35]*u1x[4]);
+    d2u0x[67] = scale*(Du0x[34]*u1x[4] + Du0x[35]*u1x[3]);
     d2u0x[68] = 0.0;
-    d2u0x[69] = scale*(D[1]*u1x[6]*u1x[7] + D[2]*u1x[6]*u1x[6] + D[4]*u1x[7]*u1x[7] + D[5]*u1x[6]*u1x[7]);
-    d2u0x[70] = scale*(u1x[6]*(D[4]*u1x[7] + D[5]*u1x[6]) + u1x[7]*(D[3]*u1x[7] + D[4]*u1x[6]));
+    d2u0x[69] = scale*(Du0x[33]*u1x[6] + Du0x[35]*u1x[7]);
+    d2u0x[70] = scale*(Du0x[34]*u1x[7] + Du0x[35]*u1x[6]);
     d2u0x[71] = 0.0;
 
     d2u0x[72] = 0.0;
@@ -1409,24 +1485,24 @@ class TACSShellNonlinearModel {
     d2u0x[79] = 0.0;
     d2u0x[80] = 0.0;
 
-    d2u0xu1x[0] = scale*(B[0]*e0ty[0] + B[1]*e0ty[3] + 2.0*B[2]*e0ty[1] + D[0]*(u0x[0]*u1x[0] + u0x[3]*u1x[3] + u0x[6]*u1x[6] + u1x[0]) + D[1]*(u0x[1]*u1x[1] + u0x[4]*u1x[4] + u0x[7]*u1x[7] + u1x[4]) + D[2]*(u0x[0]*u1x[1] + u0x[1]*u1x[0] + u0x[3]*u1x[4] + u0x[4]*u1x[3] + u0x[6]*u1x[7] + u0x[7]*u1x[6] + u1x[1] + u1x[3]) + 0.5*u0x[1]*(D[2]*u1x[0] + D[5]*u1x[1]) + 0.5*u1x[0]*(D[0]*(u0x[0] + 1.0) + D[2]*u0x[1]) + 0.5*u1x[1]*(D[2]*(u0x[0] + 1.0) + D[5]*u0x[1]) + 0.5*(u0x[0] + 1.0)*(D[0]*u1x[0] + D[2]*u1x[1]));
-    d2u0xu1x[1] = scale*(B[2]*e0ty[0] + B[4]*e0ty[3] + 2.0*B[5]*e0ty[1] + D[2]*(u0x[0]*u1x[0] + u0x[3]*u1x[3] + u0x[6]*u1x[6] + u1x[0]) + D[4]*(u0x[1]*u1x[1] + u0x[4]*u1x[4] + u0x[7]*u1x[7] + u1x[4]) + D[5]*(u0x[0]*u1x[1] + u0x[1]*u1x[0] + u0x[3]*u1x[4] + u0x[4]*u1x[3] + u0x[6]*u1x[7] + u0x[7]*u1x[6] + u1x[1] + u1x[3]) + 0.5*u0x[1]*(D[1]*u1x[0] + D[4]*u1x[1]) + 0.5*u1x[0]*(D[1]*u0x[1] + D[2]*(u0x[0] + 1.0)) + 0.5*u1x[1]*(D[4]*u0x[1] + D[5]*(u0x[0] + 1.0)) + 0.5*(u0x[0] + 1.0)*(D[2]*u1x[0] + D[5]*u1x[1]));
+    d2u0xu1x[0] = scale*(Du0x[3]*(u0x[0] + 1.0) + Du0x[5]*u0x[1] + s[3]);
+    d2u0xu1x[1] = scale*(Du0x[4]*u0x[1] + Du0x[5]*(u0x[0] + 1.0) + s[5]);
     d2u0xu1x[2] = 0.0;
-    d2u0xu1x[3] = scale*(D[0]*u0x[3]*u1x[0] + D[2]*u0x[3]*u1x[1] + D[2]*u0x[4]*u1x[0] + D[2]*u1x[0] + D[5]*u0x[4]*u1x[1] + D[5]*u1x[1]);
-    d2u0xu1x[4] = scale*(D[1]*u0x[4]*u1x[0] + D[1]*u1x[0] + D[2]*u0x[3]*u1x[0] + D[4]*u0x[4]*u1x[1] + D[4]*u1x[1] + D[5]*u0x[3]*u1x[1]);
+    d2u0xu1x[3] = scale*(Du0x[3]*u0x[3] + Du0x[5]*(u0x[4] + 1.0));
+    d2u0xu1x[4] = scale*(Du0x[4]*(u0x[4] + 1.0) + Du0x[5]*u0x[3]);
     d2u0xu1x[5] = 0.0;
-    d2u0xu1x[6] = scale*(D[0]*u0x[6]*u1x[0] + D[2]*u0x[6]*u1x[1] + D[2]*u0x[7]*u1x[0] + D[5]*u0x[7]*u1x[1]);
-    d2u0xu1x[7] = scale*(D[1]*u0x[7]*u1x[0] + D[2]*u0x[6]*u1x[0] + D[4]*u0x[7]*u1x[1] + D[5]*u0x[6]*u1x[1]);
+    d2u0xu1x[6] = scale*(Du0x[3]*u0x[6] + Du0x[5]*u0x[7]);
+    d2u0xu1x[7] = scale*(Du0x[4]*u0x[7] + Du0x[5]*u0x[6]);
     d2u0xu1x[8] = 0.0;
 
-    d2u0xu1x[9] = scale*(B[2]*e0ty[0] + B[4]*e0ty[3] + 2.0*B[5]*e0ty[1] + D[2]*(u0x[0]*u1x[0] + u0x[3]*u1x[3] + u0x[6]*u1x[6] + u1x[0]) + D[4]*(u0x[1]*u1x[1] + u0x[4]*u1x[4] + u0x[7]*u1x[7] + u1x[4]) + D[5]*(u0x[0]*u1x[1] + u0x[1]*u1x[0] + u0x[3]*u1x[4] + u0x[4]*u1x[3] + u0x[6]*u1x[7] + u0x[7]*u1x[6] + u1x[1] + u1x[3]) + 0.5*u0x[1]*(D[4]*u1x[1] + D[5]*u1x[0]) + 0.5*u1x[0]*(D[2]*(u0x[0] + 1.0) + D[5]*u0x[1]) + 0.5*u1x[1]*(D[1]*(u0x[0] + 1.0) + D[4]*u0x[1]) + 0.5*(u0x[0] + 1.0)*(D[1]*u1x[1] + D[2]*u1x[0]));
-    d2u0xu1x[10] = scale*(B[1]*e0ty[0] + B[3]*e0ty[3] + 2.0*B[4]*e0ty[1] + D[1]*(u0x[0]*u1x[0] + u0x[3]*u1x[3] + u0x[6]*u1x[6] + u1x[0]) + D[3]*(u0x[1]*u1x[1] + u0x[4]*u1x[4] + u0x[7]*u1x[7] + u1x[4]) + D[4]*(u0x[0]*u1x[1] + u0x[1]*u1x[0] + u0x[3]*u1x[4] + u0x[4]*u1x[3] + u0x[6]*u1x[7] + u0x[7]*u1x[6] + u1x[1] + u1x[3]) + 0.5*u0x[1]*(D[3]*u1x[1] + D[4]*u1x[0]) + 0.5*u1x[0]*(D[4]*u0x[1] + D[5]*(u0x[0] + 1.0)) + 0.5*u1x[1]*(D[3]*u0x[1] + D[4]*(u0x[0] + 1.0)) + 0.5*(u0x[0] + 1.0)*(D[4]*u1x[1] + D[5]*u1x[0]));
+    d2u0xu1x[9] = scale*(Du0x[11]*u0x[1] + Du0x[9]*(u0x[0] + 1.0) + s[5]);
+    d2u0xu1x[10] = scale*(Du0x[10]*u0x[1] + Du0x[11]*(u0x[0] + 1.0) + s[4]);
     d2u0xu1x[11] = 0.0;
-    d2u0xu1x[12] = scale*(D[1]*u0x[3]*u1x[1] + D[2]*u0x[3]*u1x[0] + D[4]*u0x[4]*u1x[1] + D[4]*u1x[1] + D[5]*u0x[4]*u1x[0] + D[5]*u1x[0]);
-    d2u0xu1x[13] = scale*(D[3]*u0x[4]*u1x[1] + D[3]*u1x[1] + D[4]*u0x[3]*u1x[1] + D[4]*u0x[4]*u1x[0] + D[4]*u1x[0] + D[5]*u0x[3]*u1x[0]);
+    d2u0xu1x[12] = scale*(Du0x[11]*(u0x[4] + 1.0) + Du0x[9]*u0x[3]);
+    d2u0xu1x[13] = scale*(Du0x[10]*(u0x[4] + 1.0) + Du0x[11]*u0x[3]);
     d2u0xu1x[14] = 0.0;
-    d2u0xu1x[15] = scale*(D[1]*u0x[6]*u1x[1] + D[2]*u0x[6]*u1x[0] + D[4]*u0x[7]*u1x[1] + D[5]*u0x[7]*u1x[0]);
-    d2u0xu1x[16] = scale*(D[3]*u0x[7]*u1x[1] + D[4]*u0x[6]*u1x[1] + D[4]*u0x[7]*u1x[0] + D[5]*u0x[6]*u1x[0]);
+    d2u0xu1x[15] = scale*(Du0x[11]*u0x[7] + Du0x[9]*u0x[6]);
+    d2u0xu1x[16] = scale*(Du0x[10]*u0x[7] + Du0x[11]*u0x[6]);
     d2u0xu1x[17] = 0.0;
 
     d2u0xu1x[18] = 0.0;
@@ -1439,24 +1515,24 @@ class TACSShellNonlinearModel {
     d2u0xu1x[25] = 0.0;
     d2u0xu1x[26] = 0.0;
 
-    d2u0xu1x[27] = scale*(D[0]*u0x[0]*u1x[3] + D[0]*u1x[3] + D[2]*u0x[0]*u1x[4] + D[2]*u0x[1]*u1x[3] + D[2]*u1x[4] + D[5]*u0x[1]*u1x[4]);
-    d2u0xu1x[28] = scale*(D[1]*u0x[1]*u1x[3] + D[2]*u0x[0]*u1x[3] + D[2]*u1x[3] + D[4]*u0x[1]*u1x[4] + D[5]*u0x[0]*u1x[4] + D[5]*u1x[4]);
+    d2u0xu1x[27] = scale*(Du0x[15]*(u0x[0] + 1.0) + Du0x[17]*u0x[1]);
+    d2u0xu1x[28] = scale*(Du0x[16]*u0x[1] + Du0x[17]*(u0x[0] + 1.0));
     d2u0xu1x[29] = 0.0;
-    d2u0xu1x[30] = scale*(B[0]*e0ty[0] + B[1]*e0ty[3] + 2.0*B[2]*e0ty[1] + D[0]*(u0x[0]*u1x[0] + u0x[3]*u1x[3] + u0x[6]*u1x[6] + u1x[0]) + D[1]*(u0x[1]*u1x[1] + u0x[4]*u1x[4] + u0x[7]*u1x[7] + u1x[4]) + D[2]*(u0x[0]*u1x[1] + u0x[1]*u1x[0] + u0x[3]*u1x[4] + u0x[4]*u1x[3] + u0x[6]*u1x[7] + u0x[7]*u1x[6] + u1x[1] + u1x[3]) + 0.5*u0x[3]*(D[0]*u1x[3] + D[2]*u1x[4]) + 0.5*u1x[3]*(D[0]*u0x[3] + D[2]*(u0x[4] + 1.0)) + 0.5*u1x[4]*(D[2]*u0x[3] + D[5]*(u0x[4] + 1.0)) + 0.5*(u0x[4] + 1.0)*(D[2]*u1x[3] + D[5]*u1x[4]));
-    d2u0xu1x[31] = scale*(B[2]*e0ty[0] + B[4]*e0ty[3] + 2.0*B[5]*e0ty[1] + D[2]*(u0x[0]*u1x[0] + u0x[3]*u1x[3] + u0x[6]*u1x[6] + u1x[0]) + D[4]*(u0x[1]*u1x[1] + u0x[4]*u1x[4] + u0x[7]*u1x[7] + u1x[4]) + D[5]*(u0x[0]*u1x[1] + u0x[1]*u1x[0] + u0x[3]*u1x[4] + u0x[4]*u1x[3] + u0x[6]*u1x[7] + u0x[7]*u1x[6] + u1x[1] + u1x[3]) + 0.5*u0x[3]*(D[2]*u1x[3] + D[5]*u1x[4]) + 0.5*u1x[3]*(D[1]*(u0x[4] + 1.0) + D[2]*u0x[3]) + 0.5*u1x[4]*(D[4]*(u0x[4] + 1.0) + D[5]*u0x[3]) + 0.5*(u0x[4] + 1.0)*(D[1]*u1x[3] + D[4]*u1x[4]));
+    d2u0xu1x[30] = scale*(Du0x[15]*u0x[3] + Du0x[17]*(u0x[4] + 1.0) + s[3]);
+    d2u0xu1x[31] = scale*(Du0x[16]*(u0x[4] + 1.0) + Du0x[17]*u0x[3] + s[5]);
     d2u0xu1x[32] = 0.0;
-    d2u0xu1x[33] = scale*(D[0]*u0x[6]*u1x[3] + D[2]*u0x[6]*u1x[4] + D[2]*u0x[7]*u1x[3] + D[5]*u0x[7]*u1x[4]);
-    d2u0xu1x[34] = scale*(D[1]*u0x[7]*u1x[3] + D[2]*u0x[6]*u1x[3] + D[4]*u0x[7]*u1x[4] + D[5]*u0x[6]*u1x[4]);
+    d2u0xu1x[33] = scale*(Du0x[15]*u0x[6] + Du0x[17]*u0x[7]);
+    d2u0xu1x[34] = scale*(Du0x[16]*u0x[7] + Du0x[17]*u0x[6]);
     d2u0xu1x[35] = 0.0;
 
-    d2u0xu1x[36] = scale*(D[1]*u0x[0]*u1x[4] + D[1]*u1x[4] + D[2]*u0x[0]*u1x[3] + D[2]*u1x[3] + D[4]*u0x[1]*u1x[4] + D[5]*u0x[1]*u1x[3]);
-    d2u0xu1x[37] = scale*(D[3]*u0x[1]*u1x[4] + D[4]*u0x[0]*u1x[4] + D[4]*u0x[1]*u1x[3] + D[4]*u1x[4] + D[5]*u0x[0]*u1x[3] + D[5]*u1x[3]);
+    d2u0xu1x[36] = scale*(Du0x[21]*(u0x[0] + 1.0) + Du0x[23]*u0x[1]);
+    d2u0xu1x[37] = scale*(Du0x[22]*u0x[1] + Du0x[23]*(u0x[0] + 1.0));
     d2u0xu1x[38] = 0.0;
-    d2u0xu1x[39] = scale*(B[2]*e0ty[0] + B[4]*e0ty[3] + 2.0*B[5]*e0ty[1] + D[2]*(u0x[0]*u1x[0] + u0x[3]*u1x[3] + u0x[6]*u1x[6] + u1x[0]) + D[4]*(u0x[1]*u1x[1] + u0x[4]*u1x[4] + u0x[7]*u1x[7] + u1x[4]) + D[5]*(u0x[0]*u1x[1] + u0x[1]*u1x[0] + u0x[3]*u1x[4] + u0x[4]*u1x[3] + u0x[6]*u1x[7] + u0x[7]*u1x[6] + u1x[1] + u1x[3]) + 0.5*u0x[3]*(D[1]*u1x[4] + D[2]*u1x[3]) + 0.5*u1x[3]*(D[2]*u0x[3] + D[5]*(u0x[4] + 1.0)) + 0.5*u1x[4]*(D[1]*u0x[3] + D[4]*(u0x[4] + 1.0)) + 0.5*(u0x[4] + 1.0)*(D[4]*u1x[4] + D[5]*u1x[3]));
-    d2u0xu1x[40] = scale*(B[1]*e0ty[0] + B[3]*e0ty[3] + 2.0*B[4]*e0ty[1] + D[1]*(u0x[0]*u1x[0] + u0x[3]*u1x[3] + u0x[6]*u1x[6] + u1x[0]) + D[3]*(u0x[1]*u1x[1] + u0x[4]*u1x[4] + u0x[7]*u1x[7] + u1x[4]) + D[4]*(u0x[0]*u1x[1] + u0x[1]*u1x[0] + u0x[3]*u1x[4] + u0x[4]*u1x[3] + u0x[6]*u1x[7] + u0x[7]*u1x[6] + u1x[1] + u1x[3]) + 0.5*u0x[3]*(D[4]*u1x[4] + D[5]*u1x[3]) + 0.5*u1x[3]*(D[4]*(u0x[4] + 1.0) + D[5]*u0x[3]) + 0.5*u1x[4]*(D[3]*(u0x[4] + 1.0) + D[4]*u0x[3]) + 0.5*(u0x[4] + 1.0)*(D[3]*u1x[4] + D[4]*u1x[3]));
+    d2u0xu1x[39] = scale*(Du0x[21]*u0x[3] + Du0x[23]*(u0x[4] + 1.0) + s[5]);
+    d2u0xu1x[40] = scale*(Du0x[22]*(u0x[4] + 1.0) + Du0x[23]*u0x[3] + s[4]);
     d2u0xu1x[41] = 0.0;
-    d2u0xu1x[42] = scale*(D[1]*u0x[6]*u1x[4] + D[2]*u0x[6]*u1x[3] + D[4]*u0x[7]*u1x[4] + D[5]*u0x[7]*u1x[3]);
-    d2u0xu1x[43] = scale*(D[3]*u0x[7]*u1x[4] + D[4]*u0x[6]*u1x[4] + D[4]*u0x[7]*u1x[3] + D[5]*u0x[6]*u1x[3]);
+    d2u0xu1x[42] = scale*(Du0x[21]*u0x[6] + Du0x[23]*u0x[7]);
+    d2u0xu1x[43] = scale*(Du0x[22]*u0x[7] + Du0x[23]*u0x[6]);
     d2u0xu1x[44] = 0.0;
 
     d2u0xu1x[45] = 0.0;
@@ -1469,24 +1545,24 @@ class TACSShellNonlinearModel {
     d2u0xu1x[52] = 0.0;
     d2u0xu1x[53] = 0.0;
 
-    d2u0xu1x[54] = scale*(D[0]*u0x[0]*u1x[6] + D[0]*u1x[6] + D[2]*u0x[0]*u1x[7] + D[2]*u0x[1]*u1x[6] + D[2]*u1x[7] + D[5]*u0x[1]*u1x[7]);
-    d2u0xu1x[55] = scale*(D[1]*u0x[1]*u1x[6] + D[2]*u0x[0]*u1x[6] + D[2]*u1x[6] + D[4]*u0x[1]*u1x[7] + D[5]*u0x[0]*u1x[7] + D[5]*u1x[7]);
+    d2u0xu1x[54] = scale*(Du0x[27]*(u0x[0] + 1.0) + Du0x[29]*u0x[1]);
+    d2u0xu1x[55] = scale*(Du0x[28]*u0x[1] + Du0x[29]*(u0x[0] + 1.0));
     d2u0xu1x[56] = 0.0;
-    d2u0xu1x[57] = scale*(D[0]*u0x[3]*u1x[6] + D[2]*u0x[3]*u1x[7] + D[2]*u0x[4]*u1x[6] + D[2]*u1x[6] + D[5]*u0x[4]*u1x[7] + D[5]*u1x[7]);
-    d2u0xu1x[58] = scale*(D[1]*u0x[4]*u1x[6] + D[1]*u1x[6] + D[2]*u0x[3]*u1x[6] + D[4]*u0x[4]*u1x[7] + D[4]*u1x[7] + D[5]*u0x[3]*u1x[7]);
+    d2u0xu1x[57] = scale*(Du0x[27]*u0x[3] + Du0x[29]*(u0x[4] + 1.0));
+    d2u0xu1x[58] = scale*(Du0x[28]*(u0x[4] + 1.0) + Du0x[29]*u0x[3]);
     d2u0xu1x[59] = 0.0;
-    d2u0xu1x[60] = scale*(B[0]*e0ty[0] + B[1]*e0ty[3] + 2.0*B[2]*e0ty[1] + D[0]*(u0x[0]*u1x[0] + u0x[3]*u1x[3] + u0x[6]*u1x[6] + u1x[0]) + D[1]*(u0x[1]*u1x[1] + u0x[4]*u1x[4] + u0x[7]*u1x[7] + u1x[4]) + D[2]*(u0x[0]*u1x[1] + u0x[1]*u1x[0] + u0x[3]*u1x[4] + u0x[4]*u1x[3] + u0x[6]*u1x[7] + u0x[7]*u1x[6] + u1x[1] + u1x[3]) + 0.5*u0x[6]*(D[0]*u1x[6] + D[2]*u1x[7]) + 0.5*u0x[7]*(D[2]*u1x[6] + D[5]*u1x[7]) + 0.5*u1x[6]*(D[0]*u0x[6] + D[2]*u0x[7]) + 0.5*u1x[7]*(D[2]*u0x[6] + D[5]*u0x[7]));
-    d2u0xu1x[61] = scale*(B[2]*e0ty[0] + B[4]*e0ty[3] + 2.0*B[5]*e0ty[1] + D[2]*(u0x[0]*u1x[0] + u0x[3]*u1x[3] + u0x[6]*u1x[6] + u1x[0]) + D[4]*(u0x[1]*u1x[1] + u0x[4]*u1x[4] + u0x[7]*u1x[7] + u1x[4]) + D[5]*(u0x[0]*u1x[1] + u0x[1]*u1x[0] + u0x[3]*u1x[4] + u0x[4]*u1x[3] + u0x[6]*u1x[7] + u0x[7]*u1x[6] + u1x[1] + u1x[3]) + 0.5*u0x[6]*(D[2]*u1x[6] + D[5]*u1x[7]) + 0.5*u0x[7]*(D[1]*u1x[6] + D[4]*u1x[7]) + 0.5*u1x[6]*(D[1]*u0x[7] + D[2]*u0x[6]) + 0.5*u1x[7]*(D[4]*u0x[7] + D[5]*u0x[6]));
+    d2u0xu1x[60] = scale*(Du0x[27]*u0x[6] + Du0x[29]*u0x[7] + s[3]);
+    d2u0xu1x[61] = scale*(Du0x[28]*u0x[7] + Du0x[29]*u0x[6] + s[5]);
     d2u0xu1x[62] = 0.0;
 
-    d2u0xu1x[63] = scale*(D[1]*u0x[0]*u1x[7] + D[1]*u1x[7] + D[2]*u0x[0]*u1x[6] + D[2]*u1x[6] + D[4]*u0x[1]*u1x[7] + D[5]*u0x[1]*u1x[6]);
-    d2u0xu1x[64] = scale*(D[3]*u0x[1]*u1x[7] + D[4]*u0x[0]*u1x[7] + D[4]*u0x[1]*u1x[6] + D[4]*u1x[7] + D[5]*u0x[0]*u1x[6] + D[5]*u1x[6]);
+    d2u0xu1x[63] = scale*(Du0x[33]*(u0x[0] + 1.0) + Du0x[35]*u0x[1]);
+    d2u0xu1x[64] = scale*(Du0x[34]*u0x[1] + Du0x[35]*(u0x[0] + 1.0));
     d2u0xu1x[65] = 0.0;
-    d2u0xu1x[66] = scale*(D[1]*u0x[3]*u1x[7] + D[2]*u0x[3]*u1x[6] + D[4]*u0x[4]*u1x[7] + D[4]*u1x[7] + D[5]*u0x[4]*u1x[6] + D[5]*u1x[6]);
-    d2u0xu1x[67] = scale*(D[3]*u0x[4]*u1x[7] + D[3]*u1x[7] + D[4]*u0x[3]*u1x[7] + D[4]*u0x[4]*u1x[6] + D[4]*u1x[6] + D[5]*u0x[3]*u1x[6]);
+    d2u0xu1x[66] = scale*(Du0x[33]*u0x[3] + Du0x[35]*(u0x[4] + 1.0));
+    d2u0xu1x[67] = scale*(Du0x[34]*(u0x[4] + 1.0) + Du0x[35]*u0x[3]);
     d2u0xu1x[68] = 0.0;
-    d2u0xu1x[69] = scale*(B[2]*e0ty[0] + B[4]*e0ty[3] + 2.0*B[5]*e0ty[1] + D[2]*(u0x[0]*u1x[0] + u0x[3]*u1x[3] + u0x[6]*u1x[6] + u1x[0]) + D[4]*(u0x[1]*u1x[1] + u0x[4]*u1x[4] + u0x[7]*u1x[7] + u1x[4]) + D[5]*(u0x[0]*u1x[1] + u0x[1]*u1x[0] + u0x[3]*u1x[4] + u0x[4]*u1x[3] + u0x[6]*u1x[7] + u0x[7]*u1x[6] + u1x[1] + u1x[3]) + 0.5*u0x[6]*(D[1]*u1x[7] + D[2]*u1x[6]) + 0.5*u0x[7]*(D[4]*u1x[7] + D[5]*u1x[6]) + 0.5*u1x[6]*(D[2]*u0x[6] + D[5]*u0x[7]) + 0.5*u1x[7]*(D[1]*u0x[6] + D[4]*u0x[7]));
-    d2u0xu1x[70] = scale*(B[1]*e0ty[0] + B[3]*e0ty[3] + 2.0*B[4]*e0ty[1] + D[1]*(u0x[0]*u1x[0] + u0x[3]*u1x[3] + u0x[6]*u1x[6] + u1x[0]) + D[3]*(u0x[1]*u1x[1] + u0x[4]*u1x[4] + u0x[7]*u1x[7] + u1x[4]) + D[4]*(u0x[0]*u1x[1] + u0x[1]*u1x[0] + u0x[3]*u1x[4] + u0x[4]*u1x[3] + u0x[6]*u1x[7] + u0x[7]*u1x[6] + u1x[1] + u1x[3]) + 0.5*u0x[6]*(D[4]*u1x[7] + D[5]*u1x[6]) + 0.5*u0x[7]*(D[3]*u1x[7] + D[4]*u1x[6]) + 0.5*u1x[6]*(D[4]*u0x[7] + D[5]*u0x[6]) + 0.5*u1x[7]*(D[3]*u0x[7] + D[4]*u0x[6]));
+    d2u0xu1x[69] = scale*(Du0x[33]*u0x[6] + Du0x[35]*u0x[7] + s[5]);
+    d2u0xu1x[70] = scale*(Du0x[34]*u0x[7] + Du0x[35]*u0x[6] + s[4]);
     d2u0xu1x[71] = 0.0;
 
     d2u0xu1x[72] = 0.0;
@@ -1499,24 +1575,24 @@ class TACSShellNonlinearModel {
     d2u0xu1x[79] = 0.0;
     d2u0xu1x[80] = 0.0;
 
-    d2u1x[0] = scale*(u0x[1]*(D[2]*(u0x[0] + 1.0) + D[5]*u0x[1]) + (u0x[0] + 1.0)*(D[0]*(u0x[0] + 1.0) + D[2]*u0x[1]));
-    d2u1x[1] = scale*(0.5*u0x[1]*(D[1]*(u0x[0] + 1.0) + D[4]*u0x[1]) + 0.5*u0x[1]*(D[4]*u0x[1] + D[5]*(u0x[0] + 1.0)) + 0.5*(u0x[0] + 1.0)*(D[1]*u0x[1] + D[2]*(u0x[0] + 1.0)) + 0.5*(u0x[0] + 1.0)*(D[2]*(u0x[0] + 1.0) + D[5]*u0x[1]));
+    d2u1x[0] = scale*(Du1x[3]*(u0x[0] + 1.0) + Du1x[5]*u0x[1]);
+    d2u1x[1] = scale*(Du1x[4]*u0x[1] + Du1x[5]*(u0x[0] + 1.0));
     d2u1x[2] = 0.0;
-    d2u1x[3] = scale*(D[0]*u0x[0]*u0x[3] + D[0]*u0x[3] + D[2]*u0x[0]*u0x[4] + D[2]*u0x[0] + D[2]*u0x[1]*u0x[3] + D[2]*u0x[4] + D[2] + D[5]*u0x[1]*u0x[4] + D[5]*u0x[1]);
-    d2u1x[4] = scale*(D[1]*u0x[0]*u0x[4] + D[1]*u0x[0] + D[1]*u0x[4] + D[1] + D[2]*u0x[0]*u0x[3] + D[2]*u0x[3] + D[4]*u0x[1]*u0x[4] + D[4]*u0x[1] + D[5]*u0x[1]*u0x[3]);
+    d2u1x[3] = scale*(Du1x[3]*u0x[3] + Du1x[5]*(u0x[4] + 1.0));
+    d2u1x[4] = scale*(Du1x[4]*(u0x[4] + 1.0) + Du1x[5]*u0x[3]);
     d2u1x[5] = 0.0;
-    d2u1x[6] = scale*(D[0]*u0x[0]*u0x[6] + D[0]*u0x[6] + D[2]*u0x[0]*u0x[7] + D[2]*u0x[1]*u0x[6] + D[2]*u0x[7] + D[5]*u0x[1]*u0x[7]);
-    d2u1x[7] = scale*(D[1]*u0x[0]*u0x[7] + D[1]*u0x[7] + D[2]*u0x[0]*u0x[6] + D[2]*u0x[6] + D[4]*u0x[1]*u0x[7] + D[5]*u0x[1]*u0x[6]);
+    d2u1x[6] = scale*(Du1x[3]*u0x[6] + Du1x[5]*u0x[7]);
+    d2u1x[7] = scale*(Du1x[4]*u0x[7] + Du1x[5]*u0x[6]);
     d2u1x[8] = 0.0;
 
-    d2u1x[9] = scale*(0.5*u0x[1]*(D[1]*(u0x[0] + 1.0) + D[4]*u0x[1]) + 0.5*u0x[1]*(D[4]*u0x[1] + D[5]*(u0x[0] + 1.0)) + 0.5*(u0x[0] + 1.0)*(D[1]*u0x[1] + D[2]*(u0x[0] + 1.0)) + 0.5*(u0x[0] + 1.0)*(D[2]*(u0x[0] + 1.0) + D[5]*u0x[1]));
-    d2u1x[10] = scale*(u0x[1]*(D[3]*u0x[1] + D[4]*(u0x[0] + 1.0)) + (u0x[0] + 1.0)*(D[4]*u0x[1] + D[5]*(u0x[0] + 1.0)));
+    d2u1x[9] = scale*(Du1x[11]*u0x[1] + Du1x[9]*(u0x[0] + 1.0));
+    d2u1x[10] = scale*(Du1x[10]*u0x[1] + Du1x[11]*(u0x[0] + 1.0));
     d2u1x[11] = 0.0;
-    d2u1x[12] = scale*(D[1]*u0x[1]*u0x[3] + D[2]*u0x[0]*u0x[3] + D[2]*u0x[3] + D[4]*u0x[1]*u0x[4] + D[4]*u0x[1] + D[5]*u0x[0]*u0x[4] + D[5]*u0x[0] + D[5]*u0x[4] + D[5]);
-    d2u1x[13] = scale*(D[3]*u0x[1]*u0x[4] + D[3]*u0x[1] + D[4]*u0x[0]*u0x[4] + D[4]*u0x[0] + D[4]*u0x[1]*u0x[3] + D[4]*u0x[4] + D[4] + D[5]*u0x[0]*u0x[3] + D[5]*u0x[3]);
+    d2u1x[12] = scale*(Du1x[11]*(u0x[4] + 1.0) + Du1x[9]*u0x[3]);
+    d2u1x[13] = scale*(Du1x[10]*(u0x[4] + 1.0) + Du1x[11]*u0x[3]);
     d2u1x[14] = 0.0;
-    d2u1x[15] = scale*(D[1]*u0x[1]*u0x[6] + D[2]*u0x[0]*u0x[6] + D[2]*u0x[6] + D[4]*u0x[1]*u0x[7] + D[5]*u0x[0]*u0x[7] + D[5]*u0x[7]);
-    d2u1x[16] = scale*(D[3]*u0x[1]*u0x[7] + D[4]*u0x[0]*u0x[7] + D[4]*u0x[1]*u0x[6] + D[4]*u0x[7] + D[5]*u0x[0]*u0x[6] + D[5]*u0x[6]);
+    d2u1x[15] = scale*(Du1x[11]*u0x[7] + Du1x[9]*u0x[6]);
+    d2u1x[16] = scale*(Du1x[10]*u0x[7] + Du1x[11]*u0x[6]);
     d2u1x[17] = 0.0;
 
     d2u1x[18] = 0.0;
@@ -1529,24 +1605,24 @@ class TACSShellNonlinearModel {
     d2u1x[25] = 0.0;
     d2u1x[26] = 0.0;
 
-    d2u1x[27] = scale*(D[0]*u0x[0]*u0x[3] + D[0]*u0x[3] + D[2]*u0x[0]*u0x[4] + D[2]*u0x[0] + D[2]*u0x[1]*u0x[3] + D[2]*u0x[4] + D[2] + D[5]*u0x[1]*u0x[4] + D[5]*u0x[1]);
-    d2u1x[28] = scale*(D[1]*u0x[1]*u0x[3] + D[2]*u0x[0]*u0x[3] + D[2]*u0x[3] + D[4]*u0x[1]*u0x[4] + D[4]*u0x[1] + D[5]*u0x[0]*u0x[4] + D[5]*u0x[0] + D[5]*u0x[4] + D[5]);
+    d2u1x[27] = scale*(Du1x[15]*(u0x[0] + 1.0) + Du1x[17]*u0x[1]);
+    d2u1x[28] = scale*(Du1x[16]*u0x[1] + Du1x[17]*(u0x[0] + 1.0));
     d2u1x[29] = 0.0;
-    d2u1x[30] = scale*(u0x[3]*(D[0]*u0x[3] + D[2]*(u0x[4] + 1.0)) + (u0x[4] + 1.0)*(D[2]*u0x[3] + D[5]*(u0x[4] + 1.0)));
-    d2u1x[31] = scale*(0.5*u0x[3]*(D[1]*(u0x[4] + 1.0) + D[2]*u0x[3]) + 0.5*u0x[3]*(D[2]*u0x[3] + D[5]*(u0x[4] + 1.0)) + 0.5*(u0x[4] + 1.0)*(D[1]*u0x[3] + D[4]*(u0x[4] + 1.0)) + 0.5*(u0x[4] + 1.0)*(D[4]*(u0x[4] + 1.0) + D[5]*u0x[3]));
+    d2u1x[30] = scale*(Du1x[15]*u0x[3] + Du1x[17]*(u0x[4] + 1.0));
+    d2u1x[31] = scale*(Du1x[16]*(u0x[4] + 1.0) + Du1x[17]*u0x[3]);
     d2u1x[32] = 0.0;
-    d2u1x[33] = scale*(D[0]*u0x[3]*u0x[6] + D[2]*u0x[3]*u0x[7] + D[2]*u0x[4]*u0x[6] + D[2]*u0x[6] + D[5]*u0x[4]*u0x[7] + D[5]*u0x[7]);
-    d2u1x[34] = scale*(D[1]*u0x[3]*u0x[7] + D[2]*u0x[3]*u0x[6] + D[4]*u0x[4]*u0x[7] + D[4]*u0x[7] + D[5]*u0x[4]*u0x[6] + D[5]*u0x[6]);
+    d2u1x[33] = scale*(Du1x[15]*u0x[6] + Du1x[17]*u0x[7]);
+    d2u1x[34] = scale*(Du1x[16]*u0x[7] + Du1x[17]*u0x[6]);
     d2u1x[35] = 0.0;
 
-    d2u1x[36] = scale*(D[1]*u0x[0]*u0x[4] + D[1]*u0x[0] + D[1]*u0x[4] + D[1] + D[2]*u0x[0]*u0x[3] + D[2]*u0x[3] + D[4]*u0x[1]*u0x[4] + D[4]*u0x[1] + D[5]*u0x[1]*u0x[3]);
-    d2u1x[37] = scale*(D[3]*u0x[1]*u0x[4] + D[3]*u0x[1] + D[4]*u0x[0]*u0x[4] + D[4]*u0x[0] + D[4]*u0x[1]*u0x[3] + D[4]*u0x[4] + D[4] + D[5]*u0x[0]*u0x[3] + D[5]*u0x[3]);
+    d2u1x[36] = scale*(Du1x[21]*(u0x[0] + 1.0) + Du1x[23]*u0x[1]);
+    d2u1x[37] = scale*(Du1x[22]*u0x[1] + Du1x[23]*(u0x[0] + 1.0));
     d2u1x[38] = 0.0;
-    d2u1x[39] = scale*(0.5*u0x[3]*(D[1]*(u0x[4] + 1.0) + D[2]*u0x[3]) + 0.5*u0x[3]*(D[2]*u0x[3] + D[5]*(u0x[4] + 1.0)) + 0.5*(u0x[4] + 1.0)*(D[1]*u0x[3] + D[4]*(u0x[4] + 1.0)) + 0.5*(u0x[4] + 1.0)*(D[4]*(u0x[4] + 1.0) + D[5]*u0x[3]));
-    d2u1x[40] = scale*(u0x[3]*(D[4]*(u0x[4] + 1.0) + D[5]*u0x[3]) + (u0x[4] + 1.0)*(D[3]*(u0x[4] + 1.0) + D[4]*u0x[3]));
+    d2u1x[39] = scale*(Du1x[21]*u0x[3] + Du1x[23]*(u0x[4] + 1.0));
+    d2u1x[40] = scale*(Du1x[22]*(u0x[4] + 1.0) + Du1x[23]*u0x[3]);
     d2u1x[41] = 0.0;
-    d2u1x[42] = scale*(D[1]*u0x[4]*u0x[6] + D[1]*u0x[6] + D[2]*u0x[3]*u0x[6] + D[4]*u0x[4]*u0x[7] + D[4]*u0x[7] + D[5]*u0x[3]*u0x[7]);
-    d2u1x[43] = scale*(D[3]*u0x[4]*u0x[7] + D[3]*u0x[7] + D[4]*u0x[3]*u0x[7] + D[4]*u0x[4]*u0x[6] + D[4]*u0x[6] + D[5]*u0x[3]*u0x[6]);
+    d2u1x[42] = scale*(Du1x[21]*u0x[6] + Du1x[23]*u0x[7]);
+    d2u1x[43] = scale*(Du1x[22]*u0x[7] + Du1x[23]*u0x[6]);
     d2u1x[44] = 0.0;
 
     d2u1x[45] = 0.0;
@@ -1559,24 +1635,24 @@ class TACSShellNonlinearModel {
     d2u1x[52] = 0.0;
     d2u1x[53] = 0.0;
 
-    d2u1x[54] = scale*(D[0]*u0x[0]*u0x[6] + D[0]*u0x[6] + D[2]*u0x[0]*u0x[7] + D[2]*u0x[1]*u0x[6] + D[2]*u0x[7] + D[5]*u0x[1]*u0x[7]);
-    d2u1x[55] = scale*(D[1]*u0x[1]*u0x[6] + D[2]*u0x[0]*u0x[6] + D[2]*u0x[6] + D[4]*u0x[1]*u0x[7] + D[5]*u0x[0]*u0x[7] + D[5]*u0x[7]);
+    d2u1x[54] = scale*(Du1x[27]*(u0x[0] + 1.0) + Du1x[29]*u0x[1]);
+    d2u1x[55] = scale*(Du1x[28]*u0x[1] + Du1x[29]*(u0x[0] + 1.0));
     d2u1x[56] = 0.0;
-    d2u1x[57] = scale*(D[0]*u0x[3]*u0x[6] + D[2]*u0x[3]*u0x[7] + D[2]*u0x[4]*u0x[6] + D[2]*u0x[6] + D[5]*u0x[4]*u0x[7] + D[5]*u0x[7]);
-    d2u1x[58] = scale*(D[1]*u0x[4]*u0x[6] + D[1]*u0x[6] + D[2]*u0x[3]*u0x[6] + D[4]*u0x[4]*u0x[7] + D[4]*u0x[7] + D[5]*u0x[3]*u0x[7]);
+    d2u1x[57] = scale*(Du1x[27]*u0x[3] + Du1x[29]*(u0x[4] + 1.0));
+    d2u1x[58] = scale*(Du1x[28]*(u0x[4] + 1.0) + Du1x[29]*u0x[3]);
     d2u1x[59] = 0.0;
-    d2u1x[60] = scale*(D[0]*u0x[6]*u0x[6] + 2.0*D[2]*u0x[6]*u0x[7] + D[5]*u0x[7]*u0x[7]);
-    d2u1x[61] = scale*(D[1]*u0x[6]*u0x[7] + D[2]*u0x[6]*u0x[6] + D[4]*u0x[7]*u0x[7] + D[5]*u0x[6]*u0x[7]);
+    d2u1x[60] = scale*(Du1x[27]*u0x[6] + Du1x[29]*u0x[7]);
+    d2u1x[61] = scale*(Du1x[28]*u0x[7] + Du1x[29]*u0x[6]);
     d2u1x[62] = 0.0;
 
-    d2u1x[63] = scale*(D[1]*u0x[0]*u0x[7] + D[1]*u0x[7] + D[2]*u0x[0]*u0x[6] + D[2]*u0x[6] + D[4]*u0x[1]*u0x[7] + D[5]*u0x[1]*u0x[6]);
-    d2u1x[64] = scale*(D[3]*u0x[1]*u0x[7] + D[4]*u0x[0]*u0x[7] + D[4]*u0x[1]*u0x[6] + D[4]*u0x[7] + D[5]*u0x[0]*u0x[6] + D[5]*u0x[6]);
+    d2u1x[63] = scale*(Du1x[33]*(u0x[0] + 1.0) + Du1x[35]*u0x[1]);
+    d2u1x[64] = scale*(Du1x[34]*u0x[1] + Du1x[35]*(u0x[0] + 1.0));
     d2u1x[65] = 0.0;
-    d2u1x[66] = scale*(D[1]*u0x[3]*u0x[7] + D[2]*u0x[3]*u0x[6] + D[4]*u0x[4]*u0x[7] + D[4]*u0x[7] + D[5]*u0x[4]*u0x[6] + D[5]*u0x[6]);
-    d2u1x[67] = scale*(D[3]*u0x[4]*u0x[7] + D[3]*u0x[7] + D[4]*u0x[3]*u0x[7] + D[4]*u0x[4]*u0x[6] + D[4]*u0x[6] + D[5]*u0x[3]*u0x[6]);
+    d2u1x[66] = scale*(Du1x[33]*u0x[3] + Du1x[35]*(u0x[4] + 1.0));
+    d2u1x[67] = scale*(Du1x[34]*(u0x[4] + 1.0) + Du1x[35]*u0x[3]);
     d2u1x[68] = 0.0;
-    d2u1x[69] = scale*(D[1]*u0x[6]*u0x[7] + D[2]*u0x[6]*u0x[6] + D[4]*u0x[7]*u0x[7] + D[5]*u0x[6]*u0x[7]);
-    d2u1x[70] = scale*(D[3]*u0x[7]*u0x[7] + 2.0*D[4]*u0x[6]*u0x[7] + D[5]*u0x[6]*u0x[6]);
+    d2u1x[69] = scale*(Du1x[33]*u0x[6] + Du1x[35]*u0x[7]);
+    d2u1x[70] = scale*(Du1x[34]*u0x[7] + Du1x[35]*u0x[6]);
     d2u1x[71] = 0.0;
 
     d2u1x[72] = 0.0;
@@ -1721,7 +1797,7 @@ int TacsTestShellModelDerivatives( double dh=1e-7,
 
   // Set random values for the constitutive data and inputs
   TacsScalar Cs[TACSShellConstitutive::NUM_TANGENT_STIFFNESS_ENTRIES];
-  TacsScalar u0x[9], u1x[9], e0ty[6], Ct[9];
+  TacsScalar u0x[9], u1x[9], e0ty[6];
   TacsScalar detXd;
 
   // Set random data
@@ -1729,12 +1805,12 @@ int TacsTestShellModelDerivatives( double dh=1e-7,
   TacsGenerateRandomArray(u0x, 9);
   TacsGenerateRandomArray(u1x, 9);
   TacsGenerateRandomArray(e0ty, 6);
-  TacsGenerateRandomArray(Ct, 9);
   TacsGenerateRandomArray(&detXd, 1);
 
   // Compute the strain
   TacsScalar e[9];
   model::evalStrain(u0x, u1x, e0ty, e);
+  e[8] = 0.0;
 
   // Compute the stress
   TacsScalar s[9];
@@ -1765,6 +1841,7 @@ int TacsTestShellModelDerivatives( double dh=1e-7,
     u0xt[i] = u0x[i] + dh;
 #endif // TACS_USE_COMPLEX
     model::evalStrain(u0xt, u1x, e0ty, et);
+    et[8] = 0.0;
     TACSShellConstitutive::computeStress(A, B, D, As, drill, et, st);
 
     TacsScalar f1 = 0.0;
@@ -1811,6 +1888,7 @@ int TacsTestShellModelDerivatives( double dh=1e-7,
     u1xt[i] = u1x[i] + dh;
 #endif // TACS_USE_COMPLEX
     model::evalStrain(u0x, u1xt, e0ty, et);
+    et[8] = 0.0;
     TACSShellConstitutive::computeStress(A, B, D, As, drill, et, st);
 
     TacsScalar f1 = 0.0;
@@ -1856,6 +1934,7 @@ int TacsTestShellModelDerivatives( double dh=1e-7,
     e0tyt[i] = e0ty[i] + dh;
 #endif // TACS_USE_COMPLEX
     model::evalStrain(u0x, u1x, e0tyt, et);
+    et[8] = 0.0;
     TACSShellConstitutive::computeStress(A, B, D, As, drill, et, st);
 
     TacsScalar f1 = 0.0;
@@ -1907,6 +1986,7 @@ int TacsTestShellModelDerivatives( double dh=1e-7,
     u0xt[i] = u0x[i] + dh;
 #endif // TACS_USE_COMPLEX
     model::evalStrain(u0xt, u1x, e0ty, et);
+    et[8] = 0.0;
     TACSShellConstitutive::computeStress(A, B, D, As, drill, et, st);
 
     TacsScalar du0xt[9], du1xt[9], de0tyt[6];
@@ -1969,6 +2049,7 @@ int TacsTestShellModelDerivatives( double dh=1e-7,
     u1xt[i] = u1x[i] + dh;
 #endif // TACS_USE_COMPLEX
     model::evalStrain(u0x, u1xt, e0ty,  et);
+    et[8] = 0.0;
     TACSShellConstitutive::computeStress(A, B, D, As, drill, et, st);
 
     TacsScalar du0xt[9], du1xt[9], de0tyt[6];
@@ -2011,6 +2092,7 @@ int TacsTestShellModelDerivatives( double dh=1e-7,
     e0tyt[i] = e0ty[i] + dh;
 #endif // TACS_USE_COMPLEX
     model::evalStrain(u0x, u1x, e0tyt, et);
+    et[8] = 0.0;
     TACSShellConstitutive::computeStress(A, B, D, As, drill, et, st);
 
     TacsScalar du0xt[9], du1xt[9], de0tyt[6];

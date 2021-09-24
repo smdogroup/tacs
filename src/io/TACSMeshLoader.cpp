@@ -299,8 +299,7 @@ static void parse_node_short_free_field( char *line, int *node,
   Parse a single element entry in the file.
 
   The element entries are fixed-width. The first entry consists
-  of an element type or
-
+  of an element type
 */
 static int parse_element_field( size_t *loc,
                                 char *buffer,

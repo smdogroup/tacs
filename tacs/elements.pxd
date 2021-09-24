@@ -63,6 +63,7 @@ cdef extern from "TACSElementVerification.h":
                                  int, const TacsScalar*, double, int, double, double)
     int TacsTestElementMatSVSens(TACSElement*, ElementMatrixType, int, double, const TacsScalar*, const TacsScalar*,
                                  double, int, double, double)
+    int TacsSeedRandomGenerator(int)
 
 cdef extern from "TACSTetrahedralBasis.h":
     cdef cppclass TACSLinearTetrahedralBasis(TACSElementBasis):

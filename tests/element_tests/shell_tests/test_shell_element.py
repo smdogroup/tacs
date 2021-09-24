@@ -10,8 +10,8 @@ class ElementTest(unittest.TestCase):
 
         # fd/cs step size
         if TACS.dtype is complex:
-            self.dh = 1e-5
-            self.rtol = 1e-6
+            self.dh = 1e-50
+            self.rtol = 1e-10
         else:
             self.dh = 1e-5
             self.rtol = 1e-2
@@ -72,7 +72,14 @@ class ElementTest(unittest.TestCase):
         # Set matrix types
         self.matrix_types = [TACS.STIFFNESS_MATRIX, TACS.MASS_MATRIX, TACS.GEOMETRIC_STIFFNESS_MATRIX]
 
+        # Seed random number generator in tacs for consistent test results
+        elements.SeedRandomGenerator(0)
+
     def test_element_residual(self):
+        # Here we have to overwrite the step size rtol,
+        # because TestElementResidual only supports FD testing right now
+        dh = 1e-5
+        rtol = 1e-2
         # Loop through every combination of transform type and shell element class and test residual
         for transform in self.transforms:
             with self.subTest(transform=transform):
@@ -81,8 +88,8 @@ class ElementTest(unittest.TestCase):
                         with self.subTest(element=element_handle):
                             element = element_handle(transform, self.con)
                             fail = elements.TestElementResidual(element, self.elem_index, self.time, self.xpts,
-                                                                self.vars, self.dvars, self.ddvars, self.dh,
-                                                                self.print_level, self.atol, self.rtol)
+                                                                self.vars, self.dvars, self.ddvars, dh,
+                                                                self.print_level, self.atol, rtol)
                             self.assertFalse(fail)
 
     def test_element_jacobian(self):
@@ -132,9 +139,6 @@ class ElementTest(unittest.TestCase):
                         dvs = element.getDesignVars(self.elem_index)
                         for matrix_type in self.matrix_types:
                             with self.subTest(matrix_type=matrix_type):
-                                if self.print_level > 0:
-                                    print("Testing with model %s with basis functions %s and matrix type %s\n" % (
-                                        type(model), type(basis), type(matrix_type)))
                                 fail = elements.TestElementMatDVSens(element, matrix_type, self.elem_index,
                                                                      self.time, self.xpts, self.vars, dvs, self.dh,
                                                                      self.print_level, self.atol, self.rtol)
