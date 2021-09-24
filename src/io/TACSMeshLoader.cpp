@@ -706,10 +706,10 @@ int TACSMeshLoader::scanBDFFile( const char * file_name ){
               num_components = component_num;
             }
           }
-          // else {
-          //   fprintf(stderr, "TACSMeshLoader: Element not recognized. Line\n %s\n",
-          //           line);
-          // }
+          else {
+            fprintf(stderr, "TACSMeshLoader: Element not recognized. Line\n %s\n",
+                    line);
+          }
         }
       }
 
@@ -934,10 +934,10 @@ int TACSMeshLoader::scanBDFFile( const char * file_name ){
               }
             }
           }
-          // else {
-          //   fprintf(stderr, "TACSMeshLoader: Element not recognized. Line\n %s\n",
-          //           line);
-          // }
+          else {
+            fprintf(stderr, "TACSMeshLoader: Element not recognized. Line\n %s\n",
+                    line);
+          }
         }
       }
 

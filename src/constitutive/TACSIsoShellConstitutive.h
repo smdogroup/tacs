@@ -84,6 +84,21 @@ class TACSIsoShellConstitutive : public TACSShellConstitutive {
                         const TacsScalar strain[], const TacsScalar psi[],
                         int dvLen, TacsScalar dfdx[] );
 
+  // Calculate the point-wise failure criteria
+  TacsScalar evalFailure( int elemIndex, const double pt[],
+                          const TacsScalar X[], const TacsScalar e[] );
+
+  // Evaluate the derivative of the failure criteria w.r.t. the strain
+  TacsScalar evalFailureStrainSens( int elemIndex, const double pt[],
+                                    const TacsScalar X[], const TacsScalar e[],
+                                    TacsScalar sens[] );
+
+  // Add the derivative of the failure criteria w.r.t. the design variables
+  void addFailureDVSens( int elemIndex, TacsScalar scale,
+                         const double pt[], const TacsScalar X[],
+                         const TacsScalar strain[],
+                         int dvLen, TacsScalar dfdx[] );
+
   // Evaluate the thermal strain
   void evalThermalStrain( int elemIndex, const double pt[],
                           const TacsScalar X[], TacsScalar theta,

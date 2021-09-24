@@ -328,9 +328,10 @@ void TACSElement::addPointQuantityDVSens( int elemIndex,
   TacsScalar *x = new TacsScalar[ dvLen ];
   getDesignVars(elemIndex, dvLen, x);
 
+  TacsScalar detXd = 0.0, q = 0.0;
   if (evalPointQuantity(elemIndex, quantityType, time, n, pt,
-                        Xpts, vars, dvars, ddvars, NULL, NULL) == 1){
-    TacsScalar detXd = 0.0, q0 = 0.0;
+                        Xpts, vars, dvars, ddvars, &detXd, &q) == 1){
+    TacsScalar q0 = 0.0;
     evalPointQuantity(elemIndex, quantityType, time, n, pt,
                       Xpts, vars, dvars, ddvars, &detXd, &q0);
 
@@ -384,8 +385,10 @@ void TACSElement::addPointQuantitySVSens( int elemIndex,
 #else
   const double dh = 1e-7;
 #endif // TACS_USE_COMPLEX
+
+  TacsScalar detXd = 0.0, q = 0.0;
   if (evalPointQuantity(elemIndex, quantityType, time, n, pt,
-                        Xpts, vars, dvars, ddvars, NULL, NULL) == 1){
+                        Xpts, vars, dvars, ddvars, &detXd, &q) == 1){
     int nvars = getNumVariables();
     TacsScalar *v = new TacsScalar[ nvars ];
     TacsScalar *dv = new TacsScalar[ nvars ];
@@ -394,7 +397,7 @@ void TACSElement::addPointQuantitySVSens( int elemIndex,
     memcpy(dv, dvars, nvars*sizeof(TacsScalar));
     memcpy(ddv, ddvars, nvars*sizeof(TacsScalar));
 
-    TacsScalar detXd = 0.0, q0 = 0.0;
+    TacsScalar q0 = 0.0;
     evalPointQuantity(elemIndex, quantityType, time, n, pt,
                       Xpts, vars, dvars, ddvars, &detXd, &q0);
 
@@ -410,13 +413,13 @@ void TACSElement::addPointQuantitySVSens( int elemIndex,
 #endif // TACS_USE_COMPLEX
       TacsScalar q1 = 0.0;
       evalPointQuantity(elemIndex, quantityType, time, n, pt,
-                        Xpts, vars, dvars, ddvars, &detXd, &q1);
+                        Xpts, v, dv, ddv, &detXd, &q1);
 
       TacsScalar fd = 0.0;
 #ifdef TACS_USE_COMPLEX
       fd = TacsImagPart(q1)/dh;
 #else
-      fd += (q1 - q0)/dh;
+      fd = (q1 - q0)/dh;
 #endif // TACS_USE_COMPLEX
 
       dfdu[k] += dfdq[0]*fd;
@@ -451,15 +454,16 @@ void TACSElement::addPointQuantityXptSens( int elemIndex,
   const double dh = 1e-7;
 #endif // TACS_USE_COMPLEX
 
+  TacsScalar detXd = 0.0, q = 0.0;
   if (evalPointQuantity(elemIndex, quantityType, time, n, pt,
-                        Xpts, vars, dvars, ddvars, NULL, NULL) == 1){
+                        Xpts, vars, dvars, ddvars, &detXd, &q) == 1){
     int nnodes = getNumNodes();
     TacsScalar *X = new TacsScalar[ 3*nnodes ];
     memcpy(X, Xpts, 3*nnodes*sizeof(TacsScalar));
 
-    TacsScalar detXd = 0.0, q0 = 0.0;
+    TacsScalar detXd0 = 0.0, q0 = 0.0;
     evalPointQuantity(elemIndex, quantityType, time, n, pt,
-                      Xpts, vars, dvars, ddvars, &detXd, &q0);
+                      Xpts, vars, dvars, ddvars, &detXd0, &q0);
 
     for ( int k = 0; k < 3*nnodes; k++ ){
 #ifdef TACS_USE_COMPLEX
@@ -467,18 +471,20 @@ void TACSElement::addPointQuantityXptSens( int elemIndex,
 #else
       X[k] = Xpts[k] + dh;
 #endif // TACS_USE_COMPLEX
-      TacsScalar q1 = 0.0;
+      TacsScalar detXd1 = 0.0, q1 = 0.0;
       evalPointQuantity(elemIndex, quantityType, time, n, pt,
-                        X, vars, dvars, ddvars, &detXd, &q1);
+                        X, vars, dvars, ddvars, &detXd1, &q1);
 
-      TacsScalar fd = 0.0;
+      TacsScalar fd = 0.0, fddetXd = 0.0;
 #ifdef TACS_USE_COMPLEX
       fd = TacsImagPart(q1)/dh;
+      fddetXd = TacsImagPart(detXd1)/dh;
 #else
-      fd += (q1 - q0)/dh;
+      fd = (q1 - q0)/dh;
+      fddetXd = (detXd1 - detXd0)/dh;
 #endif // TACS_USE_COMPLEX
 
-      dfdXpts[k] += scale*fd;
+      dfdXpts[k] += scale*(dfdq[0]*fd + dfddetXd*fddetXd);
 
       X[k] = Xpts[k];
     }

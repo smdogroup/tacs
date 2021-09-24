@@ -120,128 +120,129 @@ int main( int argc, char **argv ){
   pc->applyFactor(f, ans);
   assembler->setVariables(ans);
 
-//   // Evaluate the function of interest
-//   TacsScalar fval;
-//   assembler->evalFunctions(1, &func, &fval);
+  // Evaluate the function of interest
+  TacsScalar fval;
+  assembler->evalFunctions(1, &func, &fval);
 
-//   TACSBVec *dfdx = assembler->createDesignVec();
-//   dfdx->incref();
+  TACSBVec *dfdx = assembler->createDesignVec();
+  dfdx->incref();
 
-//   TACSBVec *dfdXpts = assembler->createNodeVec();
-//   dfdXpts->incref();
+  TACSBVec *dfdXpts = assembler->createNodeVec();
+  dfdXpts->incref();
 
-//   // Solve the adjoint equations
-//   res->zeroEntries();
-//   assembler->addSVSens(1.0, 0.0, 0.0, 1, &func, &res);
-//   pc->applyFactor(res, adjoint);
-//   assembler->applyBCs(adjoint);
+  // Solve the adjoint equations
+  res->zeroEntries();
+  assembler->addSVSens(1.0, 0.0, 0.0, 1, &func, &res);
+  pc->applyFactor(res, adjoint);
+  assembler->applyBCs(adjoint);
 
-//   // Compute the total derivative for the material variables
-//   dfdx->zeroEntries();
-//   assembler->addDVSens(1.0, 1, &func, &dfdx);
-//   assembler->addAdjointResProducts(-1.0, 1, &adjoint, &dfdx);
+  // Compute the total derivative for the material variables
+  dfdx->zeroEntries();
+  assembler->addDVSens(1.0, 1, &func, &dfdx);
+  assembler->addAdjointResProducts(-1.0, 1, &adjoint, &dfdx);
 
-//   dfdx->beginSetValues(TACS_ADD_VALUES);
-//   dfdx->endSetValues(TACS_ADD_VALUES);
+  dfdx->beginSetValues(TACS_ADD_VALUES);
+  dfdx->endSetValues(TACS_ADD_VALUES);
 
-//   // Compute the total derivative for the adjoint variables
-//   dfdXpts->zeroEntries();
-//   assembler->addXptSens(1.0, 1, &func, &dfdXpts);
-//   assembler->addAdjointResXptSensProducts(-1.0, 1, &adjoint, &dfdXpts);
+  // Compute the total derivative for the adjoint variables
+  dfdXpts->zeroEntries();
+  assembler->addXptSens(1.0, 1, &func, &dfdXpts);
+  assembler->addAdjointResXptSensProducts(-1.0, 1, &adjoint, &dfdXpts);
 
-//   // Finish adding everything up the geometry derivatives in parallel
-//   dfdXpts->beginSetValues(TACS_ADD_VALUES);
-//   dfdXpts->endSetValues(TACS_ADD_VALUES);
+  // Finish adding everything up the geometry derivatives in parallel
+  dfdXpts->beginSetValues(TACS_ADD_VALUES);
+  dfdXpts->endSetValues(TACS_ADD_VALUES);
 
-//   // Create a random vector and set it to a random array
-//   TACSBVec *p = assembler->createDesignVec();
-//   p->incref();
-//   p->setRand(-1.0, 1.0);
+  // Create a random vector and set it to a random array
+  TACSBVec *p = assembler->createDesignVec();
+  p->incref();
+  p->setRand(-1.0, 1.0);
 
-//   // Compute the projected derivative
-//   TacsScalar dfdp = dfdx->dot(p);
+  // Compute the projected derivative
+  TacsScalar dfdp = dfdx->dot(p);
 
-//   // Create a new vector of design variables
-//   TACSBVec *xnew = assembler->createDesignVec();
+  // Create a new vector of design variables
+  TACSBVec *xnew = assembler->createDesignVec();
+  xnew->incref();
 
-// #ifdef TACS_USE_COMPLEX
-//   xnew->copyValues(x);
-//   xnew->axpy(TacsScalar(0.0, dh), p);
-// #else
-//   xnew->copyValues(x);
-//   xnew->axpy(dh, p);
-// #endif // TACS_USE_COMPLEX
+#ifdef TACS_USE_COMPLEX
+  xnew->copyValues(x);
+  xnew->axpy(TacsScalar(0.0, dh), p);
+#else
+  xnew->copyValues(x);
+  xnew->axpy(dh, p);
+#endif // TACS_USE_COMPLEX
 
-//   // Set the perturbed design variable values
-//   assembler->setDesignVars(xnew);
+  // Set the perturbed design variable values
+  assembler->setDesignVars(xnew);
 
-//   // Re-solve the linear system
-//   assembler->assembleJacobian(alpha, beta, gamma, NULL, mat);
-//   pc->factor(); // LU factorization of stiffness matrix
-//   pc->applyFactor(f, ans);
-//   assembler->setVariables(ans);
+  // Re-solve the linear system
+  assembler->assembleJacobian(alpha, beta, gamma, NULL, mat);
+  pc->factor(); // LU factorization of stiffness matrix
+  pc->applyFactor(f, ans);
+  assembler->setVariables(ans);
 
-//   // Evaluate the function of interest
-//   TacsScalar fval2;
-//   assembler->evalFunctions(1, &func, &fval2);
+  // Evaluate the function of interest
+  TacsScalar fval2;
+  assembler->evalFunctions(1, &func, &fval2);
 
-//   if (rank == 0){
-//     printf("Adjoint:       %15.8e\n", TacsRealPart(dfdp));
-// #ifdef TACS_USE_COMPLEX
-//     double fd = TacsImagPart(fval2)/dh;
-//     printf("Complex step:  %15.8e\n", fd);
-// #else
-//     double fd = (fval2 - fval)/dh;
-//     printf("Finite-diff:   %15.8e\n", fd);
-// #endif // TACS_USE_COMPLEX
-//     printf("Rel error:     %15.8e\n", TacsRealPart((fd - dfdp)/dfdp));
-//   }
+  if (rank == 0){
+    printf("Adjoint:       %15.8e\n", TacsRealPart(dfdp));
+#ifdef TACS_USE_COMPLEX
+    double fd = TacsImagPart(fval2)/dh;
+    printf("Complex step:  %15.8e\n", fd);
+#else
+    double fd = (fval2 - fval)/dh;
+    printf("Finite-diff:   %15.8e\n", fd);
+#endif // TACS_USE_COMPLEX
+    printf("Rel error:     %15.8e\n", TacsRealPart((fd - dfdp)/dfdp));
+  }
 
-//   // Reset the design variable values
-//   assembler->setDesignVars(x);
+  // Reset the design variable values
+  assembler->setDesignVars(x);
 
-//   // Create a new vector of points
-//   TACSBVec *X = assembler->createNodeVec();
-//   X->incref();
-//   assembler->getNodes(X);
+  // Create a new vector of points
+  TACSBVec *X = assembler->createNodeVec();
+  X->incref();
+  assembler->getNodes(X);
 
-//   // Create a perturbation in the node locations
-//   TACSBVec *pert = assembler->createNodeVec();
-//   pert->incref();
-//   pert->setRand(-1.0, 1.0);
+  // Create a perturbation in the node locations
+  TACSBVec *pert = assembler->createNodeVec();
+  pert->incref();
+  pert->setRand(-1.0, 1.0);
 
-//   // Compute the projected derivative
-//   dfdp = dfdXpts->dot(pert);
+  // Compute the projected derivative
+  dfdp = dfdXpts->dot(pert);
 
-// #ifdef TACS_USE_COMPLEX
-//   X->axpy(TacsScalar(0.0, dh), pert);
-// #else
-//   X->axpy(dh, pert);
-// #endif
+#ifdef TACS_USE_COMPLEX
+  X->axpy(TacsScalar(0.0, dh), pert);
+#else
+  X->axpy(dh, pert);
+#endif
 
-//   // Set the new node locations
-//   assembler->setNodes(X);
+  // Set the new node locations
+  assembler->setNodes(X);
 
-//   // Solve the equations again
-//   assembler->assembleJacobian(alpha, beta, gamma, NULL, mat);
-//   pc->factor(); // LU factorization of stiffness matrix
-//   pc->applyFactor(f, ans);
-//   assembler->setVariables(ans);
+  // Solve the equations again
+  assembler->assembleJacobian(alpha, beta, gamma, NULL, mat);
+  pc->factor(); // LU factorization of stiffness matrix
+  pc->applyFactor(f, ans);
+  assembler->setVariables(ans);
 
-//   // Re-evaluate the function
-//   assembler->evalFunctions(1, &func, &fval2);
+  // Re-evaluate the function
+  assembler->evalFunctions(1, &func, &fval2);
 
-//   if (rank == 0){
-//     printf("Adjoint:       %15.8e\n", TacsRealPart(dfdp));
-// #ifdef TACS_USE_COMPLEX
-//     double fd = TacsImagPart(fval2)/dh;
-//     printf("Complex step:  %15.8e\n", fd);
-// #else
-//     double fd = (fval2 - fval)/dh;
-//     printf("Finite-diff:   %15.8e\n", fd);
-// #endif // TACS_USE_COMPLEX
-//     printf("Rel error:     %15.8e\n", TacsRealPart((fd - dfdp)/dfdp));
-//   }
+  if (rank == 0){
+    printf("Adjoint:       %15.8e\n", TacsRealPart(dfdp));
+#ifdef TACS_USE_COMPLEX
+    double fd = TacsImagPart(fval2)/dh;
+    printf("Complex step:  %15.8e\n", fd);
+#else
+    double fd = (fval2 - fval)/dh;
+    printf("Finite-diff:   %15.8e\n", fd);
+#endif // TACS_USE_COMPLEX
+    printf("Rel error:     %15.8e\n", TacsRealPart((fd - dfdp)/dfdp));
+  }
 
   // Create an TACSToFH5 object for writing output to files
   unsigned int write_flag = (TACS_OUTPUT_NODES |
@@ -254,32 +255,32 @@ int main( int argc, char **argv ){
   f5->writeToFile("ucrm.f5");
   f5->decref();
 
-  // // Free the KS failure
-  // func->decref();
+  // Free the KS failure
+  func->decref();
 
-  // // Free the design variable information
-  // dfdx->decref();
-  // x->decref();
-  // xnew->decref();
-  // p->decref();
+  // Free the design variable information
+  dfdx->decref();
+  x->decref();
+  xnew->decref();
+  p->decref();
 
-  // // Decref the matrix/pc objects
-  // mat->decref();
-  // pc->decref();
+  // Decref the matrix/pc objects
+  mat->decref();
+  pc->decref();
 
-  // // Decref the vectors
-  // ans->decref();
-  // f->decref();
-  // res->decref();
-  // adjoint->decref();
+  // Decref the vectors
+  ans->decref();
+  f->decref();
+  res->decref();
+  adjoint->decref();
 
-  // // Decref the nodal vectors
-  // dfdXpts->decref();
-  // pert->decref();
-  // X->decref();
+  // Decref the nodal vectors
+  dfdXpts->decref();
+  pert->decref();
+  X->decref();
 
-  // // Decref TACS
-  // assembler->decref();
+  // Decref TACS
+  assembler->decref();
 
   MPI_Finalize();
 

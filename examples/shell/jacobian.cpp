@@ -1,4 +1,5 @@
 #include "TACSElementVerification.h"
+#include "TACSConstitutiveVerification.h"
 #include "TACSIsoShellConstitutive.h"
 #include "TACSShellElementDefs.h"
 
@@ -10,7 +11,7 @@ int main( int argc, char *argv[] ){
   int rank;
   MPI_Comm_rank(comm, &rank);
 
-  int no_drill = 0, no_dynamics = 0, test_models = 0;
+  int no_drill = 0, no_dynamics = 0, test_models = 0, test_constitutive = 0;
   for ( int k = 0; k < argc; k++ ){
     if (strcmp(argv[k], "no_drill") == 0){
       no_drill = 1;
@@ -21,8 +22,12 @@ int main( int argc, char *argv[] ){
     if (strcmp(argv[k], "test_models") == 0){
       test_models = 1;
     }
+    if (strcmp(argv[k], "test_constitutive") == 0){
+      test_constitutive = 1;
+    }
   }
 
+  int elemIndex = 0;
   TacsScalar rho = 2700.0;
   TacsScalar specific_heat = 921.096;
   TacsScalar E = 70e3;
@@ -46,6 +51,10 @@ int main( int argc, char *argv[] ){
   TacsScalar t = 0.01;
   int t_num = 0;
   TACSShellConstitutive *con = new TACSIsoShellConstitutive(props, t, t_num);
+
+  if (test_constitutive){
+    TacsTestConstitutive(con, elemIndex);
+  }
 
   // Set the drilling regularization to zero
   if (no_drill){
@@ -78,7 +87,6 @@ int main( int argc, char *argv[] ){
   int vars_per_node = shell->getVarsPerNode();
   int num_nodes = shell->getNumNodes();
   int num_vars = num_nodes*vars_per_node;
-  int elemIndex = 0;
   double time = 0.0;
 
   // Start and end column to test in the Jacobian matrix
@@ -87,7 +95,7 @@ int main( int argc, char *argv[] ){
   if (argc > 1){
     int temp = 0;
     for ( int k = 0; k < argc; k++ ){
-      if (sscanf(argv[2], "%d", &temp) == 1){
+      if (sscanf(argv[k], "%d", &temp) == 1){
         if (temp >= 0 && temp <= num_vars){
           start = 0;
           end = temp;
