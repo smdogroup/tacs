@@ -797,8 +797,9 @@ int TACSShellElement<quadrature, basis, director, model>::
     // Evaluate the displacement gradient at the point
     TacsScalar XdinvT[9], XdinvzT[9];
     TacsScalar u0x[9], u1x[9];
-    TacsShellComputeDispGrad<vars_per_node, basis>(pt, Xpts, vars, fn, d, Xxi, n0, T,
-                                                    XdinvT, XdinvzT, u0x, u1x);
+    *detXd =
+      TacsShellComputeDispGrad<vars_per_node, basis>(pt, Xpts, vars, fn, d, Xxi, n0, T,
+                                                     XdinvT, XdinvzT, u0x, u1x);
 
     // Evaluate the tying components of the strain
     TacsScalar gty[6]; // The symmetric components of the tying strain
@@ -950,7 +951,7 @@ void TACSShellElement<quadrature, basis, director, model>::
     TacsScalar XdinvT[9], XdinvzT[9];
     TacsScalar u0x[9], u1x[9];
     TacsShellComputeDispGrad<vars_per_node, basis>(pt, Xpts, vars, fn, d, Xxi, n0, T,
-                                                    XdinvT, XdinvzT, u0x, u1x);
+                                                   XdinvT, XdinvzT, u0x, u1x);
 
     // Evaluate the tying components of the strain
     TacsScalar gty[6]; // The symmetric components of the tying strain
@@ -972,7 +973,7 @@ void TACSShellElement<quadrature, basis, director, model>::
     // Compute the derivative of the product of the stress and strain
     // with respect to u0x, u1x and e0ty
     TacsScalar du0x[9], du1x[9], de0ty[6];
-    model::evalStrainSens(alpha, sens, u0x, u1x, du0x, du1x, de0ty);
+    model::evalStrainSens(alpha*dfdq[0], sens, u0x, u1x, du0x, du1x, de0ty);
 
     // Add the contributions to the residual from du0x, du1x and dCt
     TacsShellAddDispGradSens<vars_per_node, basis>(pt, T, XdinvT, XdinvzT,
