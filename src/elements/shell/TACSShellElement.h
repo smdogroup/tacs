@@ -815,15 +815,15 @@ int TACSShellElement<quadrature, basis, director, model>::
     e[8] = 0.0;
 
     if (quantityType == TACS_FAILURE_INDEX){
-        *quantity = con->evalFailure(elemIndex, pt, X, e);
+      *quantity = con->evalFailure(elemIndex, pt, X, e);
     }
     else{ // quantityType == TACS_STRAIN_ENERGY_DENSITY
-        TacsScalar s[9];
-        con->evalStress(elemIndex, pt, X, e, s);
-        *quantity = 0.0;
-        for ( int i = 0; i < 9; i++ ){
-            *quantity += e[i] * s[i];
-        }
+      TacsScalar s[9];
+      con->evalStress(elemIndex, pt, X, e, s);
+      *quantity = 0.0;
+      for ( int i = 0; i < 9; i++ ){
+        *quantity += e[i] * s[i];
+      }
     }
 
     return 1;
@@ -903,13 +903,13 @@ void TACSShellElement<quadrature, basis, director, model>::
     e[8] = 0.0;
 
     if (quantityType == TACS_FAILURE_INDEX){
-        con->addFailureDVSens(elemIndex, scale*dfdq[0], pt, X, e, dvLen, dfdx);
+      con->addFailureDVSens(elemIndex, scale*dfdq[0], pt, X, e, dvLen, dfdx);
     }
     else{ // quantityType == TACS_STRAIN_ENERGY_DENSITY
-        TacsScalar s[9];
-        con->evalStress(elemIndex, pt, X, e, s);
-        con->addStressDVSens(elemIndex, scale*dfdq[0], pt, X, e,
-                             e, dvLen, dfdx);
+      TacsScalar s[9];
+      con->evalStress(elemIndex, pt, X, e, s);
+      con->addStressDVSens(elemIndex, scale*dfdq[0], pt, X, e,
+                           e, dvLen, dfdx);
     }
   }
   else if (quantityType == TACS_ELEMENT_DENSITY){
@@ -986,15 +986,15 @@ void TACSShellElement<quadrature, basis, director, model>::
 
     TacsScalar sens[9];
     if (quantityType == TACS_FAILURE_INDEX){
-        // Compute the sensitivity of the failure index w.r.t. the strain
-        con->evalFailureStrainSens(elemIndex, pt, X, e, sens);
+      // Compute the sensitivity of the failure index w.r.t. the strain
+      con->evalFailureStrainSens(elemIndex, pt, X, e, sens);
     }
     else{ // quantityType == TACS_STRAIN_ENERGY_DENSITY
-        // Compute the sensitivity of the strain energy density w.r.t. the strain
-        con->evalStress(elemIndex, pt, X, e, sens);
-        for ( int i = 0; i < 9; i++ ){
-            sens[i] *= 2.0;
-        }
+      // Compute the sensitivity of the strain energy density w.r.t. the strain
+      con->evalStress(elemIndex, pt, X, e, sens);
+      for ( int i = 0; i < 9; i++ ){
+        sens[i] *= 2.0;
+      }
     }
 
     // Compute the derivative of the product of the stress and strain
