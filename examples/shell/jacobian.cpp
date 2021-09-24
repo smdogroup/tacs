@@ -61,70 +61,16 @@ int main( int argc, char *argv[] ){
     TacsTestShellModelDerivatives<6, TACSShellQuadBasis<2>, TACSShellInplaneNonlinearModel>();
   }
 
-  // Start and end column to test in the Jacobian matrix
-  int start = 0, end = 0;
-
   TACSElement *shell = NULL;
   if (argc > 1){
-    if (strcmp(argv[1], "TACSQuad4ShellModRot") == 0){
-      shell = new TACSQuad4ShellModRot(transform, con);
-    }
-    else if (strcmp(argv[1], "TACSQuad9ShellModRot") == 0){
-      shell = new TACSQuad9ShellModRot(transform, con);
-    }
-    else if (strcmp(argv[1], "TACSQuad16ShellModRot") == 0){
-      shell = new TACSQuad16ShellModRot(transform, con);
-    }
-    else if (strcmp(argv[1], "TACSTri3ShellModRot") == 0){
-      shell = new TACSTri3ShellModRot(transform, con);
-    }
-    else if (strcmp(argv[1], "TACSQuad4ShellQuaternion") == 0){
-      shell = new TACSQuad4ShellQuaternion(transform, con);
-    }
-    else if (strcmp(argv[1], "TACSQuad9ShellQuaternion") == 0){
-      shell = new TACSQuad9ShellQuaternion(transform, con);
-    }
-    else if (strcmp(argv[1], "TACSQuad16ShellQuaternion") == 0){
-      shell = new TACSQuad16ShellQuaternion(transform, con);
-    }
-    else if (strcmp(argv[1], "TACSTri3ShellQuaternion") == 0){
-      shell = new TACSTri3ShellQuaternion(transform, con);
-    }
-    else if (strcmp(argv[1], "TACSQuad4Shell") == 0){
-      shell = new TACSQuad4Shell(transform, con);
-    }
-    else if (strcmp(argv[1], "TACSQuad9Shell") == 0){
-      shell = new TACSQuad9Shell(transform, con);
-    }
-    else if (strcmp(argv[1], "TACSQuad16Shell") == 0){
-      shell = new TACSQuad16Shell(transform, con);
-    }
-    else if (strcmp(argv[1], "TACSTri3Shell") == 0){
-      shell = new TACSTri3Shell(transform, con);
-    }
-    else if (strcmp(argv[1], "TACSQuad4ThermalShell") == 0){
-      shell = new TACSQuad4ThermalShell(transform, con);
-    }
-    else if (strcmp(argv[1], "TACSQuad9ThermalShell") == 0){
-      shell = new TACSQuad9ThermalShell(transform, con);
-    }
-    else if (strcmp(argv[1], "TACSQuad16ThermalShell") == 0){
-      shell = new TACSQuad16ThermalShell(transform, con);
-    }
-    else if (strcmp(argv[1], "TACSQuad4NonlinearShell") == 0){
-      shell = new TACSQuad4NonlinearShell(transform, con);
-    }
-    else if (strcmp(argv[1], "TACSQuad9NonlinearShell") == 0){
-      shell = new TACSQuad9NonlinearShell(transform, con);
-    }
-    else if (strcmp(argv[1], "TACSQuad16NonlinearShell") == 0){
-      shell = new TACSQuad16NonlinearShell(transform, con);
-    }
-    else {
-      shell = new TACSQuad4Shell(transform, con);
+    for ( int k = 0; k < argc; k++ ){
+      shell = TacsCreateShellByName(argv[k], transform, con);
+      if (shell){
+        break;
+      }
     }
   }
-  else {
+  if (!shell){
     shell = new TACSQuad4Shell(transform, con);
   }
   shell->incref();
@@ -135,22 +81,16 @@ int main( int argc, char *argv[] ){
   int elemIndex = 0;
   double time = 0.0;
 
-  if (argc > 2){
+  // Start and end column to test in the Jacobian matrix
+  int start = 0, end = 0;
+
+  if (argc > 1){
     int temp = 0;
-    if (sscanf(argv[2], "%d", &temp) == 1){
-      if (temp >= 0 && temp <= num_vars){
-        start = temp;
-        end = num_vars;
-      }
-    }
-  }
-  if (argc > 3){
-    int temp = 0;
-    if (sscanf(argv[3], "%d", &temp) == 1){
-      if (temp >= 0){
-        end = temp;
-        if (end > num_vars){
-          end = num_vars;
+    for ( int k = 0; k < argc; k++ ){
+      if (sscanf(argv[2], "%d", &temp) == 1){
+        if (temp >= 0 && temp <= num_vars){
+          start = 0;
+          end = temp;
         }
       }
     }
