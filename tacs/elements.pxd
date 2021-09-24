@@ -200,11 +200,27 @@ cdef extern from "TACSShellElementDefs.h":
 
     cdef cppclass TACSQuad16Shell(TACSElement):
         TACSQuad16Shell(TACSShellTransform*,
-                       TACSShellConstitutive*)
+                        TACSShellConstitutive*)
 
     cdef cppclass TACSTri3Shell(TACSElement):
         TACSTri3Shell(TACSShellTransform*,
                       TACSShellConstitutive*)
+
+    cdef cppclass TACSQuad4ThermalShell(TACSElement):
+        TACSQuad4ThermalShell(TACSShellTransform*,
+                              TACSShellConstitutive*)
+
+    cdef cppclass TACSQuad9ThermalShell(TACSElement):
+        TACSQuad9ThermalShell(TACSShellTransform*,
+                              TACSShellConstitutive*)
+
+    cdef cppclass TACSQuad16ThermalShell(TACSElement):
+        TACSQuad16ThermalShell(TACSShellTransform*,
+                               TACSShellConstitutive*)
+
+    cdef cppclass TACSTri3ThermalShell(TACSElement):
+        TACSTri3ThermalShell(TACSShellTransform*,
+                             TACSShellConstitutive*)
 
 cdef extern from "TACSGibbsVector.h":
     cdef cppclass TACSGibbsVector(TACSObject):
@@ -241,10 +257,8 @@ cdef extern from "TACSKinematicConstraints.h":
                                TACSGibbsVector *point, TACSGibbsVector *eA)
         TACSRevoluteConstraint(TACSRigidBody *bodyA,
                                TACSGibbsVector *point, TACSGibbsVector *eA)
-        TACSRevoluteConstraint( int fixed_ref_point,
-                                TACSGibbsVector *point,
-                                TACSGibbsVector *eAVec,
-                                int inertial_rev_axis )
+        TACSRevoluteConstraint(int fixed_ref_point, TACSGibbsVector *point,
+                               TACSGibbsVector *eAVec, int inertial_rev_axis)
 
     cdef cppclass TACSRigidLink(TACSElement):
         TACSRigidLink(TACSRigidBody*)
@@ -278,7 +292,7 @@ cdef extern from "TACSElementWrapper.h":
     cdef cppclass TACSElementWrapper(TACSElement):
         TACSElementWrapper(PyObject*, int, int)
 
-        int (*getmultiplierindex)(void*);
+        int (*getmultiplierindex)(void*)
         void (*getinitconditions)(void*, int, int, const TacsScalar*, int,
                                   TacsScalar*, TacsScalar*, TacsScalar*)
         void (*addresidual)(void*, int, double, int, const TacsScalar*,

@@ -309,7 +309,6 @@ cdef class CubicTriangleBasis(ElementBasis):
         self.ptr = new TACSCubicTriangleBasis()
         self.ptr.incref()
 
-
 cdef class HeatConduction2D(ElementModel):
     def __cinit__(self, PlaneStressConstitutive con):
         self.ptr = new TACSHeatConduction2D(con.cptr)
@@ -458,11 +457,15 @@ cdef class Quad4Shell(Element):
 
 cdef class Quad9Shell(Element):
     def __cinit__(self, ShellTransform transform, ShellConstitutive con):
+        if transform is None:
+            transform = ShellNaturalTransform()
         self.ptr = new TACSQuad9Shell(transform.ptr, con.cptr)
         self.ptr.incref()
 
 cdef class Quad16Shell(Element):
     def __cinit__(self, ShellTransform transform, ShellConstitutive con):
+        if transform is None:
+            transform = ShellNaturalTransform()
         self.ptr = new TACSQuad16Shell(transform.ptr, con.cptr)
         self.ptr.incref()
 
@@ -471,6 +474,34 @@ cdef class Tri3Shell(Element):
         if transform is None:
             transform = ShellNaturalTransform()
         self.ptr = new TACSTri3Shell(transform.ptr, con.cptr)
+        self.ptr.incref()
+
+cdef class Quad4ThermalShell(Element):
+    def __cinit__(self, ShellTransform transform, ShellConstitutive con):
+        if transform is None:
+            transform = ShellNaturalTransform()
+        self.ptr = new TACSQuad4ThermalShell(transform.ptr, con.cptr)
+        self.ptr.incref()
+
+cdef class Quad9ThermalShell(Element):
+    def __cinit__(self, ShellTransform transform, ShellConstitutive con):
+        if transform is None:
+            transform = ShellNaturalTransform()
+        self.ptr = new TACSQuad9ThermalShell(transform.ptr, con.cptr)
+        self.ptr.incref()
+
+cdef class Quad16ThermalShell(Element):
+    def __cinit__(self, ShellTransform transform, ShellConstitutive con):
+        if transform is None:
+            transform = ShellNaturalTransform()
+        self.ptr = new TACSQuad16ThermalShell(transform.ptr, con.cptr)
+        self.ptr.incref()
+
+cdef class Tri3ThermalShell(Element):
+    def __cinit__(self, ShellTransform transform, ShellConstitutive con):
+        if transform is None:
+            transform = ShellNaturalTransform()
+        self.ptr = new TACSTri3ThermalShell(transform.ptr, con.cptr)
         self.ptr.incref()
 
 cdef class GibbsVector:
@@ -622,27 +653,30 @@ cdef class RBE3(Element):
 #                   int fixed_ref_point=0, int inertial_rev_axis=0,
 #                   RigidBody bodyA=None, RigidBody bodyB=None):
 #         if bodyA is not None and bodyB is not None:
-#             self.ptr = new TACSRevoluteConstraint(bodyA.cptr, bodyB.cptr,
+#             self.ptr = new TACSRevoluteConstraint(bodyA.rbptr, bodyB.rbptr,
 #                                                   point.ptr, eA.ptr)
+#             self.ptr.incref()
 #         elif bodyA is not None and bodyB is None:
-#             self.ptr = new TACSRevoluteConstraint(bodyA.cptr,
+#             self.ptr = new TACSRevoluteConstraint(bodyA.rbptr,
 #                                                   point.ptr, eA.ptr)
+#             self.ptr.incref()
 #         else:
 #             self.ptr = new TACSRevoluteConstraint(fixed_ref_point,
 #                                                   point.ptr, eA.ptr,
 #                                                   inertial_rev_axis)
-#         self.ptr.incref()
+#             self.ptr.incref()
+#         return
 
-## cdef class CylindricalConstraint(Element):
-##     def __cinit__(self, GibbsVector point, GibbsVector eA,
-##                   RigidBody bodyA, RigidBody bodyB=None):
-##         if bodyB is None:
-##             self.ptr = new TACSCylindricalConstraint(bodyA.cptr,
-##                                                      point.ptr, eA.ptr)
-##         else:
-##             self.ptr = new TACSCylindricalConstraint(bodyA.cptr, bodyB.cptr,
-##                                                      point.ptr, eA.ptr)
-##         self.ptr.incref()
+# cdef class CylindricalConstraint(Element):
+#     def __cinit__(self, GibbsVector point, GibbsVector eA,
+#                   RigidBody bodyA, RigidBody bodyB=None):
+#         if bodyB is None:
+#             self.ptr = new TACSCylindricalConstraint(bodyA.cptr,
+#                                                      point.ptr, eA.ptr)
+#         else:
+#             self.ptr = new TACSCylindricalConstraint(bodyA.cptr, bodyB.cptr,
+#                                                      point.ptr, eA.ptr)
+#         self.ptr.incref()
 
 # cdef class RigidLink(Element):
 #     def __cinit__(self, RigidBody bodyA):

@@ -277,7 +277,7 @@ int main( int argc, char *argv[] ){
     new TACSBDFIntegrator(tacs, 0.0, tfinal, num_steps, order);
   integrator->incref();
 
-  integrator->setPrintLevel(1);
+  integrator->setPrintLevel(0);
   integrator->integrate();
 
   // Create an TACSToFH5 object for writing output to files

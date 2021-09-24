@@ -305,9 +305,8 @@ void TACSShellElement<quadrature, basis, director, model>::
   const int nquad = quadrature::getNumQuadraturePoints();
 
   // Derivative of the director field and matrix at each point
-  TacsScalar dd[dsize], dTdot[dsize];
+  TacsScalar dd[dsize];
   memset(dd, 0, 3*num_nodes*sizeof(TacsScalar));
-  memset(dTdot, 0, 3*num_nodes*sizeof(TacsScalar));
 
   // Compute the node normal directions
   TacsScalar fn[3*num_nodes], Xdn[9*num_nodes];
@@ -415,7 +414,7 @@ void TACSShellElement<quadrature, basis, director, model>::
     dd0dot[0] = detXd*(moments[1]*u0ddot[0] + moments[2]*d0ddot[0]);
     dd0dot[1] = detXd*(moments[1]*u0ddot[1] + moments[2]*d0ddot[1]);
     dd0dot[2] = detXd*(moments[1]*u0ddot[2] + moments[2]*d0ddot[2]);
-    basis::template addInterpFieldsTranspose<3, 3>(pt, dd0dot, dTdot);
+    basis::template addInterpFieldsTranspose<3, 3>(pt, dd0dot, dd);
   }
 
   // Add the contribution to the residual from the drill strain
@@ -429,8 +428,7 @@ void TACSShellElement<quadrature, basis, director, model>::
 
   // Add the contributions to the director field
   director::template
-    addDirectorResidual<vars_per_node, offset, num_nodes>(vars, dvars, ddvars, fn,
-                                                          dTdot, dd, res);
+    addDirectorResidual<vars_per_node, offset, num_nodes>(vars, dvars, ddvars, fn, dd, res);
 
   // Add the contribution from the rotation constraint (defined by the
   // rotational parametrization) - if any
@@ -458,9 +456,8 @@ void TACSShellElement<quadrature, basis, director, model>::
   const int nquad = quadrature::getNumQuadraturePoints();
 
   // Derivative of the director field
-  TacsScalar dd[dsize], dTdot[dsize];
+  TacsScalar dd[dsize];
   memset(dd, 0, dsize*sizeof(TacsScalar));
-  memset(dTdot, 0, dsize*sizeof(TacsScalar));
 
   // Second derivatives required for the director
   TacsScalar d2d[dsize*dsize], d2du[usize*dsize];
@@ -616,7 +613,7 @@ void TACSShellElement<quadrature, basis, director, model>::
     dd0dot[0] = detXd*(moments[1]*u0ddot[0] + moments[2]*d0ddot[0]);
     dd0dot[1] = detXd*(moments[1]*u0ddot[1] + moments[2]*d0ddot[1]);
     dd0dot[2] = detXd*(moments[1]*u0ddot[2] + moments[2]*d0ddot[2]);
-    basis::template addInterpFieldsTranspose<3, 3>(pt, dd0dot, dTdot);
+    basis::template addInterpFieldsTranspose<3, 3>(pt, dd0dot, dd);
 
     TacsScalar d2u0dot[9];
     memset(d2u0dot, 0, 9*sizeof(TacsScalar));
@@ -651,7 +648,7 @@ void TACSShellElement<quadrature, basis, director, model>::
   director::template
     addDirectorJacobian<vars_per_node, offset, num_nodes>(alpha, beta, gamma,
                                                           vars, dvars, ddvars,
-                                                          fn, dTdot, dd,
+                                                          fn, dd,
                                                           d2Tdotd, d2Tdotu, d2d, d2du,
                                                           res, mat);
 
@@ -686,7 +683,7 @@ void TACSShellElement<quadrature, basis, director, model>::
   TacsShellComputeDrillStrainDeriv<vars_per_node, offset, basis, director, model>(
     transform, Xdn, fn, vars, psi, XdinvTn, Tn, u0xn, Ctn, etn, etnd);
 
-  // Compute the director rates
+  // Compute the director rates and their derivatives
   TacsScalar d[dsize], ddot[dsize], dddot[dsize], dd[dsize];
   director::template
     computeDirectorRatesDeriv<vars_per_node, offset, num_nodes>(vars, dvars, ddvars, psi, fn,
@@ -742,6 +739,23 @@ void TACSShellElement<quadrature, basis, director, model>::
 
     // The directional derivative of the strain along the adjoint direction
     con->addStressDVSens(elemIndex, scale*detXd, pt, X, e, ed, dvLen, dfdx);
+
+    // Evaluate the second time derivatives
+    TacsScalar u0ddot[3], d0ddot[3];
+    basis::template interpFields<vars_per_node, 3>(pt, ddvars, u0ddot);
+    basis::template interpFields<3, 3>(pt, dddot, d0ddot);
+
+    TacsScalar du0ddot[3], dd0ddot[3];
+    basis::template interpFields<vars_per_node, 3>(pt, psi, du0ddot);
+    basis::template interpFields<3, 3>(pt, dd, dd0ddot);
+
+    TacsScalar coef[3];
+    coef[0] = scale*detXd*vec3Dot(u0ddot, du0ddot);
+    coef[1] = scale*detXd*(vec3Dot(u0ddot, dd0ddot) + vec3Dot(du0ddot, d0ddot));
+    coef[2] = scale*detXd*vec3Dot(d0ddot, dd0ddot);
+
+    // Add the contribution from the dynamics
+    con->addMassMomentsDVSens(elemIndex, pt, X, coef, dvLen, dfdx);
   }
 }
 
@@ -903,9 +917,8 @@ void TACSShellElement<quadrature, basis, director, model>::
                           TacsScalar dfdu[] ){
   if (quantityType == TACS_FAILURE_INDEX){
     // Derivative of the director field
-    TacsScalar dd[dsize], dTdot[dsize];
+    TacsScalar dd[dsize];
     memset(dd, 0, 3*num_nodes*sizeof(TacsScalar));
-    memset(dTdot, 0, 3*num_nodes*sizeof(TacsScalar));
 
     // Zero the contributions to the tying strain derivatives
     TacsScalar dety[basis::NUM_TYING_POINTS];
@@ -980,7 +993,7 @@ void TACSShellElement<quadrature, basis, director, model>::
     // Add the contributions to the director field
     director::template
       addDirectorResidual<vars_per_node, offset, num_nodes>(vars, dvars, ddvars, fn,
-                                                            dTdot, dd, dfdu);
+                                                            dd, dfdu);
   }
 }
 
