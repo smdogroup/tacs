@@ -2,7 +2,7 @@ include ../../Makefile.in
 include ../../TACS_Common.mk
 
 OBJS = create_stiff_panel.o \
-	create_skewed_plate.o
+	create_skewed_plate.o \
 	stiffened_panel.o \
 	skewed_plate.o
 

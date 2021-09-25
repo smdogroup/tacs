@@ -29,7 +29,7 @@ TACSInducedFailure::TACSInducedFailure( TACSAssembler *_assembler,
   normType = EXPONENTIAL;
 
   // Initialize values
-  maxFail = 0.0;
+  maxFail = -1e20;
   failNumer = 0.0;
   failDenom = 0.0;
 }
@@ -127,75 +127,66 @@ void TACSInducedFailure::elementWiseEval( EvaluationType ftype,
                                           const TacsScalar vars[],
                                           const TacsScalar dvars[],
                                           const TacsScalar ddvars[] ){
-  // Retrieve the number of stress components for this element
-  TACSElementBasis *basis = element->getElementBasis();
+  for ( int i = 0; i < element->getNumQuadraturePoints(); i++ ){
+    double pt[3];
+    double weight = element->getQuadraturePoint(i, pt);
 
-  if (basis){
-    for ( int i = 0; i < basis->getNumQuadraturePoints(); i++ ){
-      double pt[3];
-      double weight = basis->getQuadraturePoint(i, pt);
+    // Evaluate the failure index, and check whether it is an
+    // undefined quantity of interest on this element
+    TacsScalar fail = 0.0, detXd = 0.0;
+    int count = element->evalPointQuantity(elemIndex, TACS_FAILURE_INDEX,
+                                            time, i, pt,
+                                            Xpts, vars, dvars, ddvars,
+                                            &detXd, &fail);
 
-      // Evaluate the failure index, and check whether it is an
-      // undefined quantity of interest on this element
-      TacsScalar fail = 0.0;
-      int count = element->evalPointQuantity(elemIndex, TACS_FAILURE_INDEX,
-                                             time, i, pt,
-                                             Xpts, vars, dvars, ddvars,
-                                             &fail);
-
-      // Check whether the quantity requested is defined or not
-      if (count >= 1){
-        if (ftype == TACSFunction::INITIALIZE){
-          // Set the maximum failure load
-          if (TacsRealPart(fail) > TacsRealPart(maxFail)){
-            maxFail = fail;
-          }
+    // Check whether the quantity requested is defined or not
+    if (count >= 1){
+      if (ftype == TACSFunction::INITIALIZE){
+        // Set the maximum failure load
+        if (TacsRealPart(fail) > TacsRealPart(maxFail)){
+          maxFail = fail;
         }
-        else {
-          // Evaluate the determinant of the Jacobian
-          TacsScalar Xd[9], J[9];
-          TacsScalar detJ = basis->getJacobianTransform(i, pt, Xpts, Xd, J);
-
-          if (normType == POWER){
-            TacsScalar fp = pow(fabs(fail/maxFail), P);
-            failNumer += scale*weight*detJ*(fail/maxFail)*fp;
-            failDenom += weight*detJ*fp;
-          }
-          else if (normType == DISCRETE_POWER){
-            TacsScalar fp = pow(fabs(fail/maxFail), P);
-            failNumer += scale*(fail/maxFail)*fp;
-            failDenom += fp;
-          }
-          else if (normType == POWER_SQUARED){
-            TacsScalar fp = pow(fabs(fail/maxFail), P);
-            failNumer += scale*weight*detJ*(fail*fail/maxFail)*fp;
-            failDenom += weight*detJ*fp;
-          }
-          else if (normType == DISCRETE_POWER_SQUARED){
-            TacsScalar fp = pow(fabs(fail/maxFail), P);
-            failNumer += scale*(fail*fail/maxFail)*fp;
-            failDenom += fp;
-          }
-          else if (normType == EXPONENTIAL){
-            TacsScalar efp = exp(P*(fail - maxFail));
-            failNumer += scale*weight*detJ*(fail/maxFail)*efp;
-            failDenom += weight*detJ*efp;
-          }
-          else if (normType == DISCRETE_EXPONENTIAL){
-            TacsScalar efp = exp(P*(fail - maxFail));
-            failNumer += scale*(fail/maxFail)*efp;
-            failDenom += efp;
-          }
-          else if (normType == EXPONENTIAL_SQUARED){
-            TacsScalar efp = exp(P*(fail - maxFail));
-            failNumer += scale*weight*detJ*(fail*fail/maxFail)*efp;
-            failDenom += weight*detJ*efp;
-          }
-          else if (normType == DISCRETE_EXPONENTIAL_SQUARED){
-            TacsScalar efp = exp(P*(fail - maxFail));
-            failNumer += scale*(fail*fail/maxFail)*efp;
-            failDenom += efp;
-          }
+      }
+      else {
+        if (normType == POWER){
+          TacsScalar fp = pow(fabs(fail/maxFail), P);
+          failNumer += scale*weight*detXd*(fail/maxFail)*fp;
+          failDenom += weight*detXd*fp;
+        }
+        else if (normType == DISCRETE_POWER){
+          TacsScalar fp = pow(fabs(fail/maxFail), P);
+          failNumer += scale*(fail/maxFail)*fp;
+          failDenom += fp;
+        }
+        else if (normType == POWER_SQUARED){
+          TacsScalar fp = pow(fabs(fail/maxFail), P);
+          failNumer += scale*weight*detXd*(fail*fail/maxFail)*fp;
+          failDenom += weight*detXd*fp;
+        }
+        else if (normType == DISCRETE_POWER_SQUARED){
+          TacsScalar fp = pow(fabs(fail/maxFail), P);
+          failNumer += scale*(fail*fail/maxFail)*fp;
+          failDenom += fp;
+        }
+        else if (normType == EXPONENTIAL){
+          TacsScalar efp = exp(P*(fail - maxFail));
+          failNumer += scale*weight*detXd*(fail/maxFail)*efp;
+          failDenom += weight*detXd*efp;
+        }
+        else if (normType == DISCRETE_EXPONENTIAL){
+          TacsScalar efp = exp(P*(fail - maxFail));
+          failNumer += scale*(fail/maxFail)*efp;
+          failDenom += efp;
+        }
+        else if (normType == EXPONENTIAL_SQUARED){
+          TacsScalar efp = exp(P*(fail - maxFail));
+          failNumer += scale*weight*detXd*(fail*fail/maxFail)*efp;
+          failDenom += weight*detXd*efp;
+        }
+        else if (normType == DISCRETE_EXPONENTIAL_SQUARED){
+          TacsScalar efp = exp(P*(fail - maxFail));
+          failNumer += scale*(fail*fail/maxFail)*efp;
+          failDenom += efp;
         }
       }
     }
@@ -222,86 +213,77 @@ void TACSInducedFailure::getElementSVSens( int elemIndex,
   int numVars = element->getNumVariables();
   memset(dfdu, 0, numVars*sizeof(TacsScalar));
 
-  // Get the element basis class
-  TACSElementBasis *basis = element->getElementBasis();
+  for ( int i = 0; i < element->getNumQuadraturePoints(); i++ ){
+    double pt[3];
+    double weight = element->getQuadraturePoint(i, pt);
 
-  if (basis){
-    for ( int i = 0; i < basis->getNumQuadraturePoints(); i++ ){
-      double pt[3];
-      double weight = basis->getQuadraturePoint(i, pt);
+    TacsScalar fail = 0.0, detXd = 0.0;
+    int count = element->evalPointQuantity(elemIndex, TACS_FAILURE_INDEX,
+                                           time, i, pt,
+                                           Xpts, vars, dvars, ddvars,
+                                           &detXd, &fail);
 
-      TacsScalar fail = 0.0;
-      int count = element->evalPointQuantity(elemIndex, TACS_FAILURE_INDEX,
-                                             time, i, pt,
-                                             Xpts, vars, dvars, ddvars,
-                                             &fail);
+    if (count >= 1){
+      // Compute the derivative of the induced aggregation with
+      // respect to the failure function
+      TacsScalar dfdq = 0.0;
+      if (normType == POWER){
+        TacsScalar g = fail/maxFail;
+        TacsScalar fp = pow(fabs(g), P);
 
-      if (count >= 1){
-        // Evaluate the determinant of the Jacobian
-        TacsScalar Xd[9], J[9];
-        TacsScalar detJ = basis->getJacobianTransform(i, pt, Xpts, Xd, J);
-
-        // Compute the derivative of the induced aggregation with
-        // respect to the failure function
-        TacsScalar dfdq = 0.0;
-        if (normType == POWER){
-          TacsScalar g = fail/maxFail;
-          TacsScalar fp = pow(fabs(g), P);
-
-          dfdq = weight*detJ*((1.0 + P)*g*failDenom -
-                              P*failNumer)*fp/(g*failDenom*failDenom);
-        }
-        else if (normType == DISCRETE_POWER){
-          TacsScalar g = fail/maxFail;
-          TacsScalar fp = pow(fabs(g), P);
-
-          dfdq = ((1.0 + P)*g*failDenom -
-                  P*failNumer)*fp/(g*failDenom*failDenom);
-        }
-        else if (normType == POWER_SQUARED){
-          TacsScalar g = fail/maxFail;
-          TacsScalar fp = pow(fabs(g), P);
-
-          dfdq = weight*detJ*((2.0 + P)*fail*g*failDenom -
-                              P*failNumer)*fp/(g*failDenom*failDenom);
-        }
-        else if (normType == DISCRETE_POWER_SQUARED){
-          TacsScalar g = fail/maxFail;
-          TacsScalar fp = pow(fabs(g), P);
-
-          dfdq = ((2.0 + P)*fail*g*failDenom -
-                  P*failNumer)*fp/(g*failDenom*failDenom);
-        }
-        else if (normType == EXPONENTIAL){
-          TacsScalar efp = exp(P*(fail - maxFail));
-
-          dfdq = weight*detJ*(((1.0 + P*fail)*failDenom -
-                               P*maxFail*failNumer)*efp)/(failDenom*failDenom);
-        }
-        else if (normType == DISCRETE_EXPONENTIAL){
-          TacsScalar efp = exp(P*(fail - maxFail));
-
-          dfdq = (((1.0 + P*fail)*failDenom -
-                   P*maxFail*failNumer)*efp)/(failDenom*failDenom);
-        }
-        else if (normType == EXPONENTIAL_SQUARED){
-          TacsScalar efp = exp(P*(fail - maxFail));
-
-          dfdq = weight*detJ*(((2.0 + P*fail)*fail*failDenom -
-                               P*maxFail*failNumer)*efp)/(failDenom*failDenom);
-        }
-        else if (normType == DISCRETE_EXPONENTIAL_SQUARED){
-          TacsScalar efp = exp(P*(fail - maxFail));
-
-          dfdq = (((2.0 + P*fail)*fail*failDenom -
-                   P*maxFail*failNumer)*efp)/(failDenom*failDenom);
-        }
-
-        element->addPointQuantitySVSens(elemIndex, TACS_FAILURE_INDEX, time,
-                                        alpha, beta, gamma,
-                                        i, pt, Xpts, vars, dvars, ddvars,
-                                        &dfdq, dfdu);
+        dfdq = weight*detXd*((1.0 + P)*g*failDenom -
+                             P*failNumer)*fp/(g*failDenom*failDenom);
       }
+      else if (normType == DISCRETE_POWER){
+        TacsScalar g = fail/maxFail;
+        TacsScalar fp = pow(fabs(g), P);
+
+        dfdq = ((1.0 + P)*g*failDenom -
+                P*failNumer)*fp/(g*failDenom*failDenom);
+      }
+      else if (normType == POWER_SQUARED){
+        TacsScalar g = fail/maxFail;
+        TacsScalar fp = pow(fabs(g), P);
+
+        dfdq = weight*detXd*((2.0 + P)*fail*g*failDenom -
+                             P*failNumer)*fp/(g*failDenom*failDenom);
+      }
+      else if (normType == DISCRETE_POWER_SQUARED){
+        TacsScalar g = fail/maxFail;
+        TacsScalar fp = pow(fabs(g), P);
+
+        dfdq = ((2.0 + P)*fail*g*failDenom -
+                P*failNumer)*fp/(g*failDenom*failDenom);
+      }
+      else if (normType == EXPONENTIAL){
+        TacsScalar efp = exp(P*(fail - maxFail));
+
+        dfdq = weight*detXd*(((1.0 + P*fail)*failDenom -
+                              P*maxFail*failNumer)*efp)/(failDenom*failDenom);
+      }
+      else if (normType == DISCRETE_EXPONENTIAL){
+        TacsScalar efp = exp(P*(fail - maxFail));
+
+        dfdq = (((1.0 + P*fail)*failDenom -
+                 P*maxFail*failNumer)*efp)/(failDenom*failDenom);
+      }
+      else if (normType == EXPONENTIAL_SQUARED){
+        TacsScalar efp = exp(P*(fail - maxFail));
+
+        dfdq = weight*detXd*(((2.0 + P*fail)*fail*failDenom -
+                              P*maxFail*failNumer)*efp)/(failDenom*failDenom);
+      }
+      else if (normType == DISCRETE_EXPONENTIAL_SQUARED){
+        TacsScalar efp = exp(P*(fail - maxFail));
+
+        dfdq = (((2.0 + P*fail)*fail*failDenom -
+                 P*maxFail*failNumer)*efp)/(failDenom*failDenom);
+      }
+
+      element->addPointQuantitySVSens(elemIndex, TACS_FAILURE_INDEX, time,
+                                      alpha, beta, gamma,
+                                      i, pt, Xpts, vars, dvars, ddvars,
+                                      &dfdq, dfdu);
     }
   }
 }
@@ -324,98 +306,84 @@ void TACSInducedFailure::getElementXptSens( int elemIndex,
   int numNodes = element->getNumNodes();
   memset(dfdXpts, 0, 3*numNodes*sizeof(TacsScalar));
 
-  // Get the element basis class
-  TACSElementBasis *basis = element->getElementBasis();
+  for ( int i = 0; i < element->getNumQuadraturePoints(); i++ ){
+    double pt[3];
+    double weight = element->getQuadraturePoint(i, pt);
 
-  if (basis){
-    for ( int i = 0; i < basis->getNumQuadraturePoints(); i++ ){
-      double pt[3];
-      double weight = basis->getQuadraturePoint(i, pt);
+    TacsScalar fail = 0.0, detXd = 0.0;
+    int count = element->evalPointQuantity(elemIndex, TACS_FAILURE_INDEX,
+                                           time, i, pt,
+                                           Xpts, vars, dvars, ddvars,
+                                           &detXd, &fail);
 
-      TacsScalar fail = 0.0;
-      int count = element->evalPointQuantity(elemIndex, TACS_FAILURE_INDEX,
-                                             time, i, pt,
-                                             Xpts, vars, dvars, ddvars,
-                                             &fail);
+    if (count >= 1){
+      // Compute the sensitivity contribution
+      TacsScalar dfdq = 0.0;
+      TacsScalar dfddetXd = 0.0;
+      if (normType == POWER){
+        TacsScalar g = fail/maxFail;
+        TacsScalar fp = pow(fabs(g), P);
 
-      if (count >= 1){
-        // Evaluate the determinant of the Jacobian
-        TacsScalar Xd[9], J[9];
-        TacsScalar detJ = basis->getJacobianTransform(i, pt, Xpts, Xd, J);
-
-        // Compute the sensitivity contribution
-        TacsScalar dfdq = 0.0;
-        TacsScalar dfddetJ = 0.0;
-        if (normType == POWER){
-          TacsScalar g = fail/maxFail;
-          TacsScalar fp = pow(fabs(g), P);
-
-          dfdq = weight*detJ*((1.0 + P)*g*failDenom -
-                              P*failNumer)*fp/(g*failDenom*failDenom);
-          dfddetJ = ((fail*failDenom -
-                      maxFail*failNumer)*weight*fp)/(failDenom*failDenom);
-        }
-        else if (normType == DISCRETE_POWER){
-          TacsScalar g = fail/maxFail;
-          TacsScalar fp = pow(fabs(g), P);
-
-          dfdq = ((1.0 + P)*g*failDenom -
-                  P*failNumer)*fp/(g*failDenom*failDenom);
-        }
-        else if (normType == POWER_SQUARED){
-          TacsScalar g = fail/maxFail;
-          TacsScalar fp = pow(fabs(g), P);
-
-          dfdq = weight*detJ*((2.0 + P)*fail*g*failDenom -
-                              P*failNumer)*fp/(g*failDenom*failDenom);
-          dfddetJ = ((fail*fail*failDenom -
-                      maxFail*failNumer)*weight*fp)/(failDenom*failDenom);
-        }
-        else if (normType == DISCRETE_POWER_SQUARED){
-          TacsScalar g = fail/maxFail;
-          TacsScalar fp = pow(fabs(g), P);
-
-          dfdq = ((2.0 + P)*fail*g*failDenom -
-                  P*failNumer)*fp/(g*failDenom*failDenom);
-        }
-        else if (normType == EXPONENTIAL){
-          TacsScalar efp = exp(P*(fail - maxFail));
-
-          dfdq = weight*detJ*(((1.0 + P*fail)*failDenom -
-                               P*maxFail*failNumer)*efp)/(failDenom*failDenom);
-          dfddetJ = ((fail*failDenom -
-                      maxFail*failNumer)*weight*efp)/(failDenom*failDenom);
-        }
-        else if (normType == DISCRETE_EXPONENTIAL){
-          TacsScalar efp = exp(P*(fail - maxFail));
-
-          dfdq = (((1.0 + P*fail)*failDenom -
-                   P*maxFail*failNumer)*efp)/(failDenom*failDenom);
-        }
-        else if (normType == EXPONENTIAL_SQUARED){
-          TacsScalar efp = exp(P*(fail - maxFail));
-
-          dfdq = weight*detJ*(((2.0 + P*fail)*fail*failDenom -
-                               P*maxFail*failNumer)*efp)/(failDenom*failDenom);
-          dfddetJ = ((fail*fail*failDenom -
-                      maxFail*failNumer)*weight*efp)/(failDenom*failDenom);
-        }
-        else if (normType == DISCRETE_EXPONENTIAL_SQUARED){
-          TacsScalar efp = exp(P*(fail - maxFail));
-
-          dfdq = (((2.0 + P*fail)*fail*failDenom -
-                   P*maxFail*failNumer)*efp)/(failDenom*failDenom);
-        }
-
-        element->addPointQuantityXptSens(elemIndex, TACS_FAILURE_INDEX, time,
-                                         scale, i, pt, Xpts, vars, dvars, ddvars,
-                                         &dfdq, dfdXpts);
-
-        if (dfddetJ != 0.0){
-          basis->addJacobianTransformXptSens(i, pt, Xd, J, scale*dfddetJ,
-                                             NULL, NULL, dfdXpts);
-        }
+        dfdq = weight*detXd*((1.0 + P)*g*failDenom -
+                             P*failNumer)*fp/(g*failDenom*failDenom);
+        dfddetXd = ((fail*failDenom -
+                     maxFail*failNumer)*weight*fp)/(failDenom*failDenom);
       }
+      else if (normType == DISCRETE_POWER){
+        TacsScalar g = fail/maxFail;
+        TacsScalar fp = pow(fabs(g), P);
+
+        dfdq = ((1.0 + P)*g*failDenom -
+                P*failNumer)*fp/(g*failDenom*failDenom);
+      }
+      else if (normType == POWER_SQUARED){
+        TacsScalar g = fail/maxFail;
+        TacsScalar fp = pow(fabs(g), P);
+
+        dfdq = weight*detXd*((2.0 + P)*fail*g*failDenom -
+                             P*failNumer)*fp/(g*failDenom*failDenom);
+        dfddetXd = ((fail*fail*failDenom -
+                     maxFail*failNumer)*weight*fp)/(failDenom*failDenom);
+      }
+      else if (normType == DISCRETE_POWER_SQUARED){
+        TacsScalar g = fail/maxFail;
+        TacsScalar fp = pow(fabs(g), P);
+
+        dfdq = ((2.0 + P)*fail*g*failDenom -
+                P*failNumer)*fp/(g*failDenom*failDenom);
+      }
+      else if (normType == EXPONENTIAL){
+        TacsScalar efp = exp(P*(fail - maxFail));
+
+        dfdq = weight*detXd*(((1.0 + P*fail)*failDenom -
+                              P*maxFail*failNumer)*efp)/(failDenom*failDenom);
+        dfddetXd = ((fail*failDenom -
+                     maxFail*failNumer)*weight*efp)/(failDenom*failDenom);
+      }
+      else if (normType == DISCRETE_EXPONENTIAL){
+        TacsScalar efp = exp(P*(fail - maxFail));
+
+        dfdq = (((1.0 + P*fail)*failDenom -
+                 P*maxFail*failNumer)*efp)/(failDenom*failDenom);
+      }
+      else if (normType == EXPONENTIAL_SQUARED){
+        TacsScalar efp = exp(P*(fail - maxFail));
+
+        dfdq = weight*detXd*(((2.0 + P*fail)*fail*failDenom -
+                              P*maxFail*failNumer)*efp)/(failDenom*failDenom);
+        dfddetXd = ((fail*fail*failDenom -
+                     maxFail*failNumer)*weight*efp)/(failDenom*failDenom);
+      }
+      else if (normType == DISCRETE_EXPONENTIAL_SQUARED){
+        TacsScalar efp = exp(P*(fail - maxFail));
+
+        dfdq = (((2.0 + P*fail)*fail*failDenom -
+                  P*maxFail*failNumer)*efp)/(failDenom*failDenom);
+      }
+
+      element->addPointQuantityXptSens(elemIndex, TACS_FAILURE_INDEX, time,
+                                       scale, i, pt, Xpts, vars, dvars, ddvars,
+                                       dfddetXd, &dfdq, dfdXpts);
     }
   }
 }
@@ -434,86 +402,77 @@ void TACSInducedFailure::addElementDVSens( int elemIndex,
                                            const TacsScalar dvars[],
                                            const TacsScalar ddvars[],
                                            int dvLen, TacsScalar dfdx[] ){
-  // Get the element basis class
-  TACSElementBasis *basis = element->getElementBasis();
+  for ( int i = 0; i < element->getNumQuadraturePoints(); i++ ){
+    double pt[3];
+    double weight = element->getQuadraturePoint(i, pt);
 
-  if (basis){
-    for ( int i = 0; i < basis->getNumQuadraturePoints(); i++ ){
-      double pt[3];
-      double weight = basis->getQuadraturePoint(i, pt);
+    TacsScalar fail = 0.0, detXd = 0.0;
+    int count = element->evalPointQuantity(elemIndex, TACS_FAILURE_INDEX,
+                                           time, i, pt,
+                                           Xpts, vars, dvars, ddvars,
+                                           &detXd, &fail);
 
-      TacsScalar fail = 0.0;
-      int count = element->evalPointQuantity(elemIndex, TACS_FAILURE_INDEX,
-                                             time, i, pt,
-                                             Xpts, vars, dvars, ddvars,
-                                             &fail);
+    if (count >= 1){
+      // Compute the derivative of the induced aggregation with
+      // respect to the failure function
+      TacsScalar dfdq = 0.0;
+      if (normType == POWER){
+        TacsScalar g = fail/maxFail;
+        TacsScalar fp = pow(fabs(g), P);
 
-      if (count >= 1){
-        // Evaluate the determinant of the Jacobian
-        TacsScalar Xd[9], J[9];
-        TacsScalar detJ = basis->getJacobianTransform(i, pt, Xpts, Xd, J);
-
-        // Compute the derivative of the induced aggregation with
-        // respect to the failure function
-        TacsScalar dfdq = 0.0;
-        if (normType == POWER){
-          TacsScalar g = fail/maxFail;
-          TacsScalar fp = pow(fabs(g), P);
-
-          dfdq = weight*detJ*((1.0 + P)*g*failDenom -
-                              P*failNumer)*fp/(g*failDenom*failDenom);
-        }
-        else if (normType == DISCRETE_POWER){
-          TacsScalar g = fail/maxFail;
-          TacsScalar fp = pow(fabs(g), P);
-
-          dfdq = ((1.0 + P)*g*failDenom -
-                  P*failNumer)*fp/(g*failDenom*failDenom);
-        }
-        else if (normType == POWER_SQUARED){
-          TacsScalar g = fail/maxFail;
-          TacsScalar fp = pow(fabs(g), P);
-
-          dfdq = weight*detJ*((2.0 + P)*fail*g*failDenom -
-                              P*failNumer)*fp/(g*failDenom*failDenom);
-        }
-        else if (normType == DISCRETE_POWER_SQUARED){
-          TacsScalar g = fail/maxFail;
-          TacsScalar fp = pow(fabs(g), P);
-
-          dfdq = ((2.0 + P)*fail*g*failDenom -
-                  P*failNumer)*fp/(g*failDenom*failDenom);
-        }
-        else if (normType == EXPONENTIAL){
-          TacsScalar efp = exp(P*(fail - maxFail));
-
-          dfdq = weight*detJ*(((1.0 + P*fail)*failDenom -
-                               P*maxFail*failNumer)*efp)/(failDenom*failDenom);
-        }
-        else if (normType == DISCRETE_EXPONENTIAL){
-          TacsScalar efp = exp(P*(fail - maxFail));
-
-          dfdq = (((1.0 + P*fail)*failDenom -
-                   P*maxFail*failNumer)*efp)/(failDenom*failDenom);
-        }
-        else if (normType == EXPONENTIAL_SQUARED){
-          TacsScalar efp = exp(P*(fail - maxFail));
-
-          dfdq = weight*detJ*(((2.0 + P*fail)*fail*failDenom -
-                               P*maxFail*failNumer)*efp)/(failDenom*failDenom);
-        }
-        else if (normType == DISCRETE_EXPONENTIAL_SQUARED){
-          TacsScalar efp = exp(P*(fail - maxFail));
-
-          dfdq = (((2.0 + P*fail)*fail*failDenom -
-                   P*maxFail*failNumer)*efp)/(failDenom*failDenom);
-        }
-
-        element->addPointQuantityDVSens(elemIndex, TACS_FAILURE_INDEX,
-                                        time, scale, i, pt,
-                                        Xpts, vars, dvars, ddvars,
-                                        &dfdq, dvLen, dfdx);
+        dfdq = weight*detXd*((1.0 + P)*g*failDenom -
+                             P*failNumer)*fp/(g*failDenom*failDenom);
       }
+      else if (normType == DISCRETE_POWER){
+        TacsScalar g = fail/maxFail;
+        TacsScalar fp = pow(fabs(g), P);
+
+        dfdq = ((1.0 + P)*g*failDenom -
+                P*failNumer)*fp/(g*failDenom*failDenom);
+      }
+      else if (normType == POWER_SQUARED){
+        TacsScalar g = fail/maxFail;
+        TacsScalar fp = pow(fabs(g), P);
+
+        dfdq = weight*detXd*((2.0 + P)*fail*g*failDenom -
+                             P*failNumer)*fp/(g*failDenom*failDenom);
+      }
+      else if (normType == DISCRETE_POWER_SQUARED){
+        TacsScalar g = fail/maxFail;
+        TacsScalar fp = pow(fabs(g), P);
+
+        dfdq = ((2.0 + P)*fail*g*failDenom -
+                P*failNumer)*fp/(g*failDenom*failDenom);
+      }
+      else if (normType == EXPONENTIAL){
+        TacsScalar efp = exp(P*(fail - maxFail));
+
+        dfdq = weight*detXd*(((1.0 + P*fail)*failDenom -
+                              P*maxFail*failNumer)*efp)/(failDenom*failDenom);
+      }
+      else if (normType == DISCRETE_EXPONENTIAL){
+        TacsScalar efp = exp(P*(fail - maxFail));
+
+        dfdq = (((1.0 + P*fail)*failDenom -
+                 P*maxFail*failNumer)*efp)/(failDenom*failDenom);
+      }
+      else if (normType == EXPONENTIAL_SQUARED){
+        TacsScalar efp = exp(P*(fail - maxFail));
+
+        dfdq = weight*detXd*(((2.0 + P*fail)*fail*failDenom -
+                              P*maxFail*failNumer)*efp)/(failDenom*failDenom);
+      }
+      else if (normType == DISCRETE_EXPONENTIAL_SQUARED){
+        TacsScalar efp = exp(P*(fail - maxFail));
+
+        dfdq = (((2.0 + P*fail)*fail*failDenom -
+                 P*maxFail*failNumer)*efp)/(failDenom*failDenom);
+      }
+
+      element->addPointQuantityDVSens(elemIndex, TACS_FAILURE_INDEX,
+                                      time, scale, i, pt,
+                                      Xpts, vars, dvars, ddvars,
+                                      &dfdq, dvLen, dfdx);
     }
   }
 }

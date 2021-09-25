@@ -245,11 +245,12 @@ int main( int argc, char **argv ){
   }
 
   // Create an TACSToFH5 object for writing output to files
-  unsigned int write_flag = (TACS_OUTPUT_NODES |
-                             TACS_OUTPUT_DISPLACEMENTS |
-                             TACS_OUTPUT_STRAINS |
-                             TACS_OUTPUT_STRESSES |
-                             TACS_OUTPUT_EXTRAS);
+  int write_flag = (TACS_OUTPUT_CONNECTIVITY |
+                    TACS_OUTPUT_NODES |
+                    TACS_OUTPUT_DISPLACEMENTS |
+                    TACS_OUTPUT_STRAINS |
+                    TACS_OUTPUT_STRESSES |
+                    TACS_OUTPUT_EXTRAS);
   TACSToFH5 *f5 = new TACSToFH5(assembler, TACS_BEAM_OR_SHELL_ELEMENT, write_flag);
   f5->incref();
   f5->writeToFile("ucrm.f5");

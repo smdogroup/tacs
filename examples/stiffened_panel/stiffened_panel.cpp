@@ -257,15 +257,15 @@ int main( int argc, char *argv[] ){
     Nxy = 1.0;
   }
 
-  // When using complex mode, we cannot use the tacs panel analysis
-#ifndef TACS_USE_COMPLEX
-  TacsScalar theta = -15.0/180.0*M_PI;
-  if (rank == 0){
-    printf("theta = %8.1f\n", theta*180.0/M_PI);
-    panel_test(stiff_skin, stiff_base, stiff_stiffener, theta,
-               Nx, Nxy, use_lapack);
-  }
-#endif // TACS_USE_COMPLEX
+//   // When using complex mode, we cannot use the tacs panel analysis
+// #ifndef TACS_USE_COMPLEX
+//   TacsScalar theta = -15.0/180.0*M_PI;
+//   if (rank == 0){
+//     printf("theta = %8.1f\n", theta*180.0/M_PI);
+//     panel_test(stiff_skin, stiff_base, stiff_stiffener, theta,
+//                Nx, Nxy, use_lapack);
+//   }
+// #endif // TACS_USE_COMPLEX
 
   // Load in the .bdf file using the TACS mesh loader
   TACSMeshLoader *mesh = new TACSMeshLoader(MPI_COMM_WORLD);
