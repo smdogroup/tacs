@@ -42,7 +42,7 @@ TACSInducedFailure::~TACSInducedFailure(){}
 /*
   The name of the function class
 */
-const char * TACSInducedFailure::funcName = "TACSInducedFailure";
+const char* TACSInducedFailure::funcName = "TACSInducedFailure";
 
 /*
   Set the value of P
@@ -68,7 +68,9 @@ void TACSInducedFailure::setInducedType( enum InducedNormType type ){
 /*
   Retrieve the function name
 */
-const char *TACSInducedFailure::getObjectName(){ return funcName; }
+const char *TACSInducedFailure::getObjectName(){
+  return funcName;
+}
 
 /*
   Retrieve the function value
@@ -135,9 +137,9 @@ void TACSInducedFailure::elementWiseEval( EvaluationType ftype,
     // undefined quantity of interest on this element
     TacsScalar fail = 0.0, detXd = 0.0;
     int count = element->evalPointQuantity(elemIndex, TACS_FAILURE_INDEX,
-                                            time, i, pt,
-                                            Xpts, vars, dvars, ddvars,
-                                            &detXd, &fail);
+                                           time, i, pt,
+                                           Xpts, vars, dvars, ddvars,
+                                           &detXd, &fail);
 
     // Check whether the quantity requested is defined or not
     if (count >= 1){

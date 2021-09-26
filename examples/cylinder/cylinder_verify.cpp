@@ -393,33 +393,32 @@ TACSAssembler *createAssembler( TACSShellTransform *transform,
       double x = L*(u + defect*cos(v)*sin(2*M_PI*u));
 
       int node = i + j*nnx;
-      Xpts[3*node]   =  x;
-      Xpts[3*node+1] =  R*cos(theta);
+      Xpts[3*node] = x;
+      Xpts[3*node+1] = R*cos(theta);
       Xpts[3*node+2] = -R*sin(theta);
     }
   }
 
   // Set the node locations
   assembler->setNodes(X);
-  X->decref();
 
   // Create the surface traction object
   int num_elems = assembler->getNumElements();
   TACSAuxElements *aux = new TACSAuxElements(num_elems);
 
   for ( int elem = 0; elem < num_elems; elem++ ){
-    TacsScalar Xelem[3*16];
-    TacsScalar tr[3*16];
-
     int nnodes;
     const int *nodes;
     assembler->getElement(elem, &nnodes, &nodes);
+
+    TacsScalar Xelem[3*16], tr[3*16];
     X->getValues(nnodes, nodes, Xelem);
 
     for ( int node = 0; node < nnodes; node++ ){
       // Compute the pressure at this point in the shell
       double x = TacsRealPart(Xelem[3*node]);
-      double y = -R*atan2(TacsRealPart(Xelem[3*node+2]), TacsRealPart(Xelem[3*node+1]));
+      double y = -R*atan2(TacsRealPart(Xelem[3*node+2]),
+                          TacsRealPart(Xelem[3*node+1]));
 
       TacsScalar pval = load*sin(beta*x)*sin(alpha*y);
       TacsScalar ynorm = Xelem[3*node+1] / R;
@@ -443,6 +442,12 @@ TACSAssembler *createAssembler( TACSShellTransform *transform,
 
     aux->addElement(elem, trac);
   }
+
+  // Set the aux. elements
+  assembler->setAuxElements(aux);
+
+  // Free the X vector
+  X->decref();
 
   return assembler;
 }

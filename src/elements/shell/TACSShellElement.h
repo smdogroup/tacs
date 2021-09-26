@@ -774,7 +774,8 @@ int TACSShellElement<quadrature, basis, director, model>::
   TacsScalar fn[3*num_nodes];
   TacsShellComputeNodeNormals<basis>(Xpts, fn);
 
-  if (quantityType == TACS_FAILURE_INDEX || quantityType == TACS_STRAIN_ENERGY_DENSITY){
+  if (quantityType == TACS_FAILURE_INDEX ||
+      quantityType == TACS_STRAIN_ENERGY_DENSITY){
     // Compute the director rates
     TacsScalar d[dsize], ddot[dsize];
     director::template
@@ -817,7 +818,7 @@ int TACSShellElement<quadrature, basis, director, model>::
     if (quantityType == TACS_FAILURE_INDEX){
       *quantity = con->evalFailure(elemIndex, pt, X, e);
     }
-    else{ // quantityType == TACS_STRAIN_ENERGY_DENSITY
+    else { // quantityType == TACS_STRAIN_ENERGY_DENSITY
       TacsScalar s[9];
       con->evalStress(elemIndex, pt, X, e, s);
       *quantity = 0.0;
@@ -837,7 +838,6 @@ int TACSShellElement<quadrature, basis, director, model>::
     TacsScalar Xd[9];
     TacsShellAssembleFrame(Xxi, n0, Xd);
     *detXd = det3x3(Xd);
-
     *quantity = con->evalDensity(elemIndex, pt, X);
 
     return 1;
