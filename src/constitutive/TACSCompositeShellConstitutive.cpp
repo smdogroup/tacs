@@ -57,7 +57,46 @@ TACSCompositeShellConstitutive::~TACSCompositeShellConstitutive(){
 TacsScalar TACSCompositeShellConstitutive::evalDensity( int elemIndex,
                                                         const double pt[],
                                                         const TacsScalar X[] ){
-  return 0.0;
+  // Compute the thickness-weighted average of density across plies
+  TacsScalar t = 0.0, rho = 0.0;
+  for ( int i = 0; i < num_plies; i++ ){
+    TacsScalar rho_ply = ply_props[i]->getDensity();
+    TacsScalar t_ply = ply_thickness[i];
+    t += t_ply;
+    rho += rho_ply * t_ply;
+  }
+  rho /= t;
+  return rho;
+}
+
+// Evaluate the mass moments
+void TACSCompositeShellConstitutive::evalMassMoments( int elemIndex,
+                                                const double pt[],
+                                                const TacsScalar X[],
+                                                TacsScalar moments[] ){
+  moments[0] = 0.0;
+  moments[1] = 0.0;
+  moments[2] = 0.0;
+  // Compute the total thickness of the laminate
+  TacsScalar t = 0.0;
+  for ( int i = 0; i < num_plies; i++ ){
+    t += ply_thickness[i];
+  }
+  TacsScalar z = -t / 2;
+  for ( int i = 0; i < num_plies; i++ ){
+    TacsScalar rho_ply = ply_props[i]->getDensity();
+    TacsScalar t_ply = ply_thickness[i];
+    // Find z location of center of ply
+    TacsScalar z_ply = z + t_ply / 2;
+
+    moments[0] += rho_ply * t_ply;
+    moments[1] += -z_ply * rho_ply * t_ply;
+    moments[2] += rho_ply * t_ply * t_ply * t_ply / 12.0 + \
+                  z_ply * z_ply * rho_ply * t_ply;
+
+    // increment bottom ply location to next ply
+    z += t_ply;
+  }
 }
 
 // Evaluate the specific heat
