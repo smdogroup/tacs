@@ -39,23 +39,29 @@ class ConstitutiveTest(unittest.TestCase):
         cte = 24.0e-6
         kappa = 230.0
         iso_prop = constitutive.MaterialProperties(rho=rho, specific_heat=specific_heat,
-                                                     E=E, nu=nu, ys=ys, cte=cte, kappa=kappa)
+                                                   E=E, nu=nu, ys=ys, cte=cte, kappa=kappa)
         iso_ply = constitutive.OrthotropicPly(ply_thickness, iso_prop)
         iso_layup = [iso_ply] * nplies
 
         # Create the orthotropic layup
-        rho = 2700.0
+        rho = 1550.0
         specific_heat = 921.096
         E1 = 54e3
         E2 = 18e3
         nu12 = 0.25
         G12 = 9e3
         G13 = 9e3
-        ys = 270.0
+        Xt = 2410.0
+        Xc = 1040.0
+        Yt = 73.0
+        Yc = 173.0
+        S12 = 71.0
         cte = 24.0e-6
         kappa = 230.0
         ortho_prop = constitutive.MaterialProperties(rho=rho, specific_heat=specific_heat,
-                                                   E1=E1, E2=E2, nu12=nu12, G12=G12, G13=G13, ys=ys, cte=cte, kappa=kappa)
+                                                     E1=E1, E2=E2, nu12=nu12, G12=G12, G13=G13,
+                                                     Xt=Xt, Xc=Xc, Yt=Yt, Yc=Yc, S12=S12,
+                                                     cte=cte, kappa=kappa)
         ortho_ply = constitutive.OrthotropicPly(ply_thickness, ortho_prop)
         ortho_layup = [ortho_ply] * nplies
 
