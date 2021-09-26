@@ -35,6 +35,10 @@ class TACSCompositeShellConstitutive : public TACSShellConstitutive {
   TacsScalar evalDensity( int elemIndex, const double pt[],
                           const TacsScalar X[] );
 
+  // Evaluate the mass moments
+  void evalMassMoments( int elemIndex, const double pt[],
+                        const TacsScalar X[], TacsScalar moments[] );
+
   // Evaluate the specific heat
   TacsScalar evalSpecificHeat( int elemIndex, const double pt[],
                                const TacsScalar X[] );
