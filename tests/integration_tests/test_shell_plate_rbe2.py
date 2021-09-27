@@ -17,7 +17,7 @@ and Compliance functions and sensitivities
 ------------       -----------
 '''
 
-FUNC_REFS = np.array([1.3470830917436758, 51400.0, 3435767.6264591585])
+FUNC_REFS = np.array([1.2600980396725359, 51400.0, 3767896.1409673616])
 
 # Length of plate in x/y direction
 Lx = 10.0
@@ -47,7 +47,7 @@ class ProblemTest(StaticTestCase.StaticTest):
         else:
             self.rtol = 1e-1
             self.atol = 1e-4
-            self.dh = 1e-7
+            self.dh = 1e-5
 
         # Set the MPI communicator
         comm = MPI.COMM_WORLD
@@ -156,7 +156,7 @@ class ProblemTest(StaticTestCase.StaticTest):
         dep_dofs = np.array([1, 1, 1, 1, 1, 1], np.intc)
         # Set the artificial stiffness to be low to pass the sensitivity tests
         # This will affect the accuracy of the element behavior
-        rbe = elements.RBE2(num_rbe_nodes, dep_dofs, C1=1e3, C2=1e-1)
+        rbe = elements.RBE2(num_rbe_nodes, dep_dofs, C1=1e2, C2=1e-1)
         # Set the elements for each (only two) component
         element_list = [shell, rbe]
         creator.setElements(element_list)
