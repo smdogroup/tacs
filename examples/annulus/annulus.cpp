@@ -35,7 +35,7 @@ int main( int argc, char *argv[] ){
   stiff->incref();
 
   // Create the model class
-  TACSLinearElasticity2D model(stiff, TACS_LINEAR_STRAIN);
+  TACSLinearElasticity2D *model = new TACSLinearElasticity2D(stiff, TACS_LINEAR_STRAIN);
 
   // Create the basis
   TACSElementBasis *linear_basis = new TACSLinearQuadBasis();
@@ -43,9 +43,9 @@ int main( int argc, char *argv[] ){
   TACSElementBasis *cubic_basis = new TACSCubicQuadBasis();
 
   // Create the element type
-  TACSElement2D *linear_element = new TACSElement2D(&model, linear_basis);
-  TACSElement2D *quad_element = new TACSElement2D(&model, quad_basis);
-  TACSElement2D *cubic_element = new TACSElement2D(&model, cubic_basis);
+  TACSElement2D *linear_element = new TACSElement2D(model, linear_basis);
+  TACSElement2D *quad_element = new TACSElement2D(model, quad_basis);
+  TACSElement2D *cubic_element = new TACSElement2D(model, cubic_basis);
 
   // The TACSAssembler object - which should be allocated if the mesh
   // is loaded correctly

@@ -491,7 +491,7 @@ TacsScalar computeError( int order, TACSAssembler *assembler,
         TACSShellQuadBasis<3>::interpFields<3, 3>(pt, Xpts, Xp);
         TACSShellQuadBasis<3>::interpFields<6, 6>(pt, vars, u);
       }
-      else if (order == 4){
+      else { // order == 4
         TACSShellQuadBasis<4>::interpFields<3, 3>(pt, Xpts, Xp);
         TACSShellQuadBasis<4>::interpFields<6, 6>(pt, vars, u);
       }
@@ -1156,15 +1156,15 @@ int main( int argc, char * argv[] ){
                                              order, nx, ny, L, R, load);
   assembler->incref();
 
-  // // Create an TACSToFH5 object for writing output to files
-  // unsigned int write_flag = (TACSElement::OUTPUT_NODES |
-  //                            TACSElement::OUTPUT_DISPLACEMENTS |
-  //                            TACSElement::OUTPUT_STRAINS |
-  //                            TACSElement::OUTPUT_STRESSES |
-  //                            TACSElement::OUTPUT_EXTRAS |
-  //                            TACSElement::OUTPUT_COORDINATES);
-  // TACSToFH5 * f5 = new TACSToFH5(tacs, TACS_SHELL, write_flag);
-  // f5->incref();
+  // Create an TACSToFH5 object for writing output to files
+  int write_flag = (TACS_OUTPUT_CONNECTIVITY |
+                    TACS_OUTPUT_NODES |
+                    TACS_OUTPUT_DISPLACEMENTS |
+                    TACS_OUTPUT_STRAINS |
+                    TACS_OUTPUT_STRESSES |
+                    TACS_OUTPUT_EXTRAS);
+  TACSToFH5 *f5 = new TACSToFH5(assembler, TACS_BEAM_OR_SHELL_ELEMENT, write_flag);
+  f5->incref();
 
   // Create the structural matrix/preconditioner/KSM to use in conjunction
   // with the aerostructural solution
@@ -1198,7 +1198,7 @@ int main( int argc, char * argv[] ){
   gmres->solve(rhs, ans);
   ans->scale(-1.0);
   assembler->setVariables(ans);
-  // f5->writeToFile("cylindrical_solution.f5");
+  f5->writeToFile("cylindrical_solution.f5");
 
   // Compute the error associated with the normal displacement
   TacsScalar err = computeError(order, assembler,
@@ -1323,7 +1323,7 @@ int main( int argc, char * argv[] ){
   rhs->decref();
   gmres->decref();
   mat->decref();
-  // f5->decref();
+  f5->decref();
   assembler->decref();
 
   MPI_Finalize();

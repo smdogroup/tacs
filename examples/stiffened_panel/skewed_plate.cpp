@@ -2,89 +2,88 @@
 #include "TACSBuckling.h"
 #include "TACSToFH5.h"
 #include "TACSMeshLoader.h"
-#include "MITCShell.h"
-#include "isoFSDTStiffness.h"
-#include "compFSDTStiffness.h"
-#include "MaterialProperties.h"
-#include "TACSPanelAnalysis.h"
+#include "TACSIsoShellConstitutive.h"
+#include "TACSShellElementDefs.h"
+// #include "TACSPanelAnalysis.h"
 
-/*
-  The TACSPanelAnalysis object cannot be used in complex mode because
-  the underlying implementation uses eigenvalue routines from LAPACK
-  that are not "complexified".
-*/
 
-#ifndef TACS_USE_COMPLEX
+// /*
+//   The TACSPanelAnalysis object cannot be used in complex mode because
+//   the underlying implementation uses eigenvalue routines from LAPACK
+//   that are not "complexified".
+// */
 
-/*
-  Build a model of a skewed plate using a TACSPanelAnalysis object
-  and perform buckling and natural frequency analysis on the model.
+// #ifndef TACS_USE_COMPLEX
 
-  input:
-  skin:    stiffness object
-  theta:   skew angle
-  a:       the longitudinal plate dimension
-  b:       the transverse plate dimension
-  nloads:  the number of buckling loads
-  nfreq:   the number of natural frequencies of vibration
+// /*
+//   Build a model of a skewed plate using a TACSPanelAnalysis object
+//   and perform buckling and natural frequency analysis on the model.
 
-  output:
-  loads:   the buckling loads
-  freq:    the natural frequencies of vibration
-*/
-void skewed_test( FSDTStiffness *skin, TacsScalar theta,
-                  TacsScalar a, TacsScalar b,
-                  TacsScalar Nx, TacsScalar Nxy,
-                  TacsScalar loads[], int nloads,
-                  TacsScalar freq[], int nfreq ){
-  int nseg = 12;
-  int nnodes = nseg+1;
-  int nbeams = 0;
-  int nmodes = 20;
-  TACSPanelAnalysis *panel = new TACSPanelAnalysis(nnodes, nseg,
-                                                    nbeams, nmodes, a,
-                                                    theta);
-  panel->incref();
+//   input:
+//   skin:    stiffness object
+//   theta:   skew angle
+//   a:       the longitudinal plate dimension
+//   b:       the transverse plate dimension
+//   nloads:  the number of buckling loads
+//   nfreq:   the number of natural frequencies of vibration
 
-  TacsScalar *Xpts = new TacsScalar[2*nnodes];
-  memset(Xpts, 0, 2*nnodes*sizeof(TacsScalar));
+//   output:
+//   loads:   the buckling loads
+//   freq:    the natural frequencies of vibration
+// */
+// void skewed_test( FSDTStiffness *skin, TacsScalar theta,
+//                   TacsScalar a, TacsScalar b,
+//                   TacsScalar Nx, TacsScalar Nxy,
+//                   TacsScalar loads[], int nloads,
+//                   TacsScalar freq[], int nfreq ){
+//   int nseg = 12;
+//   int nnodes = nseg+1;
+//   int nbeams = 0;
+//   int nmodes = 20;
+//   TACSPanelAnalysis *panel = new TACSPanelAnalysis(nnodes, nseg,
+//                                                     nbeams, nmodes, a,
+//                                                     theta);
+//   panel->incref();
 
-  for ( int k = 0; k < nnodes; k++ ){
-    Xpts[2*k] = (k*b)/(nnodes-1);
-  }
+//   TacsScalar *Xpts = new TacsScalar[2*nnodes];
+//   memset(Xpts, 0, 2*nnodes*sizeof(TacsScalar));
 
-  for ( int k = 0; k < nnodes-1; k++ ){
-    panel->setSegment(k, TACSPanelAnalysis::SKIN_SEGMENT,
-                      skin, k, k+1);
-  }
+//   for ( int k = 0; k < nnodes; k++ ){
+//     Xpts[2*k] = (k*b)/(nnodes-1);
+//   }
 
-  panel->setPoints(Xpts, nnodes);
+//   for ( int k = 0; k < nnodes-1; k++ ){
+//     panel->setSegment(k, TACSPanelAnalysis::SKIN_SEGMENT,
+//                       skin, k, k+1);
+//   }
 
-  int cons[4] = {-1, -1, -1, 1};
-  panel->setFirstNodeBC(0, (1 | 2 | 4));
-  panel->setLastNodeBC(nnodes-1, (1 | 2 | 4));
-  panel->initialize();
+//   panel->setPoints(Xpts, nnodes);
 
-  double tp = MPI_Wtime();
-  panel->computePressureLoad(1.0, "./results/pressure_load.dat");
-  tp = MPI_Wtime() - tp;
+//   int cons[4] = {-1, -1, -1, 1};
+//   panel->setFirstNodeBC(0, (1 | 2 | 4));
+//   panel->setLastNodeBC(nnodes-1, (1 | 2 | 4));
+//   panel->initialize();
 
-  double tb = MPI_Wtime();
-  panel->computeBucklingLoads(Nx, Nxy,
-                              loads, nloads, "./results/skewed_");
-  tb = MPI_Wtime() - tb;
+//   double tp = MPI_Wtime();
+//   panel->computePressureLoad(1.0, "./results/pressure_load.dat");
+//   tp = MPI_Wtime() - tp;
 
-  double tf = MPI_Wtime();
-  panel->computeFrequencies(freq, nfreq, "./results/skewed_");
-  tf = MPI_Wtime() - tf;
+//   double tb = MPI_Wtime();
+//   panel->computeBucklingLoads(Nx, Nxy,
+//                               loads, nloads, "./results/skewed_");
+//   tb = MPI_Wtime() - tb;
 
-  printf("Pressure analysis time:  %f\n", tp);
-  printf("Buckling analysis time:  %f\n", tb);
-  printf("Frequency analysis time: %f\n", tf);
+//   double tf = MPI_Wtime();
+//   panel->computeFrequencies(freq, nfreq, "./results/skewed_");
+//   tf = MPI_Wtime() - tf;
 
-  delete [] Xpts;
-  panel->decref();
-}
+//   printf("Pressure analysis time:  %f\n", tp);
+//   printf("Buckling analysis time:  %f\n", tb);
+//   printf("Frequency analysis time: %f\n", tf);
+
+//   delete [] Xpts;
+//   panel->decref();
+// }
 
 #endif // TACS_USE_COMPLEX
 

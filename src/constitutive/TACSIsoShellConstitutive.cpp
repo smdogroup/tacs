@@ -460,3 +460,16 @@ void TACSIsoShellConstitutive::evalTangentHeatFlux( int elemIndex,
 const char* TACSIsoShellConstitutive::getObjectName(){
   return constName;
 }
+
+
+TacsScalar TACSIsoShellConstitutive::evalDesignFieldValue( int elemIndex,
+                                                           const double pt[],
+                                                           const TacsScalar X[],
+                                                           int index ){
+  if (index == 0){
+    return t;
+  }
+  else {
+    return 0.0;
+  }
+}
