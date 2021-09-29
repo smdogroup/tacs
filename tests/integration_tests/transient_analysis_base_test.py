@@ -3,16 +3,16 @@ from tacs import TACS
 import unittest
 
 '''
-This is a base class for static problem unit test cases.
-This base class will test function evaluations and total 
-and partial sensitivities for the user-specified problem 
-that inherits from it.
-When the user creates a new test based on this class three 
+This is a base class for transient problem unit test cases.
+This base class will test function evaluations and total
+sensitivities for the user-specified problem that inherits from it.
+When the user creates a new test based on this class four 
 methods are required to be defined in the child class. 
 
     1. setup_assembler
-    2. setup_tacs_vecs
-    3. setup_funcs
+    2. setup_integrator
+    3. setup_tacs_vecs
+    4. setup_funcs
     
 See the virtual method implementations for each method 
 below for more details.
