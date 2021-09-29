@@ -684,8 +684,23 @@ void TACSElement2D::addPointQuantityXptSens( int elemIndex,
   model->evalPointQuantitySens(elemIndex, quantityType, time, n, pt,
                                X, Xd, Ut, Ux, dfdq, dfdX, dfdXd, dfdUt, dfdUx);
 
+  // Scale the derivatives appropriately
+  dfdX[0] *= scale;  dfdX[1] *= scale;  dfdX[2] *= scale;
+
+  for ( int i = 0; i < 6; i++ ){
+    dfdXd[i] *= scale;
+  }
+
+  for ( int i = 0; i < 3*vars_per_node; i++ ){
+    dfdUt[i] *= scale;
+  }
+
+  for ( int i = 0; i < 2*vars_per_node; i++ ){
+    dfdUx[i] *= scale;
+  }
+
   basis->addFieldGradientXptSens(n, pt, Xpts, vars_per_node, Xd, J, Ud,
-                                 dfddetXd, dfdX, dfdXd, NULL, dfdUx, dfdXpts);
+                                 scale*dfddetXd, dfdX, dfdXd, NULL, dfdUx, dfdXpts);
 }
 
 /*
