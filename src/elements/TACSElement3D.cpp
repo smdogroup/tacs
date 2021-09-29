@@ -680,12 +680,24 @@ void TACSElement3D::addPointQuantityXptSens( int elemIndex,
 
   // Evaluate the derivative of the function with respect to X, Ut, Ux
   TacsScalar dfdX[3], dfdXd[9];
-  TacsScalar dfdUt[3*MAX_VARS_PER_NODE], dfdUx[2*MAX_VARS_PER_NODE];
+  TacsScalar dfdUt[3*MAX_VARS_PER_NODE], dfdUx[3*MAX_VARS_PER_NODE];
   model->evalPointQuantitySens(elemIndex, quantityType, time, n, pt,
                                X, Xd, Ut, Ux, dfdq, dfdX, dfdXd, dfdUt, dfdUx);
 
+  // Scale the derivatives appropriately
+  dfdX[0] *= scale;  dfdX[1] *= scale;  dfdX[2] *= scale;
+
+  for ( int i = 0; i < 9; i++ ){
+    dfdXd[i] *= scale;
+  }
+
+  for ( int i = 0; i < 3*vars_per_node; i++ ){
+    dfdUt[i] *= scale;
+    dfdUx[i] *= scale;
+  }
+
   basis->addFieldGradientXptSens(n, pt, Xpts, vars_per_node, Xd, J, Ud,
-                                 dfddetXd, dfdX, dfdXd, NULL, dfdUx, dfdXpts);
+                                 scale*dfddetXd, dfdX, dfdXd, NULL, dfdUx, dfdXpts);
 }
 
 /*
