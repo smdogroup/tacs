@@ -69,16 +69,6 @@ class TransientTestCase:
             # Set functions for integrator
             self.integrator.setFunctions(self.func_list)
 
-            self.dfdu_list = []
-            self.adjoint_list = []
-            self.dfddv_list = []
-            self.dfdx_list = []
-            for i in range(len(self.func_list)):
-                self.dfdu_list.append(self.assembler.createVec())
-                self.adjoint_list.append(self.assembler.createVec())
-                self.dfddv_list.append(self.assembler.createDesignVec())
-                self.dfdx_list.append(self.assembler.createNodeVec())
-
         def setup_assembler(self, dtype):
             """
             Setup mesh and tacs assembler for problem we will be testing.
@@ -124,6 +114,61 @@ class TransientTestCase:
             # Test functions values against historical values
             np.testing.assert_allclose(func_vals, self.func_ref, rtol=self.rtol, atol=self.atol)
 
+        def test_total_dv_sensitivities(self):
+            """
+            Test total dv sensitivity through adjoint against fd/cs
+            """
+            # Make sure vecs are initialized to zero
+            self.zero_tacs_vecs()
+
+            # Initial solve
+            func_vals = self.run_solve()
+
+            # Compute the total derivative w.r.t. material design variables using adjoint
+            self.run_adjoints()
+
+            # Compute the total derivative w.r.t. material design variables using fd/cs
+            self.perturb_tacs_vec(self.dv1, self.dv0, self.dv_pert)
+            # Run perturbed solution
+            func_vals_pert = self.run_solve(dv=self.dv1)
+            # Compute approximate sens
+            fdv_sens_approx = self.compute_fdcs_approx(func_vals_pert, func_vals)
+
+            # Tests cs/fd against sensitivity from adjoint
+            for i in range(len(self.func_list)):
+                with self.subTest(function=self.func_list[i]):
+                    dfddv = self.integrator.getGradient(i)
+                    dfddv_proj_i = dfddv.dot(self.dv_pert)
+                    np.testing.assert_allclose(dfddv_proj_i, fdv_sens_approx[i],
+                                               rtol=self.rtol, atol=self.atol)
+
+        def test_total_xpt_sensitivities(self):
+            """
+            Test total xpt sensitivity through adjoint against fd/cs
+            """
+            # Make sure vecs are initialized to zero
+            self.zero_tacs_vecs()
+
+            # Initial solve
+            func_vals = self.run_solve()
+
+            # Compute the total derivative w.r.t. nodal xpt locations using adjoint
+            self.run_adjoints()
+
+            # Compute the total derivative w.r.t. nodal xpt locations using fd/cs
+            self.perturb_tacs_vec(self.xpts1, self.xpts0, self.xpts_pert)
+            # Run perturbed solution
+            func_vals_pert = self.run_solve(xpts=self.xpts1)
+            # Compute approximate sens
+            f_xpt_sens_approx = self.compute_fdcs_approx(func_vals_pert, func_vals)
+
+            # Tests cs/fd against sensitivity from adjoint
+            for i in range(len(self.func_list)):
+                with self.subTest(function=self.func_list[i]):
+                    dfdx = self.integrator.getXptGradient(i)
+                    dfdx_proj_i = dfdx.dot(self.xpts_pert)
+                    np.testing.assert_allclose(dfdx_proj_i, f_xpt_sens_approx[i], rtol=self.rtol, atol=self.atol)
+
         def run_solve(self, dv=None, xpts=None):
             """
             Run a transient solve at specified design point and return functions of interest
@@ -161,14 +206,8 @@ class TransientTestCase:
             # Set node locations
             self.assembler.setNodes(self.xpts0)
 
-            # Assemble the transpose stiffness matrix
-            self.assembler.assembleJacobian(self.alpha, self.beta, self.gamma, None, self.mat, TACS.TRANSPOSE)
-            self.pc.factor()
-
-            # Solve for the adjoint variables
-            self.assembler.addSVSens(self.func_list, self.dfdu_list, self.alpha, self.beta, self.gamma)
-            for i in range(len(self.func_list)):
-                self.gmres.solve(self.dfdu_list[i], self.adjoint_list[i])
+            # Solve adjoint backwards in time
+            self.integrator.integrateAdjoint()
 
         def zero_tacs_vecs(self):
             """
@@ -177,18 +216,6 @@ class TransientTestCase:
 
             # Set state vars to zero
             self.assembler.zeroVariables()
-
-            # Zero dv sens for each function
-            for dfddv in self.dfddv_list:
-                dfddv.zeroEntries()
-
-            # Zero xpt sens for each function
-            for dfdx in self.dfdx_list:
-                dfdx.zeroEntries()
-
-            # Zero sv sens for each function
-            for dfdu in self.dfdu_list:
-                dfdu.zeroEntries()
 
         def perturb_tacs_vec(self, vec_out, vec_in, vec_pert):
             """

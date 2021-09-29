@@ -112,18 +112,7 @@ class ProblemTest(TransientTestCase.TransientTest):
         # Set the file output format
         integrator = TACS.BDFIntegrator(assembler, tinit, tfinal,
                                         float(num_steps), order)
-        '''
-        # Set the element flag
-        flag = (TACS.OUTPUT_CONNECTIVITY |
-                TACS.OUTPUT_NODES |
-                TACS.OUTPUT_DISPLACEMENTS |
-                TACS.OUTPUT_STRAINS)
-        f5 = TACS.ToFH5(assembler, TACS.PLANE_STRESS_ELEMENT, flag)
-        integrator.setFH5(f5)
-        integrator.setOutputFrequency(50)
-        integrator.setOutputPrefix(".")
-        integrator.setPrintLevel(1)
-        '''
+
         return integrator
 
     def setup_tacs_vecs(self, assembler, force_history, dv_pert_vec, xpts_pert_vec):
