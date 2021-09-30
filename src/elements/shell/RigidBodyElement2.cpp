@@ -103,8 +103,8 @@ enum ElementType RigidBodyElement2::getElementType(){ return TACS_RIGID_ELEMENT;
 
 /*
   Returns the multiplier index
-void RigidBodyElement2::getMultiplierIndex( int *multiplier ){
-  *multiplier = NUM_DEP_NODES + 1;
+int RigidBodyElement2::getMultiplierIndex(){
+  return NUM_DEP_NODES + 1;
 }*/
 
 /*
@@ -129,7 +129,6 @@ void RigidBodyElement2::addResidual( int elemIndex, double time,
                                      const TacsScalar ddvars[],
                                      TacsScalar res[] ){
 
-  TacsScalar Xcg[3], Icg[3], W;
   const TacsScalar *Fn, *Mn, *Xn, *X0, *un, *tn, *u0, *t0, *actualLM;
   TacsScalar *maskedLM;
 
