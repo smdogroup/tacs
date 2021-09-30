@@ -46,7 +46,7 @@ class RigidBodyElement3 : public TACSElement {
   int getNumFaceQuadraturePoints( int face ){ return 0; }
   double getFaceQuadraturePoint( int face, int n, double pt[],
                                  double tangent[] ){ return 0.0; }
-  void getMultiplierIndex( int *multiplier );
+  /*int getMultiplierIndex();*/
 
   // Functions for analysis
   // ----------------------
@@ -124,7 +124,7 @@ class RigidBodyElement3 : public TACSElement {
   // artificial stiffness scaling factor, see ref [2]
   double C2;
   // Tolerance used in colinearity test
-  const double SMALL_NUM = 1e-8;
+  static const double SMALL_NUM;
 
 };
 

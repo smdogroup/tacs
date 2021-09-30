@@ -116,14 +116,17 @@ enum ElementType RigidBodyElement3::getElementType(){ return TACS_RIGID_ELEMENT;
 /*
   Returns the multiplier index
 */
-void RigidBodyElement3::getMultiplierIndex( int *multiplier ){
-  *multiplier = NUM_INDEP_NODES + 1;
-}
+/*int RigidBodyElement3::getMultiplierIndex(){
+  return NUM_INDEP_NODES + 1;
+}*/
 
 /*
   The element name, variable, stress and strain names.
 */
 const char * RigidBodyElement3::elemName = "RigidBodyElement3";
+
+/* Tolerance for colinearity test in moment of inertia calculation*/
+const double RigidBodyElement3::SMALL_NUM = 1e-8;
 
 const char * RigidBodyElement3::dispNames[] = { "u0", "v0", "w0",
 				                                "rotx", "roty", "rotz" };
