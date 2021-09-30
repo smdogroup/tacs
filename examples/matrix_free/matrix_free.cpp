@@ -265,7 +265,7 @@ void testMatrixVectorProducts( MPI_Comm comm, int varsPerNode,
   y_mat->axpy(-1.0, y_free);
   TacsScalar norm = y_mat->norm();
   if (rank == 0){
-    printf("Residual norm of the difference: %e\n", norm);
+    printf("Residual norm of the difference: %e\n", TacsRealPart(norm));
   }
 
   mat->decref();
@@ -472,7 +472,7 @@ int main( int argc, char *argv[] ){
 
             // Construct the interpolation
             int count = 0;
-            double N[216];
+            TacsScalar N[216];
             int vars[216];
             for ( int kk = kstart; kk < kend; kk++ ){
               for ( int jj = jstart; jj < jend; jj++ ){

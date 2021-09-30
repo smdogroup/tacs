@@ -93,11 +93,12 @@ int main( int argc, char * argv[] ){
   int num_comp = mesh->getNumComponents();
   for ( int k = 0; k < num_comp; k++ ){
     const char *descriptor = mesh->getElementDescript(k);
+    TacsScalar thickness = 0.01;
+    int thickness_index = k;
     TacsScalar min_thickness = 0.01;
     TacsScalar max_thickness = 0.20;
-    TacsScalar thickness = 0.01;
     TACSShellConstitutive *con = new TACSIsoShellConstitutive(props,
-      thickness, min_thickness, max_thickness, k);
+      thickness, thickness_index, min_thickness, max_thickness);
 
     // Initialize element object
     TACSElement *elem = TacsCreateShellByName(descriptor, transform, con);
@@ -387,7 +388,7 @@ int main( int argc, char * argv[] ){
   // Compute their derivative based on the complex component
   // of the function value
   for ( int j = 0; j < NUM_FUNCS; j++ ){
-    fd[k] = TacsImagPart(fvals[j])/dh;
+    fd[j] = TacsImagPart(fvals[j])/dh;
   }
 
 #else // !TACS_USE_COMPLEX

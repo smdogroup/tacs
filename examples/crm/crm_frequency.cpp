@@ -52,11 +52,12 @@ int main( int argc, char **argv ){
   // Loop over components, creating constituitive object for each
   for ( int i = 0; i < num_components; i++ ){
     const char *descriptor = mesh->getElementDescript(i);
+    TacsScalar thickness = 0.01;
+    int thickness_index = i;
     TacsScalar min_thickness = 0.01;
     TacsScalar max_thickness = 0.20;
-    TacsScalar thickness = 0.015;
     TACSShellConstitutive *con = new TACSIsoShellConstitutive(props,
-      thickness, min_thickness, max_thickness);
+      thickness, thickness_index, min_thickness, max_thickness);
 
     // Initialize element object
     TACSElement *shell = TacsCreateShellByName(descriptor, transform, con);

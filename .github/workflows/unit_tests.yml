@@ -25,11 +25,13 @@ jobs:
           - NAME: Real
             OPTIONAL: 'default'
             INTERFACE: 'interface'
+            EXAMPLES: 'default'
 
           # complex versions
           - NAME: Complex
             OPTIONAL: 'complex'
             INTERFACE: 'complex_interface'
+            EXAMPLES: 'complex'
 
     name: TACS ${{ matrix.NAME }} Build/Test
 
@@ -74,6 +76,9 @@ jobs:
           make ${{ matrix.OPTIONAL }} TACS_DIR=$TACS_DIR METIS_INCLUDE=-I${CONDA_PREFIX}/include/ METIS_LIB="-L${CONDA_PREFIX}/lib/ -lmetis";
           cd $TACS_DIR;
           make ${{ matrix.INTERFACE }};
+          cd $TACS_DIR/examples;
+          make ${{ matrix.EXAMPLES }} TACS_DIR=$TACS_DIR METIS_INCLUDE=-I${CONDA_PREFIX}/include/ METIS_LIB="-L${CONDA_PREFIX}/lib/ -lmetis";
+          cd $TACS_DIR;
           echo "=============================================================";
           echo "running tests";
           echo "=============================================================";
