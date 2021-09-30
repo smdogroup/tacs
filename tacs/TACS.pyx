@@ -2578,6 +2578,26 @@ cdef class Creator:
     def createTACS(self):
         return _init_Assembler(self.ptr.createTACS())
 
+    def getElementIdNums(self, np.ndarray[int, ndim=1, mode='c'] elem_ids=None):
+        cdef int num_ids = 0
+        cdef int *ids = NULL
+        cdef int *elem_nums = NULL
+        cdef int num_elems = 0
+
+        # If the array of ids exists, set the correct pointers/shapes
+        if elem_ids is not None:
+            num_ids = elem_ids.shape[0]
+            ids = <int*>elem_ids.data
+        num_elems = self.ptr.getElementIdNums(num_ids, ids, &elem_nums)
+
+        cdef np.ndarray array = np.zeros(num_elems, dtype=np.intc)
+        for i in range(num_elems):
+            array[i] = elem_nums[i]
+
+        # Free the array from C++
+        deleteArray(elem_nums)
+        return array
+
     def getAssemblerNodeNums(self, Assembler assembler,
                         np.ndarray[int, ndim=1, mode='c'] nodes=None):
         cdef int num_orig_nodes = 0

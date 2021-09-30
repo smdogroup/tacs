@@ -664,6 +664,7 @@ cdef extern from "TACSCreator.h":
         int getElementPartition(const int **)
         TACSAssembler *createTACS()
         int getNodeNums(const int**)
+        int getElementIdNums(int, int *, int **)
         void getAssemblerNodeNums(TACSAssembler*, int, const int*,
                                   int*, int**)
 
