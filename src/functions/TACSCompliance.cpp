@@ -92,7 +92,7 @@ void TACSCompliance::elementWiseEval( EvaluationType ftype,
                                            &detXd, &U0);
 
     if (count >= 1){
-      compliance += detXd*weight*U0;
+      compliance += scale*detXd*weight*U0;
     }
   }
 }
