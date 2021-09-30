@@ -129,7 +129,6 @@ void TACSRBE2::addResidual( int elemIndex, double time,
                             const TacsScalar ddvars[],
                             TacsScalar res[] ){
 
-  TacsScalar Xcg[3], Icg[3], W;
   const TacsScalar *Fn, *Mn, *Xn, *X0, *un, *tn, *u0, *t0, *actualLM;
   TacsScalar *maskedLM;
 

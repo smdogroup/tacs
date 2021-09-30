@@ -116,14 +116,17 @@ enum ElementType TACSRBE3::getElementType(){ return TACS_RIGID_ELEMENT; }
 /*
   Returns the multiplier index
 */
-void TACSRBE3::getMultiplierIndex( int *multiplier ){
-  *multiplier = NUM_INDEP_NODES + 1;
-}
+/*int TACSRBE3::getMultiplierIndex(){
+  return NUM_INDEP_NODES + 1;
+}*/
 
 /*
   The element name, variable, stress and strain names.
 */
 const char * TACSRBE3::elemName = "TACSRBE3";
+
+/* Tolerance for colinearity test in moment of inertia calculation*/
+const double TACSRBE3::SMALL_NUM = 1e-8;
 
 const char * TACSRBE3::dispNames[] = { "u0", "v0", "w0",
 				                       "rotx", "roty", "rotz" };
