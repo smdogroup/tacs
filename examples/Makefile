@@ -9,21 +9,28 @@ include ../TACS_Common.mk
 
 EXAMPLE_SUBDIRS = \
 	annulus \
+	benchmark \
+	block_cyclic_mat \
+	crm \
+	cylinder \
+	grad_verify \
+	matrix_free \
 	mg \
+	plate \
+	profile_elements \
+	shell \
+	stiffened_panel \
 	tetrahedral \
 	triangle \
-	tutorial \
-	four_bar_mechanism \
-	block_cyclic_mat \
-	plate \
-	profile_elements
+	tutorial
 
-#	rigid \
-#	stiffened_panel \
-#	benchmark \
-#	crm \
-#	cylinder \
-#	grad_verify \
+# Examples that should work:
+# four_bar_mechanism
+# pyelement
+# rigid
+# rotating_beam
+# plate_dynamics
+#
 
 default:
 	@for subdir in $(EXAMPLE_SUBDIRS) ; do \

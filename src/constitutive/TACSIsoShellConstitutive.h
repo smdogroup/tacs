@@ -116,6 +116,10 @@ class TACSIsoShellConstitutive : public TACSShellConstitutive {
   // The name of the constitutive object
   const char *getObjectName();
 
+  // Retrieve the design variable for plotting purposes
+  TacsScalar evalDesignFieldValue( int elemIndex, const double pt[],
+                                   const TacsScalar X[], int index );
+
  private:
   // Material properties class
   TACSMaterialProperties *properties;

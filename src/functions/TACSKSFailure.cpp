@@ -148,9 +148,9 @@ void TACSKSFailure::elementWiseEval( EvaluationType ftype,
     // undefined quantity of interest on this element
     TacsScalar fail = 0.0, detXd = 0.0;
     int count = element->evalPointQuantity(elemIndex, TACS_FAILURE_INDEX,
-                                            time, i, pt,
-                                            Xpts, vars, dvars, ddvars,
-                                            &detXd, &fail);
+                                           time, i, pt,
+                                           Xpts, vars, dvars, ddvars,
+                                           &detXd, &fail);
 
     // Check whether the quantity requested is defined or not
     if (count >= 1){
@@ -208,33 +208,32 @@ void TACSKSFailure::getElementSVSens( int elemIndex, TACSElement *element,
 
     TacsScalar fail = 0.0, detXd = 0.0;
     int count = element->evalPointQuantity(elemIndex, TACS_FAILURE_INDEX,
-                                            time, i, pt,
-                                            Xpts, vars, dvars, ddvars,
-                                            &detXd, &fail);
+                                           time, i, pt,
+                                           Xpts, vars, dvars, ddvars,
+                                           &detXd, &fail);
 
     if (count >= 1){
       // Compute the sensitivity contribution
-      TacsScalar ksPtWeight = 0.0;
+      TacsScalar dfdq = 0.0;
       if (ksType == DISCRETE){
         // d(log(ksFailSum))/dx = 1/(ksFailSum)*d(fail)/dx
-        ksPtWeight = exp(ksWeight*(fail - maxFail))/ksFailSum;
+        dfdq = exp(ksWeight*(fail - maxFail))/ksFailSum;
       }
       else if (ksType == CONTINUOUS){
-        ksPtWeight = exp(ksWeight*(fail - maxFail))/ksFailSum;
-        ksPtWeight *= weight*detXd;
+        dfdq = exp(ksWeight*(fail - maxFail))/ksFailSum;
+        dfdq *= weight*detXd;
       }
       else if (ksType == PNORM_DISCRETE){
         TacsScalar fpow = pow(fabs(TacsRealPart(fail/maxFail)), ksWeight-2.0);
-        ksPtWeight = fail*fpow*invPnorm;
+        dfdq = fail*fpow*invPnorm;
       }
       else if (ksType == PNORM_CONTINUOUS){
         // Get the determinant of the Jacobian
         TacsScalar fpow = pow(fabs(TacsRealPart(fail/maxFail)), ksWeight-2.0);
-        ksPtWeight = fail*fpow*invPnorm;
-        ksPtWeight *= weight*detXd;
+        dfdq = fail*fpow*invPnorm;
+        dfdq *= weight*detXd;
       }
 
-      TacsScalar dfdq = ksPtWeight;
       element->addPointQuantitySVSens(elemIndex, TACS_FAILURE_INDEX, time,
                                       alpha, beta, gamma,
                                       i, pt, Xpts, vars, dvars, ddvars,
@@ -267,9 +266,9 @@ void TACSKSFailure::getElementXptSens( int elemIndex,
 
     TacsScalar fail = 0.0, detXd = 0.0;
     int count = element->evalPointQuantity(elemIndex, TACS_FAILURE_INDEX,
-                                            time, i, pt,
-                                            Xpts, vars, dvars, ddvars,
-                                            &detXd, &fail);
+                                           time, i, pt,
+                                           Xpts, vars, dvars, ddvars,
+                                           &detXd, &fail);
 
     if (count >= 1){
       // Compute the sensitivity contribution
@@ -296,8 +295,8 @@ void TACSKSFailure::getElementXptSens( int elemIndex,
       }
 
       element->addPointQuantityXptSens(elemIndex, TACS_FAILURE_INDEX, time,
-                                        scale, i, pt, Xpts, vars, dvars, ddvars,
-                                        dfddetXd, &dfdq, dfdXpts);
+                                       scale, i, pt, Xpts, vars, dvars, ddvars,
+                                       dfddetXd, &dfdq, dfdXpts);
     }
   }
 }
@@ -322,9 +321,9 @@ void TACSKSFailure::addElementDVSens( int elemIndex,
 
     TacsScalar fail = 0.0, detXd = 0.0;
     int count = element->evalPointQuantity(elemIndex, TACS_FAILURE_INDEX,
-                                            time, i, pt,
-                                            Xpts, vars, dvars, ddvars,
-                                            &detXd, &fail);
+                                           time, i, pt,
+                                           Xpts, vars, dvars, ddvars,
+                                           &detXd, &fail);
 
     if (count >= 1){
       // Compute the sensitivity contribution

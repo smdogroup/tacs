@@ -1,11 +1,8 @@
 /*
   Pressure loaded plate
 */
-#include "TACSMITCPlateModel.h"
-#include "TACSMITCThermoelasticPlateModel.h"
-#include "TACSMITCQuadBasis.h"
-#include "TACSMITCElement2D.h"
-
+#include "TACSIsoShellConstitutive.h"
+#include "TACSShellElementDefs.h"
 #include "TACSAssembler.h"
 #include "TACSCreator.h"
 #include "TACSToFH5.h"
@@ -18,16 +15,8 @@ int main( int argc, char *argv[] ){
   int rank;
   MPI_Comm_rank(comm, &rank);
 
-  int useThermoelasticAnalysis = 1;
-
   // Set the number of nodes/elements on this proc
-  int varsPerNode = -1;
-  if (useThermoelasticAnalysis){
-    varsPerNode = 6;
-  }
-  else {
-    varsPerNode = 5;
-  }
+  int varsPerNode = 6;
 
   // Set the number of elements in the x/y direction
   int order = 3;
@@ -109,24 +98,20 @@ int main( int argc, char *argv[] ){
   TACSMaterialProperties *props =
     new TACSMaterialProperties(rho, specific_heat, E, nu, ys, cte, kappa);
 
-  TACSShellConstitutive *stiff = new TACSShellConstitutive(props);
-  TACSMITCModel *model = NULL;
-  if (useThermoelasticAnalysis){
-    model = new TACSMITCThermoelasticPlateModel(stiff);
-  }
-  else {
-    model = new TACSMITCPlateModel(stiff);
-  }
+  TacsScalar axis[] = {1.0, 0.0, 0.0};
+  TACSShellTransform *transform = new TACSShellRefAxisTransform(axis);
 
-  // Create the element class
-  TACSMITCBasis *basis = NULL;
+  TacsScalar t = 0.01;
+  TACSShellConstitutive *con = new TACSIsoShellConstitutive(props, t);
+
+  TACSElement *element = NULL;
   if (order == 2){
-    basis = new TACSLinearMITCQuadBasis();
+    element = new TACSQuad4Shell(transform, con);
+
   }
-  else if (order == 3){
-    basis = new TACSQuadraticMITCQuadBasis();
+  else { // order == 3
+    element = new TACSQuad9Shell(transform, con);
   }
-  TACSElement *element = new TACSMITCElement2D(model, basis);
 
   // Set the elements
   creator->setElements(1, &element);

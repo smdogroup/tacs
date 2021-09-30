@@ -257,15 +257,15 @@ int main( int argc, char *argv[] ){
     Nxy = 1.0;
   }
 
-  // When using complex mode, we cannot use the tacs panel analysis
-#ifndef TACS_USE_COMPLEX
-  TacsScalar theta = -15.0/180.0*M_PI;
-  if (rank == 0){
-    printf("theta = %8.1f\n", theta*180.0/M_PI);
-    panel_test(stiff_skin, stiff_base, stiff_stiffener, theta,
-               Nx, Nxy, use_lapack);
-  }
-#endif // TACS_USE_COMPLEX
+//   // When using complex mode, we cannot use the tacs panel analysis
+// #ifndef TACS_USE_COMPLEX
+//   TacsScalar theta = -15.0/180.0*M_PI;
+//   if (rank == 0){
+//     printf("theta = %8.1f\n", theta*180.0/M_PI);
+//     panel_test(stiff_skin, stiff_base, stiff_stiffener, theta,
+//                Nx, Nxy, use_lapack);
+//   }
+// #endif // TACS_USE_COMPLEX
 
   // Load in the .bdf file using the TACS mesh loader
   TACSMeshLoader *mesh = new TACSMeshLoader(MPI_COMM_WORLD);
@@ -285,14 +285,13 @@ int main( int argc, char *argv[] ){
   assembler->incref();
 
   // Output for visualization
-  int write_flag = (TACS_OUTPUT_NODES |
+  int write_flag = (TACS_OUTPUT_CONNECTIVITY |
+                    TACS_OUTPUT_NODES |
                     TACS_OUTPUT_DISPLACEMENTS |
                     TACS_OUTPUT_STRAINS |
                     TACS_OUTPUT_STRESSES |
                     TACS_OUTPUT_EXTRAS);
-
-  // Create a TACSToFH5 object
-  TACSToFH5 *f5 = new TACSToFH5(assembler, TACS_SHELL, write_flag);
+  TACSToFH5 *f5 = new TACSToFH5(assembler, TACS_BEAM_OR_SHELL_ELEMENT, write_flag);
   f5->incref();
 
   int lev_fill = 5000; // ILU(k) fill in

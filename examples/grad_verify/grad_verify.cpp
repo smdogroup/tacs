@@ -1,12 +1,11 @@
 #include "TACSAssembler.h"
 #include "TACSMeshLoader.h"
-#include "MITCShell.h"
-#include "TACSShellTraction.h"
-#include "isoFSDTStiffness.h"
-#include "Compliance.h"
-#include "KSFailure.h"
-#include "InducedFailure.h"
-#include "StructuralMass.h"
+#include "TACSShellElementDefs.h"
+#include "TACSCompliance.h"
+#include "TACSKSFailure.h"
+#include "TACSInducedFailure.h"
+#include "TACSStructuralMass.h"
+#include "TACSIsoShellConstitutive.h"
 
 /*
   The following code takes as input a bdf file (which contains only
@@ -70,6 +69,20 @@ int main( int argc, char * argv[] ){
   int rank;
   MPI_Comm_rank(comm, &rank);
 
+  // Set properties needed to create stiffness object
+  TacsScalar rho = 2500.0; // density, kg/m^3
+  TacsScalar specific_heat = 921.096;
+  TacsScalar E = 70e9; // elastic modulus, Pa
+  TacsScalar nu = 0.3; // poisson's ratio
+  TacsScalar ys = 350e6; // yield stress, Pa
+  TacsScalar cte = 24.0e-6; // Coefficient of thermal expansion
+  TacsScalar kappa = 230.0; // Thermal conductivity
+
+  TACSMaterialProperties *props =
+    new TACSMaterialProperties(rho, specific_heat, E, nu, ys, cte, kappa);
+
+  TACSShellTransform *transform = new TACSShellNaturalTransform();
+
   // Set up the elements for each component using a new design
   // variable number for each stiffness object. This code assumes
   // that the mesh is entirely composed of shell elements. This
@@ -78,35 +91,17 @@ int main( int argc, char * argv[] ){
   // are not in meters). However, this code can still be be
   // use for gradient verification purposes.
   int num_comp = mesh->getNumComponents();
-  for ( int k = 0; k < mesh->getNumComponents(); k++ ){
-    // Set up the constitutive relationship
-    TacsScalar rho = 2700.0, E = 35e8, nu = 0.3, kcorr = 0.8333;
-    TacsScalar ys = 434.0e6, t = 0.01, t_min = 0.001, t_max = 0.01;
-    int t_num = k;
+  for ( int k = 0; k < num_comp; k++ ){
+    const char *descriptor = mesh->getElementDescript(k);
+    TacsScalar thickness = 0.01;
+    int thickness_index = k;
+    TacsScalar min_thickness = 0.01;
+    TacsScalar max_thickness = 0.20;
+    TACSShellConstitutive *con = new TACSIsoShellConstitutive(props,
+      thickness, thickness_index, min_thickness, max_thickness);
 
-    FSDTStiffness *con =
-      new isoFSDTStiffness(rho, E, nu, kcorr,
-                           ys, t, t_num, t_min, t_max);
-
-    // Split up the element id to show the domain decomposition.
-    int elem_id = rank;
-
-    // Get the description of the element type to determine what
-    // order of shell we're dealing with
-    const char *elem_descript = mesh->getElementDescript(k);
-
-    // Allocate the element
-    TACSElement *elem = NULL;
-    if (strcmp(elem_descript, "CQUAD4") == 0){
-      elem = new MITCShell<2>(con, LINEAR, elem_id);
-    }
-    else if (strcmp(elem_descript, "CQUAD9") == 0 ||
-             strcmp(elem_descript, "CQUAD") == 0){
-      elem = new MITCShell<3>(con, LINEAR, elem_id);
-    }
-    else if (strcmp(elem_descript, "CQUAD16") == 0){
-      elem = new MITCShell<4>(con, LINEAR, elem_id);
-    }
+    // Initialize element object
+    TACSElement *elem = TacsCreateShellByName(descriptor, transform, con);
 
     // Set the element object into the mesh
     mesh->setElement(k, elem);
@@ -116,97 +111,98 @@ int main( int argc, char * argv[] ){
   int vars_per_node = 6;
 
   // Create the TACSAssembler object
-  TACSAssembler * tacs = mesh->createTACS(vars_per_node);
-  tacs->incref();
+  TACSAssembler *assembler = mesh->createTACS(vars_per_node);
+  assembler->incref();
 
   // Set the number of threads
-  tacs->setNumThreads(num_threads);
+  assembler->setNumThreads(num_threads);
 
   // Create an TACSToFH5 object for writing output to files
-  unsigned int write_flag = (TACSElement::OUTPUT_NODES |
-                             TACSElement::OUTPUT_DISPLACEMENTS |
-                             TACSElement::OUTPUT_STRAINS |
-                             TACSElement::OUTPUT_STRESSES |
-                             TACSElement::OUTPUT_EXTRAS);
-  TACSToFH5 *f5 = new TACSToFH5(tacs, TACS_SHELL, write_flag);
+  int write_flag = (TACS_OUTPUT_CONNECTIVITY |
+                    TACS_OUTPUT_NODES |
+                    TACS_OUTPUT_DISPLACEMENTS |
+                    TACS_OUTPUT_STRAINS |
+                    TACS_OUTPUT_STRESSES |
+                    TACS_OUTPUT_EXTRAS);
+  TACSToFH5 *f5 = new TACSToFH5(assembler, TACS_BEAM_OR_SHELL_ELEMENT, write_flag);
   f5->incref();
 
   // Set a gravity load
-  TACSAuxElements *aux = new TACSAuxElements(tacs->getNumElements());
+  TACSAuxElements *aux = new TACSAuxElements(assembler->getNumElements());
 
-  // Add a traction in the negative z-direction
-  TacsScalar tx = 0.0, ty = 0.0, tz = -1e3;
-  for ( int k = 0; k < mesh->getNumComponents(); k++ ){
-    // Get the element description
-    const char *elem_descript = mesh->getElementDescript(k);
+  // // Add a traction in the negative z-direction
+  // TacsScalar tx = 0.0, ty = 0.0, tz = -1e3;
+  // for ( int k = 0; k < mesh->getNumComponents(); k++ ){
+  //   // Get the element description
+  //   const char *descript = mesh->getElementDescript(k);
 
-    // Allocate the associate gravity traction
-    TACSElement *elem = NULL;
-    if (strcmp(elem_descript, "CQUAD4") == 0){
-      elem = new TACSShellTraction<2>(tx, ty, tz);
-    }
-    else if (strcmp(elem_descript, "CQUAD9") == 0 ||
-             strcmp(elem_descript, "CQUAD") == 0){
-      elem = new TACSShellTraction<3>(tx, ty, tz);
-    }
-    else if (strcmp(elem_descript, "CQUAD16") == 0){
-      elem = new TACSShellTraction<4>(tx, ty, tz);
-    }
+  //   // Allocate the associate gravity traction
+  //   TACSElement *elem = NULL;
+  //   if (strcmp(elem_descript, "CQUAD4") == 0){
+  //     elem = new TACSShellTraction<2>(tx, ty, tz);
+  //   }
+  //   else if (strcmp(elem_descript, "CQUAD9") == 0 ||
+  //            strcmp(elem_descript, "CQUAD") == 0){
+  //     elem = new TACSShellTraction<3>(tx, ty, tz);
+  //   }
+  //   else if (strcmp(elem_descript, "CQUAD16") == 0){
+  //     elem = new TACSShellTraction<4>(tx, ty, tz);
+  //   }
 
-    // Add the element traction to the mesh
-    mesh->addAuxElement(aux, k, elem);
-  }
+  //   // Add the element traction to the mesh
+  //   mesh->addAuxElement(aux, k, elem);
+  // }
 
   // Add the tractions/loads to the TACSAssembler object
-  tacs->setAuxElements(aux);
+  assembler->setAuxElements(aux);
 
   //  Set up the ks functions
   static const int NUM_FUNCS = 12;
   TACSFunction *funcs[NUM_FUNCS];
 
   // Place functions into the func list
-  funcs[0] = new TACSStructuralMass(tacs);
-  funcs[1] = new TACSCompliance(tacs);
+  funcs[0] = new TACSStructuralMass(assembler);
+  funcs[1] = new TACSCompliance(assembler);
 
   // Set the discrete and continuous KS functions
-  TACSKSFailure *func = new TACSKSFailure(tacs, 20.0);
+  TACSKSFailure *func = new TACSKSFailure(assembler, 20.0);
   func->setKSFailureType(TACSKSFailure::DISCRETE);
   funcs[2] = func;
 
-  func = new TACSKSFailure(tacs, 20.0);
+  func = new TACSKSFailure(assembler, 20.0);
   func->setKSFailureType(TACSKSFailure::CONTINUOUS);
   funcs[3] = func;
 
   // Set the induced norm failure types
-  TACSInducedFailure * ifunc = new TACSInducedFailure(tacs, 20.0);
+  TACSInducedFailure * ifunc = new TACSInducedFailure(assembler, 20.0);
   ifunc->setInducedType(TACSInducedFailure::EXPONENTIAL);
   funcs[4] = ifunc;
 
-  ifunc = new TACSInducedFailure(tacs, 20.0);
+  ifunc = new TACSInducedFailure(assembler, 20.0);
   ifunc->setInducedType(TACSInducedFailure::DISCRETE_EXPONENTIAL);
   funcs[5] = ifunc;
 
-  ifunc = new TACSInducedFailure(tacs, 20.0);
+  ifunc = new TACSInducedFailure(assembler, 20.0);
   ifunc->setInducedType(TACSInducedFailure::DISCRETE_EXPONENTIAL_SQUARED);
   funcs[6] = ifunc;
 
-  ifunc = new TACSInducedFailure(tacs, 20.0);
+  ifunc = new TACSInducedFailure(assembler, 20.0);
   ifunc->setInducedType(TACSInducedFailure::EXPONENTIAL_SQUARED);
   funcs[7] = ifunc;
 
-  ifunc = new TACSInducedFailure(tacs, 20.0);
+  ifunc = new TACSInducedFailure(assembler, 20.0);
   ifunc->setInducedType(TACSInducedFailure::POWER);
   funcs[8] = ifunc;
 
-  ifunc = new TACSInducedFailure(tacs, 20.0);
+  ifunc = new TACSInducedFailure(assembler, 20.0);
   ifunc->setInducedType(TACSInducedFailure::DISCRETE_POWER);
   funcs[9] = ifunc;
 
-  ifunc = new TACSInducedFailure(tacs, 20.0);
+  ifunc = new TACSInducedFailure(assembler, 20.0);
   ifunc->setInducedType(TACSInducedFailure::POWER_SQUARED);
   funcs[10] = ifunc;
 
-  ifunc = new TACSInducedFailure(tacs, 20.0);
+  ifunc = new TACSInducedFailure(assembler, 20.0);
   ifunc->setInducedType(TACSInducedFailure::DISCRETE_POWER_SQUARED);
   funcs[11] = ifunc;
 
@@ -219,9 +215,9 @@ int main( int argc, char * argv[] ){
 
   // Create the structural matrix/preconditioner/KSM to use in conjunction
   // with the aerostructural solution
-  FEMat *mat = tacs->createFEMat();
-  TACSBVec *ans = tacs->createVec();
-  TACSBVec *res = tacs->createVec();
+  TACSSchurMat *mat = assembler->createSchurMat();
+  TACSBVec *ans = assembler->createVec();
+  TACSBVec *res = assembler->createVec();
   ans->incref();
   res->incref();
 
@@ -229,7 +225,7 @@ int main( int argc, char * argv[] ){
   int lev = 4500;
   double fill = 10.0;
   int reorder_schur = 1;
-  PcScMat *pc = new PcScMat(mat, lev, fill, reorder_schur);
+  TACSSchurPc *pc = new TACSSchurPc(mat, lev, fill, reorder_schur);
   pc->setMonitorFactorFlag(0);
   pc->setAlltoallAssemblyFlag(1);
 
@@ -242,50 +238,32 @@ int main( int argc, char * argv[] ){
   double rtol = 1e-12, atol = 1e-30;
   gmres->setTolerances(rtol, atol);
 
-  // Now set up the information for the design variable sensitivities
-  int num_design_vars = num_comp;
-
   // Alllocate the design variable vector/arrays
-  TacsScalar *xvals = new TacsScalar[ num_design_vars ];
-  TacsScalar *xtemp = new TacsScalar[ num_design_vars ];
+  TACSBVec *xvals = assembler->createDesignVec();
+  xvals->incref();
 
-  // Adjoint-based gradient evaluation
-  TacsScalar *dfdx = new TacsScalar[ NUM_FUNCS*num_design_vars ];
-  memset(dfdx, 0, NUM_FUNCS*num_design_vars*sizeof(TacsScalar));
+  TACSBVec *xtemp = assembler->createDesignVec();
+  xtemp->incref();
 
-  // Finite-difference gradient
-  double *fd = new double[ NUM_FUNCS*num_design_vars ];
-  memset(fd, 0, NUM_FUNCS*num_design_vars*sizeof(double));
+  // Set a random perturbation vector
+  TACSBVec *pert = assembler->createDesignVec();
+  pert->incref();
+  pert->setRand(1.0, 2.0);
 
-  // Set the design variable values
-  for ( int i = 0; i < num_design_vars; i++ ){
-    xvals[i] = -1e20;
+  TACSBVec *dfdx[NUM_FUNCS];
+  for ( int k = 0; k < NUM_FUNCS; k++ ){
+    dfdx[k] = assembler->createDesignVec();
+    dfdx[k]->incref();
   }
 
-  // Ensure consistency of the design variable values
-  tacs->getDesignVars(xvals, num_design_vars);
-  MPI_Allreduce(MPI_IN_PLACE, xvals, num_design_vars, TACS_MPI_TYPE,
-                TACS_MPI_MAX, comm);
-
   // Set the design variables
-  tacs->setDesignVars(xvals, num_design_vars);
-
-  // The maximum number of gradient components to test
-  // using finite-difference/complex-step
-  int num_grad_comp = 10;
-  num_grad_comp = (num_design_vars > num_grad_comp ?
-                   num_grad_comp : num_design_vars);
+  assembler->getDesignVars(xvals);
 
   // Scan any remaining arguments that may be required
   int test_flag = 0;
   double dh = 1e-6;
   for ( int k = 0; k < argc; k++ ){
     if (sscanf(argv[k], "dh=%lf", &dh) == 1){}
-    else if (sscanf(argv[k], "num_grad_comp=%d",
-                    &num_grad_comp) == 1){
-      num_grad_comp = (num_design_vars > num_grad_comp ?
-                       num_grad_comp : num_design_vars);
-    }
     if (strcmp(argv[k], "test") == 0){
       test_flag = 1;
     }
@@ -301,12 +279,12 @@ int main( int argc, char * argv[] ){
   }
 
   // First solve the governing equations
-  tacs->zeroVariables();
-  tacs->assembleJacobian(1.0, 0.0, 0.0, res, mat);
+  assembler->zeroVariables();
+  assembler->assembleJacobian(1.0, 0.0, 0.0, res, mat);
   pc->factor();
   gmres->solve(res, ans);
   ans->scale(-1.0);
-  tacs->setVariables(ans);
+  assembler->setVariables(ans);
 
   // Write the solution to an .f5 file
   if (f5){
@@ -333,25 +311,24 @@ int main( int argc, char * argv[] ){
 
   // Evaluate each of the functions
   TacsScalar fvals[NUM_FUNCS];
-  tacs->evalFunctions(funcs, NUM_FUNCS, fvals);
+  assembler->evalFunctions(NUM_FUNCS, funcs, fvals);
 
   // Evaluate the partial derivative of each function w.r.t. x
-  tacs->addDVSens(1.0, funcs, NUM_FUNCS,
-                  dfdx, num_design_vars);
+  assembler->addDVSens(1.0, NUM_FUNCS, funcs, dfdx);
 
   // Create the adjoint variables for each function of interest
   TACSBVec *adjoints[NUM_FUNCS];
   TACSBVec *dfdu[NUM_FUNCS];
   for ( int j = 0; j < NUM_FUNCS; j++ ){
-    adjoints[j] = tacs->createVec();
+    adjoints[j] = assembler->createVec();
     adjoints[j]->incref();
-    dfdu[j] = tacs->createVec();
+    dfdu[j] = assembler->createVec();
     dfdu[j]->incref();
   }
 
   // Evaluate the partial derivative of each function of interest
   // w.r.t. the state variables and compute the adjoint
-  tacs->addSVSens(1.0, 0.0, 0.0, funcs, NUM_FUNCS, dfdu);
+  assembler->addSVSens(1.0, 0.0, 0.0, NUM_FUNCS, funcs, dfdu);
 
   // Solve all of the adjoint equations
   for ( int j = 0; j < NUM_FUNCS; j++ ){
@@ -359,8 +336,7 @@ int main( int argc, char * argv[] ){
   }
 
   // Evaluate the adjoint-residual product
-  tacs->addAdjointResProducts(-1.0, adjoints, NUM_FUNCS,
-                              dfdx, num_design_vars);
+  assembler->addAdjointResProducts(-1.0, NUM_FUNCS, adjoints, dfdx);
 
   // Delete all of the adjoints
   for ( int j = 0; j < NUM_FUNCS; j++ ){
@@ -369,128 +345,112 @@ int main( int argc, char * argv[] ){
   }
 
   // Add up the contributions across all processors
-  MPI_Allreduce(MPI_IN_PLACE, dfdx, NUM_FUNCS*num_design_vars,
-                TACS_MPI_TYPE, MPI_SUM, comm);
+  for ( int k = 0; k < NUM_FUNCS; k++ ){
+    dfdx[k]->beginSetValues(TACS_ADD_VALUES);
+  }
+  for ( int k = 0; k < NUM_FUNCS; k++ ){
+    dfdx[k]->endSetValues(TACS_ADD_VALUES);
+  }
 
   // Test the function that will be used
   if (test_flag){
     // Test the derivatives of the functions of interest w.r.t. the
     // state and design variables
     for ( int k = 0; k < NUM_FUNCS; k++ ){
-      tacs->testFunction(funcs[k], num_design_vars, dh);
+      assembler->testFunction(funcs[k], dh);
     }
   }
 
+  TacsScalar fd[NUM_FUNCS], dfdp[NUM_FUNCS];
+  for ( int k = 0; k < NUM_FUNCS; k++ ){
+    dfdp[k] = dfdx[k]->dot(pert);
+  }
+
 #if TACS_USE_COMPLEX
-  // Compute the total derivative using the complex-step method
-  for ( int k = 0; k < num_grad_comp; k++ ){
-    // (xvals[k] + dh)
-    memcpy(xtemp, xvals, num_design_vars*sizeof(TacsScalar));
-    xtemp[k] += TacsScalar(0.0, dh);
+  // (xvals[k] + dh)
+  xtemp->copyValues(xvals);
+  xtemp->axpy(TacsScalar(0.0, dh), pert);
 
-    // Set the design variables
-    tacs->setDesignVars(xtemp, num_design_vars);
+  // Set the design variables
+  assembler->setDesignVars(xtemp);
 
-    // Solve the problem
-    tacs->zeroVariables();
-    tacs->assembleJacobian(1.0, 0.0, 0.0, res, mat);
-    pc->factor();
-    gmres->solve(res, ans);
-    ans->scale(-1.0);
-    tacs->setVariables(ans);
+  // Solve the problem
+  assembler->zeroVariables();
+  assembler->assembleJacobian(1.0, 0.0, 0.0, res, mat);
+  pc->factor();
+  gmres->solve(res, ans);
+  ans->scale(-1.0);
+  assembler->setVariables(ans);
 
-    // Evaluate all of the functions of interest
-    TacsScalar fvals[NUM_FUNCS];
-    tacs->evalFunctions(funcs, NUM_FUNCS, fvals);
+  // Evaluate all of the functions of interest
+  assembler->evalFunctions(NUM_FUNCS, funcs, fd);
 
-    // Compute their derivative based on the complex component
-    // of the function value
-    for ( int j = 0; j < NUM_FUNCS; j++ ){
-      fd[k + j*num_design_vars] = TacsImagPart(fvals[j])/dh;
-    }
+  // Compute their derivative based on the complex component
+  // of the function value
+  for ( int j = 0; j < NUM_FUNCS; j++ ){
+    fd[j] = TacsImagPart(fvals[j])/dh;
   }
 
 #else // !TACS_USE_COMPLEX
   // Test the structural sensitivities
-  for ( int k = 0; k < num_grad_comp; k++ ){
-    // (xvals[ok] + dh)
-    memcpy(xtemp, xvals, num_design_vars*sizeof(TacsScalar));
-    xtemp[k] += dh;
+  // (xvals[ok] + dh)
+  xtemp->copyValues(xvals);
+  xtemp->axpy(dh, pert);
 
-    // Set the perturbed value of the design variables
-    tacs->setDesignVars(xtemp, num_design_vars);
+  // Set the perturbed value of the design variables
+  assembler->setDesignVars(xtemp);
 
-    // Solve the problem
-    tacs->zeroVariables();
-    tacs->assembleJacobian(1.0, 0.0, 0.0, res, mat);
-    pc->factor();
-    gmres->solve(res, ans);
-    ans->scale(-1.0);
-    tacs->setVariables(ans);
+  // Solve the problem
+  assembler->zeroVariables();
+  assembler->assembleJacobian(1.0, 0.0, 0.0, res, mat);
+  pc->factor();
+  gmres->solve(res, ans);
+  ans->scale(-1.0);
+  assembler->setVariables(ans);
 
-    // Evaluate the function at the perturbed solution
-    TacsScalar fvals[NUM_FUNCS];
-    tacs->evalFunctions(funcs, NUM_FUNCS, fvals);
-    for ( int j = 0; j < NUM_FUNCS; j++ ){
-      fd[k + j*num_design_vars] = fvals[j];
-    }
+  // Evaluate the function at the perturbed solution
+  assembler->evalFunctions(NUM_FUNCS, funcs, fvals);
 
-    // (xvals[k] - dh)
-    memcpy(xtemp, xvals, num_design_vars*sizeof(TacsScalar));
-    xtemp[k] -= dh;
+  // (xvals[k] - dh)
+  xtemp->copyValues(xvals);
+  xtemp->axpy(-dh, pert);
 
-    // Set the perturbed values of the design variables
-    tacs->setDesignVars(xtemp, num_design_vars);
+  // Set the perturbed values of the design variables
+  assembler->setDesignVars(xtemp);
 
-    // Solve the finite-element problem at the perturbed values
-    // of the design variables
-    tacs->zeroVariables();
-    tacs->assembleJacobian(1.0, 0.0, 0.0, res, mat);
-    pc->factor();
-    gmres->solve(res, ans);
-    ans->scale(-1.0);
-    tacs->setVariables(ans);
+  // Solve the finite-element problem at the perturbed values
+  // of the design variables
+  assembler->zeroVariables();
+  assembler->assembleJacobian(1.0, 0.0, 0.0, res, mat);
+  pc->factor();
+  gmres->solve(res, ans);
+  ans->scale(-1.0);
+  assembler->setVariables(ans);
 
-    // Complete the finite-difference computation for each function
-    tacs->evalFunctions(funcs, NUM_FUNCS, fvals);
-    for ( int j = 0; j < NUM_FUNCS; j++ ){
-      dfdx[k + j*num_design_vars] = 0.5*(dfdx[k + j*num_design_vars] -
-                                         fvals[j])/dh;
-    }
+  // Complete the finite-difference computation for each function
+  assembler->evalFunctions(NUM_FUNCS, funcs, fd);
+  for ( int k = 0; k < NUM_FUNCS; k++ ){
+    fd[k] = 0.5*(fvals[k] - fd[k])/dh;
   }
 #endif // TACS_USE_COMPLEX
 
   if (rank == 0){
     printf("Structural sensitivities\n");
-    for ( int j = 0; j < NUM_FUNCS; j++ ){
+    for ( int k = 0; k < NUM_FUNCS; k++ ){
       printf("Sensitivities for funcion %s\n",
-             funcs[j]->functionName());
+             funcs[k]->getObjectName());
       printf("%25s %25s %25s\n",
              "Adjoint", "FD/CS", "Abs. error");
-      for ( int k = 0; k < num_grad_comp; k++ ){
-        printf("%25.15e %25.15e %25.15e\n",
-               TacsRealPart(dfdx[k + j*num_design_vars]),
-               fd[k + j*num_design_vars],
-               TacsRealPart(dfdx[k + j*num_design_vars]) -
-               fd[k + j*num_design_vars]);
-      }
+      printf("%25.15e %25.15e %25.15e\n",
+              TacsRealPart(dfdp[k]),
+              TacsRealPart(fd[k]),
+              TacsRealPart((dfdp[k] - fd[k])/fd[k]));
     }
   }
 
-  if (test_flag){
-    int elem_num = 0;
-    int print_level = 2;
-    tacs->testElement(elem_num, print_level);
-    tacs->testConstitutive(elem_num, print_level);
-  }
-
-  delete [] xvals;
-  delete [] xtemp;
-  delete [] dfdx;
-
   ans->decref();
   res->decref();
-  tacs->decref();
+  assembler->decref();
   gmres->decref();
 
   for ( int k = 0; k < NUM_FUNCS; k++ ){

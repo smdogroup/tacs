@@ -54,11 +54,12 @@ int main( int argc, char **argv ){
   // Loop over components, creating constituitive object for each
   for ( int i = 0; i < num_components; i++ ){
     const char *descriptor = mesh->getElementDescript(i);
+    TacsScalar thickness = 0.01;
+    int thickness_index = i;
     TacsScalar min_thickness = 0.01;
     TacsScalar max_thickness = 0.20;
-    TacsScalar thickness = 0.01;
     TACSShellConstitutive *con = new TACSIsoShellConstitutive(props,
-      thickness, min_thickness, max_thickness);
+      thickness, thickness_index, min_thickness, max_thickness);
 
     // Initialize element object
     TACSElement *shell = TacsCreateShellByName(descriptor, transform, con);
@@ -245,11 +246,12 @@ int main( int argc, char **argv ){
   }
 
   // Create an TACSToFH5 object for writing output to files
-  unsigned int write_flag = (TACS_OUTPUT_NODES |
-                             TACS_OUTPUT_DISPLACEMENTS |
-                             TACS_OUTPUT_STRAINS |
-                             TACS_OUTPUT_STRESSES |
-                             TACS_OUTPUT_EXTRAS);
+  int write_flag = (TACS_OUTPUT_CONNECTIVITY |
+                    TACS_OUTPUT_NODES |
+                    TACS_OUTPUT_DISPLACEMENTS |
+                    TACS_OUTPUT_STRAINS |
+                    TACS_OUTPUT_STRESSES |
+                    TACS_OUTPUT_EXTRAS);
   TACSToFH5 *f5 = new TACSToFH5(assembler, TACS_BEAM_OR_SHELL_ELEMENT, write_flag);
   f5->incref();
   f5->writeToFile("ucrm.f5");
