@@ -1,4 +1,4 @@
-#include "RigidBodyElement3.h"
+#include "TACSRBE3.h"
 #include "TACSElementAlgebra.h"
 /*
   An RBE3 rigid body element.
@@ -39,9 +39,9 @@
 /*
   Create the RBE3.
 */
-RigidBodyElement3::RigidBodyElement3( int numNodes, int _dep_dof_constrained[],
-                                      double weights[], int _indep_dof_constrained[],
-                                      double _C1, double _C2 ){
+TACSRBE3::TACSRBE3( int numNodes, int _dep_dof_constrained[],
+                    double weights[], int _indep_dof_constrained[],
+                    double _C1, double _C2 ){
 
   NUM_NODES = numNodes; // Number of nodes (1 dep node + N indep nodes + 1 dummy node)
   NUM_INDEP_NODES = NUM_NODES - 2;
@@ -67,7 +67,7 @@ RigidBodyElement3::RigidBodyElement3( int numNodes, int _dep_dof_constrained[],
 
  }
 
-RigidBodyElement3::~RigidBodyElement3(){
+TACSRBE3::~TACSRBE3(){
     if (w){
         delete [] w;
     }
@@ -83,19 +83,19 @@ RigidBodyElement3::~RigidBodyElement3(){
 /*
   Retrieve information about the names of the element variables
 */
-const char * RigidBodyElement3::elementName() {
+const char * TACSRBE3::elementName() {
   return elemName;
 }
 
 
-const char * RigidBodyElement3::displacementName( int i ) {
+const char * TACSRBE3::displacementName( int i ) {
   if (i >= 0 && i < NUM_DISPS ){
     return dispNames[i];
   }
   return NULL;
 }
 
-const char * RigidBodyElement3::extraName( int i ) {
+const char * TACSRBE3::extraName( int i ) {
   if (i >= 0 && i < NUM_DISPS ){
     return extraNames[i];
   }
@@ -105,42 +105,45 @@ const char * RigidBodyElement3::extraName( int i ) {
 /*
   Retrieve the numbers of displacements, nodes, stress and variables
 */
-int RigidBodyElement3::getVarsPerNode() { return NUM_DISPS; }
+int TACSRBE3::getVarsPerNode() { return NUM_DISPS; }
 
-int RigidBodyElement3::getNumNodes() { return NUM_NODES; }
+int TACSRBE3::getNumNodes() { return NUM_NODES; }
 
-int RigidBodyElement3::numExtras() { return NUM_EXTRAS; }
+int TACSRBE3::numExtras() { return NUM_EXTRAS; }
 
-enum ElementType RigidBodyElement3::getElementType(){ return TACS_RIGID_ELEMENT; }
+enum ElementType TACSRBE3::getElementType(){ return TACS_RIGID_ELEMENT; }
 
 /*
   Returns the multiplier index
 */
-void RigidBodyElement3::getMultiplierIndex( int *multiplier ){
-  *multiplier = NUM_INDEP_NODES + 1;
-}
+/*int TACSRBE3::getMultiplierIndex(){
+  return NUM_INDEP_NODES + 1;
+}*/
 
 /*
   The element name, variable, stress and strain names.
 */
-const char * RigidBodyElement3::elemName = "RigidBodyElement3";
+const char * TACSRBE3::elemName = "TACSRBE3";
 
-const char * RigidBodyElement3::dispNames[] = { "u0", "v0", "w0",
-				                                "rotx", "roty", "rotz" };
+/* Tolerance for colinearity test in moment of inertia calculation*/
+const double TACSRBE3::SMALL_NUM = 1e-8;
 
-const char * RigidBodyElement3::extraNames[] = { "fx", "fy", "fz",
-				                                 "mx", "my", "mz" };
+const char * TACSRBE3::dispNames[] = { "u0", "v0", "w0",
+				                       "rotx", "roty", "rotz" };
+
+const char * TACSRBE3::extraNames[] = { "fx", "fy", "fz",
+				                        "mx", "my", "mz" };
 
 /*
   Assemble the element residual associated with the given design
   variables and elements.
 */
-void RigidBodyElement3::addResidual( int elemIndex, double time,
-                                     const TacsScalar Xpts[],
-                                     const TacsScalar vars[],
-                                     const TacsScalar dvars[],
-                                     const TacsScalar ddvars[],
-                                     TacsScalar residual[] ){
+void TACSRBE3::addResidual( int elemIndex, double time,
+                            const TacsScalar Xpts[],
+                            const TacsScalar vars[],
+                            const TacsScalar dvars[],
+                            const TacsScalar ddvars[],
+                            TacsScalar residual[] ){
 
   TacsScalar Xcg[3], Jcg[3][3], W[3], Lc;
   const TacsScalar *X0, *Xn, *un, *F0, *M0, *u0, *t0, *tn;
@@ -408,16 +411,16 @@ void RigidBodyElement3::addResidual( int elemIndex, double time,
 /*
   Assemble the stiffness matrix for the RBE3 element.
 */
-void RigidBodyElement3::addJacobian( int elemIndex, double time,
-                                     TacsScalar alpha,
-                                     TacsScalar beta,
-                                     TacsScalar gamma,
-                                     const TacsScalar Xpts[],
-                                     const TacsScalar vars[],
-                                     const TacsScalar dvars[],
-                                     const TacsScalar ddvars[],
-                                     TacsScalar res[],
-                                     TacsScalar J[] ){
+void TACSRBE3::addJacobian( int elemIndex, double time,
+                            TacsScalar alpha,
+                            TacsScalar beta,
+                            TacsScalar gamma,
+                            const TacsScalar Xpts[],
+                            const TacsScalar vars[],
+                            const TacsScalar dvars[],
+                            const TacsScalar ddvars[],
+                            TacsScalar res[],
+                            TacsScalar J[] ){
 
   TacsScalar Xcg[3], Jcg[3][3], W[3], Lc;
   const TacsScalar *Xn, *X0;
@@ -678,14 +681,14 @@ void RigidBodyElement3::addJacobian( int elemIndex, double time,
   Assemble the element residual associated with the given design
   variables and elements.
 */
-void RigidBodyElement3::addAdjResXptProduct( int elemIndex, double time,
-                                             TacsScalar scale,
-                                             const TacsScalar psi[],
-                                             const TacsScalar Xpts[],
-                                             const TacsScalar vars[],
-                                             const TacsScalar dvars[],
-                                             const TacsScalar ddvars[],
-                                             TacsScalar fXptSens[] ){
+void TACSRBE3::addAdjResXptProduct( int elemIndex, double time,
+                                    TacsScalar scale,
+                                    const TacsScalar psi[],
+                                    const TacsScalar Xpts[],
+                                    const TacsScalar vars[],
+                                    const TacsScalar dvars[],
+                                    const TacsScalar ddvars[],
+                                    TacsScalar fXptSens[] ){
 
   TacsScalar Xcg[3], sXcg[3], Jcg[3][3], sJcg[3][3], W[3], Lc, sLc;
   const TacsScalar *X0, *Xn, *un, *F0, *M0, *u0, *t0, *tn;
@@ -1078,10 +1081,10 @@ void RigidBodyElement3::addAdjResXptProduct( int elemIndex, double time,
 }
 
 /* Find centroid of dependent nodes */
-void RigidBodyElement3::getCG( TacsScalar Xcg[],
-                               TacsScalar W[],
-                               const double w[],
-                               const TacsScalar Xpts[] ){
+void TACSRBE3::getCG( TacsScalar Xcg[],
+                      TacsScalar W[],
+                      const double w[],
+                      const TacsScalar Xpts[] ){
 
   Xcg[0] = Xcg[1] = Xcg[2] = 0.0;
   W[0] = W[1] = W[2] = 0.0;
@@ -1111,12 +1114,12 @@ void RigidBodyElement3::getCG( TacsScalar Xcg[],
 
 }
 
-void RigidBodyElement3::getCGSens( TacsScalar sXcg[],
-                                   TacsScalar Xcg[],
-                                   TacsScalar W[],
-                                   const double w[],
-                                   const TacsScalar Xpts[],
-                                   const int component ){
+void TACSRBE3::getCGSens( TacsScalar sXcg[],
+                          TacsScalar Xcg[],
+                          TacsScalar W[],
+                          const double w[],
+                          const TacsScalar Xpts[],
+                          const int component ){
 
   sXcg[0] = sXcg[1] = sXcg[2] = 0.0;
   getCG(Xcg, W, w, Xpts);
@@ -1132,10 +1135,10 @@ void RigidBodyElement3::getCGSens( TacsScalar sXcg[],
 }
 
 /* Find inverse moment of inertia of dependent nodes about centroid */
-TacsScalar RigidBodyElement3::getMomentsOfInertia( TacsScalar IcgInv[3][3],
-                                                   const double w[],
-                                                   const TacsScalar Xpts[],
-                                                   const TacsScalar Xcg[] ){
+TacsScalar TACSRBE3::getMomentsOfInertia( TacsScalar IcgInv[3][3],
+                                          const double w[],
+                                          const TacsScalar Xpts[],
+                                          const TacsScalar Xcg[] ){
 
   TacsScalar Icg[9], r[3], temp[9], c[6], Lc;
   Lc = 0.0;
@@ -1192,7 +1195,7 @@ TacsScalar RigidBodyElement3::getMomentsOfInertia( TacsScalar IcgInv[3][3],
   // and the moment of inertia matrix cannot be inverted. Warn the user that they must specify additional independent DOF's
   if (TacsRealPart(detIcg) < SMALL_NUM){
       fprintf(stderr,
-                "RigidBodyElement3: Error, points are colinear. "
+                "TACSRBE3: Error, points are colinear. "
                 "Make sure to specify sufficient independent DOF's to react all moments.\n");
   }
 
@@ -1208,14 +1211,14 @@ TacsScalar RigidBodyElement3::getMomentsOfInertia( TacsScalar IcgInv[3][3],
 }
 
 /* Find sensitivity of inverse moment of inertia tensor of dependent nodes about centroid */
-TacsScalar RigidBodyElement3::getMomentsOfInertiaSens( TacsScalar sIcgInv[3][3],
-                                                       TacsScalar IcgInv[3][3],
-                                                       TacsScalar* sLc,
-                                                       const double w[],
-                                                       const TacsScalar Xpts[],
-                                                       const TacsScalar Xcg[],
-                                                       const TacsScalar sXcg[],
-                                                       const int component ){
+TacsScalar TACSRBE3::getMomentsOfInertiaSens( TacsScalar sIcgInv[3][3],
+                                              TacsScalar IcgInv[3][3],
+                                              TacsScalar* sLc,
+                                              const double w[],
+                                              const TacsScalar Xpts[],
+                                              const TacsScalar Xcg[],
+                                              const TacsScalar sXcg[],
+                                              const int component ){
 
   TacsScalar Icg[9], r[3], sr[3], temp[9], sIcg[9], stemp[9], c[6], Lc;
   Lc = 0.0; *sLc = 0.0;
@@ -1318,8 +1321,8 @@ TacsScalar RigidBodyElement3::getMomentsOfInertiaSens( TacsScalar sIcgInv[3][3],
 /* This procedure masks the vars vector copied in depending on
 which dofs have been constrained. If the dof is constrained copy
 the component, if not force it to zero. */
-void RigidBodyElement3::getMaskedVars( TacsScalar maskedVars[],
-                                       const TacsScalar vars[] ){
+void TACSRBE3::getMaskedVars( TacsScalar maskedVars[],
+                              const TacsScalar vars[] ){
 
   // Mask forces
   int i = 0;
@@ -1351,13 +1354,13 @@ void RigidBodyElement3::getMaskedVars( TacsScalar maskedVars[],
 /*
   Retrieve the output data for this element
 */
-/*void RigidBodyElement3::getOutputData( int elemIndex,
-                                       ElementType etype, int out_type,
-                                       const TacsScalar Xpts[],
-                                       const TacsScalar vars[],
-                                       const TacsScalar dvars[],
-                                       const TacsScalar ddvars[],
-                                       int ld_data, TacsScalar *data  ){
+/*void TACSRBE3::getOutputData( int elemIndex,
+                                ElementType etype, int out_type,
+                                const TacsScalar Xpts[],
+                                const TacsScalar vars[],
+                                const TacsScalar dvars[],
+                                const TacsScalar ddvars[],
+                                int ld_data, TacsScalar *data  ){
   if (etype == TACS_RIGID_ELEMENT){
       // Compute residual to find distributed force on each node
       TacsScalar* res;

@@ -7,8 +7,8 @@
 include ../../../Makefile.in
 include ../../../TACS_Common.mk
 
-CXX_OBJS = RigidBodyElement2.o \
-	       RigidBodyElement3.o
+CXX_OBJS = TACSRBE2.o \
+	       TACSRBE3.o
 
 DIR=${TACS_DIR}/src/elements/shell
 

@@ -1,4 +1,4 @@
-#include "RigidBodyElement2.h"
+#include "TACSRBE2.h"
 
 /*
   A Nastran RBE2 rigid body element.
@@ -36,8 +36,8 @@
 /*
   Create the RBE2.
 */
-RigidBodyElement2::RigidBodyElement2( int _numNodes, int _dof_constrained[],
-                                      double _C1, double _C2 ){
+TACSRBE2::TACSRBE2( int _numNodes, int _dof_constrained[],
+                    double _C1, double _C2 ){
 
   NUM_NODES = _numNodes; // Number of nodes (1 indep node + N dep nodes + N dummy nodes)
   NUM_DEP_NODES = (NUM_NODES - 1)/2;
@@ -58,7 +58,7 @@ RigidBodyElement2::RigidBodyElement2( int _numNodes, int _dof_constrained[],
 
 }
 
-RigidBodyElement2::~RigidBodyElement2(){
+TACSRBE2::~TACSRBE2(){
     if (dof_constrained){
 
       for ( int j = 0; j < NUM_DEP_NODES; j++){
@@ -71,19 +71,19 @@ RigidBodyElement2::~RigidBodyElement2(){
 /*
   Retrieve information about the names of the element variables
 */
-const char * RigidBodyElement2::elementName(){
+const char * TACSRBE2::elementName(){
   return elemName;
 }
 
 
-const char * RigidBodyElement2::displacementName( int i ){
+const char * TACSRBE2::displacementName( int i ){
   if (i >= 0 && i < NUM_DISPS ){
     return dispNames[i];
   }
   return NULL;
 }
 
-const char * RigidBodyElement2::extraName( int i ){
+const char * TACSRBE2::extraName( int i ){
   if (i >= 0 && i < NUM_DISPS ){
     return extraNames[i];
   }
@@ -93,43 +93,42 @@ const char * RigidBodyElement2::extraName( int i ){
 /*
   Retrieve the numbers of displacements, nodes, stress and variables
 */
-int RigidBodyElement2::getVarsPerNode() { return NUM_DISPS; }
+int TACSRBE2::getVarsPerNode() { return NUM_DISPS; }
 
-int RigidBodyElement2::getNumNodes() { return NUM_NODES; }
+int TACSRBE2::getNumNodes() { return NUM_NODES; }
 
-int RigidBodyElement2::numExtras() { return NUM_EXTRAS; }
+int TACSRBE2::numExtras() { return NUM_EXTRAS; }
 
-enum ElementType RigidBodyElement2::getElementType(){ return TACS_RIGID_ELEMENT; }
+enum ElementType TACSRBE2::getElementType(){ return TACS_RIGID_ELEMENT; }
 
 /*
   Returns the multiplier index
-void RigidBodyElement2::getMultiplierIndex( int *multiplier ){
+void TACSRBE2::getMultiplierIndex( int *multiplier ){
   *multiplier = NUM_DEP_NODES + 1;
 }*/
 
 /*
   The element name, variable, stress and strain names.
 */
-const char * RigidBodyElement2::elemName = "RBE2";
+const char * TACSRBE2::elemName = "RBE2";
 
-const char * RigidBodyElement2::dispNames[] = { "u0", "v0", "w0",
-				     "rotx", "roty", "rotz" };
+const char * TACSRBE2::dispNames[] = { "u0", "v0", "w0",
+				                       "rotx", "roty", "rotz" };
 
-const char * RigidBodyElement2::extraNames[] = { "fx", "fy", "fz",
-				     "mx", "my", "mz" };
+const char * TACSRBE2::extraNames[] = { "fx", "fy", "fz",
+				                        "mx", "my", "mz" };
 
 /*
   Assemble the element residual associated with the given design
   variables and elements.
 */
-void RigidBodyElement2::addResidual( int elemIndex, double time,
-                                     const TacsScalar Xpts[],
-                                     const TacsScalar vars[],
-                                     const TacsScalar dvars[],
-                                     const TacsScalar ddvars[],
-                                     TacsScalar res[] ){
+void TACSRBE2::addResidual( int elemIndex, double time,
+                            const TacsScalar Xpts[],
+                            const TacsScalar vars[],
+                            const TacsScalar dvars[],
+                            const TacsScalar ddvars[],
+                            TacsScalar res[] ){
 
-  TacsScalar Xcg[3], Icg[3], W;
   const TacsScalar *Fn, *Mn, *Xn, *X0, *un, *tn, *u0, *t0, *actualLM;
   TacsScalar *maskedLM;
 
@@ -248,16 +247,16 @@ void RigidBodyElement2::addResidual( int elemIndex, double time,
 /*
   Assemble the stiffness matrix for the RBE2 element.
 */
-void RigidBodyElement2::addJacobian( int elemIndex, double time,
-                                     TacsScalar alpha,
-                                     TacsScalar beta,
-                                     TacsScalar gamma,
-                                     const TacsScalar Xpts[],
-                                     const TacsScalar vars[],
-                                     const TacsScalar dvars[],
-                                     const TacsScalar ddvars[],
-                                     TacsScalar res[],
-                                     TacsScalar J[] ){
+void TACSRBE2::addJacobian( int elemIndex, double time,
+                            TacsScalar alpha,
+                            TacsScalar beta,
+                            TacsScalar gamma,
+                            const TacsScalar Xpts[],
+                            const TacsScalar vars[],
+                            const TacsScalar dvars[],
+                            const TacsScalar ddvars[],
+                            TacsScalar res[],
+                            TacsScalar J[] ){
 
   const TacsScalar *Xn, *X0;
   int col, row;
@@ -399,14 +398,14 @@ void RigidBodyElement2::addJacobian( int elemIndex, double time,
   Assemble the element residual associated with the given design
   variables and elements.
 */
-void RigidBodyElement2::addAdjResXptProduct( int elemIndex, double time,
-                                             TacsScalar scale,
-                                             const TacsScalar psi[],
-                                             const TacsScalar Xpts[],
-                                             const TacsScalar vars[],
-                                             const TacsScalar dvars[],
-                                             const TacsScalar ddvars[],
-                                             TacsScalar fXptSens[] ){
+void TACSRBE2::addAdjResXptProduct( int elemIndex, double time,
+                                    TacsScalar scale,
+                                    const TacsScalar psi[],
+                                    const TacsScalar Xpts[],
+                                    const TacsScalar vars[],
+                                    const TacsScalar dvars[],
+                                    const TacsScalar ddvars[],
+                                    TacsScalar fXptSens[] ){
 
   const TacsScalar *Fn, *t0, *actualLM;
   TacsScalar *sXpts, *sXn, *sX0, *maskedLM;
@@ -493,8 +492,8 @@ void RigidBodyElement2::addAdjResXptProduct( int elemIndex, double time,
 /* This procedure masks the Lagrange multipliers depending on
 which dofs have been constrained. If the dof is constrained copy
 the component, if not force it to zero. */
-void RigidBodyElement2::getMaskedMultipliers( TacsScalar maskedLM[],
-		                                      const TacsScalar actualLM[] ){
+void TACSRBE2::getMaskedMultipliers( TacsScalar maskedLM[],
+		                             const TacsScalar actualLM[] ){
 
   // Mask forces
   for ( int j = 0; j < NUM_DEP_NODES; j++ ){
@@ -515,13 +514,13 @@ void RigidBodyElement2::getMaskedMultipliers( TacsScalar maskedLM[],
 /*
   Retrieve the output data for this element
 */
-/*void RigidBodyElement2::getOutputData( int elemIndex,
-                                       ElementType etype, int out_type,
-                                       const TacsScalar Xpts[],
-                                       const TacsScalar vars[],
-                                       const TacsScalar dvars[],
-                                       const TacsScalar ddvars[],
-                                       int ld_data, TacsScalar *data  ){
+/*void TACSRBE2::getOutputData( int elemIndex,
+                                ElementType etype, int out_type,
+                                const TacsScalar Xpts[],
+                                const TacsScalar vars[],
+                                const TacsScalar dvars[],
+                                const TacsScalar ddvars[],
+                                int ld_data, TacsScalar *data  ){
   if (etype == TACS_RIGID_ELEMENT){
       // Compute residual to find distributed force on each node
       TacsScalar* res;
