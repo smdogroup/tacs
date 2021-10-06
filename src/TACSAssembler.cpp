@@ -4435,8 +4435,9 @@ void TACSAssembler::evalFunctions( int numFuncs,
       funcs[k]->initEvaluation(TACSFunction::INTEGRATE);
     }
   }
-  integrateFunctions(tcoef, TACSFunction::INTEGRATE,
-                     numFuncs, funcs);
+
+  integrateFunctions(tcoef, TACSFunction::INTEGRATE, numFuncs, funcs);
+
   for ( int k = 0; k < numFuncs; k++ ){
     if (funcs[k]){
       funcs[k]->finalEvaluation(TACSFunction::INTEGRATE);
@@ -4807,10 +4808,8 @@ void TACSAssembler::addSVSens( TacsScalar alpha,
 
   // Finish adding the values
   for ( int k = 0; k < numFuncs; k++ ){
-    if (funcs[k]){
-      dfdu[k]->endSetValues(TACS_ADD_VALUES);
-      dfdu[k]->applyBCs(bcMap);
-    }
+    dfdu[k]->endSetValues(TACS_ADD_VALUES);
+    dfdu[k]->applyBCs(bcMap);
   }
 }
 
