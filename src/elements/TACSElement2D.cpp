@@ -13,6 +13,7 @@
 */
 
 #include "TACSElement2D.h"
+#include "TACSTraction2D.h"
 #include "TACSElementAlgebra.h"
 
 TACSElement2D::TACSElement2D( TACSElementModel *_model,

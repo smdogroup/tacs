@@ -13,6 +13,7 @@
 */
 
 #include "TACSElement3D.h"
+#include "TACSTraction3D.h"
 #include "TACSElementAlgebra.h"
 
 TACSElement3D::TACSElement3D( TACSElementModel *_model,
@@ -37,6 +38,11 @@ int TACSElement3D::getNumNodes(){
 
 int TACSElement3D::getDesignVarsPerNode(){
   return model->getDesignVarsPerNode();
+}
+
+TACSElement* TACSElement3D::createElementTraction(TacsScalar t[], int faceIndex){
+  int varsPerNode = getVarsPerNode();
+  return new TACSTraction3D(varsPerNode, faceIndex, basis, t);
 }
 
 ElementLayout TACSElement3D::getLayoutType(){
