@@ -27,6 +27,7 @@ Nxy = -175e5
 ksweight = 10.0
 
 class ProblemTest(StaticTestCase.StaticTest):
+    NPROCS = 1
     def setup_assembler(self, dtype):
         """
         Setup mesh and tacs assembler for problem we will be testing.
@@ -92,6 +93,42 @@ class ProblemTest(StaticTestCase.StaticTest):
         # Create the tacs assembler object
         assembler = creator.createTACS()
 
+        # Use traction elements to set running loads
+        aux_elems = TACS.AuxElements()
+
+        elem_ids = np.arange(num_elems).reshape(nx, ny)
+
+        # Apply tractions on bottom side of plate
+        face_index = 2
+        trac_vec = np.array([-Nxy, -Ny], dtype=dtype)
+        traction = elem.createElementTraction(trac_vec, face_index)
+        for elem_id in elem_ids[:, 0]:
+            aux_elems.addElement(elem_id, traction)
+
+        # Apply tractions on right side of plate
+        face_index = 1
+        trac_vec = np.array([Nx, Nxy], dtype=dtype)
+        traction = elem.createElementTraction(trac_vec, face_index)
+        for elem_id in elem_ids[-1, :]:
+            aux_elems.addElement(elem_id, traction)
+
+        # Apply tractions on top side of plate
+        face_index = 3
+        trac_vec = np.array([Nxy, Ny], dtype=dtype)
+        traction = elem.createElementTraction(trac_vec, face_index)
+        for elem_id in elem_ids[:, -1]:
+            aux_elems.addElement(elem_id, traction)
+
+        # Apply tractions on left side of plate
+        face_index = 0
+        trac_vec = np.array([-Nx, -Nxy], dtype=dtype)
+        traction = elem.createElementTraction(trac_vec, face_index)
+        for elem_id in elem_ids[0, :]:
+            aux_elems.addElement(elem_id, traction)
+
+        # Set tractions in assembler
+        assembler.setAuxElements(aux_elems)
+
         return assembler
 
     def setup_tacs_vecs(self, assembler, force_vec, dv_pert_vec, ans_pert_vec, xpts_pert_vec):
@@ -110,29 +147,7 @@ class ProblemTest(StaticTestCase.StaticTest):
         local_xyz = xpts0_array.reshape(local_num_nodes, 3)
         local_x, local_y, local_z = local_xyz[:, 0], local_xyz[:, 1], local_xyz[:, 2]
 
-        # Create force vector
-        f_array = force_vec.getArray().reshape(local_num_nodes, vars_per_node)
-
-        # Apply distributed forces on edges of plate
-        # Apply Nxx
-        f_array[local_x == Lx, 0] += (Nx * Ly) / ny
-        f_array[local_x == 0.0, 0] += -(Nx * Ly) / ny
-
-        # Apply Nyy
-        f_array[local_y == Ly, 1] += (Ny * Lx) / nx
-        f_array[local_y == 0.0, 1] += -(Ny * Lx) / nx
-
-        # Apply Nxy
-        f_array[local_y == Ly, 0] += (Nxy * Lx) / nx
-        f_array[local_x == Lx, 1] += (Nxy * Ly) / ny
-        f_array[local_y == 0.0, 0] += -(Nxy * Lx) / nx
-        f_array[local_x == 0.0, 1] += -(Nxy * Ly) / ny
-
-        # drop force at corners by half to avoid stress concentration
-        f_array[np.logical_and(local_x == 0.0, local_y == 0.0), :] *= 0.5
-        f_array[np.logical_and(local_x == 0.0, local_y == Ly), :] *= 0.5
-        f_array[np.logical_and(local_x == Lx, local_y == Ly), :] *= 0.5
-        f_array[np.logical_and(local_x == Lx, local_y == 0.0), :] *= 0.5
+        # No need to populate force vector, since we're using tractions
 
         # Create temporary dv vec for doing fd/cs
         dv_pert_array = dv_pert_vec.getArray()
