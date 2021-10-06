@@ -48,6 +48,10 @@ TACSTraction3D::~TACSTraction3D(){
   basis->decref();
 }
 
+const char* TACSTraction3D::getObjectName(){
+  return "TACSTraction3D";
+}
+
 // Get the layout properties of the element
 int TACSTraction3D::getVarsPerNode(){
   return varsPerNode;

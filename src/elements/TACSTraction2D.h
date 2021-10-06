@@ -29,6 +29,7 @@ class TACSTraction2D : public TACSElement {
   ~TACSTraction2D();
 
   // Get the layout properties of the element
+  const char* getObjectName();
   int getVarsPerNode();
   int getNumNodes();
   ElementLayout getLayoutType();
