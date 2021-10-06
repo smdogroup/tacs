@@ -8,9 +8,20 @@
 template <int vars_per_node, class quadrature, class basis>
 class TACSShellTraction : public TACSElement {
  public:
-  TACSShellTraction( const TacsScalar _t[] ){
-    for ( int i = 0; i < 3*basis::NUM_NODES; i++ ){
-      t[i] = _t[i];
+  TACSShellTraction( const TacsScalar _t[], int useConstTrac=1 ){
+    // Traction is constant across element
+    if (useConstTrac){
+      for ( int i = 0; i < basis::NUM_NODES; i++ ){
+        for ( int j = 0; j < 3; j++ ){
+          t[3*i + j] = _t[j];
+        }
+      }
+    }
+    // Traction varies across element
+    else{
+      for ( int i = 0; i < 3*basis::NUM_NODES; i++ ){
+        t[i] = _t[i];
+      }
     }
   }
 
