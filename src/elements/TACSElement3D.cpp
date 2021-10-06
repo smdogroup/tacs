@@ -27,6 +27,10 @@ TACSElement3D::~TACSElement3D(){
   basis->decref();
 }
 
+const char* TACSElement3D::getObjectName(){
+  return "TACSElement3D";
+}
+
 // Get the layout properties of the element
 int TACSElement3D::getVarsPerNode(){
   return model->getVarsPerNode();

@@ -25,6 +25,10 @@ class TACSShellTraction : public TACSElement {
     }
   }
 
+  const char* getObjectName(){
+    return "TACSShellTraction";
+  }
+
   int getVarsPerNode(){
     return vars_per_node;
   }

@@ -27,6 +27,7 @@ class TACSElement3D : public TACSElement {
   ~TACSElement3D();
 
   // Get the layout properties of the element
+  const char* getObjectName();
   int getVarsPerNode();
   int getNumNodes();
   int getDesignVarsPerNode();

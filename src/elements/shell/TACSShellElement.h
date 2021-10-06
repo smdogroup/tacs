@@ -41,6 +41,10 @@ class TACSShellElement : public TACSElement {
     con->incref();
   }
 
+  const char* getObjectName(){
+    return "TACSShellElement";
+  }
+
   int getVarsPerNode(){
     return vars_per_node;
   }

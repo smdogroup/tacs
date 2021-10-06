@@ -31,7 +31,7 @@ class TACSRBE3 : public TACSElement {
 
   // Get the element properties and names
   // ------------------------------------
-  const char * elementName();
+  const char * getObjectName();
   const char * displacementName( int i );
   const char * extraName( int i );
   int getVarsPerNode();

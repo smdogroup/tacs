@@ -239,6 +239,13 @@ cdef class Element:
         if self.ptr:
             self.ptr.decref()
 
+    def getObjectName(self):
+        cdef bytes py_string
+        if self.ptr:
+            py_string = self.ptr.getObjectName()
+            return convert_bytes_to_str(py_string)
+        return None
+
     def setComponentNum(self, int comp_num):
         if self.ptr:
             self.ptr.setComponentNum(comp_num)
