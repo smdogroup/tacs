@@ -9,6 +9,7 @@
 #include "TACSElementTypes.h"
 #include "TACSDirector.h"
 #include "TACSShellElementTransform.h"
+#include "TACSShellTraction.h"
 #include "TACSElementVerification.h"
 
 template <class quadrature, class basis, class director, class model>
@@ -90,6 +91,10 @@ class TACSShellElement : public TACSElement {
 
   int getDesignVarRange( int elemIndex, int dvLen, TacsScalar lb[], TacsScalar ub[] ){
     return con->getDesignVarRange(elemIndex, dvLen, lb, ub);
+  }
+
+  TACSElement* createElementTraction(TacsScalar t[], int faceIndex){
+    return new TACSShellTraction<vars_per_node, quadrature, basis>(t);
   }
 
   void computeEnergies( int elemIndex,

@@ -51,6 +51,11 @@ TACSElementModel* TACSElement2D::getElementModel(){
   return model;
 }
 
+TACSElement* TACSElement2D::createElementTraction(TacsScalar t[], int faceIndex){
+  int varsPerNode = getVarsPerNode();
+  return new TACSTraction2D(varsPerNode, faceIndex, basis, t);
+}
+
 int TACSElement2D::getNumQuadraturePoints(){
   return basis->getNumQuadraturePoints();
 }
