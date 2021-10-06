@@ -52,7 +52,7 @@ TACSElementModel* TACSElement2D::getElementModel(){
   return model;
 }
 
-TACSElement* TACSElement2D::createElementTraction(TacsScalar t[], int faceIndex){
+TACSElement* TACSElement2D::createElementTraction( int faceIndex, TacsScalar t[] ){
   int varsPerNode = getVarsPerNode();
   return new TACSTraction2D(varsPerNode, faceIndex, basis, t);
 }

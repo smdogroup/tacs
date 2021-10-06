@@ -188,7 +188,7 @@ class TACSElement : public TACSObject {
 
     @return The TACSElement traction class associated with this element. Possibly NULL.
   */
-  virtual TACSElement* createElementTraction(TacsScalar t[], int faceIndex){
+  virtual TACSElement* createElementTraction( int faceIndex, TacsScalar t[] ){
     return NULL;
   }
 

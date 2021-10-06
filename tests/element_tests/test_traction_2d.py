@@ -81,7 +81,7 @@ class ElementTest(unittest.TestCase):
                             print("Testing with model %s with basis functions %s\n" % (
                                 type(model), type(basis)))
                         element = elements.Element2D(model, basis)
-                        traction = element.createElementTraction(self.trac_vec, self.faceIndex)
+                        traction = element.createElementTraction(self.faceIndex, self.trac_vec)
                         fail = elements.TestElementJacobian(traction, self.elem_index, self.time, self.xpts,
                                                             self.vars, self.dvars, self.ddvars, -1, self.dh,
                                                             self.print_level, self.atol, self.rtol)
@@ -97,7 +97,7 @@ class ElementTest(unittest.TestCase):
                             print("Testing with model %s with basis functions %s\n" % (
                                 type(model), type(basis)))
                         element = elements.Element2D(model, basis)
-                        traction = element.createElementTraction(self.trac_vec, self.faceIndex)
+                        traction = element.createElementTraction(self.faceIndex, self.trac_vec)
                         dvs = traction.getDesignVars(self.elem_index)
                         fail = elements.TestAdjResProduct(traction, self.elem_index, self.time, self.xpts,
                                                           self.vars, self.dvars, self.ddvars, dvs, self.dh,
@@ -114,7 +114,7 @@ class ElementTest(unittest.TestCase):
                             print("Testing with model %s with basis functions %s\n" % (
                                 type(model), type(basis)))
                         element = elements.Element2D(model, basis)
-                        traction = element.createElementTraction(self.trac_vec, self.faceIndex)
+                        traction = element.createElementTraction(self.faceIndex, self.trac_vec)
                         fail = elements.TestAdjResXptProduct(traction, self.elem_index, self.time, self.xpts,
                                                              self.vars, self.dvars, self.ddvars, self.dh,
                                                              self.print_level, self.atol, self.rtol)
@@ -127,7 +127,7 @@ class ElementTest(unittest.TestCase):
                 for basis in self.bases:
                     with self.subTest(basis=basis):
                         element = elements.Element2D(model, basis)
-                        traction = element.createElementTraction(self.trac_vec, self.faceIndex)
+                        traction = element.createElementTraction(self.faceIndex, self.trac_vec)
                         dvs = traction.getDesignVars(self.elem_index)
                         for matrix_type in self.matrix_types:
                             with self.subTest(matrix_type=matrix_type):
@@ -146,7 +146,7 @@ class ElementTest(unittest.TestCase):
                 for basis in self.bases:
                     with self.subTest(basis=basis):
                         element = elements.Element2D(model, basis)
-                        traction = element.createElementTraction(self.trac_vec, self.faceIndex)
+                        traction = element.createElementTraction(self.faceIndex, self.trac_vec)
                         if self.print_level > 0:
                             print(
                                 "Testing with model %s with basis functions %s and matrix type GEOMETRIC_STIFFNESS\n" % (

@@ -365,7 +365,7 @@ cdef extern from "TACSElement.h":
         int getDesignVarRange(int, int, TacsScalar*, TacsScalar*)
         TACSElementBasis* getElementBasis()
         TACSElementModel* getElementModel()
-        TACSElement* createElementTraction(TacsScalar*, int)
+        TACSElement* createElementTraction(int, TacsScalar*)
 
 cdef class Element:
     cdef TACSElement *ptr

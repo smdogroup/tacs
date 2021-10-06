@@ -97,7 +97,7 @@ class TACSShellElement : public TACSElement {
     return con->getDesignVarRange(elemIndex, dvLen, lb, ub);
   }
 
-  TACSElement* createElementTraction(TacsScalar t[], int faceIndex){
+  TACSElement* createElementTraction( int faceIndex, TacsScalar t[] ){
     return new TACSShellTraction<vars_per_node, quadrature, basis>(t);
   }
 

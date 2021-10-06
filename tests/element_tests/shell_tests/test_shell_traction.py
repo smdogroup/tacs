@@ -75,7 +75,7 @@ class ElementTest(unittest.TestCase):
                 for element_handle in self.elements:
                     with self.subTest(element=element_handle):
                         element = element_handle(transform, self.con)
-                        traction = element.createElementTraction(self.trac_vec, self.faceIndex)
+                        traction = element.createElementTraction(self.faceIndex, self.trac_vec)
                         fail = elements.TestElementJacobian(traction, self.elem_index, self.time, self.xpts,
                                                             self.vars, self.dvars, self.ddvars, -1, self.dh,
                                                             self.print_level, self.atol, self.rtol)
@@ -88,7 +88,7 @@ class ElementTest(unittest.TestCase):
                 for element_handle in self.elements:
                     with self.subTest(element=element_handle):
                         element = element_handle(transform, self.con)
-                        traction = element.createElementTraction(self.trac_vec, self.faceIndex)
+                        traction = element.createElementTraction(self.faceIndex, self.trac_vec)
                         dvs = element.getDesignVars(self.elem_index)
                         fail = elements.TestAdjResProduct(traction, self.elem_index, self.time, self.xpts,
                                                           self.vars, self.dvars, self.ddvars, dvs, self.dh,
@@ -102,7 +102,7 @@ class ElementTest(unittest.TestCase):
                 for element_handle in self.elements:
                     with self.subTest(element=element_handle):
                         element = element_handle(transform, self.con)
-                        traction = element.createElementTraction(self.trac_vec, self.faceIndex)
+                        traction = element.createElementTraction(self.faceIndex, self.trac_vec)
                         fail = elements.TestAdjResXptProduct(traction, self.elem_index, self.time, self.xpts,
                                                              self.vars, self.dvars, self.ddvars, self.dh,
                                                              self.print_level, self.atol, self.rtol)
@@ -115,7 +115,7 @@ class ElementTest(unittest.TestCase):
                 for element_handle in self.elements:
                     with self.subTest(element=element_handle):
                         element = element_handle(transform, self.con)
-                        traction = element.createElementTraction(self.trac_vec, self.faceIndex)
+                        traction = element.createElementTraction(self.faceIndex, self.trac_vec)
                         dvs = element.getDesignVars(self.elem_index)
                         for matrix_type in self.matrix_types:
                             with self.subTest(matrix_type=matrix_type):
@@ -131,7 +131,7 @@ class ElementTest(unittest.TestCase):
                 for element_handle in self.elements:
                     with self.subTest(element=element_handle):
                         element = element_handle(transform, self.con)
-                        traction = element.createElementTraction(self.trac_vec, self.faceIndex)
+                        traction = element.createElementTraction(self.faceIndex, self.trac_vec)
                         fail = elements.TestElementMatSVSens(traction, TACS.GEOMETRIC_STIFFNESS_MATRIX, self.elem_index,
                                                              self.time, self.xpts, self.vars, self.dh,
                                                              self.print_level, self.atol, self.rtol)

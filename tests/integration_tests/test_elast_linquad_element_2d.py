@@ -101,28 +101,28 @@ class ProblemTest(StaticTestCase.StaticTest):
         # Apply tractions on bottom side of plate
         face_index = 2
         trac_vec = np.array([-Nxy, -Ny], dtype=dtype)
-        traction = elem.createElementTraction(trac_vec, face_index)
+        traction = elem.createElementTraction(face_index, trac_vec)
         for elem_id in elem_ids[:, 0]:
             aux_elems.addElement(elem_id, traction)
 
         # Apply tractions on right side of plate
         face_index = 1
         trac_vec = np.array([Nx, Nxy], dtype=dtype)
-        traction = elem.createElementTraction(trac_vec, face_index)
+        traction = elem.createElementTraction(face_index, trac_vec)
         for elem_id in elem_ids[-1, :]:
             aux_elems.addElement(elem_id, traction)
 
         # Apply tractions on top side of plate
         face_index = 3
         trac_vec = np.array([Nxy, Ny], dtype=dtype)
-        traction = elem.createElementTraction(trac_vec, face_index)
+        traction = elem.createElementTraction(face_index, trac_vec)
         for elem_id in elem_ids[:, -1]:
             aux_elems.addElement(elem_id, traction)
 
         # Apply tractions on left side of plate
         face_index = 0
         trac_vec = np.array([-Nx, -Nxy], dtype=dtype)
-        traction = elem.createElementTraction(trac_vec, face_index)
+        traction = elem.createElementTraction(face_index, trac_vec)
         for elem_id in elem_ids[0, :]:
             aux_elems.addElement(elem_id, traction)
 

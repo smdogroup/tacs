@@ -44,7 +44,7 @@ int TACSElement3D::getDesignVarsPerNode(){
   return model->getDesignVarsPerNode();
 }
 
-TACSElement* TACSElement3D::createElementTraction(TacsScalar t[], int faceIndex){
+TACSElement* TACSElement3D::createElementTraction( int faceIndex, TacsScalar t[] ){
   int varsPerNode = getVarsPerNode();
   return new TACSTraction3D(varsPerNode, faceIndex, basis, t);
 }
