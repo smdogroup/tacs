@@ -213,24 +213,3 @@ void TACSTraction2D::addJacobian( int elemIndex,
     basis->addWeakResidual(n, pt, area, J, varsPerNode, DUt, DUx, res);
   }
 }
-
-void TACSTraction2D::addAdjResProduct( int elemIndex,
-                                       double time,
-                                       TacsScalar scale,
-                                       const TacsScalar psi[],
-                                       const TacsScalar Xpts[],
-                                       const TacsScalar vars[],
-                                       const TacsScalar dvars[],
-                                       const TacsScalar ddvars[],
-                                       int dvLen,
-                                       TacsScalar dfdx[] ){}
-
-void TACSTraction2D::addAdjResXptProduct( int elemIndex,
-                                          double time,
-                                          TacsScalar scale,
-                                          const TacsScalar psi[],
-                                          const TacsScalar Xpts[],
-                                          const TacsScalar vars[],
-                                          const TacsScalar dvars[],
-                                          const TacsScalar ddvars[],
-                                          TacsScalar dfdXpts[] ){}

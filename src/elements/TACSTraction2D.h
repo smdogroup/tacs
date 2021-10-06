@@ -57,25 +57,6 @@ class TACSTraction2D : public TACSElement {
                     const TacsScalar *dvars, const TacsScalar *ddvars,
                     TacsScalar *res, TacsScalar *mat );
 
-  /**
-    Add the derivative of the product of the adjoint variables w.r.t.
-    the material design variables
-  */
-  void addAdjResProduct( int elemIndex, double time, TacsScalar scale,
-                         const TacsScalar psi[], const TacsScalar Xpts[],
-                         const TacsScalar vars[], const TacsScalar dvars[],
-                         const TacsScalar ddvars[],
-                         int dvLen, TacsScalar dvSens[] );
-
-  /**
-    Add the derivative of the product of the adjoint variables and the
-    residuals with respect to the node locations
-  */
-  void addAdjResXptProduct( int elemIndex, double time, TacsScalar scale,
-                            const TacsScalar psi[], const TacsScalar Xpts[],
-                            const TacsScalar vars[], const TacsScalar dvars[],
-                            const TacsScalar ddvars[], TacsScalar fXptSens[] );
-
  private:
   int varsPerNode, faceIndex;
   TACSElementBasis *basis;
