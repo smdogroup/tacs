@@ -12,13 +12,13 @@ class ElementTest(unittest.TestCase):
         if TACS.dtype is complex:
             self.dh = 1e-50
             self.rtol = 1e-10
+            self.atol = 1e-2
         else:
             self.dh = 1e-5
             self.rtol = 1e-2
+            self.atol = 1e-2
         self.dtype = TACS.dtype
 
-        # Basically, only check relative tolerance
-        self.atol = 1e99
         self.print_level = 0
 
         # Set element index
