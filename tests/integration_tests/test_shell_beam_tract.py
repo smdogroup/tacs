@@ -4,11 +4,11 @@ from tacs import TACS, elements, constitutive, functions
 from static_analysis_base_test import StaticTestCase
 
 '''
-Create a cantilevered beam of linear quad shells under a tip shear load
+Create a cantilevered beam of linear quad shells under a uniform traction
 and test KSFailure, StructuralMass, and Compliance functions and sensitivities
 '''
 
-FUNC_REFS = np.array([84.72676760968147, 2570.0, 1.70202700928821e+9])
+FUNC_REFS = np.array([0.6539869836315179, 2570.0, 106604.59992292787])
 
 # Length of plate in x/y direction
 Lx = 10.0
@@ -18,8 +18,8 @@ Ly = 1.0
 nx = 10
 ny = 10
 
-# running loads (N/m)
-Qx = 5e6
+# traction vector (N/m2)
+trac_vec = np.array([1.0e5, 2.0e5, 0.0])
 
 # KS function weight
 ksweight = 10.0
@@ -96,6 +96,21 @@ class ProblemTest(StaticTestCase.StaticTest):
         # Create the tacs assembler object
         assembler = creator.createTACS()
 
+        # Get number of elements on this processor
+        local_num_elems = assembler.getNumElements()
+
+        # Create object to hold tractions
+        aux_elems = TACS.AuxElements()
+
+        # Add uniform traction to all elements
+        faceIndex = 0
+        traction = elem.createElementTraction(faceIndex, trac_vec.astype(dtype))
+        for elem_id in range(local_num_elems):
+            aux_elems.addElement(elem_id, traction)
+
+        # Set tractions in assembler
+        assembler.setAuxElements(aux_elems)
+
         return assembler
 
     def setup_tacs_vecs(self, assembler, force_vec, dv_pert_vec, ans_pert_vec, xpts_pert_vec):
@@ -114,12 +129,7 @@ class ProblemTest(StaticTestCase.StaticTest):
         local_xyz = xpts0_array.reshape(local_num_nodes, 3)
         local_x, local_y, local_z = local_xyz[:, 0], local_xyz[:, 1], local_xyz[:, 2]
 
-        # Create force vector
-        f_array = force_vec.getArray().reshape(local_num_nodes, vars_per_node)
-
-        # Apply distributed forces at tip of beam
-        # Apply Qxx
-        f_array[local_x == Lx, 2] += (Qx * Ly) / ny
+        # Don't need to modify force vector, since we already set traction
 
         # Create temporary dv vec for doing fd/cs
         dv_pert_array = dv_pert_vec.getArray()
@@ -127,13 +137,14 @@ class ProblemTest(StaticTestCase.StaticTest):
 
         # Create temporary state variable vec for doing fd/cs
         ans_pert_array = ans_pert_vec.getArray()
-        # Define perturbation array that uniformly moves all nodes on right edge of plate to upward
+        # Define perturbation array that uniformly moves all nodes on right edge of plate to the right
         ans_pert_array = ans_pert_array.reshape(local_num_nodes, vars_per_node)
-        ans_pert_array[local_x == Lx, 2] = 1.0
+        ans_pert_array[local_x == Lx, 1] = 1.0
 
         # Define perturbation array that uniformly moves all nodes on right edge of plate to the right
         xpts_pert_array = xpts_pert_vec.getArray()
         xpts_pert_array = xpts_pert_array.reshape(local_num_nodes, 3)
+        # Define perturbation array that uniformly moves all nodes on right edge of plate to the right
         xpts_pert_array[local_x == Lx, 0] = 1.0
 
         return
