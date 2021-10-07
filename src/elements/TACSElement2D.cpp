@@ -13,6 +13,7 @@
 */
 
 #include "TACSElement2D.h"
+#include "TACSTraction2D.h"
 #include "TACSElementAlgebra.h"
 
 TACSElement2D::TACSElement2D( TACSElementModel *_model,
@@ -49,6 +50,11 @@ TACSElementBasis* TACSElement2D::getElementBasis(){
 
 TACSElementModel* TACSElement2D::getElementModel(){
   return model;
+}
+
+TACSElement* TACSElement2D::createElementTraction( int faceIndex, TacsScalar t[] ){
+  int varsPerNode = getVarsPerNode();
+  return new TACSTraction2D(varsPerNode, faceIndex, basis, t);
 }
 
 int TACSElement2D::getNumQuadraturePoints(){

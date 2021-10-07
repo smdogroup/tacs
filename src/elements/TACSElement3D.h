@@ -27,12 +27,14 @@ class TACSElement3D : public TACSElement {
   ~TACSElement3D();
 
   // Get the layout properties of the element
+  const char* getObjectName();
   int getVarsPerNode();
   int getNumNodes();
   int getDesignVarsPerNode();
   ElementLayout getLayoutType();
   TACSElementBasis* getElementBasis();
   TACSElementModel* getElementModel();
+  TACSElement* createElementTraction( int faceIndex, TacsScalar t[] );
   int getNumQuadraturePoints();
   double getQuadratureWeight( int n );
   double getQuadraturePoint( int n, double pt[] );

@@ -4435,8 +4435,9 @@ void TACSAssembler::evalFunctions( int numFuncs,
       funcs[k]->initEvaluation(TACSFunction::INTEGRATE);
     }
   }
-  integrateFunctions(tcoef, TACSFunction::INTEGRATE,
-                     numFuncs, funcs);
+
+  integrateFunctions(tcoef, TACSFunction::INTEGRATE, numFuncs, funcs);
+
   for ( int k = 0; k < numFuncs; k++ ){
     if (funcs[k]){
       funcs[k]->finalEvaluation(TACSFunction::INTEGRATE);
@@ -4807,10 +4808,8 @@ void TACSAssembler::addSVSens( TacsScalar alpha,
 
   // Finish adding the values
   for ( int k = 0; k < numFuncs; k++ ){
-    if (funcs[k]){
-      dfdu[k]->endSetValues(TACS_ADD_VALUES);
-      dfdu[k]->applyBCs(bcMap);
-    }
+    dfdu[k]->endSetValues(TACS_ADD_VALUES);
+    dfdu[k]->applyBCs(bcMap);
   }
 }
 
@@ -4898,21 +4897,27 @@ void TACSAssembler::addAdjointResProducts( TacsScalar scale,
     }
 
     // Add the contribution from the auxiliary elements
-    while (aux_count < naux && aux[aux_count].num == i){
-      // Get the design variables for this element
-      numDVs = aux[aux_count].elem->getDesignVarNums(i, maxDVs, dvNums);
+    if (aux_count < naux){
+      while (aux_count < naux && aux[aux_count].num == i){
+        // Get the design variables for this element
+        numDVs = aux[aux_count].elem->getDesignVarNums(i, maxDVs, dvNums);
 
-      // Get the adjoint variables
-      for ( int k = 0; k < numAdjoints; k++ ){
-        memset(fdvSens, 0, numDVs*designVarsPerNode*sizeof(TacsScalar));
+        // Get the adjoint variables
+        for ( int k = 0; k < numAdjoints; k++ ){
+          memset(fdvSens, 0, numDVs*designVarsPerNode*sizeof(TacsScalar));
 
-        aux[aux_count].elem->addAdjResProduct(i, time, scale,
-                                              elemAdjoint, elemXpts,
-                                              vars, dvars, ddvars,
-                                              numDVs, fdvSens);
+          // Get the element adjoint vector
+          adjoint[k]->getValues(len, nodes, elemAdjoint);
+
+          aux[aux_count].elem->addAdjResProduct(i, time, scale,
+                                                elemAdjoint, elemXpts,
+                                                vars, dvars, ddvars,
+                                                numDVs, fdvSens);
+
+
+          dfdx[k]->setValues(numDVs, dvNums, fdvSens, TACS_ADD_VALUES);
+        }
         aux_count++;
-
-        dfdx[k]->setValues(numDVs, dvNums, fdvSens, TACS_ADD_VALUES);
       }
     }
   }
@@ -4981,15 +4986,28 @@ void TACSAssembler::addAdjointResXptSensProducts( TacsScalar scale,
                                        elemAdjoint, elemXpts,
                                        vars, dvars, ddvars, xptSens);
 
-      // Add the contribution from the auxiliary elements
+      dfdXpt[k]->setValues(len, nodes, xptSens, TACS_ADD_VALUES);
+    }
+
+    // Add the contribution from the auxiliary elements
+    if (aux_count < naux){
       while (aux_count < naux && aux[aux_count].num == i){
-        aux[aux_count].elem->addAdjResXptProduct(i, time, scale,
-                                                 elemAdjoint, elemXpts,
-                                                 vars, dvars, ddvars, xptSens);
+        // Get the adjoint variables
+        for ( int k = 0; k < numAdjoints; k++ ){
+          memset(xptSens, 0, TACS_SPATIAL_DIM*len*sizeof(TacsScalar));
+
+          // Get the element adjoint vector
+          adjoint[k]->getValues(len, nodes, elemAdjoint);
+
+          aux[aux_count].elem->addAdjResXptProduct(i, time, scale,
+                                                   elemAdjoint, elemXpts,
+                                                   vars, dvars, ddvars, xptSens);
+
+
+          dfdXpt[k]->setValues(len, nodes, xptSens, TACS_ADD_VALUES);
+        }
         aux_count++;
       }
-
-      dfdXpt[k]->setValues(len, nodes, xptSens, TACS_ADD_VALUES);
     }
   }
 }

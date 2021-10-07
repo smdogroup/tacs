@@ -48,6 +48,10 @@ TACSTraction2D::~TACSTraction2D(){
   basis->decref();
 }
 
+const char* TACSTraction2D::getObjectName(){
+  return "TACSTraction2D";
+}
+
 // Get the layout properties of the element
 int TACSTraction2D::getVarsPerNode(){
   return varsPerNode;
@@ -213,24 +217,3 @@ void TACSTraction2D::addJacobian( int elemIndex,
     basis->addWeakResidual(n, pt, area, J, varsPerNode, DUt, DUx, res);
   }
 }
-
-void TACSTraction2D::addAdjResProduct( int elemIndex,
-                                       double time,
-                                       TacsScalar scale,
-                                       const TacsScalar psi[],
-                                       const TacsScalar Xpts[],
-                                       const TacsScalar vars[],
-                                       const TacsScalar dvars[],
-                                       const TacsScalar ddvars[],
-                                       int dvLen,
-                                       TacsScalar dfdx[] ){}
-
-void TACSTraction2D::addAdjResXptProduct( int elemIndex,
-                                          double time,
-                                          TacsScalar scale,
-                                          const TacsScalar psi[],
-                                          const TacsScalar Xpts[],
-                                          const TacsScalar vars[],
-                                          const TacsScalar dvars[],
-                                          const TacsScalar ddvars[],
-                                          TacsScalar dfdXpts[] ){}

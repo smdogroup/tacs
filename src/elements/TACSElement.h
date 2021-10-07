@@ -184,6 +184,15 @@ class TACSElement : public TACSObject {
   }
 
   /**
+    Create element traction class
+
+    @return The TACSElement traction class associated with this element. Possibly NULL.
+  */
+  virtual TACSElement* createElementTraction( int faceIndex, TacsScalar t[] ){
+    return NULL;
+  }
+
+  /**
     Get the type of element layout for visualization
 
     @return The layout type for this element

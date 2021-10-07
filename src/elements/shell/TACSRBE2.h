@@ -28,7 +28,7 @@ class TACSRBE2 : public TACSElement {
 
   // Get the element properties and names
   // ------------------------------------
-  const char * elementName();
+  const char * getObjectName();
   const char * displacementName( int i );
   const char * stressName( int i );
   const char * strainName( int i );
