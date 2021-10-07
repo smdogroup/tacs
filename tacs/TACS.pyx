@@ -284,6 +284,14 @@ cdef class Element:
                 return _init_Element(tracElem)
         return None
 
+    def createElementPressure(self, int faceIndex, TacsScalar p):
+        cdef TACSElement *pressElem = NULL
+        if self.ptr:
+            pressElem = self.ptr.createElementPressure(faceIndex, p)
+            if pressElem != NULL:
+                return _init_Element(pressElem)
+        return None
+
     def getDesignVarsPerNode(self):
         """
         getDesignVarsPerNode(self)

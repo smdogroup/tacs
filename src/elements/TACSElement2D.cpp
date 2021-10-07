@@ -14,6 +14,7 @@
 
 #include "TACSElement2D.h"
 #include "TACSTraction2D.h"
+#include "TACSPressure2D.h"
 #include "TACSElementAlgebra.h"
 
 TACSElement2D::TACSElement2D( TACSElementModel *_model,
@@ -55,6 +56,11 @@ TACSElementModel* TACSElement2D::getElementModel(){
 TACSElement* TACSElement2D::createElementTraction( int faceIndex, TacsScalar t[] ){
   int varsPerNode = getVarsPerNode();
   return new TACSTraction2D(varsPerNode, faceIndex, basis, t);
+}
+
+TACSElement* TACSElement2D::createElementPressure( int faceIndex, TacsScalar p ){
+  int varsPerNode = getVarsPerNode();
+  return new TACSPressure2D(varsPerNode, faceIndex, basis, p);
 }
 
 int TACSElement2D::getNumQuadraturePoints(){
