@@ -1911,7 +1911,10 @@ cdef class Assembler:
             raise MemoryError()
 
         for i in range(len(funclist)):
-            funcs[i] = (<Function>funclist[i]).ptr
+            if funclist[i] is not None:
+                funcs[i] = (<Function>funclist[i]).ptr
+            else:
+                funcs[i] = NULL
 
         # Allocate the numpy array of function values
         cdef np.ndarray fvals = np.zeros(len(funclist), dtype)
@@ -1941,7 +1944,10 @@ cdef class Assembler:
         funcs = <TACSFunction**>malloc(num_funcs*sizeof(TACSFunction*))
         dfdx = <TACSBVec**>malloc(num_funcs*sizeof(TACSBVec*))
         for i in range(num_funcs):
-            funcs[i] = (<Function>funclist[i]).ptr
+            if funclist[i] is not None:
+                funcs[i] = (<Function>funclist[i]).ptr
+            else:
+                funcs[i] = NULL
             dfdx[i] = (<Vec>dfdxlist[i]).ptr
 
         # Evaluate the derivative of the functions
@@ -1976,7 +1982,10 @@ cdef class Assembler:
         funcs = <TACSFunction**>malloc(num_funcs*sizeof(TACSFunction*))
         dfdu = <TACSBVec**>malloc(num_funcs*sizeof(TACSBVec*))
         for i in range(num_funcs):
-            funcs[i] = (<Function>funclist[i]).ptr
+            if funclist[i] is not None:
+                funcs[i] = (<Function>funclist[i]).ptr
+            else:
+                funcs[i] = NULL
             dfdu[i] = (<Vec>dfdulist[i]).ptr
 
         # Evaluate the derivative of the functions
@@ -2005,7 +2014,10 @@ cdef class Assembler:
         funcs = <TACSFunction**>malloc(num_funcs*sizeof(TACSFunction*))
         dfdX = <TACSBVec**>malloc(num_funcs*sizeof(TACSBVec*))
         for i in range(num_funcs):
-            funcs[i] = (<Function>funclist[i]).ptr
+            if funclist[i] is not None:
+                funcs[i] = (<Function>funclist[i]).ptr
+            else:
+                funcs[i] = NULL
             dfdX[i] = (<Vec>dfdXlist[i]).ptr
 
         # Evaluate the derivative of the functions
@@ -3130,10 +3142,10 @@ cdef class Integrator:
         cdef TACSFunction **funcs
         funcs = <TACSFunction**>malloc(len(funclist)*sizeof(TACSFunction*))
         for i in range(len(funclist)):
-            if funclist[i] is None:
-                funcs[i] = NULL
-            else:
+            if funclist[i] is not None:
                 funcs[i] = (<Function>funclist[i]).ptr
+            else:
+                funcs[i] = NULL
 
         # Allocate the numpy array of function values
         cdef np.ndarray fvals = np.zeros(len(funclist), dtype)
