@@ -47,6 +47,10 @@ class TACSThermalShellElement : public TACSElement {
     return num_nodes;
   }
 
+  const char* getObjectName(){
+    return "TACSThermalShellElement";
+  }
+
   ElementLayout getLayoutType(){
     return basis::getLayoutType();
   }

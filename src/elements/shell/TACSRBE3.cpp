@@ -83,7 +83,7 @@ TACSRBE3::~TACSRBE3(){
 /*
   Retrieve information about the names of the element variables
 */
-const char * TACSRBE3::elementName() {
+const char * TACSRBE3::getObjectName() {
   return elemName;
 }
 

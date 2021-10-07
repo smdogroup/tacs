@@ -239,6 +239,13 @@ cdef class Element:
         if self.ptr:
             self.ptr.decref()
 
+    def getObjectName(self):
+        cdef bytes py_string
+        if self.ptr:
+            py_string = self.ptr.getObjectName()
+            return convert_bytes_to_str(py_string)
+        return None
+
     def setComponentNum(self, int comp_num):
         if self.ptr:
             self.ptr.setComponentNum(comp_num)
@@ -267,6 +274,14 @@ cdef class Element:
     def getElementBasis(self):
         if self.ptr:
             return _init_ElementBasis(self.ptr.getElementBasis())
+        return None
+
+    def createElementTraction(self, int faceIndex, np.ndarray[TacsScalar, ndim=1] trac):
+        cdef TACSElement *tracElem = NULL
+        if self.ptr:
+            tracElem = self.ptr.createElementTraction(faceIndex, <TacsScalar*>trac.data)
+            if tracElem != NULL:
+                return _init_Element(tracElem)
         return None
 
     def getDesignVarsPerNode(self):

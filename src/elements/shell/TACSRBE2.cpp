@@ -71,7 +71,7 @@ TACSRBE2::~TACSRBE2(){
 /*
   Retrieve information about the names of the element variables
 */
-const char * TACSRBE2::elementName(){
+const char * TACSRBE2::getObjectName(){
   return elemName;
 }
 
@@ -110,7 +110,7 @@ void TACSRBE2::getMultiplierIndex( int *multiplier ){
 /*
   The element name, variable, stress and strain names.
 */
-const char * TACSRBE2::elemName = "RBE2";
+const char * TACSRBE2::elemName = "TACSRBE2";
 
 const char * TACSRBE2::dispNames[] = { "u0", "v0", "w0",
 				                       "rotx", "roty", "rotz" };
