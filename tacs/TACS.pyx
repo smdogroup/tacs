@@ -831,6 +831,15 @@ cdef class Pc:
         cdef TACSParallelMat *p_ptr = NULL
         cdef TACSSchurMat *sc_ptr = NULL
 
+        if 'lev_fill' in kwargs:
+            lev_fill = kwargs['lev_fill']
+
+        if 'fill' in kwargs:
+            fill = kwargs['ratio_fill']
+
+        if 'fill' in kwargs:
+            reorder = kwargs['reorder']
+
         if mat is not None:
             p_ptr = _dynamicParallelMat(mat.ptr)
             sc_ptr = _dynamicSchurMat(mat.ptr)
