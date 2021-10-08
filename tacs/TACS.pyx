@@ -834,10 +834,10 @@ cdef class Pc:
         if 'lev_fill' in kwargs:
             lev_fill = kwargs['lev_fill']
 
-        if 'fill' in kwargs:
+        if 'ratio_fill' in kwargs:
             fill = kwargs['ratio_fill']
 
-        if 'fill' in kwargs:
+        if 'reorder' in kwargs:
             reorder = kwargs['reorder']
 
         if mat is not None:
