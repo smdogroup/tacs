@@ -2558,19 +2558,24 @@ cdef class Creator:
 
     def setBoundaryConditions(self,
                               np.ndarray[int, ndim=1, mode='c'] nodes,
-                              np.ndarray[int, ndim=1, mode='c'] ptr=None,
-                              np.ndarray[int, ndim=1, mode='c'] bcvars=None):
+                              np.ndarray[int, ndim=1, mode='c'] bcptr=None,
+                              np.ndarray[int, ndim=1, mode='c'] bcvars=None,
+                              np.ndarray[TacsScalar, ndim=1, mode='c'] bcvals=None):
         """Set the boundary conditions"""
         cdef int num_bcs = nodes.shape[0]
-        if ptr is not None and bcvars is not None:
-            self.ptr.setBoundaryConditions(num_bcs,
-                                           <int*>nodes.data,
-                                           <int*>ptr.data,
-                                           <int*>bcvars.data)
-        else:
-            self.ptr.setBoundaryConditions(num_bcs,
-                                           <int*>nodes.data,
-                                           NULL, NULL)
+        cdef int* ptr = NULL
+        cdef int* vars = NULL
+        cdef TacsScalar* vals = NULL
+
+        if bcptr is not None:
+            ptr = <int*>bcptr.data
+        if bcvars is not None:
+            vars = <int*>bcvars.data
+        if bcvals is not None:
+            vals = <TacsScalar*>bcvals.data
+
+        self.ptr.setBoundaryConditions(num_bcs, <int*>nodes.data,
+                                       ptr, vars, vals)
         return
 
     def setDependentNodes(self, np.ndarray[int, ndim=1, mode='c'] dep_ptr,
