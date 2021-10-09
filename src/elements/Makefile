@@ -20,6 +20,8 @@ CXX_OBJS = FElibrary.o \
 	TACSNeohookean.o \
 	TACSTraction2D.o \
 	TACSTraction3D.o \
+	TACSPressure2D.o \
+	TACSPressure3D.o \
 	TACSConvectiveTraction2D.o \
 	TACSConvectiveTraction3D.o \
 	TACSElementVerification.o
