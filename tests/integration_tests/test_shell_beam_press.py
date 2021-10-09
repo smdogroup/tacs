@@ -4,11 +4,11 @@ from tacs import TACS, elements, constitutive, functions
 from static_analysis_base_test import StaticTestCase
 
 '''
-Create a cantilevered beam of linear quad shells under a tip shear load
+Create a cantilevered beam of linear triangular shells under a uniform pressure
 and test KSFailure, StructuralMass, and Compliance functions and sensitivities
 '''
 
-FUNC_REFS = np.array([84.72676760968147, 2570.0, 1.70202700928821e+9])
+FUNC_REFS = np.array([35.47818268003894, 2570.0, 206968113.43479252])
 
 # Length of plate in x/y direction
 Lx = 10.0
@@ -18,8 +18,8 @@ Ly = 1.0
 nx = 10
 ny = 10
 
-# running loads (N/m)
-Qx = 5e6
+# pressure load (N/m2)
+p = 5e5
 
 # KS function weight
 ksweight = 10.0
@@ -38,7 +38,7 @@ class ProblemTest(StaticTestCase.StaticTest):
         else:
             self.rtol = 1e-1
             self.atol = 1e-4
-            self.dh = 1e-7
+            self.dh = 1e-5
 
         # Set the MPI communicator
         comm = MPI.COMM_WORLD
@@ -47,16 +47,17 @@ class ProblemTest(StaticTestCase.StaticTest):
         props = constitutive.MaterialProperties(rho=2570.0, E=70e9, nu=0.3, ys=350e6)
         stiff = constitutive.IsoShellConstitutive(props, t=0.1, tNum=0)
 
-        # Set up the element transform function
-        transform = elements.ShellNaturalTransform()
-        elem = elements.Quad4Shell(transform, stiff)
+        # Set up the element transform
+        ref_axis = np.array([0.0, 1.0, 1.0], dtype=dtype)
+        transform = elements.ShellRefAxisTransform(ref_axis)
+        elem = elements.Tri3Shell(transform, stiff)
 
         # Allocate the TACSCreator object
         vars_per_node = elem.getVarsPerNode()
         creator = TACS.Creator(comm, vars_per_node)
 
         if comm.rank == 0:
-            num_elems = nx * ny
+            num_elems = 2 * nx * ny
             num_nodes = (nx + 1) * (ny + 1)
 
             # discretize plate
@@ -73,11 +74,13 @@ class ProblemTest(StaticTestCase.StaticTest):
                 for j in range(ny):
                     conn.append([node_ids[i, j],
                                  node_ids[i + 1, j],
-                                 node_ids[i, j + 1],
                                  node_ids[i + 1, j + 1]])
+                    conn.append([node_ids[i + 1, j + 1],
+                                 node_ids[i, j + 1],
+                                 node_ids[i, j]])
 
             conn = np.array(conn, dtype=np.intc).flatten()
-            ptr = np.arange(0, 4 * num_elems + 1, 4, dtype=np.intc)
+            ptr = np.arange(0, 3 * num_elems + 1, 3, dtype=np.intc)
             comp_ids = np.zeros(num_elems, dtype=np.intc)
 
             creator.setGlobalConnectivity(num_nodes, ptr, conn, comp_ids)
@@ -95,6 +98,21 @@ class ProblemTest(StaticTestCase.StaticTest):
 
         # Create the tacs assembler object
         assembler = creator.createTACS()
+
+        # Get number of elements on this processor
+        local_num_elems = assembler.getNumElements()
+
+        # Create object to hold pressures
+        aux_elems = TACS.AuxElements()
+
+        # Add uniform pressure to all elements
+        faceIndex = 0
+        pressure = elem.createElementPressure(faceIndex, p)
+        for elem_id in range(local_num_elems):
+            aux_elems.addElement(elem_id, pressure)
+
+        # Set tractions in assembler
+        assembler.setAuxElements(aux_elems)
 
         return assembler
 
@@ -117,9 +135,7 @@ class ProblemTest(StaticTestCase.StaticTest):
         # Create force vector
         f_array = force_vec.getArray().reshape(local_num_nodes, vars_per_node)
 
-        # Apply distributed forces at tip of beam
-        # Apply Qxx
-        f_array[local_x == Lx, 2] += (Qx * Ly) / ny
+        # Don't need to modify force vector, since we already set pressure
 
         # Create temporary dv vec for doing fd/cs
         dv_pert_array = dv_pert_vec.getArray()
@@ -127,13 +143,14 @@ class ProblemTest(StaticTestCase.StaticTest):
 
         # Create temporary state variable vec for doing fd/cs
         ans_pert_array = ans_pert_vec.getArray()
-        # Define perturbation array that uniformly moves all nodes on right edge of plate to upward
+        # Define perturbation array that uniformly moves all nodes on right edge of plate to the right
         ans_pert_array = ans_pert_array.reshape(local_num_nodes, vars_per_node)
         ans_pert_array[local_x == Lx, 2] = 1.0
 
         # Define perturbation array that uniformly moves all nodes on right edge of plate to the right
         xpts_pert_array = xpts_pert_vec.getArray()
         xpts_pert_array = xpts_pert_array.reshape(local_num_nodes, 3)
+        # Define perturbation array that uniformly moves all nodes on right edge of plate to the right
         xpts_pert_array[local_x == Lx, 0] = 1.0
 
         return

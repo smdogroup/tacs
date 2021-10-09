@@ -284,6 +284,14 @@ cdef class Element:
                 return _init_Element(tracElem)
         return None
 
+    def createElementPressure(self, int faceIndex, TacsScalar p):
+        cdef TACSElement *pressElem = NULL
+        if self.ptr:
+            pressElem = self.ptr.createElementPressure(faceIndex, p)
+            if pressElem != NULL:
+                return _init_Element(pressElem)
+        return None
+
     def getDesignVarsPerNode(self):
         """
         getDesignVarsPerNode(self)
@@ -830,6 +838,15 @@ cdef class Pc:
         cdef int reorder = 1
         cdef TACSParallelMat *p_ptr = NULL
         cdef TACSSchurMat *sc_ptr = NULL
+
+        if 'lev_fill' in kwargs:
+            lev_fill = kwargs['lev_fill']
+
+        if 'ratio_fill' in kwargs:
+            fill = kwargs['ratio_fill']
+
+        if 'reorder' in kwargs:
+            reorder = kwargs['reorder']
 
         if mat is not None:
             p_ptr = _dynamicParallelMat(mat.ptr)

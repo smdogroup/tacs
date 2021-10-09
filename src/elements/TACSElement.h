@@ -193,6 +193,15 @@ class TACSElement : public TACSObject {
   }
 
   /**
+    Create element pressure class
+
+    @return The TACSElement pressure class associated with this element. Possibly NULL.
+  */
+  virtual TACSElement* createElementPressure( int faceIndex, TacsScalar p ){
+    return NULL;
+  }
+
+  /**
     Get the type of element layout for visualization
 
     @return The layout type for this element
