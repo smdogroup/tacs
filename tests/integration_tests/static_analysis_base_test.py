@@ -296,11 +296,12 @@ class StaticTestCase:
             self.assembler.assembleJacobian(self.alpha, self.beta, self.gamma, self.res0, self.mat)
             self.pc.factor()
 
+            # zero out bc terms in force
+            self.assembler.applyBCs(self.f)
             # add force vector to residual (R = Ku - f)
             self.res0.axpy(-1.0, self.f)
 
-            # zero out bc terms in res and solve
-            self.assembler.applyBCs(self.res0)
+
             # Solve the linear system
             self.gmres.solve(self.res0, self.ans0)
             self.ans0.scale(-1.0)

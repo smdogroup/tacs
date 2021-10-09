@@ -21,7 +21,7 @@ from static_analysis_base_test import StaticTestCase
   This test is based on the "tutorial" script under the examples directory.
 '''
 
-FUNC_REFS = np.array([1.2236584994155062, 2700.0, 60.926923346719704, 114.44780151309602])
+FUNC_REFS = np.array([0.981072186947658, 2700.0, 30.508623116027273, 56.92510895125915])
 
 # Length of plate in x/y direction
 Lx = 1.0
@@ -210,7 +210,6 @@ class ProblemTest(StaticTestCase.StaticTest):
         # conditions
         f_array = force_vec.getArray()
         f_array[:] = 6.0
-        assembler.setBCs(force_vec)
 
         # Create dv perturbation dv for doing fd/cs
         dv_pert_array = dv_pert_vec.getArray()
@@ -240,46 +239,3 @@ class ProblemTest(StaticTestCase.StaticTest):
                      functions.KSTemperature(assembler, ksweight)]
         func_list[0].setKSFailureType('continuous')
         return func_list, FUNC_REFS
-
-    '''
-    We have to re-implement the linear solve routine for this test, 
-    since the base class assumes we are using the applyBCs routine, 
-    but we are actually using setBCs instead to set Dirichilet boundary 
-    conditions. Basically we do the same procedure, but skip the 
-    applyBCs step
-    '''
-
-    def run_solve(self, dv=None, xpts=None):
-        """
-        Run a linear solve at specified design point and return functions of interest
-        """
-        if dv is None:
-            dv = self.dv0
-
-        if xpts is None:
-            xpts = self.xpts0
-
-        # Set the design variables
-        self.assembler.setDesignVars(dv)
-
-        # Set node locations
-        self.assembler.setNodes(xpts)
-
-        # Assemble the stiffness matrix
-        self.assembler.zeroVariables()
-        self.assembler.assembleJacobian(self.alpha, self.beta, self.gamma, self.res0, self.mat)
-        self.pc.factor()
-
-        # add force vector to residual (R = Ku - f)
-        self.res0.axpy(-1.0, self.f)
-
-        # Solve the linear system
-        self.gmres.solve(self.res0, self.ans0)
-        self.ans0.scale(-1.0)
-
-        # Update state variables with solution
-        self.assembler.setVariables(self.ans0)
-
-        func_vals = self.assembler.evalFunctions(self.func_list)
-
-        return np.array(func_vals)
