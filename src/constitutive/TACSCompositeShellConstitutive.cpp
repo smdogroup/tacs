@@ -57,16 +57,14 @@ TACSCompositeShellConstitutive::~TACSCompositeShellConstitutive(){
 TacsScalar TACSCompositeShellConstitutive::evalDensity( int elemIndex,
                                                         const double pt[],
                                                         const TacsScalar X[] ){
-  // Compute the thickness-weighted average of density across plies
-  TacsScalar t = 0.0, rho = 0.0;
+  // Compute the thickness-weighted density across all plies
+  TacsScalar rhot = 0.0;
   for ( int i = 0; i < num_plies; i++ ){
     TacsScalar rho_ply = ply_props[i]->getDensity();
     TacsScalar t_ply = ply_thickness[i];
-    t += t_ply;
-    rho += rho_ply * t_ply;
+    rhot += rho_ply * t_ply;
   }
-  rho /= t;
-  return rho;
+  return rhot;
 }
 
 // Evaluate the mass moments
@@ -82,12 +80,12 @@ void TACSCompositeShellConstitutive::evalMassMoments( int elemIndex,
   for ( int i = 0; i < num_plies; i++ ){
     t += ply_thickness[i];
   }
-  TacsScalar z = -t / 2;
+  TacsScalar z = -t / 2.0;
   for ( int i = 0; i < num_plies; i++ ){
     TacsScalar rho_ply = ply_props[i]->getDensity();
     TacsScalar t_ply = ply_thickness[i];
     // Find z location of center of ply
-    TacsScalar z_ply = z + t_ply / 2;
+    TacsScalar z_ply = z + t_ply / 2.0;
 
     moments[0] += rho_ply * t_ply;
     moments[1] += -z_ply * rho_ply * t_ply;

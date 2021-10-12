@@ -67,7 +67,7 @@ class ConstitutiveTest(unittest.TestCase):
 
         self.layup_list = [iso_layup, ortho_layup]
         self.ply_thicknesses = np.array([ply_thickness] * nplies, dtype=self.dtype)
-        self.ply_angles = np.array([0.0, -45.0, 90.0]) * DEG2RAD
+        self.ply_angles = np.array([0.0, -45.0, 90.0], dtype=self.dtype) * DEG2RAD
 
     def test_constitutive_density(self):
         # Test density dv sensitivity
