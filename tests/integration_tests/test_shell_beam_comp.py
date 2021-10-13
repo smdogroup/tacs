@@ -33,7 +33,8 @@ ply_angles = np.array([0.0, -45.0, 90.0]) * np.pi / 180.0
 ref_axis = np.array([0.0, 1.0, 0.0])
 
 class ProblemTest(StaticTestCase.StaticTest):
-    def setup_assembler(self, dtype):
+    N_PROCS = 2  # this is how many MPI processes to use for this TestCase.
+    def setup_assembler(self, comm, dtype):
         """
         Setup mesh and tacs assembler for problem we will be testing.
         """
@@ -47,9 +48,6 @@ class ProblemTest(StaticTestCase.StaticTest):
             self.rtol = 1e-1
             self.atol = 1e-4
             self.dh = 1e-7
-
-        # Set the MPI communicator
-        comm = MPI.COMM_WORLD
 
         # Create the stiffness object
         # Create the orthotropic layup

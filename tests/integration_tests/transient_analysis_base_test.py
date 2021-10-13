@@ -1,6 +1,7 @@
 import numpy as np
 from tacs import TACS
 import unittest
+from mpi4py import MPI
 
 '''
 This is a base class for transient problem unit test cases.
@@ -38,8 +39,12 @@ class TransientTestCase:
                 self.atol = 1e-4
                 self.dh = 1e-5
 
+            # Set the MPI communicator
+            if not hasattr(self, 'comm'):
+                self.comm = MPI.COMM_WORLD
+
             # Setup user-specified assembler for this test
-            self.assembler = self.setup_assembler(self.dtype)
+            self.assembler = self.setup_assembler(self.comm, self.dtype)
 
             # Get the design variable values
             self.dv0 = self.assembler.createDesignVec()
