@@ -35,7 +35,7 @@ class ProblemTest(StaticTestCase.StaticTest):
         else:
             self.rtol = 1e-2
             self.atol = 1e-4
-            self.dh = 1e-9
+            self.dh = 1e-8
 
         # Create the mesh loader object on MPI_COMM_WORLD.The
         # TACSAssembler object will be created on the same comm MPI_Comm
