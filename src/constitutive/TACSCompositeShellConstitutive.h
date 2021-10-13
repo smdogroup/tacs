@@ -47,6 +47,10 @@ class TACSCompositeShellConstitutive : public TACSShellConstitutive {
   void evalStress( int elemIndex, const double pt[], const TacsScalar X[],
                    const TacsScalar strain[], TacsScalar stress[] );
 
+  // Evaluate failure
+  TacsScalar evalFailure( int elemIndex, const double pt[],
+                          const TacsScalar X[], const TacsScalar e[] );
+
   // Evaluate the tangent stiffness
   void evalTangentStiffness( int elemIndex, const double pt[],
                              const TacsScalar X[], TacsScalar C[] );

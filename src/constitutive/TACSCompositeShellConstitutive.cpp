@@ -75,25 +75,29 @@ void TACSCompositeShellConstitutive::evalMassMoments( int elemIndex,
   moments[0] = 0.0;
   moments[1] = 0.0;
   moments[2] = 0.0;
+
   // Compute the total thickness of the laminate
   TacsScalar t = 0.0;
   for ( int i = 0; i < num_plies; i++ ){
     t += ply_thickness[i];
   }
-  TacsScalar z = -t / 2.0;
+
+  // Compute the contribution to the mass moment from each layer
+  TacsScalar t0 = -0.5*t;
   for ( int i = 0; i < num_plies; i++ ){
     TacsScalar rho_ply = ply_props[i]->getDensity();
-    TacsScalar t_ply = ply_thickness[i];
-    // Find z location of center of ply
-    TacsScalar z_ply = z + t_ply / 2.0;
+    TacsScalar t1 = t0 + ply_thickness[i];
 
-    moments[0] += rho_ply * t_ply;
-    moments[1] += -z_ply * rho_ply * t_ply;
-    moments[2] += rho_ply * t_ply * t_ply * t_ply / 12.0 + \
-                  z_ply * z_ply * rho_ply * t_ply;
+    TacsScalar a = (t1 - t0);
+    TacsScalar b = 0.5*(t1*t1 - t0*t0);
+    TacsScalar d = 1.0/3.0*(t1*t1*t1 - t0*t0*t0);
 
-    // increment bottom ply location to next ply
-    z += t_ply;
+    moments[0] += a * rho_ply;
+    moments[1] += b * rho_ply;
+    moments[2] += d * rho_ply;
+
+    // Update the position of the bottom interface
+    t0 = t1;
   }
 }
 
@@ -158,6 +162,14 @@ void TACSCompositeShellConstitutive::evalStress( int elemIndex,
 
   // Evaluate the stress
   TACSShellConstitutive::computeStress(A, B, D, As, drill, e, s);
+}
+
+// Evaluate failure
+TacsScalar TACSCompositeShellConstitutive::evalFailure( int elemIndex,
+                                                        const double pt[],
+                                                        const TacsScalar X[],
+                                                        const TacsScalar e[] ){
+  return 0.0;
 }
 
 // Evaluate the tangent stiffness

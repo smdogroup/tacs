@@ -59,7 +59,7 @@ class ConstitutiveTest(unittest.TestCase):
         cte = 24.0e-6
         kappa = 230.0
         ortho_prop = constitutive.MaterialProperties(rho=rho, specific_heat=specific_heat,
-                                                     E1=E1, E2=E2, nu12=nu12, G12=G12, G13=G13,
+                                                     E1=E1, E2=E2, nu12=nu12, G12=G12, G13=G13, G23=G13,
                                                      Xt=Xt, Xc=Xc, Yt=Yt, Yc=Yc, S12=S12,
                                                      cte=cte, kappa=kappa)
         ortho_ply = constitutive.OrthotropicPly(ply_thickness, ortho_prop)
