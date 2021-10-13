@@ -25,6 +25,7 @@ np.import_array()
 
 # Import the definition required for const strings
 from libc.string cimport const_char
+from libc.stdlib cimport malloc, free
 
 # Import C methods for python
 from cpython cimport PyObject, Py_INCREF
@@ -353,6 +354,36 @@ cdef class IsoShellConstitutive(ShellConstitutive):
         else:
             self.ptr = NULL
             self.cptr = NULL
+
+cdef class CompositeShellConstitutive(ShellConstitutive):
+    def __cinit__(self, ply_list,
+                  np.ndarray[TacsScalar, ndim=1, mode='c'] ply_thicknesses,
+                  np.ndarray[TacsScalar, ndim=1, mode='c'] ply_angles,
+                  TacsScalar kcorr=5.0/6.0):
+
+        num_plies = len(ply_list)
+        if len(ply_thicknesses) != num_plies:
+            raise ValueError('Ply thickness array must match length of ply list')
+        if len(ply_angles) != num_plies:
+            raise ValueError('Ply angle array must match length of ply list')
+
+        # Allocate the array of TACSOrthotropicPly pointers
+        cdef TACSOrthotropicPly **plys
+        plys = <TACSOrthotropicPly**>malloc(num_plies*sizeof(TACSOrthotropicPly*))
+        if plys is NULL:
+            raise MemoryError()
+
+        for i in range(num_plies):
+            plys[i] = (<OrthotropicPly>ply_list[i]).ptr
+
+        self.cptr = new TACSCompositeShellConstitutive(num_plies, plys,
+                                                       <TacsScalar*>ply_thicknesses.data,
+                                                       <TacsScalar*>ply_angles.data, kcorr)
+        self.ptr = self.cptr
+        self.ptr.incref()
+
+        # Free the allocated array
+        free(plys)
 
 cdef class LamParamShellConstitutive(ShellConstitutive):
     def __cinit__(self, OrthotropicPly ply, **kwargs):

@@ -100,6 +100,11 @@ cdef extern from "TACSIsoShellConstitutive.h":
         TACSIsoShellConstitutive(TACSMaterialProperties*, TacsScalar, int,
                                  TacsScalar, TacsScalar)
 
+cdef extern from "TACSCompositeShellConstitutive.h":
+    cdef cppclass TACSCompositeShellConstitutive(TACSShellConstitutive):
+        TACSCompositeShellConstitutive(int, TACSOrthotropicPly**, const TacsScalar*,
+                                       const TacsScalar*, TacsScalar)
+
 cdef extern from "TACSLamParamShellConstitutive.h":
     cdef cppclass TACSLamParamShellConstitutive(TACSShellConstitutive):
         TACSLamParamShellConstitutive(TACSOrthotropicPly*, TacsScalar, int, TacsScalar, TacsScalar,
