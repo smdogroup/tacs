@@ -251,6 +251,11 @@ cdef class Element:
             self.ptr.setComponentNum(comp_num)
         return
 
+    @classmethod
+    def setFDOrder(cls, int order):
+        TACSElement.setFDOrder(order)
+        return
+
     def getNumNodes(self):
         if self.ptr != NULL:
             return self.ptr.getNumNodes()
