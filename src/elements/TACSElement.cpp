@@ -21,6 +21,18 @@
 #include "tacslapack.h"
 
 /*
+  Default finite difference order for real analysis
+*/
+int TACSElement::fdOrder = 2;
+
+/*
+  Allow users to set default finite difference order for real analysis
+*/
+void TACSElement::setFiniteDifferenceOrder( int order ){
+  fdOrder = order;
+}
+
+/*
   Finds the finite-difference based Jacobian of the element. This is
   the default Jacobian implementation for any TACSElement. The user
   can override this function and provide an analytic Jacobian
@@ -233,8 +245,22 @@ void TACSElement::addAdjResProduct( int elemIndex, double time,
       product += psi[i]*TacsImagPart(tmp[i])/dh;
     }
 #else
-    for ( int i = 0; i < nvars; i++ ){
-      product += psi[i]*(tmp[i] - res[i])/dh;
+    if (fdOrder < 2){
+      // Use first-order forward differencing
+      for ( int i = 0; i < nvars; i++ ){
+        product += psi[i]*(tmp[i] - res[i])/dh;
+      }
+    }
+    else{
+      // Use second-order central differencing
+      x[k] = xt - dh; //  backward step
+      setDesignVars(elemIndex, dvLen, x);
+      memset(res, 0, nvars*sizeof(TacsScalar));
+      addResidual(elemIndex, time, Xpts, vars, dvars, ddvars, res);
+      // Central difference
+      for ( int i = 0; i < nvars; i++ ){
+        product += psi[i]*(tmp[i] - res[i])/(2.0*dh);
+      }
     }
 #endif // TACS_USE_COMPLEX
 
@@ -291,8 +317,21 @@ void TACSElement::addAdjResXptProduct( int elemIndex, double time,
       product += psi[i]*TacsImagPart(tmp[i])/dh;
     }
 #else
-    for ( int i = 0; i < nvars; i++ ){
-      product += psi[i]*(tmp[i] - res[i])/dh;
+    if (fdOrder < 2){
+      // Use first-order forward differencing
+      for ( int i = 0; i < nvars; i++ ){
+        product += psi[i]*(tmp[i] - res[i])/(dh);
+      }
+    }
+    else{
+      // Use second-order central differencing
+      X[k] = Xpts[k] - dh; //  backward step
+      memset(res, 0, nvars*sizeof(TacsScalar));
+      addResidual(elemIndex, time, X, vars, dvars, ddvars, res);
+      // Central difference
+      for ( int i = 0; i < nvars; i++ ){
+        product += psi[i]*(tmp[i] - res[i])/(2.0*dh);
+      }
     }
 #endif // TACS_USE_COMPLEX
 
@@ -353,7 +392,19 @@ void TACSElement::addPointQuantityDVSens( int elemIndex,
 #ifdef TACS_USE_COMPLEX
       fd = TacsImagPart(q1)/dh;
 #else
-      fd += (q1 - q0)/dh;
+      if (fdOrder < 2){
+        // Use first-order forward differencing
+        fd += (q1 - q0)/dh;
+      }
+      else{
+        // Use second-order central differencing
+        x[k] = xt - dh; //  backward step
+        setDesignVars(elemIndex, dvLen, x);
+        evalPointQuantity(elemIndex, quantityType, time, n, pt,
+                          Xpts, vars, dvars, ddvars, &detXd, &q0);
+        // Central difference
+        fd += (q1 - q0)/(2.0*dh);
+      }
 #endif // TACS_USE_COMPLEX
 
       dfdx[k] += scale*dfdq[0]*fd;
@@ -419,7 +470,20 @@ void TACSElement::addPointQuantitySVSens( int elemIndex,
 #ifdef TACS_USE_COMPLEX
       fd = TacsImagPart(q1)/dh;
 #else
-      fd = (q1 - q0)/dh;
+      if (fdOrder < 2){
+        // Use first-order forward differencing
+        fd = (q1 - q0)/dh;
+      }
+      else{
+        // Use second-order central differencing
+        v[k] = vars[k] - alpha*dh; //  backward step
+        dv[k] = dvars[k] - beta*dh; //  backward step
+        ddv[k] = ddvars[k] - gamma*dh; //  backward step
+        evalPointQuantity(elemIndex, quantityType, time, n, pt,
+                          Xpts, v, dv, ddv, &detXd, &q0);
+        // Central difference
+        fd = (q1 - q0)/(2.0*dh);
+      }
 #endif // TACS_USE_COMPLEX
 
       dfdu[k] += dfdq[0]*fd;
@@ -480,8 +544,20 @@ void TACSElement::addPointQuantityXptSens( int elemIndex,
       fd = TacsImagPart(q1)/dh;
       fddetXd = TacsImagPart(detXd1)/dh;
 #else
-      fd = (q1 - q0)/dh;
-      fddetXd = (detXd1 - detXd0)/dh;
+      if (fdOrder < 2){
+        // Use first-order forward differencing
+        fd = (q1 - q0)/dh;
+        fddetXd = (detXd1 - detXd0)/dh;
+      }
+      else{
+        // Use second-order central differencing
+        X[k] = Xpts[k] - dh; //  backward step
+        evalPointQuantity(elemIndex, quantityType, time, n, pt,
+                          X, vars, dvars, ddvars, &detXd0, &q0);
+        // Central difference
+        fd = (q1 - q0)/(2.0*dh);
+        fddetXd = (detXd1 - detXd0)/(2.0*dh);
+      }
 #endif // TACS_USE_COMPLEX
 
       dfdXpts[k] += scale*(dfdq[0]*fd + dfddetXd*fddetXd);

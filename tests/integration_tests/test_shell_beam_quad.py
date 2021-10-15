@@ -8,7 +8,7 @@ Create a cantilevered beam of linear quad shells under a tip shear load
 and test KSFailure, StructuralMass, and Compliance functions and sensitivities
 '''
 
-FUNC_REFS = np.array([84.72676760968147, 2570.0, 1.70202700928821e+9])
+FUNC_REFS = np.array([84.73369920062832, 2570.0, 1.70202700928821e+9])
 
 # Length of plate in x/y direction
 Lx = 10.0
@@ -25,7 +25,8 @@ Qx = 5e6
 ksweight = 10.0
 
 class ProblemTest(StaticTestCase.StaticTest):
-    def setup_assembler(self, dtype):
+    N_PROCS = 2  # this is how many MPI processes to use for this TestCase.
+    def setup_assembler(self, comm, dtype):
         """
         Setup mesh and tacs assembler for problem we will be testing.
         """
@@ -36,12 +37,9 @@ class ProblemTest(StaticTestCase.StaticTest):
             self.atol = 1e-8
             self.dh = 1e-50
         else:
-            self.rtol = 1e-1
+            self.rtol = 2e-1
             self.atol = 1e-4
-            self.dh = 1e-7
-
-        # Set the MPI communicator
-        comm = MPI.COMM_WORLD
+            self.dh = 1e-5
 
         # Create the stiffness object
         props = constitutive.MaterialProperties(rho=2570.0, E=70e9, nu=0.3, ys=350e6)

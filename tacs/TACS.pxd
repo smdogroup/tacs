@@ -356,6 +356,8 @@ cdef extern from "TACSElement.h":
     cdef cppclass TACSElement(TACSObject):
         void setComponentNum(int)
         int getComponentNum()
+        @staticmethod
+        void setFiniteDifferenceOrder(int)
         int getVarsPerNode()
         int getNumNodes()
         int getNumVariables()

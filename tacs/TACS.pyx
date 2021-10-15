@@ -251,6 +251,11 @@ cdef class Element:
             self.ptr.setComponentNum(comp_num)
         return
 
+    @classmethod
+    def setFiniteDifferenceOrder(cls, int order):
+        TACSElement.setFiniteDifferenceOrder(order)
+        return
+
     def getNumNodes(self):
         if self.ptr != NULL:
             return self.ptr.getNumNodes()
