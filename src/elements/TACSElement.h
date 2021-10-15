@@ -76,7 +76,7 @@ class TACSElement : public TACSObject {
 
     @param order The requested finite difference order
   */
-  static void setFDOrder( int order );
+  static void setFiniteDifferenceOrder( int order );
 
   /**
     Get the number of degrees of freedom per node for this element

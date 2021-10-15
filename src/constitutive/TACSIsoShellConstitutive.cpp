@@ -365,9 +365,9 @@ TacsScalar TACSIsoShellConstitutive::evalFailureStrainSens( int elemIndex,
     sens[1] += ksFactor*phi[1];
     sens[2] += ksFactor*phi[2];
 
-    sens[3] += ksFactor*-ht*phi[0];
-    sens[4] += ksFactor*-ht*phi[1];
-    sens[5] += ksFactor*-ht*phi[2];
+    sens[3] -= ksFactor*ht*phi[0];
+    sens[4] -= ksFactor*ht*phi[1];
+    sens[5] -= ksFactor*ht*phi[2];
 
     sens[6] = sens[7] = sens[8] = 0.0;
 

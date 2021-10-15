@@ -28,7 +28,7 @@ int TACSElement::fdOrder = 2;
 /*
   Allow users to set default finite difference order for real analysis
 */
-void TACSElement::setFDOrder( int order ){
+void TACSElement::setFiniteDifferenceOrder( int order ){
   fdOrder = order;
 }
 
@@ -245,23 +245,23 @@ void TACSElement::addAdjResProduct( int elemIndex, double time,
       product += psi[i]*TacsImagPart(tmp[i])/dh;
     }
 #else
-      if (fdOrder < 2){
-        // Use first-order forward differencing
-        for ( int i = 0; i < nvars; i++ ){
-          product += psi[i]*(tmp[i] - res[i])/dh;
-        }
+    if (fdOrder < 2){
+      // Use first-order forward differencing
+      for ( int i = 0; i < nvars; i++ ){
+        product += psi[i]*(tmp[i] - res[i])/dh;
       }
-      else{
-        // Use second-order forward differencing
-        x[k] = xt - dh; //  backward step
-        setDesignVars(elemIndex, dvLen, x);
-        memset(res, 0, nvars*sizeof(TacsScalar));
-        addResidual(elemIndex, time, Xpts, vars, dvars, ddvars, res);
-        // Central difference
-        for ( int i = 0; i < nvars; i++ ){
-          product += psi[i]*(tmp[i] - res[i])/(2.0*dh);
-        }
+    }
+    else{
+      // Use second-order central differencing
+      x[k] = xt - dh; //  backward step
+      setDesignVars(elemIndex, dvLen, x);
+      memset(res, 0, nvars*sizeof(TacsScalar));
+      addResidual(elemIndex, time, Xpts, vars, dvars, ddvars, res);
+      // Central difference
+      for ( int i = 0; i < nvars; i++ ){
+        product += psi[i]*(tmp[i] - res[i])/(2.0*dh);
       }
+    }
 #endif // TACS_USE_COMPLEX
 
     dfdx[k] += scale*product;
@@ -317,22 +317,22 @@ void TACSElement::addAdjResXptProduct( int elemIndex, double time,
       product += psi[i]*TacsImagPart(tmp[i])/dh;
     }
 #else
-      if (fdOrder < 2){
-        // Use first-order forward differencing
-        for ( int i = 0; i < nvars; i++ ){
-          product += psi[i]*(tmp[i] - res[i])/(dh);
-        }
+    if (fdOrder < 2){
+      // Use first-order forward differencing
+      for ( int i = 0; i < nvars; i++ ){
+        product += psi[i]*(tmp[i] - res[i])/(dh);
       }
-      else{
-        // Use second-order forward differencing
-        X[k] = Xpts[k] - dh; //  backward step
-        memset(res, 0, nvars*sizeof(TacsScalar));
-        addResidual(elemIndex, time, X, vars, dvars, ddvars, res);
-        // Central difference
-        for ( int i = 0; i < nvars; i++ ){
-          product += psi[i]*(tmp[i] - res[i])/(2.0*dh);
-        }
+    }
+    else{
+      // Use second-order central differencing
+      X[k] = Xpts[k] - dh; //  backward step
+      memset(res, 0, nvars*sizeof(TacsScalar));
+      addResidual(elemIndex, time, X, vars, dvars, ddvars, res);
+      // Central difference
+      for ( int i = 0; i < nvars; i++ ){
+        product += psi[i]*(tmp[i] - res[i])/(2.0*dh);
       }
+    }
 #endif // TACS_USE_COMPLEX
 
     fXptSens[k] += scale*product;
@@ -397,7 +397,7 @@ void TACSElement::addPointQuantityDVSens( int elemIndex,
         fd += (q1 - q0)/dh;
       }
       else{
-        // Use second-order forward differencing
+        // Use second-order central differencing
         x[k] = xt - dh; //  backward step
         setDesignVars(elemIndex, dvLen, x);
         evalPointQuantity(elemIndex, quantityType, time, n, pt,
@@ -475,7 +475,7 @@ void TACSElement::addPointQuantitySVSens( int elemIndex,
         fd = (q1 - q0)/dh;
       }
       else{
-        // Use second-order forward differencing
+        // Use second-order central differencing
         v[k] = vars[k] - alpha*dh; //  backward step
         dv[k] = dvars[k] - beta*dh; //  backward step
         ddv[k] = ddvars[k] - gamma*dh; //  backward step
@@ -550,7 +550,7 @@ void TACSElement::addPointQuantityXptSens( int elemIndex,
         fddetXd = (detXd1 - detXd0)/dh;
       }
       else{
-        // Use second-order forward differencing
+        // Use second-order central differencing
         X[k] = Xpts[k] - dh; //  backward step
         evalPointQuantity(elemIndex, quantityType, time, n, pt,
                           X, vars, dvars, ddvars, &detXd0, &q0);

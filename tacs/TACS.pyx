@@ -252,8 +252,8 @@ cdef class Element:
         return
 
     @classmethod
-    def setFDOrder(cls, int order):
-        TACSElement.setFDOrder(order)
+    def setFiniteDifferenceOrder(cls, int order):
+        TACSElement.setFiniteDifferenceOrder(order)
         return
 
     def getNumNodes(self):
