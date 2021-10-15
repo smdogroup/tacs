@@ -37,9 +37,9 @@ class ProblemTest(StaticTestCase.StaticTest):
             self.atol = 1e-8
             self.dh = 1e-50
         else:
-            self.rtol = 1e-1
+            self.rtol = 2e-1
             self.atol = 1e-4
-            self.dh = 1e-7
+            self.dh = 1e-5
 
         # Create the stiffness object
         props = constitutive.MaterialProperties(rho=2570.0, E=70e9, nu=0.3, ys=350e6)

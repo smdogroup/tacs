@@ -47,7 +47,7 @@ class ProblemTest(StaticTestCase.StaticTest):
         else:
             self.rtol = 1e-1
             self.atol = 1e-4
-            self.dh = 1e-7
+            self.dh = 1e-5
 
         # Create the stiffness object
         # Create the orthotropic layup
