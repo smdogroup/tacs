@@ -27,7 +27,10 @@ Nxy = -175e5
 ksweight = 10.0
 
 class ProblemTest(StaticTestCase.StaticTest):
-    def setup_assembler(self, dtype):
+
+    N_PROCS = 2  # this is how many MPI processes to use for this TestCase.
+
+    def setup_assembler(self, comm, dtype):
         """
         Setup mesh and tacs assembler for problem we will be testing.
         """
@@ -41,9 +44,6 @@ class ProblemTest(StaticTestCase.StaticTest):
             self.rtol = 1e-2
             self.atol = 1e-4
             self.dh = 1e-6
-
-        # Set the MPI communicator
-        comm = MPI.COMM_WORLD
 
         # Create the stiffness object
         props = constitutive.MaterialProperties(rho=2570.0, E=70e9, nu=0.3, ys=350e6)

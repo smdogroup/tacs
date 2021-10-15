@@ -1,5 +1,4 @@
 import numpy as np
-from mpi4py import MPI
 from tacs import TACS, elements, constitutive, functions
 from static_analysis_base_test import StaticTestCase
 import os
@@ -20,7 +19,10 @@ bdf_file = os.path.join(base_dir, "./input_files/5x5x5_cube.bdf")
 ksweight = 10.0
 
 class ProblemTest(StaticTestCase.StaticTest):
-    def setup_assembler(self, dtype):
+
+    N_PROCS = 2  # this is how many MPI processes to use for this TestCase.
+
+    def setup_assembler(self, comm, dtype):
         """
         Setup mesh and tacs assembler for problem we will be testing.
         """
@@ -33,10 +35,7 @@ class ProblemTest(StaticTestCase.StaticTest):
         else:
             self.rtol = 1e-2
             self.atol = 1e-4
-            self.dh = 1e-9
-
-        # Set the MPI communicator
-        comm = MPI.COMM_WORLD
+            self.dh = 1e-8
 
         # Create the mesh loader object on MPI_COMM_WORLD.The
         # TACSAssembler object will be created on the same comm MPI_Comm

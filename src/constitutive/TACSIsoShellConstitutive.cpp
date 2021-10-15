@@ -39,6 +39,7 @@ TACSIsoShellConstitutive::TACSIsoShellConstitutive( TACSMaterialProperties *prop
   tlb = _tlb;
   tub = _tub;
   kcorr = 5.0/6.0;
+  ksWeight = 100.0;
 }
 
 TACSIsoShellConstitutive::~TACSIsoShellConstitutive(){
@@ -278,12 +279,19 @@ TacsScalar TACSIsoShellConstitutive::evalFailure( int elemIndex,
     TacsScalar top = properties->vonMisesFailure2D(st);
     TacsScalar bottom = properties->vonMisesFailure2D(sb);
 
+    TacsScalar ksMax;
+
     if (TacsRealPart(top) > TacsRealPart(bottom)){
-      return top;
+      ksMax = top;
     }
     else {
-      return bottom;
+      ksMax = bottom;
     }
+
+    // Use a ks approximation for the max value
+    TacsScalar ksSum = exp(ksWeight*(top - ksMax)) + exp(ksWeight*(bottom - ksMax));
+    TacsScalar ksVal = ksMax + log(ksSum) / ksWeight;
+    return ksVal;
   }
 
   return 0.0;
@@ -321,40 +329,49 @@ TacsScalar TACSIsoShellConstitutive::evalFailureStrainSens( int elemIndex,
     TacsScalar top = properties->vonMisesFailure2D(st);
     TacsScalar bottom = properties->vonMisesFailure2D(sb);
 
+    TacsScalar ksMax;
     if (TacsRealPart(top) > TacsRealPart(bottom)){
-      TacsScalar psi[3], phi[3];
-      properties->vonMisesFailure2DStressSens(st, psi);
-      mat3x3SymmMult(C, psi, phi);
-
-      sens[0] = phi[0];
-      sens[1] = phi[1];
-      sens[2] = phi[2];
-
-      sens[3] = ht*phi[0];
-      sens[4] = ht*phi[1];
-      sens[5] = ht*phi[2];
-
-      sens[6] = sens[7] = sens[8] = 0.0;
-
-      return top;
+      ksMax = top;
     }
     else {
-      TacsScalar psi[3], phi[3];
-      properties->vonMisesFailure2DStressSens(sb, psi);
-      mat3x3SymmMult(C, psi, phi);
-
-      sens[0] = phi[0];
-      sens[1] = phi[1];
-      sens[2] = phi[2];
-
-      sens[3] = -ht*phi[0];
-      sens[4] = -ht*phi[1];
-      sens[5] = -ht*phi[2];
-
-      sens[6] = sens[7] = sens[8] = 0.0;
-
-      return bottom;
+      ksMax = bottom;
     }
+
+    // Use a ks approximation for the max value
+    TacsScalar ksSum = exp(ksWeight*(top - ksMax)) + exp(ksWeight*(bottom - ksMax));
+    TacsScalar ksVal = ksMax + log(ksSum) / ksWeight;
+
+    TacsScalar psi[3], phi[3];
+
+    // Contribution from plate top
+    properties->vonMisesFailure2DStressSens(st, psi);
+    mat3x3SymmMult(C, psi, phi);
+    TacsScalar ksFactor = exp(ksWeight*(top - ksMax)) / ksSum;
+
+    sens[0] = ksFactor*phi[0];
+    sens[1] = ksFactor*phi[1];
+    sens[2] = ksFactor*phi[2];
+
+    sens[3] = ksFactor*ht*phi[0];
+    sens[4] = ksFactor*ht*phi[1];
+    sens[5] = ksFactor*ht*phi[2];
+
+    // Contribution from plate bottom
+    properties->vonMisesFailure2DStressSens(sb, psi);
+    mat3x3SymmMult(C, psi, phi);
+    ksFactor = exp(ksWeight*(bottom - ksMax)) / ksSum;
+
+    sens[0] += ksFactor*phi[0];
+    sens[1] += ksFactor*phi[1];
+    sens[2] += ksFactor*phi[2];
+
+    sens[3] -= ksFactor*ht*phi[0];
+    sens[4] -= ksFactor*ht*phi[1];
+    sens[5] -= ksFactor*ht*phi[2];
+
+    sens[6] = sens[7] = sens[8] = 0.0;
+
+    return ksVal;
   }
 
   return 0.0;
@@ -390,20 +407,31 @@ void TACSIsoShellConstitutive::addFailureDVSens( int elemIndex,
     TacsScalar top = properties->vonMisesFailure2D(st);
     TacsScalar bottom = properties->vonMisesFailure2D(sb);
 
+    TacsScalar ksMax;
     if (TacsRealPart(top) > TacsRealPart(bottom)){
-      TacsScalar psi[3], phi[3];
-      properties->vonMisesFailure2DStressSens(st, psi);
-      mat3x3SymmMult(C, psi, phi);
-
-      dfdx[0] += 0.5*scale*(phi[0]*e[3] + phi[1]*e[4] + phi[2]*e[5]);
+      ksMax = top;
     }
     else {
-      TacsScalar psi[3], phi[3];
-      properties->vonMisesFailure2DStressSens(sb, psi);
-      mat3x3SymmMult(C, psi, phi);
-
-      dfdx[0] -= 0.5*scale*(phi[0]*e[3] + phi[1]*e[4] + phi[2]*e[5]);
+      ksMax = bottom;
     }
+    // Use a ks approximation for the max value
+    TacsScalar ksSum = exp(ksWeight*(top - ksMax)) + exp(ksWeight*(bottom - ksMax));
+    TacsScalar ksVal = ksMax + log(ksSum) / ksWeight;
+
+    TacsScalar psi[3], phi[3];
+
+    // Contribution from plate top
+    properties->vonMisesFailure2DStressSens(st, psi);
+    mat3x3SymmMult(C, psi, phi);
+    TacsScalar ksFactor = exp(ksWeight*(top - ksMax)) / ksSum;
+    dfdx[0] += ksFactor*0.5*scale*(phi[0]*e[3] + phi[1]*e[4] + phi[2]*e[5]);
+
+    // Contribution from plate bottom
+    properties->vonMisesFailure2DStressSens(sb, psi);
+    mat3x3SymmMult(C, psi, phi);
+    ksFactor = exp(ksWeight*(bottom - ksMax)) / ksSum;
+    dfdx[0] -= ksFactor*0.5*scale*(phi[0]*e[3] + phi[1]*e[4] + phi[2]*e[5]);
+
   }
 }
 
