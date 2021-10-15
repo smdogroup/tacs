@@ -8,7 +8,7 @@ Create a cantilevered beam of linear triangular shells under a uniform pressure
 and test KSFailure, StructuralMass, and Compliance functions and sensitivities
 '''
 
-FUNC_REFS = np.array([35.47818268003894, 2570.0, 206968113.43479252])
+FUNC_REFS = np.array([35.48511406663365, 2570.0, 206968113.43479252])
 
 # Length of plate in x/y direction
 Lx = 10.0

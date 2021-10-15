@@ -8,7 +8,7 @@ Create a cantilevered beam of linear quad shells under a uniform traction
 and test KSFailure, StructuralMass, and Compliance functions and sensitivities
 '''
 
-FUNC_REFS = np.array([0.6539869836315179, 2570.0, 106604.59992292787])
+FUNC_REFS = np.array([0.6609184554371174, 2570.0, 106604.59992292787])
 
 # Length of plate in x/y direction
 Lx = 10.0

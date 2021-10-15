@@ -128,6 +128,7 @@ class TACSIsoShellConstitutive : public TACSShellConstitutive {
   TacsScalar kcorr; // The shear correction factor
   TacsScalar t, tlb, tub;
   int tNum;
+  TacsScalar ksWeight; // ks weight used in failure calc
 
   // The object name
   static const char *constName;
