@@ -5,6 +5,8 @@ gradient-based design optimization.
 
 import os
 
+__all__ = []
+
 def get_cython_include():
     '''
     Get the include directory for the Cython .pxd files in TACS
@@ -42,3 +44,13 @@ def get_libraries():
         lib_dirs.append(os.path.join(root_path, path))
 
     return lib_dirs, libs
+
+# Try importing the python extension modules - both real and complex
+# They won't work unless you have scipy hence the try statements.
+try:
+    from . import pytacs
+    from .pytacs import pyTACS
+    __all__.extend(['pytacs', 'pyTACS'])
+except:
+    import warnings
+    warnings.warn('One of pytacs failed to import.')
