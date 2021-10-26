@@ -8,7 +8,7 @@
   TACS is licensed under the Apache License, Version 2.0 (the
   "License"); you may not use this software except in compliance with
   the License.  You may obtain a copy of the License at
-  
+
   http://www.apache.org/licenses/LICENSE-2.0
 */
 
@@ -22,15 +22,15 @@
 #include <string.h>
 
 // Include FH5 header files
-#include "FH5.h"
+#include "TACSFH5.h"
 
 // Include Tecplot header files
 #include "TECIO.h"
 
 enum FileType { FULL=0, GRID=1, SOLUTION=2 };
 
-enum ZoneType { ORDERED=0, FELINESEG, FETRIANGLE, 
-                FEQUADRILATERAL, FETETRAHEDRON, FEBRICK, 
+enum ZoneType { ORDERED=0, FELINESEG, FETRIANGLE,
+                FEQUADRILATERAL, FETETRAHEDRON, FEBRICK,
                 FEPOLYGON, FEPOLYHEDRA };
 
 /*
@@ -54,7 +54,7 @@ int create_tec_file( char *data_info, char *var_names,
 
 /*
   A method to create a zone without the extra stuff
-  
+
   zone_name    == The name of the zone to use
   zone_type    == One of LINESEG, TRIANGLE, QUAD, BRICK etc
   num_points   == The number of points
@@ -96,12 +96,12 @@ zone type\n");
     strand_id = 1;
   }
 
-  return TECZNE112(zone_name, &zone_type, &num_points, &num_elements, 
+  return TECZNE112(zone_name, &zone_type, &num_points, &num_elements,
                    &num_faces, &icmax, &jcmax, &kcmax,
                    &solution_time, &strand_id, &parent_zone, &is_block,
                    &num_face_connections, &face_neighbour_mode,
                    &total_num_face_nodes, &num_connected_boundary_faces,
-                   &total_num_boundary_connections, 
+                   &total_num_boundary_connections,
                    passive_var_list, value_location,
                    share_var_from_zone, &share_con_from_zone);
 }
@@ -157,7 +157,7 @@ int main( int argc, char * argv[] ){
     fprintf(stderr, "Error, no input files\n");
     return (1);
   }
-  
+
   for ( int k = 1; k < argc; k++ ){
     char *infile = new char[ strlen(argv[k])+1 ];
     strcpy(infile, argv[k]);
@@ -176,12 +176,12 @@ int main( int argc, char * argv[] ){
     int len = strlen(infile);
     int i = len-1;
     for ( ; i >= 0; i-- ){
-      if (infile[i] == '.'){ break; }     
+      if (infile[i] == '.'){ break; }
     }
     strcpy(outfile, infile);
     strcpy(&outfile[i], ".plt");
-    
-    printf("Trying to convert FH5 file %s to tecplot file %s\n", 
+
+    printf("Trying to convert FH5 file %s to tecplot file %s\n",
            infile, outfile);
 
     char data_info[] = "Created by f5totec";
@@ -189,15 +189,15 @@ int main( int argc, char * argv[] ){
     int tec_init = 0;      // Tecplot initialized flag
 
     // Open the FH5 file for reading
-    FH5File * file = new FH5File(MPI_COMM_SELF);
+    TACSFH5File * file = new TACSFH5File(MPI_COMM_SELF);
     file->incref();
-    
+
     if (!file->openFile(infile)){
       fprintf(stderr, "Failed to open the file %s\n", infile);
       return (1);
     }
 
-    // Retrieve all the data from the file including the 
+    // Retrieve all the data from the file including the
     // variables, connectivity and component numbers
     double solution_time = 0.0;
     int *element_comp_num = NULL;
@@ -209,18 +209,18 @@ int main( int argc, char * argv[] ){
     do {
       // Find the zone corresponding to all the data
       const char *zone_name, *var_names;
-      FH5File::FH5DataType dtype;
+      TACSFH5File::FH5DataType dtype;
       int dim1, dim2;
 
       if (!file->getZoneInfo(&zone_name, &var_names, &dtype, &dim1, &dim2)){
         fprintf(stderr, "Error, zone not defined\n");
         break;
       }
-    
+
       if (strcmp(zone_name, "components") == 0){
         void *vdata;
         if (file->getZoneData(&zone_name, &var_names, &dtype,
-                              &vdata, &dim1, &dim2)){
+                              &dim1, &dim2, &vdata)){
           element_comp_num = (int*)vdata;
         }
       }
@@ -228,8 +228,8 @@ int main( int argc, char * argv[] ){
         num_elements = dim1;
         conn_dim = dim2;
         void *vdata;
-        if (file->getZoneData(&zone_name, &var_names, &dtype, 
-                              &vdata, &dim1, &dim2)){
+        if (file->getZoneData(&zone_name, &var_names, &dtype,
+                              &dim1, &dim2, &vdata)){
           conn = (int*)vdata;
         }
       }
@@ -247,23 +247,23 @@ int main( int argc, char * argv[] ){
                         outfile, dir_name, FULL);
         tec_init = 1;
         delete [] vars;
- 
+
         // Retrieve the data
         void *vdata;
         if (file->getZoneData(&zone_name, &var_names, &dtype,
-                              &vdata, &dim1, &dim2)){
+                              &dim1, &dim2, &vdata)){
           num_points = dim1;
           num_variables = dim2;
-          if (dtype == FH5File::FH5_DOUBLE){
+          if (dtype == TACSFH5File::FH5_DOUBLE){
             data = (double*)vdata;
           }
-          else if (dtype == FH5File::FH5_FLOAT){
+          else if (dtype == TACSFH5File::FH5_FLOAT){
             float_data = (float*)vdata;
           }
         }
       }
     } while (file->nextZone());
-    
+
     if (!(element_comp_num && conn && (data || float_data))){
       fprintf(stderr, "Error, data, connectivity or \
 component numbers not defined in file\n");
@@ -271,14 +271,14 @@ component numbers not defined in file\n");
 
     // Set the element type to use
     ZoneType zone_type;
-    if (conn_dim == 2){      
-      zone_type = FELINESEG; 
+    if (conn_dim == 2){
+      zone_type = FELINESEG;
     }
-    else if (conn_dim == 8){ 
-      zone_type = FEBRICK; 
+    else if (conn_dim == 8){
+      zone_type = FEBRICK;
     }
     else {
-      zone_type = FEQUADRILATERAL; 
+      zone_type = FEQUADRILATERAL;
     }
 
     int num_comp = file->getNumComponents();
@@ -287,17 +287,17 @@ component numbers not defined in file\n");
     int *reduced_conn = new int[ conn_dim*num_elements ];
     double *reduced_data = NULL;
     float *reduced_float_data = NULL;
-    if (data){ 
+    if (data){
       reduced_data = new double[ num_points ];
     }
     else if (float_data){
-      reduced_float_data = new float[ num_points ];      
+      reduced_float_data = new float[ num_points ];
     }
 
     for ( int k = 0; k < num_comp; k++ ){
       // Count up the number of elements that use the connectivity
       char *comp_name = file->getComponentName(k);
-      //printf("Converting zone %d: %s at time %g\n", 
+      //printf("Converting zone %d: %s at time %g\n",
       // k, comp_name, solution_time);
 
       memset(reduced_points, 0, num_points*sizeof(int));
@@ -310,14 +310,14 @@ component numbers not defined in file\n");
           // Add this element to the reduced connectivity
           for ( int j = 0; j < conn_dim; j++ ){
             int pt = conn[conn_dim*i + j];
-          
+
             // If a reduced numbering has not been applied to this point,
             // create a new number for it
             if (reduced_points[pt] == 0){
               reduced_points[pt] = npts;
               npts++;
             }
-          
+
             // Set the reduced connectivity
             reduced_conn[conn_dim*nelems + j] = reduced_points[pt];
           }
@@ -347,14 +347,14 @@ component numbers not defined in file\n");
           else if (reduced_float_data){
             for ( int i = 0; i < num_points; i++ ){
               if (reduced_points[i] > 0){
-                reduced_float_data[reduced_points[i]-1] = 
+                reduced_float_data[reduced_points[i]-1] =
                   float_data[i*num_variables + j];
               }
             }
             write_tec_float_data(npts, reduced_float_data);
           }
         }
-      
+
         // Now, write the connectivity
         write_con_data(reduced_conn);
       }
