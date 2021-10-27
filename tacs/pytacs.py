@@ -102,10 +102,6 @@ class pyTACS(object):
             'L2ConvergenceRel': [float, 1e-12],
             'useMonitor': [bool, False],
             'monitorFrequency': [int, 10],
-            'maxLoadCases': [int, 20],
-            'MaxItersPCReset': [int, 25],
-            'nNLIter': [int, 10],
-            'NLSolver': [str, 'FNR'],
             'resNormUB': [float, 1e20],
 
             # selectCompID Options
@@ -180,9 +176,7 @@ class pyTACS(object):
         self.varName = 'struct'
         self.coordName = 'Xpts'
 
-        self._usedLCNums = 0
         self.curSP = None
-        self.curLoadCase = None
         self.doDamp = False
         self._factorOnNext = True
         self._PCfactorOnNext = False
@@ -1182,17 +1176,6 @@ class pyTACS(object):
             structProblem.tacsData.u = self.assembler.createVec()
             structProblem.tacsData.auxElems = tacs.TACS.AuxElements()
 
-            # We will assign this structProblem a 'load case number'
-            i = self._usedLCNums
-            if i < self.getOption('maxLoadCases'):
-                structProblem.tacsData.lcnum = self._usedLCNums
-                self._usedLCNums += 1
-            else:
-                raise Error("The maximum number of internal load cases "
-                            "conditions, %d, has beeen exceeded. Use a larger "
-                            "value for the 'maxLoadCases' option." %
-                            self.getOption('maxLoadCases'))
-
         # We are now ready to associate self.curSP with the supplied SP
         self.curSP = structProblem
         self.curSP.adjointRHS = None
@@ -1210,8 +1193,7 @@ class pyTACS(object):
         self.F_array = self.F_array.reshape(len(self.F_array) // vpn, vpn)
         self.u_array = self.u_array.reshape(len(self.u_array) // vpn, vpn)
 
-        # Put a short-cut to the loadcase num for the current loadcase
-        self.curLoadCase = self.curSP.tacsData.lcnum
+        # Set current state variables in assembler
         self.assembler.setVariables(self.u)
 
         # Reset the Aitken acceleration for multidisciplinary analyses
@@ -2048,104 +2030,6 @@ class pyTACS(object):
             self._factorOnNext = False
             self._PCfactorOnNext = False
 
-    def _updateStiffness(self):
-        """
-        The stiffness matrix is updated, assembled, and potentially factored.
-        The residual is also computed for the current nonlinear iteration.
-        """
-        self.assembler.assembleMat(self.curLoadCase, self.K, self.res)
-        self.PCjustFactored = False
-        if self._PCfactorOnNext:
-            self.PC.factor()
-            self.PCjustFactored = True
-            self._PCfactorOnNext = False
-
-    def _updateResidual(self, Res, FullRes=None):
-        """Compute the residual at the current loadScale and store it in Res and,
-        if requested, compute the residual at the max loadScale and store it in FullRes.
-
-        Everything except the aero forces are included in the residual assembly method, assembleRes,
-        we then add the negative aero forces (stored in F) to compute the true residual.
-
-        During a nonlinear analysis where load incrementation is employed, Res is the vector used
-        to compute the next Newton step and to judge the convergence of each increment. FullRes,
-        on the other hand, can be used as a measure of how close the current solution is to the
-        solution at the max load scale.
-
-        In other words:
-        Res = `self.structure.assembleRes` + `self.loadScale`*`self.F`
-            = -(Internal Forces + loadScale*Traction/Point/Inertial Loads etc) + loadScale*(-Aero Forces)
-            = -(Internal Forces) - loadScale*((Traction/Point/Inertial Loads) + (Aero Forces))
-
-        FullRes = `self.structure.assembleRes` + `self.maxLoadScale`*`self.F`
-            = -(Internal Forces + maxLoadScale*Traction/Point/Inertial Loads etc) + maxLoadScale*(-Aero Forces)
-            = -(Internal Forces) - maxLoadScale*((Traction/Point/Inertial Loads) + (Aero Forces))
-
-        Parameters
-        ----------
-            Res : TACSVec
-                The vector object in which to store the residual for the currently set load scale
-            FullRes : TACSVec
-                The vector object in which to store the residual computed wrt the max load
-        """
-
-        self.assembler.assembleRes(self.curLoadCase, Res)
-        Res.axpy(-self.loadScale, self.F)
-
-        if FullRes is not None:
-            # Compute the residual at the max load scale
-            self.assembler.setLoadFactor(self.curSP.tacsData.lcnum, self.maxLoadScale)
-            self.assembler.assembleRes(self.curLoadCase, FullRes)
-            FullRes.axpy(-self.maxLoadScale, self.F)
-            # Reset the load scale
-            self.assembler.setLoadFactor(self.curSP.tacsData.lcnum, self.loadScale)
-
-    def _getForces(self, Fext=None, Fint=None):
-        """Compute and store the internal and external force vectors.
-
-        This method splits the residual and combines with the aero forces in order to
-        obtain the full internal and external force vectors.
-
-        These computations are based on the definition of the residual vector used in tacs:
-
-        `self.res` = `self.structure.assembleRes` - `self.loadScale`*`self.F`
-                   = -(Internal Forces + loadScale*Traction/Point/Inertial Loads etc) + loadScale*(-Aero Forces)
-                   = -(Internal Forces) - loadScale*((Traction/Point/Inertial Loads) + (Aero Forces))
-                   = -Fint - loadScale*Fext
-
-        .. note:: This method works on the assumption that self.res contains the up to date
-        residual at the current load scale
-
-        Parameters
-        ----------
-            Fext : TACSVec
-                The vector object in which to store the external nodal forces
-            Fint : TACSVec
-                The vector object in which to store the internal nodal forces
-        """
-
-        if Fext is not None:
-            # assembleResLoadFactor returns the derivative of assembleRes with respect to the load factor.
-            # Based on the definition above, this derivative is simply:
-
-            # d(self.structure.assembleRes)/d(loadFactor) = d/d(loadFactor)(-(Internal Forces + loadScale*Traction/Point/Inertial Loads etc))
-            # = -Traction/Point/Inertial Loads etc
-
-            # We then combine with the negative aero loads and reverse to get the full external loads vector
-            self.assembler.assembleResLoadFactor(self.curLoadCase, Fext)
-            Fext.axpy(-1.0, self.F)
-            Fext.scale(-1.0)
-
-        if Fint is not None:
-            # Compute internal loads by recomputing the residual with a load factor of zero:
-            # `self.res` = -Fint - loadScale*Fext = -Fint - 0.0*Fext = -Fint
-            LF = self.assembler.getLoadFactor(self.curLoadCase)
-            self.assembler.setLoadFactor(self.curLoadCase, 0.0)
-            self.assembler.assembleRes(self.curLoadCase, Fint)
-            Fint.scale(-1.0)
-            # Reset the loadFactor
-            self.assembler.setLoadFactor(self.curLoadCase, LF)
-
     def __call__(self, structProblem, damp=1.0, useAitkenAcceleration=False,
                  dampLB=0.2, loadScale=1.0):
         """
@@ -2203,50 +2087,8 @@ class pyTACS(object):
 
         initNormTime = time.time()
 
-        # TODO: Fix nonlinear solver
-        # Check if user requested nonlinear analysis
-        if self.getOption('solutionType').lower() != 'linear':
-            # Copy current displacement vector to compute the update delta when
-            # the solve is complete
-            self.u_old.copyValues(self.u)
-            nIter = self.getOption('nNLIter')
-            for Iter in range(nIter):
-
-                # If full Newton-Raphson requested, do that
-                if self.getOption('NLSolver').upper() in ['FNR']:
-                    self._FNRIter(loadScale)
-
-                # We can add new nonlinear solvers here as well
-                else:
-                    TACSWarning('Unrecognized nonlinear solver, %s,requested by'
-                                + 'user. Currently only FNR has been implemented. Using'
-                                + 'FNR instead.' % (self.getOption('NLSolver')),
-                                self.comm)
-                    self.setOption('NLSolver', 'FNR')
-                    self._FNRIter(loadScale)
-
-                # Do Convergence Check
-                self._convergenceCheck(Iter)
-
-                # If we're converged, compute update delta relative to previous
-                # displacement and exit
-                if self.converged:
-                    self.update.copyValues(self.u_old)
-                    self.update.axpy(-1.0, self.u)
-                    self.u.copyValues(self.u_old)
-                    self.assembler.setVariables(self.curLoadCase, self.u)
-                    break
-
-                # If we failed, reset solution and exit
-                if self.curSP.fatalFail:
-                    self.reset(structProblem)
-                    break
-            self.finalIter = Iter
-
-        # Otherwise, the system is linear, so perform one linear solve
-        else:
-            # Solve Linear System for the update
-            self.KSM.solve(self.res, self.update)
+        # Solve Linear System for the update
+        self.KSM.solve(self.res, self.update)
 
         self.update.scale(-1.0)
 
@@ -2302,197 +2144,6 @@ class pyTACS(object):
             self.pp('+--------------------------------------------------+')
 
         return damp
-
-    def loadStep(self, structProblem, nLoadSteps=10):
-        """
-        Perform a series of nonlinear solve while ramping up loads to
-        desired level. This method can help convergence for otherwise difficult
-        nonlinear structural problems.
-
-        Parameters
-        ----------
-        structProblem
-
-        Optional Arguments:
-
-        nLoadSteps, int: Maximum number of load steps to take to reach final
-                        load.
-                        (Only useful for converging a nonlinear problem)
-        """
-
-        structProblem.tacsData.u.zeroEntries()
-        dLS = 1.0 / (nLoadSteps)
-        self.finalIter = 0
-        loadScale = 0.0
-        self.pp("+----------------------------+")
-        self.pp("|Begining load step procedure|")
-        self.pp("+----------------------------+")
-
-        for j in range(nLoadSteps):
-            # Don't check for anything on first iteration
-            if self.finalIter == 0:
-                pass
-            # If the previous step did not converge lets take a step back and
-            # try again with a smaller step size
-            elif not self.converged:
-                structProblem.tacsData.u.copyValues(self.u_old)
-                self.assembler.setVariables(structProblem.tacsData.lcnum, self.u_old)
-                loadScale -= dLS
-                dLS *= 0.5
-                self._PCfactorOnNext = True
-
-            # If the previous nonlinear solve ran quickly, lets be a little
-            # more aggresive with our step size for next iteration
-            elif self.finalIter <= 6:
-                dLS *= 1.25
-            # If the previous nonlinear solve ran slowly, lets be a little
-            # less aggresive with our step size for next iteration
-            elif self.finalIter >= 10:
-                dLS *= 0.75
-
-            # Set next load step, clip it to 1.0 if it exceeds target value
-            loadScale = min(loadScale + dLS, 1.0)
-
-            self.pp("Load factor is %f" % (loadScale))
-
-            self.__call__(structProblem, loadScale=loadScale)
-            if loadScale == 1.0 and self.converged:
-                self.pp("Load step converged!")
-                break
-
-    def _FNRIter(self, loadScale):
-        """
-        Function to conduct 1 iteration of the full Newton-Raphson
-        """
-
-        # Update stiffness matrix
-        self._updateStiffness()
-        # Compute the RHS
-        self.assembler.setLoadFactor(self.curSP.tacsData.lcnum, loadScale)
-        self.assembler.assembleRes(self.curLoadCase, self.res)
-        self.res.axpy(-loadScale, self.F)  # Add the -F
-
-        # Compute the current starting norm
-        self.curNorm = numpy.real(self.res.norm())
-
-        # Solve Linear System for the update
-        self.KSM.solve(self.res, self.update)
-        # Record number of subiterations to solve linear system
-        nLinIters = self.KSM.getIterCount() + 1
-        # If the solve takes too long, refactor preconitioner on next iter
-        if nLinIters >= self.getOption('MaxItersPCReset'):
-            self._PCfactorOnNext = True
-
-        self.update.scale(-1.0)
-
-        # Update State Variables
-        self.assembler.getVariables(self.curLoadCase, self.u)
-        self.u.axpy(1.0, self.update)
-        self.assembler.setVariables(self.curLoadCase, self.u)
-
-    def _convergenceCheck(self, Iter):
-        """ Internal function to check nonlinear structural
-        convergence"""
-
-        # Get the requried data
-        data = self._getMonitorData()
-
-        self.curSP.fatalFail = False
-        self.curSP.solveFailed = False
-        self.converged = False
-
-        # Only do check on root:
-        if self.comm.rank == 0:
-            if self.getOption('printIterations'):
-                # Write header on first call
-                if Iter == 0:
-                    self._writeSolveHeader()
-
-                # Write solution Data
-                self._writeSolveData(Iter, data)
-
-            # Check for Structural Convergence
-            structChk = data['curResNorm'] <= (
-                    self.getOption('L2ConvergenceRel') * data['startResNorm']) or \
-                        data['curResNorm'] <= (self.getOption('L2Convergence'))
-
-            # Check for divergence
-            structDiv = data['curResNorm'] >= min(
-                1. / self.getOption('L2ConvergenceRel') * data['startResNorm'],
-                self.getOption('resNormUB'))
-
-            if structChk:
-                if self.getOption('printIterations'):
-                    self.pp('--------------------------------------')
-                    self.pp('      Nonlinear FEA CONVERGED!        ')
-                    self.pp('--------------------------------------')
-                self.converged = True
-
-            if structDiv:
-                self.curSP.fatalFail = True
-
-            # Check for 'close' convergence
-            if Iter == self.getOption('nNLIter') - 1 and not self.converged:
-                # Check for "Close" Convergence at last iteration
-                structChk = data['curResNorm'] <= (
-                        self.getOption('L2ConvergenceRel') * 100 * data['startResNorm'])
-
-                if structChk:
-                    if self.getOption('printIterations'):
-                        self.pp('--------------------------------------')
-                        self.pp('      Nonlinear FEA SEMI-CONVERGED!   ')
-                        self.pp('--------------------------------------')
-                    self.converged = True
-                else:
-                    self.curSP.solveFailed = True
-        # end if (rank == 0)
-
-        # Broadcast flags from aero root proc to all
-        self.curSP.fatalFail = self.comm.bcast(self.curSP.fatalFail, root=0)
-        self.converged = self.comm.bcast(self.converged, root=0)
-
-    def _getMonitorData(self):
-        """This is an extra private function that retrieves and
-        communicates the residual norm data, and a few other bits for
-        the convergence check function and output"""
-        data = {}  # struct data dictionary
-        data['initResNorm'], data['startResNorm'], data['finalResNorm'] = (
-            self.getResNorms())
-        data['curResNorm'] = self.curNorm
-        data['norm_u'] = self.u.norm()
-        if self.PCjustFactored:
-            data['PCFactored'] = '       *'
-        else:
-            data['PCFactored'] = ''
-        return data
-
-    def _writeSolveHeader(self):
-        """Output the solver heading to the screen"""
-
-        # We always have the "Iter" column, res, and u_norm.
-        if self.dtype != 'D':
-            headerStr = '%s  %17s  %17s %s' % (
-                'Iter', 'Res', 'u_norm', 'Factored')
-        else:
-            headerStr = '%s  %17s %35s  %s' % (
-                'Iter', 'Res', 'u_norm', 'Factored')
-        print(headerStr)
-
-    def _writeSolveData(self, Iter, data):
-        """Write solve data to screen. Only called on one processor"""
-        #  We always have the "Iter" column, res, and u_norm
-        if self.dtype != 'D':
-            dataStr = '%4.3d  %17.10e  %17.10e %s' % (
-                Iter, data['curResNorm'], data['norm_u'], data['PCFactored'])
-
-        else:
-            dataStr = '%4.3d %17.10e% 17.10e   %17.10e% 17.10e %s' % (
-                Iter,
-                numpy.real(data['curResNorm']),
-                numpy.imag(data['curResNorm']), numpy.real(data['norm_u']),
-                numpy.imag(data['norm_u']), data['PCFactored'])
-
-        print(dataStr)
 
     ####### Function eval/sensitivity methods ########
 
@@ -2850,47 +2501,6 @@ class pyTACS(object):
             u_req[i, :] = self.comm.bcast(uNodes[index[i], :], root=proc[1])
         return u_req
 
-    def writeForcesFile(self, structProblem, fileName, internal=False):
-
-        """Write a solution file containing the nodal forces
-
-        This routine can be used help debug the structural load
-        vector. It works by writing out a typical .f5 results file
-        with the nodal displacement values replaced by nodal forces.
-
-        Parameters
-        ----------
-        structProblem : pyStructProblem class
-            Structural problem to use.
-        fileName : str
-            Filename of output file. This will be a f5 file so should
-            have a .f5 extension.
-        internal : bool
-            Flag to determine whether to write internal or external nodal forces.
-            External forces are those applied to the structure to the user,
-            Internal forces are those resulting from internal stresses caused
-            by displacements in the structure, at equilibrium these are equal
-            and opposite to the external forces.
-        """
-
-        self.setStructProblem(structProblem)
-
-        self.u_tmp = self.assembler.createVec()
-        self.assembler.getVariables(self.curLoadCase, self.u_tmp)
-
-        self._updateResidual(self.res)
-        if internal:
-            self._getForces(Fext=None, Fint=self.temp0)
-        else:
-            self._getForces(Fext=self.temp0, Fint=None)
-
-        # Write the forces as displacements
-        self.assembler.setVariables(self.curLoadCase, self.temp0)
-        self.writeOutputFile(fileName)
-
-        # Reset the displacements
-        self.assembler.setVariables(self.curLoadCase, self.u_tmp)
-
     def writeDVVisualization(self, fileName, n=17):
         """
         This function writes a standard f5 output file, but with
@@ -3062,33 +2672,6 @@ class pyTACS(object):
         self.setStructProblem(structProblem)
         self.u.setValues(states)
         self.assembler.setVariables(self.u)
-
-    def setAdjoint(self, adjoint, objective):
-        """
-        Set externally supplied adjoint values.
-
-        Arguments:
-
-        adjoint, float, tacs bvec: An array of size getNumVariables() to
-        be copied to the structural adjoint variables
-        """
-        self.phi.copyValues(adjoint)
-        if objective is not None:
-            if not objective in self.curSP.tacsData.adjoints:
-                self.curSP.tacsData.adjoints[objective] = (
-                    self.assembler.createVec())
-            self.curSP.tacsData.adjoints[objective].copyValues(adjoint)
-
-    def getAdjoint(self, objective):
-        """ Return the adjoint values for objective if they
-        exist. Otherwise just return zeros"""
-
-        if objective in self.curSP.tacsData.adjoints:
-            vals = numpy.zeros(self.getNumVariables())
-            self.curSP.tacsData.adjoints[objective].getValues(vals)
-            return vals
-        else:
-            return numpy.zeros(self.getNumVariables(), self.dtype)
 
     def addSVSens(self, evalFuncs, dIduList):
         """ Add the state variable sensitivity to the ADjoint RHS for given evalFuncs"""
@@ -3586,13 +3169,6 @@ class pyTACS(object):
             # Current derivative of objective wrt states
             self.dIdu = self.assembler.createVec()
 
-            # The 'pseudo load vector'. Contribution from aerodynamics
-            # for coupled problems.
-            self.pLoad = self.assembler.createVec()
-
-            # Derivative of structural residuals wrt states, from
-            # aerodynamics for coupled problems
-            self.dSdu = self.assembler.createVec()
             opt = self.getOption
 
             # Tangent Stiffness --- process the ordering option here:
