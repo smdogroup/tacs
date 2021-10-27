@@ -566,8 +566,15 @@ class pyTACS(object):
                     elem = tacs.elements.Quad9Shell(transform, con)
                 elif descript in ['CTRIA3', 'CTRIAR']:
                     elem = tacs.elements.Tri3Shell(transform, con)
-                elif descript in ['CTETRA10', 'CTETRA']:
-                    basis = tacs.elements.QuadraticTetrahedralBasis()
+                elif 'CTETRA' in descript:
+                    # May have variable number of nodes in card
+                    nnodes = len(elemInfo.nodes)
+                    if nnodes == 4:
+                        basis = tacs.elements.LinearTetrahedralBasis()
+                    elif nnodes == 10:
+                        basis = tacs.elements.QuadraticTetrahedralBasis()
+                    else:
+                        raise Error("TACS does not currently support CTETRA elements with %d nodes."%nnodes)
                     model = tacs.elements.LinearElasticity3D(con)
                     elem = tacs.elements.Element3D(model, basis)
                 elif descript in ['CHEXA8', 'CHEXA']:
