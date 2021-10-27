@@ -4,17 +4,10 @@ from tacs import pytacs, TACS, elements, constitutive, functions, problems
 from pytacs_analysis_base_test import PyTACSTestCase
 
 '''
-The nominal case is a heat conduction problem of a
-1m radius plate with a Dirichilet boundary condition applied at the edges,
-such that:
-    T(theta) = T0 + dT * sin(2*theta)
-    T0 = 70 C
-    dT = 30 C
-The problem is then to solve for the temperature within the boundaries of the plate.
-The problem basically boils down to Laplaces problem:
-    grad**2 T = 0
+Cylindrical beam constructed from shell elements. The beam is cantilevered at
+one end and loaded at the other using an RBE3.
 
-test KSTemperature, StructuralMass, and AverageTemperature functions and sensitivities
+test StructuralMass and Compliance functions and sensitivities
 '''
 
 base_dir = os.path.dirname(os.path.abspath(__file__))
@@ -31,6 +24,16 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
         """
         Setup mesh and pytacs object for problem we will be testing.
         """
+
+        # Overwrite default check values
+        if dtype == complex:
+            self.rtol = 1e-8
+            self.atol = 1e-8
+            self.dh = 1e-50
+        else:
+            self.rtol = 2e-1
+            self.atol = 1e-3
+            self.dh = 1e-6
 
         # Instantiate FEA Solver
         struct_options = {}

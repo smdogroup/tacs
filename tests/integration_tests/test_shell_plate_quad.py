@@ -33,7 +33,7 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
         else:
             self.rtol = 2e-1
             self.atol = 1e-4
-            self.dh = 1e-5
+            self.dh = 1e-6
 
         # Instantiate FEA Solver
         struct_options = {}
