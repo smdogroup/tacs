@@ -75,7 +75,7 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
         # Define perturbation array that 'randomly' moves all nodes on plate
         local_num_nodes = fea_solver.getNumOwnedNodes()
         np.random.seed(0)  # Seed random numbers for deterministic/repeatable tests
-        xpts_pert_vec[:] = np.random.rand(3 * local_num_nodes).astype(fea_solver.dtype)
+        xpts_pert_vec[:] = np.linspace(0, 1, 3 * local_num_nodes)
 
         return
 
