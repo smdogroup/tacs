@@ -1,0 +1,77 @@
+import numpy as np
+import os
+from tacs import pytacs, TACS, elements, constitutive, functions, problems
+from pytacs_analysis_base_test import PyTACSTestCase
+
+'''
+The nominal case is a heat conduction problem of a
+1m radius plate with a Dirichilet boundary condition applied at the edges,
+such that:
+    T(theta) = T0 + dT * sin(2*theta)
+    T0 = 70 C
+    dT = 30 C
+The problem is then to solve for the temperature within the boundaries of the plate.
+The problem basically boils down to Laplaces problem:
+    grad**2 T = 0
+
+test KSTemperature, StructuralMass, and AverageTemperature functions and sensitivities
+'''
+
+base_dir = os.path.dirname(os.path.abspath(__file__))
+bdf_file = os.path.join(base_dir, "./input_files/cylinder.bdf")
+
+FUNC_REFS = {'Axial_compliance': 0.004547961484020668, 'Axial_mass': 0,
+             'Shear-Bending_compliance': 0.32726841037774795, 'Shear-Bending_mass': 0,
+             'Moment-Bending_compliance': 0.03641333130760834, 'Moment-Bending_mass': 0,
+             'Torsion_compliance': 0.04725017014874006, 'Torsion_mass': 0}
+
+class ProblemTest(PyTACSTestCase.PyTACSTest):
+    N_PROCS = 2  # this is how many MPI processes to use for this TestCase.
+    def setup_pytacs(self, comm, dtype):
+        """
+        Setup mesh and pytacs object for problem we will be testing.
+        """
+
+        # Instantiate FEA Solver
+        struct_options = {}
+
+        fea_solver = pytacs.pyTACS(bdf_file, options=struct_options)
+
+        # Set up constitutive objects and elements
+        fea_solver.createTACSAssembler()
+
+        return fea_solver
+
+    def setup_tacs_vecs(self, fea_solver, dv_pert_vec, xpts_pert_vec):
+        """
+        Setup user-defined vectors for analysis and fd/cs sensitivity verification
+        """
+        # Create temporary dv vec for doing fd/cs
+        dv_pert_vec[:] = 1.0
+
+        # Define perturbation array that 'randomly' moves all nodes on plate
+        local_num_nodes = fea_solver.getNumOwnedNodes()
+        np.random.seed(0)  # Seed random numbers for deterministic/repeatable tests
+        xpts_pert_vec[:] = np.random.rand(3 * local_num_nodes).astype(fea_solver.dtype)
+
+        return
+
+    def setup_funcs(self, fea_solver):
+        """
+        Create a list of functions to be tested and their reference values for the problem
+        """
+        # Add Functions
+        fea_solver.addFunction('mass', functions.StructuralMass)
+        fea_solver.addFunction('compliance', functions.Compliance)
+        func_list = ['mass', 'compliance']
+        return func_list, FUNC_REFS
+
+    def setup_tacs_problems(self, fea_solver):
+        """
+        Setup pytacs object for problems we will be testing.
+        """
+        # Read in forces from BDF and create tacs struct problems
+        tacs_probs = fea_solver.createTACSProbsFromBDF()
+        # Convert from dict to list
+        tacs_probs = tacs_probs.values()
+        return tacs_probs

@@ -52,7 +52,7 @@ def elemCallBack(dvNum, compID, compDescript, elemDescripts, specialDVs, **kwarg
     kappa = 230.0       # Thermal conductivity W/(m⋅K)
 
     # Plate geometry
-    tplate = 0.005    # 1 mm
+    tplate = 0.005    # 5 mm
 
     # Setup property and constitutive objects
     prop = constitutive.MaterialProperties(rho=rho, kappa=kappa)
