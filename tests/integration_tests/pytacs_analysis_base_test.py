@@ -4,16 +4,16 @@ import unittest
 from mpi4py import MPI
 
 '''
-This is a base class for static problem unit test cases.
+This is a base class for running pytacs unit test cases.
 This base class will test function evaluations and total 
-and partial sensitivities for the user-specified problem 
-that inherits from it.
-When the user creates a new test based on this class three 
-methods are required to be defined in the child class. 
+sensitivities for the user-specified problems implimented by
+the child test case. When the user creates a new test based 
+on this class four methods are required to be defined in the child class. 
 
-    1. setup_assembler
-    2. setup_tacs_vecs
-    3. setup_funcs
+    1. setup_pytacs
+    2. setup_tacs_problems
+    3. setup_tacs_vecs
+    4. setup_funcs
     
 See the virtual method implementations for each method 
 below for more details.
@@ -68,15 +68,15 @@ class PyTACSTestCase:
             Setup pytacs object for problems we will be testing.
             Must be defined in child class that inherits from this class.
             """
-            raise NotImplementedError("Child class must implement a 'setup_assembler' method")
+            raise NotImplementedError("Child class must implement a 'setup_pytacs' method")
             return
 
         def setup_tacs_problems(self, fea_solver):
             """
-            Setup pytacs object for problems we will be testing.
+            Setup tacs problems objects that describe different problem types we will be testing.
             Must be defined in child class that inherits from this class.
             """
-            raise NotImplementedError("Child class must implement a 'setup_assembler' method")
+            raise NotImplementedError("Child class must implement a 'setup_tacs_problems' method")
             return
 
         def setup_tacs_vecs(self, fea_solver, dv_pert_vec, xpts_pert_vec):
