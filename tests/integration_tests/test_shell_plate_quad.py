@@ -38,7 +38,7 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
         # Instantiate FEA Solver
         struct_options = {}
 
-        fea_solver = pytacs.pyTACS(bdf_file, options=struct_options)
+        fea_solver = pytacs.pyTACS(bdf_file, comm, options=struct_options)
 
         def elem_call_back(dv_num, comp_id, comp_descript, elem_descripts, special_dvs, **kwargs):
             # Material properties

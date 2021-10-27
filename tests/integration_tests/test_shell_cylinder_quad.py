@@ -38,7 +38,7 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
         # Instantiate FEA Solver
         struct_options = {}
 
-        fea_solver = pytacs.pyTACS(bdf_file, options=struct_options)
+        fea_solver = pytacs.pyTACS(bdf_file, comm, options=struct_options)
 
         # Set up constitutive objects and elements
         fea_solver.createTACSAssembler()
