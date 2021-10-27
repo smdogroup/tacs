@@ -1234,36 +1234,52 @@ class pyTACS(object):
             self.creator.setGlobalConnectivity(self.bdfInfo.nnodes, ptr, conn, objectNums)
 
             # Set up the boundary conditions
-            bcnodes = []
-            bcdofs = []
-            bcptr = [0]
-            bcvals = []
+            bcDict = {}
             for spc_id in self.bdfInfo.spcs:
                 for spc in self.bdfInfo.spcs[spc_id]:
                     # Loop through every node specifed in this spc and record bc info
                     for j, nastranNode in enumerate(spc.nodes):
                         tacsNode = self.idMap(nastranNode, self.nastranToTACSNodeIDDict)
-                        bcnodes.append(tacsNode)
-                        bcptr.append(bcptr[-1])
+                        # If node hasn't been added to bc dict yet, add it
+                        if tacsNode not in bcDict:
+                            bcDict[tacsNode] = {}
 
+                        # Loop through each dof and record bc info if it is included in this spc
                         for dof in range(varsPerNode):
-                            dofAsString = '%d' % (dof + 1)
+                            # Add 1 to get nastran dof number
+                            nastranDOF = dof + 1
                             if spc.type == 'SPC':
                                 # each node may have its own dofs uniquely constrained
                                 constrained_dofs = spc.components[j]
                                 # The boundary condition may be forced to a non-zero value
-                                bcvals.append(spc.enforced[j])
+                                constraint_val = spc.enforced[j]
                             else:  # SPC1?
                                 # All nodes always have the same dofs constrained
                                 constrained_dofs = spc.components
                                 # This boundary condition is always 0
-                                bcvals.append(0.0)
-                            # Find if dof number occurs in constraint string
-                            loc = constrained_dofs.find(dofAsString)
-                            # if dof is constrained, add it to list
-                            if loc > -1:
-                                bcdofs.append(dof)
-                                bcptr[-1] += 1
+                                constraint_val = 0.0
+                            # if nastran dof is in spc components string, add it to the bc dict
+                            if self._isDOFInString(constrained_dofs, nastranDOF):
+                                bcDict[tacsNode][dof] = constraint_val
+
+
+            # Convert bc information from dict to list
+            bcnodes = []
+            bcdofs = []
+            bcptr = [0]
+            bcvals = []
+            numbcs = 0
+            for tacsNode in bcDict:
+                bcnodes.append(tacsNode)
+                # Store constrained dofs for this node
+                dofs = bcDict[tacsNode].keys()
+                bcdofs.extend(dofs)
+                # Store enforced bc value
+                vals = bcDict[tacsNode].values()
+                bcvals.extend(vals)
+                # Increment bc pointer with how many constraints weve added for this node
+                numbcs += len(bcDict[tacsNode])
+                bcptr.append(numbcs)
 
             # Recast lists as numpy arrays
             bcnodes = np.array(bcnodes, dtype=np.intc)
@@ -1279,6 +1295,31 @@ class pyTACS(object):
 
         # Set the elements for each component
         self.creator.setElements(self.elemObjects)
+
+    def _isDOFInString(self, constrained_dofs, dof):
+        """
+        Find if dof number (nastran numbering) occurs in constraint string.
+
+        Parameters
+        ----------
+        constrained_dofs : string
+            String containing list of dofs (ex. '123456')
+        dof : int or string
+            nastran dof number to check for
+        """
+        # Convert to string, if necessary
+        if isinstance(dof, int):
+            dof = '%d' % (dof)
+        # pyNastran only supports 0,1,2,3,4,5,6 as valid dof components
+        # For this reason, we'll treat 0 as if its 7, since it's traditionally never used in nastran
+        if dof == '7':
+            dof = '0'
+        location = constrained_dofs.find(dof)
+        # if dof is found, return true
+        if location > -1:
+            return True
+        else:
+            return False
 
     def _addTACSRBE2(self, rbeInfo):
         """
