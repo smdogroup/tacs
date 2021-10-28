@@ -97,7 +97,7 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
         """
         tacs_probs = []
 
-        # Add point force to node 481 (center of plate)
+        # Add point force to node 81 (center of plate)
         sp = problems.StaticProblem(name='point_load')
         F = np.array([0.0, 0.0, 1e4, 0.0, 0.0, 0.0])
         fea_solver.addLoadToNodes(sp, 81, F, nastranOrdering=True)
