@@ -100,7 +100,7 @@ class StaticTestCase:
                 self.dfddv_list.append(self.assembler.createDesignVec())
                 self.dfdx_list.append(self.assembler.createNodeVec())
 
-        def setup_assembler(self, dtype):
+        def setup_assembler(self, comm, dtype):
             """
             Setup mesh and tacs assembler for problem we will be testing.
             Must be defined in child class that inherits from this class.
