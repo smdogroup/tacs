@@ -1239,17 +1239,17 @@ class pyTACS(object):
                             nastranDOF = dof + 1
                             if spc.type == 'SPC':
                                 # each node may have its own dofs uniquely constrained
-                                constrained_dofs = spc.components[j]
+                                constrainedDOFs = spc.components[j]
                                 # The boundary condition may be forced to a non-zero value
-                                constraint_val = spc.enforced[j]
+                                constrainedVal = spc.enforced[j]
                             else:  # SPC1?
                                 # All nodes always have the same dofs constrained
-                                constrained_dofs = spc.components
+                                constrainedDOFs = spc.components
                                 # This boundary condition is always 0
-                                constraint_val = 0.0
+                                constrainedVal = 0.0
                             # if nastran dof is in spc components string, add it to the bc dict
-                            if self._isDOFInString(constrained_dofs, nastranDOF):
-                                bcDict[tacsNode][dof] = constraint_val
+                            if self._isDOFInString(constrainedDOFs, nastranDOF):
+                                bcDict[tacsNode][dof] = constrainedVal
 
 
             # Convert bc information from dict to list
