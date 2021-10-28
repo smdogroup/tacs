@@ -36,7 +36,7 @@ import time
 import numpy as np
 from mpi4py import MPI
 import warnings
-import tacs.TACS, tacs.constitutive, tacs.elements, tacs.functions, tacs.problems
+import tacs.TACS, tacs.constitutive, tacs.elements, tacs.functions, tacs.problems.static
 from pyNastran.bdf.bdf import read_bdf
 
 warnings.simplefilter('default')
@@ -1974,7 +1974,7 @@ class pyTACS(object):
                 name = subCase.params['SUBTITLE'][0]
             else:
                 name = 'load_set_%.3d' % (subCase.id)
-            sp = tacs.problems.StaticProblem(name=name)
+            sp = tacs.problems.static.StaticProblem(name=name)
 
             if 'LOAD' in subCase.params:
                 loadsID = subCase.params['LOAD'][0]
