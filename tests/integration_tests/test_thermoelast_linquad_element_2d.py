@@ -58,7 +58,7 @@ class ProblemTest(StaticTestCase.StaticTest):
         size = comm.size
 
         # We know in advance that the number of unknowns per node is
-        # going to be equal to 2 (You can find this value by checking
+        # going to be equal to 3 (You can find this value by checking
         # with element->getVarsPerNode() which returns the number
         # of unknowns per node)
         vars_per_node = 3

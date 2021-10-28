@@ -74,7 +74,7 @@ class TransientTestCase:
             # Set functions for integrator
             self.integrator.setFunctions(self.func_list)
 
-        def setup_assembler(self, dtype):
+        def setup_assembler(self, comm, dtype):
             """
             Setup mesh and tacs assembler for problem we will be testing.
             Must be defined in child class that inherits from this class.

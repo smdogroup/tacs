@@ -79,4 +79,10 @@ setup(name='tacs',
       description='Parallel finite-element analysis package',
       author='Graeme J. Kennedy',
       author_email='graeme.kennedy@ae.gatech.edu',
+      install_requires=[
+          'numpy>=1.16.4',
+          'scipy>=1.2.1',
+          'mpi4py>=3.0.2',
+          'pynastran>=1.3.3'
+      ],
       ext_modules=cythonize(exts, include_path=inc_dirs))
