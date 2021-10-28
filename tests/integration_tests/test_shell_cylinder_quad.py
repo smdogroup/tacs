@@ -52,10 +52,9 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
         # Create temporary dv vec for doing fd/cs
         dv_pert_vec[:] = 1.0
 
-        # Define perturbation array that 'randomly' moves all nodes on plate
-        local_num_nodes = fea_solver.getNumOwnedNodes()
-        np.random.seed(0)  # Seed random numbers for deterministic/repeatable tests
-        xpts_pert_vec[:] = np.random.rand(3 * local_num_nodes).astype(fea_solver.dtype)
+        # Define perturbation array that moves all nodes on plate
+        xpts = fea_solver.getCoordinates()
+        xpts_pert_vec[:] = xpts
 
         return
 
