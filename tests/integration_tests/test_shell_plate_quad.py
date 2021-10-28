@@ -4,7 +4,8 @@ from tacs import pytacs, elements, constitutive, functions, problems
 from pytacs_analysis_base_test import PyTACSTestCase
 
 '''
-The nominal case is a 1m x 1m flat plate under a 10 kN point force at center. The
+The nominal case is a 1m x 1m flat plate under two load cases: 
+a 10 kN point force at center and a 100kPa pressure applied to the surface. The
 perimeter of the plate is fixed in all 6 degrees of freedom. The plate comprises
 900 CQUAD4 elements and test KSFailure, StructuralMass, and Compliance functions and sensitivities
 '''
@@ -12,8 +13,8 @@ perimeter of the plate is fixed in all 6 degrees of freedom. The plate comprises
 base_dir = os.path.dirname(os.path.abspath(__file__))
 bdf_file = os.path.join(base_dir, "./input_files/plate.bdf")
 
-FUNC_REFS = {'point_load_ks_vmfailure': 0.9298987653285045, 'point_load_mass': 12.500000000000535,
-             'pressure_ks_vmfailure': 1.6681113781808543, 'pressure_mass': 12.500000000000535}
+FUNC_REFS = {'point_load_compliance': 683.8571611640772, 'point_load_ks_vmfailure': 0.5757488025913641, 'point_load_mass': 12.5,
+             'pressure_compliance': 4679.345460326432, 'pressure_ks_vmfailure': 1.2938623156872926, 'pressure_mass': 12.5}
 
 # KS function weight
 ksweight = 10.0
@@ -86,7 +87,8 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
         fea_solver.addFunction('mass', functions.StructuralMass)
         fea_solver.addFunction('ks_vmfailure', functions.KSFailure,
                                KSWeight=ksweight, funcType=1)
-        func_list = ['mass', 'ks_vmfailure']
+        fea_solver.addFunction('compliance', functions.Compliance)
+        func_list = ['mass', 'ks_vmfailure', 'compliance']
         return func_list, FUNC_REFS
 
     def setup_tacs_problems(self, fea_solver):
@@ -98,7 +100,7 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
         # Add point force to node 481 (center of plate)
         sp = problems.StaticProblem(name='point_load')
         F = np.array([0.0, 0.0, 1e4, 0.0, 0.0, 0.0])
-        fea_solver.addLoadToNodes(sp, 481, F, nastranOrdering=True)
+        fea_solver.addLoadToNodes(sp, 81, F, nastranOrdering=True)
         tacs_probs.append(sp)
 
         # Add pressure to entire plate
