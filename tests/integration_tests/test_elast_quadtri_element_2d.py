@@ -8,7 +8,7 @@ Create a uniform plate of quadratic triangles under uniform edge loading
 and test KSFailure, StructuralMass, and Compliance functions and sensitivities
 '''
 
-FUNC_REFS = np.array([1.480192931064857, 25700.0, 17567887.317833334])
+FUNC_REFS = np.array([2.007845956565272, 25700.0, 17567887.317833334])
 
 # Length of plate in x/y direction
 Lx = 10.0
@@ -177,7 +177,7 @@ class ProblemTest(StaticTestCase.StaticTest):
         """
         Create a list of functions to be tested and their reference values for the problem
         """
-        func_list = [functions.KSFailure(assembler, ksweight),
+        func_list = [functions.KSFailure(assembler, ksWeight=ksweight, safetyFactor=1.5),
                      functions.StructuralMass(assembler),
                      functions.Compliance(assembler)]
         return func_list, FUNC_REFS

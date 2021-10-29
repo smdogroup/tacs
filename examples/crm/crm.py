@@ -38,7 +38,7 @@ tacs = struct_mesh.createTACS(6)
 
 # Create the KS Function
 ksWeight = 100.0
-funcs = [functions.KSFailure(tacs, ksWeight)]
+funcs = [functions.KSFailure(tacs, ksWeight=ksWeight)]
 # funcs = [functions.StructuralMass(tacs)]
 # funcs = [functions.Compliance(tacs)]
 

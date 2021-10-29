@@ -81,7 +81,7 @@ FEASolver.createTACSAssembler(elemCallBack)
 # Add TACS Functions
 FEASolver.addFunction('wing_mass', functions.StructuralMass)
 FEASolver.addFunction('ks_vmfailure', functions.KSFailure, safetyFactor=1.5,
-                      KSWeight=100.0)
+                      ksWeight=100.0)
 
 # ==============================================================================
 # Setup static problem
