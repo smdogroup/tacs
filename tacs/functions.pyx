@@ -107,11 +107,24 @@ cdef class KSTemperature(Function):
 
 cdef class KSFailure(Function):
     cdef TACSKSFailure *ksptr
-    def __cinit__(self, Assembler assembler, double ksWeight, double alpha=1.0):
+    def __cinit__(self, Assembler assembler, **kwargs):
         """
         Wrap the function KSFailure
         """
-        self.ksptr = new TACSKSFailure(assembler.ptr, ksWeight, alpha)
+        cdef double ksWeight = 80.0
+        cdef double alpha = 1.0
+        cdef double safetyFactor = 1.0
+
+        if 'ksWeight' in kwargs:
+            ksWeight = kwargs['ksWeight']
+
+        if 'alpha' in kwargs:
+            alpha = kwargs['alpha']
+
+        if 'safetyFactor' in kwargs:
+            safetyFactor = kwargs['safetyFactor']
+
+        self.ksptr = new TACSKSFailure(assembler.ptr, ksWeight, alpha, safetyFactor)
         self.ptr = self.ksptr
         self.ptr.incref()
         return

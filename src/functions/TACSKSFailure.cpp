@@ -24,11 +24,13 @@
 */
 TACSKSFailure::TACSKSFailure( TACSAssembler *_assembler,
                               double _ksWeight,
-                              double _alpha ):
+                              double _alpha,
+                              double _safetyFactor ):
 TACSFunction(_assembler, TACSFunction::ENTIRE_DOMAIN,
              TACSFunction::TWO_STAGE, 0){
   ksWeight = _ksWeight;
   alpha = _alpha;
+  safetyFactor = _safetyFactor;
   ksType = CONTINUOUS;
 
   // Initialize the maximum failure value and KS sum to default values
@@ -152,6 +154,9 @@ void TACSKSFailure::elementWiseEval( EvaluationType ftype,
                                            Xpts, vars, dvars, ddvars,
                                            &detXd, &fail);
 
+    // Scale failure value by safety factor
+    fail *= safetyFactor;
+
     // Check whether the quantity requested is defined or not
     if (count >= 1){
       if (ftype == TACSFunction::INITIALIZE){
@@ -212,6 +217,9 @@ void TACSKSFailure::getElementSVSens( int elemIndex, TACSElement *element,
                                            Xpts, vars, dvars, ddvars,
                                            &detXd, &fail);
 
+    // Scale failure value by safety factor
+    fail *= safetyFactor;
+
     if (count >= 1){
       // Compute the sensitivity contribution
       TacsScalar dfdq = 0.0;
@@ -233,6 +241,9 @@ void TACSKSFailure::getElementSVSens( int elemIndex, TACSElement *element,
         dfdq = fail*fpow*invPnorm;
         dfdq *= weight*detXd;
       }
+
+      // Scale failure sens by safety factor
+      dfdq *= safetyFactor;
 
       element->addPointQuantitySVSens(elemIndex, TACS_FAILURE_INDEX, time,
                                       alpha, beta, gamma,
@@ -270,6 +281,9 @@ void TACSKSFailure::getElementXptSens( int elemIndex,
                                            Xpts, vars, dvars, ddvars,
                                            &detXd, &fail);
 
+    // Scale failure value by safety factor
+    fail *= safetyFactor;
+
     if (count >= 1){
       // Compute the sensitivity contribution
       TacsScalar dfdq = 0.0;
@@ -293,6 +307,9 @@ void TACSKSFailure::getElementXptSens( int elemIndex,
         dfdq = fail*fpow*invPnorm*weight*detXd;
         dfddetXd = fail*fpow*invPnorm*weight;
       }
+
+      // Scale failure sens by safety factor
+      dfdq *= safetyFactor;
 
       element->addPointQuantityXptSens(elemIndex, TACS_FAILURE_INDEX, time,
                                        scale, i, pt, Xpts, vars, dvars, ddvars,
@@ -325,6 +342,9 @@ void TACSKSFailure::addElementDVSens( int elemIndex,
                                            Xpts, vars, dvars, ddvars,
                                            &detXd, &fail);
 
+    // Scale failure value by safety factor
+    fail *= safetyFactor;
+
     if (count >= 1){
       // Compute the sensitivity contribution
       TacsScalar dfdq = 0.0;
@@ -345,6 +365,9 @@ void TACSKSFailure::addElementDVSens( int elemIndex,
         TacsScalar fpow = pow(fabs(TacsRealPart(fail/maxFail)), ksWeight-2.0);
         dfdq = fail*fpow*invPnorm*weight*detXd;
       }
+
+      // Scale failure sens by safety factor
+      dfdq *= safetyFactor;
 
       element->addPointQuantityDVSens(elemIndex, TACS_FAILURE_INDEX,
                                       time, scale, i, pt,
