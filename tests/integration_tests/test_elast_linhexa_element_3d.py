@@ -8,7 +8,7 @@ Create a uniform cube under distributed point loads
 and test KSFailure, StructuralMass, and Compliance functions and sensitivities
 '''
 
-FUNC_REFS = np.array([1.1074017881777185, 2570000.0, 178995399.11928475])
+FUNC_REFS = np.array([1.1074017881777185, 2570000.0, 178995399.11928475, 7.192551651904685])
 
 # Length of plate in x/y direction
 Lx = 10.0
@@ -149,5 +149,6 @@ class ProblemTest(StaticTestCase.StaticTest):
         """
         func_list = [functions.KSFailure(assembler, ksweight),
                      functions.StructuralMass(assembler),
-                     functions.Compliance(assembler)]
+                     functions.Compliance(assembler),
+                     functions.KSDisplacement(assembler, ksWeight=ksweight, direction=[100.0, 100.0, 100.0])]
         return func_list, FUNC_REFS

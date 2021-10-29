@@ -8,7 +8,7 @@ Create a uniform cube under distributed point loads with sinusoidal variation in
 and test KSFailure, StructuralMass, and Compliance functions and sensitivities
 '''
 
-FUNC_REFS = np.array([1.0078196208590282, 2570000.0, 89660446.16938959])
+FUNC_REFS = np.array([1.0078196208590282, 2570000.0, 89660446.16938959, 7.653054063858885])
 
 # Length of plate in x/y/z direction
 Lx = 10.0
@@ -172,5 +172,6 @@ class ProblemTest(TransientTestCase.TransientTest):
         """
         func_list = [functions.KSFailure(assembler, ksweight),
                      functions.StructuralMass(assembler),
-                     functions.Compliance(assembler)]
+                     functions.Compliance(assembler),
+                     functions.KSDisplacement(assembler, ksWeight=ksweight, direction=[100.0, 100.0, 100.0])]
         return func_list, FUNC_REFS
