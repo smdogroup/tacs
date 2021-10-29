@@ -169,7 +169,7 @@ class pyTACS(object):
         DVPreprocTime = time.time()
 
         # List of DV groups
-        self.specialDVs = {}
+        self.globalDVs = {}
         self.compIDBounds = {}
         self.addedCompIDs = set()
         self.varName = 'struct'
@@ -449,7 +449,7 @@ class pyTACS(object):
             
             return mat
 
-        def elemCallBack(dvNum, compID, compDescript, elemDescripts, specialDVs, **kwargs):
+        def elemCallBack(dvNum, compID, compDescript, elemDescripts, globalDVs, **kwargs):
             # Initialize scale list for design variables we will add
             scaleList = []
             
@@ -781,8 +781,8 @@ class pyTACS(object):
 
         return globalToLocalNodeIDDict
 
-    def addSpecialDV(self, descript, value,
-                     lower=None, upper=None, scale=1.0):
+    def addGlobalDV(self, descript, value,
+                    lower=None, upper=None, scale=1.0):
         """
         This function allows adding design variables that are not
         cleanly associated with a particular constiutive object. One
@@ -812,7 +812,7 @@ class pyTACS(object):
         None, but the information is provided to the user in the
         elemCallBack function
         """
-        self.specialDVs[descript] = {'num': self.dvNum,
+        self.globalDVs[descript] = {'num': self.dvNum,
                                      'value': value,
                                      'lowerBound': lower,
                                      'upperBound': upper}
@@ -1402,7 +1402,7 @@ class pyTACS(object):
            follows::
 
              def elemCallBack(dvNum, compID, compDescript, elemDescripts,
-                             specialDVs, **kwargs):
+                             globalDVs, **kwargs):
 
            The dvNum is the current counter which must be used by the
            user when creating constitutive object with design
@@ -1419,8 +1419,8 @@ class pyTACS(object):
            one component may contain multiple compatible element types.
            Example: ['CQUAD4', CTRIA3']
 
-           specialDVs is a dictionary containing information about any
-           special DVs that have been added.
+           globalDVs is a dictionary containing information about any
+           global DVs that have been added.
 
            elemCallBack must return a list containing as many TACS element
            objects as there are element types in elemDescripts (one for each).
@@ -3080,7 +3080,7 @@ class pyTACS(object):
             propID = list(self.bdfInfo.property_ids)[i]
 
             # Call the user function
-            result = elemCallBack(self.dvNum, compID, compDescript, self.elemDescripts[i], self.specialDVs,
+            result = elemCallBack(self.dvNum, compID, compDescript, self.elemDescripts[i], self.globalDVs,
                                   propID=propID)
 
             # For maximum flexibiliy, multiple pieces of information

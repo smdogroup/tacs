@@ -45,7 +45,7 @@ structOptions = {
 bdfFile = os.path.join(os.path.dirname(__file__), 'circ-plate-dirichlet-bcs.bdf')
 FEASolver = pyTACS(bdfFile, options=structOptions)
 
-def elemCallBack(dvNum, compID, compDescript, elemDescripts, specialDVs, **kwargs):
+def elemCallBack(dvNum, compID, compDescript, elemDescripts, globalDVs, **kwargs):
     # Material properties
     rho = 2500.0        # density kg/m^3
     kappa = 230.0       # Thermal conductivity W/(m⋅K)
