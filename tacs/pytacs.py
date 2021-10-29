@@ -2725,6 +2725,15 @@ class pyTACS(object):
         self.u.setValues(states)
         self.assembler.setVariables(self.u)
 
+    def getVarsPerNodes(self):
+        """
+        Get the number of variables per node for the model.
+        """
+        if self.assembler is not None:
+            return self.varsPerNode
+        else:
+            raise Error("Assembler must be finalized before getVarsPerNodes can be called.")
+
     def addSVSens(self, evalFuncs, dIduList):
         """ Add the state variable sensitivity to the ADjoint RHS for given evalFuncs"""
         funcHandles = [self.functionList[f] for f in evalFuncs if
