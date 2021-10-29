@@ -36,7 +36,6 @@ comm = MPI.COMM_WORLD
 
 # Instantiate FEASolver
 structOptions = {
-    'varsPerNode':1,
     'printtimings':True,
     # Specify what type of elements we want in the f5
     'writeSolution':True,

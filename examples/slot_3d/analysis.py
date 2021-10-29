@@ -23,9 +23,7 @@ from tacs import functions, pyTACS
 comm = MPI.COMM_WORLD
 
 # Instantiate FEASolver
-structOptions = {
-    'varsPerNode':3,
-}
+structOptions = {}
 
 bdfFile = os.path.join(os.path.dirname(__file__), 'slot.bdf')
 # Load BDF file
