@@ -32,7 +32,7 @@ structOptions = {
 bdfFile = os.path.join(os.path.dirname(__file__), 'rbe3.bdf')
 # Set up TACS Assembler
 # Don't need a elemCallBack since property info exists in bdf
-FEASolver = pyTACS(bdfFile, options=structOptions)
+FEASolver = pyTACS(bdfFile, comm, options=structOptions)
 # Set up constitutive objects and elements
 FEASolver.createTACSAssembler()
 
