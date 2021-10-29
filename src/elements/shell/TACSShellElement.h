@@ -858,6 +858,23 @@ int TACSShellElement<quadrature, basis, director, model>::
 
     return 1;
   }
+  else if (quantityType == TACS_ELEMENT_DISPLACEMENT){
+    if (quantity){
+      TacsScalar Xxi[6], n0[3], X[3];
+      basis::template interpFields<3, 3>(pt, Xpts, X);
+      basis::template interpFieldsGrad<3, 3>(pt, Xpts, Xxi);
+      basis::template interpFields<3, 3>(pt, fn, n0);
+
+      TacsScalar Xd[9];
+      TacsShellAssembleFrame(Xxi, n0, Xd);
+      *detXd = det3x3(Xd);
+
+      // Compute the interpolated displacements
+      basis::template interpFields<vars_per_node, 3>(pt, vars, quantity);
+    }
+
+    return 3;
+  }
 
   return 0;
 }
@@ -1038,6 +1055,11 @@ void TACSShellElement<quadrature, basis, director, model>::
     director::template
       addDirectorResidual<vars_per_node, offset, num_nodes>(vars, dvars, ddvars, fn,
                                                             dd, dfdu);
+  }
+  else if (quantityType == TACS_ELEMENT_DISPLACEMENT){
+
+    // Compute the interpolated displacements
+    basis::template addInterpFieldsTranspose<vars_per_node, 3>(pt, dfdq, dfdu);
   }
 }
 

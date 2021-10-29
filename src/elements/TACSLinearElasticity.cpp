@@ -646,6 +646,15 @@ int TACSLinearElasticity2D::evalPointQuantity( int elemIndex,
 
     return 1;
   }
+  else if (quantityType == TACS_ELEMENT_DISPLACEMENT){
+    if (quantity){
+      // Return displacement components
+      quantity[0] = Ut[0];
+      quantity[1] = Ut[3];
+    }
+
+    return 2;
+  }
 
   return 0;
 }
@@ -794,6 +803,10 @@ void TACSLinearElasticity2D::evalPointQuantitySens( int elemIndex,
       dfdUx[2] = 2.0*dfdq[0]*(s[0]*Ux[2] + s[2]*(1.0 + Ux[3]));
       dfdUx[3] = 2.0*dfdq[0]*(s[1]*(1.0 + Ux[3]) + s[2]*Ux[2]);
     }
+  }
+  else if (quantityType == TACS_ELEMENT_DISPLACEMENT){
+    dfdUt[0] = dfdq[0];
+    dfdUt[3] = dfdq[1];
   }
 }
 
@@ -2035,6 +2048,16 @@ int TACSLinearElasticity3D::evalPointQuantity( int elemIndex,
 
     return 1;
   }
+  else if (quantityType == TACS_ELEMENT_DISPLACEMENT){
+    if (quantity){
+      // Return displacement components
+      quantity[0] = Ut[0];
+      quantity[1] = Ut[3];
+      quantity[2] = Ut[6];
+    }
+
+    return 3;
+  }
 
   return 0;
 }
@@ -2244,6 +2267,11 @@ void TACSLinearElasticity3D::evalPointQuantitySens( int elemIndex,
       dfdUx[7] = 2.0*dfdq[0]*(Ux[6]*s[5] + Ux[7]*s[1] + s[3]*(Ux[8] + 1.0));
       dfdUx[8] = 2.0*dfdq[0]*(Ux[6]*s[4] + Ux[7]*s[3] + Ux[8]*s[2] + s[2]);
     }
+  }
+  else if (quantityType == TACS_ELEMENT_DISPLACEMENT){
+    dfdUt[0] = dfdq[0];
+    dfdUt[3] = dfdq[1];
+    dfdUt[6] = dfdq[2];
   }
 }
 

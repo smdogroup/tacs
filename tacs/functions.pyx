@@ -130,6 +130,51 @@ cdef class KSFailure(Function):
     def setParameter(self, double ksparam):
         self.ksptr.setParameter(ksparam)
 
+cdef class KSDisplacement(Function):
+    cdef TACSKSDisplacement *ksptr
+    def __cinit__(self, Assembler assembler, **kwargs):
+        """
+        Wrap the function KSDisplacement
+        """
+        cdef double ksWeight = 80.0
+        cdef double alpha = 1.0
+        cdef double d[3]
+
+        if 'ksWeight' in kwargs:
+            ksWeight = kwargs['ksWeight']
+
+        if 'alpha' in kwargs:
+            alpha = kwargs['alpha']
+
+        if 'direction' in kwargs:
+            dir = kwargs['direction']
+            # Check if dir is a list or numpy array
+            if isinstance(dir, list) or isinstance(dir, np.ndarray):
+                dim = min(3, len(dir))
+                for i in range(dim):
+                    d[i] = dir[i]
+            else:
+                d[0] = d[1] = d[2] = 0.0
+
+        self.ksptr = new TACSKSDisplacement(assembler.ptr, ksWeight, d, alpha)
+        self.ptr = self.ksptr
+        self.ptr.incref()
+        return
+
+    def setKSDisplacementType(self, ftype='discrete'):
+        if ftype == 'discrete':
+            self.ksptr.setKSDisplacementType(KS_DISPLACEMENT_DISCRETE)
+        elif ftype == 'continuous':
+            self.ksptr.setKSDisplacementType(KS_DISPLACEMENT_CONTINUOUS)
+        elif ftype == 'pnorm-discrete':
+            self.ksptr.setKSDisplacementType(PNORM_DISPLACEMENT_DISCRETE)
+        elif ftype == 'pnorm-continuous':
+            self.ksptr.setKSDisplacementType(PNORM_DISPLACEMENT_CONTINUOUS)
+        return
+
+    def setParameter(self, double ksparam):
+        self.ksptr.setParameter(ksparam)
+
 # cdef class InducedFailure(Function):
 #     cdef TACSInducedFailure *iptr
 #     def __cinit__(self, Assembler assembler, double P):
