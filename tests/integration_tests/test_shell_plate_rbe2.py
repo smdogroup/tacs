@@ -17,7 +17,7 @@ and Compliance functions and sensitivities
 ------------       -----------
 '''
 
-FUNC_REFS = np.array([1.2600980396870352, 51400.0, 3767896.1409673616])
+FUNC_REFS = np.array([1.2600980396870352, 51400.0, 3767896.1409673616, 2.912191091671254])
 
 # Length of plate in x/y direction
 Lx = 10.0
@@ -211,5 +211,6 @@ class ProblemTest(StaticTestCase.StaticTest):
         """
         func_list = [functions.KSFailure(assembler, ksweight),
                      functions.StructuralMass(assembler),
-                     functions.Compliance(assembler)]
+                     functions.Compliance(assembler),
+                     functions.KSDisplacement(assembler, ksWeight=ksweight, direction=[1.0, 1.0, 1.0])]
         return func_list, FUNC_REFS

@@ -8,7 +8,7 @@ Create a cantilevered beam of linear triangular shells under a tip shear load
 and test KSFailure, StructuralMass, and Compliance functions and sensitivities
 '''
 
-FUNC_REFS = np.array([82.43693636249846, 2570.0, 1.6836449730480917e9])
+FUNC_REFS = np.array([82.43693636249846, 2570.0, 1.6836449730480917e9, 298.3270790567411])
 
 # Length of plate in x/y direction
 Lx = 10.0
@@ -146,5 +146,6 @@ class ProblemTest(StaticTestCase.StaticTest):
         """
         func_list = [functions.KSFailure(assembler, ksweight),
                      functions.StructuralMass(assembler),
-                     functions.Compliance(assembler)]
+                     functions.Compliance(assembler),
+                     functions.KSDisplacement(assembler, ksWeight=ksweight, direction=[0.0, 0.0, 1.0])]
         return func_list, FUNC_REFS

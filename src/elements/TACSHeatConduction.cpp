@@ -236,17 +236,23 @@ int TACSHeatConduction2D::evalPointQuantity( int elemIndex,
                                              const TacsScalar Ux[],
                                              TacsScalar *quantity ){
   if (quantityType == TACS_HEAT_FLUX){
-    stiff->evalHeatFlux(elemIndex, pt, X, Ux, quantity);
+    if (quantity){
+      stiff->evalHeatFlux(elemIndex, pt, X, Ux, quantity);
+    }
 
     return 2;
   }
   else if (quantityType == TACS_TEMPERATURE){
-    *quantity = Ut[0];
+    if (quantity){
+      *quantity = Ut[0];
+    }
 
     return 1;
   }
   else if (quantityType == TACS_ELEMENT_DENSITY){
-    *quantity = stiff->evalDensity(elemIndex, pt, X);
+    if (quantity){
+      *quantity = stiff->evalDensity(elemIndex, pt, X);
+    }
 
     return 1;
   }
@@ -607,19 +613,25 @@ int TACSHeatConduction3D::evalPointQuantity( int elemIndex,
                                              const TacsScalar Ux[],
                                              TacsScalar *quantity ){
   if (quantityType == TACS_HEAT_FLUX){
-    // Add the flux components to the heat transfer portion
-    // of the governing equations
-    stiff->evalHeatFlux(elemIndex, pt, X, Ux, quantity);
+    if (quantity){
+      // Add the flux components to the heat transfer portion
+      // of the governing equations
+      stiff->evalHeatFlux(elemIndex, pt, X, Ux, quantity);
+    }
 
     return 3;
   }
   else if (quantityType == TACS_TEMPERATURE){
-    *quantity = Ut[0];
+    if (quantity){
+      *quantity = Ut[0];
+    }
 
     return 1;
   }
   else if (quantityType == TACS_ELEMENT_DENSITY){
-    *quantity = stiff->evalDensity(elemIndex, pt, X);
+    if (quantity){
+      *quantity = stiff->evalDensity(elemIndex, pt, X);
+    }
 
     return 1;
   }
