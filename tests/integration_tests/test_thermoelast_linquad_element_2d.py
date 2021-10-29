@@ -21,7 +21,7 @@ from static_analysis_base_test import StaticTestCase
   This test is based on the "tutorial" script under the examples directory.
 '''
 
-FUNC_REFS = np.array([0.981072186947658, 2700.0, 30.508623116027273, 56.92510895125915])
+FUNC_REFS = np.array([0.981072186947658, 2700.0, 30.508623116027273, 56.92510895125915, 1.377153264551044])
 
 # Length of plate in x/y direction
 Lx = 1.0
@@ -238,6 +238,7 @@ class ProblemTest(StaticTestCase.StaticTest):
         func_list = [functions.KSFailure(assembler, ksweight),
                      functions.StructuralMass(assembler),
                      functions.AverageTemperature(assembler),
-                     functions.KSTemperature(assembler, ksweight)]
+                     functions.KSTemperature(assembler, ksweight),
+                     functions.KSDisplacement(assembler, ksWeight=ksweight, direction=[1e3, 1e3])]
         func_list[0].setKSFailureType('continuous')
         return func_list, FUNC_REFS

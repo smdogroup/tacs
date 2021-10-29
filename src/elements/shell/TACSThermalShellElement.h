@@ -812,59 +812,63 @@ int TACSThermalShellElement<quadrature, basis, director, model>::
   TacsShellComputeNodeNormals<basis>(Xpts, fn);
 
   if (quantityType == TACS_FAILURE_INDEX){
-    // Compute the director rates
-    TacsScalar d[dsize], ddot[dsize];
-    director::template
-      computeDirectorRates<vars_per_node, offset, num_nodes>(vars, dvars, fn, d, ddot);
+    if (quantity){
+      // Compute the director rates
+      TacsScalar d[dsize], ddot[dsize];
+      director::template
+        computeDirectorRates<vars_per_node, offset, num_nodes>(vars, dvars, fn, d, ddot);
 
-    // Set the total number of tying points needed for this element
-    TacsScalar ety[basis::NUM_TYING_POINTS];
-    model::template
-      computeTyingStrain<vars_per_node, basis>(Xpts, fn, vars, d, ety);
+      // Set the total number of tying points needed for this element
+      TacsScalar ety[basis::NUM_TYING_POINTS];
+      model::template
+        computeTyingStrain<vars_per_node, basis>(Xpts, fn, vars, d, ety);
 
-    // Compute X, X,xi and the interpolated normal n0
-    TacsScalar X[3], Xxi[6], n0[3], T[9];
-    basis::template interpFields<3, 3>(pt, Xpts, X);
-    basis::template interpFieldsGrad<3, 3>(pt, Xpts, Xxi);
-    basis::template interpFields<3, 3>(pt, fn, n0);
+      // Compute X, X,xi and the interpolated normal n0
+      TacsScalar X[3], Xxi[6], n0[3], T[9];
+      basis::template interpFields<3, 3>(pt, Xpts, X);
+      basis::template interpFieldsGrad<3, 3>(pt, Xpts, Xxi);
+      basis::template interpFields<3, 3>(pt, fn, n0);
 
-    // Compute the transformation at the quadrature point
-    transform->computeTransform(Xxi, n0, T);
+      // Compute the transformation at the quadrature point
+      transform->computeTransform(Xxi, n0, T);
 
-    // Evaluate the displacement gradient at the point
-    TacsScalar XdinvT[9], XdinvzT[9];
-    TacsScalar u0x[9], u1x[9];
-    TacsShellComputeDispGrad<vars_per_node, basis>(pt, Xpts, vars, fn, d, Xxi, n0, T,
-                                                    XdinvT, XdinvzT, u0x, u1x);
+      // Evaluate the displacement gradient at the point
+      TacsScalar XdinvT[9], XdinvzT[9];
+      TacsScalar u0x[9], u1x[9];
+      TacsShellComputeDispGrad<vars_per_node, basis>(pt, Xpts, vars, fn, d, Xxi, n0, T,
+                                                      XdinvT, XdinvzT, u0x, u1x);
 
-    // Evaluate the tying components of the strain
-    TacsScalar gty[6]; // The symmetric components of the tying strain
-    basis::interpTyingStrain(pt, ety, gty);
+      // Evaluate the tying components of the strain
+      TacsScalar gty[6]; // The symmetric components of the tying strain
+      basis::interpTyingStrain(pt, ety, gty);
 
-    // Compute the symmetric parts of the tying strain
-    TacsScalar e0ty[6]; // e0ty = XdinvT^{T}*gty*XdinvT
-    mat3x3SymmTransformTranspose(XdinvT, gty, e0ty);
+      // Compute the symmetric parts of the tying strain
+      TacsScalar e0ty[6]; // e0ty = XdinvT^{T}*gty*XdinvT
+      mat3x3SymmTransformTranspose(XdinvT, gty, e0ty);
 
-    // Compute the set of strain components
-    TacsScalar e[9]; // The components of the strain
-    model::evalStrain(u0x, u1x, e0ty, e);
-    e[8] = 0.0;
+      // Compute the set of strain components
+      TacsScalar e[9]; // The components of the strain
+      model::evalStrain(u0x, u1x, e0ty, e);
+      e[8] = 0.0;
 
-    *quantity = con->evalFailure(elemIndex, pt, X, e);
+      *quantity = con->evalFailure(elemIndex, pt, X, e);
+    }
 
     return 1;
   }
   else if (quantityType == TACS_ELEMENT_DENSITY){
-    TacsScalar Xxi[6], n0[3], X[3];
-    basis::template interpFields<3, 3>(pt, Xpts, X);
-    basis::template interpFieldsGrad<3, 3>(pt, Xpts, Xxi);
-    basis::template interpFields<3, 3>(pt, fn, n0);
+    if (quantity){
+      TacsScalar Xxi[6], n0[3], X[3];
+      basis::template interpFields<3, 3>(pt, Xpts, X);
+      basis::template interpFieldsGrad<3, 3>(pt, Xpts, Xxi);
+      basis::template interpFields<3, 3>(pt, fn, n0);
 
-    TacsScalar Xd[9];
-    TacsShellAssembleFrame(Xxi, n0, Xd);
-    *detXd = det3x3(Xd);
+      TacsScalar Xd[9];
+      TacsShellAssembleFrame(Xxi, n0, Xd);
+      *detXd = det3x3(Xd);
 
-    *quantity = con->evalDensity(elemIndex, pt, X);
+      *quantity = con->evalDensity(elemIndex, pt, X);
+    }
 
     return 1;
   }

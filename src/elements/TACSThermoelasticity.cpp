@@ -498,99 +498,120 @@ int TACSLinearThermoelasticity2D::evalPointQuantity( int elemIndex,
                                                      const TacsScalar Ux[],
                                                      TacsScalar *quantity ){
   if (quantityType == TACS_FAILURE_INDEX){
-    // Compute the thermal strain components
-    TacsScalar theta = Ut[6]; // The temperature value
-    TacsScalar et[3];
-    stiff->evalThermalStrain(elemIndex, pt, X, theta, et);
+    if (quantity){
+      // Compute the thermal strain components
+      TacsScalar theta = Ut[6]; // The temperature value
+      TacsScalar et[3];
+      stiff->evalThermalStrain(elemIndex, pt, X, theta, et);
 
-    TacsScalar e[3];
-    if (strain_type == TACS_LINEAR_STRAIN){
-      e[0] = Ux[0] - et[0];
-      e[1] = Ux[3] - et[1];
-      e[2] = Ux[1] + Ux[2] - et[2];
-    }
-    else {
-      e[0] = Ux[0] + 0.5*(Ux[0]*Ux[0] + Ux[2]*Ux[2]) - et[0];
-      e[1] = Ux[3] + 0.5*(Ux[1]*Ux[1] + Ux[3]*Ux[3]) - et[1];
-      e[2] = Ux[1] + Ux[2] + (Ux[0]*Ux[1] + Ux[2]*Ux[3]) - et[2];
-    }
+      TacsScalar e[3];
+      if (strain_type == TACS_LINEAR_STRAIN){
+        e[0] = Ux[0] - et[0];
+        e[1] = Ux[3] - et[1];
+        e[2] = Ux[1] + Ux[2] - et[2];
+      }
+      else {
+        e[0] = Ux[0] + 0.5*(Ux[0]*Ux[0] + Ux[2]*Ux[2]) - et[0];
+        e[1] = Ux[3] + 0.5*(Ux[1]*Ux[1] + Ux[3]*Ux[3]) - et[1];
+        e[2] = Ux[1] + Ux[2] + (Ux[0]*Ux[1] + Ux[2]*Ux[3]) - et[2];
+      }
 
-    *quantity = stiff->evalFailure(elemIndex, pt, X, e);
+      *quantity = stiff->evalFailure(elemIndex, pt, X, e);
+    }
 
     return 1;
   }
   else if (quantityType == TACS_HEAT_FLUX){
-    // Compute the thermal flux from the thermal gradient
-    TacsScalar grad[2], flux[2];
-    grad[0] = Ux[4];
-    grad[1] = Ux[5];
+    if (quantity){
+      // Compute the thermal flux from the thermal gradient
+      TacsScalar grad[2], flux[2];
+      grad[0] = Ux[4];
+      grad[1] = Ux[5];
 
-    // Add the flux components to the heat transfer portion
-    // of the governing equations
-    stiff->evalHeatFlux(elemIndex, pt, X, grad, flux);
-    quantity[0] = flux[0];
-    quantity[1] = flux[1];
+      // Add the flux components to the heat transfer portion
+      // of the governing equations
+      stiff->evalHeatFlux(elemIndex, pt, X, grad, flux);
+      quantity[0] = flux[0];
+      quantity[1] = flux[1];
+    }
 
     return 2;
   }
   else if (quantityType == TACS_TEMPERATURE){
-    *quantity = Ut[6];
+    if (quantity){
+      *quantity = Ut[6];
+    }
 
     return 1;
   }
   else if (quantityType == TACS_ELEMENT_DENSITY){
-    *quantity = stiff->evalDensity(elemIndex, pt, X);
+    if (quantity){
+      *quantity = stiff->evalDensity(elemIndex, pt, X);
+    }
 
     return 1;
   }
   else if (quantityType == TACS_STRAIN_ENERGY_DENSITY){
-    // Compute the thermal strain components
-    TacsScalar theta = Ut[6]; // The temperature value
-    TacsScalar et[3];
-    stiff->evalThermalStrain(elemIndex, pt, X, theta, et);
+    if (quantity){
+      // Compute the thermal strain components
+      TacsScalar theta = Ut[6]; // The temperature value
+      TacsScalar et[3];
+      stiff->evalThermalStrain(elemIndex, pt, X, theta, et);
 
-    TacsScalar e[3];
-    if (strain_type == TACS_LINEAR_STRAIN){
-      e[0] = Ux[0] - et[0];
-      e[1] = Ux[3] - et[1];
-      e[2] = Ux[1] + Ux[2] - et[2];
+      TacsScalar e[3];
+      if (strain_type == TACS_LINEAR_STRAIN){
+        e[0] = Ux[0] - et[0];
+        e[1] = Ux[3] - et[1];
+        e[2] = Ux[1] + Ux[2] - et[2];
+      }
+      else {
+        e[0] = Ux[0] + 0.5*(Ux[0]*Ux[0] + Ux[2]*Ux[2]) - et[0];
+        e[1] = Ux[3] + 0.5*(Ux[1]*Ux[1] + Ux[3]*Ux[3]) - et[1];
+        e[2] = Ux[1] + Ux[2] + (Ux[0]*Ux[1] + Ux[2]*Ux[3]) - et[2];
+      }
+
+      // Evaluate the sress
+      TacsScalar s[3];
+      stiff->evalStress(elemIndex, pt, X, e, s);
+
+      // Evaluate the strain energy density
+      *quantity = (e[0]*s[0] + e[1]*s[1] + e[2]*s[2]);
     }
-    else {
-      e[0] = Ux[0] + 0.5*(Ux[0]*Ux[0] + Ux[2]*Ux[2]) - et[0];
-      e[1] = Ux[3] + 0.5*(Ux[1]*Ux[1] + Ux[3]*Ux[3]) - et[1];
-      e[2] = Ux[1] + Ux[2] + (Ux[0]*Ux[1] + Ux[2]*Ux[3]) - et[2];
-    }
-
-    // Evaluate the sress
-    TacsScalar s[3];
-    stiff->evalStress(elemIndex, pt, X, e, s);
-
-    // Evaluate the strain energy density
-    *quantity = (e[0]*s[0] + e[1]*s[1] + e[2]*s[2]);
 
     return 1;
   }
   else if (quantityType == TACS_TOTAL_STRAIN_ENERGY_DENSITY){
-    TacsScalar e[3];
-    if (strain_type == TACS_LINEAR_STRAIN){
-      e[0] = Ux[0];
-      e[1] = Ux[3];
-      e[2] = Ux[1] + Ux[2];
-    }
-    else {
-      e[0] = Ux[0] + 0.5*(Ux[0]*Ux[0] + Ux[2]*Ux[2]);
-      e[1] = Ux[3] + 0.5*(Ux[1]*Ux[1] + Ux[3]*Ux[3]);
-      e[2] = Ux[1] + Ux[2] + (Ux[0]*Ux[1] + Ux[2]*Ux[3]);
-    }
+    if (quantity){
+      TacsScalar e[3];
+      if (strain_type == TACS_LINEAR_STRAIN){
+        e[0] = Ux[0];
+        e[1] = Ux[3];
+        e[2] = Ux[1] + Ux[2];
+      }
+      else {
+        e[0] = Ux[0] + 0.5*(Ux[0]*Ux[0] + Ux[2]*Ux[2]);
+        e[1] = Ux[3] + 0.5*(Ux[1]*Ux[1] + Ux[3]*Ux[3]);
+        e[2] = Ux[1] + Ux[2] + (Ux[0]*Ux[1] + Ux[2]*Ux[3]);
+      }
 
-    // Evaluate the sress
-    TacsScalar s[3];
-    stiff->evalStress(elemIndex, pt, X, e, s);
+      // Evaluate the sress
+      TacsScalar s[3];
+      stiff->evalStress(elemIndex, pt, X, e, s);
 
-    // Evaluate the strain energy density
-    *quantity = (e[0]*s[0] + e[1]*s[1] + e[2]*s[2]);
+      // Evaluate the strain energy density
+      *quantity = (e[0]*s[0] + e[1]*s[1] + e[2]*s[2]);
+    }
 
     return 1;
+  }
+  else if (quantityType == TACS_ELEMENT_DISPLACEMENT){
+    if (quantity){
+      // Return displacement components
+      quantity[0] = Ut[0];
+      quantity[1] = Ut[3];
+    }
+
+    return 2;
   }
 
   return 0;
@@ -828,6 +849,10 @@ void TACSLinearThermoelasticity2D::evalPointQuantitySens( int elemIndex,
       dfdUx[1] = 2.0*dfdq[0]*s[2];
       dfdUx[2] = 2.0*dfdq[0]*s[2];
     }
+  }
+  else if (quantityType == TACS_ELEMENT_DISPLACEMENT){
+    dfdUt[0] = dfdq[0];
+    dfdUt[3] = dfdq[1];
   }
 }
 
@@ -1573,128 +1598,150 @@ int TACSLinearThermoelasticity3D::evalPointQuantity( int elemIndex,
                                                      const TacsScalar Ux[],
                                                      TacsScalar *quantity ){
   if (quantityType == TACS_FAILURE_INDEX){
-    // Compute the thermal strain components
-    TacsScalar theta = Ut[9]; // The temperature value
-    TacsScalar et[6];
-    stiff->evalThermalStrain(elemIndex, pt, X, theta, et);
+    if (quantity){
+      // Compute the thermal strain components
+      TacsScalar theta = Ut[9]; // The temperature value
+      TacsScalar et[6];
+      stiff->evalThermalStrain(elemIndex, pt, X, theta, et);
 
-    // Compute the mechanical strain e = 0.5*(u,x + u,x^{T}) - et
-    TacsScalar e[6];
-    if (strain_type == TACS_LINEAR_STRAIN){
-      e[0] = Ux[0] - et[0];
-      e[1] = Ux[4] - et[1];
-      e[2] = Ux[8] - et[2];
+      // Compute the mechanical strain e = 0.5*(u,x + u,x^{T}) - et
+      TacsScalar e[6];
+      if (strain_type == TACS_LINEAR_STRAIN){
+        e[0] = Ux[0] - et[0];
+        e[1] = Ux[4] - et[1];
+        e[2] = Ux[8] - et[2];
 
-      e[3] = Ux[5] + Ux[7] - et[3];
-      e[4] = Ux[2] + Ux[6] - et[4];
-      e[5] = Ux[1] + Ux[3] - et[5];
+        e[3] = Ux[5] + Ux[7] - et[3];
+        e[4] = Ux[2] + Ux[6] - et[4];
+        e[5] = Ux[1] + Ux[3] - et[5];
+      }
+      else {
+        e[0] = Ux[0] + 0.5*(Ux[0]*Ux[0] + Ux[3]*Ux[3] + Ux[6]*Ux[6]) - et[0];
+        e[1] = Ux[4] + 0.5*(Ux[1]*Ux[1] + Ux[4]*Ux[4] + Ux[7]*Ux[7]) - et[1];
+        e[2] = Ux[8] + 0.5*(Ux[2]*Ux[2] + Ux[5]*Ux[5] + Ux[8]*Ux[8]) - et[2];
+
+        e[3] = Ux[5] + Ux[7] + (Ux[1]*Ux[2] + Ux[4]*Ux[5] + Ux[7]*Ux[8]) - et[3];
+        e[4] = Ux[2] + Ux[6] + (Ux[0]*Ux[2] + Ux[3]*Ux[5] + Ux[6]*Ux[8]) - et[4];
+        e[5] = Ux[1] + Ux[3] + (Ux[0]*Ux[1] + Ux[3]*Ux[4] + Ux[6]*Ux[7]) - et[5];
+      }
+
+      *quantity = stiff->evalFailure(elemIndex, pt, X, e);
     }
-    else {
-      e[0] = Ux[0] + 0.5*(Ux[0]*Ux[0] + Ux[3]*Ux[3] + Ux[6]*Ux[6]) - et[0];
-      e[1] = Ux[4] + 0.5*(Ux[1]*Ux[1] + Ux[4]*Ux[4] + Ux[7]*Ux[7]) - et[1];
-      e[2] = Ux[8] + 0.5*(Ux[2]*Ux[2] + Ux[5]*Ux[5] + Ux[8]*Ux[8]) - et[2];
-
-      e[3] = Ux[5] + Ux[7] + (Ux[1]*Ux[2] + Ux[4]*Ux[5] + Ux[7]*Ux[8]) - et[3];
-      e[4] = Ux[2] + Ux[6] + (Ux[0]*Ux[2] + Ux[3]*Ux[5] + Ux[6]*Ux[8]) - et[4];
-      e[5] = Ux[1] + Ux[3] + (Ux[0]*Ux[1] + Ux[3]*Ux[4] + Ux[6]*Ux[7]) - et[5];
-    }
-
-    *quantity = stiff->evalFailure(elemIndex, pt, X, e);
 
     return 1;
   }
   else if (quantityType == TACS_HEAT_FLUX){
-    // Compute the thermal flux from the thermal gradient
-    TacsScalar grad[3], flux[3];
-    grad[0] = Ux[9];
-    grad[1] = Ux[10];
-    grad[2] = Ux[11];
+    if (quantity){
+      // Compute the thermal flux from the thermal gradient
+      TacsScalar grad[3], flux[3];
+      grad[0] = Ux[9];
+      grad[1] = Ux[10];
+      grad[2] = Ux[11];
 
-    // Add the flux components to the heat transfer portion
-    // of the governing equations
-    stiff->evalHeatFlux(elemIndex, pt, X, grad, flux);
-    quantity[0] = flux[0];
-    quantity[1] = flux[1];
-    quantity[2] = flux[2];
+      // Add the flux components to the heat transfer portion
+      // of the governing equations
+      stiff->evalHeatFlux(elemIndex, pt, X, grad, flux);
+      quantity[0] = flux[0];
+      quantity[1] = flux[1];
+      quantity[2] = flux[2];
+    }
 
     return 3;
   }
   else if (quantityType == TACS_TEMPERATURE){
-    *quantity = Ut[9];
+    if (quantity){
+      *quantity = Ut[9];
+    }
 
     return 1;
   }
   else if (quantityType == TACS_ELEMENT_DENSITY){
-    *quantity = stiff->evalDensity(elemIndex, pt, X);
+    if (quantity){
+      *quantity = stiff->evalDensity(elemIndex, pt, X);
+    }
 
     return 1;
   }
   else if (quantityType == TACS_STRAIN_ENERGY_DENSITY){
-    // Compute the thermal strain components
-    TacsScalar theta = Ut[9]; // The temperature value
-    TacsScalar et[6];
-    stiff->evalThermalStrain(elemIndex, pt, X, theta, et);
+    if (quantity){
+      // Compute the thermal strain components
+      TacsScalar theta = Ut[9]; // The temperature value
+      TacsScalar et[6];
+      stiff->evalThermalStrain(elemIndex, pt, X, theta, et);
 
-    // Compute the mechanical strain e = 0.5*(u,x + u,x^{T}) - et
-    TacsScalar e[6];
-    if (strain_type == TACS_LINEAR_STRAIN){
-      e[0] = Ux[0] - et[0];
-      e[1] = Ux[4] - et[1];
-      e[2] = Ux[8] - et[2];
+      // Compute the mechanical strain e = 0.5*(u,x + u,x^{T}) - et
+      TacsScalar e[6];
+      if (strain_type == TACS_LINEAR_STRAIN){
+        e[0] = Ux[0] - et[0];
+        e[1] = Ux[4] - et[1];
+        e[2] = Ux[8] - et[2];
 
-      e[3] = Ux[5] + Ux[7] - et[3];
-      e[4] = Ux[2] + Ux[6] - et[4];
-      e[5] = Ux[1] + Ux[3] - et[5];
+        e[3] = Ux[5] + Ux[7] - et[3];
+        e[4] = Ux[2] + Ux[6] - et[4];
+        e[5] = Ux[1] + Ux[3] - et[5];
+      }
+      else {
+        e[0] = Ux[0] + 0.5*(Ux[0]*Ux[0] + Ux[3]*Ux[3] + Ux[6]*Ux[6]) - et[0];
+        e[1] = Ux[4] + 0.5*(Ux[1]*Ux[1] + Ux[4]*Ux[4] + Ux[7]*Ux[7]) - et[1];
+        e[2] = Ux[8] + 0.5*(Ux[2]*Ux[2] + Ux[5]*Ux[5] + Ux[8]*Ux[8]) - et[2];
+
+        e[3] = Ux[5] + Ux[7] + (Ux[1]*Ux[2] + Ux[4]*Ux[5] + Ux[7]*Ux[8]) - et[3];
+        e[4] = Ux[2] + Ux[6] + (Ux[0]*Ux[2] + Ux[3]*Ux[5] + Ux[6]*Ux[8]) - et[4];
+        e[5] = Ux[1] + Ux[3] + (Ux[0]*Ux[1] + Ux[3]*Ux[4] + Ux[6]*Ux[7]) - et[5];
+      }
+
+      TacsScalar s[6];
+      stiff->evalStress(elemIndex, pt, X, e, s);
+
+      // Evaluate the strain energy density
+      *quantity = (e[0]*s[0] + e[1]*s[1] + e[2]*s[2] +
+                   e[3]*s[3] + e[4]*s[4] + e[5]*s[5]);
     }
-    else {
-      e[0] = Ux[0] + 0.5*(Ux[0]*Ux[0] + Ux[3]*Ux[3] + Ux[6]*Ux[6]) - et[0];
-      e[1] = Ux[4] + 0.5*(Ux[1]*Ux[1] + Ux[4]*Ux[4] + Ux[7]*Ux[7]) - et[1];
-      e[2] = Ux[8] + 0.5*(Ux[2]*Ux[2] + Ux[5]*Ux[5] + Ux[8]*Ux[8]) - et[2];
-
-      e[3] = Ux[5] + Ux[7] + (Ux[1]*Ux[2] + Ux[4]*Ux[5] + Ux[7]*Ux[8]) - et[3];
-      e[4] = Ux[2] + Ux[6] + (Ux[0]*Ux[2] + Ux[3]*Ux[5] + Ux[6]*Ux[8]) - et[4];
-      e[5] = Ux[1] + Ux[3] + (Ux[0]*Ux[1] + Ux[3]*Ux[4] + Ux[6]*Ux[7]) - et[5];
-    }
-
-    TacsScalar s[6];
-    stiff->evalStress(elemIndex, pt, X, e, s);
-
-    // Evaluate the strain energy density
-    *quantity = (e[0]*s[0] + e[1]*s[1] + e[2]*s[2] +
-                 e[3]*s[3] + e[4]*s[4] + e[5]*s[5]);
 
     return 1;
   }
   else if (quantityType == TACS_TOTAL_STRAIN_ENERGY_DENSITY){
-    // Compute the total strain e = 0.5*(u,x + u,x^{T})
-    TacsScalar e[6];
-    if (strain_type == TACS_LINEAR_STRAIN){
-      e[0] = Ux[0];
-      e[1] = Ux[4];
-      e[2] = Ux[8];
+    if (quantity){
+      // Compute the total strain e = 0.5*(u,x + u,x^{T})
+      TacsScalar e[6];
+      if (strain_type == TACS_LINEAR_STRAIN){
+        e[0] = Ux[0];
+        e[1] = Ux[4];
+        e[2] = Ux[8];
 
-      e[3] = Ux[5] + Ux[7];
-      e[4] = Ux[2] + Ux[6];
-      e[5] = Ux[1] + Ux[3];
+        e[3] = Ux[5] + Ux[7];
+        e[4] = Ux[2] + Ux[6];
+        e[5] = Ux[1] + Ux[3];
+      }
+      else {
+        e[0] = Ux[0] + 0.5*(Ux[0]*Ux[0] + Ux[3]*Ux[3] + Ux[6]*Ux[6]);
+        e[1] = Ux[4] + 0.5*(Ux[1]*Ux[1] + Ux[4]*Ux[4] + Ux[7]*Ux[7]);
+        e[2] = Ux[8] + 0.5*(Ux[2]*Ux[2] + Ux[5]*Ux[5] + Ux[8]*Ux[8]);
+
+        e[3] = Ux[5] + Ux[7] + (Ux[1]*Ux[2] + Ux[4]*Ux[5] + Ux[7]*Ux[8]);
+        e[4] = Ux[2] + Ux[6] + (Ux[0]*Ux[2] + Ux[3]*Ux[5] + Ux[6]*Ux[8]);
+        e[5] = Ux[1] + Ux[3] + (Ux[0]*Ux[1] + Ux[3]*Ux[4] + Ux[6]*Ux[7]);
+      }
+
+      TacsScalar s[6];
+      stiff->evalStress(elemIndex, pt, X, e, s);
+
+      // Evaluate the strain energy density
+      *quantity = (e[0]*s[0] + e[1]*s[1] + e[2]*s[2] +
+                   e[3]*s[3] + e[4]*s[4] + e[5]*s[5]);
     }
-    else {
-      e[0] = Ux[0] + 0.5*(Ux[0]*Ux[0] + Ux[3]*Ux[3] + Ux[6]*Ux[6]);
-      e[1] = Ux[4] + 0.5*(Ux[1]*Ux[1] + Ux[4]*Ux[4] + Ux[7]*Ux[7]);
-      e[2] = Ux[8] + 0.5*(Ux[2]*Ux[2] + Ux[5]*Ux[5] + Ux[8]*Ux[8]);
-
-      e[3] = Ux[5] + Ux[7] + (Ux[1]*Ux[2] + Ux[4]*Ux[5] + Ux[7]*Ux[8]);
-      e[4] = Ux[2] + Ux[6] + (Ux[0]*Ux[2] + Ux[3]*Ux[5] + Ux[6]*Ux[8]);
-      e[5] = Ux[1] + Ux[3] + (Ux[0]*Ux[1] + Ux[3]*Ux[4] + Ux[6]*Ux[7]);
-    }
-
-    TacsScalar s[6];
-    stiff->evalStress(elemIndex, pt, X, e, s);
-
-    // Evaluate the strain energy density
-    *quantity = (e[0]*s[0] + e[1]*s[1] + e[2]*s[2] +
-                 e[3]*s[3] + e[4]*s[4] + e[5]*s[5]);
 
     return 1;
+  }
+  else if (quantityType == TACS_ELEMENT_DISPLACEMENT){
+    if (quantity){
+      // Return displacement components
+      quantity[0] = Ut[0];
+      quantity[1] = Ut[3];
+      quantity[2] = Ut[6];
+    }
+
+    return 3;
   }
 
   return 0;
@@ -2009,6 +2056,11 @@ void TACSLinearThermoelasticity3D::evalPointQuantitySens( int elemIndex,
       dfdUx[1] = 2.0*dfdq[0]*s[5];
       dfdUx[3] = 2.0*dfdq[0]*s[5];
     }
+  }
+  else if (quantityType == TACS_ELEMENT_DISPLACEMENT){
+    dfdUt[0] = dfdq[0];
+    dfdUt[3] = dfdq[1];
+    dfdUt[6] = dfdq[2];
   }
 }
 

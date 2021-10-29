@@ -9,7 +9,7 @@ unbalanced tip shear load on the right corner
 and test KSFailure, StructuralMass, and Compliance functions and sensitivities
 '''
 
-FUNC_REFS = np.array([5812.5, 63907185.558059536])
+FUNC_REFS = np.array([5812.5, 63907185.558059536, 12.21799417804536])
 
 # Length of plate in x/y direction
 Lx = 10.0
@@ -172,5 +172,6 @@ class ProblemTest(StaticTestCase.StaticTest):
         Create a list of functions to be tested and their reference values for the problem
         """
         func_list = [functions.StructuralMass(assembler),
-                     functions.Compliance(assembler)]
+                     functions.Compliance(assembler),
+                     functions.KSDisplacement(assembler, ksWeight=ksweight, direction=[0.0, 0.0, 1.0])]
         return func_list, FUNC_REFS
