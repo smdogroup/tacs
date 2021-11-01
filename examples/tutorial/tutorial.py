@@ -12,12 +12,13 @@ nx = 5  # number of elements in x direction
 ny = 5  # number of elements in y direction
 Lx = 1.0
 Ly = 1.0
-varsPerNode = 3
-nodesPerProc = (nx+1)*(ny+1)/size
-elemsPerProc = nx*ny/size
-numOwnerNodes = nodesPerProc
-numElements = elemsPerProc
+varsPerNode = 2  # 3 if we use LinearThermoelasticity2D element type
+nodesPerProc = int((nx+1)*(ny+1)/size)
+elemsPerProc = int(nx*ny/size)
+numOwnerNodes = int(nodesPerProc)
+numElements = int(elemsPerProc)
 numDependentNodes = 0
+
 
 if (rank == size-1):
     numOwnedNodes = (nx+1)*(ny+1) - nodesPerProc*(size-1)
@@ -32,17 +33,17 @@ Setup geometry, mesh, material and element
 '''
 
 # Set up partition
-int firstElem = rank*elemsPerProc
-int firstNode = rank*nodesPerProc
-int lastElem = (rank+1)*elemsPerProc
-int lastNode = (rank+1)*nodesPerProc
+firstElem = rank*elemsPerProc
+firstNode = rank*nodesPerProc
+lastElem = (rank+1)*elemsPerProc
+lastNode = (rank+1)*nodesPerProc
 if (rank == size-1):
     lastElem = nx*ny
     lastNode = (nx+1)*(ny+1)
 
 # Populate connectivity
-ptr = np.zeros(numElements + 1)
-conn = np.zeros(4*numElements)
+ptr = np.zeros(numElements + 1, dtype=np.int32)
+conn = np.zeros(4*numElements, dtype=np.int32)
 ptr[0] = 0
 k = 0
 for elem in range(firstElem, lastElem):
@@ -62,12 +63,98 @@ assembler.setElementConnectivity(ptr, conn)
 props = constitutive.MaterialProperties(rho=2700.0, E=70e3, nu=0.3, ys=270.0)
 
 # Create basis, constitutive, element, etc
-linear_basis = element.LinearQuadBasis()
+linear_basis = elements.LinearQuadBasis()
 stiff = constitutive.PlaneStressConstitutive(props)
-elements = []
-k = 0
+elements_list = []
 for elem in range(firstElem, lastElem):
     stiff = constitutive.PlaneStressConstitutive(props, 1.0, elem)
+    model = elements.LinearElasticity2D(stiff);
+    # model = elements.LinearThermoelasticity2D(stiff);
+    elements_list.append(elements.Element2D(model, linear_basis))
+
+# Set elements into the mesh
+assembler.setElements(elements_list)
+
+# Set boundary conditions
+for i in range(0, nx + 1):
+    nodes = np.array([i, i + (nx+1)*ny, i*(nx+1), (i+1)*(nx+1) - 1], dtype=np.int32)
+    dof = np.array([0, 1, 2], dtype=np.int32)
+    values = np.array([0.0, 0.0, 1.0*i])
+    assembler.addBCs(nodes, dof, values)
+
+# Done adding elements
+assembler.initialize()
+
+# Create the node location vector
+X = assembler.createNodeVec()
+Xpts = X.getArray()
+
+# Get nodal locations
+k = 0
+for node in range(firstNode, lastNode):
+    i = node % (nx + 1);
+    j = node // (nx + 1);
+    Xpts[k] = i*Lx/nx;
+    Xpts[k+1] = j*Ly/ny;
+    k += 2
+
+assembler.reorderVec(X);  # Might not needed since we don't reorder the matrix
+assembler.setNodes(X);
+
+'''
+Solve the static analysis
+'''
+
+# Create the finite element matrix
+kmat = assembler.createSchurMat()
+
+# Create the Schur preconditioner
+pc = TACS.Pc(kmat)
+
+# Allocate space for the vectors
+force = assembler.createVec()
+res   = assembler.createVec()
+ans   = assembler.createVec()
+tmp   = assembler.createVec()
+
+# Set force
+force_vals = force.getArray()
+force_vals[:] = 1.0
+assembler.setBCs(force)
+
+# Assemble the Jacobian for the governing equation
+alpha = 1.0
+beta  = 0.0
+gamma = 0.0
+assembler.assembleJacobian(alpha, beta, gamma, res, kmat)
+res.axpy(-1.0, force)  # res = Ku - f
+
+# Factor the preconditioner
+pc.factor()
+
+# Create the solver and solve the problem
+gmres_iters = 100;
+nrestart = 2
+is_flexible = 1
+gmres = TACS.KSM(kmat, pc, gmres_iters, nrestart, is_flexible)
+gmres.setMonitor(comm, freq=1)
+gmres.solve(force, ans)  # ans = K\f
+
+# Check residual: res = K*ans - f
+kmat.mult(ans, tmp)
+tmp.axpy(-1.0, force)
+norm = tmp.norm()
+if (rank == 0):
+    print("|ku - f|: {:15.5e}".format(norm))
+
+
+
+
+
+
+
+
+
     
 
 
