@@ -45,7 +45,7 @@ tMin = 0.002        # m
 tMax = 0.05         # m
 
 # Callback function used to setup TACS element objects and DVs
-def elemCallBack(dvNum, compID, compDescript, elemDescripts, specialDVs, **kwargs):
+def elemCallBack(dvNum, compID, compDescript, elemDescripts, globalDVs, **kwargs):
     # Setup (isotropic) property and constitutive objects
     prop = constitutive.MaterialProperties(rho=rho, E=E, nu=nu, ys=ys)
     # Set one thickness dv for every component
