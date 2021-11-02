@@ -1380,9 +1380,11 @@ class pyTACS(object):
             self.bdfInfo.cross_reference()
             self.bdfInfo.is_xrefed = True
 
+        # Includes all standard load cards contained in BDF
         loads = self.bdfInfo.loads
         nloads = len(loads)
 
+        # Contains any LOAD cards which may include multiple load sets
         loadCombinations = self.bdfInfo.load_combinations
 
         # Check if any loads are in the BDF
@@ -1409,6 +1411,7 @@ class pyTACS(object):
             sp = tacs.problems.static.StaticProblem(name=name)
 
             if 'LOAD' in subCase.params:
+                # Get Load set ID for this problem
                 loadsID = subCase.params['LOAD'][0]
                 # Check if there are any loads in this set
                 if loadsID in loads:
