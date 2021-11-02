@@ -92,7 +92,6 @@ class pyTACS(object):
             'solutionType': [str, 'linear'],
             'KSMSolver': [str, 'GMRES'],
             'orderingType': [str, 'ND'],
-            'varsPerNode': [int, 6],
             'PCFillLevel': [int, 1000],
             'PCFillRatio': [float, 20.0],
             'subSpaceSize': [int, 10],
@@ -170,7 +169,7 @@ class pyTACS(object):
         DVPreprocTime = time.time()
 
         # List of DV groups
-        self.specialDVs = {}
+        self.globalDVs = {}
         self.compIDBounds = {}
         self.addedCompIDs = set()
         self.varName = 'struct'
@@ -192,6 +191,9 @@ class pyTACS(object):
 
         # List of initial coordinates
         self.coords0 = None
+
+        # Variables per node for model
+        self.varsPerNode = None
 
         # Norms
         self.initNorm = 0.0
@@ -447,7 +449,7 @@ class pyTACS(object):
             
             return mat
 
-        def elemCallBack(dvNum, compID, compDescript, elemDescripts, specialDVs, **kwargs):
+        def elemCallBack(dvNum, compID, compDescript, elemDescripts, globalDVs, **kwargs):
             # Initialize scale list for design variables we will add
             scaleList = []
             
@@ -779,8 +781,8 @@ class pyTACS(object):
 
         return globalToLocalNodeIDDict
 
-    def addSpecialDV(self, descript, value,
-                     lower=None, upper=None, scale=1.0):
+    def addGlobalDV(self, descript, value,
+                    lower=None, upper=None, scale=1.0):
         """
         This function allows adding design variables that are not
         cleanly associated with a particular constiutive object. One
@@ -810,7 +812,7 @@ class pyTACS(object):
         None, but the information is provided to the user in the
         elemCallBack function
         """
-        self.specialDVs[descript] = {'num': self.dvNum,
+        self.globalDVs[descript] = {'num': self.dvNum,
                                      'value': value,
                                      'lowerBound': lower,
                                      'upperBound': upper}
@@ -1157,7 +1159,7 @@ class pyTACS(object):
         self.assembler.setAuxElements(self.auxElems)
 
         # Create numpy array representation for easier access to vector values
-        vpn = self.getOption('varsPerNode')
+        vpn = self.varsPerNode
         self.F_array = self.F.getArray()
         self.u_array = self.u.getArray()
         self.F_array = self.F_array.reshape(len(self.F_array) // vpn, vpn)
@@ -1173,8 +1175,7 @@ class pyTACS(object):
         """
         Setup TACSCreator object responsible for creating TACSAssembler
         """
-        varsPerNode = self.getOption('varsPerNode')
-        self.creator = tacs.TACS.Creator(self.comm, varsPerNode)
+        self.creator = tacs.TACS.Creator(self.comm, self.varsPerNode)
 
         # Append RBE elements to element list, these are not setup by the user
         for rbe in self.bdfInfo.rigid_elements.values():
@@ -1204,7 +1205,7 @@ class pyTACS(object):
                             bcDict[tacsNode] = {}
 
                         # Loop through each dof and record bc info if it is included in this spc
-                        for dof in range(varsPerNode):
+                        for dof in range(self.varsPerNode):
                             # Add 1 to get nastran dof number
                             nastranDOF = dof + 1
                             if spc.type == 'SPC':
@@ -1285,13 +1286,12 @@ class pyTACS(object):
         Method to automatically set up RBE2 element from bdf file for user.
         User should *NOT* set these up in their elemCallBack function.
         """
-        varsPerNode = self.getOption('varsPerNode')
         indepNode = rbeInfo.independent_nodes
         depNodes = []
         depConstrainedDOFs = []
         dummyNodes = []
         dofsAsString = rbeInfo.cm
-        dofsAsList = self.isDOFInString(dofsAsString, varsPerNode)
+        dofsAsList = self.isDOFInString(dofsAsString, self.varsPerNode)
         for node in rbeInfo.dependent_nodes:
             depNodes.append(node)
             depConstrainedDOFs.extend(dofsAsList)
@@ -1318,9 +1318,8 @@ class pyTACS(object):
         Method to automatically set up RBE3 element from bdf file for user.
         User should *NOT* set these up in their elemCallBack function.
         """
-        varsPerNode = self.getOption('varsPerNode')
         depNode = rbeInfo.dependent_nodes
-        depConstrainedDOFs = self.isDOFInString(rbeInfo.refc, varsPerNode)
+        depConstrainedDOFs = self.isDOFInString(rbeInfo.refc, self.varsPerNode)
 
         # add dummy node for lagrange multipliers
         dummyNodeNum = list(self.bdfInfo.node_ids)[-1] + 1  # Next available node number
@@ -1336,7 +1335,7 @@ class pyTACS(object):
         for depNodeGroup in rbeInfo.wt_cg_groups:
             wt = depNodeGroup[0]
             dofsAsString = depNodeGroup[1]
-            dofsAsList = self.isDOFInString(dofsAsString, varsPerNode)
+            dofsAsList = self.isDOFInString(dofsAsString, self.varsPerNode)
             for node in depNodeGroup[2]:
                 indepNodes.append(node)
                 indepWeights.append(wt)
@@ -1373,7 +1372,7 @@ class pyTACS(object):
            follows::
 
              def elemCallBack(dvNum, compID, compDescript, elemDescripts,
-                             specialDVs, **kwargs):
+                             globalDVs, **kwargs):
 
            The dvNum is the current counter which must be used by the
            user when creating constitutive object with design
@@ -1390,8 +1389,8 @@ class pyTACS(object):
            one component may contain multiple compatible element types.
            Example: ['CQUAD4', CTRIA3']
 
-           specialDVs is a dictionary containing information about any
-           special DVs that have been added.
+           globalDVs is a dictionary containing information about any
+           global DVs that have been added.
 
            elemCallBack must return a list containing as many TACS element
            objects as there are element types in elemDescripts (one for each).
@@ -1545,7 +1544,7 @@ class pyTACS(object):
             raise Error("Number of forces must match number of points,"
                         " {} forces were specified for {} points".format(F.shape[0], len(points)))
 
-        vpn = self.getOption('varsPerNode')
+        vpn = self.varsPerNode
         if len(F[0]) != vpn:
             raise Error("Length of force vector must match varsPerNode specified "
                         "for problem, which is {}, "
@@ -1625,7 +1624,7 @@ class pyTACS(object):
             raise Error("Number of forces must match number of nodes,"
                         " {} forces were specified for {} node IDs".format(F.shape[0], numNodes))
 
-        vpn = self.getOption('varsPerNode')
+        vpn = self.varsPerNode
         if len(F[0]) != vpn:
             raise Error("Length of force vector must match varsPerNode specified "
                         "for problem, which is {}, "
@@ -1919,7 +1918,7 @@ class pyTACS(object):
             self.bdfInfo.cross_reference()
             self.bdfInfo.is_xrefed = True
 
-        vpn = self.getOption('varsPerNode')
+        vpn = self.varsPerNode
         loads = self.bdfInfo.loads
         nloads = len(loads)
 
@@ -2504,7 +2503,7 @@ class pyTACS(object):
         self.setStructProblem(structProblem)
 
         # Pull out the local nodes on the proc and search "points" in the tree
-        vpn = self.getOption('varsPerNode')
+        vpn = self.varsPerNode
         Xpts = self.assembler.createNodeVec()
         self.assembler.getNodes(Xpts)
         localNodes = np.real(Xpts.getArray())
@@ -2696,6 +2695,15 @@ class pyTACS(object):
         self.u.setValues(states)
         self.assembler.setVariables(self.u)
 
+    def getVarsPerNodes(self):
+        """
+        Get the number of variables per node for the model.
+        """
+        if self.assembler is not None:
+            return self.varsPerNode
+        else:
+            raise Error("Assembler must be finalized before getVarsPerNodes can be called.")
+
     def addSVSens(self, evalFuncs, dIduList):
         """ Add the state variable sensitivity to the ADjoint RHS for given evalFuncs"""
         funcHandles = [self.functionList[f] for f in evalFuncs if
@@ -2852,9 +2860,9 @@ class pyTACS(object):
         # Create actual viewer
         if self.getOption('outputElement') is not None:
             elementType = self.getOption('outputElement')
-        elif self.getOption('varsPerNode') == 6:
+        elif self.varsPerNode == 6:
             elementType = tacs.TACS.BEAM_OR_SHELL_ELEMENT
-        elif self.getOption('varsPerNode') == 3:
+        elif self.varsPerNode == 3:
             elementType = tacs.TACS.SOLID_ELEMENT
 
         self.outputViewer = tacs.TACS.ToFH5(
@@ -3051,7 +3059,7 @@ class pyTACS(object):
             propID = list(self.bdfInfo.property_ids)[i]
 
             # Call the user function
-            result = elemCallBack(self.dvNum, compID, compDescript, self.elemDescripts[i], self.specialDVs,
+            result = elemCallBack(self.dvNum, compID, compDescript, self.elemDescripts[i], self.globalDVs,
                                   propID=propID)
 
             # For maximum flexibiliy, multiple pieces of information
@@ -3167,6 +3175,14 @@ class pyTACS(object):
                 # Set each of the elements for this component
                 pointer = self.elemObjectNumByComp[i][j]
                 self.elemObjects[pointer] = elemObject
+                # set varsPerNode
+                elemVarsPerNode = elemObject.getVarsPerNode()
+                if self.varsPerNode is None:
+                    self.varsPerNode = elemVarsPerNode
+                elif self.varsPerNode != elemVarsPerNode:
+                    raise Error("Model references elements with differing numbers of variables per node (%d and %d). "
+                                "All elements must use same number of variables to be compatible."%(self.varsPerNode,
+                                                                                                    elemVarsPerNode))
 
     def _createVariables(self):
         """Internal to create the variable required by TACS"""

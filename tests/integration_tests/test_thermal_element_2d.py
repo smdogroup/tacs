@@ -42,8 +42,7 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
         """
 
         # Instantiate FEA Solver
-        struct_options = {'varsPerNode': 1,
-                          'outputElement': TACS.PLANE_STRESS_ELEMENT,
+        struct_options = {'outputElement': TACS.PLANE_STRESS_ELEMENT,
                           # Finer tol needed to pass complex sens test
                           'L2Convergence': 1e-16}
 
