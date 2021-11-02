@@ -1372,7 +1372,7 @@ class pyTACS(object):
         Automatically define tacs problem class using information contained in BDF file.
         This function assumes all loads are specified in the BDF and allows users to
         skip setting loads in Python.
-        NOTE: Currently only supports FORCE, MOMENT, PLOAD2, and PLOAD4 cards.
+        NOTE: Currently only supports LOAD, FORCE, MOMENT, PLOAD2, and PLOAD4 cards.
         NOTE: Currently only supports staticProblem (SOL 101)
         """
         # Make sure cross-referencing is turned on in pynastran
@@ -1380,9 +1380,10 @@ class pyTACS(object):
             self.bdfInfo.cross_reference()
             self.bdfInfo.is_xrefed = True
 
-        vpn = self.varsPerNode
         loads = self.bdfInfo.loads
         nloads = len(loads)
+
+        loadCombinations = self.bdfInfo.load_combinations
 
         # Check if any loads are in the BDF
         if nloads == 0:
@@ -1412,87 +1413,107 @@ class pyTACS(object):
                 # Check if there are any loads in this set
                 if loadsID in loads:
                     loadSet = loads[loadsID]
+                    self._addLoadsFromLoadSet(sp, loadSet)
 
-                    loadDict = {}
-                    for load in loadSet:
-                        # Record any point force or moment cards
-                        if load.type == 'FORCE' or load.type == 'MOMENT':
-                            nodeID = load.node_ref.nid
+                # Load ID may also reference a nastran LOAD combonination card
+                if loadsID in loadCombinations:
+                    comboSet = loadCombinations[loadsID]
+                    # Loop through each LOAD combo card matching the specified load ID
+                    for loadCombo in comboSet:
+                        globalScale = loadCombo.scale
+                        # Loop through every load set referenced by this combo card and add loads to problem
+                        for loadScale, loadSet in zip(loadCombo.scale_factors, loadCombo.load_ids_ref):
+                            totalScale = globalScale*loadScale
+                            self._addLoadsFromLoadSet(sp, loadSet, scale=totalScale)
 
-                            if nodeID not in loadDict:
-                                loadDict[nodeID] = numpy.zeros(vpn)
-
-                            if load.type == 'FORCE' and vpn >= 3:
-                                loadDict[nodeID][:3] += load.scaled_vector
-                            elif load.type == 'MOMENT' and vpn >= 6:
-                                loadDict[nodeID][3:6] += load.scaled_vector
-
-                        # Add any pressure loads
-                        # Pressure load card specific to shell elements
-                        elif load.type == 'PLOAD2':
-                            elemIDs = load.eids
-                            pressure = load.pressure
-                            self.addPressureToElements(sp, elemIDs, pressure, nastranOrdering=True)
-
-                        # Alternate more general pressure load type
-                        elif load.type == 'PLOAD4':
-                            # Dictionary mapping nastran element face indices to TACS equivilent numbering
-                            nastranToTACSFaceIDDict = {'CTETRA': {1: 1, 2: 3, 3: 2, 4: 0},
-                                                       'CHEXA': {1: 4, 2: 2, 3: 0, 4: 3, 5: 0, 6: 5}}
-
-                            # We don't support pressure variation across elements, for now just average it
-                            pressure = np.mean(load.pressures)
-                            for elemInfo in load.eids_ref:
-                                elemID = elemInfo.eid
-
-                                # Get the correct face index number based on element type
-                                if 'CTETRA' in elemInfo.type:
-                                    for faceIndex in elemInfo.faces:
-                                        if load.g1 in elemInfo.faces[faceIndex] and \
-                                            load.g34 not in elemInfo.faces[faceIndex]:
-                                            faceIndex = nastranToTACSFaceIDDict['CTETRA'][faceIndex]
-                                            # Pressure orientation is flipped for solid elements per Nastran convention
-                                            pressure *= -1.0
-                                            break
-
-                                elif 'CHEXA' in elemInfo.type:
-                                    for faceIndex in elemInfo.faces:
-                                        if load.g1 in elemInfo.faces[faceIndex] and \
-                                            load.g34 in elemInfo.faces[faceIndex]:
-                                            faceIndex = nastranToTACSFaceIDDict['CHEXA'][faceIndex]
-                                            # Pressure orientation is flipped for solid elements per Nastran convention
-                                            pressure *= -1.0
-                                            break
-
-                                elif 'CQUAD' in elemInfo.type or 'CTRIA' in elemInfo.type:
-                                    # Face index doesn't matter for shells, just use 0
-                                    faceIndex = 0
-
-                                else:
-                                    raise Error("Unsupported element type "
-                                                "'%s' specified for PLOAD4 load set number %d." % (elemInfo.type, load.sid))
-
-                                # Figure out whether or not this is a traction based on if a vector is defined
-                                if np.linalg.norm(load.nvector) == 0.0:
-                                    self.addPressureToElements(sp, elemID, pressure, faceIndex,
-                                                               nastranOrdering=True)
-                                else:
-                                    trac = pressure * load.nvector
-                                    self.addTractionToElements(sp, elemID, trac, faceIndex,
-                                                               nastranOrdering=True)
-
-                        else:
-                            TACSWarning("Unsupported load type "
-                                        " '%s' specified for load set number %d, skipping load" %(load.type, load.sid),
-                                        self.comm)
-
-                    # Add all point forces/moments found for this problem at once
-                    if len(loadDict) > 0:
-                        self.addLoadToNodes(sp, list(loadDict.keys()), list(loadDict.values()), nastranOrdering=True)
             # append to list of structural problems
             structProblems[subCase.id] = sp
 
         return structProblems
+
+    def _addLoadsFromLoadSet(self, sp, loadSet, scale=1.0):
+        """
+        Add loads to static problem based on pyNastran load set card.
+        Loads may also optionally be scaled.
+        """
+        vpn = self.varsPerNode
+        # Keep track of added point forces and moments using a dict
+        loadDict = {}
+        for load in loadSet:
+            # Record any point force or moment cards
+            if load.type == 'FORCE' or load.type == 'MOMENT':
+                nodeID = load.node_ref.nid
+
+                if nodeID not in loadDict:
+                    loadDict[nodeID] = numpy.zeros(vpn)
+
+                if load.type == 'FORCE' and vpn >= 3:
+                    loadDict[nodeID][:3] += scale*load.scaled_vector
+                elif load.type == 'MOMENT' and vpn >= 6:
+                    loadDict[nodeID][3:6] += scale*load.scaled_vector
+
+            # Add any pressure loads
+            # Pressure load card specific to shell elements
+            elif load.type == 'PLOAD2':
+                elemIDs = load.eids
+                pressure = scale*load.pressure
+                self.addPressureToElements(sp, elemIDs, pressure, nastranOrdering=True)
+
+            # Alternate more general pressure load type
+            elif load.type == 'PLOAD4':
+                # Dictionary mapping nastran element face indices to TACS equivilent numbering
+                nastranToTACSFaceIDDict = {'CTETRA': {1: 1, 2: 3, 3: 2, 4: 0},
+                                           'CHEXA': {1: 4, 2: 2, 3: 0, 4: 3, 5: 0, 6: 5}}
+
+                # We don't support pressure variation across elements, for now just average it
+                pressure = scale*np.mean(load.pressures)
+                for elemInfo in load.eids_ref:
+                    elemID = elemInfo.eid
+
+                    # Get the correct face index number based on element type
+                    if 'CTETRA' in elemInfo.type:
+                        for faceIndex in elemInfo.faces:
+                            if load.g1 in elemInfo.faces[faceIndex] and \
+                                    load.g34 not in elemInfo.faces[faceIndex]:
+                                faceIndex = nastranToTACSFaceIDDict['CTETRA'][faceIndex]
+                                # Pressure orientation is flipped for solid elements per Nastran convention
+                                pressure *= -1.0
+                                break
+
+                    elif 'CHEXA' in elemInfo.type:
+                        for faceIndex in elemInfo.faces:
+                            if load.g1 in elemInfo.faces[faceIndex] and \
+                                    load.g34 in elemInfo.faces[faceIndex]:
+                                faceIndex = nastranToTACSFaceIDDict['CHEXA'][faceIndex]
+                                # Pressure orientation is flipped for solid elements per Nastran convention
+                                pressure *= -1.0
+                                break
+
+                    elif 'CQUAD' in elemInfo.type or 'CTRIA' in elemInfo.type:
+                        # Face index doesn't matter for shells, just use 0
+                        faceIndex = 0
+
+                    else:
+                        raise Error("Unsupported element type "
+                                    "'%s' specified for PLOAD4 load set number %d." % (elemInfo.type, load.sid))
+
+                    # Figure out whether or not this is a traction based on if a vector is defined
+                    if np.linalg.norm(load.nvector) == 0.0:
+                        self.addPressureToElements(sp, elemID, pressure, faceIndex,
+                                                   nastranOrdering=True)
+                    else:
+                        trac = pressure * load.nvector
+                        self.addTractionToElements(sp, elemID, trac, faceIndex,
+                                                   nastranOrdering=True)
+
+            else:
+                TACSWarning("Unsupported load type "
+                            " '%s' specified for load set number %d, skipping load" % (load.type, load.sid),
+                            self.comm)
+
+        # Add all point forces/moments found for this problem at once
+        if len(loadDict) > 0:
+            self.addLoadToNodes(sp, list(loadDict.keys()), list(loadDict.values()), nastranOrdering=True)
 
     ####### Static solver methods ########
 
