@@ -26,21 +26,34 @@ thickness = 0.02
 num_components = struct_mesh.getNumComponents()
 for i in range(num_components):
     descriptor = struct_mesh.getElementDescript(i)
-    stiff = constitutive.isoFSDT(rho, E, nu, kcorr, ys, thickness, i,
-                                 min_thickness, max_thickness)
+    # Setup (isotropic) property and constitutive objects
+    prop = constitutive.MaterialProperties(rho=rho, E=E, nu=nu, ys=ys)
+    # Set one thickness dv for every component
+    stiff = constitutive.IsoShellConstitutive(prop, t=thickness, tMin=min_thickness, tMax=max_thickness, tNum=i)
+
     element = None
+    transform = None
     if descriptor in ["CQUAD", "CQUADR", "CQUAD4"]:
-        element = elements.MITCShell(2, stiff, component_num=i)
+        element = elements.Quad4Shell(transform, stiff)
     struct_mesh.setElement(i, element)
 
 # Create tacs assembler object from mesh loader
 assembler = struct_mesh.createTACS(6)
 
 # Solve the eigenvalue problem
-M = assembler.createFEMat()
-K = assembler.createFEMat()
+M = assembler.createSchurMat()
+K = assembler.createSchurMat()
 
 pc = TACS.Pc(K)
+
+# Assemble and factor the stiffness/Jacobian matrix. Factor the
+# Jacobian and solve the linear system for the displacements
+alpha = 1.0
+beta = 0.0
+gamma = 0.0
+assembler.assembleJacobian(alpha, beta, gamma, None, K);
+pc.factor() # LU factorization of stiffness matrix
+
 subspace = 100
 restarts = 2
 gmres = TACS.KSM(K, pc, subspace, restarts)
@@ -55,7 +68,7 @@ freq = TACS.FrequencyAnalysis(assembler, sigma, M, K, gmres,
                               num_eigs=num_eigs, eig_tol=1e-12)
 
 # Solve the frequency analysis problem
-freq.solve()
+freq.solve(print_level=2)
 
 # Output for visualization 
 flag = (TACS.ToFH5.NODES |
