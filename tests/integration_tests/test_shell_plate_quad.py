@@ -41,7 +41,7 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
 
         fea_solver = pytacs.pyTACS(bdf_file, comm, options=struct_options)
 
-        def elem_call_back(dv_num, comp_id, comp_descript, elem_descripts, special_dvs, **kwargs):
+        def elem_call_back(dv_num, comp_id, comp_descript, elem_descripts, global_dvs, **kwargs):
             # Material properties
             rho = 2500.0  # density kg/m^3
             E = 70e9  # Young's modulus (Pa)

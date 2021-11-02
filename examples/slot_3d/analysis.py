@@ -23,13 +23,11 @@ from tacs import functions, pyTACS
 comm = MPI.COMM_WORLD
 
 # Instantiate FEASolver
-structOptions = {
-    'varsPerNode':3,
-}
+structOptions = {}
 
 bdfFile = os.path.join(os.path.dirname(__file__), 'slot.bdf')
 # Load BDF file
-FEASolver = pyTACS(bdfFile, options=structOptions)
+FEASolver = pyTACS(bdfFile, comm, options=structOptions)
 # Set up TACS Assembler
 # Don't need a elemCallBack since property info exists in bdf
 FEASolver.createTACSAssembler()
