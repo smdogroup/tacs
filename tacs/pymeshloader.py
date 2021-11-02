@@ -103,7 +103,7 @@ class pyMeshLoader(object):
         self.elemConnectivity = [None] * self.bdfInfo.nelements
         self.elemConnectivityPointer = [None] * (self.bdfInfo.nelements + 1)
         self.elemConnectivityPointer[0] = 0
-        elementTypeCounter = 0
+        elementObjectCounter = 0
         # List specifying which tacs element object each element in bdf should point to
         self.elemObjectNumByElem = [None] * (self.bdfInfo.nelements)
 
@@ -117,8 +117,8 @@ class pyMeshLoader(object):
             # This element type has not been added to the list for the component group yet, so we append it
             if elementType not in self.elemDescripts[componentID]:
                 self.elemDescripts[componentID].append(elementType)
-                self.elemObjectNumByComp[componentID].append(elementTypeCounter)
-                elementTypeCounter += 1
+                self.elemObjectNumByComp[componentID].append(elementObjectCounter)
+                elementObjectCounter += 1
 
             # Find the index number corresponding to the element object number for this component
             componentTypeIndex = self.elemDescripts[componentID].index(elementType)
@@ -146,7 +146,7 @@ class pyMeshLoader(object):
                                                                   tacsElementID] + len(element.nodes)
 
         # Allocate list for user-specified tacs element objects
-        self.elemObjects = [None] * elementTypeCounter
+        self.elemObjects = [None] * elementObjectCounter
 
     def _updateNastranToTACSDicts(self):
         '''
