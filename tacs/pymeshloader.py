@@ -400,7 +400,10 @@ class pyMeshLoader(object):
         pointer = self.elemObjectNumByComp[componentID][objectIndex]
         self.elemObjects[pointer] = elemObject
 
-    def getElementObjectForElemID(self, elemID):
+    def getElementObjectForElemID(self, elemID, nastranOrdering=False):
+        # Convert to tacs numbering, if necessary
+        if nastranOrdering:
+            elemID = self.idMap(elemID, self.nastranToTACSElemIDDict)
         # Get the pointer for the tacs element object for this element
         elemObjNum = self.elemObjectNumByElem[elemID]
         elemObj = self.elemObjects[elemObjNum]
@@ -618,17 +621,19 @@ class pyMeshLoader(object):
         Translate fromIDs numbering from nastran numbering to tacs numbering.
         If node ID doesn't exist in nastranIDList, return -1 for entry
         """
-        if isinstance(fromIDs, int):
-            return tacsIDDict[fromIDs]
-
-        toIDs = [None] * len(fromIDs)
-        for i, id in enumerate(fromIDs):
-            if id in tacsIDDict:
-                toIDs[i] = tacsIDDict[id]
+        # Input is a list return a list
+        if hasattr(fromIDs, '__iter__'):
+            toIDs = [None] * len(fromIDs)
+            # Iterate through list and call function recursively one element at a time
+            for i, id in enumerate(fromIDs):
+                toIDs[i] = self.idMap(id, tacsIDDict)
+            return toIDs
+        # Input is a int, return an int
+        else:
+            if fromIDs in tacsIDDict:
+                return tacsIDDict[fromIDs]
             else:
-                toIDs[i] = -1
-
-        return toIDs
+                return -1
 
     def _flatten(self, l, ltypes=(list, tuple)):
         ltype = type(l)
