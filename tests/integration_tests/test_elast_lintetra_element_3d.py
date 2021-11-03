@@ -122,7 +122,7 @@ class ProblemTest(StaticTestCase.StaticTest):
         """
         Create a list of functions to be tested and their reference values for the problem
         """
-        func_list = [functions.KSFailure(assembler, ksweight),
+        func_list = [functions.KSFailure(assembler, ksWeight=ksweight),
                      functions.StructuralMass(assembler),
                      functions.Compliance(assembler)]
         return func_list, FUNC_REFS
