@@ -1421,7 +1421,8 @@ class pyTACS(object):
         Should only be called by createTACSProbsFromBDF and not directly by user.
         """
         # Dictionary mapping nastran element face indices to TACS equivilent numbering
-        nastranToTACSFaceIDDict = {'CTETRA': {1: 1, 2: 3, 3: 2, 4: 0},
+        nastranToTACSFaceIDDict = {'CTETRA4': {1: 1, 2: 3, 3: 2, 4: 0},
+                                   'CTETRA': {2: 1, 4: 3, 3: 2, 1: 0},
                                    'CHEXA': {1: 4, 2: 2, 3: 0, 4: 3, 5: 0, 6: 5}}
 
         # We don't support pressure variation across elements, for now just average it
@@ -1434,9 +1435,17 @@ class pyTACS(object):
                 for faceIndex in elemInfo.faces:
                     if loadInfo.g1 in elemInfo.faces[faceIndex] and \
                             loadInfo.g34 not in elemInfo.faces[faceIndex]:
-                        faceIndex = nastranToTACSFaceIDDict['CTETRA'][faceIndex]
-                        # Pressure orientation is flipped for solid elements per Nastran convention
-                        pressure *= -1.0
+                        # For some reason CTETRA4 is the only element that doesn't
+                        # use ANSYS face numbering convention by default
+                        if len(elemInfo.nodes) == 4:
+                            faceIndex = nastranToTACSFaceIDDict['CTETRA4'][faceIndex]
+                        else:
+                            faceIndex = nastranToTACSFaceIDDict['CTETRA'][faceIndex]
+                        # Positive pressure is inward for solid elements, flip pressure if necessary
+                        # We don't flip it for face 0, because the normal for that face points inward by convention
+                        # while the rest point outward
+                        if faceIndex != 0:
+                            pressure *= -1.0
                         break
 
             elif 'CHEXA' in elemInfo.type:
