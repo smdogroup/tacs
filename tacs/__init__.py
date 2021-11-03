@@ -44,3 +44,10 @@ def get_libraries():
         lib_dirs.append(os.path.join(root_path, path))
 
     return lib_dirs, libs
+
+
+# Import pytacs modules
+from . import pytacs
+from .pytacs import pyTACS
+from . import problems
+__all__.extend(['pytacs', 'pyTACS', 'problems'])

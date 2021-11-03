@@ -43,7 +43,7 @@ structOptions = {
 }
 
 bdfFile = os.path.join(os.path.dirname(__file__), 'circ-plate-dirichlet-bcs.bdf')
-FEASolver = pyTACS(bdfFile, options=structOptions)
+FEASolver = pyTACS(bdfFile, comm, options=structOptions)
 
 def elemCallBack(dvNum, compID, compDescript, elemDescripts, globalDVs, **kwargs):
     # Material properties
