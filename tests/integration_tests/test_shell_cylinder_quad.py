@@ -16,7 +16,9 @@ bdf_file = os.path.join(base_dir, "./input_files/cylinder.bdf")
 FUNC_REFS = {'Axial_compliance': 0.004606292990644062, 'Axial_mass': 208.58647120309135,
              'Shear-Bending_compliance': 0.32883253964394005, 'Shear-Bending_mass': 208.58647120309135,
              'Moment-Bending_compliance': 0.03744304905762492, 'Moment-Bending_mass': 208.58647120309135,
-             'Torsion_compliance': 0.05100479047600847, 'Torsion_mass': 208.58647120309135}
+             'Torsion_compliance': 0.05100479047600847, 'Torsion_mass': 208.58647120309135,
+             'Combined_compliance': 0.4218866721681868, 'Combined_mass': 208.58647120309135}
+
 
 class ProblemTest(PyTACSTestCase.PyTACSTest):
     N_PROCS = 2  # this is how many MPI processes to use for this TestCase.
