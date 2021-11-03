@@ -636,6 +636,9 @@ class pyMeshLoader(object):
                 return -1
 
     def _flatten(self, l, ltypes=(list, tuple)):
+        """
+        Flattens nested list into single 1d list
+        """
         ltype = type(l)
         l = list(l)
         i = 0
