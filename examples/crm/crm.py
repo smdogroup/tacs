@@ -44,7 +44,7 @@ tacs = struct_mesh.createTACS(6)
 
 # Create the KS Function
 ksWeight = 100.0
-funcs = [functions.KSFailure(tacs, ksWeight)]
+funcs = [functions.KSFailure(tacs, ksWeight=ksWeight)]
 # funcs = [functions.StructuralMass(tacs)]
 # funcs = [functions.Compliance(tacs)]
 
@@ -100,6 +100,9 @@ fdv_sens = tacs.createDesignVec()
 fdv_sens_array = fdv_sens.getArray()
 tacs.addDVSens([funcs[0]], [fdv_sens])
 tacs.addAdjointResProducts([adjoint], [fdv_sens], -1)
+# Finalize sensitivity arrays across all procs
+fdv_sens.beginSetValues()
+fdv_sens.endSetValues()
 
 # Create a random direction along which to perturb the nodes
 pert = tacs.createNodeVec()
@@ -113,6 +116,9 @@ pert_array[2::3] = X_array[2::3]
 fXptSens = tacs.createNodeVec()
 tacs.addXptSens([funcs[0]], [fXptSens])
 tacs.addAdjointResXptSensProducts([adjoint], [fXptSens], -1)
+# Finalize sensitivity arrays across all procs
+fXptSens.beginSetValues()
+fXptSens.endSetValues()
 
 # Set the complex step
 xpert = tacs.createDesignVec()

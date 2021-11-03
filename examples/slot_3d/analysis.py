@@ -35,7 +35,7 @@ FEASolver.createTACSAssembler()
 # Add Functions
 FEASolver.addFunction('mass', functions.StructuralMass)
 FEASolver.addFunction('ks_vmfailure', functions.KSFailure, safetyFactor=1.5,
-                      KSWeight=100.0, funcType=1)
+                      ksWeight=100.0)
 
 # ==============================================================================
 # Setup static problem

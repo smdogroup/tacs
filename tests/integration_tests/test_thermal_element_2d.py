@@ -104,7 +104,7 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
         # Add Functions
         fea_solver.addFunction('mass', functions.StructuralMass)
         fea_solver.addFunction('ks_temp', functions.KSTemperature,
-                               KSWeight=100.0)
+                               ksWeight=100.0)
         fea_solver.addFunction('avg_temp', functions.AverageTemperature, volume=area)
         func_list = ['mass', 'ks_temp', 'avg_temp']
         return func_list, FUNC_REFS

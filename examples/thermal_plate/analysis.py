@@ -82,7 +82,7 @@ FEASolver.createTACSAssembler(elemCallBack)
 # Add Functions
 FEASolver.addFunction('mass', functions.StructuralMass)
 FEASolver.addFunction('ks_temp', functions.KSTemperature,
-                      KSWeight=100.0)
+                      ksWeight=100.0)
 FEASolver.addFunction('avg_temp', functions.AverageTemperature, volume=area)
 
 # Structural problem

@@ -58,7 +58,7 @@ class TACSKSFailure : public TACSFunction {
                        PNORM_DISCRETE, PNORM_CONTINUOUS };
 
   TACSKSFailure( TACSAssembler * _assembler, double ksWeight,
-                 double alpha=1.0 );
+                 double alpha=1.0, double safetyFactor=1.0 );
   ~TACSKSFailure();
 
   /**
@@ -143,6 +143,9 @@ class TACSKSFailure : public TACSFunction {
 
   // The integral scaling value
   double alpha;
+
+  // The safety factor
+  double safetyFactor;
 
   // The name of the function
   static const char *funcName;

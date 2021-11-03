@@ -455,10 +455,8 @@ class pyTACS(object):
 
         return compIDs
 
-    # TODO: Most options still not supported, most importantly safetyFactor
     def addFunction(self, funcName, funcHandle, include=None, exclude=None,
-                    includeBound=None, compIDs=None, KSWeight=80.0, safetyFactor=1.0,
-                    volume=1.0, axisIndex=0, axisOffset=0, funcType=0):
+                    includeBound=None, compIDs=None, **kwargs):
         """
         Generic function to add a function for TACS. It is intended to
         be reasonably generic since the user supplies the actual
@@ -488,29 +486,6 @@ class pyTACS(object):
         compIDs: list
             List of compIDs to select. Alternative to selectCompIDs
             arguments.
-
-        KSWeight : float
-            Weight for KS function. Only used if KS function is being
-            created
-
-        safetyFactor : float
-            Internal safety factor to use for failure and buckling functions.
-
-        volume: float
-            Volume value used in denominator to compute AverageTemperature.
-            Use an area for 2D/shell elements.
-
-        axisIndex : int
-            Index of axis for MassMoment and AggregateDisplacement function.
-            0 for x, 1 for y, and 2 for z.
-        axisOffset : flaot
-            Offset for axis in MassMoment calc.
-
-        funcType : int
-            A constant that determines the type of function. This
-            argument is only used for specific functions. E.g., KSFailure
-            may use the discrete (0) or continous (1) form.
-            See the tacs documentation for the specific options.
         """
 
         # First we will get the required domain, but only if both
@@ -526,19 +501,14 @@ class pyTACS(object):
         compIDs = self._flatten(compIDs)
         elemIDs = self.meshLoader.getLocalElementIDsForComps(compIDs)
 
-        # We have to call certain functions differently:
-        f = tacs.functions
-        if funcHandle in [f.KSFailure, f.KSTemperature]:
-            self.functionList[funcName] = funcHandle(self.assembler, KSWeight)
-        elif funcHandle in [f.AverageTemperature]:
-            self.functionList[funcName] = funcHandle(self.assembler, volume)
-        else:
-            try:
-                self.functionList[funcName] = funcHandle(self.assembler)
-            except:
-                TACSWarning("Function type %s is not currently supported "
-                            "in pyTACS" % funcHandle, self.comm)
-                return
+        # We try to setup the function, if it fails it may not be implimented:
+        try:
+            # pass assembler an function-specific kwargs straight to tacs function
+            self.functionList[funcName] = funcHandle(self.assembler, **kwargs)
+        except:
+            TACSWarning("Function type %s is not currently supported "
+                        "in pyTACS. Skipping function." % funcHandle, self.comm)
+            return
 
         # Finally set the domain information
         self.functionList[funcName].setDomain(elemIDs)
