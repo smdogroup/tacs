@@ -1195,7 +1195,7 @@ class pyTACS(object):
                 # Mark element as found
                 elemFound[i] = 1
                 # Get the pointer for the tacs element object for this element
-                elemObj = self.meshLoader.getElementObjectForElemID(elemIDs[i], nastranOrdering=True)
+                elemObj = self.meshLoader.getElementObjectForElemID(elemIDs[i], nastranOrdering=nastranOrdering)
                 # Create appropriate traction object for this element type
                 tracObj = elemObj.createElementTraction(faceIndex, tractions[i])
                 # Traction not implemented for element
@@ -1309,7 +1309,7 @@ class pyTACS(object):
             if elemID >= 0:
                 elemFound[i] = 1
                 # Get the pointer for the tacs element object for this element
-                elemObj = self.meshLoader.getElementObjectForElemID(elemIDs[i], nastranOrdering=True)
+                elemObj = self.meshLoader.getElementObjectForElemID(elemIDs[i], nastranOrdering=nastranOrdering)
                 # Create appropriate pressure object for this element type
                 pressObj = elemObj.createElementPressure(faceIndex, pressures[i])
                 # Pressure not implemented for element
