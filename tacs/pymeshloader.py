@@ -421,6 +421,7 @@ class pyMeshLoader(object):
             else:
                 raise NotImplementedError("Rigid element of type '{}' is not supported".format(rbe.type))
 
+        # Setup element connectivity and boundary condition info on root processor
         if self.comm.rank == 0:
             # Set connectivity for all elements
             ptr = np.array(self.elemConnectivityPointer, dtype=np.intc)

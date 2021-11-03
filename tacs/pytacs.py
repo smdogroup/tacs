@@ -206,7 +206,7 @@ class pyTACS(object):
         # Flag for mat/vector creation
         self._variablesCreated = False
 
-        # TACS assembler and creator objects
+        # TACS assembler object
         self.assembler = None
 
         initFinishTime = time.time()
@@ -1440,20 +1440,16 @@ class pyTACS(object):
         Loads may also optionally be scaled.
         """
         vpn = self.varsPerNode
-        # Keep track of added point forces and moments using a dict
-        loadDict = {}
         for load in loadSet:
             # Record any point force or moment cards
             if load.type == 'FORCE' or load.type == 'MOMENT':
                 nodeID = load.node_ref.nid
-
-                if nodeID not in loadDict:
-                    loadDict[nodeID] = numpy.zeros(vpn)
-
+                force = numpy.zeros(vpn)
                 if load.type == 'FORCE' and vpn >= 3:
-                    loadDict[nodeID][:3] += scale*load.scaled_vector
+                    force[:3] += scale*load.scaled_vector
                 elif load.type == 'MOMENT' and vpn >= 6:
-                    loadDict[nodeID][3:6] += scale*load.scaled_vector
+                    force[3:6] += scale*load.scaled_vector
+                self.addLoadToNodes(sp, nodeID, force, nastranOrdering=True)
 
             # Add any pressure loads
             # Pressure load card specific to shell elements
@@ -1514,9 +1510,6 @@ class pyTACS(object):
                             " '%s' specified for load set number %d, skipping load" % (load.type, load.sid),
                             self.comm)
 
-        # Add all point forces/moments found for this problem at once
-        if len(loadDict) > 0:
-            self.addLoadToNodes(sp, list(loadDict.keys()), list(loadDict.values()), nastranOrdering=True)
 
     ####### Static solver methods ########
 
