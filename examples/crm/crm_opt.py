@@ -53,7 +53,7 @@ class uCRM_VonMisesMassMin(ParOpt.pyParOptProblem):
         # Create the KS Function
         ksWeight = 50.0
         self.funcs = [functions.StructuralMass(self.assembler),
-            functions.KSFailure(self.assembler, ksWeight)]
+            functions.KSFailure(self.assembler, ksWeight=ksWeight)]
 
         # Create the forces
         self.forces = self.assembler.createVec()

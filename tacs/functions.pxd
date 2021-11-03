@@ -65,7 +65,7 @@ cdef extern from "TACSKSFailure.h":
         PNORM_FAILURE_CONTINUOUS"TACSKSFailure::PNORM_CONTINUOUS"
 
     cdef cppclass TACSKSFailure(TACSFunction):
-        TACSKSFailure(TACSAssembler*, double, double)
+        TACSKSFailure(TACSAssembler*, double, double, double)
         void setKSFailureType(KSFailureType ftype)
         double getParameter()
         void setParameter(double)

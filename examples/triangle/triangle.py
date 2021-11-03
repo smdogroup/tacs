@@ -117,7 +117,7 @@ funcs = []
 # Create the KS function
 ksweight = 100.0
 for i in range(1):
-    funcs.append(functions.KSFailure(assembler, ksweight))
+    funcs.append(functions.KSFailure(assembler, ksWeight=ksweight))
 
 func_vals = assembler.evalFunctions(funcs)
 

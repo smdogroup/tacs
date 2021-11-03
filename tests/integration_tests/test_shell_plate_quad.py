@@ -86,7 +86,7 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
         # Add Functions
         fea_solver.addFunction('mass', functions.StructuralMass)
         fea_solver.addFunction('ks_vmfailure', functions.KSFailure,
-                               KSWeight=ksweight, funcType=1)
+                               ksWeight=ksweight)
         fea_solver.addFunction('compliance', functions.Compliance)
         func_list = ['mass', 'ks_vmfailure', 'compliance']
         return func_list, FUNC_REFS
