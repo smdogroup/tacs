@@ -45,7 +45,7 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
         # Instantiate FEA Solver
         struct_options = {}
 
-        def elemCallBack(dvNum, compID, compDescript, elemDescripts, globalDVs, **kwargs):
+        def elem_call_back(dv_num, comp_id, comp_descript, elem_descripts, global_dvs, **kwargs):
             # Material properties
             rho = 2780.0  # density kg/m^3
             E = 70e9  # Young's modulus (Pa)
@@ -58,29 +58,29 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
             # Setup (isotropic) property and constitutive objects
             prop = constitutive.MaterialProperties(rho=rho, E=E, nu=nu, ys=ys)
             # Set one thickness dv for every component
-            con = constitutive.IsoShellConstitutive(prop, t=t, tNum=dvNum)
+            con = constitutive.IsoShellConstitutive(prop, t=t, tNum=dv_num)
 
             # For each element type in this component,
             # pass back the appropriate tacs element object
-            elemList = []
+            elem_list = []
             transform = None
-            for elemDescript in elemDescripts:
-                if elemDescript in ['CQUAD4', 'CQUADR']:
+            for elem_descript in elem_descripts:
+                if elem_descript in ['CQUAD4', 'CQUADR']:
                     elem = elements.Quad4Shell(transform, con)
-                elif elemDescript in ['CTRIA3', 'CTRIAR']:
+                elif elem_descript in ['CTRIA3', 'CTRIAR']:
                     elem = elements.Tri3Shell(transform, con)
                 else:
-                    print("Uh oh, '%s' not recognized" % (elemDescript))
-                elemList.append(elem)
+                    print("Uh oh, '%s' not recognized" % (elem_descript))
+                elem_list.append(elem)
 
             # Add scale for thickness dv
             scale = [100.0]
-            return elemList, scale
+            return elem_list, scale
 
         fea_solver = pytacs.pyTACS(bdf_file, comm, options=struct_options)
 
         # Set up constitutive objects and elements
-        fea_solver.createTACSAssembler(elemCallBack)
+        fea_solver.createTACSAssembler(elem_call_back)
 
         return fea_solver
 
