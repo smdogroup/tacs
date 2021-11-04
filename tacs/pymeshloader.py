@@ -16,9 +16,13 @@ from pyNastran.bdf.bdf import read_bdf
 
 class pyMeshLoader(object):
 
-    def __init__(self, comm, dtype):
+    def __init__(self, comm, dtype, printDebug=False):
+        # MPI communicator
         self.comm = comm
+        # TACS scalara data type (float or complex)
         self.dtype = dtype
+        # Debug printing flag
+        self.printDebug = printDebug
         self.bdfInfo = None
 
     def scanBdfFile(self, fileName):
@@ -27,9 +31,9 @@ class pyMeshLoader(object):
         We also set up arrays that will be require later to build tacs.
         """
 
-        # Only print debug info on root
+        # Only print debug info on root, if requested
         if self.comm.rank == 0:
-            debugPrint = True
+            debugPrint = self.printDebug
         else:
             debugPrint = False
 
@@ -39,27 +43,29 @@ class pyMeshLoader(object):
         self.bdfInfo = read_bdf(fileName, validate=False, xref=False, debug=debugPrint)
         # Set flag letting us know model is not xrefed yet
         self.bdfInfo.is_xrefed = False
-        self.bdfInfo.no_properties = False
 
-        # If no property cards were found in bdf, we have to add dummy cards
+        # If any property cards are msiing in the bdf, we have to add dummy cards
         # so pynastran doesn't through errors when cross-referencing
-        if self.bdfInfo.nproperties == 0:
-            # Flag to warn the user that the property cards are placeholders
-            # and should not be read in using pytacs elemCallBackFromBDF method
-            self.bdfInfo.no_properties = True
-            # If no material properties were found,
-            # add dummy properties and materials
-            matID = 1
-            E = 70.0
-            G = 35.0
-            nu = 0.3
-            self.bdfInfo.add_mat1(matID, E, G, nu)
-
-            # Loop through all elements and add dummy property, as necessary
-            for element_id in self.bdfInfo.elements:
-                element = self.bdfInfo.elements[element_id]
-                if element.pid not in self.bdfInfo.property_ids:
-                    self.bdfInfo.add_pbar(element.pid, matID)
+        # Loop through all elements and add dummy property, as necessary
+        self.bdfInfo.missing_properties = False
+        for element_id in self.bdfInfo.elements:
+            element = self.bdfInfo.elements[element_id]
+            if element.pid not in self.bdfInfo.property_ids:
+                # If no material properties were found,
+                # add dummy properties and materials
+                matID = 1
+                E = 70.0
+                G = 35.0
+                nu = 0.3
+                self.bdfInfo.add_mat1(matID, E, G, nu)
+                self.bdfInfo.add_pbar(element.pid, matID)
+                # Warn the user that the property card is missing
+                # and should not be read in using pytacs elemCallBackFromBDF method
+                self.bdfInfo.missing_properties = True
+                if self.printDebug:
+                    TACSWarning('Element ID %d references undefined property ID %d in bdf file. '
+                                'A user-defined elemCalBack function will need to be provided.'% (element_id, element.pid),
+                                self.comm)
 
         # Create dictionaries for mapping between tacs and nastran id numbering
         self._updateNastranToTACSDicts()
@@ -661,7 +667,7 @@ class Error(Exception):
 
     def __init__(self, message):
         msg = '\n+' + '-' * 78 + '+' + '\n' + '| pyMeshLoader Error: '
-        i = 15
+        i = 21
         for word in message.split():
             if len(word) + i + 1 > 78:  # Finish line and start new one
                 msg += ' ' * (78 - i) + '|\n| ' + word + ' '
@@ -672,3 +678,22 @@ class Error(Exception):
         msg += ' ' * (78 - i) + '|\n' + '+' + '-' * 78 + '+' + '\n'
         print(msg)
         Exception.__init__(self)
+
+class TACSWarning(object):
+    """
+    Format a warning message
+    """
+
+    def __init__(self, message, comm):
+        if comm.rank == 0:
+            msg = '\n+' + '-' * 78 + '+' + '\n' + '| pyMeshLoader Warning: '
+            i = 23
+            for word in message.split():
+                if len(word) + i + 1 > 78:  # Finish line and start new one
+                    msg += ' ' * (78 - i) + '|\n| ' + word + ' '
+                    i = 1 + len(word) + 1
+                else:
+                    msg += word + ' '
+                    i += len(word) + 1
+            msg += ' ' * (78 - i) + '|\n' + '+' + '-' * 78 + '+' + '\n'
+            print(msg)

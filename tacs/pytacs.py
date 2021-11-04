@@ -120,6 +120,7 @@ class pyTACS(object):
             'numberSolutions': [bool, True],
             'printTiming': [bool, False],
             'printIterations': [bool, True],
+            'printDebug': [bool, False],
 
         }
 
@@ -150,7 +151,8 @@ class pyTACS(object):
         importTime = time.time()
 
         # Create and load mesh loader object.
-        self.meshLoader = pyMeshLoader(self.comm, self.dtype)
+        debugFlag = self.getOption('printDebug')
+        self.meshLoader = pyMeshLoader(self.comm, self.dtype, debugFlag)
         self.meshLoader.scanBdfFile(fileName)
         self.bdfName = fileName
         # Save pynastran bdf object
@@ -659,15 +661,17 @@ class pyTACS(object):
         Automatically setup elemCallBack using information contained in BDF file.
         This function assumes all material properties are specified in the BDF.
         """
+
+        # Check if any properties are in the BDF
+        if self.bdfInfo.missing_properties:
+            raise Error("BDF file '%s' has missing properties cards. "
+                        "Set 'debugPrint' option to True for more information."
+                        "User must define own elemCallBack function." % (self.bdfName))
+
         # Make sure cross-referencing is turned on in pynastran
         if self.bdfInfo.is_xrefed is False:
             self.bdfInfo.cross_reference()
             self.bdfInfo.is_xrefed = True
-
-        # Check if any properties are in the BDF
-        if self.bdfInfo.no_properties:
-            raise Error("BDF file '%s' has no properties included in it. "
-                        "User must define own elemCallBack function." % (self.fileName))
 
         # Create a dictionary to sort all elements by property number
         elemDict = {}
@@ -1345,6 +1349,11 @@ class pyTACS(object):
         NOTE: Currently only supports LOAD, FORCE, MOMENT, PLOAD2, and PLOAD4 cards.
         NOTE: Currently only supports staticProblem (SOL 101)
         """
+
+        if self.assembler is None:
+            raise Error("TACS assembler has not been created. "
+                        "Assembler must created first by running 'createTACSAssembler' method.")
+
         # Make sure cross-referencing is turned on in pynastran
         if self.bdfInfo.is_xrefed is False:
             self.bdfInfo.cross_reference()
