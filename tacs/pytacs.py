@@ -37,6 +37,7 @@ import numpy as np
 from mpi4py import MPI
 import warnings
 import tacs.TACS, tacs.constitutive, tacs.elements, tacs.functions, tacs.problems.static
+from .utilities import BaseUI
 from tacs.pymeshloader import pyMeshLoader
 
 DEG2RAD = np.pi / 180.0
@@ -52,7 +53,7 @@ except ImportError:
               "For python 2.6 and earlier, use:"
               "\n pip install ordereddict")
 
-class pyTACS(object):
+class pyTACS(BaseUI):
 
     def __init__(self, fileName, comm=None, dvNum=0,
                  scaleList=None, **kwargs):
@@ -78,6 +79,8 @@ class pyTACS(object):
             as the number of design variables already added. i.e.
             len(scaleList) = dvNum
         """
+
+        self.objectName = 'pyTACS'
 
         startTime = time.time()
 
@@ -409,9 +412,9 @@ class pyTACS(object):
             # First check that nGroup <= len(compIDs), print warning
             # and clip if not
             if nGroup > len(compIDs):
-                TACSWarning('nGroup=%d is larger than the number of\
+                self.TACSWarning('nGroup=%d is larger than the number of\
                 selected components=%d. nGroup will be clipped to %d' %
-                            (nGroup, len(compIDs), nGroup), self.comm)
+                            (nGroup, len(compIDs), nGroup))
                 nGroup = len(compIDs)
 
             # Pluck out the component descriptions again and we will
@@ -508,8 +511,8 @@ class pyTACS(object):
             # pass assembler an function-specific kwargs straight to tacs function
             self.functionList[funcName] = funcHandle(self.assembler, **kwargs)
         except:
-            TACSWarning("Function type %s is not currently supported "
-                        "in pyTACS. Skipping function." % funcHandle, self.comm)
+            self.TACSWarning("Function type %s is not currently supported "
+                        "in pyTACS. Skipping function." % funcHandle)
             return
 
         # Finally set the domain information
@@ -664,7 +667,7 @@ class pyTACS(object):
 
         # Check if any properties are in the BDF
         if self.bdfInfo.missing_properties:
-            raise Error("BDF file '%s' has missing properties cards. "
+            raise self.TACSError("BDF file '%s' has missing properties cards. "
                         "Set 'debugPrint' option to True for more information."
                         "User must define own elemCallBack function." % (self.bdfName))
 
@@ -723,7 +726,7 @@ class pyTACS(object):
                 mat = tacs.constitutive.MaterialProperties(rho=rho, E1=E1, E2=E2, nu12=nu12, G12=G12, G13=G13, G23=G23,
                                                            Xt=Xt, Xc=Xc, Yt=Yt, Yc=Yc, S12=S12)
             else:
-                raise Error("Unsupported material type '%s' for material number %d. " % (matInfo.type, matInfo.mid))
+                raise self.TACSError("Unsupported material type '%s' for material number %d. " % (matInfo.type, matInfo.mid))
 
             return mat
 
@@ -797,7 +800,7 @@ class pyTACS(object):
                     # Need to add functionality to consider only membrane in TACS for type = MEM
 
                 else:
-                    raise Error("Unrecognized LAM type '%s' for PCOMP number %d." % (propInfo.lam, propertyID))
+                    raise self.TACSError("Unrecognized LAM type '%s' for PCOMP number %d." % (propInfo.lam, propertyID))
 
             elif propInfo.type == 'PSOLID':  # Nastran solid property
                 if 'T' in elemDict[propertyID]['dvs']:
@@ -817,7 +820,7 @@ class pyTACS(object):
                                                           tlb=minThickness, tub=maxThickness, tNum=tNum)
 
             else:
-                raise Error("Unsupported property type '%s' for property number %d. " % (propInfo.type, propertyID))
+                raise self.TACSError("Unsupported property type '%s' for property number %d. " % (propInfo.type, propertyID))
 
             # Set up transform object which may be required for certain elements
             transform = None
@@ -828,7 +831,7 @@ class pyTACS(object):
                         refAxis = mcid.i
                         transform = tacs.elements.ShellRefAxisTransform(refAxis)
                     else:  # Don't support spherical/cylindrical yet
-                        raise Error("Unsupported material coordinate system type "
+                        raise self.TACSError("Unsupported material coordinate system type "
                                     "'%s' for property number %d." % (mcid.type, propertyID))
 
             # Finally set up the element objects belonging to this component
@@ -848,7 +851,7 @@ class pyTACS(object):
                     elif nnodes == 10:
                         basis = tacs.elements.QuadraticTetrahedralBasis()
                     else:
-                        raise Error("TACS does not currently support CTETRA elements with %d nodes." % nnodes)
+                        raise self.TACSError("TACS does not currently support CTETRA elements with %d nodes." % nnodes)
                     model = tacs.elements.LinearElasticity3D(con)
                     elem = tacs.elements.Element3D(model, basis)
                 elif descript in ['CHEXA8', 'CHEXA']:
@@ -856,7 +859,7 @@ class pyTACS(object):
                     model = tacs.elements.LinearElasticity3D(con)
                     elem = tacs.elements.Element3D(model, basis)
                 else:
-                    raise Error("Unsupported element type "
+                    raise self.TACSError("Unsupported element type "
                                 "'%s' specified for property number %d." % (descript, propertyID))
                 elemList.append(elem)
 
@@ -913,7 +916,7 @@ class pyTACS(object):
                 F = np.repeat(F, [len(compIDs)], axis=0)
             # If the dimensions still don't match, raise an error
             elif F.shape[0] != len(compIDs):
-                raise Error("Number of forces must match number of compIDs,"
+                raise self.TACSError("Number of forces must match number of compIDs,"
                             " {} forces were specified for {} compIDs".format(F.shape[0], len(compIDs)))
 
             # Call addLoadToComponents again, once for each compID
@@ -980,7 +983,7 @@ class pyTACS(object):
         try:
             from scipy.spatial import cKDTree
         except:
-            raise Error("scipy.spatial "
+            raise self.TACSError("scipy.spatial "
                         "must be available to use addLoadToPoints")
 
         points = numpy.atleast_2d(points)
@@ -992,12 +995,12 @@ class pyTACS(object):
             F = np.repeat(F, [len(points)], axis=0)
         # If the dimensions still don't match, raise an error
         elif F.shape[0] != len(points):
-            raise Error("Number of forces must match number of points,"
+            raise self.TACSError("Number of forces must match number of points,"
                         " {} forces were specified for {} points".format(F.shape[0], len(points)))
 
         vpn = self.varsPerNode
         if len(F[0]) != vpn:
-            raise Error("Length of force vector must match varsPerNode specified "
+            raise self.TACSError("Length of force vector must match varsPerNode specified "
                         "for problem, which is {}, "
                         "but length of vector provided was {}".format(vpn, len(F[0])))
 
@@ -1072,12 +1075,12 @@ class pyTACS(object):
             F = np.repeat(F, [numNodes], axis=0)
         # If the dimensions still don't match, raise an error
         elif F.shape[0] != numNodes:
-            raise Error("Number of forces must match number of nodes,"
+            raise self.TACSError("Number of forces must match number of nodes,"
                         " {} forces were specified for {} node IDs".format(F.shape[0], numNodes))
 
         vpn = self.varsPerNode
         if len(F[0]) != vpn:
-            raise Error("Length of force vector must match varsPerNode specified "
+            raise self.TACSError("Length of force vector must match varsPerNode specified "
                         "for problem, which is {}, "
                         "but length of vector provided was {}".format(vpn, len(F[0])))
 
@@ -1109,8 +1112,8 @@ class pyTACS(object):
 
         for i in range(numNodes):
             if not nodeFound[i]:
-                TACSWarning("Can't add load to node ID {} ({} ordering), node not found in model. "
-                            "Double check BDF file.".format(nodeIDs[i], orderString), self.comm)
+                self.TACSWarning("Can't add load to node ID {} ({} ordering), node not found in model. "
+                            "Double check BDF file.".format(nodeIDs[i], orderString))
 
     def addTractionToComponents(self, structProblem, compIDs, tractions,
                                 faceIndex=0):
@@ -1180,7 +1183,7 @@ class pyTACS(object):
             tractions = np.repeat(tractions, [numElems], axis=0)
         # If the dimensions still don't match, raise an error
         elif tractions.shape[0] != numElems:
-            raise Error("Number of tractions must match number of elements,"
+            raise self.TACSError("Number of tractions must match number of elements,"
                         " {} tractions were specified for {} element IDs".format(tractions.shape[0], numElems))
 
         # First find the coresponding local element ID on each processor
@@ -1204,9 +1207,8 @@ class pyTACS(object):
                 tracObj = elemObj.createElementTraction(faceIndex, tractions[i])
                 # Traction not implemented for element
                 if tracObj is None:
-                    TACSWarning("TACS element of type {} does not hav a traction implimentation. "
-                                "Skipping element in addTractionToElement procedure.".format(elemObj.getObjectName()),
-                                self.comm)
+                    self.TACSWarning("TACS element of type {} does not hav a traction implimentation. "
+                                "Skipping element in addTractionToElement procedure.".format(elemObj.getObjectName()))
                 # Traction implemented
                 else:
                     # Add new traction to auxiliary element object
@@ -1223,8 +1225,8 @@ class pyTACS(object):
 
         for i in range(numElems):
             if not elemFound[i]:
-                TACSWarning("Can't add traction to element ID {} ({} ordering), element not found in model. "
-                            "Double check BDF file.".format(elemIDs[i], orderString), self.comm)
+                self.TACSWarning("Can't add traction to element ID {} ({} ordering), element not found in model. "
+                            "Double check BDF file.".format(elemIDs[i], orderString))
 
     def addPressureToComponents(self, structProblem, compIDs, pressures,
                                 faceIndex=0):
@@ -1295,7 +1297,7 @@ class pyTACS(object):
             pressures = np.repeat(pressures, [numElems], axis=0)
         # If the dimensions still don't match, raise an error
         elif pressures.shape[0] != numElems:
-            raise Error("Number of pressures must match number of elements,"
+            raise self.TACSError("Number of pressures must match number of elements,"
                         " {} pressures were specified for {} element IDs".format(pressures.shape[0], numElems))
 
         # First find the coresponding local element ID on each processor
@@ -1318,9 +1320,8 @@ class pyTACS(object):
                 pressObj = elemObj.createElementPressure(faceIndex, pressures[i])
                 # Pressure not implemented for element
                 if pressObj is None:
-                    TACSWarning("TACS element of type {} does not hav a pressure implimentation. "
-                                "Skipping element in addPressureToElement procedure.".format(elemObj.getObjectName()),
-                                self.comm)
+                    self.TACSWarning("TACS element of type {} does not hav a pressure implimentation. "
+                                "Skipping element in addPressureToElement procedure.".format(elemObj.getObjectName()))
                 # Pressure implemented
                 else:
                     # Add new pressure to auxiliary element object
@@ -1338,8 +1339,8 @@ class pyTACS(object):
 
         for i in range(numElems):
             if not elemFound[i]:
-                TACSWarning("Can't add pressure to element ID {} ({} ordering), element not found in model. "
-                            "Double check BDF file.".format(elemIDs[i], orderString), self.comm)
+                self.TACSWarning("Can't add pressure to element ID {} ({} ordering), element not found in model. "
+                            "Double check BDF file.".format(elemIDs[i], orderString))
 
     def createTACSProbsFromBDF(self):
         """
@@ -1351,7 +1352,7 @@ class pyTACS(object):
         """
 
         if self.assembler is None:
-            raise Error("TACS assembler has not been created. "
+            raise self.TACSError("TACS assembler has not been created. "
                         "Assembler must created first by running 'createTACSAssembler' method.")
 
         # Make sure cross-referencing is turned on in pynastran
@@ -1365,7 +1366,7 @@ class pyTACS(object):
 
         # Check if any loads are in the BDF
         if nloads == 0:
-            raise Error("BDF file '%s' has no loads included in it. " % (self.bdfName))
+            raise self.TACSError("BDF file '%s' has no loads included in it. " % (self.bdfName))
 
         structProblems = {}
 
@@ -1415,9 +1416,8 @@ class pyTACS(object):
                         self._addPressureFromPLOAD4(sp, loadInfo, scale)
 
                     else:
-                        TACSWarning("Unsupported load type "
-                                    " '%s' specified for load set number %d, skipping load" %(loadInfo.type, loadInfo.sid),
-                                    self.comm)
+                        self.TACSWarning("Unsupported load type "
+                                    " '%s' specified for load set number %d, skipping load" %(loadInfo.type, loadInfo.sid))
 
             # append to list of structural problems
             structProblems[subCase.id] = sp
@@ -1471,7 +1471,7 @@ class pyTACS(object):
                 faceIndex = 0
 
             else:
-                raise Error("Unsupported element type "
+                raise self.TACSError("Unsupported element type "
                             "'%s' specified for PLOAD4 load set number %d." % (elemInfo.type, loadInfo.sid))
 
             # Figure out whether or not this is a traction based on if a vector is defined
@@ -1661,7 +1661,7 @@ class pyTACS(object):
         if not ignoreMissing:
             for f in evalFuncs:
                 if not f in self.functionList:
-                    raise Error("Supplied function '%s' has not been added "
+                    raise self.TACSError("Supplied function '%s' has not been added "
                                 "using addFunction()." % f)
 
         setupProblemTime = time.time()
@@ -1737,7 +1737,7 @@ class pyTACS(object):
         adjoints = []
         for f in evalFuncs:
             if f not in self.functionList:
-                raise Error("Supplied function has not beed added "
+                raise self.TACSError("Supplied function has not beed added "
                             "using addFunction()")
             else:
                 # Populate the lists with the tacs bvecs
@@ -1948,7 +1948,7 @@ class pyTACS(object):
         try:
             from scipy.spatial import cKDTree
         except:
-            raise Error("scipy.spatial "
+            raise self.TACSError("scipy.spatial "
                         "must be available to use getDisplacements")
 
         points = numpy.atleast_2d(points)
@@ -2154,7 +2154,7 @@ class pyTACS(object):
         if self.assembler is not None:
             return self.varsPerNode
         else:
-            raise Error("Assembler must be finalized before getVarsPerNodes can be called.")
+            raise self.TACSError("Assembler must be finalized before getVarsPerNodes can be called.")
 
     def addSVSens(self, evalFuncs, dIduList):
         """ Add the state variable sensitivity to the ADjoint RHS for given evalFuncs"""
@@ -2232,42 +2232,6 @@ class pyTACS(object):
         self.assembler.setVariables(self.u)
         self.update.zeroEntries()
 
-    def setOption(self, name, value):
-        """
-        Set a solver option value. The name is not case sensitive.
-        """
-        name = name.lower()
-
-        # Try to the option in the option dictionary
-        defOptions = self.options['defaults']
-        try:
-            defOptions[name]
-        except:
-            TACSWarning('Option: \'%-30s\' is not a valid TACS option |' % name,
-                        self.comm)
-            return
-
-        # Now we know the option exists, lets check if the type is ok:
-        #        if type(value) == self.options[name][0]:
-        if isinstance(value, self.options[name][0]):
-            # Just set:
-            self.options[name] = [type(value), value]
-        else:
-            raise Error("Datatype for Option %s was not valid. "
-                        "Expected data type is %s. Received data type "
-                        " is %s." % (name, self.options[name][0], type(value)))
-
-    def getOption(self, name):
-
-        # Redefine the getOption def from the base class so we can
-        # mane sure the name is lowercase
-
-        def_options = self.options['defaults']
-        if name.lower() in def_options:
-            return self.options[name.lower()][1]
-        else:
-            raise AttributeError(repr(name) + ' is not a valid option name')
-
     def _createOutputGroups(self):
         """Automatically determine how to split out the output file
         for easier viewing"""
@@ -2342,9 +2306,8 @@ class pyTACS(object):
                 if item >= 0 and item < self.nComp:
                     compIDs[-1].append(item)
                 else:
-                    TACSWarning('Trying to add component ID of %d, which\
-                    is out of the range 0 <= compID < %d' % (item, self.nComp),
-                                self.comm)
+                    self.TACSWarning('Trying to add component ID of %d, which\
+                    is out of the range 0 <= compID < %d' % (item, self.nComp))
 
             elif isinstance(item, str):
                 # This is a little inefficinet here; loop over
@@ -2355,9 +2318,9 @@ class pyTACS(object):
                     if item in self.compDescripts[i]:
                         compIDs[-1].append(i)
             else:
-                TACSWarning('Unidentifiable information given for \'include\'\
+                self.TACSWarning('Unidentifiable information given for \'include\'\
                 or \'exclude\'. Valid data are integers 0 <= i < %d, or \
-                strings.' % self.nComp, self.comm)
+                strings.' % self.nComp)
 
         if op == 'and':
             # First convert each entry to a set:
@@ -2420,14 +2383,14 @@ class pyTACS(object):
                 else:
                     print(result[1])
                     # Don't know what it is:
-                    TACSWarning("Could not identify objects returned \
+                    self.TACSWarning("Could not identify objects returned \
                     from elemCallBack. Valid return objects are: \
                     A list of TACS element objects (required, first), \
                     an iterable object \
                     (eg, list or array) containing the scaling parameters \
                     for the added design variables (optional, second). The \
                     string representation of the offending object is: \
-                    '%s'" % repr(result[1]), self.comm)
+                    '%s'" % repr(result[1]))
 
             else:
                 elemObjects = result
@@ -2442,13 +2405,13 @@ class pyTACS(object):
                     if isinstance(object, tacs.TACS.Element):
                         numFoundElements += 1
                     else:
-                        Error("Object of type %s returned in elemCallBack function "
+                        self.TACSError("Object of type %s returned in elemCallBack function "
                               "is not a valid TACS element object. The \
                                string representation of the offending object is: \
                                '%s'"%(type(object), repr(object)))
 
             if numFoundElements != numElements:
-                raise Error("Could not find all required element objects in the "
+                raise self.TACSError("Could not find all required element objects in the "
                             "return arguments from user-supplied "
                             "elemCallBack function. {} element types ({}) are contained in Component {}, "
                             "but only {} were returned by elemCallback.".format(numElements, repr(self.elemDescripts[i]),
@@ -2480,7 +2443,7 @@ class pyTACS(object):
                 # Now the length of newVars must the same as
                 # newVars[-1]-newVars[0] + 1
                 if not len(newVars) == newVars[-1] - newVars[0] + 1:
-                    raise Error("Inconsistent design variables detected. "
+                    raise self.TACSError("Inconsistent design variables detected. "
                                 "The added design variables are not continuous."
                                 " The added design varibales are %s." %
                                 repr(newVars))
@@ -2494,12 +2457,11 @@ class pyTACS(object):
                 else:
                     # Make sure that the scaleList is the correct length.
                     if len(scaleList) != len(newVars):
-                        TACSWarning('An incorrect number of scale variables \
+                        self.TACSWarning('An incorrect number of scale variables \
                         were returned. There were %d variables added, but only \
                         %d scale variables returned. The scale for these \
                         variables will be set to 1.0. The scale variables are %s.' % (
-                            len(newVars), len(scaleList), repr(scaleList)),
-                                    self.comm)
+                            len(newVars), len(scaleList), repr(scaleList)))
                         self.scaleList.extend(numpy.ones(len(newVars)))
                     else:
                         self.scaleList.extend(scaleList)
@@ -2514,7 +2476,7 @@ class pyTACS(object):
                 if self.varsPerNode is None:
                     self.varsPerNode = elemVarsPerNode
                 elif self.varsPerNode != elemVarsPerNode:
-                    raise Error("Model references elements with differing numbers of variables per node (%d and %d). "
+                    raise self.TACSError("Model references elements with differing numbers of variables per node (%d and %d). "
                                 "All elements must use same number of variables to be compatible."%(self.varsPerNode,
                                                                                                     elemVarsPerNode))
 
@@ -2557,7 +2519,7 @@ class pyTACS(object):
             elif tmp == 'multicolor':
                 ordering = tacs.TACS.MULTICOLOR_ORDER
             else:
-                raise Error("Unrecognized 'orderingType' option value: "
+                raise self.TACSError("Unrecognized 'orderingType' option value: "
                             "'%s'. Valid values are: 'natural', 'nd', 'rcm', "
                             "'tacs_amd', or 'multicolor'." % tmp)
 
@@ -2587,7 +2549,7 @@ class pyTACS(object):
             #        self.K, self.PC, opt('subSpaceSize'), opt('subSpaceSize'),
             #        opt('nRestarts'), opt('flexible'))
             else:
-                raise Error("Unknown KSMSolver option. Valid options are "
+                raise self.TACSError("Unknown KSMSolver option. Valid options are "
                             "'GMRES' or 'GCROT'")
 
             self.KSM.setTolerances(self.getOption('L2ConvergenceRel'),
@@ -2598,196 +2560,6 @@ class pyTACS(object):
                     opt('KSMSolver'), self.comm.rank, opt('monitorFrequency')))
 
             self._variablesCreated = True
-
-    # ----------------------------------------------------------------------------
-    #                      Utility Functions
-    # ---------------------------------------------------------------------------
-    def pp(self, printStr):
-        """ Simple parallel print"""
-        if self.comm.rank == 0:
-            print(printStr)
-
-    def _info(self, message, maxLen=80, box=False):
-        """ Generic function for writing an info message. """
-
-        if self.rank == 0:
-            if not box:
-                i = 9
-                print('INFO: ', end="")
-                aux = message.split()
-                for word in aux:
-                    if len(word) + i > 120:
-                        print(' ')
-                        print(' ' * 6, end="")
-                        i = 0
-
-                    print(word, end=" ")
-                    i += len(word) + 1
-
-                print()
-            else:
-                print('+' + '-' * (maxLen - 2) + '+')
-                print('| INFO: ', end="")
-                i = 9
-                aux = message.split()
-                for word in aux:
-                    if len(word) + i > maxLen - 2:
-                        print(' ' * (80 - i) + '|')
-                        print('|', end="")
-                        i = 2
-                        print(word, end=" ")
-                        i += len(word) + 1
-                    else:
-                        print(word, end=" ")
-                        i += len(word) + 1
-
-                print(' ' * (maxLen - i) + '|')
-                print('+' + '-' * (maxLen - 2) + '+', )
-
-    # Misc Functions
-    def _flatten(self, l, ltypes=(list, tuple)):
-        ltype = type(l)
-        l = list(l)
-        i = 0
-        while i < len(l):
-            while isinstance(l[i], ltypes):
-                if not l[i]:
-                    l.pop(i)
-                    i -= 1
-                    break
-                else:
-                    l[i:i + 1] = l[i]
-            i += 1
-        return ltype(l)
-
-    def print_scientific_8(self, value):
-        """
-        Prints a value in 8-character scientific notation.
-        This is a sub-method and shouldnt typically be called
-
-        See Also
-        --------
-        print_float_8 : for a better method
-        """
-        python_value = '%8.11e' % value
-        (svalue, sExponent) = python_value.strip().split('e')
-        exponent = int(sExponent)  # removes 0s
-
-        sign = '-' if abs(value) < 0.01 else '+'
-
-        sExp2 = str(exponent).strip('-+')  # the exponent will be added later...
-        value2 = float(svalue)
-
-        lenSExp = len(sExp2) + 1  # the plus 1 is for the sign
-        leftover = 8 - lenSExp
-
-        if value < 0:
-            Format = "%%1.%sf" % (leftover - 3)
-        else:
-            Format = "%%1.%sf" % (leftover - 2)
-
-        svalue3 = Format % value2
-        svalue4 = svalue3.strip('0')
-        field = "%8s" % (svalue4 + sign + sExp2)
-        return field
-
-    def print_float_8(self, value):
-        """
-        Prints a float in nastran 8-character width syntax using the
-        highest precision possbile.
-        """
-        value = float(value)
-        if value == 0.0:
-            return '%8s' % '0.'
-        elif value > 0.:  # positive, not perfect...
-            if value < 5e-8:
-                field = self.print_scientific_8(value)
-                return field
-            elif value < 0.001:
-                field = self.print_scientific_8(value)
-                field2 = "%8.7f" % value  # small value
-                field2 = field2.strip('0 ')
-
-                field1 = field.replace('-', 'e-')
-
-                if field2 == '.':
-                    return self.print_scientific_8(value)
-                if len(field2) <= 8 and float(field1) == float(field2):
-                    field = field2
-                    field = field.strip(' 0')
-            elif value < 0.1:
-                field = "%8.7f" % value
-            elif value < 1.:
-                field = "%8.7f" % value  # same as before...
-            elif value < 10.:
-                field = "%8.6f" % value
-            elif value < 100.:
-                field = "%8.5f" % value
-            elif value < 1000.:
-                field = "%8.4f" % value
-            elif value < 10000.:
-                field = "%8.3f" % value
-            elif value < 100000.:
-                field = "%8.2f" % value
-            elif value < 1000000.:
-                field = "%8.1f" % value
-            else:  # big value
-                field = "%8.1f" % value
-                if field.index('.') < 8:
-                    field = '%8.1f' % round(value)
-                    field = field[0:8]
-                    assert '.' != field[0], field
-                else:
-                    field = self.print_scientific_8(value)
-                return field
-        else:
-            if value > -5e-7:
-                field = self.print_scientific_8(value)
-                return field
-            elif value > -0.01:  # -0.001
-                field = self.print_scientific_8(value)
-                field2 = "%8.6f" % value  # small value
-                field2 = field2.strip('0 ')
-
-                # get rid of the first minus sign, add it on afterwards
-                field1 = '-' + field.strip(' 0-').replace('-', 'e-')
-
-                if len(field2) <= 8 and float(field1) == float(field2):
-                    field = field2.rstrip(' 0')
-                    field = field.replace('-0.', '-.')
-
-            elif value > -0.1:
-                # -0.01 >x>-0.1...should be 5 (maybe scientific...)
-                field = "%8.6f" % value
-                field = field.replace('-0.', '-.')
-            elif value > -1.:
-                # -0.1  >x>-1.....should be 6, but the baseline 0 is kept...
-                field = "%8.6f" % value
-                field = field.replace('-0.', '-.')
-            elif value > -10.:
-                field = "%8.5f" % value  # -1    >x>-10
-            elif value > -100.:
-                field = "%8.4f" % value  # -10   >x>-100
-            elif value > -1000.:
-                field = "%8.3f" % value  # -100  >x>-1000
-            elif value > -10000.:
-                field = "%8.2f" % value  # -1000 >x>-10000
-            elif value > -100000.:
-                field = "%8.1f" % value  # -10000>x>-100000
-            else:
-                field = "%8.1f" % value
-                if field.index('.') < 8:
-                    field = '%7s.' % int(round(value, 0))
-                    assert '.' != field[0], field
-                else:
-                    field = self.print_scientific_8(value)
-                return field
-        field = field.strip(' 0')
-        field = '%8s' % field
-
-        assert len(field) == 8, ('value=|%s| field=|%s| is not 8 characters '
-                                 'long, its %s' % (value, field, len(field)))
-        return field
 
 
 class TACSLoadCase(object):
@@ -2801,44 +2573,3 @@ class TACSLoadCase(object):
         self.auxElems = None
         self.adjoints = {}
         self.callCounter = -1
-
-
-class Error(Exception):
-    """
-    Format the error message in a box to make it clear this
-    was a expliclty raised exception.
-    """
-
-    def __init__(self, message):
-        msg = '\n+' + '-' * 78 + '+' + '\n' + '| pyTACS Error: '
-        i = 15
-        for word in message.split():
-            if len(word) + i + 1 > 78:  # Finish line and start new one
-                msg += ' ' * (78 - i) + '|\n| ' + word + ' '
-                i = 1 + len(word) + 1
-            else:
-                msg += word + ' '
-                i += len(word) + 1
-        msg += ' ' * (78 - i) + '|\n' + '+' + '-' * 78 + '+' + '\n'
-        print(msg)
-        Exception.__init__(self)
-
-
-class TACSWarning(object):
-    """
-    Format a warning message
-    """
-
-    def __init__(self, message, comm):
-        if comm.rank == 0:
-            msg = '\n+' + '-' * 78 + '+' + '\n' + '| pyTACS Warning: '
-            i = 17
-            for word in message.split():
-                if len(word) + i + 1 > 78:  # Finish line and start new one
-                    msg += ' ' * (78 - i) + '|\n| ' + word + ' '
-                    i = 1 + len(word) + 1
-                else:
-                    msg += word + ' '
-                    i += len(word) + 1
-            msg += ' ' * (78 - i) + '|\n' + '+' + '-' * 78 + '+' + '\n'
-            print(msg)

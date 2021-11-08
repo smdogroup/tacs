@@ -13,10 +13,12 @@ functionality.
 import numpy as np
 import tacs.TACS, tacs.elements
 from pyNastran.bdf.bdf import read_bdf
+from .utilities import BaseUI
 
-class pyMeshLoader(object):
+class pyMeshLoader(BaseUI):
 
     def __init__(self, comm, dtype, printDebug=False):
+        self.objectName = 'pyMeshLoader'
         # MPI communicator
         self.comm = comm
         # TACS scalara data type (float or complex)
@@ -63,9 +65,8 @@ class pyMeshLoader(object):
                 # and should not be read in using pytacs elemCallBackFromBDF method
                 self.bdfInfo.missing_properties = True
                 if self.printDebug:
-                    TACSWarning('Element ID %d references undefined property ID %d in bdf file. '
-                                'A user-defined elemCalBack function will need to be provided.'% (element_id, element.pid),
-                                self.comm)
+                    self.TACSWarning('Element ID %d references undefined property ID %d in bdf file. '
+                                'A user-defined elemCalBack function will need to be provided.'% (element_id, element.pid))
 
         # Create dictionaries for mapping between tacs and nastran id numbering
         self._updateNastranToTACSDicts()
@@ -360,7 +361,7 @@ class pyMeshLoader(object):
         corresponding to the component groups in componentIDs.
         """
         if self.creator is None:
-            raise Error("TACS assembler has not been created. "
+            raise self.TACSError("TACS assembler has not been created. "
                         "Assembler must created first by running 'createTACS' method.")
         # Make sure list is flat
         componentIDs = self._flatten(componentIDs)
@@ -640,60 +641,3 @@ class pyMeshLoader(object):
                 return tacsIDDict[fromIDs]
             else:
                 return -1
-
-    def _flatten(self, l, ltypes=(list, tuple)):
-        """
-        Flattens nested list into single 1d list
-        """
-        ltype = type(l)
-        l = list(l)
-        i = 0
-        while i < len(l):
-            while isinstance(l[i], ltypes):
-                if not l[i]:
-                    l.pop(i)
-                    i -= 1
-                    break
-                else:
-                    l[i:i + 1] = l[i]
-            i += 1
-        return ltype(l)
-
-class Error(Exception):
-    """
-    Format the error message in a box to make it clear this
-    was a expliclty raised exception.
-    """
-
-    def __init__(self, message):
-        msg = '\n+' + '-' * 78 + '+' + '\n' + '| pyMeshLoader Error: '
-        i = 21
-        for word in message.split():
-            if len(word) + i + 1 > 78:  # Finish line and start new one
-                msg += ' ' * (78 - i) + '|\n| ' + word + ' '
-                i = 1 + len(word) + 1
-            else:
-                msg += word + ' '
-                i += len(word) + 1
-        msg += ' ' * (78 - i) + '|\n' + '+' + '-' * 78 + '+' + '\n'
-        print(msg)
-        Exception.__init__(self)
-
-class TACSWarning(object):
-    """
-    Format a warning message
-    """
-
-    def __init__(self, message, comm):
-        if comm.rank == 0:
-            msg = '\n+' + '-' * 78 + '+' + '\n' + '| pyMeshLoader Warning: '
-            i = 23
-            for word in message.split():
-                if len(word) + i + 1 > 78:  # Finish line and start new one
-                    msg += ' ' * (78 - i) + '|\n| ' + word + ' '
-                    i = 1 + len(word) + 1
-                else:
-                    msg += word + ' '
-                    i += len(word) + 1
-            msg += ' ' * (78 - i) + '|\n' + '+' + '-' * 78 + '+' + '\n'
-            print(msg)
