@@ -98,10 +98,6 @@ class BaseProblem(BaseUI):
         variables. This is used internally in pytacs, but is not
         recommended to used externally.
         """
-
-        # Set the variables in tacs, and the constriant objects
-        # Set the variables in tacs, and the constriant objects
-        self.assembler.getDesignVars(self.x)
         return self.x.getArray().copy()
 
     def getNumDesignVars(self):
@@ -127,11 +123,7 @@ class BaseProblem(BaseUI):
             Structural coordinate in array of size (N, 3) where N is
             the number of structural nodes on this processor.
         """
-        Xpts = self.assembler.createNodeVec()
-        self.assembler.getNodes(Xpts)
-        coords = Xpts.getArray()
-
-        return coords
+        return self.Xpts.getArray().copy()
 
     def setCoordinates(self, coords):
         """

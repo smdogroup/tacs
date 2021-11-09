@@ -376,8 +376,8 @@ class TransientProblem(BaseProblem):
         Examples
         --------
         >>> funcs = {}
-        >>> FEAsolver(sp)
-        >>> FEAsolver.evalFunctions(funcs, ['mass'])
+        >>> problem.solve()
+        >>> problem.evalFunctions(funcs, ['mass'])
         >>> funcs
         >>> # Result will look like (if structProblem, sp, has name of 'c1'):
         >>> # {'cl_mass':12354.10}
@@ -466,68 +466,41 @@ class TransientProblem(BaseProblem):
             evalFuncs = sorted(list(self.functionList))
         else:
             evalFuncs = sorted(list(evalFuncs))
-        # Check that the functions are all ok.
-        # and prepare tacs vecs for adjoint procedure
-        dvSenses = []
-        xptSenses = []
-        dIdus = []
-        adjoints = []
+
         for f in evalFuncs:
             if f not in self.functionList:
                 raise Error("Supplied function has not beed added "
                             "using addFunction()")
-            else:
-                # Populate the lists with the tacs bvecs
-                # we'll need for each adjoint/sens calculation
-                dvSens = self.dvSensList[f]
-                dvSens.zeroEntries()
-                dvSenses.append(dvSens)
 
-                xptSens = self.xptSensList[f]
-                xptSens.zeroEntries()
-                xptSenses.append(xptSens)
+        # Fast parallel function evaluation of structural funcs:
+        handles = [self.functionList[f] for f in evalFuncs if
+                   f in self.functionList]
+        # Set functions for integrator
+        self.integrator.setFunctions(handles)
 
-                dIdu = self.dIduList[f]
-                dIdu.zeroEntries()
-                dIdus.append(dIdu)
-
-                adjoint = self.adjointList[f]
-                adjoint.zeroEntries()
-                adjoints.append(adjoint)
-
-        setupProblemTime = time.time()
-
-        adjointStartTime = {}
-        adjointEndTime = {}
-
-        # Next we will solve all the adjoints
-        # Set adjoint rhs
-        self.addSVSens(evalFuncs, dIdus)
-        adjointRHSTime = time.time()
-        for i, f in enumerate(evalFuncs):
-            adjointStartTime[f] = time.time()
-            self.solveAdjoint(dIdus[i], adjoints[i])
-            adjointEndTime[f] = time.time()
+        # integrate adjoints backwards in time from step = numSteps
+        # to step = 0
+        for i in range(self.numSteps, -1, -1):
+            self.assembler.setAuxElements(self.auxElems[i])
+            self.integrator.initAdjoint(i)
+            self.integrator.iterateAdjoint(i)
+            self.integrator.postAdjoint(i)
 
         adjointFinishedTime = time.time()
-        # Evaluate all the adoint res prooduct at the same time for
-        # efficiency:
-        self.addDVSens(evalFuncs, dvSenses)
-        self.addAdjointResProducts(adjoints, dvSenses)
-        self.addXptSens(evalFuncs, xptSenses)
-        self.addAdjointResXptSensProducts(adjoints, xptSenses)
 
         # Recast sensititivities into dict for user
         for i, f in enumerate(evalFuncs):
             key = self.name + '_%s' % f
             # Finalize sensitivity arrays across all procs
-            dvSenses[i].beginSetValues()
-            dvSenses[i].endSetValues()
-            xptSenses[i].beginSetValues()
-            xptSenses[i].endSetValues()
+            dvSens = self.integrator.getGradient(i)
+            dvSens.beginSetValues()
+            dvSens.endSetValues()
+            xptSens = self.integrator.getXptGradient(i)
+            xptSens.beginSetValues()
+            xptSens.endSetValues()
             # Return sensitivities as array in sens dict
-            funcsSens[key] = {self.varName: dvSenses[i].getArray().copy(),
-                              self.coordName: xptSenses[i].getArray().copy()}
+            funcsSens[key] = {self.varName: dvSens.getArray().copy(),
+                              self.coordName: xptSens.getArray().copy()}
 
         totalSensitivityTime = time.time()
 
