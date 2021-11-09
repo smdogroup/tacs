@@ -267,7 +267,7 @@ class BaseProblem(BaseUI):
 
             # Call addLoadToComponents again, once for each compID
             for i, compID in enumerate(compIDs):
-                self._addLoadToComponents(FVec, compID, F[i], nastranOrdering=True)
+                self._addLoadToComponents(FVec, compID, F[i], averageLoad=True)
 
         # Average one force vector over all components
         else:

@@ -185,7 +185,7 @@ class StaticProblem(BaseProblem):
                 List of compIDs to select. Alternative to selectCompIDs
                 arguments.
         """
-        success = super().addFunction(funcName, funcHandle, compIDs=None, **kwargs)
+        success = super().addFunction(funcName, funcHandle, compIDs, **kwargs)
         if success:
             # Create additional tacs BVecs to hold adjoint and sens info
             self.adjointList[funcName] = self.assembler.createVec()
