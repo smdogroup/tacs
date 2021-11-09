@@ -49,12 +49,13 @@ def elemCallBack(dvNum, compID, compDescript, elemDescripts, globalDVs, **kwargs
     # Material properties
     rho = 2500.0        # density kg/m^3
     kappa = 230.0       # Thermal conductivity W/(m⋅K)
+    specificHeat = 921.0 # Specific heat J/(kg⋅K)
 
     # Plate geometry
     tplate = 0.005    # 5 mm
 
     # Setup property and constitutive objects
-    prop = constitutive.MaterialProperties(rho=rho, kappa=kappa)
+    prop = constitutive.MaterialProperties(rho=rho, kappa=kappa, specific_heat=specificHeat)
     # Set one thickness dv for every component
     con = constitutive.PlaneStressConstitutive(prop, t=tplate, tNum=dvNum)
 
@@ -79,27 +80,32 @@ def elemCallBack(dvNum, compID, compDescript, elemDescripts, globalDVs, **kwargs
 # Set up constitutive objects and elements
 FEASolver.createTACSAssembler(elemCallBack)
 
-# Structural problem
-problem = FEASolver.createStaticProblem(name='plate')
+# Setup problems
+# Create a transient problem that will represent time varying convection
+transientProb = FEASolver.createTransientProblem('Transient', tInit=0.0, tFinal=10.0, numSteps=100)
+# Create a static problem that will represent the steady state solution
+staticProb = FEASolver.createStaticProblem(name='SteadyState')
+# Add both problems to a list
+allProblems = [transientProb, staticProb]
 
-# Add Functions
-problem.addFunction('mass', functions.StructuralMass)
-problem.addFunction('ks_temp', functions.KSTemperature,
-                      ksWeight=100.0)
-problem.addFunction('avg_temp', functions.AverageTemperature, volume=area)
+# Add functions to each problem
+for problem in allProblems:
+    problem.addFunction('mass', functions.StructuralMass)
+    problem.addFunction('ks_temp', functions.KSTemperature,
+                          ksWeight=100.0)
+    problem.addFunction('avg_temp', functions.AverageTemperature, volume=area)
 
-# Solve state
-problem.solve()
-
-# Evaluate functions
+# Solve state for each problem, evaluate functions and sensitivities
 funcs = {}
-problem.evalFunctions(funcs)
+funcsSens = {}
+for problem in allProblems:
+    problem.solve()
+    problem.evalFunctions(funcs)
+    problem.evalFunctionsSens(funcsSens)
+    problem.writeSolution()
+
 if comm.rank == 0:
     pprint(funcs)
 
-funcsSens = {}
-problem.evalFunctionsSens(funcsSens)
 if comm.rank == 0:
     pprint(funcsSens)
-
-problem.writeSolution(outputDir=os.path.dirname(__file__))
