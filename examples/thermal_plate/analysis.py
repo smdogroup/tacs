@@ -79,28 +79,27 @@ def elemCallBack(dvNum, compID, compDescript, elemDescripts, globalDVs, **kwargs
 # Set up constitutive objects and elements
 FEASolver.createTACSAssembler(elemCallBack)
 
-# Add Functions
-FEASolver.addFunction('mass', functions.StructuralMass)
-FEASolver.addFunction('ks_temp', functions.KSTemperature,
-                      ksWeight=100.0)
-FEASolver.addFunction('avg_temp', functions.AverageTemperature, volume=area)
-
 # Structural problem
-evalFuncs = ['mass', 'ks_temp', 'avg_temp']
-sp = problems.StaticProblem(name='plate', evalFuncs=evalFuncs)
+problem = FEASolver.createStaticProblem(name='plate')
+
+# Add Functions
+problem.addFunction('mass', functions.StructuralMass)
+problem.addFunction('ks_temp', functions.KSTemperature,
+                      ksWeight=100.0)
+problem.addFunction('avg_temp', functions.AverageTemperature, volume=area)
 
 # Solve state
-FEASolver(sp)
+problem.solve()
 
 # Evaluate functions
 funcs = {}
-FEASolver.evalFunctions(sp, funcs)
+problem.evalFunctions(funcs)
 if comm.rank == 0:
     pprint(funcs)
 
 funcsSens = {}
-FEASolver.evalFunctionsSens(sp, funcsSens)
+problem.evalFunctionsSens(funcsSens)
 if comm.rank == 0:
     pprint(funcsSens)
 
-FEASolver.writeSolution(outputDir=os.path.dirname(__file__))
+problem.writeSolution(outputDir=os.path.dirname(__file__))

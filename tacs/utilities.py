@@ -48,7 +48,7 @@ class BaseUI:
     def _info(self, message, maxLen=80, box=False):
         """ Generic function for writing an info message. """
 
-        if self.rank == 0:
+        if self.comm.rank == 0:
             if not box:
                 i = 9
                 print('INFO: ', end="")

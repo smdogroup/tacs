@@ -78,48 +78,47 @@ def elemCallBack(dvNum, compID, compDescript, elemDescripts, globalDVs, **kwargs
 # Set up elements and TACS assembler
 FEASolver.createTACSAssembler(elemCallBack)
 
-# Add TACS Functions
-FEASolver.addFunction('wing_mass', functions.StructuralMass)
-FEASolver.addFunction('ks_vmfailure', functions.KSFailure, safetyFactor=1.5,
-                      ksWeight=100.0)
-
 # ==============================================================================
 # Setup static problem
 # ==============================================================================
 # Static problem
-evalFuncs = ['wing_mass', 'ks_vmfailure']
-sp = problems.StaticProblem(name='wing', evalFuncs=evalFuncs, loadFactor=2.5)
+problem = FEASolver.createStaticProblem('wing')
+
+# Add TACS Functions
+problem.addFunction('mass', functions.StructuralMass)
+problem.addFunction('ks_vmfailure', functions.KSFailure, safetyFactor=1.5,
+                    ksWeight=100.0)
 
 # Various methods for adding loads to structural problem:
 # Let's model an engine load of 75kN weight, and 64kN thrust attached to spar
 compIDs = FEASolver.selectCompIDs(["WING_SPARS/LE_SPAR/SEG.16", "WING_SPARS/LE_SPAR/SEG.17"])
 We = 75.0e3 # N
 Te = 64.0e3 # N
-FEASolver.addLoadToComponents(sp, compIDs, [-Te, 0.0, -We, 0.0, 0.0, 0.0], averageLoad=True)
+problem.addLoadToComponents(compIDs, [-Te, 0.0, -We, 0.0, 0.0, 0.0], averageLoad=True)
 # Next we'll approximate aerodynamic loads on upper/lower skin with a uniform traction
 L = 3e3 # N/m^2
 D = 150 # N/m^2
 tracVec = np.array([D, 0.0, L])
 compIDs = FEASolver.selectCompIDs(include='SKIN')
-FEASolver.addTractionToComponents(sp, compIDs, tracVec)
+problem.addTractionToComponents(compIDs, tracVec)
 # Finally, we can approximate fuel load by adding a pressure load to the lower skin
 P = 2e3 # N/m^2
 compIDs = FEASolver.selectCompIDs(include='L_SKIN')
-FEASolver.addPressureToComponents(sp, compIDs, P)
+problem.addPressureToComponents(compIDs, P)
 
 # Solve structural problem
-FEASolver(sp)
+problem.solve()
 
 # Evaluate functions
 funcs = {}
-FEASolver.evalFunctions(sp, funcs)
+problem.evalFunctions(funcs)
 if comm.rank == 0:
     pprint(funcs)
 
 # Solve adjoints and evaluate function sensitivities
 funcsSens = {}
-FEASolver.evalFunctionsSens(sp, funcsSens)
+problem.evalFunctionsSens(funcsSens)
 if comm.rank == 0:
     pprint(funcsSens)
 
-FEASolver.writeSolution(outputDir=os.path.dirname(__file__))
+problem.writeSolution(outputDir=os.path.dirname(__file__))
