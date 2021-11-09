@@ -82,7 +82,7 @@ FEASolver.createTACSAssembler(elemCallBack)
 # Setup static problem
 # ==============================================================================
 # Static problem
-problem = FEASolver.createStaticProblem('wing')
+problem = FEASolver.createStaticProblem('cruise')
 
 # Add TACS Functions
 problem.addFunction('mass', functions.StructuralMass)
