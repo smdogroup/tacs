@@ -291,7 +291,8 @@ class TransientProblem(BaseProblem):
             or NASTRAN ordering
         """
 
-        self._addPressureToComponents(self.auxElems[timeStep], compIDs, pressures, faceIndex)
+        self._addPressureToElements(self.auxElems[timeStep], elemIDs, pressures,
+                                    faceIndex, nastranOrdering)
 
     ####### Static solver methods ########
 

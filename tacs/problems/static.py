@@ -389,7 +389,8 @@ class StaticProblem(BaseProblem):
             or NASTRAN ordering
         """
 
-        self._addPressureToComponents(self.auxElems, compIDs, pressures, faceIndex)
+        self._addPressureToElements(self.auxElems, elemIDs, pressures,
+                                    faceIndex, nastranOrdering)
 
     ####### Static solver methods ########
 
