@@ -76,8 +76,11 @@ class BaseProblem(BaseUI):
         # or array
         elif isinstance(x, np.ndarray):
             self.x.getArray()[:] = x
+        # Or TACS BVec
+        elif isinstance(x, tacs.TACS.Vec):
+            self.x.copyValues(x)
         else:
-            raise ValueError("setDesignVars must be called with either a numpy array or dict as input.")
+            raise ValueError("setDesignVars must be called with either a numpy array, dict, or TACS Vec as input.")
 
         # Set the variables in tacs
         self.assembler.setDesignVars(self.x)
@@ -115,7 +118,7 @@ class BaseProblem(BaseUI):
     # TODO: Change below to getNodes/setNodes for consistency
     def getCoordinates(self):
         """
-        Return the mesh coordiantes of the structure.
+        Return the mesh coordiantes of this problem.
 
         Returns
         -------
@@ -125,9 +128,9 @@ class BaseProblem(BaseUI):
         """
         return self.Xpts.getArray().copy()
 
-    def setCoordinates(self, coords):
+    def setCoordinates(self, Xpts):
         """
-        Set the mesh coordinates of the structure.
+        Set the mesh coordinates of this problem.
 
         Returns
         -------
@@ -135,9 +138,18 @@ class BaseProblem(BaseUI):
             Structural coordinate in array of size (N, 3) where N is
             the number of structural nodes on this processor.
         """
-        XptsArray = self.Xpts.getArray()
-        # Make sure input is raveled (1D) in case user changed shape
-        XptsArray[:] = np.ravel(coords)
+        # Check if the design variables are being handed in a dict
+        if isinstance(Xpts, dict):
+            if self.coordName in Xpts:
+                self.Xpts.getArray()[:] = Xpts[self.coordName]
+        # or array
+        elif isinstance(Xpts, np.ndarray):
+            self.Xpts.getArray()[:] = Xpts
+        # Or TACS BVec
+        elif isinstance(Xpts, tacs.TACS.Vec):
+            self.Xpts.copyValues(Xpts)
+        else:
+            raise ValueError("setCoordinates must be called with either a numpy array, dict, or TACS Vec as input.")
         self.assembler.setNodes(self.Xpts)
 
     def getNumCoordinates(self):

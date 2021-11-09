@@ -86,27 +86,8 @@ class pyTACS(BaseUI):
 
         # Default Option List
         defOpts = {
-
-            'probname': [str, 'defaultName'],
-            'outputdir': [str, './'],
-
-            # Solution Options
-            'solutionType': [str, 'linear'],
-            'KSMSolver': [str, 'GMRES'],
-            'orderingType': [str, 'ND'],
-            'PCFillLevel': [int, 1000],
-            'PCFillRatio': [float, 20.0],
-            'subSpaceSize': [int, 10],
-            'nRestarts': [int, 15],
-            'flexible': [int, 1],
-            'L2Convergence': [float, 1e-12],
-            'L2ConvergenceRel': [float, 1e-12],
-            'useMonitor': [bool, False],
-            'monitorFrequency': [int, 10],
-            'resNormUB': [float, 1e20],
-
-            # selectCompID Options
-            'projectVector': [list, [0.0, 1.0, 0.0]],
+            # Meshloader options
+            'printDebug': [bool, False],
 
             # Output Options
             'outputElement': [int, None],
@@ -123,7 +104,6 @@ class pyTACS(BaseUI):
             'numberSolutions': [bool, True],
             'printTiming': [bool, False],
             'printIterations': [bool, True],
-            'printDebug': [bool, False],
 
         }
 
@@ -185,16 +165,10 @@ class pyTACS(BaseUI):
         self.compIDBounds = {}
         self.addedCompIDs = set()
 
-        self.doDamp = False
-        self._PCfactorOnNext = False
-
-        self.adjointList = OrderedDict()
-        self.dIduList = OrderedDict()
-        self.dvSensList = OrderedDict()
-        self.xptSensList = OrderedDict()
-
         # List of initial coordinates
-        self.coords0 = None
+        self.Xpts0 = None
+        # List of initial designvars
+        self.x0 = None
 
         # Variables per node for model
         self.varsPerNode = None
@@ -526,9 +500,13 @@ class pyTACS(BaseUI):
         self.dvs0 = self.assembler.createDesignVec()
         self.assembler.getDesignVars(self.dvs0)
 
-        # Initial set of nodes for geometry manipulation if necessary
-        self.coords0 = self.assembler.createNodeVec()
-        self.assembler.getNodes(self.coords0)
+        # Store original node locations read in from bdf file
+        self.Xpts0 = self.assembler.createNodeVec()
+        self.assembler.getNodes(self.Xpts0)
+
+        # Store initial design variable values
+        self.x0 = self.assembler.createDesignVec()
+        self.assembler.getDesignVars(self.x0)
 
     def _elemCallBackFromBDF(self):
         """
@@ -738,14 +716,52 @@ class pyTACS(BaseUI):
 
         return elemCallBack
 
+
+    def getOrigDesignVars(self):
+        """
+        get the original design variables that were specified with
+        during assembler creation.
+
+        Returns
+        ----------
+        x : array
+            The current design variable vector set in tacs.
+
+        Notes
+        -----
+        This routine **can** also accept a list or vector of
+        variables. This is used internally in pytacs, but is not
+        recommended to used externally.
+        """
+        return self.x0.getArray().copy()
+
+    # TODO: Change below to getNodes/setNodes for consistency
+    def getOrigCoordinates(self):
+        """
+        Return the original mesh coordiantes read in from the meshLoader.
+
+        Returns
+        -------
+        coords : array
+            Structural coordinate in array of size (N, 3) where N is
+            the number of structural nodes on this processor.
+        """
+        return self.Xpts0.getArray().copy()
+
     def createStaticProblem(self, name):
         problem = tacs.problems.static.StaticProblem(name, self.assembler, self.comm,
                                                      self.outputViewer, self.meshLoader)
+        # Set with original design vars and coordinates, in case they have changed
+        problem.setDesignVars(self.x0)
+        problem.setCoordinates(self.Xpts0)
         return problem
 
     def createTransientProblem(self, name, tInit, tFinal, numSteps):
         problem = tacs.problems.transient.TransientProblem(name, tInit, tFinal, numSteps,
                                                         self.assembler, self.comm, self.outputViewer, self.meshLoader)
+        # Set with original design vars and coordinates, in case they have changed
+        problem.setDesignVars(self.x0)
+        problem.setCoordinates(self.Xpts0)
         return problem
 
     def createTACSProbsFromBDF(self):
