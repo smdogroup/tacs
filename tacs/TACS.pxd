@@ -739,7 +739,8 @@ cdef extern from "TACSIntegrator.h":
         void setOutputFrequency(int write_freq)
         void setFH5(TACSToFH5 *_f5)
         void writeSolution(const_char *filename, int format)
-        void writeSolutionToF5(int step_num)
+        void writeSolutionToF5();
+        void writeStepToF5(int step_num);
 
         int getNumTimeSteps()
         void writeRawSolution(const_char *name, int format_flag)

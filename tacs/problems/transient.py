@@ -59,7 +59,7 @@ class TransientProblem(BaseProblem):
             'monitorFrequency': [int, 10],
 
             # Output Options
-            'writeBDF': [bool, False],
+            'outputFrequency': [int, 0],
             'writeSolution': [bool, True],
             'numberSolutions': [bool, True],
             'printTiming': [bool, False],
@@ -81,7 +81,8 @@ class TransientProblem(BaseProblem):
 
         # Set output viewer for integrator
         self.integrator.setFH5(self.outputViewer)
-        self.integrator.setOutputFrequency(1)
+        outputFreq = self.getOption('outputFrequency')
+        self.integrator.setOutputFrequency(outputFreq)
         outputDir = self.getOption('outputDir')
         self.integrator.setOutputPrefix(outputDir)
 
@@ -584,17 +585,7 @@ class TransientProblem(BaseProblem):
         self.u.setValues(states)
         self.assembler.setVariables(self.u)
 
-    def writeOutputFile(self, fileName):
-        """Low-level command to write the current loadcase to a file
-
-        Parameters
-        ----------
-        fileName : str
-            Filename for output. Should have .f5 extension.
-         """
-        self.outputViewer.writeToFile(fileName)
-
-    def writeSolution(self, outputDir=None, baseName=None, number=None):
+    def writeSolution(self, timeSteps=None):
         """This is a generic shell function that writes the output
         file(s).  The intent is that the user or calling program can
         call this function and pyTACS writes all the files that the
@@ -614,29 +605,20 @@ class TransientProblem(BaseProblem):
             Use the user spplied number to index solution. Again, only
             typically used from an external solver
         """
-        # Check input
-        if outputDir is None:
+        # Unless the writeSolution option is off write actual file:
+        if self.getOption('writeSolution'):
+            # Check input
             outputDir = self.getOption('outputDir')
-
-        if baseName is None:
             baseName = self.name
-
-        # If we are numbering solution, it saving the sequence of
-        # calls, add the call number
-        if number is not None:
-            # We need number based on the provided number:
-            baseName = baseName + '_%3.3d' % number
-        else:
-            # if number is none, i.e. standalone, but we need to
-            # number solutions, use internal counter
             if self.getOption('numberSolutions'):
                 baseName = baseName + '_%3.3d' % self.callCounter
 
-        # Unless the writeSolution option is off write actual file:
-        if self.getOption('writeSolution'):
             base = os.path.join(outputDir, baseName) + '.f5'
-            self.outputViewer.writeToFile(base)
-
-        if self.getOption('writeBDF'):
-            base = os.path.join(outputDir, baseName) + '.bdf'
-            self.writeBDF(base)
+            # Write specific time step out
+            if timeSteps is not None:
+                timeSteps = np.atleast_1d(timeSteps)
+                for timeStep in timeSteps:
+                    self.integrator.writeStepToF5(timeStep)
+            # Write all time steps out
+            else:
+                self.integrator.writeSolutionToF5()

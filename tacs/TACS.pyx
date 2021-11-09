@@ -3322,6 +3322,14 @@ cdef class Integrator:
         self.ptr.writeRawSolution(filename, format_flag)
         return
 
+    def writeStepToF5(self, int step_num):
+        self.ptr.writeStepToF5(step_num)
+        return
+
+    def writeSolutionToF5(self):
+        self.ptr.writeSolutionToF5()
+        return
+
     def persistStates(self, int step_num, prefix=''):
         """
         Writes the states variables to disk. The string argument
