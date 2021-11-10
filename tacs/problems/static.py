@@ -403,7 +403,11 @@ class StaticProblem(BaseProblem):
         self.assembler.setDesignVars(self.x)
         self.assembler.setNodes(self.Xpts)
         self.assembler.setAuxElements(self.auxElems)
+        # Set state variables
         self.assembler.setVariables(self.u)
+        # Zero any time derivitive terms
+        self.assembler.zeroDotVariables()
+        self.assembler.zeroDDotVariables()
 
     def _initializeSolve(self):
         """
@@ -415,7 +419,6 @@ class StaticProblem(BaseProblem):
             self.assembler.assembleJacobian(self.alpha, self.beta, self.gamma, self.res, self.K)
             self.PC.factor()
             self._factorOnNext = False
-            self._PCfactorOnNext = False
 
     def solve(self, Fext=None):
         """
