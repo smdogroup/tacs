@@ -92,22 +92,23 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
         dv_pert_vec[:] = 1.0
 
         # Define perturbation array that moves all nodes on shell
-        xpts = fea_solver.getCoordinates()
+        xpts = fea_solver.getOrigCoordinates()
         xpts_pert_vec[:] = xpts
 
         return
 
-    def setup_funcs(self, fea_solver):
+    def setup_funcs(self, fea_solver, problems):
         """
         Create a list of functions to be tested and their reference values for the problem
         """
         # Add Functions
-        fea_solver.addFunction('mass', functions.StructuralMass)
-        fea_solver.addFunction('compliance', functions.Compliance)
-        fea_solver.addFunction('ks_disp', functions.KSDisplacement,
-                               ksWeight=ksweight, direction=[-100.0, -100.0, -100.0])
-        fea_solver.addFunction('ks_vmfailure', functions.KSFailure,
-                               ksWeight=ksweight)
+        for problem in problems:
+            problem.addFunction('mass', functions.StructuralMass)
+            problem.addFunction('compliance', functions.Compliance)
+            problem.addFunction('ks_disp', functions.KSDisplacement,
+                                   ksWeight=ksweight, direction=[-100.0, -100.0, -100.0])
+            problem.addFunction('ks_vmfailure', functions.KSFailure,
+                                   ksWeight=ksweight)
         func_list = ['mass', 'compliance', 'ks_disp', 'ks_vmfailure']
         return func_list, FUNC_REFS
 

@@ -74,20 +74,21 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
         dv_pert_vec[:] = 1.0
 
         # Define perturbation array that moves all nodes on plate
-        xpts = fea_solver.getCoordinates()
+        xpts = fea_solver.getOrigCoordinates()
         xpts_pert_vec[:] = xpts
 
         return
 
-    def setup_funcs(self, fea_solver):
+    def setup_funcs(self, fea_solver, problems):
         """
         Create a list of functions to be tested and their reference values for the problem
         """
         # Add Functions
-        fea_solver.addFunction('mass', functions.StructuralMass)
-        fea_solver.addFunction('ks_vmfailure', functions.KSFailure,
-                               ksWeight=ksweight)
-        fea_solver.addFunction('compliance', functions.Compliance)
+        for problem in problems:
+            problem.addFunction('mass', functions.StructuralMass)
+            problem.addFunction('ks_vmfailure', functions.KSFailure,
+                                   ksWeight=ksweight)
+            problem.addFunction('compliance', functions.Compliance)
         func_list = ['mass', 'ks_vmfailure', 'compliance']
         return func_list, FUNC_REFS
 
@@ -98,16 +99,16 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
         tacs_probs = []
 
         # Add point force to node 81 (center of plate)
-        sp = problems.StaticProblem(name='point_load')
+        sp = fea_solver.createStaticProblem(name='point_load')
         F = np.array([0.0, 0.0, 1e4, 0.0, 0.0, 0.0])
-        fea_solver.addLoadToNodes(sp, 81, F, nastranOrdering=True)
+        sp.addLoadToNodes(81, F, nastranOrdering=True)
         tacs_probs.append(sp)
 
         # Add pressure to entire plate
-        sp = problems.StaticProblem(name='pressure')
+        sp = fea_solver.createStaticProblem(name='pressure')
         P = 100e3  # Pa
         compIDs = fea_solver.selectCompIDs(include='PLATE')
-        fea_solver.addPressureToComponents(sp, compIDs, P)
+        sp.addPressureToComponents(compIDs, P)
         tacs_probs.append(sp)
 
         return tacs_probs

@@ -20,9 +20,12 @@ test KSTemperature, StructuralMass, and AverageTemperature functions and sensiti
 base_dir = os.path.dirname(os.path.abspath(__file__))
 bdf_file = os.path.join(base_dir, "./input_files/circ-plate-dirichlet-bcs.bdf")
 
-FUNC_REFS = {'dirichilet_bcs_avg_temp': 69.88016093991516,
-             'dirichilet_bcs_ks_temp': 98.74014374789108,
-             'dirichilet_bcs_mass': 39.20272476980967}
+FUNC_REFS = {'steady_state_avg_temp': 69.88016093991516, 'steady_state_ks_temp': 98.74014374789108,
+             'steady_state_mass': 39.20272476980967,
+
+             'transient_avg_temp': 396.66762638787424, 'transient_ks_temp': 97.83730882226564,
+             'transient_mass': 392.027247698097}
+
 
 # Radius of plate
 R = 1.0
@@ -92,20 +95,21 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
         dv_pert_vec[:] = 1.0
 
         # Define perturbation array that moves all nodes on plate
-        xpts = fea_solver.getCoordinates()
+        xpts = fea_solver.getOrigCoordinates()
         xpts_pert_vec[:] = xpts
 
         return
 
-    def setup_funcs(self, fea_solver):
+    def setup_funcs(self, fea_solver, problems):
         """
         Create a list of functions to be tested and their reference values for the problem
         """
         # Add Functions
-        fea_solver.addFunction('mass', functions.StructuralMass)
-        fea_solver.addFunction('ks_temp', functions.KSTemperature,
-                               ksWeight=100.0)
-        fea_solver.addFunction('avg_temp', functions.AverageTemperature, volume=area)
+        for problem in problems:
+            problem.addFunction('mass', functions.StructuralMass)
+            problem.addFunction('ks_temp', functions.KSTemperature,
+                                   ksWeight=100.0)
+            problem.addFunction('avg_temp', functions.AverageTemperature, volume=area)
         func_list = ['mass', 'ks_temp', 'avg_temp']
         return func_list, FUNC_REFS
 
@@ -116,7 +120,11 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
         tacs_probs = []
 
         # Create static problem, loads are already applied through BCs
-        sp = problems.StaticProblem(name='dirichilet_bcs')
+        sp = fea_solver.createStaticProblem(name='steady_state')
         tacs_probs.append(sp)
+
+        # Create transient problem, loads are already applied through BCs
+        tp = fea_solver.createTransientProblem(name='transient', tInit=0.0, tFinal=10.0, numSteps=25)
+        tacs_probs.append(tp)
 
         return tacs_probs

@@ -55,18 +55,19 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
         dv_pert_vec[:] = 1.0
 
         # Define perturbation array that moves all nodes on plate
-        xpts = fea_solver.getCoordinates()
+        xpts = fea_solver.getOrigCoordinates()
         xpts_pert_vec[:] = xpts
 
         return
 
-    def setup_funcs(self, fea_solver):
+    def setup_funcs(self, fea_solver, problems):
         """
         Create a list of functions to be tested and their reference values for the problem
         """
         # Add Functions
-        fea_solver.addFunction('mass', functions.StructuralMass)
-        fea_solver.addFunction('compliance', functions.Compliance)
+        for problem in problems:
+            problem.addFunction('mass', functions.StructuralMass)
+            problem.addFunction('compliance', functions.Compliance)
         func_list = ['mass', 'compliance']
         return func_list, FUNC_REFS
 
