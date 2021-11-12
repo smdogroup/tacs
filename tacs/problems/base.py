@@ -14,7 +14,7 @@ import tacs.TACS, tacs.constitutive, tacs.elements, tacs.functions, tacs.problem
 
 class BaseProblem(BaseUI):
     """
-
+    Base class for TACS problem types. Contains methods common to all TACS problems.
     """
     def __init__(self, assembler, comm, outputViewer=None, meshLoader=None):
 
@@ -27,7 +27,7 @@ class BaseProblem(BaseUI):
         # MPI communicator object
         self.comm = comm
 
-        # Datat type to use for TACS scalars (float or complex)
+        # Data type to use for TACS scalars (float or complex)
         self.dtype = tacs.TACS.dtype
 
         # Create Design variable vector
@@ -152,7 +152,7 @@ class BaseProblem(BaseUI):
         """
         return self.Xpts.getSize()
 
-    ####### Design variable methods ########
+    ####### Variable methods ########
 
     def getVarsPerNode(self):
         """
@@ -178,6 +178,8 @@ class BaseProblem(BaseUI):
         vpn =  self.getVarsPerNode()
         nnodes =  self.getNumOwnedNodes()
         return vpn * nnodes
+
+    ####### Eval function methods ########
 
     def addFunction(self, funcName, funcHandle, compIDs=None, **kwargs):
         """
@@ -210,11 +212,8 @@ class BaseProblem(BaseUI):
                         "in pyTACS. Skipping function." % funcHandle)
             return False
 
-        # First we will get the required domain, but only if both
-        # include is None and exclude is None. If so, just use the
-        # entire domain:
-
-        # Note nGroup is one since we only want exactly one domain
+        # First we will get the required domain, but only if compIDs
+        # was specified. If not, just use the entire domain by default
         if compIDs is not None:
             # Make sure CompIDs is flat and get element numbers on each proc corresponding to specified compIDs
             compIDs = self._flatten(compIDs)
@@ -228,7 +227,7 @@ class BaseProblem(BaseUI):
         """Return a list of the current function key names"""
         return list(self.functionList.keys())
 
-####### Static load methods ########
+####### Load adding methods ########
 
     def _addLoadToComponents(self, FVec, compIDs, F, averageLoad=False):
         """"
