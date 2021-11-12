@@ -58,6 +58,24 @@ class BaseProblem(BaseUI):
             """
         self.varName = varName
 
+    def getDesignVars(self):
+        """
+        get the design variables that were specified with
+        addVariablesPyOpt.
+
+        Returns
+        ----------
+        x : array
+            The current design variable vector set in tacs.
+
+        Notes
+        -----
+        This routine **can** also accept a list or vector of
+        variables. This is used internally in pytacs, but is not
+        recommended to used externally.
+        """
+        return self.x.getArray().copy()
+
     def setDesignVars(self, x):
         """
         Update the design variables used by tacs.
@@ -85,35 +103,11 @@ class BaseProblem(BaseUI):
         # Set the variables in tacs
         self.assembler.setDesignVars(self.x)
 
-    def getDesignVars(self):
-        """
-        get the design variables that were specified with
-        addVariablesPyOpt.
-
-        Returns
-        ----------
-        x : array
-            The current design variable vector set in tacs.
-
-        Notes
-        -----
-        This routine **can** also accept a list or vector of
-        variables. This is used internally in pytacs, but is not
-        recommended to used externally.
-        """
-        return self.x.getArray().copy()
-
     def getNumDesignVars(self):
         """
         Return the number of design variables on this processor.
         """
         return self.x.getSize()
-
-    def getTotalNumDesignVars(self):
-        """
-        Return the number of design variables across all processors.
-        """
-        return self.dvNum
 
     # TODO: Change below to getNodes/setNodes for consistency
     def getCoordinates(self):
@@ -158,11 +152,32 @@ class BaseProblem(BaseUI):
         """
         return self.Xpts.getSize()
 
-    def getVarsPerNodes(self):
+    ####### Design variable methods ########
+
+    def getVarsPerNode(self):
         """
         Get the number of variables per node for the model.
         """
         return self.assembler.getVarsPerNode()
+
+    def getNumOwnedNodes(self):
+        """
+        Get the number of nodes owned by this processor.
+        """
+        return self.assembler.getNumOwnedNodes()
+
+    def getNumVariables(self):
+        """Return the number of degrees of freedom (states) that are
+        on this processor
+
+        Returns
+        -------
+        nstate : int
+            number of states.
+        """
+        vpn =  self.getVarsPerNode()
+        nnodes =  self.getNumOwnedNodes()
+        return vpn * nnodes
 
     def addFunction(self, funcName, funcHandle, compIDs=None, **kwargs):
         """

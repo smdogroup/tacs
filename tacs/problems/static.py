@@ -30,7 +30,7 @@ class StaticProblem(BaseProblem):
     >>> sp = StaticProblem('lc0')
     """
 
-    def __init__(self, name, assembler, comm, outputViewer=None, meshLoader=None):
+    def __init__(self, name, assembler, comm, outputViewer=None, meshLoader=None, options={}):
         # python object name
         self.objectName = 'StaticProblem'
 
@@ -59,7 +59,6 @@ class StaticProblem(BaseProblem):
             'resNormUB': [float, 1e20],
 
             # Output Options
-            'writeBDF': [bool, False],
             'writeSolution': [bool, True],
             'numberSolutions': [bool, True],
             'printTiming': [bool, False],
@@ -75,6 +74,10 @@ class StaticProblem(BaseProblem):
         for key in def_keys:
             self.options['defaults'][key.lower()] = defOpts[key]
             self.options[key.lower()] = defOpts[key]
+
+        # Set user-defined options
+        for key in options:
+            self.setOption(key, options[key])
 
         # Linear solver factor flag
         self._factorOnNext = True
@@ -429,9 +432,9 @@ class StaticProblem(BaseProblem):
         ----------
         Optional Arguments:
 
-        Fext : ndarray
-            Distributed array containing additional loads (i.e. aerodynamic)
-            to applied to RHS of static problem.
+        Fext : numpy array
+            Distributed array containing additional loads (ex. aerodynamic forces for aerostructural coupling)
+            to applied to RHS of the static problem.
 
         """
         startTime = time.time()
@@ -698,59 +701,6 @@ class StaticProblem(BaseProblem):
             print('| %-30s: %10.3f sec' % ('Complete Sensitivity Time', totalSensitivityTime - startTime))
             print('+--------------------------------------------------+')
 
-    ####### Post processing methods ########
-
-    def getVariablesAtPoints(self, structProblem, points):
-        '''The function is used to get the state variables DOF's at the
-        selected physical locations, points. A closest point search is
-        used to determine the FE nodes that are the closest to the
-        requested nodes.
-
-        NOTE: The number and units of the entries of the state vector
-        depends on the physics problem being solved and the dofs included
-        in the model.
-
-        A couple of examples of state vector components for common problem are listed below:
-
-        In Elasticity with varsPerNode = 3,
-        q = [u, v, w] # displacements
-        In Elasticity with varsPerNode = 6,
-        q = [u, v, w, tx, ty, tz] # displacements + rotations
-        In Thermoelasticity with varsPerNode = 4,
-        q = [u, v, w, T] # displacements + temperature
-        In Thermoelasticity with varsPerNode = 7,
-        q = [u, v, w, tx, ty, tz, T] # displacements + rotations + temperature
-        '''
-        try:
-            from scipy.spatial import cKDTree
-        except:
-            raise Error("scipy.spatial "
-                        "must be available to use getDisplacements")
-
-        points = np.atleast_2d(points)
-        self.setStructProblem(structProblem)
-
-        # Pull out the local nodes on the proc and search "points" in the tree
-        vpn = self.varsPerNode
-        Xpts = self.assembler.createNodeVec()
-        self.assembler.getNodes(Xpts)
-        localNodes = np.real(Xpts.getArray())
-        nNodes = len(localNodes) // vpn
-        xNodes = localNodes[0:nNodes * 3].reshape((nNodes, 3)).copy()
-        tree = cKDTree(xNodes)
-
-        d, index = tree.query(points, k=1)
-
-        # Now figure out which proc has the best distance for this
-        localu = np.real(structProblem.tacsData.u.getArray())
-        uNodes = localu[0:nNodes * vpn].reshape((nNodes, vpn)).copy()
-        u_req = np.zeros([len(points), vpn])
-        for i in range(len(points)):
-            proc = self.comm.allreduce((d[i], self.comm.rank), op=MPI.MINLOC)
-            u_req[i, :] = uNodes[index[i], :]
-            u_req[i, :] = self.comm.bcast(uNodes[index[i], :], root=proc[1])
-        return u_req
-
     def addSVSens(self, evalFuncs, dIduList):
         """ Add the state variable sensitivity to the ADjoint RHS for given evalFuncs"""
         funcHandles = [self.functionList[f] for f in evalFuncs if
@@ -777,17 +727,19 @@ class StaticProblem(BaseProblem):
         """ Add the adjoint product contribution to the nodal coordinates sensitivity arrays"""
         self.assembler.addAdjointResXptSensProducts(adjointlist, xptSensList, scale)
 
-    def getResidual(self, structProblem, res=None, Fext=None):
+    def getResidual(self, res=None, Fext=None):
         """
         This routine is used to evaluate directly the structural
         residual. Only typically used with aerostructural analysis.
 
         Parameters
         ----------
-        structProblem : pyStructProblem class
-            Structural problem to use
         res : numpy array
             If res is not None, place the residuals into this array.
+
+        Fext : numpy array
+            Distributed array containing additional loads (ex. aerodynamic forces for aerostructural coupling)
+            to applied to RHS of the static problem.
 
         Returns
         -------
@@ -795,13 +747,19 @@ class StaticProblem(BaseProblem):
             The same array if res was provided, (otherwise a new
             array) with evaluated residuals
         """
+        # Make sure assembler variables are up to date
+        self._setProblemVars()
+        # Assemble residual
         self.assembler.assembleRes(self.res)
-        self.res.axpy(1.0, self.F)  # Add the -F
+        # Add the -F
+        self.res.axpy(1.0, self.F)
 
+        # Add external loads, if specified
         if Fext is not None:
             resArray = self.res.getArray()
             resArray[:] -= Fext[:]
 
+        # Output residual
         if res is None:
             res = self.res.getArray().copy()
         else:
@@ -851,21 +809,9 @@ class StaticProblem(BaseProblem):
         self.res.axpy(-1.0, rhs)  # Add the -RHS
         self.finalNorm = np.real(self.res.norm())
 
-    def getNumVariables(self):
-        """Return the number of degrees of freedom (states) that are
-        on this processor
-
-        Returns
-        -------
-        nstate : int
-            number of states.
-        """
-        return self.u.getSize()
-
-    def getVariables(self, structProblem, states=None):
-        """Return the current state values for the current
-        structProblem"""
-        self.setStructProblem(structProblem)
+    def getVariables(self, states=None):
+        """Return the current state values for the
+        problem"""
 
         if states is None:
             states = self.u.getArray().copy()
@@ -874,7 +820,7 @@ class StaticProblem(BaseProblem):
 
         return states
 
-    def setVariables(self, structProblem, states):
+    def setVariables(self, states):
         """ Set the structural states for current load case. Typically
         only used for aerostructural analysis
 
@@ -883,19 +829,8 @@ class StaticProblem(BaseProblem):
         states : array
             Values to set. Must be the size of getNumVariables()
         """
-        self.setStructProblem(structProblem)
-        self.u.setValues(states)
+        self.u_array[:] = states[:]
         self.assembler.setVariables(self.u)
-
-    def writeOutputFile(self, fileName):
-        """Low-level command to write the current loadcase to a file
-
-        Parameters
-        ----------
-        fileName : str
-            Filename for output. Should have .f5 extension.
-         """
-        self.outputViewer.writeToFile(fileName)
 
     def writeSolution(self, outputDir=None, baseName=None, number=None):
         """This is a generic shell function that writes the output
@@ -942,7 +877,3 @@ class StaticProblem(BaseProblem):
         if self.getOption('writeSolution'):
             base = os.path.join(outputDir, baseName) + '.f5'
             self.outputViewer.writeToFile(base)
-
-        if self.getOption('writeBDF'):
-            base = os.path.join(outputDir, baseName) + '.bdf'
-            self.writeBDF(base)

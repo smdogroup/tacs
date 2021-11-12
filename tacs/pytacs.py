@@ -92,7 +92,6 @@ class pyTACS(BaseUI):
             # Output Options
             'outputElement': [int, None],
             'writeBDF': [bool, False],
-            'writeSolution': [bool, True],
             'writeConnectivity': [bool, True],
             'writeNodes': [bool, True],
             'writeDisplacements': [bool, True],
@@ -101,7 +100,6 @@ class pyTACS(BaseUI):
             'writeExtras': [bool, True],
             'writeCoordinateFrame': [bool, False],
             'familySeparator': [str, '/'],
-            'numberSolutions': [bool, True],
             'printTiming': [bool, False],
             'printIterations': [bool, True],
 
@@ -748,17 +746,18 @@ class pyTACS(BaseUI):
         """
         return self.Xpts0.getArray().copy()
 
-    def createStaticProblem(self, name):
+    def createStaticProblem(self, name, options={}):
         problem = tacs.problems.static.StaticProblem(name, self.assembler, self.comm,
-                                                     self.outputViewer, self.meshLoader)
+                                                     self.outputViewer, self.meshLoader, options)
         # Set with original design vars and coordinates, in case they have changed
         problem.setDesignVars(self.x0)
         problem.setCoordinates(self.Xpts0)
         return problem
 
-    def createTransientProblem(self, name, tInit, tFinal, numSteps):
+    def createTransientProblem(self, name, tInit, tFinal, numSteps, options={}):
         problem = tacs.problems.transient.TransientProblem(name, tInit, tFinal, numSteps,
-                                                        self.assembler, self.comm, self.outputViewer, self.meshLoader)
+                                                        self.assembler, self.comm, self.outputViewer, self.meshLoader,
+                                                        options)
         # Set with original design vars and coordinates, in case they have changed
         problem.setDesignVars(self.x0)
         problem.setCoordinates(self.Xpts0)
@@ -917,6 +916,24 @@ class pyTACS(BaseUI):
         Return number of components (property) groups found in bdf.
         """
         return self.nComp
+
+    def getTotalNumDesignVars(self):
+        """
+        Return the number of design variables across all processors.
+        """
+        return self.dvNum
+
+    def getVarsPerNode(self):
+        """
+        Get the number of variables per node for the model.
+        """
+        return self.assembler.getVarsPerNode()
+
+    def getNumOwnedNodes(self):
+        """
+        Get the number of nodes owned by this processor.
+        """
+        return self.assembler.getNumOwnedNodes()
 
     def _createOutputGroups(self):
         """Automatically determine how to split out the output file

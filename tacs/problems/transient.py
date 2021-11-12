@@ -31,7 +31,8 @@ class TransientProblem(BaseProblem):
     """
 
     def __init__(self, name, tInit, tFinal, numSteps,
-                 assembler, comm, outputViewer=None, meshLoader=None):
+                 assembler, comm, outputViewer=None, meshLoader=None,
+                 options={}):
         # python object name
         self.objectName = 'TransientProblem'
 
@@ -55,6 +56,7 @@ class TransientProblem(BaseProblem):
             'integrationOrder': [int, 2],
             'L2Convergence': [float, 1e-12],
             'L2ConvergenceRel': [float, 1e-12],
+            'jacAssemblyFreq': [int, 1],
             'useMonitor': [bool, False],
             'monitorFrequency': [int, 10],
 
@@ -75,6 +77,10 @@ class TransientProblem(BaseProblem):
         for key in def_keys:
             self.options['defaults'][key.lower()] = defOpts[key]
             self.options[key.lower()] = defOpts[key]
+
+        # Set user-defined options
+        for key in options:
+            self.setOption(key, options[key])
 
         # Create problem-specific variables
         self._createVariables()
@@ -115,6 +121,9 @@ class TransientProblem(BaseProblem):
         self.integrator.setAbsTol(atol)
         rtol = self.getOption('L2ConvergenceRel')
         self.integrator.setRelTol(rtol)
+        # Jacobian assembly frequency
+        jacFreq = self.getOption('jacAssemblyFreq')
+        self.integrator.setJacAssemblyFreq(jacFreq)
 
     def getNumTimeSteps(self):
         return self.numSteps
@@ -470,7 +479,7 @@ class TransientProblem(BaseProblem):
 
         for f in evalFuncs:
             if f not in self.functionList:
-                raise Error("Supplied function has not beed added "
+                raise self.TACSError("Supplied function has not been added "
                             "using addFunction()")
 
         # Fast parallel function evaluation of structural funcs:
@@ -510,31 +519,14 @@ class TransientProblem(BaseProblem):
             self.pp('|')
             self.pp('| TACS Adjoint Times:')
             print('|')
-            print('| %-30s: %10.3f sec' % ('TACS Sens Setup Problem Time', setupProblemTime - startTime))
-            print('| %-30s: %10.3f sec' % (
-                'TACS Adjoint RHS Time', adjointRHSTime - setupProblemTime))
-            for f in evalFuncs:
-                print('| %-30s: %10.3f sec' % (
-                'TACS Adjoint Solve Time - %s' % (f), adjointEndTime[f] - adjointStartTime[f]))
-            print('| %-30s: %10.3f sec' % ('Total Sensitivity Time', totalSensitivityTime - adjointFinishedTime))
+            print('| %-30s: %10.3f sec' % ('Adjoint solve time', adjointFinishedTime - startTime))
             print('|')
             print('| %-30s: %10.3f sec' % ('Complete Sensitivity Time', totalSensitivityTime - startTime))
             print('+--------------------------------------------------+')
 
     ####### Post processing methods ########
 
-    def getNumVariables(self):
-        """Return the number of degrees of freedom (states) that are
-        on this processor
-
-        Returns
-        -------
-        nstate : int
-            number of states.
-        """
-        return self.u.getSize()
-
-    def getVariables(self, structProblem, states=None):
+    def getVariables(self, states=None):
         """Return the current state values for the current
         structProblem"""
         self.setStructProblem(structProblem)
@@ -546,7 +538,7 @@ class TransientProblem(BaseProblem):
 
         return states
 
-    def setVariables(self, structProblem, states):
+    def setVariables(self, states):
         """ Set the structural states for current load case. Typically
         only used for aerostructural analysis
 
