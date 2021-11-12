@@ -1018,7 +1018,7 @@ class pyTACS(BaseUI):
                 # part of the description. if so add.
                 item = item.upper()
                 for i in range(self.nComp):
-                    if item in self.compDescripts[i]:
+                    if item in self.compDescripts[i].upper():
                         compIDs[-1].append(i)
             else:
                 self.TACSWarning('Unidentifiable information given for \'include\'\
