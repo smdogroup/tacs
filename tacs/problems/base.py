@@ -103,6 +103,25 @@ class BaseProblem(BaseUI):
         # Set the variables in tacs
         self.assembler.setDesignVars(self.x)
 
+    def createDesignVec(self, values=None, asBVec=False):
+        """
+        Returns a tacs distributed design variable vector.
+        """
+        xvec = self.assembler.createDesignVec()
+        xarray = xvec.getArray()
+
+        if isinstance(values, tacs.TACS.Vec):
+            xvec.copyValues(values)
+        else:
+            xarray[:] = values
+
+        # Return as tacs bvec object
+        if asBVec:
+            return xvec
+        # return as numpy array
+        else:
+            return xarray
+
     def getNumDesignVars(self):
         """
         Return the number of design variables on this processor.
@@ -146,6 +165,25 @@ class BaseProblem(BaseUI):
             raise ValueError("setCoordinates must be called with either a numpy array, dict, or TACS Vec as input.")
         self.assembler.setNodes(self.Xpts)
 
+    def createNodeVec(self, values=None, asBVec=False):
+        """
+        Returns a tacs distributed nodal coordinate vector.
+        """
+        Xptsvec = self.assembler.createNodeVec()
+        Xptsarray = Xptsvec.getArray()
+
+        if isinstance(values, tacs.TACS.Vec):
+            Xptsvec.copyValues(values)
+        else:
+            Xptsarray[:] = values
+
+        # Return as tacs bvec object
+        if asBVec:
+            return Xptsvec
+        # return as numpy array
+        else:
+            return Xptsarray
+
     def getNumCoordinates(self):
         """
         Return the number of mesh coordinates on this processor.
@@ -165,6 +203,25 @@ class BaseProblem(BaseUI):
         Get the number of nodes owned by this processor.
         """
         return self.assembler.getNumOwnedNodes()
+
+    def createVec(self, values=None, asBVec=False):
+        """
+        Returns a tacs distributed state varaible vector.
+        """
+        varVec = self.assembler.createVec()
+        varArray = varVec.getArray()
+
+        if isinstance(values, tacs.TACS.Vec):
+            varVec.copyValues(values)
+        else:
+            varArray[:] = values
+
+        # Return as tacs bvec object
+        if asBVec:
+            return varVec
+        # return as numpy array
+        else:
+            return varArray
 
     def getNumVariables(self):
         """Return the number of degrees of freedom (states) that are

@@ -96,6 +96,9 @@ class StaticProblem(BaseProblem):
         self.dIduList = OrderedDict()
         self.dvSensList = OrderedDict()
         self.xptSensList = OrderedDict()
+        # Temporary vector for adjoint solve
+        self.phi = self.assembler.createVec()
+        self.adjRHS = self.assembler.createVec()
 
         # Load vector
         self.F = self.assembler.createVec()
@@ -701,33 +704,135 @@ class StaticProblem(BaseProblem):
             print('| %-30s: %10.3f sec' % ('Complete Sensitivity Time', totalSensitivityTime - startTime))
             print('+--------------------------------------------------+')
 
-    def addSVSens(self, evalFuncs, dIduList):
+    def addSVSens(self, evalFuncs, svSensList):
         """ Add the state variable sensitivity to the ADjoint RHS for given evalFuncs"""
+        # Set problem vars to assembler
+        self._setProblemVars()
+
+        # Get list of TACS function handles from evalFuncs
         funcHandles = [self.functionList[f] for f in evalFuncs if
                        f in self.functionList]
-        self.assembler.addSVSens(funcHandles, dIduList, self.alpha, self.beta, self.gamma)
+
+        # Create a tacs BVec copy for the operation if the output is a numpy array
+        if isinstance(svSensList[0], np.ndarray):
+            svSensBVecList = [self.createVec(svSensArray, asBVec=True) for svSensArray in svSensList]
+        # Otherwise the input is already a BVec and we can do the operation in place
+        else:
+            svSensBVecList = svSensList
+
+        self.assembler.addSVSens(funcHandles, svSensBVecList, self.alpha, self.beta, self.gamma)
+
+        # Update from the BVec values, if the input was a numpy array
+        if isinstance(svSensList[0], np.ndarray):
+            for svSensArray, svSensBVec in zip(svSensList, svSensBVecList):
+                svSensArray[:] = svSensBVec.getArray()
 
     def addDVSens(self, evalFuncs, dvSensList, scale=1.0):
-        """ Add pratial sensitivity contribution due to design vars for evalFuncs"""
+        """ Add partial sensitivity contribution due to design vars for evalFuncs"""
+        # Set problem vars to assembler
+        self._setProblemVars()
+
+        # Get list of TACS function handles from evalFuncs
         funcHandles = [self.functionList[f] for f in evalFuncs if
                        f in self.functionList]
-        self.assembler.addDVSens(funcHandles, dvSensList, scale)
+
+        # Create a tacs BVec copy for the operation if the output is a numpy array
+        if isinstance(dvSensList[0], np.ndarray):
+            dvSensBVecList = [self.createDesignVec(dvSensArray, asBVec=True) for dvSensArray in dvSensList]
+        # Otherwise the input is already a BVec and we can do the operation in place
+        else:
+            dvSensBVecList = dvSensList
+
+        self.assembler.addDVSens(funcHandles, dvSensBVecList, scale)
+
+        # Update the BVec values, if the input was a numpy array
+        if isinstance(dvSensList[0], np.ndarray):
+            for dvSensArray, dvSensBVec in zip(dvSensList, dvSensBVecList):
+                dvSensArray[:] = dvSensBVec.getArray()
 
     def addAdjointResProducts(self, adjointlist, dvSensList, scale=-1.0):
         """ Add the adjoint product contribution to the design variable sensitivity arrays"""
-        self.assembler.addAdjointResProducts(adjointlist, dvSensList, scale)
+        # Set problem vars to assembler
+        self._setProblemVars()
+
+        # Create a tacs BVec copy for the operation if the output is a numpy array
+        if isinstance(adjointlist[0], np.ndarray):
+            adjointBVeclist = [self.createVec(adjointArray, asBVec=True) for adjointArray in adjointlist]
+        # Otherwise the input is already a BVec and we can do the operation in place
+        else:
+            adjointBVeclist = adjointlist
+
+        # Make sure BC terms are zeroed out in adjoint
+        for adjoint in adjointBVeclist:
+            self.assembler.applyBCs(adjoint)
+
+        # Create a tacs BVec copy for the operation if the output is a numpy array
+        if isinstance(dvSensList[0], np.ndarray):
+            dvSensBVecList = [self.createDesignVec(dvSensArray, asBVec=True) for dvSensArray in dvSensList]
+        # Otherwise the input is already a BVec and we can do the operation in place
+        else:
+            dvSensBVecList = dvSensList
+
+        self.assembler.addAdjointResProducts(adjointBVeclist, dvSensBVecList, scale)
+
+        # Update the BVec values, if the input was a numpy array
+        if isinstance(dvSensList[0], np.ndarray):
+            for dvSensArray, dvSensBVec in zip(dvSensList, dvSensBVecList):
+                dvSensArray[:] = dvSensBVec.getArray()
 
     def addXptSens(self, evalFuncs, xptSensList, scale=1.0):
-        """ Add pratial sensitivity contribution due to nodal coordinates for evalFuncs"""
+        """ Add partial sensitivity contribution due to nodal coordinates for evalFuncs"""
+        # Set problem vars to assembler
+        self._setProblemVars()
+
+        # Get list of TACS function handles from evalFuncs
         funcHandles = [self.functionList[f] for f in evalFuncs if
                        f in self.functionList]
-        self.assembler.addXptSens(funcHandles, xptSensList, scale)
+
+        # Create a tacs BVec copy for the operation if the output is a numpy array
+        if isinstance(xptSensList[0], np.ndarray):
+            xptSensBVecList = [self.createNodeVec(xptSens, asBVec=True) for xptSens in xptSensList]
+        # Otherwise the input is already a BVec and we can do the operation in place
+        else:
+            xptSensBVecList = xptSensList
+
+        self.assembler.addXptSens(funcHandles, xptSensBVecList, scale)
+
+        # Update from the BVec values, if the input was a numpy array
+        if isinstance(xptSensList[0], np.ndarray):
+            for xptSens, xptSensBVec in zip(xptSensList, xptSensBVecList):
+                xptSens[:] = xptSensBVec.getArray()
 
     def addAdjointResXptSensProducts(self, adjointlist, xptSensList, scale=-1.0):
         """ Add the adjoint product contribution to the nodal coordinates sensitivity arrays"""
-        self.assembler.addAdjointResXptSensProducts(adjointlist, xptSensList, scale)
+        # Set problem vars to assembler
+        self._setProblemVars()
 
-    def getResidual(self, res=None, Fext=None):
+        # Create a tacs BVec copy for the operation if the output is a numpy array
+        if isinstance(adjointlist[0], np.ndarray):
+            adjointBVeclist = [self.createVec(adjoint, asBVec=True) for adjoint in adjointlist]
+        # Otherwise the input is already a BVec and we can do the operation in place
+        else:
+            adjointBVeclist = adjointlist
+
+        # Make sure BC terms are zeroed out in adjoint
+        for adjoint in adjointBVeclist:
+            self.assembler.applyBCs(adjoint)
+
+        # Create a tacs BVec copy for the operation if the output is a numpy array
+        if isinstance(xptSensList[0], np.ndarray):
+            xptSensBVecList = [self.createNodeVec(xptSens, asBVec=True) for xptSens in xptSensList]
+        # Otherwise the input is already a BVec and we can do the operation in place
+        else:
+            xptSensBVecList = xptSensList
+
+        self.assembler.addAdjointResXptSensProducts(adjointBVeclist, xptSensBVecList, scale)
+
+        if isinstance(xptSensList[0], np.ndarray):
+            for xptSens, xptSensBVec in zip(xptSensList, xptSensBVecList):
+                xptSens[:] = xptSensBVec.getArray()
+
+    def getResidual(self, res, Fext=None):
         """
         This routine is used to evaluate directly the structural
         residual. Only typically used with aerostructural analysis.
@@ -752,20 +857,48 @@ class StaticProblem(BaseProblem):
         # Assemble residual
         self.assembler.assembleRes(self.res)
         # Add the -F
-        self.res.axpy(1.0, self.F)
+        self.res.axpy(-1.0, self.F)
 
         # Add external loads, if specified
         if Fext is not None:
-            resArray = self.res.getArray()
-            resArray[:] -= Fext[:]
+            if isinstance(Fext, tacs.TACS.Vec):
+                self.res.axpy(-1.0, Fext)
+            elif isinstance(Fext, np.ndarray):
+                resArray = self.res.getArray()
+                resArray[:] -= Fext[:]
 
         # Output residual
-        if res is None:
-            res = self.res.getArray().copy()
+        if isinstance(res, tacs.TACS.Vec):
+            res.copyValues(self.res)
         else:
             res[:] = self.res.getArray()
 
-        return res
+    def addTransposeJacVecProduct(self, phi, prod, scale=1.0):
+        # Create a tacs bvec copy of the adjoint vector
+        if isinstance(phi, tacs.TACS.Vec):
+            self.phi.copyValues(phi)
+        elif isinstance(phi, np.ndarray):
+            self.phi.getArray()[:] = phi
+
+        # Zero out bc terms in input
+        self.assembler.applyBCs(self.phi)
+
+        # Set problem vars to assembler
+        self._setProblemVars()
+
+        # Check if we need to initialize Jacobian
+        self._initializeSolve()
+
+        # First compute the residual
+        self.K.mult(self.phi, self.res)
+        # Zero out bc terms
+        self.assembler.applyBCs(self.res)
+
+        # Output residual
+        if isinstance(prod, tacs.TACS.Vec):
+            prod.axpy(scale, self.res)
+        else:
+            prod[:] = prod + scale * self.res.getArray()
 
     def zeroVectors(self):
         """Zero all the tacs solution b-vecs"""
@@ -789,12 +922,32 @@ class StaticProblem(BaseProblem):
             in multidisciplinary analysis
         """
 
-        # First compute the residual
-        self.K.mult(phi, self.res)
-        self.res.axpy(-1.0, rhs)  # Add the -RHS
+        # Set problem vars to assembler
+        self._setProblemVars()
 
-        # Starting Norm for this compuation
-        self.startNorm = np.real(self.res.norm())
+        # Check if we need to initialize
+        self._initializeSolve()
+
+        # Create a copy of the adjoint/rhs guess
+        if isinstance(phi, tacs.TACS.Vec):
+            self.phi.copyValues(phi)
+        elif isinstance(phi, np.ndarray):
+            self.phi.getArray()[:] = phi
+
+        if isinstance(rhs, tacs.TACS.Vec):
+            self.adjRHS.copyValues(rhs)
+        elif isinstance(rhs, np.ndarray):
+            self.adjRHS.getArray()[:] = rhs
+
+        # Zero out bc terms in adjoint guess
+        self.assembler.applyBCs(self.phi)
+
+        # First compute the residual
+        self.K.mult(self.phi, self.res)
+        self.res.axpy(-1.0, self.adjRHS)  # Add the -RHS
+
+        # Zero out bc terms in residual
+        self.assembler.applyBCs(self.res)
 
         # Solve Linear System
         zeroGuess = 0
@@ -802,12 +955,13 @@ class StaticProblem(BaseProblem):
         self.KSM.solve(self.res, self.update, zeroGuess)
 
         # Update the adjoint vector with the (damped) update
-        phi.axpy(-damp, self.update)
+        self.phi.axpy(-damp, self.update)
 
-        # Compute actual final FEA Norm
-        self.K.mult(phi, self.res)
-        self.res.axpy(-1.0, rhs)  # Add the -RHS
-        self.finalNorm = np.real(self.res.norm())
+        # Copy output values back to user vectors
+        if isinstance(phi, tacs.TACS.Vec):
+            phi.copyValues(self.phi)
+        elif isinstance(phi, np.ndarray):
+            phi[:] = self.phi.getArray()
 
     def getVariables(self, states=None):
         """Return the current state values for the
@@ -821,15 +975,18 @@ class StaticProblem(BaseProblem):
         return states
 
     def setVariables(self, states):
-        """ Set the structural states for current load case. Typically
-        only used for aerostructural analysis
+        """ Set the structural states for current load case.
 
         Parameters
         ----------
         states : array
             Values to set. Must be the size of getNumVariables()
         """
+        # Copy array values
         self.u_array[:] = states[:]
+        # Zero out bc terms
+        self.assembler.setBCs(self.u)
+        # Set states to assembler
         self.assembler.setVariables(self.u)
 
     def writeSolution(self, outputDir=None, baseName=None, number=None):
