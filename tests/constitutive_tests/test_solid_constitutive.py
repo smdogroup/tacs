@@ -1,4 +1,4 @@
-from tacs import TACS, constitutive, elements
+from tacs import TACS, constitutive
 import numpy as np
 import unittest
 
@@ -40,9 +40,6 @@ class ConstitutiveTest(unittest.TestCase):
         # Create stiffness (need class)
         self.con = constitutive.SolidConstitutive(self.props, t=1.0, tNum=0)
 
-        # Seed random number generator in tacs for consistent test results
-        elements.SeedRandomGenerator(0)
-
     def test_constitutive_density(self):
         # Test density dv sensitivity
         fail = constitutive.TestConstitutiveDensity(self.con, self.elem_index, self.pt, self.x,
@@ -82,5 +79,5 @@ class ConstitutiveTest(unittest.TestCase):
     def test_constitutive_failure_strain_sens(self):
         # Test failure dv sensitivity
         fail = constitutive.TestConstitutiveFailureStrainSens(self.con, self.elem_index, self.pt, self.x,
-                                                              self.dh, 2, self.atol, self.rtol)
+                                                              self.dh, self.print_level, self.atol, self.rtol)
         self.assertFalse(fail)
