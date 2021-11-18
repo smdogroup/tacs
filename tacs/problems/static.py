@@ -926,19 +926,16 @@ class StaticProblem(BaseProblem):
         self.assembler.setVariables(self.u)
         self.update.zeroEntries()
 
-    def solveAdjoint(self, rhs, phi, damp=1.0):
+    def solveAdjoint(self, rhs, phi):
         """
         Solve the structural adjoint.
 
         Parameters
         ----------
-        rhs : TACS BVec
+        rhs : TACS BVec or numpy array
             right hand side vector for adjoint solve
-        phi : TACS BVec
-            BVec into which the adjoint is saved
-        damp : float
-            A damping variable for adjoint update. Typically only used
-            in multidisciplinary analysis
+        phi : TACS BVec or numpy array
+            BVec or numpy array into which the adjoint is saved
         """
 
         # Set problem vars to assembler
@@ -970,7 +967,7 @@ class StaticProblem(BaseProblem):
         self.KSM.solve(self.res, self.update, zeroGuess)
 
         # Update the adjoint vector with the (damped) update
-        self.phi.axpy(-damp, self.update)
+        self.phi.axpy(-1.0, self.update)
 
         # Copy output values back to user vectors
         if isinstance(phi, tacs.TACS.Vec):
