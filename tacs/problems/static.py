@@ -899,25 +899,25 @@ class StaticProblem(BaseProblem):
         elif isinstance(phi, np.ndarray):
             self.phi.getArray()[:] = phi
 
+        if isinstance(prod, tacs.TACS.Vec):
+            self.res.copyValues(prod)
+        elif isinstance(prod, np.ndarray):
+            self.res.getArray()[:] = prod
+
         # Zero out bc terms in input
         self.assembler.applyBCs(self.phi)
 
         # Set problem vars to assembler
         self._setProblemVars()
 
-        # Check if we need to initialize Jacobian
-        self._initializeSolve()
-
-        # First compute the residual
-        self.K.mult(self.phi, self.res)
-        # Zero out bc terms
-        self.assembler.applyBCs(self.res)
+        self.assembler.addJacobianVecProduct(scale, self.alpha, self.beta, self.gamma,
+                                             self.phi, self.res, tacs.TACS.TRANSPOSE)
 
         # Output residual
         if isinstance(prod, tacs.TACS.Vec):
-            prod.axpy(scale, self.res)
+            prod.copyValues(self.res)
         else:
-            prod[:] = prod + scale * self.res.getArray()
+            prod[:] = self.res.getArray()
 
     def zeroVectors(self):
         """Zero all the tacs solution b-vecs"""
@@ -958,15 +958,11 @@ class StaticProblem(BaseProblem):
         elif isinstance(rhs, np.ndarray):
             self.adjRHS.getArray()[:] = rhs
 
-        # Zero out bc terms in adjoint guess
-        self.assembler.applyBCs(self.phi)
-
         # First compute the residual
-        self.K.mult(self.phi, self.res)
+        self.res.zeroEntries()
+        self.assembler.addJacobianVecProduct(1.0, self.alpha, self.beta, self.gamma,
+                                             self.phi, self.res, tacs.TACS.TRANSPOSE)
         self.res.axpy(-1.0, self.adjRHS)  # Add the -RHS
-
-        # Zero out bc terms in residual
-        self.assembler.applyBCs(self.res)
 
         # Solve Linear System
         zeroGuess = 0
