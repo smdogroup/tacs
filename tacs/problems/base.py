@@ -195,7 +195,7 @@ class BaseProblem(BaseUI):
     def _arrayToVec(self, varArray):
         """
         Converts a distributed numpy array into a TACS state variable BVec.
-        NOTE: dvArray must have correct size on each processor
+        NOTE: varArray must have correct size on each processor
         """
         varVec = self.assembler.createVec()
 
