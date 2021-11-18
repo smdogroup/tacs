@@ -79,5 +79,5 @@ class ConstitutiveTest(unittest.TestCase):
     def test_constitutive_failure_strain_sens(self):
         # Test failure dv sensitivity
         fail = constitutive.TestConstitutiveFailureStrainSens(self.con, self.elem_index, self.pt, self.x,
-                                                              self.dh, self.print_level, self.atol, self.rtol)
+                                                              self.dh, 2, self.atol, self.rtol)
         self.assertFalse(fail)
