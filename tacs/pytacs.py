@@ -770,6 +770,27 @@ class pyTACS(BaseUI):
         """
         return self.assembler.getVarsPerNode()
 
+    def applyBCsToVec(self, vec):
+        """
+        Applies zeros to boundary condition dofs in input vector.
+        """
+        varVec = self.assembler.createVec()
+        varArray = varVec.getArray()
+
+        # Check if input is a BVec or numpy array
+        if isinstance(vec, tacs.TACS.Vec):
+            self.assembler.applyBCs(vec)
+        elif isinstance(vec, np.ndarray):
+            array = vec
+            # Create temporary BVec
+            vec = self.assembler.createVec()
+            # Copy array values to BVec
+            vec.getArray()[:] = array
+            # Apply BCs
+            self.assembler.applyBCs(vec)
+            # Copy values back to array
+            array[:] = vec.getArray()
+
     def createStaticProblem(self, name, options={}):
         problem = tacs.problems.static.StaticProblem(name, self.assembler, self.comm,
                                                      self.outputViewer, self.meshLoader, options)

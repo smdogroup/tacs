@@ -62,7 +62,7 @@ class StaticProblem(BaseProblem):
             'writeSolution': [bool, True],
             'numberSolutions': [bool, True],
             'printTiming': [bool, False],
-            'printIterations': [bool, True],
+            'printIterations': [bool, False],
 
         }
 
@@ -90,6 +90,7 @@ class StaticProblem(BaseProblem):
 
         # Generic residual vector
         self.res = self.assembler.createVec()
+        self.rhs = self.assembler.createVec()
 
         # Dictionaries to hold adjoint/sens vectors for each evalFunc
         self.adjointList = OrderedDict()
@@ -456,14 +457,19 @@ class StaticProblem(BaseProblem):
 
         # Compute the RHS
         self.assembler.assembleRes(self.res)
-        # Zero out bc terms in F
-        self.assembler.applyBCs(self.F)
-        # Add the -F
-        self.res.axpy(-1.0, self.F)
-        # Add external forces, if necessary
+        # Add force terms from rhs
+        self.rhs.copyValues(self.F) # Fixed loads
+        # Add external loads, if specified
         if Fext is not None:
-            resArray = self.res.getArray()
-            resArray[:] -= Fext[:]
+            if isinstance(Fext, tacs.TACS.Vec):
+                self.rhs.axpy(1.0, Fext)
+            elif isinstance(Fext, np.ndarray):
+                rhsArray = self.rhs.getArray()
+                rhsArray[:] += Fext[:]
+        # Zero out bc terms in rhs
+        self.assembler.applyBCs(self.rhs)
+        # Add the -F
+        self.res.axpy(-1.0, self.rhs)
 
         # Set initnorm as the norm of F
         self.initNorm = np.real(self.F.norm())
@@ -710,7 +716,7 @@ class StaticProblem(BaseProblem):
 
         # Create a tacs BVec copy for the operation if the output is a numpy array
         if isinstance(svSensList[0], np.ndarray):
-            svSensBVecList = [self.createVec(svSensArray, asBVec=True) for svSensArray in svSensList]
+            svSensBVecList = [self._arrayToVec(svSensArray) for svSensArray in svSensList]
         # Otherwise the input is already a BVec and we can do the operation in place
         else:
             svSensBVecList = svSensList
@@ -733,7 +739,7 @@ class StaticProblem(BaseProblem):
 
         # Create a tacs BVec copy for the operation if the output is a numpy array
         if isinstance(dvSensList[0], np.ndarray):
-            dvSensBVecList = [self.createDesignVec(dvSensArray, asBVec=True) for dvSensArray in dvSensList]
+            dvSensBVecList = [self._arrayToDesignVec(dvSensArray) for dvSensArray in dvSensList]
         # Otherwise the input is already a BVec and we can do the operation in place
         else:
             dvSensBVecList = dvSensList
@@ -758,7 +764,7 @@ class StaticProblem(BaseProblem):
 
         # Create a tacs BVec copy for the operation if the output is a numpy array
         if isinstance(adjointlist[0], np.ndarray):
-            adjointBVeclist = [self.createVec(adjointArray, asBVec=True) for adjointArray in adjointlist]
+            adjointBVeclist = [self._arrayToVec(adjointArray) for adjointArray in adjointlist]
         # Otherwise the input is already a BVec and we can do the operation in place
         else:
             adjointBVeclist = adjointlist
@@ -769,7 +775,7 @@ class StaticProblem(BaseProblem):
 
         # Create a tacs BVec copy for the operation if the output is a numpy array
         if isinstance(dvSensList[0], np.ndarray):
-            dvSensBVecList = [self.createDesignVec(dvSensArray, asBVec=True) for dvSensArray in dvSensList]
+            dvSensBVecList = [self._arrayToDesignVec(dvSensArray) for dvSensArray in dvSensList]
         # Otherwise the input is already a BVec and we can do the operation in place
         else:
             dvSensBVecList = dvSensList
@@ -798,7 +804,7 @@ class StaticProblem(BaseProblem):
 
         # Create a tacs BVec copy for the operation if the output is a numpy array
         if isinstance(xptSensList[0], np.ndarray):
-            xptSensBVecList = [self.createNodeVec(xptSensArray, asBVec=True) for xptSensArray in xptSensList]
+            xptSensBVecList = [self._arrayToNodeVec(xptSensArray) for xptSensArray in xptSensList]
         # Otherwise the input is already a BVec and we can do the operation in place
         else:
             xptSensBVecList = xptSensList
@@ -823,7 +829,7 @@ class StaticProblem(BaseProblem):
 
         # Create a tacs BVec copy for the operation if the output is a numpy array
         if isinstance(adjointlist[0], np.ndarray):
-            adjointBVeclist = [self.createVec(adjointArray, asBVec=True) for adjointArray in adjointlist]
+            adjointBVeclist = [self._arrayToVec(adjointArray) for adjointArray in adjointlist]
         # Otherwise the input is already a BVec and we can do the operation in place
         else:
             adjointBVeclist = adjointlist
@@ -834,7 +840,7 @@ class StaticProblem(BaseProblem):
 
         # Create a tacs BVec copy for the operation if the output is a numpy array
         if isinstance(xptSensList[0], np.ndarray):
-            xptSensBVecList = [self.createNodeVec(xptSensArray, asBVec=True) for xptSensArray in xptSensList]
+            xptSensBVecList = [self._arrayToNodeVec(xptSensArray) for xptSensArray in xptSensList]
         # Otherwise the input is already a BVec and we can do the operation in place
         else:
             xptSensBVecList = xptSensList
@@ -858,18 +864,13 @@ class StaticProblem(BaseProblem):
 
         Parameters
         ----------
-        res : numpy array
+        res : TACS BVec or numpy array
             If res is not None, place the residuals into this array.
 
-        Fext : numpy array
+        Fext : TACS BVec or numpy array
             Distributed array containing additional loads (ex. aerodynamic forces for aerostructural coupling)
             to applied to RHS of the static problem.
 
-        Returns
-        -------
-        res : array
-            The same array if res was provided, (otherwise a new
-            array) with evaluated residuals
         """
         # Make sure assembler variables are up to date
         self._setProblemVars()
@@ -878,13 +879,21 @@ class StaticProblem(BaseProblem):
         # Add the -F
         self.res.axpy(-1.0, self.F)
 
+        # Compute the RHS
+        self.assembler.assembleRes(self.res)
+        # Add force terms from rhs
+        self.rhs.copyValues(self.F) # Fixed loads
         # Add external loads, if specified
         if Fext is not None:
             if isinstance(Fext, tacs.TACS.Vec):
-                self.res.axpy(-1.0, Fext)
+                self.rhs.axpy(1.0, Fext)
             elif isinstance(Fext, np.ndarray):
-                resArray = self.res.getArray()
-                resArray[:] -= Fext[:]
+                rhsArray = self.rhs.getArray()
+                rhsArray[:] += Fext[:]
+        # Zero out bc terms in rhs
+        self.assembler.applyBCs(self.rhs)
+        # Add the -F
+        self.res.axpy(-1.0, self.rhs)
 
         # Output residual
         if isinstance(res, tacs.TACS.Vec):
@@ -893,6 +902,21 @@ class StaticProblem(BaseProblem):
             res[:] = self.res.getArray()
 
     def addTransposeJacVecProduct(self, phi, prod, scale=1.0):
+        """
+        Adds product of transpose Jacobian and input vector into output vector as shown below:
+        prod += scale * J^T . phi
+
+        Parameters
+        ----------
+        phi : TACS BVec or numpy array
+            Input vector to product with the transpose Jacobian.
+
+        prod : TACS BVec or numpy array
+            Output vector to add Jacobian product to.
+
+        scale : float
+            Scalar used to scale Jacobian product by.
+        """
         # Create a tacs bvec copy of the adjoint vector
         if isinstance(phi, tacs.TACS.Vec):
             self.phi.copyValues(phi)

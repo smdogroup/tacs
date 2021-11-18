@@ -103,24 +103,18 @@ class BaseProblem(BaseUI):
         # Set the variables in tacs
         self.assembler.setDesignVars(self.x)
 
-    def createDesignVec(self, values=None, asBVec=False):
+    def _arrayToDesignVec(self, dvArray):
         """
-        Returns a tacs distributed design variable vector.
+        Converts a distributed numpy array into a TACS design variable BVec.
+        NOTE: dvArray must have correct size on each processor
         """
-        xvec = self.assembler.createDesignVec()
-        xarray = xvec.getArray()
+        xVec = self.assembler.createDesignVec()
 
-        if isinstance(values, tacs.TACS.Vec):
-            xvec.copyValues(values)
-        else:
-            xarray[:] = values
+        # Set values
+        xVec.getArray()[:] = dvArray
 
         # Return as tacs bvec object
-        if asBVec:
-            return xvec
-        # return as numpy array
-        else:
-            return xarray
+        return xVec
 
     def getNumDesignVars(self):
         """
@@ -165,24 +159,18 @@ class BaseProblem(BaseUI):
             raise ValueError("setCoordinates must be called with either a numpy array, dict, or TACS Vec as input.")
         self.assembler.setNodes(self.Xpts)
 
-    def createNodeVec(self, values=None, asBVec=False):
+    def _arrayToNodeVec(self, xptsArray):
         """
-        Returns a tacs distributed nodal coordinate vector.
+        Converts a distributed numpy array into a TACS nodal BVec.
+        NOTE: xptsArray must have correct size on each processor
         """
         Xptsvec = self.assembler.createNodeVec()
-        Xptsarray = Xptsvec.getArray()
 
-        if isinstance(values, tacs.TACS.Vec):
-            Xptsvec.copyValues(values)
-        else:
-            Xptsarray[:] = values
+        # Set values
+        Xptsvec.getArray()[:] = xptsArray
 
         # Return as tacs bvec object
-        if asBVec:
-            return Xptsvec
-        # return as numpy array
-        else:
-            return Xptsarray
+        return Xptsvec
 
     def getNumCoordinates(self):
         """
@@ -204,24 +192,18 @@ class BaseProblem(BaseUI):
         """
         return self.assembler.getNumOwnedNodes()
 
-    def createVec(self, values=None, asBVec=False):
+    def _arrayToVec(self, varArray):
         """
-        Returns a tacs distributed state varaible vector.
+        Converts a distributed numpy array into a TACS state variable BVec.
+        NOTE: dvArray must have correct size on each processor
         """
         varVec = self.assembler.createVec()
-        varArray = varVec.getArray()
 
-        if isinstance(values, tacs.TACS.Vec):
-            varVec.copyValues(values)
-        else:
-            varArray[:] = values
+        # Set values
+        varVec.getArray()[:] = varArray
 
         # Return as tacs bvec object
-        if asBVec:
-            return varVec
-        # return as numpy array
-        else:
-            return varArray
+        return varVec
 
     def getNumVariables(self):
         """Return the number of degrees of freedom (states) that are
