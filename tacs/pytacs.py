@@ -733,6 +733,18 @@ class pyTACS(BaseUI):
         """
         return self.x0.getArray().copy()
 
+    def getNumDesignVars(self):
+        """
+        Return the number of design variables on this processor.
+        """
+        return self.x0.getSize()
+
+    def getTotalNumDesignVars(self):
+        """
+        Return the number of design variables across all processors.
+        """
+        return self.dvNum
+
     # TODO: Change below to getNodes/setNodes for consistency
     def getOrigCoordinates(self):
         """
@@ -745,6 +757,18 @@ class pyTACS(BaseUI):
             the number of structural nodes on this processor.
         """
         return self.Xpts0.getArray().copy()
+
+    def getNumOwnedNodes(self):
+        """
+        Get the number of nodes owned by this processor.
+        """
+        return self.assembler.getNumOwnedNodes()
+
+    def getVarsPerNode(self):
+        """
+        Get the number of variables per node for the model.
+        """
+        return self.assembler.getVarsPerNode()
 
     def createStaticProblem(self, name, options={}):
         problem = tacs.problems.static.StaticProblem(name, self.assembler, self.comm,
@@ -904,36 +928,11 @@ class pyTACS(BaseUI):
                 staticProb.addTractionToElements(elemID, trac, faceIndex,
                                            nastranOrdering=True)
 
-    # =========================================================================
-    #   The remainder of the routines should not be needed by a user
-    #   using this class directly. However, many of the functions are
-    #   still public since they are used by a solver that uses this
-    #   class, i.e. an Aerostructural solver.
-    # =========================================================================
-
     def getNumComponents(self):
         """
         Return number of components (property) groups found in bdf.
         """
         return self.nComp
-
-    def getTotalNumDesignVars(self):
-        """
-        Return the number of design variables across all processors.
-        """
-        return self.dvNum
-
-    def getVarsPerNode(self):
-        """
-        Get the number of variables per node for the model.
-        """
-        return self.assembler.getVarsPerNode()
-
-    def getNumOwnedNodes(self):
-        """
-        Get the number of nodes owned by this processor.
-        """
-        return self.assembler.getNumOwnedNodes()
 
     def _createOutputGroups(self):
         """Automatically determine how to split out the output file

@@ -677,11 +677,6 @@ class StaticProblem(BaseProblem):
         # Recast sensititivities into dict for user
         for i, f in enumerate(evalFuncs):
             key = self.name + '_%s' % f
-            # Finalize sensitivity arrays across all procs
-            dvSenses[i].beginSetValues()
-            dvSenses[i].endSetValues()
-            xptSenses[i].beginSetValues()
-            xptSenses[i].endSetValues()
             # Return sensitivities as array in sens dict
             funcsSens[key] = {self.varName: dvSenses[i].getArray().copy(),
                               self.coordName: xptSenses[i].getArray().copy()}
@@ -745,9 +740,15 @@ class StaticProblem(BaseProblem):
 
         self.assembler.addDVSens(funcHandles, dvSensBVecList, scale)
 
+        # Finalize sensitivity arrays across all procs
+        for dvSensBVec in dvSensBVecList:
+            dvSensBVec.beginSetValues()
+            dvSensBVec.endSetValues()
+
         # Update the BVec values, if the input was a numpy array
         if isinstance(dvSensList[0], np.ndarray):
             for dvSensArray, dvSensBVec in zip(dvSensList, dvSensBVecList):
+                # Copy values to numpy array
                 dvSensArray[:] = dvSensBVec.getArray()
 
     def addAdjointResProducts(self, adjointlist, dvSensList, scale=-1.0):
@@ -775,9 +776,15 @@ class StaticProblem(BaseProblem):
 
         self.assembler.addAdjointResProducts(adjointBVeclist, dvSensBVecList, scale)
 
+        # Finalize sensitivity arrays across all procs
+        for dvSensBVec in dvSensBVecList:
+            dvSensBVec.beginSetValues()
+            dvSensBVec.endSetValues()
+
         # Update the BVec values, if the input was a numpy array
         if isinstance(dvSensList[0], np.ndarray):
             for dvSensArray, dvSensBVec in zip(dvSensList, dvSensBVecList):
+                # Copy values to numpy array
                 dvSensArray[:] = dvSensBVec.getArray()
 
     def addXptSens(self, evalFuncs, xptSensList, scale=1.0):
@@ -791,17 +798,23 @@ class StaticProblem(BaseProblem):
 
         # Create a tacs BVec copy for the operation if the output is a numpy array
         if isinstance(xptSensList[0], np.ndarray):
-            xptSensBVecList = [self.createNodeVec(xptSens, asBVec=True) for xptSens in xptSensList]
+            xptSensBVecList = [self.createNodeVec(xptSensArray, asBVec=True) for xptSensArray in xptSensList]
         # Otherwise the input is already a BVec and we can do the operation in place
         else:
             xptSensBVecList = xptSensList
 
         self.assembler.addXptSens(funcHandles, xptSensBVecList, scale)
 
+        # Finalize sensitivity arrays across all procs
+        for xptSensBVec in xptSensBVecList:
+            xptSensBVec.beginSetValues()
+            xptSensBVec.endSetValues()
+
         # Update from the BVec values, if the input was a numpy array
         if isinstance(xptSensList[0], np.ndarray):
-            for xptSens, xptSensBVec in zip(xptSensList, xptSensBVecList):
-                xptSens[:] = xptSensBVec.getArray()
+            for xptSensArray, xptSensBVec in zip(xptSensList, xptSensBVecList):
+                # Copy values to numpy array
+                xptSensArray[:] = xptSensBVec.getArray()
 
     def addAdjointResXptSensProducts(self, adjointlist, xptSensList, scale=-1.0):
         """ Add the adjoint product contribution to the nodal coordinates sensitivity arrays"""
@@ -810,7 +823,7 @@ class StaticProblem(BaseProblem):
 
         # Create a tacs BVec copy for the operation if the output is a numpy array
         if isinstance(adjointlist[0], np.ndarray):
-            adjointBVeclist = [self.createVec(adjoint, asBVec=True) for adjoint in adjointlist]
+            adjointBVeclist = [self.createVec(adjointArray, asBVec=True) for adjointArray in adjointlist]
         # Otherwise the input is already a BVec and we can do the operation in place
         else:
             adjointBVeclist = adjointlist
@@ -821,16 +834,22 @@ class StaticProblem(BaseProblem):
 
         # Create a tacs BVec copy for the operation if the output is a numpy array
         if isinstance(xptSensList[0], np.ndarray):
-            xptSensBVecList = [self.createNodeVec(xptSens, asBVec=True) for xptSens in xptSensList]
+            xptSensBVecList = [self.createNodeVec(xptSensArray, asBVec=True) for xptSensArray in xptSensList]
         # Otherwise the input is already a BVec and we can do the operation in place
         else:
             xptSensBVecList = xptSensList
 
         self.assembler.addAdjointResXptSensProducts(adjointBVeclist, xptSensBVecList, scale)
 
+        # Finalize sensitivity arrays across all procs
+        for xptSensBVec in xptSensBVecList:
+            xptSensBVec.beginSetValues()
+            xptSensBVec.endSetValues()
+
         if isinstance(xptSensList[0], np.ndarray):
-            for xptSens, xptSensBVec in zip(xptSensList, xptSensBVecList):
-                xptSens[:] = xptSensBVec.getArray()
+            for xptSensArray, xptSensBVec in zip(xptSensList, xptSensBVecList):
+                # Copy values to numpy array
+                xptSensArray[:] = xptSensBVec.getArray()
 
     def getResidual(self, res, Fext=None):
         """
