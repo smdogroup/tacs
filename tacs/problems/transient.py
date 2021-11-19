@@ -85,7 +85,6 @@ class TransientProblem(TACSProblem):
             'writeSolution': [bool, True],
             'numberSolutions': [bool, True],
             'printTiming': [bool, False],
-            'printIterations': [bool, True],
             'printLevel': [int, 0],
 
         }
@@ -423,7 +422,7 @@ class TransientProblem(TACSProblem):
 
         # If timing was was requested print it, if the solution is nonlinear
         # print this information automatically if prinititerations was requested.
-        if self.getOption('printTiming') or self.getOption('printIterations'):
+        if self.getOption('printTiming'):
             self.pp('+--------------------------------------------------+')
             self.pp('|')
             self.pp('| TACS Solve Times:')
