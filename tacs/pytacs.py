@@ -725,11 +725,6 @@ class pyTACS(BaseUI):
         x : array
             The current design variable vector set in tacs.
 
-        Notes
-        -----
-        This routine **can** also accept a list or vector of
-        variables. This is used internally in pytacs, but is not
-        recommended to used externally.
         """
         return self.x0.getArray().copy()
 
@@ -792,6 +787,23 @@ class pyTACS(BaseUI):
             array[:] = vec.getArray()
 
     def createStaticProblem(self, name, options={}):
+        """
+        Create a new staticProblem for modeling a static problem load case.
+        This object can be used to set loads, evalFunctions as well as perform
+        solutions and sensitivities related to static problems
+
+        Parameters
+        ----------
+        name : str
+            Name to assign static problem.
+        options : dict
+            Problem-specific options to pass to StaticProblem instance.
+
+        Returns
+        ----------
+        problem : StaticProblem
+            StaticProblem object used for modeling and solving static problems.
+        """
         problem = tacs.problems.static.StaticProblem(name, self.assembler, self.comm,
                                                      self.outputViewer, self.meshLoader, options)
         # Set with original design vars and coordinates, in case they have changed
@@ -800,6 +812,29 @@ class pyTACS(BaseUI):
         return problem
 
     def createTransientProblem(self, name, tInit, tFinal, numSteps, options={}):
+        """
+        Create a new TransientProblem for modeling a transient problem load case.
+        This object can be used to set loads, evalFunctions as well as perform
+        solutions and sensitivities related to transient problems
+
+        Parameters
+        ----------
+        name : str
+            Name to assign static problem.
+        tInit : float
+            Starting time for transient problem integration
+        tFinal : float
+            Ending time for transient problem integration
+        numSteps : int
+            Number of time steps for transient problem integration
+        options : dict
+            Problem-specific options to pass to TransientProblem instance.
+
+        Returns
+        ----------
+        problem : TransientProblem
+            TransientProblem object used for modeling and solving static problems.
+        """
         problem = tacs.problems.transient.TransientProblem(name, tInit, tFinal, numSteps,
                                                         self.assembler, self.comm, self.outputViewer, self.meshLoader,
                                                         options)
@@ -810,11 +845,20 @@ class pyTACS(BaseUI):
 
     def createTACSProbsFromBDF(self):
         """
-        Automatically define tacs problem class using information contained in BDF file.
+        Automatically define tacs problem classes with loads using information contained in BDF file.
         This function assumes all loads are specified in the BDF and allows users to
         skip setting loads in Python.
-        NOTE: Currently only supports LOAD, FORCE, MOMENT, PLOAD2, and PLOAD4 cards.
-        NOTE: Currently only supports staticProblem (SOL 101)
+
+        Returns
+        ----------
+        structProblems : dict[TACSProblems]
+            Dictionary containing a predfined TACSProblem for every loadcase found int the BDF.
+            The dictionary keys are the loadcase IDs from the BDF.
+
+        Notes
+        -----
+        Currently only supports LOAD, FORCE, MOMENT, PLOAD2, and PLOAD4 cards.
+        Currently only supports staticProblem (SOL 101)
         """
 
         if self.assembler is None:
