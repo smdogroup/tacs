@@ -10,27 +10,39 @@ import os
 import numpy as np
 from collections import OrderedDict
 import time
-from .base import BaseProblem
+from .base import TACSProblem
 import tacs.TACS, tacs.constitutive, tacs.elements, tacs.functions, tacs.problems.static
 
-class StaticProblem(BaseProblem):
-    """
-    The main purpose of this class is to represent all relevant
-    information for a static analysis. This will include
-    information defining the loading condition as well as various
-    other pieces of information.
-
-    Parameters
-    ----------
-    name : str
-        Name of this tacs problem
-
-    Examples
-    --------
-    >>> sp = StaticProblem('lc0')
-    """
+class StaticProblem(TACSProblem):
 
     def __init__(self, name, assembler, comm, outputViewer=None, meshLoader=None, options={}):
+        """
+        The main purpose of this class is to represent all relevant
+        information for a static analysis. This will include
+        information defining the loading condition as well as various
+        other pieces of information.
+
+        Parameters
+        ----------
+        name : str
+            Name of this tacs problem
+
+        assembler : assembler
+            Cython object responsible for creating and setting tacs objects used to solve problem
+
+        comm : MPI Intracomm
+            The comm object on which to create the pyTACS object.
+
+        outputViewer : TACSToFH5 object
+            Cython object used to write out f5 files that can be converted and used for postprocessing.
+
+        meshLoader : pyMeshLoader object
+            pyMeshLoader object used to create the assembler.
+
+        options : dict
+            Dictionary holding problem-specific option parameters.
+
+        """
         # python object name
         self.objectName = 'StaticProblem'
 
@@ -173,24 +185,25 @@ class StaticProblem(BaseProblem):
 
     def addFunction(self, funcName, funcHandle, compIDs=None, **kwargs):
         """
-            Generic function to add a function for TACS. It is intended to
-            be reasonably generic since the user supplies the actual
-            function handle to use. The following functions can be used:
-            KSFailure, KSBuckling, MaxBuckling, AverageKSFailure,
-            MaxFailure, AverageMaxFailure, AverageKSBuckling,
-            StructuralMass, Compliance, AggregateDisplacement.
+        Generic function to add a function for TACS. It is intended to
+        be reasonably generic since the user supplies the actual
+        function handle to use. The following functions can be used:
+        KSFailure, KSTemperature, AverageTemperature, Compliance,
+        KSDisplacement, StructuralMass, HeatFlux.
 
-            Parameters
-            ----------
-            funcName : str
-                The user-supplied name for the function. This will
-                typically be a string that is meanful to the user
-            funcHandle : tacs.functions
-                The fucntion handle to use for creation. This must come
-                from the functions module in tacs.
-            compIDs: list
-                List of compIDs to select. Alternative to selectCompIDs
-                arguments.
+        Parameters
+        ----------
+        funcName : str
+            The user-supplied name for the function. This will
+            typically be a string that is meanful to the user
+
+        funcHandle : tacs.functions
+            The fucntion handle to use for creation. This must come
+            from the functions module in tacs.
+
+        compIDs: list
+            List of compIDs to select. Alternative to selectCompIDs
+            arguments.
         """
         success = super().addFunction(funcName, funcHandle, compIDs, **kwargs)
         if success:
@@ -228,81 +241,94 @@ class StaticProblem(BaseProblem):
         super().setCoordinates(coords)
         self._factorOnNext = True
 
-####### Static load methods ########
+####### Load adding methods ########
 
     def addLoadToComponents(self, compIDs, F, averageLoad=False):
         """"
         The function is used to add a *FIXED TOTAL LOAD* on one or more
-        components, defined by COMPIDs. The purpose of this routine is
-        to add loads that remain fixed throughout an optimization. An example
-        would be an engine load. This routine determines all the unqiue nodes
-        in the FE model that are part of the the requested components, then
-        takes the total 'force' by F and divides by the number of nodes.
-        This average load is then applied to the nodes.
+        components, defined by COMPIDs. The purpose of this routine is to add loads that
+        remain fixed throughout an optimization. An example would be an engine load.
+        This routine determines all the unqiue nodes in the FE model that are part of the
+        the requested components, then takes the total 'force' by F and divides by the
+        number of nodes. This average load is then applied to the nodes.
 
-        NOTE: The units of the entries of the 'force' vector F are not
+        Parameters
+        ----------
+
+        compIDs : list[int] or int
+            The components with added loads. Use pyTACS selectCompIDs method
+            to determine this.
+
+        F : Numpy 1d or 2d array length (varsPerNodes) or (numNodeIDs, varsPerNodes)
+            Vector(s) of 'force' to apply to each components.  If only one force vector is provided,
+            force will be copied uniformly across all components.
+
+        averageLoad : bool
+            Flag to determine whether load should be split evenly across all components (True)
+            or copied and applied individually to each component (False). Defaults to False.
+
+        Notes
+        ----------
+
+        The units of the entries of the 'force' vector F are not
         necesarily physical forces and their interpretation depends
         on the physics problem being solved and the dofs included
         in the model.
 
         A couple of examples of force vector components for common problem are listed below:
 
+        In Heat Conduction with varsPerNode = 1
+        F = [Qdot] # heat rate
         In Elasticity with varsPerNode = 3,
         F = [fx, fy, fz] # forces
         In Elasticity with varsPerNode = 6,
         F = [fx, fy, fz, mx, my, mz] # forces + moments
         In Thermoelasticity with varsPerNode = 4,
-        F = [fx, fy, fz, Q] # forces + heat
+        F = [fx, fy, fz, Qdot] # forces + heat rate
         In Thermoelasticity with varsPerNode = 7,
-        F = [fx, fy, fz, mx, my, mz, Q] # forces + moments + heat
-
-        Parameters
-        ----------
-
-        compIDs : The components with added loads. Use selectCompIDs()
-            to determine this.
-        F : Numpy array length varsPerNode
-            Vector of 'force' components
+        F = [fx, fy, fz, mx, my, mz, Qdot] # forces + moments + heat rate
         """
         self._addLoadToComponents(self.F, compIDs, F, averageLoad)
 
     def addLoadToNodes(self, nodeIDs, F, nastranOrdering=False):
         """
         The function is used to add a fixed point load of F to the
-        selected node IDs. This is similar to the addLoadToPoints method,
-        except we select the load points based on node ID rather than
-        physical location.
-
-        NOTE: This should be the prefered method (over addLoadToPoints) for adding forces to
-        specific nodes for the following reasons:
-            1. This method is more efficient, as it does not require a
-            closest point search to locate the node.
-            2. In the case where the mesh features coincident nodes
-            it is impossible to uniquely specify which node gets the load
-            through x,y,z location, however the points can be specified uniquely by node ID.
-
-        A couple of examples of force vector components for common problem are listed below:
-
-        In Elasticity with varsPerNode = 3,
-        F = [fx, fy, fz] # forces
-        In Elasticity with varsPerNode = 6,
-        F = [fx, fy, fz, mx, my, mz] # forces + moments
-        In Thermoelasticity with varsPerNode = 4,
-        F = [fx, fy, fz, Q] # forces + heat
-        In Thermoelasticity with varsPerNode = 7,
-        F = [fx, fy, fz, mx, my, mz, Q] # forces + moments + heat
+        selected node IDs.
 
         Parameters
         ----------
 
         nodeIDs : list[int]
-            The nodes with added loads.
+            The nodes IDs with added loads.
+
         F : Numpy 1d or 2d array length (varsPerNodes) or (numNodeIDs, varsPerNodes)
             Array of force vectors, one for each node. If only one force vector is provided,
             force will be copied uniformly across all nodes.
+
         nastranOrdering : bool
             Flag signaling whether nodeIDs are in TACS (default)
             or NASTRAN (grid IDs in bdf file) ordering
+
+        Notes
+        ----------
+
+        The units of the entries of the 'force' vector F are not
+        necesarily physical forces and their interpretation depends
+        on the physics problem being solved and the dofs included
+        in the model.
+
+        A couple of examples of force vector components for common problem are listed below:
+
+        In Heat Conduction with varsPerNode = 1
+        F = [Qdot] # heat rate
+        In Elasticity with varsPerNode = 3,
+        F = [fx, fy, fz] # forces
+        In Elasticity with varsPerNode = 6,
+        F = [fx, fy, fz, mx, my, mz] # forces + moments
+        In Thermoelasticity with varsPerNode = 4,
+        F = [fx, fy, fz, Qdot] # forces + heat rate
+        In Thermoelasticity with varsPerNode = 7,
+        F = [fx, fy, fz, mx, my, mz, Qdot] # forces + moments + heat rate
         """
 
         self._addLoadToNodes(self.F, nodeIDs, F, nastranOrdering)
@@ -317,10 +343,13 @@ class StaticProblem(BaseProblem):
         Parameters
         ----------
 
-        compIDs : The components with added loads. Use selectCompIDs()
+        compIDs : list[int] or int
+            The components with added loads. Use pyTACS selectCompIDs method
             to determine this.
+
         tractions : Numpy array length 1 or compIDs
             Array of traction vectors for each components
+
         faceIndex : int
             Indicates which face (side) of element to apply traction to.
             Note: not required for certain elements (i.e. shells)
@@ -338,13 +367,16 @@ class StaticProblem(BaseProblem):
         Parameters
         ----------
 
-        elemIDs : List
+        elemIDs : list[int]
             The global element ID numbers for which to apply the traction.
+
         tractions : Numpy 1d or 2d array length varsPerNodes or (elemIDs, varsPerNodes)
             Array of traction vectors for each element
+
         faceIndex : int
             Indicates which face (side) of element to apply traction to.
             Note: not required for certain elements (i.e. shells)
+
         nastranOrdering : bool
             Flag signaling whether elemIDs are in TACS (default)
             or NASTRAN ordering
@@ -363,10 +395,13 @@ class StaticProblem(BaseProblem):
         Parameters
         ----------
 
-        compIDs : The components with added loads. Use selectCompIDs()
+        compIDs : list[int] or int
+            The components with added loads. Use pyTACS selectCompIDs method
             to determine this.
+
         pressures : Numpy array length 1 or compIDs
             Array of pressure values for each components
+
         faceIndex : int
             Indicates which face (side) of element to apply pressure to.
             Note: not required for certain elements (i.e. shells)
@@ -384,13 +419,16 @@ class StaticProblem(BaseProblem):
         Parameters
         ----------
 
-        elemIDs : List
+        elemIDs : list[int]
             The global element ID numbers for which to apply the pressure.
+
         pressures : Numpy array length 1 or elemIDs
             Array of pressure values for each element
+
         faceIndex : int
             Indicates which face (side) of element to apply pressure to.
             Note: not required for certain elements (i.e. shells)
+
         nastranOrdering : bool
             Flag signaling whether elemIDs are in TACS (default)
             or NASTRAN ordering
@@ -401,7 +439,7 @@ class StaticProblem(BaseProblem):
 
     ####### Static solver methods ########
 
-    def _setProblemVars(self):
+    def _updateAssemblerVars(self):
         """
         Make sure that the assembler is using
         the input variables associated with this problem
@@ -429,14 +467,14 @@ class StaticProblem(BaseProblem):
 
     def solve(self, Fext=None):
         """
-        Solution of the structural system for loadCase. The
+        Solution of the static problem for current load set. The
         forces must already be set.
 
         Parameters
         ----------
         Optional Arguments:
 
-        Fext : numpy array
+        Fext : ndarray or BVec
             Distributed array containing additional loads (ex. aerodynamic forces for aerostructural coupling)
             to applied to RHS of the static problem.
 
@@ -448,7 +486,7 @@ class StaticProblem(BaseProblem):
         setupProblemTime = time.time()
 
         # Set problem vars to assembler
-        self._setProblemVars()
+        self._updateAssemblerVars()
 
         # Check if we need to initialize
         self._initializeSolve()
@@ -542,16 +580,16 @@ class StaticProblem(BaseProblem):
         Examples
         --------
         >>> funcs = {}
-        >>> FEAsolver(sp)
-        >>> FEAsolver.evalFunctions(funcs, ['mass'])
+        >>> staticProblem.solve()
+        >>> staticProblem.evalFunctions(funcs, ['mass'])
         >>> funcs
-        >>> # Result will look like (if structProblem, sp, has name of 'c1'):
+        >>> # Result will look like (if StaticProblem has name of 'c1'):
         >>> # {'cl_mass':12354.10}
         """
         startTime = time.time()
 
         # Set problem vars to assembler
-        self._setProblemVars()
+        self._updateAssemblerVars()
 
         if evalFuncs is None:
             evalFuncs = sorted(list(self.functionList))
@@ -598,14 +636,12 @@ class StaticProblem(BaseProblem):
     def evalFunctionsSens(self, funcsSens, evalFuncs=None):
         """
         This is the main routine for returning useful (sensitivity)
-        information from pytacs. The derivatives of the functions
+        information from problem. The derivatives of the functions
         corresponding to the strings in EVAL_FUNCS are evaluated and
         updated into the provided dictionary.
 
         Parameters
         ----------
-        structProblem : pyStructProblem class
-            Structural problem to get the solution for
         funcsSens : dict
             Dictionary into which the derivatives are saved.
         evalFuncs : iterable object containing strings
@@ -614,16 +650,16 @@ class StaticProblem(BaseProblem):
         Examples
         --------
         >>> funcsSens = {}
-        >>> FEAsolver.evalFunctionsSens(sp, funcsSens, ['mass'])
+        >>> staticProblem.evalFunctionsSens(funcsSens, ['mass'])
         >>> funcs
-        >>> # Result will look like (if structProblem, sp, has name of 'c1'):
+        >>> # Result will look like (if StaticProblem has name of 'c1'):
         >>> # {'c1_mass':{'struct':[1.234, ..., 7.89]}
         """
 
         startTime = time.time()
 
         # Set problem vars to assembler
-        self._setProblemVars()
+        self._updateAssemblerVars()
 
         if evalFuncs is None:
             evalFuncs = sorted(list(self.functionList))
@@ -708,7 +744,7 @@ class StaticProblem(BaseProblem):
     def addSVSens(self, evalFuncs, svSensList):
         """ Add the state variable sensitivity to the ADjoint RHS for given evalFuncs"""
         # Set problem vars to assembler
-        self._setProblemVars()
+        self._updateAssemblerVars()
 
         # Get list of TACS function handles from evalFuncs
         funcHandles = [self.functionList[f] for f in evalFuncs if
@@ -731,7 +767,7 @@ class StaticProblem(BaseProblem):
     def addDVSens(self, evalFuncs, dvSensList, scale=1.0):
         """ Add partial sensitivity contribution due to design vars for evalFuncs"""
         # Set problem vars to assembler
-        self._setProblemVars()
+        self._updateAssemblerVars()
 
         # Get list of TACS function handles from evalFuncs
         funcHandles = [self.functionList[f] for f in evalFuncs if
@@ -760,7 +796,7 @@ class StaticProblem(BaseProblem):
     def addAdjointResProducts(self, adjointlist, dvSensList, scale=-1.0):
         """ Add the adjoint product contribution to the design variable sensitivity arrays"""
         # Set problem vars to assembler
-        self._setProblemVars()
+        self._updateAssemblerVars()
 
         # Create a tacs BVec copy for the operation if the output is a numpy array
         if isinstance(adjointlist[0], np.ndarray):
@@ -796,7 +832,7 @@ class StaticProblem(BaseProblem):
     def addXptSens(self, evalFuncs, xptSensList, scale=1.0):
         """ Add partial sensitivity contribution due to nodal coordinates for evalFuncs"""
         # Set problem vars to assembler
-        self._setProblemVars()
+        self._updateAssemblerVars()
 
         # Get list of TACS function handles from evalFuncs
         funcHandles = [self.functionList[f] for f in evalFuncs if
@@ -825,7 +861,7 @@ class StaticProblem(BaseProblem):
     def addAdjointResXptSensProducts(self, adjointlist, xptSensList, scale=-1.0):
         """ Add the adjoint product contribution to the nodal coordinates sensitivity arrays"""
         # Set problem vars to assembler
-        self._setProblemVars()
+        self._updateAssemblerVars()
 
         # Create a tacs BVec copy for the operation if the output is a numpy array
         if isinstance(adjointlist[0], np.ndarray):
@@ -873,7 +909,7 @@ class StaticProblem(BaseProblem):
 
         """
         # Make sure assembler variables are up to date
-        self._setProblemVars()
+        self._updateAssemblerVars()
         # Assemble residual
         self.assembler.assembleRes(self.res)
         # Add the -F
@@ -932,7 +968,7 @@ class StaticProblem(BaseProblem):
         self.assembler.applyBCs(self.phi)
 
         # Set problem vars to assembler
-        self._setProblemVars()
+        self._updateAssemblerVars()
 
         self.assembler.addJacobianVecProduct(scale, self.alpha, self.beta, self.gamma,
                                              self.phi, self.res, tacs.TACS.TRANSPOSE)
@@ -963,7 +999,7 @@ class StaticProblem(BaseProblem):
         """
 
         # Set problem vars to assembler
-        self._setProblemVars()
+        self._updateAssemblerVars()
 
         # Check if we need to initialize
         self._initializeSolve()
@@ -1046,7 +1082,7 @@ class StaticProblem(BaseProblem):
             typically used from an external solver
         """
         # Make sure assembler variables are up to date
-        self._setProblemVars()
+        self._updateAssemblerVars()
 
         # Check input
         if outputDir is None:

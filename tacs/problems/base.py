@@ -12,7 +12,7 @@ from ..utilities import BaseUI
 from collections import OrderedDict
 import tacs.TACS, tacs.constitutive, tacs.elements, tacs.functions, tacs.problems.static
 
-class BaseProblem(BaseUI):
+class TACSProblem(BaseUI):
     """
     Base class for TACS problem types. Contains methods common to all TACS problems.
     """
@@ -55,24 +55,18 @@ class BaseProblem(BaseUI):
         ----------
         varName : str
             Name of the structural variable used in addVarGroup().
-            """
+        """
         self.varName = varName
 
     def getDesignVars(self):
         """
-        get the design variables that were specified with
-        addVariablesPyOpt.
+        Get the current set of  design variables for this problem.
 
         Returns
         ----------
         x : array
             The current design variable vector set in tacs.
 
-        Notes
-        -----
-        This routine **can** also accept a list or vector of
-        variables. This is used internally in pytacs, but is not
-        recommended to used externally.
         """
         return self.x.getArray().copy()
 
@@ -82,9 +76,9 @@ class BaseProblem(BaseUI):
 
         Parameters
         ----------
-        x : ndarray
+        x : ndarray or dict or BVec
             The variables (typically from the optimizer) to set. It
-            looks for variable in the ``self.varName`` attribute.
+            looks for variable in the ``self.varName`` attribute if in dict.
 
         """
         # Check if the design variables are being handed in a dict
@@ -106,7 +100,20 @@ class BaseProblem(BaseUI):
     def _arrayToDesignVec(self, dvArray):
         """
         Converts a distributed numpy array into a TACS design variable BVec.
-        NOTE: dvArray must have correct size on each processor
+
+        Parameters
+        ----------
+        dvArray : ndarray
+                  Numpy array for which to convert to TACS designVec.
+
+        Returns
+        -------
+        xVec : BVec
+               Converted TACS designVec.
+
+        Notes
+        -----
+        dvArray must have correct size on each processor.
         """
         xVec = self.assembler.createDesignVec()
 
@@ -161,8 +168,21 @@ class BaseProblem(BaseUI):
 
     def _arrayToNodeVec(self, xptsArray):
         """
-        Converts a distributed numpy array into a TACS nodal BVec.
-        NOTE: xptsArray must have correct size on each processor
+        Converts a distributed numpy array into a TACS node BVec.
+
+        Parameters
+        ----------
+        xptsArray : ndarray
+                    Numpy array for which to convert to TACS nodeVec.
+
+        Returns
+        -------
+        Xptsvec : BVec
+                  Converted TACS nodeVec.
+
+        Notes
+        -----
+        xptsArray must have correct size on each processor.
         """
         Xptsvec = self.assembler.createNodeVec()
 
@@ -195,7 +215,20 @@ class BaseProblem(BaseUI):
     def _arrayToVec(self, varArray):
         """
         Converts a distributed numpy array into a TACS state variable BVec.
-        NOTE: varArray must have correct size on each processor
+
+        Parameters
+        ----------
+        varArray : ndarray
+                   Numpy array for which to convert to TACS Vec.
+
+        Returns
+        -------
+        varVec : BVec
+                 Converted TACS Vec.
+
+        Notes
+        -----
+        varArray must have correct size on each processor.
         """
         varVec = self.assembler.createVec()
 
@@ -225,18 +258,19 @@ class BaseProblem(BaseUI):
         Generic function to add a function for TACS. It is intended to
         be reasonably generic since the user supplies the actual
         function handle to use. The following functions can be used:
-        KSFailure, KSBuckling, MaxBuckling, AverageKSFailure,
-        MaxFailure, AverageMaxFailure, AverageKSBuckling,
-        StructuralMass, Compliance, AggregateDisplacement.
+        KSFailure, KSTemperature, AverageTemperature, Compliance,
+        KSDisplacement, StructuralMass, HeatFlux.
 
         Parameters
         ----------
         funcName : str
             The user-supplied name for the function. This will
             typically be a string that is meanful to the user
+
         funcHandle : tacs.functions
             The fucntion handle to use for creation. This must come
             from the functions module in tacs.
+
         compIDs: list
             List of compIDs to select. Alternative to selectCompIDs
             arguments.
@@ -263,44 +297,62 @@ class BaseProblem(BaseUI):
         return True
 
     def getFunctionKeys(self):
-        """Return a list of the current function key names"""
+        """
+        Return a list of the current function key names
+        """
         return list(self.functionList.keys())
 
 ####### Load adding methods ########
 
     def _addLoadToComponents(self, FVec, compIDs, F, averageLoad=False):
         """"
-        The function is used to add a *FIXED TOTAL LOAD* on one or more
-        components, defined by COMPIDs. The purpose of this routine is
-        to add loads that remain fixed throughout an optimization. An example
-        would be an engine load. This routine determines all the unqiue nodes
-        in the FE model that are part of the the requested components, then
-        takes the total 'force' by F and divides by the number of nodes.
-        This average load is then applied to the nodes.
+        This is an internal helper function for doing the addLoadToComponents method for
+        inhereted TACSProblem classes. The function should NOT be called by the user should
+        use the addLoadToComponents method for the respective problem class. The function is
+        used to add a *FIXED TOTAL LOAD* on one or more components, defined by COMPIDs.
+        The purpose of this routine is to add loads that remain fixed throughout an optimization.
+        An example would be an engine load. This routine determines all the unqiue nodes in the
+        FE model that are part of the requested components, then takes the total 'force' by F and
+        divides by the number of nodes. This average load is then applied to the nodes.
 
-        NOTE: The units of the entries of the 'force' vector F are not
+        Parameters
+        ----------
+
+        FVec : BVec
+            TACS BVec to add loads to.
+
+        compIDs : list[int] or int
+            The components with added loads. Use pyTACS selectCompIDs method
+            to determine this.
+
+        F : Numpy 1d or 2d array length (varsPerNodes) or (numNodeIDs, varsPerNodes)
+            Vector(s) of 'force' to apply to each components.  If only one force vector is provided,
+            force will be copied uniformly across all components.
+
+        averageLoad : bool
+            Flag to determine whether load should be split evenly across all components (True)
+            or copied and applied individually to each component (False). Defaults to False.
+
+        Notes
+        -----
+
+        The units of the entries of the 'force' vector F are not
         necesarily physical forces and their interpretation depends
         on the physics problem being solved and the dofs included
         in the model.
 
         A couple of examples of force vector components for common problem are listed below:
 
+        In Heat Conduction with varsPerNode = 1
+        F = [Qdot] # heat rate
         In Elasticity with varsPerNode = 3,
         F = [fx, fy, fz] # forces
         In Elasticity with varsPerNode = 6,
         F = [fx, fy, fz, mx, my, mz] # forces + moments
         In Thermoelasticity with varsPerNode = 4,
-        F = [fx, fy, fz, Q] # forces + heat
+        F = [fx, fy, fz, Qdot] # forces + heat rate
         In Thermoelasticity with varsPerNode = 7,
-        F = [fx, fy, fz, mx, my, mz, Q] # forces + moments + heat
-
-        Parameters
-        ----------
-
-        compIDs : The components with added loads. Use selectCompIDs()
-            to determine this.
-        F : Numpy array length varsPerNode
-            Vector of 'force' components
+        F = [fx, fy, fz, mx, my, mz, Qdot] # forces + moments + heat rate
         """
         # Make sure CompIDs are flat
         compIDs = self._flatten([compIDs])
@@ -355,41 +407,48 @@ class BaseProblem(BaseUI):
 
     def _addLoadToNodes(self, FVec, nodeIDs, F, nastranOrdering=False):
         """
-        The function is used to add a fixed point load of F to the
-        selected node IDs. This is similar to the addLoadToPoints method,
-        except we select the load points based on node ID rather than
-        physical location.
+        This is an internal helper function for doing the addLoadToNodes method for
+        inhereted TACSProblem classes. The function should NOT be called by the user should
+        use the addLoadToNodes method for the respective problem class. The function is
+        used to add a fixed point load of F to the selected node IDs.
 
-        NOTE: This should be the prefered method (over addLoadToPoints) for adding forces to
-        specific nodes for the following reasons:
-            1. This method is more efficient, as it does not require a
-            closest point search to locate the node.
-            2. In the case where the mesh features coincident nodes
-            it is impossible to uniquely specify which node gets the load
-            through x,y,z location, however the points can be specified uniquely by node ID.
+        Parameters
+        ----------
+
+        FVec : BVec
+            TACS BVec to add loads to.
+
+        nodeIDs : list[int]
+            The nodes IDs with added loads.
+
+        F : Numpy 1d or 2d array length (varsPerNodes) or (numNodeIDs, varsPerNodes)
+            Array of force vectors, one for each node. If only one force vector is provided,
+            force will be copied uniformly across all nodes.
+
+        nastranOrdering : bool
+            Flag signaling whether nodeIDs are in TACS (default)
+            or NASTRAN (grid IDs in bdf file) ordering
+
+        Notes
+        ----------
+
+        The units of the entries of the 'force' vector F are not
+        necesarily physical forces and their interpretation depends
+        on the physics problem being solved and the dofs included
+        in the model.
 
         A couple of examples of force vector components for common problem are listed below:
 
+        In Heat Conduction with varsPerNode = 1
+        F = [Qdot] # heat rate
         In Elasticity with varsPerNode = 3,
         F = [fx, fy, fz] # forces
         In Elasticity with varsPerNode = 6,
         F = [fx, fy, fz, mx, my, mz] # forces + moments
         In Thermoelasticity with varsPerNode = 4,
-        F = [fx, fy, fz, Q] # forces + heat
+        F = [fx, fy, fz, Qdot] # forces + heat rate
         In Thermoelasticity with varsPerNode = 7,
-        F = [fx, fy, fz, mx, my, mz, Q] # forces + moments + heat
-
-        Parameters
-        ----------
-
-        nodeIDs : list[int]
-            The nodes with added loads.
-        F : Numpy 1d or 2d array length (varsPerNodes) or (numNodeIDs, varsPerNodes)
-            Array of force vectors, one for each node. If only one force vector is provided,
-            force will be copied uniformly across all nodes.
-        nastranOrdering : bool
-            Flag signaling whether nodeIDs are in TACS (default)
-            or NASTRAN (grid IDs in bdf file) ordering
+        F = [fx, fy, fz, mx, my, mz, Qdot] # forces + moments + heat rate
         """
 
         # Make sure the inputs are the correct shape
@@ -449,17 +508,25 @@ class BaseProblem(BaseUI):
     def _addTractionToComponents(self, auxElems, compIDs, tractions,
                                 faceIndex=0):
         """
-        The function is used to add a *FIXED TOTAL TRACTION* on one or more
-        components, defined by COMPIDs. The purpose of this routine is
-        to add loads that remain fixed throughout an optimization.
+        This is an internal helper function for doing the addTractionToComponents method for
+        inhereted TACSProblem classes. The function should NOT be called by the user should
+        use the addTractionToComponents method for the respective problem class. The function is used
+        to add a *FIXED TOTAL TRACTION* on one or more components, defined by COMPIDs. The purpose of
+        this routine is to add loads that remain fixed throughout an optimization.
 
         Parameters
         ----------
 
-        compIDs : The components with added loads. Use selectCompIDs()
+         auxElems : TACS AuxElements object
+            AuxElements object to add loads to.
+
+        compIDs : list[int] or int
+            The components with added loads. Use pyTACS selectCompIDs method
             to determine this.
-        tractions : Numpy array length 1 or compIDs
+
+        tractions : TACS AuxElements object
             Array of traction vectors for each components
+
         faceIndex : int
             Indicates which face (side) of element to apply traction to.
             Note: not required for certain elements (i.e. shells)
@@ -482,21 +549,28 @@ class BaseProblem(BaseUI):
     def _addTractionToElements(self, auxElems, elemIDs, tractions,
                               faceIndex=0, nastranOrdering=False):
         """
-        The function is used to add a fixed traction to the
-        selected element IDs. Tractions can be specified on an
-        element by element basis (if tractions is a 2d array) or
-        set to a uniform value (if tractions is a 1d array)
+        This is an internal helper function for doing the addTractionToElements method for
+        inhereted TACSProblem classes. The function should NOT be called by the user should
+        use the addTractionToElements method for the respective problem class. The function
+        is used to add a fixed traction to the selected element IDs. Tractions can be specified on an
+        element by element basis (if tractions is a 2d array) or set to a uniform value (if tractions is a 1d array)
 
         Parameters
         ----------
 
-        elemIDs : List
+         auxElems : TACS AuxElements object
+            AuxElements object to add loads to.
+
+        elemIDs : list[int]
             The global element ID numbers for which to apply the traction.
+
         tractions : Numpy 1d or 2d array length varsPerNodes or (elemIDs, varsPerNodes)
             Array of traction vectors for each element
+
         faceIndex : int
             Indicates which face (side) of element to apply traction to.
             Note: not required for certain elements (i.e. shells)
+
         nastranOrdering : bool
             Flag signaling whether elemIDs are in TACS (default)
             or NASTRAN ordering
@@ -559,18 +633,26 @@ class BaseProblem(BaseUI):
     def _addPressureToComponents(self, auxElems, compIDs, pressures,
                                 faceIndex=0):
         """
-        The function is used to add a *FIXED TOTAL PRESSURE* on one or more
-        components, defined by COMPIds. The purpose of this routine is
-        to add loads that remain fixed throughout an optimization. An example
-        would be a fuel load.
+        This is an internal helper function for doing the addPressureToComponents method for
+        inhereted TACSProblem classes. The function should NOT be called by the user should
+        use the addPressureToComponents method for the respective problem class. The function
+        is used to add a *FIXED TOTAL PRESSURE* on one or more components, defined by COMPIds.
+        The purpose of this routine is to add loads that remain fixed throughout an optimization.
+        An example would be a fuel load.
 
         Parameters
         ----------
 
-        compIDs : The components with added loads. Use selectCompIDs()
+         auxElems : TACS AuxElements object
+            AuxElements object to add loads to.
+
+        compIDs : list[int] or int
+            The components with added loads. Use pyTACS selectCompIDs method
             to determine this.
+
         pressures : Numpy array length 1 or compIDs
             Array of pressure values for each components
+
         faceIndex : int
             Indicates which face (side) of element to apply pressure to.
             Note: not required for certain elements (i.e. shells)
@@ -593,21 +675,28 @@ class BaseProblem(BaseUI):
     def _addPressureToElements(self, auxElems, elemIDs, pressures,
                               faceIndex=0, nastranOrdering=False):
         """
-        The function is used to add a fixed presure to the
-        selected element IDs. Pressures can be specified on an
-        element by element basis (if pressures is an array) or
-        set to a uniform value (if pressures is a scalar)
+        This is an internal helper function for doing the addPressureToElements method for
+        inhereted TACSProblem classes. The function should NOT be called by the user should
+        use the addPressureToElements method for the respective problem class. The function
+        is used to add a fixed presure to the selected element IDs. Pressures can be specified on an
+        element by element basis (if pressures is an array) or set to a uniform value (if pressures is a scalar)
 
         Parameters
         ----------
 
-        elemIDs : List
+         auxElems : TACS AuxElements object
+            AuxElements object to add loads to.
+
+        elemIDs : list[int]
             The global element ID numbers for which to apply the pressure.
+
         pressures : Numpy array length 1 or elemIDs
             Array of pressure values for each element
+
         faceIndex : int
             Indicates which face (side) of element to apply pressure to.
             Note: not required for certain elements (i.e. shells)
+
         nastranOrdering : bool
             Flag signaling whether elemIDs are in TACS (default)
             or NASTRAN ordering

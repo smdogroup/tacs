@@ -10,29 +10,49 @@ import os
 import numpy as np
 from collections import OrderedDict
 import time
-from .base import BaseProblem
+from .base import TACSProblem
 import tacs.TACS, tacs.constitutive, tacs.elements, tacs.functions, tacs.problems.static
 
-class TransientProblem(BaseProblem):
-    """
-    The main purpose of this class is to represent all relevant
-    information for a static analysis. This will include
-    information defining the loading condition as well as various
-    other pieces of information.
-
-    Parameters
-    ----------
-    name : str
-        Name of this tacs problem
-
-    Examples
-    --------
-    >>> sp = TransientProblem('lc0')
-    """
+class TransientProblem(TACSProblem):
 
     def __init__(self, name, tInit, tFinal, numSteps,
                  assembler, comm, outputViewer=None, meshLoader=None,
                  options={}):
+        """
+        The main purpose of this class is to represent all relevant
+        information for a transient analysis. This will include
+        information defining the loading condition as well as various
+        other pieces of information.
+
+        Parameters
+        ----------
+        name : str
+            Name of this tacs problem
+
+        tInit : float
+            Starting time for transient problem integration
+
+        tFinal : float
+            Ending time for transient problem integration
+
+        numSteps : int
+            Number of time steps for transient problem integration
+
+        assembler : assembler
+            Cython object responsible for creating and setting tacs objects used to solve problem
+
+        comm : MPI Intracomm
+            The comm object on which to create the pyTACS object.
+
+        outputViewer : TACSToFH5 object
+            Cython object used to write out f5 files that can be converted and used for postprocessing.
+
+        meshLoader : pyMeshLoader object
+            pyMeshLoader object used to create the assembler.
+
+        options : dict
+            Dictionary holding problem-specific option parameters.
+        """
         # python object name
         self.objectName = 'TransientProblem'
 
@@ -93,7 +113,9 @@ class TransientProblem(BaseProblem):
         self.integrator.setOutputPrefix(outputDir)
 
     def _createVariables(self):
-        """Internal to create the objects required by TACS Integrator"""
+        """
+        Internal to create the objects required by TACS Integrator
+        """
 
         self.callCounter = -1
 
@@ -126,87 +148,124 @@ class TransientProblem(BaseProblem):
         self.integrator.setJacAssemblyFreq(jacFreq)
 
     def getNumTimeSteps(self):
+        """
+        Get the number of timesteps used in time integration for this problem.
+
+        Returns
+        ----------
+        numSteps : int
+            Number of time steps.
+        """
+        # Should this really be numSteps + 1 ?
         return self.numSteps
 
     def getTimeSteps(self):
+        """
+        Get the discrete time step slices used in time integration.
+
+        Returns
+        ----------
+        numSteps : int
+            Number of time steps.
+        """
         timeSteps = np.linspace(self.tInit, self.tFinal, self.numSteps + 1)
         return timeSteps
 
-####### Static load methods ########
+####### Load adding methods ########
 
     def addLoadToComponents(self, timeStep, compIDs, F, averageLoad=False):
         """"
         The function is used to add a *FIXED TOTAL LOAD* on one or more
-        components, defined by COMPIDs. The purpose of this routine is
-        to add loads that remain fixed throughout an optimization. An example
-        would be an engine load. This routine determines all the unqiue nodes
-        in the FE model that are part of the the requested components, then
-        takes the total 'force' by F and divides by the number of nodes.
+        components, defined by COMPIDs, at a specifc time instance.
+        The purpose of this routine is to add loads that remain fixed throughout
+        an optimization. An example would be an engine load. This routine determines
+        all the unqiue nodes in the FE model that are part of the the requested components,
+        then takes the total 'force' by F and divides by the number of nodes.
         This average load is then applied to the nodes.
 
-        NOTE: The units of the entries of the 'force' vector F are not
+        Parameters
+        ----------
+
+        timeStep : int
+            Time step index to apply load to.
+
+        compIDs : list[int] or int
+            The components with added loads. Use pyTACS selectCompIDs method
+            to determine this.
+
+        F : Numpy 1d or 2d array length (varsPerNodes) or (numNodeIDs, varsPerNodes)
+            Vector(s) of 'force' to apply to each components.  If only one force vector is provided,
+            force will be copied uniformly across all components.
+
+        averageLoad : bool
+            Flag to determine whether load should be split evenly across all components (True)
+            or copied and applied individually to each component (False). Defaults to False.
+
+        Notes
+        -----
+
+        The units of the entries of the 'force' vector F are not
         necesarily physical forces and their interpretation depends
         on the physics problem being solved and the dofs included
         in the model.
 
         A couple of examples of force vector components for common problem are listed below:
 
+        In Heat Conduction with varsPerNode = 1
+        F = [Qdot] # heat rate
         In Elasticity with varsPerNode = 3,
         F = [fx, fy, fz] # forces
         In Elasticity with varsPerNode = 6,
         F = [fx, fy, fz, mx, my, mz] # forces + moments
         In Thermoelasticity with varsPerNode = 4,
-        F = [fx, fy, fz, Q] # forces + heat
+        F = [fx, fy, fz, Qdot] # forces + heat rate
         In Thermoelasticity with varsPerNode = 7,
-        F = [fx, fy, fz, mx, my, mz, Q] # forces + moments + heat
-
-        Parameters
-        ----------
-
-        compIDs : The components with added loads. Use selectCompIDs()
-            to determine this.
-        F : Numpy array length varsPerNode
-            Vector of 'force' components
+        F = [fx, fy, fz, mx, my, mz, Qdot] # forces + moments + heat rate
         """
         self._addLoadToComponents(self.F[timeStep], compIDs, F, averageLoad)
 
     def addLoadToNodes(self, timeStep, nodeIDs, F, nastranOrdering=False):
         """
         The function is used to add a fixed point load of F to the
-        selected node IDs. This is similar to the addLoadToPoints method,
-        except we select the load points based on node ID rather than
-        physical location.
+        selected node IDs at a specified time instance.
 
-        NOTE: This should be the prefered method (over addLoadToPoints) for adding forces to
-        specific nodes for the following reasons:
-            1. This method is more efficient, as it does not require a
-            closest point search to locate the node.
-            2. In the case where the mesh features coincident nodes
-            it is impossible to uniquely specify which node gets the load
-            through x,y,z location, however the points can be specified uniquely by node ID.
+        Parameters
+        ----------
+
+        timeStep : int
+            Time step index to apply load to.
+
+        nodeIDs : list[int]
+            The nodes IDs with added loads.
+
+        F : Numpy 1d or 2d array length (varsPerNodes) or (numNodeIDs, varsPerNodes)
+            Array of force vectors, one for each node. If only one force vector is provided,
+            force will be copied uniformly across all nodes.
+
+        nastranOrdering : bool
+            Flag signaling whether nodeIDs are in TACS (default)
+            or NASTRAN (grid IDs in bdf file) ordering
+
+        Notes
+        -----
+
+        The units of the entries of the 'force' vector F are not
+        necesarily physical forces and their interpretation depends
+        on the physics problem being solved and the dofs included
+        in the model.
 
         A couple of examples of force vector components for common problem are listed below:
 
+        In Heat Conduction with varsPerNode = 1
+        F = [Qdot] # heat rate
         In Elasticity with varsPerNode = 3,
         F = [fx, fy, fz] # forces
         In Elasticity with varsPerNode = 6,
         F = [fx, fy, fz, mx, my, mz] # forces + moments
         In Thermoelasticity with varsPerNode = 4,
-        F = [fx, fy, fz, Q] # forces + heat
+        F = [fx, fy, fz, Qdot] # forces + heat rate
         In Thermoelasticity with varsPerNode = 7,
-        F = [fx, fy, fz, mx, my, mz, Q] # forces + moments + heat
-
-        Parameters
-        ----------
-
-        nodeIDs : list[int]
-            The nodes with added loads.
-        F : Numpy 1d or 2d array length (varsPerNodes) or (numNodeIDs, varsPerNodes)
-            Array of force vectors, one for each node. If only one force vector is provided,
-            force will be copied uniformly across all nodes.
-        nastranOrdering : bool
-            Flag signaling whether nodeIDs are in TACS (default)
-            or NASTRAN (grid IDs in bdf file) ordering
+        F = [fx, fy, fz, mx, my, mz, Qdot] # forces + moments + heat rate
         """
 
         self._addLoadToNodes(self.F[timeStep], nodeIDs, F, nastranOrdering)
@@ -215,16 +274,22 @@ class TransientProblem(BaseProblem):
                                 faceIndex=0):
         """
         The function is used to add a *FIXED TOTAL TRACTION* on one or more
-        components, defined by COMPIDs. The purpose of this routine is
-        to add loads that remain fixed throughout an optimization.
+        components, defined by COMPIDs, at specified time instance. The purpose of
+        this routine is to add loads that remain fixed throughout an optimization.
 
         Parameters
         ----------
 
-        compIDs : The components with added loads. Use selectCompIDs()
+        timeStep : int
+            Time step index to apply load to.
+
+        compIDs : list[int] or int
+            The components with added loads. Use pyTACS selectCompIDs method
             to determine this.
+
         tractions : Numpy array length 1 or compIDs
             Array of traction vectors for each components
+
         faceIndex : int
             Indicates which face (side) of element to apply traction to.
             Note: not required for certain elements (i.e. shells)
@@ -235,20 +300,26 @@ class TransientProblem(BaseProblem):
                               faceIndex=0, nastranOrdering=False):
         """
         The function is used to add a fixed traction to the
-        selected element IDs. Tractions can be specified on an
-        element by element basis (if tractions is a 2d array) or
-        set to a uniform value (if tractions is a 1d array)
+        selected element IDs at specified time instance.
+        Tractions can be specified on an element by element basis
+        (if tractions is a 2d array) or set to a uniform value (if tractions is a 1d array)
 
         Parameters
         ----------
 
-        elemIDs : List
+        timeStep : int
+            Time step index to apply load to.
+
+        elemIDs : list[int]
             The global element ID numbers for which to apply the traction.
+
         tractions : Numpy 1d or 2d array length varsPerNodes or (elemIDs, varsPerNodes)
             Array of traction vectors for each element
+
         faceIndex : int
             Indicates which face (side) of element to apply traction to.
             Note: not required for certain elements (i.e. shells)
+
         nastranOrdering : bool
             Flag signaling whether elemIDs are in TACS (default)
             or NASTRAN ordering
@@ -260,17 +331,23 @@ class TransientProblem(BaseProblem):
                                 faceIndex=0):
         """
         The function is used to add a *FIXED TOTAL PRESSURE* on one or more
-        components, defined by COMPIds. The purpose of this routine is
+        components, defined by COMPIDs, at specified time instance. The purpose of this routine is
         to add loads that remain fixed throughout an optimization. An example
         would be a fuel load.
 
         Parameters
         ----------
 
-        compIDs : The components with added loads. Use selectCompIDs()
+        timeStep : int
+            Time step index to apply load to.
+
+        compIDs : list[int] or int
+            The components with added loads. Use pyTACS selectCompIDs method
             to determine this.
+
         pressures : Numpy array length 1 or compIDs
             Array of pressure values for each components
+
         faceIndex : int
             Indicates which face (side) of element to apply pressure to.
             Note: not required for certain elements (i.e. shells)
@@ -281,20 +358,26 @@ class TransientProblem(BaseProblem):
                               faceIndex=0, nastranOrdering=False):
         """
         The function is used to add a fixed presure to the
-        selected element IDs. Pressures can be specified on an
-        element by element basis (if pressures is an array) or
-        set to a uniform value (if pressures is a scalar)
+        selected element IDs at specified time instance.
+        Pressures can be specified on an element by element
+        basis (if pressures is an array) or set to a uniform value (if pressures is a scalar)
 
         Parameters
         ----------
 
-        elemIDs : List
+        timeStep : int
+            Time step index to apply load to.
+
+        elemIDs : list[int]
             The global element ID numbers for which to apply the pressure.
+
         pressures : Numpy array length 1 or elemIDs
             Array of pressure values for each element
+
         faceIndex : int
             Indicates which face (side) of element to apply pressure to.
             Note: not required for certain elements (i.e. shells)
+
         nastranOrdering : bool
             Flag signaling whether elemIDs are in TACS (default)
             or NASTRAN ordering
@@ -303,9 +386,9 @@ class TransientProblem(BaseProblem):
         self._addPressureToElements(self.auxElems[timeStep], elemIDs, pressures,
                                     faceIndex, nastranOrdering)
 
-    ####### Static solver methods ########
+    ####### Transient solver methods ########
 
-    def _setProblemVars(self):
+    def _updateAssemblerVars(self):
         """
         Make sure that the assembler is using
         the input variables associated with this problem
@@ -316,17 +399,8 @@ class TransientProblem(BaseProblem):
 
     def solve(self):
         """
-        Solution of the structural system for loadCase. The
+        Solve the time integrated transient problem. The
         forces must already be set.
-
-        Parameters
-        ----------
-        Optional Arguments:
-
-        Fext : ndarray
-            Distributed array containing additional loads (i.e. aerodynamic)
-            to applied to RHS of static problem.
-
         """
         startTime = time.time()
 
@@ -335,7 +409,7 @@ class TransientProblem(BaseProblem):
         setupProblemTime = time.time()
 
         # Set problem vars to assembler
-        self._setProblemVars()
+        self._updateAssemblerVars()
 
         initSolveTime = time.time()
 
@@ -386,16 +460,16 @@ class TransientProblem(BaseProblem):
         Examples
         --------
         >>> funcs = {}
-        >>> problem.solve()
-        >>> problem.evalFunctions(funcs, ['mass'])
+        >>> transientProblem.solve()
+        >>> transientProblem.evalFunctions(funcs, ['mass'])
         >>> funcs
-        >>> # Result will look like (if structProblem, sp, has name of 'c1'):
+        >>> # Result will look like (if TransientProblem has name of 'c1'):
         >>> # {'cl_mass':12354.10}
         """
         startTime = time.time()
 
         # Set problem vars to assembler
-        self._setProblemVars()
+        self._updateAssemblerVars()
 
         if evalFuncs is None:
             evalFuncs = sorted(list(self.functionList))
@@ -445,14 +519,12 @@ class TransientProblem(BaseProblem):
     def evalFunctionsSens(self, funcsSens, evalFuncs=None):
         """
         This is the main routine for returning useful (sensitivity)
-        information from pytacs. The derivatives of the functions
+        information from problem. The derivatives of the functions
         corresponding to the strings in EVAL_FUNCS are evaluated and
         updated into the provided dictionary.
 
         Parameters
         ----------
-        structProblem : pyStructProblem class
-            Structural problem to get the solution for
         funcsSens : dict
             Dictionary into which the derivatives are saved.
         evalFuncs : iterable object containing strings
@@ -461,16 +533,16 @@ class TransientProblem(BaseProblem):
         Examples
         --------
         >>> funcsSens = {}
-        >>> FEAsolver.evalFunctionsSens(sp, funcsSens, ['mass'])
+        >>> transientProblem.evalFunctionsSens(funcsSens, ['mass'])
         >>> funcs
-        >>> # Result will look like (if structProblem, sp, has name of 'c1'):
+        >>> # Result will look like (if TransientProblem has name of 'c1'):
         >>> # {'c1_mass':{'struct':[1.234, ..., 7.89]}
         """
 
         startTime = time.time()
 
         # Set problem vars to assembler
-        self._setProblemVars()
+        self._updateAssemblerVars()
 
         if evalFuncs is None:
             evalFuncs = sorted(list(self.functionList))
@@ -526,10 +598,11 @@ class TransientProblem(BaseProblem):
 
     ####### Post processing methods ########
 
-    def getVariables(self, states=None):
-        """Return the current state values for the current
-        structProblem"""
-        self.setStructProblem(structProblem)
+    def getVariables(self, timeStep, states=None, dstates=None, ddstates=None):
+        """
+        Return the current state values for the current
+        problem
+        """
 
         if states is None:
             states = self.u.getArray().copy()
@@ -538,18 +611,6 @@ class TransientProblem(BaseProblem):
 
         return states
 
-    def setVariables(self, states):
-        """ Set the structural states for current load case. Typically
-        only used for aerostructural analysis
-
-        Parameters
-        ----------
-        states : array
-            Values to set. Must be the size of getNumVariables()
-        """
-        self.setStructProblem(structProblem)
-        self.u.setValues(states)
-        self.assembler.setVariables(self.u)
 
     def writeSolution(self, timeSteps=None):
         """This is a generic shell function that writes the output
