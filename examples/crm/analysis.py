@@ -174,7 +174,7 @@ problem.setDesignVars(x_orig)
 problem.zeroVectors()
 
 # Perform a fd/cs sensisitivity check on nodal coordinate sensitivity
-xpts_orig = problem.getCoordinates()
+xpts_orig = problem.getNodes()
 
 # Get number of nodes owned by this proc
 nnodes = FEAAssembler.getNumOwnedNodes()
@@ -183,7 +183,7 @@ xpts_pert = np.random.rand(3 * nnodes)
 xpts_new = xpts_orig + xpts_pert * dh
 
 # Re-solve and evaluate function with new perturbed design variable
-problem.setCoordinates(xpts_new)
+problem.setNodes(xpts_new)
 # Zero out previous solution
 problem.zeroVectors()
 # Solve

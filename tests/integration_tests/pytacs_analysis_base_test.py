@@ -49,7 +49,7 @@ class PyTACSTestCase:
             # Get the design variable values
             self.dv0 = self.fea_assembler.getOrigDesignVars()
             # Initial nodal location vector
-            self.xpts0 = self.fea_assembler.getOrigCoordinates()
+            self.xpts0 = self.fea_assembler.getOrigNodes()
             # Create temporary dv vec for doing fd/cs
             self.dv1 = np.zeros_like(self.dv0, dtype=self.dtype)
             self.dv_pert = np.zeros_like(self.dv0, dtype=self.dtype)
@@ -187,7 +187,7 @@ class PyTACSTestCase:
                 # Set the design variables
                 prob.setDesignVars(dv)
                 # Set node locations
-                prob.setCoordinates(xpts)
+                prob.setNodes(xpts)
                 # Solve problem
                 prob.solve()
                 # Evaluate functions
@@ -212,7 +212,7 @@ class PyTACSTestCase:
                 # Set the design variables
                 prob.setDesignVars(dv)
                 # Set node locations
-                prob.setCoordinates(xpts)
+                prob.setNodes(xpts)
                 # Solve problem
                 prob.solve()
                 # Evaluate functions

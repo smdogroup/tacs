@@ -228,7 +228,7 @@ class StaticProblem(TACSProblem):
         super().setDesignVars(x)
         self._factorOnNext = True
 
-    def setCoordinates(self, coords):
+    def setNodes(self, coords):
         """
         Set the mesh coordinates of the structure.
 
@@ -238,7 +238,7 @@ class StaticProblem(TACSProblem):
             Structural coordinate in array of size (N, 3) where N is
             the number of structural nodes on this processor.
         """
-        super().setCoordinates(coords)
+        super().setNodes(coords)
         self._factorOnNext = True
 
 ####### Load adding methods ########

@@ -74,7 +74,7 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
         dv_pert_vec[:] = 1.0
 
         # Define perturbation array that moves all nodes on plate
-        xpts = fea_assembler.getOrigCoordinates()
+        xpts = fea_assembler.getOrigNodes()
         xpts_pert_vec[:] = xpts
 
         return

@@ -420,6 +420,18 @@ class pyTACS(BaseUI):
 
         return compIDs
 
+    def getBDFInfo(self):
+        """
+        Return pynastran bdf object. This object can be used interactively
+        to parse information (nodes, elements, loads etc) included in the bdf file.
+
+        Returns
+        -------
+        bdfInfo : BDF object
+            pyNastran bdf object.
+        """
+        return self.bdfInfo
+
     def getCompNames(self, compIDs):
         """
         Return a list of component descriptions for the given component
@@ -732,6 +744,32 @@ class pyTACS(BaseUI):
 
         return self.x0.getArray().copy()
 
+    def createDesignVec(self, asBVec=False):
+        """
+        Create a new tacs distributed design vector.
+        Values are initialized to zero.
+
+        Parameters
+        ----------
+        asBVec : bool
+            Flag that determines whether to return
+            design vector as tacs BVec (True) or numpy array (False).
+            Defaults to False.
+
+        Returns
+        ----------
+        x : ndarray or BVec
+            Distributed design variable vector
+        """
+        if self.assembler is None:
+            raise self.TACSError("TACS assembler has not been created. "
+                        "Assembler must created first by running 'initalize' method.")
+        xVec = self.assembler.createDesignVec()
+        if asBVec:
+            return xVec
+        else:
+            return xVec.getArray()
+
     def getNumDesignVars(self):
         """
         Return the number of design variables on this processor.
@@ -752,8 +790,7 @@ class pyTACS(BaseUI):
 
         return self.dvNum
 
-    # TODO: Change below to getNodes/setNodes for consistency
-    def getOrigCoordinates(self):
+    def getOrigNodes(self):
         """
         Return the original mesh coordiantes read in from the meshLoader.
 
@@ -769,6 +806,32 @@ class pyTACS(BaseUI):
 
         return self.Xpts0.getArray().copy()
 
+    def createNodeVec(self, asBVec=False):
+        """
+        Create a new tacs distributed node vector.
+        Values are initialized to zero.
+
+        Parameters
+        ----------
+        asBVec : bool
+            Flag that determines whether to return
+            node vector as tacs BVec (True) or numpy array (False).
+            Defaults to False.
+
+        Returns
+        ----------
+        xpts : ndarray or BVec
+            Distributed node coordinate vector
+        """
+        if self.assembler is None:
+            raise self.TACSError("TACS assembler has not been created. "
+                                 "Assembler must created first by running 'initalize' method.")
+        xptVec = self.assembler.createNodeVec()
+        if asBVec:
+            return xptVec
+        else:
+            return xptVec.getArray()
+
     def getNumOwnedNodes(self):
         """
         Get the number of nodes owned by this processor.
@@ -778,6 +841,32 @@ class pyTACS(BaseUI):
                         "Assembler must created first by running 'initalize' method.")
 
         return self.assembler.getNumOwnedNodes()
+
+    def createVec(self, asBVec=False):
+        """
+        Create a new tacs distributed state variable vector.
+        Values are initialized to zero.
+
+        Parameters
+        ----------
+        asBVec : bool
+            Flag that determines whether to return
+            state vector as tacs BVec (True) or numpy array (False).
+            Defaults to False.
+
+        Returns
+        ----------
+        vars : ndarray or BVec
+            Distributed state variable vector
+        """
+        if self.assembler is None:
+            raise self.TACSError("TACS assembler has not been created. "
+                                 "Assembler must created first by running 'initalize' method.")
+        vars = self.assembler.createVec()
+        if asBVec:
+            return vars
+        else:
+            return vars.getArray()
 
     def getVarsPerNode(self):
         """
@@ -840,7 +929,7 @@ class pyTACS(BaseUI):
                                                      self.outputViewer, self.meshLoader, options)
         # Set with original design vars and coordinates, in case they have changed
         problem.setDesignVars(self.x0)
-        problem.setCoordinates(self.Xpts0)
+        problem.setNodes(self.Xpts0)
         return problem
 
     def createTransientProblem(self, name, tInit, tFinal, numSteps, options={}):
@@ -876,7 +965,7 @@ class pyTACS(BaseUI):
                                                         options)
         # Set with original design vars and coordinates, in case they have changed
         problem.setDesignVars(self.x0)
-        problem.setCoordinates(self.Xpts0)
+        problem.setNodes(self.Xpts0)
         return problem
 
     def createTACSProbsFromBDF(self):

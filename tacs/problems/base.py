@@ -129,8 +129,7 @@ class TACSProblem(BaseUI):
         """
         return self.x.getSize()
 
-    # TODO: Change below to getNodes/setNodes for consistency
-    def getCoordinates(self):
+    def getNodes(self):
         """
         Return the mesh coordiantes of this problem.
 
@@ -142,14 +141,14 @@ class TACSProblem(BaseUI):
         """
         return self.Xpts.getArray().copy()
 
-    def setCoordinates(self, Xpts):
+    def setNodes(self, Xpts):
         """
         Set the mesh coordinates of this problem.
 
         Returns
         -------
         coords : array
-            Structural coordinate in array of size (N, 3) where N is
+            Structural coordinate in array of size (N * 3) where N is
             the number of structural nodes on this processor.
         """
         # Check if the design variables are being handed in a dict
@@ -163,7 +162,7 @@ class TACSProblem(BaseUI):
         elif isinstance(Xpts, tacs.TACS.Vec):
             self.Xpts.copyValues(Xpts)
         else:
-            raise ValueError("setCoordinates must be called with either a numpy array, dict, or TACS Vec as input.")
+            raise ValueError("setNodes must be called with either a numpy array, dict, or TACS Vec as input.")
         self.assembler.setNodes(self.Xpts)
 
     def _arrayToNodeVec(self, xptsArray):

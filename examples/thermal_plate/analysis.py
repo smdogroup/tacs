@@ -8,6 +8,10 @@ such that:
 The problem is then to solve for the temperature within the boundaries of the plate.
 The problem basically boils down to Laplaces problem:
     grad**2 T = 0
+
+This example runs to problem cases:
+    1. A transient problem where the bc's are applied time t=0
+    2. A static problem that represents the steady state solution of the above at t=infinty
 """
 # ==============================================================================
 # Standard Python modules
