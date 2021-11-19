@@ -78,7 +78,7 @@ def elemCallBack(dvNum, compID, compDescript, elemDescripts, globalDVs, **kwargs
     return elemList, scale
 
 # Set up constitutive objects and elements
-FEASolver.createTACSAssembler(elemCallBack)
+FEASolver.initialize(elemCallBack)
 
 # Setup problems
 # Create a transient problem that will represent time varying convection

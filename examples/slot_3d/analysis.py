@@ -30,7 +30,7 @@ bdfFile = os.path.join(os.path.dirname(__file__), 'slot.bdf')
 FEASolver = pyTACS(bdfFile, comm, options=structOptions)
 # Set up TACS Assembler
 # Don't need a elemCallBack since property info exists in bdf
-FEASolver.createTACSAssembler()
+FEASolver.initialize()
 
 # ==============================================================================
 # Setup static problem

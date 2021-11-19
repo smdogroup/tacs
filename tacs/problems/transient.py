@@ -86,6 +86,7 @@ class TransientProblem(TACSProblem):
             'numberSolutions': [bool, True],
             'printTiming': [bool, False],
             'printIterations': [bool, True],
+            'printLevel': [int, 0],
 
         }
 
@@ -135,9 +136,8 @@ class TransientProblem(TACSProblem):
             self.integrator = tacs.TACS.DIRKIntegrator(self.assembler, self.tInit, self.tFinal,
                                                   float(self.numSteps), order)
 
-        if self.getOption('printIterations'):
-            self.integrator.setPrintLevel(1)
-
+        printLevel = self.getOption('printLevel')
+        self.integrator.setPrintLevel(printLevel)
         # Set solver tolerances
         atol = self.getOption('L2Convergence')
         self.integrator.setAbsTol(atol)

@@ -80,7 +80,7 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
             return elem, scale
 
         # Set up constitutive objects and elements
-        fea_solver.createTACSAssembler(elem_call_back)
+        fea_solver.initialize(elem_call_back)
 
         return fea_solver
 

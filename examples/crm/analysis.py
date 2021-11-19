@@ -76,7 +76,7 @@ def elemCallBack(dvNum, compID, compDescript, elemDescripts, globalDVs, **kwargs
     return elemList, scale
 
 # Set up elements and TACS assembler
-FEASolver.createTACSAssembler(elemCallBack)
+FEASolver.initialize(elemCallBack)
 
 # ==============================================================================
 # Setup static problem
