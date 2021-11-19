@@ -1041,7 +1041,7 @@ class StaticProblem(TACSProblem):
         else:
             prod[:] = self.res.getArray()
 
-    def zeroVectors(self):
+    def zeroVariables(self):
         """
         Zero all the tacs solution b-vecs
         """

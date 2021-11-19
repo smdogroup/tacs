@@ -149,7 +149,7 @@ x_new = x_orig + x_pert * dh
 funcs_new = {}
 problem.setDesignVars(x_new)
 # Zero out previous solution
-problem.zeroVectors()
+problem.zeroVariables()
 # Solve
 problem.solve()
 # Evaluate pertrubed functions
@@ -171,7 +171,7 @@ for funcName in funcs:
 
 # Reset design variables
 problem.setDesignVars(x_orig)
-problem.zeroVectors()
+problem.zeroVariables()
 
 # Perform a fd/cs sensisitivity check on nodal coordinate sensitivity
 xpts_orig = problem.getNodes()
@@ -185,7 +185,7 @@ xpts_new = xpts_orig + xpts_pert * dh
 # Re-solve and evaluate function with new perturbed design variable
 problem.setNodes(xpts_new)
 # Zero out previous solution
-problem.zeroVectors()
+problem.zeroVariables()
 # Solve
 problem.solve()
 # Evaluate pertrubed functions
