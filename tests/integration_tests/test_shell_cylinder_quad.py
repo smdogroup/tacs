@@ -37,17 +37,17 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
             self.atol = 1e-3
             self.dh = 1e-6
 
-        # Instantiate FEA Solver
+        # Instantiate FEA Assembler
         struct_options = {}
 
-        fea_solver = pytacs.pyTACS(bdf_file, comm, options=struct_options)
+        fea_assembler = pytacs.pyTACS(bdf_file, comm, options=struct_options)
 
         # Set up constitutive objects and elements
-        fea_solver.initialize()
+        fea_assembler.initialize()
 
-        return fea_solver
+        return fea_assembler
 
-    def setup_tacs_vecs(self, fea_solver, dv_pert_vec, xpts_pert_vec):
+    def setup_tacs_vecs(self, fea_assembler, dv_pert_vec, xpts_pert_vec):
         """
         Setup user-defined vectors for analysis and fd/cs sensitivity verification
         """
@@ -55,12 +55,12 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
         dv_pert_vec[:] = 1.0
 
         # Define perturbation array that moves all nodes on plate
-        xpts = fea_solver.getOrigCoordinates()
+        xpts = fea_assembler.getOrigCoordinates()
         xpts_pert_vec[:] = xpts
 
         return
 
-    def setup_funcs(self, fea_solver, problems):
+    def setup_funcs(self, fea_assembler, problems):
         """
         Create a list of functions to be tested and their reference values for the problem
         """
@@ -71,12 +71,12 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
         func_list = ['mass', 'compliance']
         return func_list, FUNC_REFS
 
-    def setup_tacs_problems(self, fea_solver):
+    def setup_tacs_problems(self, fea_assembler):
         """
         Setup pytacs object for problems we will be testing.
         """
         # Read in forces from BDF and create tacs struct problems
-        tacs_probs = fea_solver.createTACSProbsFromBDF()
+        tacs_probs = fea_assembler.createTACSProbsFromBDF()
         # Convert from dict to list
         tacs_probs = tacs_probs.values()
         return tacs_probs

@@ -24,13 +24,13 @@ from tacs import functions, constitutive, elements, pyTACS, problems
 
 comm = MPI.COMM_WORLD
 
-# Instantiate FEASolver
+# Instantiate FEAAssembler
 structOptions = {
     'printtiming':True,
 }
 
 bdfFile = os.path.join(os.path.dirname(__file__), 'CRM_box_2nd.bdf')
-FEASolver = pyTACS(bdfFile, options=structOptions, comm=comm)
+FEAAssembler = pyTACS(bdfFile, options=structOptions, comm=comm)
 
 # Material properties
 rho = 2780.0        # density kg/m^3
@@ -76,13 +76,13 @@ def elemCallBack(dvNum, compID, compDescript, elemDescripts, globalDVs, **kwargs
     return elemList, scale
 
 # Set up elements and TACS assembler
-FEASolver.initialize(elemCallBack)
+FEAAssembler.initialize(elemCallBack)
 
 # ==============================================================================
 # Setup static problem
 # ==============================================================================
 # Static problem
-problem = FEASolver.createStaticProblem('cruise')
+problem = FEAAssembler.createStaticProblem('cruise')
 
 # Add TACS Functions
 problem.addFunction('mass', functions.StructuralMass)
@@ -91,7 +91,7 @@ problem.addFunction('ks_vmfailure', functions.KSFailure, safetyFactor=1.5,
 
 # Various methods for adding loads to structural problem:
 # Let's model an engine load of 75kN weight, and 64kN thrust attached to spar
-compIDs = FEASolver.selectCompIDs(["WING_SPARS/LE_SPAR/SEG.16", "WING_SPARS/LE_SPAR/SEG.17"])
+compIDs = FEAAssembler.selectCompIDs(["WING_SPARS/LE_SPAR/SEG.16", "WING_SPARS/LE_SPAR/SEG.17"])
 We = 75.0e3 # N
 Te = 64.0e3 # N
 problem.addLoadToComponents(compIDs, [-Te, 0.0, -We, 0.0, 0.0, 0.0], averageLoad=True)
@@ -99,11 +99,11 @@ problem.addLoadToComponents(compIDs, [-Te, 0.0, -We, 0.0, 0.0, 0.0], averageLoad
 L = 3e3 # N/m^2
 D = 150 # N/m^2
 tracVec = np.array([D, 0.0, L])
-compIDs = FEASolver.selectCompIDs(include='SKIN')
+compIDs = FEAAssembler.selectCompIDs(include='SKIN')
 problem.addTractionToComponents(compIDs, tracVec)
 # Finally, we can approximate fuel load by adding a pressure load to the lower skin
 P = 2e3 # N/m^2
-compIDs = FEASolver.selectCompIDs(include='L_SKIN')
+compIDs = FEAAssembler.selectCompIDs(include='L_SKIN')
 problem.addPressureToComponents(compIDs, P)
 
 # Solve structural problem

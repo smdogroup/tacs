@@ -23,7 +23,7 @@ from tacs import pyTACS
 
 comm = MPI.COMM_WORLD
 
-# Instantiate FEASolver
+# Instantiate FEAAssembler
 structOptions = {
     'printtiming':True,
 }

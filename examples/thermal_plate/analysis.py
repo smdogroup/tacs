@@ -34,7 +34,7 @@ area = np.pi * R ** 2
 
 comm = MPI.COMM_WORLD
 
-# Instantiate FEASolver
+# Instantiate FEAAssembler
 structOptions = {
     'printtimings':True,
     # Specify what type of elements we want in the f5
@@ -43,7 +43,7 @@ structOptions = {
 }
 
 bdfFile = os.path.join(os.path.dirname(__file__), 'circ-plate-dirichlet-bcs.bdf')
-FEASolver = pyTACS(bdfFile, comm, options=structOptions)
+FEAAssembler = pyTACS(bdfFile, comm, options=structOptions)
 
 def elemCallBack(dvNum, compID, compDescript, elemDescripts, globalDVs, **kwargs):
     # Material properties
@@ -78,13 +78,13 @@ def elemCallBack(dvNum, compID, compDescript, elemDescripts, globalDVs, **kwargs
     return elemList, scale
 
 # Set up constitutive objects and elements
-FEASolver.initialize(elemCallBack)
+FEAAssembler.initialize(elemCallBack)
 
 # Setup problems
 # Create a transient problem that will represent time varying convection
-transientProb = FEASolver.createTransientProblem('Transient', tInit=0.0, tFinal=10.0, numSteps=100)
+transientProb = FEAAssembler.createTransientProblem('Transient', tInit=0.0, tFinal=10.0, numSteps=100)
 # Create a static problem that will represent the steady state solution
-staticProb = FEASolver.createStaticProblem(name='SteadyState')
+staticProb = FEAAssembler.createStaticProblem(name='SteadyState')
 # Add both problems to a list
 allProblems = [transientProb, staticProb]
 
