@@ -25,23 +25,21 @@ comm = MPI.COMM_WORLD
 
 # Instantiate FEASolver
 structOptions = {
-    'printtimings':True,
-    'writeSolution':True,
+    'printtiming':True,
 }
 
 bdfFile = os.path.join(os.path.dirname(__file__), 'rbe3.bdf')
+FEAAssembler = pyTACS(bdfFile, comm, options=structOptions)
 # Set up TACS Assembler
 # Don't need a elemCallBack since property info exists in bdf
-FEASolver = pyTACS(bdfFile, comm, options=structOptions)
-# Set up constitutive objects and elements
-FEASolver.createTACSAssembler()
+FEAAssembler.createTACSAssembler()
 
 # Read in forces from BDF and create tacs static problems
-SPs = FEASolver.createTACSProbsFromBDF()
+SPs = FEAAssembler.createTACSProbsFromBDF()
 
-# Solve state
+# Solve problems
 for caseID in SPs:
-    FEASolver(SPs[caseID])
-    FEASolver.writeSolution(outputDir=os.path.dirname(__file__))
+    SPs[caseID].solve()
+    SPs[caseID].writeSolution(outputDir=os.path.dirname(__file__))
 
 
