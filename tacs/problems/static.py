@@ -742,7 +742,17 @@ class StaticProblem(TACSProblem):
             print('+--------------------------------------------------+')
 
     def addSVSens(self, evalFuncs, svSensList):
-        """ Add the state variable sensitivity to the ADjoint RHS for given evalFuncs"""
+        """
+        Add the state variable partial sensitivity to the ADjoint RHS for given evalFuncs
+
+        Parameters
+        ----------
+        evalFuncs : list[str]
+            The functions the user wants returned
+
+        svSensList : list[BVec] or list[ndarray]
+            List of sensitivity vectors to add partial sensitivity to
+        """
         # Set problem vars to assembler
         self._updateAssemblerVars()
 
@@ -765,7 +775,20 @@ class StaticProblem(TACSProblem):
                 svSensArray[:] = svSensBVec.getArray()
 
     def addDVSens(self, evalFuncs, dvSensList, scale=1.0):
-        """ Add partial sensitivity contribution due to design vars for evalFuncs"""
+        """
+        Add partial sensitivity contribution due to design vars for evalFuncs
+
+        Parameters
+        ----------
+        evalFuncs : list[str]
+            The functions the user wants returned
+
+        dvSensList : list[BVec] or list[ndarray]
+            List of sensitivity vectors to add partial sensitivity to
+
+        scale : float
+            Scalar to multiply partial sensitivity by. Defaults to 1.0
+        """
         # Set problem vars to assembler
         self._updateAssemblerVars()
 
@@ -794,7 +817,20 @@ class StaticProblem(TACSProblem):
                 dvSensArray[:] = dvSensBVec.getArray()
 
     def addAdjointResProducts(self, adjointlist, dvSensList, scale=-1.0):
-        """ Add the adjoint product contribution to the design variable sensitivity arrays"""
+        """
+        Add the adjoint product contribution to the design variable sensitivity arrays
+
+        Parameters
+        ----------
+        adjointlist : list[BVec] or list[ndarray]
+            List of adjoint vectors for residual sensitivity product
+
+        dvSensList : list[BVec] or list[ndarray]
+            List of sensitivity vectors to add product to
+
+        scale : float
+            Scalar to multiply product by. Defaults to -1.0
+        """
         # Set problem vars to assembler
         self._updateAssemblerVars()
 
@@ -830,7 +866,20 @@ class StaticProblem(TACSProblem):
                 dvSensArray[:] = dvSensBVec.getArray()
 
     def addXptSens(self, evalFuncs, xptSensList, scale=1.0):
-        """ Add partial sensitivity contribution due to nodal coordinates for evalFuncs"""
+        """
+        Add partial sensitivity contribution due to nodal coordinates for evalFuncs
+
+        Parameters
+        ----------
+        evalFuncs : list[str]
+            The functions the user wants returned
+
+        xptSensList : list[BVec] or list[ndarray]
+            List of sensitivity vectors to add partial sensitivity to
+
+        scale : float
+            Scalar to multiply partial sensitivity by. Defaults to 1.0
+        """
         # Set problem vars to assembler
         self._updateAssemblerVars()
 
@@ -859,7 +908,20 @@ class StaticProblem(TACSProblem):
                 xptSensArray[:] = xptSensBVec.getArray()
 
     def addAdjointResXptSensProducts(self, adjointlist, xptSensList, scale=-1.0):
-        """ Add the adjoint product contribution to the nodal coordinates sensitivity arrays"""
+        """
+        Add the adjoint product contribution to the nodal coordinates sensitivity arrays
+
+        Parameters
+        ----------
+        adjointlist : list[BVec] or list[ndarray]
+            List of adjoint vectors for residual sensitivity product
+
+        xptSensList : list[BVec] or list[ndarray]
+            List of sensitivity vectors to add product to
+
+        scale : float
+            Scalar to multiply product by. Defaults to -1.0
+        """
         # Set problem vars to assembler
         self._updateAssemblerVars()
 
@@ -980,7 +1042,9 @@ class StaticProblem(TACSProblem):
             prod[:] = self.res.getArray()
 
     def zeroVectors(self):
-        """Zero all the tacs solution b-vecs"""
+        """
+        Zero all the tacs solution b-vecs
+        """
         self.res.zeroEntries()
         self.u.zeroEntries()
         self.assembler.setVariables(self.u)
@@ -1036,8 +1100,20 @@ class StaticProblem(TACSProblem):
             phi[:] = self.phi.getArray()
 
     def getVariables(self, states=None):
-        """Return the current state values for the
-        problem"""
+        """
+        Return the current state values for the
+        problem
+
+        Parameters
+        ----------
+        states : TACS BVec or numpy array
+            Vector to place current state variables into (optional)
+
+        Returns
+        ----------
+        states : TACS BVec
+            current state vector
+        """
 
         if states is None:
             states = self.u.getArray().copy()
@@ -1047,11 +1123,12 @@ class StaticProblem(TACSProblem):
         return states
 
     def setVariables(self, states):
-        """ Set the structural states for current load case.
+        """
+        Set the structural states for current load case.
 
         Parameters
         ----------
-        states : array
+        states : ndarray
             Values to set. Must be the size of getNumVariables()
         """
         # Copy array values
@@ -1062,7 +1139,8 @@ class StaticProblem(TACSProblem):
         self.assembler.setVariables(self.u)
 
     def writeSolution(self, outputDir=None, baseName=None, number=None):
-        """This is a generic shell function that writes the output
+        """
+        This is a generic shell function that writes the output
         file(s).  The intent is that the user or calling program can
         call this function and pyTACS writes all the files that the
         user has defined. It is recommended that this function is used

@@ -600,20 +600,69 @@ class TransientProblem(TACSProblem):
 
     def getVariables(self, timeStep, states=None, dstates=None, ddstates=None):
         """
-        Return the current state values for the current
-        problem
+        Return the current state values for the current problem
+
+        Parameters
+        ----------
+        timeStep : int
+            Time step index to get state variables for.
+
+        states : BVec or ndarray or None
+            If states is not None, place the state variables into this array.
+
+        dstates : BVec or ndarray or None
+            If dstates is not None, place the time derivitive of the state variables into this array.
+
+        ddstates : BVec or ndarray or None
+            If ddstates is not None, place the second time derivitive of the state variables into this array.
+
+        Returns
+        --------
+        time: float
+            The time at specified step
+
+        states : ndarray
+            The state variables into this array.
+
+        dstates : BVec or ndarray or None
+            The time derivitive of the state variables into this array.
+
+        ddstates : BVec or ndarray or None
+            The second time derivitive of the state variables into this array.
+
         """
 
-        if states is None:
-            states = self.u.getArray().copy()
-        else:
-            states[:] = self.u.getArray()
+        # Get BVecs for time instance
+        time, q, qdot, qddot = self.integrator.getStates(timeStep)
 
-        return states
+        # Convert to arrays
+        qArray = q.getArray()
+        qdotArray = qdot.getArray()
+        qddotArray = qddot.getArray()
+
+        # Inplace assignment if vectors were provided
+        if isinstance(states, tacs.TACS.Vec):
+            states.copyValues(q)
+        elif isinstance(states, np.ndarray):
+            states[:] = qArray
+
+        if isinstance(dstates, tacs.TACS.Vec):
+            dstates.copyValues(qdot)
+        elif isinstance(dstates, np.ndarray):
+            dstates[:] = qdotArray
+
+        if isinstance(ddstates, tacs.TACS.Vec):
+            ddstates.copyValues(qddot)
+        elif isinstance(ddstates, np.ndarray):
+            ddstates[:] = qddotArray
+
+        # Return arrays
+        return time, qArray, qdotArray, qddotArray
 
 
     def writeSolution(self, timeSteps=None):
-        """This is a generic shell function that writes the output
+        """
+        This is a generic shell function that writes the output
         file(s).  The intent is that the user or calling program can
         call this function and pyTACS writes all the files that the
         user has defined. It is recommended that this function is used
@@ -623,14 +672,10 @@ class TransientProblem(TACSProblem):
         Parameters
         ----------
 
-        outputDir : str or None
-            Use the supplied output directory
-        baseName : str or None
-            Use this supplied string for the base filename. Typically
-            only used from an external solver.
-        number : int or None
-            Use the user spplied number to index solution. Again, only
-            typically used from an external solver
+        timeStep : int or list[int] or None
+            Time step index or indices to get state variables for.
+            If None, returns a solution for all time steps.
+            Defaults to None.
         """
         # Unless the writeSolution option is off write actual file:
         if self.getOption('writeSolution'):
