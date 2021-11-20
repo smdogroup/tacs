@@ -1,7 +1,6 @@
-from tacs import TACS, constitutive
+from tacs import TACS, constitutive, elements
 import numpy as np
 import unittest
-
 
 class ConstitutiveTest(unittest.TestCase):
     def setUp(self):
@@ -39,6 +38,9 @@ class ConstitutiveTest(unittest.TestCase):
 
         # Create stiffness (need class)
         self.con = constitutive.IsoShellConstitutive(self.props, t=1.0, tNum=0)
+
+        # Seed random number generator in tacs for consistent test results
+        elements.SeedRandomGenerator(0)
 
     def test_constitutive_density(self):
         # Test density dv sensitivity
