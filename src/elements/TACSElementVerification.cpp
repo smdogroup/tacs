@@ -1309,6 +1309,318 @@ int TacsTestElementBasisJacobianTransform( TACSElementBasis *basis,
 }
 
 /*
+  Test the quantity output design variable sensitivities
+*/
+int TacsTestElementQuantityDVSens( TACSElement *element,
+                                   int elemIndex,
+                                   int quantityType,
+                                   double time,
+                                   const TacsScalar Xpts[],
+                                   const TacsScalar vars[],
+                                   const TacsScalar dvars[],
+                                   const TacsScalar ddvars[],
+                                   double dh,
+                                   int test_print_level,
+                                   double test_fail_atol,
+                                   double test_fail_rtol ){
+  // Retrieve the number of variables
+  int dvs_per_node = element->getDesignVarsPerNode();
+  int ndvs = element->getDesignVarNums(elemIndex, 0, NULL);
+  int num_dvs = dvs_per_node*ndvs;
+
+  TacsScalar *x = new TacsScalar[ num_dvs ];
+  element->getDesignVars(elemIndex, num_dvs, x);
+
+  // Create an array to store the values of the adjoint-residual
+  // product
+  TacsScalar *result = new TacsScalar[ num_dvs ];
+  TacsScalar *fd = new TacsScalar[ num_dvs ];
+  memset(result, 0, num_dvs*sizeof(TacsScalar));
+  memset(fd, 0, num_dvs*sizeof(TacsScalar));
+
+  // Generate a random array
+  TacsScalar f0[9], dfdq[9];
+  TacsGenerateRandomArray(dfdq, 9);
+
+  // Evaluate the pointwise quantity of interest
+  double pt[3] = {-0.125, 0.383, -0.233};
+  TacsScalar detXd;
+  int count = element->evalPointQuantity(elemIndex, quantityType, time, -1, pt,
+                                         Xpts, vars, dvars, ddvars, &detXd, f0);
+
+  if (count > 0){
+    // Evaluate the derivative
+    double scale = 1.0*rand()/RAND_MAX;
+    element->addPointQuantityDVSens(elemIndex, quantityType, time, scale, -1, pt,
+                                    Xpts, vars, dvars, ddvars, dfdq, num_dvs, result);
+
+    for ( int i = 0; i < num_dvs; i++ ){
+      TacsScalar xi = x[i];
+
+#ifdef TACS_USE_COMPLEX
+      x[i] = xi + TacsScalar(0.0, dh);
+#else
+      x[i] = xi + dh;
+#endif // TACS_USE_COMPLEX
+
+      TacsScalar f1[9];
+      element->setDesignVars(elemIndex, num_dvs, x);
+      element->evalPointQuantity(elemIndex, quantityType, time, -1, pt,
+                                 Xpts, vars, dvars, ddvars, &detXd, f1);
+
+      for ( int j = 0; j < count; j++ ){
+#ifdef TACS_USE_COMPLEX
+        fd[i] += scale*dfdq[j]*TacsImagPart(f1[j])/dh;
+#else
+        fd[i] += scale*dfdq[j]*(f1[j] - f0[j])/dh;
+#endif // TACS_USE_COMPLEX
+
+        x[i] = xi;
+      }
+    }
+  }
+
+  element->setDesignVars(elemIndex, num_dvs, x);
+
+  // Compute the error
+  int max_err_index, max_rel_index;
+  double max_err = TacsGetMaxError(result, fd, num_dvs, &max_err_index);
+  double max_rel = TacsGetMaxRelError(result, fd, num_dvs,
+                                      &max_rel_index);
+
+  if (test_print_level > 0){
+    fprintf(stderr,
+            "Testing the derivative of the pointwise quantity for %s\n",
+            element->getObjectName());
+    fprintf(stderr, "Max Err: %10.4e in component %d.\n",
+            max_err, max_err_index);
+    fprintf(stderr, "Max REr: %10.4e in component %d.\n",
+            max_rel, max_rel_index);
+  }
+  // Print the error if required
+  if (test_print_level > 1){
+    TacsPrintErrorComponents(stderr, "dfdx",
+                             result, fd, num_dvs);
+  }
+  if (test_print_level){ fprintf(stderr, "\n"); }
+
+  delete [] result;
+  delete [] fd;
+  delete [] x;
+
+  return (max_err > test_fail_atol || max_rel > test_fail_rtol);
+}
+
+/*
+  Test the quantity output state variable sensitivities
+*/
+int TacsTestElementQuantitySVSens( TACSElement *element,
+                                   int elemIndex,
+                                   int quantityType,
+                                   double time,
+                                   const TacsScalar Xpts[],
+                                   const TacsScalar vars[],
+                                   const TacsScalar dvars[],
+                                   const TacsScalar ddvars[],
+                                   double dh,
+                                   int test_print_level,
+                                   double test_fail_atol,
+                                   double test_fail_rtol ){
+  // Retrieve the number of variables
+  int nvars = element->getNumVariables();
+
+  // Create an array to store the values of the adjoint-residual
+  // product
+  TacsScalar *result = new TacsScalar[ nvars ];
+  TacsScalar *fd = new TacsScalar[ nvars ];
+  TacsScalar *q = new TacsScalar[ nvars ];
+  TacsScalar *qdot = new TacsScalar[ nvars ];
+  TacsScalar *qddot = new TacsScalar[ nvars ];
+  memset(result, 0, nvars*sizeof(TacsScalar));
+
+  // Generate a random array
+  TacsScalar f0[9], dfdq[9];
+  TacsGenerateRandomArray(dfdq, 9);
+
+  // Evaluate the pointwise quantity of interest
+  double pt[3] = {-0.125, 0.383, -0.233};
+  TacsScalar detXd;
+  int count = element->evalPointQuantity(elemIndex, quantityType, time, -1, pt,
+                                         Xpts, vars, dvars, ddvars, &detXd, f0);
+
+  if (count > 0){
+    // Evaluate the derivative
+    double scale = 1.0*rand()/RAND_MAX;
+    TacsScalar alpha = 1.0*rand()/RAND_MAX;
+    TacsScalar beta = 1.0*rand()/RAND_MAX;
+    TacsScalar gamma = 1.0*rand()/RAND_MAX;
+    element->addPointQuantitySVSens(elemIndex, quantityType, time,
+                                    scale*alpha, scale*beta, scale*gamma, -1, pt,
+                                    Xpts, vars, dvars, ddvars, dfdq, result);
+
+    for ( int i = 0; i < nvars; i++ ){
+      memcpy(q, vars, nvars*sizeof(TacsScalar));
+      memcpy(qdot, dvars, nvars*sizeof(TacsScalar));
+      memcpy(qddot, ddvars, nvars*sizeof(TacsScalar));
+
+#ifdef TACS_USE_COMPLEX
+      q[i] = vars[i] + alpha*TacsScalar(0.0, dh);
+      qdot[i] = dvars[i] + beta*TacsScalar(0.0, dh);
+      qddot[i] = ddvars[i] + gamma*TacsScalar(0.0, dh);
+#else
+      q[i] = vars[i] + alpha*dh;
+      qdot[i] = dvars[i] + beta*dh;
+      qddot[i] = ddvars[i] + gamma*dh;
+#endif // TACS_USE_COMPLEX
+
+      TacsScalar f1[9];
+      element->evalPointQuantity(elemIndex, quantityType, time, -1, pt,
+                                 Xpts, q, qdot, qddot, &detXd, f1);
+
+      for ( int j = 0; j < count; j++ ){
+#ifdef TACS_USE_COMPLEX
+        fd[i] += scale*dfdq[j]*TacsImagPart(f1[j])/dh;
+#else
+        fd[i] += scale*dfdq[j]*(f1[j] - f0[j])/dh;
+#endif // TACS_USE_COMPLEX
+      }
+    }
+  }
+
+  // Compute the error
+  int max_err_index, max_rel_index;
+  double max_err = TacsGetMaxError(result, fd, nvars, &max_err_index);
+  double max_rel = TacsGetMaxRelError(result, fd, nvars,
+                                      &max_rel_index);
+
+  if (test_print_level > 0){
+    fprintf(stderr,
+            "Testing the derivative of the pointwise quantity for %s\n",
+            element->getObjectName());
+    fprintf(stderr, "Max Err: %10.4e in component %d.\n",
+            max_err, max_err_index);
+    fprintf(stderr, "Max REr: %10.4e in component %d.\n",
+            max_rel, max_rel_index);
+  }
+  // Print the error if required
+  if (test_print_level > 1){
+    TacsPrintErrorComponents(stderr, "dfdu",
+                             result, fd, nvars);
+  }
+  if (test_print_level){ fprintf(stderr, "\n"); }
+
+  delete [] result;
+  delete [] fd;
+  delete [] q;
+  delete [] qdot;
+  delete [] qddot;
+
+  return (max_err > test_fail_atol || max_rel > test_fail_rtol);
+}
+
+/*
+  Test the quantity output element node sensitivities
+*/
+int TacsTestElementQuantityXptSens( TACSElement *element,
+                                    int elemIndex,
+                                    int quantityType,
+                                    double time,
+                                    const TacsScalar Xpts[],
+                                    const TacsScalar vars[],
+                                    const TacsScalar dvars[],
+                                    const TacsScalar ddvars[],
+                                    double dh,
+                                    int test_print_level,
+                                    double test_fail_atol,
+                                    double test_fail_rtol ){
+  int nnodes = element->getNumNodes();
+
+  // Create an array to store the result
+  TacsScalar *result = new TacsScalar[ 3*nnodes ];
+  TacsScalar *fd = new TacsScalar[ 3*nnodes ];
+  memset(result, 0, 3*nnodes*sizeof(TacsScalar));
+  memset(fd, 0, 3*nnodes*sizeof(TacsScalar));
+
+  TacsScalar *Xt = new TacsScalar[ 3*nnodes ];
+
+  // Generate a random array
+  TacsScalar f0[9], dfdq[9];
+  TacsGenerateRandomArray(dfdq, 9);
+
+  TacsScalar dfdetXd = 0.0;
+  TacsGenerateRandomArray(&dfdetXd, 1);
+
+  // Evaluate the pointwise quantity of interest
+  double pt[3] = {-0.125, 0.383, -0.233};
+  TacsScalar detXd0;
+  int count = element->evalPointQuantity(elemIndex, quantityType, time, -1, pt,
+                                         Xpts, vars, dvars, ddvars, &detXd0, f0);
+
+  if (count > 0){
+    // Evaluate the derivative
+    double scale = 1.0*rand()/RAND_MAX;
+    element->addPointQuantityXptSens(elemIndex, quantityType, time, scale, -1, pt,
+                                     Xpts, vars, dvars, ddvars, dfdetXd, dfdq, result);
+
+    for ( int i = 0; i < 3*nnodes; i++ ){
+      memcpy(Xt, Xpts, 3*nnodes*sizeof(TacsScalar));
+
+#ifdef TACS_USE_COMPLEX
+      Xt[i] = Xpts[i] + TacsScalar(0.0, dh);
+#else
+      Xt[i] = Xpts[i] + dh;
+#endif // TACS_USE_COMPLEX
+
+      TacsScalar detXd1, f1[9];
+      element->evalPointQuantity(elemIndex, quantityType, time, -1, pt,
+                                 Xt, vars, dvars, ddvars, &detXd1, f1);
+
+#ifdef TACS_USE_COMPLEX
+      fd[i] += scale*dfdetXd*TacsImagPart(detXd1)/dh;
+#else
+      fd[i] += scale*dfdetXd*(detXd1 - detXd0)/dh;
+#endif // TACS_USE_COMPLEX
+
+      for ( int j = 0; j < count; j++ ){
+#ifdef TACS_USE_COMPLEX
+        fd[i] += scale*dfdq[j]*TacsImagPart(f1[j])/dh;
+#else
+        fd[i] += scale*dfdq[j]*(f1[j] - f0[j])/dh;
+#endif // TACS_USE_COMPLEX
+      }
+    }
+  }
+
+  // Compute the error
+  int max_err_index, max_rel_index;
+  double max_err = TacsGetMaxError(result, fd, 3*nnodes, &max_err_index);
+  double max_rel = TacsGetMaxRelError(result, fd, 3*nnodes,
+                                      &max_rel_index);
+
+  if (test_print_level > 0){
+    fprintf(stderr,
+            "Testing the derivative of the pointwise quantity for %s\n",
+            element->getObjectName());
+    fprintf(stderr, "Max Err: %10.4e in component %d.\n",
+            max_err, max_err_index);
+    fprintf(stderr, "Max REr: %10.4e in component %d.\n",
+            max_rel, max_rel_index);
+  }
+  // Print the error if required
+  if (test_print_level > 1){
+    TacsPrintErrorComponents(stderr, "dfdXpts",
+                             result, fd, 3*nnodes);
+  }
+  if (test_print_level){ fprintf(stderr, "\n"); }
+
+  delete [] result;
+  delete [] fd;
+  delete [] Xt;
+
+  return (max_err > test_fail_atol || max_rel > test_fail_rtol);
+}
+
+/*
   Test the derivative of the inner product of the adjoint vector and
   the residual with respect to material design variables.
 */

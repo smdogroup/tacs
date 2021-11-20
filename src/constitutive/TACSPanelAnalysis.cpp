@@ -292,7 +292,9 @@ void TACSPanelAnalysis::setSegment( int seg, int seg_type,
   stiff: the stiffness object associated with the beam
   n:     the node number at which to place the beam
 */
-void TACSPanelAnalysis::setBeam( int beam, EBStiffness *stiff, int n ){
+void TACSPanelAnalysis::setBeam( int beam,
+                                 EBStiffness *stiff,
+                                 int n ){
   if (beam >= 0 && beam < nbeams){
     if (stiff){ stiff->incref(); }
     if (beams[beam]){ beams[beam]->decref(); }

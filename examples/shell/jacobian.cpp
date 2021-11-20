@@ -142,6 +142,10 @@ int main( int argc, char *argv[] ){
   // Test the implementation of the derivative of the adjoint-residual product w.r.t. nodes
   TacsTestAdjResXptProduct(shell, elemIndex, time, Xpts, vars, dvars, ddvars);
 
+  int quantityType = TACS_FAILURE_INDEX;
+  TacsTestElementQuantityDVSens(shell, elemIndex, quantityType, time, Xpts, vars, dvars, ddvars);
+  TacsTestElementQuantitySVSens(shell, elemIndex, quantityType, time, Xpts, vars, dvars, ddvars);
+
   delete [] Xpts;
   delete [] vars;
   delete [] dvars;
