@@ -172,7 +172,6 @@ for funcName in funcs:
 
 # Reset design variables
 problem.setDesignVars(x_orig)
-problem.zeroVariables()
 
 # Perform a fd/cs sensisitivity check on nodal coordinate sensitivity
 xpts_orig = problem.getNodes()
