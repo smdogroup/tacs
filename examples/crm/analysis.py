@@ -136,6 +136,7 @@ problem.writeSolution(outputDir=os.path.dirname(__file__))
 # Perform a fd/cs sensisitivity check on design  variable sensitivity
 x_orig = problem.getDesignVars()
 
+# Get number of design variables owned by this proc
 ndvs = FEAAssembler.getNumDesignVars()
 x_pert = np.random.rand(ndvs)
 
