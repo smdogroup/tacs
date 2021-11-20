@@ -10,7 +10,7 @@ import numpy as np
 from mpi4py import MPI
 from ..utilities import BaseUI
 from collections import OrderedDict
-import tacs.TACS, tacs.constitutive, tacs.elements, tacs.functions, tacs.problems.static
+import tacs.TACS
 
 class TACSProblem(BaseUI):
     """

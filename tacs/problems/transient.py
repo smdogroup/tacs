@@ -11,7 +11,7 @@ import numpy as np
 from collections import OrderedDict
 import time
 from .base import TACSProblem
-import tacs.TACS, tacs.constitutive, tacs.elements, tacs.functions, tacs.problems.static
+import tacs.TACS
 
 class TransientProblem(TACSProblem):
 
