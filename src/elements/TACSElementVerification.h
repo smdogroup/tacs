@@ -268,6 +268,89 @@ int TacsTestElementMatSVSens( TACSElement *element,
                               double test_fail_rtol=1e-5 );
 
 /**
+  Test the quantity output design variable sensitivities
+
+  @param element The element object
+  @param time Simulation time
+  @param Xpts The element nodal variables
+  @param vars The element state variables
+  @param dvars The time derivatives of the state variables
+  @param ddvars The second time derivatives of the state variables
+  @param dvLen The length of the design variable array
+  @param x The design variable array
+  @param dh The finite-difference step size
+  @param test_print_level The output level
+  @param test_fail_atol The test absolute tolerance
+  @param test_fail_rtol The test relative tolerance
+*/
+int TacsTestElementQuantityDVSens( TACSElement *element,
+                                   int elemIndex,
+                                   int quantityType,
+                                   double time,
+                                   const TacsScalar Xpts[],
+                                   const TacsScalar vars[],
+                                   const TacsScalar dvars[],
+                                   const TacsScalar ddvars[],
+                                   double dh=1e-7,
+                                   int test_print_level=2,
+                                   double test_fail_atol=1e-5,
+                                   double test_fail_rtol=1e-5 );
+
+/**
+  Test the quantity output state variable sensitivities
+
+  @param element The element object
+  @param time Simulation time
+  @param Xpts The element nodal variables
+  @param vars The element state variables
+  @param dvars The time derivatives of the state variables
+  @param ddvars The second time derivatives of the state variables
+  @param dh The finite-difference step size
+  @param test_print_level The output level
+  @param test_fail_atol The test absolute tolerance
+  @param test_fail_rtol The test relative tolerance
+*/
+int TacsTestElementQuantitySVSens( TACSElement *element,
+                                   int elemIndex,
+                                   int quantityType,
+                                   double time,
+                                   const TacsScalar Xpts[],
+                                   const TacsScalar vars[],
+                                   const TacsScalar dvars[],
+                                   const TacsScalar ddvars[],
+                                   double dh=1e-7,
+                                   int test_print_level=2,
+                                   double test_fail_atol=1e-5,
+                                   double test_fail_rtol=1e-5 );
+
+/**
+  Test the quantity output element node sensitivities
+
+  @param element The element object
+  @param time Simulation time
+  @param Xpts The element nodal variables
+  @param vars The element state variables
+  @param dvars The time derivatives of the state variables
+  @param ddvars The second time derivatives of the state variables
+  @param dh The finite-difference step size
+  @param test_print_level The output level
+  @param test_fail_atol The test absolute tolerance
+  @param test_fail_rtol The test relative tolerance
+*/
+int TacsTestElementQuantityXptSens( TACSElement *element,
+                                    int elemIndex,
+                                    int quantityType,
+                                    double time,
+                                    const TacsScalar Xpts[],
+                                    const TacsScalar vars[],
+                                    const TacsScalar dvars[],
+                                    const TacsScalar ddvars[],
+                                    double dh=1e-7,
+                                    int test_print_level=2,
+                                    double test_fail_atol=1e-5,
+                                    double test_fail_rtol=1e-5 );
+
+/**
   Test if the basis function derivatives are implemented correct
 
   @param basis The TACSElementBasis to check

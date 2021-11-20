@@ -16,20 +16,23 @@ class TACSThermalShellElement : public TACSElement {
  public:
   // Offset within the solution vector to the roational
   // parametrization defined via the director class. Here the offset
-  // is 4 corresponding to the (u, v, w) displacements of the
-  // mid-surface of the shell and the shell temperature.
-  static const int offset = 4;
+  // is 3 corresponding to the (u, v, w) displacements of the
+  // mid-surface of the shell.
+  static const int offset = 3;
 
   // The number of variables defined at each node of the shell
   // element.  There are 3 mid-surface displacements, the temperature
   // plus however many parameters are defined by the director class
   // for the parametrization.
-  static const int vars_per_node = offset + director::NUM_PARAMETERS;
+  static const int vars_per_node = 4 + director::NUM_PARAMETERS;
 
   // The number of nodes for this element. This is derived from the
   // basis function class. This is just a handy re-definition since
   // this constant is used in many locations within the element.
   static const int num_nodes = basis::NUM_NODES;
+
+  // The thermal degree of freedom. This comes last
+  static const int thermal_dof = vars_per_node - 1;
 
   TACSThermalShellElement( TACSShellTransform *_transform,
                            TACSShellConstitutive *_con ){
@@ -124,15 +127,15 @@ class TACSThermalShellElement : public TACSElement {
                     TacsScalar res[],
                     TacsScalar mat[] );
 
-  // void addAdjResProduct( int elemIndex, double time,
-  //                        TacsScalar scale,
-  //                        const TacsScalar psi[],
-  //                        const TacsScalar Xpts[],
-  //                        const TacsScalar vars[],
-  //                        const TacsScalar dvars[],
-  //                        const TacsScalar ddvars[],
-  //                        int dvLen,
-  //                        TacsScalar dfdx[] );
+  void addAdjResProduct( int elemIndex, double time,
+                         TacsScalar scale,
+                         const TacsScalar psi[],
+                         const TacsScalar Xpts[],
+                         const TacsScalar vars[],
+                         const TacsScalar dvars[],
+                         const TacsScalar ddvars[],
+                         int dvLen,
+                         TacsScalar dfdx[] );
 
   int evalPointQuantity( int elemIndex, int quantityType,
                          double time,
@@ -381,8 +384,8 @@ void TACSThermalShellElement<quadrature, basis, director, model>::
 
     // Evaluate the temperature and temperature gradient
     TacsScalar t, txi[2];
-    basis::template interpFields<vars_per_node, 1>(pt, &vars[3], &t);
-    basis::template interpFieldsGrad<vars_per_node, 1>(pt, &vars[3], txi);
+    basis::template interpFields<vars_per_node, 1>(pt, &vars[thermal_dof], &t);
+    basis::template interpFieldsGrad<vars_per_node, 1>(pt, &vars[thermal_dof], txi);
 
     // Transform to the local component of the heat flux
     TacsScalar tx[2]; // tx = txi*Xdinv*T
@@ -396,7 +399,7 @@ void TACSThermalShellElement<quadrature, basis, director, model>::
     TacsScalar qxi[2];
     qxi[0] = detXd*(XdinvT[0]*q[0] + XdinvT[3]*q[1]);
     qxi[1] = detXd*(XdinvT[1]*q[0] + XdinvT[4]*q[1]);
-    basis::template addInterpFieldsGradTranspose<vars_per_node, 1>(pt, qxi, &res[3]);
+    basis::template addInterpFieldsGradTranspose<vars_per_node, 1>(pt, qxi, &res[thermal_dof]);
 
     // Compute the thermal strain
     TacsScalar eth[9];
@@ -581,8 +584,8 @@ void TACSThermalShellElement<quadrature, basis, director, model>::
 
     // Evaluate the temperature and temperature gradient
     TacsScalar t, txi[2];
-    basis::template interpFields<vars_per_node, 1>(pt, &vars[3], &t);
-    basis::template interpFieldsGrad<vars_per_node, 1>(pt, &vars[3], txi);
+    basis::template interpFields<vars_per_node, 1>(pt, &vars[thermal_dof], &t);
+    basis::template interpFieldsGrad<vars_per_node, 1>(pt, &vars[thermal_dof], txi);
 
     // Transform to the local component of the heat flux
     TacsScalar tx[2]; // tx = txi*Xdinv*T
@@ -596,7 +599,7 @@ void TACSThermalShellElement<quadrature, basis, director, model>::
     TacsScalar qxi[2];
     qxi[0] = detXd*(XdinvT[0]*q[0] + XdinvT[3]*q[1]);
     qxi[1] = detXd*(XdinvT[1]*q[0] + XdinvT[4]*q[1]);
-    basis::template addInterpFieldsGradTranspose<vars_per_node, 1>(pt, qxi, &res[3]);
+    basis::template addInterpFieldsGradTranspose<vars_per_node, 1>(pt, qxi, &res[thermal_dof]);
 
     // Set the terms in the Jacobian matrix
     TacsScalar Kt[3];
@@ -618,7 +621,8 @@ void TACSThermalShellElement<quadrature, basis, director, model>::
     q2xi[3] = alpha*detXd*(XdinvT[1]*Ktmp[1] + XdinvT[4]*Ktmp[3]);
 
     basis::template
-      addInterpGradOuterProduct<vars_per_node, vars_per_node, 1, 1>(pt, q2xi, &mat[3*(size + 1)]);
+      addInterpGradOuterProduct<vars_per_node, vars_per_node, 1, 1>(
+        pt, q2xi, &mat[thermal_dof*(size + 1)]);
 
     // Compute the thermal strain
     TacsScalar eth[9];
@@ -686,7 +690,7 @@ void TACSThermalShellElement<quadrature, basis, director, model>::
 
       for ( int j = 0; j < num_nodes; j++ ){
         for ( int i = 0; i < size; i++ ){
-          mat[i*size + (vars_per_node*j + offset-1)] += tmp[i]*N[j];
+          mat[i*size + (vars_per_node*j + thermal_dof)] += tmp[i]*N[j];
         }
       }
     }
@@ -797,6 +801,141 @@ void TACSThermalShellElement<quadrature, basis, director, model>::
 }
 
 template <class quadrature, class basis, class director, class model>
+void TACSThermalShellElement<quadrature, basis, director, model>::
+  addAdjResProduct( int elemIndex, double time,
+                    TacsScalar scale,
+                    const TacsScalar psi[],
+                    const TacsScalar Xpts[],
+                    const TacsScalar vars[],
+                    const TacsScalar dvars[],
+                    const TacsScalar ddvars[],
+                    int dvLen,
+                    TacsScalar dfdx[] ){
+  // Compute the number of quadrature points
+  const int nquad = quadrature::getNumQuadraturePoints();
+
+  // Compute the node normal directions
+  TacsScalar fn[3*num_nodes], Xdn[9*num_nodes];
+  TacsShellComputeNodeNormals<basis>(Xpts, fn, Xdn);
+
+  // Store information about the transformation and derivatives at each node for
+  // the drilling degrees of freedom
+  TacsScalar etn[num_nodes], etnd[num_nodes];
+  TacsScalar XdinvTn[9*num_nodes], Tn[9*num_nodes];
+  TacsScalar u0xn[9*num_nodes], Ctn[csize];
+  TacsShellComputeDrillStrainDeriv<vars_per_node, offset, basis, director, model>(
+    transform, Xdn, fn, vars, psi, XdinvTn, Tn, u0xn, Ctn, etn, etnd);
+
+  // Compute the director rates and their derivatives
+  TacsScalar d[dsize], ddot[dsize], dddot[dsize], dd[dsize];
+  director::template
+    computeDirectorRatesDeriv<vars_per_node, offset, num_nodes>(vars, dvars, ddvars, psi, fn,
+                                                                d, ddot, dddot, dd);
+
+  // Set the total number of tying points needed for this element
+  TacsScalar ety[basis::NUM_TYING_POINTS], etyd[basis::NUM_TYING_POINTS];
+  model::template
+    computeTyingStrainDeriv<vars_per_node, basis>(Xpts, fn, vars, d, psi, dd, ety, etyd);
+
+  // Loop over each quadrature point and add the residual contribution
+  for ( int quad_index = 0; quad_index < nquad; quad_index++ ){
+    // Get the quadrature weight
+    double pt[3];
+    double weight = quadrature::getQuadraturePoint(quad_index, pt);
+
+    // Compute X, X,xi and the interpolated normal n0
+    TacsScalar X[3], Xxi[6], n0[3], T[9], et, etd;
+    basis::template interpFields<3, 3>(pt, Xpts, X);
+    basis::template interpFieldsGrad<3, 3>(pt, Xpts, Xxi);
+    basis::template interpFields<3, 3>(pt, fn, n0);
+    basis::template interpFields<1, 1>(pt, etn, &et);
+    basis::template interpFields<1, 1>(pt, etnd, &etd);
+
+    // Compute the transformation at the quadrature point
+    transform->computeTransform(Xxi, n0, T);
+
+    // Evaluate the displacement gradient at the point
+    TacsScalar XdinvT[9], XdinvzT[9];
+    TacsScalar u0x[9], u1x[9], u0xd[9], u1xd[9];
+    TacsScalar detXd =
+      TacsShellComputeDispGradDeriv<vars_per_node, basis>(pt, Xpts, vars, fn, d, Xxi, n0, T,
+                                                          psi, dd, XdinvT, XdinvzT,
+                                                          u0x, u1x, u0xd, u1xd);
+    detXd *= weight;
+
+    // Evaluate the tying components of the strain
+    TacsScalar gty[6], gtyd[6]; // The symmetric components of the tying strain
+    basis::interpTyingStrain(pt, ety, gty);
+    basis::interpTyingStrain(pt, etyd, gtyd);
+
+    // Compute the symmetric parts of the tying strain
+    TacsScalar e0ty[6], e0tyd[6]; // e0ty = XdinvT^{T}*gty*XdinvT
+    mat3x3SymmTransformTranspose(XdinvT, gty, e0ty);
+    mat3x3SymmTransformTranspose(XdinvT, gtyd, e0tyd);
+
+    // Compute the set of strain components
+    TacsScalar e[9]; // The components of the strain
+    TacsScalar ed[9]; // The directional derivative components of the strain
+    model::evalStrainDeriv(u0x, u1x, e0ty, u0xd, u1xd, e0tyd, e, ed);
+    e[8] = et;
+    ed[8] = etd;
+
+    // Evaluate the temperature and temperature gradient
+    TacsScalar t, txi[2], txid[2];
+    basis::template interpFields<vars_per_node, 1>(pt, &vars[thermal_dof], &t);
+    basis::template interpFieldsGrad<vars_per_node, 1>(pt, &vars[thermal_dof], txi);
+    basis::template interpFieldsGrad<vars_per_node, 1>(pt, &psi[thermal_dof], txid);
+
+    // Transform to the local component of the heat flux
+    TacsScalar tx[2]; // tx = txi*Xdinv*T
+    tx[0] = XdinvT[0]*txi[0] + XdinvT[1]*txi[1];
+    tx[1] = XdinvT[3]*txi[0] + XdinvT[4]*txi[1];
+
+    TacsScalar txd[2];
+    txd[0] = XdinvT[0]*txid[0] + XdinvT[1]*txid[1];
+    txd[1] = XdinvT[3]*txid[0] + XdinvT[4]*txid[1];
+
+    // Add the contributions from the heat flux
+    con->addHeatFluxDVSens(elemIndex, scale*detXd, pt, X, tx, txd, dvLen, dfdx);
+
+    // Add the contribution from the thermal strain
+    TacsScalar s[9];
+    con->evalStress(elemIndex, pt, X, ed, s);
+    con->addThermalStrainDVSens(elemIndex, pt, X, -t*scale*detXd, s, dvLen, dfdx);
+
+    // Compute the thermal strain
+    TacsScalar eth[9];
+    con->evalThermalStrain(elemIndex, pt, X, t, eth);
+
+    // Compute the mechanical strain (and stress)
+    TacsScalar em[9];
+    for ( int i = 0; i < 9; i++ ){
+      em[i] = e[i] - eth[i];
+    }
+
+    // The directional derivative of the strain along the adjoint direction
+    con->addStressDVSens(elemIndex, scale*detXd, pt, X, em, ed, dvLen, dfdx);
+
+    // Evaluate the second time derivatives
+    TacsScalar u0ddot[3], d0ddot[3];
+    basis::template interpFields<vars_per_node, 3>(pt, ddvars, u0ddot);
+    basis::template interpFields<3, 3>(pt, dddot, d0ddot);
+
+    TacsScalar du0ddot[3], dd0ddot[3];
+    basis::template interpFields<vars_per_node, 3>(pt, psi, du0ddot);
+    basis::template interpFields<3, 3>(pt, dd, dd0ddot);
+
+    TacsScalar coef[3];
+    coef[0] = scale*detXd*vec3Dot(u0ddot, du0ddot);
+    coef[1] = scale*detXd*(vec3Dot(u0ddot, dd0ddot) + vec3Dot(du0ddot, d0ddot));
+    coef[2] = scale*detXd*vec3Dot(d0ddot, dd0ddot);
+
+    // Add the contribution from the dynamics
+    con->addMassMomentsDVSens(elemIndex, pt, X, coef, dvLen, dfdx);
+  }
+}
+
+template <class quadrature, class basis, class director, class model>
 int TACSThermalShellElement<quadrature, basis, director, model>::
   evalPointQuantity( int elemIndex, int quantityType,
                      double time,
@@ -811,7 +950,74 @@ int TACSThermalShellElement<quadrature, basis, director, model>::
   TacsScalar fn[3*num_nodes];
   TacsShellComputeNodeNormals<basis>(Xpts, fn);
 
-  if (quantityType == TACS_FAILURE_INDEX){
+ if (quantityType == TACS_ELEMENT_DENSITY){
+   if (quantity){
+      TacsScalar Xxi[6], n0[3], X[3];
+      basis::template interpFields<3, 3>(pt, Xpts, X);
+      basis::template interpFieldsGrad<3, 3>(pt, Xpts, Xxi);
+      basis::template interpFields<3, 3>(pt, fn, n0);
+
+      TacsScalar Xd[9];
+      TacsShellAssembleFrame(Xxi, n0, Xd);
+      *detXd = det3x3(Xd);
+
+      *quantity = con->evalDensity(elemIndex, pt, X);
+    }
+
+    return 1;
+  }
+  else if (quantityType == TACS_HEAT_FLUX){
+    if (quantity){
+      // Compute X, X,xi
+      TacsScalar X[3], Xxi[6], n0[3];
+      basis::template interpFields<3, 3>(pt, Xpts, X);
+      basis::template interpFieldsGrad<3, 3>(pt, Xpts, Xxi);
+      basis::template interpFields<3, 3>(pt, fn, n0);
+
+      // Compute the transformation at the quadrature point
+      TacsScalar T[9];
+      transform->computeTransform(Xxi, n0, T);
+
+      // Evaluate the displacement gradient at the point
+      TacsScalar Xd[9], Xdinv[9], XdinvT[9];
+      TacsShellAssembleFrame(Xxi, n0, Xd);
+      *detXd = inv3x3(Xd, Xdinv);
+      mat3x3MatMult(Xdinv, T, XdinvT);
+
+      // Evaluate the temperature and temperature gradient
+      TacsScalar txi[2];
+      basis::template interpFieldsGrad<vars_per_node, 1>(pt, &vars[thermal_dof], txi);
+
+      // Transform to the local component of the heat flux
+      TacsScalar tx[2]; // tx = txi*Xdinv*T
+      tx[0] = XdinvT[0]*txi[0] + XdinvT[1]*txi[1];
+      tx[1] = XdinvT[3]*txi[0] + XdinvT[4]*txi[1];
+
+      con->evalHeatFlux(elemIndex, pt, X, tx, quantity);
+    }
+
+    return 2;
+  }
+  else if (quantityType == TACS_TEMPERATURE){
+    if (quantity){
+      TacsScalar Xxi[6], n0[3];
+      basis::template interpFieldsGrad<3, 3>(pt, Xpts, Xxi);
+      basis::template interpFields<3, 3>(pt, fn, n0);
+
+      TacsScalar Xd[9];
+      TacsShellAssembleFrame(Xxi, n0, Xd);
+      *detXd = det3x3(Xd);
+
+      TacsScalar t;
+      basis::template interpFields<vars_per_node, 1>(pt, &vars[thermal_dof], &t);
+      *quantity = t;
+    }
+
+    return 1;
+  }
+  else if (quantityType == TACS_FAILURE_INDEX ||
+           quantityType == TACS_STRAIN_ENERGY_DENSITY ||
+           quantityType == TACS_TOTAL_STRAIN_ENERGY_DENSITY){
     if (quantity){
       // Compute the director rates
       TacsScalar d[dsize], ddot[dsize];
@@ -835,7 +1041,8 @@ int TACSThermalShellElement<quadrature, basis, director, model>::
       // Evaluate the displacement gradient at the point
       TacsScalar XdinvT[9], XdinvzT[9];
       TacsScalar u0x[9], u1x[9];
-      TacsShellComputeDispGrad<vars_per_node, basis>(pt, Xpts, vars, fn, d, Xxi, n0, T,
+      *detXd =
+        TacsShellComputeDispGrad<vars_per_node, basis>(pt, Xpts, vars, fn, d, Xxi, n0, T,
                                                       XdinvT, XdinvzT, u0x, u1x);
 
       // Evaluate the tying components of the strain
@@ -851,23 +1058,41 @@ int TACSThermalShellElement<quadrature, basis, director, model>::
       model::evalStrain(u0x, u1x, e0ty, e);
       e[8] = 0.0;
 
-      *quantity = con->evalFailure(elemIndex, pt, X, e);
-    }
+      // Evaluate the temperature
+      TacsScalar t;
+      basis::template interpFields<vars_per_node, 1>(pt, &vars[thermal_dof], &t);
 
-    return 1;
-  }
-  else if (quantityType == TACS_ELEMENT_DENSITY){
-    if (quantity){
-      TacsScalar Xxi[6], n0[3], X[3];
-      basis::template interpFields<3, 3>(pt, Xpts, X);
-      basis::template interpFieldsGrad<3, 3>(pt, Xpts, Xxi);
-      basis::template interpFields<3, 3>(pt, fn, n0);
+      // Compute the thermal strain
+      TacsScalar eth[9];
+      con->evalThermalStrain(elemIndex, pt, X, t, eth);
 
-      TacsScalar Xd[9];
-      TacsShellAssembleFrame(Xxi, n0, Xd);
-      *detXd = det3x3(Xd);
+      // Compute the mechanical strain (and stress)
+      TacsScalar em[9];
+      for ( int i = 0; i < 9; i++ ){
+        em[i] = e[i] - eth[i];
+      }
 
-      *quantity = con->evalDensity(elemIndex, pt, X);
+      if (quantityType == TACS_FAILURE_INDEX){
+        *quantity = con->evalFailure(elemIndex, pt, X, em);
+      }
+      else if (quantityType == TACS_STRAIN_ENERGY_DENSITY){
+        TacsScalar s[9];
+        con->evalStress(elemIndex, pt, X, em, s);
+
+        *quantity =
+          (s[0]*em[0] + s[1]*em[1] + s[2]*em[2] +
+           s[3]*em[3] + s[4]*em[4] + s[5]*em[5] +
+           s[6]*em[6] + s[7]*em[7] + s[8]*em[8]);
+      }
+      else if (quantityType == TACS_TOTAL_STRAIN_ENERGY_DENSITY){
+        TacsScalar s[9];
+        con->evalStress(elemIndex, pt, X, e, s);
+
+        *quantity =
+          (s[0]*e[0] + s[1]*e[1] + s[2]*e[2] +
+           s[3]*e[3] + s[4]*e[4] + s[5]*e[5] +
+           s[6]*e[6] + s[7]*e[7] + s[8]*e[8]);
+      }
     }
 
     return 1;
@@ -932,7 +1157,21 @@ void TACSThermalShellElement<quadrature, basis, director, model>::
     model::evalStrain(u0x, u1x, e0ty, e);
     e[8] = 0.0;
 
-    con->addFailureDVSens(elemIndex, scale*dfdq[0], pt, X, e, dvLen, dfdx);
+    // Evaluate the temperature
+    TacsScalar t;
+    basis::template interpFields<vars_per_node, 1>(pt, &vars[thermal_dof], &t);
+
+    // Compute the thermal strain
+    TacsScalar eth[9];
+    con->evalThermalStrain(elemIndex, pt, X, t, eth);
+
+    // Compute the mechanical strain (and stress)
+    TacsScalar em[9];
+    for ( int i = 0; i < 9; i++ ){
+      em[i] = e[i] - eth[i];
+    }
+
+    con->addFailureDVSens(elemIndex, scale*dfdq[0], pt, X, em, dvLen, dfdx);
   }
   else if (quantityType == TACS_ELEMENT_DENSITY){
     TacsScalar X[3];
@@ -1006,14 +1245,35 @@ void TACSThermalShellElement<quadrature, basis, director, model>::
     model::evalStrain(u0x, u1x, e0ty, e);
     e[8] = 0.0;
 
+    // Evaluate the temperature
+    TacsScalar t;
+    basis::template interpFields<vars_per_node, 1>(pt, &vars[thermal_dof], &t);
+
+    // Compute the thermal strain
+    TacsScalar eth[9];
+    con->evalThermalStrain(elemIndex, pt, X, 1.0, eth);
+
+    // Compute the mechanical strain (and stress)
+    TacsScalar em[9];
+    for ( int i = 0; i < 9; i++ ){
+      em[i] = e[i] - t*eth[i];
+    }
+
     // Compute the sensitivity of the failure index w.r.t. the strain
     TacsScalar sens[9];
-    con->evalFailureStrainSens(elemIndex, pt, X, e, sens);
+    con->evalFailureStrainSens(elemIndex, pt, X, em, sens);
+
+    // Add contribution from the thermal part
+    TacsScalar scale =
+      - alpha*dfdq[0]*(sens[0]*eth[0] + sens[1]*eth[1] + sens[2]*eth[2] +
+                       sens[3]*eth[3] + sens[4]*eth[4] + sens[5]*eth[5] +
+                       sens[6]*eth[6] + sens[7]*eth[7] + sens[8]*eth[8]);
+    basis::template addInterpFieldsTranspose<vars_per_node, 1>(pt, &scale, &dfdu[thermal_dof]);
 
     // Compute the derivative of the product of the stress and strain
     // with respect to u0x, u1x and e0ty
     TacsScalar du0x[9], du1x[9], de0ty[6];
-    model::evalStrainSens(alpha, sens, u0x, u1x, du0x, du1x, de0ty);
+    model::evalStrainSens(alpha*dfdq[0], sens, u0x, u1x, du0x, du1x, de0ty);
 
     // Add the contributions to the residual from du0x, du1x and dCt
     TacsShellAddDispGradSens<vars_per_node, basis>(pt, T, XdinvT, XdinvzT,
@@ -1029,12 +1289,16 @@ void TACSThermalShellElement<quadrature, basis, director, model>::
     // Set the total number of tying points needed for this element
     model::template
       addComputeTyingStrainTranspose<vars_per_node, basis>(Xpts, fn, vars,
-                                                          d, dety, dfdu, dd);
+                                                           d, dety, dfdu, dd);
 
     // Add the contributions to the director field
     director::template
       addDirectorResidual<vars_per_node, offset, num_nodes>(vars, dvars, ddvars, fn,
                                                             dd, dfdu);
+  }
+  else if (quantityType == TACS_TEMPERATURE){
+    TacsScalar scale = alpha*dfdq[0];
+    basis::template addInterpFieldsTranspose<vars_per_node, 1>(pt, &scale, &dfdu[thermal_dof]);
   }
 }
 
@@ -1116,7 +1380,7 @@ void TACSThermalShellElement<quadrature, basis, director, model>::
 
     // Evaluate the temperature and temperature gradient
     TacsScalar t;
-    basis::template interpFields<vars_per_node, 1>(pt, &vars[3], &t);
+    basis::template interpFields<vars_per_node, 1>(pt, &vars[thermal_dof], &t);
 
     // Compute the thermal strain
     TacsScalar eth[9];
