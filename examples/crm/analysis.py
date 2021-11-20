@@ -183,7 +183,7 @@ xpts_pert = np.random.rand(3 * nnodes)
 
 xpts_new = xpts_orig + xpts_pert * dh
 
-# Re-solve and evaluate function with new perturbed design variable
+# Re-solve and evaluate function with new perturbed node coordinates
 problem.setNodes(xpts_new)
 # Zero out previous solution
 problem.zeroVariables()
