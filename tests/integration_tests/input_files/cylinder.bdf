@@ -26,6 +26,10 @@ SUBCASE 4
   SUBTITLE = Torsion
   SPC = 1
   LOAD = 4
+SUBCASE 5
+  SUBTITLE = Combined
+  SPC = 1
+  LOAD = 5
 BEGIN BULK
 $ ***************************************************************************
 $   Written by : Femap
@@ -54,6 +58,9 @@ $ Femap Load Set 3 : Moment-Bending
 MOMENT         3     181       0      1.      0.   1000.      0.
 $ Femap Load Set 4 : Torsion
 MOMENT         4     181       0      1.      0.      0.   1000.
+$ Femap Load Set 5 : Combined
+LOAD           5      1.      1.       1     1.0       2     1.0       3
+              1.      4
 $ Femap Constraint Set 1 : Untitled
 SPC1           1  123456       1
 SPC1           1  123456       2

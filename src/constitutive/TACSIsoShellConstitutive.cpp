@@ -416,7 +416,6 @@ void TACSIsoShellConstitutive::addFailureDVSens( int elemIndex,
     }
     // Use a ks approximation for the max value
     TacsScalar ksSum = exp(ksWeight*(top - ksMax)) + exp(ksWeight*(bottom - ksMax));
-    TacsScalar ksVal = ksMax + log(ksSum) / ksWeight;
 
     TacsScalar psi[3], phi[3];
 
@@ -431,7 +430,6 @@ void TACSIsoShellConstitutive::addFailureDVSens( int elemIndex,
     mat3x3SymmMult(C, psi, phi);
     ksFactor = exp(ksWeight*(bottom - ksMax)) / ksSum;
     dfdx[0] -= ksFactor*0.5*scale*(phi[0]*e[3] + phi[1]*e[4] + phi[2]*e[5]);
-
   }
 }
 
@@ -479,6 +477,23 @@ void TACSIsoShellConstitutive::evalTangentHeatFlux( int elemIndex,
   if (properties){
     properties->evalTangentHeatFlux2D(Kc);
     Kc[0] *= t;  Kc[1] *= t;  Kc[2] *= t;
+  }
+}
+
+// Add the derivative of the heat flux
+void TACSIsoShellConstitutive::addHeatFluxDVSens( int elemIndex,
+                                                  TacsScalar scale,
+                                                  const double pt[],
+                                                  const TacsScalar X[],
+                                                  const TacsScalar grad[],
+                                                  const TacsScalar psi[],
+                                                  int dvLen, TacsScalar dfdx[] ){
+  if (properties && tNum >= 0 && dvLen >= 1){
+    TacsScalar Kc[3];
+    properties->evalTangentHeatFlux2D(Kc);
+
+    dfdx[0] += scale*(psi[0]*(Kc[0]*grad[0] + Kc[1]*grad[1]) +
+                      psi[1]*(Kc[1]*grad[0] + Kc[2]*grad[1]));
   }
 }
 
