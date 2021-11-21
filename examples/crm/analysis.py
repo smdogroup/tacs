@@ -84,7 +84,7 @@ FEAAssembler.initialize(elemCallBack)
 # Setup static problem
 # ==============================================================================
 # Static problem
-problem = FEAAssembler.createStaticProblem('cruise', options={"l2convergence":1e-30, "l2convergencerel":1e-20})
+problem = FEAAssembler.createStaticProblem('cruise')
 
 # Add TACS Functions
 problem.addFunction('mass', functions.StructuralMass)
@@ -149,8 +149,6 @@ x_new = x_orig + x_pert * dh
 # Re-solve and evaluate function with new perturbed design variable
 funcs_new = {}
 problem.setDesignVars(x_new)
-# Zero out previous solution
-problem.zeroVariables()
 # Solve
 problem.solve()
 # Evaluate pertrubed functions
@@ -159,7 +157,7 @@ problem.evalFunctions(funcs_new)
 # Loop through each function and compare sensitivities
 for funcName in funcs:
     dfunc_approx = np.real((funcs_new[funcName] - funcs[funcName]) / dh)
-    # Project sensitivity agains perturbation vector
+    # Project sensitivity against perturbation vector
     dfunc_exact_local = np.real(np.dot(funcsSens[funcName]['struct'], x_pert))
     # The sens vector is distributed across multiple processors,
     # accumulate sensitivity contribution from each processor to get total sensitivity
@@ -184,8 +182,6 @@ xpts_new = xpts_orig + xpts_pert * dh
 
 # Re-solve and evaluate function with new perturbed node coordinates
 problem.setNodes(xpts_new)
-# Zero out previous solution
-problem.zeroVariables()
 # Solve
 problem.solve()
 # Evaluate pertrubed functions
@@ -194,7 +190,7 @@ problem.evalFunctions(funcs_new)
 # Loop through each function and compare sensitivities
 for funcName in funcs:
     dfunc_approx = np.real((funcs_new[funcName] - funcs[funcName]) / dh)
-    # Project sensitivity agains perturbation vector
+    # Project sensitivity against perturbation vector
     dfunc_exact_local = np.real(np.dot(funcsSens[funcName]['Xpts'], xpts_pert))
     # The sens vector is distributed across multiple processors,
     # accumulate sensitivity contribution from each processor to get total sensitivity
