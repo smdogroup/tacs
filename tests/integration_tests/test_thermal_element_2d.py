@@ -20,9 +20,12 @@ test KSTemperature, StructuralMass, and AverageTemperature functions and sensiti
 base_dir = os.path.dirname(os.path.abspath(__file__))
 bdf_file = os.path.join(base_dir, "./input_files/circ-plate-dirichlet-bcs.bdf")
 
-FUNC_REFS = {'dirichilet_bcs_avg_temp': 69.88016093991516,
-             'dirichilet_bcs_ks_temp': 98.74014374789108,
-             'dirichilet_bcs_mass': 39.20272476980967}
+FUNC_REFS = {'steady_state_avg_temp': 69.88016093991516, 'steady_state_ks_temp': 98.74014374789108,
+             'steady_state_mass': 39.20272476980967,
+
+             'transient_avg_temp': 396.66762638787424, 'transient_ks_temp': 97.83730882226564,
+             'transient_mass': 392.027247698097}
+
 
 # Radius of plate
 R = 1.0
@@ -41,12 +44,12 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
         Setup mesh and pytacs object for problem we will be testing.
         """
 
-        # Instantiate FEA Solver
+        # Instantiate FEA Assembler
         struct_options = {'outputElement': TACS.PLANE_STRESS_ELEMENT,
                           # Finer tol needed to pass complex sens test
                           'L2Convergence': 1e-16}
 
-        fea_solver = pytacs.pyTACS(bdf_file, comm, options=struct_options)
+        fea_assembler = pytacs.pyTACS(bdf_file, comm, options=struct_options)
 
         def elem_call_back(dv_num, comp_id, comp_descript, elem_descripts, special_dvs, **kwargs):
             # Material properties
@@ -80,11 +83,11 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
             return elem_list, scale
 
         # Set up constitutive objects and elements
-        fea_solver.createTACSAssembler(elem_call_back)
+        fea_assembler.initialize(elem_call_back)
 
-        return fea_solver
+        return fea_assembler
 
-    def setup_tacs_vecs(self, fea_solver, dv_pert_vec, xpts_pert_vec):
+    def setup_tacs_vecs(self, fea_assembler, dv_pert_vec, xpts_pert_vec):
         """
         Setup user-defined vectors for analysis and fd/cs sensitivity verification
         """
@@ -92,31 +95,36 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
         dv_pert_vec[:] = 1.0
 
         # Define perturbation array that moves all nodes on plate
-        xpts = fea_solver.getCoordinates()
+        xpts = fea_assembler.getOrigNodes()
         xpts_pert_vec[:] = xpts
 
         return
 
-    def setup_funcs(self, fea_solver):
+    def setup_funcs(self, fea_assembler, problems):
         """
         Create a list of functions to be tested and their reference values for the problem
         """
         # Add Functions
-        fea_solver.addFunction('mass', functions.StructuralMass)
-        fea_solver.addFunction('ks_temp', functions.KSTemperature,
-                               ksWeight=100.0)
-        fea_solver.addFunction('avg_temp', functions.AverageTemperature, volume=area)
+        for problem in problems:
+            problem.addFunction('mass', functions.StructuralMass)
+            problem.addFunction('ks_temp', functions.KSTemperature,
+                                   ksWeight=100.0)
+            problem.addFunction('avg_temp', functions.AverageTemperature, volume=area)
         func_list = ['mass', 'ks_temp', 'avg_temp']
         return func_list, FUNC_REFS
 
-    def setup_tacs_problems(self, fea_solver):
+    def setup_tacs_problems(self, fea_assembler):
         """
         Setup pytacs object for problems we will be testing.
         """
         tacs_probs = []
 
         # Create static problem, loads are already applied through BCs
-        sp = problems.StaticProblem(name='dirichilet_bcs')
+        sp = fea_assembler.createStaticProblem(name='steady_state')
         tacs_probs.append(sp)
+
+        # Create transient problem, loads are already applied through BCs
+        tp = fea_assembler.createTransientProblem(name='transient', tInit=0.0, tFinal=10.0, numSteps=25)
+        tacs_probs.append(tp)
 
         return tacs_probs

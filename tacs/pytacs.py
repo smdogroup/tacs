@@ -37,6 +37,7 @@ import numpy as np
 from mpi4py import MPI
 import warnings
 import tacs.TACS, tacs.constitutive, tacs.elements, tacs.functions, tacs.problems.static
+from .utilities import BaseUI
 from tacs.pymeshloader import pyMeshLoader
 
 DEG2RAD = np.pi / 180.0
@@ -52,7 +53,7 @@ except ImportError:
               "For python 2.6 and earlier, use:"
               "\n pip install ordereddict")
 
-class pyTACS(object):
+class pyTACS(BaseUI):
 
     def __init__(self, fileName, comm=None, dvNum=0,
                  scaleList=None, **kwargs):
@@ -79,36 +80,18 @@ class pyTACS(object):
             len(scaleList) = dvNum
         """
 
+        self.objectName = 'pyTACS'
+
         startTime = time.time()
 
         # Default Option List
         defOpts = {
-
-            'probname': [str, 'defaultName'],
-            'outputdir': [str, './'],
-
-            # Solution Options
-            'solutionType': [str, 'linear'],
-            'KSMSolver': [str, 'GMRES'],
-            'orderingType': [str, 'ND'],
-            'PCFillLevel': [int, 1000],
-            'PCFillRatio': [float, 20.0],
-            'subSpaceSize': [int, 10],
-            'nRestarts': [int, 15],
-            'flexible': [int, 1],
-            'L2Convergence': [float, 1e-12],
-            'L2ConvergenceRel': [float, 1e-12],
-            'useMonitor': [bool, False],
-            'monitorFrequency': [int, 10],
-            'resNormUB': [float, 1e20],
-
-            # selectCompID Options
-            'projectVector': [list, [0.0, 1.0, 0.0]],
+            # Meshloader options
+            'printDebug': [bool, False],
 
             # Output Options
             'outputElement': [int, None],
             'writeBDF': [bool, False],
-            'writeSolution': [bool, True],
             'writeConnectivity': [bool, True],
             'writeNodes': [bool, True],
             'writeDisplacements': [bool, True],
@@ -117,10 +100,8 @@ class pyTACS(object):
             'writeExtras': [bool, True],
             'writeCoordinateFrame': [bool, False],
             'familySeparator': [str, '/'],
-            'numberSolutions': [bool, True],
             'printTiming': [bool, False],
             'printIterations': [bool, True],
-            'printDebug': [bool, False],
 
         }
 
@@ -181,32 +162,14 @@ class pyTACS(object):
         self.globalDVs = {}
         self.compIDBounds = {}
         self.addedCompIDs = set()
-        self.varName = 'struct'
-        self.coordName = 'Xpts'
-
-        self.curSP = None
-        self.doDamp = False
-        self._factorOnNext = True
-        self._PCfactorOnNext = False
-        # List of functions
-        self.functionList = OrderedDict()
-        self.adjointList = OrderedDict()
-        self.dIduList = OrderedDict()
-        self.dvSensList = OrderedDict()
-        self.xptSensList = OrderedDict()
 
         # List of initial coordinates
-        self.coords0 = None
+        self.Xpts0 = None
+        # List of initial designvars
+        self.x0 = None
 
         # Variables per node for model
         self.varsPerNode = None
-
-        # Norms
-        self.initNorm = 0.0
-        self.startNorm = 0.0
-        self.finalNorm = 0.0
-        # Flag for mat/vector creation
-        self._variablesCreated = False
 
         # TACS assembler object
         self.assembler = None
@@ -409,9 +372,9 @@ class pyTACS(object):
             # First check that nGroup <= len(compIDs), print warning
             # and clip if not
             if nGroup > len(compIDs):
-                TACSWarning('nGroup=%d is larger than the number of\
+                self.TACSWarning('nGroup=%d is larger than the number of\
                 selected components=%d. nGroup will be clipped to %d' %
-                            (nGroup, len(compIDs), nGroup), self.comm)
+                            (nGroup, len(compIDs), nGroup))
                 nGroup = len(compIDs)
 
             # Pluck out the component descriptions again and we will
@@ -457,71 +420,17 @@ class pyTACS(object):
 
         return compIDs
 
-    def addFunction(self, funcName, funcHandle, include=None, exclude=None,
-                    includeBound=None, compIDs=None, **kwargs):
+    def getBDFInfo(self):
         """
-        Generic function to add a function for TACS. It is intended to
-        be reasonably generic since the user supplies the actual
-        function handle to use. The following functions can be used:
-        KSFailure, KSBuckling, MaxBuckling, AverageKSFailure,
-        MaxFailure, AverageMaxFailure, AverageKSBuckling,
-        StructuralMass, Compliance, AggregateDisplacement.
+        Return pynastran bdf object. This object can be used interactively
+        to parse information (nodes, elements, loads etc) included in the bdf file.
 
-        Parameters
-        ----------
-        funcName : str
-            The user-supplied name for the function. This will
-            typically be a string that is meanful to the user
-        funcHandle : tacs.functions
-
-            The fucntion handle to use for creation. This must come
-            from the functions module in tacs.
-
-        include : varries
-            Argument passed to selctCompIDs. See this function for
-            more information
-
-        exclude : varries
-            Argument passed to selctCompIDs. See this function for
-            more information
-
-        compIDs: list
-            List of compIDs to select. Alternative to selectCompIDs
-            arguments.
+        Returns
+        -------
+        bdfInfo : BDF object
+            pyNastran bdf object.
         """
-
-        # First we will get the required domain, but only if both
-        # include is None and exclude is None. If so, just use the
-        # entire domain:
-
-        # Note nGroup is one since we only want exactly one domain
-        if compIDs is None:
-            compIDs = self.selectCompIDs(include, exclude, includeBound,
-                                         nGroup=1)[0]
-
-        # Flatten and get element numbers on each proc corresponding to specified compIDs
-        compIDs = self._flatten(compIDs)
-        elemIDs = self.meshLoader.getLocalElementIDsForComps(compIDs)
-
-        # We try to setup the function, if it fails it may not be implimented:
-        try:
-            # pass assembler an function-specific kwargs straight to tacs function
-            self.functionList[funcName] = funcHandle(self.assembler, **kwargs)
-        except:
-            TACSWarning("Function type %s is not currently supported "
-                        "in pyTACS. Skipping function." % funcHandle, self.comm)
-            return
-
-        # Finally set the domain information
-        self.functionList[funcName].setDomain(elemIDs)
-
-        # Create additional tacs BVecs to hold adjoint and sens info
-        self.adjointList[funcName] = self.assembler.createVec()
-        self.dIduList[funcName] = self.assembler.createVec()
-        self.dvSensList[funcName] = self.assembler.createDesignVec()
-        self.xptSensList[funcName] = self.assembler.createNodeVec()
-
-        return compIDs
+        return self.bdfInfo
 
     def getCompNames(self, compIDs):
         """
@@ -545,62 +454,7 @@ class pyTACS(object):
 
         return compDescripts
 
-    def getFunctionKeys(self):
-        """Return a list of the current function key names"""
-        return list(self.functionList.keys())
-
-    def setStructProblem(self, structProblem):
-        """Set the structProblem. This function can be called by the
-        user but typically will be called automatically by functions
-        that accept a structProblem object.
-
-        Parameters
-        ----------
-        structProblem : instance of pyStruct_problem
-            Description of the sturctural problem to solve
-            """
-
-        if structProblem is self.curSP:
-
-            return
-
-        if self.comm.rank == 0:
-            print('+' + '-' * 70 + '+')
-            print('|  Switching to Struct Problem: %-39s|' % structProblem.name)
-            print('+' + '-' * 70 + '+')
-
-        try:
-            structProblem.tacsData
-        except AttributeError:
-            structProblem.tacsData = TACSLoadCase()
-            structProblem.tacsData.F = self.assembler.createVec()
-            structProblem.tacsData.u = self.assembler.createVec()
-            structProblem.tacsData.auxElems = tacs.TACS.AuxElements()
-
-        # We are now ready to associate self.curSP with the supplied SP
-        self.curSP = structProblem
-        self.curSP.adjointRHS = None
-        # Force and displacement vectors for problem
-        self.F = self.curSP.tacsData.F
-        self.u = self.curSP.tacsData.u
-        # Set auxiliary elements for adding tractions/pressures
-        self.auxElems = self.curSP.tacsData.auxElems
-        self.assembler.setAuxElements(self.auxElems)
-
-        # Create numpy array representation for easier access to vector values
-        vpn = self.varsPerNode
-        self.F_array = self.F.getArray()
-        self.u_array = self.u.getArray()
-        self.F_array = self.F_array.reshape(len(self.F_array) // vpn, vpn)
-        self.u_array = self.u_array.reshape(len(self.u_array) // vpn, vpn)
-
-        # Set current state variables in assembler
-        self.assembler.setVariables(self.u)
-
-        # Reset the Aitken acceleration for multidisciplinary analyses
-        self.doDamp = False
-
-    def createTACSAssembler(self, elemCallBack=None):
+    def initialize(self, elemCallBack=None):
         """
         This is the 'last' function to be called during the setup. The
         user should have already added all the design variables,
@@ -650,11 +504,19 @@ class pyTACS(object):
 
         self.assembler = self.meshLoader.createTACSAssembler(self.varsPerNode)
 
-        self._createVariables()
         self._createOutputViewer()
 
-        # Initial set of nodes for geometry manipulation if necessary
-        self.coords0 = self.getCoordinates()
+        # Initial design variable vec if necessary
+        self.dvs0 = self.assembler.createDesignVec()
+        self.assembler.getDesignVars(self.dvs0)
+
+        # Store original node locations read in from bdf file
+        self.Xpts0 = self.assembler.createNodeVec()
+        self.assembler.getNodes(self.Xpts0)
+
+        # Store initial design variable values
+        self.x0 = self.assembler.createDesignVec()
+        self.assembler.getDesignVars(self.x0)
 
     def _elemCallBackFromBDF(self):
         """
@@ -664,7 +526,7 @@ class pyTACS(object):
 
         # Check if any properties are in the BDF
         if self.bdfInfo.missing_properties:
-            raise Error("BDF file '%s' has missing properties cards. "
+            raise self.TACSError("BDF file '%s' has missing properties cards. "
                         "Set 'debugPrint' option to True for more information."
                         "User must define own elemCallBack function." % (self.bdfName))
 
@@ -723,7 +585,7 @@ class pyTACS(object):
                 mat = tacs.constitutive.MaterialProperties(rho=rho, E1=E1, E2=E2, nu12=nu12, G12=G12, G13=G13, G23=G23,
                                                            Xt=Xt, Xc=Xc, Yt=Yt, Yc=Yc, S12=S12)
             else:
-                raise Error("Unsupported material type '%s' for material number %d. " % (matInfo.type, matInfo.mid))
+                raise self.TACSError("Unsupported material type '%s' for material number %d. " % (matInfo.type, matInfo.mid))
 
             return mat
 
@@ -797,7 +659,7 @@ class pyTACS(object):
                     # Need to add functionality to consider only membrane in TACS for type = MEM
 
                 else:
-                    raise Error("Unrecognized LAM type '%s' for PCOMP number %d." % (propInfo.lam, propertyID))
+                    raise self.TACSError("Unrecognized LAM type '%s' for PCOMP number %d." % (propInfo.lam, propertyID))
 
             elif propInfo.type == 'PSOLID':  # Nastran solid property
                 if 'T' in elemDict[propertyID]['dvs']:
@@ -817,7 +679,7 @@ class pyTACS(object):
                                                           tlb=minThickness, tub=maxThickness, tNum=tNum)
 
             else:
-                raise Error("Unsupported property type '%s' for property number %d. " % (propInfo.type, propertyID))
+                raise self.TACSError("Unsupported property type '%s' for property number %d. " % (propInfo.type, propertyID))
 
             # Set up transform object which may be required for certain elements
             transform = None
@@ -828,7 +690,7 @@ class pyTACS(object):
                         refAxis = mcid.i
                         transform = tacs.elements.ShellRefAxisTransform(refAxis)
                     else:  # Don't support spherical/cylindrical yet
-                        raise Error("Unsupported material coordinate system type "
+                        raise self.TACSError("Unsupported material coordinate system type "
                                     "'%s' for property number %d." % (mcid.type, propertyID))
 
             # Finally set up the element objects belonging to this component
@@ -848,7 +710,7 @@ class pyTACS(object):
                     elif nnodes == 10:
                         basis = tacs.elements.QuadraticTetrahedralBasis()
                     else:
-                        raise Error("TACS does not currently support CTETRA elements with %d nodes." % nnodes)
+                        raise self.TACSError("TACS does not currently support CTETRA elements with %d nodes." % nnodes)
                     model = tacs.elements.LinearElasticity3D(con)
                     elem = tacs.elements.Element3D(model, basis)
                 elif descript in ['CHEXA8', 'CHEXA']:
@@ -856,7 +718,7 @@ class pyTACS(object):
                     model = tacs.elements.LinearElasticity3D(con)
                     elem = tacs.elements.Element3D(model, basis)
                 else:
-                    raise Error("Unsupported element type "
+                    raise self.TACSError("Unsupported element type "
                                 "'%s' specified for property number %d." % (descript, propertyID))
                 elemList.append(elem)
 
@@ -864,495 +726,269 @@ class pyTACS(object):
 
         return elemCallBack
 
-    ####### Static load methods ########
 
-    def addLoadToComponents(self, structProblem, compIDs, F, averageLoad=False):
-        """"
-        The function is used to add a *FIXED TOTAL LOAD* on one or more
-        components, defined by COMPIDs. The purpose of this routine is
-        to add loads that remain fixed throughout an optimization. An example
-        would be an engine load. This routine determines all the unqiue nodes
-        in the FE model that are part of the the requested components, then
-        takes the total 'force' by F and divides by the number of nodes.
-        This average load is then applied to the nodes.
+    def getOrigDesignVars(self):
+        """
+        get the original design variables that were specified with
+        during assembler creation.
 
-        NOTE: The units of the entries of the 'force' vector F are not
-        necesarily physical forces and their interpretation depends
-        on the physics problem being solved and the dofs included
-        in the model.
+        Returns
+        ----------
+        x : array
+            The current design variable vector set in tacs.
 
-        A couple of examples of force vector components for common problem are listed below:
+        """
+        if self.assembler is None:
+            raise self.TACSError("TACS assembler has not been created. "
+                        "Assembler must created first by running 'initalize' method.")
 
-        In Elasticity with varsPerNode = 3,
-        F = [fx, fy, fz] # forces
-        In Elasticity with varsPerNode = 6,
-        F = [fx, fy, fz, mx, my, mz] # forces + moments
-        In Thermoelasticity with varsPerNode = 4,
-        F = [fx, fy, fz, Q] # forces + heat
-        In Thermoelasticity with varsPerNode = 7,
-        F = [fx, fy, fz, mx, my, mz, Q] # forces + moments + heat
+        return self.x0.getArray().copy()
+
+    def createDesignVec(self, asBVec=False):
+        """
+        Create a new tacs distributed design vector.
+        Values are initialized to zero.
 
         Parameters
         ----------
+        asBVec : bool
+            Flag that determines whether to return
+            design vector as tacs BVec (True) or numpy array (False).
+            Defaults to False.
 
-        compIDs : The components with added loads. Use selectCompIDs()
-            to determine this.
-        F : Numpy array length varsPerNode
-            Vector of 'force' components
+        Returns
+        ----------
+        x : ndarray or BVec
+            Distributed design variable vector
         """
-        # Make sure CompIDs are flat
-        compIDs = self._flatten([compIDs])
-
-        # Apply a unique force vector to each component
-        if not averageLoad:
-            F = numpy.atleast_2d(F)
-
-            # If the user only specified one force vector,
-            # we assume the force should be the same for each component
-            if F.shape[0] == 1:
-                F = np.repeat(F, [len(compIDs)], axis=0)
-            # If the dimensions still don't match, raise an error
-            elif F.shape[0] != len(compIDs):
-                raise Error("Number of forces must match number of compIDs,"
-                            " {} forces were specified for {} compIDs".format(F.shape[0], len(compIDs)))
-
-            # Call addLoadToComponents again, once for each compID
-            for i, compID in enumerate(compIDs):
-                self.addLoadToComponents(structProblem, compID, F[i], averageLoad=True)
-
-        # Average one force vector over all components
+        if self.assembler is None:
+            raise self.TACSError("TACS assembler has not been created. "
+                        "Assembler must created first by running 'initalize' method.")
+        xVec = self.assembler.createDesignVec()
+        if asBVec:
+            return xVec
         else:
-            F = np.atleast_1d(F)
+            return xVec.getArray()
 
-            self.setStructProblem(structProblem)
-
-            # First determine the actual physical nodal location in the
-            # original BDF ordering of the nodes we want to add forces
-            # to. Only the root rank need do this:
-            uniqueNodes = None
-            if self.comm.rank == 0:
-                allNodes = []
-                compIDs = set(compIDs)
-                for cID in compIDs:
-                    tmp = self.meshLoader.getConnectivityForComp(cID, nastranOrdering=True)
-                    allNodes.extend(self._flatten(tmp))
-
-                # Now just unique all the nodes:
-                uniqueNodes = numpy.unique(allNodes)
-
-            uniqueNodes = self.comm.bcast(uniqueNodes, root=0)
-
-            # Now generate the final average force vector
-            Favg = F / len(uniqueNodes)
-
-            self.addLoadToNodes(structProblem, uniqueNodes, Favg, nastranOrdering=True)
-
-            # Write out a message of what we did:
-            self._info("Added a fixed load of %s to %d components, "
-                       "distributed over %d nodes." % (
-                           repr(F), len(compIDs), len(uniqueNodes)),
-                       maxLen=80, box=True)
-
-    def addLoadToPoints(self, structProblem, points, F):
-        """"
-        The function is used to add a fixed point load of F to the
-        selected physical locations, points. A closest point search is
-        used to determine the FE nodes that are the closest to the
-        requested nodes. It is most efficient if many point loads are
-        necessary that points and F, contain many entries.
-
-        NOTE: The units of the entries of the 'force' vector F are not
-        necesarily physical forces and their interpretation depends
-        on the physics problem being solved and the dofs included
-        in the model.
-
-        A couple of examples of force vector components for common problem are listed below:
-
-        In Elasticity with varsPerNode = 3,
-        F = [fx, fy, fz] # forces
-        In Elasticity with varsPerNode = 6,
-        F = [fx, fy, fz, mx, my, mz] # forces + moments
-        In Thermoelasticity with varsPerNode = 4,
-        F = [fx, fy, fz, Q] # forces + heat
-        In Thermoelasticity with varsPerNode = 7,
-        F = [fx, fy, fz, mx, my, mz, Q] # forces + moments + heat
+    def getNumDesignVars(self):
         """
-        try:
-            from scipy.spatial import cKDTree
-        except:
-            raise Error("scipy.spatial "
-                        "must be available to use addLoadToPoints")
-
-        points = numpy.atleast_2d(points)
-        F = numpy.atleast_2d(F)
-
-        # If the user only specified one force vector,
-        # we assume the force should be the same for each node
-        if F.shape[0] == 1:
-            F = np.repeat(F, [len(points)], axis=0)
-        # If the dimensions still don't match, raise an error
-        elif F.shape[0] != len(points):
-            raise Error("Number of forces must match number of points,"
-                        " {} forces were specified for {} points".format(F.shape[0], len(points)))
-
-        vpn = self.varsPerNode
-        if len(F[0]) != vpn:
-            raise Error("Length of force vector must match varsPerNode specified "
-                        "for problem, which is {}, "
-                        "but length of vector provided was {}".format(vpn, len(F[0])))
-
-        self.setStructProblem(structProblem)
-
-        # Pull out the local nodes on the proc and search "points" in the tree
-        self.assembler.getNodes(self.Xpts)
-        localNodes = np.real(self.Xpts.getArray())
-        nNodes = len(localNodes) // 3
-        xNodes = localNodes.reshape((nNodes, 3)).copy()
-        tree = cKDTree(xNodes)
-
-        d, index = tree.query(points, k=1)
-
-        # Now figure out which proc has the best distance for this
-
-        for i in range(len(points)):
-            proc = self.comm.allreduce((d[i], self.comm.rank), op=MPI.MINLOC)
-            print((i, self.comm.rank, proc, d[i], index[i], F[i]))
-            if proc[1] == self.comm.rank:
-                # Add contribution to global force array
-                self.F_array[index[i], :] += F[i]
-
-    def addLoadToNodes(self, structProblem, nodeIDs, F, nastranOrdering=False):
+        Return the number of design variables on this processor.
         """
-        The function is used to add a fixed point load of F to the
-        selected node IDs. This is similar to the addLoadToPoints method,
-        except we select the load points based on node ID rather than
-        physical location.
+        if self.assembler is None:
+            raise self.TACSError("TACS assembler has not been created. "
+                        "Assembler must created first by running 'initalize' method.")
 
-        NOTE: This should be the prefered method (over addLoadToPoints) for adding forces to
-        specific nodes for the following reasons:
-            1. This method is more efficient, as it does not require a
-            closest point search to locate the node.
-            2. In the case where the mesh features coincident nodes
-            it is impossible to uniquely specify which node gets the load
-            through x,y,z location, however the points can be specified uniquely by node ID.
+        return self.x0.getSize()
 
-        A couple of examples of force vector components for common problem are listed below:
+    def getTotalNumDesignVars(self):
+        """
+        Return the number of design variables across all processors.
+        """
+        if self.assembler is None:
+            raise self.TACSError("TACS assembler has not been created. "
+                        "Assembler must created first by running 'initalize' method.")
 
-        In Elasticity with varsPerNode = 3,
-        F = [fx, fy, fz] # forces
-        In Elasticity with varsPerNode = 6,
-        F = [fx, fy, fz, mx, my, mz] # forces + moments
-        In Thermoelasticity with varsPerNode = 4,
-        F = [fx, fy, fz, Q] # forces + heat
-        In Thermoelasticity with varsPerNode = 7,
-        F = [fx, fy, fz, mx, my, mz, Q] # forces + moments + heat
+        return self.dvNum
+
+    def getOrigNodes(self):
+        """
+        Return the original mesh coordiantes read in from the meshLoader.
+
+        Returns
+        -------
+        coords : array
+            Structural coordinate in array of size (N, 3) where N is
+            the number of structural nodes on this processor.
+        """
+        if self.assembler is None:
+            raise self.TACSError("TACS assembler has not been created. "
+                        "Assembler must created first by running 'initalize' method.")
+
+        return self.Xpts0.getArray().copy()
+
+    def createNodeVec(self, asBVec=False):
+        """
+        Create a new tacs distributed node vector.
+        Values are initialized to zero.
 
         Parameters
         ----------
+        asBVec : bool
+            Flag that determines whether to return
+            node vector as tacs BVec (True) or numpy array (False).
+            Defaults to False.
 
-        nodeIDs : list[int]
-            The nodes with added loads.
-        F : Numpy 1d or 2d array length (varsPerNodes) or (numNodeIDs, varsPerNodes)
-            Array of force vectors, one for each node. If only one force vector is provided,
-            force will be copied uniformly across all nodes.
-        nastranOrdering : bool
-            Flag signaling whether nodeIDs are in TACS (default)
-            or NASTRAN (grid IDs in bdf file) ordering
+        Returns
+        ----------
+        xpts : ndarray or BVec
+            Distributed node coordinate vector
         """
-
-        # Make sure the inputs are the correct shape
-        nodeIDs = numpy.atleast_1d(nodeIDs)
-        F = numpy.atleast_2d(F)
-
-        numNodes = len(nodeIDs)
-
-        # If the user only specified one force vector,
-        # we assume the force should be the same for each node
-        if F.shape[0] == 1:
-            F = np.repeat(F, [numNodes], axis=0)
-        # If the dimensions still don't match, raise an error
-        elif F.shape[0] != numNodes:
-            raise Error("Number of forces must match number of nodes,"
-                        " {} forces were specified for {} node IDs".format(F.shape[0], numNodes))
-
-        vpn = self.varsPerNode
-        if len(F[0]) != vpn:
-            raise Error("Length of force vector must match varsPerNode specified "
-                        "for problem, which is {}, "
-                        "but length of vector provided was {}".format(vpn, len(F[0])))
-
-        # First find the cooresponding local node ID on each processor
-        localNodeIDs = self.meshLoader.getLocalNodeIDsFromGlobal(nodeIDs, nastranOrdering)
-
-        # Set the structural problem
-        self.setStructProblem(structProblem)
-
-        # Flag to make sure we find all user-specified nodes
-        nodeFound = np.zeros(numNodes, dtype=int)
-
-        # Loop through every node and if it's owned by this processor, add the load
-        for i, nodeID in enumerate(localNodeIDs):
-            # The node was found on this proc
-            if nodeID >= 0:
-                # Add contribution to global force array
-                self.F_array[nodeID, :] += F[i]
-                nodeFound[i] = 1
-
-        # Reduce the node flag and make sure that every node was found on exactly 1 proc
-        nodeFound = self.comm.allreduce(nodeFound, op=MPI.SUM)
-
-        # Warn the user if any nodes weren't found
-        if nastranOrdering:
-            orderString = 'Nastran'
+        if self.assembler is None:
+            raise self.TACSError("TACS assembler has not been created. "
+                                 "Assembler must created first by running 'initalize' method.")
+        xptVec = self.assembler.createNodeVec()
+        if asBVec:
+            return xptVec
         else:
-            orderString = 'TACS'
+            return xptVec.getArray()
 
-        for i in range(numNodes):
-            if not nodeFound[i]:
-                TACSWarning("Can't add load to node ID {} ({} ordering), node not found in model. "
-                            "Double check BDF file.".format(nodeIDs[i], orderString), self.comm)
-
-    def addTractionToComponents(self, structProblem, compIDs, tractions,
-                                faceIndex=0):
+    def getNumOwnedNodes(self):
         """
-        The function is used to add a *FIXED TOTAL TRACTION* on one or more
-        components, defined by COMPIDs. The purpose of this routine is
-        to add loads that remain fixed throughout an optimization.
+        Get the number of nodes owned by this processor.
+        """
+        if self.assembler is None:
+            raise self.TACSError("TACS assembler has not been created. "
+                        "Assembler must created first by running 'initalize' method.")
+
+        return self.assembler.getNumOwnedNodes()
+
+    def createVec(self, asBVec=False):
+        """
+        Create a new tacs distributed state variable vector.
+        Values are initialized to zero.
 
         Parameters
         ----------
+        asBVec : bool
+            Flag that determines whether to return
+            state vector as tacs BVec (True) or numpy array (False).
+            Defaults to False.
 
-        compIDs : The components with added loads. Use selectCompIDs()
-            to determine this.
-        tractions : Numpy array length 1 or compIDs
-            Array of traction vectors for each components
-        faceIndex : int
-            Indicates which face (side) of element to apply traction to.
-            Note: not required for certain elements (i.e. shells)
-        """
-        # Make sure compIDs is flat and unique
-        compIDs = set(self._flatten(compIDs))
-        tractions = np.atleast_1d(tractions)
-
-        # Get global element IDs for the elements we're applying tractions to
-        elemIDs = self.meshLoader.getGlobalElementIDsForComps(compIDs, nastranOrdering=False)
-        # Add tractions element by element
-        self.addTractionToElements(structProblem, elemIDs, tractions, faceIndex, nastranOrdering=False)
-
-        # Write out a message of what we did:
-        self._info("Added a fixed traction of %s to %d components, "
-                   "distributed over %d elements." % (
-                       repr(tractions), len(compIDs), len(elemIDs)),
-                   maxLen=80, box=True)
-
-    def addTractionToElements(self, structProblem, elemIDs, tractions,
-                              faceIndex=0, nastranOrdering=False):
-        """
-        The function is used to add a fixed traction to the
-        selected element IDs. Tractions can be specified on an
-        element by element basis (if tractions is a 2d array) or
-        set to a uniform value (if tractions is a 1d array)
-
-        Parameters
+        Returns
         ----------
-
-        elemIDs : List
-            The global element ID numbers for which to apply the traction.
-        tractions : Numpy 1d or 2d array length varsPerNodes or (elemIDs, varsPerNodes)
-            Array of traction vectors for each element
-        faceIndex : int
-            Indicates which face (side) of element to apply traction to.
-            Note: not required for certain elements (i.e. shells)
-        nastranOrdering : bool
-            Flag signaling whether elemIDs are in TACS (default)
-            or NASTRAN ordering
+        vars : ndarray or BVec
+            Distributed state variable vector
         """
-
-        # Make sure the inputs are the correct shape
-        elemIDs = numpy.atleast_1d(elemIDs)
-        tractions = numpy.atleast_2d(tractions).astype(dtype=self.dtype)
-
-        numElems = len(elemIDs)
-
-        # If the user only specified one traction vector,
-        # we assume the force should be the same for each element
-        if tractions.shape[0] == 1:
-            tractions = np.repeat(tractions, [numElems], axis=0)
-        # If the dimensions still don't match, raise an error
-        elif tractions.shape[0] != numElems:
-            raise Error("Number of tractions must match number of elements,"
-                        " {} tractions were specified for {} element IDs".format(tractions.shape[0], numElems))
-
-        # First find the coresponding local element ID on each processor
-        localElemIDs = self.meshLoader.getLocalElementIDsFromGlobal(elemIDs, nastranOrdering=nastranOrdering)
-
-        # Set the structural problem
-        self.setStructProblem(structProblem)
-
-        # Flag to make sure we find all user-specified elements
-        elemFound = np.zeros(numElems, dtype=int)
-
-        # Loop through every element and if it's owned by this processor, add the traction
-        for i, elemID in enumerate(localElemIDs):
-            # The element was found on this proc
-            if elemID >= 0:
-                # Mark element as found
-                elemFound[i] = 1
-                # Get the pointer for the tacs element object for this element
-                elemObj = self.meshLoader.getElementObjectForElemID(elemIDs[i], nastranOrdering=nastranOrdering)
-                # Create appropriate traction object for this element type
-                tracObj = elemObj.createElementTraction(faceIndex, tractions[i])
-                # Traction not implemented for element
-                if tracObj is None:
-                    TACSWarning("TACS element of type {} does not hav a traction implimentation. "
-                                "Skipping element in addTractionToElement procedure.".format(elemObj.getObjectName()),
-                                self.comm)
-                # Traction implemented
-                else:
-                    # Add new traction to auxiliary element object
-                    self.auxElems.addElement(elemID, tracObj)
-
-        # Reduce the element flag and make sure that every element was found on exactly 1 proc
-        elemFound = self.comm.allreduce(elemFound, op=MPI.SUM)
-
-        # Warn the user if any elements weren't found
-        if nastranOrdering:
-            orderString = 'Nastran'
+        if self.assembler is None:
+            raise self.TACSError("TACS assembler has not been created. "
+                                 "Assembler must created first by running 'initalize' method.")
+        vars = self.assembler.createVec()
+        if asBVec:
+            return vars
         else:
-            orderString = 'TACS'
+            return vars.getArray()
 
-        for i in range(numElems):
-            if not elemFound[i]:
-                TACSWarning("Can't add traction to element ID {} ({} ordering), element not found in model. "
-                            "Double check BDF file.".format(elemIDs[i], orderString), self.comm)
-
-    def addPressureToComponents(self, structProblem, compIDs, pressures,
-                                faceIndex=0):
+    def getVarsPerNode(self):
         """
-        The function is used to add a *FIXED TOTAL PRESSURE* on one or more
-        components, defined by COMPIds. The purpose of this routine is
-        to add loads that remain fixed throughout an optimization. An example
-        would be a fuel load.
+        Get the number of variables per node for the model.
+        """
+        if self.assembler is None:
+            raise self.TACSError("TACS assembler has not been created. "
+                        "Assembler must created first by running 'initalize' method.")
+
+        return self.assembler.getVarsPerNode()
+
+    def applyBCsToVec(self, vec):
+        """
+        Applies zeros to boundary condition dofs in input vector.
+        """
+        if self.assembler is None:
+            raise self.TACSError("TACS assembler has not been created. "
+                        "Assembler must created first by running 'initalize' method.")
+
+        varVec = self.assembler.createVec()
+        varArray = varVec.getArray()
+
+        # Check if input is a BVec or numpy array
+        if isinstance(vec, tacs.TACS.Vec):
+            self.assembler.applyBCs(vec)
+        elif isinstance(vec, np.ndarray):
+            array = vec
+            # Create temporary BVec
+            vec = self.assembler.createVec()
+            # Copy array values to BVec
+            vec.getArray()[:] = array
+            # Apply BCs
+            self.assembler.applyBCs(vec)
+            # Copy values back to array
+            array[:] = vec.getArray()
+
+    def createStaticProblem(self, name, options={}):
+        """
+        Create a new staticProblem for modeling a static problem load case.
+        This object can be used to set loads, evalFunctions as well as perform
+        solutions and sensitivities related to static problems
 
         Parameters
         ----------
+        name : str
+            Name to assign static problem.
+        options : dict
+            Problem-specific options to pass to StaticProblem instance.
 
-        compIDs : The components with added loads. Use selectCompIDs()
-            to determine this.
-        pressures : Numpy array length 1 or compIDs
-            Array of pressure values for each components
-        faceIndex : int
-            Indicates which face (side) of element to apply pressure to.
-            Note: not required for certain elements (i.e. shells)
+        Returns
+        ----------
+        problem : StaticProblem
+            StaticProblem object used for modeling and solving static problems.
         """
-        # Make sure compIDs is flat and unique
-        compIDs = set(self._flatten(compIDs))
-        pressures = np.atleast_1d(pressures)
+        if self.assembler is None:
+            raise self.TACSError("TACS assembler has not been created. "
+                        "Assembler must created first by running 'initalize' method.")
 
-        # Get global element IDs for the elements we're applying pressure to
-        elemIDs = self.meshLoader.getGlobalElementIDsForComps(compIDs, nastranOrdering=False)
-        # Add pressure element by element
-        self.addPressureToElements(structProblem, elemIDs, pressures, faceIndex, nastranOrdering=False)
+        problem = tacs.problems.static.StaticProblem(name, self.assembler, self.comm,
+                                                     self.outputViewer, self.meshLoader, options)
+        # Set with original design vars and coordinates, in case they have changed
+        problem.setDesignVars(self.x0)
+        problem.setNodes(self.Xpts0)
+        return problem
 
-        # Write out a message of what we did:
-        self._info("Added a fixed pressure of %s to %d components, "
-                   "distributed over %d elements." % (
-                       repr(pressures), len(compIDs), len(elemIDs)),
-                   maxLen=80, box=True)
-
-    def addPressureToElements(self, structProblem, elemIDs, pressures,
-                              faceIndex=0, nastranOrdering=False):
+    def createTransientProblem(self, name, tInit, tFinal, numSteps, options={}):
         """
-        The function is used to add a fixed presure to the
-        selected element IDs. Pressures can be specified on an
-        element by element basis (if pressures is an array) or
-        set to a uniform value (if pressures is a scalar)
+        Create a new TransientProblem for modeling a transient problem load case.
+        This object can be used to set loads, evalFunctions as well as perform
+        solutions and sensitivities related to transient problems
 
         Parameters
         ----------
+        name : str
+            Name to assign static problem.
+        tInit : float
+            Starting time for transient problem integration
+        tFinal : float
+            Ending time for transient problem integration
+        numSteps : int
+            Number of time steps for transient problem integration
+        options : dict
+            Problem-specific options to pass to TransientProblem instance.
 
-        elemIDs : List
-            The global element ID numbers for which to apply the pressure.
-        pressures : Numpy array length 1 or elemIDs
-            Array of pressure values for each element
-        faceIndex : int
-            Indicates which face (side) of element to apply pressure to.
-            Note: not required for certain elements (i.e. shells)
-        nastranOrdering : bool
-            Flag signaling whether elemIDs are in TACS (default)
-            or NASTRAN ordering
+        Returns
+        ----------
+        problem : TransientProblem
+            TransientProblem object used for modeling and solving static problems.
         """
+        if self.assembler is None:
+            raise self.TACSError("TACS assembler has not been created. "
+                        "Assembler must created first by running 'initalize' method.")
 
-        # Make sure the inputs are the correct shape
-        elemIDs = numpy.atleast_1d(elemIDs)
-        pressures = numpy.atleast_1d(pressures)
-
-        numElems = len(elemIDs)
-
-        # If the user only specified one pressure,
-        # we assume the force should be the same for each element
-        if pressures.shape[0] == 1:
-            pressures = np.repeat(pressures, [numElems], axis=0)
-        # If the dimensions still don't match, raise an error
-        elif pressures.shape[0] != numElems:
-            raise Error("Number of pressures must match number of elements,"
-                        " {} pressures were specified for {} element IDs".format(pressures.shape[0], numElems))
-
-        # First find the coresponding local element ID on each processor
-        localElemIDs = self.meshLoader.getLocalElementIDsFromGlobal(elemIDs, nastranOrdering=nastranOrdering)
-
-        # Set the structural problem
-        self.setStructProblem(structProblem)
-
-        # Flag to make sure we find all user-specified elements
-        elemFound = np.zeros(numElems, dtype=int)
-
-        # Loop through every element and if it's owned by this processor, add the pressure
-        for i, elemID in enumerate(localElemIDs):
-            # The element was found on this proc
-            if elemID >= 0:
-                elemFound[i] = 1
-                # Get the pointer for the tacs element object for this element
-                elemObj = self.meshLoader.getElementObjectForElemID(elemIDs[i], nastranOrdering=nastranOrdering)
-                # Create appropriate pressure object for this element type
-                pressObj = elemObj.createElementPressure(faceIndex, pressures[i])
-                # Pressure not implemented for element
-                if pressObj is None:
-                    TACSWarning("TACS element of type {} does not hav a pressure implimentation. "
-                                "Skipping element in addPressureToElement procedure.".format(elemObj.getObjectName()),
-                                self.comm)
-                # Pressure implemented
-                else:
-                    # Add new pressure to auxiliary element object
-                    self.auxElems.addElement(elemID, pressObj)
-
-
-        # Reduce the element flag and make sure that every element was found on exactly 1 proc
-        elemFound = self.comm.allreduce(elemFound, op=MPI.SUM)
-
-        # Warn the user if any elements weren't found
-        if nastranOrdering:
-            orderString = 'Nastran'
-        else:
-            orderString = 'TACS'
-
-        for i in range(numElems):
-            if not elemFound[i]:
-                TACSWarning("Can't add pressure to element ID {} ({} ordering), element not found in model. "
-                            "Double check BDF file.".format(elemIDs[i], orderString), self.comm)
+        problem = tacs.problems.transient.TransientProblem(name, tInit, tFinal, numSteps,
+                                                        self.assembler, self.comm, self.outputViewer, self.meshLoader,
+                                                        options)
+        # Set with original design vars and coordinates, in case they have changed
+        problem.setDesignVars(self.x0)
+        problem.setNodes(self.Xpts0)
+        return problem
 
     def createTACSProbsFromBDF(self):
         """
-        Automatically define tacs problem class using information contained in BDF file.
+        Automatically define tacs problem classes with loads using information contained in BDF file.
         This function assumes all loads are specified in the BDF and allows users to
         skip setting loads in Python.
-        NOTE: Currently only supports LOAD, FORCE, MOMENT, PLOAD2, and PLOAD4 cards.
-        NOTE: Currently only supports staticProblem (SOL 101)
+
+        Returns
+        ----------
+        structProblems : dict[TACSProblems]
+            Dictionary containing a predfined TACSProblem for every loadcase found int the BDF.
+            The dictionary keys are the loadcase IDs from the BDF.
+
+        Notes
+        -----
+        Currently only supports LOAD, FORCE, MOMENT, PLOAD2, and PLOAD4 cards.
+        Currently only supports staticProblem (SOL 101)
         """
 
         if self.assembler is None:
-            raise Error("TACS assembler has not been created. "
-                        "Assembler must created first by running 'createTACSAssembler' method.")
+            raise self.TACSError("TACS assembler has not been created. "
+                        "Assembler must created first by running 'initalize' method.")
 
         # Make sure cross-referencing is turned on in pynastran
         if self.bdfInfo.is_xrefed is False:
@@ -1365,7 +1001,7 @@ class pyTACS(object):
 
         # Check if any loads are in the BDF
         if nloads == 0:
-            raise Error("BDF file '%s' has no loads included in it. " % (self.bdfName))
+            raise self.TACSError("BDF file '%s' has no loads included in it. " % (self.bdfName))
 
         structProblems = {}
 
@@ -1384,7 +1020,7 @@ class pyTACS(object):
                 name = subCase.params['SUBTITLE'][0]
             else:
                 name = 'load_set_%.3d' % (subCase.id)
-            sp = tacs.problems.static.StaticProblem(name=name)
+            staticProb = self.createStaticProblem(name)
 
             if 'LOAD' in subCase.params:
                 loadsID = subCase.params['LOAD'][0]
@@ -1401,26 +1037,25 @@ class pyTACS(object):
                             loadArray[:3] += scale * loadInfo.scaled_vector
                         elif loadInfo.type == 'MOMENT' and vpn >= 6:
                             loadArray[3:6] += scale * loadInfo.scaled_vector
-                        self.addLoadToNodes(sp, nodeID, loadArray, nastranOrdering=True)
+                        staticProb.addLoadToNodes(nodeID, loadArray, nastranOrdering=True)
 
                     # Add any pressure loads
                     # Pressure load card specific to shell elements
                     elif loadInfo.type == 'PLOAD2':
                         elemIDs = loadInfo.eids
                         pressure = scale * loadInfo.pressure
-                        self.addPressureToElements(sp, elemIDs, pressure, nastranOrdering=True)
+                        staticProb.addPressureToElements(elemIDs, pressure, nastranOrdering=True)
 
                     # Alternate more general pressure load type
                     elif loadInfo.type == 'PLOAD4':
-                        self._addPressureFromPLOAD4(sp, loadInfo, scale)
+                        self._addPressureFromPLOAD4(staticProb, loadInfo, scale)
 
                     else:
-                        TACSWarning("Unsupported load type "
-                                    " '%s' specified for load set number %d, skipping load" %(loadInfo.type, loadInfo.sid),
-                                    self.comm)
+                        self.TACSWarning("Unsupported load type "
+                                    " '%s' specified for load set number %d, skipping load" %(loadInfo.type, loadInfo.sid))
 
             # append to list of structural problems
-            structProblems[subCase.id] = sp
+            structProblems[subCase.id] = staticProb
 
         return structProblems
 
@@ -1471,802 +1106,23 @@ class pyTACS(object):
                 faceIndex = 0
 
             else:
-                raise Error("Unsupported element type "
+                raise self.TACSError("Unsupported element type "
                             "'%s' specified for PLOAD4 load set number %d." % (elemInfo.type, loadInfo.sid))
 
             # Figure out whether or not this is a traction based on if a vector is defined
             if np.linalg.norm(loadInfo.nvector) == 0.0:
-                self.addPressureToElements(staticProb, elemID, pressure, faceIndex,
+                staticProb.addPressureToElements(elemID, pressure, faceIndex,
                                            nastranOrdering=True)
             else:
                 trac = pressure * loadInfo.nvector
-                self.addTractionToElements(staticProb, elemID, trac, faceIndex,
+                staticProb.addTractionToElements(elemID, trac, faceIndex,
                                            nastranOrdering=True)
-
-
-    ####### Static solver methods ########
-
-    def reset(self, SP):
-        """ Reset each of the solution to last converged value."""
-        self.setStructProblem(SP)
-        self.u.copyValues(self.u_old)
-
-    def _initializeSolve(self):
-        """
-        Initialze the solution of the structural system for the
-        loadCase. The stiffness matrix is assembled and factored.
-        """
-
-        if self._factorOnNext:
-            self.assembler.assembleJacobian(self.alpha, self.beta, self.gamma, self.res, self.K)
-            self.PC.factor()
-            self.old_update.zeroEntries()
-            self._factorOnNext = False
-            self._PCfactorOnNext = False
-
-    def __call__(self, structProblem, damp=1.0, useAitkenAcceleration=False,
-                 dampLB=0.2, loadScale=1.0):
-        """
-        Solution of the structural system for loadCase. The
-        forces must already be set.
-
-        Parameters
-        ----------
-        structProblem
-
-        Optional Arguments:
-
-        damp, float: Value to use to damp the solution update. Default is 1.0
-
-        useAitkenAcceleration, boolen: Flag to use
-        aitkenAcceleration. Only applicable for aerostructural
-        problems. Default is False.
-
-        loadScale, float: value to scale external loads by. Only useful for
-        load step approach on nonlinear problems.
-        """
-        startTime = time.time()
-
-        self.setStructProblem(structProblem)
-        self.curSP.tacsData.callCounter += 1
-
-        # Set loadScale attributes, during load incrementation, self.loadScale is the current loadScale
-        # while self.maxLoadScale is the target/final load scale.
-        # For now, maxLoadScale is set equal to self.loadScale to make _updateResidual
-        # and _getForces work, this will be addressed in future when new NL solver is merged
-        self.loadScale = loadScale
-        self.maxLoadScale = loadScale
-
-        setupProblemTime = time.time()
-
-        # Check if we need to initialize
-        self._initializeSolve()
-
-        initSolveTime = time.time()
-
-        # Compute the RHS
-        # TODO: Auxiliary forces still need to be load scaled
-        # self.structure.setLoadFactor(self.curSP.tacsData.lcnum,loadScale)
-        self.assembler.assembleRes(self.res)
-        # Zero out bc terms in F
-        self.assembler.applyBCs(self.F)
-        # Add the -F
-        self.res.axpy(-loadScale, self.F)
-
-        # Set initnorm as the norm of F
-        self.initNorm = numpy.real(self.F.norm()) * loadScale
-
-        # Starting Norm for this compuation
-        self.startNorm = numpy.real(self.res.norm())
-
-        initNormTime = time.time()
-
-        # Solve Linear System for the update
-        self.KSM.solve(self.res, self.update)
-
-        self.update.scale(-1.0)
-
-        solveTime = time.time()
-
-        # Apply Aitken Acceleration if necessary:
-        if useAitkenAcceleration:
-            if self.doDamp:
-                # Comput: temp0 = update - old_update
-                self.temp0.zeroEntries()
-                self.temp0.axpy(1.0, self.update)
-                self.temp0.axpy(-1.0, self.old_update)
-                dnom = self.temp0.dot(self.temp0)
-                damp = damp * (1.0 - self.temp0.dot(self.update) / dnom)
-
-                # Clip to a reasonable range
-                damp = numpy.clip(damp, dampLB, 1.0)
-            self.doDamp = True
-
-        # Update State Variables
-        self.assembler.getVariables(self.u)
-        self.u.axpy(damp, self.update)
-        self.assembler.setVariables(self.u)
-
-        # Set the old update
-        self.old_update.copyValues(self.update)
-
-        stateUpdateTime = time.time()
-
-        # Compute final FEA Norm
-        self.assembler.assembleRes(self.res)
-        self.res.axpy(-loadScale, self.F)  # Add the -F
-        self.finalNorm = numpy.real(self.res.norm())
-
-        finalNormTime = time.time()
-
-        # If timing was was requested print it, if the solution is nonlinear
-        # print this information automatically if prinititerations was requested.
-        if (self.getOption('printTiming') or (self.getOption('printIterations')
-                                              and self.getOption('solutionType').lower() != 'linear')):
-            self.pp('+--------------------------------------------------+')
-            self.pp('|')
-            self.pp('| TACS Solve Times:')
-            self.pp('|')
-            self.pp('| %-30s: %10.3f sec' % ('TACS Setup Time', setupProblemTime - startTime))
-            self.pp('| %-30s: %10.3f sec' % ('TACS Solve Init Time', initSolveTime - setupProblemTime))
-            self.pp('| %-30s: %10.3f sec' % ('TACS Init Norm Time', initNormTime - initSolveTime))
-            self.pp('| %-30s: %10.3f sec' % ('TACS Solve Time', solveTime - initNormTime))
-            self.pp('| %-30s: %10.3f sec' % ('TACS State Update Time', stateUpdateTime - solveTime))
-            self.pp('| %-30s: %10.3f sec' % ('TACS Final Norm Time', finalNormTime - stateUpdateTime))
-            self.pp('|')
-            self.pp('| %-30s: %10.3f sec' % ('TACS Total Solution Time', finalNormTime - startTime))
-            self.pp('+--------------------------------------------------+')
-
-        return damp
-
-    ####### Function eval/sensitivity methods ########
-
-    def evalFunctions(self, structProblem, funcs, evalFuncs=None,
-                      ignoreMissing=False):
-        """
-        This is the main routine for returning useful information from
-        pytacs. The functions corresponding to the strings in
-        EVAL_FUNCS are evaluated and updated into the provided
-        dictionary.
-
-        Parameters
-        ----------
-        structProblem : pyStructProblem class
-            Structural problem to get the solution for
-        funcs : dict
-            Dictionary into which the functions are saved.
-        evalFuncs : iterable object containing strings.
-            If not none, use these functions to evaluate.
-        ignoreMissing : bool
-            Flag to supress checking for a valid function. Please use
-            this option with caution.
-
-        Examples
-        --------
-        >>> funcs = {}
-        >>> FEAsolver(sp)
-        >>> FEAsolver.evalFunctions(sp, funcs, ['mass'])
-        >>> funcs
-        >>> # Result will look like (if structProblem, sp, has name of 'c1'):
-        >>> # {'cl_mass':12354.10}
-        """
-        startTime = time.time()
-        # Set the structural problem
-        self.setStructProblem(structProblem)
-        if evalFuncs is None:
-            evalFuncs = sorted(list(self.curSP.evalFuncs))
-        else:
-            evalFuncs = sorted(list(evalFuncs))
-
-        if not ignoreMissing:
-            for f in evalFuncs:
-                if not f in self.functionList:
-                    raise Error("Supplied function '%s' has not been added "
-                                "using addFunction()." % f)
-
-        setupProblemTime = time.time()
-
-        # Fast parallel function evaluation of structural funcs:
-        handles = [self.functionList[f] for f in evalFuncs if
-                   f in self.functionList]
-        funcVals = self.assembler.evalFunctions(handles)
-
-        functionEvalTime = time.time()
-
-        # Assign function values to appropriate dictionary
-        i = 0
-        for f in evalFuncs:
-            if f in self.functionList:
-                key = self.curSP.name + '_%s' % f
-                self.curSP.funcNames[f] = key
-                funcs[key] = funcVals[i]
-                i += 1
-
-        dictAssignTime = time.time()
-
-        if self.getOption('printTiming'):
-            self.pp('+--------------------------------------------------+')
-            self.pp('|')
-            self.pp('| TACS Function Times:')
-            self.pp('|')
-            self.pp('| %-30s: %10.3f sec' % ('TACS Function Setup Time', setupProblemTime - startTime))
-            self.pp('| %-30s: %10.3f sec' % ('TACS Function Eval Time', functionEvalTime - setupProblemTime))
-            self.pp('| %-30s: %10.3f sec' % ('TACS Dict Time', dictAssignTime - functionEvalTime))
-            self.pp('|')
-            self.pp('| %-30s: %10.3f sec' % ('TACS Function Time', dictAssignTime - startTime))
-            self.pp('+--------------------------------------------------+')
-
-    def evalFunctionsSens(self, structProblem, funcsSens, evalFuncs=None):
-        """
-        This is the main routine for returning useful (sensitivity)
-        information from pytacs. The derivatives of the functions
-        corresponding to the strings in EVAL_FUNCS are evaluated and
-        updated into the provided dictionary.
-
-        Parameters
-        ----------
-        structProblem : pyStructProblem class
-            Structural problem to get the solution for
-        funcsSens : dict
-            Dictionary into which the derivatives are saved.
-        evalFuncs : iterable object containing strings
-            The functions the user wants returned
-
-        Examples
-        --------
-        >>> funcsSens = {}
-        >>> FEAsolver.evalFunctionsSens(sp, funcsSens, ['mass'])
-        >>> funcs
-        >>> # Result will look like (if structProblem, sp, has name of 'c1'):
-        >>> # {'c1_mass':{'struct':[1.234, ..., 7.89]}
-        """
-
-        startTime = time.time()
-
-        # Set the structural problem
-        self.setStructProblem(structProblem)
-        if evalFuncs is None:
-            evalFuncs = sorted(list(self.curSP.evalFuncs))
-        else:
-            evalFuncs = sorted(list(evalFuncs))
-        # Check that the functions are all ok.
-        # and prepare tacs vecs for adjoint procedure
-        dvSenses = []
-        xptSenses = []
-        dIdus = []
-        adjoints = []
-        for f in evalFuncs:
-            if f not in self.functionList:
-                raise Error("Supplied function has not beed added "
-                            "using addFunction()")
-            else:
-                # Populate the lists with the tacs bvecs
-                # we'll need for each adjoint/sens calculation
-                dvSens = self.dvSensList[f]
-                dvSens.zeroEntries()
-                dvSenses.append(dvSens)
-
-                xptSens = self.xptSensList[f]
-                xptSens.zeroEntries()
-                xptSenses.append(xptSens)
-
-                dIdu = self.dIduList[f]
-                dIdu.zeroEntries()
-                dIdus.append(dIdu)
-
-                adjoint = self.adjointList[f]
-                adjoint.zeroEntries()
-                adjoints.append(adjoint)
-
-        setupProblemTime = time.time()
-
-        adjointStartTime = {}
-        adjointEndTime = {}
-
-        # Next we will solve all the adjoints
-        # Set adjoint rhs
-        self.addSVSens(evalFuncs, dIdus)
-        adjointRHSTime = time.time()
-        for i, f in enumerate(evalFuncs):
-            adjointStartTime[f] = time.time()
-            self.solveAdjoint(dIdus[i], adjoints[i])
-            adjointEndTime[f] = time.time()
-
-        adjointFinishedTime = time.time()
-        # Evaluate all the adoint res prooduct at the same time for
-        # efficiency:
-        self.addDVSens(evalFuncs, dvSenses)
-        self.addAdjointResProducts(adjoints, dvSenses)
-        self.addXptSens(evalFuncs, xptSenses)
-        self.addAdjointResXptSensProducts(adjoints, xptSenses)
-
-        # Recast sensititivities into dict for user
-        for i, f in enumerate(evalFuncs):
-            key = self.curSP.name + '_%s' % f
-            # Finalize sensitivity arrays across all procs
-            dvSenses[i].beginSetValues()
-            dvSenses[i].endSetValues()
-            xptSenses[i].beginSetValues()
-            xptSenses[i].endSetValues()
-            # Return sensitivities as array in sens dict
-            funcsSens[key] = {self.varName: dvSenses[i].getArray().copy(),
-                              self.coordName: xptSenses[i].getArray().copy()}
-
-        totalSensitivityTime = time.time()
-
-        if self.getOption('printTiming'):
-            self.pp('+--------------------------------------------------+')
-            self.pp('|')
-            self.pp('| TACS Adjoint Times:')
-            print('|')
-            print('| %-30s: %10.3f sec' % ('TACS Sens Setup Problem Time', setupProblemTime - startTime))
-            print('| %-30s: %10.3f sec' % (
-                'TACS Adjoint RHS Time', adjointRHSTime - setupProblemTime))
-            for f in evalFuncs:
-                print('| %-30s: %10.3f sec' % (
-                'TACS Adjoint Solve Time - %s' % (f), adjointEndTime[f] - adjointStartTime[f]))
-            print('| %-30s: %10.3f sec' % ('Total Sensitivity Time', totalSensitivityTime - adjointFinishedTime))
-            print('|')
-            print('| %-30s: %10.3f sec' % ('Complete Sensitivity Time', totalSensitivityTime - startTime))
-            print('+--------------------------------------------------+')
-
-    ####### Design variable methods ########
-
-    def setVarName(self, varName):
-        """
-        Set a name for the structural variables in pyOpt. Only needs
-        to be changed if more than 1 pytacs object is used in an
-        optimization
-
-        Parameters
-        ----------
-        varName : str
-            Name of the structural variable used in addVarGroup().
-            """
-        self.varName = varName
-
-    def setDesignVars(self, x):
-        """
-        Update the design variables used by tacs.
-
-        Parameters
-        ----------
-        x : ndarray
-            The variables (typically from the optimizer) to set. It
-            looks for variable in the ``self.varName`` attribute.
-
-        """
-        # Check if the design variables are being handed in a dict
-        if isinstance(x, dict):
-            if self.varName in x:
-                self.x.getArray()[:] = x[self.varName]
-        # or array
-        elif isinstance(x, np.ndarray):
-            self.x.getArray()[:] = x
-        else:
-            raise ValueError("setDesignVars must be called with either a numpy array or dict as input.")
-
-        # Set the variables in tacs, and the constriant objects
-        self.assembler.setDesignVars(self.x)
-        self._factorOnNext = True
-
-    def getDesignVars(self):
-        """
-        get the design variables that were specified with
-        addVariablesPyOpt.
-
-        Returns
-        ----------
-        x : array
-            The current design variable vector set in tacs.
-
-        Notes
-        -----
-        This routine **can** also accept a list or vector of
-        variables. This is used internally in pytacs, but is not
-        recommended to used externally.
-        """
-
-        # Set the variables in tacs, and the constriant objects
-        # Set the variables in tacs, and the constriant objects
-        self.assembler.getDesignVars(self.x)
-        return self.x.getArray().copy()
-
-    def getNumDesignVars(self):
-        """
-        Return the number of design variables on this processor.
-        """
-        return self.x.getSize()
-
-    def getTotalNumDesignVars(self):
-        """
-        Return the number of design variables across all processors.
-        """
-        return self.dvNum
-
-    def getCoordinates(self):
-        """
-        Return the mesh coordiantes of the structure.
-
-        Returns
-        -------
-        coords : array
-            Structural coordinate in array of size (N, 3) where N is
-            the number of structural nodes on this processor.
-        """
-        Xpts = self.assembler.createNodeVec()
-        self.assembler.getNodes(Xpts)
-        coords = Xpts.getArray()
-
-        return coords
-
-    def setCoordinates(self, coords):
-        """
-        Set the mesh coordinates of the structure.
-
-        Returns
-        -------
-        coords : array
-            Structural coordinate in array of size (N, 3) where N is
-            the number of structural nodes on this processor.
-        """
-        XptsArray = self.Xpts.getArray()
-        # Make sure input is raveled (1D) in case user changed shape
-        XptsArray[:] = numpy.ravel(coords)
-        self.assembler.setNodes(self.Xpts)
-        self._factorOnNext = True
-
-    def getNumCoordinates(self):
-        """
-        Return the number of mesh coordinates on this processor.
-        """
-        return self.Xpts.getSize()
-
-    ####### Post processing methods ########
-
-    def getVariablesAtPoints(self, structProblem, points):
-        '''The function is used to get the state variables DOF's at the
-        selected physical locations, points. A closest point search is
-        used to determine the FE nodes that are the closest to the
-        requested nodes.
-
-        NOTE: The number and units of the entries of the state vector
-        depends on the physics problem being solved and the dofs included
-        in the model.
-
-        A couple of examples of state vector components for common problem are listed below:
-
-        In Elasticity with varsPerNode = 3,
-        q = [u, v, w] # displacements
-        In Elasticity with varsPerNode = 6,
-        q = [u, v, w, tx, ty, tz] # displacements + rotations
-        In Thermoelasticity with varsPerNode = 4,
-        q = [u, v, w, T] # displacements + temperature
-        In Thermoelasticity with varsPerNode = 7,
-        q = [u, v, w, tx, ty, tz, T] # displacements + rotations + temperature
-        '''
-        try:
-            from scipy.spatial import cKDTree
-        except:
-            raise Error("scipy.spatial "
-                        "must be available to use getDisplacements")
-
-        points = numpy.atleast_2d(points)
-        self.setStructProblem(structProblem)
-
-        # Pull out the local nodes on the proc and search "points" in the tree
-        vpn = self.varsPerNode
-        Xpts = self.assembler.createNodeVec()
-        self.assembler.getNodes(Xpts)
-        localNodes = np.real(Xpts.getArray())
-        nNodes = len(localNodes) // vpn
-        xNodes = localNodes[0:nNodes * 3].reshape((nNodes, 3)).copy()
-        tree = cKDTree(xNodes)
-
-        d, index = tree.query(points, k=1)
-
-        # Now figure out which proc has the best distance for this
-        localu = np.real(structProblem.tacsData.u.getArray())
-        uNodes = localu[0:nNodes * vpn].reshape((nNodes, vpn)).copy()
-        u_req = numpy.zeros([len(points), vpn])
-        for i in range(len(points)):
-            proc = self.comm.allreduce((d[i], self.comm.rank), op=MPI.MINLOC)
-            u_req[i, :] = uNodes[index[i], :]
-            u_req[i, :] = self.comm.bcast(uNodes[index[i], :], root=proc[1])
-        return u_req
-
-    def writeDVVisualization(self, fileName, n=17):
-        """
-        This function writes a standard f5 output file, but with
-        design variables defined by x=mod(arange(nDV, n)), where n an
-        integer supplied by the user. The idea is to use contouring in
-        a post processing program to visualize the structural design
-        variables.
-
-        Parameters
-        ----------
-        fileName : str
-            Filename to use. Since it is a f5 file, shoud have .f5 extension
-        n : int
-            Modulus value. 17 is the default which tends to work well.
-            """
-
-        nDVs = self.getNumDesignVars()
-
-        # Save the current variables
-        xSave =  self.getDesignVars()
-
-        # Generate and set the 'mod' variables
-        x = numpy.mod(numpy.arange(nDVs), n)
-        self.setDesignVars(x)
-
-        # Normal solution write
-        self.writeOutputFile(fileName)
-
-        # Reset the saved variables
-        self.setDesignVars(xSave)
-
-    def writeOutputFile(self, fileName):
-        """Low-level command to write the current loadcase to a file
-
-        Parameters
-        ----------
-        fileName : str
-            Filename for output. Should have .f5 extension.
-         """
-        self.outputViewer.writeToFile(fileName)
-
-    def writeSolution(self, outputDir=None, baseName=None, number=None):
-        """This is a generic shell function that writes the output
-        file(s).  The intent is that the user or calling program can
-        call this function and pyTACS writes all the files that the
-        user has defined. It is recommneded that this function is used
-        along with the associated logical flags in the options to
-        determine the desired writing procedure
-
-        Parameters
-        ----------
-
-        outputDir : str or None
-            Use the supplied output directory
-        baseName : str or None
-            Use this supplied string for the base filename. Typically
-            only used from an external solver.
-        number : int or None
-            Use the user spplied number to index solution. Again, only
-            typically used from an external solver
-        """
-        # Check input
-        if outputDir is None:
-            outputDir = self.getOption('outputDir')
-
-        if baseName is None:
-            baseName = self.curSP.name
-
-        # If we are numbering solution, it saving the sequence of
-        # calls, add the call number
-        if number is not None:
-            # We need number based on the provided number:
-            baseName = baseName + '_%3.3d' % number
-        else:
-            # if number is none, i.e. standalone, but we need to
-            # number solutions, use internal counter
-            if self.getOption('numberSolutions'):
-                baseName = baseName + '_%3.3d' % self.curSP.tacsData.callCounter
-
-        # Unless the writeSolution option is off write actual file:
-        if self.getOption('writeSolution'):
-            base = os.path.join(outputDir, baseName) + '.f5'
-            self.outputViewer.writeToFile(base)
-
-        if self.getOption('writeBDF'):
-            base = os.path.join(outputDir, baseName) + '.bdf'
-            self.writeBDF(base)
-
-    # =========================================================================
-    #   The remainder of the routines should not be needed by a user
-    #   using this class directly. However, many of the functions are
-    #   still public since they are used by a solver that uses this
-    #   class, i.e. an Aerostructural solver.
-    # =========================================================================
 
     def getNumComponents(self):
         """
         Return number of components (property) groups found in bdf.
         """
         return self.nComp
-
-    def solveAdjoint(self, rhs, phi, damp=1.0):
-        """
-        Solve the structural adjoint.
-
-        Parameters
-        ----------
-        rhs : TACS BVec
-            right hand side vector for adjoint solve
-        phi : TACS BVec
-            BVec into which the adjoint is saved
-        damp : float
-            A damping variable for adjoint update. Typically only used
-            in multidisciplinary analysis
-        """
-
-        # First compute the residual
-        self.K.mult(phi, self.res)
-        self.res.axpy(-1.0, rhs)  # Add the -RHS
-
-        # Starting Norm for this compuation
-        self.startNorm = numpy.real(self.res.norm())
-
-        # Solve Linear System
-        zeroGuess = 0
-        self.update.zeroEntries()
-        self.KSM.solve(self.res, self.update, zeroGuess)
-
-        # Update the adjoint vector with the (damped) update
-        phi.axpy(-damp, self.update)
-
-        # Compute actual final FEA Norm
-        self.K.mult(phi, self.res)
-        self.res.axpy(-1.0, rhs)  # Add the -RHS
-        self.finalNorm = numpy.real(self.res.norm())
-
-    def getNumVariables(self):
-        """Return the number of degrees of freedom (states) that are
-        on this processor
-
-        Returns
-        -------
-        nstate : int
-            number of states.
-        """
-        return self.u.getSize()
-
-    def getVariables(self, structProblem, states=None):
-        """Return the current state values for the current
-        structProblem"""
-        self.setStructProblem(structProblem)
-
-        if states is None:
-            states = self.u.getArray().copy()
-        else:
-            states[:] = self.u.getArray()
-
-        return states
-
-    def setVariables(self, structProblem, states):
-        """ Set the structural states for current load case. Typically
-        only used for aerostructural analysis
-
-        Parameters
-        ----------
-        states : array
-            Values to set. Must be the size of getNumVariables()
-        """
-        self.setStructProblem(structProblem)
-        self.u.setValues(states)
-        self.assembler.setVariables(self.u)
-
-    def getVarsPerNodes(self):
-        """
-        Get the number of variables per node for the model.
-        """
-        if self.assembler is not None:
-            return self.varsPerNode
-        else:
-            raise Error("Assembler must be finalized before getVarsPerNodes can be called.")
-
-    def addSVSens(self, evalFuncs, dIduList):
-        """ Add the state variable sensitivity to the ADjoint RHS for given evalFuncs"""
-        funcHandles = [self.functionList[f] for f in evalFuncs if
-                       f in self.functionList]
-        self.assembler.addSVSens(funcHandles, dIduList, self.alpha, self.beta, self.gamma)
-
-    def addDVSens(self, evalFuncs, dvSensList, scale=1.0):
-        """ Add pratial sensitivity contribution due to design vars for evalFuncs"""
-        funcHandles = [self.functionList[f] for f in evalFuncs if
-                       f in self.functionList]
-        self.assembler.addDVSens(funcHandles, dvSensList, scale)
-
-    def addAdjointResProducts(self, adjointlist, dvSensList, scale=-1.0):
-        """ Add the adjoint product contribution to the design variable sensitivity arrays"""
-        self.assembler.addAdjointResProducts(adjointlist, dvSensList, scale)
-
-    def addXptSens(self, evalFuncs, xptSensList, scale=1.0):
-        """ Add pratial sensitivity contribution due to nodal coordinates for evalFuncs"""
-        funcHandles = [self.functionList[f] for f in evalFuncs if
-                       f in self.functionList]
-        self.assembler.addXptSens(funcHandles, xptSensList, scale)
-
-    def addAdjointResXptSensProducts(self, adjointlist, xptSensList, scale=-1.0):
-        """ Add the adjoint product contribution to the nodal coordinates sensitivity arrays"""
-        self.assembler.addAdjointResXptSensProducts(adjointlist, xptSensList, scale)
-
-    def getResidual(self, structProblem, res=None, Fext=None):
-        """
-        This routine is used to evaluate directly the structural
-        residual. Only typically used with aerostructural analysis.
-
-        Parameters
-        ----------
-        structProblem : pyStructProblem class
-            Structural problem to use
-        res : numpy array
-            If res is not None, place the residuals into this array.
-
-        Returns
-        -------
-        res : array
-            The same array if res was provided, (otherwise a new
-            array) with evaluated residuals
-        """
-        self.setStructProblem(structProblem)
-        self.assembler.assembleRes(self.res)
-        self.res.axpy(1.0, self.curSP.tacsData.F)  # Add the -F
-
-        if Fext is not None:
-            resArray = self.res.getArray()
-            resArray[:] -= Fext[:]
-
-        if res is None:
-            res = self.res.getArray().copy()
-        else:
-            res[:] = self.res.getArray()
-
-        return res
-
-    def getResNorms(self):
-        """Return the initial, starting and final Res Norms. Note that
-        the same norms are used for both solution and adjoint
-        computations"""
-
-        return (numpy.real(self.initNorm), numpy.real(self.startNorm),
-                numpy.real(self.finalNorm))
-
-    def zeroVectors(self):
-        """Zero all the tacs b-vecs"""
-        if not self._variablesCreated:
-            self._createVariables()
-        self.res.zeroEntries()
-        self.u.zeroEntries()
-        self.assembler.setVariables(self.u)
-        self.update.zeroEntries()
-
-    def setOption(self, name, value):
-        """
-        Set a solver option value. The name is not case sensitive.
-        """
-        name = name.lower()
-
-        # Try to the option in the option dictionary
-        defOptions = self.options['defaults']
-        try:
-            defOptions[name]
-        except:
-            TACSWarning('Option: \'%-30s\' is not a valid TACS option |' % name,
-                        self.comm)
-            return
-
-        # Now we know the option exists, lets check if the type is ok:
-        #        if type(value) == self.options[name][0]:
-        if isinstance(value, self.options[name][0]):
-            # Just set:
-            self.options[name] = [type(value), value]
-        else:
-            raise Error("Datatype for Option %s was not valid. "
-                        "Expected data type is %s. Received data type "
-                        " is %s." % (name, self.options[name][0], type(value)))
-
-    def getOption(self, name):
-
-        # Redefine the getOption def from the base class so we can
-        # mane sure the name is lowercase
-
-        def_options = self.options['defaults']
-        if name.lower() in def_options:
-            return self.options[name.lower()][1]
-        else:
-            raise AttributeError(repr(name) + ' is not a valid option name')
 
     def _createOutputGroups(self):
         """Automatically determine how to split out the output file
@@ -2312,10 +1168,14 @@ class pyTACS(object):
         # Create actual viewer
         if self.getOption('outputElement') is not None:
             elementType = self.getOption('outputElement')
-        elif self.varsPerNode == 6:
+        elif self.varsPerNode == 6 or self.varsPerNode == 7:
             elementType = tacs.TACS.BEAM_OR_SHELL_ELEMENT
         elif self.varsPerNode == 3:
             elementType = tacs.TACS.SOLID_ELEMENT
+        else:
+            self.TACSWarning("'outputElement' not specified in options. "
+                             "No elements will be written out in f5 file.")
+            elementType = tacs.TACS.ELEMENT_NONE
 
         self.outputViewer = tacs.TACS.ToFH5(
             self.assembler, elementType, write_flag)
@@ -2342,9 +1202,8 @@ class pyTACS(object):
                 if item >= 0 and item < self.nComp:
                     compIDs[-1].append(item)
                 else:
-                    TACSWarning('Trying to add component ID of %d, which\
-                    is out of the range 0 <= compID < %d' % (item, self.nComp),
-                                self.comm)
+                    self.TACSWarning('Trying to add component ID of %d, which\
+                    is out of the range 0 <= compID < %d' % (item, self.nComp))
 
             elif isinstance(item, str):
                 # This is a little inefficinet here; loop over
@@ -2352,12 +1211,12 @@ class pyTACS(object):
                 # part of the description. if so add.
                 item = item.upper()
                 for i in range(self.nComp):
-                    if item in self.compDescripts[i]:
+                    if item in self.compDescripts[i].upper():
                         compIDs[-1].append(i)
             else:
-                TACSWarning('Unidentifiable information given for \'include\'\
+                self.TACSWarning('Unidentifiable information given for \'include\'\
                 or \'exclude\'. Valid data are integers 0 <= i < %d, or \
-                strings.' % self.nComp, self.comm)
+                strings.' % self.nComp)
 
         if op == 'and':
             # First convert each entry to a set:
@@ -2420,14 +1279,14 @@ class pyTACS(object):
                 else:
                     print(result[1])
                     # Don't know what it is:
-                    TACSWarning("Could not identify objects returned \
+                    self.TACSWarning("Could not identify objects returned \
                     from elemCallBack. Valid return objects are: \
                     A list of TACS element objects (required, first), \
                     an iterable object \
                     (eg, list or array) containing the scaling parameters \
                     for the added design variables (optional, second). The \
                     string representation of the offending object is: \
-                    '%s'" % repr(result[1]), self.comm)
+                    '%s'" % repr(result[1]))
 
             else:
                 elemObjects = result
@@ -2442,13 +1301,13 @@ class pyTACS(object):
                     if isinstance(object, tacs.TACS.Element):
                         numFoundElements += 1
                     else:
-                        Error("Object of type %s returned in elemCallBack function "
+                        self.TACSError("Object of type %s returned in elemCallBack function "
                               "is not a valid TACS element object. The \
                                string representation of the offending object is: \
                                '%s'"%(type(object), repr(object)))
 
             if numFoundElements != numElements:
-                raise Error("Could not find all required element objects in the "
+                raise self.TACSError("Could not find all required element objects in the "
                             "return arguments from user-supplied "
                             "elemCallBack function. {} element types ({}) are contained in Component {}, "
                             "but only {} were returned by elemCallback.".format(numElements, repr(self.elemDescripts[i]),
@@ -2480,7 +1339,7 @@ class pyTACS(object):
                 # Now the length of newVars must the same as
                 # newVars[-1]-newVars[0] + 1
                 if not len(newVars) == newVars[-1] - newVars[0] + 1:
-                    raise Error("Inconsistent design variables detected. "
+                    raise self.TACSError("Inconsistent design variables detected. "
                                 "The added design variables are not continuous."
                                 " The added design varibales are %s." %
                                 repr(newVars))
@@ -2494,12 +1353,11 @@ class pyTACS(object):
                 else:
                     # Make sure that the scaleList is the correct length.
                     if len(scaleList) != len(newVars):
-                        TACSWarning('An incorrect number of scale variables \
+                        self.TACSWarning('An incorrect number of scale variables \
                         were returned. There were %d variables added, but only \
                         %d scale variables returned. The scale for these \
                         variables will be set to 1.0. The scale variables are %s.' % (
-                            len(newVars), len(scaleList), repr(scaleList)),
-                                    self.comm)
+                            len(newVars), len(scaleList), repr(scaleList)))
                         self.scaleList.extend(numpy.ones(len(newVars)))
                     else:
                         self.scaleList.extend(scaleList)
@@ -2514,331 +1372,6 @@ class pyTACS(object):
                 if self.varsPerNode is None:
                     self.varsPerNode = elemVarsPerNode
                 elif self.varsPerNode != elemVarsPerNode:
-                    raise Error("Model references elements with differing numbers of variables per node (%d and %d). "
+                    raise self.TACSError("Model references elements with differing numbers of variables per node (%d and %d). "
                                 "All elements must use same number of variables to be compatible."%(self.varsPerNode,
                                                                                                     elemVarsPerNode))
-
-    def _createVariables(self):
-        """Internal to create the variable required by TACS"""
-
-        if not self._variablesCreated:
-
-            self.x = self.assembler.createDesignVec()
-            self.Xpts = self.assembler.createNodeVec()
-
-            # Generic residual vector
-            self.res = self.assembler.createVec()
-
-            self.u_old = self.assembler.createVec()
-            self.old_update = self.assembler.createVec()
-            self.temp0 = self.assembler.createVec()
-
-            # Current adjoint vector
-            self.phi = self.assembler.createVec()
-
-            # Current adjoint RHS
-            self.adjRHS = self.assembler.createVec()
-
-            # Current derivative of objective wrt states
-            self.dIdu = self.assembler.createVec()
-
-            opt = self.getOption
-
-            # Tangent Stiffness --- process the ordering option here:
-            tmp = opt('orderingType').lower()
-            if tmp == 'natural':
-                ordering = tacs.TACS.NATURAL_ORDER
-            elif tmp == 'nd':
-                ordering = tacs.TACS.ND_ORDER
-            elif tmp == 'rcm':
-                ordering = tacs.TACS.RCM_ORDER
-            elif tmp == 'tacs_amd':
-                ordering = tacs.TACS.TACS_AMD_ORDER
-            elif tmp == 'multicolor':
-                ordering = tacs.TACS.MULTICOLOR_ORDER
-            else:
-                raise Error("Unrecognized 'orderingType' option value: "
-                            "'%s'. Valid values are: 'natural', 'nd', 'rcm', "
-                            "'tacs_amd', or 'multicolor'." % tmp)
-
-            self.K = self.assembler.createSchurMat(ordering)
-
-            # Additional Vecs for updates
-            self.update = self.assembler.createVec()
-
-            # Setup PCScMat and KSM solver
-            self.alpha = 1.0
-            self.beta = 0.0
-            self.gamma = 0.0
-            self.assembler.assembleJacobian(self.alpha, self.beta, self.gamma, self.res, self.K)
-
-            reorderSchur = 1
-            self.PC = tacs.TACS.Pc(self.K, lev_fill=opt('PCFillLevel'),
-                                   ratio_fill=opt('PCFillRatio'), reorder=reorderSchur)
-
-            # Operator, fill level, fill ratio, msub, rtol, ataol
-            if opt('KSMSolver').upper() == 'GMRES':
-                self.KSM = tacs.TACS.KSM(
-                    self.K, self.PC, opt('subSpaceSize'), opt('nRestarts'),
-                    opt('flexible'))
-            # TODO: Fix this
-            # elif opt('KSMSolver').upper() == 'GCROT':
-            #    self.KSM = tacs.TACS.GCROT(
-            #        self.K, self.PC, opt('subSpaceSize'), opt('subSpaceSize'),
-            #        opt('nRestarts'), opt('flexible'))
-            else:
-                raise Error("Unknown KSMSolver option. Valid options are "
-                            "'GMRES' or 'GCROT'")
-
-            self.KSM.setTolerances(self.getOption('L2ConvergenceRel'),
-                                   self.getOption('L2Convergence'))
-
-            if opt('useMonitor'):
-                self.KSM.setMonitor(tacs.TACS.KSMPrintStdout(
-                    opt('KSMSolver'), self.comm.rank, opt('monitorFrequency')))
-
-            self._variablesCreated = True
-
-    # ----------------------------------------------------------------------------
-    #                      Utility Functions
-    # ---------------------------------------------------------------------------
-    def pp(self, printStr):
-        """ Simple parallel print"""
-        if self.comm.rank == 0:
-            print(printStr)
-
-    def _info(self, message, maxLen=80, box=False):
-        """ Generic function for writing an info message. """
-
-        if self.rank == 0:
-            if not box:
-                i = 9
-                print('INFO: ', end="")
-                aux = message.split()
-                for word in aux:
-                    if len(word) + i > 120:
-                        print(' ')
-                        print(' ' * 6, end="")
-                        i = 0
-
-                    print(word, end=" ")
-                    i += len(word) + 1
-
-                print()
-            else:
-                print('+' + '-' * (maxLen - 2) + '+')
-                print('| INFO: ', end="")
-                i = 9
-                aux = message.split()
-                for word in aux:
-                    if len(word) + i > maxLen - 2:
-                        print(' ' * (80 - i) + '|')
-                        print('|', end="")
-                        i = 2
-                        print(word, end=" ")
-                        i += len(word) + 1
-                    else:
-                        print(word, end=" ")
-                        i += len(word) + 1
-
-                print(' ' * (maxLen - i) + '|')
-                print('+' + '-' * (maxLen - 2) + '+', )
-
-    # Misc Functions
-    def _flatten(self, l, ltypes=(list, tuple)):
-        ltype = type(l)
-        l = list(l)
-        i = 0
-        while i < len(l):
-            while isinstance(l[i], ltypes):
-                if not l[i]:
-                    l.pop(i)
-                    i -= 1
-                    break
-                else:
-                    l[i:i + 1] = l[i]
-            i += 1
-        return ltype(l)
-
-    def print_scientific_8(self, value):
-        """
-        Prints a value in 8-character scientific notation.
-        This is a sub-method and shouldnt typically be called
-
-        See Also
-        --------
-        print_float_8 : for a better method
-        """
-        python_value = '%8.11e' % value
-        (svalue, sExponent) = python_value.strip().split('e')
-        exponent = int(sExponent)  # removes 0s
-
-        sign = '-' if abs(value) < 0.01 else '+'
-
-        sExp2 = str(exponent).strip('-+')  # the exponent will be added later...
-        value2 = float(svalue)
-
-        lenSExp = len(sExp2) + 1  # the plus 1 is for the sign
-        leftover = 8 - lenSExp
-
-        if value < 0:
-            Format = "%%1.%sf" % (leftover - 3)
-        else:
-            Format = "%%1.%sf" % (leftover - 2)
-
-        svalue3 = Format % value2
-        svalue4 = svalue3.strip('0')
-        field = "%8s" % (svalue4 + sign + sExp2)
-        return field
-
-    def print_float_8(self, value):
-        """
-        Prints a float in nastran 8-character width syntax using the
-        highest precision possbile.
-        """
-        value = float(value)
-        if value == 0.0:
-            return '%8s' % '0.'
-        elif value > 0.:  # positive, not perfect...
-            if value < 5e-8:
-                field = self.print_scientific_8(value)
-                return field
-            elif value < 0.001:
-                field = self.print_scientific_8(value)
-                field2 = "%8.7f" % value  # small value
-                field2 = field2.strip('0 ')
-
-                field1 = field.replace('-', 'e-')
-
-                if field2 == '.':
-                    return self.print_scientific_8(value)
-                if len(field2) <= 8 and float(field1) == float(field2):
-                    field = field2
-                    field = field.strip(' 0')
-            elif value < 0.1:
-                field = "%8.7f" % value
-            elif value < 1.:
-                field = "%8.7f" % value  # same as before...
-            elif value < 10.:
-                field = "%8.6f" % value
-            elif value < 100.:
-                field = "%8.5f" % value
-            elif value < 1000.:
-                field = "%8.4f" % value
-            elif value < 10000.:
-                field = "%8.3f" % value
-            elif value < 100000.:
-                field = "%8.2f" % value
-            elif value < 1000000.:
-                field = "%8.1f" % value
-            else:  # big value
-                field = "%8.1f" % value
-                if field.index('.') < 8:
-                    field = '%8.1f' % round(value)
-                    field = field[0:8]
-                    assert '.' != field[0], field
-                else:
-                    field = self.print_scientific_8(value)
-                return field
-        else:
-            if value > -5e-7:
-                field = self.print_scientific_8(value)
-                return field
-            elif value > -0.01:  # -0.001
-                field = self.print_scientific_8(value)
-                field2 = "%8.6f" % value  # small value
-                field2 = field2.strip('0 ')
-
-                # get rid of the first minus sign, add it on afterwards
-                field1 = '-' + field.strip(' 0-').replace('-', 'e-')
-
-                if len(field2) <= 8 and float(field1) == float(field2):
-                    field = field2.rstrip(' 0')
-                    field = field.replace('-0.', '-.')
-
-            elif value > -0.1:
-                # -0.01 >x>-0.1...should be 5 (maybe scientific...)
-                field = "%8.6f" % value
-                field = field.replace('-0.', '-.')
-            elif value > -1.:
-                # -0.1  >x>-1.....should be 6, but the baseline 0 is kept...
-                field = "%8.6f" % value
-                field = field.replace('-0.', '-.')
-            elif value > -10.:
-                field = "%8.5f" % value  # -1    >x>-10
-            elif value > -100.:
-                field = "%8.4f" % value  # -10   >x>-100
-            elif value > -1000.:
-                field = "%8.3f" % value  # -100  >x>-1000
-            elif value > -10000.:
-                field = "%8.2f" % value  # -1000 >x>-10000
-            elif value > -100000.:
-                field = "%8.1f" % value  # -10000>x>-100000
-            else:
-                field = "%8.1f" % value
-                if field.index('.') < 8:
-                    field = '%7s.' % int(round(value, 0))
-                    assert '.' != field[0], field
-                else:
-                    field = self.print_scientific_8(value)
-                return field
-        field = field.strip(' 0')
-        field = '%8s' % field
-
-        assert len(field) == 8, ('value=|%s| field=|%s| is not 8 characters '
-                                 'long, its %s' % (value, field, len(field)))
-        return field
-
-
-class TACSLoadCase(object):
-    """
-    A container class for storing data related to a particular load case
-    """
-
-    def __init__(self):
-        self.F = None
-        self.u = None
-        self.auxElems = None
-        self.adjoints = {}
-        self.callCounter = -1
-
-
-class Error(Exception):
-    """
-    Format the error message in a box to make it clear this
-    was a expliclty raised exception.
-    """
-
-    def __init__(self, message):
-        msg = '\n+' + '-' * 78 + '+' + '\n' + '| pyTACS Error: '
-        i = 15
-        for word in message.split():
-            if len(word) + i + 1 > 78:  # Finish line and start new one
-                msg += ' ' * (78 - i) + '|\n| ' + word + ' '
-                i = 1 + len(word) + 1
-            else:
-                msg += word + ' '
-                i += len(word) + 1
-        msg += ' ' * (78 - i) + '|\n' + '+' + '-' * 78 + '+' + '\n'
-        print(msg)
-        Exception.__init__(self)
-
-
-class TACSWarning(object):
-    """
-    Format a warning message
-    """
-
-    def __init__(self, message, comm):
-        if comm.rank == 0:
-            msg = '\n+' + '-' * 78 + '+' + '\n' + '| pyTACS Warning: '
-            i = 17
-            for word in message.split():
-                if len(word) + i + 1 > 78:  # Finish line and start new one
-                    msg += ' ' * (78 - i) + '|\n| ' + word + ' '
-                    i = 1 + len(word) + 1
-                else:
-                    msg += word + ' '
-                    i += len(word) + 1
-            msg += ' ' * (78 - i) + '|\n' + '+' + '-' * 78 + '+' + '\n'
-            print(msg)

@@ -36,10 +36,10 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
             self.atol = 1e-4
             self.dh = 1e-6
 
-        # Instantiate FEA Solver
+        # Instantiate FEA Assembler
         struct_options = {}
 
-        fea_solver = pytacs.pyTACS(bdf_file, comm, options=struct_options)
+        fea_assembler = pytacs.pyTACS(bdf_file, comm, options=struct_options)
 
         def elem_call_back(dv_num, comp_id, comp_descript, elem_descripts, global_dvs, **kwargs):
             # Material properties
@@ -62,11 +62,11 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
             return elem, scale
 
         # Set up constitutive objects and elements
-        fea_solver.createTACSAssembler(elem_call_back)
+        fea_assembler.initialize(elem_call_back)
 
-        return fea_solver
+        return fea_assembler
 
-    def setup_tacs_vecs(self, fea_solver, dv_pert_vec, xpts_pert_vec):
+    def setup_tacs_vecs(self, fea_assembler, dv_pert_vec, xpts_pert_vec):
         """
         Setup user-defined vectors for analysis and fd/cs sensitivity verification
         """
@@ -74,40 +74,41 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
         dv_pert_vec[:] = 1.0
 
         # Define perturbation array that moves all nodes on plate
-        xpts = fea_solver.getCoordinates()
+        xpts = fea_assembler.getOrigNodes()
         xpts_pert_vec[:] = xpts
 
         return
 
-    def setup_funcs(self, fea_solver):
+    def setup_funcs(self, fea_assembler, problems):
         """
         Create a list of functions to be tested and their reference values for the problem
         """
         # Add Functions
-        fea_solver.addFunction('mass', functions.StructuralMass)
-        fea_solver.addFunction('ks_vmfailure', functions.KSFailure,
-                               ksWeight=ksweight)
-        fea_solver.addFunction('compliance', functions.Compliance)
+        for problem in problems:
+            problem.addFunction('mass', functions.StructuralMass)
+            problem.addFunction('ks_vmfailure', functions.KSFailure,
+                                   ksWeight=ksweight)
+            problem.addFunction('compliance', functions.Compliance)
         func_list = ['mass', 'ks_vmfailure', 'compliance']
         return func_list, FUNC_REFS
 
-    def setup_tacs_problems(self, fea_solver):
+    def setup_tacs_problems(self, fea_assembler):
         """
         Setup pytacs object for problems we will be testing.
         """
         tacs_probs = []
 
         # Add point force to node 81 (center of plate)
-        sp = problems.StaticProblem(name='point_load')
+        sp = fea_assembler.createStaticProblem(name='point_load')
         F = np.array([0.0, 0.0, 1e4, 0.0, 0.0, 0.0])
-        fea_solver.addLoadToNodes(sp, 81, F, nastranOrdering=True)
+        sp.addLoadToNodes(81, F, nastranOrdering=True)
         tacs_probs.append(sp)
 
         # Add pressure to entire plate
-        sp = problems.StaticProblem(name='pressure')
+        sp = fea_assembler.createStaticProblem(name='pressure')
         P = 100e3  # Pa
-        compIDs = fea_solver.selectCompIDs(include='PLATE')
-        fea_solver.addPressureToComponents(sp, compIDs, P)
+        compIDs = fea_assembler.selectCompIDs(include='PLATE')
+        sp.addPressureToComponents(compIDs, P)
         tacs_probs.append(sp)
 
         return tacs_probs
