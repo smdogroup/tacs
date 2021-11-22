@@ -1168,10 +1168,14 @@ class pyTACS(BaseUI):
         # Create actual viewer
         if self.getOption('outputElement') is not None:
             elementType = self.getOption('outputElement')
-        elif self.varsPerNode == 6:
+        elif self.varsPerNode == 6 or self.varsPerNode == 7:
             elementType = tacs.TACS.BEAM_OR_SHELL_ELEMENT
         elif self.varsPerNode == 3:
             elementType = tacs.TACS.SOLID_ELEMENT
+        else:
+            self.TACSWarning("'outputElement' not specified in options. "
+                             "No elements will be written out in f5 file.")
+            elementType = tacs.TACS.ELEMENT_NONE
 
         self.outputViewer = tacs.TACS.ToFH5(
             self.assembler, elementType, write_flag)
