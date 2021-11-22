@@ -44,12 +44,12 @@ class PyTACSTestCase:
                 self.comm = MPI.COMM_WORLD
 
             # Setup user-specified assembler for this test
-            self.fea_solver = self.setup_pytacs(self.comm, self.dtype)
+            self.fea_assembler = self.setup_pytacs(self.comm, self.dtype)
 
             # Get the design variable values
-            self.dv0 = self.fea_solver.getDesignVars()
+            self.dv0 = self.fea_assembler.getOrigDesignVars()
             # Initial nodal location vector
-            self.xpts0 = self.fea_solver.getCoordinates()
+            self.xpts0 = self.fea_assembler.getOrigNodes()
             # Create temporary dv vec for doing fd/cs
             self.dv1 = np.zeros_like(self.dv0, dtype=self.dtype)
             self.dv_pert = np.zeros_like(self.dv0, dtype=self.dtype)
@@ -57,11 +57,11 @@ class PyTACSTestCase:
             self.xpts_pert = np.zeros_like(self.xpts0, dtype=self.dtype)
 
             # Setup tacs problems to be tested
-            self.tacs_probs = self.setup_tacs_problems(self.fea_solver)
+            self.tacs_probs = self.setup_tacs_problems(self.fea_assembler)
             # Populate fd/cs perturbation vectors based on user-defined method
-            self.setup_tacs_vecs(self.fea_solver, self.dv_pert, self.xpts_pert)
+            self.setup_tacs_vecs(self.fea_assembler, self.dv_pert, self.xpts_pert)
             # Create the function list
-            self.func_list, self.func_ref = self.setup_funcs(self.fea_solver)
+            self.func_list, self.func_ref = self.setup_funcs(self.fea_assembler, self.tacs_probs)
 
         def setup_pytacs(self, comm, dtype):
             """
@@ -71,7 +71,7 @@ class PyTACSTestCase:
             raise NotImplementedError("Child class must implement a 'setup_pytacs' method")
             return
 
-        def setup_tacs_problems(self, fea_solver):
+        def setup_tacs_problems(self, fea_assembler):
             """
             Setup tacs problems objects that describe different problem types we will be testing.
             Must be defined in child class that inherits from this class.
@@ -79,7 +79,7 @@ class PyTACSTestCase:
             raise NotImplementedError("Child class must implement a 'setup_tacs_problems' method")
             return
 
-        def setup_tacs_vecs(self, fea_solver, dv_pert_vec, xpts_pert_vec):
+        def setup_tacs_vecs(self, fea_assembler, dv_pert_vec, xpts_pert_vec):
             """
             Setup user-defined vectors for analysis and fd/cs sensitivity verification.
             Must be defined in child class that inherits from this class.
@@ -87,7 +87,7 @@ class PyTACSTestCase:
             raise NotImplementedError("Child class must implement a 'setup_tacs_vecs' method")
             return
 
-        def setup_funcs(self, fea_solver):
+        def setup_funcs(self, fea_assembler, problems):
             """
             Create a list of functions to be tested and their reference values for the problem.
             Must be defined in child class that inherits from this class.
@@ -181,17 +181,17 @@ class PyTACSTestCase:
             if xpts is None:
                 xpts = self.xpts0
 
-            # Set the design variables
-            self.fea_solver.setDesignVars(dv)
-
-            # Set node locations
-            self.fea_solver.setCoordinates(xpts)
-
             # Solve each problem and evaluate functions
             funcs = {}
             for prob in self.tacs_probs:
-                self.fea_solver(prob)
-                self.fea_solver.evalFunctions(prob, funcs, evalFuncs=self.func_list)
+                # Set the design variables
+                prob.setDesignVars(dv)
+                # Set node locations
+                prob.setNodes(xpts)
+                # Solve problem
+                prob.solve()
+                # Evaluate functions
+                prob.evalFunctions(funcs)
 
             return funcs
 
@@ -205,19 +205,19 @@ class PyTACSTestCase:
             if xpts is None:
                 xpts = self.xpts0
 
-            # Set the design variables
-            self.fea_solver.setDesignVars(dv)
-
-            # Set node locations
-            self.fea_solver.setCoordinates(xpts)
-
             # Solve each problem and evaluate function sens
             funcs_sens = {}
             funcs = {}
             for prob in self.tacs_probs:
-                self.fea_solver(prob)
-                self.fea_solver.evalFunctions(prob, funcs, evalFuncs=self.func_list)
-                self.fea_solver.evalFunctionsSens(prob, funcs_sens, evalFuncs=self.func_list)
+                # Set the design variables
+                prob.setDesignVars(dv)
+                # Set node locations
+                prob.setNodes(xpts)
+                # Solve problem
+                prob.solve()
+                # Evaluate functions
+                prob.evalFunctions(funcs)
+                prob.evalFunctionsSens(funcs_sens)
 
             return funcs_sens
 

@@ -193,10 +193,12 @@ if tacs_comm.rank == 0:
     print('Result:  ', result)
     print('Rel err: ', (result - fd[0])/result)
 
-# Output for visualization 
-flag = (TACS.OUTPUT_NODES |
+# Output for visualization
+flag = (TACS.OUTPUT_CONNECTIVITY |
+        TACS.OUTPUT_NODES |
         TACS.OUTPUT_DISPLACEMENTS |
         TACS.OUTPUT_STRAINS |
+        TACS.OUTPUT_STRESSES |
         TACS.OUTPUT_EXTRAS)
 f5 = TACS.ToFH5(tacs, TACS.BEAM_OR_SHELL_ELEMENT, flag)
 f5.writeToFile('ucrm.f5')

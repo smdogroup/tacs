@@ -22,20 +22,15 @@ from tacs import functions, pyTACS
 
 comm = MPI.COMM_WORLD
 
-# Instantiate FEASolver
+# Instantiate FEAAssembler
 structOptions = {}
 
 bdfFile = os.path.join(os.path.dirname(__file__), 'slot.bdf')
 # Load BDF file
-FEASolver = pyTACS(bdfFile, comm, options=structOptions)
+FEAAssembler = pyTACS(bdfFile, comm, options=structOptions)
 # Set up TACS Assembler
 # Don't need a elemCallBack since property info exists in bdf
-FEASolver.createTACSAssembler()
-
-# Add Functions
-FEASolver.addFunction('mass', functions.StructuralMass)
-FEASolver.addFunction('ks_vmfailure', functions.KSFailure, safetyFactor=1.5,
-                      ksWeight=100.0)
+FEAAssembler.initialize()
 
 # ==============================================================================
 # Setup static problem
@@ -43,24 +38,31 @@ FEASolver.addFunction('ks_vmfailure', functions.KSFailure, safetyFactor=1.5,
 # Static problem
 evalFuncs = ['mass', 'ks_vmfailure']
 # Read in forces from BDF and create tacs static problems
-SPs = FEASolver.createTACSProbsFromBDF()
+SPs = FEAAssembler.createTACSProbsFromBDF()
+
+# Set up eval functions
+for spID in SPs:
+    SPs[spID].addFunction('mass', functions.StructuralMass)
+    SPs[spID].addFunction('ks_vmfailure', functions.KSFailure, safetyFactor=1.5,
+                          ksWeight=100.0)
 
 # Solve state
 for spID in SPs:
-    FEASolver(SPs[spID])
+    SPs[spID].solve()
 
 # Evaluate functions
 funcs = {}
 for spID in SPs:
-    FEASolver.evalFunctions(SPs[spID], funcs, evalFuncs=evalFuncs)
+    SPs[spID].evalFunctions(funcs, evalFuncs=evalFuncs)
 
 if comm.rank == 0:
     pprint(funcs)
 
+# Evaluate function sensitivities
 funcsSens = {}
 for spID in SPs:
-    FEASolver.evalFunctionsSens(SPs[spID], funcsSens, evalFuncs=evalFuncs)
+    SPs[spID].evalFunctionsSens(funcsSens, evalFuncs=evalFuncs)
 if comm.rank == 0:
     pprint(funcsSens)
 
-FEASolver.writeSolution(outputDir=os.path.dirname(__file__))
+SPs[spID].writeSolution(outputDir=os.path.dirname(__file__))
