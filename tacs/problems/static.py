@@ -503,7 +503,7 @@ class StaticProblem(TACSProblem):
                 self.rhs.axpy(1.0, Fext)
             elif isinstance(Fext, np.ndarray):
                 rhsArray = self.rhs.getArray()
-                rhsArray[:] += Fext[:]
+                rhsArray[:] = rhsArray[:] + Fext[:]
         # Zero out bc terms in rhs
         self.assembler.applyBCs(self.rhs)
         # Add the -F
@@ -987,7 +987,7 @@ class StaticProblem(TACSProblem):
                 self.rhs.axpy(1.0, Fext)
             elif isinstance(Fext, np.ndarray):
                 rhsArray = self.rhs.getArray()
-                rhsArray[:] += Fext[:]
+                rhsArray[:] = rhsArray[:] + Fext[:]
         # Zero out bc terms in rhs
         self.assembler.applyBCs(self.rhs)
         # Add the -F
@@ -1021,25 +1021,25 @@ class StaticProblem(TACSProblem):
         elif isinstance(phi, np.ndarray):
             self.phi.getArray()[:] = phi
 
-        if isinstance(prod, tacs.TACS.Vec):
-            self.res.copyValues(prod)
-        elif isinstance(prod, np.ndarray):
-            self.res.getArray()[:] = prod
-
-        # Zero out bc terms in input
+        # Tacs doesn't actually transpose the matrix here so keep track of
+        # RHS entries that TACS zeros out for BCs.
+        bc_terms = self.update
+        bc_terms.copyValues(self.phi)
         self.assembler.applyBCs(self.phi)
+        bc_terms.axpy(-1.0, self.phi)
 
         # Set problem vars to assembler
         self._updateAssemblerVars()
 
-        self.assembler.addJacobianVecProduct(scale, self.alpha, self.beta, self.gamma,
-                                             self.phi, self.res, tacs.TACS.TRANSPOSE)
+        self.K.mult(self.phi, self.res)
+        # Add bc terms back in
+        self.res.axpy(1.0, bc_terms)
 
         # Output residual
         if isinstance(prod, tacs.TACS.Vec):
-            prod.copyValues(self.res)
+            prod.axpy(scale, self.res)
         else:
-            prod[:] = self.res.getArray()
+            prod[:] = prod + scale * self.res.getArray()
 
     def zeroVariables(self):
         """
@@ -1079,19 +1079,18 @@ class StaticProblem(TACSProblem):
         elif isinstance(rhs, np.ndarray):
             self.adjRHS.getArray()[:] = rhs
 
-        # First compute the residual
-        self.res.zeroEntries()
-        self.assembler.addJacobianVecProduct(1.0, self.alpha, self.beta, self.gamma,
-                                             self.phi, self.res, tacs.TACS.TRANSPOSE)
-        self.res.axpy(-1.0, self.adjRHS)  # Add the -RHS
+        # Tacs doesn't actually transpose the matrix here so keep track of
+        # RHS entries that TACS zeros out for BCs.
+        bc_terms = self.update
+        bc_terms.copyValues(self.adjRHS)
+        self.assembler.applyBCs(self.adjRHS)
+        bc_terms.axpy(-1.0, self.adjRHS)
 
         # Solve Linear System
-        zeroGuess = 0
-        self.update.zeroEntries()
-        self.KSM.solve(self.res, self.update, zeroGuess)
-
-        # Update the adjoint vector with the (damped) update
-        self.phi.axpy(-1.0, self.update)
+        self.KSM.solve(self.adjRHS, self.phi)
+        self.assembler.applyBCs(self.phi)
+        # Add bc terms back in
+        self.phi.axpy(1.0, bc_terms)
 
         # Copy output values back to user vectors
         if isinstance(phi, tacs.TACS.Vec):
@@ -1133,8 +1132,6 @@ class StaticProblem(TACSProblem):
         """
         # Copy array values
         self.u_array[:] = states[:]
-        # Zero out bc terms
-        self.assembler.setBCs(self.u)
         # Set states to assembler
         self.assembler.setVariables(self.u)
 
