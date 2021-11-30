@@ -143,11 +143,11 @@ class TACSProblem(BaseUI):
 
     def setNodes(self, Xpts):
         """
-        Set the mesh coordinates of this problem.
+        Set the mesh coordinates of the structure.
 
-        Returns
-        -------
-        coords : array
+        Parameters
+        ----------
+        coords : ndarray
             Structural coordinate in array of size (N * 3) where N is
             the number of structural nodes on this processor.
         """

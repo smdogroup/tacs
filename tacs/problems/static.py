@@ -232,10 +232,10 @@ class StaticProblem(TACSProblem):
         """
         Set the mesh coordinates of the structure.
 
-        Returns
-        -------
-        coords : array
-            Structural coordinate in array of size (N, 3) where N is
+        Parameters
+        ----------
+        coords : ndarray
+            Structural coordinate in array of size (N * 3) where N is
             the number of structural nodes on this processor.
         """
         super().setNodes(coords)
