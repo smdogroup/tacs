@@ -533,6 +533,7 @@ class TACSProblem(BaseUI):
             if len(Fapplied) != Frhs.getSize():
                 raise self.TACSError("User-supplied distributed vector not correct length, "
                                      "expected size of {} on processor {}, but got length {}.".format(Frhs.getSize(),
+                                                                                                      self.comm.rank,
                                                                                                       len(Fapplied)))
             rhsArray = Frhs.getArray()
             rhsArray[:] = rhsArray[:] + Fapplied[:]
