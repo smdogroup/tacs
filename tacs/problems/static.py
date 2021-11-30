@@ -333,6 +333,27 @@ class StaticProblem(TACSProblem):
 
         self._addLoadToNodes(self.F, nodeIDs, F, nastranOrdering)
 
+    def addLoadToRHS(self, Fapplied):
+        """"
+        The function is used to add a *FIXED TOTAL LOAD* directly to the
+        right hand side vector given the equation below:
+
+            K*u = f
+
+        Where:
+            K : Stiffness matrix for problem
+            u : State variables for problem
+            f : Right-hand side vector to add loads to
+
+        Parameters
+        ----------
+
+        Fapplied : ndarray or BVec
+            Distributed array containing loads to applied to RHS of the problem.
+
+        """
+        self._addLoadToRHS(self.F, Fapplied)
+
     def addTractionToComponents(self, compIDs, tractions,
                                 faceIndex=0):
         """
