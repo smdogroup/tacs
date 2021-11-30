@@ -1023,17 +1023,17 @@ class StaticProblem(TACSProblem):
 
         # Tacs doesn't actually transpose the matrix here so keep track of
         # RHS entries that TACS zeros out for BCs.
-        bc_terms = self.update
-        bc_terms.copyValues(self.phi)
+        bcTerms = self.update
+        bcTerms.copyValues(self.phi)
         self.assembler.applyBCs(self.phi)
-        bc_terms.axpy(-1.0, self.phi)
+        bcTerms.axpy(-1.0, self.phi)
 
         # Set problem vars to assembler
         self._updateAssemblerVars()
 
         self.K.mult(self.phi, self.res)
         # Add bc terms back in
-        self.res.axpy(1.0, bc_terms)
+        self.res.axpy(1.0, bcTerms)
 
         # Output residual
         if isinstance(prod, tacs.TACS.Vec):
@@ -1081,16 +1081,16 @@ class StaticProblem(TACSProblem):
 
         # Tacs doesn't actually transpose the matrix here so keep track of
         # RHS entries that TACS zeros out for BCs.
-        bc_terms = self.update
-        bc_terms.copyValues(self.adjRHS)
+        bcTerms = self.update
+        bcTerms.copyValues(self.adjRHS)
         self.assembler.applyBCs(self.adjRHS)
-        bc_terms.axpy(-1.0, self.adjRHS)
+        bcTerms.axpy(-1.0, self.adjRHS)
 
         # Solve Linear System
         self.KSM.solve(self.adjRHS, self.phi)
         self.assembler.applyBCs(self.phi)
         # Add bc terms back in
-        self.phi.axpy(1.0, bc_terms)
+        self.phi.axpy(1.0, bcTerms)
 
         # Copy output values back to user vectors
         if isinstance(phi, tacs.TACS.Vec):
@@ -1110,16 +1110,16 @@ class StaticProblem(TACSProblem):
 
         Returns
         ----------
-        states : TACS BVec
+        states : numpy array
             current state vector
         """
+            
+        if isinstance(states, tacs.TACS.Vec):
+            states.copyValues(self.u)
+        elif isinstance(states, np.ndarray):
+            states[:] = self.u_array[:]
 
-        if states is None:
-            states = self.u.getArray().copy()
-        else:
-            states[:] = self.u.getArray()
-
-        return states
+        return self.u_array.copy()
 
     def setVariables(self, states):
         """
@@ -1131,7 +1131,12 @@ class StaticProblem(TACSProblem):
             Values to set. Must be the size of getNumVariables()
         """
         # Copy array values
-        self.u_array[:] = states[:]
+        if isinstance(states, tacs.TACS.Vec):
+            self.u.copyValues(states)
+        elif isinstance(states, np.ndarray):
+            self.u_array[:] = states[:]
+        # Apply boundary conditions
+        self.assembler.applyBCs(self.u)
         # Set states to assembler
         self.assembler.setVariables(self.u)
 
