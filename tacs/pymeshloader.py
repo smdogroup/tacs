@@ -21,7 +21,7 @@ class pyMeshLoader(BaseUI):
         self.objectName = 'pyMeshLoader'
         # MPI communicator
         self.comm = comm
-        # TACS scalara data type (float or complex)
+        # TACS scalar data type (float or complex)
         self.dtype = dtype
         # Debug printing flag
         self.printDebug = printDebug
@@ -325,8 +325,8 @@ class pyMeshLoader(BaseUI):
         tacsLocalIDs = []
         for gID in globalIDs:
             # element was found on this proc, get local ID num
-            if gID in self.globalToLocalNodeIDDict:
-                lID = self.globalToLocalNodeIDDict[gID]
+            if gID in self.globalToLocalElementIDDict:
+                lID = self.globalToLocalElementIDDict[gID]
             # element was not found on this proc, return -1
             else:
                 lID = -1
@@ -375,14 +375,14 @@ class pyMeshLoader(BaseUI):
         localElemIDs = self.creator.getElementIdNums(objIDs)
         return list(localElemIDs)
 
-    def getGlobalToLocalNodeIDDict(self):
+    def getGlobalToLocalElementIDDict(self):
         """
-        Creates a dictionary who's keys correspond to the global ID of each node (tacs ordering)
-        owned by this processor and whose values correspond to the local node index for this proc.
-        The dictionary can be used to convert from a global node ID to local using the assignment below*:
-        localNodeID = globalToLocalNodeIDDict[globalNodeID]
+        Creates a dictionary who's keys correspond to the global ID of each element (tacs ordering)
+        owned by this processor and whose values correspond to the local element index for this proc.
+        The dictionary can be used to convert from a global element ID to local using the assignment below*:
+        localElementID = globalToLocalElementIDDict[globalElementID]
 
-        * assuming globalNodeID is owned on this processor
+        * assuming globalElementID is owned on this processor
         """
         # Do sorting on root proc
         if self.comm.rank == 0:
@@ -399,9 +399,9 @@ class pyMeshLoader(BaseUI):
         # Scatter the list from the root so each proc knows what element ID it owns
         ownedElementIDs = self.comm.scatter(allOwnedElementIDs, root=0)
         # Create dictionary that gives the corresponding local ID for each global ID owned by this proc
-        globalToLocalNodeIDDict = {gID: lID for lID, gID in enumerate(ownedElementIDs)}
+        globalToLocalElementIDDict = {gID: lID for lID, gID in enumerate(ownedElementIDs)}
 
-        return globalToLocalNodeIDDict
+        return globalToLocalElementIDDict
 
     def setElementObject(self, componentID, objectIndex, elemObject):
         pointer = self.elemObjectNumByComp[componentID][objectIndex]
@@ -504,7 +504,7 @@ class pyMeshLoader(BaseUI):
 
         self.assembler = self.creator.createTACS()
 
-        self.globalToLocalNodeIDDict = self.getGlobalToLocalNodeIDDict()
+        self.globalToLocalElementIDDict = self.getGlobalToLocalElementIDDict()
 
         return self.assembler
 
