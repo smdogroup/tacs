@@ -468,9 +468,18 @@ cdef class TimoshenkoConstitutive(Constitutive):
         self.ptr.incref()
 
 cdef class GeneralMassConstitutive(Constitutive):
-    def __cinit__(self, np.ndarray[TacsScalar, ndim=1, mode='c'] M):
-        assert len(M) == 21
-        self.cptr = new TACSGeneralMassConstitutive(<TacsScalar*>M.data)
+    def __cinit__(self, **kwargs):
+        cdef TacsScalar M[21]
+        if 'M' in kwargs:
+            _M = kwargs['M']
+            assert isinstance(_M, list) or isinstance(_M, np.ndarray)
+            assert len(_M) == 21
+            for i in range(21):
+                M[i] = _M[i]
+        else:
+            for i in range(21):
+                M[i] = 0.0
+        self.cptr = new TACSGeneralMassConstitutive(M)
 
         self.ptr = self.cptr
         self.ptr.incref()
