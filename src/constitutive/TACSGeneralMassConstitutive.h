@@ -30,7 +30,7 @@ class TACSGeneralMassConstitutive : public TACSConstitutive {
  public:
   static const int NUM_STRESSES = 0;
 
-  TACSGeneralMassConstitutive( TacsScalar _M[] );
+  TACSGeneralMassConstitutive( const TacsScalar _M[] );
 
   TACSGeneralMassConstitutive();
 

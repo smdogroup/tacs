@@ -27,7 +27,7 @@ const char* TACSGeneralMassConstitutive::getObjectName(){
 /*
   GeneralMassConstitutive member function definitions
 */
-TACSGeneralMassConstitutive::TACSGeneralMassConstitutive( TacsScalar _M[] ){
+TACSGeneralMassConstitutive::TACSGeneralMassConstitutive( const TacsScalar _M[] ){
   memcpy(M, _M, 21*sizeof(TacsScalar));
 }
 

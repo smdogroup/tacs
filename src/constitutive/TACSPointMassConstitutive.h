@@ -29,8 +29,8 @@
 class TACSPointMassConstitutive : public TACSGeneralMassConstitutive {
  public:
 
-  TACSPointMassConstitutive( TacsScalar m, TacsScalar I11=0.0, TacsScalar I12=0.0, TacsScalar I13=0.0,
-                             TacsScalar I22=0.0, TacsScalar I23=0.0, TacsScalar I33=0.0 );
+  TACSPointMassConstitutive( TacsScalar m, TacsScalar I11=0.0, TacsScalar I22=0.0, TacsScalar I33=0.0,
+                             TacsScalar I12=0.0, TacsScalar I13=0.0, TacsScalar I23=0.0 );
 
   // Extra info about the constitutive class
   const char *getObjectName();

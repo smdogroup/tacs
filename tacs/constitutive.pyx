@@ -467,6 +467,44 @@ cdef class TimoshenkoConstitutive(Constitutive):
         self.ptr = self.cptr
         self.ptr.incref()
 
+cdef class GeneralMassConstitutive(Constitutive):
+    def __cinit__(self, np.ndarray[TacsScalar, ndim=1, mode='c'] M):
+        assert len(M) == 21
+        self.cptr = new TACSGeneralMassConstitutive(<TacsScalar*>M.data)
+
+        self.ptr = self.cptr
+        self.ptr.incref()
+
+cdef class PointMassConstitutive(GeneralMassConstitutive):
+    def __cinit__(self, **kwargs):
+        cdef TacsScalar m = 0.0
+        cdef TacsScalar I11 = 0.0
+        cdef TacsScalar I22 = 0.0
+        cdef TacsScalar I33 = 0.0
+        cdef TacsScalar I12 = 0.0
+        cdef TacsScalar I13 = 0.0
+        cdef TacsScalar I23 = 0.0
+
+        if 'm' in kwargs:
+            m = kwargs['m']
+        if 'I11' in kwargs:
+            I11 = kwargs['I11']
+        if 'I22' in kwargs:
+            I22 = kwargs['I22']
+        if 'I33' in kwargs:
+            I33 = kwargs['I33']
+        if 'I12' in kwargs:
+            I12 = kwargs['I12']
+        if 'I13' in kwargs:
+            I13 = kwargs['I13']
+        if 'I23' in kwargs:
+            I23 = kwargs['I23']
+
+        self.cptr = new TACSPointMassConstitutive(m, I11, I22, I33, I12, I13, I23)
+
+        self.ptr = self.cptr
+        self.ptr.incref()
+
 def TestConstitutive(Constitutive con, int elemIndex=0, double dh=1e-6,
                      int test_print_level=2, double atol=1e-30,
                      double rtol=1e-5):
