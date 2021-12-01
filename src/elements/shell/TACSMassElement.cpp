@@ -39,6 +39,23 @@ enum ElementType TACSMassElement::getElementType(){ return TACS_MASS_ELEMENT; }
 */
 const char * TACSMassElement::elemName = "TACSMassElement";
 
+void TACSMassElement::computeEnergies( int elemIndex,
+                                       double time,
+                                       const TacsScalar Xpts[],
+                                       const TacsScalar vars[],
+                                       const TacsScalar dvars[],
+                                       TacsScalar *Te,
+                                       TacsScalar *Pe ){
+  *Pe = 0.0;
+  *Te = 0.0;
+  TacsScalar f[NUM_DISPS];
+  double pt[3] = {0.0, 0.0, 0.0};
+  con->evalInertia(elemIndex, pt, Xpts, dvars, f);
+  for (int i = 0; i < NUM_DISPS; i++){
+    *Te += 0.5 * dvars[i] * f[i];
+  }
+}
+
 /*
   Assemble the element residual associated with the given design
   variables and elements.
@@ -50,7 +67,7 @@ void TACSMassElement::addResidual( int elemIndex, double time,
                                    const TacsScalar ddvars[],
                                    TacsScalar res[] ){
 
-  TacsScalar f[6];
+  TacsScalar f[NUM_DISPS];
   double pt[3] = {0.0, 0.0, 0.0};
   con->evalInertia(elemIndex, pt, Xpts, ddvars, f);
   for (int i = 0; i < NUM_DISPS; i++){
@@ -74,13 +91,14 @@ void TACSMassElement::addJacobian( int elemIndex, double time,
                             TacsScalar J[] ){
   double pt[3] = {0.0, 0.0, 0.0};
   for (int j = 0; j < NUM_DISPS; j++){
-    TacsScalar N[6], f[6];
+    TacsScalar N[NUM_DISPS], f[NUM_DISPS];
     // Shape functions
     memset(N, 0, 6*sizeof(TacsScalar));
     N[j] = 1.0;
     con->evalInertia(elemIndex, pt, Xpts, N, f);
     for (int i = 0; i < NUM_DISPS; i++){
       J[j + i*NUM_VARIABLES] += gamma * f[i];
+      res[j] += ddvars[j] * f[i];
     }
   }
 }

@@ -11,7 +11,7 @@ functionality.
 # Imports
 # =============================================================================
 import numpy as np
-import tacs.TACS, tacs.elements
+import tacs.TACS, tacs.elements, tacs.constitutive
 from pyNastran.bdf.bdf import read_bdf
 from .utilities import BaseUI
 
@@ -431,6 +431,10 @@ class pyMeshLoader(BaseUI):
             else:
                 raise NotImplementedError("Rigid element of type '{}' is not supported".format(rbe.type))
 
+        # Append point mass elements to element list, these are not setup by the user
+        for massInfo in self.bdfInfo.masses.values():
+            self._addTACSMassElement(massInfo, varsPerNode)
+
         # Setup element connectivity and boundary condition info on root processor
         if self.comm.rank == 0:
             # Set connectivity for all elements
@@ -561,7 +565,7 @@ class pyMeshLoader(BaseUI):
         self.elemConnectivity.append(self.idMap(conn, self.nastranToTACSNodeIDDict))
         self.elemConnectivityPointer.append(self.elemConnectivityPointer[-1] + nTotalNodes)
         rbeObj = tacs.elements.RBE2(nTotalNodes, np.array(depConstrainedDOFs, dtype=np.intc))
-        self.elemObjectNumByElem.append(self.elemObjectNumByElem[-1] + 1)
+        self.elemObjectNumByElem.append(len(self.elemObjects))
         self.elemObjects.append(rbeObj)
         return
 
@@ -602,8 +606,44 @@ class pyMeshLoader(BaseUI):
                                     np.array(depConstrainedDOFs, dtype=np.intc),
                                     np.array(indepWeights),
                                     np.array(indepConstrainedDOFs, dtype=np.intc))
+        self.elemObjectNumByElem.append(len(self.elemObjects))
         self.elemObjects.append(rbeObj)
-        self.elemObjectNumByElem.append(self.elemObjectNumByElem[-1] + 1)
+        return
+
+    def _addTACSMassElement(self, massInfo, varsPerNode):
+        """
+        Method to automatically set up TACS mass elements from bdf file for user.
+        User should *NOT* set these up in their elemCallBack function.
+        """
+        if massInfo.type == 'CONM2':
+            m = massInfo.mass
+            [I11, I12, I22, I13, I23, I33] = massInfo.I
+            con = tacs.constitutive.PointMassConstitutive(m=m, I11=I11, I22=I22, I33=I33,
+                                                          I12=I12, I13=I13, I23=I23)
+        elif massInfo.type == 'CONM1':
+            M = np.zeros(21)
+            M[0:6] = massInfo.mass_matrix[0:, 0]
+            M[6:11] = massInfo.mass_matrix[1:, 1]
+            M[11:15] = massInfo.mass_matrix[2:, 2]
+            M[15:18] = massInfo.mass_matrix[3:, 3]
+            M[18:20] = massInfo.mass_matrix[4:, 4]
+            M[20] = massInfo.mass_matrix[5, 5]
+            # off-diagonal moment of inertia terms have to be negated, since they aren't in nastran convention
+            M[16] *= -1.0
+            M[17] *= -1.0
+            M[19] *= -1.0
+            con = tacs.constitutive.GeneralMassConstitutive(M=M)
+        else:
+            raise NotImplementedError("Mass element of type '{}' is not supported".format(massInfo.type))
+
+        # Append point mass information to the end of the element lists
+        conn = [massInfo.node_ids[0]]
+        self.elemConnectivity.append(self.idMap(conn, self.nastranToTACSNodeIDDict))
+        self.elemConnectivityPointer.append(self.elemConnectivityPointer[-1] + 1)
+        # Create tacs object for mass element
+        massObj = tacs.elements.MassElement(con)
+        self.elemObjectNumByElem.append(len(self.elemObjects))
+        self.elemObjects.append(massObj)
         return
 
     def isDOFInString(self, dofString, numDOFs):

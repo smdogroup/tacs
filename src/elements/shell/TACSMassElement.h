@@ -19,7 +19,7 @@ class TACSMassElement : public TACSElement {
   int getDesignVarsPerNode(){ return 0; }
   int getNumQuadraturePoints(){ return 1; }
   double getQuadratureWeight( int n ){ return 1.0; }
-  double getQuadraturePoint( int n, double pt[] ){ return 0.0; }
+  double getQuadraturePoint( int n, double pt[] ){ return 1.0; }
   int getNumElementFaces(){ return 0; }
   int getNumFaceQuadraturePoints( int face ){ return 0; }
   double getFaceQuadraturePoint( int face, int n, double pt[],
@@ -27,6 +27,13 @@ class TACSMassElement : public TACSElement {
 
   // Functions for analysis
   // ----------------------
+  void computeEnergies( int elemIndex,
+                        double time,
+                        const TacsScalar Xpts[],
+                        const TacsScalar vars[],
+                        const TacsScalar dvars[],
+                        TacsScalar *Te,
+                        TacsScalar *Pe );
   void addResidual( int elemIndex, double time,
                     const TacsScalar Xpts[],
                     const TacsScalar vars[],
