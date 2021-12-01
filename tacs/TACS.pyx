@@ -400,6 +400,13 @@ cdef class Constitutive:
         if self.ptr:
             self.ptr.decref()
 
+    def getObjectName(self):
+        cdef bytes py_string
+        if self.ptr:
+            py_string = self.ptr.getObjectName()
+            return convert_bytes_to_str(py_string)
+        return None
+
     def getNumStresses(self):
         if self.ptr:
             return self.ptr.getNumStresses()
