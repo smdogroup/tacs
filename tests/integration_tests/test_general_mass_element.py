@@ -30,7 +30,7 @@ f = np.ones(6)
 ksweight = 10.0
 
 class ProblemTest(PyTACSTestCase.PyTACSTest):
-    N_PROCS = 2  # this is how many MPI processes to use for this TestCase.
+    N_PROCS = 1  # this is how many MPI processes to use for this TestCase.
     def setup_pytacs(self, comm, dtype):
         """
         Setup mesh and pytacs object for problem we will be testing.
