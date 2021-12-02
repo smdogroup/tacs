@@ -103,6 +103,27 @@ void TACSMassElement::addJacobian( int elemIndex, double time,
   }
 }
 
+void TACSMassElement::getMatType( ElementMatrixType matType,
+                                  int elemIndex, double time,
+                                  const TacsScalar Xpts[],
+                                  const TacsScalar vars[],
+                                  TacsScalar mat[] ){
+  memset(mat, 0, NUM_VARIABLES*NUM_VARIABLES*sizeof(TacsScalar));
+  if (matType == TACS_MASS_MATRIX){
+    double pt[3] = {0.0, 0.0, 0.0};
+    for (int j = 0; j < NUM_DISPS; j++){
+      TacsScalar N[NUM_DISPS], f[NUM_DISPS];
+      // Shape functions
+      memset(N, 0, 6*sizeof(TacsScalar));
+      N[j] = 1.0;
+      con->evalInertia(elemIndex, pt, Xpts, N, f);
+      for (int i = 0; i < NUM_DISPS; i++){
+        mat[j + i*NUM_VARIABLES] = f[i];
+      }
+    }
+  }
+}
+
 int TACSMassElement::evalPointQuantity( int elemIndex, int quantityType,
                                         double time,
                                         int n, double pt[],

@@ -51,6 +51,12 @@ class TACSMassElement : public TACSElement {
                     TacsScalar res[],
                     TacsScalar mat[] );
 
+  void getMatType( ElementMatrixType matType,
+                   int elemIndex, double time,
+                   const TacsScalar Xpts[],
+                   const TacsScalar vars[],
+                   TacsScalar mat[] );
+
   // Functions required to determine the derivatives w.r.t. the design variables
   // ---------------------------------------------------------------------------
   void addAdjResXptProduct( int elemIndex, double time,
@@ -102,6 +108,21 @@ class TACSMassElement : public TACSElement {
                                TacsScalar dfdu[] ){
     return;
   }
+
+  void addPointQuantityXptSens( int elemIndex, int quantityType,
+                                double time,
+                                TacsScalar scale,
+                                int n, double pt[],
+                                const TacsScalar Xpts[],
+                                const TacsScalar vars[],
+                                const TacsScalar dvars[],
+                                const TacsScalar ddvars[],
+                                const TacsScalar dfddetXd,
+                                const TacsScalar dfdq[],
+                                TacsScalar dfdXpts[] ){
+    return;
+  }
+
  private:
 
   static const int NUM_DISPS = 6;
