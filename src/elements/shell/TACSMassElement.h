@@ -34,12 +34,14 @@ class TACSMassElement : public TACSElement {
                         const TacsScalar dvars[],
                         TacsScalar *Te,
                         TacsScalar *Pe );
+
   void addResidual( int elemIndex, double time,
                     const TacsScalar Xpts[],
                     const TacsScalar vars[],
                     const TacsScalar dvars[],
                     const TacsScalar ddvars[],
                     TacsScalar res[] );
+
   void addJacobian( int elemIndex, double time,
                     TacsScalar alpha,
                     TacsScalar beta,
