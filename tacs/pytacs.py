@@ -963,7 +963,7 @@ class pyTACS(BaseUI):
         Parameters
         ----------
         name : str
-            Name to assign static problem.
+            Name to assign transient problem.
         tInit : float
             Starting time for transient problem integration
         tFinal : float
@@ -976,15 +976,50 @@ class pyTACS(BaseUI):
         Returns
         ----------
         problem : TransientProblem
-            TransientProblem object used for modeling and solving static problems.
+            TransientProblem object used for modeling and solving transient problems.
+        """
+        if self.assembler is None:
+            raise self.TACSError("TACS assembler has not been created. "
+                                 "Assembler must created first by running 'initalize' method.")
+
+        problem = tacs.problems.transient.TransientProblem(name, tInit, tFinal, numSteps,
+                                                           self.assembler, self.comm, self.outputViewer,
+                                                           self.meshLoader,
+                                                           options)
+        # Set with original design vars and coordinates, in case they have changed
+        problem.setDesignVars(self.x0)
+        problem.setNodes(self.Xpts0)
+        return problem
+
+    def createModalProblem(self, name, fGuess, numFreqs, options={}):
+        """
+        Create a new TransientProblem for modeling a transient problem load case.
+        This object can be used to set loads, evalFunctions as well as perform
+        solutions and sensitivities related to transient problems
+
+        Parameters
+        ----------
+        name : str
+            Name to assign modal problem.
+        fGuess : float
+            Guess for the lowest natural frequency (rad/s)
+        numFreqs : int
+            Number of eignfrequencies to solve for
+        options : dict
+            Problem-specific options to pass to ModalProblem instance.
+
+        Returns
+        ----------
+        problem : ModalProblem
+            ModalProblem object used for modeling and solving modal problems.
         """
         if self.assembler is None:
             raise self.TACSError("TACS assembler has not been created. "
                         "Assembler must created first by running 'initalize' method.")
 
-        problem = tacs.problems.transient.TransientProblem(name, tInit, tFinal, numSteps,
-                                                        self.assembler, self.comm, self.outputViewer, self.meshLoader,
-                                                        options)
+        problem = tacs.problems.modal.ModalProblem(name, fGuess, numFreqs,
+                                                   self.assembler, self.comm, self.outputViewer, self.meshLoader,
+                                                   options)
         # Set with original design vars and coordinates, in case they have changed
         problem.setDesignVars(self.x0)
         problem.setNodes(self.Xpts0)
