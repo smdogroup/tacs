@@ -599,6 +599,16 @@ cdef class RBE3(Element):
         self.ptr.incref()
         return
 
+cdef class MassElement(Element):
+    cdef TACSMassElement *cptr
+    def __cinit__(self, GeneralMassConstitutive con):
+
+        self.cptr = new TACSMassElement(con.cptr)
+        # Increase the reference count to the underlying object
+        self.ptr = self.cptr
+        self.ptr.incref()
+        return
+
 # cdef class RigidBody(Element):
 #     cdef TACSRigidBody *cptr
 #     def __cinit__(self, RefFrame frame, TacsScalar mass,

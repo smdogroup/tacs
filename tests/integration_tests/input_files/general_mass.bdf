@@ -1,0 +1,37 @@
+INIT MASTER(S)
+NASTRAN SYSTEM(442)=-1,SYSTEM(319)=1
+ID FEMAP,FEMAP
+SOL SESTATIC
+CEND
+  TITLE = Simcenter Nastran Static Analysis Set
+  ECHO = NONE
+  DISPLACEMENT(PLOT) = ALL
+  SPCFORCE(PLOT) = ALL
+  OLOAD(PLOT) = ALL
+  FORCE(PLOT,CORNER) = ALL
+  STRESS(PLOT,CORNER) = ALL
+BEGIN BULK
+$ ***************************************************************************
+$   Written by : Femap
+$   Version    : 2021.1.0
+$   Translator : Simcenter Nastran
+$   From Model : 
+$   Date       : Wed Dec  1 17:17:01 2021
+$   Output To  : C:\Users\trbrooks\AppData\Local\Temp\1\
+$ ***************************************************************************
+$
+PARAM,PRGPST,YES
+PARAM,POST,-1
+PARAM,OGEOM,NO
+PARAM,AUTOSPC,YES
+PARAM,K6ROT,100.
+PARAM,GRDPNT,0
+CORD2C         1       0      0.      0.      0.      0.      0.      1.+FEMAPC1
++FEMAPC1      1.      0.      1.        
+CORD2S         2       0      0.      0.      0.      0.      0.      1.+FEMAPC2
++FEMAPC2      1.      0.      1.        
+GRID           1       0      0.      0.      0.       0
+CONM1          1       1       0      1.      0.      1.      0.      0.+       
++             1.      0.      0.      0.      1.      0.      0.      0.+       
++             1.      1.      0.      0.      0.      1.      1.      1.
+ENDDATA 2ed529f9

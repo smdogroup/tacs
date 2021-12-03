@@ -282,6 +282,10 @@ cdef extern from "TACSRBE3.h":
     cdef cppclass TACSRBE3(TACSElement):
         TACSRBE3(int, int*, double*, int*, double, double)
 
+cdef extern from "TACSMassElement.h":
+    cdef cppclass TACSMassElement(TACSElement):
+        TACSMassElement(TACSGeneralMassConstitutive*)
+
 cdef extern from  "MITC3.h":
     cdef cppclass MITC3(TACSElement):
         MITC3(TACSTimoshenkoConstitutive *_stiff,

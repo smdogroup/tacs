@@ -1375,3 +1375,8 @@ class pyTACS(BaseUI):
                     raise self.TACSError("Model references elements with differing numbers of variables per node (%d and %d). "
                                 "All elements must use same number of variables to be compatible."%(self.varsPerNode,
                                                                                                     elemVarsPerNode))
+
+        # If varsPerNode still hasn't been set (because there were no elements added in the callback)
+        # Default to 6
+        if self.varsPerNode is None:
+            self.varsPerNode = 6
