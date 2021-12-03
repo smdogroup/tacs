@@ -514,6 +514,40 @@ cdef class PointMassConstitutive(GeneralMassConstitutive):
         self.ptr = self.cptr
         self.ptr.incref()
 
+cdef class GeneralSpringConstitutive(Constitutive):
+    def __cinit__(self, **kwargs):
+        cdef TacsScalar K[21]
+        if 'K' in kwargs:
+            _K = kwargs['K']
+            assert isinstance(_K, list) or isinstance(_K, np.ndarray)
+            assert len(_K) == 21
+            for i in range(21):
+                K[i] = _K[i]
+        else:
+            for i in range(21):
+                K[i] = 0.0
+        self.cptr = new TACSGeneralSpringConstitutive(K)
+
+        self.ptr = self.cptr
+        self.ptr.incref()
+
+cdef class DOFSpringConstitutive(GeneralSpringConstitutive):
+    def __cinit__(self, **kwargs):
+        cdef TacsScalar k[6]
+        if 'k' in kwargs:
+            _k = kwargs['k']
+            assert isinstance(_k, list) or isinstance(_k, np.ndarray)
+            assert len(_k) == 6
+            for i in range(6):
+                k[i] = _k[i]
+        else:
+            for i in range(6):
+                k[i] = 0.0
+        self.cptr = new TACSDOFSpringConstitutive(k)
+
+        self.ptr = self.cptr
+        self.ptr.incref()
+
 def TestConstitutive(Constitutive con, int elemIndex=0, double dh=1e-6,
                      int test_print_level=2, double atol=1e-30,
                      double rtol=1e-5):
