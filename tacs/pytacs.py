@@ -599,6 +599,7 @@ class pyTACS(BaseUI):
             elemInfo = elemDict[propertyID]['elements'][0]
 
             # First we define the material object
+            mat = None
             # This property only references one material
             if hasattr(propInfo, 'mid_ref'):
                 matInfo = propInfo.mid_ref
@@ -678,12 +679,19 @@ class pyTACS(BaseUI):
                 con = tacs.constitutive.SolidConstitutive(mat, t=thickness,
                                                           tlb=minThickness, tub=maxThickness, tNum=tNum)
 
+            elif propInfo.type == 'PBUSH':  # Nastran spring
+                k = numpy.zeros(6)
+                for j in range(len(k)):
+                    if (propInfo.Ki[j]):
+                        k[j] = propInfo.Ki[j]
+                con = tacs.constitutive.DOFSpringConstitutive(k=k)
+
             else:
                 raise self.TACSError("Unsupported property type '%s' for property number %d. " % (propInfo.type, propertyID))
 
             # Set up transform object which may be required for certain elements
             transform = None
-            if hasattr(elemInfo, 'theta_mcid_ref'):
+            if propInfo.type in ['PSHELL', 'PCOMP']:
                 mcid = elemDict[propertyID]['elements'][0].theta_mcid_ref
                 if mcid:
                     if mcid.type == 'CORD2R':
@@ -692,6 +700,19 @@ class pyTACS(BaseUI):
                     else:  # Don't support spherical/cylindrical yet
                         raise self.TACSError("Unsupported material coordinate system type "
                                     "'%s' for property number %d." % (mcid.type, propertyID))
+            elif propInfo.type == 'PBUSH':
+                if elemDict[propertyID]['elements'][0].cid_ref:
+                    refAxis_i = elemDict[propertyID]['elements'][0].cid_ref.i
+                    refAxis_j = elemDict[propertyID]['elements'][0].cid_ref.j
+                    transform = tacs.elements.SpringRefFrameTransform(refAxis_i, refAxis_j)
+                elif elemDict[propertyID]['elements'][0].x[0]:
+                    refAxis = numpy.array(elemDict[propertyID]['elements'][0].x) \
+                              - elemDict[propertyID]['elements'][0].nodes_ref[0].xyz
+                    transform = tacs.elements.SpringRefAxisTransform(refAxis)
+                elif elemDict[propertyID]['elements'][0].g0_ref:
+                    refAxis = elemDict[propertyID]['elements'][0].g0_ref.xyz \
+                              - elemDict[propertyID]['elements'][0].nodes_ref[0].xyz
+                    transform = tacs.elements.SpringRefAxisTransform(refAxis)
 
             # Finally set up the element objects belonging to this component
             elemList = []
@@ -717,6 +738,8 @@ class pyTACS(BaseUI):
                     basis = tacs.elements.LinearHexaBasis()
                     model = tacs.elements.LinearElasticity3D(con)
                     elem = tacs.elements.Element3D(model, basis)
+                elif descript == 'CBUSH':
+                    elem = tacs.elements.SpringElement(transform, con)
                 else:
                     raise self.TACSError("Unsupported element type "
                                 "'%s' specified for property number %d." % (descript, propertyID))
@@ -725,7 +748,6 @@ class pyTACS(BaseUI):
             return elemList, scaleList
 
         return elemCallBack
-
 
     def getOrigDesignVars(self):
         """
@@ -1375,3 +1397,8 @@ class pyTACS(BaseUI):
                     raise self.TACSError("Model references elements with differing numbers of variables per node (%d and %d). "
                                 "All elements must use same number of variables to be compatible."%(self.varsPerNode,
                                                                                                     elemVarsPerNode))
+
+        # If varsPerNode still hasn't been set (because there were no elements added in the callback)
+        # Default to 6
+        if self.varsPerNode is None:
+            self.varsPerNode = 6

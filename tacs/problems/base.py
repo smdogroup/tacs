@@ -143,11 +143,11 @@ class TACSProblem(BaseUI):
 
     def setNodes(self, Xpts):
         """
-        Set the mesh coordinates of this problem.
+        Set the mesh coordinates of the structure.
 
-        Returns
-        -------
-        coords : array
+        Parameters
+        ----------
+        coords : ndarray
             Structural coordinate in array of size (N * 3) where N is
             the number of structural nodes on this processor.
         """
@@ -366,7 +366,7 @@ class TACSProblem(BaseUI):
                 F = np.repeat(F, [len(compIDs)], axis=0)
             # If the dimensions still don't match, raise an error
             elif F.shape[0] != len(compIDs):
-                raise Error("Number of forces must match number of compIDs,"
+                raise self.TACSError("Number of forces must match number of compIDs,"
                             " {} forces were specified for {} compIDs".format(F.shape[0], len(compIDs)))
 
             # Call addLoadToComponents again, once for each compID
@@ -504,6 +504,40 @@ class TACSProblem(BaseUI):
                 self.TACSWarning("Can't add load to node ID {} ({} ordering), node not found in model. "
                             "Double check BDF file.".format(nodeIDs[i], orderString))
 
+
+    def _addLoadToRHS(self, Frhs, Fapplied):
+        """"
+        This is an internal helper function for doing the addLoadToRHS method for
+        inhereted TACSProblem classes. The function should NOT be called by the user should
+        use the addLoadToRHS method for the respective problem class.
+        The function is used to add a *FIXED TOTAL LOAD* directly to the
+        right hand side vector given the equation below:
+
+            K*u = f
+
+        Where:
+            K : Stiffness matrix for problem
+            u : State variables for problem
+            f : Right-hand side vector to add loads to
+
+        Parameters
+        ----------
+
+        Fapplied : ndarray or BVec
+            Distributed array containing loads to applied to RHS of the problem.
+
+        """
+        if isinstance(Fapplied, tacs.TACS.Vec):
+            Frhs.axpy(1.0, Fapplied)
+        elif isinstance(Fapplied, np.ndarray):
+            if len(Fapplied) != Frhs.getSize():
+                raise self.TACSError("User-supplied distributed vector not correct length, "
+                                     "expected size of {} on processor {}, but got length {}.".format(Frhs.getSize(),
+                                                                                                      self.comm.rank,
+                                                                                                      len(Fapplied)))
+            rhsArray = Frhs.getArray()
+            rhsArray[:] = rhsArray[:] + Fapplied[:]
+
     def _addTractionToComponents(self, auxElems, compIDs, tractions,
                                 faceIndex=0):
         """
@@ -587,7 +621,7 @@ class TACSProblem(BaseUI):
             tractions = np.repeat(tractions, [numElems], axis=0)
         # If the dimensions still don't match, raise an error
         elif tractions.shape[0] != numElems:
-            raise Error("Number of tractions must match number of elements,"
+            raise self.TACSError("Number of tractions must match number of elements,"
                         " {} tractions were specified for {} element IDs".format(tractions.shape[0], numElems))
 
         # First find the coresponding local element ID on each processor
@@ -713,7 +747,7 @@ class TACSProblem(BaseUI):
             pressures = np.repeat(pressures, [numElems], axis=0)
         # If the dimensions still don't match, raise an error
         elif pressures.shape[0] != numElems:
-            raise Error("Number of pressures must match number of elements,"
+            raise self.TACSError("Number of pressures must match number of elements,"
                         " {} pressures were specified for {} element IDs".format(pressures.shape[0], numElems))
 
         # First find the coresponding local element ID on each processor

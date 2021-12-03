@@ -121,6 +121,28 @@ cdef extern from "TACSTimoshenkoConstitutive.h":
 cdef class TimoshenkoConstitutive(Constitutive):
     cdef TACSTimoshenkoConstitutive *cptr
 
+cdef extern from "TACSGeneralMassConstitutive.h":
+    cdef cppclass TACSGeneralMassConstitutive(TACSConstitutive):
+        TACSGeneralMassConstitutive(const TacsScalar*)
+
+cdef class GeneralMassConstitutive(Constitutive):
+    cdef TACSGeneralMassConstitutive *cptr
+
+cdef extern from "TACSPointMassConstitutive.h":
+    cdef cppclass TACSPointMassConstitutive(TACSGeneralMassConstitutive):
+        TACSPointMassConstitutive(TacsScalar, TacsScalar, TacsScalar, TacsScalar, TacsScalar, TacsScalar, TacsScalar)
+
+cdef extern from "TACSGeneralSpringConstitutive.h":
+    cdef cppclass TACSGeneralSpringConstitutive(TACSConstitutive):
+        TACSGeneralSpringConstitutive(TacsScalar*)
+
+cdef class GeneralSpringConstitutive(Constitutive):
+    cdef TACSGeneralSpringConstitutive *cptr
+
+cdef extern from "TACSDOFSpringConstitutive.h":
+    cdef cppclass TACSDOFSpringConstitutive(TACSGeneralSpringConstitutive):
+        TACSDOFSpringConstitutive(TacsScalar*)
+
 # Special functions required for converting pointers
 cdef extern from "":
     TACSTimoshenkoConstitutive* _dynamicTimoshenkoConstitutive"dynamic_cast<TACSTimoshenkoConstitutive*>"(TACSConstitutive*)

@@ -48,6 +48,8 @@ BEAM_OR_SHELL_ELEMENT = TACS_BEAM_OR_SHELL_ELEMENT
 PLANE_STRESS_ELEMENT = TACS_PLANE_STRESS_ELEMENT
 SOLID_ELEMENT = TACS_SOLID_ELEMENT
 RIGID_ELEMENT = TACS_RIGID_ELEMENT
+MASS_ELEMENT = TACS_MASS_ELEMENT
+SPRING_ELEMENT = TACS_SPRING_ELEMENT
 
 # Import the element matrix types
 STIFFNESS_MATRIX = TACS_STIFFNESS_MATRIX
@@ -398,6 +400,13 @@ cdef class Constitutive:
     def __dealloc__(self):
         if self.ptr:
             self.ptr.decref()
+
+    def getObjectName(self):
+        cdef bytes py_string
+        if self.ptr:
+            py_string = self.ptr.getObjectName()
+            return convert_bytes_to_str(py_string)
+        return None
 
     def getNumStresses(self):
         if self.ptr:

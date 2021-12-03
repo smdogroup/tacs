@@ -232,10 +232,10 @@ class StaticProblem(TACSProblem):
         """
         Set the mesh coordinates of the structure.
 
-        Returns
-        -------
-        coords : array
-            Structural coordinate in array of size (N, 3) where N is
+        Parameters
+        ----------
+        coords : ndarray
+            Structural coordinate in array of size (N * 3) where N is
             the number of structural nodes on this processor.
         """
         super().setNodes(coords)
@@ -332,6 +332,27 @@ class StaticProblem(TACSProblem):
         """
 
         self._addLoadToNodes(self.F, nodeIDs, F, nastranOrdering)
+
+    def addLoadToRHS(self, Fapplied):
+        """"
+        The function is used to add a *FIXED TOTAL LOAD* directly to the
+        right hand side vector given the equation below:
+
+            K*u = f
+
+        Where:
+            K : Stiffness matrix for problem
+            u : State variables for problem
+            f : Right-hand side vector to add loads to
+
+        Parameters
+        ----------
+
+        Fapplied : ndarray or BVec
+            Distributed array containing loads to applied to RHS of the problem.
+
+        """
+        self._addLoadToRHS(self.F, Fapplied)
 
     def addTractionToComponents(self, compIDs, tractions,
                                 faceIndex=0):
@@ -503,7 +524,7 @@ class StaticProblem(TACSProblem):
                 self.rhs.axpy(1.0, Fext)
             elif isinstance(Fext, np.ndarray):
                 rhsArray = self.rhs.getArray()
-                rhsArray[:] += Fext[:]
+                rhsArray[:] = rhsArray[:] + Fext[:]
         # Zero out bc terms in rhs
         self.assembler.applyBCs(self.rhs)
         # Add the -F
@@ -987,7 +1008,7 @@ class StaticProblem(TACSProblem):
                 self.rhs.axpy(1.0, Fext)
             elif isinstance(Fext, np.ndarray):
                 rhsArray = self.rhs.getArray()
-                rhsArray[:] += Fext[:]
+                rhsArray[:] = rhsArray[:] + Fext[:]
         # Zero out bc terms in rhs
         self.assembler.applyBCs(self.rhs)
         # Add the -F
@@ -1021,25 +1042,25 @@ class StaticProblem(TACSProblem):
         elif isinstance(phi, np.ndarray):
             self.phi.getArray()[:] = phi
 
-        if isinstance(prod, tacs.TACS.Vec):
-            self.res.copyValues(prod)
-        elif isinstance(prod, np.ndarray):
-            self.res.getArray()[:] = prod
-
-        # Zero out bc terms in input
+        # Tacs doesn't actually transpose the matrix here so keep track of
+        # RHS entries that TACS zeros out for BCs.
+        bcTerms = self.update
+        bcTerms.copyValues(self.phi)
         self.assembler.applyBCs(self.phi)
+        bcTerms.axpy(-1.0, self.phi)
 
         # Set problem vars to assembler
         self._updateAssemblerVars()
 
-        self.assembler.addJacobianVecProduct(scale, self.alpha, self.beta, self.gamma,
-                                             self.phi, self.res, tacs.TACS.TRANSPOSE)
+        self.K.mult(self.phi, self.res)
+        # Add bc terms back in
+        self.res.axpy(1.0, bcTerms)
 
         # Output residual
         if isinstance(prod, tacs.TACS.Vec):
-            prod.copyValues(self.res)
+            prod.axpy(scale, self.res)
         else:
-            prod[:] = self.res.getArray()
+            prod[:] = prod + scale * self.res.getArray()
 
     def zeroVariables(self):
         """
@@ -1079,19 +1100,18 @@ class StaticProblem(TACSProblem):
         elif isinstance(rhs, np.ndarray):
             self.adjRHS.getArray()[:] = rhs
 
-        # First compute the residual
-        self.res.zeroEntries()
-        self.assembler.addJacobianVecProduct(1.0, self.alpha, self.beta, self.gamma,
-                                             self.phi, self.res, tacs.TACS.TRANSPOSE)
-        self.res.axpy(-1.0, self.adjRHS)  # Add the -RHS
+        # Tacs doesn't actually transpose the matrix here so keep track of
+        # RHS entries that TACS zeros out for BCs.
+        bcTerms = self.update
+        bcTerms.copyValues(self.adjRHS)
+        self.assembler.applyBCs(self.adjRHS)
+        bcTerms.axpy(-1.0, self.adjRHS)
 
         # Solve Linear System
-        zeroGuess = 0
-        self.update.zeroEntries()
-        self.KSM.solve(self.res, self.update, zeroGuess)
-
-        # Update the adjoint vector with the (damped) update
-        self.phi.axpy(-1.0, self.update)
+        self.KSM.solve(self.adjRHS, self.phi)
+        self.assembler.applyBCs(self.phi)
+        # Add bc terms back in
+        self.phi.axpy(1.0, bcTerms)
 
         # Copy output values back to user vectors
         if isinstance(phi, tacs.TACS.Vec):
@@ -1111,16 +1131,16 @@ class StaticProblem(TACSProblem):
 
         Returns
         ----------
-        states : TACS BVec
+        states : numpy array
             current state vector
         """
+            
+        if isinstance(states, tacs.TACS.Vec):
+            states.copyValues(self.u)
+        elif isinstance(states, np.ndarray):
+            states[:] = self.u_array[:]
 
-        if states is None:
-            states = self.u.getArray().copy()
-        else:
-            states[:] = self.u.getArray()
-
-        return states
+        return self.u_array.copy()
 
     def setVariables(self, states):
         """
@@ -1132,9 +1152,12 @@ class StaticProblem(TACSProblem):
             Values to set. Must be the size of getNumVariables()
         """
         # Copy array values
-        self.u_array[:] = states[:]
-        # Zero out bc terms
-        self.assembler.setBCs(self.u)
+        if isinstance(states, tacs.TACS.Vec):
+            self.u.copyValues(states)
+        elif isinstance(states, np.ndarray):
+            self.u_array[:] = states[:]
+        # Apply boundary conditions
+        self.assembler.applyBCs(self.u)
         # Set states to assembler
         self.assembler.setVariables(self.u)
 

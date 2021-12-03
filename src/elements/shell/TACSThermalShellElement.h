@@ -1114,7 +1114,9 @@ void TACSThermalShellElement<quadrature, basis, director, model>::
                           const TacsScalar dfdq[],
                           int dvLen,
                           TacsScalar dfdx[] ){
-  if (quantityType == TACS_FAILURE_INDEX){
+  if (quantityType == TACS_FAILURE_INDEX ||
+      quantityType == TACS_STRAIN_ENERGY_DENSITY ||
+      quantityType == TACS_TOTAL_STRAIN_ENERGY_DENSITY){
     // Compute the node normal directions
     TacsScalar fn[3*num_nodes];
     TacsShellComputeNodeNormals<basis>(Xpts, fn);
@@ -1171,7 +1173,15 @@ void TACSThermalShellElement<quadrature, basis, director, model>::
       em[i] = e[i] - eth[i];
     }
 
-    con->addFailureDVSens(elemIndex, scale*dfdq[0], pt, X, em, dvLen, dfdx);
+    if (quantityType == TACS_FAILURE_INDEX){
+      con->addFailureDVSens(elemIndex, scale*dfdq[0], pt, X, em, dvLen, dfdx);
+    }
+    else if (quantityType == TACS_STRAIN_ENERGY_DENSITY){
+      con->addStressDVSens(elemIndex, scale*dfdq[0], pt, X, em, em, dvLen, dfdx);
+    }
+    else { // quantityType == TACS_TOTAL_STRAIN_ENERGY_DENSITY
+      con->addStressDVSens(elemIndex, scale*dfdq[0], pt, X, e, e, dvLen, dfdx);
+    }
   }
   else if (quantityType == TACS_ELEMENT_DENSITY){
     TacsScalar X[3];
@@ -1195,7 +1205,9 @@ void TACSThermalShellElement<quadrature, basis, director, model>::
                           const TacsScalar ddvars[],
                           const TacsScalar dfdq[],
                           TacsScalar dfdu[] ){
-  if (quantityType == TACS_FAILURE_INDEX){
+  if (quantityType == TACS_FAILURE_INDEX ||
+      quantityType == TACS_STRAIN_ENERGY_DENSITY ||
+      quantityType == TACS_TOTAL_STRAIN_ENERGY_DENSITY){
     // Derivative of the director field
     TacsScalar dd[dsize];
     memset(dd, 0, 3*num_nodes*sizeof(TacsScalar));
@@ -1249,31 +1261,64 @@ void TACSThermalShellElement<quadrature, basis, director, model>::
     TacsScalar t;
     basis::template interpFields<vars_per_node, 1>(pt, &vars[thermal_dof], &t);
 
-    // Compute the thermal strain
-    TacsScalar eth[9];
-    con->evalThermalStrain(elemIndex, pt, X, 1.0, eth);
-
-    // Compute the mechanical strain (and stress)
-    TacsScalar em[9];
-    for ( int i = 0; i < 9; i++ ){
-      em[i] = e[i] - t*eth[i];
-    }
-
-    // Compute the sensitivity of the failure index w.r.t. the strain
+    // Compute the derivative of the output with respect to the strain
+    // components in the local frame
     TacsScalar sens[9];
-    con->evalFailureStrainSens(elemIndex, pt, X, em, sens);
+    TacsScalar escale = 1.0; // Scale factor for the sensitivity
 
-    // Add contribution from the thermal part
-    TacsScalar scale =
-      - alpha*dfdq[0]*(sens[0]*eth[0] + sens[1]*eth[1] + sens[2]*eth[2] +
-                       sens[3]*eth[3] + sens[4]*eth[4] + sens[5]*eth[5] +
-                       sens[6]*eth[6] + sens[7]*eth[7] + sens[8]*eth[8]);
-    basis::template addInterpFieldsTranspose<vars_per_node, 1>(pt, &scale, &dfdu[thermal_dof]);
+    if (quantityType == TACS_FAILURE_INDEX){
+      // Compute the thermal strain
+      TacsScalar eth[9];
+      con->evalThermalStrain(elemIndex, pt, X, 1.0, eth);
+
+      // Compute the mechanical strain (and stress)
+      TacsScalar em[9];
+      for ( int i = 0; i < 9; i++ ){
+        em[i] = e[i] - t*eth[i];
+      }
+
+      // Compute the sensitivity of the failure index w.r.t. the strain
+      con->evalFailureStrainSens(elemIndex, pt, X, em, sens);
+      escale = alpha*dfdq[0];
+
+      // Add contribution from the thermal part
+      TacsScalar scale =
+        - alpha*dfdq[0]*(sens[0]*eth[0] + sens[1]*eth[1] + sens[2]*eth[2] +
+                         sens[3]*eth[3] + sens[4]*eth[4] + sens[5]*eth[5] +
+                         sens[6]*eth[6] + sens[7]*eth[7] + sens[8]*eth[8]);
+      basis::template addInterpFieldsTranspose<vars_per_node, 1>(pt, &scale, &dfdu[thermal_dof]);
+    }
+    else if (quantityType == TACS_STRAIN_ENERGY_DENSITY){
+      // Compute the thermal strain
+      TacsScalar eth[9];
+      con->evalThermalStrain(elemIndex, pt, X, 1.0, eth);
+
+      // Compute the mechanical strain (and stress)
+      TacsScalar em[9];
+      for ( int i = 0; i < 9; i++ ){
+        em[i] = e[i] - t*eth[i];
+      }
+
+      // Compute the sensitivity
+      con->evalStress(elemIndex, pt, X, em, sens);
+      escale = 2.0*alpha*dfdq[0];
+
+      // Add contribution from the thermal part
+      TacsScalar scale =
+        - 2.0*alpha*dfdq[0]*(sens[0]*eth[0] + sens[1]*eth[1] + sens[2]*eth[2] +
+                             sens[3]*eth[3] + sens[4]*eth[4] + sens[5]*eth[5] +
+                             sens[6]*eth[6] + sens[7]*eth[7] + sens[8]*eth[8]);
+      basis::template addInterpFieldsTranspose<vars_per_node, 1>(pt, &scale, &dfdu[thermal_dof]);
+    }
+    else { // quantityType == TACS_TOTAL_STRAIN_ENERGY_DENSITY
+      con->evalStress(elemIndex, pt, X, e, sens);
+      escale = 2.0*alpha*dfdq[0];
+    }
 
     // Compute the derivative of the product of the stress and strain
     // with respect to u0x, u1x and e0ty
     TacsScalar du0x[9], du1x[9], de0ty[6];
-    model::evalStrainSens(alpha*dfdq[0], sens, u0x, u1x, du0x, du1x, de0ty);
+    model::evalStrainSens(escale, sens, u0x, u1x, du0x, du1x, de0ty);
 
     // Add the contributions to the residual from du0x, du1x and dCt
     TacsShellAddDispGradSens<vars_per_node, basis>(pt, T, XdinvT, XdinvzT,
