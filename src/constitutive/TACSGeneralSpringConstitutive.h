@@ -68,7 +68,7 @@ class TACSGeneralSpringConstitutive : public TACSConstitutive {
 */
 inline void TACSGeneralSpringConstitutive::calcStress( const TacsScalar Ct[],
                                                        const TacsScalar e[],
-				                                               TacsScalar s[] ){
+                                                       TacsScalar s[] ){
   s[0] = Ct[ 0]*e[0] + Ct[ 1]*e[1] + Ct[ 2]*e[2] + Ct[ 3]*e[3] + Ct[ 4]*e[4] + Ct[ 5]*e[5];
   s[1] = Ct[ 1]*e[0] + Ct[ 6]*e[1] + Ct[ 7]*e[2] + Ct[ 8]*e[3] + Ct[ 9]*e[4] + Ct[10]*e[5];
   s[2] = Ct[ 2]*e[0] + Ct[ 7]*e[1] + Ct[11]*e[2] + Ct[12]*e[3] + Ct[13]*e[4] + Ct[14]*e[5];

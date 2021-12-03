@@ -19,6 +19,7 @@ base_dir = os.path.dirname(os.path.abspath(__file__))
 bdf_file = os.path.join(base_dir, "./input_files/simple_spring.bdf")
 
 FUNC_REFS = {'uniform_force_mass': 0.0,
+             'uniform_force_compliance': 24500.000000000007,
              'uniform_force_x_disp': 99.93068528194402,
              'uniform_force_y_disp': 49.930685281944015,
              'uniform_force_z_disp': 33.264018615277344}
@@ -82,13 +83,14 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
         # Add Functions
         for problem in problems:
             problem.addFunction('mass', functions.StructuralMass)
+            problem.addFunction('compliance', functions.Compliance)
             problem.addFunction('x_disp', functions.KSDisplacement,
                                 ksWeight=ksweight, direction=[1.0, 0.0, 0.0])
             problem.addFunction('y_disp', functions.KSDisplacement,
                                 ksWeight=ksweight, direction=[0.0, 1.0, 0.0])
             problem.addFunction('z_disp', functions.KSDisplacement,
                                 ksWeight=ksweight, direction=[0.0, 0.0, 1.0])
-        func_list = ['mass', 'x_disp', 'y_disp', 'z_disp']
+        func_list = ['mass', 'compliance', 'x_disp', 'y_disp', 'z_disp']
         return func_list, FUNC_REFS
 
     def setup_tacs_problems(self, fea_assembler):
