@@ -7,9 +7,9 @@ The stiffness values of the spring are:
 kx = 1 N/m
 ky = 4 N/m
 kz = 9 N/m
-krx = 16 N/m
-kry = 25 N/m
-krz = 36 N/m
+krx = 16 N*m
+kry = 25 N*m
+krz = 36 N*m
 
 The inertial values of the mass are:
 mass = 1.0 kg
