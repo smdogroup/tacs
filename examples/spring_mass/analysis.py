@@ -43,7 +43,7 @@ f = np.ones(6)
 
 comm = MPI.COMM_WORLD
 
-# Instantiate FEASolver
+# Instantiate FEAAssembler
 structOptions = {
     'printtiming':True,
 }
