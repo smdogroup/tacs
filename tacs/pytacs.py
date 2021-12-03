@@ -993,9 +993,9 @@ class pyTACS(BaseUI):
 
     def createModalProblem(self, name, fGuess, numFreqs, options={}):
         """
-        Create a new TransientProblem for modeling a transient problem load case.
-        This object can be used to set loads, evalFunctions as well as perform
-        solutions and sensitivities related to transient problems
+        Create a new ModalProblem for modeling a modal analysis problem load.
+        This problem can be used to identify the natural frequencies and mode
+        shapes of the model through eigenvalue analysis.
 
         Parameters
         ----------
@@ -1004,7 +1004,7 @@ class pyTACS(BaseUI):
         fGuess : float
             Guess for the lowest natural frequency (rad/s)
         numFreqs : int
-            Number of eignfrequencies to solve for
+            Number of eigenfrequencies to solve for
         options : dict
             Problem-specific options to pass to ModalProblem instance.
 
