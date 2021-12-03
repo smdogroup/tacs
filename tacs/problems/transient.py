@@ -1,5 +1,5 @@
 """
-pyStatic_problem
+pyTransient_problem
 """
 
 # =============================================================================
@@ -633,13 +633,13 @@ class TransientProblem(TACSProblem):
             Time step index to get state variables for.
 
         states : BVec or ndarray or None
-            If states is not None, place the state variables into this array.
+            If states is not None, place the state variables into this array (optional).
 
         dstates : BVec or ndarray or None
-            If dstates is not None, place the time derivitive of the state variables into this array.
+            If dstates is not None, place the time derivitive of the state variables into this array (optional).
 
         ddstates : BVec or ndarray or None
-            If ddstates is not None, place the second time derivitive of the state variables into this array.
+            If ddstates is not None, place the second time derivitive of the state variables into this array (optional).
 
         Returns
         --------
@@ -647,13 +647,13 @@ class TransientProblem(TACSProblem):
             The time at specified step
 
         states : ndarray
-            The state variables into this array.
+            The state variables.
 
         dstates : BVec or ndarray or None
-            The time derivitive of the state variables into this array.
+            The time derivitive of the state variables.
 
         ddstates : BVec or ndarray or None
-            The second time derivitive of the state variables into this array.
+            The second time derivitive of the state variables.
 
         """
 
