@@ -81,19 +81,22 @@ for step_i in range(len(timeSteps)):
     baselineProb.getVariables(step_i, states=stateHistory[step_i, :, :].reshape(-1))
 
 # Create a modal problem to find natural frequencies of system
-modalProb = FEAAssembler.createModalProblem('freq_analysis', fGuess=0.8, numFreqs=6)
+modalProb = FEAAssembler.createModalProblem('freq_analysis', sigma=0.8, numEigs=6)
 # Solve the modal problem
 modalProb.solve()
 # Print out each found eigenfrequency
-numFreqs = modalProb.getNumFrequencies()
+numFreqs = modalProb.getNumEigs()
 for i in range(numFreqs):
-    freq, _ = modalProb.getVariables(i)
+    eigVal, _ = modalProb.getVariables(i)
+    # Frequency is the sqrt of the eigenvalue
+    freq = np.sqrt(eigVal)
     print("Mode %d:"%(i+1))
     print("Frequency: %e (rad/s)" % (freq))
     print(" ")
 
 # Pull out eigen vector information for first mode
-freq0, eigVec0 = modalProb.getVariables(0)
+eigVal0, eigVec0 = modalProb.getVariables(0)
+freq0 = np.sqrt(eigVal0)
 
 # Create a new transient problem where we force the model near resonance
 resonanceProb = FEAAssembler.createTransientProblem('near_resonance', tStart, tEnd, nSteps)

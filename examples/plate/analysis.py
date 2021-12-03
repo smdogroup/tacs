@@ -132,3 +132,8 @@ for problem in allProblems:
 
 if comm.rank == 0:
     pprint(funcs)
+
+modalProb = FEAAssembler.createModalProblem('modalAnalysis', 2*np.pi, 5)
+modalProb.solve()
+modalProb.writeSolution()
+modalProb.addFunction('mass', functions.StructuralMass)

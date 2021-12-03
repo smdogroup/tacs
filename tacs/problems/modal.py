@@ -15,7 +15,7 @@ import tacs.TACS
 
 class ModalProblem(TACSProblem):
 
-    def __init__(self, name, fGuess, numFreqs,
+    def __init__(self, name, sigma, numEigs,
                  assembler, comm, outputViewer=None, meshLoader=None,
                  options={}):
         """
@@ -27,11 +27,11 @@ class ModalProblem(TACSProblem):
         name : str
             Name of this tacs problem
 
-        fGuess : float
-            Guess for the lowest natural frequency (rad/s)
+        sigma : float
+            Guess for the lowest eigenvalue. This corresponds to the lowest frequency squared. (rad^2/s^2)
 
-        numFreqs : int
-            Number of eigenfrequencies to solve for
+        numEigs : int
+            Number of eigenvalues to solve for
 
         assembler : assembler
             Cython object responsible for creating and setting tacs objects used to solve problem
@@ -58,8 +58,8 @@ class ModalProblem(TACSProblem):
         super().__init__(assembler, comm, outputViewer, meshLoader)
 
         # Set time interval parmeters
-        self.sigma = fGuess**2
-        self.numEigs = numFreqs
+        self.sigma = sigma
+        self.numEigs = numEigs
 
         # Default Option List
         defOpts = {
@@ -72,7 +72,6 @@ class ModalProblem(TACSProblem):
             'nRestarts': [int, 15],
 
             # Output Options
-            'outputFrequency': [int, 0],
             'writeSolution': [bool, True],
             'numberSolutions': [bool, True],
             'printTiming': [bool, False],
@@ -127,7 +126,7 @@ class ModalProblem(TACSProblem):
         self.freqSolver = tacs.TACS.FrequencyAnalysis(self.assembler, self.sigma, self.M, self.K, self.gmres,
                                                       num_eigs=self.numEigs, eig_tol=eigTol)
 
-    def getNumFrequencies(self):
+    def getNumEigs(self):
         """
         Get the number of eigenvalues requested from solver for this problem.
 
@@ -218,14 +217,13 @@ class ModalProblem(TACSProblem):
 
          Returns
          --------
-         freq: float
-             Eigenfrequency (rad/s) for mode
+         eigVal: float
+             Eigenvalue for mode corresponds to square of eigenfrequency (rad^2/s^2)
 
          states : ndarray
              Eigenvector for mode
          """
-        eig, err = self.freqSolver.extractEigenvalue(index)
-        freq = np.sqrt(eig)
+        eigVal, err = self.freqSolver.extractEigenvalue(index)
         eigVector = self.assembler.createVec()
         self.freqSolver.extractEigenvector(index, eigVector)
         # Inplace assignment if vectors were provided
@@ -233,7 +231,7 @@ class ModalProblem(TACSProblem):
             states.copyValues(eigVector)
         elif isinstance(states, np.ndarray):
             states[:] = eigVector.getArray()
-        return freq, eigVector.getArray()
+        return eigVal, eigVector.getArray()
 
     def writeSolution(self, indices=None):
         """
@@ -269,7 +267,7 @@ class ModalProblem(TACSProblem):
             vec = self.assembler.createVec()
             for index in indices:
                 # Extract eigenvector
-                freq, _ = self.getVariables(index, states=vec)
+                eig, _ = self.getVariables(index, states=vec)
                 # Set eigen mode in assembler
                 self.assembler.setVariables(vec)
                 # Write out mode shape as f5 file

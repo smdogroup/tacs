@@ -991,7 +991,7 @@ class pyTACS(BaseUI):
         problem.setNodes(self.Xpts0)
         return problem
 
-    def createModalProblem(self, name, fGuess, numFreqs, options={}):
+    def createModalProblem(self, name, sigma, numEigs, options={}):
         """
         Create a new ModalProblem for modeling a modal analysis problem load.
         This problem can be used to identify the natural frequencies and mode
@@ -1001,10 +1001,11 @@ class pyTACS(BaseUI):
         ----------
         name : str
             Name to assign modal problem.
-        fGuess : float
-            Guess for the lowest natural frequency (rad/s)
-        numFreqs : int
-            Number of eigenfrequencies to solve for
+        sigma : float
+            Guess for the lowest eigenvalue.
+            This corresponds to the lowest frequency squared. (rad^2/s^2)
+        numEigs : int
+            Number of eigenvalues to solve for
         options : dict
             Problem-specific options to pass to ModalProblem instance.
 
@@ -1017,7 +1018,7 @@ class pyTACS(BaseUI):
             raise self.TACSError("TACS assembler has not been created. "
                         "Assembler must created first by running 'initalize' method.")
 
-        problem = tacs.problems.modal.ModalProblem(name, fGuess, numFreqs,
+        problem = tacs.problems.modal.ModalProblem(name, sigma, numEigs,
                                                    self.assembler, self.comm, self.outputViewer, self.meshLoader,
                                                    options)
         # Set with original design vars and coordinates, in case they have changed
