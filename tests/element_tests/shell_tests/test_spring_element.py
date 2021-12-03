@@ -29,7 +29,7 @@ class ElementTest(unittest.TestCase):
 
         # Set the variable arrays
         self.xpts = np.array([0.0, 0.0, 0.0,
-                              1.0, 0.0, 0.0])
+                              1.0, 0.0, 0.0], dtype=self.dtype)
         np.random.seed(30)  # Seed random numbers for deterministic/repeatable tests
         self.vars = np.random.rand(num_vars).astype(self.dtype)
         self.dvars = self.vars.copy()
@@ -43,7 +43,7 @@ class ElementTest(unittest.TestCase):
 
         # Create stiffness (need class)
         K = np.ones(21, dtype=self.dtype)
-        k = np.arange(6, dtype=self.dtype)
+        k = np.arange(1, 7, dtype=self.dtype)
         self.con_objects = [constitutive.GeneralSpringConstitutive(K=K),
                             constitutive.DOFSpringConstitutive(k=k)]
 
