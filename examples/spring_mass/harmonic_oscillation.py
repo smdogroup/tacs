@@ -60,9 +60,10 @@ def elemCallBack(dvNum, compID, compDescript, elemDescripts, globalDVs, **kwargs
 # Set up TACS Assembler
 FEAAssembler.initialize(elemCallBack)
 
-# create tacs transient problems
+# create baseline transient problems
 baselineProb = FEAAssembler.createTransientProblem('baseline', tStart, tEnd, nSteps)
 
+# Apply sinusoidal force at each time step
 timeSteps = baselineProb.getTimeSteps()
 for step_i, time in enumerate(timeSteps):
     force = FEAAssembler.createVec()
@@ -96,6 +97,7 @@ freq0, eigVec0 = modalProb.getVariables(0)
 
 # Create a new transient problem where we force the model near resonance
 resonanceProb = FEAAssembler.createTransientProblem('near_resonance', tStart, tEnd, nSteps)
+# Apply sinusoidal force at each time step
 timeSteps = resonanceProb.getTimeSteps()
 for step_i, time in enumerate(timeSteps):
     force = Fmax * np.sin(0.99 * freq0 * time) * eigVec0
