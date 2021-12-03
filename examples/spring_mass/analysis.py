@@ -49,6 +49,8 @@ def elemCallBack(dvNum, compID, compDescript, elemDescripts, globalDVs, **kwargs
     # NOTE: Mass elements are always setup automatically for users outside of elemCallBack
     k = [1, 4, 9, 16, 25, 36]
     con = constitutive.DOFSpringConstitutive(k=k)
+    # Stiffness components are in global coordinate system
+    # We don't need a transform
     transform = None
     elem = elements.SpringElement(transform, con)
     return elem
