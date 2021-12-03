@@ -269,6 +269,32 @@ class TransientProblem(TACSProblem):
 
         self._addLoadToNodes(self.F[timeStep], nodeIDs, F, nastranOrdering)
 
+    def addLoadToRHS(self, timeStep, Fapplied):
+        """"
+        The function is used to add a *FIXED TOTAL LOAD* directly to the
+        right hand side vector given the equation below:
+
+            M*udotdot + K*u = f
+
+        Where:
+            K : Stiffness matrix for problem
+            u : State variables for problem
+            M : Mass matrix for problem
+            udotdot : Second time derivitive of state variables for problem
+            f : Right-hand side vector to add loads to
+
+        Parameters
+        ----------
+
+        timeStep : int
+            Time step index to apply load to.
+
+        Fapplied : ndarray or BVec
+            Distributed array containing loads to applied to RHS of the problem.
+
+        """
+        self._addLoadToRHS(self.F[timeStep], Fapplied)
+
     def addTractionToComponents(self, timeStep, compIDs, tractions,
                                 faceIndex=0):
         """
