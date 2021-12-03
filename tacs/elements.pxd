@@ -223,6 +223,24 @@ cdef extern from "TACSShellElementDefs.h":
         TACSTri3ThermalShell(TACSShellTransform*,
                              TACSShellConstitutive*)
 
+cdef extern from "TACSSpringElementTransform.h":
+    cdef cppclass TACSSpringTransform(TACSObject):
+        pass
+
+    cdef cppclass TACSSpringIdentityTransform(TACSSpringTransform):
+        TACSSpringIdentityTransform()
+
+    cdef cppclass TACSSpringRefAxisTransform(TACSSpringTransform):
+        TACSSpringRefAxisTransform(TacsScalar*)
+
+    cdef cppclass TACSSpringRefFrameTransform(TACSSpringTransform):
+        TACSSpringRefFrameTransform(TacsScalar*, TacsScalar*)
+
+cdef extern from "TACSSpringElement.h":
+    cdef cppclass TACSSpringElement(TACSElement):
+        TACSSpringElement(TACSSpringTransform*,
+                          TACSGeneralSpringConstitutive*)
+
 cdef extern from "TACSGibbsVector.h":
     cdef cppclass TACSGibbsVector(TACSObject):
         TACSGibbsVector(TacsScalar, TacsScalar, TacsScalar)
