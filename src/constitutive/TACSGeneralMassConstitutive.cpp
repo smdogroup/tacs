@@ -63,9 +63,9 @@ void TACSGeneralMassConstitutive::evalInertia( int elemIndex,
 
 // Evaluate the mass matrix
 void TACSGeneralMassConstitutive::evalMassMatrix( int elemIndex,
-                                             const double pt[],
-                                             const TacsScalar X[],
-                                             TacsScalar C[] ){
+                                                  const double pt[],
+                                                  const TacsScalar X[],
+                                                  TacsScalar C[] ){
   memcpy(C, M, 21*sizeof(TacsScalar));
 }
 
