@@ -351,6 +351,56 @@ void TACSSpringElement::addJacobian( int elemIndex, double time,
 
 }
 
+void TACSSpringElement::getMatType( ElementMatrixType matType,
+                                  int elemIndex, double time,
+                                  const TacsScalar Xpts[],
+                                  const TacsScalar vars[],
+                                  TacsScalar mat[] ){
+  memset(mat, 0, NUM_VARIABLES*NUM_VARIABLES*sizeof(TacsScalar));
+  if (matType == TACS_STIFFNESS_MATRIX){
+    TacsScalar stress[NUM_STRESSES], strain[NUM_STRESSES];
+    TacsScalar elemVars[NUM_VARIABLES];
+    TacsScalar B[NUM_STRESSES*NUM_VARIABLES];
+    TacsScalar BiStress[NUM_STRESSES];
+    TacsScalar t[9];
+    double pt[3] = {0.0, 0.0, 0.0};
+    memset(mat, 0, NUM_VARIABLES*NUM_VARIABLES*sizeof(TacsScalar));
+
+    transform->computeTransform(Xpts, t);
+
+    transformVarsGlobalToLocal(t, vars, elemVars);
+
+    evalStrain(elemVars, strain);
+    evalBmat(B);
+
+    springStiff->evalStress(elemIndex, pt, Xpts,
+                            strain, stress);
+
+    for ( int i = 0; i < NUM_NODES; i++ ){
+      for ( int ii = 0; ii < NUM_DISPS; ii++ ){
+        int row = ii + i*NUM_DISPS;
+
+        springStiff->evalStress(elemIndex, pt, Xpts,
+                                &B[NUM_STRESSES*row], BiStress);
+
+        for ( int j = 0; j < NUM_NODES; j++ ){
+          for ( int jj = 0; jj < NUM_DISPS; jj++ ){
+            // generate another B vector
+            int col = jj + j*NUM_DISPS;
+
+            // The regular element matrix
+            mat[col + row*NUM_VARIABLES] +=
+                    strain_product(BiStress, &B[NUM_STRESSES*col]);
+          }
+        }
+
+      }
+    }
+
+    transformStiffnessMat(t, mat);
+  }
+}
+
 /*
   Get the derivative of the residual w.r.t. the nodal coordinates.
 */

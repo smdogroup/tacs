@@ -11,7 +11,7 @@
   Additional copyright (C) 2010 Graeme J. Kennedy and Joaquim
   R.R.A. Martins All rights reserved.
 
-  This element takes as input a spring stiffness object. This object
+  This element takes as input a spring stiffness  and transform object. This object
   may include the reference direction used to define the local
   y-direction of the spring (x is along spring, z is given by x x y).
   If a reference axis is not defined, the spring axis are assumed tom align
@@ -71,6 +71,12 @@ class TACSSpringElement : public TACSElement {
                     const TacsScalar ddvars[],
                     TacsScalar res[],
                     TacsScalar mat[] );
+
+  void getMatType( ElementMatrixType matType,
+                   int elemIndex, double time,
+                   const TacsScalar Xpts[],
+                   const TacsScalar vars[],
+                   TacsScalar mat[] );
 
   // Functions required to determine the derivatives w.r.t. the design variables
   // ---------------------------------------------------------------------------
