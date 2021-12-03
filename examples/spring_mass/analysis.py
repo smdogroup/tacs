@@ -14,6 +14,10 @@ krz = 36 N/m
 The inertial values of the mass are:
 mass = 1.0 kg
 Ixx = Iyy = Izz = 1.0 kg * m^2
+
+The force applied to the mass is:
+fx = fy = fz = 1.0 N
+mx = my = mz = 1.0 N * m
 """
 # ==============================================================================
 # Standard Python modules
@@ -33,6 +37,9 @@ import numpy as np
 # Extension modules
 # ==============================================================================
 from tacs import pyTACS, functions, constitutive, elements
+
+# Force vector to apply to mass
+f = np.ones(6)
 
 comm = MPI.COMM_WORLD
 
@@ -65,7 +72,6 @@ problem = FEAAssembler.createTransientProblem('step_force', 0.0, 2*np.pi, 100)
 problem.addFunction('mass', functions.StructuralMass)
 problem.addFunction('x_disp', functions.KSDisplacement, ksWeight=100.0, direction=[1.0, 0.0, 0.0])
 
-f = np.ones(6)
 timeSteps = problem.getTimeSteps()
 for step_i, time in enumerate(timeSteps):
     # Apply step load for 0.5 seconds
@@ -85,7 +91,7 @@ stateHistory = np.zeros([len(timeSteps), nnodes, vpn])
 for step_i in range(len(timeSteps)):
     problem.getVariables(step_i, states=stateHistory[step_i, :, :].reshape(-1))
 
-# Plot results
+# Plot results for first 3 dofs
 plt.plot(timeSteps, stateHistory[:, 1, 0], timeSteps, stateHistory[:, 1, 1], timeSteps, stateHistory[:, 1, 2])
 plt.legend(['dof 1', 'dof 2', 'dof 3'])
 plt.ylabel('displacement (m)')
