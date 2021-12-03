@@ -70,7 +70,7 @@ problem = FEAAssembler.createTransientProblem('step_force', 0.0, 2*np.pi, 100)
 
 # Add functions
 problem.addFunction('mass', functions.StructuralMass)
-problem.addFunction('x_disp', functions.KSDisplacement, ksWeight=100.0, direction=[1.0, 0.0, 0.0])
+problem.addFunction('max_x_disp', functions.KSDisplacement, ksWeight=100.0, direction=[1.0, 0.0, 0.0])
 
 timeSteps = problem.getTimeSteps()
 for step_i, time in enumerate(timeSteps):
