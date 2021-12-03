@@ -5,7 +5,7 @@ The chosen frequency ends up being far away from the systems natural frequency.
 We then create a modal analysis problem to find the system's natural frequencies.
 We then create a second transient problem and use the lowest natural frequency
 and eigenmode found from the modal problem to drive the new transient problem near
-the model's first natural frequency. We then plot the respone of the of both
+the model's first natural frequency. We then plot the respone of both
 the baseline and resonating transient problem.
 """
 # ==============================================================================
