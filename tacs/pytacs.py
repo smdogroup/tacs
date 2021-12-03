@@ -927,21 +927,21 @@ class pyTACS(BaseUI):
 
     def createStaticProblem(self, name, options={}):
         """
-        Create a new staticProblem for modeling a static problem load case.
+        Create a new staticProblem for modeling a static load cases.
         This object can be used to set loads, evalFunctions as well as perform
         solutions and sensitivities related to static problems
 
         Parameters
         ----------
         name : str
-            Name to assign static problem.
+            Name to assign problem.
         options : dict
             Problem-specific options to pass to StaticProblem instance.
 
         Returns
         ----------
         problem : StaticProblem
-            StaticProblem object used for modeling and solving static problems.
+            StaticProblem object used for modeling and solving static cases.
         """
         if self.assembler is None:
             raise self.TACSError("TACS assembler has not been created. "
@@ -956,27 +956,27 @@ class pyTACS(BaseUI):
 
     def createTransientProblem(self, name, tInit, tFinal, numSteps, options={}):
         """
-        Create a new TransientProblem for modeling a transient problem load case.
+        Create a new TransientProblem for modeling a transient load cases.
         This object can be used to set loads, evalFunctions as well as perform
         solutions and sensitivities related to transient problems
 
         Parameters
         ----------
         name : str
-            Name to assign transient problem.
+            Name to assign problem.
         tInit : float
-            Starting time for transient problem integration
+            Starting time for transient time integration
         tFinal : float
-            Ending time for transient problem integration
+            Ending time for transient time integration
         numSteps : int
-            Number of time steps for transient problem integration
+            Number of time steps for transient time integration
         options : dict
             Problem-specific options to pass to TransientProblem instance.
 
         Returns
         ----------
         problem : TransientProblem
-            TransientProblem object used for modeling and solving transient problems.
+            TransientProblem object used for modeling and solving transient cases.
         """
         if self.assembler is None:
             raise self.TACSError("TACS assembler has not been created. "
@@ -993,26 +993,26 @@ class pyTACS(BaseUI):
 
     def createModalProblem(self, name, sigma, numEigs, options={}):
         """
-        Create a new ModalProblem for modeling a modal analysis problem load.
+        Create a new ModalProblem for performing modal analysis.
         This problem can be used to identify the natural frequencies and mode
         shapes of the model through eigenvalue analysis.
 
         Parameters
         ----------
         name : str
-            Name to assign modal problem.
+            Name to assign problem.
         sigma : float
             Guess for the lowest eigenvalue.
-            This corresponds to the lowest frequency squared. (rad^2/s^2)
+            This corresponds to the lowest expected frequency squared. (rad^2/s^2)
         numEigs : int
-            Number of eigenvalues to solve for
+            Number of eigenvalues to solve for.
         options : dict
             Problem-specific options to pass to ModalProblem instance.
 
         Returns
         ----------
         problem : ModalProblem
-            ModalProblem object used for modeling and solving modal problems.
+            ModalProblem object used for performing modal eigenvalue analysis.
         """
         if self.assembler is None:
             raise self.TACSError("TACS assembler has not been created. "
