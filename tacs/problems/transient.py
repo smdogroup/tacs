@@ -704,7 +704,7 @@ class TransientProblem(TACSProblem):
         number : int or None
             Use the user spplied number to index solution. Again, only
             typically used from an external solver
-        timeStep : int or list[int] or None
+        timeSteps : int or list[int] or None
             Time step index or indices to get state variables for.
             If None, returns a solution for all time steps.
             Defaults to None.
