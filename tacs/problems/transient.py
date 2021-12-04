@@ -685,7 +685,7 @@ class TransientProblem(TACSProblem):
         return time, qArray, qdotArray, qddotArray
 
 
-    def writeSolution(self, timeSteps=None):
+    def writeSolution(self, outputDir=None, baseName=None, number=None, timeSteps=None):
         """
         This is a generic shell function that writes the output
         file(s).  The intent is that the user or calling program can
@@ -696,26 +696,56 @@ class TransientProblem(TACSProblem):
 
         Parameters
         ----------
-
+        outputDir : str or None
+            Use the supplied output directory
+        baseName : str or None
+            Use this supplied string for the base filename. Typically
+            only used from an external solver.
+        number : int or None
+            Use the user spplied number to index solution. Again, only
+            typically used from an external solver
         timeStep : int or list[int] or None
             Time step index or indices to get state variables for.
             If None, returns a solution for all time steps.
             Defaults to None.
         """
-        # Unless the writeSolution option is off write actual file:
-        if self.getOption('writeSolution'):
-            # Check input
+        # Make sure assembler variables are up to date
+        self._updateAssemblerVars()
+
+        # Check input
+        if outputDir is None:
             outputDir = self.getOption('outputDir')
+
+        if baseName is None:
             baseName = self.name
+
+        # If we are numbering solution, it saving the sequence of
+        # calls, add the call number
+        if number is not None:
+            # We need number based on the provided number:
+            baseName = baseName + '_%3.3d' % number
+        else:
+            # if number is none, i.e. standalone, but we need to
+            # number solutions, use internal counter
             if self.getOption('numberSolutions'):
                 baseName = baseName + '_%3.3d' % self.callCounter
 
-            base = os.path.join(outputDir, baseName) + '.f5'
-            # Write specific time step out
-            if timeSteps is not None:
-                timeSteps = np.atleast_1d(timeSteps)
-                for timeStep in timeSteps:
-                    self.integrator.writeStepToF5(timeStep)
-            # Write all time steps out
-            else:
-                self.integrator.writeSolutionToF5()
+        # Unless the writeSolution option is off write actual file:
+        if self.getOption('writeSolution'):
+
+            # If timeSteps is None, output all modes
+            if timeSteps is None:
+                timeSteps = np.arange(self.numSteps+1)
+
+            # Write out each specified timestep
+            timeSteps = np.atleast_1d(timeSteps)
+            vec = self.assembler.createVec()
+            for timeStep in timeSteps:
+                # Extract eigenvector
+                self.getVariables(timeStep, states=vec)
+                # Set eigen mode in assembler
+                self.assembler.setVariables(vec)
+                # Write out mode shape as f5 file
+                modeName = baseName + '_%3.3d' % timeStep
+                fileName = os.path.join(outputDir, modeName) + '.f5'
+                self.outputViewer.writeToFile(fileName)

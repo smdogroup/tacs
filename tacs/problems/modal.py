@@ -233,7 +233,7 @@ class ModalProblem(TACSProblem):
             states[:] = eigVector.getArray()
         return eigVal, eigVector.getArray()
 
-    def writeSolution(self, indices=None):
+    def writeSolution(self, outputDir=None, baseName=None, number=None, indices=None):
         """
         This is a generic shell function that writes the output
         file(s).  The intent is that the user or calling program can
@@ -244,19 +244,42 @@ class ModalProblem(TACSProblem):
 
         Parameters
         ----------
-
-        Indices : int or list[int] or None
+        outputDir : str or None
+            Use the supplied output directory
+        baseName : str or None
+            Use this supplied string for the base filename. Typically
+            only used from an external solver.
+        number : int or None
+            Use the user spplied number to index solution. Again, only
+            typically used from an external solver
+        indices : int or list[int] or None
             Mode index or indices to get state variables for.
             If None, returns a solution for all modes.
             Defaults to None.
         """
-        # Unless the writeSolution option is off write actual file:
-        if self.getOption('writeSolution'):
-            # Check input
+        # Make sure assembler variables are up to date
+        self._updateAssemblerVars()
+
+        # Check input
+        if outputDir is None:
             outputDir = self.getOption('outputDir')
+
+        if baseName is None:
             baseName = self.name
+
+        # If we are numbering solution, it saving the sequence of
+        # calls, add the call number
+        if number is not None:
+            # We need number based on the provided number:
+            baseName = baseName + '_%3.3d' % number
+        else:
+            # if number is none, i.e. standalone, but we need to
+            # number solutions, use internal counter
             if self.getOption('numberSolutions'):
                 baseName = baseName + '_%3.3d' % self.callCounter
+
+        # Unless the writeSolution option is off write actual file:
+        if self.getOption('writeSolution'):
 
             # If indices is None, output all modes
             if indices is None:
