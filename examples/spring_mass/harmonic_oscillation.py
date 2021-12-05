@@ -4,7 +4,7 @@ This time we first apply an oscilating force on the mass as a baseline case.
 The chosen frequency ends up being far away from the systems natural frequency.
 We then create a modal analysis problem to find the system's natural frequencies.
 We then create a second transient problem and use the lowest natural frequency
-and eigenmode found from the modal problem to drive the new transient problem near
+and eigenmode found from the modal problem to drive the new transient problem at
 the model's first natural frequency. We then plot the respone of both
 the baseline and resonating transient problem.
 """
@@ -28,7 +28,7 @@ import numpy as np
 from tacs import pyTACS, functions, constitutive, elements
 # Begining and end time of transient problem
 tStart = 0.0 # s
-tEnd = 2 * np.pi # s
+tEnd = 4 * np.pi # s
 # Number of steps for transient problem
 nSteps = 100
 
@@ -98,12 +98,12 @@ for i in range(numFreqs):
 eigVal0, eigVec0 = modalProb.getVariables(0)
 freq0 = np.sqrt(eigVal0)
 
-# Create a new transient problem where we force the model near resonance
-resonanceProb = FEAAssembler.createTransientProblem('near_resonance', tStart, tEnd, nSteps)
+# Create a new transient problem where we force the model at resonance
+resonanceProb = FEAAssembler.createTransientProblem('resonance', tStart, tEnd, nSteps)
 # Apply sinusoidal force at each time step
 timeSteps = resonanceProb.getTimeSteps()
 for step_i, time in enumerate(timeSteps):
-    force = Fmax * np.sin(0.99 * freq0 * time) * eigVec0
+    force = Fmax * np.sin(freq0 * time) * eigVec0
     resonanceProb.addLoadToRHS(step_i, force)
 
 # Solve the problem
