@@ -4,7 +4,7 @@ This time we first apply an oscilating force on the mass as a baseline case.
 The chosen frequency ends up being far away from the systems natural frequency.
 We then create a modal analysis problem to find the system's natural frequencies.
 We then create a second transient problem and use the lowest natural frequency
-and eigenmode found from the modal problem to drive the new transient problem near
+and eigenmode found from the modal problem to drive the new transient problem at
 the model's first natural frequency. We then plot the respone of both
 the baseline and resonating transient problem.
 """
@@ -28,7 +28,7 @@ import numpy as np
 from tacs import pyTACS, functions, constitutive, elements
 # Begining and end time of transient problem
 tStart = 0.0 # s
-tEnd = 2 * np.pi # s
+tEnd = 4 * np.pi # s
 # Number of steps for transient problem
 nSteps = 100
 
@@ -81,26 +81,29 @@ for step_i in range(len(timeSteps)):
     baselineProb.getVariables(step_i, states=stateHistory[step_i, :, :].reshape(-1))
 
 # Create a modal problem to find natural frequencies of system
-modalProb = FEAAssembler.createModalProblem('freq_analysis', fGuess=0.8, numFreqs=6)
+modalProb = FEAAssembler.createModalProblem('freq_analysis', sigma=0.8, numEigs=6)
 # Solve the modal problem
 modalProb.solve()
 # Print out each found eigenfrequency
-numFreqs = modalProb.getNumFrequencies()
+numFreqs = modalProb.getNumEigs()
 for i in range(numFreqs):
-    freq, _ = modalProb.getVariables(i)
+    eigVal, _ = modalProb.getVariables(i)
+    # Frequency is the sqrt of the eigenvalue
+    freq = np.sqrt(eigVal)
     print("Mode %d:"%(i+1))
     print("Frequency: %e (rad/s)" % (freq))
     print(" ")
 
 # Pull out eigen vector information for first mode
-freq0, eigVec0 = modalProb.getVariables(0)
+eigVal0, eigVec0 = modalProb.getVariables(0)
+freq0 = np.sqrt(eigVal0)
 
-# Create a new transient problem where we force the model near resonance
-resonanceProb = FEAAssembler.createTransientProblem('near_resonance', tStart, tEnd, nSteps)
+# Create a new transient problem where we force the model at resonance
+resonanceProb = FEAAssembler.createTransientProblem('resonance', tStart, tEnd, nSteps)
 # Apply sinusoidal force at each time step
 timeSteps = resonanceProb.getTimeSteps()
 for step_i, time in enumerate(timeSteps):
-    force = Fmax * np.sin(0.99 * freq0 * time) * eigVec0
+    force = Fmax * np.sin(freq0 * time) * eigVec0
     resonanceProb.addLoadToRHS(step_i, force)
 
 # Solve the problem

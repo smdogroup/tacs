@@ -1172,14 +1172,13 @@ class StaticProblem(TACSProblem):
 
         Parameters
         ----------
-
         outputDir : str or None
             Use the supplied output directory
         baseName : str or None
             Use this supplied string for the base filename. Typically
             only used from an external solver.
         number : int or None
-            Use the user spplied number to index solution. Again, only
+            Use the user supplied number to index solution. Again, only
             typically used from an external solver
         """
         # Make sure assembler variables are up to date
