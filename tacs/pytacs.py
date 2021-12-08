@@ -1041,7 +1041,7 @@ class pyTACS(BaseUI):
         Notes
         -----
         Currently only supports LOAD, FORCE, MOMENT, PLOAD2, and PLOAD4 cards.
-        Currently only supports staticProblem (SOL 101)
+        Currently only supports staticProblem (SOL 101) and modalProblems (SOL 103)
         """
 
         if self.assembler is None:
@@ -1056,10 +1056,6 @@ class pyTACS(BaseUI):
         vpn = self.varsPerNode
         loads = self.bdfInfo.loads
         nloads = len(loads)
-
-        # Check if any loads are in the BDF
-        if nloads == 0:
-            raise self.TACSError("BDF file '%s' has no loads included in it. " % (self.bdfName))
 
         structProblems = {}
 
@@ -1078,42 +1074,56 @@ class pyTACS(BaseUI):
                 name = subCase.params['SUBTITLE'][0]
             else:
                 name = 'load_set_%.3d' % (subCase.id)
-            staticProb = self.createStaticProblem(name)
 
-            if 'LOAD' in subCase.params:
-                loadsID = subCase.params['LOAD'][0]
-                # Get loads and scalers for this load case ID
-                loadSet, loadScale, _ = self.bdfInfo.get_reduced_loads(loadsID)
-                # Loop through every load in set and add it to problem
-                for loadInfo, scale in zip(loadSet, loadScale):
-                    # Add any point force or moment cards
-                    if loadInfo.type == 'FORCE' or loadInfo.type == 'MOMENT':
-                        nodeID = loadInfo.node_ref.nid
+            if self.bdfInfo.sol == 103:
+                methodID = subCase.params['METHOD'][0]
+                methodInfo = self.bdfInfo.methods[methodID]
+                if methodInfo.v1 is not None:
+                    sigma = (2 * np.pi * methodInfo.v1) ** 2
+                elif methodInfo.v2 is not None:
+                    sigma = (2 * np.pi * methodInfo.v2) ** 2
+                else:
+                    sigma = 1.0
+                nEigs = methodInfo.maxset
+                problem = self.createModalProblem(name, sigma, nEigs)
 
-                        loadArray = numpy.zeros(vpn)
-                        if loadInfo.type == 'FORCE' and vpn >= 3:
-                            loadArray[:3] += scale * loadInfo.scaled_vector
-                        elif loadInfo.type == 'MOMENT' and vpn >= 6:
-                            loadArray[3:6] += scale * loadInfo.scaled_vector
-                        staticProb.addLoadToNodes(nodeID, loadArray, nastranOrdering=True)
+            else:
+                problem = self.createStaticProblem(name)
 
-                    # Add any pressure loads
-                    # Pressure load card specific to shell elements
-                    elif loadInfo.type == 'PLOAD2':
-                        elemIDs = loadInfo.eids
-                        pressure = scale * loadInfo.pressure
-                        staticProb.addPressureToElements(elemIDs, pressure, nastranOrdering=True)
+                if 'LOAD' in subCase.params:
+                    loadsID = subCase.params['LOAD'][0]
+                    # Get loads and scalers for this load case ID
+                    loadSet, loadScale, _ = self.bdfInfo.get_reduced_loads(loadsID)
+                    # Loop through every load in set and add it to problem
+                    for loadInfo, scale in zip(loadSet, loadScale):
+                        # Add any point force or moment cards
+                        if loadInfo.type == 'FORCE' or loadInfo.type == 'MOMENT':
+                            nodeID = loadInfo.node_ref.nid
 
-                    # Alternate more general pressure load type
-                    elif loadInfo.type == 'PLOAD4':
-                        self._addPressureFromPLOAD4(staticProb, loadInfo, scale)
+                            loadArray = numpy.zeros(vpn)
+                            if loadInfo.type == 'FORCE' and vpn >= 3:
+                                loadArray[:3] += scale * loadInfo.scaled_vector
+                            elif loadInfo.type == 'MOMENT' and vpn >= 6:
+                                loadArray[3:6] += scale * loadInfo.scaled_vector
+                            problem.addLoadToNodes(nodeID, loadArray, nastranOrdering=True)
 
-                    else:
-                        self.TACSWarning("Unsupported load type "
-                                    " '%s' specified for load set number %d, skipping load" %(loadInfo.type, loadInfo.sid))
+                        # Add any pressure loads
+                        # Pressure load card specific to shell elements
+                        elif loadInfo.type == 'PLOAD2':
+                            elemIDs = loadInfo.eids
+                            pressure = scale * loadInfo.pressure
+                            problem.addPressureToElements(elemIDs, pressure, nastranOrdering=True)
+
+                        # Alternate more general pressure load type
+                        elif loadInfo.type == 'PLOAD4':
+                            self._addPressureFromPLOAD4(problem, loadInfo, scale)
+
+                        else:
+                            self.TACSWarning("Unsupported load type "
+                                        " '%s' specified for load set number %d, skipping load" %(loadInfo.type, loadInfo.sid))
 
             # append to list of structural problems
-            structProblems[subCase.id] = staticProb
+            structProblems[subCase.id] = problem
 
         return structProblems
 
