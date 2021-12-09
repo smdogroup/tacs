@@ -1063,7 +1063,7 @@ class pyTACS(BaseUI):
 
         Notes
         -----
-        Currently only supports LOAD, FORCE, MOMENT, PLOAD2, and PLOAD4 cards.
+        Currently only supports LOAD, FORCE, MOMENT, GRAV, PLOAD2, and PLOAD4 cards.
         Currently only supports staticProblem (SOL 101)
         """
 
