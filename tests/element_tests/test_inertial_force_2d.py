@@ -11,14 +11,14 @@ class ElementTest(unittest.TestCase):
         # fd/cs step size
         if TACS.dtype is complex:
             self.dh = 1e-50
-            self.atol = 1e-11
+            self.rtol = 1e-6
+            self.atol = 1e-3
         else:
             self.dh = 1e-6
-            self.atol = 1e-6
+            self.rtol = 1.5e-1
+            self.atol = 1e-3
         self.dtype = TACS.dtype
 
-        # Basically only check absolute error
-        self.rtol = 1e99
         self.print_level = 0
 
         # Set element index

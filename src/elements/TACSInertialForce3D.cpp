@@ -123,10 +123,10 @@ void TACSInertialForce3D::addResidual( int elemIndex,
     memset(DUx, 0, 3*varsPerNode*sizeof(TacsScalar));
 
     // Get the element density
-    TacsScalar mass = con->evalDensity(elemIndex, pt, Xpts);
+    TacsScalar density = con->evalDensity(elemIndex, pt, Xpts);
 
     for ( int k = 0; k < 3; k++ ){
-      DUt[3*k] = -mass * inertiaVec[k];
+      DUt[3*k] = -density * inertiaVec[k];
     }
 
     // Add the weak form of the residual at this point
@@ -171,10 +171,10 @@ void TACSInertialForce3D::addJacobian( int elemIndex,
     memset(DUx, 0, 3*varsPerNode*sizeof(TacsScalar));
 
     // Get the element density
-    TacsScalar mass = con->evalDensity(elemIndex, pt, Xpts);
+    TacsScalar density = con->evalDensity(elemIndex, pt, Xpts);
 
     for ( int k = 0; k < 3; k++ ){
-      DUt[3*k] = -mass * inertiaVec[k];
+      DUt[3*k] = -density * inertiaVec[k];
     }
 
     // Add the weak form of the residual at this point
