@@ -11,6 +11,7 @@
 #include "TACSShellElementTransform.h"
 #include "TACSShellTraction.h"
 #include "TACSShellPressure.h"
+#include "TACSShellInertialForce.h"
 #include "TACSElementVerification.h"
 
 template <class quadrature, class basis, class director, class model>
@@ -104,6 +105,10 @@ class TACSShellElement : public TACSElement {
 
   TACSElement* createElementPressure( int faceIndex, TacsScalar p ){
     return new TACSShellPressure<vars_per_node, quadrature, basis>(p);
+  }
+
+  TACSElement* createElementInertialForce( TacsScalar inertiaVec[] ){
+    return new TACSShellInertialForce<vars_per_node, quadrature, basis>(con, inertiaVec);
   }
 
   void computeEnergies( int elemIndex,
