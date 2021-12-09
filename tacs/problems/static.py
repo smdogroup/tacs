@@ -180,8 +180,7 @@ class StaticProblem(TACSProblem):
                                self.getOption('L2Convergence'))
 
         if opt('useMonitor'):
-            self.KSM.setMonitor(tacs.TACS.KSMPrintStdout(
-                opt('KSMSolver'), self.comm.rank, opt('monitorFrequency')))
+            self.KSM.setMonitor(self.comm, _descript=opt('KSMSolver').upper(), freq=opt('monitorFrequency'))
 
     def addFunction(self, funcName, funcHandle, compIDs=None, **kwargs):
         """
