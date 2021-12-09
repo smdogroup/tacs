@@ -11,14 +11,14 @@ class ElementTest(unittest.TestCase):
         # fd/cs step size
         if TACS.dtype is complex:
             self.dh = 1e-50
-            self.rtol = 1e-6
-            self.atol = 1e-3
+            self.atol = 1e-11
         else:
             self.dh = 1e-6
-            self.rtol = 1.5e-1
-            self.atol = 1e-3
+            self.atol = 1e-6
         self.dtype = TACS.dtype
 
+        # Basically only check absolute error
+        self.rtol = 1e99
         self.print_level = 0
 
         # Set element index
@@ -33,8 +33,8 @@ class ElementTest(unittest.TestCase):
         self.vars = np.random.rand(max_vars).astype(self.dtype)
         self.dvars = self.vars.copy()
         self.ddvars = self.vars.copy()
-        # gravity vector
-        self.g = -9.81 * np.array([1.0, 1.0, 1.0], dtype=self.dtype)
+        # Gravity vector
+        self.g = 9.81 * np.array([-1.0, -1.0], dtype=self.dtype)
 
         # Create the isotropic material
         rho = 2700.0
@@ -47,20 +47,20 @@ class ElementTest(unittest.TestCase):
         self.props = constitutive.MaterialProperties(rho=rho, specific_heat=specific_heat,
                                                      E=E, nu=nu, ys=ys, cte=cte, kappa=kappa)
 
-        # Create the basis functions for 3D
-        self.bases = [elements.LinearTetrahedralBasis(),
-                      elements.QuadraticTetrahedralBasis(),
-                      elements.LinearHexaBasis(),
-                      elements.QuadraticHexaBasis(),
-                      elements.CubicHexaBasis()]
+        # Create the basis functions for 2D
+        self.bases = [elements.LinearTriangleBasis(),
+                      elements.QuadraticTriangleBasis(),
+                      elements.LinearQuadBasis(),
+                      elements.QuadraticQuadBasis(),
+                      elements.CubicQuadBasis()]
 
-        # Create stiffness
-        con = constitutive.SolidConstitutive(self.props, t=1.0, tNum=0)
+        # Create stiffness (need class)
+        con = constitutive.PlaneStressConstitutive(self.props, t=1.0, tNum=0)
 
         # Set the model type
-        self.models = [elements.LinearElasticity3D(con),
-                       # elements.LinearElasticity3D(con3d, elements.TACS_NONLINEAR_STRAIN),
-                       elements.LinearThermoelasticity3D(con)]
+        self.models = [elements.LinearElasticity2D(con),
+                       # elements.LinearElasticity2D(con2d, elements.TACS_NONLINEAR_STRAIN),
+                       elements.LinearThermoelasticity2D(con)]
 
         # Set matrix types
         self.matrix_types = [TACS.STIFFNESS_MATRIX, TACS.MASS_MATRIX, TACS.GEOMETRIC_STIFFNESS_MATRIX]
@@ -77,7 +77,7 @@ class ElementTest(unittest.TestCase):
                         if self.print_level > 0:
                             print("Testing with model %s with basis functions %s\n" % (
                                 type(model), type(basis)))
-                        element = elements.Element3D(model, basis)
+                        element = elements.Element2D(model, basis)
                         force = element.createElementInertialForce(self.g)
                         fail = elements.TestElementJacobian(force, self.elem_index, self.time, self.xpts,
                                                             self.vars, self.dvars, self.ddvars, -1, self.dh,
@@ -93,7 +93,7 @@ class ElementTest(unittest.TestCase):
                         if self.print_level > 0:
                             print("Testing with model %s with basis functions %s\n" % (
                                 type(model), type(basis)))
-                        element = elements.Element3D(model, basis)
+                        element = elements.Element2D(model, basis)
                         force = element.createElementInertialForce(self.g)
                         dvs = force.getDesignVars(self.elem_index)
                         fail = elements.TestAdjResProduct(force, self.elem_index, self.time, self.xpts,
@@ -110,7 +110,7 @@ class ElementTest(unittest.TestCase):
                         if self.print_level > 0:
                             print("Testing with model %s with basis functions %s\n" % (
                                 type(model), type(basis)))
-                        element = elements.Element3D(model, basis)
+                        element = elements.Element2D(model, basis)
                         force = element.createElementInertialForce(self.g)
                         fail = elements.TestAdjResXptProduct(force, self.elem_index, self.time, self.xpts,
                                                              self.vars, self.dvars, self.ddvars, self.dh,
@@ -123,7 +123,7 @@ class ElementTest(unittest.TestCase):
             with self.subTest(model=model):
                 for basis in self.bases:
                     with self.subTest(basis=basis):
-                        element = elements.Element3D(model, basis)
+                        element = elements.Element2D(model, basis)
                         force = element.createElementInertialForce(self.g)
                         dvs = force.getDesignVars(self.elem_index)
                         for matrix_type in self.matrix_types:
@@ -142,7 +142,7 @@ class ElementTest(unittest.TestCase):
             with self.subTest(model=model):
                 for basis in self.bases:
                     with self.subTest(basis=basis):
-                        element = elements.Element3D(model, basis)
+                        element = elements.Element2D(model, basis)
                         force = element.createElementInertialForce(self.g)
                         if self.print_level > 0:
                             print(

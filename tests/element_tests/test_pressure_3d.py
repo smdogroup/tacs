@@ -60,8 +60,7 @@ class ElementTest(unittest.TestCase):
         con = constitutive.SolidConstitutive(self.props, t=1.0, tNum=0)
 
         # Set the model type
-        self.models = [elements.HeatConduction3D(con),
-                       elements.LinearElasticity3D(con),
+        self.models = [elements.LinearElasticity3D(con),
                        # elements.LinearElasticity3D(con3d, elements.TACS_NONLINEAR_STRAIN),
                        elements.LinearThermoelasticity3D(con)]
 

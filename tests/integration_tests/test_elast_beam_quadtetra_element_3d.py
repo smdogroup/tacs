@@ -4,8 +4,9 @@ from tacs import pytacs, TACS, elements, constitutive, functions, problems
 from pytacs_analysis_base_test import PyTACSTestCase
 
 '''
- 10m x 1m x 1m Square beam constructed from tetrahedral elements. The beam is cantilevered at
+10m x 1m x 1m Square beam constructed from tetrahedral elements. The beam is cantilevered at
 one end and loaded using a pressure on the opposite face. This leads to a pure axial loading on the model.
+A second case is run where the beam is hung under a uniform gravity load.
 
 test StructuralMass and Compliance functions and sensitivities
 '''
@@ -15,7 +16,10 @@ bdf_file = os.path.join(base_dir, "./input_files/solid_beam.bdf")
 
 FUNC_REFS = {'AxialPressure_compliance': 14226.813534942703,
              'AxialPressure_ks_disp': 0.3088436763967383,
-             'AxialPressure_mass': 27000.00000000002}
+             'AxialPressure_mass': 27000.00000000002,
+             'Gravity_compliance': 3300084.4246089184,
+             'Gravity_ks_disp': 1.9255156278306307,
+             'Gravity_mass': 27000.00000000002}
 
 ksweight = 10.0
 

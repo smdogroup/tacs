@@ -4,15 +4,20 @@ ID FEMAP,FEMAP
 SOL SESTATIC
 CEND
   TITLE = Simcenter Nastran Static Analysis Set
-  SUBTITLE = AxialPressure
   ECHO = NONE
   DISPLACEMENT(PLOT) = ALL
   SPCFORCE(PLOT) = ALL
   OLOAD(PLOT) = ALL
   FORCE(PLOT,CORNER) = ALL
   STRESS(PLOT,CORNER) = ALL
+SUBCASE 1
+  SUBTITLE = AxialPressure
   SPC = 1
   LOAD = 1
+SUBCASE 2
+  SUBTITLE = Gravity
+  SPC = 1
+  LOAD = 2
 BEGIN BULK
 $ ***************************************************************************
 $   Written by : Femap
@@ -42,6 +47,8 @@ PLOAD4         1     272    1.+7                              19     131
 PLOAD4         1     343    1.+7                              97     131
 PLOAD4         1     580    1.+7                              66     131
 PLOAD4         1     606    1.+7                              19     131
+$ Femap Load Set 2 : 1000G
+GRAV           2          9.81+3      0.      0.    -1.0
 $ Femap Constraint Set 1 : Clamp
 SPC1           1  123456       1
 SPC1           1  123456       2

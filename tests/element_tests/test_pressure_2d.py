@@ -60,8 +60,7 @@ class ElementTest(unittest.TestCase):
         con = constitutive.PlaneStressConstitutive(self.props, t=1.0, tNum=0)
 
         # Set the model type
-        self.models = [elements.HeatConduction2D(con),
-                       elements.LinearElasticity2D(con),
+        self.models = [elements.LinearElasticity2D(con),
                        # elements.LinearElasticity2D(con2d, elements.TACS_NONLINEAR_STRAIN),
                        elements.LinearThermoelasticity2D(con)]
 
