@@ -84,7 +84,4 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
         tacs_probs = fea_assembler.createTACSProbsFromBDF()
         # Convert from dict to list
         tacs_probs = tacs_probs.values()
-        for prob in tacs_probs:
-            prob.setOption('l2convergence', 1e-20)
-            prob.setOption('l2convergencerel', 1e-20)
         return tacs_probs
