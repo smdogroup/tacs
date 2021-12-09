@@ -73,7 +73,7 @@ class ElementTest(unittest.TestCase):
             with self.subTest(con=con.getObjectName()):
                 element = elements.MassElement(con)
                 force = element.createElementInertialForce(self.g)
-                dvs = element.getDesignVars(self.elem_index)
+                dvs = force.getDesignVars(self.elem_index)
                 fail = elements.TestAdjResProduct(force, self.elem_index, self.time, self.xpts,
                                                   self.vars, self.dvars, self.ddvars, dvs, self.dh,
                                                   self.print_level, self.atol, self.rtol)
@@ -96,7 +96,7 @@ class ElementTest(unittest.TestCase):
             with self.subTest(con=con.getObjectName()):
                 element = elements.MassElement(con)
                 force = element.createElementInertialForce(self.g)
-                dvs = element.getDesignVars(self.elem_index)
+                dvs = force.getDesignVars(self.elem_index)
                 for matrix_type in self.matrix_types:
                     with self.subTest(matrix_type=matrix_type):
                         fail = elements.TestElementMatDVSens(force, matrix_type, self.elem_index,
