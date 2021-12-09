@@ -25,6 +25,12 @@ class TACSMassElement : public TACSElement {
   double getFaceQuadraturePoint( int face, int n, double pt[],
                                  double tangent[] ){ return 0.0; }
 
+  /**
+    Create element inertial force class
+    @return The TACSElement inertial force class associated with this element. Possibly NULL.
+  */
+  TACSElement* createElementInertialForce( TacsScalar g[] );
+
   // Functions for analysis
   // ----------------------
   void computeEnergies( int elemIndex,
