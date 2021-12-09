@@ -411,6 +411,23 @@ class TransientProblem(TACSProblem):
         self._addPressureToElements(self.auxElems[timeStep], elemIDs, pressures,
                                     faceIndex, nastranOrdering)
 
+    def addInertialLoad(self, timeStep, inertiaVector):
+        """
+        The function is used to add a fixed inertial load  at a specified time step
+        due to a uniform acceleration over the entire model.
+        This is most commonly used to model gravity loads on a model.
+
+        Parameters
+        ----------
+
+        timeStep : int
+            Time step index to apply load to.
+
+        inertiaVector : ndarray
+            Acceleration vector used to define inertial load.
+        """
+        self._addInertialLoad(self.auxElems[timeStep], inertiaVector)
+
     ####### Transient solver methods ########
 
     def _updateAssemblerVars(self):

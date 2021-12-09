@@ -1096,6 +1096,12 @@ class pyTACS(BaseUI):
                             loadArray[3:6] += scale * loadInfo.scaled_vector
                         staticProb.addLoadToNodes(nodeID, loadArray, nastranOrdering=True)
 
+                    # Add any gravity loads
+                    elif loadInfo.type == 'GRAV':
+                        inertiaVec = np.zeros(3, dtype=self.dtype)
+                        inertiaVec[:3] = scale * loadInfo.scale * loadInfo.N
+                        staticProb.addInertialLoad(inertiaVec)
+
                     # Add any pressure loads
                     # Pressure load card specific to shell elements
                     elif loadInfo.type == 'PLOAD2':

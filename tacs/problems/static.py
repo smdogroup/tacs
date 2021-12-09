@@ -458,6 +458,19 @@ class StaticProblem(TACSProblem):
         self._addPressureToElements(self.auxElems, elemIDs, pressures,
                                     faceIndex, nastranOrdering)
 
+    def addInertialLoad(self, inertiaVector):
+        """
+        The function is used to add a fixed inertial load due to
+        a uniform acceleration over the entire model.
+        This is most commonly used to model gravity loads on a model.
+
+        Parameters
+        ----------
+        inertiaVector : ndarray
+            Acceleration vector used to define inertial load.
+        """
+        self._addInertialLoad(self.auxElems, inertiaVector)
+
     ####### Static solver methods ########
 
     def _updateAssemblerVars(self):
