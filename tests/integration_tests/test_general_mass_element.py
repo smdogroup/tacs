@@ -5,7 +5,8 @@ from pytacs_analysis_base_test import PyTACSTestCase
 
 '''
 A point mass element free in space. 
-We apply a unit force in every direction on the mass for 10 seconds. 
+Case 1: We apply a unit force in every direction on the mass for 10 seconds. 
+Case 2: We apply a gravity load in the z direction for 10 seconds.
 
 The inertial values for the mass are given by the 6 dof mass matrix below:
 1   0   0   0   0   0
@@ -22,7 +23,11 @@ bdf_file = os.path.join(base_dir, "./input_files/general_mass.bdf")
 FUNC_REFS = {'constant_force_mass': 9.999999999999986,
              'constant_force_x_disp': 49.70793631821073,
              'constant_force_y_disp': 49.70793631821073,
-             'constant_force_z_disp': 49.70793631821073}
+             'constant_force_z_disp': 49.70793631821073,
+             'gravity_mass': 9.999999999999986,
+             'gravity_x_disp': 0.23025850929940442,
+             'gravity_y_disp': 0.23025850929940442,
+             'gravity_z_disp': 490.27400177251246}
 
 # Force to apply
 f = np.ones(6)
@@ -88,9 +93,21 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
         """
         Setup pytacs object for problems we will be testing.
         """
-        # Create tacs transient problem
+        # List to hold all problems
+        allProblems = []
+
+        # Create case 1 transient problem
         problem = fea_assembler.createTransientProblem('constant_force', 0.0, 10.0, 100)
         timeSteps = problem.getTimeSteps()
         for step_i, time in enumerate(timeSteps):
             problem.addLoadToNodes(step_i, 0, f, nastranOrdering=False)
-        return [problem]
+        allProblems.append(problem)
+
+        # Create case 2 transient problem
+        problem = fea_assembler.createTransientProblem('gravity', 0.0, 10.0, 100)
+        g = np.array([0.0, 0.0, 9.81], dtype=TACS.dtype)
+        for step_i, time in enumerate(timeSteps):
+            problem.addInertialLoad(step_i, g)
+        allProblems.append(problem)
+
+        return allProblems
