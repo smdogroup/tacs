@@ -22,6 +22,7 @@ CXX_OBJS = FElibrary.o \
 	TACSTraction3D.o \
 	TACSPressure2D.o \
 	TACSPressure3D.o \
+	TACSInertialForce3D.o \
 	TACSConvectiveTraction2D.o \
 	TACSConvectiveTraction3D.o \
 	TACSElementVerification.o

@@ -54,6 +54,13 @@ class TACSLinearElasticity2D : public TACSElementModel {
                          TacsScalar lb[], TacsScalar ub[] );
 
   /**
+    Get underlying tacs constitutive object for this model
+  */
+  TACSConstitutive* getConstitutive(){
+    return stiff;
+  }
+
+  /**
     Evaluate the coefficients of the weak form integrand
   */
   void evalWeakIntegrand( int elemIndex, const double time,
@@ -206,6 +213,13 @@ class TACSLinearElasticity3D : public TACSElementModel {
                          TacsScalar lb[], TacsScalar ub[] );
 
   /**
+    Get underlying tacs constitutive object for this model
+  */
+  TACSConstitutive* getConstitutive(){
+    return stiff;
+  }
+
+  /**
     Evaluate the coefficients of the weak form integrand
   */
   void evalWeakIntegrand( int elemIndex, const double time,
@@ -328,11 +342,6 @@ class TACSLinearElasticity3D : public TACSElementModel {
                       const double pt[], const TacsScalar X[],
                       const TacsScalar Ut[], const TacsScalar Ux[],
                       int ld_data, TacsScalar *data );
-
-  /**
-     Get the consitutive object
-  */
-  TACSSolidConstitutive* getConstitutive();
 
  private:
   ElementStrainType strain_type;

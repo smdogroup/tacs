@@ -17,6 +17,7 @@
 
 #include "TACSObject.h"
 #include "TACSElementTypes.h"
+#include "TACSConstitutive.h"
 
 /**
   TACSElementModel defines a physical model class independent of a
@@ -98,6 +99,15 @@ class TACSElementModel : public TACSObject {
                                  TacsScalar lowerBound[],
                                  TacsScalar upperBound[] ){
     return 0;
+  }
+
+  /**
+    Get underlying tacs constitutive object for this model
+
+    @return The TACSConstitutive object used by this model
+  */
+  virtual TACSConstitutive* getConstitutive(){
+    return NULL;
   }
 
   /**
