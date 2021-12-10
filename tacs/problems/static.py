@@ -64,6 +64,7 @@ class StaticProblem(TACSProblem):
             'subSpaceSize': [int, 10],
             'nRestarts': [int, 15],
             'flexible': [int, 1],
+            'maxLinearIterations': [int, 2],
             'L2Convergence': [float, 1e-12],
             'L2ConvergenceRel': [float, 1e-12],
             'useMonitor': [bool, False],
@@ -526,50 +527,49 @@ class StaticProblem(TACSProblem):
 
         initSolveTime = time.time()
 
-        # Compute the RHS
-        self.assembler.assembleRes(self.res)
-        # Add force terms from rhs
-        self.rhs.copyValues(self.F) # Fixed loads
-        # Add external loads, if specified
-        if Fext is not None:
-            if isinstance(Fext, tacs.TACS.Vec):
-                self.rhs.axpy(1.0, Fext)
-            elif isinstance(Fext, np.ndarray):
-                rhsArray = self.rhs.getArray()
-                rhsArray[:] = rhsArray[:] + Fext[:]
-        # Zero out bc terms in rhs
-        self.assembler.applyBCs(self.rhs)
-        # Add the -F
-        self.res.axpy(-1.0, self.rhs)
+        # Get current residual
+        self.getResidual(self.res, Fext)
 
-        # Set initnorm as the norm of F
-        self.initNorm = np.real(self.F.norm())
+        # Get rhs vector
+        self.K.mult(self.u, self.rhs)
+        self.rhs.axpy(-1.0, self.res)
+
+        # Set initnorm as the norm of rhs
+        self.initNorm = np.real(self.rhs.norm())
 
         # Starting Norm for this compuation
         self.startNorm = np.real(self.res.norm())
 
         initNormTime = time.time()
 
-        # Solve Linear System for the update
-        self.KSM.solve(self.res, self.update)
+        # Sometimes multiple solves are required to drive down
+        # the residual (even with linear elements) for problems with rbe elements
+        iter = 0
+        normRatio = np.inf
+        while iter < self.getOption('maxLinearIterations') and \
+              normRatio > self.getOption('L2ConvergenceRel'):
+            # Solve Linear System for the update
+            self.KSM.solve(self.res, self.update)
 
-        self.update.scale(-1.0)
+            self.update.scale(-1.0)
 
-        solveTime = time.time()
+            solveTime = time.time()
 
-        # Update State Variables
-        self.assembler.getVariables(self.u)
-        self.u.axpy(1.0, self.update)
-        self.assembler.setVariables(self.u)
+            # Update State Variables
+            self.assembler.getVariables(self.u)
+            self.u.axpy(1.0, self.update)
+            self.assembler.setVariables(self.u)
 
-        stateUpdateTime = time.time()
+            stateUpdateTime = time.time()
 
-        # Compute final FEA Norm
-        self.assembler.assembleRes(self.res)
-        self.res.axpy(-1.0, self.F)  # Add the -F
-        self.finalNorm = np.real(self.res.norm())
+            # Get updated residual
+            self.getResidual(self.res, Fext)
+            self.finalNorm = np.real(self.res.norm())
 
-        finalNormTime = time.time()
+            iter += 1
+            normRatio = self.finalNorm / self.initNorm
+
+            finalNormTime = time.time()
 
         # If timing was was requested print it, if the solution is nonlinear
         # print this information automatically if prinititerations was requested.
