@@ -390,6 +390,10 @@ void TACSRBE2::addJacobian( int elemIndex, double time,
     J[i] += alpha * mat[i];
   }
 
+  if (res){
+    addResidual(elemIndex, time, Xpts, vars, dvars, ddvars, res);
+  }
+
   delete [] mat;
 
 }
