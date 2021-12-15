@@ -64,7 +64,6 @@ class StaticProblem(TACSProblem):
             'subSpaceSize': [int, 10],
             'nRestarts': [int, 15],
             'flexible': [int, 1],
-            'maxLinearIterations': [int, 2],
             'L2Convergence': [float, 1e-12],
             'L2ConvergenceRel': [float, 1e-12],
             'useMonitor': [bool, False],
@@ -542,34 +541,25 @@ class StaticProblem(TACSProblem):
 
         initNormTime = time.time()
 
-        # Sometimes multiple solves are required to drive down
-        # the residual (even with linear elements) for problems with rbe elements
-        iter = 0
-        normRatio = np.inf
-        while iter < self.getOption('maxLinearIterations') and \
-              normRatio > self.getOption('L2ConvergenceRel'):
-            # Solve Linear System for the update
-            self.KSM.solve(self.res, self.update)
+        # Solve Linear System for the update
+        self.KSM.solve(self.res, self.update)
 
-            self.update.scale(-1.0)
+        self.update.scale(-1.0)
 
-            solveTime = time.time()
+        solveTime = time.time()
 
-            # Update State Variables
-            self.assembler.getVariables(self.u)
-            self.u.axpy(1.0, self.update)
-            self.assembler.setVariables(self.u)
+        # Update State Variables
+        self.assembler.getVariables(self.u)
+        self.u.axpy(1.0, self.update)
+        self.assembler.setVariables(self.u)
 
-            stateUpdateTime = time.time()
+        stateUpdateTime = time.time()
 
-            # Get updated residual
-            self.getResidual(self.res, Fext)
-            self.finalNorm = np.real(self.res.norm())
+        # Get updated residual
+        self.getResidual(self.res, Fext)
+        self.finalNorm = np.real(self.res.norm())
 
-            iter += 1
-            normRatio = self.finalNorm / self.initNorm
-
-            finalNormTime = time.time()
+        finalNormTime = time.time()
 
         # If timing was was requested print it, if the solution is nonlinear
         # print this information automatically if prinititerations was requested.
