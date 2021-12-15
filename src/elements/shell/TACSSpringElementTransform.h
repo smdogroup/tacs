@@ -73,7 +73,7 @@ class TACSSpringRefAxisTransform : public TACSSpringTransform {
     t[0] = Xpts[3] - Xpts[0];
     t[1] = Xpts[4] - Xpts[1];
     t[2] = Xpts[5] - Xpts[2];
-    TacsScalar L = vec3Normalize(t);
+    vec3Normalize(t);
 
     if (vec3Dot(ref_dir, &t[0]) == 1.0){
       fprintf(stderr,
@@ -105,7 +105,7 @@ class TACSSpringRefAxisTransform : public TACSSpringTransform {
       tSens[component-3] = 1.0;
     }
 
-    TacsScalar L = vec3NormalizeSens(t, &LSens, tSens);
+    vec3NormalizeSens(t, &LSens, tSens);
 
     crossProduct(&t[0], ref_dir, &t[6]);
     crossProduct(&tSens[0], ref_dir, &tSens[6]);
@@ -125,7 +125,7 @@ class TACSSpringRefFrameTransform : public TACSSpringTransform {
     transform[0] = _ref_axis_i[0];
     transform[1] = _ref_axis_i[1];
     transform[2] = _ref_axis_i[2];
-    TacsScalar L = vec3Normalize(transform);
+    vec3Normalize(transform);
     crossProduct(&transform[0], _ref_axis_j, &transform[6]);
     vec3Normalize(&transform[6]);
     crossProduct(&transform[6], &transform[0], &transform[3]);
