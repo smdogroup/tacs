@@ -508,7 +508,7 @@ void TACSRBE3::addJacobian( int elemIndex, double time,
     mat[row + col*NUM_VARIABLES] = mat[col + row*NUM_VARIABLES] = \
         C1*(-w[n]*(Jcg[1][2]*rnc[2]-Jcg[2][2]*rnc[1]));
 
-// Fy
+    // Fy
     row++;
     col = ii + 0;
     mat[row + col*NUM_VARIABLES] = mat[col + row*NUM_VARIABLES] = \
@@ -533,7 +533,7 @@ void TACSRBE3::addJacobian( int elemIndex, double time,
     mat[row + col*NUM_VARIABLES] = mat[col + row*NUM_VARIABLES] = \
         C1*(-w[n]*(Jcg[2][2]*rnc[0]-Jcg[0][2]*rnc[2]));
 
-// Fz
+    // Fz
     row++;
     col = ii + 0;
     mat[row + col*NUM_VARIABLES] = mat[col + row*NUM_VARIABLES] = \
@@ -607,7 +607,7 @@ void TACSRBE3::addJacobian( int elemIndex, double time,
     mat[row + col*NUM_VARIABLES] = mat[col + row*NUM_VARIABLES] = \
         C1*-w[n]*Lc*Lc*Jcg[1][2];
 
-// Mz
+    // Mz
     row++;
     col = ii + 0;
     mat[row + col*NUM_VARIABLES] = mat[col + row*NUM_VARIABLES] = \
@@ -650,27 +650,30 @@ void TACSRBE3::addJacobian( int elemIndex, double time,
      procedure in getRes */
   for (int k = 0; k < NUM_DISPS; k++){
     if (!dep_dof_constrained[k]){
-        for (int i = 0; i < NUM_VARIABLES; i++){
-            mat[i + (ii+k)*NUM_VARIABLES]  = 0.0;
-            mat[ii+k + (i)*NUM_VARIABLES]  = 0.0;
-        }
-        mat[ii+k + (ii+k)*NUM_VARIABLES] = C1*1.0;
+      for (int i = 0; i < NUM_VARIABLES; i++){
+        mat[i + (ii+k)*NUM_VARIABLES]  = 0.0;
+        mat[ii+k + (i)*NUM_VARIABLES]  = 0.0;
+      }
+      mat[ii+k + (ii+k)*NUM_VARIABLES] = C1*1.0;
     }
 
     for (int j = 0; j < NUM_INDEP_NODES; j++){
-        if (!indep_dof_constrained[j][k]){
-            for (int i = 0; i < NUM_VARIABLES; i++){
-                int row = (j+1)*NUM_DISPS + k;
-                int col = i;
-                mat[row + col*NUM_VARIABLES] = mat[col + row*NUM_VARIABLES] = \
-                    0.0;
-            }
+      if (!indep_dof_constrained[j][k]){
+        for (int i = 0; i < NUM_VARIABLES; i++){
+          int row = (j+1)*NUM_DISPS + k;
+          int col = i;
+          mat[row + col*NUM_VARIABLES] = mat[col + row*NUM_VARIABLES] = 0.0;
         }
+      }
     }
   }
 
   for (int i = 0 ; i < NUM_VARIABLES*NUM_VARIABLES; i++){
     J[i] += alpha * mat[i];
+  }
+
+  if (res){
+    addResidual(elemIndex, time, Xpts, vars, dvars, ddvars, res);
   }
 
   delete [] mat;
