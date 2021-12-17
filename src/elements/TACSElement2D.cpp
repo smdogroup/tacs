@@ -15,6 +15,8 @@
 #include "TACSElement2D.h"
 #include "TACSTraction2D.h"
 #include "TACSPressure2D.h"
+#include "TACSInertialForce2D.h"
+#include "TACSConstitutive.h"
 #include "TACSElementAlgebra.h"
 
 TACSElement2D::TACSElement2D( TACSElementModel *_model,
@@ -61,6 +63,12 @@ TACSElement* TACSElement2D::createElementTraction( int faceIndex, TacsScalar t[]
 TACSElement* TACSElement2D::createElementPressure( int faceIndex, TacsScalar p ){
   int varsPerNode = getVarsPerNode();
   return new TACSPressure2D(varsPerNode, faceIndex, basis, p);
+}
+
+TACSElement* TACSElement2D::createElementInertialForce( TacsScalar inertiaVec[] ){
+  int varsPerNode = getVarsPerNode();
+  TACSConstitutive* con = model->getConstitutive();
+  return new TACSInertialForce2D(varsPerNode, con, basis, inertiaVec);
 }
 
 int TACSElement2D::getNumQuadraturePoints(){

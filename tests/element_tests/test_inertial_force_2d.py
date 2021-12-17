@@ -11,14 +11,14 @@ class ElementTest(unittest.TestCase):
         # fd/cs step size
         if TACS.dtype is complex:
             self.dh = 1e-50
-            self.atol = 1e-11
+            self.rtol = 1e-6
+            self.atol = 1e-3
         else:
             self.dh = 1e-6
-            self.atol = 1e-6
+            self.rtol = 1.5e-1
+            self.atol = 1e-3
         self.dtype = TACS.dtype
 
-        # Basically only check absolute error
-        self.rtol = 1e99
         self.print_level = 0
 
         # Set element index
@@ -33,10 +33,8 @@ class ElementTest(unittest.TestCase):
         self.vars = np.random.rand(max_vars).astype(self.dtype)
         self.dvars = self.vars.copy()
         self.ddvars = self.vars.copy()
-        # Pressure vector and selected element face
-        np.random.seed(30)  # Seed random numbers for deterministic/repeatable tests
-        self.press = 10.0
-        self.faceIndex = 0
+        # Gravity vector
+        self.g = 9.81 * np.array([-1.0, -1.0], dtype=self.dtype)
 
         # Create the isotropic material
         rho = 2700.0
@@ -80,8 +78,8 @@ class ElementTest(unittest.TestCase):
                             print("Testing with model %s with basis functions %s\n" % (
                                 type(model), type(basis)))
                         element = elements.Element2D(model, basis)
-                        pressure = element.createElementPressure(self.faceIndex, self.press)
-                        fail = elements.TestElementJacobian(pressure, self.elem_index, self.time, self.xpts,
+                        force = element.createElementInertialForce(self.g)
+                        fail = elements.TestElementJacobian(force, self.elem_index, self.time, self.xpts,
                                                             self.vars, self.dvars, self.ddvars, -1, self.dh,
                                                             self.print_level, self.atol, self.rtol)
                         self.assertFalse(fail)
@@ -96,9 +94,9 @@ class ElementTest(unittest.TestCase):
                             print("Testing with model %s with basis functions %s\n" % (
                                 type(model), type(basis)))
                         element = elements.Element2D(model, basis)
-                        pressure = element.createElementPressure(self.faceIndex, self.press)
-                        dvs = pressure.getDesignVars(self.elem_index)
-                        fail = elements.TestAdjResProduct(pressure, self.elem_index, self.time, self.xpts,
+                        force = element.createElementInertialForce(self.g)
+                        dvs = force.getDesignVars(self.elem_index)
+                        fail = elements.TestAdjResProduct(force, self.elem_index, self.time, self.xpts,
                                                           self.vars, self.dvars, self.ddvars, dvs, self.dh,
                                                           self.print_level, self.atol, self.rtol)
                         self.assertFalse(fail)
@@ -113,8 +111,8 @@ class ElementTest(unittest.TestCase):
                             print("Testing with model %s with basis functions %s\n" % (
                                 type(model), type(basis)))
                         element = elements.Element2D(model, basis)
-                        pressure = element.createElementPressure(self.faceIndex, self.press)
-                        fail = elements.TestAdjResXptProduct(pressure, self.elem_index, self.time, self.xpts,
+                        force = element.createElementInertialForce(self.g)
+                        fail = elements.TestAdjResXptProduct(force, self.elem_index, self.time, self.xpts,
                                                              self.vars, self.dvars, self.ddvars, self.dh,
                                                              self.print_level, self.atol, self.rtol)
                         self.assertFalse(fail)
@@ -126,14 +124,14 @@ class ElementTest(unittest.TestCase):
                 for basis in self.bases:
                     with self.subTest(basis=basis):
                         element = elements.Element2D(model, basis)
-                        pressure = element.createElementPressure(self.faceIndex, self.press)
-                        dvs = pressure.getDesignVars(self.elem_index)
+                        force = element.createElementInertialForce(self.g)
+                        dvs = force.getDesignVars(self.elem_index)
                         for matrix_type in self.matrix_types:
                             with self.subTest(matrix_type=matrix_type):
                                 if self.print_level > 0:
                                     print("Testing with model %s with basis functions %s and matrix type %s\n" % (
                                         type(model), type(basis), type(matrix_type)))
-                                fail = elements.TestElementMatDVSens(pressure, matrix_type, self.elem_index,
+                                fail = elements.TestElementMatDVSens(force, matrix_type, self.elem_index,
                                                                      self.time, self.xpts, self.vars, dvs, self.dh,
                                                                      self.print_level, self.atol, self.rtol)
                                 self.assertFalse(fail)
@@ -145,12 +143,12 @@ class ElementTest(unittest.TestCase):
                 for basis in self.bases:
                     with self.subTest(basis=basis):
                         element = elements.Element2D(model, basis)
-                        pressure = element.createElementPressure(self.faceIndex, self.press)
+                        force = element.createElementInertialForce(self.g)
                         if self.print_level > 0:
                             print(
                                 "Testing with model %s with basis functions %s and matrix type GEOMETRIC_STIFFNESS\n" % (
                                     type(model), type(basis)))
-                        fail = elements.TestElementMatSVSens(pressure, TACS.GEOMETRIC_STIFFNESS_MATRIX, self.elem_index,
+                        fail = elements.TestElementMatSVSens(force, TACS.GEOMETRIC_STIFFNESS_MATRIX, self.elem_index,
                                                              self.time, self.xpts, self.vars, self.dh,
                                                              self.print_level, self.atol, self.rtol)
                         self.assertFalse(fail)

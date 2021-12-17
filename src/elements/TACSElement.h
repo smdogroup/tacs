@@ -209,6 +209,15 @@ class TACSElement : public TACSObject {
   }
 
   /**
+    Create element inertial force class
+
+    @return The TACSElement inertial force class associated with this element. Possibly NULL.
+  */
+  virtual TACSElement* createElementInertialForce( TacsScalar g[] ){
+    return NULL;
+  }
+
+  /**
     Get the type of element layout for visualization
 
     @return The layout type for this element

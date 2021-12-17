@@ -103,10 +103,13 @@ D = 150 # N/m^2
 tracVec = np.array([D, 0.0, L])
 compIDs = FEAAssembler.selectCompIDs(include='SKIN')
 problem.addTractionToComponents(compIDs, tracVec)
-# Finally, we can approximate fuel load by adding a pressure load to the lower skin
+# We can approximate fuel load by adding a pressure load to the lower skin
 P = 2e3 # N/m^2
 compIDs = FEAAssembler.selectCompIDs(include='L_SKIN')
 problem.addPressureToComponents(compIDs, P)
+# Add gravity load to all structural elements
+g = np.array([0.0, 0.0, -9.81]) # m/s^2
+problem.addInertialLoad(g)
 
 # ==============================================================================
 # Solve static problem

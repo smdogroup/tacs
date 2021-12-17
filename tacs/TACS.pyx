@@ -299,6 +299,14 @@ cdef class Element:
                 return _init_Element(pressElem)
         return None
 
+    def createElementInertialForce(self, np.ndarray[TacsScalar, ndim=1] inertiaVec):
+        cdef TACSElement *inertiaElem = NULL
+        if self.ptr:
+            inertiaElem = self.ptr.createElementInertialForce(<TacsScalar*>inertiaVec.data)
+            if inertiaElem != NULL:
+                return _init_Element(inertiaElem)
+        return None
+
     def getDesignVarsPerNode(self):
         """
         getDesignVarsPerNode(self)

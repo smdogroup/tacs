@@ -180,8 +180,7 @@ class StaticProblem(TACSProblem):
                                self.getOption('L2Convergence'))
 
         if opt('useMonitor'):
-            self.KSM.setMonitor(tacs.TACS.KSMPrintStdout(
-                opt('KSMSolver'), self.comm.rank, opt('monitorFrequency')))
+            self.KSM.setMonitor(self.comm, _descript=opt('KSMSolver').upper(), freq=opt('monitorFrequency'))
 
     def addFunction(self, funcName, funcHandle, compIDs=None, **kwargs):
         """
@@ -458,6 +457,19 @@ class StaticProblem(TACSProblem):
         self._addPressureToElements(self.auxElems, elemIDs, pressures,
                                     faceIndex, nastranOrdering)
 
+    def addInertialLoad(self, inertiaVector):
+        """
+        The function is used to add a fixed inertial load due to
+        a uniform acceleration over the entire model.
+        This is most commonly used to model gravity loads on a model.
+
+        Parameters
+        ----------
+        inertiaVector : ndarray
+            Acceleration vector used to define inertial load.
+        """
+        self._addInertialLoad(self.auxElems, inertiaVector)
+
     ####### Static solver methods ########
 
     def _updateAssemblerVars(self):
@@ -514,24 +526,15 @@ class StaticProblem(TACSProblem):
 
         initSolveTime = time.time()
 
-        # Compute the RHS
-        self.assembler.assembleRes(self.res)
-        # Add force terms from rhs
-        self.rhs.copyValues(self.F) # Fixed loads
-        # Add external loads, if specified
-        if Fext is not None:
-            if isinstance(Fext, tacs.TACS.Vec):
-                self.rhs.axpy(1.0, Fext)
-            elif isinstance(Fext, np.ndarray):
-                rhsArray = self.rhs.getArray()
-                rhsArray[:] = rhsArray[:] + Fext[:]
-        # Zero out bc terms in rhs
-        self.assembler.applyBCs(self.rhs)
-        # Add the -F
-        self.res.axpy(-1.0, self.rhs)
+        # Get current residual
+        self.getResidual(self.res, Fext)
 
-        # Set initnorm as the norm of F
-        self.initNorm = np.real(self.F.norm())
+        # Get rhs vector
+        self.K.mult(self.u, self.rhs)
+        self.rhs.axpy(-1.0, self.res)
+
+        # Set initnorm as the norm of rhs
+        self.initNorm = np.real(self.rhs.norm())
 
         # Starting Norm for this compuation
         self.startNorm = np.real(self.res.norm())
@@ -552,9 +555,8 @@ class StaticProblem(TACSProblem):
 
         stateUpdateTime = time.time()
 
-        # Compute final FEA Norm
-        self.assembler.assembleRes(self.res)
-        self.res.axpy(-1.0, self.F)  # Add the -F
+        # Get updated residual
+        self.getResidual(self.res, Fext)
         self.finalNorm = np.real(self.res.norm())
 
         finalNormTime = time.time()
