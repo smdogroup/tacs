@@ -282,9 +282,11 @@ int main( int argc, char * argv[] ){
     }
 
     int *basic_ltypes = new int[ num_basic_elements ];
+    int *basic_element_comp_num = new int[ num_basic_elements ];
     int *basic_conn = new int[ basic_conn_size ];
 
     int *btypes = basic_ltypes;
+    int *belem_comp_num = basic_element_comp_num;
     int *bconn = basic_conn;
     for ( int k = 0; k < num_elements; k++ ){
       int ntypes = 0, nconn = 0;
@@ -321,7 +323,12 @@ int main( int argc, char * argv[] ){
         TacsConvertVisLayoutToBasic(ltype, &conn[ptr[k]],
                                     btypes, bconn);
       }
+      // Set the basic element component to match the parent
+      for ( int ii = 0; ii < ntypes; ii++ ){
+        belem_comp_num[ii] = element_comp_num[k];
+      }
       btypes += ntypes;
+      belem_comp_num += ntypes;
       bconn += nconn;
     }
 
@@ -349,7 +356,7 @@ int main( int argc, char * argv[] ){
         ElementLayout ltype = (ElementLayout)basic_ltypes[i];
         int conn_size = TacsGetNumVisNodes(ltype);
 
-        if (element_comp_num[i] == k){
+        if (basic_element_comp_num[i] == k){
           // Make sure all elements in this zone are the same type
           if (zone_btype == -1){
             zone_btype = basic_ltypes[i];
@@ -456,6 +463,10 @@ int main( int argc, char * argv[] ){
     delete [] reduced_conn;
     delete [] reduced_float_data;
     delete [] avg_edata;
+
+    delete [] basic_ltypes;
+    delete [] basic_conn;
+    delete [] basic_element_comp_num;
 
     delete [] infile;
     delete [] outfile;
