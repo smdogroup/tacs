@@ -271,6 +271,12 @@ int main( int argc, char * argv[] ){
           ltype == TACS_TRI_CUBIC_ELEMENT){
         nconn = nconn + ntypes;
       }
+      // Plot higher order tetrahedral elements as a single linear element
+      else if (ltype == TACS_TETRA_QUADRATIC_ELEMENT ||
+               ltype == TACS_TETRA_CUBIC_ELEMENT){
+        nconn = 4;
+        ntypes = 1;
+      }
       num_basic_elements += ntypes;
       basic_conn_size += nconn;
     }
@@ -301,6 +307,14 @@ int main( int argc, char * argv[] ){
         }
         nconn = nconn + ntypes;
         delete [] tri_conn;
+      }
+      // Plot only the first four nodes (conrners) of higher order tets
+      else if (ltype == TACS_TETRA_QUADRATIC_ELEMENT ||
+               ltype == TACS_TETRA_CUBIC_ELEMENT){
+        memcpy(bconn, &conn[ptr[k]], 4*sizeof(int));
+        nconn = 4;
+        ntypes = 1;
+        btypes[0] = TACS_TETRA_ELEMENT;
       }
       else {
         TacsConvertVisLayoutToBasicCount(ltype, &ntypes, &nconn);
@@ -336,6 +350,7 @@ int main( int argc, char * argv[] ){
         int conn_size = TacsGetNumVisNodes(ltype);
 
         if (element_comp_num[i] == k){
+          // Make sure all elements in this zone are the same type
           if (zone_btype == -1){
             zone_btype = basic_ltypes[i];
           }
@@ -387,6 +402,9 @@ int main( int argc, char * argv[] ){
       else if (zone_btype == TACS_QUAD_ELEMENT){
         zone_type = FEQUADRILATERAL;
       }
+      else if (zone_btype == TACS_TETRA_ELEMENT){
+        zone_type = FETETRAHEDRON;
+      }
       else if (zone_btype == TACS_HEXA_ELEMENT){
         zone_type = FEBRICK;
       }
@@ -400,32 +418,26 @@ int main( int argc, char * argv[] ){
         create_fe_tec_zone(comp_name, zone_type, npts, nelems,
                            use_strands, solution_time);
 
-        // Retrieve the data
+        // Retrieve the continuous data
         for ( int j = 0; j < num_variables; j++ ){
-          if (reduced_float_data){
-
-            for ( int i = 0; i < num_points; i++ ){
-              if (reduced_points[i] > 0){
-                reduced_float_data[reduced_points[i]-1] =
-                  cdata[i*num_variables + j];
-              }
+          for ( int i = 0; i < num_points; i++ ){
+            if (reduced_points[i] > 0){
+              reduced_float_data[reduced_points[i]-1] =
+                cdata[i*num_variables + j];
             }
-            write_tec_float_data(npts, reduced_float_data);
           }
+          write_tec_float_data(npts, reduced_float_data);
         }
 
-        // Retrieve the data
+        // Retrieve the element data
         for ( int j = 0; j < num_evariables; j++ ){
-          if (reduced_float_data){
-
-            for ( int i = 0; i < num_points; i++ ){
-              if (reduced_points[i] > 0){
-                reduced_float_data[reduced_points[i]-1] =
-                  avg_edata[num_evariables*i + j];
-              }
+          for ( int i = 0; i < num_points; i++ ){
+            if (reduced_points[i] > 0){
+              reduced_float_data[reduced_points[i]-1] =
+                avg_edata[num_evariables*i + j];
             }
-            write_tec_float_data(npts, reduced_float_data);
           }
+          write_tec_float_data(npts, reduced_float_data);
         }
 
         // Now, write the connectivity
