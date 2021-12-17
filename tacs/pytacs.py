@@ -1433,6 +1433,8 @@ class pyTACS(BaseUI):
             # Loop through every element type in this component,
             # there may be multiple (e.g CQUAD4 + CTRIA3)
             for j, elemObject in enumerate(elemObjects):
+                # Set component-specific family id
+                elemObject.setComponentNum(self.compFam[i])
                 # Set each of the elements for this component
                 self.meshLoader.setElementObject(i, j, elemObject)
                 # set varsPerNode
