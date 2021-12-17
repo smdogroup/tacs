@@ -35,6 +35,7 @@ class TACSElement2D : public TACSElement {
   TACSElementModel* getElementModel();
   TACSElement* createElementTraction( int faceIndex, TacsScalar t[] );
   TACSElement* createElementPressure( int faceIndex, TacsScalar p );
+  TACSElement* createElementInertialForce( TacsScalar inertiaVec[] );
   int getNumQuadraturePoints();
   double getQuadratureWeight( int n );
   double getQuadraturePoint( int n, double pt[] );

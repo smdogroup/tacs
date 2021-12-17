@@ -4,8 +4,8 @@ from tacs import pytacs, elements, constitutive, functions, problems
 from pytacs_analysis_base_test import PyTACSTestCase
 
 '''
-The nominal case is a 1m x 1m flat plate under two load cases: 
-a 10 kN point force at center and a 100kPa pressure applied to the surface. The
+The nominal case is a 1m x 1m flat plate under three load cases: 
+a 10 kN point force at center, a 100kPa pressure applied to the surface, and a 100G gravity load. The
 perimeter of the plate is fixed in all 6 degrees of freedom. The plate comprises
 900 CQUAD4 elements and test KSFailure, StructuralMass, and Compliance functions and sensitivities
 '''
@@ -14,7 +14,8 @@ base_dir = os.path.dirname(os.path.abspath(__file__))
 bdf_file = os.path.join(base_dir, "./input_files/plate.bdf")
 
 FUNC_REFS = {'point_load_compliance': 683.8571611640772, 'point_load_ks_vmfailure': 0.5757488025913641, 'point_load_mass': 12.5,
-             'pressure_compliance': 4679.345460326432, 'pressure_ks_vmfailure': 1.2938623156872926, 'pressure_mass': 12.5}
+             'pressure_compliance': 4679.345460326432, 'pressure_ks_vmfailure': 1.2938623156872926, 'pressure_mass': 12.5,
+             'gravity_compliance': 70.36280588344383, 'gravity_ks_vmfailure': 0.11707320009742483, 'gravity_mass': 12.5}
 
 # KS function weight
 ksweight = 10.0
@@ -109,6 +110,12 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
         P = 100e3  # Pa
         compIDs = fea_assembler.selectCompIDs(include='PLATE')
         sp.addPressureToComponents(compIDs, P)
+        tacs_probs.append(sp)
+
+        # Add pressure to entire plate
+        sp = fea_assembler.createStaticProblem(name='gravity')
+        g = np.array([0.0, 0.0, -981.0], dtype=self.dtype)
+        sp.addInertialLoad(g)
         tacs_probs.append(sp)
 
         return tacs_probs

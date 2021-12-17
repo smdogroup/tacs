@@ -22,7 +22,9 @@
 #include <string.h>
 
 // Include FH5 header files
-#include "TACSFH5.h"
+#include "TACSFH5Loader.h"
+// Include TACS element types
+#include "TACSElementTypes.h"
 
 // Include Tecplot header files
 #include "TECIO.h"
@@ -188,128 +190,196 @@ int main( int argc, char * argv[] ){
     char dir_name[] = "."; // We'll be working with the current directory
     int tec_init = 0;      // Tecplot initialized flag
 
-    // Open the FH5 file for reading
-    TACSFH5File * file = new TACSFH5File(MPI_COMM_SELF);
-    file->incref();
+    // Create the loader object
+    TACSFH5Loader *loader = new TACSFH5Loader();
+    loader->incref();
 
-    if (!file->openFile(infile)){
+    int fail = loader->loadData(infile);
+    if (fail){
       fprintf(stderr, "Failed to open the file %s\n", infile);
       return (1);
     }
 
-    // Retrieve all the data from the file including the
-    // variables, connectivity and component numbers
+    int num_elements;
+    int *element_comp_num, *ltypes, *ptr, *conn;
+    loader->getConnectivity(&num_elements, &element_comp_num, &ltypes, &ptr, &conn);
+
+    const char *cname, *var_names;
+    int num_points, num_variables;
+    float *cdata;
+    loader->getContinuousData(&cname, &var_names, &num_points, &num_variables, &cdata);
+
+    const char *ename, *evar_names;
+    int edim1, num_evariables;
+    float *edata;
+    loader->getElementData(&ename, &evar_names, &edim1, &num_evariables, &edata);
+
     double solution_time = 0.0;
-    int *element_comp_num = NULL;
-    int *conn = NULL;
-    double *data = NULL;
-    float *float_data = NULL;
-    int conn_dim = 0, num_elements = 0, num_points = 0, num_variables = 0;
-    file->firstZone();
-    do {
-      // Find the zone corresponding to all the data
-      const char *zone_name, *var_names;
-      TACSFH5File::FH5DataType dtype;
-      int dim1, dim2;
 
-      if (!file->getZoneInfo(&zone_name, &var_names, &dtype, &dim1, &dim2)){
-        fprintf(stderr, "Error, zone not defined\n");
-        break;
+    // Initialize the tecplot file with the variables
+    // Concatenate continuous and element variable names
+    char *all_vars = new char[ strlen(var_names)+strlen(evar_names)+2 ];
+    strcpy(all_vars, var_names);
+    all_vars[strlen(var_names)] = ',';
+    strcpy(&all_vars[strlen(var_names)+1], evar_names);
+    create_tec_file(data_info, all_vars, outfile, dir_name, FULL);
+    tec_init = 1;
+    delete [] all_vars;
+
+    // Count up the number of times each node is referred to
+    // in the discontinuous element-wise data
+    float *counts = new float[ num_points ];
+    memset(counts, 0, num_points*sizeof(float));
+    for ( int j = 0; j < ptr[num_elements]; j++ ){
+      counts[conn[j]] += 1.0;
+    }
+    for ( int i = 0; i < num_points; i++ ){
+      if (counts[i] != 0.0){
+        counts[i] = 1.0/counts[i];
       }
+    }
 
-      if (strcmp(zone_name, "components") == 0){
-        void *vdata;
-        if (file->getZoneData(&zone_name, &var_names, &dtype,
-                              &dim1, &dim2, &vdata)){
-          element_comp_num = (int*)vdata;
-        }
+    // For each component, average the nodal data
+    float *avg_edata = new float[ num_points * num_evariables ];
+    // Nodally average the data
+    memset(avg_edata, 0, num_points * num_evariables*sizeof(float));
+    for ( int j = 0; j < num_evariables; j++ ){
+      for ( int k = 0; k < ptr[num_elements]; k++ ){
+        avg_edata[num_evariables*conn[k] + j] += counts[conn[k]]*edata[num_evariables*k + j];
       }
-      else if (strcmp(zone_name, "connectivity") == 0){
-        num_elements = dim1;
-        conn_dim = dim2;
-        void *vdata;
-        if (file->getZoneData(&zone_name, &var_names, &dtype,
-                              &dim1, &dim2, &vdata)){
-          conn = (int*)vdata;
-        }
-      }
-      else if (strncmp(zone_name, "data", 4) == 0){
-        // Try to retrieve the solution time - this may fail if an older
-        // version of the F5 file is used
-        if (!(sscanf(zone_name, "data t=%lf", &solution_time) == 1)){
-          solution_time = 0.0;
-        }
+    }
 
-        // Initialize the tecplot file with the variables
-        char *vars = new char[ strlen(var_names)+1 ];
-        strcpy(vars, var_names);
-        create_tec_file(data_info, vars,
-                        outfile, dir_name, FULL);
-        tec_init = 1;
-        delete [] vars;
+    delete [] counts;
 
-        // Retrieve the data
-        void *vdata;
-        if (file->getZoneData(&zone_name, &var_names, &dtype,
-                              &dim1, &dim2, &vdata)){
-          num_points = dim1;
-          num_variables = dim2;
-          if (dtype == TACSFH5File::FH5_DOUBLE){
-            data = (double*)vdata;
-          }
-          else if (dtype == TACSFH5File::FH5_FLOAT){
-            float_data = (float*)vdata;
-          }
-        }
-      }
-    } while (file->nextZone());
-
-    if (!(element_comp_num && conn && (data || float_data))){
+    if (!(element_comp_num && conn && cdata)){
       fprintf(stderr, "Error, data, connectivity or \
-component numbers not defined in file\n");
+              component numbers not defined in file\n");
     }
 
-    // Set the element type to use
-    ZoneType zone_type;
-    if (conn_dim == 2){
-      zone_type = FELINESEG;
-    }
-    else if (conn_dim == 8){
-      zone_type = FEBRICK;
-    }
-    else {
-      zone_type = FEQUADRILATERAL;
+    // Setup visualization elements
+    int num_basic_elements = 0;
+    int basic_conn_size = 0;
+    for ( int k = 0; k < num_elements; k++ ){
+      int ntypes = 0, nconn = 0;
+      ElementLayout ltype = (ElementLayout)ltypes[k];
+      TacsConvertVisLayoutToBasicCount(ltype, &ntypes, &nconn);
+      // For triangular elements we'll add a 4th dummy node
+      // to the connectivity that's just the third node repeated
+      // This way triangles can be treated as degenerate quads from Tecplot's perspective
+      if (ltype == TACS_TRI_ELEMENT ||
+          ltype == TACS_TRI_QUADRATIC_ELEMENT ||
+          ltype == TACS_TRI_CUBIC_ELEMENT){
+        nconn = nconn + ntypes;
+      }
+      // Plot higher order tetrahedral elements as a single linear element
+      else if (ltype == TACS_TETRA_QUADRATIC_ELEMENT ||
+               ltype == TACS_TETRA_CUBIC_ELEMENT){
+        nconn = 4;
+        ntypes = 1;
+      }
+      num_basic_elements += ntypes;
+      basic_conn_size += nconn;
     }
 
-    int num_comp = file->getNumComponents();
+    int *basic_ltypes = new int[ num_basic_elements ];
+    int *basic_element_comp_num = new int[ num_basic_elements ];
+    int *basic_conn = new int[ basic_conn_size ];
+
+    int *btypes = basic_ltypes;
+    int *belem_comp_num = basic_element_comp_num;
+    int *bconn = basic_conn;
+    for ( int k = 0; k < num_elements; k++ ){
+      int ntypes = 0, nconn = 0;
+      ElementLayout ltype = (ElementLayout)ltypes[k];
+      // Add our dummy nodes for triangular elements
+      if (ltype == TACS_TRI_ELEMENT ||
+          ltype == TACS_TRI_QUADRATIC_ELEMENT ||
+          ltype == TACS_TRI_CUBIC_ELEMENT){
+        TacsConvertVisLayoutToBasicCount(ltype, &ntypes, &nconn);
+        int *tri_conn = new int[ nconn ];
+        TacsConvertVisLayoutToBasic(ltype, &conn[ptr[k]],
+                                    btypes, tri_conn);
+
+        const int convert[] = {0, 1, 2, 2};
+        for (int jj = 0; jj < ntypes; jj++){
+          for (int ii = 0; ii < 4; ii++){
+            bconn[4*jj+ii] = tri_conn[3*jj+convert[ii]];
+          }
+          btypes[jj] = TACS_QUAD_ELEMENT;
+        }
+        nconn = nconn + ntypes;
+        delete [] tri_conn;
+      }
+      // Plot only the first four nodes (conrners) of higher order tets
+      else if (ltype == TACS_TETRA_QUADRATIC_ELEMENT ||
+               ltype == TACS_TETRA_CUBIC_ELEMENT){
+        memcpy(bconn, &conn[ptr[k]], 4*sizeof(int));
+        nconn = 4;
+        ntypes = 1;
+        btypes[0] = TACS_TETRA_ELEMENT;
+      }
+      else {
+        TacsConvertVisLayoutToBasicCount(ltype, &ntypes, &nconn);
+        TacsConvertVisLayoutToBasic(ltype, &conn[ptr[k]],
+                                    btypes, bconn);
+      }
+      // Set the basic element component to match the parent
+      for ( int ii = 0; ii < ntypes; ii++ ){
+        belem_comp_num[ii] = element_comp_num[k];
+      }
+      btypes += ntypes;
+      belem_comp_num += ntypes;
+      bconn += nconn;
+    }
+
+    int num_comp = loader->getNumComponents();
 
     int *reduced_points = new int[ num_points ];
-    int *reduced_conn = new int[ conn_dim*num_elements ];
-    double *reduced_data = NULL;
+    int *reduced_conn = new int[ basic_conn_size ];
     float *reduced_float_data = NULL;
-    if (data){
-      reduced_data = new double[ num_points ];
-    }
-    else if (float_data){
-      reduced_float_data = new float[ num_points ];
-    }
+    reduced_float_data = new float[ num_points ];
 
     for ( int k = 0; k < num_comp; k++ ){
       // Count up the number of elements that use the connectivity
-      char *comp_name = file->getComponentName(k);
+      char *comp_name = loader->getComponentName(k);
       //printf("Converting zone %d: %s at time %g\n",
       // k, comp_name, solution_time);
 
       memset(reduced_points, 0, num_points*sizeof(int));
-      memset(reduced_conn, 0, conn_dim*num_elements*sizeof(int));
+      memset(reduced_conn, 0, basic_conn_size*sizeof(int));
 
       int npts = 1, nelems = 0;
+      int zone_btype = -1;
+      int basic_conn_offset = 0;
       // Count up the number of points/elements in this sub-domain
-      for ( int i = 0; i < num_elements; i++ ){
-        if (element_comp_num[i] == k){
-          // Add this element to the reduced connectivity
-          for ( int j = 0; j < conn_dim; j++ ){
-            int pt = conn[conn_dim*i + j];
+      for ( int i = 0; i < num_basic_elements; i++ ){
+        ElementLayout ltype = (ElementLayout)basic_ltypes[i];
+        int conn_size = TacsGetNumVisNodes(ltype);
+
+        if (basic_element_comp_num[i] == k){
+          // Make sure all elements in this zone are the same type
+          if (zone_btype == -1){
+            zone_btype = basic_ltypes[i];
+          }
+          else if (zone_btype != basic_ltypes[i]){
+            fprintf(stderr, "Component %d has conflicting element types\n", k);
+            return (1);
+          }
+
+          int pt;
+          for ( int j = 0; j < conn_size; j++ ){
+            // Add this element to the reduced connectivity
+            if (basic_ltypes[k] == TACS_QUAD_ELEMENT){
+              const int convert[] = {0, 1, 3, 2};
+              pt = basic_conn[basic_conn_offset + convert[j]];
+            }
+            else if (basic_ltypes[k] == TACS_HEXA_ELEMENT){
+              const int convert[] = {0, 1, 3, 2, 4, 5, 7, 6};
+              pt = basic_conn[basic_conn_offset + convert[j]];
+            }
+            else {
+              pt = basic_conn[basic_conn_offset+j];
+            }
 
             // If a reduced numbering has not been applied to this point,
             // create a new number for it
@@ -319,40 +389,62 @@ component numbers not defined in file\n");
             }
 
             // Set the reduced connectivity
-            reduced_conn[conn_dim*nelems + j] = reduced_points[pt];
+            reduced_conn[conn_size*nelems + j] = reduced_points[pt];
           }
+
           nelems++;
         }
+        basic_conn_offset += conn_size;
       }
 
       // Since we started at npts = 1, we have one more point
       // than the actual number of points.
       npts--;
 
+      // Set the element type to use
+      ZoneType zone_type;
+      if (zone_btype == TACS_LINE_ELEMENT){
+        zone_type = FELINESEG;
+      }
+      else if (zone_btype == TACS_QUAD_ELEMENT){
+        zone_type = FEQUADRILATERAL;
+      }
+      else if (zone_btype == TACS_TETRA_ELEMENT){
+        zone_type = FETETRAHEDRON;
+      }
+      else if (zone_btype == TACS_HEXA_ELEMENT){
+        zone_type = FEBRICK;
+      }
+      else {
+        fprintf(stderr, "Component %d has unsupported element types for f5totec\n", k);
+        return (1);
+      }
+
       if (nelems > 0 && npts > 0){
         // Create the zone with the solution time
         create_fe_tec_zone(comp_name, zone_type, npts, nelems,
                            use_strands, solution_time);
 
-        // Retrieve the data
+        // Retrieve the continuous data
         for ( int j = 0; j < num_variables; j++ ){
-          if (reduced_data){
-            for ( int i = 0; i < num_points; i++ ){
-              if (reduced_points[i] > 0){
-                reduced_data[reduced_points[i]-1] = data[i*num_variables + j];
-              }
+          for ( int i = 0; i < num_points; i++ ){
+            if (reduced_points[i] > 0){
+              reduced_float_data[reduced_points[i]-1] =
+                cdata[i*num_variables + j];
             }
-            write_tec_double_data(npts, reduced_data);
           }
-          else if (reduced_float_data){
-            for ( int i = 0; i < num_points; i++ ){
-              if (reduced_points[i] > 0){
-                reduced_float_data[reduced_points[i]-1] =
-                  float_data[i*num_variables + j];
-              }
+          write_tec_float_data(npts, reduced_float_data);
+        }
+
+        // Retrieve the element data
+        for ( int j = 0; j < num_evariables; j++ ){
+          for ( int i = 0; i < num_points; i++ ){
+            if (reduced_points[i] > 0){
+              reduced_float_data[reduced_points[i]-1] =
+                avg_edata[num_evariables*i + j];
             }
-            write_tec_float_data(npts, reduced_float_data);
           }
+          write_tec_float_data(npts, reduced_float_data);
         }
 
         // Now, write the connectivity
@@ -363,17 +455,18 @@ component numbers not defined in file\n");
     if (tec_init){
       close_tec_file();
     }
-    file->close();
-    file->decref();
+
+    loader->decref();
 
     // Clean up memory
     delete [] reduced_points;
     delete [] reduced_conn;
-    delete [] reduced_data;
+    delete [] reduced_float_data;
+    delete [] avg_edata;
 
-    delete [] data;
-    delete [] conn;
-    delete [] element_comp_num;
+    delete [] basic_ltypes;
+    delete [] basic_conn;
+    delete [] basic_element_comp_num;
 
     delete [] infile;
     delete [] outfile;

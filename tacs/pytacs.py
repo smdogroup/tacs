@@ -558,11 +558,12 @@ class pyTACS(BaseUI):
         # Callback function to return appropriate tacs MaterialProperties object
         # For a pynastran mat card
         def matCallBack(matInfo):
-            # First we define the material property object
+            # Nastran isotropic material card
             if matInfo.type == 'MAT1':
                 mat = tacs.constitutive.MaterialProperties(rho=matInfo.rho, E=matInfo.e,
                                                            nu=matInfo.nu, ys=matInfo.St,
                                                            alpha=matInfo.a)
+            # Nastran orthotropic material card
             elif matInfo.type == 'MAT8':
                 E1 = matInfo.e11
                 E2 = matInfo.e22
@@ -584,6 +585,29 @@ class pyTACS(BaseUI):
                 # TODO: add alpha
                 mat = tacs.constitutive.MaterialProperties(rho=rho, E1=E1, E2=E2, nu12=nu12, G12=G12, G13=G13, G23=G23,
                                                            Xt=Xt, Xc=Xc, Yt=Yt, Yc=Yc, S12=S12)
+            # Nastran 2D anisotropic material card
+            elif matInfo.type == 'MAT2':
+                C11 = matInfo.G11
+                C12 = matInfo.G12
+                C22 = matInfo.G22
+                C13 = matInfo.G13
+                C23 = matInfo.G23
+                C33 = matInfo.G33
+                rho = matInfo.rho
+                # See if this card features anisotropic coupling terms (which we don't support yet)
+                if np.abs(C13)/(C11+C22) >= 1e-8 or np.abs(C23)/(C11+C22) >= 1e-8:
+                    self.TACSWarning("MAT2 card %d has anisotropic stiffness components that are not currently supported. "
+                                     "These terms will be dropped and the material treated as orthotropic. "
+                                     "Result accuracy may be affected."%(matInfo.mid))
+                nu12 = C12 / C22
+                nu21 = C12 / C11
+                E1 = C11 * (1 - nu12 * nu21)
+                E2 = C22 * (1 - nu12 * nu21)
+                G12 = G13 = G23 = C33
+                # TODO: add alpha
+                mat = tacs.constitutive.MaterialProperties(rho=rho, E1=E1, E2=E2, nu12=nu12, G12=G12, G13=G13,
+                                                           G23=G23)
+
             else:
                 raise self.TACSError("Unsupported material type '%s' for material number %d. " % (matInfo.type, matInfo.mid))
 
@@ -1040,7 +1064,7 @@ class pyTACS(BaseUI):
 
         Notes
         -----
-        Currently only supports LOAD, FORCE, MOMENT, PLOAD2, and PLOAD4 cards.
+        Currently only supports LOAD, FORCE, MOMENT, GRAV, PLOAD2, and PLOAD4 cards.
         Currently only supports staticProblem (SOL 101) and modalProblems (SOL 103)
         """
 
@@ -1084,7 +1108,10 @@ class pyTACS(BaseUI):
                     sigma = (2 * np.pi * methodInfo.v2) ** 2
                 else:
                     sigma = 1.0
-                nEigs = methodInfo.maxset
+                if methodInfo.nd is not None:
+                    nEigs = methodInfo.nd
+                else:
+                    nEigs = 20
                 problem = self.createModalProblem(name, sigma, nEigs)
 
             else:
@@ -1106,6 +1133,12 @@ class pyTACS(BaseUI):
                             elif loadInfo.type == 'MOMENT' and vpn >= 6:
                                 loadArray[3:6] += scale * loadInfo.scaled_vector
                             problem.addLoadToNodes(nodeID, loadArray, nastranOrdering=True)
+
+                        # Add any gravity loads
+                        elif loadInfo.type == 'GRAV':
+                            inertiaVec = np.zeros(3, dtype=self.dtype)
+                            inertiaVec[:3] = scale * loadInfo.scale * loadInfo.N
+                            problem.addInertialLoad(inertiaVec)
 
                         # Add any pressure loads
                         # Pressure load card specific to shell elements
@@ -1433,6 +1466,8 @@ class pyTACS(BaseUI):
             # Loop through every element type in this component,
             # there may be multiple (e.g CQUAD4 + CTRIA3)
             for j, elemObject in enumerate(elemObjects):
+                # Set component-specific family id
+                elemObject.setComponentNum(self.compFam[i])
                 # Set each of the elements for this component
                 self.meshLoader.setElementObject(i, j, elemObject)
                 # set varsPerNode
