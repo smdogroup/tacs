@@ -155,6 +155,11 @@ class pyMeshLoader(BaseUI):
         # Allocate list for user-specified tacs element objects
         self.elemObjects = [None] * elementObjectCounter
 
+        # Total number of nodes used to hold lagrange multiplier variables
+        self.numMultiplierNodes = 0
+        # List to hold ID numbers (TACS ordering) of multiplier nodes added to the problem later
+        self.multiplierNodeIDs = []
+
     def _updateNastranToTACSDicts(self):
         '''
         Create dictionaries responsible for mapping over
@@ -375,6 +380,12 @@ class pyMeshLoader(BaseUI):
         localElemIDs = self.creator.getElementIdNums(objIDs)
         return list(localElemIDs)
 
+    def getLocalMultiplierNodeIDs(self):
+        """
+        Get the tacs indices of multiplier nodes used to hold lagrange multipliers on this processor.
+        """
+        return self.ownedMultiplierNodeIDs
+
     def getGlobalToLocalElementIDDict(self):
         """
         Creates a dictionary who's keys correspond to the global ID of each element (tacs ordering)
@@ -510,6 +521,10 @@ class pyMeshLoader(BaseUI):
 
         self.globalToLocalElementIDDict = self.getGlobalToLocalElementIDDict()
 
+        # If any multiplier nodes were added, record their local processor indices
+        localIDs = self.getLocalNodeIDsFromGlobal(self.multiplierNodeIDs, nastranOrdering=False)
+        self.ownedMultiplierNodeIDs = [localID for localID in localIDs if localID >= 0]
+
         return self.assembler
 
     def _isDOFInString(self, constrained_dofs, dof):
@@ -552,7 +567,7 @@ class pyMeshLoader(BaseUI):
             depNodes.append(node)
             depConstrainedDOFs.extend(dofsAsList)
             # add dummy nodes for all lagrange multiplier
-            dummyNodeNum = list(self.bdfInfo.node_ids)[-1] + 1  # Next available node number
+            dummyNodeNum = list(self.bdfInfo.node_ids)[-1] + 1  # Next available nastran node number
             # Add the dummy node coincident to the dependent node in x,y,z
             self.bdfInfo.add_grid(dummyNodeNum, self.bdfInfo.nodes[node].xyz)
             dummyNodes.append(dummyNodeNum)
@@ -561,6 +576,10 @@ class pyMeshLoader(BaseUI):
         nTotalNodes = len(conn)
         # Update Nastran to TACS ID mapping dicts, since we just added new nodes to model
         self._updateNastranToTACSDicts()
+        # Add dummy nodes to lagrange multiplier node list
+        self.numMultiplierNodes += len(dummyNodes)
+        tacsIDs = self.idMap(dummyNodes, self.nastranToTACSNodeIDDict)
+        self.multiplierNodeIDs.extend(tacsIDs)
         # Append RBE information to the end of the element lists
         self.elemConnectivity.append(self.idMap(conn, self.nastranToTACSNodeIDDict))
         self.elemConnectivityPointer.append(self.elemConnectivityPointer[-1] + nTotalNodes)
@@ -584,7 +603,12 @@ class pyMeshLoader(BaseUI):
         dummyNodes = [dummyNodeNum]
         # Update Nastran to TACS ID mapping dicts, since we just added new nodes to model
         self._updateNastranToTACSDicts()
+        # Add dummy node to lagrange multiplier node list
+        self.numMultiplierNodes += len(dummyNodes)
+        tacsIDs = self.idMap(dummyNodes, self.nastranToTACSNodeIDDict)
+        self.multiplierNodeIDs.extend(tacsIDs)
 
+        # Get node and rbe3 weight info
         indepNodes = []
         indepWeights = []
         indepConstrainedDOFs = []
