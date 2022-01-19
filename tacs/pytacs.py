@@ -888,6 +888,24 @@ class pyTACS(BaseUI):
 
         return self.assembler.getNumOwnedNodes()
 
+    def getNumOwnedMultiplierNodes(self):
+        """
+        Get number of multiplier nodes owned by this processor.
+        """
+        if self.assembler is None:
+            raise self.TACSError("TACS assembler has not been created. "
+                                 "Assembler must created first by running 'initalize' method.")
+        return len(self.meshLoader.getLocalMultiplierNodeIDs())
+
+    def getLocalMultiplierNodeIDs(self):
+        """
+        Get the tacs indices of multiplier nodes used to hold lagrange multipliers on this processor.
+        """
+        if self.assembler is None:
+            raise self.TACSError("TACS assembler has not been created. "
+                        "Assembler must created first by running 'initalize' method.")
+        return self.meshLoader.getLocalMultiplierNodeIDs()
+
     def createVec(self, asBVec=False):
         """
         Create a new tacs distributed state variable vector.
