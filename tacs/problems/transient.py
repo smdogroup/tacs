@@ -100,17 +100,10 @@ class TransientProblem(TACSProblem):
 
         # Set user-defined options
         for key in options:
-            self.setOption(key, options[key])
+            super().setOption(key, options[key])
 
         # Create problem-specific variables
         self._createVariables()
-
-        # Set output viewer for integrator
-        self.integrator.setFH5(self.outputViewer)
-        outputFreq = self.getOption('outputFrequency')
-        self.integrator.setOutputFrequency(outputFreq)
-        outputDir = self.getOption('outputDir')
-        self.integrator.setOutputPrefix(outputDir)
 
     def _createVariables(self):
         """
@@ -145,6 +138,50 @@ class TransientProblem(TACSProblem):
         # Jacobian assembly frequency
         jacFreq = self.getOption('jacAssemblyFreq')
         self.integrator.setJacAssemblyFreq(jacFreq)
+
+        # Set output viewer for integrator
+        self.integrator.setFH5(self.outputViewer)
+        outputFreq = self.getOption('outputFrequency')
+        self.integrator.setOutputFrequency(outputFreq)
+        outputDir = self.getOption('outputDir')
+        self.integrator.setOutputPrefix(outputDir)
+
+    def setOption(self, name, value):
+        """
+        Set a solver option value. The name is not case sensitive.
+
+        Parameters
+        ----------
+        name : str
+            Name of option to modify
+
+        value : depends on option
+            New option value to set
+        """
+        # Defualt setOption for common problem class objects
+        super().setOption(name, value)
+
+        # Update tolerances
+        if 'l2convergence' in name.lower():
+            # Set solver tolerances
+            atol = self.getOption('L2Convergence')
+            self.integrator.setAbsTol(atol)
+            rtol = self.getOption('L2ConvergenceRel')
+            self.integrator.setRelTol(rtol)
+        elif name.lower() == 'printlevel':
+            printLevel = self.getOption('printLevel')
+            self.integrator.setPrintLevel(printLevel)
+        elif name.lower() == 'jacassemblyfreq':
+            # Jacobian assembly frequency
+            jacFreq = self.getOption('jacAssemblyFreq')
+            self.integrator.setJacAssemblyFreq(jacFreq)
+        # No need to reset solver for output options
+        elif name.lower() in ['writesolution', 'printtiming',
+                              'numbersolutions', 'outputdir']:
+            pass
+        # Reset solver for all other option changes
+        else:
+            self._createVariables()
 
     def getNumTimeSteps(self):
         """
