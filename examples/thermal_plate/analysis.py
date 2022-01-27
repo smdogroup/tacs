@@ -40,9 +40,8 @@ comm = MPI.COMM_WORLD
 
 # Instantiate FEAAssembler
 structOptions = {
-    'printtimings':True,
+    'printtiming':True,
     # Specify what type of elements we want in the f5
-    'writeSolution':True,
     'outputElement': TACS.PLANE_STRESS_ELEMENT,
 }
 
