@@ -6,6 +6,14 @@ class BaseUI:
     def setOption(self, name, value):
         """
         Set a solver option value. The name is not case sensitive.
+
+        Parameters
+        ----------
+        name : str
+            Name of option to modify
+
+        value : depends on option
+            New option value to set
         """
         name = name.lower()
 
@@ -28,6 +36,14 @@ class BaseUI:
                         " is %s." % (name, self.options[name][0], type(value)))
 
     def getOption(self, name):
+        '''
+        Get a solver option value. The name is not case sensitive.
+
+        Parameters
+        ----------
+        name : str
+            Name of option to get
+        '''
 
         # Redefine the getOption def from the base class so we can
         # mane sure the name is lowercase
@@ -37,6 +53,25 @@ class BaseUI:
             return self.options[name.lower()][1]
         else:
             raise AttributeError(repr(name) + ' is not a valid option name')
+
+    def printOptions(self):
+        """
+        Prints a nicely formatted dictionary of all the current solver
+        options to the stdout on the root processor
+        """
+        header = self.objectName
+        if hasattr(self, 'name'):
+            header += f" '{self.name}'"
+        self.pp("+----------------------------------------+")
+        self.pp("|" + f"{header} Options:".center(40) + "|")
+        self.pp("+----------------------------------------+")
+        for name in self.options:
+            if name != 'defaults':
+                if self.options[name][0] == str:
+                    self.pp(f"'{name}': '{self.options[name][1]}'")
+                else:
+                    self.pp(f"'{name}': {self.options[name][1]}")
+
     # ----------------------------------------------------------------------------
     #                      Utility Functions
     # ---------------------------------------------------------------------------

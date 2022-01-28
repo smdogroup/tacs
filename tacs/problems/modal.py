@@ -90,7 +90,7 @@ class ModalProblem(TACSProblem):
 
         # Set user-defined options
         for key in options:
-            self.setOption(key, options[key])
+            super().setOption(key, options[key])
 
         # Create problem-specific variables
         self._createVariables()
@@ -125,6 +125,29 @@ class ModalProblem(TACSProblem):
         # Create the frequency analysis object
         self.freqSolver = tacs.TACS.FrequencyAnalysis(self.assembler, self.sigma, self.M, self.K, self.gmres,
                                                       num_eigs=self.numEigs, eig_tol=eigTol)
+
+    def setOption(self, name, value):
+        """
+        Set a solver option value. The name is not case sensitive.
+
+        Parameters
+        ----------
+        name : str
+            Name of option to modify
+
+        value : depends on option
+            New option value to set
+        """
+        # Defualt setOption for common problem class objects
+        super().setOption(name, value)
+
+        # No need to reset solver for output options
+        if name.lower() in ['writesolution', 'printtiming',
+                            'numbersolutions', 'outputdir']:
+            pass
+        # Reset solver for all other option changes
+        else:
+            self._createVariables()
 
     def getNumEigs(self):
         """
