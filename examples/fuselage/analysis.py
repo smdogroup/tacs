@@ -36,7 +36,7 @@ FEAAssembler = pyTACS(bdfFile, options=structOptions, comm=comm)
 
 # Load a composite or isotropic elemCallBack depending on user input
 if args.composite:
-    from examples.fuselage.composite_setup import elemCallBack
+    from composite_setup import elemCallBack
 else:
     from aluminum_setup import elemCallBack
 
