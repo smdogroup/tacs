@@ -74,7 +74,6 @@ class StaticProblem(TACSProblem):
             'writeSolution': [bool, True],
             'numberSolutions': [bool, True],
             'printTiming': [bool, False],
-            'printIterations': [bool, False],
 
         }
 
@@ -89,10 +88,7 @@ class StaticProblem(TACSProblem):
 
         # Set user-defined options
         for key in options:
-            self.setOption(key, options[key])
-
-        # Linear solver factor flag
-        self._factorOnNext = True
+            super().setOption(key, options[key])
 
         # Create problem-specific variables
         self._createVariables()
@@ -181,6 +177,36 @@ class StaticProblem(TACSProblem):
 
         if opt('useMonitor'):
             self.KSM.setMonitor(self.comm, _descript=opt('KSMSolver').upper(), freq=opt('monitorFrequency'))
+
+        # Linear solver factor flag
+        self._factorOnNext = True
+
+    def setOption(self, name, value):
+        """
+        Set a solver option value. The name is not case sensitive.
+
+        Parameters
+        ----------
+        name : str
+            Name of option to modify
+
+        value : depends on option
+            New option value to set
+        """
+        # Defualt setOption for common problem class objects
+        super().setOption(name, value)
+
+        # Update tolerances
+        if 'l2convergence' in name.lower():
+            self.KSM.setTolerances(self.getOption('L2ConvergenceRel'),
+                                   self.getOption('L2Convergence'))
+        # No need to reset solver for output options
+        elif name.lower() in ['writesolution', 'printtiming',
+                              'numbersolutions', 'outputdir']:
+            pass
+        # Reset solver for all other option changes
+        else:
+            self._createVariables()
 
     def addFunction(self, funcName, funcHandle, compIDs=None, **kwargs):
         """
@@ -563,7 +589,7 @@ class StaticProblem(TACSProblem):
 
         # If timing was was requested print it, if the solution is nonlinear
         # print this information automatically if prinititerations was requested.
-        if self.getOption('printTiming') or self.getOption('printIterations'):
+        if self.getOption('printTiming'):
             self.pp('+--------------------------------------------------+')
             self.pp('|')
             self.pp('| TACS Solve Times:')
