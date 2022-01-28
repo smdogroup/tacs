@@ -8,10 +8,10 @@ class ConstitutiveTest(unittest.TestCase):
         # fd/cs step size
         if TACS.dtype is complex:
             self.dh = 1e-50
-            self.rtol = 1e-11
+            self.rtol = 1e-9
         else:
             self.dh = 1e-6
-            self.rtol = 1e-2
+            self.rtol = 1e-1
         self.dtype = TACS.dtype
 
         # Basically, only check relative tolerance
@@ -127,10 +127,9 @@ class ConstitutiveTest(unittest.TestCase):
                 self.assertFalse(fail)
 
     def test_constitutive_failure_strain_sens(self):
-        # Test failure dv sensitivity
         for layup in self.layup_list:
             with self.subTest(layup=layup):
                 con = constitutive.CompositeShellConstitutive(layup, self.ply_thicknesses, self.ply_angles)
                 fail = constitutive.TestConstitutiveFailureStrainSens(con, self.elem_index, self.pt, self.x,
-                                                                      self.dh, self.print_level, self.atol, self.rtol)
+                                                                      self.dh, 2, self.rtol, self.atol)
                 self.assertFalse(fail)
