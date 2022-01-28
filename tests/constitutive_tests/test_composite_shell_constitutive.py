@@ -131,5 +131,5 @@ class ConstitutiveTest(unittest.TestCase):
             with self.subTest(layup=layup):
                 con = constitutive.CompositeShellConstitutive(layup, self.ply_thicknesses, self.ply_angles)
                 fail = constitutive.TestConstitutiveFailureStrainSens(con, self.elem_index, self.pt, self.x,
-                                                                      self.dh, 2, self.rtol, self.atol)
+                                                                      self.dh, self.print_level, self.rtol, self.atol)
                 self.assertFalse(fail)
