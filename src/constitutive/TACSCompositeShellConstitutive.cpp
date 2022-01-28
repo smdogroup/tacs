@@ -164,12 +164,47 @@ void TACSCompositeShellConstitutive::evalStress( int elemIndex,
   TACSShellConstitutive::computeStress(A, B, D, As, drill, e, s);
 }
 
-// Evaluate failure
+/*
+  Compute the most critical failure criteria for the laminate
+*/
 TacsScalar TACSCompositeShellConstitutive::evalFailure( int elemIndex,
                                                         const double pt[],
                                                         const TacsScalar X[],
-                                                        const TacsScalar e[] ){
-  return 0.0;
+                                                        const TacsScalar strain[] ){
+  // Compute the total thickness of the laminate
+  TacsScalar t = 0.0;
+  for ( int i = 0; i < num_plies; i++ ){
+    t += ply_thickness[i];
+  }
+  TacsScalar t0 = -0.5*t;
+
+  // Keep track of the maximum failure criterion
+  TacsScalar max = 0.0;
+
+  for ( int i = 0; i < num_plies; i++ ){
+    TacsScalar lamStrain[3];
+    TacsScalar tp = t0 + 0.5*ply_thickness[i];
+    getLaminaStrain(lamStrain, strain, tp);
+    TacsScalar fval = ply_props[i]->failure(ply_angles[i], lamStrain);
+
+    if (TacsRealPart(fval) > TacsRealPart(max)){
+      max = fval;
+    }
+    t0 += ply_thickness[i];
+  }
+
+  return max;
+}
+
+/*
+  Get the strain in a single ply
+*/
+void TACSCompositeShellConstitutive::getLaminaStrain( TacsScalar strain[],
+                                                      const TacsScalar rmStrain[],
+                                                      TacsScalar tp ){
+  strain[0] = rmStrain[0] + tp*rmStrain[3];
+  strain[1] = rmStrain[1] + tp*rmStrain[4];
+  strain[2] = rmStrain[2] + tp*rmStrain[5];
 }
 
 // Evaluate the tangent stiffness

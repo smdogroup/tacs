@@ -81,6 +81,8 @@ class TACSCompositeShellConstitutive : public TACSShellConstitutive {
 
   // The object name
   static const char *constName;
+
+  void getLaminaStrain( TacsScalar strain[], const TacsScalar rmStrain[], TacsScalar tp );
 };
 
 #endif // TACS_COMPOSITE_SHELL_CONSTITUTIVE_H
