@@ -446,6 +446,9 @@ class pyMeshLoader(BaseUI):
         for massInfo in self.bdfInfo.masses.values():
             self._addTACSMassElement(massInfo, varsPerNode)
 
+        # Check for any nodes that aren't attached to at least one element
+        self._unattachedNodeCheck()
+
         # Setup element connectivity and boundary condition info on root processor
         if self.comm.rank == 0:
             # Set connectivity for all elements
@@ -669,6 +672,26 @@ class pyMeshLoader(BaseUI):
         self.elemObjectNumByElem.append(len(self.elemObjects))
         self.elemObjects.append(massObj)
         return
+
+    def _unattachedNodeCheck(self):
+        """
+        Check for any nodes that aren't attached to element.
+        Notify the user and throw an error if we find any.
+        This must be checked before creating the TACS assembler or a SegFault may occur.
+        """
+        flattened_conn = self._flatten(self.elemConnectivity)
+        num_unattached = 0
+        for nastranNodeID in self.bdfInfo.node_ids:
+            tacsNodeID = self.idMap(nastranNodeID, self.nastranToTACSNodeIDDict)
+            if tacsNodeID not in flattened_conn:
+                if num_unattached < 100:
+                    self.TACSWarning(f'Node ID {nastranNodeID} (Nastran ordering) is not attached to any element in the model. '
+                                     f'Please remove this node from the mesh and try again.')
+                num_unattached += 1
+        if num_unattached > 0:
+            raise self.TACSError(f'{num_unattached} unattached node(s) were detected in model. '
+                           f'Please make sure that all nodes are attached to at least one element.')
+
 
     def isDOFInString(self, dofString, numDOFs):
         """
