@@ -454,7 +454,9 @@ class pyMeshLoader(BaseUI):
         if self.comm.rank == 0:
             # Set connectivity for all elements
             ptr = np.array(self.elemConnectivityPointer, dtype=np.intc)
-            conn = np.array(self._flatten(self.elemConnectivity), dtype=np.intc)
+            # Flatten nested connectivity list to single list
+            conn = it.chain.from_iterable(self.elemConnectivity)
+            conn = np.array([*conn], dtype=np.intc)
             objectNums = np.array(self.elemObjectNumByElem, dtype=np.intc)
             self.creator.setGlobalConnectivity(self.bdfInfo.nnodes, ptr, conn, objectNums)
 
