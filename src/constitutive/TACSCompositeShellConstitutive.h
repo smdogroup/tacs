@@ -51,6 +51,11 @@ class TACSCompositeShellConstitutive : public TACSShellConstitutive {
   TacsScalar evalFailure( int elemIndex, const double pt[],
                           const TacsScalar X[], const TacsScalar e[] );
 
+  // Evaluate the derivative of the failure criteria w.r.t. the strain
+  TacsScalar evalFailureStrainSens( int elemIndex, const double pt[],
+                                    const TacsScalar X[], const TacsScalar e[],
+                                    TacsScalar sens[] );
+
   // Evaluate the tangent stiffness
   void evalTangentStiffness( int elemIndex, const double pt[],
                              const TacsScalar X[], TacsScalar C[] );
@@ -81,6 +86,8 @@ class TACSCompositeShellConstitutive : public TACSShellConstitutive {
 
   // The object name
   static const char *constName;
+
+  void getLaminaStrain( TacsScalar strain[], const TacsScalar rmStrain[], TacsScalar tp );
 };
 
 #endif // TACS_COMPOSITE_SHELL_CONSTITUTIVE_H
