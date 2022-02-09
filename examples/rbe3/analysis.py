@@ -9,15 +9,23 @@ from __future__ import print_function
 import os
 
 # ==============================================================================
+# External Python modules
+# ==============================================================================
+from pprint import pprint
+from mpi4py import MPI
+
+# ==============================================================================
 # Extension modules
 # ==============================================================================
-from tacs import pyTACS
+from tacs import pyTACS, functions
+
+comm = MPI.COMM_WORLD
 
 structOptions = {'writeSolution': True, }
 
 bdfFile = os.path.join(os.path.dirname(__file__), 'rbe3.bdf')
 # Load BDF file
-FEAAssembler = pyTACS(bdfFile, options=structOptions)
+FEAAssembler = pyTACS(bdfFile, comm=comm, options=structOptions)
 # Set up TACS Assembler
 # Don't need a elemCallBack since property info exists in bdf
 FEAAssembler.initialize()
@@ -26,6 +34,16 @@ FEAAssembler.initialize()
 SPs = FEAAssembler.createTACSProbsFromBDF()
 
 # Solve each structural problem and write solutions
-for caseID in SPs:
-    SPs[caseID].solve()
-    SPs[caseID].writeSolution(outputDir=os.path.dirname(__file__))
+funcs = {}
+for problem in SPs.values():
+    # Add eval functions to problem
+    problem.addFunction('mass', functions.StructuralMass)
+    problem.addFunction('ks_disp', functions.KSDisplacement, ksWeight=100.0, direction=[1.0, 1.0, 1.0])
+    # Solve
+    problem.solve()
+    # Evaluate functions
+    problem.evalFunctions(funcs)
+    problem.writeSolution(outputDir=os.path.dirname(__file__))
+
+if comm.rank == 0:
+    pprint(funcs)

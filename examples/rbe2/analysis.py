@@ -37,6 +37,6 @@ FEAAssembler.initialize()
 SPs = FEAAssembler.createTACSProbsFromBDF()
 
 # Solve problems
-for caseID in SPs:
-    SPs[caseID].solve()
-    SPs[caseID].writeSolution(outputDir=os.path.dirname(__file__))
+for problem in SPs.values():
+    problem.solve()
+    problem.writeSolution(outputDir=os.path.dirname(__file__))
