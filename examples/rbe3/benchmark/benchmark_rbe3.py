@@ -12,12 +12,17 @@ example_path = os.path.join(os.path.dirname(__file__), '..')
 sys.path.append(example_path)
 
 # Reference values for eval functions
-FUNC_REF = {'point_force_ks_vmfailure': 1.4546105780086274,
-            'point_force_mass': 12.500000000000535,
-            'pressure_ks_vmfailure': 0.3522022461334997,
-            'pressure_mass': 125.00000000026239}
+FUNC_REF = {'Axial_ks_disp': 0.45196571868787827,
+            'Axial_mass': 211.71704428436388,
+            'Moment-Bending_ks_disp': 1.0494950501687743,
+            'Moment-Bending_mass': 211.71704428436388,
+            'Shear-Bending_ks_disp': 0.3461665014945353,
+            'Shear-Bending_mass': 211.71704428436388,
+            'Torsion_ks_disp': 0.300370460972629,
+            'Torsion_mass': 211.71704428436388}
 
-class ExampleTest(unittest.TestCase):
+
+class ExampleBenchmark(unittest.TestCase):
 
     N_PROCS = 8  # this is how many MPI processes to use for this TestCase.
 
@@ -26,7 +31,7 @@ class ExampleTest(unittest.TestCase):
         import analysis
         self.example = analysis
 
-    def test_funcs(self):
+    def benchmark_funcs(self):
         """
         Test the example eval functions against reference values
         """

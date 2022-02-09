@@ -14,7 +14,7 @@ sys.path.append(example_path)
 # Reference values for eval functions
 FUNC_REF = [1.070354064387641]
 
-class ExampleTest(unittest.TestCase):
+class ExampleBenchmark(unittest.TestCase):
 
     N_PROCS = 8  # this is how many MPI processes to use for this TestCase.
 
@@ -23,7 +23,7 @@ class ExampleTest(unittest.TestCase):
         import crm
         self.example = crm
 
-    def test_funcs(self):
+    def benchmark_funcs(self):
         """
         Test the example eval functions against reference values
         """

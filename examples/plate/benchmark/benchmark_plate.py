@@ -12,19 +12,21 @@ example_path = os.path.join(os.path.dirname(__file__), '..')
 sys.path.append(example_path)
 
 # Reference values for eval functions
-FUNC_REF = {'step_force_mass': 6.283185307179579,
-            'step_force_max_x_disp': 0.4590201929924449}
+FUNC_REF = {'point_force_ks_vmfailure': 1.4546105780086274,
+            'point_force_mass': 12.500000000000535,
+            'pressure_ks_vmfailure': 0.3522022461334997,
+            'pressure_mass': 125.00000000026239}
 
-class ExampleTest(unittest.TestCase):
+class ExampleBenchmark(unittest.TestCase):
 
-    N_PROCS = 1  # this is how many MPI processes to use for this TestCase.
+    N_PROCS = 8  # this is how many MPI processes to use for this TestCase.
 
     def setUp(self):
         # Import the example to automatically run the script
         import analysis
         self.example = analysis
 
-    def test_funcs(self):
+    def benchmark_funcs(self):
         """
         Test the example eval functions against reference values
         """

@@ -12,9 +12,9 @@ example_path = os.path.join(os.path.dirname(__file__), '..')
 sys.path.append(example_path)
 
 # Reference values for eval functions
-FUNC_REF = {'cruise_ks_vmfailure': 0.38342812669095927, 'cruise_mass': 10467.30248511103}
+FUNC_REF = {'pressurization_ks_failure': 0.4053409304781571, 'pressurization_mass': 4219.685957940358}
 
-class ExampleTest(unittest.TestCase):
+class ExampleBenchmark(unittest.TestCase):
 
     N_PROCS = 8  # this is how many MPI processes to use for this TestCase.
 
@@ -23,7 +23,7 @@ class ExampleTest(unittest.TestCase):
         import analysis
         self.example = analysis
 
-    def test_funcs(self):
+    def benchmark_funcs(self):
         """
         Test the example eval functions against reference values
         """
