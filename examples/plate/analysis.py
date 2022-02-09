@@ -48,7 +48,7 @@ structOptions = {
 }
 
 bdfFile = os.path.join(os.path.dirname(__file__), 'plate.bdf')
-FEAAssembler = pyTACS(bdfFile, options=structOptions)
+FEAAssembler = pyTACS(bdfFile, comm=comm, options=structOptions)
 
 def elemCallBack(dvNum, compID, compDescript, elemDescripts, specialDVs, **kwargs):
     # Material properties
@@ -128,7 +128,7 @@ for problem in allProblems:
     problem.solve()
     problem.evalFunctions(funcs)
     problem.evalFunctionsSens(funcsSens)
-    problem.writeSolution()
+    problem.writeSolution(outputDir=os.path.dirname(__file__))
 
 if comm.rank == 0:
     pprint(funcs)

@@ -6,13 +6,15 @@ from __future__ import print_function
 
 # Import necessary libraries
 import numpy as np
+import os
 from mpi4py import MPI
 from tacs import TACS, elements, constitutive, functions
 
 # Load structural mesh from BDF file
+bdfFile = os.path.join(os.path.dirname(__file__), 'CRM_box_2nd.bdf')
 tacs_comm = MPI.COMM_WORLD
 struct_mesh = TACS.MeshLoader(tacs_comm)
-struct_mesh.scanBDFFile("CRM_box_2nd.bdf")
+struct_mesh.scanBDFFile(bdfFile)
 
 # Set constitutive properties
 rho = 2500.0 # density, kg/m^3

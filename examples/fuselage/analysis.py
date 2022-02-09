@@ -20,9 +20,13 @@ from mpi4py import MPI
 # ==============================================================================
 from tacs import functions, pyTACS
 
-parser = argparse.ArgumentParser()
-parser.add_argument("--composite", action="store_true", default=False)
-args = parser.parse_args()
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--composite", action="store_true", default=False)
+    args = parser.parse_args()
+    use_composite = args.composite
+else:
+    use_composite = False
 
 comm = MPI.COMM_WORLD
 
@@ -35,7 +39,7 @@ bdfFile = os.path.join(os.path.dirname(__file__), 'fuselage.bdf')
 FEAAssembler = pyTACS(bdfFile, options=structOptions, comm=comm)
 
 # Load a composite or isotropic elemCallBack depending on user input
-if args.composite:
+if use_composite:
     from composite_setup import elemCallBack
 else:
     from aluminum_setup import elemCallBack

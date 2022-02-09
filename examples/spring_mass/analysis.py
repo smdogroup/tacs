@@ -96,4 +96,5 @@ plt.plot(timeSteps, stateHistory[:, 1, 0], timeSteps, stateHistory[:, 1, 1], tim
 plt.legend(['dof 1', 'dof 2', 'dof 3'])
 plt.ylabel('displacement (m)')
 plt.xlabel('time (s)')
-plt.show()
+if __name__ == "__main__":
+    plt.show()
