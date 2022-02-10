@@ -173,6 +173,31 @@ cdef inplace_array_2d(int nptype, int dim1, int dim2, void *data_ptr,
 
     return ndarray
 
+# This wraps a C++ array with a numpy array for later useage
+cdef inplace_array_3d(int nptype, int dim1, int dim2, int dim3, void *data_ptr,
+                      PyObject *ptr):
+    """Return a numpy version of the array"""
+    # Set the shape of the array
+    cdef int size = 3
+    cdef np.npy_intp shape[3]
+    cdef np.ndarray ndarray
+
+    # Set the first entry of the shape array
+    shape[0] = <np.npy_intp>dim1
+    shape[1] = <np.npy_intp>dim2
+    shape[2] = <np.npy_intp>dim3
+
+    # Create the array itself - Note that this function will not
+    # delete the data once the ndarray goes out of scope
+    ndarray = np.PyArray_SimpleNewFromData(size, shape,
+                                           nptype, data_ptr)
+
+    # Set the base class who owns the memory
+    if ptr != NULL:
+        ndarray.base = ptr
+
+    return ndarray
+
 # A generic wrapper class for the TACSFunction object
 cdef class Function:
     def __cinit__(self):
@@ -757,6 +782,39 @@ cdef class AuxElements:
         self.ptr.addElement(num, elem.ptr)
         return
 
+cdef _convertBCSRMat(BCSRMat *mat, PyObject *ptr):
+    cdef int bsize = 0
+    cdef int nrows = 0
+    cdef int ncols = 0
+    cdef const int *rowp = NULL
+    cdef const int *cols = NULL
+    cdef TacsScalar *vals = NULL
+    cdef size = 0
+
+    if mat != NULL:
+        mat.getArrays(&bsize, &nrows, &ncols, &rowp, &cols, &vals)
+
+        size = rowp[nrows]
+        arowp = np.zeros(nrows + 1, dtype=int)
+        acols = np.zeros(size, dtype=int)
+        
+        for i in range(nrows + 1):
+            arowp[i] = rowp[i]
+            
+        for i in range(size):
+            acols[i] = cols[i]
+
+        avals = inplace_array_3d(TACS_NPY_SCALAR, size, bsize, bsize, vals, ptr)
+
+        try:
+            import scipy.sparse as sparse
+            A = sparse.bsr_matrix((avals, acols, arowp), shape=(bsize*nrows, bsize*ncols))
+            return A
+        except:
+            return bsize, bsize, nrows, ncols, arowp, acols, avals
+
+    return None
+  
 cdef class Mat:
     def __cinit__(self):
         """
@@ -805,6 +863,33 @@ cdef class Mat:
         Add value alpha to diagonal entries
         """
         self.ptr.addDiag(alpha)
+
+    def getMat(self):
+        """
+        Return the BCSR matrix data associated with the underlying matrix
+        """
+
+        cdef BCSRMat *A = NULL
+        cdef BCSRMat *B = NULL
+        cdef BCSRMat *C = NULL
+        cdef BCSRMat *D = NULL
+        cdef TACSParallelMat *mat = NULL
+        cdef TACSSchurMat *sc = NULL
+
+        mat = _dynamicParallelMat(self.ptr)
+        sc = _dynamicSchurMat(self.ptr)
+
+        if mat != NULL:
+            mat.getBCSRMat(&A, &B)
+            return (_convertBCSRMat(A, <PyObject*>self), _convertBCSRMat(B, <PyObject*>self))
+        elif sc != NULL:
+            sc.getBCSRMat(&A, &B, &C, &D)
+            return (_convertBCSRMat(A, <PyObject*>self),
+                    _convertBCSRMat(B, <PyObject*>self),
+                    _convertBCSRMat(C, <PyObject*>self),
+                    _convertBCSRMat(D, <PyObject*>self))
+
+        return None
 
     def getDenseMatrix(self):
         """
