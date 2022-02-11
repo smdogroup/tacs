@@ -247,10 +247,11 @@ cdef extern from "BCSRMat.h":
         int getRowDim()
         int getColDim()
         void getDenseColumnMajor(TacsScalar*)
+        void getArrays(int*, int*, int*, const int**, const int**, TacsScalar**)
 
 cdef extern from "TACSParallelMat.h":
     cdef cppclass TACSParallelMat(TACSMat):
-        pass
+        void getBCSRMat(BCSRMat**, BCSRMat**)
 
     cdef cppclass TACSAdditiveSchwarz(TACSPc):
         TACSAdditiveSchwarz(TACSParallelMat *mat, int levFill, double fill)
