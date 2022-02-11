@@ -11,6 +11,7 @@
 #include "TACSShellElementTransform.h"
 #include "TACSShellTraction.h"
 #include "TACSShellPressure.h"
+#include "TACSShellInertialForce.h"
 #include "TACSElementVerification.h"
 
 template <class quadrature, class basis, class director, class model>
@@ -106,6 +107,10 @@ class TACSShellElement : public TACSElement {
     return new TACSShellPressure<vars_per_node, quadrature, basis>(p);
   }
 
+  TACSElement* createElementInertialForce( TacsScalar inertiaVec[] ){
+    return new TACSShellInertialForce<vars_per_node, quadrature, basis>(con, inertiaVec);
+  }
+
   void computeEnergies( int elemIndex,
                         double time,
                         const TacsScalar Xpts[],
@@ -132,6 +137,12 @@ class TACSShellElement : public TACSElement {
                     const TacsScalar ddvars[],
                     TacsScalar res[],
                     TacsScalar mat[] );
+
+  void getMatType( ElementMatrixType matType,
+                   int elemIndex, double time,
+                   const TacsScalar Xpts[],
+                   const TacsScalar vars[],
+                   TacsScalar mat[] );
 
   void addAdjResProduct( int elemIndex, double time,
                          TacsScalar scale,
@@ -667,6 +678,35 @@ void TACSShellElement<quadrature, basis, director, model>::
   // Add the constraint associated with the rotational parametrization (if any)
   director::template
     addRotationConstrJacobian<vars_per_node, offset, num_nodes>(alpha, vars, res, mat);
+}
+
+template <class quadrature, class basis, class director, class model>
+void TACSShellElement<quadrature, basis, director, model>::
+  getMatType( ElementMatrixType matType,
+              int elemIndex, double time,
+              const TacsScalar Xpts[],
+              const TacsScalar vars[],
+              TacsScalar mat[] ){
+  memset(mat, 0, vars_per_node*num_nodes*vars_per_node*num_nodes*sizeof(TacsScalar));
+  TacsScalar alpha, beta, gamma;
+  alpha = beta = gamma = 0.0;
+  // Set alpha or gamma based on if this is a stiffness or mass matrix
+  if (matType == TACS_STIFFNESS_MATRIX){
+    alpha = 1.0;
+  }
+  else if(matType == TACS_MASS_MATRIX){
+    gamma = 1.0;
+  }
+  else{ // TACS_GEOMETRIC_STIFFNESS_MATRIX
+    // Not implimented
+    return;
+  }
+  // Create dummy residual vector
+  TacsScalar res[vars_per_node*num_nodes];
+  memset(res, 0, vars_per_node*num_nodes*sizeof(TacsScalar));
+  // Add appropriate Jacobian to matrix
+  addJacobian(elemIndex, time, alpha, beta, gamma,
+              Xpts, vars, vars, vars, res, mat);
 }
 
 template <class quadrature, class basis, class director, class model>

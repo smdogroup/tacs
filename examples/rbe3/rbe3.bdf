@@ -50,13 +50,13 @@ CORD2C         1       0      0.      0.      0.      0.      0.      1.+FEMAPC1
 CORD2S         2       0      0.      0.      0.      0.      0.      1.+FEMAPC2
 +FEMAPC2      1.      0.      1.
 $ Femap Load Set 1 : Axial
-FORCE          1    1633       0      1.      0.      0.   1000.
+FORCE          1    1633       0      1.      0.      0.     1e8
 $ Femap Load Set 2 : Shear/Bending
-FORCE          2    1633       0      1.      0.   1000.      0.
+FORCE          2    1633       0      1.      0.     1e6      0.
 $ Femap Load Set 3 : Moment/Bending
-MOMENT         3    1633       0      1.      0.   1000.      0.
+MOMENT         3    1633       0      1.      0.     1e7      0.
 $ Femap Load Set 4 : Torsion
-MOMENT         4    1633       0      1.      0.      0.   1000.
+MOMENT         4    1633       0      1.      0.      0.     1e7
 $ Femap Constraint Set 1 : BC
 SPC1           1  123456       1
 SPC1           1  123456       2
@@ -93,7 +93,8 @@ SPC1           1  123456     882
 $ Femap Property 1 : Plate
 PSHELL         1       1    .005       1               1              0.
 $ Femap Material 1 : ISOTROPIC Material
-MAT1           1   7.+102.692+10      .3      0.      0.      0.
+MAT1           1   7.+10              .3   2700.      0.      0.        +
++          2.7+8
 GRID           1       1      .5      0.      0.       0
 GRID           2       1      .511.25001      0.       0
 GRID           3       1      .5    22.5      0.       0

@@ -50,6 +50,13 @@ class TACSHeatConduction2D : public TACSElementModel {
                          TacsScalar lb[], TacsScalar ub[] );
 
   /**
+    Get underlying tacs constitutive object for this model
+  */
+  TACSConstitutive* getConstitutive(){
+    return stiff;
+  }
+
+  /**
     Evaluate the coefficients of the weak form integrand
   */
   void evalWeakIntegrand( int elemIndex, const double time,
@@ -175,6 +182,13 @@ class TACSHeatConduction3D : public TACSElementModel {
   */
   int getDesignVarRange( int elemIndex, int dvLen,
                          TacsScalar lb[], TacsScalar ub[] );
+
+  /**
+    Get underlying tacs constitutive object for this model
+  */
+  TACSConstitutive* getConstitutive(){
+    return stiff;
+  }
 
   /**
     Evaluate the coefficients of the weak form integrand

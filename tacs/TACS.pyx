@@ -48,6 +48,8 @@ BEAM_OR_SHELL_ELEMENT = TACS_BEAM_OR_SHELL_ELEMENT
 PLANE_STRESS_ELEMENT = TACS_PLANE_STRESS_ELEMENT
 SOLID_ELEMENT = TACS_SOLID_ELEMENT
 RIGID_ELEMENT = TACS_RIGID_ELEMENT
+MASS_ELEMENT = TACS_MASS_ELEMENT
+SPRING_ELEMENT = TACS_SPRING_ELEMENT
 
 # Import the element matrix types
 STIFFNESS_MATRIX = TACS_STIFFNESS_MATRIX
@@ -159,6 +161,31 @@ cdef inplace_array_2d(int nptype, int dim1, int dim2, void *data_ptr,
     # Set the first entry of the shape array
     shape[0] = <np.npy_intp>dim1
     shape[1] = <np.npy_intp>dim2
+
+    # Create the array itself - Note that this function will not
+    # delete the data once the ndarray goes out of scope
+    ndarray = np.PyArray_SimpleNewFromData(size, shape,
+                                           nptype, data_ptr)
+
+    # Set the base class who owns the memory
+    if ptr != NULL:
+        ndarray.base = ptr
+
+    return ndarray
+
+# This wraps a C++ array with a numpy array for later useage
+cdef inplace_array_3d(int nptype, int dim1, int dim2, int dim3, void *data_ptr,
+                      PyObject *ptr):
+    """Return a numpy version of the array"""
+    # Set the shape of the array
+    cdef int size = 3
+    cdef np.npy_intp shape[3]
+    cdef np.ndarray ndarray
+
+    # Set the first entry of the shape array
+    shape[0] = <np.npy_intp>dim1
+    shape[1] = <np.npy_intp>dim2
+    shape[2] = <np.npy_intp>dim3
 
     # Create the array itself - Note that this function will not
     # delete the data once the ndarray goes out of scope
@@ -297,6 +324,14 @@ cdef class Element:
                 return _init_Element(pressElem)
         return None
 
+    def createElementInertialForce(self, np.ndarray[TacsScalar, ndim=1] inertiaVec):
+        cdef TACSElement *inertiaElem = NULL
+        if self.ptr:
+            inertiaElem = self.ptr.createElementInertialForce(<TacsScalar*>inertiaVec.data)
+            if inertiaElem != NULL:
+                return _init_Element(inertiaElem)
+        return None
+
     def getDesignVarsPerNode(self):
         """
         getDesignVarsPerNode(self)
@@ -398,6 +433,13 @@ cdef class Constitutive:
     def __dealloc__(self):
         if self.ptr:
             self.ptr.decref()
+
+    def getObjectName(self):
+        cdef bytes py_string
+        if self.ptr:
+            py_string = self.ptr.getObjectName()
+            return convert_bytes_to_str(py_string)
+        return None
 
     def getNumStresses(self):
         if self.ptr:
@@ -740,6 +782,39 @@ cdef class AuxElements:
         self.ptr.addElement(num, elem.ptr)
         return
 
+cdef _convertBCSRMat(BCSRMat *mat, PyObject *ptr):
+    cdef int bsize = 0
+    cdef int nrows = 0
+    cdef int ncols = 0
+    cdef const int *rowp = NULL
+    cdef const int *cols = NULL
+    cdef TacsScalar *vals = NULL
+    cdef size = 0
+
+    if mat != NULL:
+        mat.getArrays(&bsize, &nrows, &ncols, &rowp, &cols, &vals)
+
+        size = rowp[nrows]
+        arowp = np.zeros(nrows + 1, dtype=int)
+        acols = np.zeros(size, dtype=int)
+        
+        for i in range(nrows + 1):
+            arowp[i] = rowp[i]
+            
+        for i in range(size):
+            acols[i] = cols[i]
+
+        avals = inplace_array_3d(TACS_NPY_SCALAR, size, bsize, bsize, vals, ptr)
+
+        try:
+            import scipy.sparse as sparse
+            A = sparse.bsr_matrix((avals, acols, arowp), shape=(bsize*nrows, bsize*ncols))
+            return A
+        except:
+            return bsize, bsize, nrows, ncols, arowp, acols, avals
+
+    return None
+  
 cdef class Mat:
     def __cinit__(self):
         """
@@ -788,6 +863,33 @@ cdef class Mat:
         Add value alpha to diagonal entries
         """
         self.ptr.addDiag(alpha)
+
+    def getMat(self):
+        """
+        Return the BCSR matrix data associated with the underlying matrix
+        """
+
+        cdef BCSRMat *A = NULL
+        cdef BCSRMat *B = NULL
+        cdef BCSRMat *C = NULL
+        cdef BCSRMat *D = NULL
+        cdef TACSParallelMat *mat = NULL
+        cdef TACSSchurMat *sc = NULL
+
+        mat = _dynamicParallelMat(self.ptr)
+        sc = _dynamicSchurMat(self.ptr)
+
+        if mat != NULL:
+            mat.getBCSRMat(&A, &B)
+            return (_convertBCSRMat(A, <PyObject*>self), _convertBCSRMat(B, <PyObject*>self))
+        elif sc != NULL:
+            sc.getBCSRMat(&A, &B, &C, &D)
+            return (_convertBCSRMat(A, <PyObject*>self),
+                    _convertBCSRMat(B, <PyObject*>self),
+                    _convertBCSRMat(C, <PyObject*>self),
+                    _convertBCSRMat(D, <PyObject*>self))
+
+        return None
 
     def getDenseMatrix(self):
         """

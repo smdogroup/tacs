@@ -71,11 +71,13 @@ freq = TACS.FrequencyAnalysis(assembler, sigma, M, K, gmres,
 freq.solve(print_level=2)
 
 # Output for visualization 
-flag = (TACS.ToFH5.NODES |
-        TACS.ToFH5.DISPLACEMENTS |
-        TACS.ToFH5.STRAINS |
-        TACS.ToFH5.EXTRAS)
-f5 = TACS.ToFH5(assembler, TACS.PY_SHELL, flag)
+flag = (TACS.OUTPUT_CONNECTIVITY |
+        TACS.OUTPUT_NODES |
+        TACS.OUTPUT_DISPLACEMENTS |
+        TACS.OUTPUT_STRAINS |
+        TACS.OUTPUT_STRESSES |
+        TACS.OUTPUT_EXTRAS)
+f5 = TACS.ToFH5(assembler, TACS.BEAM_OR_SHELL_ELEMENT, flag)
 
 vec = assembler.createVec()
 for i in range(num_eigs):

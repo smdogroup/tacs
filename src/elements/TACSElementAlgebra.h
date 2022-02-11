@@ -44,6 +44,34 @@ static inline void crossProduct( const TacsScalar x[],
 }
 
 /*
+  Find the cross product and its sensitivity with respect to two
+  3D input vectors and their sensitivity
+
+  input:
+  A:    the first input 3-vector
+  B:    the second input 3-vector
+  sA:   sensitivity of the first input 3-vector
+  sB:   sensitivity of the second input 3-vector
+
+  output:
+  out:  the resulting vector
+  sout: sensitivity of the resulting vector
+*/
+static inline void crossProductSens( const TacsScalar A[], const TacsScalar B[],
+                                     const TacsScalar sA[], const TacsScalar sB[],
+                                     TacsScalar out[], TacsScalar sout[] ){
+  //   (A2 * B3 - A3 * B2 ), ( A3 *B1 - A1 * B3 ), ( A1 * B2 - A2 * B1 )
+
+  out[0] = A[1]*B[2] - A[2]*B[1];
+  out[1] = A[2]*B[0] - A[0]*B[2];
+  out[2] = A[0]*B[1] - A[1]*B[0];
+
+  sout[0] = (sA[1]*B[2] - sA[2]*B[1] + A[1]*sB[2] - A[2]*sB[1]);
+  sout[1] = (sA[2]*B[0] - sA[0]*B[2] + A[2]*sB[0] - A[0]*sB[2]);
+  sout[2] = (sA[0]*B[1] - sA[1]*B[0] + A[0]*sB[1] - A[1]*sB[0]);
+}
+
+/*
   Compute the cross-product
 
   out = a*(x cross y)
@@ -414,6 +442,64 @@ static inline void vec3NormDeriv( TacsScalar nrm,
   D[6] =-s*x[2]*x[0];
   D[7] =-s*x[2]*x[1];
   D[8] = s*(t - x[2]*x[2]);
+}
+
+/*
+  Normalize a 3D vector in place
+
+  input:
+  A: the input 3-vector to be normalized
+
+  output:
+  A: normalized 3-vector
+  Anrm: norm of input vector
+*/
+static inline TacsScalar vec3Normalize( TacsScalar A[] ){
+  TacsScalar Anrm = sqrt(A[0]*A[0] + A[1]*A[1] + A[2]*A[2]);
+  TacsScalar invAnrm = 1.0/Anrm;
+
+  if (Anrm != 0.0){
+    A[0] = A[0]*invAnrm;
+    A[1] = A[1]*invAnrm;
+    A[2] = A[2]*invAnrm;
+  }
+
+  return Anrm;
+}
+
+/*
+  Find the sensitivity of the normalized 3D vector
+
+  input:
+  A: the input 3-vector to be normalized
+
+  output:
+  A: normalized 3-vector
+  sA: sensitivity ot the normalized 3-vector
+  Anrm: norm of input vector
+  sAnrm: sensitivity of the norm of input vector
+*/
+static inline TacsScalar vec3NormalizeSens( TacsScalar A[],
+                                            TacsScalar * sAnrm,
+                                            TacsScalar sA[] ){
+  TacsScalar Anrm = sqrt(A[0]*A[0] + A[1]*A[1] + A[2]*A[2]);
+  TacsScalar invAnrm = 1.0/Anrm;
+  *sAnrm = (1.0/Anrm)*(A[0]*sA[0] + A[1]*sA[1] + A[2]*sA[2]);
+
+  if ( Anrm != 0.0 ){
+    A[0] = A[0]*invAnrm;
+    A[1] = A[1]*invAnrm;
+    A[2] = A[2]*invAnrm;
+
+    sA[0] = (sA[0] - (A[0])*(*sAnrm))*invAnrm;
+    sA[1] = (sA[1] - (A[1])*(*sAnrm))*invAnrm;
+    sA[2] = (sA[2] - (A[2])*(*sAnrm))*invAnrm;
+  }
+  else {
+    sA[0] = sA[1] = sA[2] = 0.0;
+  }
+
+  return Anrm;
 }
 
 /*

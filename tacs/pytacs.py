@@ -558,11 +558,12 @@ class pyTACS(BaseUI):
         # Callback function to return appropriate tacs MaterialProperties object
         # For a pynastran mat card
         def matCallBack(matInfo):
-            # First we define the material property object
+            # Nastran isotropic material card
             if matInfo.type == 'MAT1':
                 mat = tacs.constitutive.MaterialProperties(rho=matInfo.rho, E=matInfo.e,
                                                            nu=matInfo.nu, ys=matInfo.St,
                                                            alpha=matInfo.a)
+            # Nastran orthotropic material card
             elif matInfo.type == 'MAT8':
                 E1 = matInfo.e11
                 E2 = matInfo.e22
@@ -584,6 +585,29 @@ class pyTACS(BaseUI):
                 # TODO: add alpha
                 mat = tacs.constitutive.MaterialProperties(rho=rho, E1=E1, E2=E2, nu12=nu12, G12=G12, G13=G13, G23=G23,
                                                            Xt=Xt, Xc=Xc, Yt=Yt, Yc=Yc, S12=S12)
+            # Nastran 2D anisotropic material card
+            elif matInfo.type == 'MAT2':
+                C11 = matInfo.G11
+                C12 = matInfo.G12
+                C22 = matInfo.G22
+                C13 = matInfo.G13
+                C23 = matInfo.G23
+                C33 = matInfo.G33
+                rho = matInfo.rho
+                # See if this card features anisotropic coupling terms (which we don't support yet)
+                if np.abs(C13)/(C11+C22) >= 1e-8 or np.abs(C23)/(C11+C22) >= 1e-8:
+                    self.TACSWarning("MAT2 card %d has anisotropic stiffness components that are not currently supported. "
+                                     "These terms will be dropped and the material treated as orthotropic. "
+                                     "Result accuracy may be affected."%(matInfo.mid))
+                nu12 = C12 / C22
+                nu21 = C12 / C11
+                E1 = C11 * (1 - nu12 * nu21)
+                E2 = C22 * (1 - nu12 * nu21)
+                G12 = G13 = G23 = C33
+                # TODO: add alpha
+                mat = tacs.constitutive.MaterialProperties(rho=rho, E1=E1, E2=E2, nu12=nu12, G12=G12, G13=G13,
+                                                           G23=G23)
+
             else:
                 raise self.TACSError("Unsupported material type '%s' for material number %d. " % (matInfo.type, matInfo.mid))
 
@@ -599,6 +623,7 @@ class pyTACS(BaseUI):
             elemInfo = elemDict[propertyID]['elements'][0]
 
             # First we define the material object
+            mat = None
             # This property only references one material
             if hasattr(propInfo, 'mid_ref'):
                 matInfo = propInfo.mid_ref
@@ -678,12 +703,19 @@ class pyTACS(BaseUI):
                 con = tacs.constitutive.SolidConstitutive(mat, t=thickness,
                                                           tlb=minThickness, tub=maxThickness, tNum=tNum)
 
+            elif propInfo.type == 'PBUSH':  # Nastran spring
+                k = numpy.zeros(6)
+                for j in range(len(k)):
+                    if (propInfo.Ki[j]):
+                        k[j] = propInfo.Ki[j]
+                con = tacs.constitutive.DOFSpringConstitutive(k=k)
+
             else:
                 raise self.TACSError("Unsupported property type '%s' for property number %d. " % (propInfo.type, propertyID))
 
             # Set up transform object which may be required for certain elements
             transform = None
-            if hasattr(elemInfo, 'theta_mcid_ref'):
+            if propInfo.type in ['PSHELL', 'PCOMP']:
                 mcid = elemDict[propertyID]['elements'][0].theta_mcid_ref
                 if mcid:
                     if mcid.type == 'CORD2R':
@@ -692,6 +724,19 @@ class pyTACS(BaseUI):
                     else:  # Don't support spherical/cylindrical yet
                         raise self.TACSError("Unsupported material coordinate system type "
                                     "'%s' for property number %d." % (mcid.type, propertyID))
+            elif propInfo.type == 'PBUSH':
+                if elemDict[propertyID]['elements'][0].cid_ref:
+                    refAxis_i = elemDict[propertyID]['elements'][0].cid_ref.i
+                    refAxis_j = elemDict[propertyID]['elements'][0].cid_ref.j
+                    transform = tacs.elements.SpringRefFrameTransform(refAxis_i, refAxis_j)
+                elif elemDict[propertyID]['elements'][0].x[0]:
+                    refAxis = numpy.array(elemDict[propertyID]['elements'][0].x) \
+                              - elemDict[propertyID]['elements'][0].nodes_ref[0].xyz
+                    transform = tacs.elements.SpringRefAxisTransform(refAxis)
+                elif elemDict[propertyID]['elements'][0].g0_ref:
+                    refAxis = elemDict[propertyID]['elements'][0].g0_ref.xyz \
+                              - elemDict[propertyID]['elements'][0].nodes_ref[0].xyz
+                    transform = tacs.elements.SpringRefAxisTransform(refAxis)
 
             # Finally set up the element objects belonging to this component
             elemList = []
@@ -717,6 +762,8 @@ class pyTACS(BaseUI):
                     basis = tacs.elements.LinearHexaBasis()
                     model = tacs.elements.LinearElasticity3D(con)
                     elem = tacs.elements.Element3D(model, basis)
+                elif descript == 'CBUSH':
+                    elem = tacs.elements.SpringElement(transform, con)
                 else:
                     raise self.TACSError("Unsupported element type "
                                 "'%s' specified for property number %d." % (descript, propertyID))
@@ -725,7 +772,6 @@ class pyTACS(BaseUI):
             return elemList, scaleList
 
         return elemCallBack
-
 
     def getOrigDesignVars(self):
         """
@@ -842,6 +888,24 @@ class pyTACS(BaseUI):
 
         return self.assembler.getNumOwnedNodes()
 
+    def getNumOwnedMultiplierNodes(self):
+        """
+        Get number of multiplier nodes owned by this processor.
+        """
+        if self.assembler is None:
+            raise self.TACSError("TACS assembler has not been created. "
+                                 "Assembler must created first by running 'initalize' method.")
+        return len(self.meshLoader.getLocalMultiplierNodeIDs())
+
+    def getLocalMultiplierNodeIDs(self):
+        """
+        Get the tacs indices of multiplier nodes used to hold lagrange multipliers on this processor.
+        """
+        if self.assembler is None:
+            raise self.TACSError("TACS assembler has not been created. "
+                        "Assembler must created first by running 'initalize' method.")
+        return self.meshLoader.getLocalMultiplierNodeIDs()
+
     def createVec(self, asBVec=False):
         """
         Create a new tacs distributed state variable vector.
@@ -905,21 +969,21 @@ class pyTACS(BaseUI):
 
     def createStaticProblem(self, name, options={}):
         """
-        Create a new staticProblem for modeling a static problem load case.
+        Create a new staticProblem for modeling a static load cases.
         This object can be used to set loads, evalFunctions as well as perform
         solutions and sensitivities related to static problems
 
         Parameters
         ----------
         name : str
-            Name to assign static problem.
+            Name to assign problem.
         options : dict
             Problem-specific options to pass to StaticProblem instance.
 
         Returns
         ----------
         problem : StaticProblem
-            StaticProblem object used for modeling and solving static problems.
+            StaticProblem object used for modeling and solving static cases.
         """
         if self.assembler is None:
             raise self.TACSError("TACS assembler has not been created. "
@@ -934,35 +998,71 @@ class pyTACS(BaseUI):
 
     def createTransientProblem(self, name, tInit, tFinal, numSteps, options={}):
         """
-        Create a new TransientProblem for modeling a transient problem load case.
+        Create a new TransientProblem for modeling a transient load cases.
         This object can be used to set loads, evalFunctions as well as perform
         solutions and sensitivities related to transient problems
 
         Parameters
         ----------
         name : str
-            Name to assign static problem.
+            Name to assign problem.
         tInit : float
-            Starting time for transient problem integration
+            Starting time for transient time integration
         tFinal : float
-            Ending time for transient problem integration
+            Ending time for transient time integration
         numSteps : int
-            Number of time steps for transient problem integration
+            Number of time steps for transient time integration
         options : dict
             Problem-specific options to pass to TransientProblem instance.
 
         Returns
         ----------
         problem : TransientProblem
-            TransientProblem object used for modeling and solving static problems.
+            TransientProblem object used for modeling and solving transient cases.
+        """
+        if self.assembler is None:
+            raise self.TACSError("TACS assembler has not been created. "
+                                 "Assembler must created first by running 'initalize' method.")
+
+        problem = tacs.problems.transient.TransientProblem(name, tInit, tFinal, numSteps,
+                                                           self.assembler, self.comm, self.outputViewer,
+                                                           self.meshLoader,
+                                                           options)
+        # Set with original design vars and coordinates, in case they have changed
+        problem.setDesignVars(self.x0)
+        problem.setNodes(self.Xpts0)
+        return problem
+
+    def createModalProblem(self, name, sigma, numEigs, options={}):
+        """
+        Create a new ModalProblem for performing modal analysis.
+        This problem can be used to identify the natural frequencies and mode
+        shapes of the model through eigenvalue analysis.
+
+        Parameters
+        ----------
+        name : str
+            Name to assign problem.
+        sigma : float
+            Guess for the lowest eigenvalue.
+            This corresponds to the lowest expected frequency squared. (rad^2/s^2)
+        numEigs : int
+            Number of eigenvalues to solve for.
+        options : dict
+            Problem-specific options to pass to ModalProblem instance.
+
+        Returns
+        ----------
+        problem : ModalProblem
+            ModalProblem object used for performing modal eigenvalue analysis.
         """
         if self.assembler is None:
             raise self.TACSError("TACS assembler has not been created. "
                         "Assembler must created first by running 'initalize' method.")
 
-        problem = tacs.problems.transient.TransientProblem(name, tInit, tFinal, numSteps,
-                                                        self.assembler, self.comm, self.outputViewer, self.meshLoader,
-                                                        options)
+        problem = tacs.problems.modal.ModalProblem(name, sigma, numEigs,
+                                                   self.assembler, self.comm, self.outputViewer, self.meshLoader,
+                                                   options)
         # Set with original design vars and coordinates, in case they have changed
         problem.setDesignVars(self.x0)
         problem.setNodes(self.Xpts0)
@@ -982,8 +1082,8 @@ class pyTACS(BaseUI):
 
         Notes
         -----
-        Currently only supports LOAD, FORCE, MOMENT, PLOAD2, and PLOAD4 cards.
-        Currently only supports staticProblem (SOL 101)
+        Currently only supports LOAD, FORCE, MOMENT, GRAV, PLOAD2, and PLOAD4 cards.
+        Currently only supports staticProblem (SOL 101) and modalProblems (SOL 103)
         """
 
         if self.assembler is None:
@@ -998,10 +1098,6 @@ class pyTACS(BaseUI):
         vpn = self.varsPerNode
         loads = self.bdfInfo.loads
         nloads = len(loads)
-
-        # Check if any loads are in the BDF
-        if nloads == 0:
-            raise self.TACSError("BDF file '%s' has no loads included in it. " % (self.bdfName))
 
         structProblems = {}
 
@@ -1020,42 +1116,65 @@ class pyTACS(BaseUI):
                 name = subCase.params['SUBTITLE'][0]
             else:
                 name = 'load_set_%.3d' % (subCase.id)
-            staticProb = self.createStaticProblem(name)
 
-            if 'LOAD' in subCase.params:
-                loadsID = subCase.params['LOAD'][0]
-                # Get loads and scalers for this load case ID
-                loadSet, loadScale, _ = self.bdfInfo.get_reduced_loads(loadsID)
-                # Loop through every load in set and add it to problem
-                for loadInfo, scale in zip(loadSet, loadScale):
-                    # Add any point force or moment cards
-                    if loadInfo.type == 'FORCE' or loadInfo.type == 'MOMENT':
-                        nodeID = loadInfo.node_ref.nid
+            if self.bdfInfo.sol == 103:
+                methodID = subCase.params['METHOD'][0]
+                methodInfo = self.bdfInfo.methods[methodID]
+                if methodInfo.v1 is not None:
+                    sigma = (2 * np.pi * methodInfo.v1) ** 2
+                elif methodInfo.v2 is not None:
+                    sigma = (2 * np.pi * methodInfo.v2) ** 2
+                else:
+                    sigma = 1.0
+                if methodInfo.nd is not None:
+                    nEigs = methodInfo.nd
+                else:
+                    nEigs = 20
+                problem = self.createModalProblem(name, sigma, nEigs)
 
-                        loadArray = numpy.zeros(vpn)
-                        if loadInfo.type == 'FORCE' and vpn >= 3:
-                            loadArray[:3] += scale * loadInfo.scaled_vector
-                        elif loadInfo.type == 'MOMENT' and vpn >= 6:
-                            loadArray[3:6] += scale * loadInfo.scaled_vector
-                        staticProb.addLoadToNodes(nodeID, loadArray, nastranOrdering=True)
+            else:
+                problem = self.createStaticProblem(name)
 
-                    # Add any pressure loads
-                    # Pressure load card specific to shell elements
-                    elif loadInfo.type == 'PLOAD2':
-                        elemIDs = loadInfo.eids
-                        pressure = scale * loadInfo.pressure
-                        staticProb.addPressureToElements(elemIDs, pressure, nastranOrdering=True)
+                if 'LOAD' in subCase.params:
+                    loadsID = subCase.params['LOAD'][0]
+                    # Get loads and scalers for this load case ID
+                    loadSet, loadScale, _ = self.bdfInfo.get_reduced_loads(loadsID)
+                    # Loop through every load in set and add it to problem
+                    for loadInfo, scale in zip(loadSet, loadScale):
+                        # Add any point force or moment cards
+                        if loadInfo.type == 'FORCE' or loadInfo.type == 'MOMENT':
+                            nodeID = loadInfo.node_ref.nid
 
-                    # Alternate more general pressure load type
-                    elif loadInfo.type == 'PLOAD4':
-                        self._addPressureFromPLOAD4(staticProb, loadInfo, scale)
+                            loadArray = numpy.zeros(vpn)
+                            if loadInfo.type == 'FORCE' and vpn >= 3:
+                                loadArray[:3] += scale * loadInfo.scaled_vector
+                            elif loadInfo.type == 'MOMENT' and vpn >= 6:
+                                loadArray[3:6] += scale * loadInfo.scaled_vector
+                            problem.addLoadToNodes(nodeID, loadArray, nastranOrdering=True)
 
-                    else:
-                        self.TACSWarning("Unsupported load type "
-                                    " '%s' specified for load set number %d, skipping load" %(loadInfo.type, loadInfo.sid))
+                        # Add any gravity loads
+                        elif loadInfo.type == 'GRAV':
+                            inertiaVec = np.zeros(3, dtype=self.dtype)
+                            inertiaVec[:3] = scale * loadInfo.scale * loadInfo.N
+                            problem.addInertialLoad(inertiaVec)
+
+                        # Add any pressure loads
+                        # Pressure load card specific to shell elements
+                        elif loadInfo.type == 'PLOAD2':
+                            elemIDs = loadInfo.eids
+                            pressure = scale * loadInfo.pressure
+                            problem.addPressureToElements(elemIDs, pressure, nastranOrdering=True)
+
+                        # Alternate more general pressure load type
+                        elif loadInfo.type == 'PLOAD4':
+                            self._addPressureFromPLOAD4(problem, loadInfo, scale)
+
+                        else:
+                            self.TACSWarning("Unsupported load type "
+                                        " '%s' specified for load set number %d, skipping load" %(loadInfo.type, loadInfo.sid))
 
             # append to list of structural problems
-            structProblems[subCase.id] = staticProb
+            structProblems[subCase.id] = problem
 
         return structProblems
 
@@ -1365,6 +1484,8 @@ class pyTACS(BaseUI):
             # Loop through every element type in this component,
             # there may be multiple (e.g CQUAD4 + CTRIA3)
             for j, elemObject in enumerate(elemObjects):
+                # Set component-specific family id
+                elemObject.setComponentNum(self.compFam[i])
                 # Set each of the elements for this component
                 self.meshLoader.setElementObject(i, j, elemObject)
                 # set varsPerNode
@@ -1375,3 +1496,8 @@ class pyTACS(BaseUI):
                     raise self.TACSError("Model references elements with differing numbers of variables per node (%d and %d). "
                                 "All elements must use same number of variables to be compatible."%(self.varsPerNode,
                                                                                                     elemVarsPerNode))
+
+        # If varsPerNode still hasn't been set (because there were no elements added in the callback)
+        # Default to 6
+        if self.varsPerNode is None:
+            self.varsPerNode = 6

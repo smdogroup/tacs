@@ -467,6 +467,87 @@ cdef class TimoshenkoConstitutive(Constitutive):
         self.ptr = self.cptr
         self.ptr.incref()
 
+cdef class GeneralMassConstitutive(Constitutive):
+    def __cinit__(self, **kwargs):
+        cdef TacsScalar M[21]
+        if 'M' in kwargs:
+            _M = kwargs['M']
+            assert isinstance(_M, list) or isinstance(_M, np.ndarray)
+            assert len(_M) == 21
+            for i in range(21):
+                M[i] = _M[i]
+        else:
+            for i in range(21):
+                M[i] = 0.0
+        self.cptr = new TACSGeneralMassConstitutive(M)
+
+        self.ptr = self.cptr
+        self.ptr.incref()
+
+cdef class PointMassConstitutive(GeneralMassConstitutive):
+    def __cinit__(self, **kwargs):
+        cdef TacsScalar m = 0.0
+        cdef TacsScalar I11 = 0.0
+        cdef TacsScalar I22 = 0.0
+        cdef TacsScalar I33 = 0.0
+        cdef TacsScalar I12 = 0.0
+        cdef TacsScalar I13 = 0.0
+        cdef TacsScalar I23 = 0.0
+
+        if 'm' in kwargs:
+            m = kwargs['m']
+        if 'I11' in kwargs:
+            I11 = kwargs['I11']
+        if 'I22' in kwargs:
+            I22 = kwargs['I22']
+        if 'I33' in kwargs:
+            I33 = kwargs['I33']
+        if 'I12' in kwargs:
+            I12 = kwargs['I12']
+        if 'I13' in kwargs:
+            I13 = kwargs['I13']
+        if 'I23' in kwargs:
+            I23 = kwargs['I23']
+
+        self.cptr = new TACSPointMassConstitutive(m, I11, I22, I33, I12, I13, I23)
+
+        self.ptr = self.cptr
+        self.ptr.incref()
+
+cdef class GeneralSpringConstitutive(Constitutive):
+    def __cinit__(self, **kwargs):
+        cdef TacsScalar K[21]
+        if 'K' in kwargs:
+            _K = kwargs['K']
+            assert isinstance(_K, list) or isinstance(_K, np.ndarray)
+            assert len(_K) == 21
+            for i in range(21):
+                K[i] = _K[i]
+        else:
+            for i in range(21):
+                K[i] = 0.0
+        self.cptr = new TACSGeneralSpringConstitutive(K)
+
+        self.ptr = self.cptr
+        self.ptr.incref()
+
+cdef class DOFSpringConstitutive(GeneralSpringConstitutive):
+    def __cinit__(self, **kwargs):
+        cdef TacsScalar k[6]
+        if 'k' in kwargs:
+            _k = kwargs['k']
+            assert isinstance(_k, list) or isinstance(_k, np.ndarray)
+            assert len(_k) == 6
+            for i in range(6):
+                k[i] = _k[i]
+        else:
+            for i in range(6):
+                k[i] = 0.0
+        self.cptr = new TACSDOFSpringConstitutive(k)
+
+        self.ptr = self.cptr
+        self.ptr.incref()
+
 def TestConstitutive(Constitutive con, int elemIndex=0, double dh=1e-6,
                      int test_print_level=2, double atol=1e-30,
                      double rtol=1e-5):

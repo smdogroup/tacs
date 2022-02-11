@@ -40,9 +40,8 @@ comm = MPI.COMM_WORLD
 
 # Instantiate FEAAssembler
 structOptions = {
-    'printtimings':True,
+    'printtiming':True,
     # Specify what type of elements we want in the f5
-    'writeSolution':True,
     'outputElement': TACS.PLANE_STRESS_ELEMENT,
 }
 
@@ -106,7 +105,7 @@ for problem in allProblems:
     problem.solve()
     problem.evalFunctions(funcs)
     problem.evalFunctionsSens(funcsSens)
-    problem.writeSolution()
+    problem.writeSolution(outputDir=os.path.dirname(__file__))
 
 if comm.rank == 0:
     pprint(funcs)

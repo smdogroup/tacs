@@ -1,5 +1,5 @@
 """
-pyStatic_problem
+pyTransient_problem
 """
 
 # =============================================================================
@@ -100,17 +100,10 @@ class TransientProblem(TACSProblem):
 
         # Set user-defined options
         for key in options:
-            self.setOption(key, options[key])
+            super().setOption(key, options[key])
 
         # Create problem-specific variables
         self._createVariables()
-
-        # Set output viewer for integrator
-        self.integrator.setFH5(self.outputViewer)
-        outputFreq = self.getOption('outputFrequency')
-        self.integrator.setOutputFrequency(outputFreq)
-        outputDir = self.getOption('outputDir')
-        self.integrator.setOutputPrefix(outputDir)
 
     def _createVariables(self):
         """
@@ -145,6 +138,50 @@ class TransientProblem(TACSProblem):
         # Jacobian assembly frequency
         jacFreq = self.getOption('jacAssemblyFreq')
         self.integrator.setJacAssemblyFreq(jacFreq)
+
+        # Set output viewer for integrator
+        self.integrator.setFH5(self.outputViewer)
+        outputFreq = self.getOption('outputFrequency')
+        self.integrator.setOutputFrequency(outputFreq)
+        outputDir = self.getOption('outputDir')
+        self.integrator.setOutputPrefix(outputDir)
+
+    def setOption(self, name, value):
+        """
+        Set a solver option value. The name is not case sensitive.
+
+        Parameters
+        ----------
+        name : str
+            Name of option to modify
+
+        value : depends on option
+            New option value to set
+        """
+        # Defualt setOption for common problem class objects
+        super().setOption(name, value)
+
+        # Update tolerances
+        if 'l2convergence' in name.lower():
+            # Set solver tolerances
+            atol = self.getOption('L2Convergence')
+            self.integrator.setAbsTol(atol)
+            rtol = self.getOption('L2ConvergenceRel')
+            self.integrator.setRelTol(rtol)
+        elif name.lower() == 'printlevel':
+            printLevel = self.getOption('printLevel')
+            self.integrator.setPrintLevel(printLevel)
+        elif name.lower() == 'jacassemblyfreq':
+            # Jacobian assembly frequency
+            jacFreq = self.getOption('jacAssemblyFreq')
+            self.integrator.setJacAssemblyFreq(jacFreq)
+        # No need to reset solver for output options
+        elif name.lower() in ['writesolution', 'printtiming',
+                              'numbersolutions', 'outputdir']:
+            pass
+        # Reset solver for all other option changes
+        else:
+            self._createVariables()
 
     def getNumTimeSteps(self):
         """
@@ -269,6 +306,32 @@ class TransientProblem(TACSProblem):
 
         self._addLoadToNodes(self.F[timeStep], nodeIDs, F, nastranOrdering)
 
+    def addLoadToRHS(self, timeStep, Fapplied):
+        """"
+        The function is used to add a *FIXED TOTAL LOAD* directly to the
+        right hand side vector given the equation below:
+
+            M*udotdot + K*u = f
+
+        Where:
+            K : Stiffness matrix for problem
+            u : State variables for problem
+            M : Mass matrix for problem
+            udotdot : Second time derivitive of state variables for problem
+            f : Right-hand side vector to add loads to
+
+        Parameters
+        ----------
+
+        timeStep : int
+            Time step index to apply load to.
+
+        Fapplied : ndarray or BVec
+            Distributed array containing loads to applied to RHS of the problem.
+
+        """
+        self._addLoadToRHS(self.F[timeStep], Fapplied)
+
     def addTractionToComponents(self, timeStep, compIDs, tractions,
                                 faceIndex=0):
         """
@@ -384,6 +447,23 @@ class TransientProblem(TACSProblem):
 
         self._addPressureToElements(self.auxElems[timeStep], elemIDs, pressures,
                                     faceIndex, nastranOrdering)
+
+    def addInertialLoad(self, timeStep, inertiaVector):
+        """
+        The function is used to add a fixed inertial load  at a specified time step
+        due to a uniform acceleration over the entire model.
+        This is most commonly used to model gravity loads on a model.
+
+        Parameters
+        ----------
+
+        timeStep : int
+            Time step index to apply load to.
+
+        inertiaVector : ndarray
+            Acceleration vector used to define inertial load.
+        """
+        self._addInertialLoad(self.auxElems[timeStep], inertiaVector)
 
     ####### Transient solver methods ########
 
@@ -607,13 +687,13 @@ class TransientProblem(TACSProblem):
             Time step index to get state variables for.
 
         states : BVec or ndarray or None
-            If states is not None, place the state variables into this array.
+            If states is not None, place the state variables into this array (optional).
 
         dstates : BVec or ndarray or None
-            If dstates is not None, place the time derivitive of the state variables into this array.
+            If dstates is not None, place the time derivitive of the state variables into this array (optional).
 
         ddstates : BVec or ndarray or None
-            If ddstates is not None, place the second time derivitive of the state variables into this array.
+            If ddstates is not None, place the second time derivitive of the state variables into this array (optional).
 
         Returns
         --------
@@ -621,13 +701,13 @@ class TransientProblem(TACSProblem):
             The time at specified step
 
         states : ndarray
-            The state variables into this array.
+            The state variables.
 
         dstates : BVec or ndarray or None
-            The time derivitive of the state variables into this array.
+            The time derivitive of the state variables.
 
         ddstates : BVec or ndarray or None
-            The second time derivitive of the state variables into this array.
+            The second time derivitive of the state variables.
 
         """
 
@@ -659,7 +739,7 @@ class TransientProblem(TACSProblem):
         return time, qArray, qdotArray, qddotArray
 
 
-    def writeSolution(self, timeSteps=None):
+    def writeSolution(self, outputDir=None, baseName=None, number=None, timeSteps=None):
         """
         This is a generic shell function that writes the output
         file(s).  The intent is that the user or calling program can
@@ -670,26 +750,56 @@ class TransientProblem(TACSProblem):
 
         Parameters
         ----------
-
-        timeStep : int or list[int] or None
+        outputDir : str or None
+            Use the supplied output directory
+        baseName : str or None
+            Use this supplied string for the base filename. Typically
+            only used from an external solver.
+        number : int or None
+            Use the user spplied number to index solution. Again, only
+            typically used from an external solver
+        timeSteps : int or list[int] or None
             Time step index or indices to get state variables for.
             If None, returns a solution for all time steps.
             Defaults to None.
         """
-        # Unless the writeSolution option is off write actual file:
-        if self.getOption('writeSolution'):
-            # Check input
+        # Make sure assembler variables are up to date
+        self._updateAssemblerVars()
+
+        # Check input
+        if outputDir is None:
             outputDir = self.getOption('outputDir')
+
+        if baseName is None:
             baseName = self.name
+
+        # If we are numbering solution, it saving the sequence of
+        # calls, add the call number
+        if number is not None:
+            # We need number based on the provided number:
+            baseName = baseName + '_%3.3d' % number
+        else:
+            # if number is none, i.e. standalone, but we need to
+            # number solutions, use internal counter
             if self.getOption('numberSolutions'):
                 baseName = baseName + '_%3.3d' % self.callCounter
 
-            base = os.path.join(outputDir, baseName) + '.f5'
-            # Write specific time step out
-            if timeSteps is not None:
-                timeSteps = np.atleast_1d(timeSteps)
-                for timeStep in timeSteps:
-                    self.integrator.writeStepToF5(timeStep)
-            # Write all time steps out
-            else:
-                self.integrator.writeSolutionToF5()
+        # Unless the writeSolution option is off write actual file:
+        if self.getOption('writeSolution'):
+
+            # If timeSteps is None, output all modes
+            if timeSteps is None:
+                timeSteps = np.arange(self.numSteps+1)
+
+            # Write out each specified timestep
+            timeSteps = np.atleast_1d(timeSteps)
+            vec = self.assembler.createVec()
+            for timeStep in timeSteps:
+                # Extract eigenvector
+                self.getVariables(timeStep, states=vec)
+                # Set eigen mode in assembler
+                self.assembler.setVariables(vec)
+                # Write out mode shape as f5 file
+                modeName = baseName + '_%3.3d' % timeStep
+                fileName = os.path.join(outputDir, modeName) + '.f5'
+                self.outputViewer.writeToFile(fileName)

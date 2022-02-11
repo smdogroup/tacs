@@ -1,0 +1,15 @@
+SOL 101
+CEND
+ECHO = NONE
+SUBCASE 1
+   SPC = 1
+   LOAD = 1
+   DISPLACEMENT=ALL
+   SPCFORCES=ALL
+   MPCFORCE=ALL
+BEGIN BULK
+PARAM    POST    -1
+CONM2          1       1            20.0
+            23.5            32.6                    12.8
+GRID     1               0.      0.      0.
+ENDDATA

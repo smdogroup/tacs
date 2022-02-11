@@ -8,7 +8,10 @@ include ../../../Makefile.in
 include ../../../TACS_Common.mk
 
 CXX_OBJS = TACSRBE2.o \
-	       TACSRBE3.o
+	         TACSRBE3.o \
+	         TACSMassElement.o \
+	         TACSMassInertialForce.o \
+	         TACSSpringElement.o
 
 DIR=${TACS_DIR}/src/elements/shell
 

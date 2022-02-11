@@ -74,7 +74,6 @@ class StaticProblem(TACSProblem):
             'writeSolution': [bool, True],
             'numberSolutions': [bool, True],
             'printTiming': [bool, False],
-            'printIterations': [bool, False],
 
         }
 
@@ -89,10 +88,7 @@ class StaticProblem(TACSProblem):
 
         # Set user-defined options
         for key in options:
-            self.setOption(key, options[key])
-
-        # Linear solver factor flag
-        self._factorOnNext = True
+            super().setOption(key, options[key])
 
         # Create problem-specific variables
         self._createVariables()
@@ -180,8 +176,37 @@ class StaticProblem(TACSProblem):
                                self.getOption('L2Convergence'))
 
         if opt('useMonitor'):
-            self.KSM.setMonitor(tacs.TACS.KSMPrintStdout(
-                opt('KSMSolver'), self.comm.rank, opt('monitorFrequency')))
+            self.KSM.setMonitor(self.comm, _descript=opt('KSMSolver').upper(), freq=opt('monitorFrequency'))
+
+        # Linear solver factor flag
+        self._factorOnNext = True
+
+    def setOption(self, name, value):
+        """
+        Set a solver option value. The name is not case sensitive.
+
+        Parameters
+        ----------
+        name : str
+            Name of option to modify
+
+        value : depends on option
+            New option value to set
+        """
+        # Defualt setOption for common problem class objects
+        super().setOption(name, value)
+
+        # Update tolerances
+        if 'l2convergence' in name.lower():
+            self.KSM.setTolerances(self.getOption('L2ConvergenceRel'),
+                                   self.getOption('L2Convergence'))
+        # No need to reset solver for output options
+        elif name.lower() in ['writesolution', 'printtiming',
+                              'numbersolutions', 'outputdir']:
+            pass
+        # Reset solver for all other option changes
+        else:
+            self._createVariables()
 
     def addFunction(self, funcName, funcHandle, compIDs=None, **kwargs):
         """
@@ -232,10 +257,10 @@ class StaticProblem(TACSProblem):
         """
         Set the mesh coordinates of the structure.
 
-        Returns
-        -------
-        coords : array
-            Structural coordinate in array of size (N, 3) where N is
+        Parameters
+        ----------
+        coords : ndarray
+            Structural coordinate in array of size (N * 3) where N is
             the number of structural nodes on this processor.
         """
         super().setNodes(coords)
@@ -332,6 +357,27 @@ class StaticProblem(TACSProblem):
         """
 
         self._addLoadToNodes(self.F, nodeIDs, F, nastranOrdering)
+
+    def addLoadToRHS(self, Fapplied):
+        """"
+        The function is used to add a *FIXED TOTAL LOAD* directly to the
+        right hand side vector given the equation below:
+
+            K*u = f
+
+        Where:
+            K : Stiffness matrix for problem
+            u : State variables for problem
+            f : Right-hand side vector to add loads to
+
+        Parameters
+        ----------
+
+        Fapplied : ndarray or BVec
+            Distributed array containing loads to applied to RHS of the problem.
+
+        """
+        self._addLoadToRHS(self.F, Fapplied)
 
     def addTractionToComponents(self, compIDs, tractions,
                                 faceIndex=0):
@@ -437,6 +483,19 @@ class StaticProblem(TACSProblem):
         self._addPressureToElements(self.auxElems, elemIDs, pressures,
                                     faceIndex, nastranOrdering)
 
+    def addInertialLoad(self, inertiaVector):
+        """
+        The function is used to add a fixed inertial load due to
+        a uniform acceleration over the entire model.
+        This is most commonly used to model gravity loads on a model.
+
+        Parameters
+        ----------
+        inertiaVector : ndarray
+            Acceleration vector used to define inertial load.
+        """
+        self._addInertialLoad(self.auxElems, inertiaVector)
+
     ####### Static solver methods ########
 
     def _updateAssemblerVars(self):
@@ -493,24 +552,15 @@ class StaticProblem(TACSProblem):
 
         initSolveTime = time.time()
 
-        # Compute the RHS
-        self.assembler.assembleRes(self.res)
-        # Add force terms from rhs
-        self.rhs.copyValues(self.F) # Fixed loads
-        # Add external loads, if specified
-        if Fext is not None:
-            if isinstance(Fext, tacs.TACS.Vec):
-                self.rhs.axpy(1.0, Fext)
-            elif isinstance(Fext, np.ndarray):
-                rhsArray = self.rhs.getArray()
-                rhsArray[:] += Fext[:]
-        # Zero out bc terms in rhs
-        self.assembler.applyBCs(self.rhs)
-        # Add the -F
-        self.res.axpy(-1.0, self.rhs)
+        # Get current residual
+        self.getResidual(self.res, Fext)
 
-        # Set initnorm as the norm of F
-        self.initNorm = np.real(self.F.norm())
+        # Get rhs vector
+        self.K.mult(self.u, self.rhs)
+        self.rhs.axpy(-1.0, self.res)
+
+        # Set initnorm as the norm of rhs
+        self.initNorm = np.real(self.rhs.norm())
 
         # Starting Norm for this compuation
         self.startNorm = np.real(self.res.norm())
@@ -531,16 +581,15 @@ class StaticProblem(TACSProblem):
 
         stateUpdateTime = time.time()
 
-        # Compute final FEA Norm
-        self.assembler.assembleRes(self.res)
-        self.res.axpy(-1.0, self.F)  # Add the -F
+        # Get updated residual
+        self.getResidual(self.res, Fext)
         self.finalNorm = np.real(self.res.norm())
 
         finalNormTime = time.time()
 
         # If timing was was requested print it, if the solution is nonlinear
         # print this information automatically if prinititerations was requested.
-        if self.getOption('printTiming') or self.getOption('printIterations'):
+        if self.getOption('printTiming'):
             self.pp('+--------------------------------------------------+')
             self.pp('|')
             self.pp('| TACS Solve Times:')
@@ -987,7 +1036,7 @@ class StaticProblem(TACSProblem):
                 self.rhs.axpy(1.0, Fext)
             elif isinstance(Fext, np.ndarray):
                 rhsArray = self.rhs.getArray()
-                rhsArray[:] += Fext[:]
+                rhsArray[:] = rhsArray[:] + Fext[:]
         # Zero out bc terms in rhs
         self.assembler.applyBCs(self.rhs)
         # Add the -F
@@ -1021,25 +1070,25 @@ class StaticProblem(TACSProblem):
         elif isinstance(phi, np.ndarray):
             self.phi.getArray()[:] = phi
 
-        if isinstance(prod, tacs.TACS.Vec):
-            self.res.copyValues(prod)
-        elif isinstance(prod, np.ndarray):
-            self.res.getArray()[:] = prod
-
-        # Zero out bc terms in input
+        # Tacs doesn't actually transpose the matrix here so keep track of
+        # RHS entries that TACS zeros out for BCs.
+        bcTerms = self.update
+        bcTerms.copyValues(self.phi)
         self.assembler.applyBCs(self.phi)
+        bcTerms.axpy(-1.0, self.phi)
 
         # Set problem vars to assembler
         self._updateAssemblerVars()
 
-        self.assembler.addJacobianVecProduct(scale, self.alpha, self.beta, self.gamma,
-                                             self.phi, self.res, tacs.TACS.TRANSPOSE)
+        self.K.mult(self.phi, self.res)
+        # Add bc terms back in
+        self.res.axpy(1.0, bcTerms)
 
         # Output residual
         if isinstance(prod, tacs.TACS.Vec):
-            prod.copyValues(self.res)
+            prod.axpy(scale, self.res)
         else:
-            prod[:] = self.res.getArray()
+            prod[:] = prod + scale * self.res.getArray()
 
     def zeroVariables(self):
         """
@@ -1079,19 +1128,18 @@ class StaticProblem(TACSProblem):
         elif isinstance(rhs, np.ndarray):
             self.adjRHS.getArray()[:] = rhs
 
-        # First compute the residual
-        self.res.zeroEntries()
-        self.assembler.addJacobianVecProduct(1.0, self.alpha, self.beta, self.gamma,
-                                             self.phi, self.res, tacs.TACS.TRANSPOSE)
-        self.res.axpy(-1.0, self.adjRHS)  # Add the -RHS
+        # Tacs doesn't actually transpose the matrix here so keep track of
+        # RHS entries that TACS zeros out for BCs.
+        bcTerms = self.update
+        bcTerms.copyValues(self.adjRHS)
+        self.assembler.applyBCs(self.adjRHS)
+        bcTerms.axpy(-1.0, self.adjRHS)
 
         # Solve Linear System
-        zeroGuess = 0
-        self.update.zeroEntries()
-        self.KSM.solve(self.res, self.update, zeroGuess)
-
-        # Update the adjoint vector with the (damped) update
-        self.phi.axpy(-1.0, self.update)
+        self.KSM.solve(self.adjRHS, self.phi)
+        self.assembler.applyBCs(self.phi)
+        # Add bc terms back in
+        self.phi.axpy(1.0, bcTerms)
 
         # Copy output values back to user vectors
         if isinstance(phi, tacs.TACS.Vec):
@@ -1111,16 +1159,16 @@ class StaticProblem(TACSProblem):
 
         Returns
         ----------
-        states : TACS BVec
+        states : numpy array
             current state vector
         """
+            
+        if isinstance(states, tacs.TACS.Vec):
+            states.copyValues(self.u)
+        elif isinstance(states, np.ndarray):
+            states[:] = self.u_array[:]
 
-        if states is None:
-            states = self.u.getArray().copy()
-        else:
-            states[:] = self.u.getArray()
-
-        return states
+        return self.u_array.copy()
 
     def setVariables(self, states):
         """
@@ -1132,9 +1180,12 @@ class StaticProblem(TACSProblem):
             Values to set. Must be the size of getNumVariables()
         """
         # Copy array values
-        self.u_array[:] = states[:]
-        # Zero out bc terms
-        self.assembler.setBCs(self.u)
+        if isinstance(states, tacs.TACS.Vec):
+            self.u.copyValues(states)
+        elif isinstance(states, np.ndarray):
+            self.u_array[:] = states[:]
+        # Apply boundary conditions
+        self.assembler.applyBCs(self.u)
         # Set states to assembler
         self.assembler.setVariables(self.u)
 
@@ -1149,14 +1200,13 @@ class StaticProblem(TACSProblem):
 
         Parameters
         ----------
-
         outputDir : str or None
             Use the supplied output directory
         baseName : str or None
             Use this supplied string for the base filename. Typically
             only used from an external solver.
         number : int or None
-            Use the user spplied number to index solution. Again, only
+            Use the user supplied number to index solution. Again, only
             typically used from an external solver
         """
         # Make sure assembler variables are up to date

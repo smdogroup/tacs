@@ -143,11 +143,11 @@ class TACSProblem(BaseUI):
 
     def setNodes(self, Xpts):
         """
-        Set the mesh coordinates of this problem.
+        Set the mesh coordinates of the structure.
 
-        Returns
-        -------
-        coords : array
+        Parameters
+        ----------
+        coords : ndarray
             Structural coordinate in array of size (N * 3) where N is
             the number of structural nodes on this processor.
         """
@@ -366,7 +366,7 @@ class TACSProblem(BaseUI):
                 F = np.repeat(F, [len(compIDs)], axis=0)
             # If the dimensions still don't match, raise an error
             elif F.shape[0] != len(compIDs):
-                raise Error("Number of forces must match number of compIDs,"
+                raise self.TACSError("Number of forces must match number of compIDs,"
                             " {} forces were specified for {} compIDs".format(F.shape[0], len(compIDs)))
 
             # Call addLoadToComponents again, once for each compID
@@ -504,6 +504,40 @@ class TACSProblem(BaseUI):
                 self.TACSWarning("Can't add load to node ID {} ({} ordering), node not found in model. "
                             "Double check BDF file.".format(nodeIDs[i], orderString))
 
+
+    def _addLoadToRHS(self, Frhs, Fapplied):
+        """"
+        This is an internal helper function for doing the addLoadToRHS method for
+        inhereted TACSProblem classes. The function should NOT be called by the user should
+        use the addLoadToRHS method for the respective problem class.
+        The function is used to add a *FIXED TOTAL LOAD* directly to the
+        right hand side vector given the equation below:
+
+            K*u = f
+
+        Where:
+            K : Stiffness matrix for problem
+            u : State variables for problem
+            f : Right-hand side vector to add loads to
+
+        Parameters
+        ----------
+
+        Fapplied : ndarray or BVec
+            Distributed array containing loads to applied to RHS of the problem.
+
+        """
+        if isinstance(Fapplied, tacs.TACS.Vec):
+            Frhs.axpy(1.0, Fapplied)
+        elif isinstance(Fapplied, np.ndarray):
+            if len(Fapplied) != Frhs.getSize():
+                raise self.TACSError("User-supplied distributed vector not correct length, "
+                                     "expected size of {} on processor {}, but got length {}.".format(Frhs.getSize(),
+                                                                                                      self.comm.rank,
+                                                                                                      len(Fapplied)))
+            rhsArray = Frhs.getArray()
+            rhsArray[:] = rhsArray[:] + Fapplied[:]
+
     def _addTractionToComponents(self, auxElems, compIDs, tractions,
                                 faceIndex=0):
         """
@@ -587,7 +621,7 @@ class TACSProblem(BaseUI):
             tractions = np.repeat(tractions, [numElems], axis=0)
         # If the dimensions still don't match, raise an error
         elif tractions.shape[0] != numElems:
-            raise Error("Number of tractions must match number of elements,"
+            raise self.TACSError("Number of tractions must match number of elements,"
                         " {} tractions were specified for {} element IDs".format(tractions.shape[0], numElems))
 
         # First find the coresponding local element ID on each processor
@@ -672,7 +706,7 @@ class TACSProblem(BaseUI):
                    maxLen=80, box=True)
 
     def _addPressureToElements(self, auxElems, elemIDs, pressures,
-                              faceIndex=0, nastranOrdering=False):
+                               faceIndex=0, nastranOrdering=False):
         """
         This is an internal helper function for doing the addPressureToElements method for
         inhereted TACSProblem classes. The function should NOT be called by the user should
@@ -713,8 +747,8 @@ class TACSProblem(BaseUI):
             pressures = np.repeat(pressures, [numElems], axis=0)
         # If the dimensions still don't match, raise an error
         elif pressures.shape[0] != numElems:
-            raise Error("Number of pressures must match number of elements,"
-                        " {} pressures were specified for {} element IDs".format(pressures.shape[0], numElems))
+            raise self.TACSError("Number of pressures must match number of elements,"
+                                 " {} pressures were specified for {} element IDs".format(pressures.shape[0], numElems))
 
         # First find the coresponding local element ID on each processor
         localElemIDs = self.meshLoader.getLocalElementIDsFromGlobal(elemIDs, nastranOrdering=nastranOrdering)
@@ -734,7 +768,8 @@ class TACSProblem(BaseUI):
                 # Pressure not implemented for element
                 if pressObj is None:
                     self.TACSWarning("TACS element of type {} does not hav a pressure implimentation. "
-                                "Skipping element in addPressureToElement procedure.".format(elemObj.getObjectName()))
+                                     "Skipping element in addPressureToElement procedure.".format(
+                        elemObj.getObjectName()))
                 # Pressure implemented
                 else:
                     # Add new pressure to auxiliary element object
@@ -752,4 +787,34 @@ class TACSProblem(BaseUI):
         for i in range(numElems):
             if not elemFound[i]:
                 self.TACSWarning("Can't add pressure to element ID {} ({} ordering), element not found in model. "
-                            "Double check BDF file.".format(elemIDs[i], orderString))
+                                 "Double check BDF file.".format(elemIDs[i], orderString))
+
+    def _addInertialLoad(self, auxElems, inertiaVector):
+        """
+        This is an internal helper function for doing the addInertialLoad method for
+        inhereted TACSProblem classes. The function should NOT be called by the user should
+        use the addInertialLoad method for the respective problem class. The function
+        is used to add a fixed inertial load due to a uniform acceleration over the entire model.
+        This is most commonly used to model gravity loads on a model.
+
+        Parameters
+        ----------
+
+         auxElems : TACS AuxElements object
+            AuxElements object to add loads to.
+
+        inertiaVector : ndarray
+            Acceleration vector used to define inertial load.
+        """
+        # Make sure vector is right type
+        inertiaVector = np.atleast_1d(inertiaVector).astype(self.dtype)
+        # Get elements on this processor
+        localElements = self.assembler.getElements()
+        # Loop through every element and apply inertial load
+        for elemID, elemObj in enumerate(localElements):
+            # Create appropriate inertial force object for this element type
+            inertiaObj = elemObj.createElementInertialForce(inertiaVector)
+            # Inertial force is implemented for element
+            if inertiaObj is not None:
+                # Add new inertial force to auxiliary element object
+                auxElems.addElement(elemID, inertiaObj)
