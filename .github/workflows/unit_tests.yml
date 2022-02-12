@@ -77,7 +77,7 @@ jobs:
           make ${{ matrix.OPTIONAL }} TACS_DIR=$TACS_DIR METIS_INCLUDE=-I${CONDA_PREFIX}/include/ METIS_LIB="-L${CONDA_PREFIX}/lib/ -lmetis";
           cd $TACS_DIR;
           make ${{ matrix.INTERFACE }};
-          echo $TACS_DIR >> $GITHUB_PATH;
+          export PYTHONPATH=$PYTHONPATH:$TACS_DIR;
           cd $TACS_DIR/examples;
           make ${{ matrix.EXAMPLES }} TACS_DIR=$TACS_DIR METIS_INCLUDE=-I${CONDA_PREFIX}/include/ METIS_LIB="-L${CONDA_PREFIX}/lib/ -lmetis";
           cd $TACS_DIR;
