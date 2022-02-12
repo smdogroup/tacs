@@ -12,9 +12,6 @@ functions, constraints etc (Functionality in the former
 pyTACS_Mesh). The second part deals with solution of the structural
 analysis and gradient computations.
 
-Copyright (c) 2013 by Dr. G.K.W. Kenway
-All rights reserved. Not to be used for commercial purposes.
-
 Developers:
 -----------
 - Dr. G.K.W. Kenway (GKK)
