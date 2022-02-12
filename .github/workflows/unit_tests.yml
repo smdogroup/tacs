@@ -84,3 +84,8 @@ jobs:
           echo "running tests";
           echo "=============================================================";
           testflo .;
+      - name: Make docs
+        run: |
+          cd $TACS_DIR/docs;
+          conda install -c conda-forge sphinx  -q -y;
+          make html;
