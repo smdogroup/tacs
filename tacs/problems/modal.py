@@ -33,16 +33,16 @@ class ModalProblem(TACSProblem):
         numEigs : int
             Number of eigenvalues to solve for
 
-        assembler : assembler
+        assembler : TACS.Assembler
             Cython object responsible for creating and setting tacs objects used to solve problem
 
-        comm : MPI Intracomm
+        comm : mpi4py.MPI.Intracomm
             The comm object on which to create the pyTACS object.
 
-        outputViewer : TACSToFH5 object
+        outputViewer : TACS.TACSToFH5
             Cython object used to write out f5 files that can be converted and used for postprocessing.
 
-        meshLoader : pyMeshLoader object
+        meshLoader : pymeshloader.pyMeshLoader
             pyMeshLoader object used to create the assembler.
 
         options : dict
@@ -164,19 +164,19 @@ class ModalProblem(TACSProblem):
         """
         NOT SUPPORTED FOR THIS PROBLEM
         """
-        self.TACSWarning("addFunction method not supported for this class.")
+        self._TACSWarning("addFunction method not supported for this class.")
 
     def evalFunctions(self, funcs, evalFuncs=None, ignoreMissing=False):
         """
         NOT SUPPORTED FOR THIS PROBLEM
         """
-        self.TACSWarning("evalFunctions method not supported for this class.")
+        self._TACSWarning("evalFunctions method not supported for this class.")
 
     def evalFunctionsSens(self, funcsSens, evalFuncs=None):
         """
         NOT SUPPORTED FOR THIS PROBLEM
         """
-        self.TACSWarning("evalFunctionsSens method not supported for this class.")
+        self._TACSWarning("evalFunctionsSens method not supported for this class.")
 
     ####### Transient solver methods ########
 
@@ -213,16 +213,16 @@ class ModalProblem(TACSProblem):
         # If timing was was requested print it, if the solution is nonlinear
         # print this information automatically if prinititerations was requested.
         if self.getOption('printTiming'):
-            self.pp('+--------------------------------------------------+')
-            self.pp('|')
-            self.pp('| TACS Solve Times:')
-            self.pp('|')
-            self.pp('| %-30s: %10.3f sec' % ('TACS Setup Time', setupProblemTime - startTime))
-            self.pp('| %-30s: %10.3f sec' % ('TACS Solve Init Time', initSolveTime - setupProblemTime))
-            self.pp('| %-30s: %10.3f sec' % ('TACS Solve Time', solveTime - initSolveTime))
-            self.pp('|')
-            self.pp('| %-30s: %10.3f sec' % ('TACS Total Solution Time', solveTime - startTime))
-            self.pp('+--------------------------------------------------+')
+            self._pp('+--------------------------------------------------+')
+            self._pp('|')
+            self._pp('| TACS Solve Times:')
+            self._pp('|')
+            self._pp('| %-30s: %10.3f sec' % ('TACS Setup Time', setupProblemTime - startTime))
+            self._pp('| %-30s: %10.3f sec' % ('TACS Solve Init Time', initSolveTime - setupProblemTime))
+            self._pp('| %-30s: %10.3f sec' % ('TACS Solve Time', solveTime - initSolveTime))
+            self._pp('|')
+            self._pp('| %-30s: %10.3f sec' % ('TACS Total Solution Time', solveTime - startTime))
+            self._pp('+--------------------------------------------------+')
 
         return
 
@@ -235,7 +235,7 @@ class ModalProblem(TACSProblem):
          index : int
              Mode index to return solution for.
 
-         states : BVec or ndarray or None
+         states : TACS.Vec or numpy.ndarray or None
              Place eigenvector for mode into this array (optional).
 
          Returns
@@ -243,7 +243,7 @@ class ModalProblem(TACSProblem):
          eigVal: float
              Eigenvalue for mode corresponds to square of eigenfrequency (rad^2/s^2)
 
-         states : ndarray
+         states : numpy.ndarray
              Eigenvector for mode
          """
         eigVal, err = self.freqSolver.extractEigenvalue(index)

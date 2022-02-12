@@ -14,6 +14,10 @@
 
 #include "TACSGeneralSpringConstitutive.h"
 
+/**
+  This is the base class for the traditional spring constitutive objects with no dof coupling.
+  Assumes 6 dofs.
+*/
 class TACSDOFSpringConstitutive : public TACSGeneralSpringConstitutive {
   public:
 

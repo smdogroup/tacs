@@ -22,7 +22,7 @@ class BaseUI:
         try:
             defOptions[name]
         except:
-            self.TACSWarning('Option: \'%-30s\' is not a valid option |' % name)
+            self._TACSWarning('Option: \'%-30s\' is not a valid option |' % name)
             return
 
         # Now we know the option exists, lets check if the type is ok:
@@ -31,7 +31,7 @@ class BaseUI:
             # Just set:
             self.options[name] = [type(value), value]
         else:
-            raise self.TACSError("Datatype for Option %s was not valid. "
+            raise self._TACSError("Datatype for Option %s was not valid. "
                         "Expected data type is %s. Received data type "
                         " is %s." % (name, self.options[name][0], type(value)))
 
@@ -62,20 +62,20 @@ class BaseUI:
         header = self.objectName
         if hasattr(self, 'name'):
             header += f" '{self.name}'"
-        self.pp("+----------------------------------------+")
-        self.pp("|" + f"{header} Options:".center(40) + "|")
-        self.pp("+----------------------------------------+")
+        self._pp("+----------------------------------------+")
+        self._pp("|" + f"{header} Options:".center(40) + "|")
+        self._pp("+----------------------------------------+")
         for name in self.options:
             if name != 'defaults':
                 if self.options[name][0] == str:
-                    self.pp(f"'{name}': '{self.options[name][1]}'")
+                    self._pp(f"'{name}': '{self.options[name][1]}'")
                 else:
-                    self.pp(f"'{name}': {self.options[name][1]}")
+                    self._pp(f"'{name}': {self.options[name][1]}")
 
     # ----------------------------------------------------------------------------
     #                      Utility Functions
     # ---------------------------------------------------------------------------
-    def pp(self, printStr):
+    def _pp(self, printStr):
         """ Simple parallel print"""
         if self.comm.rank == 0:
             print(printStr)
@@ -133,7 +133,7 @@ class BaseUI:
             i += 1
         return ltype(l)
 
-    def TACSWarning(self, message):
+    def _TACSWarning(self, message):
         """
         Format a class-specific warning for message
         """
@@ -152,7 +152,7 @@ class BaseUI:
             msg += ' ' * (78 - i) + '|\n' + '+' + '-' * 78 + '+' + '\n'
             print(msg)
 
-    def TACSError(self, message):
+    def _TACSError(self, message):
         """
         Format a class-specific error for message
         """

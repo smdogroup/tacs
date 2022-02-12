@@ -38,16 +38,16 @@ class TransientProblem(TACSProblem):
         numSteps : int
             Number of time steps for transient problem integration
 
-        assembler : assembler
+        assembler : TACS.Assembler
             Cython object responsible for creating and setting tacs objects used to solve problem
 
-        comm : MPI Intracomm
+        comm : mpi4py.MPI.Intracomm
             The comm object on which to create the pyTACS object.
 
-        outputViewer : TACSToFH5 object
+        outputViewer : TACS.TACSToFH5
             Cython object used to write out f5 files that can be converted and used for postprocessing.
 
-        meshLoader : pyMeshLoader object
+        meshLoader : pymeshloader.pyMeshLoader
             pyMeshLoader object used to create the assembler.
 
         options : dict
@@ -326,7 +326,7 @@ class TransientProblem(TACSProblem):
         timeStep : int
             Time step index to apply load to.
 
-        Fapplied : ndarray or BVec
+        Fapplied : numpy.ndarray or TACS.Vec
             Distributed array containing loads to applied to RHS of the problem.
 
         """
@@ -349,7 +349,7 @@ class TransientProblem(TACSProblem):
             The components with added loads. Use pyTACS selectCompIDs method
             to determine this.
 
-        tractions : Numpy array length 1 or compIDs
+        tractions : numpy.ndarray length 1 or compIDs
             Array of traction vectors for each components
 
         faceIndex : int
@@ -375,7 +375,7 @@ class TransientProblem(TACSProblem):
         elemIDs : list[int]
             The global element ID numbers for which to apply the traction.
 
-        tractions : Numpy 1d or 2d array length varsPerNodes or (elemIDs, varsPerNodes)
+        tractions : numpy.ndarray 1d or 2d length varsPerNodes or (elemIDs, varsPerNodes)
             Array of traction vectors for each element
 
         faceIndex : int
@@ -460,7 +460,7 @@ class TransientProblem(TACSProblem):
         timeStep : int
             Time step index to apply load to.
 
-        inertiaVector : ndarray
+        inertiaVector : numpy.ndarray
             Acceleration vector used to define inertial load.
         """
         self._addInertialLoad(self.auxElems[timeStep], inertiaVector)
@@ -503,16 +503,16 @@ class TransientProblem(TACSProblem):
         # If timing was was requested print it, if the solution is nonlinear
         # print this information automatically if prinititerations was requested.
         if self.getOption('printTiming'):
-            self.pp('+--------------------------------------------------+')
-            self.pp('|')
-            self.pp('| TACS Solve Times:')
-            self.pp('|')
-            self.pp('| %-30s: %10.3f sec' % ('TACS Setup Time', setupProblemTime - startTime))
-            self.pp('| %-30s: %10.3f sec' % ('TACS Solve Init Time', initSolveTime - setupProblemTime))
-            self.pp('| %-30s: %10.3f sec' % ('TACS Solve Time', solveTime - initSolveTime))
-            self.pp('|')
-            self.pp('| %-30s: %10.3f sec' % ('TACS Total Solution Time', solveTime - startTime))
-            self.pp('+--------------------------------------------------+')
+            self._pp('+--------------------------------------------------+')
+            self._pp('|')
+            self._pp('| TACS Solve Times:')
+            self._pp('|')
+            self._pp('| %-30s: %10.3f sec' % ('TACS Setup Time', setupProblemTime - startTime))
+            self._pp('| %-30s: %10.3f sec' % ('TACS Solve Init Time', initSolveTime - setupProblemTime))
+            self._pp('| %-30s: %10.3f sec' % ('TACS Solve Time', solveTime - initSolveTime))
+            self._pp('|')
+            self._pp('| %-30s: %10.3f sec' % ('TACS Total Solution Time', solveTime - startTime))
+            self._pp('+--------------------------------------------------+')
 
         return
 
@@ -584,16 +584,16 @@ class TransientProblem(TACSProblem):
         dictAssignTime = time.time()
 
         if self.getOption('printTiming'):
-            self.pp('+--------------------------------------------------+')
-            self.pp('|')
-            self.pp('| TACS Function Times:')
-            self.pp('|')
-            self.pp('| %-30s: %10.3f sec' % ('TACS Function Setup Time', setupProblemTime - startTime))
-            self.pp('| %-30s: %10.3f sec' % ('TACS Function Eval Time', functionEvalTime - setupProblemTime))
-            self.pp('| %-30s: %10.3f sec' % ('TACS Dict Time', dictAssignTime - functionEvalTime))
-            self.pp('|')
-            self.pp('| %-30s: %10.3f sec' % ('TACS Function Time', dictAssignTime - startTime))
-            self.pp('+--------------------------------------------------+')
+            self._pp('+--------------------------------------------------+')
+            self._pp('|')
+            self._pp('| TACS Function Times:')
+            self._pp('|')
+            self._pp('| %-30s: %10.3f sec' % ('TACS Function Setup Time', setupProblemTime - startTime))
+            self._pp('| %-30s: %10.3f sec' % ('TACS Function Eval Time', functionEvalTime - setupProblemTime))
+            self._pp('| %-30s: %10.3f sec' % ('TACS Dict Time', dictAssignTime - functionEvalTime))
+            self._pp('|')
+            self._pp('| %-30s: %10.3f sec' % ('TACS Function Time', dictAssignTime - startTime))
+            self._pp('+--------------------------------------------------+')
 
     def evalFunctionsSens(self, funcsSens, evalFuncs=None):
         """
@@ -630,7 +630,7 @@ class TransientProblem(TACSProblem):
 
         for f in evalFuncs:
             if f not in self.functionList:
-                raise self.TACSError("Supplied function has not been added "
+                raise self._TACSError("Supplied function has not been added "
                             "using addFunction()")
 
         # Fast parallel function evaluation of structural funcs:
@@ -666,9 +666,9 @@ class TransientProblem(TACSProblem):
         totalSensitivityTime = time.time()
 
         if self.getOption('printTiming'):
-            self.pp('+--------------------------------------------------+')
-            self.pp('|')
-            self.pp('| TACS Adjoint Times:')
+            self._pp('+--------------------------------------------------+')
+            self._pp('|')
+            self._pp('| TACS Adjoint Times:')
             print('|')
             print('| %-30s: %10.3f sec' % ('Adjoint solve time', adjointFinishedTime - startTime))
             print('|')
@@ -686,13 +686,13 @@ class TransientProblem(TACSProblem):
         timeStep : int
             Time step index to get state variables for.
 
-        states : BVec or ndarray or None
+        states : TACS.Vec or numpy.ndarray or None
             If states is not None, place the state variables into this array (optional).
 
-        dstates : BVec or ndarray or None
+        dstates : TACS.Vec or numpy.ndarray or None
             If dstates is not None, place the time derivitive of the state variables into this array (optional).
 
-        ddstates : BVec or ndarray or None
+        ddstates : TACS.Vec or numpy.ndarray or None
             If ddstates is not None, place the second time derivitive of the state variables into this array (optional).
 
         Returns
@@ -700,13 +700,13 @@ class TransientProblem(TACSProblem):
         time: float
             The time at specified step
 
-        states : ndarray
+        states : TACS.Vec or numpy.ndarray
             The state variables.
 
-        dstates : BVec or ndarray or None
+        dstates : TACS.Vec or numpy.ndarray or None
             The time derivitive of the state variables.
 
-        ddstates : BVec or ndarray or None
+        ddstates : TACS.Vec or numpy.ndarray or None
             The second time derivitive of the state variables.
 
         """

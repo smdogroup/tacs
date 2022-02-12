@@ -1,5 +1,5 @@
-Example: CRM Optimization
-*************************
+CRM Optimization
+****************
 
 Listed below is a demonstration of a simple optimization problem in 
 TACS: minimize the mass of the CRM model subject to a global stress 

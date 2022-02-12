@@ -13,6 +13,11 @@
 
 #include "TACSConstitutive.h"
 
+/**
+  This is the base class for the fully general spring constitutive objects.
+  Assumes 6 dofs (3 translations + 3 rotations).
+  The spring properties of this object are specified using a symmetric 6 x 6 stiffness matrix
+*/
 class TACSGeneralSpringConstitutive : public TACSConstitutive {
   public:
     static const int NUM_STRESSES = 6;

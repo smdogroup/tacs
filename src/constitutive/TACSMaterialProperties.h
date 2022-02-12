@@ -36,7 +36,7 @@ enum MaterialType { TACS_ISOTROPIC_MATERIAL,
    The goal of this class is to store a set of material properties
    that can be queried by constitutive classes for beams, shells,
    plane stress and solid elements. The minimum set of properties
-   consists of isotroic mechanical properties, with zero thermal
+   consists of isotropic mechanical properties, with zero thermal
    expansion.
 */
 class TACSMaterialProperties : public TACSObject {
@@ -163,7 +163,7 @@ class TACSMaterialProperties : public TACSObject {
   to zero by default. If a value of C, the failure stress under
   combined in-plane loading, is supplied, the interaction coefficient
   is determined. Be careful - the value can easily fall outside
-  acceptible bounds - these are tested during initialization.
+  acceptable bounds - these are tested during initialization.
 */
 class TACSOrthotropicPly : public TACSObject {
  public:

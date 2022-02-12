@@ -42,6 +42,133 @@ cdef extern from "mpi-compat.h":
     pass
 
 cdef class MaterialProperties:
+    """
+    This class stores the mechanical and thermal material properties for
+    isotropic and anisotropic materials.
+
+    The goal of this class is to store a set of material properties
+    that can be queried by constitutive classes for beams, shells,
+    plane stress and solid elements. The minimum set of properties
+    consists of isotroic mechanical properties, with zero thermal
+    expansion.
+
+    There are several different ways of specifying material
+    properties. The following describes several of the possible
+    ways and the appropriate situations:
+
+        'rho' + 'specific_heat' + 'kappa':
+
+            Specifies the density, specific heat, and thermal conductivity for an isotropic material.
+            This is appropriate for 2D or 3D heat conduction analysis.
+
+        'rho' + 'specific_heat' + 'kappa1' + 'kappa2':
+
+            Specifies the density, specific heat, and thermal conductivity for an orthotropic material.
+            This is appropriate for 2D heat conduction analysis.
+
+        'rho' + 'specific_heat' + 'kappa1' + 'kappa2' + 'kappa3':
+
+            Specifies the density, specific heat, and thermal conductivity for an orthotropic material.
+            This is appropriate for 3D heat conduction analysis.
+
+        'rho' + 'E' + 'nu' + 'ys':
+
+            Specifies the density, Youngs' modulus, Poisson's ratio, and yield strength for an isotropic material.
+            This is appropriate for 2D or 3D elastic structural analysis.
+
+        'rho' + 'E1' + 'E2' + 'nu12' + 'G12' + 'T1' + 'T2' + 'C1' + 'C2' + 'S12':
+
+            Specifies the density, Youngs' moduli, Poisson's ratios, and strength values for an orthotropic material.
+            This is appropriate for 2D elastic structural analysis.
+
+        'rho' + 'E1' + 'E2' + 'E3' + 'nu12' + 'nu13' + 'nu23' + 'G12' + 'G13' + 'G23'
+        + 'T1' + 'T2' + 'T3' + 'C1' + 'C2' + 'C3' + 'S12' + 'S13' + 'S23':
+
+            Specifies the density, Youngs' moduli, Poisson's ratios, and strength values for an orthotropic material.
+            This is appropriate for 3D elastic structural analysis.
+
+        'rho'  + 'specific_heat' + 'kappa' + 'alpha' + 'E' + 'nu' + 'ys':
+
+            Specifies the density, specific heat, thermal conductivity, thermal expansion, Youngs' modulus,
+            Poisson's ratio, and yield strength for an isotropic material.
+            This is appropriate for 2D or 3D thermoelastic structural analysis.
+
+        'rho'  + 'specific_heat' + 'kappa1' + 'kappa2' + 'alpha1' + 'alpha2'
+        + 'E1' + 'E2' + 'nu12' + 'G12' + 'T1' + 'T2' + 'C1' + 'C2' + 'S12':
+
+            Specifies the density, specific heat, thermal conductivity, thermal expansion, Youngs' moduli,
+            Poisson's ratios, and strength values for an orthotropic material.
+            This is appropriate for 2D thermoelastic structural analysis.
+
+        'rho'  + 'specific_heat' + 'kappa1' + 'kappa2' + 'kappa3' + 'alpha1' + 'alpha2' + 'alpha3'
+        + 'E1' + 'E2' + 'E3' + 'nu12' + 'nu13' + 'nu23' + 'G12' + 'G13' + 'G23'
+        + 'T1' + 'T2' + 'T3' + 'C1' + 'C2' + 'C3' + 'S12' + 'S13' + 'S23':
+
+            Specifies the density, specific heat, thermal conductivity, thermal expansion, Youngs' moduli,
+            Poisson's ratios, and strength values for an orthotropic material.
+            This is appropriate for 3D thermoelastic structural analysis.
+
+    All parameters are optional and specified using a keyword arg format.
+
+    Args:
+        rho (float or complex, optional): The material density (keyword argument).
+
+        specific_heat (float or complex, optional): The material specific heat (keyword argument).
+
+        kappa (float or complex, optional): The material isotropic thermal conductivity (keyword argument).
+        kappa1 (float or complex, optional): The material orthotropic thermal conductivity
+            in the '1' direction (keyword argument).
+        kappa2 (float or complex, optional): The material orthotropic thermal conductivity
+           in the '2' direction (keyword argument).
+        kappa3 (float or complex, optional): The material orthotropic thermal conductivity
+           in the '3' direction (keyword argument).
+
+        alpha (float or complex, optional): The material isotropic thermal expansion coeeficient (keyword argument).
+        alpha1 (float or complex): The material orthotropic thermal expansion coefficient in the '1' direction
+            (keyword argument).
+        alpha2 (float or complex, optional): The material orthotropic thermal expansion coefficient in the '2' direction
+            (keyword argument).
+        alpha3 (float or complex, optional): The material orthotropic thermal expansion coefficient in the '3' direction
+            (keyword argument).
+
+        E (float or complex, optional): The material isotropic Youngs' modulus (keyword argument).
+        E1 (float or complex, optional): The material orthotropic Youngs' modulus
+            in the '1' direction (keyword argument).
+        E2 (float or complex, optional): The material orthotropic Youngs' modulus
+            in the '2' direction (keyword argument).
+        E3 (float or complex, optional): The material orthotropic Youngs' modulus
+            in the '3' direction (keyword argument).
+
+        nu (float or complex, optional): The material isotropic Poisson's ratio (keyword argument).
+        nu12 (float or complex, optional): The material orthotropic Poisson's ratio
+            in the '1-2' plane (keyword argument).
+        nu13 (float or complex, optional): The material orthotropic Poisson's ratio
+            in the '1-3' plane (keyword argument).
+        nu23 (float or complex, optional): The material orthotropic Poisson's ratio
+            in the '2-3' plane (keyword argument).
+
+        G (float or complex, optional): The material isotropic shear modulus (keyword argument).
+        G12 (float or complex, optional): The material orthotropic shear modulus in the '1-2' plane (keyword argument).
+        G13 (float or complex, optional): The material orthotropic shear modulus in the '1-3' plane (keyword argument).
+        G23 (float or complex, optional): The material orthotropic shear modulus in the '2-3' plane (keyword argument).
+
+        ys (float or complex, optional): The material isotropic yield strength (keyword argument).
+        T1 (float or complex, optional): The material orthotropic tension strength
+            in the '1' direction (keyword argument).
+        T2 (float or complex, optional): The material orthotropic tension strength
+            in the '2' direction (keyword argument).
+        T3 (float or complex, optional): The material orthotropic tension strength
+            in the '3' direction (keyword argument).
+        C1 (float or complex, optional): The material orthotropic compression strength
+            in the '1' direction (keyword argument).
+        C2 (float or complex, optional): The material orthotropic compression strength
+            in the '2' direction (keyword argument).
+        C3 (float or complex, optional): The material orthotropic compression strength
+            in the '3' direction (keyword argument).
+        S12 (float or complex, optional): The material orthotropic shear strength in the '1-2' plane (keyword argument).
+        S13 (float or complex, optional): The material orthotropic shear strength in the '1-3' plane (keyword argument).
+        S23 (float or complex, optional): The material orthotropic shear strength in the '2-3' plane (keyword argument).
+    """
     def __cinit__(self, **kwargs):
         # Set the density and specific heat value
         cdef TacsScalar rho = 2700.0
@@ -202,6 +329,9 @@ cdef class MaterialProperties:
     def getMaterialProperties(self):
         """
         Return a dictionary of the material properties
+
+        Returns:
+            mat (dict): Dictionary holding material property information
         """
 
         cdef TacsScalar E1, E2, E3, nu12, nu13, nu23, G12, G13, G23
@@ -247,12 +377,41 @@ cdef class MaterialProperties:
         return mat
 
     def setDensity(self, TacsScalar rho):
+        """
+        Set the density property values
+
+        Args:
+            rho (float or complex): The material density
+        """
         self.ptr.setDensity(rho)
 
     def setSpecificHeat(self, TacsScalar specific_heat):
+        """
+        Set the density property values
+
+        Args:
+            rho (float or complex): The material specific heat
+        """
         self.ptr.setSpecificHeat(specific_heat)
 
 cdef class OrthotropicPly:
+    """
+      The following class holds the material stiffness and strength
+      properties for an orthotropic ply. This class is used by several
+      constitutive classes within TACS.
+
+      The interaction coefficient for the Tsai-Wu failure criterion is set
+      to zero by default. If a value of C, the failure stress under
+      combined in-plane loading, is supplied, the interaction coefficient
+      is determined. Be careful - the value can easily fall outside
+      acceptible bounds - these are tested during initialization.
+
+      Args:
+          ply_thickness (float or complex): The ply thickness.
+          props (MaterialProperties): The ply material property.
+          max_strain_criterion (bool): Flag to determine if max strain strength criterion is to be used.
+            Defaults to False (i.e. use max strength).
+    """
     cdef TACSOrthotropicPly *ptr
     def __cinit__(self, TacsScalar ply_thickness, MaterialProperties props,
                   max_strain_criterion=False):
@@ -267,6 +426,18 @@ cdef class OrthotropicPly:
         self.ptr.decref()
 
 cdef class PlaneStressConstitutive(Constitutive):
+    """
+    This is the base class for the plane stress constitutive objects.
+    All objects performing plane stress analysis should utilize this class.
+
+    Args:
+        props (MaterialProperties): The material property.
+        t (float or complex, optional): The material thickness (keyword argument). Defaults to 1.0.
+        tNum (int, optional): Design variable number to assign to thickness (keyword argument). Defaults to -1
+            (i.e. no design variable).
+        tlb (float or complex, optional): Thickness varaible lower bound (keyword argument). Defaults to 0.0.
+        tub (float or complex, optional): Thickness varaible upper bound (keyword argument). Defaults to 10.0.
+    """
     def __cinit__(self, *args, **kwargs):
         cdef TACSMaterialProperties *props = NULL
         cdef TacsScalar t = 1.0
@@ -295,6 +466,20 @@ cdef class PlaneStressConstitutive(Constitutive):
             self.cptr = NULL
 
 cdef class SolidConstitutive(Constitutive):
+    """
+    This is the base class for the solid constitutive objects.
+    All objects performing solid elastic analysis should utilize this class.
+
+    Args:
+        props (MaterialProperties): The material property.
+        t (float or complex, optional): The material "thickness" (keyword argument).
+            Weighting factor used for topology optimization. 0.0 corresponds to void,
+            1.0 corresponds material fully present, values in between are intermediate. Defaults to 1.0.
+        tNum (int, optional): Design variable number to assign to "thickness" (keyword argument). Defaults to -1
+            (i.e. no design variable).
+        tlb (float or complex, optional): "Thickness" varaible lower bound (keyword argument). Defaults to 0.0.
+        tub (float or complex, optional): "Thickness" varaible upper bound (keyword argument). Defaults to 10.0.
+    """
     def __cinit__(self, *args, **kwargs):
         cdef TACSMaterialProperties *props = NULL
         cdef TacsScalar t = 1.0
@@ -328,6 +513,18 @@ cdef class SolidConstitutive(Constitutive):
         return None
 
 cdef class IsoShellConstitutive(ShellConstitutive):
+    """
+    This constitutive class defines the stiffness properties for a
+    isotropic first-order shear deformation theory shell type element.
+
+    Args:
+        props (MaterialProperties): The material property.
+        t (float or complex, optional): The material thickness (keyword argument). Defaults to 1.0.
+        tNum (int, optional): Design variable number to assign to thickness (keyword argument). Defaults to -1
+            (i.e. no design variable).
+        tlb (float or complex, optional): Thickness varaible lower bound (keyword argument). Defaults to 0.0.
+        tub (float or complex, optional): Thickness varaible upper bound (keyword argument). Defaults to 10.0.
+    """
     def __cinit__(self, *args, **kwargs):
         cdef TACSMaterialProperties *props = NULL
         cdef TacsScalar t = 1.0
@@ -356,6 +553,16 @@ cdef class IsoShellConstitutive(ShellConstitutive):
             self.cptr = NULL
 
 cdef class CompositeShellConstitutive(ShellConstitutive):
+    """
+    This constitutive class defines the stiffness properties for a
+    composite laminate first-order shear deformation theory (FSDT) shell type element.
+
+    Args:
+       ply_list (list[OrthotropicPly]): List of ply properties in layup.
+       ply_thicknesses (numpy.ndarray[float or complex]): Array of ply thicknesses in layup.
+       ply_angles (numpy.ndarray[float or complex]): Array of ply angles (in radians) in layup.
+       kcorr (float or complex, optional): FSDT shear correction factor. Defaults to 5.0/6.0.
+    """
     def __cinit__(self, ply_list,
                   np.ndarray[TacsScalar, ndim=1, mode='c'] ply_thicknesses,
                   np.ndarray[TacsScalar, ndim=1, mode='c'] ply_angles,
@@ -468,6 +675,21 @@ cdef class TimoshenkoConstitutive(Constitutive):
         self.ptr.incref()
 
 cdef class GeneralMassConstitutive(Constitutive):
+    """
+    This is the base class for the fully general point mass constitutive objects.
+    Assumes 6 dofs (3 translations + 3 rotations).
+    The mass properties of this object are specified using a symmetric 6 x 6 mass matrix, as shown below.
+
+        | M[ 0] M[ 1] M[ 2] M[ 3] M[ 4] M[ 5]
+        | M[ 1] M[ 6] M[ 7] M[ 8] M[ 9] M[10]
+        | M[ 2] M[ 7] M[11] M[12] M[13] M[14]
+        | M[ 3] M[ 8] M[12] M[15] M[16] M[17]
+        | M[ 4] M[ 9] M[13] M[16] M[18] M[19]
+        | M[ 5] M[10] M[14] M[17] M[19] M[20]
+
+    Args:
+        M (array-like[float or complex]): Flattened array containing one side of symmetric mass matrix entries.
+    """
     def __cinit__(self, **kwargs):
         cdef TacsScalar M[21]
         if 'M' in kwargs:
@@ -485,6 +707,19 @@ cdef class GeneralMassConstitutive(Constitutive):
         self.ptr.incref()
 
 cdef class PointMassConstitutive(GeneralMassConstitutive):
+    """
+    This is the base class for the traditional point mass constitutive objects with no translation-rotation coupling.
+    Assumes 6 dofs.
+
+    Args:
+        m (float or complex, optional): Mass value (keyword argument). Defaults to 0.0.
+        I11 (float or complex, optional): Moment of inertia in '1' direction (keyword argument). Defaults to 0.0.
+        I22 (float or complex, optional): Moment of inertia in '2' direction (keyword argument). Defaults to 0.0.
+        I33 (float or complex, optional): Moment of inertia in '3' direction (keyword argument). Defaults to 0.0.
+        I12 (float or complex, optional): Moment of inertia in '1-2' plane (keyword argument). Defaults to 0.0.
+        I13 (float or complex, optional): Moment of inertia in '1-3' plane (keyword argument). Defaults to 0.0.
+        I23 (float or complex, optional): Moment of inertia in '2-3' plane (keyword argument). Defaults to 0.0.
+    """
     def __cinit__(self, **kwargs):
         cdef TacsScalar m = 0.0
         cdef TacsScalar I11 = 0.0
@@ -515,6 +750,21 @@ cdef class PointMassConstitutive(GeneralMassConstitutive):
         self.ptr.incref()
 
 cdef class GeneralSpringConstitutive(Constitutive):
+    """
+    This is the base class for the fully general spring constitutive objects.
+    Assumes 6 dofs (3 translations + 3 rotations).
+    The spring properties of this object are specified using a symmetric 6 x 6 stiffness matrix, as shown below.
+
+        | K[ 0] K[ 1] K[ 2] K[ 3] K[ 4] K[ 5]
+        | K[ 1] K[ 6] K[ 7] K[ 8] K[ 9] K[10]
+        | K[ 2] K[ 7] K[11] K[12] K[13] K[14]
+        | K[ 3] K[ 8] K[12] K[15] K[16] K[17]
+        | K[ 4] K[ 9] K[13] K[16] K[18] K[19]
+        | K[ 5] K[10] K[14] K[17] K[19] K[20]
+
+    Args:
+        K (array-like[float or complex]): Flattened array containing one side of symmetric stiffness matrix entries.
+    """
     def __cinit__(self, **kwargs):
         cdef TacsScalar K[21]
         if 'K' in kwargs:
@@ -532,6 +782,13 @@ cdef class GeneralSpringConstitutive(Constitutive):
         self.ptr.incref()
 
 cdef class DOFSpringConstitutive(GeneralSpringConstitutive):
+    """
+    This is the base class for the traditional spring constitutive objects with no dof coupling.
+    Assumes 6 dofs.
+
+    Args:
+        k (array-like[float or complex]): Stiffness values for all 6 dofs.
+    """
     def __cinit__(self, **kwargs):
         cdef TacsScalar k[6]
         if 'k' in kwargs:

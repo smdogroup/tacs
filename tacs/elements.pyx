@@ -242,89 +242,150 @@ def SeedRandomGenerator(int seed=0):
     return
 
 cdef class LinearTetrahedralBasis(ElementBasis):
+    """
+    Basis class for a linear tetrahedral 3D element.
+    """
     def __cinit__(self):
         self.ptr = new TACSLinearTetrahedralBasis()
         self.ptr.incref()
 
 cdef class QuadraticTetrahedralBasis(ElementBasis):
+    """
+    Basis class for a quadratic tetrahedral 3D element.
+    """
     def __cinit__(self):
         self.ptr = new TACSQuadraticTetrahedralBasis()
         self.ptr.incref()
 
 cdef class CubicTetrahedralBasis(ElementBasis):
+    """
+    Basis class for a cubic tetrahedral 3D element.
+    """
     def __cinit__(self):
         self.ptr = new TACSCubicTetrahedralBasis()
         self.ptr.incref()
 
 
 cdef class LinearHexaBasis(ElementBasis):
+    """
+    Basis class for a linear hexahedral 3D element.
+    """
     def __cinit__(self):
         self.ptr = new TACSLinearHexaBasis()
         self.ptr.incref()
 
 cdef class QuadraticHexaBasis(ElementBasis):
+    """
+    Basis class for a quadratic hexahedral 3D element.
+    """
     def __cinit__(self):
         self.ptr = new TACSQuadraticHexaBasis()
         self.ptr.incref()
 
 cdef class CubicHexaBasis(ElementBasis):
+    """
+    Basis class for a cubic hexahedral 3D element.
+    """
     def __cinit__(self):
         self.ptr = new TACSCubicHexaBasis()
         self.ptr.incref()
 
 
 cdef class LinearQuadBasis(ElementBasis):
+    """
+    Basis class for a linear quad 2D element.
+    """
     def __cinit__(self):
         self.ptr = new TACSLinearQuadBasis()
         self.ptr.incref()
 
 cdef class QuadraticQuadBasis(ElementBasis):
+    """
+    Basis class for a quadratic quad 2D element.
+    """
     def __cinit__(self):
         self.ptr = new TACSQuadraticQuadBasis()
         self.ptr.incref()
 
 cdef class CubicQuadBasis(ElementBasis):
+    """
+    Basis class for a cubic quad 2D element.
+    """
     def __cinit__(self):
         self.ptr = new TACSCubicQuadBasis()
         self.ptr.incref()
 
 cdef class QuarticQuadBasis(ElementBasis):
+    """
+    Basis class for a quartic quad 2D element.
+    """
     def __cinit__(self):
         self.ptr = new TACSQuarticQuadBasis()
         self.ptr.incref()
 
 cdef class QuinticQuadBasis(ElementBasis):
+    """
+    Basis class for a quintic quad 2D element.
+    """
     def __cinit__(self):
         self.ptr = new TACSQuinticQuadBasis()
         self.ptr.incref()
 
 
 cdef class LinearTriangleBasis(ElementBasis):
+    """
+    Basis class for a linear triangular 2D element
+    """
     def __cinit__(self):
         self.ptr = new TACSLinearTriangleBasis()
         self.ptr.incref()
 
 cdef class QuadraticTriangleBasis(ElementBasis):
+    """
+    Basis class for a quadratic triangular 2D element
+    """
     def __cinit__(self):
         self.ptr = new TACSQuadraticTriangleBasis()
         self.ptr.incref()
 
 cdef class CubicTriangleBasis(ElementBasis):
+    """
+    Basis class for a cubic triangular 2D element
+    """
     def __cinit__(self):
         self.ptr = new TACSCubicTriangleBasis()
         self.ptr.incref()
 
 cdef class HeatConduction2D(ElementModel):
+    """
+    Model class for 2D heat conduction element.
+
+    Args:
+        con (PlaneStressConstitutive): Material constitutive properties.
+    """
     def __cinit__(self, PlaneStressConstitutive con):
         self.ptr = new TACSHeatConduction2D(con.cptr)
         self.ptr.incref()
 
 cdef class LinearElasticity2D(ElementModel):
+    """
+    Model class for 2D linear elasticity element.
+
+    Args:
+        con (PlaneStressConstitutive): Material constitutive properties.
+    """
     def __cinit__(self, PlaneStressConstitutive con):
         self.ptr = new TACSLinearElasticity2D(con.cptr, TACS_LINEAR_STRAIN)
         self.ptr.incref()
 
 cdef class LinearThermoelasticity2D(ElementModel):
+    """
+    Model class for 2D linear thermoelasticity element.
+
+    Args:
+        con (PlaneStressConstitutive): Material constitutive properties.
+        steady_flag (bool, optional): Steady state flag. Defaults to False.
+    """
     def __cinit__(self, PlaneStressConstitutive con, int steady_flag=0):
         self.ptr = new TACSLinearThermoelasticity2D(con.cptr, TACS_LINEAR_STRAIN,
                                                     steady_flag)
@@ -332,11 +393,23 @@ cdef class LinearThermoelasticity2D(ElementModel):
 
 
 cdef class HeatConduction3D(ElementModel):
+    """
+    Model class for 3D heat conduction element.
+
+    Args:
+        con (SolidConstitutive): Material constitutive properties.
+    """
     def __cinit__(self, SolidConstitutive con):
         self.ptr = new TACSHeatConduction3D(con.cptr)
         self.ptr.incref()
 
 cdef class LinearElasticity3D(ElementModel):
+    """
+    Model class for 3D linear elasticity element.
+
+    Args:
+        con (SolidConstitutive): Material constitutive properties.
+    """
     cdef TACSLinearElasticity3D *leptr
     def __cinit__(self, SolidConstitutive con):
         self.leptr = new TACSLinearElasticity3D(con.cptr, TACS_LINEAR_STRAIN)
@@ -352,6 +425,13 @@ cdef class LinearElasticity3D(ElementModel):
         return None
 
 cdef class LinearThermoelasticity3D(ElementModel):
+    """
+    Model class for 3D linear thermoelasticity element.
+
+    Args:
+        con (SolidConstitutive): Material constitutive properties.
+        steady_flag (bool, optional): Steady state flag. Defaults to False.
+    """
     def __cinit__(self, SolidConstitutive con, int steady_flag=0):
         self.ptr = new TACSLinearThermoelasticity3D(con.cptr, TACS_LINEAR_STRAIN,
                                                     steady_flag)
@@ -368,11 +448,25 @@ cdef class ThermoelasticPlateModel(ElementModel):
         self.ptr.incref()
 
 cdef class Element2D(Element):
+    """
+    General element class appropriate for 2D analysis.
+
+    Args:
+        model (ElementModel): Physics model for element.
+        basis (ElementBasis): Basis for element.
+    """
     def __cinit__(self, ElementModel model, ElementBasis basis):
         self.ptr = new TACSElement2D(model.ptr, basis.ptr)
         self.ptr.incref()
 
 cdef class Element3D(Element):
+    """
+    General element class appropriate for 3D analysis.
+
+    Args:
+        model (ElementModel): Physics model for element.
+        basis (ElementBasis): Basis for element.
+    """
     def __cinit__(self, ElementModel model, ElementBasis basis):
         self.ptr = new TACSElement3D(model.ptr, basis.ptr)
         self.ptr.incref()
@@ -440,11 +534,33 @@ cdef class ShellTransform:
             self.ptr.decref()
 
 cdef class ShellNaturalTransform(ShellTransform):
+    """
+    Class for computing the transformation from the global coordinates
+    to the shell/material local coordinates (used for defining stresses).
+    This class uses shell "natural" coordinate system (i.e. local :math:`x` is aligned with element's first edge.)
+    This is appropriate for isotropic shells, who's stiffness properties don't depend on orientation.
+
+    See :ref:`shell_element:Natural transform` for more info.
+    """
     def __cinit__(self):
         self.ptr = new TACSShellNaturalTransform()
         self.ptr.incref()
 
 cdef class ShellRefAxisTransform(ShellTransform):
+    """
+    Class for computing the transformation from the global coordinates
+    to the shell local coordinates (used for defining stresses).
+    This class uses a projection of a user-supplied reference axis to define the shell/material coordinate system
+    (i.e. local :math:`x` is aligned with the reference axis.)
+    This is appropriate for orthotropic and anisotropic shells, who's stiffness properties depend on orientation.
+
+    Note: the reference direction cannot be normal to the shell surface.
+
+    See :ref:`shell_element:Reference axis projection transform` for more info.
+
+    Args:
+        axis (array-like): Reference axis.
+    """
     def __cinit__(self, axis):
         cdef TacsScalar a[3]
         a[0] = axis[0]
@@ -454,6 +570,19 @@ cdef class ShellRefAxisTransform(ShellTransform):
         self.ptr.incref()
 
 cdef class Quad4Shell(Element):
+    """
+    A 4-node quad shell element for general linear elastic analysis.
+
+    This element employs a mixed interpolation of tensorial (strain)
+    components (MITC) method to avoid shear locking problems.
+
+    See :ref:`shell_element:Mixed Interpolation of Tensorial Components` for more info
+
+    Args:
+        transform (ShellTransform or None): Shell transform object.
+          ``None`` is equivalent to :class:`~ShellNaturalTransform`.
+        con (ShellConstitutive): Shell constitutive object.
+    """
     def __cinit__(self, ShellTransform transform, ShellConstitutive con):
         if transform is None:
             transform = ShellNaturalTransform()
@@ -461,6 +590,19 @@ cdef class Quad4Shell(Element):
         self.ptr.incref()
 
 cdef class Quad9Shell(Element):
+    """
+    A 9-node quad shell element for general linear elastic analysis.
+
+    This element employs a mixed interpolation of tensorial (strain)
+    components (MITC) method to avoid shear locking problems.
+
+    See :ref:`shell_element:Mixed Interpolation of Tensorial Components` for more info
+
+    Args:
+        transform (ShellTransform or None): Shell transform object.
+          ``None`` is equivalent to :class:`~ShellNaturalTransform`.
+        con (ShellConstitutive): Shell constitutive object.
+    """
     def __cinit__(self, ShellTransform transform, ShellConstitutive con):
         if transform is None:
             transform = ShellNaturalTransform()
@@ -468,6 +610,19 @@ cdef class Quad9Shell(Element):
         self.ptr.incref()
 
 cdef class Quad16Shell(Element):
+    """
+    A 16-node quad shell element for general linear elastic analysis.
+
+    This element employs a mixed interpolation of tensorial (strain)
+    components (MITC) method to avoid shear locking problems.
+
+    See :ref:`shell_element:Mixed Interpolation of Tensorial Components` for more info
+
+    Args:
+        transform (ShellTransform or None): Shell transform object.
+          ``None`` is equivalent to :class:`~ShellNaturalTransform`.
+        con (ShellConstitutive): Shell constitutive object.
+    """
     def __cinit__(self, ShellTransform transform, ShellConstitutive con):
         if transform is None:
             transform = ShellNaturalTransform()
@@ -475,6 +630,19 @@ cdef class Quad16Shell(Element):
         self.ptr.incref()
 
 cdef class Tri3Shell(Element):
+    """
+    A 3-node triangular shell element for general linear elastic analysis.
+
+    This element employs a mixed interpolation of tensorial (strain)
+    components (MITC) method to avoid shear locking problems.
+
+    See :ref:`shell_element:Mixed Interpolation of Tensorial Components` for more info
+
+    Args:
+        transform (ShellTransform or None): Shell transform object.
+          ``None`` is equivalent to :class:`~ShellNaturalTransform`.
+        con (ShellConstitutive): Shell constitutive object.
+    """
     def __cinit__(self, ShellTransform transform, ShellConstitutive con):
         if transform is None:
             transform = ShellNaturalTransform()
@@ -482,6 +650,19 @@ cdef class Tri3Shell(Element):
         self.ptr.incref()
 
 cdef class Quad4ThermalShell(Element):
+    """
+    A 4-node quad shell element for general linear thermoelastic analysis.
+
+    This element employs a mixed interpolation of tensorial (strain)
+    components (MITC) method to avoid shear locking problems.
+
+    See :ref:`shell_element:Mixed Interpolation of Tensorial Components` for more info
+
+    Args:
+        transform (ShellTransform or None): Shell transform object.
+          ``None`` is equivalent to :class:`~ShellNaturalTransform`.
+        con (ShellConstitutive): Shell constitutive object.
+    """
     def __cinit__(self, ShellTransform transform, ShellConstitutive con):
         if transform is None:
             transform = ShellNaturalTransform()
@@ -489,6 +670,19 @@ cdef class Quad4ThermalShell(Element):
         self.ptr.incref()
 
 cdef class Quad9ThermalShell(Element):
+    """
+    A 9-node quad shell element for general linear thermoelastic analysis.
+
+    This element employs a mixed interpolation of tensorial (strain)
+    components (MITC) method to avoid shear locking problems.
+
+    See :ref:`shell_element:Mixed Interpolation of Tensorial Components` for more info
+
+    Args:
+        transform (ShellTransform or None): Shell transform object.
+          ``None`` is equivalent to :class:`~ShellNaturalTransform`.
+        con (ShellConstitutive): Shell constitutive object.
+    """
     def __cinit__(self, ShellTransform transform, ShellConstitutive con):
         if transform is None:
             transform = ShellNaturalTransform()
@@ -496,6 +690,19 @@ cdef class Quad9ThermalShell(Element):
         self.ptr.incref()
 
 cdef class Quad16ThermalShell(Element):
+    """
+    A 16-node quad shell element for general linear thermoelastic analysis.
+
+    This element employs a mixed interpolation of tensorial (strain)
+    components (MITC) method to avoid shear locking problems.
+
+    See :ref:`shell_element:Mixed Interpolation of Tensorial Components` for more info
+
+    Args:
+        transform (ShellTransform or None): Shell transform object.
+          ``None`` is equivalent to :class:`~ShellNaturalTransform`.
+        con (ShellConstitutive): Shell constitutive object.
+    """
     def __cinit__(self, ShellTransform transform, ShellConstitutive con):
         if transform is None:
             transform = ShellNaturalTransform()
@@ -503,6 +710,19 @@ cdef class Quad16ThermalShell(Element):
         self.ptr.incref()
 
 cdef class Tri3ThermalShell(Element):
+    """
+    A 3-node triangular shell element for general linear thermoelastic analysis.
+
+    This element employs a mixed interpolation of tensorial (strain)
+    components (MITC) method to avoid shear locking problems.
+
+    See :ref:`shell_element:Mixed Interpolation of Tensorial Components` for more info
+
+    Args:
+        transform (ShellTransform or None): Shell transform object.
+          ``None`` is equivalent to :class:`~ShellNaturalTransform`.
+        con (ShellConstitutive): Shell constitutive object.
+    """
     def __cinit__(self, ShellTransform transform, ShellConstitutive con):
         if transform is None:
             transform = ShellNaturalTransform()
@@ -520,11 +740,29 @@ cdef class SpringTransform:
             self.ptr.decref()
 
 cdef class SpringIdentityTransform(SpringTransform):
+    """
+    Class for computing the transformation from the global coordinates
+    to the spring/material local coordinates (used for defining spring stifness directions).
+    This class uses an identity transform (i.e. the spring stiffnesses are aligned with the global axes.)
+    """
     def __cinit__(self):
         self.ptr = new TACSSpringIdentityTransform()
         self.ptr.incref()
 
 cdef class SpringRefAxisTransform(SpringTransform):
+    """
+    Class for computing the transformation from the global coordinates
+    to the spring/material local coordinates (used for defining spring stiffness directions).
+    This class uses a projection of a user-supplied reference axis to define the spring stiffness coordinate system.
+    The local `x` always aligns with the element. The local `z` is given by the cross product of `x` and `axis`.
+    The local `y` is given by the cross product of local `z` and `x`.
+
+    Note: not appropriate for elements with coincident nodes. Use :class:`~SpringIdentityTransform` or
+    :class:`~SpringRefFrameTransform`.
+
+    Args:
+        axis (array-like): Reference axis.
+    """
     def __cinit__(self, axis):
         cdef TacsScalar a[3]
         a[0] = axis[0]
@@ -534,6 +772,14 @@ cdef class SpringRefAxisTransform(SpringTransform):
         self.ptr.incref()
 
 cdef class SpringRefFrameTransform(SpringTransform):
+    """
+    Class for computing the transformation from the global coordinates
+    to the spring/material local coordinates (used for defining spring stifness directions).
+    This class uses an user-defined arbritrary reference frame for the transform (i.e. the spring stiffnesses are aligned with the global axes.)
+    The reference is defined using two reference vectors. `axis1` defines the local `x` axes.
+    The local `z` is given by the cross product of `x` and `axis2`.
+    The local `y` is given by the cross product of local `z` and `x`.
+    """
     def __cinit__(self, axis1, axis2):
         cdef TacsScalar a1[3], a2[3]
         a1[0] = axis1[0]
@@ -546,6 +792,12 @@ cdef class SpringRefFrameTransform(SpringTransform):
         self.ptr.incref()
 
 cdef class SpringElement(Element):
+    """
+    A 6 DOF spring element.
+
+    Args:
+        con (GeneralSpringConstitutive): Spring constitutive object.
+    """
     def __cinit__(self, SpringTransform transform, GeneralSpringConstitutive con):
         if transform is None:
             transform = SpringIdentityTransform()
@@ -598,6 +850,12 @@ cdef class RigidBodyViz:
             self.ptr.decref()
 
 cdef class RBE2(Element):
+    """
+    A rigid body connected to an arbitrary number of grid points.
+    The independent degrees-of-freedom are the six components of motion at
+    a single grid point. The dependent degrees-of-freedom at the other grid
+    points.
+    """
     cdef TACSRBE2 *cptr
     def __cinit__(self, int num_nodes,
                   np.ndarray[int, ndim=1, mode='c'] constrained_dofs,
@@ -617,6 +875,24 @@ cdef class RBE2(Element):
         return
 
 cdef class RBE3(Element):
+    """
+    The RBE3 element is a powerful tool for distributing applied
+    loads and mass in a model. Unlike the RBAR and RBE2 elements,
+    the RBE3 doesn’t add additional stiffness to your structure.
+    Forces and moments applied to reference points are distributed
+    to a set of independent degrees of freedom based on the RBE3
+    geometry and local weight factors.
+
+    Assumes 6 DOFs.
+
+    Args:
+        num_nodes (int): Total number of nodes associated with the element.
+        dep_constrained_dofs (np.ndarray[int]): Flags to determine which
+          dependent node dof's are attached to the eleemnt.
+        weights (np.ndarray[float]): RBE weighting factor for each independent node.
+        indep_constrained_dofs (np.ndarray[int]): Flags to determine which
+          independent node dof's are attached to the eleemnt.
+    """
     cdef TACSRBE3 *cptr
     def __cinit__(self, int num_nodes,
                   np.ndarray[int, ndim=1, mode='c'] dep_constrained_dofs,
@@ -643,6 +919,12 @@ cdef class RBE3(Element):
         return
 
 cdef class MassElement(Element):
+    """
+    A 6 DOF point mass element.
+
+    Args:
+        con (GeneralMassConstitutive): Point mass constitutive object.
+    """
     cdef TACSMassElement *cptr
     def __cinit__(self, GeneralMassConstitutive con):
 

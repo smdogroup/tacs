@@ -27,16 +27,16 @@ class StaticProblem(TACSProblem):
         name : str
             Name of this tacs problem
 
-        assembler : assembler
+        assembler : TACS.Assembler
             Cython object responsible for creating and setting tacs objects used to solve problem
 
-        comm : MPI Intracomm
+        comm : mpi4py.MPI.Intracomm
             The comm object on which to create the pyTACS object.
 
-        outputViewer : TACSToFH5 object
+        outputViewer : TACS.TACSToFH5
             Cython object used to write out f5 files that can be converted and used for postprocessing.
 
-        meshLoader : pyMeshLoader object
+        meshLoader : pymeshloader.pyMeshLoader
             pyMeshLoader object used to create the assembler.
 
         options : dict
@@ -139,7 +139,7 @@ class StaticProblem(TACSProblem):
         elif tmp == 'multicolor':
             ordering = tacs.TACS.MULTICOLOR_ORDER
         else:
-            raise self.TACSError("Unrecognized 'orderingType' option value: "
+            raise self._TACSError("Unrecognized 'orderingType' option value: "
                         "'%s'. Valid values are: 'natural', 'nd', 'rcm', "
                         "'tacs_amd', or 'multicolor'." % tmp)
 
@@ -169,7 +169,7 @@ class StaticProblem(TACSProblem):
         #        self.K, self.PC, opt('subSpaceSize'), opt('subSpaceSize'),
         #        opt('nRestarts'), opt('flexible'))
         else:
-            raise self.TACSError("Unknown KSMSolver option. Valid options are "
+            raise self._TACSError("Unknown KSMSolver option. Valid options are "
                         "'GMRES' or 'GCROT'")
 
         self.KSM.setTolerances(self.getOption('L2ConvergenceRel'),
@@ -245,7 +245,7 @@ class StaticProblem(TACSProblem):
 
         Parameters
         ----------
-        x : ndarray
+        x : numpy.ndarray
             The variables (typically from the optimizer) to set. It
             looks for variable in the ``self.varName`` attribute.
 
@@ -259,7 +259,7 @@ class StaticProblem(TACSProblem):
 
         Parameters
         ----------
-        coords : ndarray
+        coords : numpy.ndarray
             Structural coordinate in array of size (N * 3) where N is
             the number of structural nodes on this processor.
         """
@@ -284,7 +284,7 @@ class StaticProblem(TACSProblem):
             The components with added loads. Use pyTACS selectCompIDs method
             to determine this.
 
-        F : Numpy 1d or 2d array length (varsPerNodes) or (numNodeIDs, varsPerNodes)
+        F : numpy.ndarray 1d or 2d length (varsPerNodes) or (numNodeIDs, varsPerNodes)
             Vector(s) of 'force' to apply to each components.  If only one force vector is provided,
             force will be copied uniformly across all components.
 
@@ -373,7 +373,7 @@ class StaticProblem(TACSProblem):
         Parameters
         ----------
 
-        Fapplied : ndarray or BVec
+        Fapplied : numpy.ndarray or TACS.Vec
             Distributed array containing loads to applied to RHS of the problem.
 
         """
@@ -491,7 +491,7 @@ class StaticProblem(TACSProblem):
 
         Parameters
         ----------
-        inertiaVector : ndarray
+        inertiaVector : numpy.ndarray
             Acceleration vector used to define inertial load.
         """
         self._addInertialLoad(self.auxElems, inertiaVector)
@@ -533,7 +533,7 @@ class StaticProblem(TACSProblem):
         ----------
         Optional Arguments:
 
-        Fext : ndarray or BVec
+        Fext : numpy.ndarray or TAC.Vec
             Distributed array containing additional loads (ex. aerodynamic forces for aerostructural coupling)
             to applied to RHS of the static problem.
 
@@ -590,19 +590,19 @@ class StaticProblem(TACSProblem):
         # If timing was was requested print it, if the solution is nonlinear
         # print this information automatically if prinititerations was requested.
         if self.getOption('printTiming'):
-            self.pp('+--------------------------------------------------+')
-            self.pp('|')
-            self.pp('| TACS Solve Times:')
-            self.pp('|')
-            self.pp('| %-30s: %10.3f sec' % ('TACS Setup Time', setupProblemTime - startTime))
-            self.pp('| %-30s: %10.3f sec' % ('TACS Solve Init Time', initSolveTime - setupProblemTime))
-            self.pp('| %-30s: %10.3f sec' % ('TACS Init Norm Time', initNormTime - initSolveTime))
-            self.pp('| %-30s: %10.3f sec' % ('TACS Solve Time', solveTime - initNormTime))
-            self.pp('| %-30s: %10.3f sec' % ('TACS State Update Time', stateUpdateTime - solveTime))
-            self.pp('| %-30s: %10.3f sec' % ('TACS Final Norm Time', finalNormTime - stateUpdateTime))
-            self.pp('|')
-            self.pp('| %-30s: %10.3f sec' % ('TACS Total Solution Time', finalNormTime - startTime))
-            self.pp('+--------------------------------------------------+')
+            self._pp('+--------------------------------------------------+')
+            self._pp('|')
+            self._pp('| TACS Solve Times:')
+            self._pp('|')
+            self._pp('| %-30s: %10.3f sec' % ('TACS Setup Time', setupProblemTime - startTime))
+            self._pp('| %-30s: %10.3f sec' % ('TACS Solve Init Time', initSolveTime - setupProblemTime))
+            self._pp('| %-30s: %10.3f sec' % ('TACS Init Norm Time', initNormTime - initSolveTime))
+            self._pp('| %-30s: %10.3f sec' % ('TACS Solve Time', solveTime - initNormTime))
+            self._pp('| %-30s: %10.3f sec' % ('TACS State Update Time', stateUpdateTime - solveTime))
+            self._pp('| %-30s: %10.3f sec' % ('TACS Final Norm Time', finalNormTime - stateUpdateTime))
+            self._pp('|')
+            self._pp('| %-30s: %10.3f sec' % ('TACS Total Solution Time', finalNormTime - startTime))
+            self._pp('+--------------------------------------------------+')
 
         return
 
@@ -671,16 +671,16 @@ class StaticProblem(TACSProblem):
         dictAssignTime = time.time()
 
         if self.getOption('printTiming'):
-            self.pp('+--------------------------------------------------+')
-            self.pp('|')
-            self.pp('| TACS Function Times:')
-            self.pp('|')
-            self.pp('| %-30s: %10.3f sec' % ('TACS Function Setup Time', setupProblemTime - startTime))
-            self.pp('| %-30s: %10.3f sec' % ('TACS Function Eval Time', functionEvalTime - setupProblemTime))
-            self.pp('| %-30s: %10.3f sec' % ('TACS Dict Time', dictAssignTime - functionEvalTime))
-            self.pp('|')
-            self.pp('| %-30s: %10.3f sec' % ('TACS Function Time', dictAssignTime - startTime))
-            self.pp('+--------------------------------------------------+')
+            self._pp('+--------------------------------------------------+')
+            self._pp('|')
+            self._pp('| TACS Function Times:')
+            self._pp('|')
+            self._pp('| %-30s: %10.3f sec' % ('TACS Function Setup Time', setupProblemTime - startTime))
+            self._pp('| %-30s: %10.3f sec' % ('TACS Function Eval Time', functionEvalTime - setupProblemTime))
+            self._pp('| %-30s: %10.3f sec' % ('TACS Dict Time', dictAssignTime - functionEvalTime))
+            self._pp('|')
+            self._pp('| %-30s: %10.3f sec' % ('TACS Function Time', dictAssignTime - startTime))
+            self._pp('+--------------------------------------------------+')
 
     def evalFunctionsSens(self, funcsSens, evalFuncs=None):
         """
@@ -775,9 +775,9 @@ class StaticProblem(TACSProblem):
         totalSensitivityTime = time.time()
 
         if self.getOption('printTiming'):
-            self.pp('+--------------------------------------------------+')
-            self.pp('|')
-            self.pp('| TACS Adjoint Times:')
+            self._pp('+--------------------------------------------------+')
+            self._pp('|')
+            self._pp('| TACS Adjoint Times:')
             print('|')
             print('| %-30s: %10.3f sec' % ('TACS Sens Setup Problem Time', setupProblemTime - startTime))
             print('| %-30s: %10.3f sec' % (
@@ -799,7 +799,7 @@ class StaticProblem(TACSProblem):
         evalFuncs : list[str]
             The functions the user wants returned
 
-        svSensList : list[BVec] or list[ndarray]
+        svSensList : list[TACS.Vec] or list[numpy.ndarray]
             List of sensitivity vectors to add partial sensitivity to
         """
         # Set problem vars to assembler
@@ -832,7 +832,7 @@ class StaticProblem(TACSProblem):
         evalFuncs : list[str]
             The functions the user wants returned
 
-        dvSensList : list[BVec] or list[ndarray]
+        dvSensList : list[BVec] or list[numpy.ndarray]
             List of sensitivity vectors to add partial sensitivity to
 
         scale : float
@@ -871,10 +871,10 @@ class StaticProblem(TACSProblem):
 
         Parameters
         ----------
-        adjointlist : list[BVec] or list[ndarray]
+        adjointlist : list[BVec] or list[numpy.ndarray]
             List of adjoint vectors for residual sensitivity product
 
-        dvSensList : list[BVec] or list[ndarray]
+        dvSensList : list[BVec] or list[numpy.ndarray]
             List of sensitivity vectors to add product to
 
         scale : float
@@ -923,7 +923,7 @@ class StaticProblem(TACSProblem):
         evalFuncs : list[str]
             The functions the user wants returned
 
-        xptSensList : list[BVec] or list[ndarray]
+        xptSensList : list[BVec] or list[numpy.ndarray]
             List of sensitivity vectors to add partial sensitivity to
 
         scale : float
@@ -962,10 +962,10 @@ class StaticProblem(TACSProblem):
 
         Parameters
         ----------
-        adjointlist : list[BVec] or list[ndarray]
+        adjointlist : list[BVec] or list[numpy.ndarray]
             List of adjoint vectors for residual sensitivity product
 
-        xptSensList : list[BVec] or list[ndarray]
+        xptSensList : list[BVec] or list[numpy.ndarray]
             List of sensitivity vectors to add product to
 
         scale : float
@@ -1176,7 +1176,7 @@ class StaticProblem(TACSProblem):
 
         Parameters
         ----------
-        states : ndarray
+        states : numpy.ndarray
             Values to set. Must be the size of getNumVariables()
         """
         # Copy array values

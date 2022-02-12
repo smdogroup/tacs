@@ -21,8 +21,8 @@
 
 #include "TACSGeneralMassConstitutive.h"
 
-/*
-  This is the base class for the point mass constitutive objects.
+/**
+  This is the base class for the traditional point mass constitutive objects with no translation-rotation coupling.
   Assumes 6 dofs.
 
 */
