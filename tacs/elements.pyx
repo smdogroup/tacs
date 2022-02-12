@@ -580,7 +580,7 @@ cdef class Quad4Shell(Element):
 
     Args:
         transform (ShellTransform or None): Shell transform object.
-          ``None`` is equivalent to :class:`~ShellNaturalTransform`.
+          `None` is equivalent to :class:`~ShellNaturalTransform`.
         con (ShellConstitutive): Shell constitutive object.
     """
     def __cinit__(self, ShellTransform transform, ShellConstitutive con):
@@ -600,7 +600,7 @@ cdef class Quad9Shell(Element):
 
     Args:
         transform (ShellTransform or None): Shell transform object.
-          ``None`` is equivalent to :class:`~ShellNaturalTransform`.
+          `None` is equivalent to :class:`~ShellNaturalTransform`.
         con (ShellConstitutive): Shell constitutive object.
     """
     def __cinit__(self, ShellTransform transform, ShellConstitutive con):
@@ -620,7 +620,7 @@ cdef class Quad16Shell(Element):
 
     Args:
         transform (ShellTransform or None): Shell transform object.
-          ``None`` is equivalent to :class:`~ShellNaturalTransform`.
+          `None` is equivalent to :class:`~ShellNaturalTransform`.
         con (ShellConstitutive): Shell constitutive object.
     """
     def __cinit__(self, ShellTransform transform, ShellConstitutive con):
@@ -640,7 +640,7 @@ cdef class Tri3Shell(Element):
 
     Args:
         transform (ShellTransform or None): Shell transform object.
-          ``None`` is equivalent to :class:`~ShellNaturalTransform`.
+          `None` is equivalent to :class:`~ShellNaturalTransform`.
         con (ShellConstitutive): Shell constitutive object.
     """
     def __cinit__(self, ShellTransform transform, ShellConstitutive con):
@@ -660,7 +660,7 @@ cdef class Quad4ThermalShell(Element):
 
     Args:
         transform (ShellTransform or None): Shell transform object.
-          ``None`` is equivalent to :class:`~ShellNaturalTransform`.
+          `None` is equivalent to :class:`~ShellNaturalTransform`.
         con (ShellConstitutive): Shell constitutive object.
     """
     def __cinit__(self, ShellTransform transform, ShellConstitutive con):
@@ -680,7 +680,7 @@ cdef class Quad9ThermalShell(Element):
 
     Args:
         transform (ShellTransform or None): Shell transform object.
-          ``None`` is equivalent to :class:`~ShellNaturalTransform`.
+          `None` is equivalent to :class:`~ShellNaturalTransform`.
         con (ShellConstitutive): Shell constitutive object.
     """
     def __cinit__(self, ShellTransform transform, ShellConstitutive con):
@@ -700,7 +700,7 @@ cdef class Quad16ThermalShell(Element):
 
     Args:
         transform (ShellTransform or None): Shell transform object.
-          ``None`` is equivalent to :class:`~ShellNaturalTransform`.
+          `None` is equivalent to :class:`~ShellNaturalTransform`.
         con (ShellConstitutive): Shell constitutive object.
     """
     def __cinit__(self, ShellTransform transform, ShellConstitutive con):
@@ -720,7 +720,7 @@ cdef class Tri3ThermalShell(Element):
 
     Args:
         transform (ShellTransform or None): Shell transform object.
-          ``None`` is equivalent to :class:`~ShellNaturalTransform`.
+          `None` is equivalent to :class:`~ShellNaturalTransform`.
         con (ShellConstitutive): Shell constitutive object.
     """
     def __cinit__(self, ShellTransform transform, ShellConstitutive con):
@@ -796,6 +796,8 @@ cdef class SpringElement(Element):
     A 6 DOF spring element.
 
     Args:
+        transform (SpringTransform or None): Spring transform object.
+          `None` is equivalent to :class:`~SpringIdentityTransform`.
         con (GeneralSpringConstitutive): Spring constitutive object.
     """
     def __cinit__(self, SpringTransform transform, GeneralSpringConstitutive con):
