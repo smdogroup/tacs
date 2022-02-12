@@ -24,13 +24,13 @@ jobs:
           # real versions
           - NAME: Real
             OPTIONAL: 'default'
-            INTERFACE: ''
+            INTERFACE: 'interface'
             EXAMPLES: 'default'
 
           # complex versions
           - NAME: Complex
             OPTIONAL: 'complex'
-            INTERFACE: '--define TACS_USE_COMPLEX'
+            INTERFACE: 'complex_interface'
             EXAMPLES: 'complex'
 
     name: TACS ${{ matrix.NAME }} Build/Test/Docs
@@ -76,7 +76,8 @@ jobs:
           cp Makefile.in.info Makefile.in;
           make ${{ matrix.OPTIONAL }} TACS_DIR=$TACS_DIR METIS_INCLUDE=-I${CONDA_PREFIX}/include/ METIS_LIB="-L${CONDA_PREFIX}/lib/ -lmetis";
           cd $TACS_DIR;
-          python setup.py develop --user ${{ matrix.INTERFACE }};
+          make ${{ matrix.INTERFACE }};
+          python setup.py install --user;
           cd $TACS_DIR/examples;
           make ${{ matrix.EXAMPLES }} TACS_DIR=$TACS_DIR METIS_INCLUDE=-I${CONDA_PREFIX}/include/ METIS_LIB="-L${CONDA_PREFIX}/lib/ -lmetis";
           cd $TACS_DIR;
