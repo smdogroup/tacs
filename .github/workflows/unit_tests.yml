@@ -90,4 +90,5 @@ jobs:
           echo "=============================================================";
           cd $TACS_DIR/docs;
           conda install -c conda-forge sphinx  -q -y;
+          conda install -c conda-forge breathe -q -y;
           make html;
