@@ -33,7 +33,7 @@ jobs:
             INTERFACE: 'complex_interface'
             EXAMPLES: 'complex'
 
-    name: TACS ${{ matrix.NAME }} Build/Test
+    name: TACS ${{ matrix.NAME }} Build/Test/Docs
 
     steps:
 
@@ -43,7 +43,7 @@ jobs:
         with:
           python-version: 3.8
 
-      - name: Install and run unit tests
+      - name: Install, run unit tests, build docs
         run: |
           echo "=============================================================";
           echo "Run #${GITHUB_RUN_NUMBER}";
@@ -84,8 +84,9 @@ jobs:
           echo "running tests";
           echo "=============================================================";
           testflo .;
-      - name: Make docs
-        run: |
+          echo "=============================================================";
+          echo "building docs";
+          echo "=============================================================";
           cd $TACS_DIR/docs;
           conda install -c conda-forge sphinx  -q -y;
           make html;
