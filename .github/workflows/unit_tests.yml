@@ -66,6 +66,9 @@ jobs:
           export TACS_DIR=${GITHUB_WORKSPACE};
           pip install testflo;
           conda install -c anaconda openmpi -q -y;
+          # Necessary to prevent mpi tests failing due to lack of slots
+          export OMPI_MCA_btl=self,tcp;
+          export OMPI_MCA_rmaps_base_oversubscribe=1;
           conda install gxx_linux-64 -q -y;
           conda install -c anaconda openblas -q -y;
           conda install -c conda-forge lapack -q -y;
