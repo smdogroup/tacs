@@ -450,6 +450,38 @@ int TacsTestElementJacobian( TACSElement *element,
 
   fail = (max_err > test_fail_atol || max_rel > test_fail_rtol);
 
+  // Test residual computed through addJacobian, make sure it's consistent with addResidual
+  memset(temp, 0, nvars*sizeof(TacsScalar));
+  memset(res, 0, nvars*sizeof(TacsScalar));
+
+  element->addResidual(elemIndex, time, Xpts, vars, dvars, ddvars, temp);
+  element->addJacobian(elemIndex, time, alpha, beta, gamma,
+                       Xpts, vars, dvars, ddvars, res, mat);
+
+  // Compute the error
+  max_err = TacsGetMaxError(temp, res, nvars, &max_err_index);
+  max_rel = TacsGetMaxRelError(temp, res, nvars, &max_rel_index);
+
+  if (test_print_level > 0){
+    fprintf(stderr,
+            "Testing residual consistency of addJacobian method for element %s.\n",
+            element->getObjectName());
+    fprintf(stderr, "Max Err: %10.4e in component %d.\n",
+            max_err, max_err_index);
+    fprintf(stderr, "Max REr: %10.4e in component %d.\n",
+            max_rel, max_rel_index);
+  }
+  // Print the error if required
+  if (test_print_level > 1){
+    fprintf(stderr,
+            "The difference between addResidual and addJacobian residuals is\n");
+    TacsPrintErrorComponents(stderr, "res",
+                             temp, res, nvars);
+  }
+  if (test_print_level){ fprintf(stderr, "\n"); }
+
+  fail = fail || (max_err > test_fail_atol || max_rel > test_fail_rtol);
+
   delete [] temp;
   delete [] q;
   delete [] dq;
