@@ -471,6 +471,17 @@ class TACSLinearizedRotation {
       d2du += 2*dsize;
       d2Tdotu += 2*dsize;
     }
+
+    // Update residual
+    TacsScalar *r = &res[offset];
+
+    for ( int i = 0; i < num_nodes; i++ ){
+      crossProductAdd(1.0, t, dd, r);
+
+      r += vars_per_node;
+      dd += 3;
+      t += 3;
+    }
   }
 
   static TacsScalar evalDrillStrain( const TacsScalar u0x[],
