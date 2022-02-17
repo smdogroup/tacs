@@ -91,4 +91,5 @@ jobs:
           cd $TACS_DIR/docs;
           conda install -c conda-forge sphinx  -q -y;
           conda install -c conda-forge breathe -q -y;
+          conda install -c conda-forge sphinxcontrib-programoutput -q -y;
           make html;

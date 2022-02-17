@@ -38,6 +38,15 @@ pyTACS purposes:
   :members:
   :inherited-members:
 
+Options
+-------
+Options can be set for :class:`~pyTACS` at time of creation for the class or using the
+:meth:`pyTACS.setOption <tacs.pytacs.pyTACS.setOption>`. Current option values for a class
+instance can be printed out using the :meth:`pyTACS.printOption <tacs.pytacs.pyTACS.printOptions>` method.
+The following options, their default values and descriptions are listed below:
+
+.. program-output:: python -c "from tacs import pyTACS; pyTACS.printDefaultOptions()"
+
 Initializing
 ------------
 Before the class can be used to create problems, it must first be initialized by calling the
@@ -164,6 +173,16 @@ This class should be created using the
   :members:
   :inherited-members:
 
+Options
+^^^^^^^
+Options can be set for :class:`~tacs.problems.StaticProblem` at time of creation for the class in the
+:meth:`pyTACS.createStaticProblem <tacs.pytacs.pyTACS.createStaticProblem>` method or using the
+:meth:`StaticProblem.setOption <tacs.problems.StaticProblem.setOption>` method. Current option values for a class
+instance can be printed out using the :meth:`StaticProblem.printOption <tacs.problems.ModalProblem.printOptions>` method.
+The following options, their default values and descriptions are listed below:
+
+.. program-output:: python -c "from tacs.problems import StaticProblem; StaticProblem.printDefaultOptions()"
+
 TransientProblem
 ----------------
 This class should be created using the
@@ -173,6 +192,16 @@ This class should be created using the
   :members:
   :inherited-members:
 
+Options
+^^^^^^^
+Options can be set for :class:`~tacs.problems.TransientProblem` at time of creation for the class in the
+:meth:`pyTACS.createStaticProblem <tacs.pytacs.pyTACS.createTransientProblem>` method or using the
+:meth:`TransientProblem.setOption <tacs.problems.TransientProblem.setOption>` method. Current option values for a class
+instance can be printed out using the :meth:`TransientProblem.printOption <tacs.problems.ModalProblem.printOptions>` method.
+The following options their default values and descriptions are listed below:
+
+.. program-output:: python -c "from tacs.problems import TransientProblem; TransientProblem.printDefaultOptions()"
+
 ModalProblem
 ------------
 This class should be created using the
@@ -181,3 +210,13 @@ This class should be created using the
 .. autoclass:: tacs.problems.ModalProblem
   :members:
   :inherited-members:
+
+Options
+^^^^^^^
+Options can be set for :class:`~tacs.problems.ModalProblem` at time of creation for the class in the
+:meth:`pyTACS.createStaticProblem <tacs.pytacs.pyTACS.createModalProblem>` method or using the
+:meth:`ModalProblem.setOption <tacs.problems.ModalProblem.setOption>` method. Current option values for a class
+instance can be printed out using the :meth:`ModalProblem.printOption <tacs.problems.ModalProblem.printOptions>` method.
+The following options, their default values and descriptions are listed below:
+
+.. program-output:: python -c "from tacs.problems import ModalProblem; ModalProblem.printDefaultOptions()"
