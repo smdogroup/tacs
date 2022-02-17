@@ -4,4 +4,3 @@ pyTACS Interface
    :maxdepth: 1
 
    pytacs_module
-   problems

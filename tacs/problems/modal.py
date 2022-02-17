@@ -63,19 +63,23 @@ class ModalProblem(TACSProblem):
 
         # Default Option List
         defOpts = {
-            'outputdir': [str, './'],
+            'outputdir': [str, './', 'Output directory for F5 file writer.'],
 
             # Solution Options
-            'L2Convergence': [float, 1e-12],
-            'L2ConvergenceRel': [float, 1e-12],
-            'subSpaceSize': [int, 10],
-            'nRestarts': [int, 15],
+            'L2Convergence': [float, 1e-12, 'Absolute convergence tolerance for Eigenvalue solver based on l2 norm of residual.'],
+            'L2ConvergenceRel': [float, 1e-12, 'Relative convergence tolerance for Eigenvalue solver based on l2 norm of residual.'],
+            'subSpaceSize': [int, 10, 'Subspace size for Krylov solver used by Eigenvalue solver.'],
+            'nRestarts': [int, 15, 'Max number of resets for Krylov solver used by Eigenvalue solver.'],
 
             # Output Options
-            'writeSolution': [bool, True],
-            'numberSolutions': [bool, True],
-            'printTiming': [bool, False],
-            'printLevel': [int, 0],
+            'writeSolution': [bool, True, 'Flag for supressing all f5 file writing.'],
+            'numberSolutions': [bool, True, 'Flag for attaching solution counter index to f5 files.'],
+            'printTiming': [bool, False, 'Flag for printing out timing information for class procedures.'],
+            'printLevel': [int, 0, 'Print level for integraton solver.\n'
+                            '\t Accepts:\n'
+                                   '\t\t   0 : No printing.\n'
+                                   '\t\t   1 : Print major iterations.\n'
+                                   '\t\t > 1 : Print major + minor iterations.'],
 
         }
 

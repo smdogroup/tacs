@@ -8,7 +8,7 @@ most frequently used are discussed below.
 
 
 Workflow
---------
+========
 
 The most common usage of TACS is to evaluate the values and gradients of desired
 structural functions with respect to specified design variables. In general, this workflow
@@ -18,8 +18,8 @@ proceeds as follows:
    file) using an instance of the :class:`~tacs.pytacs.pyTACS` class.
 #. Setup tacs element objects for the structure using the
    :meth:`pyTACS.initialize <tacs.pytacs.pyTACS.initialize>` method.
-#. Create an instance of the :ref:`problem<pytacs/problems:Problems>` class and add loads and functions of interest.
-#. Solve the :ref:`problem<pytacs/problems:Problems>` and evaluate the functions and their gradients with respect to the
+#. Create an instance of the :ref:`problem<Problem classes>` class and add loads and functions of interest.
+#. Solve the :ref:`problem<Problem classes>` and evaluate the functions and their gradients with respect to the
    design variables.
 
 These function values and gradients can then be passed to an optimizer (such as :class:`~paropt.ParOpt`)
@@ -28,25 +28,25 @@ Improved design variable values are iteratively computed by the optimizer and St
 repeated until the optimization criteria are satisfied.
 
 pyTACS class
-------------
+============
 pyTACS purposes:
   - Setting up the low-level TACS objects
   - Getting general model information (number of nodes, elements, component IDs, etc)
-  - creating TACS :ref:`problem<pytacs/problems:Problems>` classes used for analysis
+  - creating TACS :ref:`problem<Problem classes>` classes used for analysis
 
 .. automodule:: tacs.pytacs
   :members:
   :inherited-members:
 
 Initializing
-^^^^^^^^^^^^
+------------
 Before the class can be used to create problems, it must first be initialized by calling the
 :meth:`pyTACS.initialize <tacs.pytacs.pyTACS.initialize>` method. This method reads in all of the element cards
 from the BDF file and sets up the equivalent TACS element objects necessary for analysis. The
 class can be initialized through two ways: with or without `elemCallBack` function.
 
 Initializing with elemCallBack
-""""""""""""""""""""""""""""""
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 :class:`~tacs.pytacs.pyTACS` can be initialized py passing a user-defined `elemCallBack` function to
 :meth:`pyTACS.initialize <tacs.pytacs.pyTACS.initialize>`, that will be used to setup the correct
 TACS elements at runtime.
@@ -87,7 +87,7 @@ The `elemCallBack` function should have the following structure:
   if the NASTRAN element card doesn't contain a property ID, it should not show up in the `elemCallBack` function.
 
 Initializing without elemCallBack
-"""""""""""""""""""""""""""""""""
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 If NASTRAN material property card definitions for every element exist the BDF file,
 :class:`~tacs.pytacs.pyTACS` can be initialized without a :func:`~elemCallBack` function.
 This can be done by :meth:`pyTACS.initialize <tacs.pytacs.pyTACS.initialize>` calling without any arguments.
@@ -125,14 +125,14 @@ The following NASTRAN cards are supported:
   :ref:`elemCallBack procedure <pytacs/pytacs_module:Initializing with elemCallBack>` instead.
 
 Tagging component groups in BDF
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+-------------------------------
 Several pyTACS methods (:meth:`pyTACS.selectCompIDs <tacs.pytacs.pyTACS.selectCompIDs>`, :func:`~elemCallBack`, etc.)
 allow for the use of user-defined component labels. These labels are read in through formatted comment in the BDF file.
 
 There are currently two supported formats for labels: ICEM-format and FEMAP-format. These are described below.
 
 ICEM component label format
-"""""""""""""""""""""""""""
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. code-block:: none
 
@@ -145,7 +145,7 @@ ICEM component label format
   CQUADR         6       1     735    3801    3802     736       1
 
 FEMAP component label format
-""""""""""""""""""""""""""""
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. code-block:: none
 
@@ -153,10 +153,10 @@ FEMAP component label format
   PSHELL         1       1      .1       1               1              0.
 
 Problem classes
----------------
+===============
 
 StaticProblem
-^^^^^^^^^^^^^
+-------------
 This class should be created using the
 :meth:`pyTACS.createStaticProblem <tacs.pytacs.pyTACS.createStaticProblem>` method.
 
@@ -165,7 +165,7 @@ This class should be created using the
   :inherited-members:
 
 TransientProblem
-^^^^^^^^^^^^^^^^
+----------------
 This class should be created using the
 :meth:`pyTACS.createTransientProblem <tacs.pytacs.pyTACS.createTransientProblem>` method.
 
@@ -174,7 +174,7 @@ This class should be created using the
   :inherited-members:
 
 ModalProblem
-^^^^^^^^^^^^
+------------
 This class should be created using the
 :meth:`pyTACS.createModalProblem <tacs.pytacs.pyTACS.createModalProblem>` method.
 

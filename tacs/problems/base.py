@@ -342,16 +342,16 @@ class TACSProblem(BaseUI):
 
         A couple of examples of force vector components for common problem are listed below:
 
-        In Heat Conduction with varsPerNode = 1
-        F = [Qdot] # heat rate
-        In Elasticity with varsPerNode = 3,
-        F = [fx, fy, fz] # forces
-        In Elasticity with varsPerNode = 6,
-        F = [fx, fy, fz, mx, my, mz] # forces + moments
-        In Thermoelasticity with varsPerNode = 4,
-        F = [fx, fy, fz, Qdot] # forces + heat rate
-        In Thermoelasticity with varsPerNode = 7,
-        F = [fx, fy, fz, mx, my, mz, Qdot] # forces + moments + heat rate
+            In Heat Conduction with varsPerNode = 1
+                F = [Qdot] # heat rate
+            In Elasticity with varsPerNode = 3,
+                F = [fx, fy, fz] # forces
+            In Elasticity with varsPerNode = 6,
+                F = [fx, fy, fz, mx, my, mz] # forces + moments
+            In Thermoelasticity with varsPerNode = 4,
+                F = [fx, fy, fz, Qdot] # forces + heat rate
+            In Thermoelasticity with varsPerNode = 7,
+                F = [fx, fy, fz, mx, my, mz, Qdot] # forces + moments + heat rate
         """
         # Make sure CompIDs are flat
         compIDs = self._flatten([compIDs])
@@ -438,16 +438,16 @@ class TACSProblem(BaseUI):
 
         A couple of examples of force vector components for common problem are listed below:
 
-        In Heat Conduction with varsPerNode = 1
-        F = [Qdot] # heat rate
-        In Elasticity with varsPerNode = 3,
-        F = [fx, fy, fz] # forces
-        In Elasticity with varsPerNode = 6,
-        F = [fx, fy, fz, mx, my, mz] # forces + moments
-        In Thermoelasticity with varsPerNode = 4,
-        F = [fx, fy, fz, Qdot] # forces + heat rate
-        In Thermoelasticity with varsPerNode = 7,
-        F = [fx, fy, fz, mx, my, mz, Qdot] # forces + moments + heat rate
+            In Heat Conduction with varsPerNode = 1
+                F = [Qdot] # heat rate
+            In Elasticity with varsPerNode = 3,
+                F = [fx, fy, fz] # forces
+            In Elasticity with varsPerNode = 6,
+                F = [fx, fy, fz, mx, my, mz] # forces + moments
+            In Thermoelasticity with varsPerNode = 4,
+                F = [fx, fy, fz, Qdot] # forces + heat rate
+            In Thermoelasticity with varsPerNode = 7,
+                F = [fx, fy, fz, mx, my, mz, Qdot] # forces + moments + heat rate
         """
 
         # Make sure the inputs are the correct shape

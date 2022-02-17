@@ -69,25 +69,26 @@ class TransientProblem(TACSProblem):
 
         # Default Option List
         defOpts = {
-            'outputdir': [str, './'],
+            'outputdir': [str, './', 'Output directory for F5 file writer.'],
 
             # Solution Options
-            'timeIntegrator': [str, 'BDF'],
-            'integrationOrder': [int, 2],
-            'L2Convergence': [float, 1e-12],
-            'L2ConvergenceRel': [float, 1e-12],
-            'jacAssemblyFreq': [int, 1],
-            'useMonitor': [bool, False],
-            'monitorFrequency': [int, 10],
+            'timeIntegrator': [str, 'BDF', "Time integration scheme to use. Currently supports 'BDF' and 'DIRK'."],
+            'integrationOrder': [int, 2, "Integration order for time marching scheme."],
+            'L2Convergence': [float, 1e-12, 'Absolute convergence tolerance for integrator based on l2 norm of residual.'],
+            'L2ConvergenceRel': [float, 1e-12, 'Relative convergence tolerance for integrator based on l2 norm of residual.'],
+            'jacAssemblyFreq': [int, 1, 'How frequently to reassemble Jacobian during time integration process.'],
 
             # Output Options
-            'outputFrequency': [int, 0],
-            'writeSolution': [bool, True],
-            'numberSolutions': [bool, True],
-            'printTiming': [bool, False],
-            'printLevel': [int, 0],
+            'writeSolution': [bool, True, 'Flag for supressing all f5 file writing.'],
+            'numberSolutions': [bool, True, 'Flag for attaching solution counter index to f5 files.'],
+            'printTiming': [bool, False, 'Flag for printing out timing information for class procedures.'],
+            'printLevel': [int, 0, 'Print level for integraton solver.\n'
+                            '\t Accepts:\n'
+                                   '\t\t   0 : No printing.\n'
+                                   '\t\t   1 : Print major iterations.\n'
+                                   '\t\t > 1 : Print major + minor iterations.'],
 
-        }
+            }
 
         # Process the default options which are added to self.options
         # under the 'defaults' key. Make sure the key are lower case
@@ -141,8 +142,6 @@ class TransientProblem(TACSProblem):
 
         # Set output viewer for integrator
         self.integrator.setFH5(self.outputViewer)
-        outputFreq = self.getOption('outputFrequency')
-        self.integrator.setOutputFrequency(outputFreq)
         outputDir = self.getOption('outputDir')
         self.integrator.setOutputPrefix(outputDir)
 
@@ -247,16 +246,16 @@ class TransientProblem(TACSProblem):
 
         A couple of examples of force vector components for common problem are listed below:
 
-        In Heat Conduction with varsPerNode = 1
-        F = [Qdot] # heat rate
-        In Elasticity with varsPerNode = 3,
-        F = [fx, fy, fz] # forces
-        In Elasticity with varsPerNode = 6,
-        F = [fx, fy, fz, mx, my, mz] # forces + moments
-        In Thermoelasticity with varsPerNode = 4,
-        F = [fx, fy, fz, Qdot] # forces + heat rate
-        In Thermoelasticity with varsPerNode = 7,
-        F = [fx, fy, fz, mx, my, mz, Qdot] # forces + moments + heat rate
+            In Heat Conduction with varsPerNode = 1
+                F = [Qdot] # heat rate
+            In Elasticity with varsPerNode = 3,
+                F = [fx, fy, fz] # forces
+            In Elasticity with varsPerNode = 6,
+                F = [fx, fy, fz, mx, my, mz] # forces + moments
+            In Thermoelasticity with varsPerNode = 4,
+                F = [fx, fy, fz, Qdot] # forces + heat rate
+            In Thermoelasticity with varsPerNode = 7,
+                F = [fx, fy, fz, mx, my, mz, Qdot] # forces + moments + heat rate
         """
         self._addLoadToComponents(self.F[timeStep], compIDs, F, averageLoad)
 
@@ -292,16 +291,16 @@ class TransientProblem(TACSProblem):
 
         A couple of examples of force vector components for common problem are listed below:
 
-        In Heat Conduction with varsPerNode = 1
-        F = [Qdot] # heat rate
-        In Elasticity with varsPerNode = 3,
-        F = [fx, fy, fz] # forces
-        In Elasticity with varsPerNode = 6,
-        F = [fx, fy, fz, mx, my, mz] # forces + moments
-        In Thermoelasticity with varsPerNode = 4,
-        F = [fx, fy, fz, Qdot] # forces + heat rate
-        In Thermoelasticity with varsPerNode = 7,
-        F = [fx, fy, fz, mx, my, mz, Qdot] # forces + moments + heat rate
+            In Heat Conduction with varsPerNode = 1
+                F = [Qdot] # heat rate
+            In Elasticity with varsPerNode = 3,
+                F = [fx, fy, fz] # forces
+            In Elasticity with varsPerNode = 6,
+                F = [fx, fy, fz, mx, my, mz] # forces + moments
+            In Thermoelasticity with varsPerNode = 4,
+                F = [fx, fy, fz, Qdot] # forces + heat rate
+            In Thermoelasticity with varsPerNode = 7,
+                F = [fx, fy, fz, mx, my, mz, Qdot] # forces + moments + heat rate
         """
 
         self._addLoadToNodes(self.F[timeStep], nodeIDs, F, nastranOrdering)
@@ -314,11 +313,11 @@ class TransientProblem(TACSProblem):
             M*udotdot + K*u = f
 
         Where:
-            K : Stiffness matrix for problem
-            u : State variables for problem
-            M : Mass matrix for problem
-            udotdot : Second time derivitive of state variables for problem
-            f : Right-hand side vector to add loads to
+            - K : Stiffness matrix for problem
+            - u : State variables for problem
+            - M : Mass matrix for problem
+            - udotdot : Second time derivitive of state variables for problem
+            - f : Right-hand side vector to add loads to
 
         Parameters
         ----------

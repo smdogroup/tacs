@@ -74,21 +74,30 @@ class pyTACS(BaseUI):
         # Default Option List
         defOpts = {
             # Meshloader options
-            'printDebug': [bool, False],
+            'printDebug': [bool, False, 'Flag for whether to print debug information while loading file.'],
 
             # Output Options
-            'outputElement': [int, None],
-            'writeBDF': [bool, False],
-            'writeConnectivity': [bool, True],
-            'writeNodes': [bool, True],
-            'writeDisplacements': [bool, True],
-            'writeStrains': [bool, True],
-            'writeStresses': [bool, True],
-            'writeExtras': [bool, True],
-            'writeCoordinateFrame': [bool, False],
-            'familySeparator': [str, '/'],
-            'printTiming': [bool, False],
-            'printIterations': [bool, True],
+            'outputElement': [int, None, 'Specifies which element type should be written out in the f5 file.\n'
+                                         '\t If None, the type will try to be inferred from varsPerNode (not foolproof).\n'
+                                          '\t Acceptable values are:\n'
+                                              f'\t\t tacs.TACS.ELEMENT_NONE = {tacs.TACS.ELEMENT_NONE}\n'
+                                              f'\t\t tacs.TACS.SCALAR_2D_ELEMENT = {tacs.TACS.SCALAR_2D_ELEMENT}\n'
+                                              f'\t\t tacs.TACS.SCALAR_3D_ELEMENT = {tacs.TACS.SCALAR_3D_ELEMENT}\n'
+                                              f'\t\t tacs.TACS.BEAM_OR_SHELL_ELEMENT = {tacs.TACS.BEAM_OR_SHELL_ELEMENT}\n'
+                                              f'\t\t tacs.TACS.PLANE_STRESS_ELEMENT = {tacs.TACS.PLANE_STRESS_ELEMENT}\n'
+                                              f'\t\t tacs.TACS.SOLID_ELEMENT = {tacs.TACS.SOLID_ELEMENT}\n'
+                                              f'\t\t tacs.TACS.RIGID_ELEMENT = {tacs.TACS.RIGID_ELEMENT}\n'
+                                              f'\t\t tacs.TACS.MASS_ELEMENT = {tacs.TACS.MASS_ELEMENT}\n'
+                                              f'\t\t tacs.TACS.SPRING_ELEMENT = {tacs.TACS.SPRING_ELEMENT}'],
+            'writeConnectivity': [bool, True, 'Flag for whether to include element connectivity in f5 file.'],
+            'writeNodes': [bool, True, 'Flag for whether to include nodes in f5 file.'],
+            'writeDisplacements': [bool, True, 'Flag for whether to include nodal displacements in f5 file.'],
+            'writeStrains': [bool, True, 'Flag for whether to include element strains in f5 file.'],
+            'writeStresses': [bool, True, 'Flag for whether to include element stresses in f5 file.'],
+            'writeExtras': [bool, True, 'Flag for whether to include element extra variables in f5 file.'],
+            'writeCoordinateFrame': [bool, False, 'Flag for whether to include element coordinate frames in f5 file.'],
+            'familySeparator': [str, '/', 'Family seperator character used for condensing groups in f5 file.'],
+            'printTiming': [bool, False, 'Flag for printing out timing information for class procedures.'],
 
         }
 

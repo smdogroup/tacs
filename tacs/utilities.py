@@ -29,7 +29,8 @@ class BaseUI:
         #        if type(value) == self.options[name][0]:
         if isinstance(value, self.options[name][0]):
             # Just set:
-            self.options[name] = [type(value), value]
+            description = defOptions[name][2]
+            self.options[name] = [type(value), value, description]
         else:
             raise self._TACSError("Datatype for Option %s was not valid. "
                         "Expected data type is %s. Received data type "
@@ -71,6 +72,8 @@ class BaseUI:
                     self._pp(f"'{name}': '{self.options[name][1]}'")
                 else:
                     self._pp(f"'{name}': {self.options[name][1]}")
+                # print description
+                self._pp(f"\t {self.options[name][2]}")
 
     # ----------------------------------------------------------------------------
     #                      Utility Functions

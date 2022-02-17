@@ -54,26 +54,31 @@ class StaticProblem(TACSProblem):
 
         # Default Option List
         defOpts = {
-            'outputdir': [str, './'],
+            'outputdir': [str, './', 'Output directory for F5 file writer.'],
 
             # Solution Options
-            'KSMSolver': [str, 'GMRES'],
-            'orderingType': [str, 'ND'],
-            'PCFillLevel': [int, 1000],
-            'PCFillRatio': [float, 20.0],
-            'subSpaceSize': [int, 10],
-            'nRestarts': [int, 15],
-            'flexible': [int, 1],
-            'L2Convergence': [float, 1e-12],
-            'L2ConvergenceRel': [float, 1e-12],
-            'useMonitor': [bool, False],
-            'monitorFrequency': [int, 10],
-            'resNormUB': [float, 1e20],
+            'KSMSolver': [str, 'GMRES', "Krylov subspace method to use for linear solver. Currently only supports 'GMRES'"],
+            'orderingType': [int, tacs.TACS.ND_ORDER, "Ordering type to use for matrix partitioning.\n"
+                                        '\t Acceptable values are:\n'
+                                        f'\t\t tacs.TACS.NATURAL_ORDER = {tacs.TACS.NATURAL_ORDER}\n'
+                                        f'\t\t tacs.TACS.RCM_ORDER = {tacs.TACS.RCM_ORDER}\n'
+                                        f'\t\t tacs.TACS.ND_ORDER = {tacs.TACS.ND_ORDER}\n'
+                                        f'\t\t tacs.TACS.TACS_AMD_ORDER = {tacs.TACS.TACS_AMD_ORDER}\n'
+                                        f'\t\t tacs.TACS.MULTICOLOR_ORDER = {tacs.TACS.MULTICOLOR_ORDER}'],
+            'PCFillLevel': [int, 1000, 'Preconditioner fill level.'],
+            'PCFillRatio': [float, 20.0, 'Preconditioner fill ratio.'],
+            'subSpaceSize': [int, 10, 'Subspace size for Krylov solver.'],
+            'nRestarts': [int, 15, 'Max number of restarts for Krylov solver.'],
+            'flexible': [int, 1, 'Flag for whether the Krylov solver is flexible.'],
+            'L2Convergence': [float, 1e-12, 'Absolute convergence tolerance for linear solver based on l2 norm of residual.'],
+            'L2ConvergenceRel': [float, 1e-12, 'Relative convergence tolerance for linear solver based on l2 norm of residual.'],
+            'useMonitor': [bool, False, 'Flag for whether to attach a debug monitor to the linear solver.'],
+            'monitorFrequency': [int, 10, 'Print frequency for sub iterations of linear solver.'],
 
             # Output Options
-            'writeSolution': [bool, True],
-            'numberSolutions': [bool, True],
-            'printTiming': [bool, False],
+            'writeSolution': [bool, True, 'Flag for supressing all f5 file writing.'],
+            'numberSolutions': [bool, True, 'Flag for attaching solution counter index to f5 files.'],
+            'printTiming': [bool, False, 'Flag for printing out timing information for class procedures.'],
 
         }
 
@@ -127,21 +132,7 @@ class StaticProblem(TACSProblem):
         opt = self.getOption
 
         # Tangent Stiffness --- process the ordering option here:
-        tmp = opt('orderingType').lower()
-        if tmp == 'natural':
-            ordering = tacs.TACS.NATURAL_ORDER
-        elif tmp == 'nd':
-            ordering = tacs.TACS.ND_ORDER
-        elif tmp == 'rcm':
-            ordering = tacs.TACS.RCM_ORDER
-        elif tmp == 'tacs_amd':
-            ordering = tacs.TACS.TACS_AMD_ORDER
-        elif tmp == 'multicolor':
-            ordering = tacs.TACS.MULTICOLOR_ORDER
-        else:
-            raise self._TACSError("Unrecognized 'orderingType' option value: "
-                        "'%s'. Valid values are: 'natural', 'nd', 'rcm', "
-                        "'tacs_amd', or 'multicolor'." % tmp)
+        ordering = opt('orderingType')
 
         self.K = self.assembler.createSchurMat(ordering)
 
@@ -302,16 +293,16 @@ class StaticProblem(TACSProblem):
 
         A couple of examples of force vector components for common problem are listed below:
 
-        In Heat Conduction with varsPerNode = 1
-        F = [Qdot] # heat rate
-        In Elasticity with varsPerNode = 3,
-        F = [fx, fy, fz] # forces
-        In Elasticity with varsPerNode = 6,
-        F = [fx, fy, fz, mx, my, mz] # forces + moments
-        In Thermoelasticity with varsPerNode = 4,
-        F = [fx, fy, fz, Qdot] # forces + heat rate
-        In Thermoelasticity with varsPerNode = 7,
-        F = [fx, fy, fz, mx, my, mz, Qdot] # forces + moments + heat rate
+            In Heat Conduction with varsPerNode = 1
+                F = [Qdot] # heat rate
+            In Elasticity with varsPerNode = 3,
+                F = [fx, fy, fz] # forces
+            In Elasticity with varsPerNode = 6,
+                F = [fx, fy, fz, mx, my, mz] # forces + moments
+            In Thermoelasticity with varsPerNode = 4,
+                F = [fx, fy, fz, Qdot] # forces + heat rate
+            In Thermoelasticity with varsPerNode = 7,
+                F = [fx, fy, fz, mx, my, mz, Qdot] # forces + moments + heat rate
         """
         self._addLoadToComponents(self.F, compIDs, F, averageLoad)
 
@@ -344,16 +335,16 @@ class StaticProblem(TACSProblem):
 
         A couple of examples of force vector components for common problem are listed below:
 
-        In Heat Conduction with varsPerNode = 1
-        F = [Qdot] # heat rate
-        In Elasticity with varsPerNode = 3,
-        F = [fx, fy, fz] # forces
-        In Elasticity with varsPerNode = 6,
-        F = [fx, fy, fz, mx, my, mz] # forces + moments
-        In Thermoelasticity with varsPerNode = 4,
-        F = [fx, fy, fz, Qdot] # forces + heat rate
-        In Thermoelasticity with varsPerNode = 7,
-        F = [fx, fy, fz, mx, my, mz, Qdot] # forces + moments + heat rate
+            In Heat Conduction with varsPerNode = 1
+                F = [Qdot] # heat rate
+            In Elasticity with varsPerNode = 3,
+                F = [fx, fy, fz] # forces
+            In Elasticity with varsPerNode = 6,
+                F = [fx, fy, fz, mx, my, mz] # forces + moments
+            In Thermoelasticity with varsPerNode = 4,
+                F = [fx, fy, fz, Qdot] # forces + heat rate
+            In Thermoelasticity with varsPerNode = 7,
+                F = [fx, fy, fz, mx, my, mz, Qdot] # forces + moments + heat rate
         """
 
         self._addLoadToNodes(self.F, nodeIDs, F, nastranOrdering)
@@ -366,9 +357,9 @@ class StaticProblem(TACSProblem):
             K*u = f
 
         Where:
-            K : Stiffness matrix for problem
-            u : State variables for problem
-            f : Right-hand side vector to add loads to
+            - K : Stiffness matrix for problem
+            - u : State variables for problem
+            - f : Right-hand side vector to add loads to
 
         Parameters
         ----------
