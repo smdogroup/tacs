@@ -17,39 +17,23 @@ Getting Started
 
    install
    interface
-
-Core modules
-============
-.. toctree::
-   :maxdepth: 1
-
-   TACS
-   constitutive
-   elements
-   functions
-
-pyTACS Interface
-================
-.. toctree::
-   :maxdepth: 1
-
-   pytacs
-   problems
+   pytacs/pytacs_module
 
 Examples
 ========
 .. toctree::
    :maxdepth: 1
 
-   Example-CRM_Optimization
+   examples/Example-Plate
+   examples/Example-CRM_Optimization
 
-Theory
-======
-
+References
+==========
 .. toctree::
    :maxdepth: 1
 
-   shell_element
+   theory/theory
+   core/core
 
 Indices and tables
 ==================

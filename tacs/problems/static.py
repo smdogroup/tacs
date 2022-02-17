@@ -210,7 +210,7 @@ class StaticProblem(TACSProblem):
 
     def addFunction(self, funcName, funcHandle, compIDs=None, **kwargs):
         """
-        Generic function to add a function for TACS. It is intended to
+        Generic method to add a function for TACS. It is intended to
         be reasonably generic since the user supplies the actual
         function handle to use. The following functions can be used:
         KSFailure, KSTemperature, AverageTemperature, Compliance,
@@ -270,7 +270,7 @@ class StaticProblem(TACSProblem):
 
     def addLoadToComponents(self, compIDs, F, averageLoad=False):
         """"
-        The function is used to add a *FIXED TOTAL LOAD* on one or more
+        This method is used to add a *FIXED TOTAL LOAD* on one or more
         components, defined by COMPIDs. The purpose of this routine is to add loads that
         remain fixed throughout an optimization. An example would be an engine load.
         This routine determines all the unqiue nodes in the FE model that are part of the
@@ -317,7 +317,7 @@ class StaticProblem(TACSProblem):
 
     def addLoadToNodes(self, nodeIDs, F, nastranOrdering=False):
         """
-        The function is used to add a fixed point load of F to the
+        This method is used to add a fixed point load of F to the
         selected node IDs.
 
         Parameters
@@ -360,7 +360,7 @@ class StaticProblem(TACSProblem):
 
     def addLoadToRHS(self, Fapplied):
         """"
-        The function is used to add a *FIXED TOTAL LOAD* directly to the
+        This method is used to add a *FIXED TOTAL LOAD* directly to the
         right hand side vector given the equation below:
 
             K*u = f
@@ -382,7 +382,7 @@ class StaticProblem(TACSProblem):
     def addTractionToComponents(self, compIDs, tractions,
                                 faceIndex=0):
         """
-        The function is used to add a *FIXED TOTAL TRACTION* on one or more
+        This method is used to add a *FIXED TOTAL TRACTION* on one or more
         components, defined by COMPIDs. The purpose of this routine is
         to add loads that remain fixed throughout an optimization.
 
@@ -405,7 +405,7 @@ class StaticProblem(TACSProblem):
     def addTractionToElements(self, elemIDs, tractions,
                               faceIndex=0, nastranOrdering=False):
         """
-        The function is used to add a fixed traction to the
+        This method is used to add a fixed traction to the
         selected element IDs. Tractions can be specified on an
         element by element basis (if tractions is a 2d array) or
         set to a uniform value (if tractions is a 1d array)
@@ -433,7 +433,7 @@ class StaticProblem(TACSProblem):
     def addPressureToComponents(self, compIDs, pressures,
                                 faceIndex=0):
         """
-        The function is used to add a *FIXED TOTAL PRESSURE* on one or more
+        This method is used to add a *FIXED TOTAL PRESSURE* on one or more
         components, defined by COMPIds. The purpose of this routine is
         to add loads that remain fixed throughout an optimization. An example
         would be a fuel load.
@@ -457,7 +457,7 @@ class StaticProblem(TACSProblem):
     def addPressureToElements(self, elemIDs, pressures,
                               faceIndex=0, nastranOrdering=False):
         """
-        The function is used to add a fixed presure to the
+        This method is used to add a fixed presure to the
         selected element IDs. Pressures can be specified on an
         element by element basis (if pressures is an array) or
         set to a uniform value (if pressures is a scalar)
@@ -485,7 +485,7 @@ class StaticProblem(TACSProblem):
 
     def addInertialLoad(self, inertiaVector):
         """
-        The function is used to add a fixed inertial load due to
+        This method is used to add a fixed inertial load due to
         a uniform acceleration over the entire model.
         This is most commonly used to model gravity loads on a model.
 
@@ -533,7 +533,7 @@ class StaticProblem(TACSProblem):
         ----------
         Optional Arguments:
 
-        Fext : numpy.ndarray or TAC.Vec
+        Fext : numpy.ndarray or TACS.Vec
             Distributed array containing additional loads (ex. aerodynamic forces for aerostructural coupling)
             to applied to RHS of the static problem.
 

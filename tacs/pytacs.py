@@ -3,22 +3,18 @@
 pytacs - The Python wrapper for the TACS solver
 
 This python interface is designed to provide a easier interface to the
-c-layer of TACS. It combines all the functionality of the old pyTACS
-and pyTACS_Mesh. User-supplied hooks allow for nearly complete
+c-layer of TACS. User-supplied hooks allow for nearly complete
 customization of any or all parts of the problem setup. There are two
 main parts of this module: The first deals with setting up the TACS
-problem including reading the mesh, setting design variables,
-functions, constraints etc (Functionality in the former
-pyTACS_Mesh). The second part deals with solution of the structural
-analysis and gradient computations.
+model including reading the mesh, setting elements and design variables.
+The second part deals with creating problem instances that are responsible
+for setting loads and functions, performing analysis, and gradient computations.
 
 Developers:
------------
-- Dr. G.K.W. Kenway (GKK)
-- Dr. T.R Brooks
+    - Dr. G.K.W. Kenway (GKK)
+    - Dr. T.R Brooks
 
-History
--------
+History:
     - v. 1.0 pyTACS initial implementation
     - v. 3.0 updated TACS 3.0 pyTACS implementation
 """
@@ -300,7 +296,7 @@ class pyTACS(BaseUI):
              # containing LE_SPAR. Note that once the componets are
              # selected, they are sorted **alphetically** and assigned
              # sequentially.
-             selectCompIDs(include='LE_SAPR', nGroup=10)
+             selectCompIDs(include='LE_SPAR', nGroup=10)
 
            nGroup can also be negative. If it is negative, then a single
            design variable group is added to each of the found
@@ -441,7 +437,7 @@ class pyTACS(BaseUI):
 
     def initialize(self, elemCallBack=None):
         """
-        This is the 'last' function to be called during the setup. The
+        This is the 'last' method to be called during the setup. The
         user should have already added all the design variables,
         domains ect. before this function is call. This function
         finializes the problem initialization and cannot be changed at
@@ -1248,7 +1244,7 @@ class pyTACS(BaseUI):
 
     def _createOutputViewer(self):
         """
-        Internal function to create the appropriate output viewer
+        Internal method to create the appropriate output viewer
         (TACSToFH5 object) for TACS.
         """
 
@@ -1290,7 +1286,7 @@ class pyTACS(BaseUI):
             self.outputViewer.setComponentName(i, self.fam[i])
 
     def _getCompIDs(self, op, *inList):
-        """ Internal function to return the component IDs mathing
+        """ Internal method to return the component IDs mathing
         information in inList"""
 
         # First recursively flatten the inList in case it was nested:

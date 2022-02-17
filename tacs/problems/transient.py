@@ -211,7 +211,7 @@ class TransientProblem(TACSProblem):
 
     def addLoadToComponents(self, timeStep, compIDs, F, averageLoad=False):
         """"
-        The function is used to add a *FIXED TOTAL LOAD* on one or more
+        This method is used to add a *FIXED TOTAL LOAD* on one or more
         components, defined by COMPIDs, at a specifc time instance.
         The purpose of this routine is to add loads that remain fixed throughout
         an optimization. An example would be an engine load. This routine determines
@@ -262,7 +262,7 @@ class TransientProblem(TACSProblem):
 
     def addLoadToNodes(self, timeStep, nodeIDs, F, nastranOrdering=False):
         """
-        The function is used to add a fixed point load of F to the
+        This method is used to add a fixed point load of F to the
         selected node IDs at a specified time instance.
 
         Parameters
@@ -308,7 +308,7 @@ class TransientProblem(TACSProblem):
 
     def addLoadToRHS(self, timeStep, Fapplied):
         """"
-        The function is used to add a *FIXED TOTAL LOAD* directly to the
+        This method is used to add a *FIXED TOTAL LOAD* directly to the
         right hand side vector given the equation below:
 
             M*udotdot + K*u = f
@@ -335,7 +335,7 @@ class TransientProblem(TACSProblem):
     def addTractionToComponents(self, timeStep, compIDs, tractions,
                                 faceIndex=0):
         """
-        The function is used to add a *FIXED TOTAL TRACTION* on one or more
+        This method is used to add a *FIXED TOTAL TRACTION* on one or more
         components, defined by COMPIDs, at specified time instance. The purpose of
         this routine is to add loads that remain fixed throughout an optimization.
 
@@ -361,7 +361,7 @@ class TransientProblem(TACSProblem):
     def addTractionToElements(self, timeStep, elemIDs, tractions,
                               faceIndex=0, nastranOrdering=False):
         """
-        The function is used to add a fixed traction to the
+        This method is used to add a fixed traction to the
         selected element IDs at specified time instance.
         Tractions can be specified on an element by element basis
         (if tractions is a 2d array) or set to a uniform value (if tractions is a 1d array)
@@ -392,7 +392,7 @@ class TransientProblem(TACSProblem):
     def addPressureToComponents(self, timeStep, compIDs, pressures,
                                 faceIndex=0):
         """
-        The function is used to add a *FIXED TOTAL PRESSURE* on one or more
+        This method is used to add a *FIXED TOTAL PRESSURE* on one or more
         components, defined by COMPIDs, at specified time instance. The purpose of this routine is
         to add loads that remain fixed throughout an optimization. An example
         would be a fuel load.
@@ -419,7 +419,7 @@ class TransientProblem(TACSProblem):
     def addPressureToElements(self, timeStep, elemIDs, pressures,
                               faceIndex=0, nastranOrdering=False):
         """
-        The function is used to add a fixed presure to the
+        This method is used to add a fixed presure to the
         selected element IDs at specified time instance.
         Pressures can be specified on an element by element
         basis (if pressures is an array) or set to a uniform value (if pressures is a scalar)
@@ -450,7 +450,7 @@ class TransientProblem(TACSProblem):
 
     def addInertialLoad(self, timeStep, inertiaVector):
         """
-        The function is used to add a fixed inertial load  at a specified time step
+        This method is used to add a fixed inertial load  at a specified time step
         due to a uniform acceleration over the entire model.
         This is most commonly used to model gravity loads on a model.
 

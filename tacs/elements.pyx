@@ -540,7 +540,7 @@ cdef class ShellNaturalTransform(ShellTransform):
     This class uses shell "natural" coordinate system (i.e. local :math:`x` is aligned with element's first edge.)
     This is appropriate for isotropic shells, who's stiffness properties don't depend on orientation.
 
-    See :ref:`shell_element:Natural transform` for more info.
+    See :ref:`theory/shell_element:Natural transform` for more info.
     """
     def __cinit__(self):
         self.ptr = new TACSShellNaturalTransform()
@@ -556,7 +556,7 @@ cdef class ShellRefAxisTransform(ShellTransform):
 
     Note: the reference direction cannot be normal to the shell surface.
 
-    See :ref:`shell_element:Reference axis projection transform` for more info.
+    See :ref:`theory/shell_element:Reference axis projection transform` for more info.
 
     Args:
         axis (array-like): Reference axis.
@@ -576,7 +576,7 @@ cdef class Quad4Shell(Element):
     This element employs a mixed interpolation of tensorial (strain)
     components (MITC) method to avoid shear locking problems.
 
-    See :ref:`shell_element:Mixed Interpolation of Tensorial Components` for more info
+    See :ref:`theory/shell_element:Mixed Interpolation of Tensorial Components` for more info
 
     Args:
         transform (ShellTransform or None): Shell transform object.
@@ -596,7 +596,7 @@ cdef class Quad9Shell(Element):
     This element employs a mixed interpolation of tensorial (strain)
     components (MITC) method to avoid shear locking problems.
 
-    See :ref:`shell_element:Mixed Interpolation of Tensorial Components` for more info
+    See :ref:`theory/shell_element:Mixed Interpolation of Tensorial Components` for more info
 
     Args:
         transform (ShellTransform or None): Shell transform object.
@@ -616,7 +616,7 @@ cdef class Quad16Shell(Element):
     This element employs a mixed interpolation of tensorial (strain)
     components (MITC) method to avoid shear locking problems.
 
-    See :ref:`shell_element:Mixed Interpolation of Tensorial Components` for more info
+    See :ref:`theory/shell_element:Mixed Interpolation of Tensorial Components` for more info
 
     Args:
         transform (ShellTransform or None): Shell transform object.
@@ -636,7 +636,7 @@ cdef class Tri3Shell(Element):
     This element employs a mixed interpolation of tensorial (strain)
     components (MITC) method to avoid shear locking problems.
 
-    See :ref:`shell_element:Mixed Interpolation of Tensorial Components` for more info
+    See :ref:`theory/shell_element:Mixed Interpolation of Tensorial Components` for more info
 
     Args:
         transform (ShellTransform or None): Shell transform object.
@@ -656,7 +656,7 @@ cdef class Quad4ThermalShell(Element):
     This element employs a mixed interpolation of tensorial (strain)
     components (MITC) method to avoid shear locking problems.
 
-    See :ref:`shell_element:Mixed Interpolation of Tensorial Components` for more info
+    See :ref:`theory/shell_element:Mixed Interpolation of Tensorial Components` for more info
 
     Args:
         transform (ShellTransform or None): Shell transform object.
@@ -676,7 +676,7 @@ cdef class Quad9ThermalShell(Element):
     This element employs a mixed interpolation of tensorial (strain)
     components (MITC) method to avoid shear locking problems.
 
-    See :ref:`shell_element:Mixed Interpolation of Tensorial Components` for more info
+    See :ref:`theory/shell_element:Mixed Interpolation of Tensorial Components` for more info
 
     Args:
         transform (ShellTransform or None): Shell transform object.
@@ -696,7 +696,7 @@ cdef class Quad16ThermalShell(Element):
     This element employs a mixed interpolation of tensorial (strain)
     components (MITC) method to avoid shear locking problems.
 
-    See :ref:`shell_element:Mixed Interpolation of Tensorial Components` for more info
+    See :ref:`theory/shell_element:Mixed Interpolation of Tensorial Components` for more info
 
     Args:
         transform (ShellTransform or None): Shell transform object.
@@ -716,7 +716,7 @@ cdef class Tri3ThermalShell(Element):
     This element employs a mixed interpolation of tensorial (strain)
     components (MITC) method to avoid shear locking problems.
 
-    See :ref:`shell_element:Mixed Interpolation of Tensorial Components` for more info
+    See :ref:`theory/shell_element:Mixed Interpolation of Tensorial Components` for more info
 
     Args:
         transform (ShellTransform or None): Shell transform object.
@@ -857,6 +857,13 @@ cdef class RBE2(Element):
     The independent degrees-of-freedom are the six components of motion at
     a single grid point. The dependent degrees-of-freedom at the other grid
     points.
+
+    Assumes 6 DOFs.
+
+    Args:
+        num_nodes (int): Total number of nodes associated with the element.
+        constrained_dofs (numpy.ndarray[int]): Flags to determine which
+          dependent node dof's are attached to the eleemnt.
     """
     cdef TACSRBE2 *cptr
     def __cinit__(self, int num_nodes,
@@ -889,10 +896,10 @@ cdef class RBE3(Element):
 
     Args:
         num_nodes (int): Total number of nodes associated with the element.
-        dep_constrained_dofs (np.ndarray[int]): Flags to determine which
+        dep_constrained_dofs (numpy.ndarray[int]): Flags to determine which
           dependent node dof's are attached to the eleemnt.
-        weights (np.ndarray[float]): RBE weighting factor for each independent node.
-        indep_constrained_dofs (np.ndarray[int]): Flags to determine which
+        weights (numpy.ndarray[float]): RBE weighting factor for each independent node.
+        indep_constrained_dofs (numpy.ndarray[int]): Flags to determine which
           independent node dof's are attached to the eleemnt.
     """
     cdef TACSRBE3 *cptr

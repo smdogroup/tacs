@@ -254,7 +254,7 @@ class TACSProblem(BaseUI):
 
     def addFunction(self, funcName, funcHandle, compIDs=None, **kwargs):
         """
-        Generic function to add a function for TACS. It is intended to
+        Generic method to add a function for TACS. It is intended to
         be reasonably generic since the user supplies the actual
         function handle to use. The following functions can be used:
         KSFailure, KSTemperature, AverageTemperature, Compliance,
