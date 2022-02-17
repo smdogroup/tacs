@@ -41,6 +41,9 @@ class TACSProblem(BaseUI):
         # List of functions
         self.functionList = OrderedDict()
 
+        # Empty options dict, should be filled out by child class
+        self.options = {}
+
         return
 
     ####### Design variable methods ########

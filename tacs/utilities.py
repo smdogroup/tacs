@@ -75,6 +75,25 @@ class BaseUI:
                 # print description
                 self._pp(f"\t {self.options[name][2]}")
 
+    @classmethod
+    def printDefaultOptions(cls):
+        """
+        Prints a nicely formatted dictionary of all the default solver
+        options to the stdout on the root processor
+        """
+        header = cls.objectName
+        print("+----------------------------------------+")
+        print("|" + f"{header} Options:".center(40) + "|")
+        print("+----------------------------------------+")
+        if hasattr(cls, 'defaultOptions'):
+            for name in cls.defaultOptions:
+                if cls.defaultOptions[name][0] == str:
+                    print(f"'{name}': '{cls.defaultOptions[name][1]}'")
+                else:
+                    print(f"'{name}': {cls.defaultOptions[name][1]}")
+                # print description
+                print(f"\t {cls.defaultOptions[name][2]}")
+
     # ----------------------------------------------------------------------------
     #                      Utility Functions
     # ---------------------------------------------------------------------------

@@ -14,13 +14,51 @@ from .base import TACSProblem
 import tacs.TACS
 
 class StaticProblem(TACSProblem):
+    """
+    The main purpose of this class is to represent all relevant
+    information for a static analysis. This will include
+    information defining the loading condition as well as various
+    other pieces of information.
+    """
+    # Class name
+    objectName = 'StaticProblem'
+
+    # Default options for class
+    defaultOptions = {
+        'outputdir': [str, './', 'Output directory for F5 file writer.'],
+
+        # Solution Options
+        'KSMSolver': [str, 'GMRES', "Krylov subspace method to use for linear solver. Currently only supports 'GMRES'"],
+        'orderingType': [int, tacs.TACS.ND_ORDER, "Ordering type to use for matrix partitioning.\n"
+                                                  '\t Acceptable values are:\n'
+                                                  f'\t\t tacs.TACS.NATURAL_ORDER = {tacs.TACS.NATURAL_ORDER}\n'
+                                                  f'\t\t tacs.TACS.RCM_ORDER = {tacs.TACS.RCM_ORDER}\n'
+                                                  f'\t\t tacs.TACS.ND_ORDER = {tacs.TACS.ND_ORDER}\n'
+                                                  f'\t\t tacs.TACS.TACS_AMD_ORDER = {tacs.TACS.TACS_AMD_ORDER}\n'
+                                                  f'\t\t tacs.TACS.MULTICOLOR_ORDER = {tacs.TACS.MULTICOLOR_ORDER}'],
+        'PCFillLevel': [int, 1000, 'Preconditioner fill level.'],
+        'PCFillRatio': [float, 20.0, 'Preconditioner fill ratio.'],
+        'subSpaceSize': [int, 10, 'Subspace size for Krylov solver.'],
+        'nRestarts': [int, 15, 'Max number of restarts for Krylov solver.'],
+        'flexible': [bool, True, 'Flag for whether the preconditioner is flexible.'],
+        'L2Convergence': [float, 1e-12,
+                          'Absolute convergence tolerance for linear solver based on l2 norm of residual.'],
+        'L2ConvergenceRel': [float, 1e-12,
+                             'Relative convergence tolerance for linear solver based on l2 norm of residual.'],
+        'useMonitor': [bool, False, 'Flag for whether to attach a debug monitor to the linear solver.'],
+        'monitorFrequency': [int, 10, 'Print frequency for sub iterations of linear solver.'],
+
+        # Output Options
+        'writeSolution': [bool, True, 'Flag for suppressing all f5 file writing.'],
+        'numberSolutions': [bool, True, 'Flag for attaching solution counter index to f5 files.'],
+        'printTiming': [bool, False, 'Flag for printing out timing information for class procedures.'],
+
+    }
 
     def __init__(self, name, assembler, comm, outputViewer=None, meshLoader=None, options={}):
         """
-        The main purpose of this class is to represent all relevant
-        information for a static analysis. This will include
-        information defining the loading condition as well as various
-        other pieces of information.
+        NOTE: This class should not be initialized directly by the user.
+        Use pyTACS.createStaticProblem instead.
 
         Parameters
         ----------
@@ -43,8 +81,6 @@ class StaticProblem(TACSProblem):
             Dictionary holding problem-specific option parameters.
 
         """
-        # python object name
-        self.objectName = 'StaticProblem'
 
         # Problem name
         self.name = name
@@ -52,44 +88,13 @@ class StaticProblem(TACSProblem):
         # Defualt setup for common problem class objects
         super().__init__(assembler, comm, outputViewer, meshLoader)
 
-        # Default Option List
-        defOpts = {
-            'outputdir': [str, './', 'Output directory for F5 file writer.'],
-
-            # Solution Options
-            'KSMSolver': [str, 'GMRES', "Krylov subspace method to use for linear solver. Currently only supports 'GMRES'"],
-            'orderingType': [int, tacs.TACS.ND_ORDER, "Ordering type to use for matrix partitioning.\n"
-                                        '\t Acceptable values are:\n'
-                                        f'\t\t tacs.TACS.NATURAL_ORDER = {tacs.TACS.NATURAL_ORDER}\n'
-                                        f'\t\t tacs.TACS.RCM_ORDER = {tacs.TACS.RCM_ORDER}\n'
-                                        f'\t\t tacs.TACS.ND_ORDER = {tacs.TACS.ND_ORDER}\n'
-                                        f'\t\t tacs.TACS.TACS_AMD_ORDER = {tacs.TACS.TACS_AMD_ORDER}\n'
-                                        f'\t\t tacs.TACS.MULTICOLOR_ORDER = {tacs.TACS.MULTICOLOR_ORDER}'],
-            'PCFillLevel': [int, 1000, 'Preconditioner fill level.'],
-            'PCFillRatio': [float, 20.0, 'Preconditioner fill ratio.'],
-            'subSpaceSize': [int, 10, 'Subspace size for Krylov solver.'],
-            'nRestarts': [int, 15, 'Max number of restarts for Krylov solver.'],
-            'flexible': [int, 1, 'Flag for whether the Krylov solver is flexible.'],
-            'L2Convergence': [float, 1e-12, 'Absolute convergence tolerance for linear solver based on l2 norm of residual.'],
-            'L2ConvergenceRel': [float, 1e-12, 'Relative convergence tolerance for linear solver based on l2 norm of residual.'],
-            'useMonitor': [bool, False, 'Flag for whether to attach a debug monitor to the linear solver.'],
-            'monitorFrequency': [int, 10, 'Print frequency for sub iterations of linear solver.'],
-
-            # Output Options
-            'writeSolution': [bool, True, 'Flag for supressing all f5 file writing.'],
-            'numberSolutions': [bool, True, 'Flag for attaching solution counter index to f5 files.'],
-            'printTiming': [bool, False, 'Flag for printing out timing information for class procedures.'],
-
-        }
-
         # Process the default options which are added to self.options
         # under the 'defaults' key. Make sure the key are lower case
-        self.options = {}
-        def_keys = defOpts.keys()
+        def_keys = self.defaultOptions.keys()
         self.options['defaults'] = {}
         for key in def_keys:
-            self.options['defaults'][key.lower()] = defOpts[key]
-            self.options[key.lower()] = defOpts[key]
+            self.options['defaults'][key.lower()] = self.defaultOptions[key]
+            self.options[key.lower()] = self.defaultOptions[key]
 
         # Set user-defined options
         for key in options:

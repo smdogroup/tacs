@@ -14,13 +14,43 @@ from .base import TACSProblem
 import tacs.TACS
 
 class ModalProblem(TACSProblem):
+    """
+    The main purpose of this class is to represent all relevant
+    information for a modal analysis.
+    """
+    # python object name
+    objectName = 'ModalProblem'
+
+    # Default Option List
+    defaultOptions = {
+        'outputdir': [str, './', 'Output directory for F5 file writer.'],
+
+        # Solution Options
+        'L2Convergence': [float, 1e-12,
+                          'Absolute convergence tolerance for Eigenvalue solver based on l2 norm of residual.'],
+        'L2ConvergenceRel': [float, 1e-12,
+                             'Relative convergence tolerance for Eigenvalue solver based on l2 norm of residual.'],
+        'subSpaceSize': [int, 10, 'Subspace size for Krylov solver used by Eigenvalue solver.'],
+        'nRestarts': [int, 15, 'Max number of resets for Krylov solver used by Eigenvalue solver.'],
+
+        # Output Options
+        'writeSolution': [bool, True, 'Flag for suppressing all f5 file writing.'],
+        'numberSolutions': [bool, True, 'Flag for attaching solution counter index to f5 files.'],
+        'printTiming': [bool, False, 'Flag for printing out timing information for class procedures.'],
+        'printLevel': [int, 0, 'Print level for integraton solver.\n'
+                               '\t Accepts:\n'
+                               '\t\t   0 : No printing.\n'
+                               '\t\t   1 : Print major iterations.\n'
+                               '\t\t > 1 : Print major + minor iterations.'],
+
+    }
 
     def __init__(self, name, sigma, numEigs,
                  assembler, comm, outputViewer=None, meshLoader=None,
                  options={}):
         """
-        The main purpose of this class is to represent all relevant
-        information for a modal analysis.
+        NOTE: This class should not be initialized directly by the user.
+        Use pyTACS.createModalProblem instead.
 
         Parameters
         ----------
@@ -48,8 +78,6 @@ class ModalProblem(TACSProblem):
         options : dict
             Dictionary holding problem-specific option parameters.
         """
-        # python object name
-        self.objectName = 'ModalProblem'
 
         # Problem name
         self.name = name
@@ -61,36 +89,13 @@ class ModalProblem(TACSProblem):
         self.sigma = sigma
         self.numEigs = numEigs
 
-        # Default Option List
-        defOpts = {
-            'outputdir': [str, './', 'Output directory for F5 file writer.'],
-
-            # Solution Options
-            'L2Convergence': [float, 1e-12, 'Absolute convergence tolerance for Eigenvalue solver based on l2 norm of residual.'],
-            'L2ConvergenceRel': [float, 1e-12, 'Relative convergence tolerance for Eigenvalue solver based on l2 norm of residual.'],
-            'subSpaceSize': [int, 10, 'Subspace size for Krylov solver used by Eigenvalue solver.'],
-            'nRestarts': [int, 15, 'Max number of resets for Krylov solver used by Eigenvalue solver.'],
-
-            # Output Options
-            'writeSolution': [bool, True, 'Flag for supressing all f5 file writing.'],
-            'numberSolutions': [bool, True, 'Flag for attaching solution counter index to f5 files.'],
-            'printTiming': [bool, False, 'Flag for printing out timing information for class procedures.'],
-            'printLevel': [int, 0, 'Print level for integraton solver.\n'
-                            '\t Accepts:\n'
-                                   '\t\t   0 : No printing.\n'
-                                   '\t\t   1 : Print major iterations.\n'
-                                   '\t\t > 1 : Print major + minor iterations.'],
-
-        }
-
         # Process the default options which are added to self.options
         # under the 'defaults' key. Make sure the key are lower case
-        self.options = {}
-        def_keys = defOpts.keys()
+        def_keys = self.defaultOptions.keys()
         self.options['defaults'] = {}
         for key in def_keys:
-            self.options['defaults'][key.lower()] = defOpts[key]
-            self.options[key.lower()] = defOpts[key]
+            self.options['defaults'][key.lower()] = self.defaultOptions[key]
+            self.options[key.lower()] = self.defaultOptions[key]
 
         # Set user-defined options
         for key in options:

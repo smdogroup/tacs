@@ -43,6 +43,39 @@ class pyTACS(BaseUI):
     The class for working with a TACS structure
     """
 
+    # Class name
+    objectName = 'pyTACS'
+
+    # Default class options
+    defaultOptions = {
+        # Meshloader options
+        'printDebug': [bool, False, 'Flag for whether to print debug information while loading file.'],
+
+        # Output Options
+        'outputElement': [int, None, 'Specifies which element type should be written out in the f5 file.\n'
+                                     '\t If None, the type will try to be inferred from varsPerNode (not foolproof).\n'
+                                     '\t Acceptable values are:\n'
+                                     f'\t\t tacs.TACS.ELEMENT_NONE = {tacs.TACS.ELEMENT_NONE}\n'
+                                     f'\t\t tacs.TACS.SCALAR_2D_ELEMENT = {tacs.TACS.SCALAR_2D_ELEMENT}\n'
+                                     f'\t\t tacs.TACS.SCALAR_3D_ELEMENT = {tacs.TACS.SCALAR_3D_ELEMENT}\n'
+                                     f'\t\t tacs.TACS.BEAM_OR_SHELL_ELEMENT = {tacs.TACS.BEAM_OR_SHELL_ELEMENT}\n'
+                                     f'\t\t tacs.TACS.PLANE_STRESS_ELEMENT = {tacs.TACS.PLANE_STRESS_ELEMENT}\n'
+                                     f'\t\t tacs.TACS.SOLID_ELEMENT = {tacs.TACS.SOLID_ELEMENT}\n'
+                                     f'\t\t tacs.TACS.RIGID_ELEMENT = {tacs.TACS.RIGID_ELEMENT}\n'
+                                     f'\t\t tacs.TACS.MASS_ELEMENT = {tacs.TACS.MASS_ELEMENT}\n'
+                                     f'\t\t tacs.TACS.SPRING_ELEMENT = {tacs.TACS.SPRING_ELEMENT}'],
+        'writeConnectivity': [bool, True, 'Flag for whether to include element connectivity in f5 file.'],
+        'writeNodes': [bool, True, 'Flag for whether to include nodes in f5 file.'],
+        'writeDisplacements': [bool, True, 'Flag for whether to include nodal displacements in f5 file.'],
+        'writeStrains': [bool, True, 'Flag for whether to include element strains in f5 file.'],
+        'writeStresses': [bool, True, 'Flag for whether to include element stresses in f5 file.'],
+        'writeExtras': [bool, True, 'Flag for whether to include element extra variables in f5 file.'],
+        'writeCoordinateFrame': [bool, False, 'Flag for whether to include element coordinate frames in f5 file.'],
+        'familySeparator': [str, '/', 'Family seperator character used for condensing groups in f5 file.'],
+        'printTiming': [bool, False, 'Flag for printing out timing information for class procedures.'],
+
+    }
+
     def __init__(self, fileName, comm=None, dvNum=0,
                  scaleList=None, **kwargs):
         """
@@ -67,39 +100,7 @@ class pyTACS(BaseUI):
             len(scaleList) = dvNum
         """
 
-        self.objectName = 'pyTACS'
-
         startTime = time.time()
-
-        # Default Option List
-        defOpts = {
-            # Meshloader options
-            'printDebug': [bool, False, 'Flag for whether to print debug information while loading file.'],
-
-            # Output Options
-            'outputElement': [int, None, 'Specifies which element type should be written out in the f5 file.\n'
-                                         '\t If None, the type will try to be inferred from varsPerNode (not foolproof).\n'
-                                          '\t Acceptable values are:\n'
-                                              f'\t\t tacs.TACS.ELEMENT_NONE = {tacs.TACS.ELEMENT_NONE}\n'
-                                              f'\t\t tacs.TACS.SCALAR_2D_ELEMENT = {tacs.TACS.SCALAR_2D_ELEMENT}\n'
-                                              f'\t\t tacs.TACS.SCALAR_3D_ELEMENT = {tacs.TACS.SCALAR_3D_ELEMENT}\n'
-                                              f'\t\t tacs.TACS.BEAM_OR_SHELL_ELEMENT = {tacs.TACS.BEAM_OR_SHELL_ELEMENT}\n'
-                                              f'\t\t tacs.TACS.PLANE_STRESS_ELEMENT = {tacs.TACS.PLANE_STRESS_ELEMENT}\n'
-                                              f'\t\t tacs.TACS.SOLID_ELEMENT = {tacs.TACS.SOLID_ELEMENT}\n'
-                                              f'\t\t tacs.TACS.RIGID_ELEMENT = {tacs.TACS.RIGID_ELEMENT}\n'
-                                              f'\t\t tacs.TACS.MASS_ELEMENT = {tacs.TACS.MASS_ELEMENT}\n'
-                                              f'\t\t tacs.TACS.SPRING_ELEMENT = {tacs.TACS.SPRING_ELEMENT}'],
-            'writeConnectivity': [bool, True, 'Flag for whether to include element connectivity in f5 file.'],
-            'writeNodes': [bool, True, 'Flag for whether to include nodes in f5 file.'],
-            'writeDisplacements': [bool, True, 'Flag for whether to include nodal displacements in f5 file.'],
-            'writeStrains': [bool, True, 'Flag for whether to include element strains in f5 file.'],
-            'writeStresses': [bool, True, 'Flag for whether to include element stresses in f5 file.'],
-            'writeExtras': [bool, True, 'Flag for whether to include element extra variables in f5 file.'],
-            'writeCoordinateFrame': [bool, False, 'Flag for whether to include element coordinate frames in f5 file.'],
-            'familySeparator': [str, '/', 'Family seperator character used for condensing groups in f5 file.'],
-            'printTiming': [bool, False, 'Flag for printing out timing information for class procedures.'],
-
-        }
 
         # Data type (real or complex)
         self.dtype = tacs.TACS.dtype
@@ -113,11 +114,11 @@ class pyTACS(BaseUI):
         # Process the default options which are added to self.options
         # under the 'defaults' key. Make sure the key are lower case
         self.options = {}
-        def_keys = defOpts.keys()
+        def_keys = self.defaultOptions.keys()
         self.options['defaults'] = {}
         for key in def_keys:
-            self.options['defaults'][key.lower()] = defOpts[key]
-            self.options[key.lower()] = defOpts[key]
+            self.options['defaults'][key.lower()] = self.defaultOptions[key]
+            self.options[key.lower()] = self.defaultOptions[key]
 
         # Process the user-supplied options
         koptions = kwargs.pop('options', {})
