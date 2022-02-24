@@ -48,6 +48,7 @@ jobs:
           echo "=============================================================";
           echo "Run #${GITHUB_RUN_NUMBER}";
           echo "Run ID: ${GITHUB_RUN_ID}";
+          lscpu;
           echo "Testing: ${GITHUB_REPOSITORY}";
           echo "Triggered by: ${GITHUB_EVENT_NAME}";
           echo "Initiated by: ${GITHUB_ACTOR}";
@@ -65,6 +66,9 @@ jobs:
           export TACS_DIR=${GITHUB_WORKSPACE};
           pip install testflo;
           conda install -c anaconda openmpi -q -y;
+          # Necessary to prevent mpi tests failing due to lack of slots
+          export OMPI_MCA_btl=self,tcp;
+          export OMPI_MCA_rmaps_base_oversubscribe=1;
           conda install gxx_linux-64 -q -y;
           conda install -c anaconda openblas -q -y;
           conda install -c conda-forge lapack -q -y;
