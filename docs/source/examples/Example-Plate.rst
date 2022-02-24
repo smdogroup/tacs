@@ -18,7 +18,7 @@ First, import required libraries:
   import numpy as np
   from tacs import functions, constitutive, elements, pyTACS
 
-First we must create the :class:`~tacs.pytacs.pyTACS` class.
+Next, we must create the :class:`~tacs.pytacs.pyTACS` class.
 :class:`~tacs.pytacs.pyTACS` acts as an assembler for all of the TACS submodules.
 It's purpose is to read in mesh files, setup TACS element objects, and create TACS problems for analysis.
 To create a :class:`~tacs.pytacs.pyTACS` class, at minimum, a NASTRAN bdf defining nodes, elements, and boundary conditions is required.
