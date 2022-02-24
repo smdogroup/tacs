@@ -23,9 +23,9 @@
 #include "TACSMaterialProperties.h"
 
 /*
-  This is the base class for the plane stress constitutive objects.
+  This is the base class for the solid constitutive objects.
 
-  All objects performing plane stress analysis should utilize this class.
+  All objects performing solid elastic analysis should utilize this class.
 */
 class TACSSolidConstitutive : public TACSConstitutive {
  public:

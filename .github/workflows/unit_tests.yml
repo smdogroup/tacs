@@ -1,4 +1,4 @@
-name: Build and unit tests
+name: Build, unit tests, and docs
 
 on:
   # Triggers the workflow on push or pull request events but only for the main branch
@@ -33,7 +33,7 @@ jobs:
             INTERFACE: 'complex_interface'
             EXAMPLES: 'complex'
 
-    name: TACS ${{ matrix.NAME }} Build/Test
+    name: TACS ${{ matrix.NAME }} Build/Test/Docs
 
     steps:
 
@@ -43,7 +43,7 @@ jobs:
         with:
           python-version: 3.8
 
-      - name: Install and run unit tests
+      - name: Install, run unit tests, build docs
         run: |
           echo "=============================================================";
           echo "Run #${GITHUB_RUN_NUMBER}";
@@ -81,6 +81,7 @@ jobs:
           make ${{ matrix.OPTIONAL }} TACS_DIR=$TACS_DIR METIS_INCLUDE=-I${CONDA_PREFIX}/include/ METIS_LIB="-L${CONDA_PREFIX}/lib/ -lmetis";
           cd $TACS_DIR;
           make ${{ matrix.INTERFACE }};
+          export PYTHONPATH=$PYTHONPATH:$TACS_DIR;
           cd $TACS_DIR/examples;
           make ${{ matrix.EXAMPLES }} TACS_DIR=$TACS_DIR METIS_INCLUDE=-I${CONDA_PREFIX}/include/ METIS_LIB="-L${CONDA_PREFIX}/lib/ -lmetis";
           cd $TACS_DIR;
@@ -88,3 +89,20 @@ jobs:
           echo "running tests";
           echo "=============================================================";
           testflo .;
+          echo "=============================================================";
+          echo "building docs";
+          echo "=============================================================";
+          cd $TACS_DIR/docs;
+          conda install -c conda-forge sphinx  -q -y;
+          conda install -c conda-forge breathe -q -y;
+          conda install -c conda-forge sphinxcontrib-programoutput -q -y;
+          make html BUILDDIR=.;
+          cd html;
+          zip -r ./tacs-docs.zip .;
+      - name: 'Upload docs'
+        if: ${{ matrix.name == 'Real' }}
+        uses: actions/upload-artifact@v2
+        with:
+          name: tacs-docs
+          path: docs/html/tacs-docs.zip
+          retention-days: 7

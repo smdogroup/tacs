@@ -1,5 +1,9 @@
 """
-pyModal_problem
+The main purpose of this class is to represent all relevant
+information for a modal analysis.
+
+.. note:: This class should be created using the
+    :meth:`pyTACS.createModalProblem <tacs.pytacs.pyTACS.createModalProblem>` method.
 """
 
 # =============================================================================
@@ -14,13 +18,39 @@ from .base import TACSProblem
 import tacs.TACS
 
 class ModalProblem(TACSProblem):
+    # python object name
+    objectName = 'ModalProblem'
+
+    # Default Option List
+    defaultOptions = {
+        'outputdir': [str, './', 'Output directory for F5 file writer.'],
+
+        # Solution Options
+        'L2Convergence': [float, 1e-12,
+                          'Absolute convergence tolerance for Eigenvalue solver based on l2 norm of residual.'],
+        'L2ConvergenceRel': [float, 1e-12,
+                             'Relative convergence tolerance for Eigenvalue solver based on l2 norm of residual.'],
+        'subSpaceSize': [int, 10, 'Subspace size for Krylov solver used by Eigenvalue solver.'],
+        'nRestarts': [int, 15, 'Max number of resets for Krylov solver used by Eigenvalue solver.'],
+
+        # Output Options
+        'writeSolution': [bool, True, 'Flag for suppressing all f5 file writing.'],
+        'numberSolutions': [bool, True, 'Flag for attaching solution counter index to f5 files.'],
+        'printTiming': [bool, False, 'Flag for printing out timing information for class procedures.'],
+        'printLevel': [int, 0, 'Print level for integraton solver.\n'
+                               '\t Accepts:\n'
+                               '\t\t   0 : No printing.\n'
+                               '\t\t   1 : Print major iterations.\n'
+                               '\t\t > 1 : Print major + minor iterations.'],
+
+    }
 
     def __init__(self, name, sigma, numEigs,
                  assembler, comm, outputViewer=None, meshLoader=None,
                  options={}):
         """
-        The main purpose of this class is to represent all relevant
-        information for a modal analysis.
+        NOTE: This class should not be initialized directly by the user.
+        Use pyTACS.createModalProblem instead.
 
         Parameters
         ----------
@@ -33,23 +63,21 @@ class ModalProblem(TACSProblem):
         numEigs : int
             Number of eigenvalues to solve for
 
-        assembler : assembler
+        assembler : TACS.Assembler
             Cython object responsible for creating and setting tacs objects used to solve problem
 
-        comm : MPI Intracomm
+        comm : mpi4py.MPI.Intracomm
             The comm object on which to create the pyTACS object.
 
-        outputViewer : TACSToFH5 object
+        outputViewer : TACS.TACSToFH5
             Cython object used to write out f5 files that can be converted and used for postprocessing.
 
-        meshLoader : pyMeshLoader object
+        meshLoader : pymeshloader.pyMeshLoader
             pyMeshLoader object used to create the assembler.
 
         options : dict
-            Dictionary holding problem-specific option parameters.
+            Dictionary holding problem-specific option parameters (case-insensitive).
         """
-        # python object name
-        self.objectName = 'ModalProblem'
 
         # Problem name
         self.name = name
@@ -61,32 +89,13 @@ class ModalProblem(TACSProblem):
         self.sigma = sigma
         self.numEigs = numEigs
 
-        # Default Option List
-        defOpts = {
-            'outputdir': [str, './'],
-
-            # Solution Options
-            'L2Convergence': [float, 1e-12],
-            'L2ConvergenceRel': [float, 1e-12],
-            'subSpaceSize': [int, 10],
-            'nRestarts': [int, 15],
-
-            # Output Options
-            'writeSolution': [bool, True],
-            'numberSolutions': [bool, True],
-            'printTiming': [bool, False],
-            'printLevel': [int, 0],
-
-        }
-
         # Process the default options which are added to self.options
         # under the 'defaults' key. Make sure the key are lower case
-        self.options = {}
-        def_keys = defOpts.keys()
+        def_keys = self.defaultOptions.keys()
         self.options['defaults'] = {}
         for key in def_keys:
-            self.options['defaults'][key.lower()] = defOpts[key]
-            self.options[key.lower()] = defOpts[key]
+            self.options['defaults'][key.lower()] = self.defaultOptions[key]
+            self.options[key.lower()] = self.defaultOptions[key]
 
         # Set user-defined options
         for key in options:
@@ -164,19 +173,19 @@ class ModalProblem(TACSProblem):
         """
         NOT SUPPORTED FOR THIS PROBLEM
         """
-        self.TACSWarning("addFunction method not supported for this class.")
+        self._TACSWarning("addFunction method not supported for this class.")
 
     def evalFunctions(self, funcs, evalFuncs=None, ignoreMissing=False):
         """
         NOT SUPPORTED FOR THIS PROBLEM
         """
-        self.TACSWarning("evalFunctions method not supported for this class.")
+        self._TACSWarning("evalFunctions method not supported for this class.")
 
     def evalFunctionsSens(self, funcsSens, evalFuncs=None):
         """
         NOT SUPPORTED FOR THIS PROBLEM
         """
-        self.TACSWarning("evalFunctionsSens method not supported for this class.")
+        self._TACSWarning("evalFunctionsSens method not supported for this class.")
 
     ####### Transient solver methods ########
 
@@ -213,16 +222,16 @@ class ModalProblem(TACSProblem):
         # If timing was was requested print it, if the solution is nonlinear
         # print this information automatically if prinititerations was requested.
         if self.getOption('printTiming'):
-            self.pp('+--------------------------------------------------+')
-            self.pp('|')
-            self.pp('| TACS Solve Times:')
-            self.pp('|')
-            self.pp('| %-30s: %10.3f sec' % ('TACS Setup Time', setupProblemTime - startTime))
-            self.pp('| %-30s: %10.3f sec' % ('TACS Solve Init Time', initSolveTime - setupProblemTime))
-            self.pp('| %-30s: %10.3f sec' % ('TACS Solve Time', solveTime - initSolveTime))
-            self.pp('|')
-            self.pp('| %-30s: %10.3f sec' % ('TACS Total Solution Time', solveTime - startTime))
-            self.pp('+--------------------------------------------------+')
+            self._pp('+--------------------------------------------------+')
+            self._pp('|')
+            self._pp('| TACS Solve Times:')
+            self._pp('|')
+            self._pp('| %-30s: %10.3f sec' % ('TACS Setup Time', setupProblemTime - startTime))
+            self._pp('| %-30s: %10.3f sec' % ('TACS Solve Init Time', initSolveTime - setupProblemTime))
+            self._pp('| %-30s: %10.3f sec' % ('TACS Solve Time', solveTime - initSolveTime))
+            self._pp('|')
+            self._pp('| %-30s: %10.3f sec' % ('TACS Total Solution Time', solveTime - startTime))
+            self._pp('+--------------------------------------------------+')
 
         return
 
@@ -235,7 +244,7 @@ class ModalProblem(TACSProblem):
          index : int
              Mode index to return solution for.
 
-         states : BVec or ndarray or None
+         states : TACS.Vec or numpy.ndarray or None
              Place eigenvector for mode into this array (optional).
 
          Returns
@@ -243,7 +252,7 @@ class ModalProblem(TACSProblem):
          eigVal: float
              Eigenvalue for mode corresponds to square of eigenfrequency (rad^2/s^2)
 
-         states : ndarray
+         states : numpy.ndarray
              Eigenvector for mode
          """
         eigVal, err = self.freqSolver.extractEigenvalue(index)

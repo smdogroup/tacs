@@ -1,5 +1,5 @@
-Installing TACS
-***************
+Install
+*******
 
 Prerequisites
 -------------
