@@ -76,16 +76,19 @@ Currently supported NASTRAN cards and their corresponding TACS-equivelant classe
     - PSHELL -> :class:`~tacs.constitutive.IsoShellConstitutive`
     - PCOMP -> :class:`~tacs.constitutive.CompositeShellConstitutive`
     - PSOLID -> :class:`~tacs.constitutive.SolidConstitutive`
+    - PBUSH -> :class:`~tacs.constitutive.DOFSpringConstitutive`
 
   Elements cards:
-    - CQUAD4 -> :class:`~tacs.elements.Quad4Shell`
-    - CTRIA3 -> :class:`~tacs.elements.Tri3Shell`
+    - CQUAD4, CQUADR -> :class:`~tacs.elements.Quad4Shell`
+    - CQUAD9 -> :class:`~tacs.elements.Quad9Shell`
+    - CTRIA3, CTRIAR -> :class:`~tacs.elements.Tri3Shell`
     - CHEXA -> :class:`~tacs.elements.Element3D` (:class:`~tacs.elements.LinearHexaBasis`, :class:`~tacs.elements.LinearElasticity3D`)
     - CTETRA -> :class:`~tacs.elements.Element3D` (:class:`~tacs.elements.LinearTetrahedralBasis`, :class:`~tacs.elements.LinearElasticity3D`)
     - RBE2 -> :class:`~tacs.elements.RBE2`
     - RBE3 -> :class:`~tacs.elements.RBE3`
     - CONM1 -> :class:`~tacs.elements.MassElement`
     - CONM2 -> :class:`~tacs.elements.MassElement`
+    - CBUSH -> :class:`~tacs.elements.SpringElement`
 
   Design Variable cards:
     - DESVAR
