@@ -568,7 +568,7 @@ cdef class ShellNaturalTransform(ShellTransform):
     This class uses shell "natural" coordinate system (i.e. local :math:`x` is aligned with element's first edge.)
     This is appropriate for isotropic shells, who's stiffness properties don't depend on orientation.
 
-    See :ref:`theory/shell_element:Natural transform` for more info.
+    .. seealso:: :ref:`theory/shell_element:Natural transform`
     """
     def __cinit__(self):
         self.ptr = new TACSShellNaturalTransform()
@@ -584,7 +584,7 @@ cdef class ShellRefAxisTransform(ShellTransform):
 
     .. warning:: The reference direction cannot be normal to the shell surface.
 
-    See :ref:`theory/shell_element:Reference axis projection transform` for more info.
+    .. seealso:: :ref:`theory/shell_element:Reference axis projection transform`
 
     Args:
         axis (array-like): Reference axis.
@@ -604,7 +604,7 @@ cdef class Quad4Shell(Element):
     This element employs a mixed interpolation of tensorial (strain)
     components (MITC) method to avoid shear locking problems.
 
-    See :ref:`theory/shell_element:Mixed Interpolation of Tensorial Components` for more info
+    .. seealso:: :ref:`theory/shell_element:Mixed Interpolation of Tensorial Components`
 
     .. note::
         varsPerNode: 6
@@ -629,7 +629,7 @@ cdef class Quad9Shell(Element):
     This element employs a mixed interpolation of tensorial (strain)
     components (MITC) method to avoid shear locking problems.
 
-    See :ref:`theory/shell_element:Mixed Interpolation of Tensorial Components` for more info
+    .. seealso:: :ref:`theory/shell_element:Mixed Interpolation of Tensorial Components`
 
     .. note::
         varsPerNode: 6
@@ -654,7 +654,7 @@ cdef class Quad16Shell(Element):
     This element employs a mixed interpolation of tensorial (strain)
     components (MITC) method to avoid shear locking problems.
 
-    See :ref:`theory/shell_element:Mixed Interpolation of Tensorial Components` for more info
+    .. seealso:: :ref:`theory/shell_element:Mixed Interpolation of Tensorial Components`
 
     .. note::
         varsPerNode: 6
@@ -679,7 +679,7 @@ cdef class Tri3Shell(Element):
     This element employs a mixed interpolation of tensorial (strain)
     components (MITC) method to avoid shear locking problems.
 
-    See :ref:`theory/shell_element:Mixed Interpolation of Tensorial Components` for more info
+    .. seealso:: :ref:`theory/shell_element:Mixed Interpolation of Tensorial Components`
 
     .. note::
         varsPerNode: 6
@@ -704,7 +704,7 @@ cdef class Quad4ThermalShell(Element):
     This element employs a mixed interpolation of tensorial (strain)
     components (MITC) method to avoid shear locking problems.
 
-    See :ref:`theory/shell_element:Mixed Interpolation of Tensorial Components` for more info
+    .. seealso:: :ref:`theory/shell_element:Mixed Interpolation of Tensorial Components`
 
     .. note::
         varsPerNode: 7
@@ -729,7 +729,7 @@ cdef class Quad9ThermalShell(Element):
     This element employs a mixed interpolation of tensorial (strain)
     components (MITC) method to avoid shear locking problems.
 
-    See :ref:`theory/shell_element:Mixed Interpolation of Tensorial Components` for more info
+    .. seealso:: :ref:`theory/shell_element:Mixed Interpolation of Tensorial Components`
 
     .. note::
         varsPerNode: 7
@@ -754,7 +754,7 @@ cdef class Quad16ThermalShell(Element):
     This element employs a mixed interpolation of tensorial (strain)
     components (MITC) method to avoid shear locking problems.
 
-    See :ref:`theory/shell_element:Mixed Interpolation of Tensorial Components` for more info
+    .. seealso:: :ref:`theory/shell_element:Mixed Interpolation of Tensorial Components`
 
     .. note::
         varsPerNode: 7
@@ -779,7 +779,7 @@ cdef class Tri3ThermalShell(Element):
     This element employs a mixed interpolation of tensorial (strain)
     components (MITC) method to avoid shear locking problems.
 
-    See :ref:`theory/shell_element:Mixed Interpolation of Tensorial Components` for more info
+    .. seealso:: :ref:`theory/shell_element:Mixed Interpolation of Tensorial Components`
 
     .. note::
         varsPerNode: 7
