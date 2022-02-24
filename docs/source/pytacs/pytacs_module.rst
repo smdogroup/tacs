@@ -63,7 +63,7 @@ Initializing without elemCallBack
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 If NASTRAN material property card definitions for every element exist in the BDF file,
 :class:`~tacs.pytacs.pyTACS` can be initialized without a :func:`~elemCallBack` function.
-This can be done by :meth:`pyTACS.initialize calling <tacs.pytacs.pyTACS.initialize>` without any arguments.
+This can be done by calling :meth:`pyTACS.initialize <tacs.pytacs.pyTACS.initialize>` without any arguments.
 
 Currently supported NASTRAN cards and their corresponding TACS-equivelant classes are listed below:
 
