@@ -95,7 +95,8 @@ jobs:
           make html BUILDDIR=.;
           cd html;
           zip -r ./tacs-docs.zip .;
-      - name: 'Upload Docs'
+      - name: 'Upload docs'
+        if: ${{ matrix.name == 'Real' }}
         uses: actions/upload-artifact@v2
         with:
           name: tacs-docs

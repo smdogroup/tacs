@@ -77,7 +77,7 @@ class pyTACS(BaseUI):
     }
 
     def __init__(self, fileName, comm=None, dvNum=0,
-                 scaleList=None, **kwargs):
+                 scaleList=None, options={}):
         """
 
         Parameters
@@ -98,6 +98,9 @@ class pyTACS(BaseUI):
             when dvNum is non zero, the scaleList must be same size
             as the number of design variables already added. i.e.
             len(scaleList) = dvNum
+
+        options : dict
+            Dictionary holding model-specific option parameters (case-insensitive).
         """
 
         startTime = time.time()
@@ -121,10 +124,10 @@ class pyTACS(BaseUI):
             self.options[key.lower()] = self.defaultOptions[key]
 
         # Process the user-supplied options
-        koptions = kwargs.pop('options', {})
-        kopt_keys = koptions.keys()
-        for key in kopt_keys:
-            self.setOption(key, koptions[key])
+        userOptions = options
+        optKeys = userOptions.keys()
+        for key in optKeys:
+            self.setOption(key, userOptions[key])
 
         importTime = time.time()
 
@@ -970,7 +973,7 @@ class pyTACS(BaseUI):
         name : str
             Name to assign problem.
         options : dict
-            Problem-specific options to pass to StaticProblem instance.
+            Problem-specific options to pass to StaticProblem instance (case-insensitive).
 
         Returns
         ----------
@@ -1005,7 +1008,7 @@ class pyTACS(BaseUI):
         numSteps : int
             Number of time steps for transient time integration
         options : dict
-            Problem-specific options to pass to TransientProblem instance.
+            Problem-specific options to pass to TransientProblem instance (case-insensitive).
 
         Returns
         ----------
@@ -1041,7 +1044,7 @@ class pyTACS(BaseUI):
         numEigs : int
             Number of eigenvalues to solve for.
         options : dict
-            Problem-specific options to pass to ModalProblem instance.
+            Problem-specific options to pass to ModalProblem instance (case-insensitive).
 
         Returns
         ----------

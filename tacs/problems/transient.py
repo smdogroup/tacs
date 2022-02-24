@@ -81,7 +81,7 @@ class TransientProblem(TACSProblem):
             pyMeshLoader object used to create the assembler.
 
         options : dict
-            Dictionary holding problem-specific option parameters.
+            Dictionary holding problem-specific option parameters (case-insensitive).
         """
 
         # Problem name
