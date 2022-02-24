@@ -24,7 +24,6 @@ Examples
    :maxdepth: 1
 
    examples/Example-Plate
-   examples/Example-CRM_Optimization
 
 References
 ==========

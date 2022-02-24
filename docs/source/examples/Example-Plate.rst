@@ -1,5 +1,6 @@
 Plate under static load
 ***********************
+.. note:: The script for this example can be found under the `examples/plate/` directory.
 
 This problem will show how to use some of pytacs more advanced load setting procedures.
 The nominal case is a 1m x 1m flat plate. The perimeter of the plate is fixed in
@@ -112,8 +113,9 @@ selecting node ID 481 (the node at the center of the plate).
   F = np.array([0.0, 0.0, 1e4, 0.0, 0.0, 0.0])
   staticProb.addLoadToNodes(481, F, nastranOrdering=True)
 
-Solve problem and evaluate functions, :meth:`StaticProblem.solve <tacs.problems.StaticProblem.solve>` and
-:meth:`StaticProblem.evalFunctions <tacs.problems.StaticProblem.evalFunctions>`.
+Now that our problem has been setup with loads and functions we can solve it and evaluate its functions using the
+:meth:`StaticProblem.solve <tacs.problems.StaticProblem.solve>` and
+:meth:`StaticProblem.evalFunctions <tacs.problems.StaticProblem.evalFunctions>` methods, respectively.
 
 .. code-block:: python
 
@@ -121,9 +123,31 @@ Solve problem and evaluate functions, :meth:`StaticProblem.solve <tacs.problems.
   problem.solve()
   problem.evalFunctions(funcs)
 
-Evaluate functions sensitivity :meth:`StaticProblem.evalFunctionsSens <tacs.problems.StaticProblem.evalFunctionsSens>`.
+To get the function sensitivity with respect to the design variables and node locations using the
+:meth:`StaticProblem.evalFunctionsSens <tacs.problems.StaticProblem.evalFunctionsSens>` method.
 
 .. code-block:: python
 
   funcsSens = {}
   problem.evalFunctionsSens(funcsSens)
+
+Finally, we can write out our solution to an f5 file format for further post-processing and visualization by using the
+:meth:`StaticProblem.writeSolution <tacs.problems.StaticProblem.writeSolution>` method.
+
+.. code-block:: python
+
+  problem.writeSolution()
+
+This produces a file called ``point_force_000.f5`` in our runscript directory. This file can be converted into a ``.vtk`` file
+(using ``f5tovtk``) for visualization in Paraview or a ``.plt`` (using ``f5totec``) for visualization in TecPlot using:
+
+.. code-block:: console
+
+  $ f5tovtk point_force_000.f5
+
+or
+
+.. code-block:: console
+
+  $ f5totec point_force_000.f5
+
