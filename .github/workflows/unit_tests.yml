@@ -33,6 +33,7 @@ jobs:
             OPTIONAL: 'complex'
             INTERFACE: 'complex_interface'
             EXAMPLES: 'complex'
+            PUBLISH_DOCS: false
 
     name: TACS ${{ matrix.NAME }} Build/Test/Docs
 
