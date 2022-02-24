@@ -1,4 +1,4 @@
-name: Build and unit tests
+name: Build, unit tests, and docs
 
 on:
   # Triggers the workflow on push or pull request events but only for the main branch

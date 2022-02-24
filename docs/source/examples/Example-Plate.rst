@@ -7,7 +7,7 @@ The nominal case is a 1m x 1m flat plate. The perimeter of the plate is fixed in
 all 6 degrees of freedom. The plate comprises 900 CQUAD4 elements.
 We consider a static case where a 10 kN point force is applied at the plate center.
 
-.. image:: plate.png
+.. image:: images/plate.png
   :width: 800
   :alt: Plate problem
 
