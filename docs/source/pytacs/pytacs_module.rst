@@ -1,42 +1,6 @@
-pyTACS Interface
-****************
-
-TACS has interfaces at the C++ level and the Python level. TACS is implemented in C++,
-so the interface through C++ contains all publicly accessible class member functions.
-The Python level interface wraps the most important classes and functions, of which the
-most frequently used are discussed below.
-
-
-Workflow
-========
-
-The most common usage of TACS is to evaluate the values and gradients of desired
-structural functions with respect to specified design variables. In general, this workflow
-proceeds as follows:
-
-#. Load in a finite element model of the desired structure (in the form of a NASTRAN-style
-   file) using an instance of the :class:`~tacs.pytacs.pyTACS` class.
-#. Setup tacs element objects for the structure using the
-   :meth:`pyTACS.initialize <tacs.pytacs.pyTACS.initialize>` method.
-#. Create an instance of the :ref:`problem<Problem classes>` class and add loads and functions of interest.
-#. Solve the :ref:`problem<Problem classes>` and evaluate the functions and their gradients with respect to the
-   design variables.
-
-These function values and gradients can then be passed to an optimizer (such as :class:`~paropt.ParOpt`)
-in order to minimize the value of a particular function subject to some constraints.
-Improved design variable values are iteratively computed by the optimizer and Step 4 is
-repeated until the optimization criteria are satisfied.
-
 pyTACS class
 ============
-pyTACS purposes:
-  - Setting up the low-level TACS objects
-  - Getting general model information (number of nodes, elements, component IDs, etc)
-  - creating TACS :ref:`problem<Problem classes>` classes used for analysis
-
 .. automodule:: tacs.pytacs
-  :members:
-  :inherited-members:
 
 Options
 -------
@@ -52,15 +16,15 @@ Initializing
 Before the class can be used to create problems, it must first be initialized by calling the
 :meth:`pyTACS.initialize <tacs.pytacs.pyTACS.initialize>` method. This method reads in all of the element cards
 from the BDF file and sets up the equivalent TACS element objects necessary for analysis. The
-class can be initialized through two ways: with or without `elemCallBack` function.
+class can be initialized through two ways: with or without ``elemCallBack`` function.
 
 Initializing with elemCallBack
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-:class:`~tacs.pytacs.pyTACS` can be initialized py passing a user-defined `elemCallBack` function to
+:class:`~tacs.pytacs.pyTACS` can be initialized py passing a user-defined ``elemCallBack`` function to
 :meth:`pyTACS.initialize <tacs.pytacs.pyTACS.initialize>`, that will be used to setup the correct
 TACS elements at runtime.
 
-The `elemCallBack` function should have the following structure:
+The ``elemCallBack`` function should have the following structure:
 
 .. function:: elemCallBack(dvNum, compID, compDescript, elemDescripts, globalDVs, **kwargs)
 
@@ -91,17 +55,17 @@ The `elemCallBack` function should have the following structure:
   :rtype: list[:ref:`Element<core/elements:Element classes>`]
 
 .. note::
-  Some elements should not be setup through the `elemCallBack` function (RBE2, RBE3, CONM1, CONM2, etc.).
+  Some elements should not be setup through the ``elemCallBack`` function (RBE2, RBE3, CONM1, CONM2, etc.).
   These elements are setup automatically by :class:`~tacs.pytacs.pyTACS`. As a general rule of thumb,
-  if the NASTRAN element card doesn't contain a property ID, it should not show up in the `elemCallBack` function.
+  if the NASTRAN element card doesn't contain a property ID, it should not show up in the ``elemCallBack`` function.
 
 Initializing without elemCallBack
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-If NASTRAN material property card definitions for every element exist the BDF file,
+If NASTRAN material property card definitions for every element exist in the BDF file,
 :class:`~tacs.pytacs.pyTACS` can be initialized without a :func:`~elemCallBack` function.
-This can be done by :meth:`pyTACS.initialize <tacs.pytacs.pyTACS.initialize>` calling without any arguments.
+This can be done by :meth:`pyTACS.initialize calling <tacs.pytacs.pyTACS.initialize>` without any arguments.
 
-The following NASTRAN cards are supported:
+Currently supported NASTRAN cards and their corresponding TACS-equivelant classes are listed below:
 
   Material cards:
     - MAT1 -> :class:`~tacs.constitutive.MaterialProperties`
@@ -117,6 +81,7 @@ The following NASTRAN cards are supported:
     - CQUAD4 -> :class:`~tacs.elements.Quad4Shell`
     - CTRIA3 -> :class:`~tacs.elements.Tri3Shell`
     - CHEXA -> :class:`~tacs.elements.Element3D` (:class:`~tacs.elements.LinearHexaBasis`, :class:`~tacs.elements.LinearElasticity3D`)
+    - CTETRA -> :class:`~tacs.elements.Element3D` (:class:`~tacs.elements.LinearTetrahedralBasis`, :class:`~tacs.elements.LinearElasticity3D`)
     - RBE2 -> :class:`~tacs.elements.RBE2`
     - RBE3 -> :class:`~tacs.elements.RBE3`
     - CONM1 -> :class:`~tacs.elements.MassElement`
@@ -127,8 +92,8 @@ The following NASTRAN cards are supported:
 
 .. note::
   Not every NASTRAN element card has one unique TACS element counterpart.
-  For example a user may want a `CQUAD4` card interpreted as :class:`~tacs.elements.Quad4Shell` in an elastic analysis,
-  but might also want it interpreted as a :class:`~tacs.elements.Quad4ThermalShell` in a thermoelastic analysis.
+  For example a user may want a `CQUAD4` card interpreted as :class:`~tacs.elements.Quad4Shell` in the case of an elastic analysis,
+  but might want it interpreted as a :class:`~tacs.elements.Quad4ThermalShell` in the case of a thermoelastic analysis.
   In the case where the default TACS elements above don't match the user's desired TACS element,
   the user is recommended to setup that element through an
   :ref:`elemCallBack procedure <pytacs/pytacs_module:Initializing with elemCallBack>` instead.
@@ -142,6 +107,10 @@ There are currently two supported formats for labels: ICEM-format and FEMAP-form
 
 ICEM component label format
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In the ICEM format, the elements are organized by property groups and
+the component label is appended as a string comment above the first element in every property group.
+The string comment should start with ``$       Shell element data for family`` followed by the component name.
+No spaces are allowed within the component name. An example of this format is provided below:
 
 .. code-block:: none
 
@@ -152,71 +121,29 @@ ICEM component label format
   CQUADR         4       1     733    3799    3800     734       1
   CQUADR         5       1     734    3800    3801     735       1
   CQUADR         6       1     735    3801    3802     736       1
+  $       Shell element data for family    WING_SPARS/LE_SPAR/SEG.01
+  CQUADR        97       2    3262    3882     782    3601       2
+  CQUADR        98       2     782    3882    3881     781       2
+  CQUADR        99       2    3875    3888    3885    3874       2
+  CQUADR       100       2    3885    3888    3887    3884       2
+  CQUADR       101       2    3892    3899    3896    3891       2
+  CQUADR       102       2    3896    3899    3898    3895       2
 
 FEMAP component label format
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In the FEMAP format, the component label is appended as a string comment above each property card.
+The string comment should start with ``$ Femap Property i :`` (where ``i`` is replaced with the property number the label is referencing)
+followed by the component name. No spaces are allowed within the component name. An example of this format is provided below:
 
 .. code-block:: none
 
   $ Femap Property 1 : Plate
   PSHELL         1       1      .1       1               1              0.
+  $ Femap Property 2 : Stiffener
+  PSHELL         2       1      .1       1               1              0.
 
-Problem classes
-===============
-
-StaticProblem
+API Reference
 -------------
-This class should be created using the
-:meth:`pyTACS.createStaticProblem <tacs.pytacs.pyTACS.createStaticProblem>` method.
-
-.. autoclass:: tacs.problems.StaticProblem
+.. autoclass:: tacs.pytacs.pyTACS
   :members:
   :inherited-members:
-
-Options
-^^^^^^^
-Options can be set for :class:`~tacs.problems.StaticProblem` at time of creation for the class in the
-:meth:`pyTACS.createStaticProblem <tacs.pytacs.pyTACS.createStaticProblem>` method or using the
-:meth:`StaticProblem.setOption <tacs.problems.StaticProblem.setOption>` method. Current option values for a class
-instance can be printed out using the :meth:`StaticProblem.printOption <tacs.problems.ModalProblem.printOptions>` method.
-The following options, their default values and descriptions are listed below:
-
-.. program-output:: python -c "from tacs.problems import StaticProblem; StaticProblem.printDefaultOptions()"
-
-TransientProblem
-----------------
-This class should be created using the
-:meth:`pyTACS.createTransientProblem <tacs.pytacs.pyTACS.createTransientProblem>` method.
-
-.. autoclass:: tacs.problems.TransientProblem
-  :members:
-  :inherited-members:
-
-Options
-^^^^^^^
-Options can be set for :class:`~tacs.problems.TransientProblem` at time of creation for the class in the
-:meth:`pyTACS.createStaticProblem <tacs.pytacs.pyTACS.createTransientProblem>` method or using the
-:meth:`TransientProblem.setOption <tacs.problems.TransientProblem.setOption>` method. Current option values for a class
-instance can be printed out using the :meth:`TransientProblem.printOption <tacs.problems.ModalProblem.printOptions>` method.
-The following options their default values and descriptions are listed below:
-
-.. program-output:: python -c "from tacs.problems import TransientProblem; TransientProblem.printDefaultOptions()"
-
-ModalProblem
-------------
-This class should be created using the
-:meth:`pyTACS.createModalProblem <tacs.pytacs.pyTACS.createModalProblem>` method.
-
-.. autoclass:: tacs.problems.ModalProblem
-  :members:
-  :inherited-members:
-
-Options
-^^^^^^^
-Options can be set for :class:`~tacs.problems.ModalProblem` at time of creation for the class in the
-:meth:`pyTACS.createStaticProblem <tacs.pytacs.pyTACS.createModalProblem>` method or using the
-:meth:`ModalProblem.setOption <tacs.problems.ModalProblem.setOption>` method. Current option values for a class
-instance can be printed out using the :meth:`ModalProblem.printOption <tacs.problems.ModalProblem.printOptions>` method.
-The following options, their default values and descriptions are listed below:
-
-.. program-output:: python -c "from tacs.problems import ModalProblem; ModalProblem.printDefaultOptions()"

@@ -1,5 +1,11 @@
 """
-pyStatic_problem
+The main purpose of this class is to represent all relevant
+information for a static analysis. This will include
+information defining the loading condition as well as various
+other pieces of information.
+
+.. note:: This class should be created using the
+    :meth:`pyTACS.createStaticProblem <tacs.pytacs.pyTACS.createStaticProblem>` method.
 """
 
 # =============================================================================
@@ -14,12 +20,6 @@ from .base import TACSProblem
 import tacs.TACS
 
 class StaticProblem(TACSProblem):
-    """
-    The main purpose of this class is to represent all relevant
-    information for a static analysis. This will include
-    information defining the loading condition as well as various
-    other pieces of information.
-    """
     # Class name
     objectName = 'StaticProblem'
 
@@ -223,8 +223,8 @@ class StaticProblem(TACSProblem):
             from the functions module in tacs.
 
         compIDs: list
-            List of compIDs to select. Alternative to selectCompIDs
-            arguments.
+            List of compIDs to select. Use pyTACS.selectCompIDs method
+            to determine this.
         """
         success = super().addFunction(funcName, funcHandle, compIDs, **kwargs)
         if success:

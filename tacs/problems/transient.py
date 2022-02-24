@@ -1,5 +1,11 @@
 """
-pyTransient_problem
+The main purpose of this class is to represent all relevant
+information for a transient analysis. This will include
+information defining the loading condition as well as various
+other pieces of information.
+
+.. note:: This class should be created using the
+    :meth:`pyTACS.createTransientProblem <tacs.pytacs.pyTACS.createTransientProblem>` method.
 """
 
 # =============================================================================
@@ -14,13 +20,6 @@ from .base import TACSProblem
 import tacs.TACS
 
 class TransientProblem(TACSProblem):
-    """
-    The main purpose of this class is to represent all relevant
-    information for a transient analysis. This will include
-    information defining the loading condition as well as various
-    other pieces of information.
-    """
-
     # python object name
     objectName = 'TransientProblem'
 
@@ -230,7 +229,7 @@ class TransientProblem(TACSProblem):
             Time step index to apply load to.
 
         compIDs : list[int] or int
-            The components with added loads. Use pyTACS selectCompIDs method
+            The components with added loads. Use pyTACS.selectCompIDs method
             to determine this.
 
         F : Numpy 1d or 2d array length (varsPerNodes) or (numNodeIDs, varsPerNodes)
@@ -350,7 +349,7 @@ class TransientProblem(TACSProblem):
             Time step index to apply load to.
 
         compIDs : list[int] or int
-            The components with added loads. Use pyTACS selectCompIDs method
+            The components with added loads. Use pyTACS.selectCompIDs method
             to determine this.
 
         tractions : numpy.ndarray length 1 or compIDs
@@ -408,7 +407,7 @@ class TransientProblem(TACSProblem):
             Time step index to apply load to.
 
         compIDs : list[int] or int
-            The components with added loads. Use pyTACS selectCompIDs method
+            The components with added loads. Use pyTACS.selectCompIDs method
             to determine this.
 
         pressures : Numpy array length 1 or compIDs

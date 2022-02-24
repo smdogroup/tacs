@@ -274,8 +274,7 @@ class TACSProblem(BaseUI):
             from the functions module in tacs.
 
         compIDs: list
-            List of compIDs to select. Alternative to selectCompIDs
-            arguments.
+            List of compIDs to select.
         """
 
         # We try to setup the function, if it fails it may not be implimented:
@@ -324,7 +323,7 @@ class TACSProblem(BaseUI):
             TACS BVec to add loads to.
 
         compIDs : list[int] or int
-            The components with added loads. Use pyTACS selectCompIDs method
+            The components with added loads. Use pyTACS.selectCompIDs method
             to determine this.
 
         F : numpy.ndarray 1d or 2d length (varsPerNodes) or (numNodeIDs, varsPerNodes)
@@ -557,7 +556,7 @@ class TACSProblem(BaseUI):
             AuxElements object to add loads to.
 
         compIDs : list[int] or int
-            The components with added loads. Use pyTACS selectCompIDs method
+            The components with added loads. Use pyTACS.selectCompIDs method
             to determine this.
 
         tractions : TACS AuxElements object
@@ -683,7 +682,7 @@ class TACSProblem(BaseUI):
             AuxElements object to add loads to.
 
         compIDs : list[int] or int
-            The components with added loads. Use pyTACS selectCompIDs method
+            The components with added loads. Use pyTACS.selectCompIDs method
             to determine this.
 
         pressures : Numpy array length 1 or compIDs

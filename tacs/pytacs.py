@@ -1,9 +1,9 @@
 #!/usr/bin/python
 """
-pytacs - The Python wrapper for the TACS solver
+pytacs - The Python wrapper for the TACS assembler
 
 This python interface is designed to provide a easier interface to the
-c-layer of TACS. User-supplied hooks allow for nearly complete
+C++ layer of TACS. User-supplied hooks allow for nearly complete
 customization of any or all parts of the problem setup. There are two
 main parts of this module: The first deals with setting up the TACS
 model including reading the mesh, setting elements and design variables.

@@ -13,11 +13,10 @@ TACS has been under continuous development since 2010 by the `Structural and Mul
 Getting Started
 ===============
 .. toctree::
-   :maxdepth: 1
+   :maxdepth: 2
 
    install
-   interface
-   pytacs/pytacs_module
+   interfaces
 
 Examples
 ========

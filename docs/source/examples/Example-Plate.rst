@@ -17,20 +17,27 @@ First, import required libraries:
   import numpy as np
   from tacs import functions, constitutive, elements, pyTACS
 
-This class will initialize the model in TACS with constitutive
-properties and design variables, then generate the ParOpt
-problem to be optimized.
-
-At minimum, :class:`~tacs.pytacs.pyTACS` requires a NASTRAN bdf defining nodes, elements, and boundary conditions.
-Including property cards in the bdf file is optional, as they can also be defined in the
-:meth:`pyTACS.initialize <tacs.pytacs.pyTACS.initialize>` method, as we'll see later in this example.
+First we must create the :class:`~tacs.pytacs.pyTACS` class.
+:class:`~tacs.pytacs.pyTACS` acts as an assembler for all of the TACS submodules.
+It's purpose is to read in mesh files, setup TACS element objects, and create TACS problems for analysis.
+To create a :class:`~tacs.pytacs.pyTACS` class, at minimum, a NASTRAN bdf defining nodes, elements, and boundary conditions is required.
 
 .. code-block:: python
 
   bdfFile = './plate.bdf'
   FEAAssembler = pyTACS(bdfFile)
 
-Callback function used to setup TACS element objects and design variables :func:`~tacs.pytacs.elemCallBack`.
+Next step, we must initialize pyTACS.
+pyTACS must always be initialized before an analysis can be conducted.
+During this step, TACS element objects and design variables are setup and assigned for use in analysis.
+There are two ways to call the :meth:`pyTACS.initialize <tacs.pytacs.pyTACS.initialize>` method.
+The first, involves defining a :func:`~tacs.pytacs.elemCallBack` function that tells pyTACS which TACS element to setup
+for each NASTRAN element card in the BDF and passing this function handle to the :meth:`pyTACS.initialize <tacs.pytacs.pyTACS.initialize>`.
+The second method, allows pyTACS to automatically initialize itself based on information from the BDF file,
+as long as property cards exist for every element. This is done by calling the
+:meth:`pyTACS.initialize <tacs.pytacs.pyTACS.initialize>` method with no arguments.
+For more information on the pyTACS initialization procedure, see :ref:`here<pytacs/pytacs_module:Initializing>`.
+For this example, we will take the first approach. Our :func:`~tacs.pytacs.elemCallBack` for this model is defined below.
 
 .. code-block:: python
 
@@ -43,13 +50,11 @@ Callback function used to setup TACS element objects and design variables :func:
 
       # Plate geometry
       tplate = 0.005    # 5 mm
-      tMin = 0.0001    # 0.1 mm
-      tMax = 0.05     # 5 cm
 
       # Set up material properties
       prop = constitutive.MaterialProperties(rho=rho, E=E, nu=nu, ys=ys)
       # Set up constitutive model
-      con = constitutive.IsoShellConstitutive(prop, t=tplate, tNum=dvNum, tlb=tMin, tub=tMax)
+      con = constitutive.IsoShellConstitutive(prop, t=tplate, tNum=dvNum)
       # Set the transform used to define shell stresses, None defaults to NaturalShellTransform
       transform = None
       # Set up tacs element for every entry in elemDescripts
@@ -62,30 +67,45 @@ Callback function used to setup TACS element objects and design variables :func:
               raise ValueError(f"Unexpected element of type {descript}.")
       return elemList
 
-See :class:`~tacs.constitutive.MaterialProperties`, :class:`~tacs.constitutive.IsoShellConstitutive`,
-and :class:`~tacs.elements.Quad4Shell` for more information.
+The callback function for this example is pretty simple.
+First, we define the :class:`~tacs.constitutive.MaterialProperties` for aluminum.
+We then use those properties and the plate thickness to setup a :class:`~tacs.constitutive.IsoShellConstitutive`
+for modeling the shell stiffness. We set the element transform type to ``None``. Finally, for every element card in
+``elemDescripts``, we pass back an appropriate initialized TACS element class. In this case, the only element type
+in the BDF are `CQUAD4`, so we'll always pass back an ``elemList`` with one entry, a :class:`~tacs.elements.Quad4Shell`.
 
-Set up constitutive objects and elements, :meth:`pyTACS.initialize <tacs.pytacs.pyTACS.initialize>`.
+Now that the callback function has been defined, we can pass it to :meth:`pyTACS.initialize <tacs.pytacs.pyTACS.initialize>`.
 
 .. code-block:: python
 
   FEAAssembler.initialize(elemCallBack)
 
-Create static problem :meth:`pyTACS.createStaticProblem <tacs.pytacs.pyTACS.createStaticProblem>`.
+The :class:`~tacs.pytacs.pyTACS` has been initialized, we can now use it to create a :class:`~tacs.problems.StaticProblem`.
+TACS :ref:`problem<pytacs/problems:Problem classes>` classes are generally responsible for setting loads, solving analyses, evaluating
+functions of interests, and computing gradients.
+To create our :class:`~tacs.problems.StaticProblem` we can use the
+:meth:`pyTACS.createStaticProblem <tacs.pytacs.pyTACS.createStaticProblem>` method.
+This method requires at minimum a name for our problem.
 
 .. code-block:: python
 
-  staticProb = FEAAssembler.createStaticProblem(name='point_force')
+  staticProb = FEAAssembler.createStaticProblem('point_force')
 
-Add functions using :meth:`StaticProblem.addFunction <tacs.problems.StaticProblem.addFunction>`,
-:class:`~tacs.functions.StructuralMass`, :class:`~tacs.functions.KSFailure`.
+Next, we'll add some functions of interest to our problem that we can evaluate after we've solved it.
+This can be accomplished using :meth:`StaticProblem.addFunction <tacs.problems.StaticProblem.addFunction>` method.
+This method takes a user-defined name and any uninitialized TACS :py:mod:`~tacs.functions` class as an input. Additional arguments necessary to
+setup the function class (minus the :class:`~TACS.Assembler`) can be passed as keyword arguments to :meth:`StaticProblem.addFunction <tacs.problems.StaticProblem.addFunction>`.
+For now let's add a function to evaluate the mass of the plate using :class:`~tacs.functions.StructuralMass`
+and a function to evaluate the maximum vonMises-based failure criteria using :class:`~tacs.functions.KSFailure`.
 
 .. code-block:: python
 
   staticProb.addFunction('mass', functions.StructuralMass)
   staticProb.addFunction('ks_vmfailure', functions.KSFailure, ksWeight=100.0)
 
-Add a point load to the center of the plate :meth:`StaticProblem.addLoadToNodes <tacs.problems.StaticProblem.addLoadToNodes>`.
+Now let's add our point load to the problem. We can do this by using the
+:meth:`StaticProblem.addLoadToNodes <tacs.problems.StaticProblem.addLoadToNodes>` method and
+selecting node ID 481 (the node at the center of the plate).
 
 .. code-block:: python
 

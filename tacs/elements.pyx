@@ -360,6 +360,9 @@ cdef class HeatConduction2D(ElementModel):
     """
     Model class for 2D heat conduction element.
 
+    .. note::
+        varsPerNode: 1
+
     Args:
         con (PlaneStressConstitutive): Material constitutive properties.
     """
@@ -371,6 +374,9 @@ cdef class LinearElasticity2D(ElementModel):
     """
     Model class for 2D linear elasticity element.
 
+    .. note::
+        varsPerNode: 2
+
     Args:
         con (PlaneStressConstitutive): Material constitutive properties.
     """
@@ -381,6 +387,9 @@ cdef class LinearElasticity2D(ElementModel):
 cdef class LinearThermoelasticity2D(ElementModel):
     """
     Model class for 2D linear thermoelasticity element.
+
+    .. note::
+        varsPerNode: 3
 
     Args:
         con (PlaneStressConstitutive): Material constitutive properties.
@@ -396,6 +405,9 @@ cdef class HeatConduction3D(ElementModel):
     """
     Model class for 3D heat conduction element.
 
+    .. note::
+        varsPerNode: 1
+
     Args:
         con (SolidConstitutive): Material constitutive properties.
     """
@@ -406,6 +418,9 @@ cdef class HeatConduction3D(ElementModel):
 cdef class LinearElasticity3D(ElementModel):
     """
     Model class for 3D linear elasticity element.
+
+    .. note::
+        varsPerNode: 3
 
     Args:
         con (SolidConstitutive): Material constitutive properties.
@@ -427,6 +442,9 @@ cdef class LinearElasticity3D(ElementModel):
 cdef class LinearThermoelasticity3D(ElementModel):
     """
     Model class for 3D linear thermoelasticity element.
+
+    .. note::
+        varsPerNode: 4
 
     Args:
         con (SolidConstitutive): Material constitutive properties.
@@ -451,6 +469,11 @@ cdef class Element2D(Element):
     """
     General element class appropriate for 2D analysis.
 
+    .. note::
+        varsPerNode: depends on ``ElementModel``
+
+        outputElement: ``TACS.PLANE_STRESS_ELEMENT``
+
     Args:
         model (ElementModel): Physics model for element.
         basis (ElementBasis): Basis for element.
@@ -462,6 +485,11 @@ cdef class Element2D(Element):
 cdef class Element3D(Element):
     """
     General element class appropriate for 3D analysis.
+
+    .. note::
+        varsPerNode: depends on ``ElementModel``
+
+        outputElement: ``TACS.SOLID_ELEMENT``
 
     Args:
         model (ElementModel): Physics model for element.
@@ -554,7 +582,7 @@ cdef class ShellRefAxisTransform(ShellTransform):
     (i.e. local :math:`x` is aligned with the reference axis.)
     This is appropriate for orthotropic and anisotropic shells, who's stiffness properties depend on orientation.
 
-    Note: the reference direction cannot be normal to the shell surface.
+    .. warning:: The reference direction cannot be normal to the shell surface.
 
     See :ref:`theory/shell_element:Reference axis projection transform` for more info.
 
@@ -578,9 +606,14 @@ cdef class Quad4Shell(Element):
 
     See :ref:`theory/shell_element:Mixed Interpolation of Tensorial Components` for more info
 
+    .. note::
+        varsPerNode: 6
+
+        outputElement: ``TACS.BEAM_OR_SHELL_ELEMENT``
+
     Args:
         transform (ShellTransform or None): Shell transform object.
-          `None` is equivalent to :class:`~ShellNaturalTransform`.
+          ``None`` is equivalent to :class:`~ShellNaturalTransform`.
         con (ShellConstitutive): Shell constitutive object.
     """
     def __cinit__(self, ShellTransform transform, ShellConstitutive con):
@@ -598,9 +631,14 @@ cdef class Quad9Shell(Element):
 
     See :ref:`theory/shell_element:Mixed Interpolation of Tensorial Components` for more info
 
+    .. note::
+        varsPerNode: 6
+
+        outputElement: ``TACS.BEAM_OR_SHELL_ELEMENT``
+
     Args:
         transform (ShellTransform or None): Shell transform object.
-          `None` is equivalent to :class:`~ShellNaturalTransform`.
+          ``None`` is equivalent to :class:`~ShellNaturalTransform`.
         con (ShellConstitutive): Shell constitutive object.
     """
     def __cinit__(self, ShellTransform transform, ShellConstitutive con):
@@ -618,9 +656,14 @@ cdef class Quad16Shell(Element):
 
     See :ref:`theory/shell_element:Mixed Interpolation of Tensorial Components` for more info
 
+    .. note::
+        varsPerNode: 6
+
+        outputElement: ``TACS.BEAM_OR_SHELL_ELEMENT``
+
     Args:
         transform (ShellTransform or None): Shell transform object.
-          `None` is equivalent to :class:`~ShellNaturalTransform`.
+          ``None`` is equivalent to :class:`~ShellNaturalTransform`.
         con (ShellConstitutive): Shell constitutive object.
     """
     def __cinit__(self, ShellTransform transform, ShellConstitutive con):
@@ -638,9 +681,14 @@ cdef class Tri3Shell(Element):
 
     See :ref:`theory/shell_element:Mixed Interpolation of Tensorial Components` for more info
 
+    .. note::
+        varsPerNode: 6
+
+        outputElement: ``TACS.BEAM_OR_SHELL_ELEMENT``
+
     Args:
         transform (ShellTransform or None): Shell transform object.
-          `None` is equivalent to :class:`~ShellNaturalTransform`.
+          ``None`` is equivalent to :class:`~ShellNaturalTransform`.
         con (ShellConstitutive): Shell constitutive object.
     """
     def __cinit__(self, ShellTransform transform, ShellConstitutive con):
@@ -658,9 +706,14 @@ cdef class Quad4ThermalShell(Element):
 
     See :ref:`theory/shell_element:Mixed Interpolation of Tensorial Components` for more info
 
+    .. note::
+        varsPerNode: 7
+
+        outputElement: ``TACS.BEAM_OR_SHELL_ELEMENT``
+
     Args:
         transform (ShellTransform or None): Shell transform object.
-          `None` is equivalent to :class:`~ShellNaturalTransform`.
+          ``None`` is equivalent to :class:`~ShellNaturalTransform`.
         con (ShellConstitutive): Shell constitutive object.
     """
     def __cinit__(self, ShellTransform transform, ShellConstitutive con):
@@ -678,9 +731,14 @@ cdef class Quad9ThermalShell(Element):
 
     See :ref:`theory/shell_element:Mixed Interpolation of Tensorial Components` for more info
 
+    .. note::
+        varsPerNode: 7
+
+        outputElement: ``TACS.BEAM_OR_SHELL_ELEMENT``
+
     Args:
         transform (ShellTransform or None): Shell transform object.
-          `None` is equivalent to :class:`~ShellNaturalTransform`.
+          ``None`` is equivalent to :class:`~ShellNaturalTransform`.
         con (ShellConstitutive): Shell constitutive object.
     """
     def __cinit__(self, ShellTransform transform, ShellConstitutive con):
@@ -698,9 +756,14 @@ cdef class Quad16ThermalShell(Element):
 
     See :ref:`theory/shell_element:Mixed Interpolation of Tensorial Components` for more info
 
+    .. note::
+        varsPerNode: 7
+
+        outputElement: ``TACS.BEAM_OR_SHELL_ELEMENT``
+
     Args:
         transform (ShellTransform or None): Shell transform object.
-          `None` is equivalent to :class:`~ShellNaturalTransform`.
+          ``None`` is equivalent to :class:`~ShellNaturalTransform`.
         con (ShellConstitutive): Shell constitutive object.
     """
     def __cinit__(self, ShellTransform transform, ShellConstitutive con):
@@ -718,9 +781,14 @@ cdef class Tri3ThermalShell(Element):
 
     See :ref:`theory/shell_element:Mixed Interpolation of Tensorial Components` for more info
 
+    .. note::
+        varsPerNode: 7
+
+        outputElement: ``TACS.BEAM_OR_SHELL_ELEMENT``
+
     Args:
         transform (ShellTransform or None): Shell transform object.
-          `None` is equivalent to :class:`~ShellNaturalTransform`.
+          ``None`` is equivalent to :class:`~ShellNaturalTransform`.
         con (ShellConstitutive): Shell constitutive object.
     """
     def __cinit__(self, ShellTransform transform, ShellConstitutive con):
@@ -757,8 +825,8 @@ cdef class SpringRefAxisTransform(SpringTransform):
     The local `x` always aligns with the element. The local `z` is given by the cross product of `x` and `axis`.
     The local `y` is given by the cross product of local `z` and `x`.
 
-    Note: not appropriate for elements with coincident nodes. Use :class:`~SpringIdentityTransform` or
-    :class:`~SpringRefFrameTransform`.
+    .. warning:: Not appropriate for elements with coincident nodes. Use :class:`~SpringIdentityTransform` or
+      :class:`~SpringRefFrameTransform`.
 
     Args:
         axis (array-like): Reference axis.
@@ -795,9 +863,14 @@ cdef class SpringElement(Element):
     """
     A 6 DOF spring element.
 
+    .. note::
+        varsPerNode: 6
+
+        outputElement: ``TACS.SPRING_ELEMENT``
+
     Args:
         transform (SpringTransform or None): Spring transform object.
-          `None` is equivalent to :class:`~SpringIdentityTransform`.
+          ``None`` is equivalent to :class:`~SpringIdentityTransform`.
         con (GeneralSpringConstitutive): Spring constitutive object.
     """
     def __cinit__(self, SpringTransform transform, GeneralSpringConstitutive con):
@@ -858,7 +931,10 @@ cdef class RBE2(Element):
     a single grid point. The dependent degrees-of-freedom at the other grid
     points.
 
-    Assumes 6 DOFs.
+    .. note::
+        varsPerNode: 6
+
+        outputElement: ``TACS.RIGID_ELEMENT``
 
     Args:
         num_nodes (int): Total number of nodes associated with the element.
@@ -892,7 +968,10 @@ cdef class RBE3(Element):
     to a set of independent degrees of freedom based on the RBE3
     geometry and local weight factors.
 
-    Assumes 6 DOFs.
+    .. note::
+        varsPerNode: 6
+
+        outputElement: ``TACS.RIGID_ELEMENT``
 
     Args:
         num_nodes (int): Total number of nodes associated with the element.
@@ -930,6 +1009,11 @@ cdef class RBE3(Element):
 cdef class MassElement(Element):
     """
     A 6 DOF point mass element.
+
+    .. note::
+        varsPerNode: 6
+
+        outputElement: ``TACS.MASS_ELEMENT``
 
     Args:
         con (GeneralMassConstitutive): Point mass constitutive object.

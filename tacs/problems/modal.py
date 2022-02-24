@@ -1,5 +1,9 @@
 """
-pyModal_problem
+The main purpose of this class is to represent all relevant
+information for a modal analysis.
+
+.. note:: This class should be created using the
+    :meth:`pyTACS.createModalProblem <tacs.pytacs.pyTACS.createModalProblem>` method.
 """
 
 # =============================================================================
@@ -14,10 +18,6 @@ from .base import TACSProblem
 import tacs.TACS
 
 class ModalProblem(TACSProblem):
-    """
-    The main purpose of this class is to represent all relevant
-    information for a modal analysis.
-    """
     # python object name
     objectName = 'ModalProblem'
 

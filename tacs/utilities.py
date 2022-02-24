@@ -64,7 +64,7 @@ class BaseUI:
         if hasattr(self, 'name'):
             header += f" '{self.name}'"
         self._pp("+----------------------------------------+")
-        self._pp("|" + f"{header} Options:".center(40) + "|")
+        self._pp("|" + f"{header} options:".center(40) + "|")
         self._pp("+----------------------------------------+")
         for name in self.options:
             if name != 'defaults':
@@ -79,11 +79,11 @@ class BaseUI:
     def printDefaultOptions(cls):
         """
         Prints a nicely formatted dictionary of all the default solver
-        options to the stdout on the root processor
+        options to the stdout
         """
         header = cls.objectName
         print("+----------------------------------------+")
-        print("|" + f"{header} Options:".center(40) + "|")
+        print("|" + f"{header} default options:".center(40) + "|")
         print("+----------------------------------------+")
         if hasattr(cls, 'defaultOptions'):
             for name in cls.defaultOptions:

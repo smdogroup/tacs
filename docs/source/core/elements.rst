@@ -1,7 +1,7 @@
 elements module
 ***************
 
-The `tacs.elements` module contains classes contains the full library elements supported by TACS.
+The `tacs.elements` module contains the full library elements supported by TACS.
 
 Basis classes
 -------------
@@ -28,7 +28,8 @@ The following :class:`~TACS.ElementModel` classes are available in TACS:
 
 Transform classes
 -----------------
-Some :class:`~TACS.Element` classes require transform classes in their setup procedure. The following transform classes are available in TACS:
+Some :class:`~TACS.Element` classes require transform classes in their setup procedure.
+The following transform classes are available in TACS:
 
 .. automodule:: tacs.elements
   :members: ShellNaturalTransform, ShellRefAxisTransform,
