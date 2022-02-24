@@ -92,4 +92,12 @@ jobs:
           conda install -c conda-forge sphinx  -q -y;
           conda install -c conda-forge breathe -q -y;
           conda install -c conda-forge sphinxcontrib-programoutput -q -y;
-          make html;
+          make html BUILDDIR=.;
+          cd html;
+          zip -r ./tacs-docs.zip .;
+      - name: 'Upload Docs'
+        uses: actions/upload-artifact@v2
+        with:
+          name: tacs-docs
+          path: docs/html/tacs-docs.zip
+          retention-days: 7
