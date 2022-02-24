@@ -42,6 +42,12 @@ cdef extern from "mpi-compat.h":
     pass
 
 cdef class StructuralMass(Function):
+    """
+    Evaluates the structural mass of the elements.
+
+    Args:
+        assembler (Assembler): TACS Assembler object that will evaluating this function.
+    """
     def __cinit__(self, Assembler assembler):
         """
         Wrap the function StructuralMass
@@ -51,6 +57,16 @@ cdef class StructuralMass(Function):
         return
 
 cdef class Compliance(Function):
+    """
+    Evaluate the compliance of the structure.
+
+    This evaluates the compliance within the structure based on an
+    integration of the strain energy in each element, not by the product
+    of the load vector with the displacement.
+
+    Args:
+        assembler (Assembler): TACS Assembler object that will evaluating this function.
+    """
     cdef TACSCompliance *cptr
     def __cinit__(self, Assembler assembler):
         """
@@ -69,6 +85,13 @@ cdef class Compliance(Function):
         return
 
 cdef class AverageTemperature(Function):
+    """
+    Evaluate the spatial average of the temperature of the model.
+
+    Args:
+        assembler (Assembler): TACS Assembler object that will evaluating this function.
+        volume (float, optional): Normalization factor used in averaging process. Defaults to 1.0.
+    """
     def __cinit__(self, Assembler assembler, **kwargs):
         """
         Wrap the function AverageTemperature
@@ -83,6 +106,20 @@ cdef class AverageTemperature(Function):
         return
 
 cdef class KSTemperature(Function):
+    """
+    The following class implements the methods necessary
+    to calculate the Kreisselmeier–Steinhauser (KS) aggregation
+    of temperature over the domain of some finite element model.
+    The KS aggregation gives a smooth and differentiable approximation to the
+    maximum value.
+
+    Args:
+        assembler (Assembler): TACS Assembler object that will evaluating this function.
+        ksWeight (float, optional): The ks weight used in the calculation (keyword argument). Defaults to 80.0.
+        ftype (str, optional): The type of KS aggregation to be used (keyword argument).
+            Accepted inputs are: 'discrete', 'continuous', 'pnorm-discrete', and 'pnorm-continuous'.
+            Case-insensitive, defaults to 'continuous'.
+    """
     cdef TACSKSTemperature *kstptr
     def __cinit__(self, Assembler assembler, **kwargs):
         """
@@ -100,9 +137,17 @@ cdef class KSTemperature(Function):
         self.kstptr = new TACSKSTemperature(assembler.ptr, ksWeight, alpha)
         self.ptr = self.kstptr
         self.ptr.incref()
+
+        if 'ftype' in kwargs:
+            ftype = kwargs['ftype']
+        else:
+            ftype = 'continuous'
+        self.setKSTemperatureType(ftype)
+
         return
 
     def setKSTemperatureType(self, ftype='discrete'):
+        ftype = ftype.lower()
         if ftype == 'discrete':
             self.kstptr.setKSTemperatureType(KS_TEMPERATURE_DISCRETE)
         elif ftype == 'continuous':
@@ -120,6 +165,30 @@ cdef class KSTemperature(Function):
         self.kstptr.setParameter(ksparam)
 
 cdef class KSFailure(Function):
+    """
+    The following class implements the methods necessary to calculate
+    the Kreisselmeier–Steinhauser (KS) aggregation of either a stress
+    or strain failure criteria over the domain of some finite element model.
+    The KS aggregation gives a smooth and differentiable approximation to the
+    maximum value.
+
+    The failure load is calculated using the strain-based failure
+    criteria from the base :class:`~TACS.Constitutive` class which requires linear and
+    constant components of the strain to determine the failure load.
+
+    For most elements, unity is generally considered to be the threshold value for failure.
+    Meaning if this function returns a value > 1.0, at least one of the elements has exceeded
+    its strength criteria. While values < 1.0 implies all elements are within their strength criteria.
+
+    Args:
+        assembler (Assembler): TACS Assembler object that will evaluating this function.
+        ksWeight (float, optional): The ks weight used in the calculation (keyword argument). Defaults to 80.0.
+        safetyFactor (float, optional):
+            The safety factor to apply to loads before computing the failure (keyword argument). Defaults to 1.0.
+        ftype (str, optional): The type of KS aggregation to be used (keyword argument).
+            Accepted inputs are: 'discrete', 'continuous', 'pnorm-discrete', and 'pnorm-continuous'.
+            Case-insensitive, defaults to 'continuous'.
+    """
     cdef TACSKSFailure *ksptr
     def __cinit__(self, Assembler assembler, **kwargs):
         """
@@ -141,9 +210,17 @@ cdef class KSFailure(Function):
         self.ksptr = new TACSKSFailure(assembler.ptr, ksWeight, alpha, safetyFactor)
         self.ptr = self.ksptr
         self.ptr.incref()
+
+        if 'ftype' in kwargs:
+            ftype = kwargs['ftype']
+        else:
+            ftype = 'continuous'
+        self.setKSFailureType(ftype)
+
         return
 
     def setKSFailureType(self, ftype='discrete'):
+        ftype = ftype.lower()
         if ftype == 'discrete':
             self.ksptr.setKSFailureType(KS_FAILURE_DISCRETE)
         elif ftype == 'continuous':
@@ -158,6 +235,23 @@ cdef class KSFailure(Function):
         self.ksptr.setParameter(ksparam)
 
 cdef class KSDisplacement(Function):
+    """
+    The following class implements the methods to calculate the
+    Kreisselmeier–Steinhauser (KS) aggregation of the displacement in
+    a particular direction over the domain of some finite element model.
+    The KS aggregation gives a smooth and differentiable approximation to the
+    maximum value.
+
+    Args:
+        assembler (Assembler): TACS Assembler object that will evaluating this function.
+        ksWeight (float, optional): The ks weight used in the calculation (keyword argument). Defaults to 80.0.
+        direction (array-like[double], optional):
+          3d vector specifying which direction to project displacements in for KS aggregation (keyword argument).
+          Defaults to [0.0, 0.0, 0.0].
+        ftype (str, optional): The type of KS aggregation to be used (keyword argument).
+          Accepted inputs are: 'discrete', 'continuous', 'pnorm-discrete', and 'pnorm-continuous'.
+          Case-insensitive, defaults to 'continuous'.
+    """
     cdef TACSKSDisplacement *ksptr
     def __cinit__(self, Assembler assembler, **kwargs):
         """
@@ -166,6 +260,7 @@ cdef class KSDisplacement(Function):
         cdef double ksWeight = 80.0
         cdef double alpha = 1.0
         cdef double d[3]
+        d[0] = d[1] = d[2] = 0.0
 
         if 'ksWeight' in kwargs:
             ksWeight = kwargs['ksWeight']
@@ -180,15 +275,21 @@ cdef class KSDisplacement(Function):
                 dim = min(3, len(dir))
                 for i in range(dim):
                     d[i] = dir[i]
-            else:
-                d[0] = d[1] = d[2] = 0.0
 
         self.ksptr = new TACSKSDisplacement(assembler.ptr, ksWeight, d, alpha)
         self.ptr = self.ksptr
         self.ptr.incref()
+
+        if 'ftype' in kwargs:
+            ftype = kwargs['ftype']
+        else:
+            ftype = 'continuous'
+        self.setKSDisplacementType(ftype)
+
         return
 
     def setKSDisplacementType(self, ftype='discrete'):
+        ftype = ftype.lower()
         if ftype == 'discrete':
             self.ksptr.setKSDisplacementType(KS_DISPLACEMENT_DISCRETE)
         elif ftype == 'continuous':

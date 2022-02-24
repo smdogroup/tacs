@@ -13,10 +13,9 @@
   A rigid body connected to an arbitrary number of grid points.
   The independent degrees-of-freedom are the six components of motion at
   a single grid point. The dependent degrees-of-freedom at the other grid
-  points all have the same user-selected component numbers. This element
-  is implemented using a Lagrange multiplier method based on RBE2 constraints.
-  Using this method, the entries of the stiffness matrix become
-  the coefficients of the constraint matrix:
+  points. This element is implemented using a Lagrange multiplier method
+  based on RBE2 constraints. Using this method, the entries of the
+  stiffness matrix become the coefficients of the constraint matrix:
 
                  - -     -      -      -    -
                 | f |   | 0  B^T |    |  u   |

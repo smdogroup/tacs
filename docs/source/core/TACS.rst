@@ -1,42 +1,31 @@
-TACS Interface
-**************
+Direct
+******
 
-TACS has interfaces at the C++ level and the Python level. TACS is implemented in C++,
-so the interface through C++ contains all publicly accessible class member functions.
-The Python level interface wraps the most important classes and functions, of which the
-most frequently used are discussed below.
-
+In the direct Python interface for TACS, the user will be responsible for setting up and bookkeeping of most TACS objects.
+This includes objects like: the MeshLoader, Assembler, state vectors, FE matrices, etc.
+This approach allows for more visibility into the workings of the C++ source code, but can be daunting for new users.
+For a more simplified user interface where most of this setup and bookkeeping has been automated for the user, see
+:ref:`pytacs/pytacs:pyTACS`.
 
 Workflow
 --------
 
 The most common usage of TACS is to evaluate the values and gradients of desired
-structural functions with respect to specified design variables. In general, this workflow
+structural functions with respect to specified design variables. Using the direct interface, this workflow
 proceeds as follows:
 
 #. Load in a finite element model of the desired structure (in the form of a NASTRAN-style
    file) using an instance of the :class:`~TACS.MeshLoader` class.
 #. For each component of the loaded model, generate an element with the desired
-   cosntitutive properties and design variables.
+   constitutive properties and design variables.
 #. Create an instance of the :class:`~TACS.Assembler` class and apply boundary conditions.
 #. Solve the system and evaluate the functions and their gradients with respect to the
    design variables.
 
-These function values and gradients can then be passed to an optimizer (such as ParOpt)
+These function values and gradients can then be passed to an optimizer (such as :mod:`~paropt.ParOpt`)
 in order to minimize the value of a particular function subject to some constraints.
 Improved design variable values are iteratively computed by the optimizer and Step 4 is
 repeated until the optimization criteria are satisfied.
-
-
-Functions
----------
-
-There are several structural functions built into TACS. These functions and their gradients with respect to design variables can be evaluated by the :class:`~TACS.Assembler` object. These functions inherit from the :class:`~TACS.Function` class. The most commonly used of these include:
-
-* StructuralMass
-* KSFailure (approximate maximum ratio of the von Mises stress to the design stress)
-* Compliance
-
 
 Assembler
 ---------

@@ -41,6 +41,7 @@ release = u''
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = ['breathe',
+  'sphinxcontrib.programoutput',
   'sphinx.ext.doctest',
   'sphinx.ext.intersphinx',
   'sphinx.ext.todo',
@@ -49,7 +50,8 @@ extensions = ['breathe',
   'sphinx.ext.napoleon',
   'sphinx.ext.viewcode',
   'sphinx.ext.githubpages',
-  'sphinx.ext.mathjax']
+  'sphinx.ext.mathjax',
+  'sphinx.ext.autosectionlabel']
 
 # Breathe configuration
 breathe_projects = {'tacs': '../xml'}
@@ -82,6 +84,7 @@ exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 # The name of the Pygments (syntax highlighting) style to use.
 pygments_style = 'sphinx'
 
+autosectionlabel_prefix_document = True
 
 # -- Options for HTML output -------------------------------------------------
 
@@ -195,7 +198,11 @@ epub_exclude_files = ['search.html']
 # -- Options for intersphinx extension ---------------------------------------
 
 # Example configuration for intersphinx: refer to the Python standard library.
-intersphinx_mapping = {'https://docs.python.org/': None}
+intersphinx_mapping = {'https://docs.python.org/': None,
+                       'numpy [stable]': ('https://numpy.org/doc/stable/', None),
+                       'pynastran [latest]': ('https://pynastran-git.readthedocs.io/en/latest/', None),
+                       'mpi4py [stable]': ('https://mpi4py.readthedocs.io/en/stable/', None),
+                       'paropt': ('https://smdogroup.github.io/paropt/' ,None)}
 
 #-----------------------------------------------------------------------------
 # Document both class docstring and init docstring
