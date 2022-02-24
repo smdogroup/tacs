@@ -1,4 +1,4 @@
-[![Build, unit tests, and docs](https://github.com/smdogroup/tacs/actions/workflows/unit_tests_and_docs.yml/badge.svg)](https://github.com/smdogroup/tacs/actions/workflows/unit_tests_and_docs.yml)
+[![Build, unit tests, and docs](https://github.com/smdogroup/tacs/actions/workflows/unit_tests.yml/badge.svg)](https://github.com/smdogroup/tacs/actions/workflows/unit_tests.yml)
 
 # TACS Overview #
 
