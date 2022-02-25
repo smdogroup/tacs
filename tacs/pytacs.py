@@ -426,22 +426,32 @@ class pyTACS(BaseUI):
         """
         return self.bdfInfo
 
-    def getCompNames(self, compIDs):
+    def getCompNames(self, compIDs=None):
         """
         Return a list of component descriptions for the given component
         IDs. compIDs should come from a call to selectCompIDs
 
         Parameters
         ----------
-        compIDs : list
-            List of integers of the compIDs numbers
+        compIDs : int or list[int] or None
+            List of integers of the compIDs numbers. If None, returns names for all components.
+            Defaults to None.
 
         Returns
         -------
         compDescript : list
             List of strings of the names of the corresponding compIDs
         """
-        compIDs = self._flatten(compIDs)
+        # Return all component names
+        if compIDs is None:
+            return copy.deepcopy(self.compDescripts)
+        # Convert to list
+        elif isinstance(compIDs, int):
+            compIDs = [compIDs]
+        # Make sure list is flat
+        else:
+            compIDs = self._flatten(compIDs)
+
         compDescripts = []
         for i in range(len(compIDs)):
             compDescripts.append(self.compDescripts[compIDs[i]])
@@ -500,10 +510,6 @@ class pyTACS(BaseUI):
         self.assembler = self.meshLoader.createTACSAssembler(self.varsPerNode)
 
         self._createOutputViewer()
-
-        # Initial design variable vec if necessary
-        self.dvs0 = self.assembler.createDesignVec()
-        self.assembler.getDesignVars(self.dvs0)
 
         # Store original node locations read in from bdf file
         self.Xpts0 = self.assembler.createNodeVec()
@@ -780,8 +786,7 @@ class pyTACS(BaseUI):
 
         """
         if self.assembler is None:
-            raise self._TACSError("TACS assembler has not been created. "
-                        "Assembler must created first by running 'initalize' method.")
+            raise self._initializeError()
 
         return self.x0.getArray().copy()
 
@@ -803,8 +808,8 @@ class pyTACS(BaseUI):
             Distributed design variable vector
         """
         if self.assembler is None:
-            raise self._TACSError("TACS assembler has not been created. "
-                        "Assembler must created first by running 'initalize' method.")
+            raise self._initializeError()
+
         xVec = self.assembler.createDesignVec()
         if asBVec:
             return xVec
@@ -816,8 +821,7 @@ class pyTACS(BaseUI):
         Return the number of design variables on this processor.
         """
         if self.assembler is None:
-            raise self._TACSError("TACS assembler has not been created. "
-                        "Assembler must created first by running 'initalize' method.")
+            raise self._initializeError()
 
         return self.x0.getSize()
 
@@ -826,8 +830,7 @@ class pyTACS(BaseUI):
         Return the number of design variables across all processors.
         """
         if self.assembler is None:
-            raise self._TACSError("TACS assembler has not been created. "
-                        "Assembler must created first by running 'initalize' method.")
+            raise self._initializeError()
 
         return self.dvNum
 
@@ -838,12 +841,11 @@ class pyTACS(BaseUI):
         Returns
         -------
         coords : array
-            Structural coordinate in array of size (N, 3) where N is
+            Structural coordinate in array of size (N * 3) where N is
             the number of structural nodes on this processor.
         """
         if self.assembler is None:
-            raise self._TACSError("TACS assembler has not been created. "
-                        "Assembler must created first by running 'initalize' method.")
+            raise self._initializeError()
 
         return self.Xpts0.getArray().copy()
 
@@ -865,8 +867,8 @@ class pyTACS(BaseUI):
             Distributed node coordinate vector
         """
         if self.assembler is None:
-            raise self._TACSError("TACS assembler has not been created. "
-                                 "Assembler must created first by running 'initalize' method.")
+            raise self._initializeError()
+
         xptVec = self.assembler.createNodeVec()
         if asBVec:
             return xptVec
@@ -878,8 +880,7 @@ class pyTACS(BaseUI):
         Get the number of nodes owned by this processor.
         """
         if self.assembler is None:
-            raise self._TACSError("TACS assembler has not been created. "
-                        "Assembler must created first by running 'initalize' method.")
+            raise self._initializeError()
 
         return self.assembler.getNumOwnedNodes()
 
@@ -888,8 +889,7 @@ class pyTACS(BaseUI):
         Get number of multiplier nodes owned by this processor.
         """
         if self.assembler is None:
-            raise self._TACSError("TACS assembler has not been created. "
-                                 "Assembler must created first by running 'initalize' method.")
+            raise self._initializeError()
         return len(self.meshLoader.getLocalMultiplierNodeIDs())
 
     def getLocalMultiplierNodeIDs(self):
@@ -897,8 +897,7 @@ class pyTACS(BaseUI):
         Get the tacs indices of multiplier nodes used to hold lagrange multipliers on this processor.
         """
         if self.assembler is None:
-            raise self._TACSError("TACS assembler has not been created. "
-                        "Assembler must created first by running 'initalize' method.")
+            raise self._initializeError()
         return self.meshLoader.getLocalMultiplierNodeIDs()
 
     def createVec(self, asBVec=False):
@@ -919,8 +918,8 @@ class pyTACS(BaseUI):
             Distributed state variable vector
         """
         if self.assembler is None:
-            raise self._TACSError("TACS assembler has not been created. "
-                                 "Assembler must created first by running 'initalize' method.")
+            raise self._initializeError()
+
         vars = self.assembler.createVec()
         if asBVec:
             return vars
@@ -932,8 +931,7 @@ class pyTACS(BaseUI):
         Get the number of variables per node for the model.
         """
         if self.assembler is None:
-            raise self._TACSError("TACS assembler has not been created. "
-                        "Assembler must created first by running 'initalize' method.")
+            raise self._initializeError()
 
         return self.assembler.getVarsPerNode()
 
@@ -942,8 +940,7 @@ class pyTACS(BaseUI):
         Applies zeros to boundary condition dofs in input vector.
         """
         if self.assembler is None:
-            raise self._TACSError("TACS assembler has not been created. "
-                        "Assembler must created first by running 'initalize' method.")
+            raise self._initializeError()
 
         varVec = self.assembler.createVec()
         varArray = varVec.getArray()
@@ -981,8 +978,7 @@ class pyTACS(BaseUI):
             StaticProblem object used for modeling and solving static cases.
         """
         if self.assembler is None:
-            raise self._TACSError("TACS assembler has not been created. "
-                        "Assembler must created first by running 'initalize' method.")
+            raise self._initializeError()
 
         problem = tacs.problems.static.StaticProblem(name, self.assembler, self.comm,
                                                      self.outputViewer, self.meshLoader, options)
@@ -1016,8 +1012,7 @@ class pyTACS(BaseUI):
             TransientProblem object used for modeling and solving transient cases.
         """
         if self.assembler is None:
-            raise self._TACSError("TACS assembler has not been created. "
-                                 "Assembler must created first by running 'initalize' method.")
+            raise self._initializeError()
 
         problem = tacs.problems.transient.TransientProblem(name, tInit, tFinal, numSteps,
                                                            self.assembler, self.comm, self.outputViewer,
@@ -1052,8 +1047,7 @@ class pyTACS(BaseUI):
             ModalProblem object used for performing modal eigenvalue analysis.
         """
         if self.assembler is None:
-            raise self._TACSError("TACS assembler has not been created. "
-                        "Assembler must created first by running 'initalize' method.")
+            raise self._initializeError()
 
         problem = tacs.problems.modal.ModalProblem(name, sigma, numEigs,
                                                    self.assembler, self.comm, self.outputViewer, self.meshLoader,
@@ -1082,8 +1076,7 @@ class pyTACS(BaseUI):
         """
 
         if self.assembler is None:
-            raise self._TACSError("TACS assembler has not been created. "
-                        "Assembler must created first by running 'initalize' method.")
+            raise self._initializeError()
 
         # Make sure cross-referencing is turned on in pynastran
         if self.bdfInfo.is_xrefed is False:
@@ -1494,3 +1487,11 @@ class pyTACS(BaseUI):
         # Default to 6
         if self.varsPerNode is None:
             self.varsPerNode = 6
+
+    def _initializeError(self):
+        """
+        Standard error print out if the user tries to call certain pytacs methods before intializing.
+        """
+        error = self._TACSError("TACS assembler has not been created. "
+                        "Assembler must created first by running 'initalize' method.")
+        return error

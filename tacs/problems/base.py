@@ -139,7 +139,7 @@ class TACSProblem(BaseUI):
         Returns
         -------
         coords : array
-            Structural coordinate in array of size (N, 3) where N is
+            Structural coordinate in array of size (N * 3) where N is
             the number of structural nodes on this processor.
         """
         return self.Xpts.getArray().copy()
