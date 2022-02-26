@@ -200,13 +200,7 @@ class pyMeshLoader(BaseUI):
 
     def getNumComponents(self):
         '''
-        Return number of nodes found in bdf.
-        '''
-        return self.bdfInfo.nproperties
-
-    def getNumComponents(self):
-        '''
-        Return number of nodes found in bdf.
+        Return number of components (properties) found in bdf.
         '''
         return self.bdfInfo.nproperties
 
@@ -275,6 +269,9 @@ class pyMeshLoader(BaseUI):
         return self.elemDescripts
 
     def getComponentDescripts(self):
+        """
+        Get user-defined labels for each component read in from the BDF.
+        """
         return self.compDescripts
 
     def getLocalNodeIDsFromGlobal(self, globalIDs, nastranOrdering=False):
