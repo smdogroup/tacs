@@ -308,6 +308,11 @@ cdef class Element:
             return _init_ElementBasis(self.ptr.getElementBasis())
         return None
 
+    def getElementType(self):
+        if self.ptr:
+            return self.ptr.getElementType()
+        return ELEMENT_NONE
+
     def createElementTraction(self, int faceIndex, np.ndarray[TacsScalar, ndim=1] trac):
         cdef TACSElement *tracElem = NULL
         if self.ptr:
