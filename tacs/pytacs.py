@@ -53,7 +53,7 @@ class pyTACS(BaseUI):
 
         # Output Options
         'outputElement': [int, None, 'Specifies which element type should be written out in the f5 file.\n'
-                                     '\t If None, the type be inferred from the first element in the model.\n'
+                                     '\t If None, the type will be inferred from the first element in the model.\n'
                                      '\t Acceptable values are:\n'
                                      f'\t\t tacs.TACS.ELEMENT_NONE = {tacs.TACS.ELEMENT_NONE}\n'
                                      f'\t\t tacs.TACS.SCALAR_2D_ELEMENT = {tacs.TACS.SCALAR_2D_ELEMENT}\n'
