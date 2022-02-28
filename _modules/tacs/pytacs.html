@@ -465,22 +465,32 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">bdfInfo</span></div>
 
-<div class="viewcode-block" id="pyTACS.getCompNames"><a class="viewcode-back" href="../../pytacs/pytacs_module.html#tacs.pytacs.pyTACS.getCompNames">[docs]</a>    <span class="k">def</span> <span class="nf">getCompNames</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">compIDs</span><span class="p">):</span>
+<div class="viewcode-block" id="pyTACS.getCompNames"><a class="viewcode-back" href="../../pytacs/pytacs_module.html#tacs.pytacs.pyTACS.getCompNames">[docs]</a>    <span class="k">def</span> <span class="nf">getCompNames</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">compIDs</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Return a list of component descriptions for the given component</span>
 <span class="sd">        IDs. compIDs should come from a call to selectCompIDs</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
-<span class="sd">        compIDs : list</span>
-<span class="sd">            List of integers of the compIDs numbers</span>
+<span class="sd">        compIDs : int or list[int] or None</span>
+<span class="sd">            List of integers of the compIDs numbers. If None, returns names for all components.</span>
+<span class="sd">            Defaults to None.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
 <span class="sd">        compDescript : list</span>
 <span class="sd">            List of strings of the names of the corresponding compIDs</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">compIDs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_flatten</span><span class="p">(</span><span class="n">compIDs</span><span class="p">)</span>
+        <span class="c1"># Return all component names</span>
+        <span class="k">if</span> <span class="n">compIDs</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">compDescripts</span><span class="p">)</span>
+        <span class="c1"># Convert to list</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">compIDs</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+            <span class="n">compIDs</span> <span class="o">=</span> <span class="p">[</span><span class="n">compIDs</span><span class="p">]</span>
+        <span class="c1"># Make sure list is flat</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">compIDs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_flatten</span><span class="p">(</span><span class="n">compIDs</span><span class="p">)</span>
+
         <span class="n">compDescripts</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">compIDs</span><span class="p">)):</span>
             <span class="n">compDescripts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">compDescripts</span><span class="p">[</span><span class="n">compIDs</span><span class="p">[</span><span class="n">i</span><span class="p">]])</span>
@@ -539,10 +549,6 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">assembler</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">meshLoader</span><span class="o">.</span><span class="n">createTACSAssembler</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">varsPerNode</span><span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_createOutputViewer</span><span class="p">()</span>
-
-        <span class="c1"># Initial design variable vec if necessary</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">dvs0</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">assembler</span><span class="o">.</span><span class="n">createDesignVec</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">assembler</span><span class="o">.</span><span class="n">getDesignVars</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dvs0</span><span class="p">)</span>
 
         <span class="c1"># Store original node locations read in from bdf file</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">Xpts0</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">assembler</span><span class="o">.</span><span class="n">createNodeVec</span><span class="p">()</span>
@@ -819,8 +825,7 @@
 
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">assembler</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TACSError</span><span class="p">(</span><span class="s2">&quot;TACS assembler has not been created. &quot;</span>
-                        <span class="s2">&quot;Assembler must created first by running &#39;initalize&#39; method.&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="bp">self</span><span class="o">.</span><span class="n">_initializeError</span><span class="p">()</span>
 
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">x0</span><span class="o">.</span><span class="n">getArray</span><span class="p">()</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span></div>
 
@@ -842,8 +847,8 @@
 <span class="sd">            Distributed design variable vector</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">assembler</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TACSError</span><span class="p">(</span><span class="s2">&quot;TACS assembler has not been created. &quot;</span>
-                        <span class="s2">&quot;Assembler must created first by running &#39;initalize&#39; method.&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="bp">self</span><span class="o">.</span><span class="n">_initializeError</span><span class="p">()</span>
+
         <span class="n">xVec</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">assembler</span><span class="o">.</span><span class="n">createDesignVec</span><span class="p">()</span>
         <span class="k">if</span> <span class="n">asBVec</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">xVec</span>
@@ -855,8 +860,7 @@
 <span class="sd">        Return the number of design variables on this processor.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">assembler</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TACSError</span><span class="p">(</span><span class="s2">&quot;TACS assembler has not been created. &quot;</span>
-                        <span class="s2">&quot;Assembler must created first by running &#39;initalize&#39; method.&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="bp">self</span><span class="o">.</span><span class="n">_initializeError</span><span class="p">()</span>
 
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">x0</span><span class="o">.</span><span class="n">getSize</span><span class="p">()</span></div>
 
@@ -865,8 +869,7 @@
 <span class="sd">        Return the number of design variables across all processors.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">assembler</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TACSError</span><span class="p">(</span><span class="s2">&quot;TACS assembler has not been created. &quot;</span>
-                        <span class="s2">&quot;Assembler must created first by running &#39;initalize&#39; method.&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="bp">self</span><span class="o">.</span><span class="n">_initializeError</span><span class="p">()</span>
 
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">dvNum</span></div>
 
@@ -877,12 +880,11 @@
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
 <span class="sd">        coords : array</span>
-<span class="sd">            Structural coordinate in array of size (N, 3) where N is</span>
+<span class="sd">            Structural coordinate in array of size (N * 3) where N is</span>
 <span class="sd">            the number of structural nodes on this processor.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">assembler</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TACSError</span><span class="p">(</span><span class="s2">&quot;TACS assembler has not been created. &quot;</span>
-                        <span class="s2">&quot;Assembler must created first by running &#39;initalize&#39; method.&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="bp">self</span><span class="o">.</span><span class="n">_initializeError</span><span class="p">()</span>
 
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">Xpts0</span><span class="o">.</span><span class="n">getArray</span><span class="p">()</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span></div>
 
@@ -904,8 +906,8 @@
 <span class="sd">            Distributed node coordinate vector</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">assembler</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TACSError</span><span class="p">(</span><span class="s2">&quot;TACS assembler has not been created. &quot;</span>
-                                 <span class="s2">&quot;Assembler must created first by running &#39;initalize&#39; method.&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="bp">self</span><span class="o">.</span><span class="n">_initializeError</span><span class="p">()</span>
+
         <span class="n">xptVec</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">assembler</span><span class="o">.</span><span class="n">createNodeVec</span><span class="p">()</span>
         <span class="k">if</span> <span class="n">asBVec</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">xptVec</span>
@@ -917,8 +919,7 @@
 <span class="sd">        Get the number of nodes owned by this processor.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">assembler</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TACSError</span><span class="p">(</span><span class="s2">&quot;TACS assembler has not been created. &quot;</span>
-                        <span class="s2">&quot;Assembler must created first by running &#39;initalize&#39; method.&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="bp">self</span><span class="o">.</span><span class="n">_initializeError</span><span class="p">()</span>
 
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">assembler</span><span class="o">.</span><span class="n">getNumOwnedNodes</span><span class="p">()</span></div>
 
@@ -927,8 +928,7 @@
 <span class="sd">        Get number of multiplier nodes owned by this processor.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">assembler</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TACSError</span><span class="p">(</span><span class="s2">&quot;TACS assembler has not been created. &quot;</span>
-                                 <span class="s2">&quot;Assembler must created first by running &#39;initalize&#39; method.&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="bp">self</span><span class="o">.</span><span class="n">_initializeError</span><span class="p">()</span>
         <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">meshLoader</span><span class="o">.</span><span class="n">getLocalMultiplierNodeIDs</span><span class="p">())</span></div>
 
 <div class="viewcode-block" id="pyTACS.getLocalMultiplierNodeIDs"><a class="viewcode-back" href="../../pytacs/pytacs_module.html#tacs.pytacs.pyTACS.getLocalMultiplierNodeIDs">[docs]</a>    <span class="k">def</span> <span class="nf">getLocalMultiplierNodeIDs</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -936,8 +936,7 @@
 <span class="sd">        Get the tacs indices of multiplier nodes used to hold lagrange multipliers on this processor.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">assembler</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TACSError</span><span class="p">(</span><span class="s2">&quot;TACS assembler has not been created. &quot;</span>
-                        <span class="s2">&quot;Assembler must created first by running &#39;initalize&#39; method.&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="bp">self</span><span class="o">.</span><span class="n">_initializeError</span><span class="p">()</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">meshLoader</span><span class="o">.</span><span class="n">getLocalMultiplierNodeIDs</span><span class="p">()</span></div>
 
 <div class="viewcode-block" id="pyTACS.createVec"><a class="viewcode-back" href="../../pytacs/pytacs_module.html#tacs.pytacs.pyTACS.createVec">[docs]</a>    <span class="k">def</span> <span class="nf">createVec</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">asBVec</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
@@ -958,8 +957,8 @@
 <span class="sd">            Distributed state variable vector</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">assembler</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TACSError</span><span class="p">(</span><span class="s2">&quot;TACS assembler has not been created. &quot;</span>
-                                 <span class="s2">&quot;Assembler must created first by running &#39;initalize&#39; method.&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="bp">self</span><span class="o">.</span><span class="n">_initializeError</span><span class="p">()</span>
+
         <span class="nb">vars</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">assembler</span><span class="o">.</span><span class="n">createVec</span><span class="p">()</span>
         <span class="k">if</span> <span class="n">asBVec</span><span class="p">:</span>
             <span class="k">return</span> <span class="nb">vars</span>
@@ -971,8 +970,7 @@
 <span class="sd">        Get the number of variables per node for the model.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">assembler</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TACSError</span><span class="p">(</span><span class="s2">&quot;TACS assembler has not been created. &quot;</span>
-                        <span class="s2">&quot;Assembler must created first by running &#39;initalize&#39; method.&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="bp">self</span><span class="o">.</span><span class="n">_initializeError</span><span class="p">()</span>
 
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">assembler</span><span class="o">.</span><span class="n">getVarsPerNode</span><span class="p">()</span></div>
 
@@ -981,8 +979,7 @@
 <span class="sd">        Applies zeros to boundary condition dofs in input vector.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">assembler</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TACSError</span><span class="p">(</span><span class="s2">&quot;TACS assembler has not been created. &quot;</span>
-                        <span class="s2">&quot;Assembler must created first by running &#39;initalize&#39; method.&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="bp">self</span><span class="o">.</span><span class="n">_initializeError</span><span class="p">()</span>
 
         <span class="n">varVec</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">assembler</span><span class="o">.</span><span class="n">createVec</span><span class="p">()</span>
         <span class="n">varArray</span> <span class="o">=</span> <span class="n">varVec</span><span class="o">.</span><span class="n">getArray</span><span class="p">()</span>
@@ -1020,8 +1017,7 @@
 <span class="sd">            StaticProblem object used for modeling and solving static cases.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">assembler</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TACSError</span><span class="p">(</span><span class="s2">&quot;TACS assembler has not been created. &quot;</span>
-                        <span class="s2">&quot;Assembler must created first by running &#39;initalize&#39; method.&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="bp">self</span><span class="o">.</span><span class="n">_initializeError</span><span class="p">()</span>
 
         <span class="n">problem</span> <span class="o">=</span> <span class="n">tacs</span><span class="o">.</span><span class="n">problems</span><span class="o">.</span><span class="n">static</span><span class="o">.</span><span class="n">StaticProblem</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">assembler</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">comm</span><span class="p">,</span>
                                                      <span class="bp">self</span><span class="o">.</span><span class="n">outputViewer</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">meshLoader</span><span class="p">,</span> <span class="n">options</span><span class="p">)</span>
@@ -1055,8 +1051,7 @@
 <span class="sd">            TransientProblem object used for modeling and solving transient cases.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">assembler</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TACSError</span><span class="p">(</span><span class="s2">&quot;TACS assembler has not been created. &quot;</span>
-                                 <span class="s2">&quot;Assembler must created first by running &#39;initalize&#39; method.&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="bp">self</span><span class="o">.</span><span class="n">_initializeError</span><span class="p">()</span>
 
         <span class="n">problem</span> <span class="o">=</span> <span class="n">tacs</span><span class="o">.</span><span class="n">problems</span><span class="o">.</span><span class="n">transient</span><span class="o">.</span><span class="n">TransientProblem</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">tInit</span><span class="p">,</span> <span class="n">tFinal</span><span class="p">,</span> <span class="n">numSteps</span><span class="p">,</span>
                                                            <span class="bp">self</span><span class="o">.</span><span class="n">assembler</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">comm</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">outputViewer</span><span class="p">,</span>
@@ -1091,8 +1086,7 @@
 <span class="sd">            ModalProblem object used for performing modal eigenvalue analysis.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">assembler</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TACSError</span><span class="p">(</span><span class="s2">&quot;TACS assembler has not been created. &quot;</span>
-                        <span class="s2">&quot;Assembler must created first by running &#39;initalize&#39; method.&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="bp">self</span><span class="o">.</span><span class="n">_initializeError</span><span class="p">()</span>
 
         <span class="n">problem</span> <span class="o">=</span> <span class="n">tacs</span><span class="o">.</span><span class="n">problems</span><span class="o">.</span><span class="n">modal</span><span class="o">.</span><span class="n">ModalProblem</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">sigma</span><span class="p">,</span> <span class="n">numEigs</span><span class="p">,</span>
                                                    <span class="bp">self</span><span class="o">.</span><span class="n">assembler</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">comm</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">outputViewer</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">meshLoader</span><span class="p">,</span>
@@ -1121,8 +1115,7 @@
 <span class="sd">        &quot;&quot;&quot;</span>
 
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">assembler</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TACSError</span><span class="p">(</span><span class="s2">&quot;TACS assembler has not been created. &quot;</span>
-                        <span class="s2">&quot;Assembler must created first by running &#39;initalize&#39; method.&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="bp">self</span><span class="o">.</span><span class="n">_initializeError</span><span class="p">()</span>
 
         <span class="c1"># Make sure cross-referencing is turned on in pynastran</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">bdfInfo</span><span class="o">.</span><span class="n">is_xrefed</span> <span class="ow">is</span> <span class="kc">False</span><span class="p">:</span>
@@ -1532,7 +1525,15 @@
         <span class="c1"># If varsPerNode still hasn&#39;t been set (because there were no elements added in the callback)</span>
         <span class="c1"># Default to 6</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">varsPerNode</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">varsPerNode</span> <span class="o">=</span> <span class="mi">6</span></div>
+            <span class="bp">self</span><span class="o">.</span><span class="n">varsPerNode</span> <span class="o">=</span> <span class="mi">6</span>
+
+    <span class="k">def</span> <span class="nf">_initializeError</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Standard error print out if the user tries to call certain pytacs methods before intializing.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">error</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TACSError</span><span class="p">(</span><span class="s2">&quot;TACS assembler has not been created. &quot;</span>
+                        <span class="s2">&quot;Assembler must created first by running &#39;initalize&#39; method.&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">error</span></div>
 </pre></div>
 
             <div class="clearer"></div>
