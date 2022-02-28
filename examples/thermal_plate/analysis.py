@@ -40,9 +40,7 @@ comm = MPI.COMM_WORLD
 
 # Instantiate FEAAssembler
 structOptions = {
-    'printtiming':True,
-    # Specify what type of elements we want in the f5
-    'outputElement': TACS.PLANE_STRESS_ELEMENT,
+    'printtiming':True
 }
 
 bdfFile = os.path.join(os.path.dirname(__file__), 'circ-plate-dirichlet-bcs.bdf')
