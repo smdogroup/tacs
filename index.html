@@ -4,18 +4,18 @@
 <html lang="python">
   <head>
     <meta charset="utf-8" />
-    <title>Welcome to TACS&#39;s documentation! &#8212; TACS  documentation</title>
-    <link rel="stylesheet" href="_static/sphinxdoc.css" type="text/css" />
-    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>TACS Overview &#8212; TACS  documentation</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="_static/sphinxdoc.css" />
     <link rel="stylesheet" href="_static/custom.css" type="text/css" />
-    <script id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+    <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
     <script src="_static/jquery.js"></script>
     <script src="_static/underscore.js"></script>
     <script src="_static/doctools.js"></script>
-    <script src="_static/language_data.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="Installing TACS" href="install.html" /> 
+    <link rel="next" title="Install" href="install.html" /> 
   </head><body>
     <div class="related" role="navigation" aria-label="related navigation">
       <h3>Navigation</h3>
@@ -27,69 +27,71 @@
           <a href="py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="install.html" title="Installing TACS"
+          <a href="install.html" title="Install"
              accesskey="N">next</a> |</li>
-        <li class="nav-item nav-item-0"><a href="#">TACS  documentation</a> &#187;</li> 
+        <li class="nav-item nav-item-0"><a href="#">TACS  documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">TACS Overview</a></li> 
       </ul>
-    </div>
-      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
-        <div class="sphinxsidebarwrapper">
-  <h3><a href="#">Table of Contents</a></h3>
-  <ul>
-<li><a class="reference internal" href="#">Welcome to TACS's documentation!</a></li>
-<li><a class="reference internal" href="#indices-and-tables">Indices and tables</a></li>
-</ul>
-
-  <h4>Next topic</h4>
-  <p class="topless"><a href="install.html"
-                        title="next chapter">Installing TACS</a></p>
-  <div role="note" aria-label="source link">
-    <h3>This Page</h3>
-    <ul class="this-page-menu">
-      <li><a href="_sources/index.rst.txt"
-            rel="nofollow">Show Source</a></li>
-    </ul>
-   </div>
-<div id="searchbox" style="display: none" role="search">
-  <h3 id="searchlabel">Quick search</h3>
-    <div class="searchformwrapper">
-    <form class="search" action="search.html" method="get">
-      <input type="text" name="q" aria-labelledby="searchlabel" />
-      <input type="submit" value="Go" />
-    </form>
-    </div>
-</div>
-<script>$('#searchbox').show(0);</script>
-        </div>
-      </div>
+    </div>  
 
     <div class="document">
       <div class="documentwrapper">
         <div class="bodywrapper">
           <div class="body" role="main">
             
-  <div class="section" id="welcome-to-tacs-s-documentation">
-<h1>Welcome to TACS's documentation!<a class="headerlink" href="#welcome-to-tacs-s-documentation" title="Permalink to this headline">¶</a></h1>
-<p>Contents:</p>
+  <div class="section" id="tacs-overview">
+<h1>TACS Overview<a class="headerlink" href="#tacs-overview" title="Permalink to this headline">¶</a></h1>
+<p>The Toolkit for the Analysis of Composite Structures (TACS) is a parallel finite-element code for analysis and gradient-based design of advanced structures. Originally, TACS was primarily designed as a tool for the analysis of shell structures, such as wing-boxes. More recently it has been extended to perform topology optimization of large three-dimensional structures using gradient-based methods.</p>
+<p>TACS has been under continuous development since 2010 by the <a class="reference external" href="http://gkennedy.gatech.edu">Structural and Multidisciplinary Design Optimization group at Georgia Tech</a> and by the <a class="reference external" href="http://mdolab.engin.umich.edu/">Multidisciplinary Design Optimization Lab at the University of Michigan</a>.</p>
+</div>
+<div class="section" id="getting-started">
+<h1>Getting Started<a class="headerlink" href="#getting-started" title="Permalink to this headline">¶</a></h1>
 <div class="toctree-wrapper compound">
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="install.html">Installing TACS</a><ul>
+<li class="toctree-l1"><a class="reference internal" href="install.html">Install</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="install.html#prerequisites">Prerequisites</a></li>
-<li class="toctree-l2"><a class="reference internal" href="install.html#steps-to-compile">Steps to Compile</a></li>
+<li class="toctree-l2"><a class="reference internal" href="install.html#basic-steps-to-compile-tacs">Basic steps to compile TACS</a></li>
+<li class="toctree-l2"><a class="reference internal" href="install.html#detailed-installation-instructions">Detailed installation instructions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="install.html#checking-out-the-code">Checking out the code</a></li>
+<li class="toctree-l2"><a class="reference internal" href="install.html#install-dependencies">Install dependencies</a></li>
+<li class="toctree-l2"><a class="reference internal" href="install.html#make-the-c-tacs-library">Make the C++ TACS library</a></li>
+<li class="toctree-l2"><a class="reference internal" href="install.html#f5tovtk">f5tovtk</a></li>
+<li class="toctree-l2"><a class="reference internal" href="install.html#installing-the-python-interface">Installing the python interface</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="interface.html">TACS Interface</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="interface.html#workflow">Workflow</a></li>
-<li class="toctree-l2"><a class="reference internal" href="interface.html#functions">Functions</a></li>
-<li class="toctree-l2"><a class="reference internal" href="interface.html#assembler">Assembler</a></li>
-<li class="toctree-l2"><a class="reference internal" href="interface.html#meshloader">MeshLoader</a></li>
-<li class="toctree-l2"><a class="reference internal" href="interface.html#creator">Creator</a></li>
-<li class="toctree-l2"><a class="reference internal" href="interface.html#frequencyanalysis">FrequencyAnalysis</a></li>
-<li class="toctree-l2"><a class="reference internal" href="interface.html#integrator">Integrator</a></li>
+<li class="toctree-l1"><a class="reference internal" href="interfaces.html">Interfaces</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="core/TACS.html">Direct</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pytacs/pytacs.html">pyTACS</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="Example-CRM_Optimization.html">Example: CRM Optimization</a></li>
-<li class="toctree-l1"><a class="reference internal" href="reference.html">Class reference</a></li>
+</ul>
+</div>
+</div>
+<div class="section" id="examples">
+<h1>Examples<a class="headerlink" href="#examples" title="Permalink to this headline">¶</a></h1>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="examples/Example-Plate.html">Plate under static load</a></li>
+</ul>
+</div>
+</div>
+<div class="section" id="references">
+<h1>References<a class="headerlink" href="#references" title="Permalink to this headline">¶</a></h1>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="theory/theory.html">Theory</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="theory/shell_element.html">Beam and shell elements in TACS</a></li>
+<li class="toctree-l2"><a class="reference internal" href="theory/shell_element.html#director-implementation">Director implementation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="theory/shell_element.html#beam-element-implementation">Beam element implementation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="theory/shell_element.html#shell-element-implementation">Shell element implementation</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="core/core.html">Core modules</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="core/constitutive.html">constitutive module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="core/elements.html">elements module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="core/functions.html">functions module</a></li>
+</ul>
+</li>
 </ul>
 </div>
 </div>
@@ -103,7 +105,38 @@
 </div>
 
 
+            <div class="clearer"></div>
           </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <div>
+    <h3><a href="#">Table of Contents</a></h3>
+    <ul>
+<li><a class="reference internal" href="#">TACS Overview</a></li>
+<li><a class="reference internal" href="#getting-started">Getting Started</a></li>
+<li><a class="reference internal" href="#examples">Examples</a></li>
+<li><a class="reference internal" href="#references">References</a></li>
+<li><a class="reference internal" href="#indices-and-tables">Indices and tables</a></li>
+</ul>
+
+  </div>
+  <div>
+    <h4>Next topic</h4>
+    <p class="topless"><a href="install.html"
+                          title="next chapter">Install</a></p>
+  </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
         </div>
       </div>
       <div class="clearer"></div>
@@ -118,9 +151,10 @@
           <a href="py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="install.html" title="Installing TACS"
+          <a href="install.html" title="Install"
              >next</a> |</li>
-        <li class="nav-item nav-item-0"><a href="#">TACS  documentation</a> &#187;</li> 
+        <li class="nav-item nav-item-0"><a href="#">TACS  documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">TACS Overview</a></li> 
       </ul>
     </div>
  <script type="text/javascript">

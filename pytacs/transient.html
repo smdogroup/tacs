@@ -1,0 +1,724 @@
+
+<!DOCTYPE html>
+
+<html lang="python">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>TransientProblem &#8212; TACS  documentation</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinxdoc.css" />
+    <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+    <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="ModalProblem" href="modal.html" />
+    <link rel="prev" title="StaticProblem" href="static.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="modal.html" title="ModalProblem"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="static.html" title="StaticProblem"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">TACS  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../interfaces.html" >Interfaces</a> &#187;</li>
+          <li class="nav-item nav-item-2"><a href="pytacs.html" >pyTACS</a> &#187;</li>
+          <li class="nav-item nav-item-3"><a href="problems.html" accesskey="U">Problem classes</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">TransientProblem</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="module-tacs.problems.transient">
+<span id="transientproblem"></span><h1>TransientProblem<a class="headerlink" href="#module-tacs.problems.transient" title="Permalink to this headline">¶</a></h1>
+<p>The main purpose of this class is to represent all relevant
+information for a transient analysis. This will include
+information defining the loading condition as well as various
+other pieces of information.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>This class should be created using the
+<a class="reference internal" href="pytacs_module.html#tacs.pytacs.pyTACS.createTransientProblem" title="tacs.pytacs.pyTACS.createTransientProblem"><code class="xref py py-meth docutils literal notranslate"><span class="pre">pyTACS.createTransientProblem</span></code></a> method.</p>
+</div>
+<div class="section" id="options">
+<h2>Options<a class="headerlink" href="#options" title="Permalink to this headline">¶</a></h2>
+<p>Options can be set for <a class="reference internal" href="#tacs.problems.TransientProblem" title="tacs.problems.TransientProblem"><code class="xref py py-class docutils literal notranslate"><span class="pre">TransientProblem</span></code></a> at time of creation for the class in the
+<a class="reference internal" href="pytacs_module.html#tacs.pytacs.pyTACS.createTransientProblem" title="tacs.pytacs.pyTACS.createTransientProblem"><code class="xref py py-meth docutils literal notranslate"><span class="pre">pyTACS.createTransientProblem</span></code></a> method or using the
+<a class="reference internal" href="#tacs.problems.TransientProblem.setOption" title="tacs.problems.TransientProblem.setOption"><code class="xref py py-meth docutils literal notranslate"><span class="pre">TransientProblem.setOption</span></code></a> method. Current option values for a class
+instance can be printed out using the <a class="reference internal" href="#tacs.problems.TransientProblem.printOptions" title="tacs.problems.TransientProblem.printOptions"><code class="xref py py-meth docutils literal notranslate"><span class="pre">TransientProblem.printOption</span></code></a> method.
+The following options their default values and descriptions are listed below:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>+----------------------------------------+
+|   TransientProblem default options:    |
++----------------------------------------+
+&#39;outputdir&#39;: &#39;./&#39;
+	 Output directory for F5 file writer.
+&#39;timeIntegrator&#39;: &#39;BDF&#39;
+	 Time integration scheme to use. Currently supports &#39;BDF&#39; and &#39;DIRK&#39;.
+&#39;integrationOrder&#39;: 2
+	 Integration order for time marching scheme.
+&#39;L2Convergence&#39;: 1e-12
+	 Absolute convergence tolerance for integrator based on l2 norm of residual.
+&#39;L2ConvergenceRel&#39;: 1e-12
+	 Relative convergence tolerance for integrator based on l2 norm of residual.
+&#39;jacAssemblyFreq&#39;: 1
+	 How frequently to reassemble Jacobian during time integration process.
+&#39;writeSolution&#39;: True
+	 Flag for suppressing all f5 file writing.
+&#39;numberSolutions&#39;: True
+	 Flag for attaching solution counter index to f5 files.
+&#39;printTiming&#39;: False
+	 Flag for printing out timing information for class procedures.
+&#39;printLevel&#39;: 0
+	 Print level for integraton solver.
+	 Accepts:
+		   0 : No printing.
+		   1 : Print major iterations.
+		 &gt; 1 : Print major + minor iterations.
+</pre></div>
+</div>
+</div>
+<div class="section" id="api-reference">
+<h2>API Reference<a class="headerlink" href="#api-reference" title="Permalink to this headline">¶</a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="tacs.problems.TransientProblem">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tacs.problems.</span></span><span class="sig-name descname"><span class="pre">TransientProblem</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tInit</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tFinal</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">numSteps</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">assembler</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">comm</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">outputViewer</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">meshLoader</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">options</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">{}</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/problems/transient.html#TransientProblem"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.problems.TransientProblem" title="Permalink to this definition">¶</a></dt>
+<dd><p>NOTE: This class should not be initialized directly by the user.
+Use pyTACS.createTransientProblem instead.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>name</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.10)"><em>str</em></a>) -- Name of this tacs problem</p></li>
+<li><p><strong>tInit</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.10)"><em>float</em></a>) -- Starting time for transient problem integration</p></li>
+<li><p><strong>tFinal</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.10)"><em>float</em></a>) -- Ending time for transient problem integration</p></li>
+<li><p><strong>numSteps</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><em>int</em></a>) -- Number of time steps for transient problem integration</p></li>
+<li><p><strong>assembler</strong> (<a class="reference internal" href="../core/TACS.html#TACS.Assembler" title="TACS.Assembler"><em>TACS.Assembler</em></a>) -- Cython object responsible for creating and setting tacs objects used to solve problem</p></li>
+<li><p><strong>comm</strong> (<a class="reference external" href="https://mpi4py.readthedocs.io/en/stable/reference/mpi4py.MPI.Intracomm.html#mpi4py.MPI.Intracomm" title="(in MPI for Python v3.1)"><em>mpi4py.MPI.Intracomm</em></a>) -- The comm object on which to create the pyTACS object.</p></li>
+<li><p><strong>outputViewer</strong> (<em>TACS.TACSToFH5</em>) -- Cython object used to write out f5 files that can be converted and used for postprocessing.</p></li>
+<li><p><strong>meshLoader</strong> (<em>pymeshloader.pyMeshLoader</em>) -- pyMeshLoader object used to create the assembler.</p></li>
+<li><p><strong>options</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.10)"><em>dict</em></a>) -- Dictionary holding problem-specific option parameters (case-insensitive).</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.problems.TransientProblem.setOption">
+<span class="sig-name descname"><span class="pre">setOption</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/problems/transient.html#TransientProblem.setOption"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.problems.TransientProblem.setOption" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set a solver option value. The name is not case sensitive.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>name</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.10)"><em>str</em></a>) -- Name of option to modify</p></li>
+<li><p><strong>value</strong> (<em>depends on option</em>) -- New option value to set</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.problems.TransientProblem.getNumTimeSteps">
+<span class="sig-name descname"><span class="pre">getNumTimeSteps</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/problems/transient.html#TransientProblem.getNumTimeSteps"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.problems.TransientProblem.getNumTimeSteps" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get the number of timesteps used in time integration for this problem.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p><strong>numSteps</strong> -- Number of time steps.</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)">int</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.problems.TransientProblem.getTimeSteps">
+<span class="sig-name descname"><span class="pre">getTimeSteps</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/problems/transient.html#TransientProblem.getTimeSteps"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.problems.TransientProblem.getTimeSteps" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get the discrete time step slices used in time integration.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p><strong>numSteps</strong> -- Number of time steps.</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)">int</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.problems.TransientProblem.addLoadToComponents">
+<span class="sig-name descname"><span class="pre">addLoadToComponents</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">timeStep</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">compIDs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">F</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">averageLoad</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/problems/transient.html#TransientProblem.addLoadToComponents"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.problems.TransientProblem.addLoadToComponents" title="Permalink to this definition">¶</a></dt>
+<dd><p>&quot;
+This method is used to add a <em>FIXED TOTAL LOAD</em> on one or more
+components, defined by COMPIDs, at a specifc time instance.
+The purpose of this routine is to add loads that remain fixed throughout
+an optimization. An example would be an engine load. This routine determines
+all the unqiue nodes in the FE model that are part of the the requested components,
+then takes the total 'force' by F and divides by the number of nodes.
+This average load is then applied to the nodes.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>timeStep</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><em>int</em></a>) -- Time step index to apply load to.</p></li>
+<li><p><strong>compIDs</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.10)"><em>list</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><em>int</em></a><em>] or </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><em>int</em></a>) -- The components with added loads. Use pyTACS.selectCompIDs method
+to determine this.</p></li>
+<li><p><strong>F</strong> (<em>Numpy 1d</em><em> or </em><em>2d array length</em><em> (</em><em>varsPerNodes</em><em>) or </em><em>(</em><em>numNodeIDs</em><em>, </em><em>varsPerNodes</em><em>)</em>) -- Vector(s) of 'force' to apply to each components.  If only one force vector is provided,
+force will be copied uniformly across all components.</p></li>
+<li><p><strong>averageLoad</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.10)"><em>bool</em></a>) -- Flag to determine whether load should be split evenly across all components (True)
+or copied and applied individually to each component (False). Defaults to False.</p></li>
+</ul>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<p>The units of the entries of the 'force' vector F are not
+necesarily physical forces and their interpretation depends
+on the physics problem being solved and the dofs included
+in the model.</p>
+<p>A couple of examples of force vector components for common problem are listed below:</p>
+<blockquote>
+<div><dl class="simple">
+<dt>In Heat Conduction with varsPerNode = 1</dt><dd><p>F = [Qdot] # heat rate</p>
+</dd>
+<dt>In Elasticity with varsPerNode = 3,</dt><dd><p>F = [fx, fy, fz] # forces</p>
+</dd>
+<dt>In Elasticity with varsPerNode = 6,</dt><dd><p>F = [fx, fy, fz, mx, my, mz] # forces + moments</p>
+</dd>
+<dt>In Thermoelasticity with varsPerNode = 4,</dt><dd><p>F = [fx, fy, fz, Qdot] # forces + heat rate</p>
+</dd>
+<dt>In Thermoelasticity with varsPerNode = 7,</dt><dd><p>F = [fx, fy, fz, mx, my, mz, Qdot] # forces + moments + heat rate</p>
+</dd>
+</dl>
+</div></blockquote>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.problems.TransientProblem.addLoadToNodes">
+<span class="sig-name descname"><span class="pre">addLoadToNodes</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">timeStep</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nodeIDs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">F</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nastranOrdering</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/problems/transient.html#TransientProblem.addLoadToNodes"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.problems.TransientProblem.addLoadToNodes" title="Permalink to this definition">¶</a></dt>
+<dd><p>This method is used to add a fixed point load of F to the
+selected node IDs at a specified time instance.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>timeStep</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><em>int</em></a>) -- Time step index to apply load to.</p></li>
+<li><p><strong>nodeIDs</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.10)"><em>list</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><em>int</em></a><em>]</em>) -- The nodes IDs with added loads.</p></li>
+<li><p><strong>F</strong> (<em>Numpy 1d</em><em> or </em><em>2d array length</em><em> (</em><em>varsPerNodes</em><em>) or </em><em>(</em><em>numNodeIDs</em><em>, </em><em>varsPerNodes</em><em>)</em>) -- Array of force vectors, one for each node. If only one force vector is provided,
+force will be copied uniformly across all nodes.</p></li>
+<li><p><strong>nastranOrdering</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.10)"><em>bool</em></a>) -- Flag signaling whether nodeIDs are in TACS (default)
+or NASTRAN (grid IDs in bdf file) ordering</p></li>
+</ul>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<p>The units of the entries of the 'force' vector F are not
+necesarily physical forces and their interpretation depends
+on the physics problem being solved and the dofs included
+in the model.</p>
+<p>A couple of examples of force vector components for common problem are listed below:</p>
+<blockquote>
+<div><dl class="simple">
+<dt>In Heat Conduction with varsPerNode = 1</dt><dd><p>F = [Qdot] # heat rate</p>
+</dd>
+<dt>In Elasticity with varsPerNode = 3,</dt><dd><p>F = [fx, fy, fz] # forces</p>
+</dd>
+<dt>In Elasticity with varsPerNode = 6,</dt><dd><p>F = [fx, fy, fz, mx, my, mz] # forces + moments</p>
+</dd>
+<dt>In Thermoelasticity with varsPerNode = 4,</dt><dd><p>F = [fx, fy, fz, Qdot] # forces + heat rate</p>
+</dd>
+<dt>In Thermoelasticity with varsPerNode = 7,</dt><dd><p>F = [fx, fy, fz, mx, my, mz, Qdot] # forces + moments + heat rate</p>
+</dd>
+</dl>
+</div></blockquote>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.problems.TransientProblem.addLoadToRHS">
+<span class="sig-name descname"><span class="pre">addLoadToRHS</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">timeStep</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Fapplied</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/problems/transient.html#TransientProblem.addLoadToRHS"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.problems.TransientProblem.addLoadToRHS" title="Permalink to this definition">¶</a></dt>
+<dd><p>&quot;
+This method is used to add a <em>FIXED TOTAL LOAD</em> directly to the
+right hand side vector given the equation below:</p>
+<blockquote>
+<div><p>M*udotdot + K*u = f</p>
+</div></blockquote>
+<dl class="simple">
+<dt>Where:</dt><dd><ul class="simple">
+<li><p>K : Stiffness matrix for problem</p></li>
+<li><p>u : State variables for problem</p></li>
+<li><p>M : Mass matrix for problem</p></li>
+<li><p>udotdot : Second time derivitive of state variables for problem</p></li>
+<li><p>f : Right-hand side vector to add loads to</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>timeStep</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><em>int</em></a>) -- Time step index to apply load to.</p></li>
+<li><p><strong>Fapplied</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.22)"><em>numpy.ndarray</em></a><em> or </em><em>TACS.Vec</em>) -- Distributed array containing loads to applied to RHS of the problem.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.problems.TransientProblem.addTractionToComponents">
+<span class="sig-name descname"><span class="pre">addTractionToComponents</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">timeStep</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">compIDs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tractions</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">faceIndex</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/problems/transient.html#TransientProblem.addTractionToComponents"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.problems.TransientProblem.addTractionToComponents" title="Permalink to this definition">¶</a></dt>
+<dd><p>This method is used to add a <em>FIXED TOTAL TRACTION</em> on one or more
+components, defined by COMPIDs, at specified time instance. The purpose of
+this routine is to add loads that remain fixed throughout an optimization.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>timeStep</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><em>int</em></a>) -- Time step index to apply load to.</p></li>
+<li><p><strong>compIDs</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.10)"><em>list</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><em>int</em></a><em>] or </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><em>int</em></a>) -- The components with added loads. Use pyTACS.selectCompIDs method
+to determine this.</p></li>
+<li><p><strong>tractions</strong> (<em>numpy.ndarray length 1</em><em> or </em><em>compIDs</em>) -- Array of traction vectors for each components</p></li>
+<li><p><strong>faceIndex</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><em>int</em></a>) -- Indicates which face (side) of element to apply traction to.
+Note: not required for certain elements (i.e. shells)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.problems.TransientProblem.addTractionToElements">
+<span class="sig-name descname"><span class="pre">addTractionToElements</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">timeStep</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">elemIDs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tractions</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">faceIndex</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nastranOrdering</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/problems/transient.html#TransientProblem.addTractionToElements"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.problems.TransientProblem.addTractionToElements" title="Permalink to this definition">¶</a></dt>
+<dd><p>This method is used to add a fixed traction to the
+selected element IDs at specified time instance.
+Tractions can be specified on an element by element basis
+(if tractions is a 2d array) or set to a uniform value (if tractions is a 1d array)</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>timeStep</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><em>int</em></a>) -- Time step index to apply load to.</p></li>
+<li><p><strong>elemIDs</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.10)"><em>list</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><em>int</em></a><em>]</em>) -- The global element ID numbers for which to apply the traction.</p></li>
+<li><p><strong>tractions</strong> (<em>numpy.ndarray 1d</em><em> or </em><em>2d length varsPerNodes</em><em> or </em><em>(</em><em>elemIDs</em><em>, </em><em>varsPerNodes</em><em>)</em>) -- Array of traction vectors for each element</p></li>
+<li><p><strong>faceIndex</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><em>int</em></a>) -- Indicates which face (side) of element to apply traction to.
+Note: not required for certain elements (i.e. shells)</p></li>
+<li><p><strong>nastranOrdering</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.10)"><em>bool</em></a>) -- Flag signaling whether elemIDs are in TACS (default)
+or NASTRAN ordering</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.problems.TransientProblem.addPressureToComponents">
+<span class="sig-name descname"><span class="pre">addPressureToComponents</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">timeStep</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">compIDs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pressures</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">faceIndex</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/problems/transient.html#TransientProblem.addPressureToComponents"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.problems.TransientProblem.addPressureToComponents" title="Permalink to this definition">¶</a></dt>
+<dd><p>This method is used to add a <em>FIXED TOTAL PRESSURE</em> on one or more
+components, defined by COMPIDs, at specified time instance. The purpose of this routine is
+to add loads that remain fixed throughout an optimization. An example
+would be a fuel load.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>timeStep</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><em>int</em></a>) -- Time step index to apply load to.</p></li>
+<li><p><strong>compIDs</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.10)"><em>list</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><em>int</em></a><em>] or </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><em>int</em></a>) -- The components with added loads. Use pyTACS.selectCompIDs method
+to determine this.</p></li>
+<li><p><strong>pressures</strong> (<em>Numpy array length 1</em><em> or </em><em>compIDs</em>) -- Array of pressure values for each components</p></li>
+<li><p><strong>faceIndex</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><em>int</em></a>) -- Indicates which face (side) of element to apply pressure to.
+Note: not required for certain elements (i.e. shells)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.problems.TransientProblem.addPressureToElements">
+<span class="sig-name descname"><span class="pre">addPressureToElements</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">timeStep</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">elemIDs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pressures</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">faceIndex</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nastranOrdering</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/problems/transient.html#TransientProblem.addPressureToElements"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.problems.TransientProblem.addPressureToElements" title="Permalink to this definition">¶</a></dt>
+<dd><p>This method is used to add a fixed presure to the
+selected element IDs at specified time instance.
+Pressures can be specified on an element by element
+basis (if pressures is an array) or set to a uniform value (if pressures is a scalar)</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>timeStep</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><em>int</em></a>) -- Time step index to apply load to.</p></li>
+<li><p><strong>elemIDs</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.10)"><em>list</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><em>int</em></a><em>]</em>) -- The global element ID numbers for which to apply the pressure.</p></li>
+<li><p><strong>pressures</strong> (<em>Numpy array length 1</em><em> or </em><em>elemIDs</em>) -- Array of pressure values for each element</p></li>
+<li><p><strong>faceIndex</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><em>int</em></a>) -- Indicates which face (side) of element to apply pressure to.
+Note: not required for certain elements (i.e. shells)</p></li>
+<li><p><strong>nastranOrdering</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.10)"><em>bool</em></a>) -- Flag signaling whether elemIDs are in TACS (default)
+or NASTRAN ordering</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.problems.TransientProblem.addInertialLoad">
+<span class="sig-name descname"><span class="pre">addInertialLoad</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">timeStep</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inertiaVector</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/problems/transient.html#TransientProblem.addInertialLoad"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.problems.TransientProblem.addInertialLoad" title="Permalink to this definition">¶</a></dt>
+<dd><p>This method is used to add a fixed inertial load  at a specified time step
+due to a uniform acceleration over the entire model.
+This is most commonly used to model gravity loads on a model.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>timeStep</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><em>int</em></a>) -- Time step index to apply load to.</p></li>
+<li><p><strong>inertiaVector</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.22)"><em>numpy.ndarray</em></a>) -- Acceleration vector used to define inertial load.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.problems.TransientProblem.solve">
+<span class="sig-name descname"><span class="pre">solve</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/problems/transient.html#TransientProblem.solve"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.problems.TransientProblem.solve" title="Permalink to this definition">¶</a></dt>
+<dd><p>Solve the time integrated transient problem. The
+forces must already be set.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.problems.TransientProblem.evalFunctions">
+<span class="sig-name descname"><span class="pre">evalFunctions</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">funcs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">evalFuncs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ignoreMissing</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/problems/transient.html#TransientProblem.evalFunctions"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.problems.TransientProblem.evalFunctions" title="Permalink to this definition">¶</a></dt>
+<dd><p>This is the main routine for returning useful information from
+pytacs. The functions corresponding to the strings in
+EVAL_FUNCS are evaluated and updated into the provided
+dictionary.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>funcs</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.10)"><em>dict</em></a>) -- Dictionary into which the functions are saved.</p></li>
+<li><p><strong>evalFuncs</strong> (<em>iterable object containing strings.</em>) -- If not none, use these functions to evaluate.</p></li>
+<li><p><strong>ignoreMissing</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.10)"><em>bool</em></a>) -- Flag to supress checking for a valid function. Please use
+this option with caution.</p></li>
+</ul>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">funcs</span> <span class="o">=</span> <span class="p">{}</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">transientProblem</span><span class="o">.</span><span class="n">solve</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">transientProblem</span><span class="o">.</span><span class="n">evalFunctions</span><span class="p">(</span><span class="n">funcs</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;mass&#39;</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">funcs</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># Result will look like (if TransientProblem has name of &#39;c1&#39;):</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># {&#39;cl_mass&#39;:12354.10}</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.problems.TransientProblem.evalFunctionsSens">
+<span class="sig-name descname"><span class="pre">evalFunctionsSens</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">funcsSens</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">evalFuncs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/problems/transient.html#TransientProblem.evalFunctionsSens"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.problems.TransientProblem.evalFunctionsSens" title="Permalink to this definition">¶</a></dt>
+<dd><p>This is the main routine for returning useful (sensitivity)
+information from problem. The derivatives of the functions
+corresponding to the strings in EVAL_FUNCS are evaluated and
+updated into the provided dictionary.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>funcsSens</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.10)"><em>dict</em></a>) -- Dictionary into which the derivatives are saved.</p></li>
+<li><p><strong>evalFuncs</strong> (<em>iterable object containing strings</em>) -- The functions the user wants returned</p></li>
+</ul>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">funcsSens</span> <span class="o">=</span> <span class="p">{}</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">transientProblem</span><span class="o">.</span><span class="n">evalFunctionsSens</span><span class="p">(</span><span class="n">funcsSens</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;mass&#39;</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">funcs</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># Result will look like (if TransientProblem has name of &#39;c1&#39;):</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># {&#39;c1_mass&#39;:{&#39;struct&#39;:[1.234, ..., 7.89]}</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.problems.TransientProblem.getVariables">
+<span class="sig-name descname"><span class="pre">getVariables</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">timeStep</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">states</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dstates</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ddstates</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/problems/transient.html#TransientProblem.getVariables"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.problems.TransientProblem.getVariables" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the current state values for the current problem</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>timeStep</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><em>int</em></a>) -- Time step index to get state variables for.</p></li>
+<li><p><strong>states</strong> (<em>TACS.Vec</em><em> or </em><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.22)"><em>numpy.ndarray</em></a><em> or </em><em>None</em>) -- If states is not None, place the state variables into this array (optional).</p></li>
+<li><p><strong>dstates</strong> (<em>TACS.Vec</em><em> or </em><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.22)"><em>numpy.ndarray</em></a><em> or </em><em>None</em>) -- If dstates is not None, place the time derivitive of the state variables into this array (optional).</p></li>
+<li><p><strong>ddstates</strong> (<em>TACS.Vec</em><em> or </em><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.22)"><em>numpy.ndarray</em></a><em> or </em><em>None</em>) -- If ddstates is not None, place the second time derivitive of the state variables into this array (optional).</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>time</strong> (<em>float</em>) -- The time at specified step</p></li>
+<li><p><strong>states</strong> (<em>TACS.Vec or numpy.ndarray</em>) -- The state variables.</p></li>
+<li><p><strong>dstates</strong> (<em>TACS.Vec or numpy.ndarray or None</em>) -- The time derivitive of the state variables.</p></li>
+<li><p><strong>ddstates</strong> (<em>TACS.Vec or numpy.ndarray or None</em>) -- The second time derivitive of the state variables.</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.problems.TransientProblem.writeSolution">
+<span class="sig-name descname"><span class="pre">writeSolution</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">outputDir</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">baseName</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">number</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeSteps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/problems/transient.html#TransientProblem.writeSolution"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.problems.TransientProblem.writeSolution" title="Permalink to this definition">¶</a></dt>
+<dd><p>This is a generic shell function that writes the output
+file(s).  The intent is that the user or calling program can
+call this function and pyTACS writes all the files that the
+user has defined. It is recommended that this function is used
+along with the associated logical flags in the options to
+determine the desired writing procedure</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>outputDir</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.10)"><em>str</em></a><em> or </em><em>None</em>) -- Use the supplied output directory</p></li>
+<li><p><strong>baseName</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.10)"><em>str</em></a><em> or </em><em>None</em>) -- Use this supplied string for the base filename. Typically
+only used from an external solver.</p></li>
+<li><p><strong>number</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><em>int</em></a><em> or </em><em>None</em>) -- Use the user spplied number to index solution. Again, only
+typically used from an external solver</p></li>
+<li><p><strong>timeSteps</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><em>int</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.10)"><em>list</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><em>int</em></a><em>] or </em><em>None</em>) -- Time step index or indices to get state variables for.
+If None, returns a solution for all time steps.
+Defaults to None.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.problems.TransientProblem.addFunction">
+<span class="sig-name descname"><span class="pre">addFunction</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">funcName</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">funcHandle</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">compIDs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tacs.problems.TransientProblem.addFunction" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generic method to add a function for TACS. It is intended to
+be reasonably generic since the user supplies the actual
+function handle to use. The following functions can be used:
+KSFailure, KSTemperature, AverageTemperature, Compliance,
+KSDisplacement, StructuralMass, HeatFlux.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>funcName</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.10)"><em>str</em></a>) -- The user-supplied name for the function. This will
+typically be a string that is meanful to the user</p></li>
+<li><p><strong>funcHandle</strong> (<em>tacs.functions</em>) -- The fucntion handle to use for creation. This must come
+from the functions module in tacs.</p></li>
+<li><p><strong>compIDs</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.10)"><em>list</em></a>) -- List of compIDs to select.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.problems.TransientProblem.getDesignVars">
+<span class="sig-name descname"><span class="pre">getDesignVars</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.problems.TransientProblem.getDesignVars" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get the current set of  design variables for this problem.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p><strong>x</strong> -- The current design variable vector set in tacs.</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>array</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.problems.TransientProblem.getFunctionKeys">
+<span class="sig-name descname"><span class="pre">getFunctionKeys</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.problems.TransientProblem.getFunctionKeys" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a list of the current function key names</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.problems.TransientProblem.getNodes">
+<span class="sig-name descname"><span class="pre">getNodes</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.problems.TransientProblem.getNodes" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the mesh coordiantes of this problem.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p><strong>coords</strong> -- Structural coordinate in array of size (N, 3) where N is
+the number of structural nodes on this processor.</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>array</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.problems.TransientProblem.getNumCoordinates">
+<span class="sig-name descname"><span class="pre">getNumCoordinates</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.problems.TransientProblem.getNumCoordinates" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the number of mesh coordinates on this processor.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.problems.TransientProblem.getNumDesignVars">
+<span class="sig-name descname"><span class="pre">getNumDesignVars</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.problems.TransientProblem.getNumDesignVars" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the number of design variables on this processor.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.problems.TransientProblem.getNumOwnedNodes">
+<span class="sig-name descname"><span class="pre">getNumOwnedNodes</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.problems.TransientProblem.getNumOwnedNodes" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get the number of nodes owned by this processor.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.problems.TransientProblem.getNumVariables">
+<span class="sig-name descname"><span class="pre">getNumVariables</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.problems.TransientProblem.getNumVariables" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the number of degrees of freedom (states) that are
+on this processor</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p><strong>nstate</strong> -- number of states.</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)">int</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.problems.TransientProblem.getOption">
+<span class="sig-name descname"><span class="pre">getOption</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tacs.problems.TransientProblem.getOption" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get a solver option value. The name is not case sensitive.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>name</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.10)"><em>str</em></a>) -- Name of option to get</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.problems.TransientProblem.getVarsPerNode">
+<span class="sig-name descname"><span class="pre">getVarsPerNode</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.problems.TransientProblem.getVarsPerNode" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get the number of variables per node for the model.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.problems.TransientProblem.printDefaultOptions">
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">printDefaultOptions</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.problems.TransientProblem.printDefaultOptions" title="Permalink to this definition">¶</a></dt>
+<dd><p>Prints a nicely formatted dictionary of all the default solver
+options to the stdout</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.problems.TransientProblem.printOptions">
+<span class="sig-name descname"><span class="pre">printOptions</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.problems.TransientProblem.printOptions" title="Permalink to this definition">¶</a></dt>
+<dd><p>Prints a nicely formatted dictionary of all the current solver
+options to the stdout on the root processor</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.problems.TransientProblem.setDesignVars">
+<span class="sig-name descname"><span class="pre">setDesignVars</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tacs.problems.TransientProblem.setDesignVars" title="Permalink to this definition">¶</a></dt>
+<dd><p>Update the design variables used by tacs.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>x</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.22)"><em>numpy.ndarray</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.10)"><em>dict</em></a><em> or </em><em>TACS.Vec</em>) -- The variables (typically from the optimizer) to set. It
+looks for variable in the <code class="docutils literal notranslate"><span class="pre">self.varName</span></code> attribute if in dict.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.problems.TransientProblem.setNodes">
+<span class="sig-name descname"><span class="pre">setNodes</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">Xpts</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tacs.problems.TransientProblem.setNodes" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set the mesh coordinates of the structure.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>coords</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.22)"><em>numpy.ndarray</em></a>) -- Structural coordinate in array of size (N * 3) where N is
+the number of structural nodes on this processor.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.problems.TransientProblem.setVarName">
+<span class="sig-name descname"><span class="pre">setVarName</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">varName</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tacs.problems.TransientProblem.setVarName" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set a name for the structural variables in pyOpt. Only needs
+to be changed if more than 1 pytacs object is used in an
+optimization</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>varName</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.10)"><em>str</em></a>) -- Name of the structural variable used in addVarGroup().</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <div>
+    <h3><a href="../index.html">Table of Contents</a></h3>
+    <ul>
+<li><a class="reference internal" href="#">TransientProblem</a><ul>
+<li><a class="reference internal" href="#options">Options</a></li>
+<li><a class="reference internal" href="#api-reference">API Reference</a></li>
+</ul>
+</li>
+</ul>
+
+  </div>
+  <div>
+    <h4>Previous topic</h4>
+    <p class="topless"><a href="static.html"
+                          title="previous chapter">StaticProblem</a></p>
+  </div>
+  <div>
+    <h4>Next topic</h4>
+    <p class="topless"><a href="modal.html"
+                          title="next chapter">ModalProblem</a></p>
+  </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="modal.html" title="ModalProblem"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="static.html" title="StaticProblem"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">TACS  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../interfaces.html" >Interfaces</a> &#187;</li>
+          <li class="nav-item nav-item-2"><a href="pytacs.html" >pyTACS</a> &#187;</li>
+          <li class="nav-item nav-item-3"><a href="problems.html" >Problem classes</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">TransientProblem</a></li> 
+      </ul>
+    </div>
+ <script type="text/javascript">
+    $(document).ready(function() {
+        $(".toggle > *").hide();
+        $(".toggle .header").show();
+        $(".toggle .header").click(function() {
+            $(this).parent().children().not(".header").toggle(400);
+            $(this).parent().children(".header").toggleClass("open");
+        })
+    });
+</script>
+
+  </body>
+</html>

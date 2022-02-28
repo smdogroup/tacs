@@ -4,19 +4,19 @@
 <html lang="python">
   <head>
     <meta charset="utf-8" />
-    <title>Installing TACS &#8212; TACS  documentation</title>
-    <link rel="stylesheet" href="_static/sphinxdoc.css" type="text/css" />
-    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Install &#8212; TACS  documentation</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="_static/sphinxdoc.css" />
     <link rel="stylesheet" href="_static/custom.css" type="text/css" />
-    <script id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+    <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
     <script src="_static/jquery.js"></script>
     <script src="_static/underscore.js"></script>
     <script src="_static/doctools.js"></script>
-    <script src="_static/language_data.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="TACS Interface" href="interface.html" />
-    <link rel="prev" title="Welcome to TACS&#39;s documentation!" href="index.html" /> 
+    <link rel="next" title="Interfaces" href="interfaces.html" />
+    <link rel="prev" title="TACS Overview" href="index.html" /> 
   </head><body>
     <div class="related" role="navigation" aria-label="related navigation">
       <h3>Navigation</h3>
@@ -28,66 +28,36 @@
           <a href="py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="interface.html" title="TACS Interface"
+          <a href="interfaces.html" title="Interfaces"
              accesskey="N">next</a> |</li>
         <li class="right" >
-          <a href="index.html" title="Welcome to TACS&#39;s documentation!"
+          <a href="index.html" title="TACS Overview"
              accesskey="P">previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="index.html">TACS  documentation</a> &#187;</li> 
+        <li class="nav-item nav-item-0"><a href="index.html">TACS  documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Install</a></li> 
       </ul>
-    </div>
-      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
-        <div class="sphinxsidebarwrapper">
-  <h3><a href="index.html">Table of Contents</a></h3>
-  <ul>
-<li><a class="reference internal" href="#">Installing TACS</a><ul>
-<li><a class="reference internal" href="#prerequisites">Prerequisites</a></li>
-<li><a class="reference internal" href="#steps-to-compile">Steps to Compile</a></li>
-</ul>
-</li>
-</ul>
-
-  <h4>Previous topic</h4>
-  <p class="topless"><a href="index.html"
-                        title="previous chapter">Welcome to TACS's documentation!</a></p>
-  <h4>Next topic</h4>
-  <p class="topless"><a href="interface.html"
-                        title="next chapter">TACS Interface</a></p>
-  <div role="note" aria-label="source link">
-    <h3>This Page</h3>
-    <ul class="this-page-menu">
-      <li><a href="_sources/install.rst.txt"
-            rel="nofollow">Show Source</a></li>
-    </ul>
-   </div>
-<div id="searchbox" style="display: none" role="search">
-  <h3 id="searchlabel">Quick search</h3>
-    <div class="searchformwrapper">
-    <form class="search" action="search.html" method="get">
-      <input type="text" name="q" aria-labelledby="searchlabel" />
-      <input type="submit" value="Go" />
-    </form>
-    </div>
-</div>
-<script>$('#searchbox').show(0);</script>
-        </div>
-      </div>
+    </div>  
 
     <div class="document">
       <div class="documentwrapper">
         <div class="bodywrapper">
           <div class="body" role="main">
             
-  <div class="section" id="installing-tacs">
-<h1>Installing TACS<a class="headerlink" href="#installing-tacs" title="Permalink to this headline">¶</a></h1>
+  <div class="section" id="install">
+<h1>Install<a class="headerlink" href="#install" title="Permalink to this headline">¶</a></h1>
 <div class="section" id="prerequisites">
 <h2>Prerequisites<a class="headerlink" href="#prerequisites" title="Permalink to this headline">¶</a></h2>
 <p>The following packages are required to use TACS:</p>
 <ul class="simple">
-<li><p>MPI and mpi4py</p></li>
+<li><p>MPI</p></li>
 <li><p>BLAS</p></li>
 <li><p>LAPACK</p></li>
 <li><p>Metis 5.1</p></li>
+</ul>
+<p>To use the python interface to TACS you will also require:</p>
+<ul class="simple">
+<li><p>Cython</p></li>
+<li><p>mpi4py</p></li>
 <li><p>numpy</p></li>
 </ul>
 <p>Optional packages:</p>
@@ -96,31 +66,166 @@
 <li><p>TecIO - to convert TACS FH5 output files to tecplot-compatible files</p></li>
 </ul>
 </div>
-<div class="section" id="steps-to-compile">
-<h2>Steps to Compile<a class="headerlink" href="#steps-to-compile" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="basic-steps-to-compile-tacs">
+<h2>Basic steps to compile TACS<a class="headerlink" href="#basic-steps-to-compile-tacs" title="Permalink to this headline">¶</a></h2>
 <ol class="arabic">
-<li><p>Clone the TACS git repository</p></li>
+<li><p>Clone the TACS git repository <a class="reference external" href="https://github.com/smdogroup/tacs">tacs</a></p></li>
 <li><p>In the base 'tacs' directory, copy the Makefile.in.info to Makefile.in. Edit
 the Makefile.in and follow the directions within to set the variables. Set
 the following:</p>
 <blockquote>
 <div><ul class="simple">
-<li><p>TACS_DIR: the root director of TACS</p></li>
-<li><p>CXX: the C++ compiler, must be MPI-enabled</p></li>
-<li><p>LAPACK_LIBS: linking arguments for the LAPACK libraries</p></li>
-<li><p>METIS_INCLUDE/METIS_LIB: the include/linking arguments for METIS</p></li>
-<li><p>AMD_INCLUDE/AMD_LIBS: optional include/linking arguments for AMD</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">TACS_DIR</span></code>: the root director of TACS</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">CXX</span></code>: the C++ compiler, must be MPI-enabled</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">LAPACK_LIBS</span></code>: linking arguments for the LAPACK libraries</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">METIS_INCLUDE</span></code> and <code class="docutils literal notranslate"><span class="pre">METIS_LIB</span></code>: set the include/linking arguments for METIS</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">AMD_INCLUDE</span></code> and <code class="docutils literal notranslate"><span class="pre">AMD_LIBS</span></code>: <em>optional</em> set include/linking arguments for AMD</p></li>
 </ul>
 </div></blockquote>
 </li>
-<li><p>To compile, from the base directory, run <em>make</em> then <em>make interface</em></p></li>
-<li><p>To set up the Python interface, run <em>python setup.py</em></p></li>
+<li><p>To compile, from the base directory, run <code class="docutils literal notranslate"><span class="pre">make</span></code> then <code class="docutils literal notranslate"><span class="pre">make</span> <span class="pre">interface</span></code></p></li>
+<li><p>To set up the Python interface, run <code class="docutils literal notranslate"><span class="pre">python</span> <span class="pre">setup.py</span> <span class="pre">develop</span> <span class="pre">--user</span></code></p></li>
 </ol>
 </div>
+<div class="section" id="detailed-installation-instructions">
+<h2>Detailed installation instructions<a class="headerlink" href="#detailed-installation-instructions" title="Permalink to this headline">¶</a></h2>
+<p>The Toolbox for the Analysis of Composite Structures (TACS) is a
+parallel finite-element code written in C++, with an optional python
+interface. TACS has been implemented from the start with gradient-based
+optimization in mind. There are built-in routines for evaluating
+functions of interest and their derivatives. TACS is object oriented
+and can be extended to include new elements, constitutive properties
+or functions of interest.</p>
+<p>There are several software package dependencies required to install
+TACS. The dependencies are divided into the following categories:</p>
+<ol class="arabic simple">
+<li><p>Dependencies for the C++ interface</p></li>
+<li><p>Dependencies for the python interface</p></li>
+</ol>
+</div>
+<div class="section" id="checking-out-the-code">
+<h2>Checking out the code<a class="headerlink" href="#checking-out-the-code" title="Permalink to this headline">¶</a></h2>
+<p>Using git checkout the source</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">git</span> <span class="n">clone</span> <span class="n">https</span><span class="p">:</span><span class="o">//</span><span class="n">github</span><span class="o">.</span><span class="n">com</span><span class="o">/</span><span class="n">smdogroup</span><span class="o">/</span><span class="n">tacs</span>
+</pre></div>
+</div>
+<p>After you have cloned TACS, copy the file <code class="docutils literal notranslate"><span class="pre">Makefile.in.info</span></code> to a file called <code class="docutils literal notranslate"><span class="pre">Makefile.in</span></code>.
+When compiling, TACS will look for the paths and settings in <code class="docutils literal notranslate"><span class="pre">Makefile.in</span></code>.
+Make sure to set the following:</p>
+<ol class="arabic simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">TACS_DIR</span></code>: the root director of TACS</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">CXX</span></code>: the C++ compiler, must be MPI-enabled</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">LAPACK_LIBS</span></code>: linking arguments for the LAPACK libraries</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">METIS_INCLUDE</span></code> and <code class="docutils literal notranslate"><span class="pre">METIS_LIB</span></code>: set the include/linking arguments for METIS</p></li>
+</ol>
+<p>In addition, it is recommended to copy the default python settings by copying <code class="docutils literal notranslate"><span class="pre">setup.cfg.info</span></code> to <code class="docutils literal notranslate"><span class="pre">setup.cfg</span></code>.
+The settings in <code class="docutils literal notranslate"><span class="pre">setup.cfg.info</span></code> are intended for development, if you are just going to use the code as-is,
+you may wish to modify these settings.</p>
+</div>
+<div class="section" id="install-dependencies">
+<h2>Install dependencies<a class="headerlink" href="#install-dependencies" title="Permalink to this headline">¶</a></h2>
+<p>These instructions direct you to install METIS and other dependencies in the directory <code class="docutils literal notranslate"><span class="pre">tacs/extern</span></code>.
+This location for the dependencies is not required, and indeed may not be best.
+If you already have these libraries installed, simply adjust the variables in <code class="docutils literal notranslate"><span class="pre">tacs/Makefile.in</span></code> accordingly.</p>
+<p>Go to the directory <code class="docutils literal notranslate"><span class="pre">tacs/extern</span></code>. Download <code class="docutils literal notranslate"><span class="pre">metis-5.1.0</span></code> from <code class="docutils literal notranslate"><span class="pre">http://glaros.dtc.umn.edu/gkhome/metis/metis/download</span></code> and place the file <code class="docutils literal notranslate"><span class="pre">metis-5.1.0.tar.gz</span></code> there.
+Note that METIS needs CMake to build and install.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>cd metis-5.1.0
+make config prefix=$PWD CFLAGS=&quot;-fPIC&quot;
+make
+</pre></div>
+</div>
+</div>
+<div class="section" id="make-the-c-tacs-library">
+<h2>Make the C++ TACS library<a class="headerlink" href="#make-the-c-tacs-library" title="Permalink to this headline">¶</a></h2>
+<p>Return to the root TACS directory.
+Ensure that all appropriate variables are set in <code class="docutils literal notranslate"><span class="pre">Makefile.in</span></code>.
+Make the TACS libraries by running <code class="docutils literal notranslate"><span class="pre">make</span></code> from the root directory.</p>
+</div>
+<div class="section" id="f5tovtk">
+<h2>f5tovtk<a class="headerlink" href="#f5tovtk" title="Permalink to this headline">¶</a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">f5tovtk</span></code> is an executable that converts <code class="docutils literal notranslate"><span class="pre">.f5</span></code> files to VTK format compatible with Paraview.
+After compiling the C++ libraries, go to the subdirectory <code class="docutils literal notranslate"><span class="pre">tacs/extern/f5tovtk</span></code> and make the executable there.
+It is useful to put this utility on your path if possible.
+I add the directory <code class="docutils literal notranslate"><span class="pre">$HOME/bin</span></code> to my <code class="docutils literal notranslate"><span class="pre">PATH</span></code> and then from the directory <code class="docutils literal notranslate"><span class="pre">$HOME/bin</span></code> execute</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>ln -s $HOME/git/tacs/extern/f5tovtk
+</pre></div>
+</div>
+</div>
+<div class="section" id="installing-the-python-interface">
+<h2>Installing the python interface<a class="headerlink" href="#installing-the-python-interface" title="Permalink to this headline">¶</a></h2>
+<p>The python interface is generated in the <code class="docutils literal notranslate"><span class="pre">tacs/tacs</span></code> sub-directory.
+The interface is generated using Cython.</p>
+<p>The python interface requires the following packages:</p>
+<ol class="arabic simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">Cython</span></code>: Python interface generator</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">numpy</span></code>: Numerical python packages</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">mpi4py</span></code>: Python interface for MPI</p></li>
+</ol>
+<p>Use <code class="docutils literal notranslate"><span class="pre">pip</span></code> to install these packages if they are not already installed.
+TACS works with python 3.</p>
+<p>To build the python interface to <code class="docutils literal notranslate"><span class="pre">tacs</span></code>, you can use the Makefile
+or you can type the following command in the root directory:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">python</span> <span class="n">setup</span><span class="o">.</span><span class="n">py</span> <span class="n">build_ext</span> <span class="o">--</span><span class="n">inplace</span>
+</pre></div>
+</div>
+<p>The <code class="docutils literal notranslate"><span class="pre">--inplace</span></code> option places the shared objects direclty in the source directories.
+There are several options to make the python <code class="docutils literal notranslate"><span class="pre">tacs</span></code> package visible to python.
+I recommend using the user install option which places a link to the library in a local directory that python looks in.
+This can be performed by typing:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">python</span> <span class="n">setup</span><span class="o">.</span><span class="n">py</span> <span class="n">develop</span> <span class="o">--</span><span class="n">user</span>
+</pre></div>
+</div>
+<p>Once you have installed TACS in this way, you can use the shortcut in the <code class="docutils literal notranslate"><span class="pre">Makefile</span></code> and type:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">make</span> <span class="n">interface</span>
+</pre></div>
+</div>
+</div>
 </div>
 
 
+            <div class="clearer"></div>
           </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <div>
+    <h3><a href="index.html">Table of Contents</a></h3>
+    <ul>
+<li><a class="reference internal" href="#">Install</a><ul>
+<li><a class="reference internal" href="#prerequisites">Prerequisites</a></li>
+<li><a class="reference internal" href="#basic-steps-to-compile-tacs">Basic steps to compile TACS</a></li>
+<li><a class="reference internal" href="#detailed-installation-instructions">Detailed installation instructions</a></li>
+<li><a class="reference internal" href="#checking-out-the-code">Checking out the code</a></li>
+<li><a class="reference internal" href="#install-dependencies">Install dependencies</a></li>
+<li><a class="reference internal" href="#make-the-c-tacs-library">Make the C++ TACS library</a></li>
+<li><a class="reference internal" href="#f5tovtk">f5tovtk</a></li>
+<li><a class="reference internal" href="#installing-the-python-interface">Installing the python interface</a></li>
+</ul>
+</li>
+</ul>
+
+  </div>
+  <div>
+    <h4>Previous topic</h4>
+    <p class="topless"><a href="index.html"
+                          title="previous chapter">TACS Overview</a></p>
+  </div>
+  <div>
+    <h4>Next topic</h4>
+    <p class="topless"><a href="interfaces.html"
+                          title="next chapter">Interfaces</a></p>
+  </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
         </div>
       </div>
       <div class="clearer"></div>
@@ -135,12 +240,13 @@ the following:</p>
           <a href="py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="interface.html" title="TACS Interface"
+          <a href="interfaces.html" title="Interfaces"
              >next</a> |</li>
         <li class="right" >
-          <a href="index.html" title="Welcome to TACS&#39;s documentation!"
+          <a href="index.html" title="TACS Overview"
              >previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="index.html">TACS  documentation</a> &#187;</li> 
+        <li class="nav-item nav-item-0"><a href="index.html">TACS  documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Install</a></li> 
       </ul>
     </div>
  <script type="text/javascript">

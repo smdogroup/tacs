@@ -1,0 +1,155 @@
+
+<!DOCTYPE html>
+
+<html lang="python">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>pyTACS &#8212; TACS  documentation</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinxdoc.css" />
+    <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+    <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="pyTACS class" href="pytacs_module.html" />
+    <link rel="prev" title="Direct" href="../core/TACS.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="pytacs_module.html" title="pyTACS class"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="../core/TACS.html" title="Direct"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">TACS  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../interfaces.html" accesskey="U">Interfaces</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">pyTACS</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="pytacs">
+<h1>pyTACS<a class="headerlink" href="#pytacs" title="Permalink to this headline">¶</a></h1>
+<p>The pyTACS interface utilizes a number of Python classes that automate the setup and running of models and analyses in TACS.
+This interface offers the following benefits over the <a class="reference internal" href="../core/TACS.html#direct"><span class="std std-ref">Direct</span></a> approach:
+has a more robust NASTRAN BDF mesh parsing capablity, improved interface for applying loads to structural problems,
+fewer Python objects to keep track of when running typical analyses.
+The interface consists of two main groups of classes: an assembler class called <a class="reference internal" href="pytacs_module.html#tacs.pytacs.pyTACS" title="tacs.pytacs.pyTACS"><code class="xref py py-class docutils literal notranslate"><span class="pre">pyTACS</span></code></a> and
+a set of problem classes for analysis. The details of the interfaces will be discussed in the sections below.</p>
+<div class="section" id="workflow">
+<h2>Workflow<a class="headerlink" href="#workflow" title="Permalink to this headline">¶</a></h2>
+<p>The most common usage of TACS is to evaluate the values and gradients of desired
+structural functions with respect to specified design variables. Using the pyTACS interface, this workflow
+proceeds as follows:</p>
+<ol class="arabic simple">
+<li><p>Load in a finite element model of the desired structure (in the form of a NASTRAN-style
+file) using an instance of the <a class="reference internal" href="pytacs_module.html#tacs.pytacs.pyTACS" title="tacs.pytacs.pyTACS"><code class="xref py py-class docutils literal notranslate"><span class="pre">pyTACS</span></code></a> class.</p></li>
+<li><p>Setup tacs element objects and design variables for the structure using the
+<a class="reference internal" href="pytacs_module.html#tacs.pytacs.pyTACS.initialize" title="tacs.pytacs.pyTACS.initialize"><code class="xref py py-meth docutils literal notranslate"><span class="pre">pyTACS.initialize</span></code></a> method.</p></li>
+<li><p>Create an instance of the <a class="reference internal" href="problems.html#problem-classes"><span class="std std-ref">problem</span></a> class and add loads and functions of interest.</p></li>
+<li><p>Solve the <a class="reference internal" href="problems.html#problem-classes"><span class="std std-ref">problem</span></a> and evaluate the functions and their gradients with respect to the
+design variables.</p></li>
+</ol>
+<p>These function values and gradients can then be passed to an optimizer (such as <a class="reference external" href="https://smdogroup.github.io/paropt/reference.html#module-paropt.ParOpt" title="(in paropt)"><code class="xref py py-mod docutils literal notranslate"><span class="pre">ParOpt</span></code></a>)
+in order to minimize the value of a particular function subject to some constraints.
+Improved design variable values are iteratively computed by the optimizer and Step 4 is
+repeated until the optimization criteria are satisfied.</p>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="pytacs_module.html">pyTACS class</a></li>
+<li class="toctree-l1"><a class="reference internal" href="problems.html">Problem classes</a></li>
+</ul>
+</div>
+</div>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <div>
+    <h3><a href="../index.html">Table of Contents</a></h3>
+    <ul>
+<li><a class="reference internal" href="#">pyTACS</a><ul>
+<li><a class="reference internal" href="#workflow">Workflow</a></li>
+</ul>
+</li>
+</ul>
+
+  </div>
+  <div>
+    <h4>Previous topic</h4>
+    <p class="topless"><a href="../core/TACS.html"
+                          title="previous chapter">Direct</a></p>
+  </div>
+  <div>
+    <h4>Next topic</h4>
+    <p class="topless"><a href="pytacs_module.html"
+                          title="next chapter">pyTACS class</a></p>
+  </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="pytacs_module.html" title="pyTACS class"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="../core/TACS.html" title="Direct"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">TACS  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../interfaces.html" >Interfaces</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">pyTACS</a></li> 
+      </ul>
+    </div>
+ <script type="text/javascript">
+    $(document).ready(function() {
+        $(".toggle > *").hide();
+        $(".toggle .header").show();
+        $(".toggle .header").click(function() {
+            $(this).parent().children().not(".header").toggle(400);
+            $(this).parent().children(".header").toggleClass("open");
+        })
+    });
+</script>
+
+  </body>
+</html>

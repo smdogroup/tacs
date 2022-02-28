@@ -1,0 +1,896 @@
+
+<!DOCTYPE html>
+
+<html lang="python">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>tacs.problems.transient &#8212; TACS  documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/sphinxdoc.css" />
+    <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+    <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+    <script src="../../../_static/jquery.js"></script>
+    <script src="../../../_static/underscore.js"></script>
+    <script src="../../../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">TACS  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" accesskey="U">Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">tacs.problems.transient</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for tacs.problems.transient</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">The main purpose of this class is to represent all relevant</span>
+<span class="sd">information for a transient analysis. This will include</span>
+<span class="sd">information defining the loading condition as well as various</span>
+<span class="sd">other pieces of information.</span>
+
+<span class="sd">.. note:: This class should be created using the</span>
+<span class="sd">    :meth:`pyTACS.createTransientProblem &lt;tacs.pytacs.pyTACS.createTransientProblem&gt;` method.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="c1"># =============================================================================</span>
+<span class="c1"># Imports</span>
+<span class="c1"># =============================================================================</span>
+<span class="kn">import</span> <span class="nn">warnings</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">OrderedDict</span>
+<span class="kn">import</span> <span class="nn">time</span>
+<span class="kn">from</span> <span class="nn">.base</span> <span class="kn">import</span> <span class="n">TACSProblem</span>
+<span class="kn">import</span> <span class="nn">tacs.TACS</span>
+
+<div class="viewcode-block" id="TransientProblem"><a class="viewcode-back" href="../../../pytacs/transient.html#tacs.problems.TransientProblem">[docs]</a><span class="k">class</span> <span class="nc">TransientProblem</span><span class="p">(</span><span class="n">TACSProblem</span><span class="p">):</span>
+    <span class="c1"># python object name</span>
+    <span class="n">objectName</span> <span class="o">=</span> <span class="s1">&#39;TransientProblem&#39;</span>
+
+    <span class="c1"># Default Option List</span>
+    <span class="n">defaultOptions</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s1">&#39;outputdir&#39;</span><span class="p">:</span> <span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="s1">&#39;./&#39;</span><span class="p">,</span> <span class="s1">&#39;Output directory for F5 file writer.&#39;</span><span class="p">],</span>
+
+        <span class="c1"># Solution Options</span>
+        <span class="s1">&#39;timeIntegrator&#39;</span><span class="p">:</span> <span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="s1">&#39;BDF&#39;</span><span class="p">,</span> <span class="s2">&quot;Time integration scheme to use. Currently supports &#39;BDF&#39; and &#39;DIRK&#39;.&quot;</span><span class="p">],</span>
+        <span class="s1">&#39;integrationOrder&#39;</span><span class="p">:</span> <span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="s2">&quot;Integration order for time marching scheme.&quot;</span><span class="p">],</span>
+        <span class="s1">&#39;L2Convergence&#39;</span><span class="p">:</span> <span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="mf">1e-12</span><span class="p">,</span> <span class="s1">&#39;Absolute convergence tolerance for integrator based on l2 norm of residual.&#39;</span><span class="p">],</span>
+        <span class="s1">&#39;L2ConvergenceRel&#39;</span><span class="p">:</span> <span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="mf">1e-12</span><span class="p">,</span>
+                             <span class="s1">&#39;Relative convergence tolerance for integrator based on l2 norm of residual.&#39;</span><span class="p">],</span>
+        <span class="s1">&#39;jacAssemblyFreq&#39;</span><span class="p">:</span> <span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="s1">&#39;How frequently to reassemble Jacobian during time integration process.&#39;</span><span class="p">],</span>
+
+        <span class="c1"># Output Options</span>
+        <span class="s1">&#39;writeSolution&#39;</span><span class="p">:</span> <span class="p">[</span><span class="nb">bool</span><span class="p">,</span> <span class="kc">True</span><span class="p">,</span> <span class="s1">&#39;Flag for suppressing all f5 file writing.&#39;</span><span class="p">],</span>
+        <span class="s1">&#39;numberSolutions&#39;</span><span class="p">:</span> <span class="p">[</span><span class="nb">bool</span><span class="p">,</span> <span class="kc">True</span><span class="p">,</span> <span class="s1">&#39;Flag for attaching solution counter index to f5 files.&#39;</span><span class="p">],</span>
+        <span class="s1">&#39;printTiming&#39;</span><span class="p">:</span> <span class="p">[</span><span class="nb">bool</span><span class="p">,</span> <span class="kc">False</span><span class="p">,</span> <span class="s1">&#39;Flag for printing out timing information for class procedures.&#39;</span><span class="p">],</span>
+        <span class="s1">&#39;printLevel&#39;</span><span class="p">:</span> <span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="s1">&#39;Print level for integraton solver.</span><span class="se">\n</span><span class="s1">&#39;</span>
+                               <span class="s1">&#39;</span><span class="se">\t</span><span class="s1"> Accepts:</span><span class="se">\n</span><span class="s1">&#39;</span>
+                               <span class="s1">&#39;</span><span class="se">\t\t</span><span class="s1">   0 : No printing.</span><span class="se">\n</span><span class="s1">&#39;</span>
+                               <span class="s1">&#39;</span><span class="se">\t\t</span><span class="s1">   1 : Print major iterations.</span><span class="se">\n</span><span class="s1">&#39;</span>
+                               <span class="s1">&#39;</span><span class="se">\t\t</span><span class="s1"> &gt; 1 : Print major + minor iterations.&#39;</span><span class="p">],</span>
+
+    <span class="p">}</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">tInit</span><span class="p">,</span> <span class="n">tFinal</span><span class="p">,</span> <span class="n">numSteps</span><span class="p">,</span>
+                 <span class="n">assembler</span><span class="p">,</span> <span class="n">comm</span><span class="p">,</span> <span class="n">outputViewer</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">meshLoader</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">options</span><span class="o">=</span><span class="p">{}):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        NOTE: This class should not be initialized directly by the user.</span>
+<span class="sd">        Use pyTACS.createTransientProblem instead.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        name : str</span>
+<span class="sd">            Name of this tacs problem</span>
+
+<span class="sd">        tInit : float</span>
+<span class="sd">            Starting time for transient problem integration</span>
+
+<span class="sd">        tFinal : float</span>
+<span class="sd">            Ending time for transient problem integration</span>
+
+<span class="sd">        numSteps : int</span>
+<span class="sd">            Number of time steps for transient problem integration</span>
+
+<span class="sd">        assembler : TACS.Assembler</span>
+<span class="sd">            Cython object responsible for creating and setting tacs objects used to solve problem</span>
+
+<span class="sd">        comm : mpi4py.MPI.Intracomm</span>
+<span class="sd">            The comm object on which to create the pyTACS object.</span>
+
+<span class="sd">        outputViewer : TACS.TACSToFH5</span>
+<span class="sd">            Cython object used to write out f5 files that can be converted and used for postprocessing.</span>
+
+<span class="sd">        meshLoader : pymeshloader.pyMeshLoader</span>
+<span class="sd">            pyMeshLoader object used to create the assembler.</span>
+
+<span class="sd">        options : dict</span>
+<span class="sd">            Dictionary holding problem-specific option parameters (case-insensitive).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="c1"># Problem name</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">name</span>
+
+        <span class="c1"># Defualt setup for common problem class objects</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">assembler</span><span class="p">,</span> <span class="n">comm</span><span class="p">,</span> <span class="n">outputViewer</span><span class="p">,</span> <span class="n">meshLoader</span><span class="p">)</span>
+
+        <span class="c1"># Set time interval parmeters</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tInit</span> <span class="o">=</span> <span class="n">tInit</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tFinal</span> <span class="o">=</span> <span class="n">tFinal</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">numSteps</span> <span class="o">=</span> <span class="n">numSteps</span>
+
+        <span class="c1"># Process the default options which are added to self.options</span>
+        <span class="c1"># under the &#39;defaults&#39; key. Make sure the key are lower case</span>
+        <span class="n">def_keys</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">defaultOptions</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">options</span><span class="p">[</span><span class="s1">&#39;defaults&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">def_keys</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">options</span><span class="p">[</span><span class="s1">&#39;defaults&#39;</span><span class="p">][</span><span class="n">key</span><span class="o">.</span><span class="n">lower</span><span class="p">()]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">defaultOptions</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">options</span><span class="p">[</span><span class="n">key</span><span class="o">.</span><span class="n">lower</span><span class="p">()]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">defaultOptions</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+
+        <span class="c1"># Set user-defined options</span>
+        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">options</span><span class="p">:</span>
+            <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">setOption</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">options</span><span class="p">[</span><span class="n">key</span><span class="p">])</span>
+
+        <span class="c1"># Create problem-specific variables</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_createVariables</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">_createVariables</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Internal to create the objects required by TACS Integrator</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">callCounter</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+
+        <span class="c1"># Create a force vector for each time step</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">F</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">assembler</span><span class="o">.</span><span class="n">createVec</span><span class="p">()</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">numSteps</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)]</span>
+        <span class="c1"># Auxillary element object for applying tractions/pressure</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">auxElems</span> <span class="o">=</span> <span class="p">[</span><span class="n">tacs</span><span class="o">.</span><span class="n">TACS</span><span class="o">.</span><span class="n">AuxElements</span><span class="p">()</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">numSteps</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)]</span>
+
+        <span class="c1"># Create the BDF integrator solver</span>
+        <span class="n">order</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s1">&#39;integrationOrder&#39;</span><span class="p">)</span>
+        <span class="n">solverType</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s1">&#39;timeIntegrator&#39;</span><span class="p">)</span>
+        <span class="c1"># Chose solver type</span>
+        <span class="k">if</span> <span class="n">solverType</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span> <span class="o">==</span> <span class="s1">&#39;BDF&#39;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">integrator</span> <span class="o">=</span> <span class="n">tacs</span><span class="o">.</span><span class="n">TACS</span><span class="o">.</span><span class="n">BDFIntegrator</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">assembler</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">tInit</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">tFinal</span><span class="p">,</span>
+                                            <span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">numSteps</span><span class="p">),</span> <span class="n">order</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">solverType</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span> <span class="o">==</span> <span class="s1">&#39;DIRK&#39;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">integrator</span> <span class="o">=</span> <span class="n">tacs</span><span class="o">.</span><span class="n">TACS</span><span class="o">.</span><span class="n">DIRKIntegrator</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">assembler</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">tInit</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">tFinal</span><span class="p">,</span>
+                                                  <span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">numSteps</span><span class="p">),</span> <span class="n">order</span><span class="p">)</span>
+
+        <span class="n">printLevel</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s1">&#39;printLevel&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">integrator</span><span class="o">.</span><span class="n">setPrintLevel</span><span class="p">(</span><span class="n">printLevel</span><span class="p">)</span>
+        <span class="c1"># Set solver tolerances</span>
+        <span class="n">atol</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s1">&#39;L2Convergence&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">integrator</span><span class="o">.</span><span class="n">setAbsTol</span><span class="p">(</span><span class="n">atol</span><span class="p">)</span>
+        <span class="n">rtol</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s1">&#39;L2ConvergenceRel&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">integrator</span><span class="o">.</span><span class="n">setRelTol</span><span class="p">(</span><span class="n">rtol</span><span class="p">)</span>
+        <span class="c1"># Jacobian assembly frequency</span>
+        <span class="n">jacFreq</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s1">&#39;jacAssemblyFreq&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">integrator</span><span class="o">.</span><span class="n">setJacAssemblyFreq</span><span class="p">(</span><span class="n">jacFreq</span><span class="p">)</span>
+
+        <span class="c1"># Set output viewer for integrator</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">integrator</span><span class="o">.</span><span class="n">setFH5</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">outputViewer</span><span class="p">)</span>
+        <span class="n">outputDir</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s1">&#39;outputDir&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">integrator</span><span class="o">.</span><span class="n">setOutputPrefix</span><span class="p">(</span><span class="n">outputDir</span><span class="p">)</span>
+
+<div class="viewcode-block" id="TransientProblem.setOption"><a class="viewcode-back" href="../../../pytacs/transient.html#tacs.problems.TransientProblem.setOption">[docs]</a>    <span class="k">def</span> <span class="nf">setOption</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Set a solver option value. The name is not case sensitive.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        name : str</span>
+<span class="sd">            Name of option to modify</span>
+
+<span class="sd">        value : depends on option</span>
+<span class="sd">            New option value to set</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Defualt setOption for common problem class objects</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">setOption</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+
+        <span class="c1"># Update tolerances</span>
+        <span class="k">if</span> <span class="s1">&#39;l2convergence&#39;</span> <span class="ow">in</span> <span class="n">name</span><span class="o">.</span><span class="n">lower</span><span class="p">():</span>
+            <span class="c1"># Set solver tolerances</span>
+            <span class="n">atol</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s1">&#39;L2Convergence&#39;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">integrator</span><span class="o">.</span><span class="n">setAbsTol</span><span class="p">(</span><span class="n">atol</span><span class="p">)</span>
+            <span class="n">rtol</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s1">&#39;L2ConvergenceRel&#39;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">integrator</span><span class="o">.</span><span class="n">setRelTol</span><span class="p">(</span><span class="n">rtol</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">name</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s1">&#39;printlevel&#39;</span><span class="p">:</span>
+            <span class="n">printLevel</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s1">&#39;printLevel&#39;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">integrator</span><span class="o">.</span><span class="n">setPrintLevel</span><span class="p">(</span><span class="n">printLevel</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">name</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s1">&#39;jacassemblyfreq&#39;</span><span class="p">:</span>
+            <span class="c1"># Jacobian assembly frequency</span>
+            <span class="n">jacFreq</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s1">&#39;jacAssemblyFreq&#39;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">integrator</span><span class="o">.</span><span class="n">setJacAssemblyFreq</span><span class="p">(</span><span class="n">jacFreq</span><span class="p">)</span>
+        <span class="c1"># No need to reset solver for output options</span>
+        <span class="k">elif</span> <span class="n">name</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;writesolution&#39;</span><span class="p">,</span> <span class="s1">&#39;printtiming&#39;</span><span class="p">,</span>
+                              <span class="s1">&#39;numbersolutions&#39;</span><span class="p">,</span> <span class="s1">&#39;outputdir&#39;</span><span class="p">]:</span>
+            <span class="k">pass</span>
+        <span class="c1"># Reset solver for all other option changes</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_createVariables</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="TransientProblem.getNumTimeSteps"><a class="viewcode-back" href="../../../pytacs/transient.html#tacs.problems.TransientProblem.getNumTimeSteps">[docs]</a>    <span class="k">def</span> <span class="nf">getNumTimeSteps</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the number of timesteps used in time integration for this problem.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        ----------</span>
+<span class="sd">        numSteps : int</span>
+<span class="sd">            Number of time steps.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Should this really be numSteps + 1 ?</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">numSteps</span></div>
+
+<div class="viewcode-block" id="TransientProblem.getTimeSteps"><a class="viewcode-back" href="../../../pytacs/transient.html#tacs.problems.TransientProblem.getTimeSteps">[docs]</a>    <span class="k">def</span> <span class="nf">getTimeSteps</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the discrete time step slices used in time integration.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        ----------</span>
+<span class="sd">        numSteps : int</span>
+<span class="sd">            Number of time steps.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">timeSteps</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">tInit</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">tFinal</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">numSteps</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">timeSteps</span></div>
+
+<span class="c1">####### Load adding methods ########</span>
+
+<div class="viewcode-block" id="TransientProblem.addLoadToComponents"><a class="viewcode-back" href="../../../pytacs/transient.html#tacs.problems.TransientProblem.addLoadToComponents">[docs]</a>    <span class="k">def</span> <span class="nf">addLoadToComponents</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">timeStep</span><span class="p">,</span> <span class="n">compIDs</span><span class="p">,</span> <span class="n">F</span><span class="p">,</span> <span class="n">averageLoad</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;&quot;</span>
+<span class="sd">        This method is used to add a *FIXED TOTAL LOAD* on one or more</span>
+<span class="sd">        components, defined by COMPIDs, at a specifc time instance.</span>
+<span class="sd">        The purpose of this routine is to add loads that remain fixed throughout</span>
+<span class="sd">        an optimization. An example would be an engine load. This routine determines</span>
+<span class="sd">        all the unqiue nodes in the FE model that are part of the the requested components,</span>
+<span class="sd">        then takes the total &#39;force&#39; by F and divides by the number of nodes.</span>
+<span class="sd">        This average load is then applied to the nodes.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+
+<span class="sd">        timeStep : int</span>
+<span class="sd">            Time step index to apply load to.</span>
+
+<span class="sd">        compIDs : list[int] or int</span>
+<span class="sd">            The components with added loads. Use pyTACS.selectCompIDs method</span>
+<span class="sd">            to determine this.</span>
+
+<span class="sd">        F : Numpy 1d or 2d array length (varsPerNodes) or (numNodeIDs, varsPerNodes)</span>
+<span class="sd">            Vector(s) of &#39;force&#39; to apply to each components.  If only one force vector is provided,</span>
+<span class="sd">            force will be copied uniformly across all components.</span>
+
+<span class="sd">        averageLoad : bool</span>
+<span class="sd">            Flag to determine whether load should be split evenly across all components (True)</span>
+<span class="sd">            or copied and applied individually to each component (False). Defaults to False.</span>
+
+<span class="sd">        Notes</span>
+<span class="sd">        -----</span>
+
+<span class="sd">        The units of the entries of the &#39;force&#39; vector F are not</span>
+<span class="sd">        necesarily physical forces and their interpretation depends</span>
+<span class="sd">        on the physics problem being solved and the dofs included</span>
+<span class="sd">        in the model.</span>
+
+<span class="sd">        A couple of examples of force vector components for common problem are listed below:</span>
+
+<span class="sd">            In Heat Conduction with varsPerNode = 1</span>
+<span class="sd">                F = [Qdot] # heat rate</span>
+<span class="sd">            In Elasticity with varsPerNode = 3,</span>
+<span class="sd">                F = [fx, fy, fz] # forces</span>
+<span class="sd">            In Elasticity with varsPerNode = 6,</span>
+<span class="sd">                F = [fx, fy, fz, mx, my, mz] # forces + moments</span>
+<span class="sd">            In Thermoelasticity with varsPerNode = 4,</span>
+<span class="sd">                F = [fx, fy, fz, Qdot] # forces + heat rate</span>
+<span class="sd">            In Thermoelasticity with varsPerNode = 7,</span>
+<span class="sd">                F = [fx, fy, fz, mx, my, mz, Qdot] # forces + moments + heat rate</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_addLoadToComponents</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">F</span><span class="p">[</span><span class="n">timeStep</span><span class="p">],</span> <span class="n">compIDs</span><span class="p">,</span> <span class="n">F</span><span class="p">,</span> <span class="n">averageLoad</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="TransientProblem.addLoadToNodes"><a class="viewcode-back" href="../../../pytacs/transient.html#tacs.problems.TransientProblem.addLoadToNodes">[docs]</a>    <span class="k">def</span> <span class="nf">addLoadToNodes</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">timeStep</span><span class="p">,</span> <span class="n">nodeIDs</span><span class="p">,</span> <span class="n">F</span><span class="p">,</span> <span class="n">nastranOrdering</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        This method is used to add a fixed point load of F to the</span>
+<span class="sd">        selected node IDs at a specified time instance.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+
+<span class="sd">        timeStep : int</span>
+<span class="sd">            Time step index to apply load to.</span>
+
+<span class="sd">        nodeIDs : list[int]</span>
+<span class="sd">            The nodes IDs with added loads.</span>
+
+<span class="sd">        F : Numpy 1d or 2d array length (varsPerNodes) or (numNodeIDs, varsPerNodes)</span>
+<span class="sd">            Array of force vectors, one for each node. If only one force vector is provided,</span>
+<span class="sd">            force will be copied uniformly across all nodes.</span>
+
+<span class="sd">        nastranOrdering : bool</span>
+<span class="sd">            Flag signaling whether nodeIDs are in TACS (default)</span>
+<span class="sd">            or NASTRAN (grid IDs in bdf file) ordering</span>
+
+<span class="sd">        Notes</span>
+<span class="sd">        -----</span>
+
+<span class="sd">        The units of the entries of the &#39;force&#39; vector F are not</span>
+<span class="sd">        necesarily physical forces and their interpretation depends</span>
+<span class="sd">        on the physics problem being solved and the dofs included</span>
+<span class="sd">        in the model.</span>
+
+<span class="sd">        A couple of examples of force vector components for common problem are listed below:</span>
+
+<span class="sd">            In Heat Conduction with varsPerNode = 1</span>
+<span class="sd">                F = [Qdot] # heat rate</span>
+<span class="sd">            In Elasticity with varsPerNode = 3,</span>
+<span class="sd">                F = [fx, fy, fz] # forces</span>
+<span class="sd">            In Elasticity with varsPerNode = 6,</span>
+<span class="sd">                F = [fx, fy, fz, mx, my, mz] # forces + moments</span>
+<span class="sd">            In Thermoelasticity with varsPerNode = 4,</span>
+<span class="sd">                F = [fx, fy, fz, Qdot] # forces + heat rate</span>
+<span class="sd">            In Thermoelasticity with varsPerNode = 7,</span>
+<span class="sd">                F = [fx, fy, fz, mx, my, mz, Qdot] # forces + moments + heat rate</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_addLoadToNodes</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">F</span><span class="p">[</span><span class="n">timeStep</span><span class="p">],</span> <span class="n">nodeIDs</span><span class="p">,</span> <span class="n">F</span><span class="p">,</span> <span class="n">nastranOrdering</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="TransientProblem.addLoadToRHS"><a class="viewcode-back" href="../../../pytacs/transient.html#tacs.problems.TransientProblem.addLoadToRHS">[docs]</a>    <span class="k">def</span> <span class="nf">addLoadToRHS</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">timeStep</span><span class="p">,</span> <span class="n">Fapplied</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;&quot;</span>
+<span class="sd">        This method is used to add a *FIXED TOTAL LOAD* directly to the</span>
+<span class="sd">        right hand side vector given the equation below:</span>
+
+<span class="sd">            M*udotdot + K*u = f</span>
+
+<span class="sd">        Where:</span>
+<span class="sd">            - K : Stiffness matrix for problem</span>
+<span class="sd">            - u : State variables for problem</span>
+<span class="sd">            - M : Mass matrix for problem</span>
+<span class="sd">            - udotdot : Second time derivitive of state variables for problem</span>
+<span class="sd">            - f : Right-hand side vector to add loads to</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+
+<span class="sd">        timeStep : int</span>
+<span class="sd">            Time step index to apply load to.</span>
+
+<span class="sd">        Fapplied : numpy.ndarray or TACS.Vec</span>
+<span class="sd">            Distributed array containing loads to applied to RHS of the problem.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_addLoadToRHS</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">F</span><span class="p">[</span><span class="n">timeStep</span><span class="p">],</span> <span class="n">Fapplied</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="TransientProblem.addTractionToComponents"><a class="viewcode-back" href="../../../pytacs/transient.html#tacs.problems.TransientProblem.addTractionToComponents">[docs]</a>    <span class="k">def</span> <span class="nf">addTractionToComponents</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">timeStep</span><span class="p">,</span> <span class="n">compIDs</span><span class="p">,</span> <span class="n">tractions</span><span class="p">,</span>
+                                <span class="n">faceIndex</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        This method is used to add a *FIXED TOTAL TRACTION* on one or more</span>
+<span class="sd">        components, defined by COMPIDs, at specified time instance. The purpose of</span>
+<span class="sd">        this routine is to add loads that remain fixed throughout an optimization.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+
+<span class="sd">        timeStep : int</span>
+<span class="sd">            Time step index to apply load to.</span>
+
+<span class="sd">        compIDs : list[int] or int</span>
+<span class="sd">            The components with added loads. Use pyTACS.selectCompIDs method</span>
+<span class="sd">            to determine this.</span>
+
+<span class="sd">        tractions : numpy.ndarray length 1 or compIDs</span>
+<span class="sd">            Array of traction vectors for each components</span>
+
+<span class="sd">        faceIndex : int</span>
+<span class="sd">            Indicates which face (side) of element to apply traction to.</span>
+<span class="sd">            Note: not required for certain elements (i.e. shells)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_addTractionToComponents</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">auxElems</span><span class="p">[</span><span class="n">timeStep</span><span class="p">],</span> <span class="n">compIDs</span><span class="p">,</span> <span class="n">tractions</span><span class="p">,</span> <span class="n">faceIndex</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="TransientProblem.addTractionToElements"><a class="viewcode-back" href="../../../pytacs/transient.html#tacs.problems.TransientProblem.addTractionToElements">[docs]</a>    <span class="k">def</span> <span class="nf">addTractionToElements</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">timeStep</span><span class="p">,</span> <span class="n">elemIDs</span><span class="p">,</span> <span class="n">tractions</span><span class="p">,</span>
+                              <span class="n">faceIndex</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">nastranOrdering</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        This method is used to add a fixed traction to the</span>
+<span class="sd">        selected element IDs at specified time instance.</span>
+<span class="sd">        Tractions can be specified on an element by element basis</span>
+<span class="sd">        (if tractions is a 2d array) or set to a uniform value (if tractions is a 1d array)</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+
+<span class="sd">        timeStep : int</span>
+<span class="sd">            Time step index to apply load to.</span>
+
+<span class="sd">        elemIDs : list[int]</span>
+<span class="sd">            The global element ID numbers for which to apply the traction.</span>
+
+<span class="sd">        tractions : numpy.ndarray 1d or 2d length varsPerNodes or (elemIDs, varsPerNodes)</span>
+<span class="sd">            Array of traction vectors for each element</span>
+
+<span class="sd">        faceIndex : int</span>
+<span class="sd">            Indicates which face (side) of element to apply traction to.</span>
+<span class="sd">            Note: not required for certain elements (i.e. shells)</span>
+
+<span class="sd">        nastranOrdering : bool</span>
+<span class="sd">            Flag signaling whether elemIDs are in TACS (default)</span>
+<span class="sd">            or NASTRAN ordering</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_addTractionToElements</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">auxElems</span><span class="p">[</span><span class="n">timeStep</span><span class="p">],</span> <span class="n">elemIDs</span><span class="p">,</span> <span class="n">tractions</span><span class="p">,</span> <span class="n">faceIndex</span><span class="p">,</span> <span class="n">nastranOrdering</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="TransientProblem.addPressureToComponents"><a class="viewcode-back" href="../../../pytacs/transient.html#tacs.problems.TransientProblem.addPressureToComponents">[docs]</a>    <span class="k">def</span> <span class="nf">addPressureToComponents</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">timeStep</span><span class="p">,</span> <span class="n">compIDs</span><span class="p">,</span> <span class="n">pressures</span><span class="p">,</span>
+                                <span class="n">faceIndex</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        This method is used to add a *FIXED TOTAL PRESSURE* on one or more</span>
+<span class="sd">        components, defined by COMPIDs, at specified time instance. The purpose of this routine is</span>
+<span class="sd">        to add loads that remain fixed throughout an optimization. An example</span>
+<span class="sd">        would be a fuel load.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+
+<span class="sd">        timeStep : int</span>
+<span class="sd">            Time step index to apply load to.</span>
+
+<span class="sd">        compIDs : list[int] or int</span>
+<span class="sd">            The components with added loads. Use pyTACS.selectCompIDs method</span>
+<span class="sd">            to determine this.</span>
+
+<span class="sd">        pressures : Numpy array length 1 or compIDs</span>
+<span class="sd">            Array of pressure values for each components</span>
+
+<span class="sd">        faceIndex : int</span>
+<span class="sd">            Indicates which face (side) of element to apply pressure to.</span>
+<span class="sd">            Note: not required for certain elements (i.e. shells)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_addPressureToComponents</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">auxElems</span><span class="p">[</span><span class="n">timeStep</span><span class="p">],</span> <span class="n">compIDs</span><span class="p">,</span> <span class="n">pressures</span><span class="p">,</span> <span class="n">faceIndex</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="TransientProblem.addPressureToElements"><a class="viewcode-back" href="../../../pytacs/transient.html#tacs.problems.TransientProblem.addPressureToElements">[docs]</a>    <span class="k">def</span> <span class="nf">addPressureToElements</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">timeStep</span><span class="p">,</span> <span class="n">elemIDs</span><span class="p">,</span> <span class="n">pressures</span><span class="p">,</span>
+                              <span class="n">faceIndex</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">nastranOrdering</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        This method is used to add a fixed presure to the</span>
+<span class="sd">        selected element IDs at specified time instance.</span>
+<span class="sd">        Pressures can be specified on an element by element</span>
+<span class="sd">        basis (if pressures is an array) or set to a uniform value (if pressures is a scalar)</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+
+<span class="sd">        timeStep : int</span>
+<span class="sd">            Time step index to apply load to.</span>
+
+<span class="sd">        elemIDs : list[int]</span>
+<span class="sd">            The global element ID numbers for which to apply the pressure.</span>
+
+<span class="sd">        pressures : Numpy array length 1 or elemIDs</span>
+<span class="sd">            Array of pressure values for each element</span>
+
+<span class="sd">        faceIndex : int</span>
+<span class="sd">            Indicates which face (side) of element to apply pressure to.</span>
+<span class="sd">            Note: not required for certain elements (i.e. shells)</span>
+
+<span class="sd">        nastranOrdering : bool</span>
+<span class="sd">            Flag signaling whether elemIDs are in TACS (default)</span>
+<span class="sd">            or NASTRAN ordering</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_addPressureToElements</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">auxElems</span><span class="p">[</span><span class="n">timeStep</span><span class="p">],</span> <span class="n">elemIDs</span><span class="p">,</span> <span class="n">pressures</span><span class="p">,</span>
+                                    <span class="n">faceIndex</span><span class="p">,</span> <span class="n">nastranOrdering</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="TransientProblem.addInertialLoad"><a class="viewcode-back" href="../../../pytacs/transient.html#tacs.problems.TransientProblem.addInertialLoad">[docs]</a>    <span class="k">def</span> <span class="nf">addInertialLoad</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">timeStep</span><span class="p">,</span> <span class="n">inertiaVector</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        This method is used to add a fixed inertial load  at a specified time step</span>
+<span class="sd">        due to a uniform acceleration over the entire model.</span>
+<span class="sd">        This is most commonly used to model gravity loads on a model.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+
+<span class="sd">        timeStep : int</span>
+<span class="sd">            Time step index to apply load to.</span>
+
+<span class="sd">        inertiaVector : numpy.ndarray</span>
+<span class="sd">            Acceleration vector used to define inertial load.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_addInertialLoad</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">auxElems</span><span class="p">[</span><span class="n">timeStep</span><span class="p">],</span> <span class="n">inertiaVector</span><span class="p">)</span></div>
+
+    <span class="c1">####### Transient solver methods ########</span>
+
+    <span class="k">def</span> <span class="nf">_updateAssemblerVars</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Make sure that the assembler is using</span>
+<span class="sd">        the input variables associated with this problem</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">assembler</span><span class="o">.</span><span class="n">setDesignVars</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">x</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assembler</span><span class="o">.</span><span class="n">setNodes</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">Xpts</span><span class="p">)</span>
+
+<div class="viewcode-block" id="TransientProblem.solve"><a class="viewcode-back" href="../../../pytacs/transient.html#tacs.problems.TransientProblem.solve">[docs]</a>    <span class="k">def</span> <span class="nf">solve</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Solve the time integrated transient problem. The</span>
+<span class="sd">        forces must already be set.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">startTime</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">callCounter</span> <span class="o">+=</span> <span class="mi">1</span>
+
+        <span class="n">setupProblemTime</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+
+        <span class="c1"># Set problem vars to assembler</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_updateAssemblerVars</span><span class="p">()</span>
+
+        <span class="n">initSolveTime</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+
+        <span class="c1"># Loop over every time step and solve transient problem</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">numSteps</span> <span class="o">+</span> <span class="mi">1</span><span class="p">):</span>
+            <span class="c1"># Set the auxilliary elements for this time step (tractions/pressures)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">assembler</span><span class="o">.</span><span class="n">setAuxElements</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">auxElems</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">integrator</span><span class="o">.</span><span class="n">iterate</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">forces</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">F</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+
+        <span class="n">solveTime</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+
+        <span class="c1"># If timing was was requested print it, if the solution is nonlinear</span>
+        <span class="c1"># print this information automatically if prinititerations was requested.</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s1">&#39;printTiming&#39;</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_pp</span><span class="p">(</span><span class="s1">&#39;+--------------------------------------------------+&#39;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_pp</span><span class="p">(</span><span class="s1">&#39;|&#39;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_pp</span><span class="p">(</span><span class="s1">&#39;| TACS Solve Times:&#39;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_pp</span><span class="p">(</span><span class="s1">&#39;|&#39;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_pp</span><span class="p">(</span><span class="s1">&#39;| </span><span class="si">%-30s</span><span class="s1">: </span><span class="si">%10.3f</span><span class="s1"> sec&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="s1">&#39;TACS Setup Time&#39;</span><span class="p">,</span> <span class="n">setupProblemTime</span> <span class="o">-</span> <span class="n">startTime</span><span class="p">))</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_pp</span><span class="p">(</span><span class="s1">&#39;| </span><span class="si">%-30s</span><span class="s1">: </span><span class="si">%10.3f</span><span class="s1"> sec&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="s1">&#39;TACS Solve Init Time&#39;</span><span class="p">,</span> <span class="n">initSolveTime</span> <span class="o">-</span> <span class="n">setupProblemTime</span><span class="p">))</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_pp</span><span class="p">(</span><span class="s1">&#39;| </span><span class="si">%-30s</span><span class="s1">: </span><span class="si">%10.3f</span><span class="s1"> sec&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="s1">&#39;TACS Solve Time&#39;</span><span class="p">,</span> <span class="n">solveTime</span> <span class="o">-</span> <span class="n">initSolveTime</span><span class="p">))</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_pp</span><span class="p">(</span><span class="s1">&#39;|&#39;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_pp</span><span class="p">(</span><span class="s1">&#39;| </span><span class="si">%-30s</span><span class="s1">: </span><span class="si">%10.3f</span><span class="s1"> sec&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="s1">&#39;TACS Total Solution Time&#39;</span><span class="p">,</span> <span class="n">solveTime</span> <span class="o">-</span> <span class="n">startTime</span><span class="p">))</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_pp</span><span class="p">(</span><span class="s1">&#39;+--------------------------------------------------+&#39;</span><span class="p">)</span>
+
+        <span class="k">return</span></div>
+
+    <span class="c1">####### Function eval/sensitivity methods ########</span>
+
+<div class="viewcode-block" id="TransientProblem.evalFunctions"><a class="viewcode-back" href="../../../pytacs/transient.html#tacs.problems.TransientProblem.evalFunctions">[docs]</a>    <span class="k">def</span> <span class="nf">evalFunctions</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">funcs</span><span class="p">,</span> <span class="n">evalFuncs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                      <span class="n">ignoreMissing</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        This is the main routine for returning useful information from</span>
+<span class="sd">        pytacs. The functions corresponding to the strings in</span>
+<span class="sd">        EVAL_FUNCS are evaluated and updated into the provided</span>
+<span class="sd">        dictionary.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        funcs : dict</span>
+<span class="sd">            Dictionary into which the functions are saved.</span>
+<span class="sd">        evalFuncs : iterable object containing strings.</span>
+<span class="sd">            If not none, use these functions to evaluate.</span>
+<span class="sd">        ignoreMissing : bool</span>
+<span class="sd">            Flag to supress checking for a valid function. Please use</span>
+<span class="sd">            this option with caution.</span>
+
+<span class="sd">        Examples</span>
+<span class="sd">        --------</span>
+<span class="sd">        &gt;&gt;&gt; funcs = {}</span>
+<span class="sd">        &gt;&gt;&gt; transientProblem.solve()</span>
+<span class="sd">        &gt;&gt;&gt; transientProblem.evalFunctions(funcs, [&#39;mass&#39;])</span>
+<span class="sd">        &gt;&gt;&gt; funcs</span>
+<span class="sd">        &gt;&gt;&gt; # Result will look like (if TransientProblem has name of &#39;c1&#39;):</span>
+<span class="sd">        &gt;&gt;&gt; # {&#39;cl_mass&#39;:12354.10}</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">startTime</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+
+        <span class="c1"># Set problem vars to assembler</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_updateAssemblerVars</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="n">evalFuncs</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">evalFuncs</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">functionList</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">evalFuncs</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">evalFuncs</span><span class="p">))</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">ignoreMissing</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">evalFuncs</span><span class="p">:</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">f</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">functionList</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="n">Error</span><span class="p">(</span><span class="s2">&quot;Supplied function &#39;</span><span class="si">%s</span><span class="s2">&#39; has not been added &quot;</span>
+                                <span class="s2">&quot;using addFunction().&quot;</span> <span class="o">%</span> <span class="n">f</span><span class="p">)</span>
+
+        <span class="n">setupProblemTime</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+
+        <span class="c1"># Fast parallel function evaluation of structural funcs:</span>
+        <span class="n">handles</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">functionList</span><span class="p">[</span><span class="n">f</span><span class="p">]</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">evalFuncs</span> <span class="k">if</span>
+                   <span class="n">f</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">functionList</span><span class="p">]</span>
+        <span class="c1"># Set functions for integrator</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">integrator</span><span class="o">.</span><span class="n">setFunctions</span><span class="p">(</span><span class="n">handles</span><span class="p">)</span>
+        <span class="c1"># Evaluate functions</span>
+        <span class="n">funcVals</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">integrator</span><span class="o">.</span><span class="n">evalFunctions</span><span class="p">(</span><span class="n">handles</span><span class="p">)</span>
+
+        <span class="n">functionEvalTime</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+
+        <span class="c1"># Assign function values to appropriate dictionary</span>
+        <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">evalFuncs</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">f</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">functionList</span><span class="p">:</span>
+                <span class="n">key</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">+</span> <span class="s1">&#39;_</span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">f</span>
+                <span class="n">funcs</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">funcVals</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+                <span class="n">i</span> <span class="o">+=</span> <span class="mi">1</span>
+
+        <span class="n">dictAssignTime</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s1">&#39;printTiming&#39;</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_pp</span><span class="p">(</span><span class="s1">&#39;+--------------------------------------------------+&#39;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_pp</span><span class="p">(</span><span class="s1">&#39;|&#39;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_pp</span><span class="p">(</span><span class="s1">&#39;| TACS Function Times:&#39;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_pp</span><span class="p">(</span><span class="s1">&#39;|&#39;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_pp</span><span class="p">(</span><span class="s1">&#39;| </span><span class="si">%-30s</span><span class="s1">: </span><span class="si">%10.3f</span><span class="s1"> sec&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="s1">&#39;TACS Function Setup Time&#39;</span><span class="p">,</span> <span class="n">setupProblemTime</span> <span class="o">-</span> <span class="n">startTime</span><span class="p">))</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_pp</span><span class="p">(</span><span class="s1">&#39;| </span><span class="si">%-30s</span><span class="s1">: </span><span class="si">%10.3f</span><span class="s1"> sec&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="s1">&#39;TACS Function Eval Time&#39;</span><span class="p">,</span> <span class="n">functionEvalTime</span> <span class="o">-</span> <span class="n">setupProblemTime</span><span class="p">))</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_pp</span><span class="p">(</span><span class="s1">&#39;| </span><span class="si">%-30s</span><span class="s1">: </span><span class="si">%10.3f</span><span class="s1"> sec&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="s1">&#39;TACS Dict Time&#39;</span><span class="p">,</span> <span class="n">dictAssignTime</span> <span class="o">-</span> <span class="n">functionEvalTime</span><span class="p">))</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_pp</span><span class="p">(</span><span class="s1">&#39;|&#39;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_pp</span><span class="p">(</span><span class="s1">&#39;| </span><span class="si">%-30s</span><span class="s1">: </span><span class="si">%10.3f</span><span class="s1"> sec&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="s1">&#39;TACS Function Time&#39;</span><span class="p">,</span> <span class="n">dictAssignTime</span> <span class="o">-</span> <span class="n">startTime</span><span class="p">))</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_pp</span><span class="p">(</span><span class="s1">&#39;+--------------------------------------------------+&#39;</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="TransientProblem.evalFunctionsSens"><a class="viewcode-back" href="../../../pytacs/transient.html#tacs.problems.TransientProblem.evalFunctionsSens">[docs]</a>    <span class="k">def</span> <span class="nf">evalFunctionsSens</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">funcsSens</span><span class="p">,</span> <span class="n">evalFuncs</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        This is the main routine for returning useful (sensitivity)</span>
+<span class="sd">        information from problem. The derivatives of the functions</span>
+<span class="sd">        corresponding to the strings in EVAL_FUNCS are evaluated and</span>
+<span class="sd">        updated into the provided dictionary.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        funcsSens : dict</span>
+<span class="sd">            Dictionary into which the derivatives are saved.</span>
+<span class="sd">        evalFuncs : iterable object containing strings</span>
+<span class="sd">            The functions the user wants returned</span>
+
+<span class="sd">        Examples</span>
+<span class="sd">        --------</span>
+<span class="sd">        &gt;&gt;&gt; funcsSens = {}</span>
+<span class="sd">        &gt;&gt;&gt; transientProblem.evalFunctionsSens(funcsSens, [&#39;mass&#39;])</span>
+<span class="sd">        &gt;&gt;&gt; funcs</span>
+<span class="sd">        &gt;&gt;&gt; # Result will look like (if TransientProblem has name of &#39;c1&#39;):</span>
+<span class="sd">        &gt;&gt;&gt; # {&#39;c1_mass&#39;:{&#39;struct&#39;:[1.234, ..., 7.89]}</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">startTime</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+
+        <span class="c1"># Set problem vars to assembler</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_updateAssemblerVars</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="n">evalFuncs</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">evalFuncs</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">functionList</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">evalFuncs</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">evalFuncs</span><span class="p">))</span>
+
+        <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">evalFuncs</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">f</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">functionList</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TACSError</span><span class="p">(</span><span class="s2">&quot;Supplied function has not been added &quot;</span>
+                            <span class="s2">&quot;using addFunction()&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Fast parallel function evaluation of structural funcs:</span>
+        <span class="n">handles</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">functionList</span><span class="p">[</span><span class="n">f</span><span class="p">]</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">evalFuncs</span> <span class="k">if</span>
+                   <span class="n">f</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">functionList</span><span class="p">]</span>
+        <span class="c1"># Set functions for integrator</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">integrator</span><span class="o">.</span><span class="n">setFunctions</span><span class="p">(</span><span class="n">handles</span><span class="p">)</span>
+
+        <span class="c1"># integrate adjoints backwards in time from step = numSteps</span>
+        <span class="c1"># to step = 0</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">numSteps</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">assembler</span><span class="o">.</span><span class="n">setAuxElements</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">auxElems</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">integrator</span><span class="o">.</span><span class="n">initAdjoint</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">integrator</span><span class="o">.</span><span class="n">iterateAdjoint</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">integrator</span><span class="o">.</span><span class="n">postAdjoint</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+
+        <span class="n">adjointFinishedTime</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+
+        <span class="c1"># Recast sensititivities into dict for user</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">f</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">evalFuncs</span><span class="p">):</span>
+            <span class="n">key</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">+</span> <span class="s1">&#39;_</span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">f</span>
+            <span class="c1"># Finalize sensitivity arrays across all procs</span>
+            <span class="n">dvSens</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">integrator</span><span class="o">.</span><span class="n">getGradient</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+            <span class="n">dvSens</span><span class="o">.</span><span class="n">beginSetValues</span><span class="p">()</span>
+            <span class="n">dvSens</span><span class="o">.</span><span class="n">endSetValues</span><span class="p">()</span>
+            <span class="n">xptSens</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">integrator</span><span class="o">.</span><span class="n">getXptGradient</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+            <span class="n">xptSens</span><span class="o">.</span><span class="n">beginSetValues</span><span class="p">()</span>
+            <span class="n">xptSens</span><span class="o">.</span><span class="n">endSetValues</span><span class="p">()</span>
+            <span class="c1"># Return sensitivities as array in sens dict</span>
+            <span class="n">funcsSens</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="bp">self</span><span class="o">.</span><span class="n">varName</span><span class="p">:</span> <span class="n">dvSens</span><span class="o">.</span><span class="n">getArray</span><span class="p">()</span><span class="o">.</span><span class="n">copy</span><span class="p">(),</span>
+                              <span class="bp">self</span><span class="o">.</span><span class="n">coordName</span><span class="p">:</span> <span class="n">xptSens</span><span class="o">.</span><span class="n">getArray</span><span class="p">()</span><span class="o">.</span><span class="n">copy</span><span class="p">()}</span>
+
+        <span class="n">totalSensitivityTime</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s1">&#39;printTiming&#39;</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_pp</span><span class="p">(</span><span class="s1">&#39;+--------------------------------------------------+&#39;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_pp</span><span class="p">(</span><span class="s1">&#39;|&#39;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_pp</span><span class="p">(</span><span class="s1">&#39;| TACS Adjoint Times:&#39;</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;|&#39;</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;| </span><span class="si">%-30s</span><span class="s1">: </span><span class="si">%10.3f</span><span class="s1"> sec&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="s1">&#39;Adjoint solve time&#39;</span><span class="p">,</span> <span class="n">adjointFinishedTime</span> <span class="o">-</span> <span class="n">startTime</span><span class="p">))</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;|&#39;</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;| </span><span class="si">%-30s</span><span class="s1">: </span><span class="si">%10.3f</span><span class="s1"> sec&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="s1">&#39;Complete Sensitivity Time&#39;</span><span class="p">,</span> <span class="n">totalSensitivityTime</span> <span class="o">-</span> <span class="n">startTime</span><span class="p">))</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;+--------------------------------------------------+&#39;</span><span class="p">)</span></div>
+
+    <span class="c1">####### Post processing methods ########</span>
+
+<div class="viewcode-block" id="TransientProblem.getVariables"><a class="viewcode-back" href="../../../pytacs/transient.html#tacs.problems.TransientProblem.getVariables">[docs]</a>    <span class="k">def</span> <span class="nf">getVariables</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">timeStep</span><span class="p">,</span> <span class="n">states</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">dstates</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ddstates</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Return the current state values for the current problem</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        timeStep : int</span>
+<span class="sd">            Time step index to get state variables for.</span>
+
+<span class="sd">        states : TACS.Vec or numpy.ndarray or None</span>
+<span class="sd">            If states is not None, place the state variables into this array (optional).</span>
+
+<span class="sd">        dstates : TACS.Vec or numpy.ndarray or None</span>
+<span class="sd">            If dstates is not None, place the time derivitive of the state variables into this array (optional).</span>
+
+<span class="sd">        ddstates : TACS.Vec or numpy.ndarray or None</span>
+<span class="sd">            If ddstates is not None, place the second time derivitive of the state variables into this array (optional).</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        --------</span>
+<span class="sd">        time: float</span>
+<span class="sd">            The time at specified step</span>
+
+<span class="sd">        states : TACS.Vec or numpy.ndarray</span>
+<span class="sd">            The state variables.</span>
+
+<span class="sd">        dstates : TACS.Vec or numpy.ndarray or None</span>
+<span class="sd">            The time derivitive of the state variables.</span>
+
+<span class="sd">        ddstates : TACS.Vec or numpy.ndarray or None</span>
+<span class="sd">            The second time derivitive of the state variables.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="c1"># Get BVecs for time instance</span>
+        <span class="n">time</span><span class="p">,</span> <span class="n">q</span><span class="p">,</span> <span class="n">qdot</span><span class="p">,</span> <span class="n">qddot</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">integrator</span><span class="o">.</span><span class="n">getStates</span><span class="p">(</span><span class="n">timeStep</span><span class="p">)</span>
+
+        <span class="c1"># Convert to arrays</span>
+        <span class="n">qArray</span> <span class="o">=</span> <span class="n">q</span><span class="o">.</span><span class="n">getArray</span><span class="p">()</span>
+        <span class="n">qdotArray</span> <span class="o">=</span> <span class="n">qdot</span><span class="o">.</span><span class="n">getArray</span><span class="p">()</span>
+        <span class="n">qddotArray</span> <span class="o">=</span> <span class="n">qddot</span><span class="o">.</span><span class="n">getArray</span><span class="p">()</span>
+
+        <span class="c1"># Inplace assignment if vectors were provided</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">states</span><span class="p">,</span> <span class="n">tacs</span><span class="o">.</span><span class="n">TACS</span><span class="o">.</span><span class="n">Vec</span><span class="p">):</span>
+            <span class="n">states</span><span class="o">.</span><span class="n">copyValues</span><span class="p">(</span><span class="n">q</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">states</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
+            <span class="n">states</span><span class="p">[:]</span> <span class="o">=</span> <span class="n">qArray</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">dstates</span><span class="p">,</span> <span class="n">tacs</span><span class="o">.</span><span class="n">TACS</span><span class="o">.</span><span class="n">Vec</span><span class="p">):</span>
+            <span class="n">dstates</span><span class="o">.</span><span class="n">copyValues</span><span class="p">(</span><span class="n">qdot</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">dstates</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
+            <span class="n">dstates</span><span class="p">[:]</span> <span class="o">=</span> <span class="n">qdotArray</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">ddstates</span><span class="p">,</span> <span class="n">tacs</span><span class="o">.</span><span class="n">TACS</span><span class="o">.</span><span class="n">Vec</span><span class="p">):</span>
+            <span class="n">ddstates</span><span class="o">.</span><span class="n">copyValues</span><span class="p">(</span><span class="n">qddot</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">ddstates</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
+            <span class="n">ddstates</span><span class="p">[:]</span> <span class="o">=</span> <span class="n">qddotArray</span>
+
+        <span class="c1"># Return arrays</span>
+        <span class="k">return</span> <span class="n">time</span><span class="p">,</span> <span class="n">qArray</span><span class="p">,</span> <span class="n">qdotArray</span><span class="p">,</span> <span class="n">qddotArray</span></div>
+
+
+<div class="viewcode-block" id="TransientProblem.writeSolution"><a class="viewcode-back" href="../../../pytacs/transient.html#tacs.problems.TransientProblem.writeSolution">[docs]</a>    <span class="k">def</span> <span class="nf">writeSolution</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">outputDir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">baseName</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">number</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">timeSteps</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        This is a generic shell function that writes the output</span>
+<span class="sd">        file(s).  The intent is that the user or calling program can</span>
+<span class="sd">        call this function and pyTACS writes all the files that the</span>
+<span class="sd">        user has defined. It is recommended that this function is used</span>
+<span class="sd">        along with the associated logical flags in the options to</span>
+<span class="sd">        determine the desired writing procedure</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        outputDir : str or None</span>
+<span class="sd">            Use the supplied output directory</span>
+<span class="sd">        baseName : str or None</span>
+<span class="sd">            Use this supplied string for the base filename. Typically</span>
+<span class="sd">            only used from an external solver.</span>
+<span class="sd">        number : int or None</span>
+<span class="sd">            Use the user spplied number to index solution. Again, only</span>
+<span class="sd">            typically used from an external solver</span>
+<span class="sd">        timeSteps : int or list[int] or None</span>
+<span class="sd">            Time step index or indices to get state variables for.</span>
+<span class="sd">            If None, returns a solution for all time steps.</span>
+<span class="sd">            Defaults to None.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Make sure assembler variables are up to date</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_updateAssemblerVars</span><span class="p">()</span>
+
+        <span class="c1"># Check input</span>
+        <span class="k">if</span> <span class="n">outputDir</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">outputDir</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s1">&#39;outputDir&#39;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">baseName</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">baseName</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span>
+
+        <span class="c1"># If we are numbering solution, it saving the sequence of</span>
+        <span class="c1"># calls, add the call number</span>
+        <span class="k">if</span> <span class="n">number</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="c1"># We need number based on the provided number:</span>
+            <span class="n">baseName</span> <span class="o">=</span> <span class="n">baseName</span> <span class="o">+</span> <span class="s1">&#39;_</span><span class="si">%3.3d</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">number</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># if number is none, i.e. standalone, but we need to</span>
+            <span class="c1"># number solutions, use internal counter</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s1">&#39;numberSolutions&#39;</span><span class="p">):</span>
+                <span class="n">baseName</span> <span class="o">=</span> <span class="n">baseName</span> <span class="o">+</span> <span class="s1">&#39;_</span><span class="si">%3.3d</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">callCounter</span>
+
+        <span class="c1"># Unless the writeSolution option is off write actual file:</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s1">&#39;writeSolution&#39;</span><span class="p">):</span>
+
+            <span class="c1"># If timeSteps is None, output all modes</span>
+            <span class="k">if</span> <span class="n">timeSteps</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">timeSteps</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">numSteps</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span>
+
+            <span class="c1"># Write out each specified timestep</span>
+            <span class="n">timeSteps</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">atleast_1d</span><span class="p">(</span><span class="n">timeSteps</span><span class="p">)</span>
+            <span class="n">vec</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">assembler</span><span class="o">.</span><span class="n">createVec</span><span class="p">()</span>
+            <span class="k">for</span> <span class="n">timeStep</span> <span class="ow">in</span> <span class="n">timeSteps</span><span class="p">:</span>
+                <span class="c1"># Extract eigenvector</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">getVariables</span><span class="p">(</span><span class="n">timeStep</span><span class="p">,</span> <span class="n">states</span><span class="o">=</span><span class="n">vec</span><span class="p">)</span>
+                <span class="c1"># Set eigen mode in assembler</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">assembler</span><span class="o">.</span><span class="n">setVariables</span><span class="p">(</span><span class="n">vec</span><span class="p">)</span>
+                <span class="c1"># Write out mode shape as f5 file</span>
+                <span class="n">modeName</span> <span class="o">=</span> <span class="n">baseName</span> <span class="o">+</span> <span class="s1">&#39;_</span><span class="si">%3.3d</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">timeStep</span>
+                <span class="n">fileName</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">outputDir</span><span class="p">,</span> <span class="n">modeName</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39;.f5&#39;</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">outputViewer</span><span class="o">.</span><span class="n">writeToFile</span><span class="p">(</span><span class="n">fileName</span><span class="p">)</span></div></div>
+</pre></div>
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">TACS  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" >Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">tacs.problems.transient</a></li> 
+      </ul>
+    </div>
+ <script type="text/javascript">
+    $(document).ready(function() {
+        $(".toggle > *").hide();
+        $(".toggle .header").show();
+        $(".toggle .header").click(function() {
+            $(this).parent().children().not(".header").toggle(400);
+            $(this).parent().children(".header").toggleClass("open");
+        })
+    });
+</script>
+
+  </body>
+</html>

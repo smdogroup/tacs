@@ -1,0 +1,228 @@
+
+<!DOCTYPE html>
+
+<html lang="python">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>functions module &#8212; TACS  documentation</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinxdoc.css" />
+    <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+    <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="prev" title="elements module" href="elements.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="elements.html" title="elements module"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">TACS  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="core.html" accesskey="U">Core modules</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">functions module</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="functions-module">
+<h1>functions module<a class="headerlink" href="#functions-module" title="Permalink to this headline">¶</a></h1>
+<p>There are several structural functions built into TACS. All of them can be found in the <cite>tacs.functions</cite> module. These functions and their gradients with respect to design variables can be evaluated by the <a class="reference internal" href="TACS.html#TACS.Assembler" title="TACS.Assembler"><code class="xref py py-class docutils literal notranslate"><span class="pre">Assembler</span></code></a> object. These functions inherit from the <code class="xref py py-class docutils literal notranslate"><span class="pre">Function</span></code> class.
+Each class should only ever be passed to a single instance of TACS. If the function needs to be calculated for separate instances, this should be handled by separate instances of function.
+The current available function in TACS:</p>
+<span class="target" id="module-tacs.functions"></span><dl class="py class">
+<dt class="sig sig-object py" id="tacs.functions.AverageTemperature">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tacs.functions.</span></span><span class="sig-name descname"><span class="pre">AverageTemperature</span></span><a class="headerlink" href="#tacs.functions.AverageTemperature" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">tacs.TACS.Function</span></code></p>
+<p>Evaluate the spatial average of the temperature of the model.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>assembler</strong> (<a class="reference internal" href="TACS.html#TACS.Assembler" title="TACS.Assembler"><em>Assembler</em></a>) -- TACS Assembler object that will evaluating this function.</p></li>
+<li><p><strong>volume</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.10)"><em>float</em></a><em>, </em><em>optional</em>) -- Normalization factor used in averaging process. Defaults to 1.0.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="tacs.functions.Compliance">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tacs.functions.</span></span><span class="sig-name descname"><span class="pre">Compliance</span></span><a class="headerlink" href="#tacs.functions.Compliance" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">tacs.TACS.Function</span></code></p>
+<p>Evaluate the compliance of the structure.</p>
+<p>This evaluates the compliance within the structure based on an
+integration of the strain energy in each element, not by the product
+of the load vector with the displacement.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>assembler</strong> (<a class="reference internal" href="TACS.html#TACS.Assembler" title="TACS.Assembler"><em>Assembler</em></a>) -- TACS Assembler object that will evaluating this function.</p>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.functions.Compliance.setComplianceType">
+<span class="sig-name descname"><span class="pre">setComplianceType</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.functions.Compliance.setComplianceType" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set the type of compliance value to use</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="tacs.functions.KSDisplacement">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tacs.functions.</span></span><span class="sig-name descname"><span class="pre">KSDisplacement</span></span><a class="headerlink" href="#tacs.functions.KSDisplacement" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">tacs.TACS.Function</span></code></p>
+<p>The following class implements the methods to calculate the
+Kreisselmeier–Steinhauser (KS) aggregation of the displacement in
+a particular direction over the domain of some finite element model.
+The KS aggregation gives a smooth and differentiable approximation to the
+maximum value.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>assembler</strong> (<a class="reference internal" href="TACS.html#TACS.Assembler" title="TACS.Assembler"><em>Assembler</em></a>) -- TACS Assembler object that will evaluating this function.</p></li>
+<li><p><strong>ksWeight</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.10)"><em>float</em></a><em>, </em><em>optional</em>) -- The ks weight used in the calculation (keyword argument). Defaults to 80.0.</p></li>
+<li><p><strong>direction</strong> (<em>array-like</em><em>[</em><em>double</em><em>]</em><em>, </em><em>optional</em>) -- 3d vector specifying which direction to project displacements in for KS aggregation (keyword argument).
+Defaults to [0.0, 0.0, 0.0].</p></li>
+<li><p><strong>ftype</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.10)"><em>str</em></a><em>, </em><em>optional</em>) -- The type of KS aggregation to be used (keyword argument).
+Accepted inputs are: 'discrete', 'continuous', 'pnorm-discrete', and 'pnorm-continuous'.
+Case-insensitive, defaults to 'continuous'.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="tacs.functions.KSFailure">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tacs.functions.</span></span><span class="sig-name descname"><span class="pre">KSFailure</span></span><a class="headerlink" href="#tacs.functions.KSFailure" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">tacs.TACS.Function</span></code></p>
+<p>The following class implements the methods necessary to calculate
+the Kreisselmeier–Steinhauser (KS) aggregation of either a stress
+or strain failure criteria over the domain of some finite element model.
+The KS aggregation gives a smooth and differentiable approximation to the
+maximum value.</p>
+<p>The failure load is calculated using the strain-based failure
+criteria from the base <code class="xref py py-class docutils literal notranslate"><span class="pre">Constitutive</span></code> class which requires linear and
+constant components of the strain to determine the failure load.</p>
+<p>For most elements, unity is generally considered to be the threshold value for failure.
+Meaning if this function returns a value &gt; 1.0, at least one of the elements has exceeded
+its strength criteria. While values &lt; 1.0 implies all elements are within their strength criteria.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>assembler</strong> (<a class="reference internal" href="TACS.html#TACS.Assembler" title="TACS.Assembler"><em>Assembler</em></a>) -- TACS Assembler object that will evaluating this function.</p></li>
+<li><p><strong>ksWeight</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.10)"><em>float</em></a><em>, </em><em>optional</em>) -- The ks weight used in the calculation (keyword argument). Defaults to 80.0.</p></li>
+<li><p><strong>safetyFactor</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.10)"><em>float</em></a><em>, </em><em>optional</em>) -- The safety factor to apply to loads before computing the failure (keyword argument). Defaults to 1.0.</p></li>
+<li><p><strong>ftype</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.10)"><em>str</em></a><em>, </em><em>optional</em>) -- The type of KS aggregation to be used (keyword argument).
+Accepted inputs are: 'discrete', 'continuous', 'pnorm-discrete', and 'pnorm-continuous'.
+Case-insensitive, defaults to 'continuous'.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="tacs.functions.KSTemperature">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tacs.functions.</span></span><span class="sig-name descname"><span class="pre">KSTemperature</span></span><a class="headerlink" href="#tacs.functions.KSTemperature" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">tacs.TACS.Function</span></code></p>
+<p>The following class implements the methods necessary
+to calculate the Kreisselmeier–Steinhauser (KS) aggregation
+of temperature over the domain of some finite element model.
+The KS aggregation gives a smooth and differentiable approximation to the
+maximum value.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>assembler</strong> (<a class="reference internal" href="TACS.html#TACS.Assembler" title="TACS.Assembler"><em>Assembler</em></a>) -- TACS Assembler object that will evaluating this function.</p></li>
+<li><p><strong>ksWeight</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.10)"><em>float</em></a><em>, </em><em>optional</em>) -- The ks weight used in the calculation (keyword argument). Defaults to 80.0.</p></li>
+<li><p><strong>ftype</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.10)"><em>str</em></a><em>, </em><em>optional</em>) -- The type of KS aggregation to be used (keyword argument).
+Accepted inputs are: 'discrete', 'continuous', 'pnorm-discrete', and 'pnorm-continuous'.
+Case-insensitive, defaults to 'continuous'.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="tacs.functions.StructuralMass">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tacs.functions.</span></span><span class="sig-name descname"><span class="pre">StructuralMass</span></span><a class="headerlink" href="#tacs.functions.StructuralMass" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">tacs.TACS.Function</span></code></p>
+<p>Evaluates the structural mass of the elements.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>assembler</strong> (<a class="reference internal" href="TACS.html#TACS.Assembler" title="TACS.Assembler"><em>Assembler</em></a>) -- TACS Assembler object that will evaluating this function.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <div>
+    <h4>Previous topic</h4>
+    <p class="topless"><a href="elements.html"
+                          title="previous chapter">elements module</a></p>
+  </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="elements.html" title="elements module"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">TACS  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="core.html" >Core modules</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">functions module</a></li> 
+      </ul>
+    </div>
+ <script type="text/javascript">
+    $(document).ready(function() {
+        $(".toggle > *").hide();
+        $(".toggle .header").show();
+        $(".toggle .header").click(function() {
+            $(this).parent().children().not(".header").toggle(400);
+            $(this).parent().children(".header").toggleClass("open");
+        })
+    });
+</script>
+
+  </body>
+</html>

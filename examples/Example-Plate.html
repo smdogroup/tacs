@@ -1,0 +1,236 @@
+
+<!DOCTYPE html>
+
+<html lang="python">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Plate under static load &#8212; TACS  documentation</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinxdoc.css" />
+    <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+    <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Theory" href="../theory/theory.html" />
+    <link rel="prev" title="ModalProblem" href="../pytacs/modal.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="../theory/theory.html" title="Theory"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="../pytacs/modal.html" title="ModalProblem"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">TACS  documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Plate under static load</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="plate-under-static-load">
+<h1>Plate under static load<a class="headerlink" href="#plate-under-static-load" title="Permalink to this headline">¶</a></h1>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The script for this example can be found under the <cite>examples/plate/</cite> directory.</p>
+</div>
+<p>This problem will show how to use some of pytacs more advanced load setting procedures.
+The nominal case is a 1m x 1m flat plate. The perimeter of the plate is fixed in
+all 6 degrees of freedom. The plate comprises 900 CQUAD4 elements.
+We consider a static case where a 10 kN point force is applied at the plate center.</p>
+<a class="reference internal image-reference" href="../_images/plate.png"><img alt="Plate problem" src="../_images/plate.png" style="width: 800px;" /></a>
+<p>First, import required libraries:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">tacs</span> <span class="kn">import</span> <span class="n">functions</span><span class="p">,</span> <span class="n">constitutive</span><span class="p">,</span> <span class="n">elements</span><span class="p">,</span> <span class="n">pyTACS</span>
+</pre></div>
+</div>
+<p>Next, we must create the <a class="reference internal" href="../pytacs/pytacs_module.html#tacs.pytacs.pyTACS" title="tacs.pytacs.pyTACS"><code class="xref py py-class docutils literal notranslate"><span class="pre">pyTACS</span></code></a> class.
+<a class="reference internal" href="../pytacs/pytacs_module.html#tacs.pytacs.pyTACS" title="tacs.pytacs.pyTACS"><code class="xref py py-class docutils literal notranslate"><span class="pre">pyTACS</span></code></a> acts as an assembler for all of the TACS submodules.
+It's purpose is to read in mesh files, setup TACS element objects, and create TACS problems for analysis.
+To create a <a class="reference internal" href="../pytacs/pytacs_module.html#tacs.pytacs.pyTACS" title="tacs.pytacs.pyTACS"><code class="xref py py-class docutils literal notranslate"><span class="pre">pyTACS</span></code></a> class, at minimum, a NASTRAN bdf defining nodes, elements, and boundary conditions is required.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">bdfFile</span> <span class="o">=</span> <span class="s1">&#39;./plate.bdf&#39;</span>
+<span class="n">FEAAssembler</span> <span class="o">=</span> <span class="n">pyTACS</span><span class="p">(</span><span class="n">bdfFile</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Next step, we must initialize pyTACS.
+pyTACS must always be initialized before an analysis can be conducted.
+During this step, TACS element objects and design variables are setup and assigned for use in analysis.
+There are two ways to call the <a class="reference internal" href="../pytacs/pytacs_module.html#tacs.pytacs.pyTACS.initialize" title="tacs.pytacs.pyTACS.initialize"><code class="xref py py-meth docutils literal notranslate"><span class="pre">pyTACS.initialize</span></code></a> method.
+The first, involves defining a <a class="reference internal" href="../pytacs/pytacs_module.html#tacs.pytacs.elemCallBack" title="tacs.pytacs.elemCallBack"><code class="xref py py-func docutils literal notranslate"><span class="pre">elemCallBack()</span></code></a> function that tells pyTACS which TACS element to setup
+for each NASTRAN element card in the BDF and passing this function handle to the <a class="reference internal" href="../pytacs/pytacs_module.html#tacs.pytacs.pyTACS.initialize" title="tacs.pytacs.pyTACS.initialize"><code class="xref py py-meth docutils literal notranslate"><span class="pre">pyTACS.initialize</span></code></a>.
+The second method, allows pyTACS to automatically initialize itself based on information from the BDF file,
+as long as property cards exist for every element. This is done by calling the
+<a class="reference internal" href="../pytacs/pytacs_module.html#tacs.pytacs.pyTACS.initialize" title="tacs.pytacs.pyTACS.initialize"><code class="xref py py-meth docutils literal notranslate"><span class="pre">pyTACS.initialize</span></code></a> method with no arguments.
+For more information on the pyTACS initialization procedure, see <a class="reference internal" href="../pytacs/pytacs_module.html#initializing"><span class="std std-ref">here</span></a>.
+For this example, we will take the first approach. Our <a class="reference internal" href="../pytacs/pytacs_module.html#tacs.pytacs.elemCallBack" title="tacs.pytacs.elemCallBack"><code class="xref py py-func docutils literal notranslate"><span class="pre">elemCallBack()</span></code></a> for this model is defined below.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">elemCallBack</span><span class="p">(</span><span class="n">dvNum</span><span class="p">,</span> <span class="n">compID</span><span class="p">,</span> <span class="n">compDescript</span><span class="p">,</span> <span class="n">elemDescripts</span><span class="p">,</span> <span class="n">specialDVs</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="c1"># Material properties</span>
+    <span class="n">rho</span> <span class="o">=</span> <span class="mf">2500.0</span>        <span class="c1"># density kg/m^3</span>
+    <span class="n">E</span> <span class="o">=</span> <span class="mf">70e9</span>            <span class="c1"># Young&#39;s modulus (Pa)</span>
+    <span class="n">nu</span> <span class="o">=</span> <span class="mf">0.3</span>            <span class="c1"># Poisson&#39;s ratio</span>
+    <span class="n">ys</span> <span class="o">=</span> <span class="mf">464.0e6</span>        <span class="c1"># yield stress</span>
+
+    <span class="c1"># Plate geometry</span>
+    <span class="n">tplate</span> <span class="o">=</span> <span class="mf">0.005</span>    <span class="c1"># 5 mm</span>
+
+    <span class="c1"># Set up material properties</span>
+    <span class="n">prop</span> <span class="o">=</span> <span class="n">constitutive</span><span class="o">.</span><span class="n">MaterialProperties</span><span class="p">(</span><span class="n">rho</span><span class="o">=</span><span class="n">rho</span><span class="p">,</span> <span class="n">E</span><span class="o">=</span><span class="n">E</span><span class="p">,</span> <span class="n">nu</span><span class="o">=</span><span class="n">nu</span><span class="p">,</span> <span class="n">ys</span><span class="o">=</span><span class="n">ys</span><span class="p">)</span>
+    <span class="c1"># Set up constitutive model</span>
+    <span class="n">con</span> <span class="o">=</span> <span class="n">constitutive</span><span class="o">.</span><span class="n">IsoShellConstitutive</span><span class="p">(</span><span class="n">prop</span><span class="p">,</span> <span class="n">t</span><span class="o">=</span><span class="n">tplate</span><span class="p">,</span> <span class="n">tNum</span><span class="o">=</span><span class="n">dvNum</span><span class="p">)</span>
+    <span class="c1"># Set the transform used to define shell stresses, None defaults to NaturalShellTransform</span>
+    <span class="n">transform</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="c1"># Set up tacs element for every entry in elemDescripts</span>
+    <span class="c1"># According to the bdf file, elemDescripts should always be [&quot;CQUAD4&quot;]</span>
+    <span class="n">elemList</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">descript</span> <span class="ow">in</span> <span class="n">elemDescripts</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">descript</span> <span class="o">==</span> <span class="s1">&#39;CQUAD4&#39;</span><span class="p">:</span>
+            <span class="n">elem</span> <span class="o">=</span> <span class="n">elements</span><span class="o">.</span><span class="n">Quad4Shell</span><span class="p">(</span><span class="n">transform</span><span class="p">,</span> <span class="n">con</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span> <span class="c1"># Add a catch for any unexpected element types</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unexpected element of type </span><span class="si">{</span><span class="n">descript</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">elemList</span>
+</pre></div>
+</div>
+<p>The callback function for this example is pretty simple.
+First, we define the <a class="reference internal" href="../core/constitutive.html#tacs.constitutive.MaterialProperties" title="tacs.constitutive.MaterialProperties"><code class="xref py py-class docutils literal notranslate"><span class="pre">MaterialProperties</span></code></a> for aluminum.
+We then use those properties and the plate thickness to setup a <a class="reference internal" href="../core/constitutive.html#tacs.constitutive.IsoShellConstitutive" title="tacs.constitutive.IsoShellConstitutive"><code class="xref py py-class docutils literal notranslate"><span class="pre">IsoShellConstitutive</span></code></a>
+for modeling the shell stiffness. We set the element transform type to <code class="docutils literal notranslate"><span class="pre">None</span></code>. Finally, for every element card in
+<code class="docutils literal notranslate"><span class="pre">elemDescripts</span></code>, we pass back an appropriate initialized TACS element class. In this case, the only element type
+in the BDF are <cite>CQUAD4</cite>, so we'll always pass back an <code class="docutils literal notranslate"><span class="pre">elemList</span></code> with one entry, a <a class="reference internal" href="../core/elements.html#tacs.elements.Quad4Shell" title="tacs.elements.Quad4Shell"><code class="xref py py-class docutils literal notranslate"><span class="pre">Quad4Shell</span></code></a>.</p>
+<p>Now that the callback function has been defined, we can pass it to <a class="reference internal" href="../pytacs/pytacs_module.html#tacs.pytacs.pyTACS.initialize" title="tacs.pytacs.pyTACS.initialize"><code class="xref py py-meth docutils literal notranslate"><span class="pre">pyTACS.initialize</span></code></a>.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">FEAAssembler</span><span class="o">.</span><span class="n">initialize</span><span class="p">(</span><span class="n">elemCallBack</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The <a class="reference internal" href="../pytacs/pytacs_module.html#tacs.pytacs.pyTACS" title="tacs.pytacs.pyTACS"><code class="xref py py-class docutils literal notranslate"><span class="pre">pyTACS</span></code></a> has been initialized, we can now use it to create a <a class="reference internal" href="../pytacs/static.html#tacs.problems.StaticProblem" title="tacs.problems.StaticProblem"><code class="xref py py-class docutils literal notranslate"><span class="pre">StaticProblem</span></code></a>.
+TACS <a class="reference internal" href="../pytacs/problems.html#problem-classes"><span class="std std-ref">problem</span></a> classes are generally responsible for setting loads, solving analyses, evaluating
+functions of interests, and computing gradients.
+To create our <a class="reference internal" href="../pytacs/static.html#tacs.problems.StaticProblem" title="tacs.problems.StaticProblem"><code class="xref py py-class docutils literal notranslate"><span class="pre">StaticProblem</span></code></a> we can use the
+<a class="reference internal" href="../pytacs/pytacs_module.html#tacs.pytacs.pyTACS.createStaticProblem" title="tacs.pytacs.pyTACS.createStaticProblem"><code class="xref py py-meth docutils literal notranslate"><span class="pre">pyTACS.createStaticProblem</span></code></a> method.
+This method requires at minimum a name for our problem.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">staticProb</span> <span class="o">=</span> <span class="n">FEAAssembler</span><span class="o">.</span><span class="n">createStaticProblem</span><span class="p">(</span><span class="s1">&#39;point_force&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Next, we'll add some functions of interest to our problem that we can evaluate after we've solved it.
+This can be accomplished using <a class="reference internal" href="../pytacs/static.html#tacs.problems.StaticProblem.addFunction" title="tacs.problems.StaticProblem.addFunction"><code class="xref py py-meth docutils literal notranslate"><span class="pre">StaticProblem.addFunction</span></code></a> method.
+This method takes a user-defined name and any uninitialized TACS <a class="reference internal" href="../core/functions.html#module-tacs.functions" title="tacs.functions"><code class="xref py py-mod docutils literal notranslate"><span class="pre">functions</span></code></a> class as an input. Additional arguments necessary to
+setup the function class (minus the <a class="reference internal" href="../core/TACS.html#TACS.Assembler" title="TACS.Assembler"><code class="xref py py-class docutils literal notranslate"><span class="pre">Assembler</span></code></a>) can be passed as keyword arguments to <a class="reference internal" href="../pytacs/static.html#tacs.problems.StaticProblem.addFunction" title="tacs.problems.StaticProblem.addFunction"><code class="xref py py-meth docutils literal notranslate"><span class="pre">StaticProblem.addFunction</span></code></a>.
+For now let's add a function to evaluate the mass of the plate using <a class="reference internal" href="../core/functions.html#tacs.functions.StructuralMass" title="tacs.functions.StructuralMass"><code class="xref py py-class docutils literal notranslate"><span class="pre">StructuralMass</span></code></a>
+and a function to evaluate the maximum vonMises-based failure criteria using <a class="reference internal" href="../core/functions.html#tacs.functions.KSFailure" title="tacs.functions.KSFailure"><code class="xref py py-class docutils literal notranslate"><span class="pre">KSFailure</span></code></a>.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">staticProb</span><span class="o">.</span><span class="n">addFunction</span><span class="p">(</span><span class="s1">&#39;mass&#39;</span><span class="p">,</span> <span class="n">functions</span><span class="o">.</span><span class="n">StructuralMass</span><span class="p">)</span>
+<span class="n">staticProb</span><span class="o">.</span><span class="n">addFunction</span><span class="p">(</span><span class="s1">&#39;ks_vmfailure&#39;</span><span class="p">,</span> <span class="n">functions</span><span class="o">.</span><span class="n">KSFailure</span><span class="p">,</span> <span class="n">ksWeight</span><span class="o">=</span><span class="mf">100.0</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Now let's add our point load to the problem. We can do this by using the
+<a class="reference internal" href="../pytacs/static.html#tacs.problems.StaticProblem.addLoadToNodes" title="tacs.problems.StaticProblem.addLoadToNodes"><code class="xref py py-meth docutils literal notranslate"><span class="pre">StaticProblem.addLoadToNodes</span></code></a> method and
+selecting node ID 481 (the node at the center of the plate).</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">F</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">1e4</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">])</span>
+<span class="n">staticProb</span><span class="o">.</span><span class="n">addLoadToNodes</span><span class="p">(</span><span class="mi">481</span><span class="p">,</span> <span class="n">F</span><span class="p">,</span> <span class="n">nastranOrdering</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Now that our problem has been setup with loads and functions we can solve it and evaluate its functions using the
+<a class="reference internal" href="../pytacs/static.html#tacs.problems.StaticProblem.solve" title="tacs.problems.StaticProblem.solve"><code class="xref py py-meth docutils literal notranslate"><span class="pre">StaticProblem.solve</span></code></a> and
+<a class="reference internal" href="../pytacs/static.html#tacs.problems.StaticProblem.evalFunctions" title="tacs.problems.StaticProblem.evalFunctions"><code class="xref py py-meth docutils literal notranslate"><span class="pre">StaticProblem.evalFunctions</span></code></a> methods, respectively.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">funcs</span> <span class="o">=</span> <span class="p">{}</span>
+<span class="n">problem</span><span class="o">.</span><span class="n">solve</span><span class="p">()</span>
+<span class="n">problem</span><span class="o">.</span><span class="n">evalFunctions</span><span class="p">(</span><span class="n">funcs</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>To get the function sensitivity with respect to the design variables and node locations using the
+<a class="reference internal" href="../pytacs/static.html#tacs.problems.StaticProblem.evalFunctionsSens" title="tacs.problems.StaticProblem.evalFunctionsSens"><code class="xref py py-meth docutils literal notranslate"><span class="pre">StaticProblem.evalFunctionsSens</span></code></a> method.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">funcsSens</span> <span class="o">=</span> <span class="p">{}</span>
+<span class="n">problem</span><span class="o">.</span><span class="n">evalFunctionsSens</span><span class="p">(</span><span class="n">funcsSens</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Finally, we can write out our solution to an f5 file format for further post-processing and visualization by using the
+<a class="reference internal" href="../pytacs/static.html#tacs.problems.StaticProblem.writeSolution" title="tacs.problems.StaticProblem.writeSolution"><code class="xref py py-meth docutils literal notranslate"><span class="pre">StaticProblem.writeSolution</span></code></a> method.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">problem</span><span class="o">.</span><span class="n">writeSolution</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>This produces a file called <code class="docutils literal notranslate"><span class="pre">point_force_000.f5</span></code> in our runscript directory. This file can be converted into a <code class="docutils literal notranslate"><span class="pre">.vtk</span></code> file
+(using <code class="docutils literal notranslate"><span class="pre">f5tovtk</span></code>) for visualization in Paraview or a <code class="docutils literal notranslate"><span class="pre">.plt</span></code> (using <code class="docutils literal notranslate"><span class="pre">f5totec</span></code>) for visualization in TecPlot using:</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$ </span>f5tovtk point_force_000.f5
+</pre></div>
+</div>
+<p>or</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$ </span>f5totec point_force_000.f5
+</pre></div>
+</div>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <div>
+    <h4>Previous topic</h4>
+    <p class="topless"><a href="../pytacs/modal.html"
+                          title="previous chapter">ModalProblem</a></p>
+  </div>
+  <div>
+    <h4>Next topic</h4>
+    <p class="topless"><a href="../theory/theory.html"
+                          title="next chapter">Theory</a></p>
+  </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="../theory/theory.html" title="Theory"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="../pytacs/modal.html" title="ModalProblem"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">TACS  documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Plate under static load</a></li> 
+      </ul>
+    </div>
+ <script type="text/javascript">
+    $(document).ready(function() {
+        $(".toggle > *").hide();
+        $(".toggle .header").show();
+        $(".toggle .header").click(function() {
+            $(this).parent().children().not(".header").toggle(400);
+            $(this).parent().children(".header").toggleClass("open");
+        })
+    });
+</script>
+
+  </body>
+</html>
