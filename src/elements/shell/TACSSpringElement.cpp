@@ -45,7 +45,7 @@ int TACSSpringElement::getNumNodes(){
   return NUM_NODES;
 }
 
-enum ElementType TACSSpringElement::getElementType(){ return TACS_SPRING_ELEMENT; }
+ElementType TACSSpringElement::getElementType(){ return TACS_SPRING_ELEMENT; }
 
 double TACSSpringElement::getQuadraturePoint( int n, double pt[] ){
   pt[0] = pt[1] = pt[2] = 0.0;

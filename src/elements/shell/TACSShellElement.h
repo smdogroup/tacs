@@ -58,6 +58,10 @@ class TACSShellElement : public TACSElement {
     return basis::getLayoutType();
   }
 
+  ElementType getElementType(){
+    return TACS_BEAM_OR_SHELL_ELEMENT;
+  }
+
   int getNumQuadraturePoints(){
     return quadrature::getNumQuadraturePoints();
   }
