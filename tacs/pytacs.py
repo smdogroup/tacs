@@ -53,7 +53,7 @@ class pyTACS(BaseUI):
 
         # Output Options
         'outputElement': [int, None, 'Specifies which element type should be written out in the f5 file.\n'
-                                     '\t If None, the type will try to be inferred from varsPerNode (not foolproof).\n'
+                                     '\t If None, the type will be inferred from the first element in the model.\n'
                                      '\t Acceptable values are:\n'
                                      f'\t\t tacs.TACS.ELEMENT_NONE = {tacs.TACS.ELEMENT_NONE}\n'
                                      f'\t\t tacs.TACS.SCALAR_2D_ELEMENT = {tacs.TACS.SCALAR_2D_ELEMENT}\n'
@@ -1275,14 +1275,10 @@ class pyTACS(BaseUI):
         # Create actual viewer
         if self.getOption('outputElement') is not None:
             elementType = self.getOption('outputElement')
-        elif self.varsPerNode == 6 or self.varsPerNode == 7:
-            elementType = tacs.TACS.BEAM_OR_SHELL_ELEMENT
-        elif self.varsPerNode == 3:
-            elementType = tacs.TACS.SOLID_ELEMENT
         else:
-            self._TACSWarning("'outputElement' not specified in options. "
-                             "No elements will be written out in f5 file.")
-            elementType = tacs.TACS.ELEMENT_NONE
+            # Set the output type based on the first element in the model
+            elem = self.meshLoader.getElementObjectForElemID(0, nastranOrdering=False)
+            elementType = elem.getElementType()
 
         self.outputViewer = tacs.TACS.ToFH5(
             self.assembler, elementType, write_flag)

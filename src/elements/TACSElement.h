@@ -227,6 +227,15 @@ class TACSElement : public TACSObject {
   }
 
   /**
+    Get the output element type for visualization
+
+    @return The output element type for this element
+  */
+  virtual ElementType getElementType(){
+    return TACS_ELEMENT_NONE;
+  }
+
+  /**
     Get the number of design variables per node.
 
     The value defaults to one, unless over-ridden by the model

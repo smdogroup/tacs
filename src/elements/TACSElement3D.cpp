@@ -67,6 +67,10 @@ ElementLayout TACSElement3D::getLayoutType(){
   return basis->getLayoutType();
 }
 
+ElementType TACSElement3D::getElementType(){
+  return TACS_SOLID_ELEMENT;
+}
+
 TACSElementBasis* TACSElement3D::getElementBasis(){
   return basis;
 }
