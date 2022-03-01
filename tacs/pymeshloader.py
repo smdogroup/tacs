@@ -463,7 +463,15 @@ class pyMeshLoader(BaseUI):
                 for spc in self.bdfInfo.spcs[spc_id]:
                     # Loop through every node specifed in this spc and record bc info
                     for j, nastranNode in enumerate(spc.nodes):
+                        # If constrained node doesn't exist in bdf
+                        if nastranNode not in self.bdfInfo.node_ids:
+                            self._TACSWarning(f'Node ID {nastranNode} (Nastran ordering) is referenced by an SPC,  '
+                                              'but the node was not defined in the BDF file. Skipping SPC.')
+                            continue
+
+                        # Convert to TACS node ID
                         tacsNode = self.idMap(nastranNode, self.nastranToTACSNodeIDDict)
+
                         # If node hasn't been added to bc dict yet, add it
                         if tacsNode not in bcDict:
                             bcDict[tacsNode] = {}
