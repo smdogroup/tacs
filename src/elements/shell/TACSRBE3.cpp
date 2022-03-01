@@ -111,7 +111,7 @@ int TACSRBE3::getNumNodes() { return NUM_NODES; }
 
 int TACSRBE3::numExtras() { return NUM_EXTRAS; }
 
-enum ElementType TACSRBE3::getElementType(){ return TACS_RIGID_ELEMENT; }
+ElementType TACSRBE3::getElementType(){ return TACS_RIGID_ELEMENT; }
 
 /*
   Returns the multiplier index

@@ -26,17 +26,11 @@ This example demonstrates a number of useful pyTACS features, including:
 
 comm = MPI.COMM_WORLD
 
-# Optional arguments: these to output the f5 file to visualize the solution and which element type to use
-structOptions = {
-    'writeSolution': True,
-    'outputElement': TACS.PLANE_STRESS_ELEMENT,
-}
-
 # Name of the bdf file to get the mesh
 bdfFile = os.path.join(os.path.dirname(__file__), 'battery_pack.bdf')
 
 # Instantiate the pyTACS object
-FEAAssembler = pyTACS(bdfFile, comm, options=structOptions)
+FEAAssembler = pyTACS(bdfFile, comm)
 
 # Specify the plate thickness
 tplate = 0.065

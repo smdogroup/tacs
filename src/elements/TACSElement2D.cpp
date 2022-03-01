@@ -47,6 +47,10 @@ ElementLayout TACSElement2D::getLayoutType(){
   return basis->getLayoutType();
 }
 
+ElementType TACSElement2D::getElementType(){
+  return TACS_PLANE_STRESS_ELEMENT;
+}
+
 TACSElementBasis* TACSElement2D::getElementBasis(){
   return basis;
 }
