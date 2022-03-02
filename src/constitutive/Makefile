@@ -12,7 +12,7 @@ CXX_OBJS = TACSMaterialProperties.o \
 	TACSConstitutiveVerification.o \
 	TACSPlaneStressConstitutive.o \
 	TACSSolidConstitutive.o \
-	TACSTimoshenkoConstitutive.o \
+	TACSBeamConstitutive.o \
 	TACSShellConstitutive.o \
 	TACSIsoShellConstitutive.o \
 	TACSLamParamShellConstitutive.o \

@@ -1,9 +1,9 @@
 include ../../Makefile.in
 include ../../TACS_Common.mk
 
-OBJS = jacobian.o plate.o cylinder.o
+OBJS = jacobian.o plate.o cylinder.o beam.o
 
-default: jacobian plate cylinder
+default: jacobian plate cylinder beam
 
 debug: TACS_CC_FLAGS=${TACS_DEBUG_CC_FLAGS}
 debug: default
@@ -22,6 +22,9 @@ cylinder: ${OBJS}
 
 jacobian: ${OBJS}
 	${CXX} -o jacobian jacobian.o ${TACS_LD_FLAGS}
+
+beam: ${OBJS}
+	${CXX} -o beam beam.o ${TACS_LD_FLAGS}
 
 clean:
 	${RM} *.o plate cylinder jacobian

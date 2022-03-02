@@ -8,6 +8,9 @@
 #include "TACSShellInplaneElementModel.h"
 #include "TACSShellElement.h"
 #include "TACSThermalShellElement.h"
+#include "TACSBeamElement.h"
+#include "TACSBeamElementBasis.h"
+#include "TACSBeamElementModel.h"
 
 /*
   Linear shell elements with appropriate quadrature schemes
