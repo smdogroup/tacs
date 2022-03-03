@@ -4,16 +4,29 @@
 #include "TACSElementAlgebra.h"
 #include "TACSBeamConstitutive.h"
 #include "TACSElementVerification.h"
+#include "TACSBeamElementBasis.h"
 
 class TACSBeamLinearModel {
  public:
 
-  /*
+  /**
     Compute the tensorial components of the tying strain
 
-  */
+    G = 0.5*(X,eta^{T}*U,eta + U,eta^{T}*X,eta)
 
-  /*
+    The derivative with respect to the frame gives
+
+    X,eta = [X,xi ; n]
+
+    The derivative with respect to the displacements gives
+
+    u,eta = [u,xi ; d]
+
+    @param Xxi Derivatives of the node locations with respect to xi
+    @param n The interpolated frame normal
+    @param Uxi Derivatives of the displacements with respect to xi
+    @param d The interpolated director field
+  */
   template <int vars_per_node, class basis>
   static void computeTyingStrain( const TacsScalar Xpts[],
                                   const TacsScalar fn1[],
@@ -26,23 +39,96 @@ class TACSBeamLinearModel {
       // Get the field index
       const TacsBeamTyingStrainComponent field = basis::getTyingField(index);
 
+      // Get the tying point parametric location
+      double pt[2];
+      basis::getTyingPoint(index, pt);
 
+      // Interpolate the field value
+      TacsScalar Uxi[3], Xxi[3];
+      basis::template interpFieldsGrad<3, 3>(pt, Xpts, Xxi);
+      basis::template interpFieldsGrad<vars_per_node, 3>(pt, vars, Uxi);
 
+      ety[index] = 0.0;
+      if (field == TACS_BEAM_G12_COMPONENT){
+        TacsScalar d0[3], n0[3];
+        basis::template interpFields<3, 3>(pt, d1, d0);
+        basis::template interpFields<3, 3>(pt, fn1, n0);
 
+        // Compute g12 = e1^{T}*G*e2
+        ety[index] = 0.5*(Xxi[0]*d0[0] + Xxi[1]*d0[1] + Xxi[2]*d0[2] +
+                          n0[0]*Uxi[0] + n0[1]*Uxi[1] + n0[2]*Uxi[2]);
+      }
+      else { // if (field == TACS_BEAM_G13_COMPONENT){
+        TacsScalar d0[3], n0[3];
+        basis::template interpFields<3, 3>(pt, d2, d0);
+        basis::template interpFields<3, 3>(pt, fn2, n0);
+
+        // Compute g13 = e1^{T}*G*e3
+        ety[index] = 0.5*(Xxi[0]*d0[0] + Xxi[1]*d0[1] + Xxi[2]*d0[2] +
+                          n0[0]*Uxi[0] + n0[1]*Uxi[1] + n0[2]*Uxi[2]);
+      }
     }
   }
 
   template <int vars_per_node, class basis>
   static void addComputeTyingStrainTranspose( const TacsScalar Xpts[],
-                                              const TacsScalar fn[],
+                                              const TacsScalar fn1[],
+                                              const TacsScalar fn2[],
                                               const TacsScalar vars[],
-                                              const TacsScalar d[],
+                                              const TacsScalar d1[],
+                                              const TacsScalar d2[],
                                               const TacsScalar dety[],
                                               TacsScalar res[],
-                                              TacsScalar dd[] ){
+                                              TacsScalar dd1[],
+                                              TacsScalar dd2[] ){
+    for ( int index = 0; index < basis::NUM_TYING_POINTS; index++ ){
+      // Get the field index
+      const TacsBeamTyingStrainComponent field = basis::getTyingField(index);
 
+      // Get the tying point parametric location
+      double pt[2];
+      basis::getTyingPoint(index, pt);
+
+      // Interpolate the field value
+      TacsScalar Xxi[3], dUxi[3];
+      basis::template interpFieldsGrad<3, 3>(pt, Xpts, Xxi);
+
+      if (field == TACS_BEAM_G12_COMPONENT){
+        TacsScalar dd0[3], n0[3];
+        basis::template interpFields<3, 3>(pt, fn1, n0);
+
+        // Compute g12 = e1^{T}*G*e2
+        dUxi[0] = 0.5*dety[index]*n0[0];
+        dUxi[1] = 0.5*dety[index]*n0[1];
+        dUxi[2] = 0.5*dety[index]*n0[2];
+
+        dd0[0] = 0.5*dety[index]*Xxi[0];
+        dd0[1] = 0.5*dety[index]*Xxi[1];
+        dd0[2] = 0.5*dety[index]*Xxi[2];
+
+        basis::template addInterpFieldsTranspose<3, 3>(pt, dd0, dd1);
+      }
+      else { // if (field == TACS_BEAM_G13_COMPONENT){
+        TacsScalar dd0[3], n0[3];
+        basis::template interpFields<3, 3>(pt, fn2, n0);
+
+        // Compute g13 = e1^{T}*G*e3
+        dUxi[0] = 0.5*dety[index]*n0[0];
+        dUxi[1] = 0.5*dety[index]*n0[1];
+        dUxi[2] = 0.5*dety[index]*n0[2];
+
+        dd0[0] = 0.5*dety[index]*Xxi[0];
+        dd0[1] = 0.5*dety[index]*Xxi[1];
+        dd0[2] = 0.5*dety[index]*Xxi[2];
+
+        basis::template addInterpFieldsTranspose<3, 3>(pt, dd0, dd2);
+      }
+
+      if (res){
+        basis::template addInterpFieldsGradTranspose<vars_per_node, 3>(pt, dUxi, res);
+      }
+    }
   }
-  */
 
   static inline void evalStrain( const TacsScalar u0x[],
                                  const TacsScalar d1x[],
@@ -81,7 +167,7 @@ class TACSBeamLinearModel {
     dd1x[0] = scale*dfde[2];
     dd1x[1] = 0.0;
     dd1x[2] = 0.5*scale*dfde[1];
-    
+
     dd2x[0] = scale*dfde[3];
     dd2x[1] = -0.5*scale*dfde[1];
     dd2x[2] = 0.0;
@@ -106,9 +192,8 @@ class TACSBeamLinearModel {
                                  TacsScalar d2d1xd2x[] ){
 
 
-  }                                                             
+  }
 };
-
 
 /*
 class TACSBeamNonlinearModel {
@@ -151,13 +236,10 @@ class TACSBeamNonlinearModel {
                                      TacsScalar dd2x[] ){
 
 
-  }                                
+  }
 };
+
 */
-
-
-
-
 
 template <int vars_per_node, class basis, class model>
 int TacsTestBeamModelDerivatives( double dh=1e-7,
@@ -580,9 +662,8 @@ int TacsTestBeamModelDerivatives( double dh=1e-7,
   }
   if (test_print_level){ fprintf(stderr, "\n"); }
   */
-  
+
   return fail;
 }
 
 #endif // TACS_BEAM_ELEMENT_MODEL_H
-

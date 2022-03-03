@@ -4,84 +4,41 @@
 #include "TACSGaussQuadrature.h"
 #include "TACSElementAlgebra.h"
 #include "TACSElementTypes.h"
+#include "TACSShellElementQuadBasis.h"
 
-/**
-  Defines the quadrature over both the face and quadrature
-*/
-class TACSBeamLinearQuadrature {
- public:
-  static int getNumParameters(){
-    return 1;
-  }
-  static int getNumQuadraturePoints(){
-    return 2;
-  }
-  static double getQuadratureWeight( int n ){
-    return TacsGaussQuadWts2[n];
-  }
-  static double getQuadraturePoint( int n, double pt[] ){
-    pt[0] = TacsGaussQuadPts2[n];
-
-    return TacsGaussQuadWts2[n];
-  }
-  static int getNumFaces(){
-    return 2;
-  }
-  static int getNumFaceQuadraturePoints( int face ){
-    return 1;
-  }
-  static double getFaceQuadraturePoint( int face, int n,
-                                        double pt[],
-                                        double t[] ){
-    pt[0] = -1.0 + 2.0*face;
-    return 1.0;
-  }
-};
-
-/**
-  Defines the quadrature over both the face and quadrature
-*/
-class TACSBeamQuadraticQuadrature {
- public:
-  static int getNumParameters(){
-    return 1;
-  }
-  static int getNumQuadraturePoints(){
-    return 3;
-  }
-  static double getQuadratureWeight( int n ){
-    return TacsGaussQuadWts3[n];
-  }
-  static double getQuadraturePoint( int n, double pt[] ){
-    pt[0] = TacsGaussQuadPts3[n];
-
-    return TacsGaussQuadWts3[n];
-  }
-  static int getNumFaces(){
-    return 2;
-  }
-  static int getNumFaceQuadraturePoints( int face ){
-    return 1;
-  }
-  static double getFaceQuadraturePoint( int face, int n,
-                                        double pt[],
-                                        double t[] ){
-    pt[0] = -1.0 + 2.0*face;
-    return 1.0;
-  }
-};
+enum TacsBeamTyingStrainComponent {
+  TACS_BEAM_G12_COMPONENT=0,
+  TACS_BEAM_G13_COMPONENT=1 };
 
 template <int order>
 class TACSBeamBasis {
  public:
   static const int NUM_NODES = order;
-  static const int NUM_TYING_POINTS = 2*(order - 1);
+  static const int NUM_G12_TYING_POINTS = (order - 1);
+  static const int NUM_G13_TYING_POINTS = (order - 1);
+  static const int NUM_TYING_POINTS =
+    (NUM_G12_TYING_POINTS +
+     NUM_G13_TYING_POINTS);
+
+  static const int G12_OFFSET = (order - 1);
+  static const int G13_OFFSET =
+    G12_OFFSET + (order - 1);
 
   static void getNodePoint( const int n, double pt[] ){
     pt[0] = -1.0 + 2.0*n;
   }
   static ElementLayout getLayoutType(){
-    return TACS_LINE_ELEMENT;
+    if (order == 2){
+      return TACS_LINE_ELEMENT;
+    }
+    else if (order == 3){
+      return TACS_LINE_QUADRATIC_ELEMENT;
+    }
+    else if (order == 4){
+      return TACS_LINE_CUBIC_ELEMENT;
+    }
+
+    return TACS_LAYOUT_NONE;
   }
 
   template <int vars_per_node, int m>
@@ -280,6 +237,24 @@ class TACSBeamBasis {
     // }
   }
 
+  /**
+    Get the tying strain field index associated with this tying point
+
+    @param index The index of the tying point
+    @return The tying strain field index
+  */
+  static inline TacsBeamTyingStrainComponent getTyingField( int index ){
+    if (index < G13_OFFSET){
+      return TACS_BEAM_G12_COMPONENT;
+    }
+    else {
+      return TACS_BEAM_G13_COMPONENT;
+    }
+  }
+
+  /*
+    Get the knots associated with the tying points
+  */
   static inline void getTyingKnots( const double **ty_knots ){
     if (order == 2){
       *ty_knots = TacsGaussQuadPts1;
@@ -297,68 +272,143 @@ class TACSBeamBasis {
       *ty_knots = TacsGaussQuadPts5;
     }
   }
-  static int getNumTyingFields(){
-    return 2;
+
+  /**
+    Get the tying point parametric location associated with the tying point
+
+    @param index The index of the tying point
+    @param pt The parametric point associated with the tying point
+  */
+  static inline void getTyingPoint( int ty_index, double pt[] ){
+    const double *ty_knots;
+    getTyingKnots(&ty_knots);
+
+    if (ty_index < G13_OFFSET){
+      pt[0] = ty_knots[ty_index];
+    }
+    else {
+      pt[0] = ty_knots[ty_index - G13_OFFSET];
+    }
   }
-  static int getNumTyingPoints( const int field ){
-    if (field == 0 || field == 1){ return order-1; }
+
+  /*
+    Evaluate the interpolation for all of the tying points
+  */
+  static void evalTyingInterp( const double pt[], double N[] ){
+    const double *ty_knots;
+    getTyingKnots(&ty_knots);
+
+    double nar[order-1];
+    TacsLagrangeShapeFunction<order-1>(pt[0], ty_knots, nar);
+
+    // TACS_SHELL_G12_COMPONENT
+    for ( int i = 0; i < order-1; i++, N++ ){
+      N[0] = nar[i];
+    }
+
+    // TACS_SHELL_G13_COMPONENT
+    for ( int i = 0; i < order-1; i++, N++ ){
+      N[0] = nar[i];
+    }
+  }
+
+  /*
+    Get the number of tying points associated with each field
+  */
+  static inline int getNumTyingPoints( const int field ){
+    if (field == TACS_BEAM_G12_COMPONENT){ return NUM_G12_TYING_POINTS; }
+    else if (field == TACS_BEAM_G13_COMPONENT){ return NUM_G13_TYING_POINTS; }
     return 0;
   }
-  static void getTyingPoint( const int field,
-                             const int ty,
-                             double pt[] ){
-    const double *ty_knots;
-    getTyingKnots(&ty_knots);
-    pt[0] = ty_knots[ty];
-  }
-  static TacsScalar interpTying( const int field,
-                                 const double pt[],
-                                 const TacsScalar ety[] ){
-    const double *ty_knots;
-    getTyingKnots(&ty_knots);
 
-    TacsScalar value = 0.0;
-    double na[order-1];
-    TacsLagrangeShapeFunction<order-1>(pt[0], ty_knots, na);
+  /**
+    Evaluate the tensorial components of the strain tensor at the
+    specific quadrature point
 
-    for ( int i = 0; i < order-1; i++, ety++ ){
-      value += na[i]*ety[0];
+    gty = [g12  g13]
+
+    @param pt The quadrature point
+    @param ety The strain computed at the tying points
+    @param gty The interpolated tying strain
+  */
+  static inline void interpTyingStrain( const double pt[],
+                                        const TacsScalar ety[],
+                                        TacsScalar gty[] ){
+    const int num_tying_fields = 2;
+
+    double N[NUM_TYING_POINTS];
+    evalTyingInterp(pt, N);
+
+    const double *N0 = N;
+    for ( int field = 0; field < num_tying_fields; field++ ){
+      const int npts = getNumTyingPoints(field);
+
+      gty[field] = 0.0;
+      for ( int k = 0; k < npts; k++, N0++, ety++ ){
+        gty[field] += N0[0]*ety[0];
+      }
     }
 
-    return value;
+    // Set the last tying strain entry to zero
+    gty[5] = 0.0;
   }
 
-  static void addInterpTyingTranspose( const int field,
-                                       const double pt[],
-                                       const TacsScalar value,
-                                       TacsScalar ety[] ){
-    const double *ty_knots;
-    getTyingKnots(&ty_knots);
+  /**
+    Add the derivative of the tying strain to the residual
 
-    double na[order-1];
-    TacsLagrangeShapeFunction<order-1>(pt[0], ty_knots, na);
+    @param pt The quadrature point
+    @param dgty The derivative of the interpolated strain
+    @param dety The output derivative of the strain at the tying points
+  */
+  static inline void addInterpTyingStrainTranspose( const double pt[],
+                                                    const TacsScalar dgty[],
+                                                    TacsScalar dety[] ){
+    const int num_tying_fields = 2;
 
-    for ( int i = 0; i < order-1; i++, ety++ ){
-      ety[0] += na[i]*value;
+    double N[NUM_TYING_POINTS];
+    evalTyingInterp(pt, N);
+
+    const double *N0 = N;
+    for ( int field = 0; field < num_tying_fields; field++ ){
+      const int npts = getNumTyingPoints(field);
+
+      for ( int k = 0; k < npts; k++, N0++, dety++ ){
+        dety[0] += dgty[field]*N0[0];
+      }
     }
   }
 
-  static void addInterpTyingOuterProduct( const int f1,
-                                          const int f2,
-                                          const double pt[],
-                                          const TacsScalar value,
-                                          TacsScalar d2ety[] ){
-    const double *ty_knots;
-    getTyingKnots(&ty_knots);
+  /**
+    Add the second derivative of the tying strain at the tying points
 
-    double na[order-1];
-    TacsLagrangeShapeFunction<order-1>(pt[0], ty_knots, na);
+    @param pt The quadrature point
+    @param d2gty The second derivative of the interpolated strain
+    @param d2ety The second derivatives of the strain at the tying points
+  */
+  static inline void addInterpTyingStrainHessian( const double pt[],
+                                                  const TacsScalar d2gty[],
+                                                  TacsScalar d2ety[] ){
+    // Set the values into the strain tensor
+    const int num_tying_fields = 2;
 
-    for ( int i = 0; i < order-1; i++ ){
-      TacsScalar N = value*na[i];
+    double N[NUM_TYING_POINTS];
+    evalTyingInterp(pt, N);
 
-      for ( int j = 0; j < order-1; j++ ){
-        d2ety[0] += na[j]*N;
+    const double *N1 = N;
+    for ( int field1 = 0; field1 < num_tying_fields; field1++ ){
+      const int npts1 = getNumTyingPoints(field1);
+      for ( int k1 = 0; k1 < npts1; k1++, N1++ ){
+
+        const double *N2 = N;
+        for ( int field2 = 0; field2 < num_tying_fields; field2++ ){
+          const int npts2 = getNumTyingPoints(field2);
+          const TacsScalar value =
+            d2gty[num_tying_fields*field1 + field2];
+
+          for ( int k2 = 0; k2 < npts2; k2++, N2++, d2ety++ ){
+            d2ety[0] += N1[0]*N2[0]*value;
+          }
+        }
       }
     }
   }
