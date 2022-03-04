@@ -85,7 +85,7 @@ FEAAssembler.initialize(elemCallBack)
 
 # Setup problems
 # Create a transient problem that will represent time varying convection
-transientProb = FEAAssembler.createTransientProblem('Transient', tInit=0.0, tFinal=10.0, numSteps=100)
+transientProb = FEAAssembler.createTransientProblem('Transient', tInit=0.0, tFinal=2000.0, numSteps=100)
 # Create a static problem that will represent the steady state solution
 staticProb = FEAAssembler.createStaticProblem(name='SteadyState')
 # Add both problems to a list

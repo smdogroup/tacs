@@ -126,21 +126,9 @@ TacsScalar TACSPlaneStressConstitutive::evalSpecificHeat( int elemIndex,
                                                           const double pt[],
                                                           const TacsScalar X[] ){
   if (properties){
-    return t*properties->getSpecificHeat();
+    return properties->getSpecificHeat();
   }
   return 0.0;
-}
-
-// Add the derivative of the specific heat
-void TACSPlaneStressConstitutive::addSpecificHeatDVSens( int elemIndex,
-                                                         TacsScalar scale,
-                                                         const double pt[],
-                                                         const TacsScalar X[],
-                                                         int dvLen,
-                                                         TacsScalar dfdx[] ){
-  if (properties && tNum >= 0){
-    dfdx[0] += scale*properties->getSpecificHeat();
-  }
 }
 
 // Evaluate the stresss
