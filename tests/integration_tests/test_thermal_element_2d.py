@@ -23,8 +23,8 @@ bdf_file = os.path.join(base_dir, "./input_files/circ-plate-dirichlet-bcs.bdf")
 FUNC_REFS = {'steady_state_avg_temp': 69.88016093991516, 'steady_state_ks_temp': 98.74014374789108,
              'steady_state_mass': 39.20272476980967,
 
-             'transient_avg_temp': 396.66762638787424, 'transient_ks_temp': 97.83730882226564,
-             'transient_mass': 392.027247698097}
+             'transient_avg_temp': 79333.52527757485, 'transient_ks_temp': 97.890292,
+             'transient_mass': 78405.44953961941}
 
 
 # Radius of plate
@@ -124,7 +124,7 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
         tacs_probs.append(sp)
 
         # Create transient problem, loads are already applied through BCs
-        tp = fea_assembler.createTransientProblem(name='transient', tInit=0.0, tFinal=10.0, numSteps=25)
+        tp = fea_assembler.createTransientProblem(name='transient', tInit=0.0, tFinal=2000.0, numSteps=25)
         tacs_probs.append(tp)
 
         return tacs_probs
