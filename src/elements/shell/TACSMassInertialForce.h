@@ -15,7 +15,6 @@ class TACSMassInertialForce : public TACSElement {
   const char * getObjectName();
   int getVarsPerNode();
   int getNumNodes();
-  enum ElementType getElementType();
   int getDesignVarsPerNode(){ return 0; }
   int getNumQuadraturePoints(){ return 1; }
   double getQuadratureWeight( int n ){ return 1.0; }

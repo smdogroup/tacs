@@ -22,16 +22,17 @@ class BaseUI:
         try:
             defOptions[name]
         except:
-            self.TACSWarning('Option: \'%-30s\' is not a valid option |' % name)
+            self._TACSWarning('Option: \'%-30s\' is not a valid option |' % name)
             return
 
         # Now we know the option exists, lets check if the type is ok:
         #        if type(value) == self.options[name][0]:
         if isinstance(value, self.options[name][0]):
             # Just set:
-            self.options[name] = [type(value), value]
+            description = defOptions[name][2]
+            self.options[name] = [type(value), value, description]
         else:
-            raise self.TACSError("Datatype for Option %s was not valid. "
+            raise self._TACSError("Datatype for Option %s was not valid. "
                         "Expected data type is %s. Received data type "
                         " is %s." % (name, self.options[name][0], type(value)))
 
@@ -62,20 +63,41 @@ class BaseUI:
         header = self.objectName
         if hasattr(self, 'name'):
             header += f" '{self.name}'"
-        self.pp("+----------------------------------------+")
-        self.pp("|" + f"{header} Options:".center(40) + "|")
-        self.pp("+----------------------------------------+")
+        self._pp("+----------------------------------------+")
+        self._pp("|" + f"{header} options:".center(40) + "|")
+        self._pp("+----------------------------------------+")
         for name in self.options:
             if name != 'defaults':
                 if self.options[name][0] == str:
-                    self.pp(f"'{name}': '{self.options[name][1]}'")
+                    self._pp(f"'{name}': '{self.options[name][1]}'")
                 else:
-                    self.pp(f"'{name}': {self.options[name][1]}")
+                    self._pp(f"'{name}': {self.options[name][1]}")
+                # print description
+                self._pp(f"\t {self.options[name][2]}")
+
+    @classmethod
+    def printDefaultOptions(cls):
+        """
+        Prints a nicely formatted dictionary of all the default solver
+        options to the stdout
+        """
+        header = cls.objectName
+        print("+----------------------------------------+")
+        print("|" + f"{header} default options:".center(40) + "|")
+        print("+----------------------------------------+")
+        if hasattr(cls, 'defaultOptions'):
+            for name in cls.defaultOptions:
+                if cls.defaultOptions[name][0] == str:
+                    print(f"'{name}': '{cls.defaultOptions[name][1]}'")
+                else:
+                    print(f"'{name}': {cls.defaultOptions[name][1]}")
+                # print description
+                print(f"\t {cls.defaultOptions[name][2]}")
 
     # ----------------------------------------------------------------------------
     #                      Utility Functions
     # ---------------------------------------------------------------------------
-    def pp(self, printStr):
+    def _pp(self, printStr):
         """ Simple parallel print"""
         if self.comm.rank == 0:
             print(printStr)
@@ -133,7 +155,7 @@ class BaseUI:
             i += 1
         return ltype(l)
 
-    def TACSWarning(self, message):
+    def _TACSWarning(self, message):
         """
         Format a class-specific warning for message
         """
@@ -152,7 +174,7 @@ class BaseUI:
             msg += ' ' * (78 - i) + '|\n' + '+' + '-' * 78 + '+' + '\n'
             print(msg)
 
-    def TACSError(self, message):
+    def _TACSError(self, message):
         """
         Format a class-specific error for message
         """

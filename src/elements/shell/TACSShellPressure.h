@@ -33,10 +33,6 @@ class TACSShellPressure : public TACSElement {
     return basis::NUM_NODES;
   }
 
-  ElementLayout getLayoutType(){
-    return basis::getLayoutType();
-  }
-
   int getNumQuadraturePoints(){
     return quadrature::getNumQuadraturePoints();
   }

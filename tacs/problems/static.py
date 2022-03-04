@@ -1,5 +1,11 @@
 """
-pyStatic_problem
+The main purpose of this class is to represent all relevant
+information for a static analysis. This will include
+information defining the loading condition as well as various
+other pieces of information.
+
+.. note:: This class should be created using the
+    :meth:`pyTACS.createStaticProblem <tacs.pytacs.pyTACS.createStaticProblem>` method.
 """
 
 # =============================================================================
@@ -14,37 +20,67 @@ from .base import TACSProblem
 import tacs.TACS
 
 class StaticProblem(TACSProblem):
+    # Class name
+    objectName = 'StaticProblem'
+
+    # Default options for class
+    defaultOptions = {
+        'outputdir': [str, './', 'Output directory for F5 file writer.'],
+
+        # Solution Options
+        'KSMSolver': [str, 'GMRES', "Krylov subspace method to use for linear solver. Currently only supports 'GMRES'"],
+        'orderingType': [int, tacs.TACS.ND_ORDER, "Ordering type to use for matrix partitioning.\n"
+                                                  '\t Acceptable values are:\n'
+                                                  f'\t\t tacs.TACS.NATURAL_ORDER = {tacs.TACS.NATURAL_ORDER}\n'
+                                                  f'\t\t tacs.TACS.RCM_ORDER = {tacs.TACS.RCM_ORDER}\n'
+                                                  f'\t\t tacs.TACS.ND_ORDER = {tacs.TACS.ND_ORDER}\n'
+                                                  f'\t\t tacs.TACS.TACS_AMD_ORDER = {tacs.TACS.TACS_AMD_ORDER}\n'
+                                                  f'\t\t tacs.TACS.MULTICOLOR_ORDER = {tacs.TACS.MULTICOLOR_ORDER}'],
+        'PCFillLevel': [int, 1000, 'Preconditioner fill level.'],
+        'PCFillRatio': [float, 20.0, 'Preconditioner fill ratio.'],
+        'subSpaceSize': [int, 10, 'Subspace size for Krylov solver.'],
+        'nRestarts': [int, 15, 'Max number of restarts for Krylov solver.'],
+        'flexible': [bool, True, 'Flag for whether the preconditioner is flexible.'],
+        'L2Convergence': [float, 1e-12,
+                          'Absolute convergence tolerance for linear solver based on l2 norm of residual.'],
+        'L2ConvergenceRel': [float, 1e-12,
+                             'Relative convergence tolerance for linear solver based on l2 norm of residual.'],
+        'useMonitor': [bool, False, 'Flag for whether to attach a debug monitor to the linear solver.'],
+        'monitorFrequency': [int, 10, 'Print frequency for sub iterations of linear solver.'],
+
+        # Output Options
+        'writeSolution': [bool, True, 'Flag for suppressing all f5 file writing.'],
+        'numberSolutions': [bool, True, 'Flag for attaching solution counter index to f5 files.'],
+        'printTiming': [bool, False, 'Flag for printing out timing information for class procedures.'],
+
+    }
 
     def __init__(self, name, assembler, comm, outputViewer=None, meshLoader=None, options={}):
         """
-        The main purpose of this class is to represent all relevant
-        information for a static analysis. This will include
-        information defining the loading condition as well as various
-        other pieces of information.
+        NOTE: This class should not be initialized directly by the user.
+        Use pyTACS.createStaticProblem instead.
 
         Parameters
         ----------
         name : str
             Name of this tacs problem
 
-        assembler : assembler
+        assembler : TACS.Assembler
             Cython object responsible for creating and setting tacs objects used to solve problem
 
-        comm : MPI Intracomm
+        comm : mpi4py.MPI.Intracomm
             The comm object on which to create the pyTACS object.
 
-        outputViewer : TACSToFH5 object
+        outputViewer : TACS.TACSToFH5
             Cython object used to write out f5 files that can be converted and used for postprocessing.
 
-        meshLoader : pyMeshLoader object
+        meshLoader : pymeshloader.pyMeshLoader
             pyMeshLoader object used to create the assembler.
 
         options : dict
-            Dictionary holding problem-specific option parameters.
+            Dictionary holding problem-specific option parameters (case-insensitive).
 
         """
-        # python object name
-        self.objectName = 'StaticProblem'
 
         # Problem name
         self.name = name
@@ -52,39 +88,13 @@ class StaticProblem(TACSProblem):
         # Defualt setup for common problem class objects
         super().__init__(assembler, comm, outputViewer, meshLoader)
 
-        # Default Option List
-        defOpts = {
-            'outputdir': [str, './'],
-
-            # Solution Options
-            'KSMSolver': [str, 'GMRES'],
-            'orderingType': [str, 'ND'],
-            'PCFillLevel': [int, 1000],
-            'PCFillRatio': [float, 20.0],
-            'subSpaceSize': [int, 10],
-            'nRestarts': [int, 15],
-            'flexible': [int, 1],
-            'L2Convergence': [float, 1e-12],
-            'L2ConvergenceRel': [float, 1e-12],
-            'useMonitor': [bool, False],
-            'monitorFrequency': [int, 10],
-            'resNormUB': [float, 1e20],
-
-            # Output Options
-            'writeSolution': [bool, True],
-            'numberSolutions': [bool, True],
-            'printTiming': [bool, False],
-
-        }
-
         # Process the default options which are added to self.options
         # under the 'defaults' key. Make sure the key are lower case
-        self.options = {}
-        def_keys = defOpts.keys()
+        def_keys = self.defaultOptions.keys()
         self.options['defaults'] = {}
         for key in def_keys:
-            self.options['defaults'][key.lower()] = defOpts[key]
-            self.options[key.lower()] = defOpts[key]
+            self.options['defaults'][key.lower()] = self.defaultOptions[key]
+            self.options[key.lower()] = self.defaultOptions[key]
 
         # Set user-defined options
         for key in options:
@@ -127,21 +137,7 @@ class StaticProblem(TACSProblem):
         opt = self.getOption
 
         # Tangent Stiffness --- process the ordering option here:
-        tmp = opt('orderingType').lower()
-        if tmp == 'natural':
-            ordering = tacs.TACS.NATURAL_ORDER
-        elif tmp == 'nd':
-            ordering = tacs.TACS.ND_ORDER
-        elif tmp == 'rcm':
-            ordering = tacs.TACS.RCM_ORDER
-        elif tmp == 'tacs_amd':
-            ordering = tacs.TACS.TACS_AMD_ORDER
-        elif tmp == 'multicolor':
-            ordering = tacs.TACS.MULTICOLOR_ORDER
-        else:
-            raise self.TACSError("Unrecognized 'orderingType' option value: "
-                        "'%s'. Valid values are: 'natural', 'nd', 'rcm', "
-                        "'tacs_amd', or 'multicolor'." % tmp)
+        ordering = opt('orderingType')
 
         self.K = self.assembler.createSchurMat(ordering)
 
@@ -169,7 +165,7 @@ class StaticProblem(TACSProblem):
         #        self.K, self.PC, opt('subSpaceSize'), opt('subSpaceSize'),
         #        opt('nRestarts'), opt('flexible'))
         else:
-            raise self.TACSError("Unknown KSMSolver option. Valid options are "
+            raise self._TACSError("Unknown KSMSolver option. Valid options are "
                         "'GMRES' or 'GCROT'")
 
         self.KSM.setTolerances(self.getOption('L2ConvergenceRel'),
@@ -210,7 +206,7 @@ class StaticProblem(TACSProblem):
 
     def addFunction(self, funcName, funcHandle, compIDs=None, **kwargs):
         """
-        Generic function to add a function for TACS. It is intended to
+        Generic method to add a function for TACS. It is intended to
         be reasonably generic since the user supplies the actual
         function handle to use. The following functions can be used:
         KSFailure, KSTemperature, AverageTemperature, Compliance,
@@ -227,8 +223,8 @@ class StaticProblem(TACSProblem):
             from the functions module in tacs.
 
         compIDs: list
-            List of compIDs to select. Alternative to selectCompIDs
-            arguments.
+            List of compIDs to select. Use pyTACS.selectCompIDs method
+            to determine this.
         """
         success = super().addFunction(funcName, funcHandle, compIDs, **kwargs)
         if success:
@@ -245,7 +241,7 @@ class StaticProblem(TACSProblem):
 
         Parameters
         ----------
-        x : ndarray
+        x : numpy.ndarray
             The variables (typically from the optimizer) to set. It
             looks for variable in the ``self.varName`` attribute.
 
@@ -259,7 +255,7 @@ class StaticProblem(TACSProblem):
 
         Parameters
         ----------
-        coords : ndarray
+        coords : numpy.ndarray
             Structural coordinate in array of size (N * 3) where N is
             the number of structural nodes on this processor.
         """
@@ -270,7 +266,7 @@ class StaticProblem(TACSProblem):
 
     def addLoadToComponents(self, compIDs, F, averageLoad=False):
         """"
-        The function is used to add a *FIXED TOTAL LOAD* on one or more
+        This method is used to add a *FIXED TOTAL LOAD* on one or more
         components, defined by COMPIDs. The purpose of this routine is to add loads that
         remain fixed throughout an optimization. An example would be an engine load.
         This routine determines all the unqiue nodes in the FE model that are part of the
@@ -284,7 +280,7 @@ class StaticProblem(TACSProblem):
             The components with added loads. Use pyTACS selectCompIDs method
             to determine this.
 
-        F : Numpy 1d or 2d array length (varsPerNodes) or (numNodeIDs, varsPerNodes)
+        F : numpy.ndarray 1d or 2d length (varsPerNodes) or (numNodeIDs, varsPerNodes)
             Vector(s) of 'force' to apply to each components.  If only one force vector is provided,
             force will be copied uniformly across all components.
 
@@ -302,22 +298,22 @@ class StaticProblem(TACSProblem):
 
         A couple of examples of force vector components for common problem are listed below:
 
-        In Heat Conduction with varsPerNode = 1
-        F = [Qdot] # heat rate
-        In Elasticity with varsPerNode = 3,
-        F = [fx, fy, fz] # forces
-        In Elasticity with varsPerNode = 6,
-        F = [fx, fy, fz, mx, my, mz] # forces + moments
-        In Thermoelasticity with varsPerNode = 4,
-        F = [fx, fy, fz, Qdot] # forces + heat rate
-        In Thermoelasticity with varsPerNode = 7,
-        F = [fx, fy, fz, mx, my, mz, Qdot] # forces + moments + heat rate
+            In Heat Conduction with varsPerNode = 1
+                F = [Qdot] # heat rate
+            In Elasticity with varsPerNode = 3,
+                F = [fx, fy, fz] # forces
+            In Elasticity with varsPerNode = 6,
+                F = [fx, fy, fz, mx, my, mz] # forces + moments
+            In Thermoelasticity with varsPerNode = 4,
+                F = [fx, fy, fz, Qdot] # forces + heat rate
+            In Thermoelasticity with varsPerNode = 7,
+                F = [fx, fy, fz, mx, my, mz, Qdot] # forces + moments + heat rate
         """
         self._addLoadToComponents(self.F, compIDs, F, averageLoad)
 
     def addLoadToNodes(self, nodeIDs, F, nastranOrdering=False):
         """
-        The function is used to add a fixed point load of F to the
+        This method is used to add a fixed point load of F to the
         selected node IDs.
 
         Parameters
@@ -344,36 +340,36 @@ class StaticProblem(TACSProblem):
 
         A couple of examples of force vector components for common problem are listed below:
 
-        In Heat Conduction with varsPerNode = 1
-        F = [Qdot] # heat rate
-        In Elasticity with varsPerNode = 3,
-        F = [fx, fy, fz] # forces
-        In Elasticity with varsPerNode = 6,
-        F = [fx, fy, fz, mx, my, mz] # forces + moments
-        In Thermoelasticity with varsPerNode = 4,
-        F = [fx, fy, fz, Qdot] # forces + heat rate
-        In Thermoelasticity with varsPerNode = 7,
-        F = [fx, fy, fz, mx, my, mz, Qdot] # forces + moments + heat rate
+            In Heat Conduction with varsPerNode = 1
+                F = [Qdot] # heat rate
+            In Elasticity with varsPerNode = 3,
+                F = [fx, fy, fz] # forces
+            In Elasticity with varsPerNode = 6,
+                F = [fx, fy, fz, mx, my, mz] # forces + moments
+            In Thermoelasticity with varsPerNode = 4,
+                F = [fx, fy, fz, Qdot] # forces + heat rate
+            In Thermoelasticity with varsPerNode = 7,
+                F = [fx, fy, fz, mx, my, mz, Qdot] # forces + moments + heat rate
         """
 
         self._addLoadToNodes(self.F, nodeIDs, F, nastranOrdering)
 
     def addLoadToRHS(self, Fapplied):
         """"
-        The function is used to add a *FIXED TOTAL LOAD* directly to the
+        This method is used to add a *FIXED TOTAL LOAD* directly to the
         right hand side vector given the equation below:
 
             K*u = f
 
         Where:
-            K : Stiffness matrix for problem
-            u : State variables for problem
-            f : Right-hand side vector to add loads to
+            - K : Stiffness matrix for problem
+            - u : State variables for problem
+            - f : Right-hand side vector to add loads to
 
         Parameters
         ----------
 
-        Fapplied : ndarray or BVec
+        Fapplied : numpy.ndarray or TACS.Vec
             Distributed array containing loads to applied to RHS of the problem.
 
         """
@@ -382,7 +378,7 @@ class StaticProblem(TACSProblem):
     def addTractionToComponents(self, compIDs, tractions,
                                 faceIndex=0):
         """
-        The function is used to add a *FIXED TOTAL TRACTION* on one or more
+        This method is used to add a *FIXED TOTAL TRACTION* on one or more
         components, defined by COMPIDs. The purpose of this routine is
         to add loads that remain fixed throughout an optimization.
 
@@ -405,7 +401,7 @@ class StaticProblem(TACSProblem):
     def addTractionToElements(self, elemIDs, tractions,
                               faceIndex=0, nastranOrdering=False):
         """
-        The function is used to add a fixed traction to the
+        This method is used to add a fixed traction to the
         selected element IDs. Tractions can be specified on an
         element by element basis (if tractions is a 2d array) or
         set to a uniform value (if tractions is a 1d array)
@@ -433,7 +429,7 @@ class StaticProblem(TACSProblem):
     def addPressureToComponents(self, compIDs, pressures,
                                 faceIndex=0):
         """
-        The function is used to add a *FIXED TOTAL PRESSURE* on one or more
+        This method is used to add a *FIXED TOTAL PRESSURE* on one or more
         components, defined by COMPIds. The purpose of this routine is
         to add loads that remain fixed throughout an optimization. An example
         would be a fuel load.
@@ -457,7 +453,7 @@ class StaticProblem(TACSProblem):
     def addPressureToElements(self, elemIDs, pressures,
                               faceIndex=0, nastranOrdering=False):
         """
-        The function is used to add a fixed presure to the
+        This method is used to add a fixed presure to the
         selected element IDs. Pressures can be specified on an
         element by element basis (if pressures is an array) or
         set to a uniform value (if pressures is a scalar)
@@ -485,13 +481,13 @@ class StaticProblem(TACSProblem):
 
     def addInertialLoad(self, inertiaVector):
         """
-        The function is used to add a fixed inertial load due to
+        This method is used to add a fixed inertial load due to
         a uniform acceleration over the entire model.
         This is most commonly used to model gravity loads on a model.
 
         Parameters
         ----------
-        inertiaVector : ndarray
+        inertiaVector : numpy.ndarray
             Acceleration vector used to define inertial load.
         """
         self._addInertialLoad(self.auxElems, inertiaVector)
@@ -533,7 +529,7 @@ class StaticProblem(TACSProblem):
         ----------
         Optional Arguments:
 
-        Fext : ndarray or BVec
+        Fext : numpy.ndarray or TACS.Vec
             Distributed array containing additional loads (ex. aerodynamic forces for aerostructural coupling)
             to applied to RHS of the static problem.
 
@@ -590,19 +586,19 @@ class StaticProblem(TACSProblem):
         # If timing was was requested print it, if the solution is nonlinear
         # print this information automatically if prinititerations was requested.
         if self.getOption('printTiming'):
-            self.pp('+--------------------------------------------------+')
-            self.pp('|')
-            self.pp('| TACS Solve Times:')
-            self.pp('|')
-            self.pp('| %-30s: %10.3f sec' % ('TACS Setup Time', setupProblemTime - startTime))
-            self.pp('| %-30s: %10.3f sec' % ('TACS Solve Init Time', initSolveTime - setupProblemTime))
-            self.pp('| %-30s: %10.3f sec' % ('TACS Init Norm Time', initNormTime - initSolveTime))
-            self.pp('| %-30s: %10.3f sec' % ('TACS Solve Time', solveTime - initNormTime))
-            self.pp('| %-30s: %10.3f sec' % ('TACS State Update Time', stateUpdateTime - solveTime))
-            self.pp('| %-30s: %10.3f sec' % ('TACS Final Norm Time', finalNormTime - stateUpdateTime))
-            self.pp('|')
-            self.pp('| %-30s: %10.3f sec' % ('TACS Total Solution Time', finalNormTime - startTime))
-            self.pp('+--------------------------------------------------+')
+            self._pp('+--------------------------------------------------+')
+            self._pp('|')
+            self._pp('| TACS Solve Times:')
+            self._pp('|')
+            self._pp('| %-30s: %10.3f sec' % ('TACS Setup Time', setupProblemTime - startTime))
+            self._pp('| %-30s: %10.3f sec' % ('TACS Solve Init Time', initSolveTime - setupProblemTime))
+            self._pp('| %-30s: %10.3f sec' % ('TACS Init Norm Time', initNormTime - initSolveTime))
+            self._pp('| %-30s: %10.3f sec' % ('TACS Solve Time', solveTime - initNormTime))
+            self._pp('| %-30s: %10.3f sec' % ('TACS State Update Time', stateUpdateTime - solveTime))
+            self._pp('| %-30s: %10.3f sec' % ('TACS Final Norm Time', finalNormTime - stateUpdateTime))
+            self._pp('|')
+            self._pp('| %-30s: %10.3f sec' % ('TACS Total Solution Time', finalNormTime - startTime))
+            self._pp('+--------------------------------------------------+')
 
         return
 
@@ -671,16 +667,16 @@ class StaticProblem(TACSProblem):
         dictAssignTime = time.time()
 
         if self.getOption('printTiming'):
-            self.pp('+--------------------------------------------------+')
-            self.pp('|')
-            self.pp('| TACS Function Times:')
-            self.pp('|')
-            self.pp('| %-30s: %10.3f sec' % ('TACS Function Setup Time', setupProblemTime - startTime))
-            self.pp('| %-30s: %10.3f sec' % ('TACS Function Eval Time', functionEvalTime - setupProblemTime))
-            self.pp('| %-30s: %10.3f sec' % ('TACS Dict Time', dictAssignTime - functionEvalTime))
-            self.pp('|')
-            self.pp('| %-30s: %10.3f sec' % ('TACS Function Time', dictAssignTime - startTime))
-            self.pp('+--------------------------------------------------+')
+            self._pp('+--------------------------------------------------+')
+            self._pp('|')
+            self._pp('| TACS Function Times:')
+            self._pp('|')
+            self._pp('| %-30s: %10.3f sec' % ('TACS Function Setup Time', setupProblemTime - startTime))
+            self._pp('| %-30s: %10.3f sec' % ('TACS Function Eval Time', functionEvalTime - setupProblemTime))
+            self._pp('| %-30s: %10.3f sec' % ('TACS Dict Time', dictAssignTime - functionEvalTime))
+            self._pp('|')
+            self._pp('| %-30s: %10.3f sec' % ('TACS Function Time', dictAssignTime - startTime))
+            self._pp('+--------------------------------------------------+')
 
     def evalFunctionsSens(self, funcsSens, evalFuncs=None):
         """
@@ -775,9 +771,9 @@ class StaticProblem(TACSProblem):
         totalSensitivityTime = time.time()
 
         if self.getOption('printTiming'):
-            self.pp('+--------------------------------------------------+')
-            self.pp('|')
-            self.pp('| TACS Adjoint Times:')
+            self._pp('+--------------------------------------------------+')
+            self._pp('|')
+            self._pp('| TACS Adjoint Times:')
             print('|')
             print('| %-30s: %10.3f sec' % ('TACS Sens Setup Problem Time', setupProblemTime - startTime))
             print('| %-30s: %10.3f sec' % (
@@ -799,7 +795,7 @@ class StaticProblem(TACSProblem):
         evalFuncs : list[str]
             The functions the user wants returned
 
-        svSensList : list[BVec] or list[ndarray]
+        svSensList : list[TACS.Vec] or list[numpy.ndarray]
             List of sensitivity vectors to add partial sensitivity to
         """
         # Set problem vars to assembler
@@ -832,7 +828,7 @@ class StaticProblem(TACSProblem):
         evalFuncs : list[str]
             The functions the user wants returned
 
-        dvSensList : list[BVec] or list[ndarray]
+        dvSensList : list[BVec] or list[numpy.ndarray]
             List of sensitivity vectors to add partial sensitivity to
 
         scale : float
@@ -871,10 +867,10 @@ class StaticProblem(TACSProblem):
 
         Parameters
         ----------
-        adjointlist : list[BVec] or list[ndarray]
+        adjointlist : list[BVec] or list[numpy.ndarray]
             List of adjoint vectors for residual sensitivity product
 
-        dvSensList : list[BVec] or list[ndarray]
+        dvSensList : list[BVec] or list[numpy.ndarray]
             List of sensitivity vectors to add product to
 
         scale : float
@@ -923,7 +919,7 @@ class StaticProblem(TACSProblem):
         evalFuncs : list[str]
             The functions the user wants returned
 
-        xptSensList : list[BVec] or list[ndarray]
+        xptSensList : list[BVec] or list[numpy.ndarray]
             List of sensitivity vectors to add partial sensitivity to
 
         scale : float
@@ -962,10 +958,10 @@ class StaticProblem(TACSProblem):
 
         Parameters
         ----------
-        adjointlist : list[BVec] or list[ndarray]
+        adjointlist : list[BVec] or list[numpy.ndarray]
             List of adjoint vectors for residual sensitivity product
 
-        xptSensList : list[BVec] or list[ndarray]
+        xptSensList : list[BVec] or list[numpy.ndarray]
             List of sensitivity vectors to add product to
 
         scale : float
@@ -1176,7 +1172,7 @@ class StaticProblem(TACSProblem):
 
         Parameters
         ----------
-        states : ndarray
+        states : numpy.ndarray
             Values to set. Must be the size of getNumVariables()
         """
         # Copy array values

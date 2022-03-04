@@ -1,5 +1,11 @@
 """
-pyTransient_problem
+The main purpose of this class is to represent all relevant
+information for a transient analysis. This will include
+information defining the loading condition as well as various
+other pieces of information.
+
+.. note:: This class should be created using the
+    :meth:`pyTACS.createTransientProblem <tacs.pytacs.pyTACS.createTransientProblem>` method.
 """
 
 # =============================================================================
@@ -14,15 +20,39 @@ from .base import TACSProblem
 import tacs.TACS
 
 class TransientProblem(TACSProblem):
+    # python object name
+    objectName = 'TransientProblem'
+
+    # Default Option List
+    defaultOptions = {
+        'outputdir': [str, './', 'Output directory for F5 file writer.'],
+
+        # Solution Options
+        'timeIntegrator': [str, 'BDF', "Time integration scheme to use. Currently supports 'BDF' and 'DIRK'."],
+        'integrationOrder': [int, 2, "Integration order for time marching scheme."],
+        'L2Convergence': [float, 1e-12, 'Absolute convergence tolerance for integrator based on l2 norm of residual.'],
+        'L2ConvergenceRel': [float, 1e-12,
+                             'Relative convergence tolerance for integrator based on l2 norm of residual.'],
+        'jacAssemblyFreq': [int, 1, 'How frequently to reassemble Jacobian during time integration process.'],
+
+        # Output Options
+        'writeSolution': [bool, True, 'Flag for suppressing all f5 file writing.'],
+        'numberSolutions': [bool, True, 'Flag for attaching solution counter index to f5 files.'],
+        'printTiming': [bool, False, 'Flag for printing out timing information for class procedures.'],
+        'printLevel': [int, 0, 'Print level for integraton solver.\n'
+                               '\t Accepts:\n'
+                               '\t\t   0 : No printing.\n'
+                               '\t\t   1 : Print major iterations.\n'
+                               '\t\t > 1 : Print major + minor iterations.'],
+
+    }
 
     def __init__(self, name, tInit, tFinal, numSteps,
                  assembler, comm, outputViewer=None, meshLoader=None,
                  options={}):
         """
-        The main purpose of this class is to represent all relevant
-        information for a transient analysis. This will include
-        information defining the loading condition as well as various
-        other pieces of information.
+        NOTE: This class should not be initialized directly by the user.
+        Use pyTACS.createTransientProblem instead.
 
         Parameters
         ----------
@@ -38,23 +68,21 @@ class TransientProblem(TACSProblem):
         numSteps : int
             Number of time steps for transient problem integration
 
-        assembler : assembler
+        assembler : TACS.Assembler
             Cython object responsible for creating and setting tacs objects used to solve problem
 
-        comm : MPI Intracomm
+        comm : mpi4py.MPI.Intracomm
             The comm object on which to create the pyTACS object.
 
-        outputViewer : TACSToFH5 object
+        outputViewer : TACS.TACSToFH5
             Cython object used to write out f5 files that can be converted and used for postprocessing.
 
-        meshLoader : pyMeshLoader object
+        meshLoader : pymeshloader.pyMeshLoader
             pyMeshLoader object used to create the assembler.
 
         options : dict
-            Dictionary holding problem-specific option parameters.
+            Dictionary holding problem-specific option parameters (case-insensitive).
         """
-        # python object name
-        self.objectName = 'TransientProblem'
 
         # Problem name
         self.name = name
@@ -67,36 +95,13 @@ class TransientProblem(TACSProblem):
         self.tFinal = tFinal
         self.numSteps = numSteps
 
-        # Default Option List
-        defOpts = {
-            'outputdir': [str, './'],
-
-            # Solution Options
-            'timeIntegrator': [str, 'BDF'],
-            'integrationOrder': [int, 2],
-            'L2Convergence': [float, 1e-12],
-            'L2ConvergenceRel': [float, 1e-12],
-            'jacAssemblyFreq': [int, 1],
-            'useMonitor': [bool, False],
-            'monitorFrequency': [int, 10],
-
-            # Output Options
-            'outputFrequency': [int, 0],
-            'writeSolution': [bool, True],
-            'numberSolutions': [bool, True],
-            'printTiming': [bool, False],
-            'printLevel': [int, 0],
-
-        }
-
         # Process the default options which are added to self.options
         # under the 'defaults' key. Make sure the key are lower case
-        self.options = {}
-        def_keys = defOpts.keys()
+        def_keys = self.defaultOptions.keys()
         self.options['defaults'] = {}
         for key in def_keys:
-            self.options['defaults'][key.lower()] = defOpts[key]
-            self.options[key.lower()] = defOpts[key]
+            self.options['defaults'][key.lower()] = self.defaultOptions[key]
+            self.options[key.lower()] = self.defaultOptions[key]
 
         # Set user-defined options
         for key in options:
@@ -141,8 +146,6 @@ class TransientProblem(TACSProblem):
 
         # Set output viewer for integrator
         self.integrator.setFH5(self.outputViewer)
-        outputFreq = self.getOption('outputFrequency')
-        self.integrator.setOutputFrequency(outputFreq)
         outputDir = self.getOption('outputDir')
         self.integrator.setOutputPrefix(outputDir)
 
@@ -211,7 +214,7 @@ class TransientProblem(TACSProblem):
 
     def addLoadToComponents(self, timeStep, compIDs, F, averageLoad=False):
         """"
-        The function is used to add a *FIXED TOTAL LOAD* on one or more
+        This method is used to add a *FIXED TOTAL LOAD* on one or more
         components, defined by COMPIDs, at a specifc time instance.
         The purpose of this routine is to add loads that remain fixed throughout
         an optimization. An example would be an engine load. This routine determines
@@ -226,7 +229,7 @@ class TransientProblem(TACSProblem):
             Time step index to apply load to.
 
         compIDs : list[int] or int
-            The components with added loads. Use pyTACS selectCompIDs method
+            The components with added loads. Use pyTACS.selectCompIDs method
             to determine this.
 
         F : Numpy 1d or 2d array length (varsPerNodes) or (numNodeIDs, varsPerNodes)
@@ -247,22 +250,22 @@ class TransientProblem(TACSProblem):
 
         A couple of examples of force vector components for common problem are listed below:
 
-        In Heat Conduction with varsPerNode = 1
-        F = [Qdot] # heat rate
-        In Elasticity with varsPerNode = 3,
-        F = [fx, fy, fz] # forces
-        In Elasticity with varsPerNode = 6,
-        F = [fx, fy, fz, mx, my, mz] # forces + moments
-        In Thermoelasticity with varsPerNode = 4,
-        F = [fx, fy, fz, Qdot] # forces + heat rate
-        In Thermoelasticity with varsPerNode = 7,
-        F = [fx, fy, fz, mx, my, mz, Qdot] # forces + moments + heat rate
+            In Heat Conduction with varsPerNode = 1
+                F = [Qdot] # heat rate
+            In Elasticity with varsPerNode = 3,
+                F = [fx, fy, fz] # forces
+            In Elasticity with varsPerNode = 6,
+                F = [fx, fy, fz, mx, my, mz] # forces + moments
+            In Thermoelasticity with varsPerNode = 4,
+                F = [fx, fy, fz, Qdot] # forces + heat rate
+            In Thermoelasticity with varsPerNode = 7,
+                F = [fx, fy, fz, mx, my, mz, Qdot] # forces + moments + heat rate
         """
         self._addLoadToComponents(self.F[timeStep], compIDs, F, averageLoad)
 
     def addLoadToNodes(self, timeStep, nodeIDs, F, nastranOrdering=False):
         """
-        The function is used to add a fixed point load of F to the
+        This method is used to add a fixed point load of F to the
         selected node IDs at a specified time instance.
 
         Parameters
@@ -292,33 +295,33 @@ class TransientProblem(TACSProblem):
 
         A couple of examples of force vector components for common problem are listed below:
 
-        In Heat Conduction with varsPerNode = 1
-        F = [Qdot] # heat rate
-        In Elasticity with varsPerNode = 3,
-        F = [fx, fy, fz] # forces
-        In Elasticity with varsPerNode = 6,
-        F = [fx, fy, fz, mx, my, mz] # forces + moments
-        In Thermoelasticity with varsPerNode = 4,
-        F = [fx, fy, fz, Qdot] # forces + heat rate
-        In Thermoelasticity with varsPerNode = 7,
-        F = [fx, fy, fz, mx, my, mz, Qdot] # forces + moments + heat rate
+            In Heat Conduction with varsPerNode = 1
+                F = [Qdot] # heat rate
+            In Elasticity with varsPerNode = 3,
+                F = [fx, fy, fz] # forces
+            In Elasticity with varsPerNode = 6,
+                F = [fx, fy, fz, mx, my, mz] # forces + moments
+            In Thermoelasticity with varsPerNode = 4,
+                F = [fx, fy, fz, Qdot] # forces + heat rate
+            In Thermoelasticity with varsPerNode = 7,
+                F = [fx, fy, fz, mx, my, mz, Qdot] # forces + moments + heat rate
         """
 
         self._addLoadToNodes(self.F[timeStep], nodeIDs, F, nastranOrdering)
 
     def addLoadToRHS(self, timeStep, Fapplied):
         """"
-        The function is used to add a *FIXED TOTAL LOAD* directly to the
+        This method is used to add a *FIXED TOTAL LOAD* directly to the
         right hand side vector given the equation below:
 
             M*udotdot + K*u = f
 
         Where:
-            K : Stiffness matrix for problem
-            u : State variables for problem
-            M : Mass matrix for problem
-            udotdot : Second time derivitive of state variables for problem
-            f : Right-hand side vector to add loads to
+            - K : Stiffness matrix for problem
+            - u : State variables for problem
+            - M : Mass matrix for problem
+            - udotdot : Second time derivitive of state variables for problem
+            - f : Right-hand side vector to add loads to
 
         Parameters
         ----------
@@ -326,7 +329,7 @@ class TransientProblem(TACSProblem):
         timeStep : int
             Time step index to apply load to.
 
-        Fapplied : ndarray or BVec
+        Fapplied : numpy.ndarray or TACS.Vec
             Distributed array containing loads to applied to RHS of the problem.
 
         """
@@ -335,7 +338,7 @@ class TransientProblem(TACSProblem):
     def addTractionToComponents(self, timeStep, compIDs, tractions,
                                 faceIndex=0):
         """
-        The function is used to add a *FIXED TOTAL TRACTION* on one or more
+        This method is used to add a *FIXED TOTAL TRACTION* on one or more
         components, defined by COMPIDs, at specified time instance. The purpose of
         this routine is to add loads that remain fixed throughout an optimization.
 
@@ -346,10 +349,10 @@ class TransientProblem(TACSProblem):
             Time step index to apply load to.
 
         compIDs : list[int] or int
-            The components with added loads. Use pyTACS selectCompIDs method
+            The components with added loads. Use pyTACS.selectCompIDs method
             to determine this.
 
-        tractions : Numpy array length 1 or compIDs
+        tractions : numpy.ndarray length 1 or compIDs
             Array of traction vectors for each components
 
         faceIndex : int
@@ -361,7 +364,7 @@ class TransientProblem(TACSProblem):
     def addTractionToElements(self, timeStep, elemIDs, tractions,
                               faceIndex=0, nastranOrdering=False):
         """
-        The function is used to add a fixed traction to the
+        This method is used to add a fixed traction to the
         selected element IDs at specified time instance.
         Tractions can be specified on an element by element basis
         (if tractions is a 2d array) or set to a uniform value (if tractions is a 1d array)
@@ -375,7 +378,7 @@ class TransientProblem(TACSProblem):
         elemIDs : list[int]
             The global element ID numbers for which to apply the traction.
 
-        tractions : Numpy 1d or 2d array length varsPerNodes or (elemIDs, varsPerNodes)
+        tractions : numpy.ndarray 1d or 2d length varsPerNodes or (elemIDs, varsPerNodes)
             Array of traction vectors for each element
 
         faceIndex : int
@@ -392,7 +395,7 @@ class TransientProblem(TACSProblem):
     def addPressureToComponents(self, timeStep, compIDs, pressures,
                                 faceIndex=0):
         """
-        The function is used to add a *FIXED TOTAL PRESSURE* on one or more
+        This method is used to add a *FIXED TOTAL PRESSURE* on one or more
         components, defined by COMPIDs, at specified time instance. The purpose of this routine is
         to add loads that remain fixed throughout an optimization. An example
         would be a fuel load.
@@ -404,7 +407,7 @@ class TransientProblem(TACSProblem):
             Time step index to apply load to.
 
         compIDs : list[int] or int
-            The components with added loads. Use pyTACS selectCompIDs method
+            The components with added loads. Use pyTACS.selectCompIDs method
             to determine this.
 
         pressures : Numpy array length 1 or compIDs
@@ -419,7 +422,7 @@ class TransientProblem(TACSProblem):
     def addPressureToElements(self, timeStep, elemIDs, pressures,
                               faceIndex=0, nastranOrdering=False):
         """
-        The function is used to add a fixed presure to the
+        This method is used to add a fixed presure to the
         selected element IDs at specified time instance.
         Pressures can be specified on an element by element
         basis (if pressures is an array) or set to a uniform value (if pressures is a scalar)
@@ -450,7 +453,7 @@ class TransientProblem(TACSProblem):
 
     def addInertialLoad(self, timeStep, inertiaVector):
         """
-        The function is used to add a fixed inertial load  at a specified time step
+        This method is used to add a fixed inertial load  at a specified time step
         due to a uniform acceleration over the entire model.
         This is most commonly used to model gravity loads on a model.
 
@@ -460,7 +463,7 @@ class TransientProblem(TACSProblem):
         timeStep : int
             Time step index to apply load to.
 
-        inertiaVector : ndarray
+        inertiaVector : numpy.ndarray
             Acceleration vector used to define inertial load.
         """
         self._addInertialLoad(self.auxElems[timeStep], inertiaVector)
@@ -503,16 +506,16 @@ class TransientProblem(TACSProblem):
         # If timing was was requested print it, if the solution is nonlinear
         # print this information automatically if prinititerations was requested.
         if self.getOption('printTiming'):
-            self.pp('+--------------------------------------------------+')
-            self.pp('|')
-            self.pp('| TACS Solve Times:')
-            self.pp('|')
-            self.pp('| %-30s: %10.3f sec' % ('TACS Setup Time', setupProblemTime - startTime))
-            self.pp('| %-30s: %10.3f sec' % ('TACS Solve Init Time', initSolveTime - setupProblemTime))
-            self.pp('| %-30s: %10.3f sec' % ('TACS Solve Time', solveTime - initSolveTime))
-            self.pp('|')
-            self.pp('| %-30s: %10.3f sec' % ('TACS Total Solution Time', solveTime - startTime))
-            self.pp('+--------------------------------------------------+')
+            self._pp('+--------------------------------------------------+')
+            self._pp('|')
+            self._pp('| TACS Solve Times:')
+            self._pp('|')
+            self._pp('| %-30s: %10.3f sec' % ('TACS Setup Time', setupProblemTime - startTime))
+            self._pp('| %-30s: %10.3f sec' % ('TACS Solve Init Time', initSolveTime - setupProblemTime))
+            self._pp('| %-30s: %10.3f sec' % ('TACS Solve Time', solveTime - initSolveTime))
+            self._pp('|')
+            self._pp('| %-30s: %10.3f sec' % ('TACS Total Solution Time', solveTime - startTime))
+            self._pp('+--------------------------------------------------+')
 
         return
 
@@ -584,16 +587,16 @@ class TransientProblem(TACSProblem):
         dictAssignTime = time.time()
 
         if self.getOption('printTiming'):
-            self.pp('+--------------------------------------------------+')
-            self.pp('|')
-            self.pp('| TACS Function Times:')
-            self.pp('|')
-            self.pp('| %-30s: %10.3f sec' % ('TACS Function Setup Time', setupProblemTime - startTime))
-            self.pp('| %-30s: %10.3f sec' % ('TACS Function Eval Time', functionEvalTime - setupProblemTime))
-            self.pp('| %-30s: %10.3f sec' % ('TACS Dict Time', dictAssignTime - functionEvalTime))
-            self.pp('|')
-            self.pp('| %-30s: %10.3f sec' % ('TACS Function Time', dictAssignTime - startTime))
-            self.pp('+--------------------------------------------------+')
+            self._pp('+--------------------------------------------------+')
+            self._pp('|')
+            self._pp('| TACS Function Times:')
+            self._pp('|')
+            self._pp('| %-30s: %10.3f sec' % ('TACS Function Setup Time', setupProblemTime - startTime))
+            self._pp('| %-30s: %10.3f sec' % ('TACS Function Eval Time', functionEvalTime - setupProblemTime))
+            self._pp('| %-30s: %10.3f sec' % ('TACS Dict Time', dictAssignTime - functionEvalTime))
+            self._pp('|')
+            self._pp('| %-30s: %10.3f sec' % ('TACS Function Time', dictAssignTime - startTime))
+            self._pp('+--------------------------------------------------+')
 
     def evalFunctionsSens(self, funcsSens, evalFuncs=None):
         """
@@ -630,7 +633,7 @@ class TransientProblem(TACSProblem):
 
         for f in evalFuncs:
             if f not in self.functionList:
-                raise self.TACSError("Supplied function has not been added "
+                raise self._TACSError("Supplied function has not been added "
                             "using addFunction()")
 
         # Fast parallel function evaluation of structural funcs:
@@ -666,9 +669,9 @@ class TransientProblem(TACSProblem):
         totalSensitivityTime = time.time()
 
         if self.getOption('printTiming'):
-            self.pp('+--------------------------------------------------+')
-            self.pp('|')
-            self.pp('| TACS Adjoint Times:')
+            self._pp('+--------------------------------------------------+')
+            self._pp('|')
+            self._pp('| TACS Adjoint Times:')
             print('|')
             print('| %-30s: %10.3f sec' % ('Adjoint solve time', adjointFinishedTime - startTime))
             print('|')
@@ -686,13 +689,13 @@ class TransientProblem(TACSProblem):
         timeStep : int
             Time step index to get state variables for.
 
-        states : BVec or ndarray or None
+        states : TACS.Vec or numpy.ndarray or None
             If states is not None, place the state variables into this array (optional).
 
-        dstates : BVec or ndarray or None
+        dstates : TACS.Vec or numpy.ndarray or None
             If dstates is not None, place the time derivitive of the state variables into this array (optional).
 
-        ddstates : BVec or ndarray or None
+        ddstates : TACS.Vec or numpy.ndarray or None
             If ddstates is not None, place the second time derivitive of the state variables into this array (optional).
 
         Returns
@@ -700,13 +703,13 @@ class TransientProblem(TACSProblem):
         time: float
             The time at specified step
 
-        states : ndarray
+        states : TACS.Vec or numpy.ndarray
             The state variables.
 
-        dstates : BVec or ndarray or None
+        dstates : TACS.Vec or numpy.ndarray or None
             The time derivitive of the state variables.
 
-        ddstates : BVec or ndarray or None
+        ddstates : TACS.Vec or numpy.ndarray or None
             The second time derivitive of the state variables.
 
         """

@@ -41,6 +41,9 @@ class TACSProblem(BaseUI):
         # List of functions
         self.functionList = OrderedDict()
 
+        # Empty options dict, should be filled out by child class
+        self.options = {}
+
         return
 
     ####### Design variable methods ########
@@ -76,7 +79,7 @@ class TACSProblem(BaseUI):
 
         Parameters
         ----------
-        x : ndarray or dict or BVec
+        x : numpy.ndarray or dict or TACS.Vec
             The variables (typically from the optimizer) to set. It
             looks for variable in the ``self.varName`` attribute if in dict.
 
@@ -103,12 +106,12 @@ class TACSProblem(BaseUI):
 
         Parameters
         ----------
-        dvArray : ndarray
+        dvArray : numpy.ndarray
                   Numpy array for which to convert to TACS designVec.
 
         Returns
         -------
-        xVec : BVec
+        xVec : TACS.Vec
                Converted TACS designVec.
 
         Notes
@@ -136,7 +139,7 @@ class TACSProblem(BaseUI):
         Returns
         -------
         coords : array
-            Structural coordinate in array of size (N, 3) where N is
+            Structural coordinate in array of size (N * 3) where N is
             the number of structural nodes on this processor.
         """
         return self.Xpts.getArray().copy()
@@ -147,7 +150,7 @@ class TACSProblem(BaseUI):
 
         Parameters
         ----------
-        coords : ndarray
+        coords : numpy.ndarray
             Structural coordinate in array of size (N * 3) where N is
             the number of structural nodes on this processor.
         """
@@ -171,12 +174,12 @@ class TACSProblem(BaseUI):
 
         Parameters
         ----------
-        xptsArray : ndarray
+        xptsArray : numpy.ndarray
                     Numpy array for which to convert to TACS nodeVec.
 
         Returns
         -------
-        Xptsvec : BVec
+        Xptsvec : TACS.Vec
                   Converted TACS nodeVec.
 
         Notes
@@ -217,12 +220,12 @@ class TACSProblem(BaseUI):
 
         Parameters
         ----------
-        varArray : ndarray
+        varArray : numpy.ndarray
                    Numpy array for which to convert to TACS Vec.
 
         Returns
         -------
-        varVec : BVec
+        varVec : TACS.Vec
                  Converted TACS Vec.
 
         Notes
@@ -254,7 +257,7 @@ class TACSProblem(BaseUI):
 
     def addFunction(self, funcName, funcHandle, compIDs=None, **kwargs):
         """
-        Generic function to add a function for TACS. It is intended to
+        Generic method to add a function for TACS. It is intended to
         be reasonably generic since the user supplies the actual
         function handle to use. The following functions can be used:
         KSFailure, KSTemperature, AverageTemperature, Compliance,
@@ -271,8 +274,7 @@ class TACSProblem(BaseUI):
             from the functions module in tacs.
 
         compIDs: list
-            List of compIDs to select. Alternative to selectCompIDs
-            arguments.
+            List of compIDs to select.
         """
 
         # We try to setup the function, if it fails it may not be implimented:
@@ -280,7 +282,7 @@ class TACSProblem(BaseUI):
             # pass assembler an function-specific kwargs straight to tacs function
             self.functionList[funcName] = funcHandle(self.assembler, **kwargs)
         except:
-            self.TACSWarning("Function type %s is not currently supported "
+            self._TACSWarning("Function type %s is not currently supported "
                         "in pyTACS. Skipping function." % funcHandle)
             return False
 
@@ -317,14 +319,14 @@ class TACSProblem(BaseUI):
         Parameters
         ----------
 
-        FVec : BVec
+        FVec : TACS.Vec
             TACS BVec to add loads to.
 
         compIDs : list[int] or int
-            The components with added loads. Use pyTACS selectCompIDs method
+            The components with added loads. Use pyTACS.selectCompIDs method
             to determine this.
 
-        F : Numpy 1d or 2d array length (varsPerNodes) or (numNodeIDs, varsPerNodes)
+        F : numpy.ndarray 1d or 2d length (varsPerNodes) or (numNodeIDs, varsPerNodes)
             Vector(s) of 'force' to apply to each components.  If only one force vector is provided,
             force will be copied uniformly across all components.
 
@@ -342,16 +344,16 @@ class TACSProblem(BaseUI):
 
         A couple of examples of force vector components for common problem are listed below:
 
-        In Heat Conduction with varsPerNode = 1
-        F = [Qdot] # heat rate
-        In Elasticity with varsPerNode = 3,
-        F = [fx, fy, fz] # forces
-        In Elasticity with varsPerNode = 6,
-        F = [fx, fy, fz, mx, my, mz] # forces + moments
-        In Thermoelasticity with varsPerNode = 4,
-        F = [fx, fy, fz, Qdot] # forces + heat rate
-        In Thermoelasticity with varsPerNode = 7,
-        F = [fx, fy, fz, mx, my, mz, Qdot] # forces + moments + heat rate
+            In Heat Conduction with varsPerNode = 1
+                F = [Qdot] # heat rate
+            In Elasticity with varsPerNode = 3,
+                F = [fx, fy, fz] # forces
+            In Elasticity with varsPerNode = 6,
+                F = [fx, fy, fz, mx, my, mz] # forces + moments
+            In Thermoelasticity with varsPerNode = 4,
+                F = [fx, fy, fz, Qdot] # forces + heat rate
+            In Thermoelasticity with varsPerNode = 7,
+                F = [fx, fy, fz, mx, my, mz, Qdot] # forces + moments + heat rate
         """
         # Make sure CompIDs are flat
         compIDs = self._flatten([compIDs])
@@ -366,7 +368,7 @@ class TACSProblem(BaseUI):
                 F = np.repeat(F, [len(compIDs)], axis=0)
             # If the dimensions still don't match, raise an error
             elif F.shape[0] != len(compIDs):
-                raise self.TACSError("Number of forces must match number of compIDs,"
+                raise self._TACSError("Number of forces must match number of compIDs,"
                             " {} forces were specified for {} compIDs".format(F.shape[0], len(compIDs)))
 
             # Call addLoadToComponents again, once for each compID
@@ -414,7 +416,7 @@ class TACSProblem(BaseUI):
         Parameters
         ----------
 
-        FVec : BVec
+        FVec : TACS.Vec
             TACS BVec to add loads to.
 
         nodeIDs : list[int]
@@ -438,16 +440,16 @@ class TACSProblem(BaseUI):
 
         A couple of examples of force vector components for common problem are listed below:
 
-        In Heat Conduction with varsPerNode = 1
-        F = [Qdot] # heat rate
-        In Elasticity with varsPerNode = 3,
-        F = [fx, fy, fz] # forces
-        In Elasticity with varsPerNode = 6,
-        F = [fx, fy, fz, mx, my, mz] # forces + moments
-        In Thermoelasticity with varsPerNode = 4,
-        F = [fx, fy, fz, Qdot] # forces + heat rate
-        In Thermoelasticity with varsPerNode = 7,
-        F = [fx, fy, fz, mx, my, mz, Qdot] # forces + moments + heat rate
+            In Heat Conduction with varsPerNode = 1
+                F = [Qdot] # heat rate
+            In Elasticity with varsPerNode = 3,
+                F = [fx, fy, fz] # forces
+            In Elasticity with varsPerNode = 6,
+                F = [fx, fy, fz, mx, my, mz] # forces + moments
+            In Thermoelasticity with varsPerNode = 4,
+                F = [fx, fy, fz, Qdot] # forces + heat rate
+            In Thermoelasticity with varsPerNode = 7,
+                F = [fx, fy, fz, mx, my, mz, Qdot] # forces + moments + heat rate
         """
 
         # Make sure the inputs are the correct shape
@@ -462,12 +464,12 @@ class TACSProblem(BaseUI):
             F = np.repeat(F, [numNodes], axis=0)
         # If the dimensions still don't match, raise an error
         elif F.shape[0] != numNodes:
-            raise self.TACSError("Number of forces must match number of nodes,"
+            raise self._TACSError("Number of forces must match number of nodes,"
                         " {} forces were specified for {} node IDs".format(F.shape[0], numNodes))
 
         vpn = self.assembler.getVarsPerNode()
         if len(F[0]) != vpn:
-            raise self.TACSError("Length of force vector must match varsPerNode specified "
+            raise self._TACSError("Length of force vector must match varsPerNode specified "
                         "for problem, which is {}, "
                         "but length of vector provided was {}".format(vpn, len(F[0])))
 
@@ -501,7 +503,7 @@ class TACSProblem(BaseUI):
 
         for i in range(numNodes):
             if not nodeFound[i]:
-                self.TACSWarning("Can't add load to node ID {} ({} ordering), node not found in model. "
+                self._TACSWarning("Can't add load to node ID {} ({} ordering), node not found in model. "
                             "Double check BDF file.".format(nodeIDs[i], orderString))
 
 
@@ -523,7 +525,7 @@ class TACSProblem(BaseUI):
         Parameters
         ----------
 
-        Fapplied : ndarray or BVec
+        Fapplied : numpy.ndarray or TACS.Vec
             Distributed array containing loads to applied to RHS of the problem.
 
         """
@@ -531,7 +533,7 @@ class TACSProblem(BaseUI):
             Frhs.axpy(1.0, Fapplied)
         elif isinstance(Fapplied, np.ndarray):
             if len(Fapplied) != Frhs.getSize():
-                raise self.TACSError("User-supplied distributed vector not correct length, "
+                raise self._TACSError("User-supplied distributed vector not correct length, "
                                      "expected size of {} on processor {}, but got length {}.".format(Frhs.getSize(),
                                                                                                       self.comm.rank,
                                                                                                       len(Fapplied)))
@@ -554,7 +556,7 @@ class TACSProblem(BaseUI):
             AuxElements object to add loads to.
 
         compIDs : list[int] or int
-            The components with added loads. Use pyTACS selectCompIDs method
+            The components with added loads. Use pyTACS.selectCompIDs method
             to determine this.
 
         tractions : TACS AuxElements object
@@ -621,7 +623,7 @@ class TACSProblem(BaseUI):
             tractions = np.repeat(tractions, [numElems], axis=0)
         # If the dimensions still don't match, raise an error
         elif tractions.shape[0] != numElems:
-            raise self.TACSError("Number of tractions must match number of elements,"
+            raise self._TACSError("Number of tractions must match number of elements,"
                         " {} tractions were specified for {} element IDs".format(tractions.shape[0], numElems))
 
         # First find the coresponding local element ID on each processor
@@ -642,7 +644,7 @@ class TACSProblem(BaseUI):
                 tracObj = elemObj.createElementTraction(faceIndex, tractions[i])
                 # Traction not implemented for element
                 if tracObj is None:
-                    self.TACSWarning("TACS element of type {} does not hav a traction implimentation. "
+                    self._TACSWarning("TACS element of type {} does not hav a traction implimentation. "
                                 "Skipping element in addTractionToElement procedure.".format(elemObj.getObjectName()))
                 # Traction implemented
                 else:
@@ -660,7 +662,7 @@ class TACSProblem(BaseUI):
 
         for i in range(numElems):
             if not elemFound[i]:
-                self.TACSWarning("Can't add traction to element ID {} ({} ordering), element not found in model. "
+                self._TACSWarning("Can't add traction to element ID {} ({} ordering), element not found in model. "
                             "Double check BDF file.".format(elemIDs[i], orderString))
 
     def _addPressureToComponents(self, auxElems, compIDs, pressures,
@@ -680,7 +682,7 @@ class TACSProblem(BaseUI):
             AuxElements object to add loads to.
 
         compIDs : list[int] or int
-            The components with added loads. Use pyTACS selectCompIDs method
+            The components with added loads. Use pyTACS.selectCompIDs method
             to determine this.
 
         pressures : Numpy array length 1 or compIDs
@@ -747,7 +749,7 @@ class TACSProblem(BaseUI):
             pressures = np.repeat(pressures, [numElems], axis=0)
         # If the dimensions still don't match, raise an error
         elif pressures.shape[0] != numElems:
-            raise self.TACSError("Number of pressures must match number of elements,"
+            raise self._TACSError("Number of pressures must match number of elements,"
                                  " {} pressures were specified for {} element IDs".format(pressures.shape[0], numElems))
 
         # First find the coresponding local element ID on each processor
@@ -767,7 +769,7 @@ class TACSProblem(BaseUI):
                 pressObj = elemObj.createElementPressure(faceIndex, pressures[i])
                 # Pressure not implemented for element
                 if pressObj is None:
-                    self.TACSWarning("TACS element of type {} does not hav a pressure implimentation. "
+                    self._TACSWarning("TACS element of type {} does not hav a pressure implimentation. "
                                      "Skipping element in addPressureToElement procedure.".format(
                         elemObj.getObjectName()))
                 # Pressure implemented
@@ -786,7 +788,7 @@ class TACSProblem(BaseUI):
 
         for i in range(numElems):
             if not elemFound[i]:
-                self.TACSWarning("Can't add pressure to element ID {} ({} ordering), element not found in model. "
+                self._TACSWarning("Can't add pressure to element ID {} ({} ordering), element not found in model. "
                                  "Double check BDF file.".format(elemIDs[i], orderString))
 
     def _addInertialLoad(self, auxElems, inertiaVector):
@@ -803,7 +805,7 @@ class TACSProblem(BaseUI):
          auxElems : TACS AuxElements object
             AuxElements object to add loads to.
 
-        inertiaVector : ndarray
+        inertiaVector : numpy.ndarray
             Acceleration vector used to define inertial load.
         """
         # Make sure vector is right type

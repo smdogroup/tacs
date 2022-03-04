@@ -31,6 +31,7 @@ class TACSElement2D : public TACSElement {
   int getNumNodes();
   int getDesignVarsPerNode();
   ElementLayout getLayoutType();
+  ElementType getElementType();
   TACSElementBasis* getElementBasis();
   TACSElementModel* getElementModel();
   TACSElement* createElementTraction( int faceIndex, TacsScalar t[] );

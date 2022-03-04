@@ -2,7 +2,7 @@
 """
 pymeshloader - A python-based mesh loader for setting up TACS
 
-This python interface is designed to provide a easier interface to the
+This python interface is designed to provide an easier interface to the
 c-layer of TACS. This module uses the pyNastran library for its bdf parsing
 functionality.
 
@@ -66,8 +66,8 @@ class pyMeshLoader(BaseUI):
                 # and should not be read in using pytacs elemCallBackFromBDF method
                 self.bdfInfo.missing_properties = True
                 if self.printDebug:
-                    self.TACSWarning('Element ID %d references undefined property ID %d in bdf file. '
-                                'A user-defined elemCalBack function will need to be provided.'% (element_id, element.pid))
+                    self._TACSWarning('Element ID %d references undefined property ID %d in bdf file. '
+                                'A user-defined elemCalBack function will need to be provided.' % (element_id, element.pid))
 
         # Create dictionaries for mapping between tacs and nastran id numbering
         self._updateNastranToTACSDicts()
@@ -200,13 +200,7 @@ class pyMeshLoader(BaseUI):
 
     def getNumComponents(self):
         '''
-        Return number of nodes found in bdf.
-        '''
-        return self.bdfInfo.nproperties
-
-    def getNumComponents(self):
-        '''
-        Return number of nodes found in bdf.
+        Return number of components (properties) found in bdf.
         '''
         return self.bdfInfo.nproperties
 
@@ -275,6 +269,9 @@ class pyMeshLoader(BaseUI):
         return self.elemDescripts
 
     def getComponentDescripts(self):
+        """
+        Get user-defined labels for each component read in from the BDF.
+        """
         return self.compDescripts
 
     def getLocalNodeIDsFromGlobal(self, globalIDs, nastranOrdering=False):
@@ -367,7 +364,7 @@ class pyMeshLoader(BaseUI):
         corresponding to the component groups in componentIDs.
         """
         if self.creator is None:
-            raise self.TACSError("TACS assembler has not been created. "
+            raise self._TACSError("TACS assembler has not been created. "
                         "Assembler must created first by running 'createTACS' method.")
         # Make sure list is flat
         componentIDs = self._flatten(componentIDs)
@@ -466,7 +463,15 @@ class pyMeshLoader(BaseUI):
                 for spc in self.bdfInfo.spcs[spc_id]:
                     # Loop through every node specifed in this spc and record bc info
                     for j, nastranNode in enumerate(spc.nodes):
+                        # If constrained node doesn't exist in bdf
+                        if nastranNode not in self.bdfInfo.node_ids:
+                            self._TACSWarning(f'Node ID {nastranNode} (Nastran ordering) is referenced by an SPC,  '
+                                              'but the node was not defined in the BDF file. Skipping SPC.')
+                            continue
+
+                        # Convert to TACS node ID
                         tacsNode = self.idMap(nastranNode, self.nastranToTACSNodeIDDict)
+
                         # If node hasn't been added to bc dict yet, add it
                         if tacsNode not in bcDict:
                             bcDict[tacsNode] = {}
@@ -693,7 +698,7 @@ class pyMeshLoader(BaseUI):
                 tacsNodeID = self.idMap(nastranNodeID, self.nastranToTACSNodeIDDict)
                 if tacsNodeID not in attachedNodes:
                     if numUnattached < 100:
-                        self.TACSWarning(f'Node ID {nastranNodeID} (Nastran ordering) is not attached to any element in the model. '
+                        self._TACSWarning(f'Node ID {nastranNodeID} (Nastran ordering) is not attached to any element in the model. '
                                          f'Please remove this node from the mesh and try again.')
                     numUnattached += 1
 
@@ -701,7 +706,7 @@ class pyMeshLoader(BaseUI):
         numUnattached = self.comm.bcast(numUnattached, root=0)
         # Raise an error if any unattached nodes were found
         if numUnattached > 0:
-            raise self.TACSError(f'{numUnattached} unattached node(s) were detected in model. '
+            raise self._TACSError(f'{numUnattached} unattached node(s) were detected in model. '
                            f'Please make sure that all nodes are attached to at least one element.')
 
     def isDOFInString(self, dofString, numDOFs):
