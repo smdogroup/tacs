@@ -164,6 +164,11 @@ TACSAssembler::TACSAssembler( MPI_Comm _tacs_comm,
   elementIData = NULL;
   elementSensData = NULL;
   elementSensIData = NULL;
+
+  // Initial condition vectors
+  vars0 = NULL;
+  dvars0 = NULL;
+  ddvars0 = NULL;
 }
 
 /**
@@ -226,6 +231,11 @@ TACSAssembler::~TACSAssembler(){
   if (elementIData){ delete [] elementIData; }
   if (elementSensData){ delete [] elementSensData; }
   if (elementSensIData){ delete [] elementSensIData; }
+
+  // Delete initial condition vectors
+  if (vars0){ vars0->decref(); }
+  if (dvars0){ dvars0->decref(); }
+  if (ddvars0){ ddvars0->decref(); }
 
   // Decref the thread information class
   thread_info->decref();
@@ -3816,9 +3826,11 @@ TACSSerialPivotMat *TACSAssembler::createSerialMat(){
 void TACSAssembler::getInitConditions( TACSBVec *vars,
                                        TACSBVec *dvars,
                                        TACSBVec *ddvars ){
-  if (vars){ vars->zeroEntries(); }
-  if (dvars){ dvars->zeroEntries(); }
-  if (ddvars){ ddvars->zeroEntries(); }
+  // If the user requests initial conditions of vars and vars0 has not been set,
+  // zero the vector to prepare to get initial conditions from the element interface
+  if (vars && !vars0){ vars->zeroEntries(); }
+  if (dvars && !dvars0){ dvars->zeroEntries(); }
+  if (ddvars && !ddvars0){ ddvars->zeroEntries(); }
 
   // Retrieve pointers to temporary storage
   TacsScalar *elemVars, *elemDVars, *elemDDVars, *elemXpts;
@@ -3841,23 +3853,62 @@ void TACSAssembler::getInitConditions( TACSBVec *vars,
                                    elemVars, elemDVars, elemDDVars);
 
     // Set the values into the vectors
-    if (vars){
+    if (vars && !vars0){
       vars->setValues(len, nodes, elemVars, TACS_INSERT_NONZERO_VALUES);
     }
-    if (dvars){
+    if (dvars && !dvars0){
       dvars->setValues(len, nodes, elemDVars, TACS_INSERT_NONZERO_VALUES);
     }
-    if (ddvars){
+    if (ddvars && !ddvars0){
       ddvars->setValues(len, nodes, elemDDVars, TACS_INSERT_NONZERO_VALUES);
     }
   }
 
-  if (vars){ vars->beginSetValues(TACS_INSERT_NONZERO_VALUES); }
-  if (dvars){ dvars->beginSetValues(TACS_INSERT_NONZERO_VALUES); }
-  if (ddvars){ ddvars->beginSetValues(TACS_INSERT_NONZERO_VALUES); }
-  if (vars){ vars->endSetValues(TACS_INSERT_NONZERO_VALUES); }
-  if (dvars){ dvars->endSetValues(TACS_INSERT_NONZERO_VALUES); }
-  if (ddvars){ ddvars->beginSetValues(TACS_INSERT_NONZERO_VALUES); }
+  // If the the initial conditions of vars is requested and the vars0 vector has not
+  // been declared, then set the values of the tacs vector
+  if (vars && !vars0){ vars->beginSetValues(TACS_INSERT_NONZERO_VALUES); }
+  if (dvars && !dvars0){ dvars->beginSetValues(TACS_INSERT_NONZERO_VALUES); }
+  if (ddvars && !ddvars0){ ddvars->beginSetValues(TACS_INSERT_NONZERO_VALUES); }
+  if (vars && !vars0){ vars->endSetValues(TACS_INSERT_NONZERO_VALUES); }
+  if (dvars && !dvars0){ dvars->endSetValues(TACS_INSERT_NONZERO_VALUES); }
+  if (ddvars && !ddvars0){ ddvars->beginSetValues(TACS_INSERT_NONZERO_VALUES); }
+
+  // If the vars is requested and vars0 has been set, then copy the values from vars0
+  if (vars && vars0){ vars->copyValues(vars0); }
+  if (dvars && dvars0){ dvars->copyValues(dvars0); }
+  if (ddvars && ddvars0){ ddvars->copyValues(ddvars0); }
+}
+
+/**
+Set the initial conditions for the problem
+
+  @param vars The initial variable values (may be NULL)
+  @param dvars The initial time derivative values (may be NULL)
+  @param ddvars The initial second time derivative values (may be NULL)
+*/
+void TACSAssembler::setInitConditions( TACSBVec *vars,
+                                       TACSBVec *dvars,
+                                       TACSBVec *ddvars ){
+
+    // Copy the values to the array.
+    if (vars){
+      if (!vars0){
+        vars0 = createVec();
+        vars0->incref();
+      }
+      vars0->copyValues(vars); }
+    if (dvars){
+      if (!dvars0){
+        dvars0 = createVec();
+        dvars0->incref();
+      }
+      dvars0->copyValues(dvars); }
+    if (ddvars){
+      if (!ddvars0){
+        ddvars0 = createVec();
+        ddvars0->incref();
+      }
+      ddvars0->copyValues(ddvars); }
 }
 
 /**

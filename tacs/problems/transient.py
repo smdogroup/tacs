@@ -11,6 +11,7 @@ other pieces of information.
 # =============================================================================
 # Imports
 # =============================================================================
+from configparser import NoOptionError
 import warnings
 import os
 import numpy as np
@@ -49,6 +50,7 @@ class TransientProblem(TACSProblem):
 
     def __init__(self, name, tInit, tFinal, numSteps,
                  assembler, comm, outputViewer=None, meshLoader=None,
+                 vars0=None, dvars0=None, ddvars0=None,
                  options={}):
         """
         NOTE: This class should not be initialized directly by the user.
@@ -80,6 +82,15 @@ class TransientProblem(TACSProblem):
         meshLoader : pymeshloader.pyMeshLoader
             pyMeshLoader object used to create the assembler.
 
+        vars0 : np.ndarray
+            Initial conditions for the state variable vector
+
+        dvars0 : np.ndarray
+            Initial conditions for the first derivative of the state variable vector
+
+        ddvars0 : np.ndarray
+            Initial conditions for the second derivative of the state variable vector
+
         options : dict
             Dictionary holding problem-specific option parameters (case-insensitive).
         """
@@ -107,6 +118,11 @@ class TransientProblem(TACSProblem):
         for key in options:
             super().setOption(key, options[key])
 
+        # Save the initial conditions
+        self.vars0 = vars0
+        self.dvars0 = dvars0
+        self.ddvars0 = ddvars0
+
         # Create problem-specific variables
         self._createVariables()
 
@@ -121,6 +137,10 @@ class TransientProblem(TACSProblem):
         self.F = [self.assembler.createVec() for i in range(self.numSteps + 1)]
         # Auxillary element object for applying tractions/pressure
         self.auxElems = [tacs.TACS.AuxElements() for i in range(self.numSteps + 1)]
+        # Initialize the initial conditions tacs vectors
+        self.vars0 = self.assembler.createVec()
+        self.dvars0 = self.assembler.createVec()
+        self.ddvars0 = self.assembler.createVec()
 
         # Create the BDF integrator solver
         order = self.getOption('integrationOrder')
@@ -470,6 +490,50 @@ class TransientProblem(TACSProblem):
 
     ####### Transient solver methods ########
 
+    def setInitConditions(self, vars=None, dvars=None, ddvars=None):
+        """
+        Set the initial conditions associated with this problem
+
+        Parameters
+        ----------
+        vars : float or np.ndarray or TACSBVec
+            Initial conditions of the state variables
+        dvars : float or np.ndarray or TACSBVec
+            Initial conditions of the first time-derivative of the state variables
+        ddvars : float or np.ndarray or TACSBVec
+            Initial conditions of the second time-derivative of the state variables
+        """
+
+        if vars is not None:
+            if isinstance(vars, np.ndarray):
+                vars0Array = self.vars0.getArray()
+                vars0Array[:] = vars[:]
+            elif isinstance(vars, tacs.TACS.Vec):
+                self.vars0.copyValues(vars)
+            else:  # assume type=float
+                vars0Array = self.vars0.getArray()
+                vars0Array[:] = vars
+
+        if dvars is not None:
+            if isinstance(dvars, np.ndarray):
+                dvars0Array = self.dvars0.getArray()
+                dvars0Array[:] = dvars[:]
+            elif isinstance(dvars, tacs.TACS.Vec):
+                self.dvars0.copyValues(dvars)
+            else:  # assume type=float
+                dvars0Array = self.dvars0.getArray()
+                dvars0Array[:] = dvars
+
+        if ddvars is not None:
+            if isinstance(ddvars, np.ndarray):
+                ddvars0Array = self.ddvars0.getArray()
+                ddvars0Array[:] = ddvars[:]
+            elif isinstance(ddvars, tacs.TACS.Vec):
+                self.ddvars0.copyValues(ddvars)
+            else:  # assume type=float
+                ddvars0Array = self.ddvars0.getArray()
+                ddvars0Array[:] = ddvars
+
     def _updateAssemblerVars(self):
         """
         Make sure that the assembler is using
@@ -478,6 +542,7 @@ class TransientProblem(TACSProblem):
 
         self.assembler.setDesignVars(self.x)
         self.assembler.setNodes(self.Xpts)
+        self.assembler.setInitConditions(vec=self.vars0, dvec=self.dvars0, ddvec=self.ddvars0)
 
     def solve(self):
         """

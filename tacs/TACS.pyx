@@ -802,10 +802,10 @@ cdef _convertBCSRMat(BCSRMat *mat, PyObject *ptr):
         size = rowp[nrows]
         arowp = np.zeros(nrows + 1, dtype=int)
         acols = np.zeros(size, dtype=int)
-        
+
         for i in range(nrows + 1):
             arowp[i] = rowp[i]
-            
+
         for i in range(size):
             acols[i] = cols[i]
 
@@ -819,7 +819,7 @@ cdef _convertBCSRMat(BCSRMat *mat, PyObject *ptr):
             return bsize, bsize, nrows, ncols, arowp, acols, avals
 
     return None
-  
+
 cdef class Mat:
     def __cinit__(self):
         """
@@ -1934,6 +1934,25 @@ cdef class Assembler:
             cddvec = ddvec.ptr
 
         self.ptr.getInitConditions(cvec, cdvec, cddvec)
+        return
+
+    def setInitConditions(self, Vec vec=None,
+                          Vec dvec=None, Vec ddvec=None):
+        """
+        Set the initial conditions as a vector
+        """
+        cdef TACSBVec *cvec = NULL
+        cdef TACSBVec *cdvec = NULL
+        cdef TACSBVec *cddvec = NULL
+
+        if vec is not None:
+            cvec = vec.ptr
+        if dvec is not None:
+            cdvec = dvec.ptr
+        if ddvec is not None:
+            cddvec = ddvec.ptr
+
+        self.ptr.setInitConditions(cvec, cdvec, cddvec)
         return
 
     def evalEnergies(self):
