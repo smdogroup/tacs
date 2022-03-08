@@ -3838,29 +3838,31 @@ void TACSAssembler::getInitConditions( TACSBVec *vars,
                   &elemXpts, NULL, NULL, NULL);
 
   // Retrieve the initial condition values from each element
-  for ( int i = 0; i < numElements; i++ ){
-    int ptr = elementNodeIndex[i];
-    int len = elementNodeIndex[i+1] - ptr;
-    const int *nodes = &elementTacsNodes[ptr];
-    xptVec->getValues(len, nodes, elemXpts);
+  if ((vars && !vars0) || (dvars && !dvars0) || (ddvars && !ddvars0)){
+    for ( int i = 0; i < numElements; i++ ){
+      int ptr = elementNodeIndex[i];
+      int len = elementNodeIndex[i+1] - ptr;
+      const int *nodes = &elementTacsNodes[ptr];
+      xptVec->getValues(len, nodes, elemXpts);
 
-    // Get the initial condition values
-    int nvars = elements[i]->getNumVariables();
-    memset(elemVars, 0, nvars*sizeof(TacsScalar));
-    memset(elemDVars, 0, nvars*sizeof(TacsScalar));
-    memset(elemDDVars, 0, nvars*sizeof(TacsScalar));
-    elements[i]->getInitConditions(i, elemXpts,
-                                   elemVars, elemDVars, elemDDVars);
+      // Get the initial condition values
+      int nvars = elements[i]->getNumVariables();
+      memset(elemVars, 0, nvars*sizeof(TacsScalar));
+      memset(elemDVars, 0, nvars*sizeof(TacsScalar));
+      memset(elemDDVars, 0, nvars*sizeof(TacsScalar));
+      elements[i]->getInitConditions(i, elemXpts,
+                                     elemVars, elemDVars, elemDDVars);
 
-    // Set the values into the vectors
-    if (vars && !vars0){
-      vars->setValues(len, nodes, elemVars, TACS_INSERT_NONZERO_VALUES);
-    }
-    if (dvars && !dvars0){
-      dvars->setValues(len, nodes, elemDVars, TACS_INSERT_NONZERO_VALUES);
-    }
-    if (ddvars && !ddvars0){
-      ddvars->setValues(len, nodes, elemDDVars, TACS_INSERT_NONZERO_VALUES);
+      // Set the values into the vectors
+      if (vars && !vars0){
+        vars->setValues(len, nodes, elemVars, TACS_INSERT_NONZERO_VALUES);
+      }
+      if (dvars && !dvars0){
+        dvars->setValues(len, nodes, elemDVars, TACS_INSERT_NONZERO_VALUES);
+      }
+      if (ddvars && !ddvars0){
+        ddvars->setValues(len, nodes, elemDDVars, TACS_INSERT_NONZERO_VALUES);
+      }
     }
   }
 
