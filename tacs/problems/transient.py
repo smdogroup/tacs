@@ -11,7 +11,6 @@ other pieces of information.
 # =============================================================================
 # Imports
 # =============================================================================
-from configparser import NoOptionError
 import warnings
 import os
 import numpy as np
@@ -50,7 +49,6 @@ class TransientProblem(TACSProblem):
 
     def __init__(self, name, tInit, tFinal, numSteps,
                  assembler, comm, outputViewer=None, meshLoader=None,
-                 vars0=None, dvars0=None, ddvars0=None,
                  options={}):
         """
         NOTE: This class should not be initialized directly by the user.
@@ -82,15 +80,6 @@ class TransientProblem(TACSProblem):
         meshLoader : pymeshloader.pyMeshLoader
             pyMeshLoader object used to create the assembler.
 
-        vars0 : np.ndarray
-            Initial conditions for the state variable vector
-
-        dvars0 : np.ndarray
-            Initial conditions for the first derivative of the state variable vector
-
-        ddvars0 : np.ndarray
-            Initial conditions for the second derivative of the state variable vector
-
         options : dict
             Dictionary holding problem-specific option parameters (case-insensitive).
         """
@@ -117,11 +106,6 @@ class TransientProblem(TACSProblem):
         # Set user-defined options
         for key in options:
             super().setOption(key, options[key])
-
-        # Save the initial conditions
-        self.vars0 = vars0
-        self.dvars0 = dvars0
-        self.ddvars0 = ddvars0
 
         # Create problem-specific variables
         self._createVariables()
