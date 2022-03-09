@@ -207,9 +207,10 @@ class TACSAssembler : public TACSObject {
   TACSSchurMat *createSchurMat( OrderingType order_type=TACS_AMD_ORDER );
   TACSSerialPivotMat *createSerialMat();
 
-  // Retrieve the initial conditions for the simulation
+  // Retrieve or set the initial conditions for the simulation
   // --------------------------------------------------
   void getInitConditions( TACSBVec *vars, TACSBVec *dvars, TACSBVec *ddvars );
+  void setInitConditions( TACSBVec *vars, TACSBVec *dvars, TACSBVec *ddvars );
 
   // Evaluate the kinetic and potential energy
   // -----------------------------------------
@@ -436,6 +437,9 @@ class TACSAssembler : public TACSObject {
   // Memory for the design variables and inddex data
   TacsScalar *elementSensData;
   int *elementSensIData;
+
+  // Memory for the initial condition vectors
+  TACSBVec *vars0, *dvars0, *ddvars0;
 
   // The data required to perform parallel operations
   // MPI info
