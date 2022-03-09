@@ -160,6 +160,10 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">F</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">assembler</span><span class="o">.</span><span class="n">createVec</span><span class="p">()</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">numSteps</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)]</span>
         <span class="c1"># Auxillary element object for applying tractions/pressure</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">auxElems</span> <span class="o">=</span> <span class="p">[</span><span class="n">tacs</span><span class="o">.</span><span class="n">TACS</span><span class="o">.</span><span class="n">AuxElements</span><span class="p">()</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">numSteps</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)]</span>
+        <span class="c1"># Initialize the initial conditions tacs vectors</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">vars0</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">assembler</span><span class="o">.</span><span class="n">createVec</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dvars0</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">assembler</span><span class="o">.</span><span class="n">createVec</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ddvars0</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">assembler</span><span class="o">.</span><span class="n">createVec</span><span class="p">()</span>
 
         <span class="c1"># Create the BDF integrator solver</span>
         <span class="n">order</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s1">&#39;integrationOrder&#39;</span><span class="p">)</span>
@@ -509,6 +513,50 @@
 
     <span class="c1">####### Transient solver methods ########</span>
 
+<div class="viewcode-block" id="TransientProblem.setInitConditions"><a class="viewcode-back" href="../../../pytacs/transient.html#tacs.problems.TransientProblem.setInitConditions">[docs]</a>    <span class="k">def</span> <span class="nf">setInitConditions</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">vars</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">dvars</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ddvars</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Set the initial conditions associated with this problem</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        vars : float or np.ndarray or TACSBVec</span>
+<span class="sd">            Initial conditions of the state variables</span>
+<span class="sd">        dvars : float or np.ndarray or TACSBVec</span>
+<span class="sd">            Initial conditions of the first time-derivative of the state variables</span>
+<span class="sd">        ddvars : float or np.ndarray or TACSBVec</span>
+<span class="sd">            Initial conditions of the second time-derivative of the state variables</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="nb">vars</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="nb">vars</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
+                <span class="n">vars0Array</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vars0</span><span class="o">.</span><span class="n">getArray</span><span class="p">()</span>
+                <span class="n">vars0Array</span><span class="p">[:]</span> <span class="o">=</span> <span class="nb">vars</span><span class="p">[:]</span>
+            <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="nb">vars</span><span class="p">,</span> <span class="n">tacs</span><span class="o">.</span><span class="n">TACS</span><span class="o">.</span><span class="n">Vec</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">vars0</span><span class="o">.</span><span class="n">copyValues</span><span class="p">(</span><span class="nb">vars</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>  <span class="c1"># assume type=float</span>
+                <span class="n">vars0Array</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vars0</span><span class="o">.</span><span class="n">getArray</span><span class="p">()</span>
+                <span class="n">vars0Array</span><span class="p">[:]</span> <span class="o">=</span> <span class="nb">vars</span>
+
+        <span class="k">if</span> <span class="n">dvars</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">dvars</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
+                <span class="n">dvars0Array</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dvars0</span><span class="o">.</span><span class="n">getArray</span><span class="p">()</span>
+                <span class="n">dvars0Array</span><span class="p">[:]</span> <span class="o">=</span> <span class="n">dvars</span><span class="p">[:]</span>
+            <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">dvars</span><span class="p">,</span> <span class="n">tacs</span><span class="o">.</span><span class="n">TACS</span><span class="o">.</span><span class="n">Vec</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">dvars0</span><span class="o">.</span><span class="n">copyValues</span><span class="p">(</span><span class="n">dvars</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>  <span class="c1"># assume type=float</span>
+                <span class="n">dvars0Array</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dvars0</span><span class="o">.</span><span class="n">getArray</span><span class="p">()</span>
+                <span class="n">dvars0Array</span><span class="p">[:]</span> <span class="o">=</span> <span class="n">dvars</span>
+
+        <span class="k">if</span> <span class="n">ddvars</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">ddvars</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
+                <span class="n">ddvars0Array</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ddvars0</span><span class="o">.</span><span class="n">getArray</span><span class="p">()</span>
+                <span class="n">ddvars0Array</span><span class="p">[:]</span> <span class="o">=</span> <span class="n">ddvars</span><span class="p">[:]</span>
+            <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">ddvars</span><span class="p">,</span> <span class="n">tacs</span><span class="o">.</span><span class="n">TACS</span><span class="o">.</span><span class="n">Vec</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">ddvars0</span><span class="o">.</span><span class="n">copyValues</span><span class="p">(</span><span class="n">ddvars</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>  <span class="c1"># assume type=float</span>
+                <span class="n">ddvars0Array</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ddvars0</span><span class="o">.</span><span class="n">getArray</span><span class="p">()</span>
+                <span class="n">ddvars0Array</span><span class="p">[:]</span> <span class="o">=</span> <span class="n">ddvars</span></div>
+
     <span class="k">def</span> <span class="nf">_updateAssemblerVars</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Make sure that the assembler is using</span>
@@ -517,6 +565,7 @@
 
         <span class="bp">self</span><span class="o">.</span><span class="n">assembler</span><span class="o">.</span><span class="n">setDesignVars</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">x</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">assembler</span><span class="o">.</span><span class="n">setNodes</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">Xpts</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assembler</span><span class="o">.</span><span class="n">setInitConditions</span><span class="p">(</span><span class="n">vec</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">vars0</span><span class="p">,</span> <span class="n">dvec</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">dvars0</span><span class="p">,</span> <span class="n">ddvec</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">ddvars0</span><span class="p">)</span>
 
 <div class="viewcode-block" id="TransientProblem.solve"><a class="viewcode-back" href="../../../pytacs/transient.html#tacs.problems.TransientProblem.solve">[docs]</a>    <span class="k">def</span> <span class="nf">solve</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>

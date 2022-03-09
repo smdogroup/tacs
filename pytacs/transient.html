@@ -374,6 +374,21 @@ This is most commonly used to model gravity loads on a model.</p>
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="tacs.problems.TransientProblem.setInitConditions">
+<span class="sig-name descname"><span class="pre">setInitConditions</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">vars</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dvars</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ddvars</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/problems/transient.html#TransientProblem.setInitConditions"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.problems.TransientProblem.setInitConditions" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set the initial conditions associated with this problem</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>vars</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.10)"><em>float</em></a><em> or </em><em>np.ndarray</em><em> or </em><em>TACSBVec</em>) -- Initial conditions of the state variables</p></li>
+<li><p><strong>dvars</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.10)"><em>float</em></a><em> or </em><em>np.ndarray</em><em> or </em><em>TACSBVec</em>) -- Initial conditions of the first time-derivative of the state variables</p></li>
+<li><p><strong>ddvars</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.10)"><em>float</em></a><em> or </em><em>np.ndarray</em><em> or </em><em>TACSBVec</em>) -- Initial conditions of the second time-derivative of the state variables</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="tacs.problems.TransientProblem.solve">
 <span class="sig-name descname"><span class="pre">solve</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/problems/transient.html#TransientProblem.solve"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.problems.TransientProblem.solve" title="Permalink to this definition">¶</a></dt>
 <dd><p>Solve the time integrated transient problem. The
