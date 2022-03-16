@@ -932,7 +932,8 @@ void TACSShellElement<quadrature, basis, director, model>::
                           const TacsScalar dfdq[],
                           int dvLen,
                           TacsScalar dfdx[] ){
-  if (quantityType == TACS_FAILURE_INDEX || quantityType == TACS_STRAIN_ENERGY_DENSITY){
+  if (quantityType == TACS_FAILURE_INDEX ||
+      quantityType == TACS_STRAIN_ENERGY_DENSITY){
     // Compute the node normal directions
     TacsScalar fn[3*num_nodes];
     TacsShellComputeNodeNormals<basis>(Xpts, fn);
@@ -1023,7 +1024,7 @@ void TACSShellElement<quadrature, basis, director, model>::
     TacsScalar d[dsize], ddot[dsize], dddot[dsize];
     director::template
       computeDirectorRates<vars_per_node, offset, num_nodes>(vars, dvars, ddvars, fn,
-                                                            d, ddot, dddot);
+                                                             d, ddot, dddot);
 
     // Set the total number of tying points needed for this element
     TacsScalar ety[basis::NUM_TYING_POINTS];

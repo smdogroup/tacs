@@ -13,7 +13,7 @@
 */
 template <class basis>
 void TacsBeamComputeNodeNormals( const TacsScalar Xpts[],
-                                 const TacsScalar axis[],
+                                 A2D::Vec3& axis,
                                  TacsScalar fn1[],
                                  TacsScalar fn2[] ){
   for ( int i = 0; i < basis::NUM_NODES; i++ ){
@@ -21,140 +21,237 @@ void TacsBeamComputeNodeNormals( const TacsScalar Xpts[],
     basis::getNodePoint(i, pt);
 
     // Compute the derivative X,xi at each node
-    TacsScalar Xxi[3];
-    basis::template interpFieldsGrad<3, 3>(pt, Xpts, Xxi);
+    A2D::Vec3 X0xi;
+    basis::template interpFieldsGrad<3, 3>(pt, Xpts, X0xi.x);
 
-    // Normalize the tangent direction
-    TacsScalar t[3];
-    TacsScalar tnorm = sqrt(vec3Dot(Xxi, Xxi));
-    TacsScalar tinv = 1.0/tnorm;
-    t[0] = tinv*Xxi[0];
-    t[1] = tinv*Xxi[1];
-    t[2] = tinv*Xxi[2];
+    // Normalize the first direction.
+    A2D::Vec3 t1;
+    A2D::Vec3Normalize normalizet1(X0xi, t1);
 
-    // Compute the first direction in the plane
-    TacsScalar n1[3];
-    TacsScalar tdot = vec3Dot(t, axis);
-    n1[0] = axis[0] - tdot*t[0];
-    n1[1] = axis[1] - tdot*t[1];
-    n1[2] = axis[2] - tdot*t[2];
+    // t2_dir = axis - dot(t1, axis) * t1
+    A2D::Vec3 t2_dir;
+    A2D::Scalar dot;
+    A2D::Vec3Dot dott1(t1, axis, dot);
+    A2D::Vec3Axpy axpy(-1.0, dot, t1, axis, t2_dir);
 
-    // Compute the norm
-    TacsScalar n1norm = sqrt(vec3Dot(n1, n1));
-    TacsScalar n1inv = 1.0/n1norm;
-    fn1[0] = n1inv*n1[0];
-    fn1[1] = n1inv*n1[1];
-    fn1[2] = n1inv*n1[2];
+    // Compute the t2 direction
+    A2D::Vec3 t2;
+    A2D::Vec3Normalize normalizet2(t2_dir, t2);
 
-    // Compute the cross product
-    TacsScalar n2[3];
-    crossProduct(1.0, t, fn1, fn2);
+    // Compute the n2 direction
+    A2D::Vec3 t3;
+    A2D::Vec3CrossProduct cross(t1, t2, t3);
+
+    fn1[0] = t2.x[0];
+    fn1[1] = t2.x[1];
+    fn1[2] = t2.x[2];
+
+    fn2[0] = t3.x[0];
+    fn2[1] = t3.x[1];
+    fn2[2] = t3.x[2];
 
     fn1 += 3;
     fn2 += 3;
   }
 }
 
-/**
-  Compute the displacement gradient of the constant and through-thickness
-  rate of change of the displacements.
+/*
+  Compute the frame normals at each node location
 
-  @param pt The parametric point
-  @param Xpts The node locations for the element
-  @param vars The element variables
-  @param fn The frame normal directions at each node
-  @param d The director field at each node
-  @param Xxi The in-plane coordinate derivatives
-  @param n0 The interpolated frame normal direction
-  @param T The transformation to local coordinates
-  @param XdinvT Product of inverse of the Jacobian trans. and T
-  @param XdinvzT Product of z-derivative of Jac. trans. inv. and T
-  @param u0x Derivative of the displacement in the local x coordinates
-  @param u1x Derivative of the through-thickness disp. in local x coordinates
+  @param Xpts The node locations for the elements
+  @param axis The coordinates of the reference axis
+  @param fn1 The first normal direction
+  @param fn2 The second normal direction
 */
-template <int vars_per_node, class basis>
-TacsScalar TacsBeamComputeDispGrad( const double pt[],
-                                    const TacsScalar Xpts[],
-                                    const TacsScalar vars[],
-                                    const TacsScalar fn1[],
-                                    const TacsScalar fn2[],
-                                    const TacsScalar d1[],
-                                    const TacsScalar d2[],
-                                    const TacsScalar Xxi[],
-                                    const TacsScalar n1[],
-                                    const TacsScalar n2[],
-                                    const TacsScalar T[],
-                                    TacsScalar XdinvT[],
-                                    TacsScalar Xdinvz1T[],
-                                    TacsScalar Xdinvz2T[],
-                                    TacsScalar u0x[],
-                                    TacsScalar d1x[],
-                                    TacsScalar d2x[] ){
-  // Assemble the reference frame
-  TacsScalar Xd[9];
-  TacsShellAssembleFrame(Xxi, n1, n2, Xd);
+template <class basis>
+void TacsBeamComputeNodeNormalsSens( const TacsScalar Xpts[],
+                                     A2D::Vec3& axis,
+                                     const TacsScalar dfn1[],
+                                     const TacsScalar dfn2[],
+                                     TacsScalar dXpts[] ){
+  for ( int i = 0; i < basis::NUM_NODES; i++ ){
+    double pt[2];
+    basis::getNodePoint(i, pt);
 
-  // Compute the inverse of the 3x3 Jacobian transformation
-  TacsScalar Xdinv[9];
-  TacsScalar detXd = inv3x3(Xd, Xdinv);
+    // Compute the derivative X,xi at each node
+    A2D::Vec3 X0xi;
+    basis::template interpFieldsGrad<3, 3>(pt, Xpts, X0xi.x);
 
-  // Compute n,xi = [dn/dxi1; dn/dxi2]
-  TacsScalar n1xi[3], n2xi[3];
-  basis::template interpFieldsGrad<3, 3>(pt, fn1, n1xi);
-  basis::template interpFieldsGrad<3, 3>(pt, fn2, n2xi);
+    // Normalize the first direction.
+    A2D::Vec3 t1;
+    A2D::Vec3Normalize normalizet1(X0xi, t1);
 
-  // Assemble the terms Xd = [Xxi; n1; n2] and Xdz
-  TacsScalar Xdz1[9], Xdz2[9];
-  TacsShellAssembleFrame(n1xi, Xdz1);
-  TacsShellAssembleFrame(n2xi, Xdz2);
+    // t2_dir = axis - dot(t1, axis) * t1
+    A2D::Vec3 t2_dir;
+    A2D::Scalar dot;
+    A2D::Vec3Dot dott1(t1, axis, dot);
+    A2D::Vec3Axpy axpy(-1.0, dot, t1, axis, t2_dir);
 
-  // Compute negXdinvXdz = -Xdinv*Xdz
-  TacsScalar negXdinvXdz1[9], negXdinvXdz2[9];
-  mat3x3MatMult(Xdinv, Xdz1, negXdinvXdz1);
-  for ( int i = 0; i < 9; i++ ){
-    negXdinvXdz1[i] *= -1.0;
+    // Compute the t2 direction
+    A2D::Vec3 t2(NULL, dfn1);
+    A2D::Vec3Normalize normalizet2(t2_dir, t2);
+
+    // Compute the n2 direction
+    A2D::Vec3 t3(NULL, dfn2);
+    A2D::Vec3CrossProduct cross(t1, t2, t3);
+
+    cross.reverse();
+    normalizet2.reverse();
+    axpy.reverse();
+    dott1.reverse();
+    normalizet1.reverse();
+
+    basis::template addInterpFieldsTranspose<3, 3>(pt, X0xi.xd, dXpts);
+
+    fn1 += 3;
+    fn2 += 3;
   }
-  mat3x3MatMult(Xdinv, Xdz2, negXdinvXdz2);
-  for ( int i = 0; i < 9; i++ ){
-    negXdinvXdz2[i] *= -1.0;
-  }
-
-  // Compute XdinvT = Xdinv*T
-  mat3x3MatMult(Xdinv, T, XdinvT);
-
-  // Compute Xdinvz = -Xdinv*Xdz*Xdinv*T
-  mat3x3MatMult(negXdinvXdz1, XdinvT, Xdinvz1T);
-  mat3x3MatMult(negXdinvXdz2, XdinvT, Xdinvz2T);
-
-  // Compute the director field and the gradient of the director
-  // field at the specified point
-  TacsScalar d01[3], d02[3], d1xi[3], d2xi[3];
-  basis::template interpFields<3, 3>(pt, d1, d01);
-  basis::template interpFields<3, 3>(pt, d2, d02);
-  basis::template interpFieldsGrad<3, 3>(pt, d1, d1xi);
-  basis::template interpFieldsGrad<3, 3>(pt, d2, d2xi);
-
-  // // Compute the gradient of the displacement solution at the quadrature points
-  // TacsScalar u0xi[3];
-  // basis::template interpFieldsGrad<vars_per_node, 3>(pt, vars, u0xi);
-
-  // // Compute the derivative u0,x
-  // TacsShellAssembleFrame(u0xi, d01, d01, u0x); // Use u0x to store [u0,xi; d0]
-
-  // // u1x = T^{T}*u1d*XdinvT + T^{T}*u0d*XdinvzT
-  // TacsScalar tmp[9];
-  // TacsShellAssembleFrame(d0xi, u1x); // Use u1x to store [d0,xi; 0]
-  // mat3x3MatMult(u1x, XdinvT, tmp);
-  // mat3x3MatMultAdd(u0x, XdinvzT, tmp);
-  // mat3x3TransMatMult(T, tmp, u1x);
-
-  // // Compute the transformation u0x = T^{T}*ueta*Xdinv*T
-  // // u0x = T^{T}*u0d*Xdinv*T
-  // mat3x3MatMult(u0x, XdinvT, tmp);
-  // mat3x3TransMatMult(T, tmp, u0x);
-
-  return detXd;
 }
+
+// /**
+//   Compute the displacement gradient of the constant and through-thickness
+//   rate of change of the displacements.
+
+//   @param pt The parametric point
+//   @param Xpts The node locations for the element
+//   @param vars The element variables
+//   @param fn The frame normal directions at each node
+//   @param d The director field at each node
+//   @param Xxi The in-plane coordinate derivatives
+//   @param n0 The interpolated frame normal direction
+//   @param T The transformation to local coordinates
+//   @param XdinvT Product of inverse of the Jacobian trans. and T
+//   @param XdinvzT Product of z-derivative of Jac. trans. inv. and T
+//   @param u0x Derivative of the displacement in the local x coordinates
+//   @param u1x Derivative of the through-thickness disp. in local x coordinates
+// */
+// template <int vars_per_node, class basis>
+// TacsScalar TacsBeamComputeDispGrad( const double pt[],
+//                                     const TacsScalar Xpts[],
+//                                     const TacsScalar vars[],
+//                                     const TacsScalar fn1[],
+//                                     const TacsScalar fn2[],
+//                                     const TacsScalar d1[],
+//                                     const TacsScalar d2[],
+//                                     const TacsScalar Xxi[],
+//                                     const TacsScalar n1[],
+//                                     const TacsScalar n2[],
+//                                     const TacsScalar T[],
+//                                     TacsScalar XdinvT[],
+//                                     TacsScalar Xdinvz1T[],
+//                                     TacsScalar Xdinvz2T[],
+//                                     TacsScalar u0x[],
+//                                     TacsScalar d1x[],
+//                                     TacsScalar d2x[] ){
+//   // Assemble the reference frame
+//   TacsScalar Xd[9];
+//   TacsShellAssembleFrame(Xxi, n1, n2, Xd);
+
+//   // Compute the inverse of the 3x3 Jacobian transformation
+//   TacsScalar Xdinv[9];
+//   TacsScalar detXd = inv3x3(Xd, Xdinv);
+
+
+//   // Assemble the derivative of the reference frame
+//   TacsScalar Ud[9];
+//   TacsShellAssembleFrame(u0xi, d1, d2, Ud);
+
+
+
+
+
+
+//   // Compute n,xi = [dn/dxi1; dn/dxi2]
+//   TacsScalar n1xi[3], n2xi[3];
+//   basis::template interpFieldsGrad<3, 3>(pt, fn1, n1xi);
+//   basis::template interpFieldsGrad<3, 3>(pt, fn2, n2xi);
+
+//   // Assemble the terms Xd = [Xxi; n1; n2] and Xdz
+//   TacsScalar Xdz1[9], Xdz2[9];
+//   TacsShellAssembleFrame(n1xi, Xdz1);
+//   TacsShellAssembleFrame(n2xi, Xdz2);
+
+//   // Compute negXdinvXdz = -Xdinv*Xdz
+//   TacsScalar negXdinvXdz1[9], negXdinvXdz2[9];
+//   mat3x3MatMult(Xdinv, Xdz1, negXdinvXdz1);
+//   for ( int i = 0; i < 9; i++ ){
+//     negXdinvXdz1[i] *= -1.0;
+//   }
+//   mat3x3MatMult(Xdinv, Xdz2, negXdinvXdz2);
+//   for ( int i = 0; i < 9; i++ ){
+//     negXdinvXdz2[i] *= -1.0;
+//   }
+
+//   // Compute XdinvT = Xdinv*T
+//   mat3x3MatMult(Xdinv, T, XdinvT);
+
+//   // Compute Xdinvz = -Xdinv*Xdz*Xdinv*T
+//   mat3x3MatMult(negXdinvXdz1, XdinvT, Xdinvz1T);
+//   mat3x3MatMult(negXdinvXdz2, XdinvT, Xdinvz2T);
+
+//   // Compute the director field and the gradient of the director
+//   // field at the specified point
+//   TacsScalar d01[3], d02[3], d1xi[3], d2xi[3];
+//   basis::template interpFields<3, 3>(pt, d1, d01);
+//   basis::template interpFields<3, 3>(pt, d2, d02);
+//   basis::template interpFieldsGrad<3, 3>(pt, d1, d1xi);
+//   basis::template interpFieldsGrad<3, 3>(pt, d2, d2xi);
+
+//   // d1x = T^{T}*(d1xi*e1^{T} + Ur*z1Xdinv)*T*e1
+//   TacsScalar scale = Xdinv[0]*T[0] + Xdinv[1]*T[3] + Xdinv[2]*T[6];
+//   tmp[0] = T[0];
+//   tmp[1] = T[3];
+//   tmp[2] = T[6];
+//   mat3x3Mult(z1Xdinv, tmp, d1x); // tmp = z1Xdinv*T*e1
+//   mat3x3Mult(u0xi, d1x, tmp); // tmp = Ur*z1Xdinv*T*e1
+//   vec3Axpy(scale, d1a, tmp);
+//   mat3x3MultTrans(T, tmp, Td1a);
+
+
+
+
+
+
+
+//   // Td2a = T^{T}*d2a*e1^{T}*Xdinv*T*e1
+//   TacsScalar Td2a[3], z2Te1[3];
+//   tmp[0] = T[0];
+//   tmp[1] = T[3];
+//   tmp[2] = T[6];
+//   mat3x3Mult(z2Xdinv, tmp, z2Te1); // tmp = z1Xdinv*T*e1
+//   mat3x3Mult(Ur, z2Te1, tmp); // tmp = Ur*z1Xdinv*T*e1
+//   vec3Axpy(S[0], d2a, tmp);
+//   mat3x3MultTrans(T, tmp, Td2a);
+
+
+
+
+
+
+
+
+//   // Compute the gradient of the displacement solution at the quadrature points
+//   TacsScalar u0[3], u0xi[3];
+//   basis::template interpFields<vars_per_node, 3>(pt, vars, u0);
+//   basis::template interpFieldsGrad<vars_per_node, 3>(pt, vars, u0xi);
+
+//   // Compute the derivative u0,x
+//   TacsShellAssembleFrame(u0xi, d01, d01, u0x); // Use u0x to store [u0,xi; d1, d2]
+
+//   // d1x = T^{T}*d1*XdinvT + T^{T}*u0*XdinvzT
+//   // TacsScalar tmp[9];
+//   // TacsShellAssembleFrame(d0xi, u1x); // Use u1x to store [d0,xi; 0]
+//   // mat3x3MatMult(u1x, XdinvT, tmp);
+//   // mat3x3MatMultAdd(u0x, XdinvzT, tmp);
+//   // mat3x3TransMatMult(T, tmp, u1x);
+
+//   // // Compute the transformation u0x = T^{T}*ueta*Xdinv*T
+//   // // u0x = T^{T}*u0d*Xdinv*T
+//   // mat3x3MatMult(u0x, XdinvT, tmp);
+//   // mat3x3TransMatMult(T, tmp, u0x);
+
+//   return detXd;
+// }
 
 /*
   Test the implementation of the shell terms for a given basis

@@ -9,10 +9,10 @@
 #include "TACSBeamConstitutive.h"
 #include "TACSElement.h"
 #include "TACSElementTypes.h"
+#include "a2d.h"
 
 /*
   Compute the transformation from the local coordinates
-  to
 */
 class TACSBeamTransform : public TACSObject {
  public:
@@ -21,68 +21,93 @@ class TACSBeamTransform : public TACSObject {
     transformation from the global coordinates to the shell-aligned local axis.
   */
   virtual void computeTransform( const TacsScalar Xxi[], TacsScalar T[] ) = 0;
+  virtual void computeTransformSens( const TacsScalar X0xi_vals[],
+                                     const TacsScalar dTvals[],
+                                     TacsScalar dX0xi[] ) = 0;
+  virtual A2D::Vec3& getRefAxis() = 0;
 };
 
-class TACSBeamRefAxisTransform : public TACSShellTransform {
+/*
+  Compute the transformation
+*/
+class TACSBeamRefAxisTransform : public TACSBeamTransform {
  public:
-  TACSBeamRefAxisTransform( const TacsScalar _axis[] ){
-    axis[0] = _axis[0];
-    axis[1] = _axis[1];
-    axis[2] = _axis[2];
-
-    TacsScalar norm = sqrt(vec3Dot(axis, axis));
-    TacsScalar invNorm = 0.0;
-    if (norm != 0.0){
-      invNorm = 1.0/norm;
-    }
-    vec3Scale(invNorm, axis);
+  TACSBeamRefAxisTransform( const TacsScalar axis[] ) : axis(axis) {
+    A2D::Vec3Normalize(axis);
   }
 
-  void computeTransform( const TacsScalar Xxi[], TacsScalar T[] ){
-    // Compute the reference frame
-    TacsScalar t[3];
-    TacsScalar tnorm = sqrt(vec3Dot(Xxi, Xxi));
-    TacsScalar tinv = 1.0/tnorm;
-    t[0] = tinv*Xxi[0];
-    t[1] = tinv*Xxi[1];
-    t[2] = tinv*Xxi[2];
+  void computeTransform( const TacsScalar X0xi_vals[],
+                         TacsScalar Tvals[] ){
+    // Normalize the first direction.
+    A2D::Vec3 X0xi(X0xi_vals);
+    A2D::Vec3 t1;
+    A2D::Vec3Normalize normalizet1(X0xi, t1);
 
-    // Compute the first direction in the plane
-    TacsScalar n1[3];
-    TacsScalar tdot = vec3Dot(t, axis);
-    n1[0] = axis[0] - tdot*t[0];
-    n1[1] = axis[1] - tdot*t[1];
-    n1[2] = axis[2] - tdot*t[2];
+    // t2_dir = axis - dot(t1, axis) * t1
+    A2D::Vec3 t2_dir;
+    A2D::Scalar dot;
+    A2D::Vec3Dot dott1(t1, axis, dot);
+    A2D::Vec3Axpy axpy(-1.0, dot, t1, axis, t2_dir);
 
-    // Compute the norm
-    TacsScalar n1inv = 1.0/sqrt(vec3Dot(n1, n1));
-    n1[0] *= n1inv;
-    n1[1] *= n1inv;
-    n1[2] *= n1inv;
+    // Compute the t2 direction
+    A2D::Vec3 t2;
+    A2D::Vec3Normalize normalizet2(t2_dir, t2);
 
-    // Compute the cross product
-    TacsScalar n2[3];
-    crossProduct(1.0, t, n1, n2);
+    // Compute the n2 direction
+    A2D::Vec3 t3;
+    A2D::Vec3CrossProduct cross(t1, t2, t3);
 
-    // Set the components of the transformation matrix
-    T[0] = t[0];
-    T[3] = t[1];
-    T[6] = t[2];
+    // Assemble the referece frame
+    A2D::Mat3x3 T;
+    A2D::Mat3x3FromThreeVec3 assembleT(t1, t2, t3, T);
 
-    T[1] = n1[0];
-    T[4] = n1[1];
-    T[7] = n1[2];
+    for ( int i = 0; i < 9; i++ ){
+      Tvals[i] = T.A[i];
+    }
+  }
 
-    T[2] = n2[0];
-    T[5] = n2[1];
-    T[8] = n2[2];
+  void computeTransformSens( const TacsScalar X0xi_vals[],
+                             const TacsScalar dTvals[],
+                             TacsScalar dX0xi[] ){
+    // Normalize the first direction.
+    A2D::ADVec3 X0xi(X0xi_vals);
+    A2D::ADVec3 t1;
+    A2D::ADVec3Normalize normalizet1(X0xi, t1);
+
+    // t2_dir = axis - dot(t1, axis) * t1
+    A2D::ADVec3 t2_dir;
+    A2D::ADScalar dot;
+    A2D::ADVec3Dot dott1(t1, axis, dot);
+    A2D::ADVec3Axpy axpy(-1.0, dot, t1, axis, t2_dir);
+
+    // Compute the t2 direction
+    A2D::ADVec3 t2;
+    A2D::ADVec3Normalize normalizet2(t2_dir, t2);
+
+    // Compute the n2 direction
+    A2D::ADVec3 t3;
+    A2D::ADVec3CrossProduct cross(t1, t2, t3);
+
+    // Assemble the referece frame
+    A2D::ADMat3x3 T(NULL, dTvals); // Set the seeds for T
+    A2D::ADMat3x3FromThreeVec3 assembleT(t1, t2, t3, T);
+
+    // Reverse the operations to get the derivative w.r.t. X0
+    assembleT.reverse();
+    cross.reverse();
+    normalizet2.reverse();
+    axpy.reverse();
+    dott1.reverse();
+    normalizet1.reverse();
+
+    for ( int i = 0; i < 3; i++ ){
+      dX0xi[i] = X0xi.xd[i];
+    }
   }
 
  private:
-  TacsScalar axis[3];
+  A2D::Vec3 axis;
 };
-
-
 
 template <class quadrature, class basis, class director, class model>
 class TACSBeamElement : public TACSElement {
@@ -264,14 +289,16 @@ void TACSBeamElement<quadrature, basis, director, model>::
 
   // Compute the normal directions
   TacsScalar fn1[3*basis::NUM_NODES], fn2[3*basis::NUM_NODES];
-  // TacsBeamComputeNodeNormals<basis>(Xpts, axis, fn1, fn2);
+  TacsBeamComputeNodeNormals<basis>(Xpts, axis, fn1, fn2);
 
   // Compute the frame normal and directors at each node
   TacsScalar d1[dsize], d2[dsize], d1dot[dsize], d2dot[dsize];
-  director::template computeDirectorRates<vars_per_node, disp_offset, basis::NUM_NODES>(
-    vars, dvars, fn1, d1, d1dot);
-  director::template computeDirectorRates<vars_per_node, disp_offset, basis::NUM_NODES>(
-    vars, dvars, fn2, d2, d2dot);
+  director::template
+    computeDirectorRates<vars_per_node, disp_offset,
+                         basis::NUM_NODES>(vars, dvars, fn1, d1, d1dot);
+  director::template
+    computeDirectorRates<vars_per_node, disp_offset,
+                         basis::NUM_NODES>(vars, dvars, fn2, d2, d2dot);
 
   // Set the total number of tying points needed for this element
   TacsScalar ety[basis::NUM_TYING_POINTS];
@@ -284,26 +311,90 @@ void TACSBeamElement<quadrature, basis, director, model>::
     double pt[3];
     double weight = quadrature::getQuadraturePoint(quad_index, pt);
 
-    // Compute X, X,xi and the interpolated normal n0
-    TacsScalar X[3], Xxi[3], n1[3], n2[3], T[9];
-    basis::template interpFields<3, 3>(pt, Xpts, X);
-    basis::template interpFieldsGrad<3, 3>(pt, Xpts, Xxi);
+    // The transformation to the local beam coordinates
+    A2D::Mat3x3 T;
 
-    basis::template interpFields<3, 3>(pt, fn1, n1);
-    basis::template interpFields<3, 3>(pt, fn2, n2);
+    // Parametric location
+    A2D::Vec3 X0;
+
+    // Tangent to the beam
+    A2D::Vec3 X0Xi;
+
+    // Interpolated normal directions
+    A2D::Vec3 n1, n2;
+
+    // Derivatives of the interpolated normal directions
+    A2D::Vec3 n1xi, n2xi;
+
+    // The values of the director fields and their derivatives
+    A2D::Vec3 d01, d02, d01xi, d02xi;
+
+    // Compute X, X,xi and the interpolated normal
+    TacsScalar X[3], Xxi[3], n1[3], n2[3], T[9];
+    basis::template interpFields<3, 3>(pt, Xpts, X0.x);
+    basis::template interpFieldsGrad<3, 3>(pt, Xpts, X0xi.x);
+    basis::template interpFields<3, 3>(pt, fn1, n1.x);
+    basis::template interpFields<3, 3>(pt, fn2, n2.x);
+    basis::template interpFieldsGrad<3, 3>(pt, fn1, n1xi.x);
+    basis::template interpFieldsGrad<3, 3>(pt, fn2, n2xi.x);
+    basis::template interpFields<3, 3>(pt, d1, d01.x);
+    basis::template interpFields<3, 3>(pt, d2, d02.x);
+    basis::template interpFieldsGrad<3, 3>(pt, d1, d01xi.x);
+    basis::template interpFieldsGrad<3, 3>(pt, d2, d02xi.x);
 
     // Compute the transformation at the quadrature point
-    // transform->computeTransform(Xxi, n0, T);
+    transform->computeTransform(Xxi.x, T.A);
 
-    // // Evaluate the displacement gradient at the point
-    TacsScalar XdinvT[9], Xdinvz1T[9], Xdinvz2T[9];
-    TacsScalar u0x[9], d1x[3], d2x[3];
-    TacsScalar detXd =
-      TacsBeamComputeDispGrad<vars_per_node, basis>(pt, Xpts, vars, fn1, fn2, d1, d2,
-                                                    Xxi, n1, n2, T,
-                                                    XdinvT, Xdinvz1T, Xdinvz2T,
-                                                    u0x, d1x, d2x);
-    detXd *= weight;
+    // Compute the inverse
+    A2D::Mat3x3 Xd, Xdinv;
+    A2D::Mat3x3FromThreeVec3 assembleXd(X0xi, n1, n2, Xd);
+    A2D::Mat3x3Inverse invXd(Xd, Xdinv);
+
+    // Compute the determinant of the transform
+    A2D::Scalar detXd;
+    A2D::Mat3x3Det computedetXd(weight, Xd, detXd);
+
+    // Compute XdinvT = Xdinv * T
+    A2D::Mat3x3 XdinvT;
+    A2D::Mat3x3MatMult multXinvT(Xdinv, T, XdinvT);
+
+    // Assemble the matrix Xdz1 = [n1,xi | 0 | 0] and Xdz2 = [n2,xi | 0 | 0 ]
+    A2D::Mat3x3 Xdz1, Xdz2;
+    A2D::Mat3x3FromVec3 assembleXdz1(n1xi, Xdz1);
+    A2D::Mat3x3FromVec3 assembleXdz2(n2xi, Xdz2);
+
+    // Compute Xdinvz1T = - Xdinv * Xdz1 * Xdinv * T
+    A2D::Mat3x3 Xdinvz1T, Xdz1XdinvT;
+    A2D::Mat3x3MatMult multXdz1XdinvT(Xdz1, XdinvT, Xdz1XdinvT);
+    A2D::Mat3x3MatMult multXdinvz1T(-1.0, Xdinv, Xdz1XdinvT, Xdinvz1T);
+
+    // Compute Xdinvz2T = - Xdinv * Xdz2 * Xdinv * T
+    A2D::Mat3x3 Xdinvz2T, Xdz2XdinvT;
+    A2D::Mat3x3MatMult multXdz2XdinvT(Xdz2, XdinvT, Xdz2XdinvT);
+    A2D::Mat3x3MatMult multXdinvz2T(-1.0, Xdinv, Xdz2XdinvT, Xdinvz2T);
+
+    // Assemble u0d, u1d and u2d
+    A2D::Mat3x3 u0d, u1d, u2d;
+    A2D::Mat3x3FromThreeVec3 assembleu0d(u0xi, d1, d2, u0d);
+    A2D::Mat3x3FromVec3 assembleu1d(d1xi, u1d);
+    A2D::Mat3x3FromVec3 assembleu2d(d2xi, u2d);
+
+    // Compute u0x = T^{T} * u0d * XdinvT
+    A2D::Mat3x3 u0dXdinvT, u0x;
+    A2D::Mat3x3MatMult multu0d(u0d, XdinvT, u0dXdinvT);
+    A2D::MatTrans3x3MatMult multu0x(T, u0dXdinvT, u0x);
+
+    // Compute u1x = T^{T} * (u1d * XdinvT + u0d * XdinvzT)
+    A2D::Mat3x3 u1dXdinvT, u1x;
+    A2D::Mat3x3MatMult multu1d(u1d, XdinvT, u1dXdinvT);
+    A2D::Mat3x3MatMultAdd multu1dadd(u0d, Xdinvz1T, u1dXdinvT);
+    A2D::MatTrans3x3MatMult multu1x(T, u1dXdinvT, u1x);
+
+    // Compute u2x = T^{T} * (u2d * XdinvT + u0d * XdinvzT)
+    A2D::Mat3x3 u2dXdinvT, u2x;
+    A2D::Mat3x3MatMult multu2d(u2d, XdinvT, u2dXdinvT);
+    A2D::Mat3x3MatMultAdd multu2dadd(u0d, Xdinvz2T, u2dXdinvT);
+    A2D::MatTrans3x3MatMult multu2x(T, u2dXdinvT, u2x);
 
     // Evaluate the tying components of the strain
     TacsScalar gty[2]; // The components of the tying strain
