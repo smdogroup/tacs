@@ -52,7 +52,7 @@ class TACSBeamBasis {
       field[k] = 0.0;
     }
 
-    for ( int i = 0; i < 2; i++ ){
+    for ( int i = 0; i < order; i++ ){
       for ( int k = 0; k < m; k++ ){
         field[k] += na[i]*values[k];
       }
@@ -67,7 +67,7 @@ class TACSBeamBasis {
     double na[order];
     TacsLagrangeLobattoShapeFunction<order>(pt[0], na);
 
-    for ( int i = 0; i < 2; i++ ){
+    for ( int i = 0; i < order; i++ ){
       for ( int k = 0; k < m; k++ ){
         values[k] += na[i]*field[k];
       }
@@ -86,7 +86,7 @@ class TACSBeamBasis {
       grad[k] = 0.0;
     }
 
-    for ( int i = 0; i < 2; i++ ){
+    for ( int i = 0; i < order; i++ ){
       for ( int k = 0; k < m; k++ ){
         grad[k] += dna[i]*values[k];
       }
@@ -101,7 +101,7 @@ class TACSBeamBasis {
     double na[order], dna[order];
     TacsLagrangeLobattoShapeFuncDerivative<order>(pt[0], na, dna);
 
-    for ( int i = 0; i < 2; i++ ){
+    for ( int i = 0; i < order; i++ ){
       for ( int k = 0; k < m; k++ ){
         values[k] += dna[i]*grad[k];
       }

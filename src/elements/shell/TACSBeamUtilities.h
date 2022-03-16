@@ -2,6 +2,7 @@
 #define TACS_BEAM_UTILITIES_H
 
 #include "TACSElementAlgebra.h"
+#include "a2d.h"
 
 /*
   Compute the frame normals at each node location
@@ -13,7 +14,7 @@
 */
 template <class basis>
 void TacsBeamComputeNodeNormals( const TacsScalar Xpts[],
-                                 A2D::Vec3& axis,
+                                 const A2D::Vec3& axis,
                                  TacsScalar fn1[],
                                  TacsScalar fn2[] ){
   for ( int i = 0; i < basis::NUM_NODES; i++ ){
@@ -65,7 +66,7 @@ void TacsBeamComputeNodeNormals( const TacsScalar Xpts[],
 */
 template <class basis>
 void TacsBeamComputeNodeNormalsSens( const TacsScalar Xpts[],
-                                     A2D::Vec3& axis,
+                                     const A2D::Vec3& axis,
                                      const TacsScalar dfn1[],
                                      const TacsScalar dfn2[],
                                      TacsScalar dXpts[] ){
@@ -74,26 +75,26 @@ void TacsBeamComputeNodeNormalsSens( const TacsScalar Xpts[],
     basis::getNodePoint(i, pt);
 
     // Compute the derivative X,xi at each node
-    A2D::Vec3 X0xi;
+    A2D::ADVec3 X0xi;
     basis::template interpFieldsGrad<3, 3>(pt, Xpts, X0xi.x);
 
     // Normalize the first direction.
-    A2D::Vec3 t1;
-    A2D::Vec3Normalize normalizet1(X0xi, t1);
+    A2D::ADVec3 t1;
+    A2D::ADVec3Normalize normalizet1(X0xi, t1);
 
     // t2_dir = axis - dot(t1, axis) * t1
-    A2D::Vec3 t2_dir;
-    A2D::Scalar dot;
-    A2D::Vec3Dot dott1(t1, axis, dot);
-    A2D::Vec3Axpy axpy(-1.0, dot, t1, axis, t2_dir);
+    A2D::ADVec3 t2_dir;
+    A2D::ADScalar dot;
+    A2D::ADVec3Dot dott1(t1, axis, dot);
+    A2D::ADVec3Axpy axpy(-1.0, dot, t1, axis, t2_dir);
 
     // Compute the t2 direction
-    A2D::Vec3 t2(NULL, dfn1);
-    A2D::Vec3Normalize normalizet2(t2_dir, t2);
+    A2D::ADVec3 t2(NULL, dfn1);
+    A2D::ADVec3Normalize normalizet2(t2_dir, t2);
 
     // Compute the n2 direction
-    A2D::Vec3 t3(NULL, dfn2);
-    A2D::Vec3CrossProduct cross(t1, t2, t3);
+    A2D::ADVec3 t3(NULL, dfn2);
+    A2D::ADVec3CrossProduct cross(t1, t2, t3);
 
     cross.reverse();
     normalizet2.reverse();
@@ -103,8 +104,8 @@ void TacsBeamComputeNodeNormalsSens( const TacsScalar Xpts[],
 
     basis::template addInterpFieldsTranspose<3, 3>(pt, X0xi.xd, dXpts);
 
-    fn1 += 3;
-    fn2 += 3;
+    dfn1 += 3;
+    dfn2 += 3;
   }
 }
 

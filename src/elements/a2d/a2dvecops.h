@@ -76,12 +76,39 @@ public:
 */
 class Vec3Axpy {
 public:
-  Vec3Axpy( const Scalar& alpha, const Vec3& x, Vconst ec3& y, Vec3& v ){
+  Vec3Axpy( const Scalar& alpha, const Vec3& x, const Vec3& y, Vec3& v ){
     Vec3AXPYCore(alpha.value, x.x, y.x, v.x);
   }
   Vec3Axpy( const TacsScalar scale, const Scalar& alpha, const Vec3& x, const Vec3& y, Vec3& v ){
     Vec3AXPYCore(scale * alpha.value, x.x, y.x, v.x);
   }
+};
+
+class ADVec3VecAxpy {
+public:
+  ADVec3VecAxpy( ADScalar& alpha, ADVec3& x, const Vec3& y, ADVec3& v ) : scale(1.0), alpha(alpha), x(x), y(y), v(v) {
+    Vec3AXPYCore(alpha.value, x.x, y.x, v.x);
+  }
+  ADVec3VecAxpy( const TacsScalar scale, ADScalar& alpha, ADVec3& x, const Vec3& y, ADVec3& v ) : scale(scale), alpha(alpha), x(x), y(y), v(v) {
+    Vec3AXPYCore(scale * alpha.value, x.x, y.x, v.x);
+  }
+  void forward(){
+    v.xd[0] = scale * (alpha.valued * x.x[0] + alpha.value * x.xd[0]);
+    v.xd[1] = scale * (alpha.valued * x.x[1] + alpha.value * x.xd[1]);
+    v.xd[2] = scale * (alpha.valued * x.x[2] + alpha.value * x.xd[2]);
+  }
+  void reverse(){
+    alpha.valued += scale * Vec3DotCore(x.x, v.xd);
+    x.xd[0] += scale * alpha.value * v.xd[0];
+    x.xd[1] += scale * alpha.value * v.xd[1];
+    x.xd[2] += scale * alpha.value * v.xd[2];
+  }
+
+  const TacsScalar scale;
+  ADScalar& alpha;
+  ADVec3& x;
+  const Vec3& y;
+  ADVec3& v;
 };
 
 class ADVec3Axpy {
@@ -125,6 +152,30 @@ public:
   Vec3Dot( const TacsScalar scale, const Vec3& x, const Vec3& y, Scalar& alpha ){
     alpha.value = scale * Vec3DotCore(x.x, y.x);
   }
+};
+
+class Vec3ADVecDot {
+public:
+  Vec3ADVecDot( const Vec3& x, ADVec3& y, ADScalar& alpha ) : scale(1.0), x(x), y(y), alpha(alpha) {
+    alpha.value = Vec3DotCore(x.x, y.x);
+  }
+  Vec3ADVecDot( const TacsScalar scale, const Vec3& x, ADVec3& y, ADScalar& alpha ) : scale(scale), x(x), y(y), alpha(alpha) {
+    alpha.value = scale * Vec3DotCore(x.x, y.x);
+  }
+  void forward(){
+    alpha.valued = scale * Vec3DotCore(x.x, y.xd);
+  }
+  void reverse(){
+    TacsScalar s = scale * alpha.valued;
+    y.xd[0] += s * x.x[0];
+    y.xd[1] += s * x.x[1];
+    y.xd[2] += s * x.x[2];
+  }
+
+  const TacsScalar scale;
+  const Vec3& x;
+  ADVec3& y;
+  ADScalar& alpha;
 };
 
 class ADVec3Dot {

@@ -341,7 +341,7 @@ static inline void computeInertiaRateProduct( const TacsScalar Jr[],
   vInit:      the initial velocity
   omegaInit:  the initial angular velocity
 */
-MITC3::MITC3( TACSTimoshenkoConstitutive *_stiff,
+MITC3::MITC3( TACSBeamConstitutive *_stiff,
               TACSGibbsVector *_gravity,
               TACSGibbsVector *_vInit,
               TACSGibbsVector *_omegaInit ){

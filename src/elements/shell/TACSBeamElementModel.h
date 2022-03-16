@@ -168,10 +168,14 @@ class TACSBeamLinearModel {
     dd1x[0] = scale*dfde[2];
     dd1x[1] = 0.0;
     dd1x[2] = 0.5*scale*dfde[1];
+    dd1x[3] = dd1x[4] = dd1x[5] = 0.0;
+    dd1x[6] = dd1x[7] = dd1x[8] = 0.0;
 
     dd2x[0] = scale*dfde[3];
     dd2x[1] = -0.5*scale*dfde[1];
     dd2x[2] = 0.0;
+    dd2x[3] = dd2x[4] = dd2x[5] = 0.0;
+    dd2x[6] = dd2x[7] = dd2x[8] = 0.0;
 
     de0ty[0] = scale*dfde[4];
     de0ty[1] = scale*dfde[5];
@@ -349,20 +353,20 @@ int TacsTestBeamModelDerivatives( double dh=1e-7,
 
   // Set random values for the constitutive data and inputs
   TacsScalar Cs[TACSBeamConstitutive::NUM_TANGENT_STIFFNESS_ENTRIES];
-  TacsScalar u0x[9], d1x[3], d2x[3], e0ty[2];
+  TacsScalar u0x[9], u1x[9], u2x[9], e0ty[2];
   TacsScalar detXd;
 
   // Set random data
   TacsGenerateRandomArray(Cs, TACSBeamConstitutive::NUM_TANGENT_STIFFNESS_ENTRIES);
   TacsGenerateRandomArray(u0x, 9);
-  TacsGenerateRandomArray(d1x, 3);
-  TacsGenerateRandomArray(d2x, 3);
+  TacsGenerateRandomArray(u1x, 9);
+  TacsGenerateRandomArray(u2x, 9);
   TacsGenerateRandomArray(e0ty, 2);
   TacsGenerateRandomArray(&detXd, 1);
 
   // Compute the strain
   TacsScalar e[6];
-  model::evalStrain(u0x, d1x, d2x, e0ty, e);
+  model::evalStrain(u0x, u1x, u2x, e0ty, e);
 
   // Compute the stress
   TacsScalar s[6];
@@ -370,8 +374,8 @@ int TacsTestBeamModelDerivatives( double dh=1e-7,
 
   // Compute the derivative of the product of the stress and strain
   // with respect to u0x, u1x and e0ty
-  TacsScalar du0x[3], dd1x[3], dd2x[3], de0ty[2];
-  model::evalStrainSens(detXd, s, u0x, d1x, d2x, e0ty, du0x, dd1x, dd2x, de0ty);
+  TacsScalar du0x[9], du1x[9], du2x[9], de0ty[2];
+  model::evalStrainSens(detXd, s, u0x, u1x, u2x, e0ty, du0x, du1x, du2x, de0ty);
 
   TacsScalar f0 = 0.0;
   for ( int j = 0; j < 6; j++ ){
@@ -380,7 +384,7 @@ int TacsTestBeamModelDerivatives( double dh=1e-7,
 
   // Compute against the derivatives for the strain
   TacsScalar fdu0x[9];
-  for ( int i = 0; i < 3; i++ ){
+  for ( int i = 0; i < 9; i++ ){
     TacsScalar u0xt[9], et[6], st[6];
     memcpy(u0xt, u0x, 9*sizeof(TacsScalar));
 
@@ -389,7 +393,7 @@ int TacsTestBeamModelDerivatives( double dh=1e-7,
 #else
     u0xt[i] = u0x[i] + dh;
 #endif // TACS_USE_COMPLEX
-    model::evalStrain(u0xt, d1x, d2x, e0ty, et);
+    model::evalStrain(u0xt, u1x, u2x, e0ty, et);
     TACSBeamConstitutive::computeStress(Cs, et, st);
 
     TacsScalar f1 = 0.0;
@@ -425,17 +429,17 @@ int TacsTestBeamModelDerivatives( double dh=1e-7,
   fail = (max_err > test_fail_atol || max_rel > test_fail_rtol);
 
   // Compute against the derivatives for the strain
-  TacsScalar fdd1x[3];
-  for ( int i = 0; i < 3; i++ ){
-    TacsScalar d1xt[3], et[6], st[6];
-    memcpy(d1xt, d1x, 3*sizeof(TacsScalar));
+  TacsScalar fdu1x[9];
+  for ( int i = 0; i < 9; i++ ){
+    TacsScalar u1xt[9], et[6], st[6];
+    memcpy(u1xt, u1x, 9*sizeof(TacsScalar));
 
 #ifdef TACS_USE_COMPLEX
-    d1xt[i] = d1x[i] + TacsScalar(0.0, dh);
+    u1xt[i] = u1x[i] + TacsScalar(0.0, dh);
 #else
-    d1xt[i] = d1x[i] + dh;
+    u1xt[i] = u1x[i] + dh;
 #endif // TACS_USE_COMPLEX
-    model::evalStrain(u0x, d1xt, d2x, e0ty, et);
+    model::evalStrain(u0x, u1xt, u2x, e0ty, et);
     TACSBeamConstitutive::computeStress(Cs, et, st);
 
     TacsScalar f1 = 0.0;
@@ -444,15 +448,15 @@ int TacsTestBeamModelDerivatives( double dh=1e-7,
     }
 
 #ifdef TACS_USE_COMPLEX
-    fdd1x[i] = TacsImagPart(f1)/dh;
+    fdu1x[i] = TacsImagPart(f1)/dh;
 #else
-    fdd1x[i] = (f1 - f0)/dh;
+    fdu1x[i] = (f1 - f0)/dh;
 #endif // TACS_USE_COMPLEX
   }
 
   // Compute the error
-  max_err = TacsGetMaxError(dd1x, fdd1x, 3, &max_err_index);
-  max_rel = TacsGetMaxRelError(dd1x, fdd1x, 3, &max_rel_index);
+  max_err = TacsGetMaxError(du1x, fdu1x, 9, &max_err_index);
+  max_rel = TacsGetMaxRelError(du1x, fdu1x, 9, &max_rel_index);
 
   if (test_print_level > 0){
     fprintf(stderr, "Testing the derivative w.r.t. u1x\n");
@@ -463,24 +467,24 @@ int TacsTestBeamModelDerivatives( double dh=1e-7,
   }
   // Print the error if required
   if (test_print_level > 1){
-    TacsPrintErrorComponents(stderr, "dd1x", dd1x, fdd1x, 3);
+    TacsPrintErrorComponents(stderr, "du1x", du1x, fdu1x, 9);
   }
   if (test_print_level){ fprintf(stderr, "\n"); }
 
   fail = (max_err > test_fail_atol || max_rel > test_fail_rtol);
 
   // Compute against the derivatives for the strain
-  TacsScalar fdd2x[3];
-  for ( int i = 0; i < 3; i++ ){
-    TacsScalar d2xt[3], et[6], st[6];
-    memcpy(d2xt, d2x, 3*sizeof(TacsScalar));
+  TacsScalar fdu2x[9];
+  for ( int i = 0; i < 9; i++ ){
+    TacsScalar u2xt[9], et[6], st[6];
+    memcpy(u2xt, u2x, 9*sizeof(TacsScalar));
 
 #ifdef TACS_USE_COMPLEX
-    d2xt[i] = d2x[i] + TacsScalar(0.0, dh);
+    u2xt[i] = u2x[i] + TacsScalar(0.0, dh);
 #else
-    d2xt[i] = d2x[i] + dh;
+    u2xt[i] = u2x[i] + dh;
 #endif // TACS_USE_COMPLEX
-    model::evalStrain(u0x, d1x, d2xt, e0ty, et);
+    model::evalStrain(u0x, u1x, u2xt, e0ty, et);
     TACSBeamConstitutive::computeStress(Cs, et, st);
 
     TacsScalar f1 = 0.0;
@@ -489,15 +493,15 @@ int TacsTestBeamModelDerivatives( double dh=1e-7,
     }
 
 #ifdef TACS_USE_COMPLEX
-    fdd2x[i] = TacsImagPart(f1)/dh;
+    fdu2x[i] = TacsImagPart(f1)/dh;
 #else
-    fdd2x[i] = (f1 - f0)/dh;
+    fdu2x[i] = (f1 - f0)/dh;
 #endif // TACS_USE_COMPLEX
   }
 
   // Compute the error
-  max_err = TacsGetMaxError(dd2x, fdd2x, 3, &max_err_index);
-  max_rel = TacsGetMaxRelError(dd2x, fdd2x, 3, &max_rel_index);
+  max_err = TacsGetMaxError(du2x, fdu2x, 9, &max_err_index);
+  max_rel = TacsGetMaxRelError(du2x, fdu2x, 9, &max_rel_index);
 
   if (test_print_level > 0){
     fprintf(stderr, "Testing the derivative w.r.t. u1x\n");
@@ -508,7 +512,7 @@ int TacsTestBeamModelDerivatives( double dh=1e-7,
   }
   // Print the error if required
   if (test_print_level > 1){
-    TacsPrintErrorComponents(stderr, "dd2x", dd2x, fdd2x, 3);
+    TacsPrintErrorComponents(stderr, "du2x", du2x, fdu2x, 9);
   }
   if (test_print_level){ fprintf(stderr, "\n"); }
 
@@ -525,7 +529,7 @@ int TacsTestBeamModelDerivatives( double dh=1e-7,
 #else
     e0tyt[i] = e0ty[i] + dh;
 #endif // TACS_USE_COMPLEX
-    model::evalStrain(u0x, d1x, d2x, e0tyt, et);
+    model::evalStrain(u0x, u1x, u2x, e0tyt, et);
     TACSBeamConstitutive::computeStress(Cs, et, st);
 
     TacsScalar f1 = 0.0;
