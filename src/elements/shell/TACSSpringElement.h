@@ -34,7 +34,7 @@ class TACSSpringElement : public TACSElement {
   const char * getObjectName();
   int getVarsPerNode();
   int getNumNodes();
-  enum ElementType getElementType();
+  ElementType getElementType();
   int getDesignVarsPerNode(){ return 0; }
   int getNumQuadraturePoints(){ return 2; }
   double getQuadratureWeight( int n ){ return 0.5; }

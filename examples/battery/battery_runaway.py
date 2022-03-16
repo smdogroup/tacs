@@ -94,10 +94,7 @@ for i, t in enumerate(timeSteps):
         compIDs = FEAAssembler.selectCompIDs(include=["Battery.00"])
 
         # Define the heat-flux: apply 6000 Watts spread out over the face of the cell undergoing thermal runaway
-        # *** Note that the desired heat-flux needs to be multiplied by the
-        # thickness of the geometry for plane-stress heat-conduction problems.
-        # This is a work-around to an existing bug.
-        transientProblem.addLoadToComponents(i, compIDs, [6000.0*tplate])
+        transientProblem.addLoadToComponents(i, compIDs, [6000.0])
 
 # Define the functions of interest as maximum temperature withing 3 different batteries
 compIDs_00 = FEAAssembler.selectCompIDs(["Battery.00"])  # battery undergoing thermal runaway

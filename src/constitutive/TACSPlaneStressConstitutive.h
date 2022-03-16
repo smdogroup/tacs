@@ -64,11 +64,6 @@ class TACSPlaneStressConstitutive : public TACSConstitutive {
   TacsScalar evalSpecificHeat( int elemIndex, const double pt[],
                                const TacsScalar X[] );
 
-  // Add the derivative of the density
-  void addSpecificHeatDVSens( int elemIndex, TacsScalar scale,
-                              const double pt[], const TacsScalar X[],
-                              int dvLen, TacsScalar dfdx[] );
-
   // Evaluate the stresss
   void evalStress( int elemIndex, const double pt[], const TacsScalar X[],
                    const TacsScalar strain[], TacsScalar stress[] );

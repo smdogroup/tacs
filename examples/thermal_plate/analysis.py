@@ -40,9 +40,7 @@ comm = MPI.COMM_WORLD
 
 # Instantiate FEAAssembler
 structOptions = {
-    'printtiming':True,
-    # Specify what type of elements we want in the f5
-    'outputElement': TACS.PLANE_STRESS_ELEMENT,
+    'printtiming':True
 }
 
 bdfFile = os.path.join(os.path.dirname(__file__), 'circ-plate-dirichlet-bcs.bdf')
@@ -85,7 +83,7 @@ FEAAssembler.initialize(elemCallBack)
 
 # Setup problems
 # Create a transient problem that will represent time varying convection
-transientProb = FEAAssembler.createTransientProblem('Transient', tInit=0.0, tFinal=10.0, numSteps=100)
+transientProb = FEAAssembler.createTransientProblem('Transient', tInit=0.0, tFinal=2000.0, numSteps=100)
 # Create a static problem that will represent the steady state solution
 staticProb = FEAAssembler.createStaticProblem(name='SteadyState')
 # Add both problems to a list

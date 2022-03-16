@@ -37,7 +37,7 @@ class TACSRBE3 : public TACSElement {
   int getVarsPerNode();
   int getNumNodes();
   int numExtras();
-  enum ElementType getElementType();
+  ElementType getElementType();
   int getDesignVarsPerNode(){ return 0; }
   int getNumQuadraturePoints(){ return 0; }
   double getQuadratureWeight( int n ){ return 0.0; }

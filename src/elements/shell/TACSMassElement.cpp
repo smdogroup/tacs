@@ -33,7 +33,7 @@ int TACSMassElement::getVarsPerNode() { return NUM_DISPS; }
 
 int TACSMassElement::getNumNodes() { return NUM_NODES; }
 
-enum ElementType TACSMassElement::getElementType(){ return TACS_MASS_ELEMENT; }
+ElementType TACSMassElement::getElementType(){ return TACS_MASS_ELEMENT; }
 
 /*
   The element name, variable, stress and strain names.

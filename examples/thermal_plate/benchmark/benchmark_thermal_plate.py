@@ -12,12 +12,12 @@ example_path = os.path.join(os.path.dirname(__file__), '..')
 sys.path.append(example_path)
 
 # Reference values for eval functions
-FUNC_REF = {'SteadyState_avg_temp': 69.88016093991516,
+FUNC_REF = {'SteadyState_avg_temp': 69.88016093991513,
             'SteadyState_ks_temp': 98.74014374789108,
             'SteadyState_mass': 39.20272476980967,
-            'Transient_avg_temp': 397.96589286752857,
-            'Transient_ks_temp': 97.83004117447352,
-            'Transient_mass': 392.0272476980816}
+            'Transient_avg_temp': 79593.17857390088,
+            'Transient_ks_temp': 97.88302435005559,
+            'Transient_mass': 78405.44953961598}
 
 class ExampleBenchmark(unittest.TestCase):
 
