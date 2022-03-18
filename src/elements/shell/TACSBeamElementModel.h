@@ -200,7 +200,6 @@ class TACSBeamLinearModel {
   }
 };
 
-/*
 class TACSBeamNonlinearModel {
  public:
 
