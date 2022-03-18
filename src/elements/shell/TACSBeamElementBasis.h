@@ -348,9 +348,6 @@ class TACSBeamBasis {
         gty[field] += N0[0]*ety[0];
       }
     }
-
-    // Set the last tying strain entry to zero
-    gty[5] = 0.0;
   }
 
   /**

@@ -95,64 +95,81 @@ namespace A2D {
     A[8] += scale * x[2] * y[2];
   }
 
-  inline void Mat3x3VecProductCore( const TacsScalar A[], const TacsScalar x[],
-                                    TacsScalar y[] ){
+  inline void Mat3x3VecMultCore( const TacsScalar A[],
+                                 const TacsScalar x[],
+                                 TacsScalar y[] ){
     y[0] = A[0] * x[0] + A[1] * x[1] + A[2] * x[2];
     y[1] = A[3] * x[0] + A[4] * x[1] + A[5] * x[2];
     y[2] = A[6] * x[0] + A[7] * x[1] + A[8] * x[2];
   }
 
-  inline void Mat3x3VecProductScaleCore( const TacsScalar scale,
-                                         const TacsScalar A[], const TacsScalar x[],
-                                         TacsScalar y[] ){
+  inline void Mat3x3VecMultScaleCore( const TacsScalar scale,
+                                      const TacsScalar A[],
+                                      const TacsScalar x[],
+                                      TacsScalar y[] ){
     y[0] = scale * (A[0] * x[0] + A[1] * x[1] + A[2] * x[2]);
     y[1] = scale * (A[3] * x[0] + A[4] * x[1] + A[5] * x[2]);
     y[2] = scale * (A[6] * x[0] + A[7] * x[1] + A[8] * x[2]);
   }
 
-  inline void Mat3x3VecProductAddCore( const TacsScalar A[], const TacsScalar x[],
-                                       TacsScalar y[] ){
+  inline void Mat3x3VecMultAddCore( const TacsScalar A[],
+                                    const TacsScalar x[],
+                                    TacsScalar y[] ){
     y[0] += A[0] * x[0] + A[1] * x[1] + A[2] * x[2];
     y[1] += A[3] * x[0] + A[4] * x[1] + A[5] * x[2];
     y[2] += A[6] * x[0] + A[7] * x[1] + A[8] * x[2];
   }
 
-  inline void Mat3x3VecProductAddScaleCore( const TacsScalar scale,
-                                            const TacsScalar A[], const TacsScalar x[],
-                                            TacsScalar y[] ){
+  inline void Mat3x3VecMultAddScaleCore( const TacsScalar scale,
+                                         const TacsScalar A[],
+                                         const TacsScalar x[],
+                                         TacsScalar y[] ){
     y[0] += scale * (A[0] * x[0] + A[1] * x[1] + A[2] * x[2]);
     y[1] += scale * (A[3] * x[0] + A[4] * x[1] + A[5] * x[2]);
     y[2] += scale * (A[6] * x[0] + A[7] * x[1] + A[8] * x[2]);
   }
 
-  inline void MatTrans3x3VecProductCore( const TacsScalar A[], const TacsScalar x[],
-                                         TacsScalar y[] ){
+  inline void MatTrans3x3VecMultCore( const TacsScalar A[],
+                                      const TacsScalar x[],
+                                      TacsScalar y[] ){
     y[0] = A[0] * x[0] + A[3] * x[1] + A[6] * x[2];
     y[1] = A[1] * x[0] + A[4] * x[1] + A[7] * x[2];
     y[2] = A[2] * x[0] + A[5] * x[1] + A[8] * x[2];
   }
 
-  inline void MatTrans3x3VecProductScaleCore( const TacsScalar scale,
-                                              const TacsScalar A[], const TacsScalar x[],
-                                              TacsScalar y[] ){
+  inline void MatTrans3x3VecMultScaleCore( const TacsScalar scale,
+                                           const TacsScalar A[],
+                                           const TacsScalar x[],
+                                           TacsScalar y[] ){
     y[0] = scale * (A[0] * x[0] + A[3] * x[1] + A[6] * x[2]);
     y[1] = scale * (A[1] * x[0] + A[4] * x[1] + A[7] * x[2]);
     y[2] = scale * (A[2] * x[0] + A[5] * x[1] + A[8] * x[2]);
   }
 
-  inline void MatTrans3x3VecProductAddCore( const TacsScalar A[], const TacsScalar x[],
-                                            TacsScalar y[] ){
+  inline void MatTrans3x3VecMultAddCore( const TacsScalar A[],
+                                         const TacsScalar x[],
+                                         TacsScalar y[] ){
     y[0] += A[0] * x[0] + A[3] * x[1] + A[6] * x[2];
     y[1] += A[1] * x[0] + A[4] * x[1] + A[7] * x[2];
     y[2] += A[2] * x[0] + A[5] * x[1] + A[8] * x[2];
   }
 
-  inline void MatTrans3x3VecProductAddScaleCore( const TacsScalar scale,
-                                                 const TacsScalar A[], const TacsScalar x[],
-                                                 TacsScalar y[] ){
+  inline void MatTrans3x3VecMultAddScaleCore( const TacsScalar scale,
+                                              const TacsScalar A[],
+                                              const TacsScalar x[],
+                                              TacsScalar y[] ){
     y[0] += scale * (A[0] * x[0] + A[3] * x[1] + A[6] * x[2]);
     y[1] += scale * (A[1] * x[0] + A[4] * x[1] + A[7] * x[2]);
     y[2] += scale * (A[2] * x[0] + A[5] * x[1] + A[8] * x[2]);
+  }
+
+  inline TacsScalar Mat3x3InnerProductCore( const TacsScalar A[],
+                                            const TacsScalar x[],
+                                            const TacsScalar y[] ){
+    return
+      x[0] * (A[0] * y[0] + A[1] * y[1] + A[2] * y[2]) +
+      x[1] * (A[3] * y[0] + A[4] * y[1] + A[5] * y[2]) +
+      x[2] * (A[6] * y[0] + A[7] * y[1] + A[8] * y[2]);
   }
 
 } // namespace AD

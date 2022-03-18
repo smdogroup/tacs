@@ -80,7 +80,7 @@ class TACSBeamRefAxisTransform : public TACSBeamTransform {
     A2D::ADVec3 t2_dir;
     A2D::ADScalar dot;
     A2D::Vec3ADVecDot dott1(axis, t1, dot);
-    A2D::ADVec3VecAxpy axpy(-1.0, dot, t1, axis, t2_dir);
+    A2D::ADVec3VecADScalarAxpy axpy(-1.0, dot, t1, axis, t2_dir);
 
     // Compute the t2 direction
     A2D::ADVec3 t2;
@@ -491,20 +491,20 @@ void TACSBeamElement<quadrature, basis, director, model>::
 
     // Compute s0, sz1 and sz2
     A2D::Scalar s0, sz1, sz2;
-    A2D::Vec3 e1({1.0, 0.0, 0.0});
-    A2D::Mat3x3InnerProduct inners0(XdinvT, e1, e1, s0);
-    A2D::Mat3x3InnerProduct innersz1(Xdinv, e1, n1xi, sz1);
-    A2D::Mat3x3InnerProduct innersz1(Xdinv, e1, n2xi, sz2);
+    A2D::Vec3 e1(1.0, 0.0, 0.0);
+    A2D::Mat3x3VecVecInnerProduct inners0(XdinvT, e1, e1, s0);
+    A2D::Mat3x3VecVecInnerProduct innersz1(Xdinv, e1, n1xi, sz1);
+    A2D::Mat3x3VecVecInnerProduct innersz2(Xdinv, e1, n2xi, sz2);
 
     // Compute d1x = s0 * T^{T} * (d1xi - sz1 * u0xi)
     A2D::Vec3 d1t, d1x;
-    A2D::Vec3Axpy axpyd1t(-1.0, sz1, u0xi, d1xi, d1t);
-    A2D::MatTrans3x3MultScale matmult2dx(s0, T, d1t, d1x);
+    A2D::Vec3Axpy axpyd1t(-1.0, sz1, u0xi, d01xi, d1t);
+    A2D::MatTrans3x3VecMultScale matmultd1x(s0, T, d1t, d1x);
 
     // Compute d2x = s0 * T^{T} * (d2xi - sz2 * u0xi)
     A2D::Vec3 d2t, d2x;
-    A2D::Vec3Axpy axpyd2t(-1.0, sz2, u0xi, d2xi, d2t);
-    A2D::MatTrans3x3MultScale matmultd2x(s0, T, d2t, d2x);
+    A2D::Vec3Axpy axpyd2t(-1.0, sz2, u0xi, d02xi, d2t);
+    A2D::MatTrans3x3VecMultScale matmultd2x(s0, T, d2t, d2x);
 
     // Evaluate the tying components of the strain
     TacsScalar gty[2]; // The components of the tying strain
@@ -517,7 +517,7 @@ void TACSBeamElement<quadrature, basis, director, model>::
 
     // Compute the set of strain components
     TacsScalar e[6]; // The components of the strain
-    model::evalStrain(u0x.A, u1x.A, u2x.A, e0ty, e);
+    model::evalStrain(u0x.A, d1x.x, d2x.x, e0ty, e);
 
     // Compute the corresponding stresses
     TacsScalar s[6];
@@ -625,43 +625,31 @@ void TACSBeamElement<quadrature, basis, director, model>::
     A2D::Mat3x3 XdinvT;
     A2D::Mat3x3MatMult multXinvT(Xdinv, T, XdinvT);
 
-    // Assemble the matrix Xdz1 = [n1,xi | 0 | 0] and Xdz2 = [n2,xi | 0 | 0 ]
-    A2D::Mat3x3 Xdz1, Xdz2;
-    A2D::Mat3x3FromVec3 assembleXdz1(n1xi, Xdz1);
-    A2D::Mat3x3FromVec3 assembleXdz2(n2xi, Xdz2);
-
-    // Compute Xdinvz1T = - Xdinv * Xdz1 * Xdinv * T
-    A2D::Mat3x3 Xdinvz1T, Xdz1XdinvT;
-    A2D::Mat3x3MatMult multXdz1XdinvT(Xdz1, XdinvT, Xdz1XdinvT);
-    A2D::Mat3x3MatMult multXdinvz1T(-1.0, Xdinv, Xdz1XdinvT, Xdinvz1T);
-
-    // Compute Xdinvz2T = - Xdinv * Xdz2 * Xdinv * T
-    A2D::Mat3x3 Xdinvz2T, Xdz2XdinvT;
-    A2D::Mat3x3MatMult multXdz2XdinvT(Xdz2, XdinvT, Xdz2XdinvT);
-    A2D::Mat3x3MatMult multXdinvz2T(-1.0, Xdinv, Xdz2XdinvT, Xdinvz2T);
-
-    // Assemble u0d, u1d and u2d
-    A2D::ADMat3x3 u0d, u1d, u2d;
+    // Assemble u0d
+    A2D::ADMat3x3 u0d;
     A2D::ADMat3x3FromThreeADVec3 assembleu0d(u0xi, d01, d02, u0d);
-    A2D::ADMat3x3FromADVec3 assembleu1d(d01xi, u1d);
-    A2D::ADMat3x3FromADVec3 assembleu2d(d02xi, u2d);
 
     // Compute u0x = T^{T} * u0d * XdinvT
     A2D::ADMat3x3 u0dXdinvT, u0x;
     A2D::ADMat3x3MatMult multu0d(u0d, XdinvT, u0dXdinvT);
     A2D::MatTrans3x3ADMatMult multu0x(T, u0dXdinvT, u0x);
 
-    // Compute u1x = T^{T} * (u1d * XdinvT + u0d * XdinvzT)
-    A2D::ADMat3x3 u1dXdinvT, u1x;
-    A2D::ADMat3x3MatMult multu1d(u1d, XdinvT, u1dXdinvT);
-    A2D::ADMat3x3MatMultAdd multu1dadd(u0d, Xdinvz1T, u1dXdinvT);
-    A2D::MatTrans3x3ADMatMult multu1x(T, u1dXdinvT, u1x);
+    // Compute s0, sz1 and sz2
+    A2D::Scalar s0, sz1, sz2;
+    A2D::Vec3 e1(1.0, 0.0, 0.0);
+    A2D::Mat3x3VecVecInnerProduct inners0(XdinvT, e1, e1, s0);
+    A2D::Mat3x3VecVecInnerProduct innersz1(Xdinv, e1, n1xi, sz1);
+    A2D::Mat3x3VecVecInnerProduct innersz2(Xdinv, e1, n2xi, sz2);
 
-    // Compute u2x = T^{T} * (u2d * XdinvT + u0d * XdinvzT)
-    A2D::ADMat3x3 u2dXdinvT, u2x;
-    A2D::ADMat3x3MatMult multu2d(u2d, XdinvT, u2dXdinvT);
-    A2D::ADMat3x3MatMultAdd multu2dadd(u0d, Xdinvz2T, u2dXdinvT);
-    A2D::MatTrans3x3ADMatMult multu2x(T, u2dXdinvT, u2x);
+    // Compute d1x = s0 * T^{T} * (d1xi - sz1 * u0xi)
+    A2D::ADVec3 d1t, d1x;
+    A2D::ADVec3ADVecScalarAxpy axpyd1t(-1.0, sz1, u0xi, d01xi, d1t);
+    A2D::MatTrans3x3ADVecMultScale matmultd1x(s0, T, d1t, d1x);
+
+    // Compute d2x = s0 * T^{T} * (d2xi - sz2 * u0xi)
+    A2D::ADVec3 d2t, d2x;
+    A2D::ADVec3ADVecScalarAxpy axpyd2t(-1.0, sz2, u0xi, d02xi, d2t);
+    A2D::MatTrans3x3ADVecMultScale matmultd2x(s0, T, d2t, d2x);
 
     // Evaluate the tying components of the strain
     TacsScalar gty[2]; // The components of the tying strain
@@ -674,27 +662,22 @@ void TACSBeamElement<quadrature, basis, director, model>::
 
     // Evaluate the strain
     TacsScalar e[6];
-    model::evalStrain(u0x.A, u1x.A, u2x.A, e0ty, e);
+    model::evalStrain(u0x.A, d1x.x, d2x.x, e0ty, e);
 
     // Compute the corresponding stresses
     TacsScalar s[6];
     con->evalStress(elemIndex, pt, X0.x, e, s);
 
     // Evaluate the strain and strain derivatives from the
-    model::evalStrainSens(detXd.value, s, u0x.A, u1x.A, u2x.A, e0ty,
-                          u0x.Ad, u1x.Ad, u2x.Ad, de0ty);
+    model::evalStrainSens(detXd.value, s, u0x.A, d1x.x, d2x.x, e0ty,
+                          u0x.Ad, d1x.xd, d2x.xd, de0ty);
 
-    // Reverse the operations for the derivative w.r.t. state variables
-    multu2x.reverse();
-    multu2dadd.reverse();
-    multu2d.reverse();
-    multu1x.reverse();
-    multu1dadd.reverse();
-    multu1d.reverse();
+    matmultd2x.reverse();
+    axpyd2t.reverse();
+    matmultd1x.reverse();
+    axpyd1t.reverse();
     multu0x.reverse();
     multu0d.reverse();
-    assembleu2d.reverse();
-    assembleu1d.reverse();
     assembleu0d.reverse();
 
     // Add the residual contributions back to the element
