@@ -94,7 +94,14 @@ class TACSLinearizedRotation {
   }
 
   /*
-    Add the
+    Add the Jacobian of the rotation matrix to the output
+
+    @param alpha Scalar coefficient for the Jacobian matrix
+    @param vars The variable values
+    @param dC The derivative of the functional w.r.t. C
+    @param d2C The second derivatives of the functional w.r.t. C
+    @param res The residual
+    @param mat The Jacobian matrix
   */
   template <int vars_per_node, int offset, int num_nodes>
   static void addRotationMatJacobian( const TacsScalar alpha,
@@ -484,6 +491,40 @@ class TACSLinearizedRotation {
     }
   }
 
+  /*
+    Add the director contributions to the derivative of the normal
+  */
+  template <int vars_per_node, int offset, int num_nodes>
+  static void addDirectorRefNormalSens( const TacsScalar vars[],
+                                        const TacsScalar dvars[],
+                                        const TacsScalar t[],
+                                        const TacsScalar dd[],
+                                        const TacsScalar ddotd[],
+                                        TacsScalar dt[],
+                                        TacsScalar varsd[],
+                                        TacsScalar dvarsd[] ){
+
+    if (dt){
+      const TacsScalar *q = &vars[offset];
+      const TacsScalar *qdot = &dvars[offset];
+
+      for ( int i = 0; i < num_nodes; i++ ){
+        crossProductAdd(-1.0, q, dd, dt);
+        crossProductAdd(-1.0, q, ddotd, dt);
+
+        t += 3;
+        dd += 3;
+        dt += 3;
+        ddotd += 3;
+
+        q += vars_per_node;
+        qdot += vars_per_node;
+      }
+    }
+    // if (varsd){}
+    // if (dvarsd){}
+  }
+
   static TacsScalar evalDrillStrain( const TacsScalar u0x[],
                                      const TacsScalar Ct[] ){
     // Compute the rotational penalty
@@ -650,7 +691,14 @@ class TACSQuadraticRotation {
   }
 
   /*
-    Add the
+    Add the Jacobian of the rotation matrix to the output
+
+    @param alpha Scalar coefficient for the Jacobian matrix
+    @param vars The variable values
+    @param dC The derivative of the functional w.r.t. C
+    @param d2C The second derivatives of the functional w.r.t. C
+    @param res The residual
+    @param mat The Jacobian matrix
   */
   template <int vars_per_node, int offset, int num_nodes>
   static void addRotationMatJacobian( const TacsScalar alpha,
@@ -1435,6 +1483,16 @@ class TACSQuaternionRotation {
     }
   }
 
+  /*
+    Add the Jacobian of the rotation matrix to the output
+
+    @param alpha Scalar coefficient for the Jacobian matrix
+    @param vars The variable values
+    @param dC The derivative of the functional w.r.t. C
+    @param d2C The second derivatives of the functional w.r.t. C
+    @param res The residual
+    @param mat The Jacobian matrix
+  */
   template <int vars_per_node, int offset, int num_nodes>
   static void addRotationMatJacobian( const TacsScalar alpha,
                                       const TacsScalar vars[],

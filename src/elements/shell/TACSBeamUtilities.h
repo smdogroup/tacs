@@ -32,7 +32,7 @@ void TacsBeamComputeNodeNormals( const TacsScalar Xpts[],
     // t2_dir = axis - dot(t1, axis) * t1
     A2D::Vec3 t2_dir;
     A2D::Scalar dot;
-    A2D::Vec3Dot dott1(t1, axis, dot);
+    A2D::Vec3Dot dott1(axis, t1, dot);
     A2D::Vec3Axpy axpy(-1.0, dot, t1, axis, t2_dir);
 
     // Compute the t2 direction
@@ -65,11 +65,11 @@ void TacsBeamComputeNodeNormals( const TacsScalar Xpts[],
   @param fn2 The second normal direction
 */
 template <class basis>
-void TacsBeamComputeNodeNormalsSens( const TacsScalar Xpts[],
-                                     const A2D::Vec3& axis,
-                                     const TacsScalar dfn1[],
-                                     const TacsScalar dfn2[],
-                                     TacsScalar dXpts[] ){
+void TacsBeamAddNodeNormalsSens( const TacsScalar Xpts[],
+                                 const A2D::Vec3& axis,
+                                 const TacsScalar dfn1[],
+                                 const TacsScalar dfn2[],
+                                 TacsScalar dXpts[] ){
   for ( int i = 0; i < basis::NUM_NODES; i++ ){
     double pt[2];
     basis::getNodePoint(i, pt);
@@ -85,8 +85,8 @@ void TacsBeamComputeNodeNormalsSens( const TacsScalar Xpts[],
     // t2_dir = axis - dot(t1, axis) * t1
     A2D::ADVec3 t2_dir;
     A2D::ADScalar dot;
-    A2D::ADVec3Dot dott1(t1, axis, dot);
-    A2D::ADVec3Axpy axpy(-1.0, dot, t1, axis, t2_dir);
+    A2D::Vec3ADVecDot dott1(axis, t1, dot);
+    A2D::ADVec3VecADScalarAxpy axpy(-1.0, dot, t1, axis, t2_dir);
 
     // Compute the t2 direction
     A2D::ADVec3 t2(NULL, dfn1);
@@ -102,7 +102,7 @@ void TacsBeamComputeNodeNormalsSens( const TacsScalar Xpts[],
     dott1.reverse();
     normalizet1.reverse();
 
-    basis::template addInterpFieldsTranspose<3, 3>(pt, X0xi.xd, dXpts);
+    basis::template addInterpFieldsGradTranspose<3, 3>(pt, X0xi.xd, dXpts);
 
     dfn1 += 3;
     dfn2 += 3;

@@ -150,6 +150,45 @@ class TACSBeamLinearModel {
     e[5] = e0ty[1];
   }
 
+  static inline void evalStrainDeriv( const TacsScalar u0x[],
+                                      const TacsScalar d1x[],
+                                      const TacsScalar d2x[],
+                                      const TacsScalar e0ty[],
+                                      const TacsScalar u0xd[],
+                                      const TacsScalar d1xd[],
+                                      const TacsScalar d2xd[],
+                                      const TacsScalar e0tyd[],
+                                      TacsScalar e[],
+                                      TacsScalar ed[] ){
+    // Axial strain
+    e[0] = u0x[0];
+
+    // Torsional component of the strain
+    e[1] = 0.5*(d1x[2] - d2x[1]);
+
+    // Bending components of the strain
+    e[2] = d1x[0];
+    e[3] = d2x[0];
+
+    // Add the tying shear strain components
+    e[4] = e0ty[0];
+    e[5] = e0ty[1];
+
+    // Axial strain
+    ed[0] = u0xd[0];
+
+    // Torsional component of the strain
+    ed[1] = 0.5*(d1xd[2] - d2xd[1]);
+
+    // Bending components of the strain
+    ed[2] = d1xd[0];
+    ed[3] = d2xd[0];
+
+    // Add the tying shear strain components
+    ed[4] = e0tyd[0];
+    ed[5] = e0tyd[1];
+  }
+
   static inline void evalStrainSens( const TacsScalar scale,
                                      const TacsScalar dfde[],
                                      const TacsScalar u0x[],

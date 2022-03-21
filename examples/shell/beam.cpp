@@ -59,6 +59,12 @@ int main( int argc, char *argv[] ){
   // will pass this test - for instance the thermal beam elements.
   TacsTestElementResidual(beam, elemIndex, time, Xpts, vars, dvars, ddvars);
 
+  // Test the quantity derivative implementation
+  TacsTestElementQuantityXptSens(beam, elemIndex, TACS_FAILURE_INDEX,
+                                 time, Xpts, vars, dvars, ddvars);
+
+  TacsTestAdjResXptProduct(beam, elemIndex, time, Xpts, vars, dvars, ddvars);
+
   beam->decref();
 
   MPI_Finalize();

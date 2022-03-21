@@ -736,8 +736,9 @@ void TACSShellElement<quadrature, basis, director, model>::
   TacsScalar etn[num_nodes], etnd[num_nodes];
   TacsScalar XdinvTn[9*num_nodes], Tn[9*num_nodes];
   TacsScalar u0xn[9*num_nodes], Ctn[csize];
-  TacsShellComputeDrillStrainDeriv<vars_per_node, offset, basis, director, model>(
-    transform, Xdn, fn, vars, psi, XdinvTn, Tn, u0xn, Ctn, etn, etnd);
+  TacsShellComputeDrillStrainDeriv<vars_per_node, offset, basis, director,
+                                   model>(transform, Xdn, fn, vars, psi,
+                                          XdinvTn, Tn, u0xn, Ctn, etn, etnd);
 
   // Compute the director rates and their derivatives
   TacsScalar d[dsize], ddot[dsize], dddot[dsize], dd[dsize];
