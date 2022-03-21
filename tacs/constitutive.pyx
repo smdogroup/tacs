@@ -664,13 +664,13 @@ cdef class LamParamShellConstitutive(ShellConstitutive):
         self.ptr = self.cptr
         self.ptr.incref()
 
-cdef class TimoshenkoConstitutive(Constitutive):
+cdef class BeamConstitutive(Constitutive):
     def __cinit__(self, rhoA, rhoIy, rhoIz, rhoIyz,
-                      EA, GJ, EIy, EIz, kGAy, kGAz,
-                      np.ndarray[TacsScalar, ndim=1, mode='c'] axis):
-        self.cptr = new TACSTimoshenkoConstitutive(rhoA, rhoIy, rhoIz, rhoIyz,
-                                                  EA, GJ, EIy, EIz, kGAy, kGAz,
-                                                  <TacsScalar*>axis.data)
+                  EA, GJ, EIy, EIz, kGAy, kGAz,
+                  np.ndarray[TacsScalar, ndim=1, mode='c'] axis):
+        self.cptr = new TACSBeamConstitutive(rhoA, rhoIy, rhoIz, rhoIyz,
+                                             EA, GJ, EIy, EIz, kGAy, kGAz,
+                                             <TacsScalar*>axis.data)
         self.ptr = self.cptr
         self.ptr.incref()
 

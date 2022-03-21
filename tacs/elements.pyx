@@ -1140,11 +1140,11 @@ cdef class MassElement(Element):
 #         self.ptr.incref()
 
 # cdef class MITCBeam(Element):
-#     def __cinit__(self, TimoshenkoConstitutive stiff,
+#     def __cinit__(self, BeamConstitutive stiff,
 #                   GibbsVector gravity=None,
 #                   GibbsVector vInit=None,
 #                   GibbsVector omegaInit=None):
-#         cdef TACSTimoshenkoConstitutive *con = _dynamicTimoshenkoConstitutive(stiff.ptr)
+#         cdef TACSBeamConstitutive *con = _dynamicBeamConstitutive(stiff.ptr)
 #         if omegaInit is not None:
 #             self.ptr = new MITC3(con, gravity.ptr,
 #                                  vInit.ptr, omegaInit.ptr)

@@ -112,14 +112,14 @@ cdef extern from "TACSLamParamShellConstitutive.h":
                                       TacsScalar, TacsScalar, TacsScalar,
                                       TacsScalar, TacsScalar, int, int, TacsScalar, TacsScalar)
 
-cdef extern from "TACSTimoshenkoConstitutive.h":
-    cdef cppclass TACSTimoshenkoConstitutive(TACSConstitutive):
-        TACSTimoshenkoConstitutive(TacsScalar, TacsScalar, TacsScalar, TacsScalar,
-                                   TacsScalar, TacsScalar, TacsScalar, TacsScalar,
-                                   TacsScalar, TacsScalar, const TacsScalar*)
+cdef extern from "TACSBeamConstitutive.h":
+    cdef cppclass TACSBeamConstitutive(TACSConstitutive):
+        TACSBeamConstitutive(TacsScalar, TacsScalar, TacsScalar, TacsScalar,
+                             TacsScalar, TacsScalar, TacsScalar, TacsScalar,
+                             TacsScalar, TacsScalar, const TacsScalar*)
 
-cdef class TimoshenkoConstitutive(Constitutive):
-    cdef TACSTimoshenkoConstitutive *cptr
+cdef class BeamConstitutive(Constitutive):
+    cdef TACSBeamConstitutive *cptr
 
 cdef extern from "TACSGeneralMassConstitutive.h":
     cdef cppclass TACSGeneralMassConstitutive(TACSConstitutive):
@@ -145,7 +145,7 @@ cdef extern from "TACSDOFSpringConstitutive.h":
 
 # Special functions required for converting pointers
 cdef extern from "":
-    TACSTimoshenkoConstitutive* _dynamicTimoshenkoConstitutive"dynamic_cast<TACSTimoshenkoConstitutive*>"(TACSConstitutive*)
+    TACSBeamConstitutive* _dynamicBeamConstitutive"dynamic_cast<TACSBeamConstitutive*>"(TACSConstitutive*)
 
 cdef extern from "TACSConstitutiveVerification.h":
     int TacsTestConstitutiveDensity(TACSConstitutive*, int, const double*, const TacsScalar*, int,

@@ -306,7 +306,7 @@ cdef extern from "TACSMassElement.h":
 
 cdef extern from  "MITC3.h":
     cdef cppclass MITC3(TACSElement):
-        MITC3(TACSTimoshenkoConstitutive *_stiff,
+        MITC3(TACSBeamConstitutive *_stiff,
               TACSGibbsVector *_gravity,
               TACSGibbsVector *_vInit,
               TACSGibbsVector *_omegaInit)
