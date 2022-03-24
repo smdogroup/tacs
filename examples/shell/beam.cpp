@@ -1,5 +1,5 @@
 #include "TACSElementVerification.h"
-#include "TACSBeamConstitutive.h"
+#include "TACSBasicBeamConstitutive.h"
 #include "TACSBeamElement.h"
 #include "TACSShellElementDefs.h"
 
@@ -26,10 +26,10 @@ int main( int argc, char *argv[] ){
   TACSBeamRefAxisTransform *transform = new TACSBeamRefAxisTransform(axis);
   transform->incref();
 
-  TACSBeamConstitutive *stiff =
-    new TACSBeamConstitutive(1.0, 1.0, 1.0, 1.0,
-                             0.23, 0.3251, 1.43,
-                             0.47, 0.71, 1.93, axis);
+  TACSBasicBeamConstitutive *stiff =
+    new TACSBasicBeamConstitutive(1.0, 1.0, 1.0, 1.0,
+                                  0.23, 0.3251, 1.43,
+                                  0.47, 0.71, 1.93);
 
 
   // TACSElement *beam = new TACSQuadBeam(transform, stiff);

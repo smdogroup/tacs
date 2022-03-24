@@ -26,98 +26,46 @@ class TACSBeamConstitutive : public TACSConstitutive {
   static const int NUM_STRESSES = 6;
   static const int NUM_TANGENT_STIFFNESS_ENTRIES = 21;
 
-  TACSBeamConstitutive( const TacsScalar _axis[],
-                        TacsScalar EA,
-                        TacsScalar EI22, TacsScalar EI33, TacsScalar EI23,
-                        TacsScalar GJ,
-                        TacsScalar kG22, TacsScalar kG33, TacsScalar kG23,
-                        TacsScalar m00,
-                        TacsScalar m11, TacsScalar m22, TacsScalar m33,
-                        TacsScalar xm2, TacsScalar xm3,
-                        TacsScalar xc2, TacsScalar xc3,
-                        TacsScalar xk2, TacsScalar xk3,
-                        TacsScalar muS );
-  TACSBeamConstitutive( TacsScalar rhoA, TacsScalar rhoIy,
-                        TacsScalar rhoIz, TacsScalar rhoIyz,
-                        TacsScalar EA, TacsScalar GJ,
-                        TacsScalar EIy, TacsScalar EIz,
-                        TacsScalar kGAy, TacsScalar kGAz,
-                        const TacsScalar axis[] );
-  TACSBeamConstitutive( const TacsScalar rho[],
-                        const TacsScalar C[],
-                        const TacsScalar axis[] );
-  virtual ~TACSBeamConstitutive();
+  TACSBeamConstitutive(){}
 
   /**
-     Set the mass moments, stiffness matrix and reference axis into
-     the constitutive object
+    Get the cross-sectional mass per unit area and the second moments
+    of mass for the cross section
 
-     Note that a null argument is ignored on input.
+    moments = [rho * A, Iz1z1, Iz2z2, Iz1z2 ]
 
-     @param _rho The mass moments about the axis
-     @param _C The stiffness matrix
-     @param _axis The reference axis used to compute the stiffness
+    @param elemIndex The local element index
+    @param pt The parametric location
+    @param X The point location
+    @return The moments of the mass
   */
-  void setProperties( const TacsScalar _rho[], const TacsScalar _C[],
-                      const TacsScalar _axis[] );
-
+  virtual void evalMassMoments( int elemIndex,
+                                const double pt[],
+                                const TacsScalar X[],
+                                TacsScalar moments[] ) = 0;
 
   /**
-     Get the mass moments, stiffness matrix and reference axis into
-     the constitutive object
+    Add the derivative of the pointwise mass times the given scalar
 
-     Note that a null argument is ignored.
-
-     @param _rho The mass moments about the axis
-     @param _C The stiffness matrix
-     @param _axis The reference axis used to compute the stiffness
+    @param elemIndex The local element index
+    @param pt The parametric location
+    @param X The point location
+    @param scale Scale factor for the moments
+    @param dvLen the length of the sensitivity array
+    @param dfdx The sensitivity array
   */
-  void getProperties( TacsScalar _rho[], TacsScalar _C[],
-                      TacsScalar _axis[] );
+  virtual void addMassMomentsDVSens( int elemIndex,
+                                     const double pt[],
+                                     const TacsScalar X[],
+                                     const TacsScalar scale[],
+                                     int dvLen, TacsScalar dfdx[] ){}
 
-  /**
-    Get the reference axis for the beam.
-
-    This reference axis defines the direction of the stiffest bending
-    component of the beam.
-
-    @return Constant pointer to the three axis components
-  */
-  const TacsScalar *getRefAxis(){ return axis; }
-
-  /**
-    Get the mass moments of the beam
-
-    The mass moments consist of the mass per unit area and the
-  */
-  virtual void getMassMoments( int elemIndex, const double pt[], TacsScalar moments[] ){
-    moments[0] = rho[0];
-    moments[1] = rho[1];
-    moments[2] = rho[2];
-    moments[3] = rho[3];
+  // Get the number of stress components
+  int getNumStresses(){
+    return NUM_STRESSES;
   }
 
-  virtual void addMassMomentsDVSens( int elemIndex, TacsScalar scale,
-                                     const double pt[], const TacsScalar psi[],
-                                     int dvLen, TacsScalar dfdx[] ){}
-  
-  // Get the number of stress components
-  int getNumStresses();
-
-  // Evaluate material properties
-  TacsScalar evalDensity( int elemIndex, const double pt[],
-                          const TacsScalar X[] );
-  TacsScalar evalSpecificHeat( int elemIndex, const double pt[],
-                               const TacsScalar X[] );
-
-  // Evaluate the stress and the tangent stiffness matrix
-  void evalStress( int elemIndex, const double pt[],
-                   const TacsScalar X[], const TacsScalar e[],
-                   TacsScalar s[] );
-  void evalTangentStiffness( int elemIndex, const double pt[],
-                             const TacsScalar X[], TacsScalar C[] );
-
-  // Class name
+  // Return the class name
   const char *getObjectName();
 
   /**
@@ -138,17 +86,7 @@ class TACSBeamConstitutive : public TACSConstitutive {
     s[5] = Ct[5]*e[0] + Ct[10]*e[1] + Ct[14]*e[2] + Ct[17]*e[3] + Ct[19]*e[4] + Ct[20]*e[5];
   }
 
- protected:
-  // The constitutive matrix
-  TacsScalar C[36];
-
-  // The moments of the density
-  TacsScalar rho[4];
-
-  // The reference axis - parallel with the local z-direction of the
-  // beam. This direction cannot be parallel with the beam.
-  TacsScalar axis[3];
-
+ private:
   // Set the constitutive name
   static const char *constName;
 };
