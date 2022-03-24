@@ -387,7 +387,6 @@ class TACSShellLinearModel {
     }
   }
 
-
   /*
     Compute the directional derivative
   */

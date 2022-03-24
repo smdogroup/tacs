@@ -64,8 +64,16 @@ int main( int argc, char *argv[] ){
   TacsTestElementResidual(beam, elemIndex, time, Xpts, vars, dvars, ddvars);
 
   // Test the quantity derivative implementation
+  TacsTestElementQuantityDVSens(beam, elemIndex, TACS_FAILURE_INDEX,
+                                time, Xpts, vars, dvars, ddvars);
+  TacsTestElementQuantitySVSens(beam, elemIndex, TACS_FAILURE_INDEX,
+                                time, Xpts, vars, dvars, ddvars);
   TacsTestElementQuantityXptSens(beam, elemIndex, TACS_FAILURE_INDEX,
                                  time, Xpts, vars, dvars, ddvars);
+
+  int dvLen = 3;
+  TacsScalar x[3];
+  TacsTestAdjResProduct(beam, elemIndex, time, Xpts, vars, dvars, ddvars, dvLen, x);
 
   TacsTestAdjResXptProduct(beam, elemIndex, time, Xpts, vars, dvars, ddvars);
 
