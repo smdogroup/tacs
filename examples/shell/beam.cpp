@@ -7,6 +7,9 @@ typedef TACSBeamElement<TACSBeamQuadraticQuadrature, TACSBeamBasis<3>,
                         TACSLinearizedRotation, TACSBeamLinearModel> TACSQuadBeam;
 
 typedef TACSBeamElement<TACSBeamQuadraticQuadrature, TACSBeamBasis<3>,
+                        TACSQuadraticRotation, TACSBeamLinearModel> TACSQuadBeamModRot;
+
+typedef TACSBeamElement<TACSBeamQuadraticQuadrature, TACSBeamBasis<3>,
                         TACSQuaternionRotation, TACSBeamLinearModel> TACSQuadBeamQuaternion;
 
 int main( int argc, char *argv[] ){
@@ -29,8 +32,9 @@ int main( int argc, char *argv[] ){
                              0.47, 0.71, 1.93, axis);
 
 
-  TACSElement *beam = new TACSQuadBeam(transform, stiff);
-  // TACSElement *beam = new TACSQuadBeamQuaternion(transform, stiff);
+  // TACSElement *beam = new TACSQuadBeam(transform, stiff);
+  // TACSElement *beam = new TACSQuadBeamModRot(transform, stiff);
+  TACSElement *beam = new TACSQuadBeamQuaternion(transform, stiff);
   beam->incref();
 
   int vars_per_node = beam->getVarsPerNode();
