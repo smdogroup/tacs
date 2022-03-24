@@ -100,7 +100,7 @@ public:
     alpha.value = Mat3x3DetCore(A.A);
   }
   ADMat3x3Det( const TacsScalar scale, ADMat3x3& A, ADScalar& alpha ) : scale(scale), A(A), alpha(alpha) {
-    alpha.value = Mat3x3DetCore(A.A);
+    alpha.value = scale * Mat3x3DetCore(A.A);
   }
   void forward(){
     alpha.valued = scale * Mat3x3DetDerivForwardCore(A.A, A.Ad);

@@ -296,8 +296,6 @@ class TACSLinearizedRotation {
       crossProduct(q, t, d);
       crossProduct(qdot, t, ddot);
       crossProduct(qddot, t, dddot);
-
-      // Cd = - qd^{x}
       crossProduct(qd, t, dd);
 
       t += 3;
