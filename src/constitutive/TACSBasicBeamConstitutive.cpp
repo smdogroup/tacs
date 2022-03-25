@@ -76,9 +76,11 @@ TACSBasicBeamConstitutive::TACSBasicBeamConstitutive( TacsScalar EA,
 
   // Set the entries of the density matrix
   rho[0] = m00;
-  rho[1] = m11;
-  rho[2] = m22;
-  rho[3] = m00*xm2*xm3;
+  rho[0] = xm2*m00;
+  rho[2] = xm3*m00;
+  rho[3] = m11;
+  rho[4] = m22;
+  rho[5] = m00*xm2*xm3;
 }
 
 /*
@@ -106,7 +108,9 @@ TACSBasicBeamConstitutive::TACSBasicBeamConstitutive( TacsScalar rhoA,
 
   // Set the entries of the density matrix
   rho[0] = rhoA;
-  rho[1] = rhoIy;
-  rho[2] = rhoIz;
-  rho[3] = rhoIyz;
+  rho[1] = 0.0;
+  rho[2] = 0.0;
+  rho[3] = rhoIy;
+  rho[4] = rhoIz;
+  rho[5] = rhoIyz;
 }

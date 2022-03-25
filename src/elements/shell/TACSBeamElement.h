@@ -538,6 +538,32 @@ void TACSBeamElement<quadrature, basis, director, model>::
 
     Ue += 0.5 * detXd.value * (s[0]*e[0] + s[1]*e[1] + s[2]*e[2] +
                                s[3]*e[3] + s[4]*e[4] + s[5]*e[5]);
+
+    // Evaluate the velocities
+    A2D::Vec3 u0dot, d01dot, d02dot;
+    basis::template interpFields<vars_per_node, 3>(pt, dvars, u0dot.x);
+    basis::template interpFields<3, 3>(pt, d1dot, d01dot.x);
+    basis::template interpFields<3, 3>(pt, d2dot, d02dot.x);
+
+    // dot{u} = \dot{u0} + z1 * dot{d1} + z2 * dot{d2}
+    A2D::Scalar u0d0, u0d10, u0d20, d1d10, d2d20, d1d20;
+    A2D::Vec3Dot u0ddot(u0dot, u0dot, u0d0);
+    A2D::Vec3Dot u0d1dot(u0dot, d01dot, u0d10);
+    A2D::Vec3Dot u0d2dot(u0dot, d02dot, u0d20);
+    A2D::Vec3Dot d1d1dot(d01dot, d01dot, d1d10);
+    A2D::Vec3Dot d2d2dot(d02dot, d02dot, d2d20);
+    A2D::Vec3Dot d2d1dot(d01dot, d02dot, d1d20);
+
+    // Evaluate the mass moments
+    TacsScalar rho[6];
+    con->evalMassMoments(elemIndex, pt, X0.x, rho);
+
+    Te += 0.5 * detXd.value * (rho[0] * u0d0.value +
+                               2.0 * rho[1] * u0d10.value +
+                               2.0 * rho[2] * u0d20.value +
+                               rho[3] * d1d10.value +
+                               rho[4] * d2d20.value +
+                               2.0 * rho[5] * d1d20.value);
   }
 
   *Telem = Te;
@@ -715,6 +741,43 @@ void TACSBeamElement<quadrature, basis, director, model>::
 
     // Evaluate the tying strain
     basis::addInterpTyingStrainTranspose(pt, dgty, dety);
+
+    // Evaluate the accelerations
+    A2D::ADVec3 u0dot, d01dot, d02dot;
+    basis::template interpFields<vars_per_node, 3>(pt, ddvars, u0dot.x);
+    basis::template interpFields<3, 3>(pt, d1ddot, d01dot.x);
+    basis::template interpFields<3, 3>(pt, d2ddot, d02dot.x);
+
+    // dot{u}(xi, z1, z2) = dot{u0} + z1 * dot{d1} + z2 * dot{d2}
+    A2D::ADScalar u0d0, u0d10, u0d20, d1d10, d2d20, d1d20;
+    A2D::ADVec3Dot u0ddot(u0dot, u0dot, u0d0);
+    A2D::ADVec3Dot u0d1dot(u0dot, d01dot, u0d10);
+    A2D::ADVec3Dot u0d2dot(u0dot, d02dot, u0d20);
+    A2D::ADVec3Dot d1d1dot(d01dot, d01dot, d1d10);
+    A2D::ADVec3Dot d2d2dot(d02dot, d02dot, d2d20);
+    A2D::ADVec3Dot d2d1dot(d01dot, d02dot, d1d20);
+
+    // Evaluate the mass moments
+    TacsScalar rho[6];
+    con->evalMassMoments(elemIndex, pt, X0.x, rho);
+
+    u0d0.valued = 0.5 * rho[0] * detXd.value;
+    u0d10.valued = rho[1] * detXd.value;
+    u0d20.valued = rho[2] * detXd.value;
+    d1d10.valued = 0.5 * rho[3] * detXd.value;
+    d2d20.valued = 0.5 * rho[4] * detXd.value;
+    d1d20.valued = rho[5] * detXd.value;
+
+    d2d1dot.reverse();
+    d2d2dot.reverse();
+    d1d1dot.reverse();
+    u0d2dot.reverse();
+    u0d1dot.reverse();
+    u0ddot.reverse();
+
+    basis::template addInterpFieldsTranspose<vars_per_node, 3>(pt, u0dot.xd, res);
+    basis::template addInterpFieldsTranspose<3, 3>(pt, d01dot.xd, d1d);
+    basis::template addInterpFieldsTranspose<3, 3>(pt, d02dot.xd, d2d);
   }
 
   // Add the contributions from the tying strain
@@ -735,7 +798,6 @@ void TACSBeamElement<quadrature, basis, director, model>::
   director::template
     addRotationConstraint<vars_per_node, offset, num_nodes>(vars, res);
 }
-
 
 template <class quadrature, class basis, class director, class model>
 void TACSBeamElement<quadrature, basis, director, model>::
@@ -902,6 +964,43 @@ void TACSBeamElement<quadrature, basis, director, model>::
     // Add the product of the derivative of the stress
     con->addStressDVSens(elemIndex, scale * detXd.value,
                          pt, X0.x, e, epsi, dvLen, dfdx);
+
+    // Evaluate the accelerations
+    A2D::Vec3 u0dot, d01dot, d02dot;
+    basis::template interpFields<vars_per_node, 3>(pt, ddvars, u0dot.x);
+    basis::template interpFields<3, 3>(pt, d1ddot, d01dot.x);
+    basis::template interpFields<3, 3>(pt, d2ddot, d02dot.x);
+
+    A2D::Vec3 u0dotpsi, d01dotpsi, d02dotpsi;
+    basis::template interpFields<vars_per_node, 3>(pt, psi, u0dotpsi.x);
+    basis::template interpFields<3, 3>(pt, d1psi, d01dotpsi.x);
+    basis::template interpFields<3, 3>(pt, d2psi, d02dotpsi.x);
+
+    // Compute the dot-products
+    A2D::Scalar u0psi, u0psid1, u0psid2, u0d1psi, u0d2psi;
+    A2D::Vec3Dot dot1(u0dot, u0dotpsi, u0psi);
+    A2D::Vec3Dot dot2(u0dotpsi, d01dot, u0psid1);
+    A2D::Vec3Dot dot3(u0dot, d01dotpsi, u0d1psi);
+    A2D::Vec3Dot dot4(u0dotpsi, d02dot, u0psid2);
+    A2D::Vec3Dot dot5(u0dot, d02dotpsi, u0d2psi);
+
+    A2D::Scalar d1d1psi, d2d2psi, d1psid2, d1d2psi;
+    A2D::Vec3Dot dot7(d01dot, d01dotpsi, d1d1psi);
+    A2D::Vec3Dot dot8(d02dot, d02dotpsi, d2d2psi);
+    A2D::Vec3Dot dot9(d01dotpsi, d02dot, d1psid2);
+    A2D::Vec3Dot dot10(d01dot, d02dotpsi, d1d2psi);
+
+    // Add derivatives from the mass moments
+    TacsScalar rho[6];
+    TacsScalar alpha = scale * detXd.value;
+    rho[0] = alpha * u0psi.value;
+    rho[1] = alpha * (u0psid1.value + u0d1psi.value);
+    rho[2] = alpha * (u0psid2.value + u0d2psi.value);
+    rho[3] = alpha * d1d1psi.value;
+    rho[4] = alpha * d2d2psi.value;
+    rho[5] = alpha * (d1psid2.value + d1d2psi.value);
+
+    con->addMassMomentsDVSens(elemIndex, pt, X0.x, rho, dvLen, dfdx);
   }
 }
 
@@ -1111,6 +1210,67 @@ void TACSBeamElement<quadrature, basis, director, model>::
     gtypsid[0] = e0typsid[0];
     gtypsid[1] = e0typsid[1];
 
+    // Evaluate the accelerations
+    A2D::ADVec3 u0dot, d01dot, d02dot;
+    basis::template interpFields<vars_per_node, 3>(pt, ddvars, u0dot.x);
+    basis::template interpFields<3, 3>(pt, d1ddot, d01dot.x);
+    basis::template interpFields<3, 3>(pt, d2ddot, d02dot.x);
+
+    A2D::ADVec3 u0dotpsi, d01dotpsi, d02dotpsi;
+    basis::template interpFields<vars_per_node, 3>(pt, psi, u0dotpsi.x);
+    basis::template interpFields<3, 3>(pt, d1psi, d01dotpsi.x);
+    basis::template interpFields<3, 3>(pt, d2psi, d02dotpsi.x);
+
+    // Compute the dot-products
+    A2D::ADScalar u0psi, u0psid1, u0psid2, u0d1psi, u0d2psi;
+    A2D::ADVec3Dot dot1(u0dot, u0dotpsi, u0psi);
+    A2D::ADVec3Dot dot2(u0dotpsi, d01dot, u0psid1);
+    A2D::ADVec3Dot dot3(u0dot, d01dotpsi, u0d1psi);
+    A2D::ADVec3Dot dot4(u0dotpsi, d02dot, u0psid2);
+    A2D::ADVec3Dot dot5(u0dot, d02dotpsi, u0d2psi);
+
+    A2D::ADScalar d1d1psi, d2d2psi, d1psid2, d1d2psi;
+    A2D::ADVec3Dot dot6(d01dot, d01dotpsi, d1d1psi);
+    A2D::ADVec3Dot dot7(d02dot, d02dotpsi, d2d2psi);
+    A2D::ADVec3Dot dot8(d01dotpsi, d02dot, d1psid2);
+    A2D::ADVec3Dot dot9(d01dot, d02dotpsi, d1d2psi);
+
+    // Evaluate the mass moments
+    TacsScalar rho[6];
+    con->evalMassMoments(elemIndex, pt, X0.x, rho);
+
+    // Add the contribution from the adjoint-residual product from the
+    // dynamics
+    detXd.valued += scale * (rho[0] * u0psi.value +
+                             rho[1] * (u0psid1.value + u0d1psi.value) +
+                             rho[2] * (u0psid2.value + u0d2psi.value) +
+                             rho[3] * d1d1psi.value +
+                             rho[4] * d2d2psi.value +
+                             rho[5] * (d1psid2.value + d1d2psi.value));
+
+    // Set the seeds for the dot-products
+    TacsScalar alpha = scale * detXd.value;
+    u0psi.valued = alpha * rho[0];
+    u0psid1.valued = alpha * rho[1];
+    u0d1psi.valued = alpha * rho[1];
+    u0psid2.valued = alpha * rho[2];
+    u0d2psi.valued = alpha * rho[2];
+    d1d1psi.valued = alpha * rho[3];
+    d2d2psi.valued = alpha * rho[4];
+    d1psid2.valued = alpha * rho[5];
+    d1d2psi.valued = alpha * rho[5];
+
+    // Reverse the dot-products
+    dot9.reverse();
+    dot8.reverse();
+    dot7.reverse();
+    dot6.reverse();
+    dot5.reverse();
+    dot4.reverse();
+    dot3.reverse();
+    dot2.reverse();
+    dot1.reverse();
+
     matmultd2xpsi.reverse();
     axpyd2tpsi.reverse();
     matmultd1xpsi.reverse();
@@ -1154,6 +1314,13 @@ void TACSBeamElement<quadrature, basis, director, model>::
     basis::template addInterpFieldsTranspose<3, 3>(pt, d02psi.xd, dd2psi);
     basis::template addInterpFieldsGradTranspose<3, 3>(pt, d01xipsi.xd, dd1psi);
     basis::template addInterpFieldsGradTranspose<3, 3>(pt, d02xipsi.xd, dd2psi);
+
+    // Add the contributions from the dynamics
+    basis::template addInterpFieldsTranspose<3, 3>(pt, d01dot.xd, dd1);
+    basis::template addInterpFieldsTranspose<3, 3>(pt, d02dot.xd, dd2);
+
+    basis::template addInterpFieldsTranspose<3, 3>(pt, d01dotpsi.xd, dd1psi);
+    basis::template addInterpFieldsTranspose<3, 3>(pt, d02dotpsi.xd, dd2psi);
 
     // Add the contributions to the tying strain
     basis::addInterpTyingStrainTranspose(pt, gtyd, etyd);

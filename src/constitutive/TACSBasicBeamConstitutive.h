@@ -58,6 +58,8 @@ class TACSBasicBeamConstitutive : public TACSBeamConstitutive {
     moments[1] = rho[1];
     moments[2] = rho[2];
     moments[3] = rho[3];
+    moments[4] = rho[4];
+    moments[5] = rho[5];
   }
 
   /**
@@ -114,7 +116,7 @@ class TACSBasicBeamConstitutive : public TACSBeamConstitutive {
   TacsScalar C[36];
 
   // The moments of the density
-  TacsScalar rho[4];
+  TacsScalar rho[6];
 };
 
 #endif // TACS_BASIC_BEAM_CONSTITUTIVE_H

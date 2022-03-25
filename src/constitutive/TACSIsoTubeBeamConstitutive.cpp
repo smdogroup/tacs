@@ -104,9 +104,11 @@ void TACSIsoTubeBeamConstitutive::evalMassMoments( int elemIndex,
   TacsScalar Ia = M_PI * ((d0 * d0 * d0 * d0) - (d1 * d1 * d1 * d1))/64.0;
 
   moments[0] = rho * A;
-  moments[1] = rho * Ia;
-  moments[2] = rho * Ia;
-  moments[3] = 0.0;
+  moments[1] = 0.0;
+  moments[2] = 0.0;
+  moments[3] = rho * Ia;
+  moments[4] = rho * Ia;
+  moments[5] = 0.0;
 }
 
 void TACSIsoTubeBeamConstitutive::addMassMomentsDVSens( int elemIndex,
@@ -115,6 +117,25 @@ void TACSIsoTubeBeamConstitutive::addMassMomentsDVSens( int elemIndex,
                                                         const TacsScalar scale[],
                                                         int dvLen,
                                                         TacsScalar dfdx[] ){
+  TacsScalar rho = props->getDensity();
+  TacsScalar d0 = inner + wall;
+  TacsScalar d1 = inner;
+
+  int index = 0;
+  if (innerDV >= 0){
+    TacsScalar dA = M_PI * wall / 2.0;
+    TacsScalar dIa = M_PI * ((d0 * d0 * d0) - (d1 * d1 * d1))/16.0;
+
+    dfdx[index] += rho * (scale[0] * dA + scale[3] * dIa + scale[4] * dIa);
+    index++;
+  }
+  if (wallDV >= 0){
+    TacsScalar dA = M_PI * d0/2.0;
+    TacsScalar dIa = M_PI * (d0 * d0 * d0)/16.0;
+
+    dfdx[index] += rho * (scale[0] * dA + scale[3] * dIa + scale[4] * dIa);
+    index++;
+  }
 }
 
 TacsScalar TACSIsoTubeBeamConstitutive::evalSpecificHeat( int elemIndex,

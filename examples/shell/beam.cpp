@@ -51,9 +51,9 @@ int main( int argc, char *argv[] ){
                                     wall_lb, wall_ub);
   TacsTestConstitutive(stiff, 0);
 
-  TACSElement *beam = new TACSQuadBeam(transform, stiff);
+  // TACSElement *beam = new TACSQuadBeam(transform, stiff);
   // TACSElement *beam = new TACSQuadBeamModRot(transform, stiff);
-  // TACSElement *beam = new TACSQuadBeamQuaternion(transform, stiff);
+  TACSElement *beam = new TACSQuadBeamQuaternion(transform, stiff);
   beam->incref();
 
   int vars_per_node = beam->getVarsPerNode();

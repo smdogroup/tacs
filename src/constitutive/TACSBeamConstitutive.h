@@ -32,7 +32,7 @@ class TACSBeamConstitutive : public TACSConstitutive {
     Get the cross-sectional mass per unit area and the second moments
     of mass for the cross section
 
-    moments = [rho * A, Iz1z1, Iz2z2, Iz1z2 ]
+    moments = [rho * A, cz1, cz2, Iz1z1, Iz2z2, Iz1z2 ]
 
     @param elemIndex The local element index
     @param pt The parametric location
