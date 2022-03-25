@@ -103,6 +103,10 @@ class TACSMaterialProperties : public TACSObject {
   void evalThermalStrain3D( TacsScalar e[] );
   void evalThermalStrain2D( TacsScalar e[] );
 
+  // Given the strain state, compute the stresses
+  void evalStress2D( const TacsScalar e[], TacsScalar s[] );
+  void evalStress3D( const TacsScalar e[], TacsScalar s[] );
+
   // Compute the failure index using the von Mises stress
   TacsScalar vonMisesFailure3D( const TacsScalar stress[] );
   TacsScalar vonMisesFailure3DStressSens( const TacsScalar stress[],

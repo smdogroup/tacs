@@ -1,7 +1,8 @@
 #include "TACSElementVerification.h"
-#include "TACSBasicBeamConstitutive.h"
+#include "TACSIsoTubeBeamConstitutive.h"
 #include "TACSBeamElement.h"
 #include "TACSShellElementDefs.h"
+#include "TACSConstitutiveVerification.h"
 
 typedef TACSBeamElement<TACSBeamQuadraticQuadrature, TACSBeamBasis<3>,
                         TACSLinearizedRotation, TACSBeamLinearModel> TACSQuadBeam;
@@ -26,15 +27,33 @@ int main( int argc, char *argv[] ){
   TACSBeamRefAxisTransform *transform = new TACSBeamRefAxisTransform(axis);
   transform->incref();
 
-  TACSBasicBeamConstitutive *stiff =
-    new TACSBasicBeamConstitutive(1.0, 1.0, 1.0, 1.0,
-                                  0.23, 0.3251, 1.43,
-                                  0.47, 0.71, 1.93);
+  TacsScalar rho = 2700.0;
+  TacsScalar specific_heat = 921.096;
+  TacsScalar E = 70e3;
+  TacsScalar nu = 0.3;
+  TacsScalar ys = 270.0;
+  TacsScalar cte = 24.0e-6;
+  TacsScalar kappa = 230.0;
 
+  TACSMaterialProperties *props =
+    new TACSMaterialProperties(rho, specific_heat, E, nu, ys, cte, kappa);
 
-  // TACSElement *beam = new TACSQuadBeam(transform, stiff);
+  TacsScalar inner = 0.12;
+  TacsScalar wall = 0.05;
+  int inner_dv = 0, wall_dv = 1;
+  TacsScalar inner_lb = 0.01, wall_lb = 0.01;
+  TacsScalar inner_ub = 0.5, wall_ub = 0.5;
+
+  TACSIsoTubeBeamConstitutive *stiff =
+    new TACSIsoTubeBeamConstitutive(props, inner, wall,
+                                    inner_dv, wall_dv,
+                                    inner_lb, inner_ub,
+                                    wall_lb, wall_ub);
+  TacsTestConstitutive(stiff, 0);
+
+  TACSElement *beam = new TACSQuadBeam(transform, stiff);
   // TACSElement *beam = new TACSQuadBeamModRot(transform, stiff);
-  TACSElement *beam = new TACSQuadBeamQuaternion(transform, stiff);
+  // TACSElement *beam = new TACSQuadBeamQuaternion(transform, stiff);
   beam->incref();
 
   int vars_per_node = beam->getVarsPerNode();
@@ -71,11 +90,23 @@ int main( int argc, char *argv[] ){
   TacsTestElementQuantityXptSens(beam, elemIndex, TACS_FAILURE_INDEX,
                                  time, Xpts, vars, dvars, ddvars);
 
-  int dvLen = 3;
-  TacsScalar x[3];
-  TacsTestAdjResProduct(beam, elemIndex, time, Xpts, vars, dvars, ddvars, dvLen, x);
-
   TacsTestAdjResXptProduct(beam, elemIndex, time, Xpts, vars, dvars, ddvars);
+
+  const int dvLen = 3;
+  int dvNums[dvLen];
+  TacsScalar x[dvLen];
+  TacsScalar xelem[dvLen];
+
+  // Get the design variables from the element
+  int ndvs = beam->getDesignVarNums(elemIndex, dvLen, dvNums);
+  beam->getDesignVars(elemIndex, dvLen, xelem);
+
+  // Set the design variable numbers into the design variable vector
+  for ( int i = 0; i < ndvs; i++ ){
+    x[dvNums[i]] = xelem[i];
+  }
+
+  TacsTestAdjResProduct(beam, elemIndex, time, Xpts, vars, dvars, ddvars, dvLen, x);
 
   beam->decref();
 

@@ -25,78 +25,87 @@
 class TACSIsoTubeBeamConstitutive : public TACSBeamConstitutive {
  public:
   TACSIsoTubeBeamConstitutive( TACSMaterialProperties *properties,
-                               TacsScalar inner_diameter,
-                               TacsScalar wall_thickness,
-                               int inner_diameter_dv );
-  ~TACSIsoTubeBeamConstitutive(){}
+                               TacsScalar inner_init, TacsScalar wall_init,
+                               int inner_dv, int wall_dv,
+                               TacsScalar inner_lb, TacsScalar inner_ub,
+                               TacsScalar wall_lb, TacsScalar wall_ub );
+  ~TACSIsoTubeBeamConstitutive();
 
+  // Retrieve the global design variable numbers
   int getDesignVarNums( int elemIndex, int dvLen, int dvNums[] );
-  int setDesignVars( int elemIndex,
-                     int dvLen, const TacsScalar dvs[] );
-  int getDesignVars( int elemIndex,
-                     int dvLen, TacsScalar dvs[] );
+
+  // Set the element design variable from the design vector
+  int setDesignVars( int elemIndex, int dvLen, const TacsScalar dvs[] );
+
+  // Get the element design variables values
+  int getDesignVars( int elemIndex, int dvLen, TacsScalar dvs[] );
+
+  // Get the lower and upper bounds for the design variable values
   int getDesignVarRange( int elemIndex, int dvLen,
-                         TacsScalar lowerBound[],
-                         TacsScalar upperBound[] );
-  void evalMassMoments( int elemIndex,
-                        const double pt[],
-                        const TacsScalar X[],
-                        TacsScalar moments[] );
-  void addMassMomentsDVSens( int elemIndex,
-                             const double pt[],
-                             const TacsScalar X[],
-                             const TacsScalar scale[],
-                             int dvLen, TacsScalar dfdx[] );
-  TacsScalar evalDensity( int elemIndex,
-                          const double pt[],
+                         TacsScalar lb[], TacsScalar ub[] );
+
+  // Evaluate the material density
+  TacsScalar evalDensity( int elemIndex, const double pt[],
                           const TacsScalar X[] );
-  void addDensityDVSens( int elemIndex,
-                         TacsScalar scale,
-                         const double pt[],
-                         const TacsScalar X[],
+
+  // Add the derivative of the density
+  void addDensityDVSens( int elemIndex, TacsScalar scale,
+                         const double pt[], const TacsScalar X[],
                          int dvLen, TacsScalar dfdx[] );
-  void evalStress( int elemIndex,
-                   const double pt[],
-                   const TacsScalar X[],
-                   const TacsScalar strain[],
-                   TacsScalar stress[] );
-  void evalTangentStiffness( int elemIndex,
-                             const double pt[],
-                             const TacsScalar X[],
-                             TacsScalar C[] );
-  void addStressDVSens( int elemIndex,
-                        TacsScalar scale,
-                        const double pt[],
-                        const TacsScalar X[],
-                        const TacsScalar strain[],
-                        const TacsScalar psi[],
+
+  // Evaluate the mass moments
+  void evalMassMoments( int elemIndex, const double pt[],
+                        const TacsScalar X[], TacsScalar moments[] );
+
+  // Add the sensitivity of the mass moments
+  void addMassMomentsDVSens( int elemIndex, const double pt[],
+                             const TacsScalar X[], const TacsScalar scale[],
+                             int dvLen, TacsScalar dfdx[] );
+
+  // Evaluate the specific heat
+  TacsScalar evalSpecificHeat( int elemIndex, const double pt[],
+                               const TacsScalar X[] );
+
+  // Evaluate the stresss
+  void evalStress( int elemIndex, const double pt[], const TacsScalar X[],
+                   const TacsScalar strain[], TacsScalar stress[] );
+
+  // Evaluate the tangent stiffness
+  void evalTangentStiffness( int elemIndex, const double pt[],
+                             const TacsScalar X[], TacsScalar C[] );
+
+  // Add the contribution
+  void addStressDVSens( int elemIndex, TacsScalar scale,
+                        const double pt[], const TacsScalar X[],
+                        const TacsScalar strain[], const TacsScalar psi[],
                         int dvLen, TacsScalar dfdx[] );
-  TacsScalar evalFailure( int elemIndex,
-                          const double pt[],
-                          const TacsScalar X[],
-                          const TacsScalar strain[] );
-  TacsScalar evalFailureStrainSens( int elemIndex,
-                                    const double pt[],
-                                    const TacsScalar X[],
-                                    const TacsScalar strain[],
+
+  // Calculate the point-wise failure criteria
+  TacsScalar evalFailure( int elemIndex, const double pt[],
+                          const TacsScalar X[], const TacsScalar e[] );
+
+  // Evaluate the derivative of the failure criteria w.r.t. the strain
+  TacsScalar evalFailureStrainSens( int elemIndex, const double pt[],
+                                    const TacsScalar X[], const TacsScalar e[],
                                     TacsScalar sens[] );
-  void addFailureDVSens( int elemIndex,
-                         TacsScalar scale,
-                         const double pt[],
-                         const TacsScalar X[],
+
+  // Add the derivative of the failure criteria w.r.t. the design variables
+  void addFailureDVSens( int elemIndex, TacsScalar scale,
+                         const double pt[], const TacsScalar X[],
                          const TacsScalar strain[],
                          int dvLen, TacsScalar dfdx[] );
+
+  // Retrieve the design variable for plotting purposes
   TacsScalar evalDesignFieldValue( int elemIndex,
                                    const double pt[],
                                    const TacsScalar X[],
                                    int index );
  private:
   TACSMaterialProperties *props;
-
   TacsScalar inner, wall;
   int innerDV, wallDV;
-  TacsScalar lowerInner, upperInner;
-  TacsScalar lowerWall, upperWall;
+  TacsScalar innerLb, innerUb;
+  TacsScalar wallLb, wallUb;
 };
 
 #endif // TACS_ISO_TUBE_BEAM_CONSTITUTIVE_H

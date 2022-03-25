@@ -1300,9 +1300,7 @@ int TACSBeamElement<quadrature, basis, director, model>::
   model::evalStrain(u0x.A, d1x.x, d2x.x, e0ty, e);
 
   if (quantity){
-    // *quantity = stiff->evalFailure(elemIndex, pt, X.x, e);
-    *quantity = (e[0] * e[0] + e[1] * e[1] + e[2] * e[2] +
-                 e[3] * e[3] + e[4] * e[4] + e[5] * e[5]);
+    *quantity = con->evalFailure(elemIndex, pt, X0.x, e);
   }
   if (detXdval){
     *detXdval = detXd.value;
@@ -1324,8 +1322,6 @@ void TACSBeamElement<quadrature, basis, director, model>::
                           const TacsScalar dfdq[],
                           int dvLen,
                           TacsScalar dfdx[] ){
-
-
   // Get the reference axis
   const A2D::Vec3& axis = transform->getRefAxis();
 
@@ -1435,6 +1431,8 @@ void TACSBeamElement<quadrature, basis, director, model>::
   TacsScalar e[6]; // The components of the strain
   model::evalStrain(u0x.A, d1x.x, d2x.x, e0ty, e);
 
+  // Add the sensitivity contribution from the design variables
+  con->addFailureDVSens(elemIndex, dfdq[0] * scale, pt, X0.x, e, dvLen, dfdx);
 }
 
 template <class quadrature, class basis, class director, class model>
@@ -1569,14 +1567,7 @@ void TACSBeamElement<quadrature, basis, director, model>::
   model::evalStrain(u0x.A, d1x.x, d2x.x, e0ty, e);
 
   TacsScalar esens[6];
-  // stiff->evalFailureStrainSens(elemIndex, pt, X.x, esens);
-
-  esens[0] = 2.0 * e[0];
-  esens[1] = 2.0 * e[1];
-  esens[2] = 2.0 * e[2];
-  esens[3] = 2.0 * e[3];
-  esens[4] = 2.0 * e[4];
-  esens[5] = 2.0 * e[5];
+  con->evalFailureStrainSens(elemIndex, pt, X0.x, e, esens);
 
   // Evaluate the strain and strain derivatives from the
   TacsScalar e0tyd[2];
@@ -1755,15 +1746,9 @@ void TACSBeamElement<quadrature, basis, director, model>::
   TacsScalar e[6]; // The components of the strain
   model::evalStrain(u0x.A, d1x.x, d2x.x, e0ty, e);
 
+  // Evaluate the failure sensitivity contribution
   TacsScalar esens[6];
-  // stiff->evalFailureStrainSens(elemIndex, pt, X.x, esens);
-
-  esens[0] = 2.0 * e[0];
-  esens[1] = 2.0 * e[1];
-  esens[2] = 2.0 * e[2];
-  esens[3] = 2.0 * e[3];
-  esens[4] = 2.0 * e[4];
-  esens[5] = 2.0 * e[5];
+  con->evalFailureStrainSens(elemIndex, pt, X0.x, e, esens);
 
   // Evaluate the strain and strain derivatives from the
   TacsScalar e0tyd[2];

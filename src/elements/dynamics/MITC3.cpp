@@ -605,7 +605,8 @@ void MITC3::computeEnergies( int elemIndex,
 
     // Evaluate the areal mass properties
     TacsScalar rho[4];
-    stiff->getMassMoments(elemIndex, &u, rho);
+    TacsScalar Xpt[3] = {0.0, 0.0, 0.0};
+    stiff->evalMassMoments(elemIndex, &u, Xpt, rho);
 
     // Compute the inertia tensor
     TacsScalar Jr[6];
@@ -663,7 +664,6 @@ void MITC3::computeEnergies( int elemIndex,
 
     // Compute the stress based on the strain values
     TacsScalar s[6];
-    TacsScalar Xpt[] = {0.0, 0.0, 0.0};
     stiff->evalStress(elemIndex, &u, Xpt, e, s);
 
     // Compute the terms for the potential energy due to gravity
@@ -771,7 +771,8 @@ void MITC3::addResidual( int elemIndex,
 
     // Evaluate the areal mass properties
     TacsScalar rho[4];
-    stiff->getMassMoments(elemIndex, &u, rho);
+    TacsScalar Xpt[3] = {0.0, 0.0, 0.0};
+    stiff->evalMassMoments(elemIndex, &u, Xpt, rho);
 
     // The following is used to evaluate the contributions from the
     // kinetic energy terms
@@ -860,7 +861,6 @@ void MITC3::addResidual( int elemIndex,
     addTyingBmat(B, N12, B12, B13);
 
     // Compute the stress based on the strain values
-    TacsScalar Xpt[3] = {0.0, 0.0, 0.0};
     TacsScalar s[6];
     stiff->evalStress(elemIndex, &u, Xpt, e, s);
 
@@ -988,7 +988,8 @@ void MITC3::addJacobian( int elemIndex, double time,
 
     // Evaluate the areal mass properties
     TacsScalar rho[4];
-    stiff->getMassMoments(elemIndex, &u, rho);
+    TacsScalar Xpt[3] = {0.0, 0.0, 0.0};
+    stiff->evalMassMoments(elemIndex, &u, Xpt, rho);
 
     // Compute the inertia tensor
     TacsScalar Jr[6];
@@ -1117,7 +1118,6 @@ void MITC3::addJacobian( int elemIndex, double time,
 
       // Compute the stress based on the strain values
       TacsScalar s[6];
-      TacsScalar Xpt[] = {0.0, 0.0, 0.0};
       stiff->evalStress(elemIndex, &u, Xpt, e, s);
 
       // Add the contributions to the tying strain weights
@@ -1250,7 +1250,8 @@ void MITC3::addAdjResProduct( int elemIndex, double time, TacsScalar scale,
 
     // Evaluate the areal mass properties
     TacsScalar rho[4];
-    stiff->getMassMoments(elemIndex, &u, rho);
+    TacsScalar Xpt[3] = {0.0, 0.0, 0.0};
+    stiff->evalMassMoments(elemIndex, &u, Xpt, rho);
 
     // Store sensitivity vectors
     TacsScalar drho[4] = {0.0, 0.0, 0.0, 0.0};
@@ -1282,7 +1283,7 @@ void MITC3::addAdjResProduct( int elemIndex, double time, TacsScalar scale,
     const TacsScalar *q = vars, *dq = dvars;
     for ( int ii = 0; ii < NUM_NODES; ii++ ){
       // Add the contributions from the rectilinear velocity
-      drho[0] += det*N[ii]*(r[0]*a0[0] + r[1]*a0[1] + r[2]*a0[2]);
+      drho[0] += scale*det*N[ii]*(r[0]*a0[0] + r[1]*a0[1] + r[2]*a0[2]);
 
       /*
       // Add the contributions from the angular velocity
@@ -1340,9 +1341,6 @@ void MITC3::addAdjResProduct( int elemIndex, double time, TacsScalar scale,
     addTyingStrain(e, N12, g12, g13);
     addTyingBmat(B, N12, B12, B13);
 
-    // Compute the stress based on the strain values
-    TacsScalar Xpt[3] = {0.0, 0.0, 0.0};
-
     // Set the stress-sensitivity values
     TacsScalar ds[6] = {0.0, 0.0, 0.0,
                         0.0, 0.0, 0.0};
@@ -1362,7 +1360,7 @@ void MITC3::addAdjResProduct( int elemIndex, double time, TacsScalar scale,
       }
     }
 
-    stiff->addMassMomentsDVSens(elemIndex, scale, &u, drho, dvLen, dfdx);
+    stiff->addMassMomentsDVSens(elemIndex, &u, Xpt, drho, dvLen, dfdx);
     stiff->addStressDVSens(elemIndex, scale*det, &u, Xpt, e, ds, dvLen, dfdx);
   }
 }
@@ -1432,7 +1430,7 @@ void MITC3::computeAngularAccel( TacsScalar domega[],
 TacsScalar MITC3::computeTransform( TacsScalar T[],
                                     const TacsScalar Xa[] ){
   // Get the reference axis
-  const TacsScalar *axis = stiff->getRefAxis();
+  const TacsScalar axis[3] = {1.0, 0.0, 0.0}; // stiff->getRefAxis();
 
   // Compute the reference frame
   TacsScalar t[3];

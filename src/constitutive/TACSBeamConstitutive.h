@@ -71,19 +71,19 @@ class TACSBeamConstitutive : public TACSConstitutive {
   /**
     Compute a matrix-vector product using the tangent stiffness matrix
 
-    @param Ct The tangent stiffness matrix
+    @param C The tangent stiffness matrix
     @param e The component of the strain
     @param s The components of the stress
   */
-  static inline void computeStress( const TacsScalar Ct[],
+  static inline void computeStress( const TacsScalar C[],
                                     const TacsScalar e[],
                                     TacsScalar s[] ){
-    s[0] = Ct[0]*e[0] + Ct[1]*e[1]  + Ct[2]*e[2]  + Ct[3]*e[3]  + Ct[4]*e[4]  + Ct[5]*e[5];
-    s[1] = Ct[1]*e[0] + Ct[6]*e[1]  + Ct[7]*e[2]  + Ct[8]*e[3]  + Ct[9]*e[4]  + Ct[10]*e[5];
-    s[2] = Ct[2]*e[0] + Ct[7]*e[1]  + Ct[11]*e[2] + Ct[12]*e[3] + Ct[13]*e[4] + Ct[14]*e[5];
-    s[3] = Ct[3]*e[0] + Ct[8]*e[1]  + Ct[12]*e[2] + Ct[15]*e[3] + Ct[16]*e[4] + Ct[17]*e[5];
-    s[4] = Ct[4]*e[0] + Ct[9]*e[1]  + Ct[13]*e[2] + Ct[16]*e[3] + Ct[18]*e[4] + Ct[19]*e[5];
-    s[5] = Ct[5]*e[0] + Ct[10]*e[1] + Ct[14]*e[2] + Ct[17]*e[3] + Ct[19]*e[4] + Ct[20]*e[5];
+    s[0] = C[0]*e[0] + C[1]*e[1]  + C[2]*e[2]  + C[3]*e[3]  + C[4]*e[4]  + C[5]*e[5];
+    s[1] = C[1]*e[0] + C[6]*e[1]  + C[7]*e[2]  + C[8]*e[3]  + C[9]*e[4]  + C[10]*e[5];
+    s[2] = C[2]*e[0] + C[7]*e[1]  + C[11]*e[2] + C[12]*e[3] + C[13]*e[4] + C[14]*e[5];
+    s[3] = C[3]*e[0] + C[8]*e[1]  + C[12]*e[2] + C[15]*e[3] + C[16]*e[4] + C[17]*e[5];
+    s[4] = C[4]*e[0] + C[9]*e[1]  + C[13]*e[2] + C[16]*e[3] + C[18]*e[4] + C[19]*e[5];
+    s[5] = C[5]*e[0] + C[10]*e[1] + C[14]*e[2] + C[17]*e[3] + C[19]*e[4] + C[20]*e[5];
   }
 
  private:
