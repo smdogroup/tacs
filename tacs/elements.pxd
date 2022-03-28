@@ -223,6 +223,14 @@ cdef extern from "TACSShellElementDefs.h":
         TACSTri3ThermalShell(TACSShellTransform*,
                              TACSShellConstitutive*)
 
+    cdef cppclass TACSQuad4NonlinearShell(TACSElement):
+        TACSQuad4NonlinearShell(TACSShellTransform*,
+                             TACSShellConstitutive*)
+
+    cdef cppclass TACSQuad4NonlinearThermalShell(TACSElement):
+        TACSQuad4NonlinearThermalShell(TACSShellTransform*,
+                             TACSShellConstitutive*)
+
 cdef extern from "TACSSpringElementTransform.h":
     cdef cppclass TACSSpringTransform(TACSObject):
         pass
