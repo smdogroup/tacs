@@ -145,8 +145,8 @@ or alternatively, you can use the shortcut in the ``Makefile`` and type:
 
 .. note::
   If the user is using an older version of pip (<21.3) and runs into a missing ``libtacs.so`` error when importing
-  tacs in python, they may need to add the following to their pip install command `pip install -e . --use-feature=in-tree-build`.
-  This option is on by default in newer pip versions and should therefore not be necessary.
+  tacs in python, they may need to add the following to their pip install command ``pip install -e . --use-feature=in-tree-build``.
+  This option is on by default in newer pip versions and therefore should not be necessary.
 
 Once this process is complete the python interface install should be complete and tacs should be importable from python.
 
