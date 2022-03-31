@@ -70,10 +70,20 @@ debug:
 	fi
 
 interface:
-	${PIP} install -e .
+	@if [ "${PIP}" = "" ]; then \
+		echo "DeprecationWarning: PIP environment variable not set in Makefile.in. See Makefile.in.info for how to set this. Using setup.py install for now."; \
+		${PYTHON} setup.py build_ext --inplace; \
+	else \
+		${PIP} install -e .; \
+	fi
 
 complex_interface:
-	CFLAGS=-DTACS_USE_COMPLEX ${PIP} install -e .
+	@if [ "${PIP}" = "" ]; then \
+		echo "DeprecationWarning: PIP environment variable not set in Makefile.in. See Makefile.in.info for how to set this. Using setup.py install for now."; \
+		${PYTHON} setup.py build_ext --inplace --define TACS_USE_COMPLEX; \
+	else \
+		CFLAGS=-DTACS_USE_COMPLEX ${PIP} install -e .; \
+	fi
 
 complex: TACS_IS_COMPLEX=true
 complex: default
