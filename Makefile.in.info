@@ -6,8 +6,6 @@
 
 # the full path to the root TACS directory
 TACS_DIR = ${HOME}/git/tacs
-# libtacs.so install directory
-PREFIX = /usr/local
 CXX = mpicxx
 RM = rm -f
 PYTHON = python
