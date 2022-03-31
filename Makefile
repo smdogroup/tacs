@@ -70,10 +70,10 @@ debug:
 	fi
 
 interface:
-	${PYTHON} setup.py build_ext --inplace
+	${PIP} install -e .
 
 complex_interface:
-	${PYTHON} setup.py build_ext --inplace --define TACS_USE_COMPLEX
+	CFLAGS=-DTACS_USE_COMPLEX ${PIP} install -e .
 
 complex: TACS_IS_COMPLEX=true
 complex: default
