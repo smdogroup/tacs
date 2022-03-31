@@ -98,9 +98,10 @@ setup(name='tacs',
       author='Graeme J. Kennedy',
       author_email='graeme.kennedy@ae.gatech.edu',
       install_requires=[
-          'numpy>=1.16.4',
+          # Make sure the user's mpi4py and numpy version are at least more current than the build versions
+          f'numpy>={numpy.__version__}',
+          f'mpi4py>={mpi4py.__version__}',
           'scipy>=1.2.1',
-          'mpi4py>=3.0.2',
           'pynastran>=1.3.3'
       ],
       extras_require={
