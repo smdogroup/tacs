@@ -9,22 +9,10 @@ import mpi4py
 # Import distutils
 from setuptools import setup, find_packages
 from distutils.core import Extension as Ext
-from distutils.sysconfig import parse_makefile
 from Cython.Build import cythonize
 from Cython.Compiler import Options
 
 Options.docstrings = True
-
-# Load in contents of Makefile.in
-mf_file = './Makefile.in'
-if os.path.exists(mf_file):
-    makefile_in = parse_makefile(mf_file)
-else:
-    raise RuntimeError('No Makefile.in found in tacs root.\n'
-                       'Create the Makefile.in by running the following command from tacs root directory:'
-                       '$ cp ./Makefile.in.info ./Makefile.in\n')
-
-tacs_root = makefile_in['TACS_DIR']
 
 # Convert from local to absolute directories
 def get_global_dir(files):
@@ -87,14 +75,14 @@ for e in exts:
                            'binding': True}
 
 tacs_root = os.path.abspath(os.path.dirname(__file__))
-with open(os.path.join(tacs_root, "README.md"), encoding="utf-8") as f:
+with open(os.path.join(tacs_root, 'README.md'), encoding='utf-8') as f:
     long_description = f.read()
 
 setup(name='tacs',
       version=0.1,
       description='Parallel finite-element analysis package',
       long_description=long_description,
-      long_description_content_type="text/markdown",
+      long_description_content_type='text/markdown',
       author='Graeme J. Kennedy',
       author_email='graeme.kennedy@ae.gatech.edu',
       install_requires=[
