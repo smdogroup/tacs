@@ -9,10 +9,22 @@ import mpi4py
 # Import distutils
 from setuptools import setup, find_packages
 from distutils.core import Extension as Ext
+from distutils.sysconfig import parse_makefile
 from Cython.Build import cythonize
 from Cython.Compiler import Options
 
 Options.docstrings = True
+
+# Load in contents of Makefile.in
+mf_file = './Makefile.in'
+if os.path.exists(mf_file):
+    makefile_in = parse_makefile(mf_file)
+else:
+    raise RuntimeError('No Makefile.in found in tacs root.\n'
+                       'Create the Makefile.in by running the following command from tacs root directory:'
+                       '$ cp ./Makefile.in.info ./Makefile.in\n')
+
+tacs_root = makefile_in['TACS_DIR']
 
 # Convert from local to absolute directories
 def get_global_dir(files):
@@ -93,6 +105,7 @@ setup(name='tacs',
       ],
       extras_require={
         'testing': ['testflo'],
+        'docs': ['sphinx', 'breathe', 'sphinxcontrib-programoutput'],
         'mphys': ['mphys', 'openmdao'],
       },
       packages=find_packages(include=['tacs*']),
