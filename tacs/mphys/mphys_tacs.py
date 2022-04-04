@@ -77,10 +77,10 @@ class TacsDVComp(om.ExplicitComponent):
 
     def compute_jacvec_product(self, inputs, d_inputs, d_outputs, mode):
         if mode == 'fwd':
-            if 'dv_struct' in d_outputs:
+            if 'dv_struct' in d_outputs and 'dv_struct_serial' in d_inputs:
                 d_outputs['dv_struct'] += d_inputs['dv_struct_serial'][self.src_indices]
         else:  # mode == 'rev'
-            if 'dv_struct_serial' in d_inputs:
+            if 'dv_struct' in d_outputs and 'dv_struct_serial' in d_inputs:
                 d_inputs['dv_struct_serial'][self.src_indices] += d_outputs['dv_struct']
 
     def get_dv_src_indices(self):

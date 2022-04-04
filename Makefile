@@ -70,16 +70,31 @@ debug:
 	fi
 
 interface:
-	${PYTHON} setup.py build_ext --inplace
+	@if [ "${PIP}" = "" ]; then \
+		echo "DeprecationWarning: PIP environment variable not set in Makefile.in. See Makefile.in.info for how to set this. Using setup.py install for now."; \
+		${PYTHON} setup.py build_ext --inplace; \
+	else \
+		${PIP} install -e . --use-feature=in-tree-build; \
+	fi
 
 complex_interface:
-	${PYTHON} setup.py build_ext --inplace --define TACS_USE_COMPLEX
+	@if [ "${PIP}" = "" ]; then \
+		echo "DeprecationWarning: PIP environment variable not set in Makefile.in. See Makefile.in.info for how to set this. Using setup.py install for now."; \
+		${PYTHON} setup.py build_ext --inplace --define TACS_USE_COMPLEX; \
+	else \
+		CFLAGS=-DTACS_USE_COMPLEX ${PIP} install -e . --use-feature=in-tree-build; \
+	fi
 
 complex: TACS_IS_COMPLEX=true
 complex: default
 
 complex_debug: TACS_IS_COMPLEX=true
 complex_debug: debug
+
+install:
+	@echo "installing libtacs.so in $(DESTDIR)$(PREFIX)/lib/"; \
+	install -d $(DESTDIR)$(PREFIX)/lib/ ; \
+	install -m 644 ${TACS_DIR}/lib/libtacs.so $(DESTDIR)$(PREFIX)/lib/
 
 clean:
 	${RM} lib/libtacs.a lib/libtacs.so

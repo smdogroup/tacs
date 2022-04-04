@@ -46,13 +46,13 @@ Note that the default values can often be used without modification. Of all thes
 
 The python interface can be created with a call to setup.py. The setup.cfg.info contains the recommended defaults for the configuration script. For development, create a local development installation by executing
 
-python setup.py develop --user
+pip install -e .
 
-You can subsequently execute the following command to update the python interface after changes.
+This command is also executed by the command `make interface`.
 
-python setup.py build_ext --inplace 
+If the user does not intend to modify the source code and wishes to install the interface to their python site-packages, they can instead run
 
-This command is also executed by the command make interface.
+pip install .
 
 ### Converting FH5 files ###
 
