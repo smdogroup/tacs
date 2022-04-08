@@ -165,20 +165,20 @@ The interface is generated using Cython.</p>
 TACS works with python 3.</p>
 <p>To build the python interface to <code class="docutils literal notranslate"><span class="pre">tacs</span></code>, you can use the Makefile
 or you can type the following command in the root directory:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">python</span> <span class="n">setup</span><span class="o">.</span><span class="n">py</span> <span class="n">build_ext</span> <span class="o">--</span><span class="n">inplace</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">pip</span> <span class="n">install</span> <span class="o">-</span><span class="n">e</span> <span class="o">.</span>
 </pre></div>
 </div>
-<p>The <code class="docutils literal notranslate"><span class="pre">--inplace</span></code> option places the shared objects direclty in the source directories.
-There are several options to make the python <code class="docutils literal notranslate"><span class="pre">tacs</span></code> package visible to python.
-I recommend using the user install option which places a link to the library in a local directory that python looks in.
-This can be performed by typing:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">python</span> <span class="n">setup</span><span class="o">.</span><span class="n">py</span> <span class="n">develop</span> <span class="o">--</span><span class="n">user</span>
-</pre></div>
-</div>
-<p>Once you have installed TACS in this way, you can use the shortcut in the <code class="docutils literal notranslate"><span class="pre">Makefile</span></code> and type:</p>
+<p>or alternatively, you can use the shortcut in the <code class="docutils literal notranslate"><span class="pre">Makefile</span></code> and type:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">make</span> <span class="n">interface</span>
 </pre></div>
 </div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>If the user is using an older version of pip (&lt;21.3) and runs into a missing <code class="docutils literal notranslate"><span class="pre">libtacs.so</span></code> error when importing
+tacs in python, they may need to add the following to their pip install command <code class="docutils literal notranslate"><span class="pre">pip</span> <span class="pre">install</span> <span class="pre">-e</span> <span class="pre">.</span> <span class="pre">--use-feature=in-tree-build</span></code>.
+This option is on by default in newer pip versions and therefore should not be necessary.</p>
+</div>
+<p>Once this process is complete the python interface install should be complete and tacs should be importable from python.</p>
 </div>
 </div>
 
