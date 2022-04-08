@@ -772,6 +772,56 @@ cdef class Quad4NonlinearThermalShell(Element):
         self.ptr = new TACSQuad4NonlinearThermalShell(transform.ptr, con.cptr)
         self.ptr.incref()
 
+cdef class Quad4ShellQuaternion(Element):
+    """
+    A 4-node quad shell element for general linear thermoelastic analysis.
+
+    This element employs a mixed interpolation of tensorial (strain)
+    components (MITC) method to avoid shear locking problems.
+
+    .. seealso:: :ref:`theory/shell_element:Mixed Interpolation of Tensorial Components`
+
+    .. note::
+        varsPerNode: 8
+
+        outputElement: ``TACS.BEAM_OR_SHELL_ELEMENT``
+
+    Args:
+        transform (ShellTransform or None): Shell transform object.
+          ``None`` is equivalent to :class:`~ShellNaturalTransform`.
+        con (ShellConstitutive): Shell constitutive object.
+    """
+    def __cinit__(self, ShellTransform transform, ShellConstitutive con):
+        if transform is None:
+            transform = ShellNaturalTransform()
+        self.ptr = new TACSQuad4ShellQuaternion(transform.ptr, con.cptr)
+        self.ptr.incref()
+
+cdef class Quad4ShellModRot(Element):
+    """
+    A 4-node quad shell element for general linear thermoelastic analysis.
+
+    This element employs a mixed interpolation of tensorial (strain)
+    components (MITC) method to avoid shear locking problems.
+
+    .. seealso:: :ref:`theory/shell_element:Mixed Interpolation of Tensorial Components`
+
+    .. note::
+        varsPerNode: ??
+
+        outputElement: ``TACS.BEAM_OR_SHELL_ELEMENT``
+
+    Args:
+        transform (ShellTransform or None): Shell transform object.
+          ``None`` is equivalent to :class:`~ShellNaturalTransform`.
+        con (ShellConstitutive): Shell constitutive object.
+    """
+    def __cinit__(self, ShellTransform transform, ShellConstitutive con):
+        if transform is None:
+            transform = ShellNaturalTransform()
+        self.ptr = new TACSQuad4ShellModRot(transform.ptr, con.cptr)
+        self.ptr.incref()
+
 cdef class Quad9ThermalShell(Element):
     """
     A 9-node quad shell element for general linear thermoelastic analysis.
