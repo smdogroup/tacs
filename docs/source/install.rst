@@ -135,19 +135,20 @@ or you can type the following command in the root directory:
 
 ::
 
-    python setup.py build_ext --inplace
+    pip install -e .
 
-The ``--inplace`` option places the shared objects direclty in the source directories.
-There are several options to make the python ``tacs`` package visible to python.
-I recommend using the user install option which places a link to the library in a local directory that python looks in.
-This can be performed by typing:
-
-::
-
-    python setup.py develop --user
-
-Once you have installed TACS in this way, you can use the shortcut in the ``Makefile`` and type:
+or alternatively, you can use the shortcut in the ``Makefile`` and type:
 
 ::
 
     make interface
+
+.. note::
+  If the user is using an older version of pip (<21.3) and runs into a missing ``libtacs.so`` error when importing
+  tacs in python, they may need to add the following to their pip install command ``pip install -e . --use-feature=in-tree-build``.
+  This option is on by default in newer pip versions and therefore should not be necessary.
+
+Once this process is complete the python interface install should be complete and tacs should be importable from python.
+
+
+
