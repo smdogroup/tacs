@@ -18,7 +18,7 @@ This example demonstrates a number of useful pyTACS features, including:
 * Evaluating multiple functions in different regions
 * Easy domain-selection enabling the previous three items
 
-.. image:: images/battery_pack.pdf
+.. image:: images/battery_pack.png
   :width: 800
   :alt: Battery pack problem domain
 
