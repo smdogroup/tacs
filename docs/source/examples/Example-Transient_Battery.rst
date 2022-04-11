@@ -18,7 +18,7 @@ This example demonstrates a number of useful pyTACS features, including:
 * Evaluating multiple functions in different regions
 * Easy domain-selection enabling the previous three items
 
-.. image:: images/battery_pack.png
+.. image:: images/battery_pack.pdf
   :width: 800
   :alt: Battery pack problem domain
 
@@ -196,6 +196,8 @@ or
 .. code-block:: console
 
   $ f5totec Transient_000_0xx.f5
+
+The animation below shows what the transient heat transfer temperature solution looks like when visualized in Paraview.
 
 .. image:: images/battery.gif
   :width: 800
