@@ -112,7 +112,14 @@ jobs:
         with:
           branch: gh-pages # The branch the action should deploy to.
           folder: docs/html/ # The folder the action should deploy.
-      - name: Setup tmate debug session
+      # This allows the user to ssh into the github runner and debug a job upon failure
+      # This will only trigger if the job was run using workflow_dispatch and debug_enabled input flag was set to true
+      - name: Setup interactive debug session on failure
         if: ${{ failure() && github.event.inputs.debug_enabled }}
         uses: mxschmitt/action-tmate@v3
-        timeout-minutes: 15
+        # To access the terminal through the web-interface:
+        #   1. Click on the web-browser link printed out in this action from the github workkflow terminal
+        #   2. Press cntrl + c in the new tab that opens up to reveal the terminal
+        #   3. To activate the conda environment used to build TACS run:
+        #       $ source $CONDA/etc/profile.d/conda.sh
+        #       $ conda activate test
