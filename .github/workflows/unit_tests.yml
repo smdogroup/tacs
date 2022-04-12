@@ -107,6 +107,7 @@ jobs:
           branch: gh-pages # The branch the action should deploy to.
           folder: docs/html/ # The folder the action should deploy.
       - name: Setup tmate session
-        shell: bash -l {0}
         if: ${{ failure() }}
         uses: mxschmitt/action-tmate@v3
+        with:
+          shell: bash -l {0}
