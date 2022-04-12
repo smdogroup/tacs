@@ -64,6 +64,7 @@ jobs:
           python-version: 3.8
 
       - name: Install TACS
+        shell: bash -l {0}
         run: |
           export TACS_DIR=${GITHUB_WORKSPACE};
           echo "TACS_DIR=${GITHUB_WORKSPACE}" >> $GITHUB_ENV
@@ -80,10 +81,12 @@ jobs:
           cd $TACS_DIR/examples;
           make ${{ matrix.EXAMPLES }} TACS_DIR=$TACS_DIR METIS_INCLUDE=-I${CONDA_PREFIX}/include/ METIS_LIB="-L${CONDA_PREFIX}/lib/ -lmetis";
       - name: Run unit tests
+        shell: bash -l {0}
         run: |
           pip install testflo;
           testflo .;
       - name: Building docs
+        shell: bash -l {0}
         run: |
           cd $TACS_DIR/docs;
           conda install -c conda-forge sphinx breathe sphinxcontrib-programoutput -q -y;
@@ -104,5 +107,6 @@ jobs:
           branch: gh-pages # The branch the action should deploy to.
           folder: docs/html/ # The folder the action should deploy.
       - name: Setup tmate session
+        shell: bash -l {0}
         if: ${{ failure() }}
         uses: mxschmitt/action-tmate@v3
