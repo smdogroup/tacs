@@ -90,7 +90,7 @@ jobs:
         run: |
           pip install testflo;
           testflo .;
-      - name: Building docs
+      - name: Build docs
         shell: bash -l {0}
         run: |
           cd $TACS_DIR/docs;
