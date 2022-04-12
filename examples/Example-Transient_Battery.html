@@ -1,0 +1,288 @@
+
+<!DOCTYPE html>
+
+<html lang="python">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Battery pack during thermal runaway &#8212; TACS  documentation</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinxdoc.css" />
+    <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+    <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Theory" href="../theory/theory.html" />
+    <link rel="prev" title="Plate under static load" href="Example-Plate.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="../theory/theory.html" title="Theory"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="Example-Plate.html" title="Plate under static load"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">TACS  documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Battery pack during thermal runaway</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="battery-pack-during-thermal-runaway">
+<h1>Battery pack during thermal runaway<a class="headerlink" href="#battery-pack-during-thermal-runaway" title="Permalink to this headline">¶</a></h1>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The script and BDF file for this example can be found under the <cite>examples/battery/</cite> directory.</p>
+</div>
+<p>This example demonstrates transient heating of a battery pack with one cell undergoing thermal runaway.
+The domain is an aluminum battery pack with 9 cylindrical cells embedded in a grid-pattern. The cell in
+the corner undergoes thermal runaway, releasing a large amount of heat for 2 seconds. The heat conduction
+of the battery pack is then computed for 5 seconds in total. The maximum temperature within a cell is computed
+over all time steps. This is done for 3 cells: the cell undergoing thermal runaway, the nearest cell adjacent
+to it, and the cell on the diagonal near it. Computing the maximum temperature of these cells could be used to
+prevent other cells in the pack from going into thermal runaway, leading to a cascading failure.
+The problem domain is shown in the figure below with the BDF component names labeled.</p>
+<a class="reference internal image-reference" href="../_images/battery_pack.png"><img alt="Battery pack problem domain" src="../_images/battery_pack.png" style="width: 800px;" /></a>
+<dl class="simple">
+<dt>This example will demonstrate a number of useful pyTACS features, including:</dt><dd><ul class="simple">
+<li><p>Transient heat conduction physics</p></li>
+<li><p>Two materials modeled in the same mesh</p></li>
+<li><p>Time-specified loading: the right-hand-side is given as a user-defined function of time</p></li>
+<li><p>Evaluating multiple functions in different regions</p></li>
+<li><p>Easy domain-selection enabling the previous three items</p></li>
+</ul>
+</dd>
+</dl>
+<p>First, import required libraries:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">print_function</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">from</span> <span class="nn">pprint</span> <span class="kn">import</span> <span class="n">pprint</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">mpi4py</span> <span class="kn">import</span> <span class="n">MPI</span>
+
+<span class="kn">from</span> <span class="nn">tacs</span> <span class="kn">import</span> <span class="n">functions</span><span class="p">,</span> <span class="n">constitutive</span><span class="p">,</span> <span class="n">elements</span><span class="p">,</span> <span class="n">TACS</span><span class="p">,</span> <span class="n">pyTACS</span>
+</pre></div>
+</div>
+<p>Import the bdf file, initialize the pyTACS object, and define the mateterial properties for the problem.
+This problem uses two different materials: one material for the battery cells, and aluminum material
+propertiesfor the battery pack.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Name of the bdf file to get the mesh</span>
+<span class="n">bdfFile</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="vm">__file__</span><span class="p">),</span> <span class="s1">&#39;battery_pack.bdf&#39;</span><span class="p">)</span>
+
+<span class="c1"># Instantiate the pyTACS object</span>
+<span class="n">FEAAssembler</span> <span class="o">=</span> <span class="n">pyTACS</span><span class="p">(</span><span class="n">bdfFile</span><span class="p">,</span> <span class="n">comm</span><span class="p">)</span>
+
+<span class="c1"># Specify the plate thickness</span>
+<span class="n">tplate</span> <span class="o">=</span> <span class="mf">0.065</span>
+
+<span class="c1"># Define material properties for two materials used in this problem</span>
+<span class="c1"># Properties of the battery cells</span>
+<span class="n">battery_rho</span> <span class="o">=</span> <span class="mf">1460.0</span>  <span class="c1"># density kg/m^3</span>
+<span class="n">battery_kappa</span> <span class="o">=</span> <span class="mf">1.3</span> <span class="c1"># Thermal conductivity W/(m⋅K)</span>
+<span class="n">battery_cp</span> <span class="o">=</span> <span class="mf">880.0</span> <span class="c1"># Specific heat J/(kg⋅K)</span>
+
+<span class="c1"># Properties of the battery pack (aluminum)</span>
+<span class="n">alum_rho</span> <span class="o">=</span> <span class="mf">2700.0</span>  <span class="c1"># density kg/m^3</span>
+<span class="n">alum_kappa</span> <span class="o">=</span> <span class="mf">204.0</span> <span class="c1"># Thermal conductivity W/(m⋅K)</span>
+<span class="n">alum_cp</span> <span class="o">=</span> <span class="mf">883.0</span> <span class="c1"># Specific heat J/(kg⋅K)</span>
+</pre></div>
+</div>
+<p>Next, set up the <a class="reference internal" href="../pytacs/pytacs_module.html#tacs.pytacs.elemCallBack" title="tacs.pytacs.elemCallBack"><code class="xref py py-func docutils literal notranslate"><span class="pre">elemCallBack()</span></code></a> function. By checking the <cite>compDescript</cite> value, the elements
+are set with either aluminum material properties, or battery material properties.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># The callback function to define the element properties</span>
+<span class="k">def</span> <span class="nf">elemCallBack</span><span class="p">(</span><span class="n">dvNum</span><span class="p">,</span> <span class="n">compID</span><span class="p">,</span> <span class="n">compDescript</span><span class="p">,</span> <span class="n">elemDescripts</span><span class="p">,</span> <span class="n">globalDVs</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+
+    <span class="c1"># Set up property and constitutive objects</span>
+    <span class="k">if</span> <span class="n">compDescript</span> <span class="o">==</span> <span class="s1">&#39;Block&#39;</span><span class="p">:</span>  <span class="c1"># If the bdf file labels this component as &quot;Block&quot;, then it is aluminum</span>
+        <span class="n">prop</span> <span class="o">=</span> <span class="n">constitutive</span><span class="o">.</span><span class="n">MaterialProperties</span><span class="p">(</span><span class="n">rho</span><span class="o">=</span><span class="n">alum_rho</span><span class="p">,</span> <span class="n">kappa</span><span class="o">=</span><span class="n">alum_kappa</span><span class="p">,</span> <span class="n">specific_heat</span><span class="o">=</span><span class="n">alum_cp</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>  <span class="c1"># otherwise it is a battery</span>
+        <span class="n">prop</span> <span class="o">=</span> <span class="n">constitutive</span><span class="o">.</span><span class="n">MaterialProperties</span><span class="p">(</span><span class="n">rho</span><span class="o">=</span><span class="n">battery_rho</span><span class="p">,</span> <span class="n">kappa</span><span class="o">=</span><span class="n">battery_kappa</span><span class="p">,</span> <span class="n">specific_heat</span><span class="o">=</span><span class="n">battery_cp</span><span class="p">)</span>
+
+    <span class="c1"># Set one thickness value for every component</span>
+    <span class="n">con</span> <span class="o">=</span> <span class="n">constitutive</span><span class="o">.</span><span class="n">PlaneStressConstitutive</span><span class="p">(</span><span class="n">prop</span><span class="p">,</span> <span class="n">t</span><span class="o">=</span><span class="n">tplate</span><span class="p">,</span> <span class="n">tNum</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+
+    <span class="c1"># For each element type in this component,</span>
+    <span class="c1"># pass back the appropriate tacs element object</span>
+    <span class="n">elemList</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">model</span> <span class="o">=</span> <span class="n">elements</span><span class="o">.</span><span class="n">HeatConduction2D</span><span class="p">(</span><span class="n">con</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">elemDescript</span> <span class="ow">in</span> <span class="n">elemDescripts</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">elemDescript</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;CQUAD4&#39;</span><span class="p">,</span> <span class="s1">&#39;CQUADR&#39;</span><span class="p">]:</span>
+            <span class="n">basis</span> <span class="o">=</span> <span class="n">elements</span><span class="o">.</span><span class="n">LinearQuadBasis</span><span class="p">()</span>
+        <span class="k">elif</span> <span class="n">elemDescript</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;CTRIA3&#39;</span><span class="p">,</span> <span class="s1">&#39;CTRIAR&#39;</span><span class="p">]:</span>
+            <span class="n">basis</span> <span class="o">=</span> <span class="n">elements</span><span class="o">.</span><span class="n">LinearTriangleBasis</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Element &#39;</span><span class="si">%s</span><span class="s2">&#39; not recognized&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">elemDescript</span><span class="p">))</span>
+        <span class="n">elem</span> <span class="o">=</span> <span class="n">elements</span><span class="o">.</span><span class="n">Element2D</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">basis</span><span class="p">)</span>
+        <span class="n">elemList</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">elem</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">elemList</span>
+
+<span class="c1"># Set up constitutive objects and elements</span>
+<span class="n">FEAAssembler</span><span class="o">.</span><span class="n">initialize</span><span class="p">(</span><span class="n">elemCallBack</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Next, define the instance of <a class="reference internal" href="../pytacs/transient.html#tacs.problems.TransientProblem" title="tacs.problems.TransientProblem"><code class="xref py py-class docutils literal notranslate"><span class="pre">TransientProblem</span></code></a>, give it a name (in this case, we've called it &quot;Transient&quot;),
+and declare the initial time, <cite>tInit</cite>, final time, <cite>tFinal</cite>, and the number of time steps, <cite>numSteps</cite>.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Create a transient problem that will represent time-varying heat conduction</span>
+<span class="n">transientProblem</span> <span class="o">=</span> <span class="n">FEAAssembler</span><span class="o">.</span><span class="n">createTransientProblem</span><span class="p">(</span><span class="s1">&#39;Transient&#39;</span><span class="p">,</span> <span class="n">tInit</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">tFinal</span><span class="o">=</span><span class="mf">5.0</span><span class="p">,</span> <span class="n">numSteps</span><span class="o">=</span><span class="mi">50</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Here we define the time-varying heat flux for this problem. This simulates one battery going into thermal runaway
+and releasing a large amount of heat for 2 seconds. To do this, we first get all of the problem's time steps using
+<a class="reference internal" href="../pytacs/transient.html#tacs.problems.TransientProblem.getTimeSteps" title="tacs.problems.TransientProblem.getTimeSteps"><code class="xref py py-meth docutils literal notranslate"><span class="pre">TransientProblem.getTimeSteps</span></code></a>. Then, we loop through each time step,
+and add a heat-flux for each time step where the time is less than or equal to 2 seconds.
+To add the heat flux only to elements corresponding to the battery undergoing thermal runaway, we use
+the <a class="reference internal" href="../pytacs/pytacs_module.html#tacs.pytacs.pyTACS.selectCompIDs" title="tacs.pytacs.pyTACS.selectCompIDs"><code class="xref py py-meth docutils literal notranslate"><span class="pre">pyTACS.selectCompIDs</span></code></a> method. Those component IDs are then passed
+as an input when we define the load using
+the <a class="reference internal" href="../pytacs/transient.html#tacs.problems.TransientProblem.addLoadToComponents" title="tacs.problems.TransientProblem.addLoadToComponents"><code class="xref py py-meth docutils literal notranslate"><span class="pre">TransientProblem.addLoadToComponents</span></code></a> method,
+which takes as input the time-step, the component IDs that we just selected, and an array specifiying the total
+load to apply, which will be spread out over all elements in the specified components. Since the heat transfer problem has only one degree of
+freedom, this is an array of length 1. The value of 6000.0 used here indicates a total heat of 6000 Watts to be applied
+for 2 seconds, corresponding to 12,000 Joules of total thermal energy released by the battery during thermal runaway.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Get the time steps and define the loads</span>
+<span class="n">timeSteps</span> <span class="o">=</span> <span class="n">transientProblem</span><span class="o">.</span><span class="n">getTimeSteps</span><span class="p">()</span>
+<span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">t</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">timeSteps</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">t</span> <span class="o">&lt;=</span> <span class="mf">2.0</span><span class="p">:</span>  <span class="c1"># only apply the load for the first 2 seconds (step function)</span>
+        <span class="c1"># select the component of the battery undergoing thermal runaway</span>
+        <span class="n">compIDs</span> <span class="o">=</span> <span class="n">FEAAssembler</span><span class="o">.</span><span class="n">selectCompIDs</span><span class="p">(</span><span class="n">include</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;Battery.00&quot;</span><span class="p">])</span>
+
+        <span class="c1"># Define the heat-flux: apply 6000 Watts spread out over the face of the cell undergoing thermal runaway</span>
+        <span class="n">transientProblem</span><span class="o">.</span><span class="n">addLoadToComponents</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">compIDs</span><span class="p">,</span> <span class="p">[</span><span class="mf">6000.0</span><span class="p">])</span>
+</pre></div>
+</div>
+<p>Next, we define the functions that we want to evaluate for this problem. In this case, we are interested in the maximum temperature of
+the cell undergoing thermal runaway, as well as the maximum temperature of the two cells closest to it to prevent them from exceeding their
+maximum operting temperature, preventing a cascading thermal runaway event. To do this, we first select the component IDs for each of these
+three batteries using the same procedure that was used to define the heat flux.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Define the functions of interest as maximum temperature withing 3 different batteries</span>
+<span class="n">compIDs_00</span> <span class="o">=</span> <span class="n">FEAAssembler</span><span class="o">.</span><span class="n">selectCompIDs</span><span class="p">([</span><span class="s2">&quot;Battery.00&quot;</span><span class="p">])</span>  <span class="c1"># battery undergoing thermal runaway</span>
+<span class="n">compIDs_01</span> <span class="o">=</span> <span class="n">FEAAssembler</span><span class="o">.</span><span class="n">selectCompIDs</span><span class="p">([</span><span class="s2">&quot;Battery.01&quot;</span><span class="p">])</span>  <span class="c1"># adjecent battery</span>
+<span class="n">compIDs_04</span> <span class="o">=</span> <span class="n">FEAAssembler</span><span class="o">.</span><span class="n">selectCompIDs</span><span class="p">([</span><span class="s2">&quot;Battery.04&quot;</span><span class="p">])</span>  <span class="c1"># diagonal battery</span>
+</pre></div>
+</div>
+<p>With the component IDs for each cell selected, we can define the functions using the <a class="reference internal" href="../pytacs/transient.html#tacs.problems.TransientProblem.addFunction" title="tacs.problems.TransientProblem.addFunction"><code class="xref py py-meth docutils literal notranslate"><span class="pre">TransientProblem.addFunction</span></code></a> method.
+This method takes as input a user-defined name for this function, and an uninitialized TACS <a class="reference internal" href="../core/functions.html#module-tacs.functions" title="tacs.functions"><code class="xref py py-mod docutils literal notranslate"><span class="pre">functions</span></code></a> class, which in this case
+is <a class="reference internal" href="../core/functions.html#tacs.functions.KSTemperature" title="tacs.functions.KSTemperature"><code class="xref py py-class docutils literal notranslate"><span class="pre">KSTemperature</span></code></a>. Two keyword arguments used here: first, <cite>ksWeight</cite>, corresponding to the &quot;rho&quot; value in the KS-aggregation function,
+and the second, <cite>compIDs</cite>, where we pass in the component IDs for each battery that we just selected. The KS function in the transient case computes the approximate maximum
+over all time steps and all elements in the specified domains.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">transientProblem</span><span class="o">.</span><span class="n">addFunction</span><span class="p">(</span><span class="s1">&#39;ks_temp_corner&#39;</span><span class="p">,</span> <span class="n">functions</span><span class="o">.</span><span class="n">KSTemperature</span><span class="p">,</span>
+                             <span class="n">ksWeight</span><span class="o">=</span><span class="mf">100.0</span><span class="p">,</span> <span class="n">compIDs</span><span class="o">=</span><span class="n">compIDs_00</span><span class="p">)</span>
+<span class="n">transientProblem</span><span class="o">.</span><span class="n">addFunction</span><span class="p">(</span><span class="s1">&#39;ks_temp_adjacent&#39;</span><span class="p">,</span> <span class="n">functions</span><span class="o">.</span><span class="n">KSTemperature</span><span class="p">,</span>
+                             <span class="n">ksWeight</span><span class="o">=</span><span class="mf">100.0</span><span class="p">,</span> <span class="n">compIDs</span><span class="o">=</span><span class="n">compIDs_01</span><span class="p">)</span>
+<span class="n">transientProblem</span><span class="o">.</span><span class="n">addFunction</span><span class="p">(</span><span class="s1">&#39;ks_temp_diagonal&#39;</span><span class="p">,</span> <span class="n">functions</span><span class="o">.</span><span class="n">KSTemperature</span><span class="p">,</span>
+                             <span class="n">ksWeight</span><span class="o">=</span><span class="mf">100.0</span><span class="p">,</span> <span class="n">compIDs</span><span class="o">=</span><span class="n">compIDs_04</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Now that our problem has been set up with loads and functions we can solve it and evaluate its functions using the
+<a class="reference internal" href="../pytacs/transient.html#tacs.problems.TransientProblem.solve" title="tacs.problems.TransientProblem.solve"><code class="xref py py-meth docutils literal notranslate"><span class="pre">TransientProblem.solve</span></code></a> and
+<a class="reference internal" href="../pytacs/transient.html#tacs.problems.TransientProblem.evalFunctions" title="tacs.problems.TransientProblem.evalFunctions"><code class="xref py py-meth docutils literal notranslate"><span class="pre">TransientProblem.evalFunctions</span></code></a> methods, respectively.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">funcs</span> <span class="o">=</span> <span class="p">{}</span>
+<span class="n">transientProblem</span><span class="o">.</span><span class="n">solve</span><span class="p">()</span>
+<span class="n">transientProblem</span><span class="o">.</span><span class="n">evalFunctions</span><span class="p">(</span><span class="n">funcs</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>To get the function sensitivity with respect to the design variables and node locations using the
+<a class="reference internal" href="../pytacs/transient.html#tacs.problems.TransientProblem.evalFunctionsSens" title="tacs.problems.TransientProblem.evalFunctionsSens"><code class="xref py py-meth docutils literal notranslate"><span class="pre">TransientProblem.evalFunctionsSens</span></code></a> method.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">funcsSens</span> <span class="o">=</span> <span class="p">{}</span>
+<span class="n">transientProblem</span><span class="o">.</span><span class="n">evalFunctionsSens</span><span class="p">(</span><span class="n">funcsSens</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Finally, we can write out our solution to an f5 file format for further post-processing and visualization by using the
+<a class="reference internal" href="../pytacs/transient.html#tacs.problems.TransientProblem.writeSolution" title="tacs.problems.TransientProblem.writeSolution"><code class="xref py py-meth docutils literal notranslate"><span class="pre">TransientProblem.writeSolution</span></code></a> method.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">transientProblem</span><span class="o">.</span><span class="n">writeSolution</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>This produces several files called <code class="docutils literal notranslate"><span class="pre">Transient_000_000.f5</span></code> through <code class="docutils literal notranslate"><span class="pre">Transient_000_050.f5</span></code> in our runscript directory.
+The first index after the problem name indicates the optimization step (000 in this case for a single solve), and the second
+index indicates the time-step of the analysis (000 through 050). These files can be converted into a <code class="docutils literal notranslate"><span class="pre">.vtk</span></code> file
+(using <code class="docutils literal notranslate"><span class="pre">f5tovtk</span></code>) for visualization in Paraview or a <code class="docutils literal notranslate"><span class="pre">.plt</span></code> (using <code class="docutils literal notranslate"><span class="pre">f5totec</span></code>) for visualization in TecPlot using:</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$ </span>f5tovtk Transient_000_0xx.f5
+</pre></div>
+</div>
+<p>or</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$ </span>f5totec Transient_000_0xx.f5
+</pre></div>
+</div>
+<p>The animation below shows what the transient heat transfer temperature solution looks like when visualized in Paraview.</p>
+<a class="reference internal image-reference" href="../_images/battery.gif"><img alt="Animation of battery pack heat transfer analysis" src="../_images/battery.gif" style="width: 800px;" /></a>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <div>
+    <h4>Previous topic</h4>
+    <p class="topless"><a href="Example-Plate.html"
+                          title="previous chapter">Plate under static load</a></p>
+  </div>
+  <div>
+    <h4>Next topic</h4>
+    <p class="topless"><a href="../theory/theory.html"
+                          title="next chapter">Theory</a></p>
+  </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="../theory/theory.html" title="Theory"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="Example-Plate.html" title="Plate under static load"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">TACS  documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Battery pack during thermal runaway</a></li> 
+      </ul>
+    </div>
+ <script type="text/javascript">
+    $(document).ready(function() {
+        $(".toggle > *").hide();
+        $(".toggle .header").show();
+        $(".toggle .header").click(function() {
+            $(this).parent().children().not(".header").toggle(400);
+            $(this).parent().children(".header").toggleClass("open");
+        })
+    });
+</script>
+
+  </body>
+</html>
