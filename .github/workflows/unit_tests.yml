@@ -18,6 +18,10 @@ jobs:
     concurrency: ci-${{ github.ref }}
     # Run on Ubuntu
     runs-on: ubuntu-latest
+    # Necessary to prevent mpi tests failing due to lack of slots
+    env:
+      OMPI_MCA_btl: self,tcp
+      OMPI_MCA_rmaps_base_oversubscribe: 1
 
     strategy:
       fail-fast: false
@@ -40,6 +44,16 @@ jobs:
     name: TACS ${{ matrix.NAME }} Build/Test/Docs
 
     steps:
+      - name: Display run details
+        run: |
+          echo "=============================================================";
+          echo "Run #${GITHUB_RUN_NUMBER}";
+          echo "Run ID: ${GITHUB_RUN_ID}";
+          lscpu;
+          echo "Testing: ${GITHUB_REPOSITORY}";
+          echo "Triggered by: ${GITHUB_EVENT_NAME}";
+          echo "Initiated by: ${GITHUB_ACTOR}";
+          echo "=============================================================";
 
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it.
       - uses: actions/checkout@v2
@@ -51,20 +65,9 @@ jobs:
 
       - name: Install TACS
         run: |
-          echo "=============================================================";
-          echo "Run #${GITHUB_RUN_NUMBER}";
-          echo "Run ID: ${GITHUB_RUN_ID}";
-          lscpu;
-          echo "Testing: ${GITHUB_REPOSITORY}";
-          echo "Triggered by: ${GITHUB_EVENT_NAME}";
-          echo "Initiated by: ${GITHUB_ACTOR}";
-          echo "=============================================================";
           export TACS_DIR=${GITHUB_WORKSPACE};
           echo "TACS_DIR=${GITHUB_WORKSPACE}" >> $GITHUB_ENV
           conda install -c anaconda openmpi -q -y;
-          # Necessary to prevent mpi tests failing due to lack of slots
-          export OMPI_MCA_btl=self,tcp;
-          export OMPI_MCA_rmaps_base_oversubscribe=1;
           conda install gxx_linux-64 -q -y;
           conda install -c anaconda openblas -q -y;
           conda install -c conda-forge lapack -q -y;
@@ -83,9 +86,7 @@ jobs:
       - name: Building docs
         run: |
           cd $TACS_DIR/docs;
-          conda install -c conda-forge sphinx  -q -y;
-          conda install -c conda-forge breathe -q -y;
-          conda install -c conda-forge sphinxcontrib-programoutput -q -y;
+          conda install -c conda-forge sphinx breathe sphinxcontrib-programoutput -q -y;
           make html BUILDDIR=.;
           cd html;
           zip -r ../tacs-docs.zip .;
@@ -102,3 +103,6 @@ jobs:
         with:
           branch: gh-pages # The branch the action should deploy to.
           folder: docs/html/ # The folder the action should deploy.
+      - name: Setup tmate session
+        if: ${{ failure() }}
+        uses: mxschmitt/action-tmate@v3
