@@ -115,4 +115,5 @@ jobs:
         if: ${{ failure() && github.event.inputs.debug_enabled }}
         uses: mxschmitt/action-tmate@v3
         timeout-minutes: 15
-        shell: bash -l {0}
+        with:
+          shell: bash -l {0}
