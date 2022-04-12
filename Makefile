@@ -91,6 +91,11 @@ complex: default
 complex_debug: TACS_IS_COMPLEX=true
 complex_debug: debug
 
+install:
+	@echo "installing libtacs.so in $(DESTDIR)$(PREFIX)/lib/"; \
+	install -d $(DESTDIR)$(PREFIX)/lib/ ; \
+	install -m 644 ${TACS_DIR}/lib/libtacs.so $(DESTDIR)$(PREFIX)/lib/
+
 clean:
 	${RM} lib/libtacs.a lib/libtacs.so
 	${RM} tacs/*.so tacs/*.cpp
