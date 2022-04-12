@@ -24,6 +24,7 @@ Examples
    :maxdepth: 1
 
    examples/Example-Plate
+   examples/Example-Transient_Battery
 
 References
 ==========
