@@ -6,21 +6,21 @@ This example demonstrates transient heating of a battery pack with one cell unde
 The domain is an aluminum battery pack with 9 cylindrical cells embedded in a grid-pattern. The cell in
 the corner undergoes thermal runaway, releasing a large amount of heat for 2 seconds. The heat conduction
 of the battery pack is then computed for 5 seconds in total. The maximum temperature within a cell is computed
-over all time steps. This is done for 3 cells: the cell undergoing thermal runaway, the nearest cell adject
+over all time steps. This is done for 3 cells: the cell undergoing thermal runaway, the nearest cell adjacent
 to it, and the cell on the diagonal near it. Computing the maximum temperature of these cells could be used to
-prevent other cells in the pack from going into thermal runaway, leading to a cascading failure. The problem
-domain is shown in the figure below with the BDF component names labeled.
-
-This example demonstrates a number of useful pyTACS features, including:
-* Transient heat conduction physics
-* Two materials modeled in the same mesh
-* Time-specified loading: the right-hand-side is given as a user-defined function of time
-* Evaluating multiple functions in different regions
-* Easy domain-selection enabling the previous three items
+prevent other cells in the pack from going into thermal runaway, leading to a cascading failure.
+The problem domain is shown in the figure below with the BDF component names labeled.
 
 .. image:: images/battery_pack.png
   :width: 800
   :alt: Battery pack problem domain
+
+This example will demonstrate a number of useful pyTACS features, including:
+  * Transient heat conduction physics
+  * Two materials modeled in the same mesh
+  * Time-specified loading: the right-hand-side is given as a user-defined function of time
+  * Evaluating multiple functions in different regions
+  * Easy domain-selection enabling the previous three items
 
 First, import required libraries:
 
