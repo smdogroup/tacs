@@ -27,6 +27,10 @@ jobs:
     env:
       OMPI_MCA_btl: self,tcp
       OMPI_MCA_rmaps_base_oversubscribe: 1
+    # Ensures conda environment is initialized for all steps
+    defaults:
+      run:
+        shell: bash -l {0}
 
     strategy:
       fail-fast: false
@@ -69,7 +73,6 @@ jobs:
           python-version: 3.8
 
       - name: Install TACS
-        shell: bash -l {0}
         run: |
           export TACS_DIR=${GITHUB_WORKSPACE};
           echo "TACS_DIR=${GITHUB_WORKSPACE}" >> $GITHUB_ENV
@@ -86,12 +89,10 @@ jobs:
           cd $TACS_DIR/examples;
           make ${{ matrix.EXAMPLES }} TACS_DIR=$TACS_DIR METIS_INCLUDE=-I${CONDA_PREFIX}/include/ METIS_LIB="-L${CONDA_PREFIX}/lib/ -lmetis";
       - name: Run unit tests
-        shell: bash -l {0}
         run: |
           pip install testflo;
           testflo .;
       - name: Build docs
-        shell: bash -l {0}
         run: |
           cd $TACS_DIR/docs;
           conda install -c conda-forge sphinx breathe sphinxcontrib-programoutput -q -y;
@@ -115,5 +116,3 @@ jobs:
         if: ${{ failure() && github.event.inputs.debug_enabled }}
         uses: mxschmitt/action-tmate@v3
         timeout-minutes: 15
-        with:
-          shell: bash -l {0}
