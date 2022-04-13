@@ -128,7 +128,6 @@ class ProblemTest(OpenMDAOTestCase.OpenMDAOTest):
 
         prob = om.Problem()
         prob.model = Top()
-        prob.setup()
 
         return prob
 
