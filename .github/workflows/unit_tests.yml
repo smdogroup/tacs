@@ -88,6 +88,12 @@ jobs:
           make ${{ matrix.INTERFACE }};
           cd $TACS_DIR/examples;
           make ${{ matrix.EXAMPLES }} TACS_DIR=$TACS_DIR METIS_INCLUDE=-I${CONDA_PREFIX}/include/ METIS_LIB="-L${CONDA_PREFIX}/lib/ -lmetis";
+      - name: Install optional dependencies
+        run: |
+          # Install MPHYS for openmdao tests
+          conda install -c conda-forge petsc petsc4py -q -y;
+          pip install openmdao==3.16;
+          pip install "mphys @ git+https://github.com/OpenMDAO/mphys.git";
       - name: Run unit tests
         run: |
           pip install testflo;
