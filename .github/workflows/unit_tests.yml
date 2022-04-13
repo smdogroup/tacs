@@ -97,7 +97,7 @@ jobs:
       - name: Run unit tests
         run: |
           pip install testflo;
-          testflo .;
+          testflo --timeout 120 .;
       - name: Build docs
         run: |
           cd $TACS_DIR/docs;
