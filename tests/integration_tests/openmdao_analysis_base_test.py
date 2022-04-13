@@ -98,16 +98,18 @@ class OpenMDAOTestCase:
             """
             Test total sensitivities using fd/cs
             """
-            # Only run this test if the user specified wrt
-            if len(self.wrt) > 0:
-                # solve
-                self.prob.run_model()
+            # solve
+            self.prob.run_model()
 
-                # Test functions total sensitivities
-                of = list(self.func_ref.keys())
-                data = self.prob.check_totals(of=of, wrt=self.wrt, compact_print=True, out_stream=None,
-                                              method=self.fd_method, form=self.fd_form, step=self.dh)
-                assert_check_totals(data, atol=self.atol, rtol=self.rtol)
+            # Test functions total sensitivities
+            of = list(self.func_ref.keys())
+            for var_wrt in self.wrt:
+                with self.subTest(wrt=var_wrt):
+                    for var_of in of:
+                        with self.subTest(of=var_of):
+                            data = self.prob.check_totals(of=var_of, wrt=var_wrt, compact_print=True, out_stream=None,
+                                                          method=self.fd_method, form=self.fd_form, step=self.dh)
+                            assert_check_totals(data, atol=self.atol, rtol=self.rtol)
 
         def cleanup_fwd_data(self, data):
             """
