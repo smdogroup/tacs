@@ -661,6 +661,7 @@ class TacsBuilder(Builder):
 
     def get_coupling_group_subsystem(self, scenario_name=None):
         return TacsCouplingGroup(fea_assembler=self.fea_assembler,
+                                 conduction=self.conduction,
                                  check_partials=self.check_partials,
                                  coupled=self.coupled,
                                  scenario_name=scenario_name,
