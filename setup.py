@@ -68,7 +68,7 @@ exts = []
 for mod in ['TACS', 'elements', 'constitutive', 'functions']:
     exts.append(Ext('tacs.%s'%(mod), sources=['tacs/%s.pyx'%(mod)],
                     include_dirs=inc_dirs, libraries=libs,
-                    library_dirs=lib_dirs, runtime_library_dirs=runtime_lib_dirs))
+                    library_dirs=lib_dirs))
 
 for e in exts:
     e.cython_directives = {'embedsignature': True,
