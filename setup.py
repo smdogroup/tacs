@@ -40,8 +40,6 @@ def get_mpi_flags():
 
 inc_dirs, lib_dirs, libs = get_mpi_flags()
 
-# Add tacs-dev/lib as a runtime directory
-runtime_lib_dirs = get_global_dir(['lib'])
 
 # Relative paths for the include/library directories
 rel_inc_dirs = ['src', 'src/bpmat', 'src/elements', 'src/elements/dynamics',
@@ -52,7 +50,15 @@ libs.extend(['tacs'])
 
 # Convert from relative to absolute directories
 inc_dirs.extend(get_global_dir(rel_inc_dirs))
-lib_dirs.extend(get_global_dir(rel_lib_dirs))
+
+tacs_lib = os.environ.get('TACS_LIB')
+if tacs_lib is not None:
+    lib_dirs.append(tacs_lib)
+    runtime_lib_dirs = [tacs_lib]
+else:
+    lib_dirs.extend(get_global_dir(rel_lib_dirs))
+    # Add tacs-dev/lib as a runtime directory
+    runtime_lib_dirs = get_global_dir(['lib'])
 
 # This should be made more general so that you can specify alternate
 # locations for the installation of AMD/METIS
@@ -68,7 +74,7 @@ exts = []
 for mod in ['TACS', 'elements', 'constitutive', 'functions']:
     exts.append(Ext('tacs.%s'%(mod), sources=['tacs/%s.pyx'%(mod)],
                     include_dirs=inc_dirs, libraries=libs,
-                    library_dirs=lib_dirs))
+                    library_dirs=lib_dirs, runtime_library_dirs=runtime_lib_dirs))
 
 for e in exts:
     e.cython_directives = {'embedsignature': True,
