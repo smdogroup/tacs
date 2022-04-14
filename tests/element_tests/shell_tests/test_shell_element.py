@@ -57,14 +57,26 @@ class ElementTest(unittest.TestCase):
                          elements.Tri3ThermalShell,
                          elements.Quad4ThermalShell,
                          elements.Quad9ThermalShell,
-                         elements.Quad16ThermalShell]
+                         elements.Quad16ThermalShell,
+                         elements.Quad4NonlinearShell,
+                         elements.Quad9NonlinearShell,
+                         elements.Quad16NonlinearShell,
+                         elements.Tri3NonlinearShell,
+                         elements.Quad4NonlinearThermalShell,
+                         elements.Quad9NonlinearThermalShell,
+                         elements.Quad16NonlinearThermalShell,
+                         elements.Tri3NonlinearThermalShell]
 
         # The thermal elements will not pass the residual test since they are not derived
         # from Lagrange's equations due to the presence of the thermal coupling equations.
         self.thermal_elements = [elements.Tri3ThermalShell,
                                  elements.Quad4ThermalShell,
                                  elements.Quad9ThermalShell,
-                                 elements.Quad16ThermalShell]
+                                 elements.Quad16ThermalShell,
+                                 elements.Quad4NonlinearThermalShell,
+                                 elements.Quad9NonlinearThermalShell,
+                                 elements.Quad16NonlinearThermalShell,
+                                 elements.Tri3NonlinearThermalShell]
 
         # Create stiffness (need class)
         self.con = constitutive.IsoShellConstitutive(self.props, t=1.0, tNum=0)
