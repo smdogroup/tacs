@@ -41,3 +41,4 @@ tacs/*.cpp
 *.vtk
 *.cfg
 .vscode
+.DS_Store

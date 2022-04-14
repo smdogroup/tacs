@@ -85,7 +85,10 @@ class StaticTestCase:
             # Create GMRES solver object
             subspace = 100
             restarts = 2
+            atol = 1e-30
+            rtol = 1e-12
             self.gmres = TACS.KSM(self.mat, self.pc, subspace, restarts)
+            self.gmres.setTolerances(rtol, atol)
 
             # Create the function list
             self.func_list, self.func_ref = self.setup_funcs(self.assembler)
