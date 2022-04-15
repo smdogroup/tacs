@@ -26,6 +26,15 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
+        include:
+          # real versions
+          - OS: ubuntu-latest
+            BUILD_DIR: linux-64
+
+          # complex versions
+          - OS: macos-latest
+            BUILD_DIR: osx-64
+      matrix:
         OS: [ ubuntu-latest, macos-latest ]
 
     name: TACS Conda Package Deployment (${{ matrix.OS }})
@@ -59,3 +68,5 @@ jobs:
           conda config --set anaconda_upload yes;
           cd ${TACS_DIR}/conda;
           conda build -c conda-forge -c timryanb --output-folder . .;
+          anaconda upload --label main ${{ matrix.BUILD_DIR }}/*real*.tar.bz2;
+          anaconda upload --label complex ${{ matrix.BUILD_DIR }}/*complex*.tar.bz2;
