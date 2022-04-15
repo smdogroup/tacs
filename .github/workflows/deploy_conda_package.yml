@@ -1,0 +1,54 @@
+name: Deploy conda package
+
+on:
+  # Triggers the workflow on push or pull request events but only for the main branch
+  # Remove push when finally merging.
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+  # Allows you to run this workflow manually from the Actions tab.
+  workflow_dispatch:
+
+jobs:
+  # This job is called deploy_conda_package.
+  deploy_conda_package:
+    # Recommended if you intend to make multiple deployments in quick succession.
+    concurrency: ci-${{ github.ref }}
+    # Run on Ubuntu/MacOS
+    runs-on: [ubuntu-latest, macos-latest]
+    # Ensures conda environment is initialized for all steps
+    defaults:
+      run:
+        shell: bash -l {0}
+
+    name: TACS Conda Package Deployment
+
+    steps:
+
+      - name: Display run details
+        run: |
+          echo "=============================================================";
+          echo "Run #${GITHUB_RUN_NUMBER}";
+          echo "Run ID: ${GITHUB_RUN_ID}";
+          lscpu;
+          echo "Testing: ${GITHUB_REPOSITORY}";
+          echo "Triggered by: ${GITHUB_EVENT_NAME}";
+          echo "Initiated by: ${GITHUB_ACTOR}";
+          echo "=============================================================";
+      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it.
+      - uses: actions/checkout@v2
+      - name: Setup miniconda
+        uses: conda-incubator/setup-miniconda@v2
+        with:
+          auto-update-conda: true
+          python-version: 3.8
+
+      - name: Build TACS package
+        run: |
+          export TACS_DIR=${GITHUB_WORKSPACE};
+          echo "TACS_DIR=${GITHUB_WORKSPACE}" >> $GITHUB_ENV;
+          conda install conda-build -q -y;
+          cd ${TACS_DIR}/conda;
+          conda build -c conda-forge -c timryanb .;
