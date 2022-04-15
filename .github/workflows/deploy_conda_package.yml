@@ -63,7 +63,7 @@ jobs:
           echo "TACS_DIR=${GITHUB_WORKSPACE}" >> $GITHUB_ENV;
           export ANACONDA_API_TOKEN=${{ secrets.ANACONDA_TOKEN }};
           conda install anaconda-client conda-build conda-verify -q -y;
-          conda config --set anaconda_upload yes;
+          conda config --set anaconda_upload no;
           cd ${TACS_DIR}/conda;
           conda build -c conda-forge -c timryanb --output-folder . .;
           anaconda upload --label main ${{ matrix.BUILD_DIR }}/*real*.tar.bz2;
