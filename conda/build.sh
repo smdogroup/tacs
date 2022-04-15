@@ -17,7 +17,7 @@ fi
 if [[ $scalar == "complex" ]]; then
   alias MAKE="make complex"
   alias PIP="CFLAGS=-DTACS_USE_COMPLEX ${PYTHON} -m pip"
-elif [[ $mpi == "mpich" ]]; then
+elif [[ $scalar == "real" ]]; then
   alias MAKE="make default"
   alias PIP=" ${PYTHON} -m pip"
 fi
