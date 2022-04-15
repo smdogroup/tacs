@@ -223,6 +223,46 @@ cdef extern from "TACSShellElementDefs.h":
         TACSTri3ThermalShell(TACSShellTransform*,
                              TACSShellConstitutive*)
 
+    cdef cppclass TACSQuad4NonlinearShell(TACSElement):
+        TACSQuad4NonlinearShell(TACSShellTransform*,
+                             TACSShellConstitutive*)
+    
+    cdef cppclass TACSQuad9NonlinearShell(TACSElement):
+        TACSQuad9NonlinearShell(TACSShellTransform*,
+                             TACSShellConstitutive*)
+
+    cdef cppclass TACSQuad16NonlinearShell(TACSElement):
+        TACSQuad16NonlinearShell(TACSShellTransform*,
+                             TACSShellConstitutive*)                             
+    
+    cdef cppclass TACSTri3NonlinearShell(TACSElement):
+        TACSTri3NonlinearShell(TACSShellTransform*,
+                      TACSShellConstitutive*)
+    
+    cdef cppclass TACSQuad4NonlinearThermalShell(TACSElement):
+        TACSQuad4NonlinearThermalShell(TACSShellTransform*,
+                             TACSShellConstitutive*)
+    
+    cdef cppclass TACSQuad9NonlinearThermalShell(TACSElement):
+        TACSQuad9NonlinearThermalShell(TACSShellTransform*,
+                              TACSShellConstitutive*)
+
+    cdef cppclass TACSQuad16NonlinearThermalShell(TACSElement):
+        TACSQuad16NonlinearThermalShell(TACSShellTransform*,
+                               TACSShellConstitutive*)
+
+    cdef cppclass TACSTri3NonlinearThermalShell(TACSElement):
+        TACSTri3NonlinearThermalShell(TACSShellTransform*,
+                             TACSShellConstitutive*)
+    
+    cdef cppclass TACSQuad4ShellQuaternion(TACSElement):
+        TACSQuad4ShellQuaternion(TACSShellTransform*,
+                             TACSShellConstitutive*)
+
+    cdef cppclass TACSQuad4ShellModRot(TACSElement):
+        TACSQuad4ShellModRot(TACSShellTransform*,
+                             TACSShellConstitutive*)
+
 cdef extern from "TACSSpringElementTransform.h":
     cdef cppclass TACSSpringTransform(TACSObject):
         pass
