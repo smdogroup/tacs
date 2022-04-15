@@ -34,8 +34,6 @@ jobs:
           # complex versions
           - OS: macos-latest
             BUILD_DIR: osx-64
-      matrix:
-        OS: [ ubuntu-latest, macos-latest ]
 
     name: TACS Conda Package Deployment (${{ matrix.OS }})
 
