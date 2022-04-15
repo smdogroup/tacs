@@ -17,13 +17,18 @@ jobs:
     # Recommended if you intend to make multiple deployments in quick succession.
     concurrency: ci-${{ github.ref }}
     # Run on Ubuntu/MacOS
-    runs-on: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.OS }}
     # Ensures conda environment is initialized for all steps
     defaults:
       run:
         shell: bash -l {0}
 
-    name: TACS Conda Package Deployment
+    strategy:
+      fail-fast: false
+      matrix:
+        OS: [ ubuntu-latest, macos-latest ]
+
+    name: TACS Conda Package Deployment (${{ matrix.OS }})
 
     steps:
 
