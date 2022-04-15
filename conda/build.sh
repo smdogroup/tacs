@@ -15,22 +15,22 @@ elif [[ "$target_platform" == linux-* ]]; then
 fi
 
 if [[ $scalar == "complex" ]]; then
-  alias MAKE="make complex"
-  alias PIP="CFLAGS=-DTACS_USE_COMPLEX ${PYTHON} -m pip"
+  alias MAKE_TACS="make complex"
+  alias PIP_TACS="CFLAGS=-DTACS_USE_COMPLEX ${PYTHON} -m pip"
 elif [[ $scalar == "real" ]]; then
-  alias MAKE="make default"
-  alias PIP="${PYTHON} -m pip"
+  alias MAKE_TACS="make default"
+  alias PIP_TACS="${PYTHON} -m pip"
 fi
 
 cp Makefile.in.info Makefile.in;
-echo $MAKE
-echo $PIP
-MAKE TACS_DIR=${TACS_DIR} \
+echo $MAKE_TACS
+echo $PIP_TACS
+MAKE_TACS TACS_DIR=${TACS_DIR} \
      LAPACK_LIBS="${LAPACK_LIBS}" \
      METIS_INCLUDE=-I${PREFIX}/include/ METIS_LIB="-L${PREFIX}/lib/ -lmetis" \
      SO_LINK_FLAGS="${LIB_SLF}" SO_EXT=${SO_EXT};
 mv ${TACS_DIR}/lib/libtacs.${SO_EXT} ${PREFIX}/lib;
-PIP install --no-deps --prefix=${PREFIX} . -vv;
+PIP_TACS install --no-deps --prefix=${PREFIX} . -vv;
 cd ${TACS_DIR}/extern/f5tovtk;
 # purposely lower-case make, only default supported below
 make default TACS_DIR=${TACS_DIR} \
