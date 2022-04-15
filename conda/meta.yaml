@@ -61,7 +61,9 @@ test:
     - tests
 
   commands:
-    - testflo tests/
+    - export OMPI_MCA_btl=self,tcp
+    - export OMPI_MCA_rmaps_base_oversubscribe=1
+    #- testflo --timeout 120 tests/
 
 about:
   home: https://github.com/smdogroup/tacs
