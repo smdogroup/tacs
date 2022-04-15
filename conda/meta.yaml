@@ -23,6 +23,7 @@ requirements:
     - mpi4py
     - cython
     - setuptools
+
   host:
     - python
     - pip
@@ -52,10 +53,15 @@ requirements:
     - mpi4py
     - pynastran
 
-  test:
-    # Python imports
-    imports:
-      - tacs
+test:
+  requires:
+    - testflo
+
+  source_files:
+    - tests
+
+  commands:
+    - testflo tests/
 
 about:
   home: https://github.com/smdogroup/tacs
