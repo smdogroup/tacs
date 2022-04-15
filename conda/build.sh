@@ -19,10 +19,12 @@ if [[ $scalar == "complex" ]]; then
   alias PIP="CFLAGS=-DTACS_USE_COMPLEX ${PYTHON} -m pip"
 elif [[ $scalar == "real" ]]; then
   alias MAKE="make default"
-  alias PIP=" ${PYTHON} -m pip"
+  alias PIP="${PYTHON} -m pip"
 fi
 
 cp Makefile.in.info Makefile.in;
+echo $MAKE
+echo $PIP
 MAKE TACS_DIR=${TACS_DIR} \
      LAPACK_LIBS="${LAPACK_LIBS}" \
      METIS_INCLUDE=-I${PREFIX}/include/ METIS_LIB="-L${PREFIX}/lib/ -lmetis" \
