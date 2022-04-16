@@ -10,7 +10,7 @@
 package:
   name: "tacs"
   version: "{{ version }}"
-  string: {{ scalar }}_h{{ PKG_HASH }}_{{ build }}
+  string: {{ PKG_HASH }}_{{ build }}_{{ scalar }}
   track_features:
     - tacs_complex  # [scalar == "complex"]
 
