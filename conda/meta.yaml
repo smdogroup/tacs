@@ -10,12 +10,15 @@
 package:
   name: "tacs"
   version: "{{ version }}"
-  string: {{ PKG_HASH }}_{{ build }}_{{ scalar }}
-  track_features:
-    - tacs_complex  # [scalar == "complex"]
 
 source:
   git_url: https://github.com/timryanb/tacs.git
+
+build:
+  number: {{ build }} 
+  string: {{ PKG_HASH }}_{{ build }}_{{ scalar }}
+  track_features:
+    - tacs_complex  # [scalar == "complex"]
 
 requirements:
   build:
