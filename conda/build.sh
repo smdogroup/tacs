@@ -20,7 +20,10 @@ if [[ $scalar == "complex" ]]; then
 elif [[ $scalar == "real" ]]; then
   alias MAKE_TACS="make default"
   alias PIP_TACS="${PYTHON} -m pip"
+  echo "Real build"
+  MAKE_TACS
 fi
+echo $scalar
 
 cp Makefile.in.info Makefile.in;
 echo $MAKE_TACS
