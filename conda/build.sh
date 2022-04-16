@@ -21,6 +21,8 @@ elif [[ $scalar == "real" ]]; then
   alias MAKE_TACS="make default"
   alias PIP_TACS="${PYTHON} -m pip"
   echo "Real build"
+  which make
+  make default
   MAKE_TACS
 fi
 echo $scalar
