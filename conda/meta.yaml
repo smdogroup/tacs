@@ -16,7 +16,7 @@ source:
 
 build:
   number: {{ build }} 
-  string: py{{ CONDA_PY }}_h{{ PKG_HASH }}_{{ build }}_{{ scalar }}
+  string: py{{ CONDA_PY }}_{{ scalar }}_h{{ PKG_HASH }}_{{ build }}
   track_features:
     - tacs_complex  # [scalar == "complex"]
 
