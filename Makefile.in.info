@@ -57,3 +57,8 @@ METIS_LIB = ${TACS_DIR}/extern/metis/lib/libmetis.a
 
 # AMD_INCLUDE = -I${TACS_DIR}/extern/AMD/Include -I${TACS_DIR}/extern/UFconfig
 # AMD_LIBS = ${TACS_DIR}/extern/AMD/Lib/libamd.a ${TACS_DIR}/extern/UFconfig/libufconfig.a
+
+# tecio is a library for creating tecplot output files. It is only required for f5totec.
+
+# TECIO_INCLUDE = -I${TACS_DIR}/extern/tecio/teciosrc
+# TECIO_LIBS = ${TACS_DIR}/extern/tecio/teciosrc/libtecio.a
