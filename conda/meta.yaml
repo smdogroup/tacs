@@ -28,6 +28,7 @@ requirements:
     - numpy   1.19   # [py==39]
     - numpy   1.22   # [py==310]
     - {{ mpi }}
+    - openmpi-mpicxx  # [mpi == "openmpi"]
     - {{ compiler('cxx') }}
     - make
     - mpi4py
@@ -42,6 +43,7 @@ requirements:
     - numpy   1.19   # [py==39]
     - numpy   1.22   # [py==310]
     - {{ mpi }}
+    - openmpi-mpicxx  # [mpi == "openmpi"]
     - libopenblas
     - lapack
     - metis >=5.1
@@ -58,6 +60,7 @@ requirements:
     - numpy >=1.22.0,<2.0.a0   # [py==310]
     - scipy
     - {{ mpi }}
+    - openmpi-mpicxx  # [mpi == "openmpi"]
     - libopenblas
     - lapack
     - metis >=5.1
@@ -83,9 +86,10 @@ test:
 
   commands:
     - test -f $PREFIX/bin/f5tovtk
+    - test -f $PREFIX/bin/f5totec
     - export OMPI_MCA_btl=self,tcp
     - export OMPI_MCA_rmaps_base_oversubscribe=1
-    #- testflo --timeout 120 tests/
+    - testflo --timeout 120 tests/ # [linux64]
 
 about:
   home: https://github.com/smdogroup/tacs
