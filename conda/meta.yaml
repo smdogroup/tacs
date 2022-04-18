@@ -45,6 +45,7 @@ requirements:
     - libopenblas
     - lapack
     - metis >=5.1
+    - tecio
     - mpi4py
     - cython
     - setuptools
@@ -70,13 +71,24 @@ test:
   source_files:
     - tests
 
+  imports:
+    - tacs
+    - tacs.pyTACS
+    - tacs.problems
+    - tacs.TACS
+    - tacs.elements
+    - tacs.functions
+    - tacs.constitutive
+    #- tacs.mphys # Needs OpenMDAO/MPHYS conda packages
+
   commands:
+    - test -f $PREFIX/bin/f5tovtk
     - export OMPI_MCA_btl=self,tcp
     - export OMPI_MCA_rmaps_base_oversubscribe=1
     #- testflo --timeout 120 tests/
 
 about:
   home: https://github.com/smdogroup/tacs
-  license: APACHE
+  license: Apache-2.0
   license_family: APACHE
   summary: Parallel finite-element analysis package
