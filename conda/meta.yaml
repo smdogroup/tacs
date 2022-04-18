@@ -15,20 +15,22 @@ source:
   git_url: https://github.com/timryanb/tacs.git
 
 build:
-  number: {{ build }} 
+  number: {{ build }}
+  skip: true  # [py<=36]
   string: py{{ CONDA_PY }}_{{ scalar }}_h{{ PKG_HASH }}_{{ build }}
   track_features:
     - tacs_complex  # [scalar == "complex"]
 
 requirements:
   build:
-    - python
+    - python {{ python }}
     - numpy   1.18   # [py==37]
     - numpy   1.18   # [py==38]
     - numpy   1.19   # [py==39]
     - numpy   1.22   # [py==310]
     - {{ mpi }}
     - openmpi-mpicxx  # [mpi == "openmpi"]
+    - mpich-mpicxx  # [mpi == "mpich"]
     - {{ compiler('cxx') }}
     - make
     - mpi4py
@@ -36,7 +38,7 @@ requirements:
     - setuptools
 
   host:
-    - python
+    - python {{ python }}
     - pip
     - numpy   1.18   # [py==37]
     - numpy   1.18   # [py==38]
@@ -44,6 +46,7 @@ requirements:
     - numpy   1.22   # [py==310]
     - {{ mpi }}
     - openmpi-mpicxx  # [mpi == "openmpi"]
+    - mpich-mpicxx  # [mpi == "mpich"]
     - libopenblas
     - lapack
     - metis >=5.1
@@ -53,7 +56,7 @@ requirements:
     - setuptools
 
   run:
-    - python >=3.7
+    - python
     - numpy >=1.18.5,<2.0.a0   # [py==37]
     - numpy >=1.18.5,<2.0.a0   # [py==38]
     - numpy >=1.19.5,<2.0.a0   # [py==39]
@@ -61,6 +64,7 @@ requirements:
     - scipy
     - {{ mpi }}
     - openmpi-mpicxx  # [mpi == "openmpi"]
+    - mpich-mpicxx  # [mpi == "mpich"]
     - libopenblas
     - lapack
     - metis >=5.1

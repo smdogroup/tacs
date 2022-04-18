@@ -65,6 +65,6 @@ jobs:
           conda install anaconda-client conda-build conda-verify -q -y;
           conda config --set anaconda_upload no;
           cd ${TACS_DIR}/conda;
-          conda build -c conda-forge -c timryanb --output-folder . .;
+          conda build --no-include-recipe -c conda-forge -c timryanb --output-folder . .;
           anaconda upload --label main ${{ matrix.BUILD_DIR }}/*real*.tar.bz2 --force;
           anaconda upload --label complex ${{ matrix.BUILD_DIR }}/*complex*.tar.bz2 --force;
