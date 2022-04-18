@@ -95,7 +95,7 @@ test:
     - test -f $PREFIX/bin/f5totec
     - export OMPI_MCA_btl=self,tcp
     - export OMPI_MCA_rmaps_base_oversubscribe=1
-    - testflo --timeout 120 tests/
+    - testflo --timeout 120 tests/ # [linux64]
 
 about:
   home: https://github.com/smdogroup/tacs

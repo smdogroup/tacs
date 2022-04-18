@@ -29,8 +29,11 @@ make ${OPTIONAL} TACS_DIR=${TACS_DIR} \
      METIS_INCLUDE=-I${PREFIX}/include/ METIS_LIB="-L${PREFIX}/lib/ -lmetis" \
      SO_LINK_FLAGS="${LIB_SLF}" SO_EXT=${SO_EXT};
 mv ${TACS_DIR}/lib/libtacs.${SO_EXT} ${PREFIX}/lib;
+
+# Recursively copy all header files
 mkdir ${PREFIX}/include/tacs;
-cp ${TACS_DIR}/src/**/*.h ${PREFIX}/include/tacs;
+find ${TACS_DIR}/src/ -name '*.h' -exec cp -prv '{}' ${PREFIX}/include/tacs ';'
+
 CFLAGS=${PIP_FLAGS} ${PYTHON} -m pip install --no-deps --prefix=${PREFIX} . -vv;
 
 cd ${TACS_DIR}/extern/f5tovtk;
