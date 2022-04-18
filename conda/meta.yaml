@@ -73,7 +73,7 @@ test:
 
   imports:
     - tacs
-    - tacs.pyTACS
+    - tacs.pytacs
     - tacs.problems
     - tacs.TACS
     - tacs.elements
