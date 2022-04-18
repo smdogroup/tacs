@@ -89,11 +89,13 @@ test:
     #- tacs.mphys # Needs OpenMDAO/MPHYS conda packages
 
   commands:
+    - |
+
     - test -f $PREFIX/bin/f5tovtk
     - test -f $PREFIX/bin/f5totec
     - export OMPI_MCA_btl=self,tcp
     - export OMPI_MCA_rmaps_base_oversubscribe=1
-    - testflo --timeout 120 tests/ # [linux64]
+    - testflo --timeout 120 tests/
 
 about:
   home: https://github.com/smdogroup/tacs
