@@ -8,31 +8,25 @@ from mphys.scenario_structural import ScenarioStructural
 import openmdao.api as om
 
 '''
-The nominal case is a heat conduction problem of a
-1m radius plate with a Dirichilet boundary condition applied at the edges,
-such that:
-    T(theta) = T0 + dT * sin(2*theta)
-    T0 = 70 C
-    dT = 30 C
-The problem is then to solve for the temperature within the boundaries of the plate.
-The problem basically boils down to Laplaces problem:
-    grad**2 T = 0
-test KSTemperature, StructuralMass, and AverageTemperature functions and sensitivities
+This is a simple 1m by 2m plate made up of four quad thermal elements.
+The plate is thermally loaded under a unit heat flow, 
+"q_conduct", applied on on every node. The mass, AverageTemperature, and KSTemperature 
+of the plate are evaluated as outputs and have their partial and total sensitivities checked.
 '''
 
 base_dir = os.path.dirname(os.path.abspath(__file__))
 bdf_file = os.path.join(base_dir, "./input_files/debug_plate.bdf")
 
-FUNC_REFS = {'analysis.avg_temp': 0.29063076564606977,
+# Historical reference values for function outputs
+FUNC_REFS = {'analysis.avg_temp': 0.4565217391304351,
              'analysis.ks_temp': 0.6819632852575701,
              'analysis.mass': 25000.0}
 
+# Inputs to check total sensitivities wrt
 wrt = ['mesh.fea_mesh.x_struct0', 'dv_struct', 'q_conduct']
 
-# Radius of plate
-R = 1.0
 # Area of plate
-area = np.pi * R ** 2
+area = 2.0
 
 # KS function weight
 ksweight = 10.0
@@ -43,7 +37,7 @@ class ProblemTest(OpenMDAOTestCase.OpenMDAOTest):
 
     def setup_problem(self, dtype):
         """
-        Setup mesh and pytacs object for problem we will be testing.
+        Setup openmdao problem object we will be testing.
         """
 
         # Overwrite default tolerances
@@ -72,24 +66,17 @@ class ProblemTest(OpenMDAOTestCase.OpenMDAOTest):
             # pass back the appropriate tacs element object
             elem_list = []
             model = elements.HeatConduction2D(con)
-            for elem_descript in elem_descripts:
-                if elem_descript in ['CQUAD4', 'CQUADR']:
-                    basis = elements.LinearQuadBasis()
-                elif elem_descript in ['CTRIA3', 'CTRIAR']:
-                    basis = elements.LinearTriangleBasis()
-                else:
-                    print("Uh oh, '%s' not recognized" % (elem_descript))
-                elem = elements.Element2D(model, basis)
-                elem_list.append(elem)
+            basis = elements.LinearQuadBasis()
+            elem = elements.Element2D(model, basis)
 
             # Add scale for thickness dv
             scale = [100.0]
-            return elem_list, scale
+            return elem, scale
 
         def problem_setup(scenario_name, fea_assembler, problem):
             """
             Helper function to add fixed forces and eval functions
-            to structural problems used in tacs builder
+            to thermal problems used in tacs builder
             """
             # Set convergence to be tight for test
             problem.setOption('L2Convergence', 1e-20)
@@ -133,6 +120,7 @@ class ProblemTest(OpenMDAOTestCase.OpenMDAOTest):
 
     def setup_funcs(self):
         """
-        Create a list of functions to be tested and their reference values for the problem
+        Create a dict of functions to be tested and a list of inputs
+        to test their sensitivities with respect to.
         """
         return FUNC_REFS, wrt

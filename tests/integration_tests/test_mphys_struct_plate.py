@@ -8,24 +8,20 @@ from mphys.scenario_structural import ScenarioStructural
 import openmdao.api as om
 
 '''
-The nominal case is a heat conduction problem of a
-1m radius plate with a Dirichilet boundary condition applied at the edges,
-such that:
-    T(theta) = T0 + dT * sin(2*theta)
-    T0 = 70 C
-    dT = 30 C
-The problem is then to solve for the temperature within the boundaries of the plate.
-The problem basically boils down to Laplaces problem:
-    grad**2 T = 0
-test KSTemperature, StructuralMass, and AverageTemperature functions and sensitivities
+This is a simple 1m by 2m plate made up of four quad shell elements.
+The plate is structurally loaded under a 100G gravity load and a unit force, 
+"f_struct", is applied on on every node. The mass and KSFailure of the plate 
+are evaluated as outputs and have their partial and total sensitivities checked.
 '''
 
 base_dir = os.path.dirname(os.path.abspath(__file__))
 bdf_file = os.path.join(base_dir, "./input_files/debug_plate.bdf")
 
+# Historical reference values for function outputs
 FUNC_REFS = {'analysis.mass': 55.6,
              'analysis.ks_vmfailure': 5.778130269059719}
 
+# Inputs to check total sensitivities wrt
 wrt = ['mesh.fea_mesh.x_struct0', 'dv_struct', 'f_struct']
 
 # KS function weight
@@ -37,7 +33,7 @@ class ProblemTest(OpenMDAOTestCase.OpenMDAOTest):
 
     def setup_problem(self, dtype):
         """
-        Setup mesh and pytacs object for problem we will be testing.
+        Setup openmdao problem object we will be testing.
         """
 
         # Overwrite default tolerances
@@ -118,6 +114,7 @@ class ProblemTest(OpenMDAOTestCase.OpenMDAOTest):
 
     def setup_funcs(self):
         """
-        Create a list of functions to be tested and their reference values for the problem
+        Create a dict of functions to be tested and a list of inputs
+        to test their sensitivities with respect to.
         """
         return FUNC_REFS, wrt

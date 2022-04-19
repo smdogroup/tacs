@@ -8,8 +8,8 @@ ErrorTuple = namedtuple('ErrorTuple', ['forward', 'reverse', 'forward_reverse'])
 
 '''
 This is a base class for running openmdao unit test cases.
-This base class will test function evaluations partial and total 
-sensitivities for the user-specified openmdao problems implimented by
+This base class will test function evaluations, partial, and total 
+sensitivities for the user-specified openmdao problems implemented by
 the child test case. When the user creates a new test based 
 on this class two methods are required to be defined in the child class. 
     1. setup_problem
@@ -54,7 +54,7 @@ class OpenMDAOTestCase:
 
         def setup_problem(self, dtype):
             """
-            Setup pytacs object for problems we will be testing.
+            Setup openmdao problem object we will be testing.
             Must be defined in child class that inherits from this class.
             """
             raise NotImplementedError("Child class must implement a 'setup_problem' method")
@@ -62,7 +62,8 @@ class OpenMDAOTestCase:
 
         def setup_funcs(self):
             """
-            Create a list of functions to be tested and their reference values for the problem.
+            Create a dictionary of functions and their reference values to be tested for the problem.
+            Also provides a list of variable names to test total sensitivity wrt.
             Must be defined in child class that inherits from this class.
             """
             raise NotImplementedError("Child class must implement a 'setup_funcs' method")
