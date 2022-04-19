@@ -77,7 +77,7 @@ jobs:
           export TACS_DIR=${GITHUB_WORKSPACE};
           echo "TACS_DIR=${GITHUB_WORKSPACE}" >> $GITHUB_ENV
           conda install zlib=1.2.11;
-          conda install -c anaconda openmpi -q -y;
+          conda install -c conda-forge openmpi openmpi-mpicxx -q -y;
           conda install gxx_linux-64 -q -y;
           conda install -c anaconda openblas -q -y;
           conda install -c conda-forge lapack -q -y;
