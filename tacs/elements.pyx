@@ -624,7 +624,7 @@ cdef class Quad4Shell(Element):
 
 cdef class Quad4NonlinearShell(Element):
     """
-    A 4-node quad shell element for general nonlinear elastic analysis.
+    A 4-node quad shell element for general geometric nonlinear elastic analysis.
 
     This element employs a mixed interpolation of tensorial (strain)
     components (MITC) method to avoid shear locking problems.
@@ -674,7 +674,7 @@ cdef class Quad9Shell(Element):
 
 cdef class Quad9NonlinearShell(Element):
     """
-    A 9-node quad shell element for general nonlinear elastic analysis.
+    A 9-node quad shell element for general geometric nonlinear elastic analysis.
 
     This element employs a mixed interpolation of tensorial (strain)
     components (MITC) method to avoid shear locking problems.
@@ -724,7 +724,7 @@ cdef class Quad16Shell(Element):
 
 cdef class Quad16NonlinearShell(Element):
     """
-    A 16-node quad shell element for general nonlinear elastic analysis.
+    A 16-node quad shell element for general geometric nonlinear elastic analysis.
 
     This element employs a mixed interpolation of tensorial (strain)
     components (MITC) method to avoid shear locking problems.
@@ -774,7 +774,7 @@ cdef class Tri3Shell(Element):
 
 cdef class Tri3NonlinearShell(Element):
     """
-    A 3-node triangular shell element for general nonlinear elastic analysis.
+    A 3-node triangular shell element for geometric elastic analysis.
 
     This element employs a mixed interpolation of tensorial (strain)
     components (MITC) method to avoid shear locking problems.
@@ -924,7 +924,7 @@ cdef class Quad9ThermalShell(Element):
 
 cdef class Quad9NonlinearThermalShell(Element):
     """
-    A 9-node quad shell element for general nonlinear thermoelastic analysis.
+    A 9-node quad shell element for general geometric nonlinear thermoelastic analysis.
 
     This element employs a mixed interpolation of tensorial (strain)
     components (MITC) method to avoid shear locking problems.
@@ -974,7 +974,7 @@ cdef class Quad16ThermalShell(Element):
 
 cdef class Quad16NonlinearThermalShell(Element):
     """
-    A 16-node quad shell element for general nonlinear thermoelastic analysis.
+    A 16-node quad shell element for general geometric nonlinear thermoelastic analysis.
 
     This element employs a mixed interpolation of tensorial (strain)
     components (MITC) method to avoid shear locking problems.
@@ -1024,7 +1024,7 @@ cdef class Tri3ThermalShell(Element):
 
 cdef class Tri3NonlinearThermalShell(Element):
     """
-    A 3-node triangular shell element for general nonlinear thermoelastic analysis.
+    A 3-node triangular shell element for general geometric nonlinear thermoelastic analysis.
 
     This element employs a mixed interpolation of tensorial (strain)
     components (MITC) method to avoid shear locking problems.

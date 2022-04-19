@@ -43,6 +43,8 @@ The following :class:`~TACS.Element` classes are available in TACS:
 .. automodule:: tacs.elements
   :members: Element2D, Element3D,
     Quad4Shell, Quad9Shell, Quad16Shell, Tri3Shell,
+    Quad4NonlinearShell, Quad9NonlinearShell, Quad16NonlinearShell, Tri3NonlinearShell,
+    Quad4NonlinearThermalShell, Quad9NonlinearThermalShell, Quad16NonlinearThermalShell, Tri3NonlinearThermalShell,
     Quad4ThermalShell, Quad9ThermalShell, Quad16ThermalShell, Tri3ThermalShell,
     RBE2, RBE3, MassElement, SpringElement
   :show-inheritance:
