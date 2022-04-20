@@ -1,7 +1,6 @@
 """
-Structural model of a slot made from 3D tetrahedral elements.
-The slot is constrained at its bolt holes and a set of point
-forces are applied at the top of the slot.
+6 noded beam model 1 meter long in x direction.
+We apply a tip load in the z direction and clamp it at the root.
 """
 # ==============================================================================
 # Standard Python modules
