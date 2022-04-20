@@ -233,6 +233,10 @@ class TACSBeamElement : public TACSElement {
     con->incref();
   }
 
+  const char* getObjectName(){
+    return "TACSBeamElement";
+  }
+
   int getVarsPerNode(){
     return vars_per_node;
   }
@@ -242,6 +246,10 @@ class TACSBeamElement : public TACSElement {
 
   ElementLayout getLayoutType(){
     return basis::getLayoutType();
+  }
+
+  ElementType getElementType(){
+    return TACS_BEAM_OR_SHELL_ELEMENT;
   }
 
   int getNumQuadraturePoints(){
