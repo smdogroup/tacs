@@ -76,11 +76,11 @@ TACSBasicBeamConstitutive::TACSBasicBeamConstitutive( TacsScalar EA,
 
   // Set the entries of the density matrix
   rho[0] = m00;
-  rho[0] = xm2*m00;
+  rho[1] = xm2*m00;
   rho[2] = xm3*m00;
   rho[3] = m11;
   rho[4] = m22;
-  rho[5] = m00*xm2*xm3;
+  rho[5] = m33; // m00*xm2*xm3;
 }
 
 /*
@@ -88,9 +88,9 @@ TACSBasicBeamConstitutive::TACSBasicBeamConstitutive( TacsScalar EA,
   moments of the cross-section.
 */
 TACSBasicBeamConstitutive::TACSBasicBeamConstitutive( TacsScalar rhoA,
+                                                      TacsScalar rhoJ,
                                                       TacsScalar rhoIy,
                                                       TacsScalar rhoIz,
-                                                      TacsScalar rhoIyz,
                                                       TacsScalar EA,
                                                       TacsScalar GJ,
                                                       TacsScalar EIy,
@@ -110,7 +110,7 @@ TACSBasicBeamConstitutive::TACSBasicBeamConstitutive( TacsScalar rhoA,
   rho[0] = rhoA;
   rho[1] = 0.0;
   rho[2] = 0.0;
-  rho[3] = rhoIy;
-  rho[4] = rhoIz;
-  rho[5] = rhoIyz;
+  rho[3] = rhoJ;
+  rho[4] = rhoIy;
+  rho[5] = rhoIz;
 }

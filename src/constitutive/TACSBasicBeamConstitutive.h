@@ -33,8 +33,8 @@ class TACSBasicBeamConstitutive : public TACSBeamConstitutive {
                              TacsScalar xc2, TacsScalar xc3,
                              TacsScalar xk2, TacsScalar xk3,
                              TacsScalar muS );
-  TACSBasicBeamConstitutive( TacsScalar rhoA, TacsScalar rhoIy,
-                             TacsScalar rhoIz, TacsScalar rhoIyz,
+  TACSBasicBeamConstitutive( TacsScalar rhoA, TacsScalar rhoJ,
+                             TacsScalar rhoIy, TacsScalar rhoIz,
                              TacsScalar EA, TacsScalar GJ,
                              TacsScalar EIy, TacsScalar EIz,
                              TacsScalar kGAy, TacsScalar kGAz );
