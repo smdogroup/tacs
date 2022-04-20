@@ -522,8 +522,8 @@ cdef class IsoShellConstitutive(ShellConstitutive):
         t (float or complex, optional): The material thickness (keyword argument). Defaults to 1.0.
         tNum (int, optional): Design variable number to assign to thickness (keyword argument). Defaults to -1
             (i.e. no design variable).
-        tlb (float or complex, optional): Thickness varaible lower bound (keyword argument). Defaults to 0.0.
-        tub (float or complex, optional): Thickness varaible upper bound (keyword argument). Defaults to 10.0.
+        tlb (float or complex, optional): Thickness variable lower bound (keyword argument). Defaults to 0.0.
+        tub (float or complex, optional): Thickness variable upper bound (keyword argument). Defaults to 10.0.
     """
     def __cinit__(self, *args, **kwargs):
         cdef TACSMaterialProperties *props = NULL
@@ -686,6 +686,62 @@ cdef class BasicBeamConstitutive1(BeamConstitutive):
                                                   EA, GJ, EIy, EIz, kGAy, kGAz)
         self.ptr = self.cptr
         self.ptr.incref()
+
+cdef class IsoTubeBeamConstitutive(BeamConstitutive):
+    """
+    Timoshenko theory based constitutive object for a hollow circular beam.
+
+    Args:
+        props (MaterialProperties): The material property.
+        d (float or complex, optional): Tube inner diameter (keyword argument). Defaults to 1.0.
+        dNum (int, optional): Design variable number to assign to tube diameter (keyword argument). Defaults to -1
+            (i.e. no design variable).
+        dlb (float or complex, optional): Lower bound on tube diameter (keyword argument). Defaults to 0.0.
+        dub (float or complex, optional): Upper bound on tube diameter (keyword argument). Defaults to 10.0.
+        t (float or complex, optional): Tube wall thickness (keyword argument). Defaults to 0.1.
+        tNum (int, optional): Design variable number to assign to wall thickness (keyword argument). Defaults to -1
+            (i.e. no design variable).
+        tlb (float or complex, optional): Lower bound on wall thickness (keyword argument). Defaults to 0.0.
+        tub (float or complex, optional): Upper bound on wall thickness (keyword argument). Defaults to 10.0.
+    """
+    def __cinit__(self, *args, **kwargs):
+        cdef TACSMaterialProperties *props = NULL
+        cdef TacsScalar d = 1.0
+        cdef int dNum = -1
+        cdef TacsScalar dlb = 0.0
+        cdef TacsScalar dub = 10.0
+        cdef TacsScalar t = 0.1
+        cdef int tNum = -1
+        cdef TacsScalar tlb = 0.0
+        cdef TacsScalar tub = 10.0
+
+        if len(args) >= 1:
+            props = (<MaterialProperties>args[0]).ptr
+        if 'd' in kwargs:
+            d = kwargs['d']
+        if 'dNum' in kwargs:
+            dNum = kwargs['dNum']
+        if 'dlb' in kwargs:
+            dlb = kwargs['dlb']
+        if 'dub' in kwargs:
+            dub = kwargs['dub']
+        if 't' in kwargs:
+            t = kwargs['t']
+        if 'tNum' in kwargs:
+            tNum = kwargs['tNum']
+        if 'tlb' in kwargs:
+            tlb = kwargs['tlb']
+        if 'tub' in kwargs:
+            tub = kwargs['tub']
+
+        if props is not NULL:
+            self.cptr = new TACSIsoTubeBeamConstitutive(props, d, t, dNum, tNum,
+                                                        dlb, dub, tlb, tub)
+            self.ptr = self.cptr
+            self.ptr.incref()
+        else:
+            self.ptr = NULL
+            self.cptr = NULL
 
 cdef class GeneralMassConstitutive(Constitutive):
     """
