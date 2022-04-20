@@ -26,18 +26,25 @@ class ConstitutiveTest(unittest.TestCase):
         # This constituitive class has no dvs
         self.dvs = np.array([], dtype=self.dtype)
 
+        # Create the isotropic material
         rho = 2700.0
-        E = 70e9
-        G = 30e9
-        k = 5.0/6.0
+        specific_heat = 921.096
+        E = 70e3
+        nu = 0.3
+        ys = 270.0
+        cte = 24.0e-6
+        kappa = 230.0
+        self.props = constitutive.MaterialProperties(rho=rho, specific_heat=specific_heat,
+                                                     E=E, nu=nu, ys=ys, cte=cte, kappa=kappa)
 
         A = 0.01
         Iy = Iz = 1e-3
         J = (Iy**2 + Iz**2)**0.5
+        kcorr = 5.0/6.0
 
         # Create stiffness (need class)
-        self.con = constitutive.BasicBeamConstitutive1(rho*A, rho*J, rho*Iy, rho*Iz,
-                                                       E*A, G*J, E*Iy, E*Iz, k*G*A, k*G*A)
+        self.con = constitutive.BasicBeamConstitutive1(self.props, A=A, J=J, Iy=Iy, Iz=Iz,
+                                                       kcorr=kcorr)
 
         # Seed random number generator in tacs for consistent test results
         elements.SeedRandomGenerator(0)

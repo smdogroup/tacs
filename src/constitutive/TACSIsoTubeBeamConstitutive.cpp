@@ -387,3 +387,12 @@ TacsScalar TACSIsoTubeBeamConstitutive::evalDesignFieldValue( int elemIndex,
   }
   return 0.0;
 }
+
+const char* TACSIsoTubeBeamConstitutive::constName = "TACSIsoTubeBeamConstitutive";
+
+/*
+  Return the constitutive name
+*/
+const char* TACSIsoTubeBeamConstitutive::getObjectName(){
+  return constName;
+}

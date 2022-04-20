@@ -669,21 +669,35 @@ cdef class BasicBeamConstitutive1(BeamConstitutive):
     Timoshenko theory based constitutive object for an uncoupled beam.
 
     Args:
-        rhoA (float or complex): Mass per unit span
-        rhoJ (float or complex): Rotational mass of inertia about x-axis
-        rhoIy (float or complex): Rotational mass moment of inertia about y-axis
-        rhoIz (float or complex): Rotational mass moment of inertia about z-axis
-        EA (float or complex): Axial stiffness
-        GJ (float or complex): Torsional stiffness
-        EIy (float or complex): Bending stiffness in z-axis
-        EIz (float or complex): Bending stiffness in y-axis
-        kGAy (float or complex): Shearing stiffness in y-axis
-        kGAz (float or complex): Shearing stiffness in z-axis
+        props (MaterialProperties): The material property.
+        A (float or complex): Beam cross-sectional area (keyword argument). Defaults to 0.0.
+        J (float or complex): Beam polar moment of inertia about x-axis (keyword argument). Defaults to 0.0.
+        Iy (float or complex): Beam area moment of inertia about y-axis (keyword argument). Defaults to 0.0.
+        Iz (float or complex): Beam area moment of inertia about z-axis (keyword argument). Defaults to 0.0.
+        kcorr (float or complex): Shear correction factor (keyword argument). Defaults to 5/6.
     """
-    def __cinit__(self, rhoA, rhoJ, rhoIy, rhoIz,
-                  EA, GJ, EIy, EIz, kGAy, kGAz):
-        self.cptr = new TACSBasicBeamConstitutive(rhoA, rhoJ, rhoIy, rhoIz,
-                                                  EA, GJ, EIy, EIz, kGAy, kGAz)
+    def __cinit__(self, *args, **kwargs):
+        cdef TACSMaterialProperties *props = NULL
+        cdef TacsScalar A = 0.0
+        cdef TacsScalar J = 0.0
+        cdef TacsScalar Iy = 0.0
+        cdef TacsScalar Iz = 0.0
+        cdef TacsScalar kcorr = 5.0/6.0
+
+        if len(args) >= 1:
+            props = (<MaterialProperties>args[0]).ptr
+        if 'A' in kwargs:
+            A = kwargs['A']
+        if 'J' in kwargs:
+            J = kwargs['J']
+        if 'Iy' in kwargs:
+            Iy = kwargs['Iy']
+        if 'Iz' in kwargs:
+            Iz = kwargs['Iz']
+        if 'kcorr' in kwargs:
+            kcorr = kwargs['kcorr']
+
+        self.cptr = new TACSBasicBeamConstitutive(props, A, J, Iy, Iz, kcorr)
         self.ptr = self.cptr
         self.ptr.incref()
 
