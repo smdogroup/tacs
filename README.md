@@ -1,8 +1,10 @@
 [![Build, unit tests, and docs](https://github.com/smdogroup/tacs/actions/workflows/unit_tests.yml/badge.svg)](https://github.com/smdogroup/tacs/actions/workflows/unit_tests.yml)
 [![Anaconda-Server Badge](https://anaconda.org/timryanb/tacs/badges/license.svg)](https://anaconda.org/timryanb/tacs)
+
 [![Anaconda-Server Badge](https://anaconda.org/timryanb/tacs/badges/installer/conda.svg)](https://anaconda.org/timryanb/tacs)
 [![Anaconda-Server Badge](https://anaconda.org/timryanb/tacs/badges/version.svg)](https://anaconda.org/timryanb/tacs)
 [![Anaconda-Server Badge](https://anaconda.org/timryanb/tacs/badges/platforms.svg)](https://anaconda.org/timryanb/tacs)
+[![Anaconda-Server Badge](https://anaconda.org/timryanb/tacs/badges/downloads.svg)](https://anaconda.org/timryanb/tacs)
 
 # TACS Overview #
 
@@ -30,7 +32,32 @@ Kennedy, G. J. and Hicken, J. E., "Improved Constraint-Aggregation Methods", Com
 
 Kennedy, G. J., "Strategies for adaptive optimization with aggregation constraints using interior-point methods", 2015, doi:http://dx.doi.org/10.1016/j.compstruc.2015.02.024
 
-# Setting up and installing TACS #
+# Setting up and installing TACS through anaconda #
+The easiest way to get started with TACS is through a conda install. [Conda packages](https://anaconda.org/timryanb/tacs) are
+available for Mac OSX and Linux platforms. To get started, run:
+
+    conda create -n TACS python=3.8
+    activate TACS
+    conda install -c conda-forge -c timryanb tacs
+    
+This will create an environment named "TACS" and install the `tacs` package and all
+necessary dependencies. Once installed the user will have access to all TACS C++ and python libraries. 
+
+The best way to get started is to check out and run the files in the `examples/`
+folder. For instance, running the script under the `examples/crm` directory:
+
+    mpirun python analysis.py
+    
+The conda install also sets up the `f5totec` and `f5tovtk` executables in the user's conda environment.
+So TACS-generated .f5 solution files can be converted into a format for viewing in Tecplot or Paraview using the following respective commands:
+    
+    f5totec cruise_000.f5
+
+or 
+
+    f5tovtk cruise_000.f5
+
+# Setting up and installing TACS from source #
 
 In addition to a working implementation of MPI, BLAS and LAPACK, TACS requires Metis 5.1 for mesh partitioning. The latest version of Metis can be obtained [here](http://glaros.dtc.umn.edu/gkhome/metis/metis/download). TACS can optionally use the approximate minimum degree ordering routines from AMD/UFConfig. These were distributed separately, but can now be obtained from SuiteSparse package. If you use AMD, be sure to define the TACS_HAS_AMD_LIBRARY flag within the Makefile.in configuration file.
 
@@ -50,13 +77,13 @@ Note that the default values can often be used without modification. Of all thes
 
 The python interface can be created with a call to setup.py. The setup.cfg.info contains the recommended defaults for the configuration script. For development, create a local development installation by executing
 
-pip install -e .
+    pip install -e .
 
 This command is also executed by the command `make interface`.
 
 If the user does not intend to modify the source code and wishes to install the interface to their python site-packages, they can instead run
 
-pip install .
+    pip install .
 
 ### Converting FH5 files ###
 
