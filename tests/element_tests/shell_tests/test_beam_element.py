@@ -49,7 +49,7 @@ class ElementTest(unittest.TestCase):
         ref_axis = np.array([0.0, 1.0, 1.0], dtype=self.dtype)
         self.transforms = [elements.BeamRefAxisTransform(ref_axis)]
 
-        # TACS shell elements of various orders and types
+        # TACS beam elements of various orders and types
         self.elements = [elements.LinearBeam]
 
         t = 0.1
@@ -71,7 +71,7 @@ class ElementTest(unittest.TestCase):
         # because TestElementResidual only supports FD testing right now
         dh = 1e-5
         rtol = 1e-2
-        # Loop through every combination of transform type and shell element class and test residual
+        # Loop through every combination of transform type and beam element class and test residual
         for transform in self.transforms:
             with self.subTest(transform=transform):
                 for element_handle in self.elements:
@@ -83,7 +83,7 @@ class ElementTest(unittest.TestCase):
                         self.assertFalse(fail)
 
     def test_element_jacobian(self):
-        # Loop through every combination of transform type and shell element class and test Jacobian
+        # Loop through every combination of transform type and beam element class and test Jacobian
         for transform in self.transforms:
             with self.subTest(transform=transform):
                 for element_handle in self.elements:
@@ -95,7 +95,7 @@ class ElementTest(unittest.TestCase):
                         self.assertFalse(fail)
 
     def test_adj_res_product(self):
-        # Loop through every combination of transform type and shell element class and test adjoint residual-dvsens product
+        # Loop through every combination of transform type and beam element class and test adjoint residual-dvsens product
         for transform in self.transforms:
             with self.subTest(transform=transform):
                 for element_handle in self.elements:
@@ -108,7 +108,7 @@ class ElementTest(unittest.TestCase):
                         self.assertFalse(fail)
 
     def test_adj_res_xpt_product(self):
-        # Loop through every combination of transform type and shell element class and test adjoint residual-xptsens product
+        # Loop through every combination of transform type and beam element class and test adjoint residual-xptsens product
         for transform in self.transforms:
             with self.subTest(transform=transform):
                 for element_handle in self.elements:
@@ -120,7 +120,7 @@ class ElementTest(unittest.TestCase):
                         self.assertFalse(fail)
 
     def test_element_mat_dv_sens(self):
-        # Loop through every combination of transform type and shell element class and element matrix inner product sens
+        # Loop through every combination of transform type and beam element class and element matrix inner product sens
         for transform in self.transforms:
             with self.subTest(transform=transform):
                 for element_handle in self.elements:
