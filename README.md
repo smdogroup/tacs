@@ -34,7 +34,7 @@ Kennedy, G. J., "Strategies for adaptive optimization with aggregation constrain
 
 # Setting up and installing TACS through anaconda #
 The easiest way to get started with TACS is through a conda install. [Conda packages](https://anaconda.org/timryanb/tacs) are
-available for Mac OSX and Linux platforms. To get started, run:
+available for Mac OSX and Linux platforms. To get started, run the following in a conda terminal:
 
     conda create -n TACS python=3.8
     activate TACS
