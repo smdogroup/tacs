@@ -1,4 +1,5 @@
 [![Build, unit tests, and docs](https://github.com/smdogroup/tacs/actions/workflows/unit_tests.yml/badge.svg)](https://github.com/smdogroup/tacs/actions/workflows/unit_tests.yml)
+[![Anaconda-Server Badge](https://anaconda.org/timryanb/tacs/badges/license.svg)](https://anaconda.org/timryanb/tacs)
 [![Anaconda-Server Badge](https://anaconda.org/timryanb/tacs/badges/installer/conda.svg)](https://anaconda.org/timryanb/tacs)
 [![Anaconda-Server Badge](https://anaconda.org/timryanb/tacs/badges/version.svg)](https://anaconda.org/timryanb/tacs)
 [![Anaconda-Server Badge](https://anaconda.org/timryanb/tacs/badges/platforms.svg)](https://anaconda.org/timryanb/tacs)

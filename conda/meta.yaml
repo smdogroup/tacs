@@ -99,6 +99,7 @@ test:
 
 about:
   home: https://github.com/smdogroup/tacs
-  license: Apache-2.0
+  license: Apache
   license_family: APACHE
   summary: Parallel finite-element analysis package
+  doc_url: https://smdogroup.github.io/tacs/
