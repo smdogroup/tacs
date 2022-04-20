@@ -114,12 +114,16 @@ cdef extern from "TACSLamParamShellConstitutive.h":
 
 cdef extern from "TACSBeamConstitutive.h":
     cdef cppclass TACSBeamConstitutive(TACSConstitutive):
-        TACSBeamConstitutive(TacsScalar, TacsScalar, TacsScalar, TacsScalar,
-                             TacsScalar, TacsScalar, TacsScalar, TacsScalar,
-                             TacsScalar, TacsScalar, const TacsScalar*)
+        TACSBeamConstitutive()
 
 cdef class BeamConstitutive(Constitutive):
     cdef TACSBeamConstitutive *cptr
+
+cdef extern from "TACSBasicBeamConstitutive.h":
+    cdef cppclass TACSBasicBeamConstitutive(TACSBeamConstitutive):
+        TACSBasicBeamConstitutive(TacsScalar, TacsScalar, TacsScalar, TacsScalar,
+                                  TacsScalar, TacsScalar, TacsScalar, TacsScalar,
+                                  TacsScalar, TacsScalar)
 
 cdef extern from "TACSGeneralMassConstitutive.h":
     cdef cppclass TACSGeneralMassConstitutive(TACSConstitutive):

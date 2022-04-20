@@ -664,13 +664,26 @@ cdef class LamParamShellConstitutive(ShellConstitutive):
         self.ptr = self.cptr
         self.ptr.incref()
 
-cdef class BeamConstitutive(Constitutive):
-    def __cinit__(self, rhoA, rhoIy, rhoIz, rhoIyz,
-                  EA, GJ, EIy, EIz, kGAy, kGAz,
-                  np.ndarray[TacsScalar, ndim=1, mode='c'] axis):
-        self.cptr = new TACSBeamConstitutive(rhoA, rhoIy, rhoIz, rhoIyz,
-                                             EA, GJ, EIy, EIz, kGAy, kGAz,
-                                             <TacsScalar*>axis.data)
+cdef class BasicBeamConstitutive1(BeamConstitutive):
+    """
+    Timoshenko theory based constitutive object for an uncoupled beam.
+
+    Args:
+        rhoA (float or complex): Mass per unit span
+        rhoJ (float or complex): Rotational mass of inertia about x-axis
+        rhoIy (float or complex): Rotational mass moment of inertia about y-axis
+        rhoIz (float or complex): Rotational mass moment of inertia about z-axis
+        EA (float or complex): Axial stiffness
+        GJ (float or complex): Torsional stiffness
+        EIy (float or complex): Bending stiffness in z-axis
+        EIz (float or complex): Bending stiffness in y-axis
+        kGAy (float or complex): Shearing stiffness in y-axis
+        kGAz (float or complex): Shearing stiffness in z-axis
+    """
+    def __cinit__(self, rhoA, rhoJ, rhoIy, rhoIz,
+                  EA, GJ, EIy, EIz, kGAy, kGAz):
+        self.cptr = new TACSBasicBeamConstitutive(rhoA, rhoJ, rhoIy, rhoIz,
+                                                  EA, GJ, EIy, EIz, kGAy, kGAz)
         self.ptr = self.cptr
         self.ptr.incref()
 
