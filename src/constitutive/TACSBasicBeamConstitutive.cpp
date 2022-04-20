@@ -89,6 +89,40 @@ TACSBasicBeamConstitutive::TACSBasicBeamConstitutive( TacsScalar EA,
   Set the diagonal components of the stiffness matrix and the mass
   moments of the cross-section.
 */
+TACSBasicBeamConstitutive::TACSBasicBeamConstitutive( TacsScalar rhoA,
+                                                      TacsScalar rhoIy,
+                                                      TacsScalar rhoIz,
+                                                      TacsScalar rhoIyz,
+                                                      TacsScalar EA,
+                                                      TacsScalar GJ,
+                                                      TacsScalar EIy,
+                                                      TacsScalar EIz,
+                                                      TacsScalar kGAy,
+                                                      TacsScalar kGAz ){
+  props = NULL;
+
+  // Set the entries of the stiffness matrix
+  memset(C, 0, NUM_TANGENT_STIFFNESS_ENTRIES*sizeof(TacsScalar));
+  C[0] = EA;
+  C[6] = GJ;
+  C[11] = EIy;
+  C[15] = EIz;
+  C[18] = kGAy;
+  C[20] = kGAz;
+
+  // Set the entries of the density matrix
+  rho[0] = rhoA;
+  rho[1] = 0.0;
+  rho[2] = 0.0;
+  rho[3] = rhoIy;
+  rho[4] = rhoIz;
+  rho[5] = rhoIyz;
+}
+
+/*
+  Set the diagonal components of the stiffness matrix and the mass
+  moments of the cross-section.
+*/
 TACSBasicBeamConstitutive::TACSBasicBeamConstitutive( TACSMaterialProperties *properties,
                                                       TacsScalar A,
                                                       TacsScalar J,
