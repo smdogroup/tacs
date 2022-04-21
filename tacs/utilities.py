@@ -1,7 +1,10 @@
+import tacs.TACS
+
 class BaseUI:
-    def __init__(self):
-        self.objectName = 'UntitledClass'
-        return
+    objectName = 'UntitledClass'
+
+    # Data type (real or complex)
+    dtype = tacs.TACS.dtype
 
     def setOption(self, name, value):
         """

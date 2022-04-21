@@ -85,7 +85,7 @@ class ModalProblem(TACSProblem):
         # Defualt setup for common problem class objects
         super().__init__(assembler, comm, outputViewer, meshLoader)
 
-        # Set time interval parmeters
+        # Set time interval parameters
         self.sigma = sigma
         self.numEigs = numEigs
 

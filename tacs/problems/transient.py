@@ -19,6 +19,7 @@ import time
 from .base import TACSProblem
 import tacs.TACS
 
+
 class TransientProblem(TACSProblem):
     # python object name
     objectName = 'TransientProblem'
@@ -132,10 +133,10 @@ class TransientProblem(TACSProblem):
         # Chose solver type
         if solverType.upper() == 'BDF':
             self.integrator = tacs.TACS.BDFIntegrator(self.assembler, self.tInit, self.tFinal,
-                                            float(self.numSteps), order)
+                                                      float(self.numSteps), order)
         elif solverType.upper() == 'DIRK':
             self.integrator = tacs.TACS.DIRKIntegrator(self.assembler, self.tInit, self.tFinal,
-                                                  float(self.numSteps), order)
+                                                       float(self.numSteps), order)
 
         printLevel = self.getOption('printLevel')
         self.integrator.setPrintLevel(printLevel)
@@ -214,7 +215,7 @@ class TransientProblem(TACSProblem):
         timeSteps = np.linspace(self.tInit, self.tFinal, self.numSteps + 1)
         return timeSteps
 
-####### Load adding methods ########
+    ####### Load adding methods ########
 
     def addLoadToComponents(self, timeStep, compIDs, F, averageLoad=False):
         """"
@@ -480,11 +481,11 @@ class TransientProblem(TACSProblem):
 
         Parameters
         ----------
-        vars : float or np.ndarray or TACSBVec
+        vars : float or numpy.ndarray or TACS.Vec
             Initial conditions of the state variables
-        dvars : float or np.ndarray or TACSBVec
+        dvars : float or numpy.ndarray or TACS.Vec
             Initial conditions of the first time-derivative of the state variables
-        ddvars : float or np.ndarray or TACSBVec
+        ddvars : float or numpy.ndarray or TACS.Vec
             Initial conditions of the second time-derivative of the state variables
         """
 
@@ -546,14 +547,14 @@ class TransientProblem(TACSProblem):
 
         # Loop over every time step and solve transient problem
         for i in range(self.numSteps + 1):
-            # Set the auxilliary elements for this time step (tractions/pressures)
+            # Set the auxiliary elements for this time step (tractions/pressures)
             self.assembler.setAuxElements(self.auxElems[i])
             self.integrator.iterate(i, forces=self.F[i])
 
         solveTime = time.time()
 
         # If timing was was requested print it, if the solution is nonlinear
-        # print this information automatically if prinititerations was requested.
+        # print this information automatically if printTiming was requested.
         if self.getOption('printTiming'):
             self._pp('+--------------------------------------------------+')
             self._pp('|')
@@ -609,9 +610,9 @@ class TransientProblem(TACSProblem):
 
         if not ignoreMissing:
             for f in evalFuncs:
-                if not f in self.functionList:
-                    raise Error("Supplied function '%s' has not been added "
-                                "using addFunction()." % f)
+                if f not in self.functionList:
+                    raise self._TACSError(f"Supplied function '{f}' has not been added "
+                                          "using addFunction().")
 
         setupProblemTime = time.time()
 
@@ -652,7 +653,8 @@ class TransientProblem(TACSProblem):
         This is the main routine for returning useful (sensitivity)
         information from problem. The derivatives of the functions
         corresponding to the strings in EVAL_FUNCS are evaluated and
-        updated into the provided dictionary.
+        updated into the provided dictionary. The derivitives with
+        respect to all design variables and node locations are computed.
 
         Parameters
         ----------
@@ -667,7 +669,7 @@ class TransientProblem(TACSProblem):
         >>> transientProblem.evalFunctionsSens(funcsSens, ['mass'])
         >>> funcs
         >>> # Result will look like (if TransientProblem has name of 'c1'):
-        >>> # {'c1_mass':{'struct':[1.234, ..., 7.89]}
+        >>> # {'c1_mass':{'struct':[1.234, ..., 7.89], 'Xpts':[3.14, ..., 1.59]}}
         """
 
         startTime = time.time()
@@ -683,7 +685,7 @@ class TransientProblem(TACSProblem):
         for f in evalFuncs:
             if f not in self.functionList:
                 raise self._TACSError("Supplied function has not been added "
-                            "using addFunction()")
+                                      "using addFunction()")
 
         # Fast parallel function evaluation of structural funcs:
         handles = [self.functionList[f] for f in evalFuncs if
@@ -701,7 +703,7 @@ class TransientProblem(TACSProblem):
 
         adjointFinishedTime = time.time()
 
-        # Recast sensititivities into dict for user
+        # Recast sensitivities into dict for user
         for i, f in enumerate(evalFuncs):
             key = self.name + '_%s' % f
             # Finalize sensitivity arrays across all procs
@@ -790,7 +792,6 @@ class TransientProblem(TACSProblem):
         # Return arrays
         return time, qArray, qdotArray, qddotArray
 
-
     def writeSolution(self, outputDir=None, baseName=None, number=None, timeSteps=None):
         """
         This is a generic shell function that writes the output
@@ -841,7 +842,7 @@ class TransientProblem(TACSProblem):
 
             # If timeSteps is None, output all modes
             if timeSteps is None:
-                timeSteps = np.arange(self.numSteps+1)
+                timeSteps = np.arange(self.numSteps + 1)
 
             # Write out each specified timestep
             timeSteps = np.atleast_1d(timeSteps)

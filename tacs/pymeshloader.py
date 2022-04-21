@@ -16,14 +16,13 @@ import tacs.TACS, tacs.elements, tacs.constitutive
 from pyNastran.bdf.bdf import read_bdf
 from .utilities import BaseUI
 
-class pyMeshLoader(BaseUI):
 
-    def __init__(self, comm, dtype, printDebug=False):
-        self.objectName = 'pyMeshLoader'
+class pyMeshLoader(BaseUI):
+    objectName = 'pyMeshLoader'
+
+    def __init__(self, comm, printDebug=False):
         # MPI communicator
         self.comm = comm
-        # TACS scalar data type (float or complex)
-        self.dtype = dtype
         # Debug printing flag
         self.printDebug = printDebug
         self.bdfInfo = None
@@ -47,7 +46,7 @@ class pyMeshLoader(BaseUI):
         # Set flag letting us know model is not xrefed yet
         self.bdfInfo.is_xrefed = False
 
-        # If any property cards are msiing in the bdf, we have to add dummy cards
+        # If any property cards are missing in the bdf, we have to add dummy cards
         # so pynastran doesn't through errors when cross-referencing
         # Loop through all elements and add dummy property, as necessary
         self.bdfInfo.missing_properties = False
@@ -67,7 +66,8 @@ class pyMeshLoader(BaseUI):
                 self.bdfInfo.missing_properties = True
                 if self.printDebug:
                     self._TACSWarning('Element ID %d references undefined property ID %d in bdf file. '
-                                'A user-defined elemCalBack function will need to be provided.' % (element_id, element.pid))
+                                      'A user-defined elemCallBack function will need to be provided.' % (
+                                      element_id, element.pid))
 
         # Create dictionaries for mapping between tacs and nastran id numbering
         self._updateNastranToTACSDicts()
@@ -148,7 +148,7 @@ class pyMeshLoader(BaseUI):
             elif elementType in ['CHEXA8', 'CHEXA']:
                 conn = [conn[0], conn[1], conn[3], conn[2], conn[4], conn[5], conn[7], conn[6]]
 
-            # Map node ids in connectivity from Nastan numbering to TACS numbering
+            # Map node ids in connectivity from Nastran numbering to TACS numbering
             self.elemConnectivity[tacsElementID] = self.idMap(conn, self.nastranToTACSNodeIDDict)
             self.elemConnectivityPointer[tacsElementID + 1] = self.elemConnectivityPointer[
                                                                   tacsElementID] + len(element.nodes)
@@ -162,7 +162,7 @@ class pyMeshLoader(BaseUI):
         self.multiplierNodeIDs = []
 
     def _updateNastranToTACSDicts(self):
-        '''
+        """
         Create dictionaries responsible for mapping over
         global node, global element, and property/component ID numbers
         from NASTRAN (as read in from BDF) to TACS (contiguous, 0-based).
@@ -173,7 +173,7 @@ class pyMeshLoader(BaseUI):
             tacsElementID = self.nastranToTACSNodeIDDict[nastranElementID]
         The dictionaries contain all elements/nodes found in the BDF,
         not just those *owned* by this processor
-        '''
+        """
         # Create Node ID map
         nastranIDs = self.bdfInfo.node_ids
         tacsIDs = range(self.bdfInfo.nnodes)
@@ -199,33 +199,33 @@ class pyMeshLoader(BaseUI):
         return self.bdfInfo
 
     def getNumComponents(self):
-        '''
+        """
         Return number of components (properties) found in bdf.
-        '''
+        """
         return self.bdfInfo.nproperties
 
     def getNumBDFNodes(self):
-        '''
+        """
         Return number of nodes found in bdf.
-        '''
+        """
         return self.bdfInfo.nnodes
 
     def getNumOwnedNodes(self):
-        '''
+        """
         Return number of nodes owned by this processor.
-        '''
+        """
         return self.assembler.getNumOwnedNodes()
 
     def getNumBDFElements(self):
-        '''
+        """
         Return number of elements found in bdf.
-        '''
+        """
         return self.bdfInfo.nelements
 
     def getBDFNodes(self, nodeIDs, nastranOrdering=False):
-        '''
+        """
         Return x,y,z location of specified node in bdf file.
-        '''
+        """
         # Convert to tacs numbering, if necessary
         if nastranOrdering:
             nodeIDs = self.idMap(nodeIDs, self.nastranToTACSNodeIDDict)
@@ -365,7 +365,7 @@ class pyMeshLoader(BaseUI):
         """
         if self.creator is None:
             raise self._TACSError("TACS assembler has not been created. "
-                        "Assembler must created first by running 'createTACS' method.")
+                                  "Assembler must created first by running 'createTACS' method.")
         # Make sure list is flat
         componentIDs = self._flatten(componentIDs)
         # Get the element object IDs belonging to each of these components
@@ -438,7 +438,7 @@ class pyMeshLoader(BaseUI):
             elif rbe.type == 'RBE3':
                 self._addTACSRBE3(rbe, varsPerNode)
             else:
-                raise NotImplementedError("Rigid element of type '{}' is not supported".format(rbe.type))
+                raise NotImplementedError(f"Rigid element of type '{rbe.type}' is not supported")
 
         # Append point mass elements to element list, these are not setup by the user
         for massInfo in self.bdfInfo.masses.values():
@@ -494,7 +494,6 @@ class pyMeshLoader(BaseUI):
                             if self._isDOFInString(constrainedDOFs, nastranDOF):
                                 bcDict[tacsNode][dof] = constrainedVal
 
-
             # Convert bc information from dict to list
             bcnodes = []
             bcdofs = []
@@ -522,7 +521,7 @@ class pyMeshLoader(BaseUI):
             self.creator.setBoundaryConditions(bcnodes, bcptr, bcdofs, bcvals)
 
             # Set node locations
-            Xpts = self.bdfInfo.get_xyz_in_coord().astype(tacs.TACS.dtype)
+            Xpts = self.bdfInfo.get_xyz_in_coord().astype(self.dtype)
             self.creator.setNodes(Xpts.flatten())
 
         # Set the elements for each component
@@ -669,7 +668,7 @@ class pyMeshLoader(BaseUI):
             M[19] *= -1.0
             con = tacs.constitutive.GeneralMassConstitutive(M=M)
         else:
-            raise NotImplementedError("Mass element of type '{}' is not supported".format(massInfo.type))
+            raise NotImplementedError(f"Mass element of type '{massInfo.type}' is not supported")
 
         # Append point mass information to the end of the element lists
         conn = [massInfo.node_ids[0]]
@@ -698,8 +697,9 @@ class pyMeshLoader(BaseUI):
                 tacsNodeID = self.idMap(nastranNodeID, self.nastranToTACSNodeIDDict)
                 if tacsNodeID not in attachedNodes:
                     if numUnattached < 100:
-                        self._TACSWarning(f'Node ID {nastranNodeID} (Nastran ordering) is not attached to any element in the model. '
-                                         f'Please remove this node from the mesh and try again.')
+                        self._TACSWarning(
+                            f'Node ID {nastranNodeID} (Nastran ordering) is not attached to any element in the model. '
+                            f'Please remove this node from the mesh and try again.')
                     numUnattached += 1
 
         # Broadcast number of found unattached nodes
@@ -707,7 +707,7 @@ class pyMeshLoader(BaseUI):
         # Raise an error if any unattached nodes were found
         if numUnattached > 0:
             raise self._TACSError(f'{numUnattached} unattached node(s) were detected in model. '
-                           f'Please make sure that all nodes are attached to at least one element.')
+                                  f'Please make sure that all nodes are attached to at least one element.')
 
     def isDOFInString(self, dofString, numDOFs):
         """

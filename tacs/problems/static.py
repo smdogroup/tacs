@@ -19,6 +19,7 @@ import time
 from .base import TACSProblem
 import tacs.TACS
 
+
 class StaticProblem(TACSProblem):
     # Class name
     objectName = 'StaticProblem'
@@ -126,7 +127,7 @@ class StaticProblem(TACSProblem):
         self.u = self.assembler.createVec()
         self.u_array = self.u.getArray()
         # Auxillary element object for applying tractions/pressure
-        self.auxElems  = tacs.TACS.AuxElements()
+        self.auxElems = tacs.TACS.AuxElements()
         self.callCounter = -1
 
         # Norms
@@ -166,7 +167,7 @@ class StaticProblem(TACSProblem):
         #        opt('nRestarts'), opt('flexible'))
         else:
             raise self._TACSError("Unknown KSMSolver option. Valid options are "
-                        "'GMRES' or 'GCROT'")
+                                  "'GMRES' or 'GCROT'")
 
         self.KSM.setTolerances(self.getOption('L2ConvergenceRel'),
                                self.getOption('L2Convergence'))
@@ -262,14 +263,14 @@ class StaticProblem(TACSProblem):
         super().setNodes(coords)
         self._factorOnNext = True
 
-####### Load adding methods ########
+    ####### Load adding methods ########
 
     def addLoadToComponents(self, compIDs, F, averageLoad=False):
         """"
         This method is used to add a *FIXED TOTAL LOAD* on one or more
         components, defined by COMPIDs. The purpose of this routine is to add loads that
         remain fixed throughout an optimization. An example would be an engine load.
-        This routine determines all the unqiue nodes in the FE model that are part of the
+        This routine determines all the unique nodes in the FE model that are part of the
         the requested components, then takes the total 'force' by F and divides by the
         number of nodes. This average load is then applied to the nodes.
 
@@ -643,9 +644,9 @@ class StaticProblem(TACSProblem):
 
         if not ignoreMissing:
             for f in evalFuncs:
-                if not f in self.functionList:
-                    raise Error("Supplied function '%s' has not been added "
-                                "using addFunction()." % f)
+                if f not in self.functionList:
+                    raise self._TACSError(f"Supplied function '{f}' has not been added "
+                                          "using addFunction().")
 
         setupProblemTime = time.time()
 
@@ -683,7 +684,8 @@ class StaticProblem(TACSProblem):
         This is the main routine for returning useful (sensitivity)
         information from problem. The derivatives of the functions
         corresponding to the strings in EVAL_FUNCS are evaluated and
-        updated into the provided dictionary.
+        updated into the provided dictionary. The derivitives with
+        respect to all design variables and node locations are computed.
 
         Parameters
         ----------
@@ -698,7 +700,7 @@ class StaticProblem(TACSProblem):
         >>> staticProblem.evalFunctionsSens(funcsSens, ['mass'])
         >>> funcs
         >>> # Result will look like (if StaticProblem has name of 'c1'):
-        >>> # {'c1_mass':{'struct':[1.234, ..., 7.89]}
+        >>> # {'c1_mass':{'struct':[1.234, ..., 7.89], 'Xpts':[3.14, ..., 1.59]}}
         """
 
         startTime = time.time()
@@ -718,8 +720,8 @@ class StaticProblem(TACSProblem):
         adjoints = []
         for f in evalFuncs:
             if f not in self.functionList:
-                raise Error("Supplied function has not beed added "
-                            "using addFunction()")
+                raise self._TACSError("Supplied function has not been added "
+                                      "using addFunction()")
             else:
                 # Populate the lists with the tacs bvecs
                 # we'll need for each adjoint/sens calculation
@@ -780,7 +782,7 @@ class StaticProblem(TACSProblem):
                 'TACS Adjoint RHS Time', adjointRHSTime - setupProblemTime))
             for f in evalFuncs:
                 print('| %-30s: %10.3f sec' % (
-                'TACS Adjoint Solve Time - %s' % (f), adjointEndTime[f] - adjointStartTime[f]))
+                    'TACS Adjoint Solve Time - %s' % (f), adjointEndTime[f] - adjointStartTime[f]))
             print('| %-30s: %10.3f sec' % ('Total Sensitivity Time', totalSensitivityTime - adjointFinishedTime))
             print('|')
             print('| %-30s: %10.3f sec' % ('Complete Sensitivity Time', totalSensitivityTime - startTime))
@@ -1025,7 +1027,7 @@ class StaticProblem(TACSProblem):
         # Compute the RHS
         self.assembler.assembleRes(self.res)
         # Add force terms from rhs
-        self.rhs.copyValues(self.F) # Fixed loads
+        self.rhs.copyValues(self.F)  # Fixed loads
         # Add external loads, if specified
         if Fext is not None:
             if isinstance(Fext, tacs.TACS.Vec):
@@ -1158,7 +1160,7 @@ class StaticProblem(TACSProblem):
         states : numpy array
             current state vector
         """
-            
+
         if isinstance(states, tacs.TACS.Vec):
             states.copyValues(self.u)
         elif isinstance(states, np.ndarray):
