@@ -63,7 +63,7 @@ This will generate a .plt or .vtk file respectively.
 
 In addition to a working implementation of MPI, BLAS and LAPACK, TACS requires Metis 5.1 for mesh partitioning. The latest version of Metis can be obtained [here](http://glaros.dtc.umn.edu/gkhome/metis/metis/download). TACS can optionally use the approximate minimum degree ordering routines from AMD/UFConfig. These were distributed separately, but can now be obtained from SuiteSparse package. If you use AMD, be sure to define the TACS_HAS_AMD_LIBRARY flag within the Makefile.in configuration file.
 
-To convert TACS FH5 output files to tecplot-compatible files, you must install TecIO. This can be placed in the tacs/extern directory. There is also a FH5 to VTK converter as well that produces (large) ASCII files.
+To convert TACS FH5 output files to tecplot-compatible files, you must install [TecIO](https://tecplot.azureedge.net/products/tecio/2021r2/tecio.tgz). This can be placed in the tacs/extern directory. There is also a FH5 to VTK converter as well that produces (large) ASCII files.
 
 Once the external dependencies are installed, copy Makefile.in.info to Makefile.in. Open Makefile.in and follow the directions within to set the variables. In particular, set the following:
 
