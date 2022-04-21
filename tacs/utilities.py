@@ -90,7 +90,7 @@ class BaseUI:
         options to the stdout
         """
         # Class name
-        header = type(cls).__name__
+        header = cls.__name__
         print("+----------------------------------------+")
         print("|" + f"{header} default options:".center(40) + "|")
         print("+----------------------------------------+")
