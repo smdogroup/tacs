@@ -1,9 +1,14 @@
 import tacs.TACS
 
 class BaseUI:
+    """
+    Base class to be inherited by all pyTACS classes.
+    Contains common methods useful for many classes.
+    """
+    # python object name
     objectName = 'UntitledClass'
 
-    # Data type (real or complex)
+    # Set common data type for all pyTACS classes to inherit (real or complex)
     dtype = tacs.TACS.dtype
 
     def setOption(self, name, value):

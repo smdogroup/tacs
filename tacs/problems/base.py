@@ -5,7 +5,6 @@ pyBase_problem
 # =============================================================================
 # Imports
 # =============================================================================
-import warnings
 import numpy as np
 from mpi4py import MPI
 from ..utilities import BaseUI

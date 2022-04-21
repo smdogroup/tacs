@@ -23,11 +23,9 @@ History:
 # =============================================================================
 from __future__ import print_function
 import copy
-import os
 import numbers
 import numpy
 import time
-from collections import OrderedDict
 
 import numpy as np
 from mpi4py import MPI

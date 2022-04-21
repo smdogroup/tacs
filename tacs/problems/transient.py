@@ -11,10 +11,8 @@ other pieces of information.
 # =============================================================================
 # Imports
 # =============================================================================
-import warnings
 import os
 import numpy as np
-from collections import OrderedDict
 import time
 from .base import TACSProblem
 import tacs.TACS
