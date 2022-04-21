@@ -5,8 +5,6 @@ class BaseUI:
     Base class to be inherited by all pyTACS classes.
     Contains common methods useful for many classes.
     """
-    # python object name
-    objectName = 'UntitledClass'
 
     # Set common data type for all pyTACS classes to inherit (real or complex)
     dtype = tacs.TACS.dtype
@@ -29,8 +27,8 @@ class BaseUI:
         defOptions = self.options['defaults']
         try:
             defOptions[name]
-        except:
-            self._TACSWarning('Option: \'%-30s\' is not a valid option |' % name)
+        except KeyError:
+            self._TACSWarning(f'Option: \'{name}\' is not a valid option')
             return
 
         # Now we know the option exists, lets check if the type is ok:
@@ -45,14 +43,14 @@ class BaseUI:
                         " is %s." % (name, self.options[name][0], type(value)))
 
     def getOption(self, name):
-        '''
+        """
         Get a solver option value. The name is not case sensitive.
 
         Parameters
         ----------
         name : str
             Name of option to get
-        '''
+        """
 
         # Redefine the getOption def from the base class so we can
         # mane sure the name is lowercase
@@ -68,7 +66,7 @@ class BaseUI:
         Prints a nicely formatted dictionary of all the current solver
         options to the stdout on the root processor
         """
-        header = self.objectName
+        header = type(self).__name__
         if hasattr(self, 'name'):
             header += f" '{self.name}'"
         self._pp("+----------------------------------------+")
@@ -89,7 +87,7 @@ class BaseUI:
         Prints a nicely formatted dictionary of all the default solver
         options to the stdout
         """
-        header = cls.objectName
+        header = type(cls).__name__
         print("+----------------------------------------+")
         print("|" + f"{header} default options:".center(40) + "|")
         print("+----------------------------------------+")
@@ -169,7 +167,7 @@ class BaseUI:
         """
         if self.comm.rank == 0:
             msg = '\n+' + '-' * 78 + '+' + '\n'
-            objectWarning = '| %s Warning: '%(self.objectName)
+            objectWarning = f'| {type(self).__name__} Warning: '
             msg += objectWarning
             i = len(objectWarning) - 1
             for word in message.split():
@@ -186,7 +184,7 @@ class BaseUI:
         """
         Format a class-specific error for message
         """
-        return Error(self.objectName, message)
+        return Error(type(self).__name__, message)
 
 class Error(Exception):
     """

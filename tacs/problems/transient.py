@@ -19,8 +19,6 @@ import tacs.TACS
 
 
 class TransientProblem(TACSProblem):
-    # python object name
-    objectName = 'TransientProblem'
 
     # Default Option List
     defaultOptions = {
@@ -38,7 +36,7 @@ class TransientProblem(TACSProblem):
         'writeSolution': [bool, True, 'Flag for suppressing all f5 file writing.'],
         'numberSolutions': [bool, True, 'Flag for attaching solution counter index to f5 files.'],
         'printTiming': [bool, False, 'Flag for printing out timing information for class procedures.'],
-        'printLevel': [int, 0, 'Print level for integraton solver.\n'
+        'printLevel': [int, 0, 'Print level for integration solver.\n'
                                '\t Accepts:\n'
                                '\t\t   0 : No printing.\n'
                                '\t\t   1 : Print major iterations.\n'

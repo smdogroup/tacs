@@ -20,8 +20,6 @@ import tacs.TACS
 
 
 class StaticProblem(TACSProblem):
-    # Class name
-    objectName = 'StaticProblem'
 
     # Default options for class
     defaultOptions = {

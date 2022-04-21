@@ -18,7 +18,6 @@ from .utilities import BaseUI
 
 
 class pyMeshLoader(BaseUI):
-    objectName = 'pyMeshLoader'
 
     def __init__(self, comm, printDebug=False):
         # MPI communicator

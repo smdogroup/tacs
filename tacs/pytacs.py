@@ -42,9 +42,6 @@ class pyTACS(BaseUI):
     The class for working with a TACS structure
     """
 
-    # Class name
-    objectName = 'pyTACS'
-
     # Default class options
     defaultOptions = {
         # Meshloader options
@@ -523,7 +520,7 @@ class pyTACS(BaseUI):
         # Check if any properties are in the BDF
         if self.bdfInfo.missing_properties:
             raise self._TACSError(f"BDF file '{self.bdfName}' has missing properties cards. "
-                                  "Set 'debugPrint' option to True for more information. "
+                                  "Set 'printDebug' option to True for more information. "
                                   "User must define own elemCallBack function.")
 
         # Make sure cross-referencing is turned on in pynastran

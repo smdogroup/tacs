@@ -16,8 +16,6 @@ from .base import TACSProblem
 import tacs.TACS
 
 class ModalProblem(TACSProblem):
-    # python object name
-    objectName = 'ModalProblem'
 
     # Default Option List
     defaultOptions = {
@@ -35,7 +33,7 @@ class ModalProblem(TACSProblem):
         'writeSolution': [bool, True, 'Flag for suppressing all f5 file writing.'],
         'numberSolutions': [bool, True, 'Flag for attaching solution counter index to f5 files.'],
         'printTiming': [bool, False, 'Flag for printing out timing information for class procedures.'],
-        'printLevel': [int, 0, 'Print level for integraton solver.\n'
+        'printLevel': [int, 0, 'Print level for Eigenvalue solver.\n'
                                '\t Accepts:\n'
                                '\t\t   0 : No printing.\n'
                                '\t\t   1 : Print major iterations.\n'
