@@ -22,7 +22,7 @@ class TransientProblem(TACSProblem):
 
     # Default Option List
     defaultOptions = {
-        'outputdir': [str, './', 'Output directory for F5 file writer.'],
+        'outputDir': [str, './', 'Output directory for F5 file writer.'],
 
         # Solution Options
         'timeIntegrator': [str, 'BDF', "Time integration scheme to use. Currently supports 'BDF' and 'DIRK'."],
@@ -84,8 +84,8 @@ class TransientProblem(TACSProblem):
         # Problem name
         self.name = name
 
-        # Defualt setup for common problem class objects
-        super().__init__(assembler, comm, outputViewer, meshLoader)
+        # Default setup for common problem class objects
+        TACSProblem.__init__(self, assembler, comm, outputViewer, meshLoader)
 
         # Set time interval parmeters
         self.tInit = tInit
@@ -102,7 +102,7 @@ class TransientProblem(TACSProblem):
 
         # Set user-defined options
         for key in options:
-            super().setOption(key, options[key])
+            TACSProblem.setOption(self, key, options[key])
 
         # Create problem-specific variables
         self._createVariables()
@@ -162,8 +162,8 @@ class TransientProblem(TACSProblem):
         value : depends on option
             New option value to set
         """
-        # Defualt setOption for common problem class objects
-        super().setOption(name, value)
+        # Default setOption for common problem class objects
+        TACSProblem.setOption(self, name, value)
 
         # Update tolerances
         if 'l2convergence' in name.lower():

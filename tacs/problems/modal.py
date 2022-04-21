@@ -19,7 +19,7 @@ class ModalProblem(TACSProblem):
 
     # Default Option List
     defaultOptions = {
-        'outputdir': [str, './', 'Output directory for F5 file writer.'],
+        'outputDir': [str, './', 'Output directory for F5 file writer.'],
 
         # Solution Options
         'L2Convergence': [float, 1e-12,
@@ -78,8 +78,8 @@ class ModalProblem(TACSProblem):
         # Problem name
         self.name = name
 
-        # Defualt setup for common problem class objects
-        super().__init__(assembler, comm, outputViewer, meshLoader)
+        # Default setup for common problem class objects
+        TACSProblem.__init__(self, assembler, comm, outputViewer, meshLoader)
 
         # Set time interval parameters
         self.sigma = sigma
@@ -95,7 +95,7 @@ class ModalProblem(TACSProblem):
 
         # Set user-defined options
         for key in options:
-            super().setOption(key, options[key])
+            TACSProblem.setOption(self, key, options[key])
 
         # Create problem-specific variables
         self._createVariables()
@@ -143,8 +143,8 @@ class ModalProblem(TACSProblem):
         value : depends on option
             New option value to set
         """
-        # Defualt setOption for common problem class objects
-        super().setOption(name, value)
+        # Default setOption for common problem class objects
+        TACSProblem.setOption(self, name, value)
 
         # No need to reset solver for output options
         if name.lower() in ['writesolution', 'printtiming',

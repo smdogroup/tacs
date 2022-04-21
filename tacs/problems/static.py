@@ -23,7 +23,7 @@ class StaticProblem(TACSProblem):
 
     # Default options for class
     defaultOptions = {
-        'outputdir': [str, './', 'Output directory for F5 file writer.'],
+        'outputDir': [str, './', 'Output directory for F5 file writer.'],
 
         # Solution Options
         'KSMSolver': [str, 'GMRES', "Krylov subspace method to use for linear solver. Currently only supports 'GMRES'"],
@@ -83,8 +83,8 @@ class StaticProblem(TACSProblem):
         # Problem name
         self.name = name
 
-        # Defualt setup for common problem class objects
-        super().__init__(assembler, comm, outputViewer, meshLoader)
+        # Default setup for common problem class objects
+        TACSProblem.__init__(self, assembler, comm, outputViewer, meshLoader)
 
         # Process the default options which are added to self.options
         # under the 'defaults' key. Make sure the key are lower case
@@ -96,7 +96,7 @@ class StaticProblem(TACSProblem):
 
         # Set user-defined options
         for key in options:
-            super().setOption(key, options[key])
+            TACSProblem.setOption(self, key, options[key])
 
         # Create problem-specific variables
         self._createVariables()
@@ -187,8 +187,8 @@ class StaticProblem(TACSProblem):
         value : depends on option
             New option value to set
         """
-        # Defualt setOption for common problem class objects
-        super().setOption(name, value)
+        # Default setOption for common problem class objects
+        TACSProblem.setOption(self, name, value)
 
         # Update tolerances
         if 'l2convergence' in name.lower():
@@ -224,7 +224,7 @@ class StaticProblem(TACSProblem):
             List of compIDs to select. Use pyTACS.selectCompIDs method
             to determine this.
         """
-        success = super().addFunction(funcName, funcHandle, compIDs, **kwargs)
+        success = TACSProblem.addFunction(self, funcName, funcHandle, compIDs, **kwargs)
         if success:
             # Create additional tacs BVecs to hold adjoint and sens info
             self.adjointList[funcName] = self.assembler.createVec()
@@ -244,7 +244,7 @@ class StaticProblem(TACSProblem):
             looks for variable in the ``self.varName`` attribute.
 
         """
-        super().setDesignVars(x)
+        TACSProblem.setDesignVars(self, x)
         self._factorOnNext = True
 
     def setNodes(self, coords):
@@ -257,7 +257,7 @@ class StaticProblem(TACSProblem):
             Structural coordinate in array of size (N * 3) where N is
             the number of structural nodes on this processor.
         """
-        super().setNodes(coords)
+        TACSProblem.setNodes(self, coords)
         self._factorOnNext = True
 
     ####### Load adding methods ########
@@ -1149,12 +1149,12 @@ class StaticProblem(TACSProblem):
 
         Parameters
         ----------
-        states : TACS BVec or numpy array
+        states : TACS.Vec or numpy.ndarray
             Vector to place current state variables into (optional)
 
         Returns
         ----------
-        states : numpy array
+        states : numpy.ndarray
             current state vector
         """
 

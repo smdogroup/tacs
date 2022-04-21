@@ -603,7 +603,7 @@ class pyTACS(BaseUI):
                                                            G23=G23)
 
             else:
-                raise self._TACSError(f"Unsupported material type '{matInfo.type}' for material number {matInfo.mid}. ")
+                raise self._TACSError(f"Unsupported material type '{matInfo.type}' for material number {matInfo.mid}.")
 
             return mat
 
