@@ -797,6 +797,53 @@ cdef class Tri3ThermalShell(Element):
         self.ptr = new TACSTri3ThermalShell(transform.ptr, con.cptr)
         self.ptr.incref()
 
+cdef class BeamTransform:
+    cdef TACSBeamTransform *ptr
+    def __cinit__(self):
+        self.ptr = NULL
+        return
+
+    def __dealloc__(self):
+        if self.ptr != NULL:
+            self.ptr.decref()
+
+cdef class BeamRefAxisTransform(BeamTransform):
+    """
+    Class for computing the transformation from the global coordinates
+    to the beam local coordinates (used for defining stresses).
+    This class uses a projection of a user-supplied reference axis to define the beam coordinate system
+    (i.e. local :math:`y` is aligned with the reference axis.)
+
+    .. warning:: The reference direction cannot be parallel to the beam axis.
+
+    Args:
+        axis (array-like): Reference axis.
+    """
+    def __cinit__(self, axis):
+        cdef TacsScalar a[3]
+        a[0] = axis[0]
+        a[1] = axis[1]
+        a[2] = axis[2]
+        self.ptr = new TACSBeamRefAxisTransform(a)
+        self.ptr.incref()
+
+cdef class LinearBeam(Element):
+    """
+    A 2-node Timoshenko beam element for general linear elastic analysis.
+
+    .. note::
+        varsPerNode: 6
+
+        outputElement: ``TACS.BEAM_OR_SHELL_ELEMENT``
+
+    Args:
+        transform (BeamTransform): Beam transform object.
+        con (BeamConstitutive): Beam constitutive object.
+    """
+    def __cinit__(self, BeamTransform transform, BeamConstitutive con):
+        self.ptr = new TACSLinearBeam(transform.ptr, con.cptr)
+        self.ptr.incref()
+
 cdef class SpringTransform:
     cdef TACSSpringTransform *ptr
     def __cinit__(self):

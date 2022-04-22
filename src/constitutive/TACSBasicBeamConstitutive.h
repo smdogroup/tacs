@@ -20,6 +20,7 @@
 */
 
 #include "TACSBeamConstitutive.h"
+#include "TACSMaterialProperties.h"
 
 class TACSBasicBeamConstitutive : public TACSBeamConstitutive {
  public:
@@ -38,6 +39,11 @@ class TACSBasicBeamConstitutive : public TACSBeamConstitutive {
                              TacsScalar EA, TacsScalar GJ,
                              TacsScalar EIy, TacsScalar EIz,
                              TacsScalar kGAy, TacsScalar kGAz );
+  TACSBasicBeamConstitutive( TACSMaterialProperties *properties,
+                             TacsScalar A, TacsScalar J, TacsScalar Iy, TacsScalar Iz,
+                             TacsScalar kcorr=5.0/6.0 );
+
+  ~TACSBasicBeamConstitutive();
 
   /**
     Get the cross-sectional mass per unit area and the second moments
@@ -111,12 +117,21 @@ class TACSBasicBeamConstitutive : public TACSBeamConstitutive {
     return 0.0;
   }
 
+  // The name of the constitutive object
+  const char *getObjectName();
+
  private:
   // The constitutive matrix
   TacsScalar C[36];
 
   // The moments of the density
   TacsScalar rho[6];
+
+  // Material properties class
+  TACSMaterialProperties *props;
+
+  // The object name
+  static const char *constName;
 };
 
 #endif // TACS_BASIC_BEAM_CONSTITUTIVE_H

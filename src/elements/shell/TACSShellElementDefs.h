@@ -102,6 +102,26 @@ typedef TACSShellElement<TACSQuadCubicQuadrature, TACSShellQuadBasis<4>,
 typedef TACSShellElement<TACSTriLinearQuadrature, TACSShellTriLinearBasis,
                          TACSQuaternionRotation, TACSShellInplaneLinearModel> TACSTri3ShellQuaternion;
 
+// TODO: Linear in name is ambiguous (quadrature or strain). better naming scheme?
+// TACSOrder1Beam, TACSOrder2Beam, etc?
+typedef TACSBeamElement<TACSBeamLinearQuadrature, TACSBeamBasis<2>,
+                        TACSLinearizedRotation, TACSBeamLinearModel> TACSLinearBeam;
+
+typedef TACSBeamElement<TACSBeamQuadraticQuadrature, TACSBeamBasis<3>,
+                        TACSLinearizedRotation, TACSBeamLinearModel> TACSQuadBeam;
+
+typedef TACSBeamElement<TACSBeamLinearQuadrature, TACSBeamBasis<2>,
+                        TACSQuadraticRotation, TACSBeamLinearModel> TACSLinearBeamModRot;
+
+typedef TACSBeamElement<TACSBeamQuadraticQuadrature, TACSBeamBasis<3>,
+                        TACSQuadraticRotation, TACSBeamLinearModel> TACSQuadBeamModRot;
+
+typedef TACSBeamElement<TACSBeamLinearQuadrature, TACSBeamBasis<2>,
+                        TACSQuaternionRotation, TACSBeamLinearModel> TACSLinearBeamQuaternion;
+
+typedef TACSBeamElement<TACSBeamQuadraticQuadrature, TACSBeamBasis<3>,
+                        TACSQuaternionRotation, TACSBeamLinearModel> TACSQuadBeamQuaternion;
+
 /**
   Create a TACS shell element based on the name of the shell.
 

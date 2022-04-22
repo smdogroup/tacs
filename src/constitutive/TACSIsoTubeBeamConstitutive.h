@@ -95,6 +95,9 @@ class TACSIsoTubeBeamConstitutive : public TACSBeamConstitutive {
                          const TacsScalar strain[],
                          int dvLen, TacsScalar dfdx[] );
 
+  // The name of the constitutive object
+  const char *getObjectName();
+
   // Retrieve the design variable for plotting purposes
   TacsScalar evalDesignFieldValue( int elemIndex,
                                    const double pt[],
@@ -106,6 +109,8 @@ class TACSIsoTubeBeamConstitutive : public TACSBeamConstitutive {
   int innerDV, wallDV;
   TacsScalar innerLb, innerUb;
   TacsScalar wallLb, wallUb;
+  // The object name
+  static const char *constName;
 };
 
 #endif // TACS_ISO_TUBE_BEAM_CONSTITUTIVE_H
