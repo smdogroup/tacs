@@ -67,7 +67,7 @@ The following options their default values and descriptions are listed below:</p
 <div class="highlight-text notranslate"><div class="highlight"><pre><span></span>+----------------------------------------+
 |   TransientProblem default options:    |
 +----------------------------------------+
-&#39;outputdir&#39;: &#39;./&#39;
+&#39;outputDir&#39;: &#39;./&#39;
 	 Output directory for F5 file writer.
 &#39;timeIntegrator&#39;: &#39;BDF&#39;
 	 Time integration scheme to use. Currently supports &#39;BDF&#39; and &#39;DIRK&#39;.
@@ -86,7 +86,7 @@ The following options their default values and descriptions are listed below:</p
 &#39;printTiming&#39;: False
 	 Flag for printing out timing information for class procedures.
 &#39;printLevel&#39;: 0
-	 Print level for integraton solver.
+	 Print level for integration solver.
 	 Accepts:
 		   0 : No printing.
 		   1 : Print major iterations.
@@ -380,9 +380,9 @@ This is most commonly used to model gravity loads on a model.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>vars</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.10)"><em>float</em></a><em> or </em><em>np.ndarray</em><em> or </em><em>TACSBVec</em>) -- Initial conditions of the state variables</p></li>
-<li><p><strong>dvars</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.10)"><em>float</em></a><em> or </em><em>np.ndarray</em><em> or </em><em>TACSBVec</em>) -- Initial conditions of the first time-derivative of the state variables</p></li>
-<li><p><strong>ddvars</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.10)"><em>float</em></a><em> or </em><em>np.ndarray</em><em> or </em><em>TACSBVec</em>) -- Initial conditions of the second time-derivative of the state variables</p></li>
+<li><p><strong>vars</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.10)"><em>float</em></a><em> or </em><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.22)"><em>numpy.ndarray</em></a><em> or </em><em>TACS.Vec</em>) -- Initial conditions of the state variables</p></li>
+<li><p><strong>dvars</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.10)"><em>float</em></a><em> or </em><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.22)"><em>numpy.ndarray</em></a><em> or </em><em>TACS.Vec</em>) -- Initial conditions of the first time-derivative of the state variables</p></li>
+<li><p><strong>ddvars</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.10)"><em>float</em></a><em> or </em><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.22)"><em>numpy.ndarray</em></a><em> or </em><em>TACS.Vec</em>) -- Initial conditions of the second time-derivative of the state variables</p></li>
 </ul>
 </dd>
 </dl>
@@ -429,7 +429,8 @@ this option with caution.</p></li>
 <dd><p>This is the main routine for returning useful (sensitivity)
 information from problem. The derivatives of the functions
 corresponding to the strings in EVAL_FUNCS are evaluated and
-updated into the provided dictionary.</p>
+updated into the provided dictionary. The derivitives with
+respect to all design variables and node locations are computed.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
@@ -443,7 +444,7 @@ updated into the provided dictionary.</p>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">transientProblem</span><span class="o">.</span><span class="n">evalFunctionsSens</span><span class="p">(</span><span class="n">funcsSens</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;mass&#39;</span><span class="p">])</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">funcs</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="c1"># Result will look like (if TransientProblem has name of &#39;c1&#39;):</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="c1"># {&#39;c1_mass&#39;:{&#39;struct&#39;:[1.234, ..., 7.89]}</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># {&#39;c1_mass&#39;:{&#39;struct&#39;:[1.234, ..., 7.89], &#39;Xpts&#39;:[3.14, ..., 1.59]}}</span>
 </pre></div>
 </div>
 </dd></dl>
@@ -510,13 +511,19 @@ KSDisplacement, StructuralMass, HeatFlux.</p>
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>funcName</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.10)"><em>str</em></a>) -- The user-supplied name for the function. This will
-typically be a string that is meanful to the user</p></li>
-<li><p><strong>funcHandle</strong> (<em>tacs.functions</em>) -- The fucntion handle to use for creation. This must come
+typically be a string that is meaningful to the user</p></li>
+<li><p><strong>funcHandle</strong> (<em>tacs.functions</em>) -- The function handle to use for creation. This must come
 from the functions module in tacs.</p></li>
 <li><p><strong>compIDs</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.10)"><em>list</em></a>) -- List of compIDs to select.</p></li>
 </ul>
 </dd>
 </dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="tacs.problems.TransientProblem.dtype">
+<span class="sig-name descname"><span class="pre">dtype</span></span><a class="headerlink" href="#tacs.problems.TransientProblem.dtype" title="Permalink to this definition">¶</a></dt>
+<dd><p>alias of <code class="xref py py-class docutils literal notranslate"><span class="pre">numpy.float64</span></code></p>
 </dd></dl>
 
 <dl class="py method">

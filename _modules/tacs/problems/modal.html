@@ -48,21 +48,17 @@
 <span class="c1"># =============================================================================</span>
 <span class="c1"># Imports</span>
 <span class="c1"># =============================================================================</span>
-<span class="kn">import</span> <span class="nn">warnings</span>
 <span class="kn">import</span> <span class="nn">os</span>
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-<span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">OrderedDict</span>
 <span class="kn">import</span> <span class="nn">time</span>
 <span class="kn">from</span> <span class="nn">.base</span> <span class="kn">import</span> <span class="n">TACSProblem</span>
 <span class="kn">import</span> <span class="nn">tacs.TACS</span>
 
 <div class="viewcode-block" id="ModalProblem"><a class="viewcode-back" href="../../../pytacs/modal.html#tacs.problems.ModalProblem">[docs]</a><span class="k">class</span> <span class="nc">ModalProblem</span><span class="p">(</span><span class="n">TACSProblem</span><span class="p">):</span>
-    <span class="c1"># python object name</span>
-    <span class="n">objectName</span> <span class="o">=</span> <span class="s1">&#39;ModalProblem&#39;</span>
 
     <span class="c1"># Default Option List</span>
     <span class="n">defaultOptions</span> <span class="o">=</span> <span class="p">{</span>
-        <span class="s1">&#39;outputdir&#39;</span><span class="p">:</span> <span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="s1">&#39;./&#39;</span><span class="p">,</span> <span class="s1">&#39;Output directory for F5 file writer.&#39;</span><span class="p">],</span>
+        <span class="s1">&#39;outputDir&#39;</span><span class="p">:</span> <span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="s1">&#39;./&#39;</span><span class="p">,</span> <span class="s1">&#39;Output directory for F5 file writer.&#39;</span><span class="p">],</span>
 
         <span class="c1"># Solution Options</span>
         <span class="s1">&#39;L2Convergence&#39;</span><span class="p">:</span> <span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="mf">1e-12</span><span class="p">,</span>
@@ -76,7 +72,7 @@
         <span class="s1">&#39;writeSolution&#39;</span><span class="p">:</span> <span class="p">[</span><span class="nb">bool</span><span class="p">,</span> <span class="kc">True</span><span class="p">,</span> <span class="s1">&#39;Flag for suppressing all f5 file writing.&#39;</span><span class="p">],</span>
         <span class="s1">&#39;numberSolutions&#39;</span><span class="p">:</span> <span class="p">[</span><span class="nb">bool</span><span class="p">,</span> <span class="kc">True</span><span class="p">,</span> <span class="s1">&#39;Flag for attaching solution counter index to f5 files.&#39;</span><span class="p">],</span>
         <span class="s1">&#39;printTiming&#39;</span><span class="p">:</span> <span class="p">[</span><span class="nb">bool</span><span class="p">,</span> <span class="kc">False</span><span class="p">,</span> <span class="s1">&#39;Flag for printing out timing information for class procedures.&#39;</span><span class="p">],</span>
-        <span class="s1">&#39;printLevel&#39;</span><span class="p">:</span> <span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="s1">&#39;Print level for integraton solver.</span><span class="se">\n</span><span class="s1">&#39;</span>
+        <span class="s1">&#39;printLevel&#39;</span><span class="p">:</span> <span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="s1">&#39;Print level for Eigenvalue solver.</span><span class="se">\n</span><span class="s1">&#39;</span>
                                <span class="s1">&#39;</span><span class="se">\t</span><span class="s1"> Accepts:</span><span class="se">\n</span><span class="s1">&#39;</span>
                                <span class="s1">&#39;</span><span class="se">\t\t</span><span class="s1">   0 : No printing.</span><span class="se">\n</span><span class="s1">&#39;</span>
                                <span class="s1">&#39;</span><span class="se">\t\t</span><span class="s1">   1 : Print major iterations.</span><span class="se">\n</span><span class="s1">&#39;</span>
@@ -121,10 +117,10 @@
         <span class="c1"># Problem name</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">name</span>
 
-        <span class="c1"># Defualt setup for common problem class objects</span>
-        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">assembler</span><span class="p">,</span> <span class="n">comm</span><span class="p">,</span> <span class="n">outputViewer</span><span class="p">,</span> <span class="n">meshLoader</span><span class="p">)</span>
+        <span class="c1"># Default setup for common problem class objects</span>
+        <span class="n">TACSProblem</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">assembler</span><span class="p">,</span> <span class="n">comm</span><span class="p">,</span> <span class="n">outputViewer</span><span class="p">,</span> <span class="n">meshLoader</span><span class="p">)</span>
 
-        <span class="c1"># Set time interval parmeters</span>
+        <span class="c1"># Set time interval parameters</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">sigma</span> <span class="o">=</span> <span class="n">sigma</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">numEigs</span> <span class="o">=</span> <span class="n">numEigs</span>
 
@@ -138,7 +134,7 @@
 
         <span class="c1"># Set user-defined options</span>
         <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">options</span><span class="p">:</span>
-            <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">setOption</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">options</span><span class="p">[</span><span class="n">key</span><span class="p">])</span>
+            <span class="n">TACSProblem</span><span class="o">.</span><span class="n">setOption</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">options</span><span class="p">[</span><span class="n">key</span><span class="p">])</span>
 
         <span class="c1"># Create problem-specific variables</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_createVariables</span><span class="p">()</span>
@@ -186,8 +182,8 @@
 <span class="sd">        value : depends on option</span>
 <span class="sd">            New option value to set</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="c1"># Defualt setOption for common problem class objects</span>
-        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">setOption</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+        <span class="c1"># Default setOption for common problem class objects</span>
+        <span class="n">TACSProblem</span><span class="o">.</span><span class="n">setOption</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
 
         <span class="c1"># No need to reset solver for output options</span>
         <span class="k">if</span> <span class="n">name</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;writesolution&#39;</span><span class="p">,</span> <span class="s1">&#39;printtiming&#39;</span><span class="p">,</span>

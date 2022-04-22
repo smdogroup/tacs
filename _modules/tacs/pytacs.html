@@ -62,11 +62,9 @@
 <span class="c1"># =============================================================================</span>
 <span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">print_function</span>
 <span class="kn">import</span> <span class="nn">copy</span>
-<span class="kn">import</span> <span class="nn">os</span>
 <span class="kn">import</span> <span class="nn">numbers</span>
 <span class="kn">import</span> <span class="nn">numpy</span>
 <span class="kn">import</span> <span class="nn">time</span>
-<span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">OrderedDict</span>
 
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 <span class="kn">from</span> <span class="nn">mpi4py</span> <span class="kn">import</span> <span class="n">MPI</span>
@@ -77,13 +75,11 @@
 
 <span class="n">warnings</span><span class="o">.</span><span class="n">simplefilter</span><span class="p">(</span><span class="s1">&#39;default&#39;</span><span class="p">)</span>
 
+
 <div class="viewcode-block" id="pyTACS"><a class="viewcode-back" href="../../pytacs/pytacs_module.html#tacs.pytacs.pyTACS">[docs]</a><span class="k">class</span> <span class="nc">pyTACS</span><span class="p">(</span><span class="n">BaseUI</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    The class for working with a TACS structure</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-
-    <span class="c1"># Class name</span>
-    <span class="n">objectName</span> <span class="o">=</span> <span class="s1">&#39;pyTACS&#39;</span>
 
     <span class="c1"># Default class options</span>
     <span class="n">defaultOptions</span> <span class="o">=</span> <span class="p">{</span>
@@ -110,7 +106,7 @@
         <span class="s1">&#39;writeStresses&#39;</span><span class="p">:</span> <span class="p">[</span><span class="nb">bool</span><span class="p">,</span> <span class="kc">True</span><span class="p">,</span> <span class="s1">&#39;Flag for whether to include element stresses in f5 file.&#39;</span><span class="p">],</span>
         <span class="s1">&#39;writeExtras&#39;</span><span class="p">:</span> <span class="p">[</span><span class="nb">bool</span><span class="p">,</span> <span class="kc">True</span><span class="p">,</span> <span class="s1">&#39;Flag for whether to include element extra variables in f5 file.&#39;</span><span class="p">],</span>
         <span class="s1">&#39;writeCoordinateFrame&#39;</span><span class="p">:</span> <span class="p">[</span><span class="nb">bool</span><span class="p">,</span> <span class="kc">False</span><span class="p">,</span> <span class="s1">&#39;Flag for whether to include element coordinate frames in f5 file.&#39;</span><span class="p">],</span>
-        <span class="s1">&#39;familySeparator&#39;</span><span class="p">:</span> <span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="s1">&#39;/&#39;</span><span class="p">,</span> <span class="s1">&#39;Family seperator character used for condensing groups in f5 file.&#39;</span><span class="p">],</span>
+        <span class="s1">&#39;familySeparator&#39;</span><span class="p">:</span> <span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="s1">&#39;/&#39;</span><span class="p">,</span> <span class="s1">&#39;Family separator character used for condensing groups in f5 file.&#39;</span><span class="p">],</span>
         <span class="s1">&#39;printTiming&#39;</span><span class="p">:</span> <span class="p">[</span><span class="nb">bool</span><span class="p">,</span> <span class="kc">False</span><span class="p">,</span> <span class="s1">&#39;Flag for printing out timing information for class procedures.&#39;</span><span class="p">],</span>
 
     <span class="p">}</span>
@@ -144,9 +140,6 @@
 
         <span class="n">startTime</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
 
-        <span class="c1"># Data type (real or complex)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">dtype</span> <span class="o">=</span> <span class="n">tacs</span><span class="o">.</span><span class="n">TACS</span><span class="o">.</span><span class="n">dtype</span>
-
         <span class="c1"># Set the communicator and rank -- defaults to MPI_COMM_WORLD</span>
         <span class="k">if</span> <span class="n">comm</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">comm</span> <span class="o">=</span> <span class="n">MPI</span><span class="o">.</span><span class="n">COMM_WORLD</span>
@@ -172,7 +165,7 @@
 
         <span class="c1"># Create and load mesh loader object.</span>
         <span class="n">debugFlag</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s1">&#39;printDebug&#39;</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">meshLoader</span> <span class="o">=</span> <span class="n">pyMeshLoader</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">comm</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">dtype</span><span class="p">,</span> <span class="n">debugFlag</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">meshLoader</span> <span class="o">=</span> <span class="n">pyMeshLoader</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">comm</span><span class="p">,</span> <span class="n">debugFlag</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">meshLoader</span><span class="o">.</span><span class="n">scanBdfFile</span><span class="p">(</span><span class="n">fileName</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">bdfName</span> <span class="o">=</span> <span class="n">fileName</span>
         <span class="c1"># Save pynastran bdf object</span>
@@ -187,7 +180,6 @@
         <span class="c1"># Load all the component descriptions</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">compDescripts</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">meshLoader</span><span class="o">.</span><span class="n">getComponentDescripts</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">elemDescripts</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">meshLoader</span><span class="o">.</span><span class="n">getElementDescripts</span><span class="p">()</span>
-
 
         <span class="c1"># Set the starting dvNum and scaleList</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">dvNum</span> <span class="o">=</span> <span class="n">dvNum</span>
@@ -231,7 +223,7 @@
                     <span class="n">lower</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">upper</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="mf">1.0</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        This function allows adding design variables that are not</span>
-<span class="sd">        cleanly associated with a particular constiutive object. One</span>
+<span class="sd">        cleanly associated with a particular constitutive object. One</span>
 <span class="sd">        example is the pitch of the stiffeners for blade stiffened</span>
 <span class="sd">        panels; It often is the same for many different constitutive</span>
 <span class="sd">        objects. By calling this function, the internal dvNum counter</span>
@@ -254,9 +246,9 @@
 <span class="sd">            Scale factor for variable</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">globalDVs</span><span class="p">[</span><span class="n">descript</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;num&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">dvNum</span><span class="p">,</span>
-                                     <span class="s1">&#39;value&#39;</span><span class="p">:</span> <span class="n">value</span><span class="p">,</span>
-                                     <span class="s1">&#39;lowerBound&#39;</span><span class="p">:</span> <span class="n">lower</span><span class="p">,</span>
-                                     <span class="s1">&#39;upperBound&#39;</span><span class="p">:</span> <span class="n">upper</span><span class="p">}</span>
+                                    <span class="s1">&#39;value&#39;</span><span class="p">:</span> <span class="n">value</span><span class="p">,</span>
+                                    <span class="s1">&#39;lowerBound&#39;</span><span class="p">:</span> <span class="n">lower</span><span class="p">,</span>
+                                    <span class="s1">&#39;upperBound&#39;</span><span class="p">:</span> <span class="n">upper</span><span class="p">}</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">dvNum</span> <span class="o">+=</span> <span class="mi">1</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">scaleList</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">scale</span><span class="p">)</span></div>
 
@@ -272,18 +264,18 @@
 <span class="sd">        domains. All of these operations boil down to selecting a</span>
 <span class="sd">        subset of the compIDs.</span>
 
-<span class="sd">        This function attemps to support as many ways as possible to</span>
+<span class="sd">        This function attempts to support as many ways as possible to</span>
 <span class="sd">        select parts of the structure. Easy and efficient selection of</span>
 <span class="sd">        parts is critical to the end user.</span>
 
-<span class="sd">        Methods of selction:</span>
+<span class="sd">        Methods of selection:</span>
 
 <span class="sd">        1. include, integer, string, list of integers and/or strings: The</span>
-<span class="sd">           simpliest and most direct way of selecting a component. The</span>
+<span class="sd">           simplest and most direct way of selecting a component. The</span>
 <span class="sd">           user supplies the index of the componentID, a name or partial</span>
 <span class="sd">           name, or a list of a combination of both.</span>
 
-<span class="sd">           For exammple::</span>
+<span class="sd">           For example::</span>
 
 <span class="sd">            # Select the 11th component</span>
 <span class="sd">            selectCompIDs(include=10)</span>
@@ -294,15 +286,15 @@
 <span class="sd">            # Select any component containing &#39;rib.00&#39;</span>
 <span class="sd">            selectCompIDs(include=&#39;rib.00&#39;)</span>
 
-<span class="sd">            # Select any components containg &#39;rib.00&#39; and &#39;rib.10&#39;</span>
+<span class="sd">            # Select any components containing &#39;rib.00&#39; and &#39;rib.10&#39;</span>
 <span class="sd">            selectCompIDs(include=[&#39;rib.00&#39;, &#39;rib.10&#39;])</span>
 
-<span class="sd">            # Select any componet containing &#39;rib.00&#39;, the 11th</span>
+<span class="sd">            # Select any component containing &#39;rib.00&#39;, the 11th</span>
 <span class="sd">            # component and any component containing &#39;spar&#39;</span>
 <span class="sd">            # (This is probably not advisable!)</span>
 <span class="sd">            selectCompIDs(include=[&#39;rib.00&#39;, 10, &#39;spar&#39;])</span>
 
-<span class="sd">        2. Exclude, operates similarally to &#39;include&#39;. The behaviour</span>
+<span class="sd">        2. Exclude, operates similarly to &#39;include&#39;. The behaviour</span>
 <span class="sd">           of exclude is identical to include above, except that</span>
 <span class="sd">           component ID&#39;s that are found using &#39;exclude&#39; are</span>
 <span class="sd">           &#39;subtracted&#39; from those found using include. A special</span>
@@ -319,11 +311,11 @@
 <span class="sd">               selectCompIDs(exclude = [2, 3]) will return</span>
 
 <span class="sd">               # This will return components that have &#39;ribs&#39; in the</span>
-<span class="sd">               # componet ID, but not those that have &#39;le_ribs&#39; in the</span>
-<span class="sd">               # componet id.</span>
+<span class="sd">               # component ID, but not those that have &#39;le_ribs&#39; in the</span>
+<span class="sd">               # component id.</span>
 <span class="sd">               selectCompIDs(include=&#39;ribs&#39;, exclude=&#39;le_ribs&#39;)</span>
 
-<span class="sd">        3. includeBounds, list of componets defining a region inside</span>
+<span class="sd">        3. includeBounds, list of components defining a region inside</span>
 <span class="sd">           of which &#39;include&#39; components will be selected. This</span>
 <span class="sd">           functionality uses a geometric approach to select the compIDs.</span>
 <span class="sd">           All components within the project 2D convex hull are included.</span>
@@ -338,15 +330,15 @@
 <span class="sd">               selectCompIDs(include=&#39;U_SKIN&#39;, includeBound=</span>
 <span class="sd">                   [&#39;LE_SPAR&#39;, &#39;TE_SPAR&#39;, &#39;RIB.01&#39;, &#39;RIB.04&#39;])</span>
 
-<span class="sd">        4. nGroup: The number of groups to divde the found componets</span>
+<span class="sd">        4. nGroup: The number of groups to divide the found componets</span>
 <span class="sd">           into. Generally this will be 1. However, in certain cases, it</span>
-<span class="sd">           is convient to create multiple groups in one pass.</span>
+<span class="sd">           is convenient to create multiple groups in one pass.</span>
 
 <span class="sd">           For example::</span>
 
 <span class="sd">             # This will &#39;evenly&#39; create 10 groups on all components</span>
 <span class="sd">             # containing LE_SPAR. Note that once the componets are</span>
-<span class="sd">             # selected, they are sorted **alphetically** and assigned</span>
+<span class="sd">             # selected, they are sorted **alphabetically** and assigned</span>
 <span class="sd">             # sequentially.</span>
 <span class="sd">             selectCompIDs(include=&#39;LE_SPAR&#39;, nGroup=10)</span>
 
@@ -368,7 +360,7 @@
 <span class="sd">        components (default behaviour).</span>
 
 <span class="sd">        selectCompIDs(include=[&#39;RIB&#39;, &#39;SEG.01&#39;], includeOpt=&#39;and&#39;)</span>
-<span class="sd">        will select any componet with &#39;RIB&#39; in the description AND</span>
+<span class="sd">        will select any component with &#39;RIB&#39; in the description AND</span>
 <span class="sd">        &#39;SEG.01&#39; in the description.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
 
@@ -433,7 +425,7 @@
 
             <span class="n">ind</span> <span class="o">=</span> <span class="n">split_list</span><span class="p">(</span><span class="n">ind</span><span class="p">,</span> <span class="n">nGroup</span><span class="p">)</span>
 
-            <span class="c1"># Finally assemble the nested list of componet IDs</span>
+            <span class="c1"># Finally assemble the nested list of component IDs</span>
             <span class="n">tmp</span> <span class="o">=</span> <span class="p">[]</span>
             <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">ind</span><span class="p">)):</span>
                 <span class="n">tmp</span><span class="o">.</span><span class="n">append</span><span class="p">([])</span>
@@ -502,7 +494,7 @@
 <span class="sd">        This is the &#39;last&#39; method to be called during the setup. The</span>
 <span class="sd">        user should have already added all the design variables,</span>
 <span class="sd">        domains ect. before this function is call. This function</span>
-<span class="sd">        finializes the problem initialization and cannot be changed at</span>
+<span class="sd">        finalizes the problem initialization and cannot be changed at</span>
 <span class="sd">        later time. If a elemCallBack function is not provided by the user,</span>
 <span class="sd">        we will use pyNastran to generate one automatically from element</span>
 <span class="sd">        properties provided in the BDF file.</span>
@@ -567,8 +559,8 @@
         <span class="c1"># Check if any properties are in the BDF</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">bdfInfo</span><span class="o">.</span><span class="n">missing_properties</span><span class="p">:</span>
             <span class="k">raise</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TACSError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;BDF file &#39;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">bdfName</span><span class="si">}</span><span class="s2">&#39; has missing properties cards. &quot;</span>
-                        <span class="s2">&quot;Set &#39;debugPrint&#39; option to True for more information.&quot;</span>
-                        <span class="s2">&quot;User must define own elemCallBack function.&quot;</span><span class="p">)</span>
+                                  <span class="s2">&quot;Set &#39;printDebug&#39; option to True for more information. &quot;</span>
+                                  <span class="s2">&quot;User must define own elemCallBack function.&quot;</span><span class="p">)</span>
 
         <span class="c1"># Make sure cross-referencing is turned on in pynastran</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">bdfInfo</span><span class="o">.</span><span class="n">is_xrefed</span> <span class="ow">is</span> <span class="kc">False</span><span class="p">:</span>
@@ -635,10 +627,11 @@
                 <span class="n">C33</span> <span class="o">=</span> <span class="n">matInfo</span><span class="o">.</span><span class="n">G33</span>
                 <span class="n">rho</span> <span class="o">=</span> <span class="n">matInfo</span><span class="o">.</span><span class="n">rho</span>
                 <span class="c1"># See if this card features anisotropic coupling terms (which we don&#39;t support yet)</span>
-                <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">C13</span><span class="p">)</span><span class="o">/</span><span class="p">(</span><span class="n">C11</span><span class="o">+</span><span class="n">C22</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="mf">1e-8</span> <span class="ow">or</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">C23</span><span class="p">)</span><span class="o">/</span><span class="p">(</span><span class="n">C11</span><span class="o">+</span><span class="n">C22</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="mf">1e-8</span><span class="p">:</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">_TACSWarning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;MAT2 card </span><span class="si">{</span><span class="n">matInfo</span><span class="o">.</span><span class="n">mid</span><span class="si">}</span><span class="s2"> has anisotropic stiffness components that are not currently supported. &quot;</span>
-                                     <span class="s2">&quot;These terms will be dropped and the material treated as orthotropic. &quot;</span>
-                                     <span class="s2">&quot;Result accuracy may be affected.&quot;</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">C13</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">C11</span> <span class="o">+</span> <span class="n">C22</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="mf">1e-8</span> <span class="ow">or</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">C23</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">C11</span> <span class="o">+</span> <span class="n">C22</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="mf">1e-8</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_TACSWarning</span><span class="p">(</span>
+                        <span class="sa">f</span><span class="s2">&quot;MAT2 card </span><span class="si">{</span><span class="n">matInfo</span><span class="o">.</span><span class="n">mid</span><span class="si">}</span><span class="s2"> has anisotropic stiffness components that are not currently supported. &quot;</span>
+                        <span class="s2">&quot;These terms will be dropped and the material treated as orthotropic. &quot;</span>
+                        <span class="s2">&quot;Result accuracy may be affected.&quot;</span><span class="p">)</span>
                 <span class="n">nu12</span> <span class="o">=</span> <span class="n">C12</span> <span class="o">/</span> <span class="n">C22</span>
                 <span class="n">nu21</span> <span class="o">=</span> <span class="n">C12</span> <span class="o">/</span> <span class="n">C11</span>
                 <span class="n">E1</span> <span class="o">=</span> <span class="n">C11</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">nu12</span> <span class="o">*</span> <span class="n">nu21</span><span class="p">)</span>
@@ -649,7 +642,7 @@
                                                            <span class="n">G23</span><span class="o">=</span><span class="n">G23</span><span class="p">)</span>
 
             <span class="k">else</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TACSError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unsupported material type &#39;</span><span class="si">{</span><span class="n">matInfo</span><span class="o">.</span><span class="n">type</span><span class="si">}</span><span class="s2">&#39; for material number </span><span class="si">{</span><span class="n">matInfo</span><span class="o">.</span><span class="n">mid</span><span class="si">}</span><span class="s2">. &quot;</span><span class="p">)</span>
+                <span class="k">raise</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TACSError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unsupported material type &#39;</span><span class="si">{</span><span class="n">matInfo</span><span class="o">.</span><span class="n">type</span><span class="si">}</span><span class="s2">&#39; for material number </span><span class="si">{</span><span class="n">matInfo</span><span class="o">.</span><span class="n">mid</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
 
             <span class="k">return</span> <span class="n">mat</span>
 
@@ -763,7 +756,7 @@
                         <span class="n">transform</span> <span class="o">=</span> <span class="n">tacs</span><span class="o">.</span><span class="n">elements</span><span class="o">.</span><span class="n">ShellRefAxisTransform</span><span class="p">(</span><span class="n">refAxis</span><span class="p">)</span>
                     <span class="k">else</span><span class="p">:</span>  <span class="c1"># Don&#39;t support spherical/cylindrical yet</span>
                         <span class="k">raise</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TACSError</span><span class="p">(</span><span class="s2">&quot;Unsupported material coordinate system type &quot;</span>
-                                    <span class="sa">f</span><span class="s2">&quot;&#39;</span><span class="si">{</span><span class="n">mcid</span><span class="o">.</span><span class="n">type</span><span class="si">}</span><span class="s2">&#39; for property number </span><span class="si">{</span><span class="n">propertyID</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
+                                              <span class="sa">f</span><span class="s2">&quot;&#39;</span><span class="si">{</span><span class="n">mcid</span><span class="o">.</span><span class="n">type</span><span class="si">}</span><span class="s2">&#39; for property number </span><span class="si">{</span><span class="n">propertyID</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
             <span class="k">elif</span> <span class="n">propInfo</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="s1">&#39;PBUSH&#39;</span><span class="p">:</span>
                 <span class="k">if</span> <span class="n">elemDict</span><span class="p">[</span><span class="n">propertyID</span><span class="p">][</span><span class="s1">&#39;elements&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">cid_ref</span><span class="p">:</span>
                     <span class="n">refAxis_i</span> <span class="o">=</span> <span class="n">elemDict</span><span class="p">[</span><span class="n">propertyID</span><span class="p">][</span><span class="s1">&#39;elements&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">cid_ref</span><span class="o">.</span><span class="n">i</span>
@@ -806,7 +799,7 @@
                     <span class="n">elem</span> <span class="o">=</span> <span class="n">tacs</span><span class="o">.</span><span class="n">elements</span><span class="o">.</span><span class="n">SpringElement</span><span class="p">(</span><span class="n">transform</span><span class="p">,</span> <span class="n">con</span><span class="p">)</span>
                 <span class="k">else</span><span class="p">:</span>
                     <span class="k">raise</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TACSError</span><span class="p">(</span><span class="s2">&quot;Unsupported element type &quot;</span>
-                                <span class="sa">f</span><span class="s2">&quot;&#39;</span><span class="si">{</span><span class="n">descript</span><span class="si">}</span><span class="s2">&#39; specified for property number </span><span class="si">{</span><span class="n">propertyID</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
+                                          <span class="sa">f</span><span class="s2">&quot;&#39;</span><span class="si">{</span><span class="n">descript</span><span class="si">}</span><span class="s2">&#39; specified for property number </span><span class="si">{</span><span class="n">propertyID</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
                 <span class="n">elemList</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">elem</span><span class="p">)</span>
 
             <span class="k">return</span> <span class="n">elemList</span><span class="p">,</span> <span class="n">scaleList</span>
@@ -1198,7 +1191,7 @@
 
                         <span class="k">else</span><span class="p">:</span>
                             <span class="bp">self</span><span class="o">.</span><span class="n">_TACSWarning</span><span class="p">(</span><span class="s2">&quot;Unsupported load type &quot;</span>
-                                        <span class="sa">f</span><span class="s2">&quot; &#39;</span><span class="si">{</span><span class="n">loadInfo</span><span class="o">.</span><span class="n">type</span><span class="si">}</span><span class="s2">&#39; specified for load set number </span><span class="si">{</span><span class="n">loadInfo</span><span class="o">.</span><span class="n">sid</span><span class="si">}</span><span class="s2">, skipping load&quot;</span><span class="p">)</span>
+                                              <span class="sa">f</span><span class="s2">&quot; &#39;</span><span class="si">{</span><span class="n">loadInfo</span><span class="o">.</span><span class="n">type</span><span class="si">}</span><span class="s2">&#39; specified for load set number </span><span class="si">{</span><span class="n">loadInfo</span><span class="o">.</span><span class="n">sid</span><span class="si">}</span><span class="s2">, skipping load&quot;</span><span class="p">)</span>
 
             <span class="c1"># append to list of structural problems</span>
             <span class="n">structProblems</span><span class="p">[</span><span class="n">subCase</span><span class="o">.</span><span class="n">id</span><span class="p">]</span> <span class="o">=</span> <span class="n">problem</span>
@@ -1253,16 +1246,16 @@
 
             <span class="k">else</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TACSError</span><span class="p">(</span><span class="s2">&quot;Unsupported element type &quot;</span>
-                            <span class="sa">f</span><span class="s2">&quot;&#39;</span><span class="si">{</span><span class="n">elemInfo</span><span class="o">.</span><span class="n">type</span><span class="si">}</span><span class="s2">&#39; specified for PLOAD4 load set number </span><span class="si">{</span><span class="n">loadInfo</span><span class="o">.</span><span class="n">sid</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
+                                      <span class="sa">f</span><span class="s2">&quot;&#39;</span><span class="si">{</span><span class="n">elemInfo</span><span class="o">.</span><span class="n">type</span><span class="si">}</span><span class="s2">&#39; specified for PLOAD4 load set number </span><span class="si">{</span><span class="n">loadInfo</span><span class="o">.</span><span class="n">sid</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
 
             <span class="c1"># Figure out whether or not this is a traction based on if a vector is defined</span>
             <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">loadInfo</span><span class="o">.</span><span class="n">nvector</span><span class="p">)</span> <span class="o">==</span> <span class="mf">0.0</span><span class="p">:</span>
                 <span class="n">staticProb</span><span class="o">.</span><span class="n">addPressureToElements</span><span class="p">(</span><span class="n">elemID</span><span class="p">,</span> <span class="n">pressure</span><span class="p">,</span> <span class="n">faceIndex</span><span class="p">,</span>
-                                           <span class="n">nastranOrdering</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+                                                 <span class="n">nastranOrdering</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="n">trac</span> <span class="o">=</span> <span class="n">pressure</span> <span class="o">*</span> <span class="n">loadInfo</span><span class="o">.</span><span class="n">nvector</span>
                 <span class="n">staticProb</span><span class="o">.</span><span class="n">addTractionToElements</span><span class="p">(</span><span class="n">elemID</span><span class="p">,</span> <span class="n">trac</span><span class="p">,</span> <span class="n">faceIndex</span><span class="p">,</span>
-                                           <span class="n">nastranOrdering</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+                                                 <span class="n">nastranOrdering</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
 <div class="viewcode-block" id="pyTACS.getNumComponents"><a class="viewcode-back" href="../../pytacs/pytacs_module.html#tacs.pytacs.pyTACS.getNumComponents">[docs]</a>    <span class="k">def</span> <span class="nf">getNumComponents</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
@@ -1444,16 +1437,17 @@
                         <span class="n">numFoundElements</span> <span class="o">+=</span> <span class="mi">1</span>
                     <span class="k">else</span><span class="p">:</span>
                         <span class="bp">self</span><span class="o">.</span><span class="n">_TACSError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Object of type </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="nb">object</span><span class="p">)</span><span class="si">}</span><span class="s2"> returned in elemCallBack function &quot;</span>
-                              <span class="s2">&quot;is not a valid TACS element object. The </span><span class="se">\</span>
+                                        <span class="s2">&quot;is not a valid TACS element object. The </span><span class="se">\</span>
 <span class="s2">                               string representation of the offending object is: </span><span class="se">\</span>
 <span class="s2">                               &#39;{repr(object)}&#39;&quot;</span><span class="p">)</span>
 
             <span class="k">if</span> <span class="n">numFoundElements</span> <span class="o">!=</span> <span class="n">numElements</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TACSError</span><span class="p">(</span><span class="s2">&quot;Could not find all required element objects in the &quot;</span>
-                            <span class="s2">&quot;return arguments from user-supplied &quot;</span>
-                            <span class="s2">&quot;elemCallBack function. </span><span class="si">{}</span><span class="s2"> element types (</span><span class="si">{}</span><span class="s2">) are contained in Component </span><span class="si">{}</span><span class="s2">, &quot;</span>
-                            <span class="s2">&quot;but only </span><span class="si">{}</span><span class="s2"> were returned by elemCallback.&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">numElements</span><span class="p">,</span> <span class="nb">repr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">elemDescripts</span><span class="p">[</span><span class="n">i</span><span class="p">]),</span>
-                                                                                <span class="n">i</span><span class="p">,</span> <span class="n">numFoundElements</span><span class="p">))</span>
+                                      <span class="s2">&quot;return arguments from user-supplied &quot;</span>
+                                      <span class="s2">&quot;elemCallBack function. </span><span class="si">{}</span><span class="s2"> element types (</span><span class="si">{}</span><span class="s2">) are contained in Component </span><span class="si">{}</span><span class="s2">, &quot;</span>
+                                      <span class="s2">&quot;but only </span><span class="si">{}</span><span class="s2"> were returned by elemCallback.&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">numElements</span><span class="p">,</span>
+                                                                                          <span class="nb">repr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">elemDescripts</span><span class="p">[</span><span class="n">i</span><span class="p">]),</span>
+                                                                                          <span class="n">i</span><span class="p">,</span> <span class="n">numFoundElements</span><span class="p">))</span>
 
             <span class="c1"># Now determine the number of design variables. This is</span>
             <span class="c1"># NOT as simple as just getting the number of design</span>
@@ -1482,8 +1476,8 @@
                 <span class="c1"># newVars[-1]-newVars[0] + 1</span>
                 <span class="k">if</span> <span class="ow">not</span> <span class="nb">len</span><span class="p">(</span><span class="n">newVars</span><span class="p">)</span> <span class="o">==</span> <span class="n">newVars</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">newVars</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="mi">1</span><span class="p">:</span>
                     <span class="k">raise</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TACSError</span><span class="p">(</span><span class="s2">&quot;Inconsistent design variables detected. &quot;</span>
-                                <span class="s2">&quot;The added design variables are not continuous.&quot;</span>
-                                <span class="sa">f</span><span class="s2">&quot; The added design varibales are </span><span class="si">{</span><span class="nb">repr</span><span class="p">(</span><span class="n">newVars</span><span class="p">)</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
+                                          <span class="s2">&quot;The added design variables are not continuous.&quot;</span>
+                                          <span class="sa">f</span><span class="s2">&quot; The added design varibales are </span><span class="si">{</span><span class="nb">repr</span><span class="p">(</span><span class="n">newVars</span><span class="p">)</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
 
             <span class="c1"># Finally increment the dvcounter</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">dvNum</span> <span class="o">+=</span> <span class="nb">len</span><span class="p">(</span><span class="n">newVars</span><span class="p">)</span>
@@ -1514,9 +1508,10 @@
                 <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">varsPerNode</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">varsPerNode</span> <span class="o">=</span> <span class="n">elemVarsPerNode</span>
                 <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">varsPerNode</span> <span class="o">!=</span> <span class="n">elemVarsPerNode</span><span class="p">:</span>
-                    <span class="k">raise</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TACSError</span><span class="p">(</span><span class="s2">&quot;Model references elements with differing numbers of variables per node (</span><span class="si">%d</span><span class="s2"> and </span><span class="si">%d</span><span class="s2">). &quot;</span>
-                                <span class="s2">&quot;All elements must use same number of variables to be compatible.&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">varsPerNode</span><span class="p">,</span>
-                                                                                                    <span class="n">elemVarsPerNode</span><span class="p">))</span>
+                    <span class="k">raise</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TACSError</span><span class="p">(</span>
+                        <span class="s2">&quot;Model references elements with differing numbers of variables per node (</span><span class="si">%d</span><span class="s2"> and </span><span class="si">%d</span><span class="s2">). &quot;</span>
+                        <span class="s2">&quot;All elements must use same number of variables to be compatible.&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">varsPerNode</span><span class="p">,</span>
+                                                                                              <span class="n">elemVarsPerNode</span><span class="p">))</span>
 
         <span class="c1"># If varsPerNode still hasn&#39;t been set (because there were no elements added in the callback)</span>
         <span class="c1"># Default to 6</span>
@@ -1528,7 +1523,7 @@
 <span class="sd">        Standard error print out if the user tries to call certain pytacs methods before intializing.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">error</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TACSError</span><span class="p">(</span><span class="s2">&quot;TACS assembler has not been created. &quot;</span>
-                        <span class="s2">&quot;Assembler must created first by running &#39;initalize&#39; method.&quot;</span><span class="p">)</span>
+                                <span class="s2">&quot;Assembler must created first by running &#39;initalize&#39; method.&quot;</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">error</span></div>
 </pre></div>
 

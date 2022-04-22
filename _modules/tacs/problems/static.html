@@ -50,7 +50,6 @@
 <span class="c1"># =============================================================================</span>
 <span class="c1"># Imports</span>
 <span class="c1"># =============================================================================</span>
-<span class="kn">import</span> <span class="nn">warnings</span>
 <span class="kn">import</span> <span class="nn">os</span>
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 <span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">OrderedDict</span>
@@ -58,13 +57,12 @@
 <span class="kn">from</span> <span class="nn">.base</span> <span class="kn">import</span> <span class="n">TACSProblem</span>
 <span class="kn">import</span> <span class="nn">tacs.TACS</span>
 
+
 <div class="viewcode-block" id="StaticProblem"><a class="viewcode-back" href="../../../pytacs/static.html#tacs.problems.StaticProblem">[docs]</a><span class="k">class</span> <span class="nc">StaticProblem</span><span class="p">(</span><span class="n">TACSProblem</span><span class="p">):</span>
-    <span class="c1"># Class name</span>
-    <span class="n">objectName</span> <span class="o">=</span> <span class="s1">&#39;StaticProblem&#39;</span>
 
     <span class="c1"># Default options for class</span>
     <span class="n">defaultOptions</span> <span class="o">=</span> <span class="p">{</span>
-        <span class="s1">&#39;outputdir&#39;</span><span class="p">:</span> <span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="s1">&#39;./&#39;</span><span class="p">,</span> <span class="s1">&#39;Output directory for F5 file writer.&#39;</span><span class="p">],</span>
+        <span class="s1">&#39;outputDir&#39;</span><span class="p">:</span> <span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="s1">&#39;./&#39;</span><span class="p">,</span> <span class="s1">&#39;Output directory for F5 file writer.&#39;</span><span class="p">],</span>
 
         <span class="c1"># Solution Options</span>
         <span class="s1">&#39;KSMSolver&#39;</span><span class="p">:</span> <span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="s1">&#39;GMRES&#39;</span><span class="p">,</span> <span class="s2">&quot;Krylov subspace method to use for linear solver. Currently only supports &#39;GMRES&#39;&quot;</span><span class="p">],</span>
@@ -124,8 +122,8 @@
         <span class="c1"># Problem name</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">name</span>
 
-        <span class="c1"># Defualt setup for common problem class objects</span>
-        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">assembler</span><span class="p">,</span> <span class="n">comm</span><span class="p">,</span> <span class="n">outputViewer</span><span class="p">,</span> <span class="n">meshLoader</span><span class="p">)</span>
+        <span class="c1"># Default setup for common problem class objects</span>
+        <span class="n">TACSProblem</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">assembler</span><span class="p">,</span> <span class="n">comm</span><span class="p">,</span> <span class="n">outputViewer</span><span class="p">,</span> <span class="n">meshLoader</span><span class="p">)</span>
 
         <span class="c1"># Process the default options which are added to self.options</span>
         <span class="c1"># under the &#39;defaults&#39; key. Make sure the key are lower case</span>
@@ -137,7 +135,7 @@
 
         <span class="c1"># Set user-defined options</span>
         <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">options</span><span class="p">:</span>
-            <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">setOption</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">options</span><span class="p">[</span><span class="n">key</span><span class="p">])</span>
+            <span class="n">TACSProblem</span><span class="o">.</span><span class="n">setOption</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">options</span><span class="p">[</span><span class="n">key</span><span class="p">])</span>
 
         <span class="c1"># Create problem-specific variables</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_createVariables</span><span class="p">()</span>
@@ -165,7 +163,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">u</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">assembler</span><span class="o">.</span><span class="n">createVec</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">u_array</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">u</span><span class="o">.</span><span class="n">getArray</span><span class="p">()</span>
         <span class="c1"># Auxillary element object for applying tractions/pressure</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">auxElems</span>  <span class="o">=</span> <span class="n">tacs</span><span class="o">.</span><span class="n">TACS</span><span class="o">.</span><span class="n">AuxElements</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">auxElems</span> <span class="o">=</span> <span class="n">tacs</span><span class="o">.</span><span class="n">TACS</span><span class="o">.</span><span class="n">AuxElements</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">callCounter</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
 
         <span class="c1"># Norms</span>
@@ -205,7 +203,7 @@
         <span class="c1">#        opt(&#39;nRestarts&#39;), opt(&#39;flexible&#39;))</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">raise</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TACSError</span><span class="p">(</span><span class="s2">&quot;Unknown KSMSolver option. Valid options are &quot;</span>
-                        <span class="s2">&quot;&#39;GMRES&#39; or &#39;GCROT&#39;&quot;</span><span class="p">)</span>
+                                  <span class="s2">&quot;&#39;GMRES&#39; or &#39;GCROT&#39;&quot;</span><span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">KSM</span><span class="o">.</span><span class="n">setTolerances</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s1">&#39;L2ConvergenceRel&#39;</span><span class="p">),</span>
                                <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s1">&#39;L2Convergence&#39;</span><span class="p">))</span>
@@ -228,8 +226,8 @@
 <span class="sd">        value : depends on option</span>
 <span class="sd">            New option value to set</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="c1"># Defualt setOption for common problem class objects</span>
-        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">setOption</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+        <span class="c1"># Default setOption for common problem class objects</span>
+        <span class="n">TACSProblem</span><span class="o">.</span><span class="n">setOption</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
 
         <span class="c1"># Update tolerances</span>
         <span class="k">if</span> <span class="s1">&#39;l2convergence&#39;</span> <span class="ow">in</span> <span class="n">name</span><span class="o">.</span><span class="n">lower</span><span class="p">():</span>
@@ -265,7 +263,7 @@
 <span class="sd">            List of compIDs to select. Use pyTACS.selectCompIDs method</span>
 <span class="sd">            to determine this.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">success</span> <span class="o">=</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">addFunction</span><span class="p">(</span><span class="n">funcName</span><span class="p">,</span> <span class="n">funcHandle</span><span class="p">,</span> <span class="n">compIDs</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="n">success</span> <span class="o">=</span> <span class="n">TACSProblem</span><span class="o">.</span><span class="n">addFunction</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">funcName</span><span class="p">,</span> <span class="n">funcHandle</span><span class="p">,</span> <span class="n">compIDs</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">success</span><span class="p">:</span>
             <span class="c1"># Create additional tacs BVecs to hold adjoint and sens info</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">adjointList</span><span class="p">[</span><span class="n">funcName</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">assembler</span><span class="o">.</span><span class="n">createVec</span><span class="p">()</span>
@@ -285,7 +283,7 @@
 <span class="sd">            looks for variable in the ``self.varName`` attribute.</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">setDesignVars</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+        <span class="n">TACSProblem</span><span class="o">.</span><span class="n">setDesignVars</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_factorOnNext</span> <span class="o">=</span> <span class="kc">True</span></div>
 
 <div class="viewcode-block" id="StaticProblem.setNodes"><a class="viewcode-back" href="../../../pytacs/static.html#tacs.problems.StaticProblem.setNodes">[docs]</a>    <span class="k">def</span> <span class="nf">setNodes</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">coords</span><span class="p">):</span>
@@ -298,17 +296,17 @@
 <span class="sd">            Structural coordinate in array of size (N * 3) where N is</span>
 <span class="sd">            the number of structural nodes on this processor.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">setNodes</span><span class="p">(</span><span class="n">coords</span><span class="p">)</span>
+        <span class="n">TACSProblem</span><span class="o">.</span><span class="n">setNodes</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">coords</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_factorOnNext</span> <span class="o">=</span> <span class="kc">True</span></div>
 
-<span class="c1">####### Load adding methods ########</span>
+    <span class="c1">####### Load adding methods ########</span>
 
 <div class="viewcode-block" id="StaticProblem.addLoadToComponents"><a class="viewcode-back" href="../../../pytacs/static.html#tacs.problems.StaticProblem.addLoadToComponents">[docs]</a>    <span class="k">def</span> <span class="nf">addLoadToComponents</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">compIDs</span><span class="p">,</span> <span class="n">F</span><span class="p">,</span> <span class="n">averageLoad</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;&quot;</span>
 <span class="sd">        This method is used to add a *FIXED TOTAL LOAD* on one or more</span>
 <span class="sd">        components, defined by COMPIDs. The purpose of this routine is to add loads that</span>
 <span class="sd">        remain fixed throughout an optimization. An example would be an engine load.</span>
-<span class="sd">        This routine determines all the unqiue nodes in the FE model that are part of the</span>
+<span class="sd">        This routine determines all the unique nodes in the FE model that are part of the</span>
 <span class="sd">        the requested components, then takes the total &#39;force&#39; by F and divides by the</span>
 <span class="sd">        number of nodes. This average load is then applied to the nodes.</span>
 
@@ -682,9 +680,9 @@
 
         <span class="k">if</span> <span class="ow">not</span> <span class="n">ignoreMissing</span><span class="p">:</span>
             <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">evalFuncs</span><span class="p">:</span>
-                <span class="k">if</span> <span class="ow">not</span> <span class="n">f</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">functionList</span><span class="p">:</span>
-                    <span class="k">raise</span> <span class="n">Error</span><span class="p">(</span><span class="s2">&quot;Supplied function &#39;</span><span class="si">%s</span><span class="s2">&#39; has not been added &quot;</span>
-                                <span class="s2">&quot;using addFunction().&quot;</span> <span class="o">%</span> <span class="n">f</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">f</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">functionList</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TACSError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Supplied function &#39;</span><span class="si">{</span><span class="n">f</span><span class="si">}</span><span class="s2">&#39; has not been added &quot;</span>
+                                          <span class="s2">&quot;using addFunction().&quot;</span><span class="p">)</span>
 
         <span class="n">setupProblemTime</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
 
@@ -722,7 +720,8 @@
 <span class="sd">        This is the main routine for returning useful (sensitivity)</span>
 <span class="sd">        information from problem. The derivatives of the functions</span>
 <span class="sd">        corresponding to the strings in EVAL_FUNCS are evaluated and</span>
-<span class="sd">        updated into the provided dictionary.</span>
+<span class="sd">        updated into the provided dictionary. The derivitives with</span>
+<span class="sd">        respect to all design variables and node locations are computed.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -737,7 +736,7 @@
 <span class="sd">        &gt;&gt;&gt; staticProblem.evalFunctionsSens(funcsSens, [&#39;mass&#39;])</span>
 <span class="sd">        &gt;&gt;&gt; funcs</span>
 <span class="sd">        &gt;&gt;&gt; # Result will look like (if StaticProblem has name of &#39;c1&#39;):</span>
-<span class="sd">        &gt;&gt;&gt; # {&#39;c1_mass&#39;:{&#39;struct&#39;:[1.234, ..., 7.89]}</span>
+<span class="sd">        &gt;&gt;&gt; # {&#39;c1_mass&#39;:{&#39;struct&#39;:[1.234, ..., 7.89], &#39;Xpts&#39;:[3.14, ..., 1.59]}}</span>
 <span class="sd">        &quot;&quot;&quot;</span>
 
         <span class="n">startTime</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
@@ -757,8 +756,8 @@
         <span class="n">adjoints</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">evalFuncs</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">f</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">functionList</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="n">Error</span><span class="p">(</span><span class="s2">&quot;Supplied function has not beed added &quot;</span>
-                            <span class="s2">&quot;using addFunction()&quot;</span><span class="p">)</span>
+                <span class="k">raise</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TACSError</span><span class="p">(</span><span class="s2">&quot;Supplied function has not been added &quot;</span>
+                                      <span class="s2">&quot;using addFunction()&quot;</span><span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="c1"># Populate the lists with the tacs bvecs</span>
                 <span class="c1"># we&#39;ll need for each adjoint/sens calculation</span>
@@ -819,7 +818,7 @@
                 <span class="s1">&#39;TACS Adjoint RHS Time&#39;</span><span class="p">,</span> <span class="n">adjointRHSTime</span> <span class="o">-</span> <span class="n">setupProblemTime</span><span class="p">))</span>
             <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">evalFuncs</span><span class="p">:</span>
                 <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;| </span><span class="si">%-30s</span><span class="s1">: </span><span class="si">%10.3f</span><span class="s1"> sec&#39;</span> <span class="o">%</span> <span class="p">(</span>
-                <span class="s1">&#39;TACS Adjoint Solve Time - </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">f</span><span class="p">),</span> <span class="n">adjointEndTime</span><span class="p">[</span><span class="n">f</span><span class="p">]</span> <span class="o">-</span> <span class="n">adjointStartTime</span><span class="p">[</span><span class="n">f</span><span class="p">]))</span>
+                    <span class="s1">&#39;TACS Adjoint Solve Time - </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">f</span><span class="p">),</span> <span class="n">adjointEndTime</span><span class="p">[</span><span class="n">f</span><span class="p">]</span> <span class="o">-</span> <span class="n">adjointStartTime</span><span class="p">[</span><span class="n">f</span><span class="p">]))</span>
             <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;| </span><span class="si">%-30s</span><span class="s1">: </span><span class="si">%10.3f</span><span class="s1"> sec&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="s1">&#39;Total Sensitivity Time&#39;</span><span class="p">,</span> <span class="n">totalSensitivityTime</span> <span class="o">-</span> <span class="n">adjointFinishedTime</span><span class="p">))</span>
             <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;|&#39;</span><span class="p">)</span>
             <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;| </span><span class="si">%-30s</span><span class="s1">: </span><span class="si">%10.3f</span><span class="s1"> sec&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="s1">&#39;Complete Sensitivity Time&#39;</span><span class="p">,</span> <span class="n">totalSensitivityTime</span> <span class="o">-</span> <span class="n">startTime</span><span class="p">))</span>
@@ -1064,7 +1063,7 @@
         <span class="c1"># Compute the RHS</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">assembler</span><span class="o">.</span><span class="n">assembleRes</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">res</span><span class="p">)</span>
         <span class="c1"># Add force terms from rhs</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">rhs</span><span class="o">.</span><span class="n">copyValues</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">F</span><span class="p">)</span> <span class="c1"># Fixed loads</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">rhs</span><span class="o">.</span><span class="n">copyValues</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">F</span><span class="p">)</span>  <span class="c1"># Fixed loads</span>
         <span class="c1"># Add external loads, if specified</span>
         <span class="k">if</span> <span class="n">Fext</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">Fext</span><span class="p">,</span> <span class="n">tacs</span><span class="o">.</span><span class="n">TACS</span><span class="o">.</span><span class="n">Vec</span><span class="p">):</span>
@@ -1189,15 +1188,15 @@
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
-<span class="sd">        states : TACS BVec or numpy array</span>
+<span class="sd">        states : TACS.Vec or numpy.ndarray</span>
 <span class="sd">            Vector to place current state variables into (optional)</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        ----------</span>
-<span class="sd">        states : numpy array</span>
+<span class="sd">        states : numpy.ndarray</span>
 <span class="sd">            current state vector</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-            
+
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">states</span><span class="p">,</span> <span class="n">tacs</span><span class="o">.</span><span class="n">TACS</span><span class="o">.</span><span class="n">Vec</span><span class="p">):</span>
             <span class="n">states</span><span class="o">.</span><span class="n">copyValues</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">u</span><span class="p">)</span>
         <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">states</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>

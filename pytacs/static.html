@@ -67,7 +67,7 @@ The following options, their default values and descriptions are listed below:</
 <div class="highlight-text notranslate"><div class="highlight"><pre><span></span>+----------------------------------------+
 |     StaticProblem default options:     |
 +----------------------------------------+
-&#39;outputdir&#39;: &#39;./&#39;
+&#39;outputDir&#39;: &#39;./&#39;
 	 Output directory for F5 file writer.
 &#39;KSMSolver&#39;: &#39;GMRES&#39;
 	 Krylov subspace method to use for linear solver. Currently only supports &#39;GMRES&#39;
@@ -192,7 +192,7 @@ the number of structural nodes on this processor.</p>
 This method is used to add a <em>FIXED TOTAL LOAD</em> on one or more
 components, defined by COMPIDs. The purpose of this routine is to add loads that
 remain fixed throughout an optimization. An example would be an engine load.
-This routine determines all the unqiue nodes in the FE model that are part of the
+This routine determines all the unique nodes in the FE model that are part of the
 the requested components, then takes the total 'force' by F and divides by the
 number of nodes. This average load is then applied to the nodes.</p>
 <dl class="field-list simple">
@@ -435,7 +435,8 @@ this option with caution.</p></li>
 <dd><p>This is the main routine for returning useful (sensitivity)
 information from problem. The derivatives of the functions
 corresponding to the strings in EVAL_FUNCS are evaluated and
-updated into the provided dictionary.</p>
+updated into the provided dictionary. The derivitives with
+respect to all design variables and node locations are computed.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
@@ -449,7 +450,7 @@ updated into the provided dictionary.</p>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">staticProblem</span><span class="o">.</span><span class="n">evalFunctionsSens</span><span class="p">(</span><span class="n">funcsSens</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;mass&#39;</span><span class="p">])</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">funcs</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="c1"># Result will look like (if StaticProblem has name of &#39;c1&#39;):</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="c1"># {&#39;c1_mass&#39;:{&#39;struct&#39;:[1.234, ..., 7.89]}</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># {&#39;c1_mass&#39;:{&#39;struct&#39;:[1.234, ..., 7.89], &#39;Xpts&#39;:[3.14, ..., 1.59]}}</span>
 </pre></div>
 </div>
 </dd></dl>
@@ -587,13 +588,13 @@ prod += scale * J^T . phi</p>
 problem</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>states</strong> (<em>TACS BVec</em><em> or </em><em>numpy array</em>) -- Vector to place current state variables into (optional)</p>
+<dd class="field-odd"><p><strong>states</strong> (<em>TACS.Vec</em><em> or </em><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.22)"><em>numpy.ndarray</em></a>) -- Vector to place current state variables into (optional)</p>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><p><strong>states</strong> -- current state vector</p>
 </dd>
 <dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>numpy array</p>
+<dd class="field-odd"><p><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.22)">numpy.ndarray</a></p>
 </dd>
 </dl>
 </dd></dl>
@@ -629,6 +630,12 @@ typically used from an external solver</p></li>
 </ul>
 </dd>
 </dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="tacs.problems.StaticProblem.dtype">
+<span class="sig-name descname"><span class="pre">dtype</span></span><a class="headerlink" href="#tacs.problems.StaticProblem.dtype" title="Permalink to this definition">¶</a></dt>
+<dd><p>alias of <code class="xref py py-class docutils literal notranslate"><span class="pre">numpy.float64</span></code></p>
 </dd></dl>
 
 <dl class="py method">

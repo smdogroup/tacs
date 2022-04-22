@@ -112,7 +112,7 @@ The following options, their default values and descriptions are listed below:</
 &#39;writeCoordinateFrame&#39;: False
 	 Flag for whether to include element coordinate frames in f5 file.
 &#39;familySeparator&#39;: &#39;/&#39;
-	 Family seperator character used for condensing groups in f5 file.
+	 Family separator character used for condensing groups in f5 file.
 &#39;printTiming&#39;: False
 	 Flag for printing out timing information for class procedures.
 </pre></div>
@@ -289,7 +289,7 @@ len(scaleList) = dvNum</p></li>
 <dt class="sig sig-object py" id="tacs.pytacs.pyTACS.addGlobalDV">
 <span class="sig-name descname"><span class="pre">addGlobalDV</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">descript</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">value</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lower</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">upper</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scale</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/pytacs.html#pyTACS.addGlobalDV"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.pytacs.pyTACS.addGlobalDV" title="Permalink to this definition">¶</a></dt>
 <dd><p>This function allows adding design variables that are not
-cleanly associated with a particular constiutive object. One
+cleanly associated with a particular constitutive object. One
 example is the pitch of the stiffeners for blade stiffened
 panels; It often is the same for many different constitutive
 objects. By calling this function, the internal dvNum counter
@@ -319,16 +319,16 @@ generating subgroups of these for the purposes of adding
 design variables, constitutive objects, KS domains and mass
 domains. All of these operations boil down to selecting a
 subset of the compIDs.</p>
-<p>This function attemps to support as many ways as possible to
+<p>This function attempts to support as many ways as possible to
 select parts of the structure. Easy and efficient selection of
 parts is critical to the end user.</p>
-<p>Methods of selction:</p>
+<p>Methods of selection:</p>
 <ol class="arabic">
 <li><p>include, integer, string, list of integers and/or strings: The
-simpliest and most direct way of selecting a component. The
+simplest and most direct way of selecting a component. The
 user supplies the index of the componentID, a name or partial
 name, or a list of a combination of both.</p>
-<p>For exammple:</p>
+<p>For example:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1"># Select the 11th component</span>
 <span class="n">selectCompIDs</span><span class="p">(</span><span class="n">include</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
 
@@ -338,17 +338,17 @@ name, or a list of a combination of both.</p>
 <span class="c1"># Select any component containing &#39;rib.00&#39;</span>
 <span class="n">selectCompIDs</span><span class="p">(</span><span class="n">include</span><span class="o">=</span><span class="s1">&#39;rib.00&#39;</span><span class="p">)</span>
 
-<span class="c1"># Select any components containg &#39;rib.00&#39; and &#39;rib.10&#39;</span>
+<span class="c1"># Select any components containing &#39;rib.00&#39; and &#39;rib.10&#39;</span>
 <span class="n">selectCompIDs</span><span class="p">(</span><span class="n">include</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;rib.00&#39;</span><span class="p">,</span> <span class="s1">&#39;rib.10&#39;</span><span class="p">])</span>
 
-<span class="c1"># Select any componet containing &#39;rib.00&#39;, the 11th</span>
+<span class="c1"># Select any component containing &#39;rib.00&#39;, the 11th</span>
 <span class="c1"># component and any component containing &#39;spar&#39;</span>
 <span class="c1"># (This is probably not advisable!)</span>
 <span class="n">selectCompIDs</span><span class="p">(</span><span class="n">include</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;rib.00&#39;</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="s1">&#39;spar&#39;</span><span class="p">])</span>
 </pre></div>
 </div>
 </li>
-<li><p>Exclude, operates similarally to 'include'. The behaviour
+<li><p>Exclude, operates similarly to 'include'. The behaviour
 of exclude is identical to include above, except that
 component ID's that are found using 'exclude' are
 'subtracted' from those found using include. A special
@@ -363,13 +363,13 @@ compID's EXCEPT the those in exclude.</p>
 <span class="n">selectCompIDs</span><span class="p">(</span><span class="n">exclude</span> <span class="o">=</span> <span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">])</span> <span class="n">will</span> <span class="k">return</span>
 
 <span class="c1"># This will return components that have &#39;ribs&#39; in the</span>
-<span class="c1"># componet ID, but not those that have &#39;le_ribs&#39; in the</span>
-<span class="c1"># componet id.</span>
+<span class="c1"># component ID, but not those that have &#39;le_ribs&#39; in the</span>
+<span class="c1"># component id.</span>
 <span class="n">selectCompIDs</span><span class="p">(</span><span class="n">include</span><span class="o">=</span><span class="s1">&#39;ribs&#39;</span><span class="p">,</span> <span class="n">exclude</span><span class="o">=</span><span class="s1">&#39;le_ribs&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
 </li>
-<li><p>includeBounds, list of componets defining a region inside
+<li><p>includeBounds, list of components defining a region inside
 of which 'include' components will be selected. This
 functionality uses a geometric approach to select the compIDs.
 All components within the project 2D convex hull are included.
@@ -384,13 +384,13 @@ accumulate multiple regions.</p>
 </pre></div>
 </div>
 </li>
-<li><p>nGroup: The number of groups to divde the found componets
+<li><p>nGroup: The number of groups to divide the found componets
 into. Generally this will be 1. However, in certain cases, it
-is convient to create multiple groups in one pass.</p>
+is convenient to create multiple groups in one pass.</p>
 <p>For example:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1"># This will &#39;evenly&#39; create 10 groups on all components</span>
 <span class="c1"># containing LE_SPAR. Note that once the componets are</span>
-<span class="c1"># selected, they are sorted **alphetically** and assigned</span>
+<span class="c1"># selected, they are sorted **alphabetically** and assigned</span>
 <span class="c1"># sequentially.</span>
 <span class="n">selectCompIDs</span><span class="p">(</span><span class="n">include</span><span class="o">=</span><span class="s1">&#39;LE_SPAR&#39;</span><span class="p">,</span> <span class="n">nGroup</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
 </pre></div>
@@ -412,7 +412,7 @@ used for item in 'include' option. For example:</p>
 includeOpt='or') will select the LE_SPAR and TE_SPAR
 components (default behaviour).</p>
 <p>selectCompIDs(include=['RIB', 'SEG.01'], includeOpt='and')
-will select any componet with 'RIB' in the description AND
+will select any component with 'RIB' in the description AND
 'SEG.01' in the description.</p>
 </dd></dl>
 
@@ -456,7 +456,7 @@ Defaults to None.</p>
 <dd><p>This is the 'last' method to be called during the setup. The
 user should have already added all the design variables,
 domains ect. before this function is call. This function
-finializes the problem initialization and cannot be changed at
+finalizes the problem initialization and cannot be changed at
 later time. If a elemCallBack function is not provided by the user,
 we will use pyNastran to generate one automatically from element
 properties provided in the BDF file.</p>
@@ -717,6 +717,12 @@ Currently only supports staticProblem (SOL 101) and modalProblems (SOL 103)</p>
 <dt class="sig sig-object py" id="tacs.pytacs.pyTACS.getNumComponents">
 <span class="sig-name descname"><span class="pre">getNumComponents</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/pytacs.html#pyTACS.getNumComponents"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.pytacs.pyTACS.getNumComponents" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return number of components (property) groups found in bdf.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="tacs.pytacs.pyTACS.dtype">
+<span class="sig-name descname"><span class="pre">dtype</span></span><a class="headerlink" href="#tacs.pytacs.pyTACS.dtype" title="Permalink to this definition">¶</a></dt>
+<dd><p>alias of <code class="xref py py-class docutils literal notranslate"><span class="pre">numpy.float64</span></code></p>
 </dd></dl>
 
 <dl class="py method">
