@@ -5,17 +5,18 @@ pyBase_problem
 # =============================================================================
 # Imports
 # =============================================================================
-import warnings
 import numpy as np
 from mpi4py import MPI
 from ..utilities import BaseUI
 from collections import OrderedDict
 import tacs.TACS
 
+
 class TACSProblem(BaseUI):
     """
     Base class for TACS problem types. Contains methods common to all TACS problems.
     """
+
     def __init__(self, assembler, comm, outputViewer=None, meshLoader=None):
 
         # TACS assembler object
@@ -26,9 +27,6 @@ class TACSProblem(BaseUI):
         self.meshLoader = meshLoader
         # MPI communicator object
         self.comm = comm
-
-        # Data type to use for TACS scalars (float or complex)
-        self.dtype = tacs.TACS.dtype
 
         # Create Design variable vector
         self.x = self.assembler.createDesignVec()
@@ -241,7 +239,8 @@ class TACSProblem(BaseUI):
         return varVec
 
     def getNumVariables(self):
-        """Return the number of degrees of freedom (states) that are
+        """
+        Return the number of degrees of freedom (states) that are
         on this processor
 
         Returns
@@ -249,8 +248,8 @@ class TACSProblem(BaseUI):
         nstate : int
             number of states.
         """
-        vpn =  self.getVarsPerNode()
-        nnodes =  self.getNumOwnedNodes()
+        vpn = self.getVarsPerNode()
+        nnodes = self.getNumOwnedNodes()
         return vpn * nnodes
 
     ####### Eval function methods ########
@@ -267,23 +266,23 @@ class TACSProblem(BaseUI):
         ----------
         funcName : str
             The user-supplied name for the function. This will
-            typically be a string that is meanful to the user
+            typically be a string that is meaningful to the user
 
         funcHandle : tacs.functions
-            The fucntion handle to use for creation. This must come
+            The function handle to use for creation. This must come
             from the functions module in tacs.
 
         compIDs: list
             List of compIDs to select.
         """
 
-        # We try to setup the function, if it fails it may not be implimented:
+        # We try to setup the function, if it fails it may not be implemented:
         try:
             # pass assembler an function-specific kwargs straight to tacs function
             self.functionList[funcName] = funcHandle(self.assembler, **kwargs)
         except:
-            self._TACSWarning("Function type %s is not currently supported "
-                        "in pyTACS. Skipping function." % funcHandle)
+            self._TACSWarning(f"Function type {funcHandle} is not currently supported. "
+                              "in pyTACS. Skipping function.")
             return False
 
         # First we will get the required domain, but only if compIDs
@@ -303,7 +302,7 @@ class TACSProblem(BaseUI):
         """
         return list(self.functionList.keys())
 
-####### Load adding methods ########
+    ####### Load adding methods ########
 
     def _addLoadToComponents(self, FVec, compIDs, F, averageLoad=False):
         """"
@@ -369,7 +368,7 @@ class TACSProblem(BaseUI):
             # If the dimensions still don't match, raise an error
             elif F.shape[0] != len(compIDs):
                 raise self._TACSError("Number of forces must match number of compIDs,"
-                            " {} forces were specified for {} compIDs".format(F.shape[0], len(compIDs)))
+                                      " {} forces were specified for {} compIDs".format(F.shape[0], len(compIDs)))
 
             # Call addLoadToComponents again, once for each compID
             for i, compID in enumerate(compIDs):
@@ -465,13 +464,13 @@ class TACSProblem(BaseUI):
         # If the dimensions still don't match, raise an error
         elif F.shape[0] != numNodes:
             raise self._TACSError("Number of forces must match number of nodes,"
-                        " {} forces were specified for {} node IDs".format(F.shape[0], numNodes))
+                                  " {} forces were specified for {} node IDs".format(F.shape[0], numNodes))
 
         vpn = self.assembler.getVarsPerNode()
         if len(F[0]) != vpn:
             raise self._TACSError("Length of force vector must match varsPerNode specified "
-                        "for problem, which is {}, "
-                        "but length of vector provided was {}".format(vpn, len(F[0])))
+                                  "for problem, which is {}, "
+                                  "but length of vector provided was {}".format(vpn, len(F[0])))
 
         # First find the cooresponding local node ID on each processor
         localNodeIDs = self.meshLoader.getLocalNodeIDsFromGlobal(nodeIDs, nastranOrdering)
@@ -504,8 +503,7 @@ class TACSProblem(BaseUI):
         for i in range(numNodes):
             if not nodeFound[i]:
                 self._TACSWarning("Can't add load to node ID {} ({} ordering), node not found in model. "
-                            "Double check BDF file.".format(nodeIDs[i], orderString))
-
+                                  "Double check BDF file.".format(nodeIDs[i], orderString))
 
     def _addLoadToRHS(self, Frhs, Fapplied):
         """"
@@ -534,14 +532,14 @@ class TACSProblem(BaseUI):
         elif isinstance(Fapplied, np.ndarray):
             if len(Fapplied) != Frhs.getSize():
                 raise self._TACSError("User-supplied distributed vector not correct length, "
-                                     "expected size of {} on processor {}, but got length {}.".format(Frhs.getSize(),
-                                                                                                      self.comm.rank,
-                                                                                                      len(Fapplied)))
+                                      "expected size of {} on processor {}, but got length {}.".format(Frhs.getSize(),
+                                                                                                       self.comm.rank,
+                                                                                                       len(Fapplied)))
             rhsArray = Frhs.getArray()
             rhsArray[:] = rhsArray[:] + Fapplied[:]
 
     def _addTractionToComponents(self, auxElems, compIDs, tractions,
-                                faceIndex=0):
+                                 faceIndex=0):
         """
         This is an internal helper function for doing the addTractionToComponents method for
         inhereted TACSProblem classes. The function should NOT be called by the user should
@@ -582,7 +580,7 @@ class TACSProblem(BaseUI):
                    maxLen=80, box=True)
 
     def _addTractionToElements(self, auxElems, elemIDs, tractions,
-                              faceIndex=0, nastranOrdering=False):
+                               faceIndex=0, nastranOrdering=False):
         """
         This is an internal helper function for doing the addTractionToElements method for
         inhereted TACSProblem classes. The function should NOT be called by the user should
@@ -624,7 +622,8 @@ class TACSProblem(BaseUI):
         # If the dimensions still don't match, raise an error
         elif tractions.shape[0] != numElems:
             raise self._TACSError("Number of tractions must match number of elements,"
-                        " {} tractions were specified for {} element IDs".format(tractions.shape[0], numElems))
+                                  " {} tractions were specified for {} element IDs".format(tractions.shape[0],
+                                                                                           numElems))
 
         # First find the coresponding local element ID on each processor
         localElemIDs = self.meshLoader.getLocalElementIDsFromGlobal(elemIDs, nastranOrdering=nastranOrdering)
@@ -645,7 +644,8 @@ class TACSProblem(BaseUI):
                 # Traction not implemented for element
                 if tracObj is None:
                     self._TACSWarning("TACS element of type {} does not hav a traction implimentation. "
-                                "Skipping element in addTractionToElement procedure.".format(elemObj.getObjectName()))
+                                      "Skipping element in addTractionToElement procedure.".format(
+                        elemObj.getObjectName()))
                 # Traction implemented
                 else:
                     # Add new traction to auxiliary element object
@@ -663,10 +663,10 @@ class TACSProblem(BaseUI):
         for i in range(numElems):
             if not elemFound[i]:
                 self._TACSWarning("Can't add traction to element ID {} ({} ordering), element not found in model. "
-                            "Double check BDF file.".format(elemIDs[i], orderString))
+                                  "Double check BDF file.".format(elemIDs[i], orderString))
 
     def _addPressureToComponents(self, auxElems, compIDs, pressures,
-                                faceIndex=0):
+                                 faceIndex=0):
         """
         This is an internal helper function for doing the addPressureToComponents method for
         inhereted TACSProblem classes. The function should NOT be called by the user should
@@ -750,7 +750,8 @@ class TACSProblem(BaseUI):
         # If the dimensions still don't match, raise an error
         elif pressures.shape[0] != numElems:
             raise self._TACSError("Number of pressures must match number of elements,"
-                                 " {} pressures were specified for {} element IDs".format(pressures.shape[0], numElems))
+                                  " {} pressures were specified for {} element IDs".format(pressures.shape[0],
+                                                                                           numElems))
 
         # First find the coresponding local element ID on each processor
         localElemIDs = self.meshLoader.getLocalElementIDsFromGlobal(elemIDs, nastranOrdering=nastranOrdering)
@@ -770,7 +771,7 @@ class TACSProblem(BaseUI):
                 # Pressure not implemented for element
                 if pressObj is None:
                     self._TACSWarning("TACS element of type {} does not hav a pressure implimentation. "
-                                     "Skipping element in addPressureToElement procedure.".format(
+                                      "Skipping element in addPressureToElement procedure.".format(
                         elemObj.getObjectName()))
                 # Pressure implemented
                 else:
@@ -789,7 +790,7 @@ class TACSProblem(BaseUI):
         for i in range(numElems):
             if not elemFound[i]:
                 self._TACSWarning("Can't add pressure to element ID {} ({} ordering), element not found in model. "
-                                 "Double check BDF file.".format(elemIDs[i], orderString))
+                                  "Double check BDF file.".format(elemIDs[i], orderString))
 
     def _addInertialLoad(self, auxElems, inertiaVector):
         """
