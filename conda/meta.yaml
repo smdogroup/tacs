@@ -96,7 +96,7 @@ test:
     - export OMPI_MCA_btl=self,tcp
     - export OMPI_MCA_rmaps_base_oversubscribe=1
     - rm tests/integration_tests/test_mphys*
-    - testflo --pre_announce --timeout 120 tests/
+    - testflo --pre_announce --timeout 120 tests/ # [linux64]
 
 about:
   home: https://github.com/smdogroup/tacs
