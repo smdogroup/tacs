@@ -21,11 +21,9 @@ from tacs import pyTACS, functions
 
 comm = MPI.COMM_WORLD
 
-structOptions = {'writeSolution': True, }
-
 bdfFile = os.path.join(os.path.dirname(__file__), 'rbe3.bdf')
 # Load BDF file
-FEAAssembler = pyTACS(bdfFile, comm=comm, options=structOptions)
+FEAAssembler = pyTACS(bdfFile, comm=comm)
 # Set up TACS Assembler
 # Don't need a elemCallBack since property info exists in bdf
 FEAAssembler.initialize()

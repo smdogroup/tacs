@@ -9,21 +9,17 @@ information for a modal analysis.
 # =============================================================================
 # Imports
 # =============================================================================
-import warnings
 import os
 import numpy as np
-from collections import OrderedDict
 import time
 from .base import TACSProblem
 import tacs.TACS
 
 class ModalProblem(TACSProblem):
-    # python object name
-    objectName = 'ModalProblem'
 
     # Default Option List
     defaultOptions = {
-        'outputdir': [str, './', 'Output directory for F5 file writer.'],
+        'outputDir': [str, './', 'Output directory for F5 file writer.'],
 
         # Solution Options
         'L2Convergence': [float, 1e-12,
@@ -37,7 +33,7 @@ class ModalProblem(TACSProblem):
         'writeSolution': [bool, True, 'Flag for suppressing all f5 file writing.'],
         'numberSolutions': [bool, True, 'Flag for attaching solution counter index to f5 files.'],
         'printTiming': [bool, False, 'Flag for printing out timing information for class procedures.'],
-        'printLevel': [int, 0, 'Print level for integraton solver.\n'
+        'printLevel': [int, 0, 'Print level for Eigenvalue solver.\n'
                                '\t Accepts:\n'
                                '\t\t   0 : No printing.\n'
                                '\t\t   1 : Print major iterations.\n'
@@ -82,10 +78,10 @@ class ModalProblem(TACSProblem):
         # Problem name
         self.name = name
 
-        # Defualt setup for common problem class objects
-        super().__init__(assembler, comm, outputViewer, meshLoader)
+        # Default setup for common problem class objects
+        TACSProblem.__init__(self, assembler, comm, outputViewer, meshLoader)
 
-        # Set time interval parmeters
+        # Set time interval parameters
         self.sigma = sigma
         self.numEigs = numEigs
 
@@ -99,7 +95,7 @@ class ModalProblem(TACSProblem):
 
         # Set user-defined options
         for key in options:
-            super().setOption(key, options[key])
+            TACSProblem.setOption(self, key, options[key])
 
         # Create problem-specific variables
         self._createVariables()
@@ -147,8 +143,8 @@ class ModalProblem(TACSProblem):
         value : depends on option
             New option value to set
         """
-        # Defualt setOption for common problem class objects
-        super().setOption(name, value)
+        # Default setOption for common problem class objects
+        TACSProblem.setOption(self, name, value)
 
         # No need to reset solver for output options
         if name.lower() in ['writesolution', 'printtiming',
