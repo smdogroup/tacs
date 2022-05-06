@@ -20,9 +20,7 @@ class TACSBeamBasis {
     (NUM_G12_TYING_POINTS +
      NUM_G13_TYING_POINTS);
 
-  static const int G12_OFFSET = (order - 1);
-  static const int G13_OFFSET =
-    G12_OFFSET + (order - 1);
+  static const int G12_OFFSET = NUM_G12_TYING_POINTS;
 
   static void getNodePoint( const int n, double pt[] ){
     pt[0] = -1.0 + 2.0*n;
@@ -244,7 +242,7 @@ class TACSBeamBasis {
     @return The tying strain field index
   */
   static inline TacsBeamTyingStrainComponent getTyingField( int index ){
-    if (index < G13_OFFSET){
+    if (index < G12_OFFSET){
       return TACS_BEAM_G12_COMPONENT;
     }
     else {
@@ -283,11 +281,11 @@ class TACSBeamBasis {
     const double *ty_knots;
     getTyingKnots(&ty_knots);
 
-    if (ty_index < G13_OFFSET){
+    if (ty_index < G12_OFFSET){
       pt[0] = ty_knots[ty_index];
     }
     else {
-      pt[0] = ty_knots[ty_index - G13_OFFSET];
+      pt[0] = ty_knots[ty_index - G12_OFFSET];
     }
   }
 

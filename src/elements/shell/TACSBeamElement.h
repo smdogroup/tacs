@@ -533,8 +533,8 @@ void TACSBeamElement<quadrature, basis, director, model>::
 
     // Transform the tying strain to the local coordinates
     TacsScalar e0ty[2];
-    e0ty[0] = gty[0];
-    e0ty[1] = gty[1];
+    e0ty[0] = 2.0 * XdinvT.A[0] * gty[0];
+    e0ty[1] = 2.0 * XdinvT.A[0] * gty[1];
 
     // Compute the set of strain components
     TacsScalar e[6]; // The components of the strain
@@ -710,8 +710,8 @@ void TACSBeamElement<quadrature, basis, director, model>::
 
     // // Transform the tying strain to the local coordinates
     TacsScalar e0ty[2], de0ty[2];
-    e0ty[0] = gty[0];
-    e0ty[1] = gty[1];
+    e0ty[0] = 2.0 * XdinvT.A[0] * gty[0];
+    e0ty[1] = 2.0 * XdinvT.A[0] * gty[1];
 
     // Evaluate the strain
     TacsScalar e[6];
@@ -727,8 +727,8 @@ void TACSBeamElement<quadrature, basis, director, model>::
 
     // Convert the contributions to the tying strain
     TacsScalar dgty[2];
-    dgty[0] = de0ty[0];
-    dgty[1] = de0ty[1];
+    dgty[0] = 2.0 * XdinvT.A[0] * de0ty[0];
+    dgty[1] = 2.0 * XdinvT.A[0] * de0ty[1];
 
     matmultd2x.reverse();
     axpyd2t.reverse();
@@ -959,10 +959,10 @@ void TACSBeamElement<quadrature, basis, director, model>::
 
     // Transform the tying strain to the local coordinates
     TacsScalar e0ty[2], e0typsi[2];
-    e0ty[0] = gty[0];
-    e0ty[1] = gty[1];
-    e0typsi[0] = gtypsi[0];
-    e0typsi[1] = gtypsi[1];
+    e0ty[0] = 2.0 * XdinvT.A[0] * gty[0];
+    e0ty[1] = 2.0 * XdinvT.A[0] * gty[1];
+    e0typsi[0] = 2.0 * XdinvT.A[0] * gtypsi[0];
+    e0typsi[1] = 2.0 * XdinvT.A[0] * gtypsi[1];
 
     // // Evaluate the strain and the adjoint strain
     TacsScalar e[6], epsi[6];
@@ -1181,10 +1181,10 @@ void TACSBeamElement<quadrature, basis, director, model>::
 
     // Transform the tying strain to the local coordinates
     TacsScalar e0ty[2], e0typsi[2];
-    e0ty[0] = gty[0];
-    e0ty[1] = gty[1];
-    e0typsi[0] = gtypsi[0];
-    e0typsi[1] = gtypsi[1];
+    e0ty[0] = 2.0 * XdinvT.A[0] * gty[0];
+    e0ty[1] = 2.0 * XdinvT.A[0] * gty[1];
+    e0typsi[0] = 2.0 * XdinvT.A[0] * gtypsi[0];
+    e0typsi[1] = 2.0 * XdinvT.A[0] * gtypsi[1];
 
     // // Evaluate the strain and the adjoint strain
     TacsScalar e[6], epsi[6];
@@ -1213,10 +1213,13 @@ void TACSBeamElement<quadrature, basis, director, model>::
 
     // Apply the tying strain transformation
     TacsScalar gtyd[2], gtypsid[2];
-    gtyd[0] = e0tyd[0];
-    gtyd[1] = e0tyd[1];
-    gtypsid[0] = e0typsid[0];
-    gtypsid[1] = e0typsid[1];
+    gtyd[0] = 2.0 * XdinvT.A[0] * e0tyd[0];
+    gtyd[1] = 2.0 * XdinvT.A[0] * e0tyd[1];
+    gtypsid[0] = 2.0 * XdinvT.A[0] * e0typsid[0];
+    gtypsid[1] = 2.0 * XdinvT.A[0] * e0typsid[1];
+
+    XdinvT.Ad[0] += 2.0 * (gty[0] * e0tyd[0] + gty[1] * e0tyd[1] +
+                           e0typsid[0] * gtypsi[0] + e0typsid[1] * gtypsi[1]);
 
     // Evaluate the accelerations
     A2D::ADVec3 u0ddot, d01ddot, d02ddot;
@@ -1261,6 +1264,7 @@ void TACSBeamElement<quadrature, basis, director, model>::
     u0psi.valued = alpha * rho[0];
     u0psid1.valued = alpha * rho[1];
     u0d1psi.valued = alpha * rho[1];
+
     u0psid2.valued = alpha * rho[2];
     u0d2psi.valued = alpha * rho[2];
     d1d1psi.valued = alpha * rho[3];
@@ -1467,8 +1471,8 @@ int TACSBeamElement<quadrature, basis, director, model>::
 
   // Transform the tying strain to the local coordinates
   TacsScalar e0ty[2];
-  e0ty[0] = gty[0];
-  e0ty[1] = gty[1];
+  e0ty[0] = 2.0 * XdinvT.A[0] * gty[0];
+  e0ty[1] = 2.0 * XdinvT.A[0] * gty[1];
 
   // Compute the set of strain components
   TacsScalar e[6]; // The components of the strain
@@ -1599,8 +1603,8 @@ void TACSBeamElement<quadrature, basis, director, model>::
 
   // Transform the tying strain to the local coordinates
   TacsScalar e0ty[2];
-  e0ty[0] = gty[0];
-  e0ty[1] = gty[1];
+  e0ty[0] = 2.0 * XdinvT.A[0] * gty[0];
+  e0ty[1] = 2.0 * XdinvT.A[0] * gty[1];
 
   // Compute the set of strain components
   TacsScalar e[6]; // The components of the strain
@@ -1734,8 +1738,8 @@ void TACSBeamElement<quadrature, basis, director, model>::
 
   // // Transform the tying strain to the local coordinates
   TacsScalar e0ty[2];
-  e0ty[0] = gty[0];
-  e0ty[1] = gty[1];
+  e0ty[0] = 2.0 * XdinvT.A[0] * gty[0];
+  e0ty[1] = 2.0 * XdinvT.A[0] * gty[1];
 
   // Evaluate the strain
   TacsScalar e[6];
@@ -1751,8 +1755,8 @@ void TACSBeamElement<quadrature, basis, director, model>::
 
   // Convert the contributions to the tying strain
   TacsScalar gtyd[2];
-  gtyd[0] = e0tyd[0];
-  gtyd[1] = e0tyd[1];
+  gtyd[0] = 2.0 * XdinvT.A[0] * e0tyd[0];
+  gtyd[1] = 2.0 * XdinvT.A[0] * e0tyd[1];
 
   matmultd2x.reverse();
   axpyd2t.reverse();
@@ -1914,8 +1918,8 @@ void TACSBeamElement<quadrature, basis, director, model>::
 
   // Transform the tying strain to the local coordinates
   TacsScalar e0ty[2];
-  e0ty[0] = gty[0];
-  e0ty[1] = gty[1];
+  e0ty[0] = 2.0 * XdinvT.A[0] * gty[0];
+  e0ty[1] = 2.0 * XdinvT.A[0] * gty[1];
 
   // Compute the set of strain components
   TacsScalar e[6]; // The components of the strain
@@ -1933,8 +1937,10 @@ void TACSBeamElement<quadrature, basis, director, model>::
 
   // Apply the tying strain transformation
   TacsScalar gtyd[2];
-  gtyd[0] = e0tyd[0];
-  gtyd[1] = e0tyd[1];
+  gtyd[0] = 2.0 * XdinvT.A[0] * e0tyd[0];
+  gtyd[1] = 2.0 * XdinvT.A[0] * e0tyd[1];
+
+  XdinvT.Ad[0] += 2.0 * (gty[0] * e0tyd[0] + gty[1] * e0tyd[1]);
 
   matmultd2x.reverse();
   axpyd2t.reverse();

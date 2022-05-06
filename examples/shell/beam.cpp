@@ -23,11 +23,11 @@ int main( int argc, char *argv[] ){
 
   TacsTestBeamModelDerivatives<6, TACSBeamBasis<3>, TACSBeamLinearModel>();
 
-  TacsScalar axis[] = {0.1, 0.43, 0.5};
+  TacsScalar axis[] = {0.0, 1.0, 0.0};
   TACSBeamRefAxisTransform *transform = new TACSBeamRefAxisTransform(axis);
   transform->incref();
 
-  TacsScalar rho = 2700.0;
+  TacsScalar rho = 0.0; // 2700.0;
   TacsScalar specific_heat = 921.096;
   TacsScalar E = 70e3;
   TacsScalar nu = 0.3;
@@ -51,9 +51,9 @@ int main( int argc, char *argv[] ){
                                     wall_lb, wall_ub);
   TacsTestConstitutive(stiff, 0);
 
-  // TACSElement *beam = new TACSQuadBeam(transform, stiff);
+  TACSElement *beam = new TACSQuadBeam(transform, stiff);
   // TACSElement *beam = new TACSQuadBeamModRot(transform, stiff);
-  TACSElement *beam = new TACSQuadBeamQuaternion(transform, stiff);
+  // TACSElement *beam = new TACSQuadBeamQuaternion(transform, stiff);
   beam->incref();
 
   int vars_per_node = beam->getVarsPerNode();
@@ -62,14 +62,17 @@ int main( int argc, char *argv[] ){
   double time = 0.0;
   int elemIndex = 0;
 
-  TacsScalar *Xpts = new TacsScalar[ 3*num_nodes ];
+  // Set the state variables
   TacsScalar *vars = new TacsScalar[ num_vars ];
   TacsScalar *dvars = new TacsScalar[ num_vars ];
   TacsScalar *ddvars = new TacsScalar[ num_vars ];
-  TacsGenerateRandomArray(Xpts, 3*num_nodes);
   TacsGenerateRandomArray(vars, num_vars);
   TacsGenerateRandomArray(dvars, num_vars);
   TacsGenerateRandomArray(ddvars, num_vars);
+
+  // Set the node locations
+  TacsScalar *Xpts = new TacsScalar[ 3*num_nodes ];
+  TacsGenerateRandomArray(Xpts, 3*num_nodes);
 
   // Zero out the multipliers so the residual test passes
   if (vars_per_node == 8){
