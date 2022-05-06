@@ -1,7 +1,13 @@
+import tacs.TACS
+
 class BaseUI:
-    def __init__(self):
-        self.objectName = 'UntitledClass'
-        return
+    """
+    Base class to be inherited by all pyTACS classes.
+    Contains common methods useful for many classes.
+    """
+
+    # Set common data type for all pyTACS classes to inherit (real or complex)
+    dtype = tacs.TACS.dtype
 
     def setOption(self, name, value):
         """
@@ -21,8 +27,8 @@ class BaseUI:
         defOptions = self.options['defaults']
         try:
             defOptions[name]
-        except:
-            self._TACSWarning('Option: \'%-30s\' is not a valid option |' % name)
+        except KeyError:
+            self._TACSWarning(f'\'{name}\' is not a valid option')
             return
 
         # Now we know the option exists, lets check if the type is ok:
@@ -37,14 +43,14 @@ class BaseUI:
                         " is %s." % (name, self.options[name][0], type(value)))
 
     def getOption(self, name):
-        '''
+        """
         Get a solver option value. The name is not case sensitive.
 
         Parameters
         ----------
         name : str
             Name of option to get
-        '''
+        """
 
         # Redefine the getOption def from the base class so we can
         # mane sure the name is lowercase
@@ -60,9 +66,11 @@ class BaseUI:
         Prints a nicely formatted dictionary of all the current solver
         options to the stdout on the root processor
         """
-        header = self.objectName
+        # Class name
+        header = type(self).__name__
         if hasattr(self, 'name'):
-            header += f" '{self.name}'"
+            # Append problem name, if TACSProblem
+            header += f" ('{self.name}')"
         self._pp("+----------------------------------------+")
         self._pp("|" + f"{header} options:".center(40) + "|")
         self._pp("+----------------------------------------+")
@@ -81,7 +89,8 @@ class BaseUI:
         Prints a nicely formatted dictionary of all the default solver
         options to the stdout
         """
-        header = cls.objectName
+        # Class name
+        header = cls.__name__
         print("+----------------------------------------+")
         print("|" + f"{header} default options:".center(40) + "|")
         print("+----------------------------------------+")
@@ -106,9 +115,15 @@ class BaseUI:
         """ Generic function for writing an info message. """
 
         if self.comm.rank == 0:
+            # Class name
+            header = type(self).__name__
+            if hasattr(self, 'name'):
+                # Append problem name, if TACSProblem
+                header += f" ('{self.name}')"
             if not box:
-                i = 9
-                print('INFO: ', end="")
+                objectInfo = f'{header} Info: '
+                print(objectInfo, end="")
+                i = len(objectInfo) + 1
                 aux = message.split()
                 for word in aux:
                     if len(word) + i > 120:
@@ -122,8 +137,9 @@ class BaseUI:
                 print()
             else:
                 print('+' + '-' * (maxLen - 2) + '+')
-                print('| INFO: ', end="")
-                i = 9
+                objectInfo = f'| {header} Info: '
+                print(objectInfo, end="")
+                i = len(objectInfo) + 1
                 aux = message.split()
                 for word in aux:
                     if len(word) + i > maxLen - 2:
@@ -160,8 +176,13 @@ class BaseUI:
         Format a class-specific warning for message
         """
         if self.comm.rank == 0:
+            # Class name
+            header = type(self).__name__
+            if hasattr(self, 'name'):
+                # Append problem name, if TACSProblem
+                header += f" ('{self.name}')"
             msg = '\n+' + '-' * 78 + '+' + '\n'
-            objectWarning = '| %s Warning: '%(self.objectName)
+            objectWarning = f'| {header} Warning: '
             msg += objectWarning
             i = len(objectWarning) - 1
             for word in message.split():
@@ -178,12 +199,17 @@ class BaseUI:
         """
         Format a class-specific error for message
         """
-        return Error(self.objectName, message)
+        # Class name
+        header = type(self).__name__
+        if hasattr(self, 'name'):
+            # Append problem name, if TACSProblem
+            header += f" ('{self.name}')"
+        return Error(header, message)
 
 class Error(Exception):
     """
     Format the error message in a box to make it clear this
-    was a expliclty raised exception.
+    was a explicitly raised exception.
     """
 
     def __init__(self, objName, message):

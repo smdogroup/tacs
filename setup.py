@@ -7,7 +7,7 @@ import numpy
 import mpi4py
 
 # Import distutils
-from setuptools import setup
+from setuptools import setup, find_packages
 from distutils.core import Extension as Ext
 from Cython.Build import cythonize
 from Cython.Compiler import Options
@@ -74,15 +74,31 @@ for e in exts:
     e.cython_directives = {'embedsignature': True,
                            'binding': True}
 
+tacs_root = os.path.abspath(os.path.dirname(__file__))
+with open(os.path.join(tacs_root, 'README.md'), encoding='utf-8') as f:
+    long_description = f.read()
+
 setup(name='tacs',
       version=0.1,
       description='Parallel finite-element analysis package',
+      long_description=long_description,
+      long_description_content_type='text/markdown',
       author='Graeme J. Kennedy',
       author_email='graeme.kennedy@ae.gatech.edu',
       install_requires=[
-          'numpy>=1.16.4',
-          'scipy>=1.2.1',
+          # Make sure the user's numpy version are at least more current than the build versions
+          f'numpy>={numpy.__version__}',
           'mpi4py>=3.0.2',
-          'pynastran>=1.3.3'
+          'scipy>=1.2.1',
+          'pynastran>=1.3.3',
+          # This package isn't actually a requirement of tacs, but of pynastran
+          # Right now 2.0.0 breaks pynastran and the pip package hasn't been updated to fix this
+          'nptyping<2.0.0',
       ],
+      extras_require={
+        'testing': ['testflo'],
+        'docs': ['sphinx', 'breathe', 'sphinxcontrib-programoutput'],
+        'mphys': ['mphys', 'openmdao'],
+      },
+      packages=find_packages(include=['tacs*']),
       ext_modules=cythonize(exts, include_path=inc_dirs))

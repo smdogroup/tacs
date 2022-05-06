@@ -9,11 +9,11 @@ from tacs import functions, constitutive, elements, TACS, pyTACS
 
 """
 This example demonstrates transient heating of a battery pack with one cell undergoing thermal runaway.
-The domain is an aluminum battery pack with 9 cylindrical cells embedded in a grid-pattern. The cell in 
+The domain is an aluminum battery pack with 9 cylindrical cells embedded in a grid-pattern. The cell in
 the corner undergoes thermal runaway, releasing a large amount of heat for 2 seconds. The heat conduction
-of the battery pack is then computed for 5 seconds in total. The maximum temperature within a cell is computed 
-at each time step. This is done for 3 cells: the cell undergoing thermal runaway, the nearest cell adject 
-to it, and the cell on the diagonal near it. Tracking the maximum temperature of these cells could be used to
+of the battery pack is then computed for 5 seconds in total. The maximum temperature within a cell is computed
+over all time steps. This is done for 3 cells: the cell undergoing thermal runaway, the nearest cell adject
+to it, and the cell on the diagonal near it. Computing the maximum temperature of these cells could be used to
 prevent other cells in the pack from going into thermal runaway, leading to a cascading failure.
 
 This example demonstrates a number of useful pyTACS features, including:
@@ -26,17 +26,11 @@ This example demonstrates a number of useful pyTACS features, including:
 
 comm = MPI.COMM_WORLD
 
-# Optional arguments: these to output the f5 file to visualize the solution and which element type to use
-structOptions = {
-    'writeSolution': True,
-    'outputElement': TACS.PLANE_STRESS_ELEMENT,
-}
-
 # Name of the bdf file to get the mesh
 bdfFile = os.path.join(os.path.dirname(__file__), 'battery_pack.bdf')
 
 # Instantiate the pyTACS object
-FEAAssembler = pyTACS(bdfFile, comm, options=structOptions)
+FEAAssembler = pyTACS(bdfFile, comm)
 
 # Specify the plate thickness
 tplate = 0.065
@@ -60,7 +54,7 @@ def elemCallBack(dvNum, compID, compDescript, elemDescripts, globalDVs, **kwargs
         prop = constitutive.MaterialProperties(rho=alum_rho, kappa=alum_kappa, specific_heat=alum_cp)
     else:  # otherwise it is a battery
         prop = constitutive.MaterialProperties(rho=battery_rho, kappa=battery_kappa, specific_heat=battery_cp)
-    
+
     # Set one thickness value for every component
     con = constitutive.PlaneStressConstitutive(prop, t=tplate, tNum=-1)
 
@@ -83,7 +77,7 @@ def elemCallBack(dvNum, compID, compDescript, elemDescripts, globalDVs, **kwargs
 # Set up constitutive objects and elements
 FEAAssembler.initialize(elemCallBack)
 
-# Create a transient problem that will represent time varying convection
+# Create a transient problem that will represent time-varying heat conduction
 transientProblem = FEAAssembler.createTransientProblem('Transient', tInit=0.0, tFinal=5.0, numSteps=50)
 
 # Get the time steps and define the loads
