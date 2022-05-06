@@ -94,7 +94,14 @@ class TACSLinearizedRotation {
   }
 
   /*
-    Add the
+    Add the Jacobian of the rotation matrix to the output
+
+    @param alpha Scalar coefficient for the Jacobian matrix
+    @param vars The variable values
+    @param dC The derivative of the functional w.r.t. C
+    @param d2C The second derivatives of the functional w.r.t. C
+    @param res The residual
+    @param mat The Jacobian matrix
   */
   template <int vars_per_node, int offset, int num_nodes>
   static void addRotationMatJacobian( const TacsScalar alpha,
@@ -263,7 +270,7 @@ class TACSLinearizedRotation {
     @param vars The full variable vector
     @param dvars The first time derivative of the variables
     @param ddvars The second derivatives of the variables
-    @param varsd The full variable vector derivative
+    @param psi The full variable vector derivative
     @param t The reference directions
     @param C The rotation matrices at each point
     @param d The director values
@@ -275,34 +282,32 @@ class TACSLinearizedRotation {
   static void computeDirectorRatesDeriv( const TacsScalar vars[],
                                          const TacsScalar dvars[],
                                          const TacsScalar ddvars[],
-                                         const TacsScalar varsd[],
+                                         const TacsScalar psi[],
                                          const TacsScalar t[],
                                          TacsScalar d[],
                                          TacsScalar ddot[],
                                          TacsScalar dddot[],
-                                         TacsScalar dd[] ){
+                                         TacsScalar dpsi[] ){
     const TacsScalar *q = &vars[offset];
     const TacsScalar *qdot = &dvars[offset];
     const TacsScalar *qddot = &ddvars[offset];
-    const TacsScalar *qd = &varsd[offset];
+    const TacsScalar *qpsi = &psi[offset];
     for ( int i = 0; i < num_nodes; i++ ){
       crossProduct(q, t, d);
       crossProduct(qdot, t, ddot);
       crossProduct(qddot, t, dddot);
-
-      // Cd = - qd^{x}
-      crossProduct(qd, t, dd);
+      crossProduct(qpsi, t, dpsi);
 
       t += 3;
       d += 3;
       ddot += 3;
       dddot += 3;
-      dd += 3;
+      dpsi += 3;
 
       q += vars_per_node;
       qdot += vars_per_node;
       qddot += vars_per_node;
-      qd += vars_per_node;
+      qpsi += vars_per_node;
     }
   }
 
@@ -484,6 +489,82 @@ class TACSLinearizedRotation {
     }
   }
 
+  /*
+    Add the director contributions to the derivative of the normal
+
+    Add the adjoint sensitivity of the reference normal (dt) based on
+    the adjoint sensitivity of the director (dd).
+
+    Given that the parametrization is d = (C^{T}(q) - I) * t, compute
+
+    dt += d(dd^{T}d)/dt = dd^{T}*C^{T}(q) = C(q) * dd
+
+    @param vars The full variable vector
+    @param t The reference directions
+    @param dd The adjoint sensitivities w.r.t. the director
+    @param dt The adjoint sensitivity w.r.t. the reference directions
+  */
+  template <int vars_per_node, int offset, int num_nodes>
+  static void addDirectorRefNormalSens( const TacsScalar vars[],
+                                        const TacsScalar t[],
+                                        const TacsScalar dd[],
+                                        TacsScalar dt[] ){
+    const TacsScalar *q = &vars[offset];
+
+    for ( int i = 0; i < num_nodes; i++ ){
+      crossProductAdd(1.0, dd, q, dt);
+
+      t += 3;
+      dd += 3;
+      dt += 3;
+      q += vars_per_node;
+    }
+  }
+
+  /*
+    Add the director contributions to the derivative of the normal
+
+    Add the adjoint sensitivity of the reference normal (dt) based on
+    the adjoint sensitivity of the director (dd) and the sensitivity
+    of the derivative field (ddadj).
+
+    Given that the parametrization is d = (C^{T}(q) - I) * t and the field
+    dpsi = d(d)/dq^{T} * psi, compute
+
+    dt += d(dd^{T}d)/dt = dd^{T}*C^{T}(q) = C(q) * dd
+
+    dt += d(ddpsi^{T}*dpsi)/dt = [ d(C(q))/dq * psi ] * ddpsi
+
+    @param vars The full variable vector
+    @param psi The full variable vector derivative
+    @param t The reference directions
+    @param dd The adjoint sensitivities w.r.t. the director
+    @param ddpsi The adjoint sensitivities w.r.t. the director derivative
+    @param dt The adjoint sensitivity w.r.t. the reference directions
+  */
+  template <int vars_per_node, int offset, int num_nodes>
+  static void addDirectorRefNormalSens( const TacsScalar vars[],
+                                        const TacsScalar psi[],
+                                        const TacsScalar t[],
+                                        const TacsScalar dd[],
+                                        const TacsScalar ddpsi[],
+                                        TacsScalar dt[] ){
+    const TacsScalar *q = &vars[offset];
+    const TacsScalar *qpsi = &psi[offset];
+
+    for ( int i = 0; i < num_nodes; i++ ){
+      crossProductAdd(1.0, dd, q, dt);
+      crossProductAdd(1.0, ddpsi, qpsi, dt);
+
+      t += 3;
+      dd += 3;
+      ddpsi += 3;
+      dt += 3;
+      q += vars_per_node;
+      qpsi += vars_per_node;
+    }
+  }
+
   static TacsScalar evalDrillStrain( const TacsScalar u0x[],
                                      const TacsScalar Ct[] ){
     // Compute the rotational penalty
@@ -650,7 +731,14 @@ class TACSQuadraticRotation {
   }
 
   /*
-    Add the
+    Add the Jacobian of the rotation matrix to the output
+
+    @param alpha Scalar coefficient for the Jacobian matrix
+    @param vars The variable values
+    @param dC The derivative of the functional w.r.t. C
+    @param d2C The second derivatives of the functional w.r.t. C
+    @param res The residual
+    @param mat The Jacobian matrix
   */
   template <int vars_per_node, int offset, int num_nodes>
   static void addRotationMatJacobian( const TacsScalar alpha,
@@ -897,7 +985,7 @@ class TACSQuadraticRotation {
     @param vars The full variable vector
     @param dvars The first time derivative of the variables
     @param ddvars The second derivatives of the variables
-    @param varsd The full variable vector derivative
+    @param psi The full variable vector derivative
     @param t The reference directions
     @param C The rotation matrices at each point
     @param d The director values
@@ -909,16 +997,16 @@ class TACSQuadraticRotation {
   static void computeDirectorRatesDeriv( const TacsScalar vars[],
                                          const TacsScalar dvars[],
                                          const TacsScalar ddvars[],
-                                         const TacsScalar varsd[],
+                                         const TacsScalar psi[],
                                          const TacsScalar t[],
                                          TacsScalar d[],
                                          TacsScalar ddot[],
                                          TacsScalar dddot[],
-                                         TacsScalar dd[] ){
+                                         TacsScalar dpsi[] ){
     const TacsScalar *q = &vars[offset];
     const TacsScalar *qdot = &dvars[offset];
     const TacsScalar *qddot = &ddvars[offset];
-    const TacsScalar *qd = &varsd[offset];
+    const TacsScalar *qpsi = &psi[offset];
     for ( int i = 0; i < num_nodes; i++ ){
       TacsScalar qxt[3], qxtdot[3], qxtddot[3], qdxt[3];
 
@@ -949,24 +1037,24 @@ class TACSQuadraticRotation {
       crossProductAdd(1.0, qdot, qxtdot, dddot);
       crossProductAdd(0.5, q, qxtddot, dddot);
 
-      // Compute dd = (qd^{x} + 0.5*qd^{x}*q^{x} + 0.5*q^{x}*qd^{x})*t
-      crossProduct(qd, t, qdxt);
-      dd[0] = qdxt[0];
-      dd[1] = qdxt[1];
-      dd[2] = qdxt[2];
-      crossProductAdd(0.5, qd, qxt, dd);
-      crossProductAdd(0.5, q, qdxt, dd);
+      // Compute dpsi = (qpsi^{x} + 0.5*qpsi^{x}*q^{x} + 0.5*q^{x}*qpsi^{x})*t
+      crossProduct(qpsi, t, qdxt);
+      dpsi[0] = qdxt[0];
+      dpsi[1] = qdxt[1];
+      dpsi[2] = qdxt[2];
+      crossProductAdd(0.5, qpsi, qxt, dpsi);
+      crossProductAdd(0.5, q, qdxt, dpsi);
 
       t += 3;
       d += 3;
       ddot += 3;
       dddot += 3;
-      dd += 3;
+      dpsi += 3;
 
       q += vars_per_node;
       qdot += vars_per_node;
       qddot += vars_per_node;
-      qd += vars_per_node;
+      qpsi += vars_per_node;
     }
   }
 
@@ -1265,6 +1353,107 @@ class TACSQuadraticRotation {
     }
   }
 
+  /*
+    Add the director contributions to the derivative of the normal
+
+    Add the adjoint sensitivity of the reference normal (dt) based on
+    the adjoint sensitivity of the director (dd).
+
+    Given that the parametrization is d = (C^{T}(q) - I) * t, compute
+
+    dt += d(dd^{T} * d)/dt = dd^{T} * C^{T}(q) = C(q) * dd
+    .   = (0.5*q^{x} - 1)*q^{x} * dpsi
+
+    @param vars The full variable vector
+    @param t The reference directions
+    @param dd The adjoint sensitivities w.r.t. the director
+    @param dt The adjoint sensitivity w.r.t. the reference directions
+  */
+  template <int vars_per_node, int offset, int num_nodes>
+  static void addDirectorRefNormalSens( const TacsScalar vars[],
+                                        const TacsScalar t[],
+                                        const TacsScalar dd[],
+                                        TacsScalar dt[] ){
+    const TacsScalar *q = &vars[offset];
+
+    for ( int i = 0; i < num_nodes; i++ ){
+      TacsScalar tmp[3];
+      crossProduct(q, dd, tmp);
+      dt[0] -= tmp[0];
+      dt[1] -= tmp[1];
+      dt[2] -= tmp[2];
+      crossProductAdd(0.5, q, tmp, dt);
+
+      t += 3;
+      dd += 3;
+      dt += 3;
+      q += vars_per_node;
+    }
+  }
+
+  /*
+    Add the director contributions to the derivative of the normal
+
+    Add the adjoint sensitivity of the reference normal (dt) based on
+    the adjoint sensitivity of the director (dd) and the sensitivity
+    of the derivative field (ddadj).
+
+    Given that the parametrization is d = (C^{T}(q) - I) * t and the field
+    dpsi = d(d)/dq^{T} * psi, compute
+
+    dt += d(dd^{T}d)/dn = dd^{T} * C^{T}(q) = C(q) * dd
+    .   = (0.5*q^{x} - 1)*q^{x} * dpsi
+
+    dt += d(ddpsi^{T} * dpsi)/dt = [ d(C(q))/dq * psi ] * ddpsi
+    .   = (qpsi^{x} + 0.5*qpsi^{x}*q^{x} + 0.5*q^{x}*qpsi^{x})^{T} * ddpsi
+    .   = (0.5*qpsi^{x}*q^{x} + 0.5*q^{x}*qpsi^{x}) - qpsi^{x}) * ddpsi
+
+    @param vars The full variable vector
+    @param psi The full variable vector derivative
+    @param t The reference directions
+    @param dd The adjoint sensitivities w.r.t. the director
+    @param ddpsi The adjoint sensitivities w.r.t. the director derivative
+    @param dt The adjoint sensitivity w.r.t. the reference directions
+  */
+  template <int vars_per_node, int offset, int num_nodes>
+  static void addDirectorRefNormalSens( const TacsScalar vars[],
+                                        const TacsScalar psi[],
+                                        const TacsScalar t[],
+                                        const TacsScalar dd[],
+                                        const TacsScalar ddpsi[],
+                                        TacsScalar dt[] ){
+    const TacsScalar *q = &vars[offset];
+    const TacsScalar *qpsi = &psi[offset];
+
+    for ( int i = 0; i < num_nodes; i++ ){
+      TacsScalar tmp[3];
+      crossProduct(q, dd, tmp);
+      dt[0] -= tmp[0];
+      dt[1] -= tmp[1];
+      dt[2] -= tmp[2];
+      crossProductAdd(0.5, q, tmp, dt);
+
+      // tmp = qpsi^{x} * ddpsi
+      crossProduct(qpsi, ddpsi, tmp);
+      dt[0] -= tmp[0];
+      dt[1] -= tmp[1];
+      dt[2] -= tmp[2];
+      // Add dt += 0.5 * q^{x} * tmp = 0.5 * q^{x} * qpsi^{x} * ddpsi
+      crossProductAdd(0.5, q, tmp, dt);
+
+      // tmp = q^{x} * ddpsi
+      crossProduct(q, ddpsi, tmp);
+      crossProductAdd(0.5, qpsi, tmp, dt);
+
+      t += 3;
+      dd += 3;
+      ddpsi += 3;
+      dt += 3;
+      q += vars_per_node;
+      qpsi += vars_per_node;
+    }
+  }
+
   static TacsScalar evalDrillStrain( const TacsScalar u0x[],
                                      const TacsScalar Ct[] ){
     // Compute the rotational penalty
@@ -1435,6 +1624,16 @@ class TACSQuaternionRotation {
     }
   }
 
+  /*
+    Add the Jacobian of the rotation matrix to the output
+
+    @param alpha Scalar coefficient for the Jacobian matrix
+    @param vars The variable values
+    @param dC The derivative of the functional w.r.t. C
+    @param d2C The second derivatives of the functional w.r.t. C
+    @param res The residual
+    @param mat The Jacobian matrix
+  */
   template <int vars_per_node, int offset, int num_nodes>
   static void addRotationMatJacobian( const TacsScalar alpha,
                                       const TacsScalar vars[],
@@ -2259,6 +2458,128 @@ class TACSQuaternionRotation {
           }
         }
       }
+    }
+  }
+
+  /*
+    Add the director contributions to the derivative of the normal
+
+    Add the adjoint sensitivity of the reference normal (dt) based on
+    the adjoint sensitivity of the director (dd).
+
+    Given that the parametrization is d = (C^{T}(q) - I) * t, compute
+
+    dt += d(dd^{T} * d)/dt = dd^{T} * C^{T}(q) = C(q) * dd
+    .   = (0.5*q^{x} - 1)*q^{x} * dpsi
+
+    @param vars The full variable vector
+    @param t The reference directions
+    @param dd The adjoint sensitivities w.r.t. the director
+    @param dt The adjoint sensitivity w.r.t. the reference directions
+  */
+  template <int vars_per_node, int offset, int num_nodes>
+  static void addDirectorRefNormalSens( const TacsScalar vars[],
+                                        const TacsScalar t[],
+                                        const TacsScalar dd[],
+                                        TacsScalar dt[] ){
+    const TacsScalar *q = &vars[offset];
+
+    for ( int i = 0; i < num_nodes; i++ ){
+      TacsScalar C[9];
+      C[0] = - 2.0*(q[2]*q[2] + q[3]*q[3]);
+      C[1] = 2.0*(q[1]*q[2] + q[3]*q[0]);
+      C[2] = 2.0*(q[1]*q[3] - q[2]*q[0]);
+
+      C[3] = 2.0*(q[2]*q[1] - q[3]*q[0]);
+      C[4] = - 2.0*(q[1]*q[1] + q[3]*q[3]);
+      C[5] = 2.0*(q[2]*q[3] + q[1]*q[0]);
+
+      C[6] = 2.0*(q[3]*q[1] + q[2]*q[0]);
+      C[7] = 2.0*(q[3]*q[2] - q[1]*q[0]);
+      C[8] = - 2.0*(q[1]*q[1] + q[2]*q[2]);
+
+      dt[0] += C[0]*dd[0] + C[1]*dd[1] + C[2]*dd[2];
+      dt[1] += C[3]*dd[0] + C[4]*dd[1] + C[5]*dd[2];
+      dt[2] += C[6]*dd[0] + C[7]*dd[1] + C[8]*dd[2];
+
+      t += 3;
+      dd += 3;
+      dt += 3;
+      q += vars_per_node;
+    }
+  }
+
+  /*
+    Add the director contributions to the derivative of the normal
+
+    Add the adjoint sensitivity of the reference normal (dt) based on
+    the adjoint sensitivity of the director (dd) and the sensitivity
+    of the derivative field (ddadj).
+
+    Given that the parametrization is d = (C^{T}(q) - I) * t and the field
+    dpsi = d(d)/dq^{T} * psi, compute
+
+    dt += d(dd^{T}d)/dn = dd^{T} * (C^{T}(q) - I) = (C(q) - I) * dd
+
+    dt += d(ddpsi^{T} * dpsi)/dt = [ d(C(q))/dq * psi ] * ddpsi
+
+    @param vars The full variable vector
+    @param psi The full variable vector derivative
+    @param t The reference directions
+    @param dd The adjoint sensitivities w.r.t. the director
+    @param ddpsi The adjoint sensitivities w.r.t. the director derivative
+    @param dt The adjoint sensitivity w.r.t. the reference directions
+  */
+  template <int vars_per_node, int offset, int num_nodes>
+  static void addDirectorRefNormalSens( const TacsScalar vars[],
+                                        const TacsScalar psi[],
+                                        const TacsScalar t[],
+                                        const TacsScalar dd[],
+                                        const TacsScalar ddpsi[],
+                                        TacsScalar dt[] ){
+    const TacsScalar *q = &vars[offset];
+    const TacsScalar *qpsi = &psi[offset];
+
+    for ( int i = 0; i < num_nodes; i++ ){
+      TacsScalar C[9], Cd[9];
+      C[0] = - 2.0*(q[2]*q[2] + q[3]*q[3]);
+      C[1] = 2.0*(q[1]*q[2] + q[3]*q[0]);
+      C[2] = 2.0*(q[1]*q[3] - q[2]*q[0]);
+
+      C[3] = 2.0*(q[2]*q[1] - q[3]*q[0]);
+      C[4] = - 2.0*(q[1]*q[1] + q[3]*q[3]);
+      C[5] = 2.0*(q[2]*q[3] + q[1]*q[0]);
+
+      C[6] = 2.0*(q[3]*q[1] + q[2]*q[0]);
+      C[7] = 2.0*(q[3]*q[2] - q[1]*q[0]);
+      C[8] = - 2.0*(q[1]*q[1] + q[2]*q[2]);
+
+      dt[0] += C[0]*dd[0] + C[1]*dd[1] + C[2]*dd[2];
+      dt[1] += C[3]*dd[0] + C[4]*dd[1] + C[5]*dd[2];
+      dt[2] += C[6]*dd[0] + C[7]*dd[1] + C[8]*dd[2];
+
+      Cd[0] =-4.0*(q[2]*qpsi[2] + q[3]*qpsi[3]);
+      Cd[1] = 2.0*(q[1]*qpsi[2] + q[3]*qpsi[0] + qpsi[1]*q[2] + qpsi[3]*q[0]);
+      Cd[2] = 2.0*(q[1]*qpsi[3] - q[2]*qpsi[0] + qpsi[1]*q[3] - qpsi[2]*q[0]);
+
+      Cd[3] = 2.0*(q[2]*qpsi[1] - q[3]*qpsi[0] + qpsi[2]*q[1] - qpsi[3]*q[0]);
+      Cd[4] =-4.0*(q[1]*qpsi[1] + q[3]*qpsi[3]);
+      Cd[5] = 2.0*(q[2]*qpsi[3] + q[1]*qpsi[0] + qpsi[2]*q[3] + qpsi[1]*q[0]);
+
+      Cd[6] = 2.0*(q[3]*qpsi[1] + q[2]*qpsi[0] + qpsi[3]*q[1] + qpsi[2]*q[0]);
+      Cd[7] = 2.0*(q[3]*qpsi[2] - q[1]*qpsi[0] + qpsi[3]*q[2] - qpsi[1]*q[0]);
+      Cd[8] =-4.0*(q[1]*qpsi[1] + q[2]*qpsi[2]);
+
+      dt[0] += Cd[0]*ddpsi[0] + Cd[1]*ddpsi[1] + Cd[2]*ddpsi[2];
+      dt[1] += Cd[3]*ddpsi[0] + Cd[4]*ddpsi[1] + Cd[5]*ddpsi[2];
+      dt[2] += Cd[6]*ddpsi[0] + Cd[7]*ddpsi[1] + Cd[8]*ddpsi[2];
+
+      t += 3;
+      dd += 3;
+      ddpsi += 3;
+      dt += 3;
+      q += vars_per_node;
+      qpsi += vars_per_node;
     }
   }
 
