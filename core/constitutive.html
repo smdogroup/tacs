@@ -244,6 +244,25 @@ Defaults to False (i.e. use max strength).</p></li>
 These objects typically defines mass, stiffness, failure and buckling behaviors for the elements that reference them.
 The following <code class="xref py py-class docutils literal notranslate"><span class="pre">Constitutive</span></code> classes are available in TACS:</p>
 <span class="target" id="module-0"></span><dl class="py class">
+<dt class="sig sig-object py" id="tacs.constitutive.BasicBeamConstitutive1">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tacs.constitutive.</span></span><span class="sig-name descname"><span class="pre">BasicBeamConstitutive1</span></span><a class="headerlink" href="#tacs.constitutive.BasicBeamConstitutive1" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">tacs.constitutive.BeamConstitutive</span></code></p>
+<p>Timoshenko theory based constitutive object for an uncoupled beam.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>props</strong> (<a class="reference internal" href="#tacs.constitutive.MaterialProperties" title="tacs.constitutive.MaterialProperties"><em>MaterialProperties</em></a>) -- The material property.</p></li>
+<li><p><strong>A</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.10)"><em>float</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#complex" title="(in Python v3.10)"><em>complex</em></a>) -- Beam cross-sectional area (keyword argument). Defaults to 0.0.</p></li>
+<li><p><strong>J</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.10)"><em>float</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#complex" title="(in Python v3.10)"><em>complex</em></a>) -- Beam polar moment of inertia about x-axis (keyword argument). Defaults to 0.0.</p></li>
+<li><p><strong>Iy</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.10)"><em>float</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#complex" title="(in Python v3.10)"><em>complex</em></a>) -- Beam area moment of inertia about y-axis (keyword argument). Defaults to 0.0.</p></li>
+<li><p><strong>Iz</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.10)"><em>float</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#complex" title="(in Python v3.10)"><em>complex</em></a>) -- Beam area moment of inertia about z-axis (keyword argument). Defaults to 0.0.</p></li>
+<li><p><strong>kcorr</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.10)"><em>float</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#complex" title="(in Python v3.10)"><em>complex</em></a>) -- Shear correction factor (keyword argument). Defaults to 5/6.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py class">
 <dt class="sig sig-object py" id="tacs.constitutive.CompositeShellConstitutive">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tacs.constitutive.</span></span><span class="sig-name descname"><span class="pre">CompositeShellConstitutive</span></span><a class="headerlink" href="#tacs.constitutive.CompositeShellConstitutive" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">tacs.constitutive.ShellConstitutive</span></code></p>
@@ -335,8 +354,32 @@ isotropic first-order shear deformation theory shell type element.</p>
 <li><p><strong>t</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.10)"><em>float</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#complex" title="(in Python v3.10)"><em>complex</em></a><em>, </em><em>optional</em>) -- The material thickness (keyword argument). Defaults to 1.0.</p></li>
 <li><p><strong>tNum</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><em>int</em></a><em>, </em><em>optional</em>) -- Design variable number to assign to thickness (keyword argument). Defaults to -1
 (i.e. no design variable).</p></li>
-<li><p><strong>tlb</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.10)"><em>float</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#complex" title="(in Python v3.10)"><em>complex</em></a><em>, </em><em>optional</em>) -- Thickness varaible lower bound (keyword argument). Defaults to 0.0.</p></li>
-<li><p><strong>tub</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.10)"><em>float</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#complex" title="(in Python v3.10)"><em>complex</em></a><em>, </em><em>optional</em>) -- Thickness varaible upper bound (keyword argument). Defaults to 10.0.</p></li>
+<li><p><strong>tlb</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.10)"><em>float</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#complex" title="(in Python v3.10)"><em>complex</em></a><em>, </em><em>optional</em>) -- Thickness variable lower bound (keyword argument). Defaults to 0.0.</p></li>
+<li><p><strong>tub</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.10)"><em>float</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#complex" title="(in Python v3.10)"><em>complex</em></a><em>, </em><em>optional</em>) -- Thickness variable upper bound (keyword argument). Defaults to 10.0.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="tacs.constitutive.IsoTubeBeamConstitutive">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tacs.constitutive.</span></span><span class="sig-name descname"><span class="pre">IsoTubeBeamConstitutive</span></span><a class="headerlink" href="#tacs.constitutive.IsoTubeBeamConstitutive" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">tacs.constitutive.BeamConstitutive</span></code></p>
+<p>Timoshenko theory based constitutive object for a hollow circular beam.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>props</strong> (<a class="reference internal" href="#tacs.constitutive.MaterialProperties" title="tacs.constitutive.MaterialProperties"><em>MaterialProperties</em></a>) -- The material property.</p></li>
+<li><p><strong>d</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.10)"><em>float</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#complex" title="(in Python v3.10)"><em>complex</em></a><em>, </em><em>optional</em>) -- Tube inner diameter (keyword argument). Defaults to 1.0.</p></li>
+<li><p><strong>dNum</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><em>int</em></a><em>, </em><em>optional</em>) -- Design variable number to assign to tube diameter (keyword argument). Defaults to -1
+(i.e. no design variable).</p></li>
+<li><p><strong>dlb</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.10)"><em>float</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#complex" title="(in Python v3.10)"><em>complex</em></a><em>, </em><em>optional</em>) -- Lower bound on tube diameter (keyword argument). Defaults to 0.0.</p></li>
+<li><p><strong>dub</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.10)"><em>float</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#complex" title="(in Python v3.10)"><em>complex</em></a><em>, </em><em>optional</em>) -- Upper bound on tube diameter (keyword argument). Defaults to 10.0.</p></li>
+<li><p><strong>t</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.10)"><em>float</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#complex" title="(in Python v3.10)"><em>complex</em></a><em>, </em><em>optional</em>) -- Tube wall thickness (keyword argument). Defaults to 0.1.</p></li>
+<li><p><strong>tNum</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><em>int</em></a><em>, </em><em>optional</em>) -- Design variable number to assign to wall thickness (keyword argument). Defaults to -1
+(i.e. no design variable).</p></li>
+<li><p><strong>tlb</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.10)"><em>float</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#complex" title="(in Python v3.10)"><em>complex</em></a><em>, </em><em>optional</em>) -- Lower bound on wall thickness (keyword argument). Defaults to 0.0.</p></li>
+<li><p><strong>tub</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.10)"><em>float</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#complex" title="(in Python v3.10)"><em>complex</em></a><em>, </em><em>optional</em>) -- Upper bound on wall thickness (keyword argument). Defaults to 10.0.</p></li>
 </ul>
 </dd>
 </dl>

@@ -301,6 +301,25 @@ This is appropriate for orthotropic and anisotropic shells, who's stiffness prop
 </dd></dl>
 
 <dl class="py class">
+<dt class="sig sig-object py" id="tacs.elements.BeamRefAxisTransform">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tacs.elements.</span></span><span class="sig-name descname"><span class="pre">BeamRefAxisTransform</span></span><a class="headerlink" href="#tacs.elements.BeamRefAxisTransform" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">tacs.elements.BeamTransform</span></code></p>
+<p>Class for computing the transformation from the global coordinates
+to the beam local coordinates (used for defining stresses).
+This class uses a projection of a user-supplied reference axis to define the beam coordinate system
+(i.e. local <span class="math notranslate nohighlight">\(y\)</span> is aligned with the reference axis.)</p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>The reference direction cannot be parallel to the beam axis.</p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>axis</strong> (<em>array-like</em>) -- Reference axis.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py class">
 <dt class="sig sig-object py" id="tacs.elements.SpringIdentityTransform">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tacs.elements.</span></span><span class="sig-name descname"><span class="pre">SpringIdentityTransform</span></span><a class="headerlink" href="#tacs.elements.SpringIdentityTransform" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">tacs.elements.SpringTransform</span></code></p>

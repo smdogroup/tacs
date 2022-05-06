@@ -32,7 +32,7 @@ Some :class:`~TACS.Element` classes require transform classes in their setup pro
 The following transform classes are available in TACS:
 
 .. automodule:: tacs.elements
-  :members: ShellNaturalTransform, ShellRefAxisTransform,
+  :members: ShellNaturalTransform, ShellRefAxisTransform, BeamRefAxisTransform,
     SpringIdentityTransform, SpringRefAxisTransform, SpringRefFrameTransform
   :show-inheritance:
 
