@@ -233,6 +233,16 @@ class TACSBeamElement : public TACSElement {
     con->incref();
   }
 
+  ~TACSBeamElement(){
+    if (transform){
+      transform->decref();
+    }
+
+    if (con){
+      con->decref();
+    }
+  }
+
   const char* getObjectName(){
     return "TACSBeamElement";
   }

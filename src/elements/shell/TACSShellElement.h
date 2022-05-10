@@ -43,6 +43,16 @@ class TACSShellElement : public TACSElement {
     con->incref();
   }
 
+  ~TACSShellElement(){
+    if (transform){
+      transform->decref();
+    }
+
+    if (con){
+      con->decref();
+    }
+  }
+
   const char* getObjectName(){
     return "TACSShellElement";
   }
