@@ -1045,6 +1045,7 @@ cdef class Tri3NonlinearThermalShell(Element):
         if transform is None:
             transform = ShellNaturalTransform()
         self.ptr = new TACSTri3NonlinearThermalShell(transform.ptr, con.cptr)
+        self.ptr.incref()
 
 cdef class BeamTransform:
     cdef TACSBeamTransform *ptr
