@@ -724,8 +724,8 @@ class pyTACS(BaseUI):
             elif propInfo.type == 'PROD':  # Nastran rod
                 area = propInfo.A
                 J = propInfo.j
-                ky = 0.0
-                kz = 0.0
+                k1 = 0.0
+                k2 = 0.0
 
                 con = tacs.constitutive.BasicBeamConstitutive1(mat, A=area, J=J, ky=k1, kz=k2)
 

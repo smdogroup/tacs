@@ -512,6 +512,22 @@ cdef class SolidConstitutive(Constitutive):
             return _init_MaterialProperties(self.cptr.getMaterialProperties())
         return None
 
+cdef class ShellConstitutive(Constitutive):
+    """
+    This is the base class for the shell constitutive objects.
+    All objects performing shell elastic analysis should utilize this class.
+    """
+
+    def setDrillingRegularization(self, double kpenalty):
+        """
+        Update regularization parameter used to stiffen shell in drilling rotation dof.
+
+        Args:
+            kpenalty (float): Drilling regularization parameter.
+        """
+        if self.cptr:
+            self.cptr.setDrillingRegularization(kpenalty)
+
 cdef class IsoShellConstitutive(ShellConstitutive):
     """
     This constitutive class defines the stiffness properties for a
