@@ -518,12 +518,12 @@ cdef class ShellConstitutive(Constitutive):
     All objects performing shell elastic analysis should utilize this class.
     """
 
-    def setDrillingRegularization(self, double kpenalty):
+    def setDrillingRegularization(self, double kpenalty=10.0):
         """
         Update regularization parameter used to stiffen shell in drilling rotation dof.
 
         Args:
-            kpenalty (float): Drilling regularization parameter.
+            kpenalty (float): Drilling regularization parameter. Defaults to 10.0.
         """
         if self.cptr:
             self.cptr.setDrillingRegularization(kpenalty)
