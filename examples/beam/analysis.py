@@ -46,7 +46,7 @@ def elemCallBack(dvNum, compID, compDescript, elemDescripts, globalDVs, **kwargs
     # Setup (isotropic) property and constitutive objects
     prop = constitutive.MaterialProperties(rho=rho, E=E, nu=nu, ys=ys)
     # Tube beam constitutive properties (defaults to D=1.0, tw=0.1)
-    con = constitutive.IsoTubeBeamConstitutive(prop)#constitutive.BasicBeamConstitutive1(prop, A=A, Iy=Iy, Iz=Iz, J=J)
+    con = constitutive.BasicBeamConstitutive1(prop, A=A, Iy=Iy, Iz=Iz, J=J, ky=1000, kz=1000)
 
     refAxis = np.array([0.0, 1.0, 0.0])
 
@@ -66,33 +66,32 @@ FEAAssembler.initialize(elemCallBack)
 evalFuncs = ['mass', 'ks_vmfailure']
 
 # Create a static problem with a simple z shear load at tip node
-problem = FEAAssembler.createStaticProblem('z-shear')
-problem.addLoadToNodes(6, [0.0, 0.0, 1.0e10, 0.0, 0.0, 0.0], nastranOrdering=True)
+problems = FEAAssembler.createTACSProbsFromBDF().values()
 # Add some eval funcs
-problem.addFunction('mass', functions.StructuralMass)
-problem.addFunction('ks_vmfailure', functions.KSFailure, safetyFactor=1.5,
+for problem in problems:
+    problem.addFunction('mass', functions.StructuralMass)
+    problem.addFunction('ks_vmfailure', functions.KSFailure, safetyFactor=1.5,
                     ksWeight=100.0)
 
-# Solve state
-problem.solve()
-
-# Solve fails, because some of the Jacobian rows/cols are all zeros
-K = problem.K.getDenseMatrix()
-if np.linalg.det(K) == 0:
-    raise AssertionError("Stiffness matrix is singular!!!")
+for problem in problems:
+    # Solve state
+    problem.solve()
 
 # Evaluate functions
 funcs = {}
-problem.evalFunctions(funcs, evalFuncs=evalFuncs)
+for problem in problems:
+    problem.evalFunctions(funcs, evalFuncs=evalFuncs)
 
 if comm.rank == 0:
     pprint(funcs)
 
 # Evaluate function sensitivities
 funcsSens = {}
-problem.evalFunctionsSens(funcsSens, evalFuncs=evalFuncs)
+for problem in problems:
+    problem.evalFunctionsSens(funcsSens, evalFuncs=evalFuncs)
 if comm.rank == 0:
     pprint(funcsSens)
 
 # Write solution out
-problem.writeSolution(outputDir=os.path.dirname(__file__))
+for problem in problems:
+    problem.writeSolution(outputDir=os.path.dirname(__file__))
