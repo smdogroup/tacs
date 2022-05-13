@@ -192,7 +192,7 @@ void TACSIsoTubeBeamConstitutive::evalStress( int elemIndex,
   props->getIsotropicProperties(&E, &nu);
 
   TacsScalar G = 0.5*E/(1.0 + nu);
-  const TacsScalar kcorr = 2*(1.0 + nu)/(4.0 + 3 * nu);
+  TacsScalar kcorr = 2*(1.0 + nu)/(4.0 + 3 * nu);
   TacsScalar d0 = inner + wall;
   TacsScalar d1 = inner;
   TacsScalar A = M_PI * ((d0 * d0) - (d1 * d1))/4.0;
@@ -214,7 +214,7 @@ void TACSIsoTubeBeamConstitutive::evalTangentStiffness( int elemIndex,
   props->getIsotropicProperties(&E, &nu);
 
   TacsScalar G = 0.5*E/(1.0 + nu);
-  const TacsScalar kcorr = 5.0/6.0;
+  TacsScalar kcorr = 2*(1.0 + nu)/(4.0 + 3 * nu);
   TacsScalar d0 = inner + wall;
   TacsScalar d1 = inner;
   TacsScalar A = M_PI * ((d0 * d0) - (d1 * d1))/4.0;
@@ -242,7 +242,7 @@ void TACSIsoTubeBeamConstitutive::addStressDVSens( int elemIndex,
   props->getIsotropicProperties(&E, &nu);
 
   TacsScalar G = 0.5*E/(1.0 + nu);
-  const TacsScalar kcorr = 5.0/6.0;
+  TacsScalar kcorr = 2*(1.0 + nu)/(4.0 + 3 * nu);
   TacsScalar d0 = inner + wall;
   TacsScalar d1 = inner;
 
