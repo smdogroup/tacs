@@ -105,8 +105,8 @@ TACSBasicBeamConstitutive::TACSBasicBeamConstitutive( TacsScalar rhoA,
   memset(C, 0, NUM_TANGENT_STIFFNESS_ENTRIES*sizeof(TacsScalar));
   C[0] = EA;
   C[6] = GJ;
-  C[11] = EIy;
-  C[15] = EIz;
+  C[11] = EIz;
+  C[15] = EIy;
   C[18] = kGAy;
   C[20] = kGAz;
 
@@ -128,7 +128,9 @@ TACSBasicBeamConstitutive::TACSBasicBeamConstitutive( TACSMaterialProperties *pr
                                                       TacsScalar J,
                                                       TacsScalar Iy,
                                                       TacsScalar Iz,
-                                                      TacsScalar kcorr ){
+                                                      TacsScalar Iyz,
+                                                      TacsScalar ky,
+                                                      TacsScalar kz ){
 
   props = properties;
   props->incref();
@@ -143,10 +145,11 @@ TACSBasicBeamConstitutive::TACSBasicBeamConstitutive( TACSMaterialProperties *pr
   memset(C, 0, NUM_TANGENT_STIFFNESS_ENTRIES*sizeof(TacsScalar));
   C[0] = E*A;
   C[6] = G*J;
-  C[11] = E*Iy;
-  C[15] = E*Iz;
-  C[18] = kcorr*G*A;
-  C[20] = kcorr*G*A;
+  C[11] = E*Iz;
+  C[12] = -E*Iyz;
+  C[15] = E*Iy;
+  C[18] = ky*G*A;
+  C[20] = kz*G*A;
 
   // Set the entries of the density matrix
   rho[0] = density*A;

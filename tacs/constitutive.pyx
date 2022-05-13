@@ -674,7 +674,9 @@ cdef class BasicBeamConstitutive1(BeamConstitutive):
         J (float or complex): Beam polar moment of inertia about x-axis (keyword argument). Defaults to 0.0.
         Iy (float or complex): Beam area moment of inertia about y-axis (keyword argument). Defaults to 0.0.
         Iz (float or complex): Beam area moment of inertia about z-axis (keyword argument). Defaults to 0.0.
-        kcorr (float or complex): Shear correction factor (keyword argument). Defaults to 5/6.
+        Iyz (float or complex): Beam area product of inertia in yz-plane (keyword argument). Defaults to 0.0.
+        ky (float or complex): Shear correction factor in y-direction (keyword argument). Defaults to 5/6.
+        kz (float or complex): Shear correction factor in z-direction (keyword argument). Defaults to 5/6.
     """
     def __cinit__(self, *args, **kwargs):
         cdef TACSMaterialProperties *props = NULL
@@ -682,7 +684,9 @@ cdef class BasicBeamConstitutive1(BeamConstitutive):
         cdef TacsScalar J = 0.0
         cdef TacsScalar Iy = 0.0
         cdef TacsScalar Iz = 0.0
-        cdef TacsScalar kcorr = 5.0/6.0
+        cdef TacsScalar Iyz = 0.0
+        cdef TacsScalar ky = 5.0/6.0
+        cdef TacsScalar kz = 5.0/6.0
 
         if len(args) >= 1:
             props = (<MaterialProperties>args[0]).ptr
@@ -694,10 +698,14 @@ cdef class BasicBeamConstitutive1(BeamConstitutive):
             Iy = kwargs['Iy']
         if 'Iz' in kwargs:
             Iz = kwargs['Iz']
-        if 'kcorr' in kwargs:
-            kcorr = kwargs['kcorr']
+        if 'Iyz' in kwargs:
+            Iyz = kwargs['Iyz']
+        if 'ky' in kwargs:
+            ky = kwargs['ky']
+        if 'kz' in kwargs:
+            kz = kwargs['kz']
 
-        self.cptr = new TACSBasicBeamConstitutive(props, A, J, Iy, Iz, kcorr)
+        self.cptr = new TACSBasicBeamConstitutive(props, A, J, Iy, Iz, Iyz, ky, kz)
         self.ptr = self.cptr
         self.ptr.incref()
 
