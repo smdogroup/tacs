@@ -1455,6 +1455,13 @@ int TACSBeamElement<quadrature, basis, director, model>::
     }
     return 1;
   }
+  else if (quantityType == TACS_ELEMENT_DISPLACEMENT){
+    if (quantity){
+      // Compute the interpolated displacements
+      basis::template interpFields<vars_per_node, 3>(pt, vars, quantity);
+    }
+    return 3;
+  }
 
   // Compute XdinvT = Xdinv * T
   A2D::Mat3x3 XdinvT;
@@ -1850,6 +1857,10 @@ void TACSBeamElement<quadrature, basis, director, model>::
     director::template
       addDirectorResidual<vars_per_node, offset,
                           num_nodes>(vars, dvars, ddvars, fn2, d2d, dfdu);
+  }
+  else if (quantityType == TACS_ELEMENT_DISPLACEMENT){
+    // Compute the interpolated displacements
+    basis::template addInterpFieldsTranspose<vars_per_node, 3>(pt, dfdq, dfdu);
   }
 }
 
