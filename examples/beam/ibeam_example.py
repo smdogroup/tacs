@@ -35,9 +35,10 @@ E = 70.0e9          # Young's modulus (Pa)
 nu = 0.3           # Poisson's ratio
 ys = 270.0e6        # yield stress
 
-# Shell thickness
-t = 0.01
-A = 0.005            # m2
+# Web thickness
+t = 0.01 # m
+# Flange area
+A = 0.005 # m^2
 
 # Callback function used to setup TACS element objects and DVs
 def elemCallBack(dvNum, compID, compDescript, elemDescripts, globalDVs, **kwargs):
