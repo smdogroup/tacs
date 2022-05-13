@@ -1506,6 +1506,18 @@ int TACSBeamElement<quadrature, basis, director, model>::
     return 1;
   }
 
+  if (quantityType == TACS_STRAIN_ENERGY_DENSITY){
+    if (quantity){
+      TacsScalar s[6];
+      con->evalStress(elemIndex, pt, X0.x, e, s);
+      *quantity = 0.0;
+      for ( int i = 0; i < 6; i++ ){
+        *quantity += e[i] * s[i];
+      }
+    }
+    return 1;
+   }
+
   return 0;
 
 }
@@ -1641,6 +1653,12 @@ void TACSBeamElement<quadrature, basis, director, model>::
   if (quantityType == TACS_FAILURE_INDEX){
     // Add the sensitivity contribution from the design variables
     con->addFailureDVSens(elemIndex, dfdq[0] * scale, pt, X0.x, e, dvLen, dfdx);
+  }
+  else if (quantityType == TACS_STRAIN_ENERGY_DENSITY){
+      TacsScalar s[6];
+      con->evalStress(elemIndex, pt, X0.x, e, s);
+      con->addStressDVSens(elemIndex, scale*dfdq[0], pt, X0.x, e,
+                           e, dvLen, dfdx);
   }
 }
 
@@ -1778,7 +1796,17 @@ void TACSBeamElement<quadrature, basis, director, model>::
     model::evalStrain(u0x.A, d1x.x, d2x.x, e0ty, e);
 
     TacsScalar esens[6];
-    con->evalFailureStrainSens(elemIndex, pt, X0.x, e, esens);
+    if (quantityType == TACS_FAILURE_INDEX){
+      // Compute the sensitivity of the failure index w.r.t. the strain
+      con->evalFailureStrainSens(elemIndex, pt, X0.x, e, esens);
+    }
+    else{ // quantityType == TACS_STRAIN_ENERGY_DENSITY
+      // Compute the sensitivity of the strain energy density w.r.t. the strain
+      con->evalStress(elemIndex, pt, X0.x, e, esens);
+      for ( int i = 0; i < 6; i++ ){
+        esens[i] *= 2.0;
+      }
+    }
 
     // Evaluate the strain and strain derivatives from the
     TacsScalar e0tyd[2];
@@ -1961,7 +1989,15 @@ void TACSBeamElement<quadrature, basis, director, model>::
   // Evaluate the failure sensitivity contribution
   TacsScalar esens[6] = {0.0};
   if (quantityType == TACS_FAILURE_INDEX){
+    // Compute the sensitivity of the failure index w.r.t. the strain
     con->evalFailureStrainSens(elemIndex, pt, X0.x, e, esens);
+  }
+  else if (quantityType == TACS_STRAIN_ENERGY_DENSITY){
+    // Compute the sensitivity of the strain energy density w.r.t. the strain
+    con->evalStress(elemIndex, pt, X0.x, e, esens);
+    for ( int i = 0; i < 6; i++ ){
+      esens[i] *= 2.0;
+    }
   }
 
   // Evaluate the strain and strain derivatives from the
