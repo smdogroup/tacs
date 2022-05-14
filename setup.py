@@ -81,7 +81,7 @@ with open(os.path.join(tacs_root, 'README.md'), encoding='utf-8') as f:
 optional_dependencies = {
     'testing': ['testflo'],
     'docs': ['sphinx', 'breathe', 'sphinxcontrib-programoutput'],
-    'mphys': ['mphys', 'openmdao'],
+    'mphys': ['mphys @ git+https://github.com/OpenMDAO/mphys.git', 'openmdao'],
 }
 
 # Add an optional dependency that concatenates all others
@@ -107,8 +107,5 @@ setup(name='tacs',
           'nptyping<2.0.0',
       ],
       extras_require=optional_dependencies,
-      dependency_links=[
-          "git+https://github.com/OpenMDAO/mphys",
-      ],
       packages=find_packages(include=['tacs*']),
       ext_modules=cythonize(exts, include_path=inc_dirs))
