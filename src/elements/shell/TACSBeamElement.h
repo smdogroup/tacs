@@ -11,6 +11,7 @@
 #include "TACSElement.h"
 #include "TACSElementTypes.h"
 #include "a2d.h"
+#include "TACSBeamInertialForce.h"
 
 /*
   Compute the transformation from the local coordinates
@@ -275,7 +276,7 @@ class TACSBeamElement : public TACSElement {
   }
 
   int getNumElementFaces(){
-    return quadrature::getNumFaces();
+    return quadrature::getNumElementFaces();
   }
 
   int getNumFaceQuadraturePoints( int face ){
@@ -301,6 +302,10 @@ class TACSBeamElement : public TACSElement {
 
   int getDesignVarRange( int elemIndex, int dvLen, TacsScalar lb[], TacsScalar ub[] ){
     return con->getDesignVarRange(elemIndex, dvLen, lb, ub);
+  }
+
+  TACSElement* createElementInertialForce( TacsScalar inertiaVec[] ){
+    return new TACSBeamInertialForce<vars_per_node, quadrature, basis>(con, inertiaVec);
   }
 
   void computeEnergies( int elemIndex,
