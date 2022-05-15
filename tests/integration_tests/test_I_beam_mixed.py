@@ -12,6 +12,8 @@ The properties of the cross-section are given below:
     tweb = 0.1
 We apply apply various tip loads test KSDisplacement, KSFailure, 
 StructuralMass, and Compliance functions and sensitivities.
+
+NOTE: Design variables are read in from BDF file.
 '''
 
 base_dir = os.path.dirname(os.path.abspath(__file__))
