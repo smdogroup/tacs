@@ -141,12 +141,10 @@ void TACSIsoTubeBeamConstitutive::addMassMomentsDVSens( int elemIndex,
 TacsScalar TACSIsoTubeBeamConstitutive::evalSpecificHeat( int elemIndex,
                                                           const double pt[],
                                                           const TacsScalar X[] ){
-  TacsScalar cp = props->getSpecificHeat();
-  TacsScalar d0 = inner + wall;
-  TacsScalar d1 = inner;
-  TacsScalar A = M_PI * ((d0 * d0) - (d1 * d1))/4.0;
-
-  return cp * A;
+  if (props){
+    return props->getSpecificHeat();
+  }
+  return 0.0;
 }
 
 
