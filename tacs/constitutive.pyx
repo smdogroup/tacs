@@ -785,18 +785,8 @@ cdef class IsoRectangleBeamConstitutive(BeamConstitutive):
     """
     Timoshenko theory based constitutive object for a solid rectangular beam.
 
-    The assumed orientation of the cross-section is given in the figure below.
-                                  width
-          <--------------------------------------------------->
-          +---------------------------------------------------+    ^
-          |                        ^  y_elem                  |    |
-          |                        |                          |    |
-          |                         ——> z_elem                |    | thickness
-          |                                                   |    |
-          |                                                   |    |
-          +---------------------------------------------------+    v
-
-    Where the local `y` direction is defined by the beam's reference axis.
+    The thickness dimension is assumed to measured along the beam's local reference axis,
+    the width is perpindicular to the reference axis.
 
     Args:
         props (MaterialProperties): The material property.
