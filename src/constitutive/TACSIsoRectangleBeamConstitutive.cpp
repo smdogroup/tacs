@@ -327,7 +327,7 @@ TacsScalar TACSIsoRectangleBeamConstitutive::evalFailure( int elemIndex,
   for (int i = 0; i < 2; i++) {
     for (int j = 0; j < 2; j++, count++) {
       // Compute the combined strain state e0 = [ex, ey, ez, gyz, gxz, gxy]
-      e0[0] = e[0] + z_lim[j] * e[2] - y_lim[i] * e[3]; // ex
+      e0[0] = e[0] - y_lim[i] * e[2] - z_lim[j] * e[3]; // ex
       e0[1] = 0.0;
       e0[2] = 0.0;
       e0[3] = 0.0;
@@ -374,7 +374,7 @@ TacsScalar TACSIsoRectangleBeamConstitutive::evalFailureStrainSens( int elemInde
   for (int i = 0; i < 2; i++) {
     for (int j = 0; j < 2; j++, count++) {
       // Compute the combined strain state e0 = [ex, ey, ez, gyz, gxz, gxy]
-      e0[0] = e[0] + z_lim[j] * e[2] - y_lim[i] * e[3]; // ex
+      e0[0] = e[0] - y_lim[i] * e[2] - z_lim[j] * e[3]; // ex
       e0[1] = 0.0;
       e0[2] = 0.0;
       e0[3] = 0.0;
@@ -388,8 +388,8 @@ TacsScalar TACSIsoRectangleBeamConstitutive::evalFailureStrainSens( int elemInde
       fail_checks[count] = props->vonMisesFailure3DStressSens(s0, s0d);
       props->evalStress3D(s0d, e0d);
       fail_checks_sens[count][0] = e0d[0];
-      fail_checks_sens[count][2] = z_lim[j] * e0d[0];
-      fail_checks_sens[count][3] = -y_lim[i] * e0d[0];
+      fail_checks_sens[count][2] = -y_lim[i] * e0d[0];
+      fail_checks_sens[count][3] = -z_lim[j] * e0d[0];
       fail_checks_sens[count][1] = y_lim[i] * e0d[4] - z_lim[j] * e0d[5];
       fail_checks_sens[count][5] = e0d[4];
       fail_checks_sens[count][4] = e0d[5];
@@ -437,7 +437,7 @@ void TACSIsoRectangleBeamConstitutive::addFailureDVSens( int elemIndex,
     TacsScalar z_lim[] = {-width / 2.0, width / 2.0};
     TacsScalar dy_lim[] = {0.0, 0.0};
     TacsScalar dz_lim[] = {0.0, 0.0};
-  
+
     if (dvNum == width_num) {
       dz_lim[0] = -0.5;
       dz_lim[1] = 0.5;
@@ -446,26 +446,26 @@ void TACSIsoRectangleBeamConstitutive::addFailureDVSens( int elemIndex,
       dy_lim[0] = -0.5;
       dy_lim[1] = 0.5;
     }
-  
+
     int count = 0;
     for (int i = 0; i < 2; i++) {
       for (int j = 0; j < 2; j++, count++) {
         // Compute the combined strain state e0 = [ex, ey, ez, gyz, gxz, gxy]
-        e0[0] = e[0] + z_lim[j] * e[2] - y_lim[i] * e[3]; // ex
+        e0[0] = e[0] - y_lim[i] * e[2] - z_lim[j] * e[3]; // ex
         e0[1] = 0.0;
         e0[2] = 0.0;
         e0[3] = 0.0;
         e0[4] = e[5] + y_lim[i] * e[1];
         e0[5] = e[4] - z_lim[j] * e[1];
-  
+
         // Compute the stress
         props->evalStress3D(e0, s0);
-  
+
         // Compute the von Mises stress
         fail_checks[count] = props->vonMisesFailure3DStressSens(s0, s0d);
         props->evalStress3D(s0d, e0d);
-        
-        fail_checks_sens[count] = e0d[0] * (dz_lim[j] * e[2] - dy_lim[i] * e[3]) + (e0d[4] * dy_lim[i] - e0d[5] * dz_lim[j]) * e[1];
+
+        fail_checks_sens[count] = e0d[0] * (-dy_lim[i] * e[2] - dz_lim[j] * e[3]) + (e0d[4] * dy_lim[i] - e0d[5] * dz_lim[j]) * e[1];
   
         if (TacsRealPart(fail_checks[count]) > TacsRealPart(max_fail)) {
           max_fail = fail_checks[count];
