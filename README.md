@@ -44,15 +44,15 @@ Note that the default values can often be used without modification. Of all thes
 
 ### Setting up the Python interface ###
 
-The python interface can be created with a call to setup.py. The setup.cfg.info contains the recommended defaults for the configuration script. For development, create a local development installation by executing
+The python interface (and all dependencies) can be created with a call to setup.py. The setup.cfg.info contains the recommended defaults for the configuration script. For development, create a local development installation by executing
 
-pip install -e .
+    pip install -e .\[all\]
 
 This command is also executed by the command `make interface`.
 
 If the user does not intend to modify the source code and wishes to install the interface to their python site-packages, they can instead run
 
-pip install .
+    pip install .\[all\]
 
 ### Converting FH5 files ###
 
