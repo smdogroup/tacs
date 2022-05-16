@@ -4,7 +4,8 @@
 <html lang="python">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
     <title>pyTACS class &#8212; TACS  documentation</title>
     <link rel="stylesheet" type="text/css" href="../_static/pygments.css" />
     <link rel="stylesheet" type="text/css" href="../_static/sphinxdoc.css" />
@@ -45,7 +46,7 @@
         <div class="bodywrapper">
           <div class="body" role="main">
             
-  <div class="section" id="module-tacs.pytacs">
+  <section id="module-tacs.pytacs">
 <span id="pytacs-class"></span><h1>pyTACS class<a class="headerlink" href="#module-tacs.pytacs" title="Permalink to this headline">¶</a></h1>
 <p>pytacs - The Python wrapper for the TACS assembler</p>
 <p>This python interface is designed to provide a easier interface to the
@@ -73,7 +74,7 @@ for setting loads and functions, performing analysis, and gradient computations.
 </ul>
 </dd>
 </dl>
-<div class="section" id="options">
+<section id="options">
 <h2>Options<a class="headerlink" href="#options" title="Permalink to this headline">¶</a></h2>
 <p>Options can be set for <a class="reference internal" href="#tacs.pytacs.pyTACS" title="tacs.pytacs.pyTACS"><code class="xref py py-class docutils literal notranslate"><span class="pre">pyTACS</span></code></a> at time of creation for the class or using the
 <a class="reference internal" href="#tacs.pytacs.pyTACS.setOption" title="tacs.pytacs.pyTACS.setOption"><code class="xref py py-meth docutils literal notranslate"><span class="pre">pyTACS.setOption</span></code></a>. Current option values for a class
@@ -117,14 +118,14 @@ The following options, their default values and descriptions are listed below:</
 	 Flag for printing out timing information for class procedures.
 </pre></div>
 </div>
-</div>
-<div class="section" id="initializing">
+</section>
+<section id="initializing">
 <h2>Initializing<a class="headerlink" href="#initializing" title="Permalink to this headline">¶</a></h2>
 <p>Before the class can be used to create problems, it must first be initialized by calling the
 <a class="reference internal" href="#tacs.pytacs.pyTACS.initialize" title="tacs.pytacs.pyTACS.initialize"><code class="xref py py-meth docutils literal notranslate"><span class="pre">pyTACS.initialize</span></code></a> method. This method reads in all of the element cards
 from the BDF file and sets up the equivalent TACS element objects necessary for analysis. The
 class can be initialized through two ways: with or without <code class="docutils literal notranslate"><span class="pre">elemCallBack</span></code> function.</p>
-<div class="section" id="initializing-with-elemcallback">
+<section id="initializing-with-elemcallback">
 <h3>Initializing with elemCallBack<a class="headerlink" href="#initializing-with-elemcallback" title="Permalink to this headline">¶</a></h3>
 <p><a class="reference internal" href="#tacs.pytacs.pyTACS" title="tacs.pytacs.pyTACS"><code class="xref py py-class docutils literal notranslate"><span class="pre">pyTACS</span></code></a> can be initialized py passing a user-defined <code class="docutils literal notranslate"><span class="pre">elemCallBack</span></code> function to
 <a class="reference internal" href="#tacs.pytacs.pyTACS.initialize" title="tacs.pytacs.pyTACS.initialize"><code class="xref py py-meth docutils literal notranslate"><span class="pre">pyTACS.initialize</span></code></a>, that will be used to setup the correct
@@ -170,8 +171,8 @@ objects as there are element types in <cite>elemDescripts</cite> (one for each).
 These elements are setup automatically by <a class="reference internal" href="#tacs.pytacs.pyTACS" title="tacs.pytacs.pyTACS"><code class="xref py py-class docutils literal notranslate"><span class="pre">pyTACS</span></code></a>. As a general rule of thumb,
 if the NASTRAN element card doesn't contain a property ID, it should not show up in the <code class="docutils literal notranslate"><span class="pre">elemCallBack</span></code> function.</p>
 </div>
-</div>
-<div class="section" id="initializing-without-elemcallback">
+</section>
+<section id="initializing-without-elemcallback">
 <h3>Initializing without elemCallBack<a class="headerlink" href="#initializing-without-elemcallback" title="Permalink to this headline">¶</a></h3>
 <p>If NASTRAN material property card definitions for every element exist in the BDF file,
 <a class="reference internal" href="#tacs.pytacs.pyTACS" title="tacs.pytacs.pyTACS"><code class="xref py py-class docutils literal notranslate"><span class="pre">pyTACS</span></code></a> can be initialized without a <a class="reference internal" href="#tacs.pytacs.elemCallBack" title="tacs.pytacs.elemCallBack"><code class="xref py py-func docutils literal notranslate"><span class="pre">elemCallBack()</span></code></a> function.
@@ -220,14 +221,14 @@ In the case where the default TACS elements above don't match the user's desired
 the user is recommended to setup that element through an
 <a class="reference internal" href="#initializing-with-elemcallback"><span class="std std-ref">elemCallBack procedure</span></a> instead.</p>
 </div>
-</div>
-</div>
-<div class="section" id="tagging-component-groups-in-bdf">
+</section>
+</section>
+<section id="tagging-component-groups-in-bdf">
 <h2>Tagging component groups in BDF<a class="headerlink" href="#tagging-component-groups-in-bdf" title="Permalink to this headline">¶</a></h2>
 <p>Several pyTACS methods (<a class="reference internal" href="#tacs.pytacs.pyTACS.selectCompIDs" title="tacs.pytacs.pyTACS.selectCompIDs"><code class="xref py py-meth docutils literal notranslate"><span class="pre">pyTACS.selectCompIDs</span></code></a>, <a class="reference internal" href="#tacs.pytacs.elemCallBack" title="tacs.pytacs.elemCallBack"><code class="xref py py-func docutils literal notranslate"><span class="pre">elemCallBack()</span></code></a>, etc.)
 allow for the use of user-defined component labels. These labels are read in through formatted comment in the BDF file.</p>
 <p>There are currently two supported formats for labels: ICEM-format and FEMAP-format. These are described below.</p>
-<div class="section" id="icem-component-label-format">
+<section id="icem-component-label-format">
 <h3>ICEM component label format<a class="headerlink" href="#icem-component-label-format" title="Permalink to this headline">¶</a></h3>
 <p>In the ICEM format, the elements are organized by property groups and
 the component label is appended as a string comment above the first element in every property group.
@@ -249,8 +250,8 @@ CQUADR       101       2    3892    3899    3896    3891       2
 CQUADR       102       2    3896    3899    3898    3895       2
 </pre></div>
 </div>
-</div>
-<div class="section" id="femap-component-label-format">
+</section>
+<section id="femap-component-label-format">
 <h3>FEMAP component label format<a class="headerlink" href="#femap-component-label-format" title="Permalink to this headline">¶</a></h3>
 <p>In the FEMAP format, the component label is appended as a string comment above each property card.
 The string comment should start with <code class="docutils literal notranslate"><span class="pre">$</span> <span class="pre">Femap</span> <span class="pre">Property</span> <span class="pre">i</span> <span class="pre">:</span></code> (where <code class="docutils literal notranslate"><span class="pre">i</span></code> is replaced with the property number the label is referencing)
@@ -261,9 +262,9 @@ $ Femap Property 2 : Stiffener
 PSHELL         2       1      .1       1               1              0.
 </pre></div>
 </div>
-</div>
-</div>
-<div class="section" id="api-reference">
+</section>
+</section>
+<section id="api-reference">
 <h2>API Reference<a class="headerlink" href="#api-reference" title="Permalink to this headline">¶</a></h2>
 <dl class="py class">
 <dt class="sig sig-object py" id="tacs.pytacs.pyTACS">
@@ -766,8 +767,8 @@ options to the stdout on the root processor</p>
 
 </dd></dl>
 
-</div>
-</div>
+</section>
+</section>
 
 
             <div class="clearer"></div>

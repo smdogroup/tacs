@@ -4,7 +4,8 @@
 <html lang="python">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
     <title>Install &#8212; TACS  documentation</title>
     <link rel="stylesheet" type="text/css" href="_static/pygments.css" />
     <link rel="stylesheet" type="text/css" href="_static/sphinxdoc.css" />
@@ -43,9 +44,9 @@
         <div class="bodywrapper">
           <div class="body" role="main">
             
-  <div class="section" id="install">
+  <section id="install">
 <h1>Install<a class="headerlink" href="#install" title="Permalink to this headline">¶</a></h1>
-<div class="section" id="prerequisites">
+<section id="prerequisites">
 <h2>Prerequisites<a class="headerlink" href="#prerequisites" title="Permalink to this headline">¶</a></h2>
 <p>The following packages are required to use TACS:</p>
 <ul class="simple">
@@ -65,8 +66,8 @@
 <li><p>AMD - TACS can use the approximate minimum degree ordering routines from AMD/UFConfig</p></li>
 <li><p>TecIO - to convert TACS FH5 output files to tecplot-compatible files</p></li>
 </ul>
-</div>
-<div class="section" id="basic-steps-to-compile-tacs">
+</section>
+<section id="basic-steps-to-compile-tacs">
 <h2>Basic steps to compile TACS<a class="headerlink" href="#basic-steps-to-compile-tacs" title="Permalink to this headline">¶</a></h2>
 <ol class="arabic">
 <li><p>Clone the TACS git repository <a class="reference external" href="https://github.com/smdogroup/tacs">tacs</a></p></li>
@@ -86,8 +87,8 @@ the following:</p>
 <li><p>To compile, from the base directory, run <code class="docutils literal notranslate"><span class="pre">make</span></code> then <code class="docutils literal notranslate"><span class="pre">make</span> <span class="pre">interface</span></code></p></li>
 <li><p>To set up the Python interface, run <code class="docutils literal notranslate"><span class="pre">python</span> <span class="pre">setup.py</span> <span class="pre">develop</span> <span class="pre">--user</span></code></p></li>
 </ol>
-</div>
-<div class="section" id="detailed-installation-instructions">
+</section>
+<section id="detailed-installation-instructions">
 <h2>Detailed installation instructions<a class="headerlink" href="#detailed-installation-instructions" title="Permalink to this headline">¶</a></h2>
 <p>The Toolbox for the Analysis of Composite Structures (TACS) is a
 parallel finite-element code written in C++, with an optional python
@@ -102,8 +103,8 @@ TACS. The dependencies are divided into the following categories:</p>
 <li><p>Dependencies for the C++ interface</p></li>
 <li><p>Dependencies for the python interface</p></li>
 </ol>
-</div>
-<div class="section" id="checking-out-the-code">
+</section>
+<section id="checking-out-the-code">
 <h2>Checking out the code<a class="headerlink" href="#checking-out-the-code" title="Permalink to this headline">¶</a></h2>
 <p>Using git checkout the source</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">git</span> <span class="n">clone</span> <span class="n">https</span><span class="p">:</span><span class="o">//</span><span class="n">github</span><span class="o">.</span><span class="n">com</span><span class="o">/</span><span class="n">smdogroup</span><span class="o">/</span><span class="n">tacs</span>
@@ -121,8 +122,8 @@ Make sure to set the following:</p>
 <p>In addition, it is recommended to copy the default python settings by copying <code class="docutils literal notranslate"><span class="pre">setup.cfg.info</span></code> to <code class="docutils literal notranslate"><span class="pre">setup.cfg</span></code>.
 The settings in <code class="docutils literal notranslate"><span class="pre">setup.cfg.info</span></code> are intended for development, if you are just going to use the code as-is,
 you may wish to modify these settings.</p>
-</div>
-<div class="section" id="install-dependencies">
+</section>
+<section id="install-dependencies">
 <h2>Install dependencies<a class="headerlink" href="#install-dependencies" title="Permalink to this headline">¶</a></h2>
 <p>These instructions direct you to install METIS and other dependencies in the directory <code class="docutils literal notranslate"><span class="pre">tacs/extern</span></code>.
 This location for the dependencies is not required, and indeed may not be best.
@@ -134,14 +135,14 @@ make config prefix=$PWD CFLAGS=&quot;-fPIC&quot;
 make
 </pre></div>
 </div>
-</div>
-<div class="section" id="make-the-c-tacs-library">
+</section>
+<section id="make-the-c-tacs-library">
 <h2>Make the C++ TACS library<a class="headerlink" href="#make-the-c-tacs-library" title="Permalink to this headline">¶</a></h2>
 <p>Return to the root TACS directory.
 Ensure that all appropriate variables are set in <code class="docutils literal notranslate"><span class="pre">Makefile.in</span></code>.
 Make the TACS libraries by running <code class="docutils literal notranslate"><span class="pre">make</span></code> from the root directory.</p>
-</div>
-<div class="section" id="f5tovtk">
+</section>
+<section id="f5tovtk">
 <h2>f5tovtk<a class="headerlink" href="#f5tovtk" title="Permalink to this headline">¶</a></h2>
 <p><code class="docutils literal notranslate"><span class="pre">f5tovtk</span></code> is an executable that converts <code class="docutils literal notranslate"><span class="pre">.f5</span></code> files to VTK format compatible with Paraview.
 After compiling the C++ libraries, go to the subdirectory <code class="docutils literal notranslate"><span class="pre">tacs/extern/f5tovtk</span></code> and make the executable there.
@@ -150,8 +151,8 @@ I add the directory <code class="docutils literal notranslate"><span class="pre"
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span>ln -s $HOME/git/tacs/extern/f5tovtk
 </pre></div>
 </div>
-</div>
-<div class="section" id="installing-the-python-interface">
+</section>
+<section id="installing-the-python-interface">
 <h2>Installing the python interface<a class="headerlink" href="#installing-the-python-interface" title="Permalink to this headline">¶</a></h2>
 <p>The python interface is generated in the <code class="docutils literal notranslate"><span class="pre">tacs/tacs</span></code> sub-directory.
 The interface is generated using Cython.</p>
@@ -163,9 +164,9 @@ The interface is generated using Cython.</p>
 </ol>
 <p>Use <code class="docutils literal notranslate"><span class="pre">pip</span></code> to install these packages if they are not already installed.
 TACS works with python 3.</p>
-<p>To build the python interface to <code class="docutils literal notranslate"><span class="pre">tacs</span></code>, you can use the Makefile
+<p>To build the python interface to <code class="docutils literal notranslate"><span class="pre">tacs</span></code>, and install all dependencies, you can use the Makefile
 or you can type the following command in the root directory:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">pip</span> <span class="n">install</span> <span class="o">-</span><span class="n">e</span> <span class="o">.</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">pip</span> <span class="n">install</span> <span class="o">-</span><span class="n">e</span> <span class="o">.</span>\<span class="p">[</span><span class="nb">all</span>\<span class="p">]</span>
 </pre></div>
 </div>
 <p>or alternatively, you can use the shortcut in the <code class="docutils literal notranslate"><span class="pre">Makefile</span></code> and type:</p>
@@ -175,12 +176,12 @@ or you can type the following command in the root directory:</p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
 <p>If the user is using an older version of pip (&lt;21.3) and runs into a missing <code class="docutils literal notranslate"><span class="pre">libtacs.so</span></code> error when importing
-tacs in python, they may need to add the following to their pip install command <code class="docutils literal notranslate"><span class="pre">pip</span> <span class="pre">install</span> <span class="pre">-e</span> <span class="pre">.</span> <span class="pre">--use-feature=in-tree-build</span></code>.
+tacs in python, they may need to add the following to their pip install command <code class="docutils literal notranslate"><span class="pre">pip</span> <span class="pre">install</span> <span class="pre">-e</span> <span class="pre">.\[all\]</span> <span class="pre">--use-feature=in-tree-build</span></code>.
 This option is on by default in newer pip versions and therefore should not be necessary.</p>
 </div>
 <p>Once this process is complete the python interface install should be complete and tacs should be importable from python.</p>
-</div>
-</div>
+</section>
+</section>
 
 
             <div class="clearer"></div>

@@ -130,12 +130,12 @@ The python interface requires the following packages:
 Use ``pip`` to install these packages if they are not already installed.
 TACS works with python 3.
 
-To build the python interface to ``tacs``, you can use the Makefile
+To build the python interface to ``tacs``, and install all dependencies, you can use the Makefile
 or you can type the following command in the root directory:
 
 ::
 
-    pip install -e .
+    pip install -e .\[all\]
 
 or alternatively, you can use the shortcut in the ``Makefile`` and type:
 
@@ -145,7 +145,7 @@ or alternatively, you can use the shortcut in the ``Makefile`` and type:
 
 .. note::
   If the user is using an older version of pip (<21.3) and runs into a missing ``libtacs.so`` error when importing
-  tacs in python, they may need to add the following to their pip install command ``pip install -e . --use-feature=in-tree-build``.
+  tacs in python, they may need to add the following to their pip install command ``pip install -e .\[all\] --use-feature=in-tree-build``.
   This option is on by default in newer pip versions and therefore should not be necessary.
 
 Once this process is complete the python interface install should be complete and tacs should be importable from python.
