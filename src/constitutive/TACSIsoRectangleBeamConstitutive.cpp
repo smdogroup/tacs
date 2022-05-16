@@ -465,7 +465,7 @@ void TACSIsoRectangleBeamConstitutive::addFailureDVSens( int elemIndex,
         fail_checks[count] = props->vonMisesFailure3DStressSens(s0, s0d);
         props->evalStress3D(s0d, e0d);
         
-        fail_checks_sens[count] = e0d[0] * (dz_lim[j] * e[2] - dy_lim[i] * e[3]) + (e0d[4] * dy_lim[i] - e0d[5] * dz_lim[i]) * e[1];
+        fail_checks_sens[count] = e0d[0] * (dz_lim[j] * e[2] - dy_lim[i] * e[3]) + (e0d[4] * dy_lim[i] - e0d[5] * dz_lim[j]) * e[1];
   
         if (TacsRealPart(fail_checks[count]) > TacsRealPart(max_fail)) {
           max_fail = fail_checks[count];
