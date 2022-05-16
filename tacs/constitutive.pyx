@@ -781,6 +781,75 @@ cdef class IsoTubeBeamConstitutive(BeamConstitutive):
             self.ptr = NULL
             self.cptr = NULL
 
+cdef class IsoRectangleBeamConstitutive(BeamConstitutive):
+    """
+    Timoshenko theory based constitutive object for a solid rectangular beam.
+
+    The assumed orientation of the cross-section is given in the figure below.
+                                  width
+          <--------------------------------------------------->
+          +---------------------------------------------------+    ^
+          |                        ^  y_elem                  |    |
+          |                        |                          |    |
+          |                         ——> z_elem                |    | thickness
+          |                                                   |    |
+          |                                                   |    |
+          +---------------------------------------------------+    v
+
+    Where the local `y` direction is defined by the beam's reference axis.
+
+    Args:
+        props (MaterialProperties): The material property.
+        width (float or complex, optional): Cross-section width (keyword argument). Defaults to 1.0.
+        wNum (int, optional): Design variable number to assign to width (keyword argument). Defaults to -1
+            (i.e. no design variable).
+        wlb (float or complex, optional): Lower bound on width (keyword argument). Defaults to 0.0.
+        wub (float or complex, optional): Upper bound on width diameter (keyword argument). Defaults to 10.0.
+        t (float or complex, optional): Cross-section thickness (keyword argument). Defaults to 0.1.
+        tNum (int, optional): Design variable number to assign to thickness (keyword argument). Defaults to -1
+            (i.e. no design variable).
+        tlb (float or complex, optional): Lower bound on thickness (keyword argument). Defaults to 0.0.
+        tub (float or complex, optional): Upper bound on thickness (keyword argument). Defaults to 10.0.
+    """
+    def __cinit__(self, *args, **kwargs):
+        cdef TACSMaterialProperties *props = NULL
+        cdef TacsScalar w = 1.0
+        cdef int wNum = -1
+        cdef TacsScalar wlb = 0.0
+        cdef TacsScalar wub = 10.0
+        cdef TacsScalar t = 0.1
+        cdef int tNum = -1
+        cdef TacsScalar tlb = 0.0
+        cdef TacsScalar tub = 10.0
+
+        if len(args) >= 1:
+            props = (<MaterialProperties>args[0]).ptr
+        if 'w' in kwargs:
+            w = kwargs['w']
+        if 'wNum' in kwargs:
+            wNum = kwargs['wNum']
+        if 'wlb' in kwargs:
+            wlb = kwargs['wlb']
+        if 'wub' in kwargs:
+            wub = kwargs['wub']
+        if 't' in kwargs:
+            t = kwargs['t']
+        if 'tNum' in kwargs:
+            tNum = kwargs['tNum']
+        if 'tlb' in kwargs:
+            tlb = kwargs['tlb']
+        if 'tub' in kwargs:
+            tub = kwargs['tub']
+
+        if props is not NULL:
+            self.cptr = new TACSIsoRectangleBeamConstitutive(props, w, t, wNum, tNum,
+                                                             wlb, wub, tlb, tub)
+            self.ptr = self.cptr
+            self.ptr.incref()
+        else:
+            self.ptr = NULL
+            self.cptr = NULL
+
 cdef class GeneralMassConstitutive(Constitutive):
     """
     This is the base class for the fully general point mass constitutive objects.

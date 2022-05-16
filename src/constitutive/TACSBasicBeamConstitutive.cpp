@@ -155,9 +155,9 @@ TACSBasicBeamConstitutive::TACSBasicBeamConstitutive( TACSMaterialProperties *pr
   rho[0] = density*A;
   rho[1] = 0.0;
   rho[2] = 0.0;
-  rho[3] = density*J;
-  rho[4] = density*Iy;
-  rho[5] = density*Iz;
+  rho[3] = density*Iy;
+  rho[4] = density*Iz;
+  rho[5] = density*Iyz;
 }
 
 TACSBasicBeamConstitutive::~TACSBasicBeamConstitutive(){
