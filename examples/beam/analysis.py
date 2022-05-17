@@ -45,7 +45,6 @@ J = 0.4
 def elemCallBack(dvNum, compID, compDescript, elemDescripts, globalDVs, **kwargs):
     # Setup (isotropic) property and constitutive objects
     prop = constitutive.MaterialProperties(rho=rho, E=E, nu=nu, ys=ys)
-    # Tube beam constitutive properties (defaults to D=1.0, tw=0.1)
     con = constitutive.BasicBeamConstitutive(prop, A=A, Iy=Iy, Iz=Iz, J=J, ky=1000, kz=1000)
 
     refAxis = np.array([0.0, 1.0, 0.0])
