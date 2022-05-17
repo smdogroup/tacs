@@ -57,9 +57,7 @@ class ElementTest(unittest.TestCase):
 
         # TACS shell elements of various orders and types
         self.elements = [elements.Order1Beam(transform, con),
-                         elements.Order2Beam(transform, con),
-                         elements.Order1BeamModRot(transform, con),
-                         elements.Order2BeamModRot(transform, con)]
+                         elements.Order2Beam(transform, con)]
 
         # Set matrix types
         self.matrix_types = [TACS.STIFFNESS_MATRIX, TACS.MASS_MATRIX, TACS.GEOMETRIC_STIFFNESS_MATRIX]

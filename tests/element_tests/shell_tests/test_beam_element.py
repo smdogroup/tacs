@@ -51,9 +51,7 @@ class ElementTest(unittest.TestCase):
 
         # TACS beam elements of various orders and types
         self.elements = [elements.Order1Beam,
-                         elements.Order2Beam,
-                         elements.Order1BeamModRot,
-                         elements.Order2BeamModRot]
+                         elements.Order2Beam]
 
         t = 0.1
         d = 1.0
