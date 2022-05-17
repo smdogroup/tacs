@@ -57,7 +57,7 @@ def elemCallBack(dvNum, compID, compDescript, elemDescripts, globalDVs, **kwargs
             con = constitutive.BasicBeamConstitutive1(prop, A=A, ky=0.0, kz=0.0)
             refAxis = np.array([0.0, 0.0, 1.0])
             transform = elements.BeamRefAxisTransform(refAxis)
-            elem = elements.LinearBeam(transform, con)
+            elem = elements.Order1Beam(transform, con)
         else:
             raise ValueError(f'Element type "{descript}" not recognized.')
     return elem

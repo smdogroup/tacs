@@ -66,7 +66,7 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
             refAxis = np.array([0.0, 1.0, 0.0])
             transform = elements.BeamRefAxisTransform(refAxis)
             # pass back the appropriate tacs element object
-            elem = elements.LinearBeam(transform, con)
+            elem = elements.Order1Beam(transform, con)
             return elem
 
         # Instantiate FEA Assembler

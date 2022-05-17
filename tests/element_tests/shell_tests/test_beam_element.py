@@ -50,7 +50,10 @@ class ElementTest(unittest.TestCase):
         self.transforms = [elements.BeamRefAxisTransform(ref_axis)]
 
         # TACS beam elements of various orders and types
-        self.elements = [elements.LinearBeam]
+        self.elements = [elements.Order1Beam,
+                         elements.Order2Beam,
+                         elements.Order1BeamModRot,
+                         elements.Order2BeamModRot]
 
         t = 0.1
         d = 1.0

@@ -56,7 +56,10 @@ class ElementTest(unittest.TestCase):
         con = constitutive.IsoTubeBeamConstitutive(self.props, d=1.0, t=0.01, dNum=0, tNum=1)
 
         # TACS shell elements of various orders and types
-        self.elements = [elements.LinearBeam(transform, con)]
+        self.elements = [elements.Order1Beam(transform, con),
+                         elements.Order2Beam(transform, con),
+                         elements.Order1BeamModRot(transform, con),
+                         elements.Order2BeamModRot(transform, con)]
 
         # Set matrix types
         self.matrix_types = [TACS.STIFFNESS_MATRIX, TACS.MASS_MATRIX, TACS.GEOMETRIC_STIFFNESS_MATRIX]

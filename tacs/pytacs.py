@@ -719,7 +719,7 @@ class pyTACS(BaseUI):
                 if k2 is None:
                     k2 = 1e6
 
-                con = tacs.constitutive.BasicBeamConstitutive1(mat, A=area, Iy=I2, Iz=I1, Iyz=I12, J=J, ky=k1, kz=k2)
+                con = tacs.constitutive.BasicBeamConstitutive(mat, A=area, Iy=I2, Iz=I1, Iyz=I12, J=J, ky=k1, kz=k2)
 
             elif propInfo.type == 'PROD':  # Nastran rod
                 area = propInfo.A
@@ -727,7 +727,7 @@ class pyTACS(BaseUI):
                 k1 = 0.0
                 k2 = 0.0
 
-                con = tacs.constitutive.BasicBeamConstitutive1(mat, A=area, J=J, ky=k1, kz=k2)
+                con = tacs.constitutive.BasicBeamConstitutive(mat, A=area, J=J, ky=k1, kz=k2)
 
             else:
                 raise self._TACSError(f"Unsupported property type '{propInfo.type}' for property number {propertyID}. ")
@@ -773,7 +773,7 @@ class pyTACS(BaseUI):
                 elif descript in ['CTRIA3', 'CTRIAR']:
                     elem = tacs.elements.Tri3Shell(transform, con)
                 elif descript in ['CBAR', 'CROD']:
-                    elem = tacs.elements.LinearBeam(transform, con)
+                    elem = tacs.elements.Order1Beam(transform, con)
                 elif 'CTETRA' in descript:
                     # May have variable number of nodes in card
                     nnodes = len(elemInfo.nodes)

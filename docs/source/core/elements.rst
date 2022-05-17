@@ -46,5 +46,6 @@ The following :class:`~TACS.Element` classes are available in TACS:
     Quad4NonlinearShell, Quad9NonlinearShell, Quad16NonlinearShell, Tri3NonlinearShell,
     Quad4NonlinearThermalShell, Quad9NonlinearThermalShell, Quad16NonlinearThermalShell, Tri3NonlinearThermalShell,
     Quad4ThermalShell, Quad9ThermalShell, Quad16ThermalShell, Tri3ThermalShell,
+    Order1Beam, Order2Beam, Order1BeamModRot, Order2BeamModRot,
     RBE2, RBE3, MassElement, SpringElement
   :show-inheritance:

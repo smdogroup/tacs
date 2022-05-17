@@ -680,7 +680,7 @@ cdef class LamParamShellConstitutive(ShellConstitutive):
         self.ptr = self.cptr
         self.ptr.incref()
 
-cdef class BasicBeamConstitutive1(BeamConstitutive):
+cdef class BasicBeamConstitutive(BeamConstitutive):
     """
     Timoshenko theory based constitutive object for an uncoupled beam.
 
