@@ -1,6 +1,17 @@
 """
-6 noded beam model 1 meter long in x direction.
-We apply a tip load in the z direction and clamp it at the root.
+This example models a cantilevered I-beam, with a tip shear load applied.
+The parameters for the problem are given below:
+    h_web = 1.0
+    t_web = 0.01
+    A_cap = 0.005
+    I_beam = 1/12 * h_web^3 * t_web + 2 * A_cap * (h_web/2)^2 = 0.00333
+    L_beam = 10.0
+    V = 1000000.
+The I-beam is modeled through a combination of two element types:
+    Shell elements: To model the webs
+    Beam elements (only axial stiffness): To model the caps
+The tip deflection of the model is given by the following formula
+    v_tip = V * L^3 / (3 * E * I) = 1.4285714285714286
 """
 # ==============================================================================
 # Standard Python modules
@@ -40,6 +51,9 @@ t = 0.01 # m
 # Flange area
 A = 0.005 # m^2
 
+# Tip shear
+V = 1000000.
+
 # Callback function used to setup TACS element objects and DVs
 def elemCallBack(dvNum, compID, compDescript, elemDescripts, globalDVs, **kwargs):
     # Setup (isotropic) property and constitutive objects
@@ -54,7 +68,8 @@ def elemCallBack(dvNum, compID, compDescript, elemDescripts, globalDVs, **kwargs
             transform = elements.ShellRefAxisTransform(refAxis)
             elem = elements.Quad4Shell(transform, con)
         elif descript == 'CROD':
-            con = constitutive.BasicBeamConstitutive1(prop, A=A, ky=0.0, kz=0.0)
+            # Shear corrections and bending stiffness are zero for pure axial members
+            con = constitutive.BasicBeamConstitutive(prop, A=A, ky=0.0, kz=0.0)
             refAxis = np.array([0.0, 0.0, 1.0])
             transform = elements.BeamRefAxisTransform(refAxis)
             elem = elements.Order1Beam(transform, con)
@@ -71,35 +86,32 @@ FEAAssembler.initialize(elemCallBack)
 # Static problem
 
 # Create a static problem with a simple z shear load at tip node
-problems = FEAAssembler.createTACSProbsFromBDF().values()
+problem = FEAAssembler.createStaticProblem('I_Beam')
+# Apply load at centroid of RBE3 at tip of beam
+problem.addLoadToNodes(89, [0.0, V, 0.0, 0.0, 0.0, 0.0], nastranOrdering=True)
 # Add some eval funcs
-for problem in problems:
-    problem.addFunction('mass', functions.StructuralMass)
-    problem.addFunction('compliance', functions.Compliance)
-    problem.addFunction('ks_vmfailure', functions.KSFailure, safetyFactor=1.5,
-                    ksWeight=100.0)
-    problem.addFunction('y_disp', functions.KSDisplacement, ksWeight=100.0, direction=[0.0, 1.0, 0.0])
-    problem.addFunction('z_disp', functions.KSDisplacement, ksWeight=100.0, direction=[0.0, 0.0, 1.0])
+problem.addFunction('mass', functions.StructuralMass)
+problem.addFunction('compliance', functions.Compliance)
+problem.addFunction('ks_vmfailure', functions.KSFailure, safetyFactor=1.5,
+                ksWeight=100.0)
+problem.addFunction('y_disp', functions.KSDisplacement, ksWeight=100.0, direction=[0.0, 1.0, 0.0])
+problem.addFunction('z_disp', functions.KSDisplacement, ksWeight=100.0, direction=[0.0, 0.0, 1.0])
 
-for problem in problems:
-    # Solve state
-    problem.solve()
+# Solve state
+problem.solve()
 
 # Evaluate functions
 funcs = {}
-for problem in problems:
-    problem.evalFunctions(funcs)
+problem.evalFunctions(funcs)
 
 if comm.rank == 0:
     pprint(funcs)
 
 # Evaluate function sensitivities
 funcsSens = {}
-for problem in problems:
-    problem.evalFunctionsSens(funcsSens)
+problem.evalFunctionsSens(funcsSens)
 if comm.rank == 0:
     pprint(funcsSens)
 
 # Write solution out
-for problem in problems:
-    problem.writeSolution(outputDir=os.path.dirname(__file__))
+problem.writeSolution(outputDir=os.path.dirname(__file__))
