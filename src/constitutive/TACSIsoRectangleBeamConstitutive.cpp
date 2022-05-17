@@ -423,13 +423,12 @@ void TACSIsoRectangleBeamConstitutive::addFailureDVSens( int elemIndex,
   int dvNums[2];
   dvNums[0] = width_num;
   dvNums[1] = thickness_num;
-  for (int index = 0; index < 2; index++){
-    int dvNum = dvNums[index];
+  int index = 0;
+  for (int dv_index = 0; dv_index < 2; dv_index++){
+    int dvNum = dvNums[dv_index];
     // Check the cross-section for failure at the four corners
     TacsScalar e0[6], s0[6];
     TacsScalar e0d[6], s0d[6];
-    TacsScalar ySens[6];
-    TacsScalar zSens[6];
     TacsScalar fail_checks[4];
     TacsScalar fail_checks_sens[4];
     TacsScalar max_fail = -1e20, ks_sum = 0.0;
@@ -482,6 +481,7 @@ void TACSIsoRectangleBeamConstitutive::addFailureDVSens( int elemIndex,
       for (int i = 0; i < count; i++) {
         dfdx[index] += scale * exp(ks_weight * (fail_checks[i] - max_fail)) * fail_checks_sens[i] / ks_sum;
       }
+      index++;
     }
   } 
 }
