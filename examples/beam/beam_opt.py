@@ -97,20 +97,22 @@ prob.driver = om.ScipyOptimizeDriver(debug_print=['objs', 'nl_cons'], maxiter=10
 prob.driver.options['optimizer'] = 'SLSQP'
 
 prob.setup()
-om.n2(prob, show_browser=False, outfile='beam_opt_n2.html')
 
 prob.run_driver()
 
-x = prob['mesh.x_struct0'][:-3:3]
+x = prob.get_val('mesh.x_struct0', get_remote=True)[:-3:3]
 t_opt = prob['dv_struct']
 m_opt = prob['tip_shear.mass']
 t_exact = np.sqrt(6*(L-x)*V/w/ys)
 
-# Plot results for first 3 dofs
-plt.plot(x, t_opt, 'o', x, t_exact)
-plt.legend(['opt', 'exact'])
-plt.ylabel('t(x)')
-plt.xlabel('x')
-plt.title('Optimal beam thickness profile')
-if __name__ == "__main__":
+if __name__ == "__main__" and prob.comm.size == 1:
+    # Output N2 representation of OpenMDAO model
+    om.n2(prob, show_browser=False, outfile='beam_opt_n2.html')
+
+    # Plot results for solution
+    plt.plot(x, t_opt, 'o', x, t_exact)
+    plt.legend(['opt', 'exact'])
+    plt.ylabel('t(x)')
+    plt.xlabel('x')
+    plt.title('Optimal beam thickness profile')
     plt.show()
