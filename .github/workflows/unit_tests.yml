@@ -79,6 +79,7 @@ jobs:
           # zlib 1.2.12 apparently breaks this install, so we pin an older version
           conda install zlib=1.2.11;
           conda install -c anaconda openmpi -q -y;
+          conda install -c conda-forge openmpi-mpicxx -q -y;
           conda install gxx_linux-64 -q -y;
           conda install -c anaconda openblas -q -y;
           conda install -c conda-forge lapack -q -y;
