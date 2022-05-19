@@ -52,7 +52,7 @@ def elemCallBack(dvNum, compID, compDescript, elemDescripts, globalDVs, **kwargs
     # For each element type in this component,
     # pass back the appropriate tacs element object
     transform = elements.BeamRefAxisTransform(refAxis)
-    elem = elements.Order1Beam(transform, con)
+    elem = elements.Beam2(transform, con)
     return elem
 
 # Set up elements and TACS assembler

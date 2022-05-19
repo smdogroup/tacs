@@ -270,29 +270,29 @@ cdef extern from "TACSShellElementDefs.h":
         TACSQuad4ShellModRot(TACSShellTransform*,
                              TACSShellConstitutive*)
  
-    cdef cppclass TACSOrder1Beam(TACSElement):
-        TACSOrder1Beam(TACSBeamTransform*,
-                       TACSBeamConstitutive*)
+    cdef cppclass TACSBeam2(TACSElement):
+        TACSBeam2(TACSBeamTransform*,
+                  TACSBeamConstitutive*)
 
-    cdef cppclass TACSOrder2Beam(TACSElement):
-        TACSOrder2Beam(TACSBeamTransform*,
-                       TACSBeamConstitutive*)
+    cdef cppclass TACSBeam3(TACSElement):
+        TACSBeam3(TACSBeamTransform*,
+                  TACSBeamConstitutive*)
 
-    cdef cppclass TACSOrder1BeamModRot(TACSElement):
-        TACSOrder1BeamModRot(TACSBeamTransform*,
-                             TACSBeamConstitutive*)
+    cdef cppclass TACSBeam2ModRot(TACSElement):
+        TACSBeam2ModRot(TACSBeamTransform*,
+                        TACSBeamConstitutive*)
 
-    cdef cppclass TACSOrder2BeamModRot(TACSElement):
-        TACSOrder2BeamModRot(TACSBeamTransform*,
-                             TACSBeamConstitutive*)
+    cdef cppclass TACSBeam3ModRot(TACSElement):
+        TACSBeam3ModRot(TACSBeamTransform*,
+                        TACSBeamConstitutive*)
 
-    cdef cppclass TACSOrder1BeamQuaternion(TACSElement):
-        TACSOrder1BeamQuaternion(TACSBeamTransform*,
-                                 TACSBeamConstitutive*)
+    cdef cppclass TACSBeam2Quaternion(TACSElement):
+        TACSBeam2Quaternion(TACSBeamTransform*,
+                            TACSBeamConstitutive*)
 
-    cdef cppclass TACSOrder2BeamQuaternion(TACSElement):
-        TACSOrder2BeamQuaternion(TACSBeamTransform*,
-                                 TACSBeamConstitutive*)
+    cdef cppclass TACSBeam3Quaternion(TACSElement):
+        TACSBeam3Quaternion(TACSBeamTransform*,
+                            TACSBeamConstitutive*)
 
 cdef extern from "TACSSpringElementTransform.h":
     cdef cppclass TACSSpringTransform(TACSObject):

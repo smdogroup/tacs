@@ -58,7 +58,7 @@ def element_callback(dvNum, compID, compDescript, elemDescripts, specialDVs, **k
     transform = elements.BeamRefAxisTransform(refAxis)
 
     # Pass back the appropriate tacs element object
-    elem = elements.Order1Beam(transform, con)
+    elem = elements.Beam2(transform, con)
     return elem
 
 def problem_setup(scenario_name, fea_assembler, problem):

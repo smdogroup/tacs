@@ -773,7 +773,7 @@ class pyTACS(BaseUI):
                 elif descript in ['CTRIA3', 'CTRIAR']:
                     elem = tacs.elements.Tri3Shell(transform, con)
                 elif descript in ['CBAR', 'CROD']:
-                    elem = tacs.elements.Order1Beam(transform, con)
+                    elem = tacs.elements.Beam2(transform, con)
                 elif 'CTETRA' in descript:
                     # May have variable number of nodes in card
                     nnodes = len(elemInfo.nodes)

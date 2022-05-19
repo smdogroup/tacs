@@ -1077,7 +1077,7 @@ cdef class BeamRefAxisTransform(BeamTransform):
         self.ptr = new TACSBeamRefAxisTransform(a)
         self.ptr.incref()
 
-cdef class Order1Beam(Element):
+cdef class Beam2(Element):
     """
     A 2-node Timoshenko beam element for general linear elastic analysis.
 
@@ -1089,10 +1089,10 @@ cdef class Order1Beam(Element):
         con (BeamConstitutive): Beam constitutive object.
     """
     def __cinit__(self, BeamTransform transform, BeamConstitutive con):
-        self.ptr = new TACSOrder1Beam(transform.ptr, con.cptr)
+        self.ptr = new TACSBeam2(transform.ptr, con.cptr)
         self.ptr.incref()
 
-cdef class Order2Beam(Element):
+cdef class Beam3(Element):
     """
     A 3-node Timoshenko beam element for general linear elastic analysis.
 
@@ -1104,10 +1104,10 @@ cdef class Order2Beam(Element):
         con (BeamConstitutive): Beam constitutive object.
     """
     def __cinit__(self, BeamTransform transform, BeamConstitutive con):
-        self.ptr = new TACSOrder2Beam(transform.ptr, con.cptr)
+        self.ptr = new TACSBeam3(transform.ptr, con.cptr)
         self.ptr.incref()
 
-cdef class Order1BeamModRot(Element):
+cdef class Beam2ModRot(Element):
     """
     A 2-node Timoshenko beam element for general nonlinear elastic analysis
     with moderate rotations.
@@ -1120,10 +1120,10 @@ cdef class Order1BeamModRot(Element):
         con (BeamConstitutive): Beam constitutive object.
     """
     def __cinit__(self, BeamTransform transform, BeamConstitutive con):
-        self.ptr = new TACSOrder1BeamModRot(transform.ptr, con.cptr)
+        self.ptr = new TACSBeam2ModRot(transform.ptr, con.cptr)
         self.ptr.incref()
 
-cdef class Order2BeamModRot(Element):
+cdef class Beam3ModRot(Element):
     """
     A 3-node Timoshenko beam element for general nonlinear elastic analysis
     with moderate rotations.
@@ -1136,7 +1136,7 @@ cdef class Order2BeamModRot(Element):
         con (BeamConstitutive): Beam constitutive object.
     """
     def __cinit__(self, BeamTransform transform, BeamConstitutive con):
-        self.ptr = new TACSOrder2BeamModRot(transform.ptr, con.cptr)
+        self.ptr = new TACSBeam3ModRot(transform.ptr, con.cptr)
         self.ptr.incref()
 
 cdef class SpringTransform:

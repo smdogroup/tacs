@@ -103,22 +103,22 @@ typedef TACSShellElement<TACSTriLinearQuadrature, TACSShellTriLinearBasis,
                          TACSQuaternionRotation, TACSShellInplaneLinearModel> TACSTri3ShellQuaternion;
 
 typedef TACSBeamElement<TACSBeamLinearQuadrature, TACSBeamBasis<2>,
-                        TACSLinearizedRotation, TACSBeamLinearModel> TACSOrder1Beam;
+                        TACSLinearizedRotation, TACSBeamLinearModel> TACSBeam2;
 
 typedef TACSBeamElement<TACSBeamQuadraticQuadrature, TACSBeamBasis<3>,
-                        TACSLinearizedRotation, TACSBeamLinearModel> TACSOrder2Beam;
+                        TACSLinearizedRotation, TACSBeamLinearModel> TACSBeam3;
 
 typedef TACSBeamElement<TACSBeamLinearQuadrature, TACSBeamBasis<2>,
-                        TACSQuadraticRotation, TACSBeamLinearModel> TACSOrder1BeamModRot;
+                        TACSQuadraticRotation, TACSBeamLinearModel> TACSBeam2ModRot;
 
 typedef TACSBeamElement<TACSBeamQuadraticQuadrature, TACSBeamBasis<3>,
-                        TACSQuadraticRotation, TACSBeamLinearModel> TACSOrder2BeamModRot;
+                        TACSQuadraticRotation, TACSBeamLinearModel> TACSBeam3ModRot;
 
 typedef TACSBeamElement<TACSBeamLinearQuadrature, TACSBeamBasis<2>,
-                        TACSQuaternionRotation, TACSBeamLinearModel> TACSOrder1BeamQuaternion;
+                        TACSQuaternionRotation, TACSBeamLinearModel> TACSBeam2Quaternion;
 
 typedef TACSBeamElement<TACSBeamQuadraticQuadrature, TACSBeamBasis<3>,
-                        TACSQuaternionRotation, TACSBeamLinearModel> TACSOrder2BeamQuaternion;
+                        TACSQuaternionRotation, TACSBeamLinearModel> TACSBeam3Quaternion;
 
 /**
   Create a TACS shell element based on the name of the shell.
