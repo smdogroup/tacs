@@ -23,6 +23,7 @@ CXX_OBJS = TACSMaterialProperties.o \
 	TACSBeamConstitutive.o \
 	TACSBasicBeamConstitutive.o \
 	TACSIsoTubeBeamConstitutive.o \
+	TACSIsoRectangleBeamConstitutive.o \
 
 DIR=${TACS_DIR}/src/constitutive
 

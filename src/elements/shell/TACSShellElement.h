@@ -1113,7 +1113,6 @@ void TACSShellElement<quadrature, basis, director, model>::
                                                             dd, dfdu);
   }
   else if (quantityType == TACS_ELEMENT_DISPLACEMENT){
-
     // Compute the interpolated displacements
     basis::template addInterpFieldsTranspose<vars_per_node, 3>(pt, dfdq, dfdu);
   }

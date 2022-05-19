@@ -270,29 +270,29 @@ cdef extern from "TACSShellElementDefs.h":
         TACSQuad4ShellModRot(TACSShellTransform*,
                              TACSShellConstitutive*)
  
-    cdef cppclass TACSLinearBeam(TACSElement):
-        TACSLinearBeam(TACSBeamTransform*,
-                       TACSBeamConstitutive*)
+    cdef cppclass TACSBeam2(TACSElement):
+        TACSBeam2(TACSBeamTransform*,
+                  TACSBeamConstitutive*)
 
-    cdef cppclass TACSQuadBeam(TACSElement):
-        TACSQuadBeam(TACSBeamTransform*,
-                     TACSBeamConstitutive*)
+    cdef cppclass TACSBeam3(TACSElement):
+        TACSBeam3(TACSBeamTransform*,
+                  TACSBeamConstitutive*)
 
-    cdef cppclass TACSLinearBeamModRot(TACSElement):
-        TACSLinearBeamModRot(TACSBeamTransform*,
-                             TACSBeamConstitutive*)
+    cdef cppclass TACSBeam2ModRot(TACSElement):
+        TACSBeam2ModRot(TACSBeamTransform*,
+                        TACSBeamConstitutive*)
 
-    cdef cppclass TACSQuadBeamModRot(TACSElement):
-        TACSQuadBeamModRot(TACSBeamTransform*,
-                           TACSBeamConstitutive*)
+    cdef cppclass TACSBeam3ModRot(TACSElement):
+        TACSBeam3ModRot(TACSBeamTransform*,
+                        TACSBeamConstitutive*)
 
-    cdef cppclass TACSLinearBeamQuaternion(TACSElement):
-        TACSLinearBeamQuaternion(TACSBeamTransform*,
-                                 TACSBeamConstitutive*)
+    cdef cppclass TACSBeam2Quaternion(TACSElement):
+        TACSBeam2Quaternion(TACSBeamTransform*,
+                            TACSBeamConstitutive*)
 
-    cdef cppclass TACSQuadBeamQuaternion(TACSElement):
-        TACSQuadBeamQuaternion(TACSBeamTransform*,
-                               TACSBeamConstitutive*)
+    cdef cppclass TACSBeam3Quaternion(TACSElement):
+        TACSBeam3Quaternion(TACSBeamTransform*,
+                            TACSBeamConstitutive*)
 
 cdef extern from "TACSSpringElementTransform.h":
     cdef cppclass TACSSpringTransform(TACSObject):

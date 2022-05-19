@@ -1077,7 +1077,7 @@ cdef class BeamRefAxisTransform(BeamTransform):
         self.ptr = new TACSBeamRefAxisTransform(a)
         self.ptr.incref()
 
-cdef class LinearBeam(Element):
+cdef class Beam2(Element):
     """
     A 2-node Timoshenko beam element for general linear elastic analysis.
 
@@ -1089,7 +1089,54 @@ cdef class LinearBeam(Element):
         con (BeamConstitutive): Beam constitutive object.
     """
     def __cinit__(self, BeamTransform transform, BeamConstitutive con):
-        self.ptr = new TACSLinearBeam(transform.ptr, con.cptr)
+        self.ptr = new TACSBeam2(transform.ptr, con.cptr)
+        self.ptr.incref()
+
+cdef class Beam3(Element):
+    """
+    A 3-node Timoshenko beam element for general linear elastic analysis.
+
+    .. note::
+        varsPerNode: 6
+
+    Args:
+        transform (BeamTransform): Beam transform object.
+        con (BeamConstitutive): Beam constitutive object.
+    """
+    def __cinit__(self, BeamTransform transform, BeamConstitutive con):
+        self.ptr = new TACSBeam3(transform.ptr, con.cptr)
+        self.ptr.incref()
+
+cdef class Beam2ModRot(Element):
+    """
+    A 2-node Timoshenko beam element for general nonlinear elastic analysis
+    with moderate rotations.
+
+    .. note::
+        varsPerNode: 6
+
+    Args:
+        transform (BeamTransform): Beam transform object.
+        con (BeamConstitutive): Beam constitutive object.
+    """
+    def __cinit__(self, BeamTransform transform, BeamConstitutive con):
+        self.ptr = new TACSBeam2ModRot(transform.ptr, con.cptr)
+        self.ptr.incref()
+
+cdef class Beam3ModRot(Element):
+    """
+    A 3-node Timoshenko beam element for general nonlinear elastic analysis
+    with moderate rotations.
+
+    .. note::
+        varsPerNode: 6
+
+    Args:
+        transform (BeamTransform): Beam transform object.
+        con (BeamConstitutive): Beam constitutive object.
+    """
+    def __cinit__(self, BeamTransform transform, BeamConstitutive con):
+        self.ptr = new TACSBeam3ModRot(transform.ptr, con.cptr)
         self.ptr.incref()
 
 cdef class SpringTransform:

@@ -43,7 +43,7 @@ class ConstitutiveTest(unittest.TestCase):
         kcorr = 5.0/6.0
 
         # Create stiffness (need class)
-        self.con = constitutive.BasicBeamConstitutive1(self.props, A=A, J=J, Iy=Iy, Iz=Iz,
+        self.con = constitutive.BasicBeamConstitutive(self.props, A=A, J=J, Iy=Iy, Iz=Iz,
                                                        kcorr=kcorr)
 
         # Seed random number generator in tacs for consistent test results

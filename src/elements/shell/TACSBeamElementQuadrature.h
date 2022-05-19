@@ -25,7 +25,7 @@ class TACSBeamLinearQuadrature {
 
     return TacsGaussQuadWts2[n];
   }
-  static int getNumFaces(){
+  static int getNumElementFaces(){
     return 2;
   }
   static int getNumFaceQuadraturePoints( int face ){
@@ -60,7 +60,7 @@ class TACSBeamQuadraticQuadrature {
 
     return TacsGaussQuadWts3[n];
   }
-  static int getNumFaces(){
+  static int getNumElementFaces(){
     return 2;
   }
   static int getNumFaceQuadraturePoints( int face ){
@@ -95,7 +95,7 @@ class TACSBeamCubicQuadrature {
 
     return TacsGaussQuadWts4[n];
   }
-  static int getNumFaces(){
+  static int getNumElementFaces(){
     return 2;
   }
   static int getNumFaceQuadraturePoints( int face ){

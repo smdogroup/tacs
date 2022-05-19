@@ -13,6 +13,7 @@ class ConstitutiveTest(unittest.TestCase):
             self.dh = 1e-6
             self.rtol = 1e-2
             self.atol = 1e-1
+
         self.dtype = TACS.dtype
 
         self.print_level = 0
@@ -36,12 +37,12 @@ class ConstitutiveTest(unittest.TestCase):
         self.props = constitutive.MaterialProperties(rho=rho, specific_heat=specific_heat,
                                                      E=E, nu=nu, ys=ys, cte=cte, kappa=kappa)
         t = 0.1
-        d = 1.0
-        dNum = 0
+        w = 1.0
+        wNum = 0
         tNum = 1
 
         # Create stiffness (need class)
-        self.con = constitutive.IsoTubeBeamConstitutive(self.props, t=t, tNum=tNum, d=d, dNum=dNum)
+        self.con = constitutive.IsoRectangleBeamConstitutive(self.props, t=t, tNum=tNum, w=w, wNum=wNum)
 
         # Seed random number generator in tacs for consistent test results
         elements.SeedRandomGenerator(0)
