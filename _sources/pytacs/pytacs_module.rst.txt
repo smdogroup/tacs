@@ -75,6 +75,7 @@ Currently supported NASTRAN cards and their corresponding TACS-equivelant classe
   Property cards:
     - PSHELL -> :class:`~tacs.constitutive.IsoShellConstitutive`
     - PCOMP -> :class:`~tacs.constitutive.CompositeShellConstitutive`
+    - PBAR, PROD -> :class:`~tacs.constitutive.BasicBeamConstitutive`
     - PSOLID -> :class:`~tacs.constitutive.SolidConstitutive`
     - PBUSH -> :class:`~tacs.constitutive.DOFSpringConstitutive`
 
@@ -82,6 +83,7 @@ Currently supported NASTRAN cards and their corresponding TACS-equivelant classe
     - CQUAD4, CQUADR -> :class:`~tacs.elements.Quad4Shell`
     - CQUAD9 -> :class:`~tacs.elements.Quad9Shell`
     - CTRIA3, CTRIAR -> :class:`~tacs.elements.Tri3Shell`
+    - CBAR, CROD -> :class:`~tacs.elements.Beam2`
     - CHEXA -> :class:`~tacs.elements.Element3D` (:class:`~tacs.elements.LinearHexaBasis`, :class:`~tacs.elements.LinearElasticity3D`)
     - CTETRA -> :class:`~tacs.elements.Element3D` (:class:`~tacs.elements.LinearTetrahedralBasis`, :class:`~tacs.elements.LinearElasticity3D`)
     - RBE2 -> :class:`~tacs.elements.RBE2`
