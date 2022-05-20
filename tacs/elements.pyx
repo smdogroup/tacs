@@ -1084,6 +1084,8 @@ cdef class Beam2(Element):
     .. note::
         varsPerNode: 6
 
+        outputElement: ``TACS.BEAM_OR_SHELL_ELEMENT``
+
     Args:
         transform (BeamTransform): Beam transform object.
         con (BeamConstitutive): Beam constitutive object.
@@ -1098,6 +1100,8 @@ cdef class Beam3(Element):
 
     .. note::
         varsPerNode: 6
+
+        outputElement: ``TACS.BEAM_OR_SHELL_ELEMENT``
 
     Args:
         transform (BeamTransform): Beam transform object.
@@ -1115,6 +1119,8 @@ cdef class Beam2ModRot(Element):
     .. note::
         varsPerNode: 6
 
+        outputElement: ``TACS.BEAM_OR_SHELL_ELEMENT``
+
     Args:
         transform (BeamTransform): Beam transform object.
         con (BeamConstitutive): Beam constitutive object.
@@ -1130,6 +1136,8 @@ cdef class Beam3ModRot(Element):
 
     .. note::
         varsPerNode: 6
+
+        outputElement: ``TACS.BEAM_OR_SHELL_ELEMENT``
 
     Args:
         transform (BeamTransform): Beam transform object.
