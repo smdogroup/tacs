@@ -6,6 +6,8 @@ import numpy as np
 import unittest
 import sys
 import os
+# Import the example to automatically run the script
+import beam_opt
 
 # Set the path to the example script we're testing
 example_path = os.path.join(os.path.dirname(__file__), '..')
@@ -19,8 +21,6 @@ class ExampleBenchmark(unittest.TestCase):
     N_PROCS = 3  # this is how many MPI processes to use for this TestCase.
 
     def setUp(self):
-        # Import the example to automatically run the script
-        import beam_opt
         self.example = beam_opt
 
     def benchmark_opt(self):

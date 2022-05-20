@@ -60,6 +60,7 @@ def elemCallBack(dvNum, compID, compDescript, elemDescripts, globalDVs, **kwargs
     prop = constitutive.MaterialProperties(rho=rho, E=E, nu=nu, ys=ys)
     # For each element type in this component,
     # pass back the appropriate tacs element object
+    elemList = []
     for descript in elemDescripts:
         if descript == 'CQUAD4':
             con = constitutive.IsoShellConstitutive(prop, t=t, tNum=dvNum)
@@ -77,7 +78,8 @@ def elemCallBack(dvNum, compID, compDescript, elemDescripts, globalDVs, **kwargs
             elem = elements.Beam2(transform, con)
         else:
             raise ValueError(f'Element type "{descript}" not recognized.')
-    return elem
+        elemList.append(elem)
+    return elemList
 
 # Set up elements and TACS assembler
 FEAAssembler.initialize(elemCallBack)
