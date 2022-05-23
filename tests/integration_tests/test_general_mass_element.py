@@ -21,13 +21,20 @@ base_dir = os.path.dirname(os.path.abspath(__file__))
 bdf_file = os.path.join(base_dir, "./input_files/general_mass.bdf")
 
 FUNC_REFS = {'constant_force_mass': 9.999999999999986,
-             'constant_force_x_disp': 49.70793631821073,
-             'constant_force_y_disp': 49.70793631821073,
-             'constant_force_z_disp': 49.70793631821073,
+             'constant_force_x_cg': 0.2970297029702968,
+             'constant_force_x_disp': 49.707936318209754,
+             'constant_force_y_cg': 0.09900990099009888,
+             'constant_force_y_disp': 49.707936318209754,
+             'constant_force_z_cg': 0.19801980198019775,
+             'constant_force_z_disp': 49.707936318209754,
+
              'gravity_mass': 9.999999999999986,
+             'gravity_x_cg': 0.2970297029702968,
              'gravity_x_disp': 0.23025850929940442,
+             'gravity_y_cg': 0.09900990099009888,
              'gravity_y_disp': 0.23025850929940442,
-             'gravity_z_disp': 490.27400177251246}
+             'gravity_z_cg': 0.19801980198019775,
+             'gravity_z_disp': 490.2740017725439}
 
 # Force to apply
 f = np.ones(6)
@@ -86,7 +93,13 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
                                 ksWeight=ksweight, direction=[0.0, 1.0, 0.0])
             problem.addFunction('z_disp', functions.KSDisplacement,
                                 ksWeight=ksweight, direction=[0.0, 0.0, 1.0])
-        func_list = ['mass', 'x_disp', 'y_disp', 'z_disp']
+            problem.addFunction('x_cg', functions.CenterOfMass,
+                                direction=[1.0, 0.0, 0.0])
+            problem.addFunction('y_cg', functions.CenterOfMass,
+                                direction=[0.0, 1.0, 0.0])
+            problem.addFunction('z_cg', functions.CenterOfMass,
+                                direction=[0.0, 0.0, 1.0])
+        func_list = ['mass', 'x_disp', 'y_disp', 'z_disp', 'x_cg', 'y_cg', 'z_cg']
         return func_list, FUNC_REFS
 
     def setup_tacs_problems(self, fea_assembler):

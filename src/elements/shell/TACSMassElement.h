@@ -98,9 +98,7 @@ class TACSMassElement : public TACSElement {
                                const TacsScalar ddvars[],
                                const TacsScalar dfdq[],
                                int dvLen,
-                               TacsScalar dfdx[] ){
-    return;
-  }
+                               TacsScalar dfdx[] );
 
   void addPointQuantitySVSens( int elemIndex, int quantityType,
                                double time,
@@ -127,9 +125,7 @@ class TACSMassElement : public TACSElement {
                                 const TacsScalar ddvars[],
                                 const TacsScalar dfddetXd,
                                 const TacsScalar dfdq[],
-                                TacsScalar dfdXpts[] ){
-    return;
-  }
+                                TacsScalar dfdXpts[] );
 
  private:
 

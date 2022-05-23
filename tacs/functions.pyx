@@ -56,6 +56,35 @@ cdef class StructuralMass(Function):
         self.ptr.incref()
         return
 
+cdef class CenterOfMass(Function):
+    """
+    Evaluates the center of mass of the elements.
+
+    Args:
+        assembler (Assembler): TACS Assembler object that will evaluating this function.
+        direction (array-like[double], optional):
+          3d vector specifying which direction to project cg position onto (keyword argument).
+          Defaults to [0.0, 0.0, 0.0].
+    """
+    def __cinit__(self, Assembler assembler, **kwargs):
+        """
+        Wrap the function CenterOfMass
+        """
+        cdef double d[3]
+        d[0] = d[1] = d[2] = 0.0
+
+        if 'direction' in kwargs:
+            dir = kwargs['direction']
+            # Check if dir is a list or numpy array
+            if isinstance(dir, list) or isinstance(dir, np.ndarray):
+                dim = min(3, len(dir))
+                for i in range(dim):
+                    d[i] = dir[i]
+
+        self.ptr = new TACSCenterOfMass(assembler.ptr, d)
+        self.ptr.incref()
+        return
+
 cdef class Compliance(Function):
     """
     Evaluate the compliance of the structure.

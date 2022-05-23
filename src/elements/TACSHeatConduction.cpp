@@ -256,6 +256,15 @@ int TACSHeatConduction2D::evalPointQuantity( int elemIndex,
 
     return 1;
   }
+  else if (quantityType == TACS_ELEMENT_DENSITY_MOMENT){
+    if (quantity){
+      TacsScalar density = stiff->evalDensity(elemIndex, pt, X);
+      quantity[0] = density * X[0];
+      quantity[1] = density * X[1];
+    }
+
+    return 2;
+  }
 
   return 0;
 }
@@ -283,6 +292,12 @@ void TACSHeatConduction2D::addPointQuantityDVSens( int elemIndex,
   }
   else if (quantityType == TACS_ELEMENT_DENSITY){
     stiff->addDensityDVSens(elemIndex, scale*dfdq[0], pt, X, dvLen, dfdx);
+  }
+  else if (quantityType == TACS_ELEMENT_DENSITY_MOMENT){
+    TacsScalar dfdmass = 0.0;
+    dfdmass += scale * dfdq[0] * X[0];
+    dfdmass += scale * dfdq[1] * X[1];
+    stiff->addDensityDVSens(elemIndex, dfdmass, pt, X, dvLen, dfdx);
   }
 }
 
@@ -322,6 +337,11 @@ void TACSHeatConduction2D::evalPointQuantitySens( int elemIndex,
 
     dfdUx[0] = dfdq[0]*Kc[0] + dfdq[1]*Kc[1];
     dfdUx[1] = dfdq[0]*Kc[1] + dfdq[1]*Kc[2];
+  }
+  else if (quantityType == TACS_ELEMENT_DENSITY_MOMENT){
+    TacsScalar density = stiff->evalDensity(elemIndex, pt, X);
+    dfdX[0] = density * dfdq[0];
+    dfdX[1] = density * dfdq[1];
   }
 }
 
@@ -635,6 +655,16 @@ int TACSHeatConduction3D::evalPointQuantity( int elemIndex,
 
     return 1;
   }
+  else if (quantityType == TACS_ELEMENT_DENSITY_MOMENT){
+    if (quantity){
+      TacsScalar density = stiff->evalDensity(elemIndex, pt, X);
+      quantity[0] = density * X[0];
+      quantity[1] = density * X[1];
+      quantity[2] = density * X[2];
+    }
+
+    return 3;
+  }
 
   return 0;
 }
@@ -662,6 +692,13 @@ void TACSHeatConduction3D::addPointQuantityDVSens( int elemIndex,
   }
   else if (quantityType == TACS_ELEMENT_DENSITY){
     stiff->addDensityDVSens(elemIndex, scale*dfdq[0], pt, X, dvLen, dfdx);
+  }
+  else if (quantityType == TACS_ELEMENT_DENSITY_MOMENT){
+    TacsScalar dfdmass = 0.0;
+    dfdmass += scale * dfdq[0] * X[0];
+    dfdmass += scale * dfdq[1] * X[1];
+    dfdmass += scale * dfdq[2] * X[2];
+    stiff->addDensityDVSens(elemIndex, dfdmass, pt, X, dvLen, dfdx);
   }
 }
 
@@ -703,6 +740,12 @@ void TACSHeatConduction3D::evalPointQuantitySens( int elemIndex,
     dfdUx[0] = dfdq[0]*Kc[0] + dfdq[1]*Kc[1] + dfdq[2]*Kc[2];
     dfdUx[1] = dfdq[0]*Kc[1] + dfdq[1]*Kc[3] + dfdq[2]*Kc[4];
     dfdUx[2] = dfdq[0]*Kc[2] + dfdq[1]*Kc[4] + dfdq[2]*Kc[5];
+  }
+  else if (quantityType == TACS_ELEMENT_DENSITY_MOMENT){
+    TacsScalar density = stiff->evalDensity(elemIndex, pt, X);
+    dfdX[0] = density * dfdq[0];
+    dfdX[1] = density * dfdq[1];
+    dfdX[2] = density * dfdq[2];
   }
 }
 

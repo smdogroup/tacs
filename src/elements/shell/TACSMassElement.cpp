@@ -153,6 +153,57 @@ int TACSMassElement::evalPointQuantity( int elemIndex, int quantityType,
     }
     return 3;
   }
+  else if (quantityType == TACS_ELEMENT_DENSITY_MOMENT){
+    if (quantity){
+      TacsScalar mass = con->evalDensity(elemIndex, pt, Xpts);
+      quantity[0] = mass * Xpts[0];
+      quantity[1] = mass * Xpts[1];
+      quantity[2] = mass * Xpts[2];
+    }
+    return 3;
+  }
 
   return 0;
+}
+
+void TACSMassElement::addPointQuantityDVSens( int elemIndex, int quantityType,
+                                              double time,
+                                              TacsScalar scale,
+                                              int n, double pt[],
+                                              const TacsScalar Xpts[],
+                                              const TacsScalar vars[],
+                                              const TacsScalar dvars[],
+                                              const TacsScalar ddvars[],
+                                              const TacsScalar dfdq[],
+                                              int dvLen,
+                                              TacsScalar dfdx[] ){
+ if (quantityType == TACS_ELEMENT_DENSITY){
+    con->addDensityDVSens(elemIndex, scale*dfdq[0], pt, Xpts, dvLen, dfdx);
+ }
+ else if (quantityType == TACS_ELEMENT_DENSITY_MOMENT){
+    TacsScalar dfdmass = 0.0;
+    dfdmass += scale * dfdq[0] * Xpts[0];
+    dfdmass += scale * dfdq[1] * Xpts[1];
+    dfdmass += scale * dfdq[2] * Xpts[2];
+    con->addDensityDVSens(elemIndex, dfdmass, pt, Xpts, dvLen, dfdx);
+  }
+}
+
+void TACSMassElement::addPointQuantityXptSens( int elemIndex, int quantityType,
+                                               double time,
+                                               TacsScalar scale,
+                                               int n, double pt[],
+                                               const TacsScalar Xpts[],
+                                               const TacsScalar vars[],
+                                               const TacsScalar dvars[],
+                                               const TacsScalar ddvars[],
+                                               const TacsScalar dfddetXd,
+                                               const TacsScalar dfdq[],
+                                               TacsScalar dfdXpts[] ){
+  if (quantityType == TACS_ELEMENT_DENSITY_MOMENT){
+    TacsScalar mass = con->evalDensity(elemIndex, pt, Xpts);
+    dfdXpts[0] += scale * mass * dfdq[0];
+    dfdXpts[1] += scale * mass * dfdq[1];
+    dfdXpts[2] += scale * mass * dfdq[2];
+  }
 }

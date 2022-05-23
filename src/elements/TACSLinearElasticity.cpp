@@ -655,6 +655,15 @@ int TACSLinearElasticity2D::evalPointQuantity( int elemIndex,
 
     return 2;
   }
+  else if (quantityType == TACS_ELEMENT_DENSITY_MOMENT){
+    if (quantity){
+      TacsScalar density = stiff->evalDensity(elemIndex, pt, X);
+      quantity[0] = density * X[0];
+      quantity[1] = density * X[1];
+    }
+
+    return 2;
+  }
 
   return 0;
 }
@@ -711,6 +720,12 @@ void TACSLinearElasticity2D::addPointQuantityDVSens( int elemIndex,
     stiff->evalStress(elemIndex, pt, X, e, s);
     stiff->addStressDVSens(elemIndex, scale*dfdq[0], pt, X, e,
                            e, dvLen, dfdx);
+  }
+  else if (quantityType == TACS_ELEMENT_DENSITY_MOMENT){
+    TacsScalar dfdmass = 0.0;
+    dfdmass += scale * dfdq[0] * X[0];
+    dfdmass += scale * dfdq[1] * X[1];
+    stiff->addDensityDVSens(elemIndex, dfdmass, pt, X, dvLen, dfdx);
   }
 }
 
@@ -807,6 +822,11 @@ void TACSLinearElasticity2D::evalPointQuantitySens( int elemIndex,
   else if (quantityType == TACS_ELEMENT_DISPLACEMENT){
     dfdUt[0] = dfdq[0];
     dfdUt[3] = dfdq[1];
+  }
+  else if (quantityType == TACS_ELEMENT_DENSITY_MOMENT){
+    TacsScalar density = stiff->evalDensity(elemIndex, pt, X);
+    dfdX[0] = density * dfdq[0];
+    dfdX[1] = density * dfdq[1];
   }
 }
 
@@ -2058,6 +2078,16 @@ int TACSLinearElasticity3D::evalPointQuantity( int elemIndex,
 
     return 3;
   }
+  else if (quantityType == TACS_ELEMENT_DENSITY_MOMENT){
+    if (quantity){
+      TacsScalar density = stiff->evalDensity(elemIndex, pt, X);
+      quantity[0] = density * X[0];
+      quantity[1] = density * X[1];
+      quantity[2] = density * X[2];
+    }
+
+    return 3;
+  }
 
   return 0;
 }
@@ -2130,6 +2160,13 @@ void TACSLinearElasticity3D::addPointQuantityDVSens( int elemIndex,
     stiff->evalStress(elemIndex, pt, X, e, s);
     stiff->addStressDVSens(elemIndex, scale*dfdq[0], pt, X, e,
                            e, dvLen, dfdx);
+  }
+  else if (quantityType == TACS_ELEMENT_DENSITY_MOMENT){
+    TacsScalar dfdmass = 0.0;
+    dfdmass += scale * dfdq[0] * X[0];
+    dfdmass += scale * dfdq[1] * X[1];
+    dfdmass += scale * dfdq[2] * X[2];
+    stiff->addDensityDVSens(elemIndex, dfdmass, pt, X, dvLen, dfdx);
   }
 }
 
@@ -2272,6 +2309,12 @@ void TACSLinearElasticity3D::evalPointQuantitySens( int elemIndex,
     dfdUt[0] = dfdq[0];
     dfdUt[3] = dfdq[1];
     dfdUt[6] = dfdq[2];
+  }
+  else if (quantityType == TACS_ELEMENT_DENSITY_MOMENT){
+    TacsScalar density = stiff->evalDensity(elemIndex, pt, X);
+    dfdX[0] = density * dfdq[0];
+    dfdX[1] = density * dfdq[1];
+    dfdX[2] = density * dfdq[2];
   }
 }
 

@@ -20,11 +20,14 @@ test KSTemperature, StructuralMass, and AverageTemperature functions and sensiti
 base_dir = os.path.dirname(os.path.abspath(__file__))
 bdf_file = os.path.join(base_dir, "./input_files/circ-plate-dirichlet-bcs.bdf")
 
-FUNC_REFS = {'steady_state_avg_temp': 69.88016093991516, 'steady_state_ks_temp': 98.74014374789108,
+FUNC_REFS = {'steady_state_avg_temp': 69.8801609399151, 'steady_state_ks_temp': 98.74014374789103,
              'steady_state_mass': 39.20272476980967,
+             'steady_state_x_cg': 2.815920682086164e-10, 'steady_state_y_cg': 2.826318842831093e-10,
 
-             'transient_avg_temp': 79333.52527757485, 'transient_ks_temp': 97.890292,
-             'transient_mass': 78405.44953961941}
+             'transient_avg_temp': 79333.52527756922,
+             'transient_ks_temp': 97.89029199587861,
+             'transient_mass': 78405.4495396193,
+             'transient_x_cg': 2.1660930381681422e-08, 'transient_y_cg': 2.17409345376563e-08}
 
 
 # Radius of plate
@@ -108,9 +111,13 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
         for problem in problems:
             problem.addFunction('mass', functions.StructuralMass)
             problem.addFunction('ks_temp', functions.KSTemperature,
-                                   ksWeight=100.0)
+                                ksWeight=100.0)
             problem.addFunction('avg_temp', functions.AverageTemperature, volume=area)
-        func_list = ['mass', 'ks_temp', 'avg_temp']
+            problem.addFunction('x_cg', functions.CenterOfMass,
+                                direction=[1.0, 0.0, 0.0])
+            problem.addFunction('y_cg', functions.CenterOfMass,
+                                direction=[0.0, 1.0, 0.0])
+        func_list = ['mass', 'ks_temp', 'avg_temp', 'x_cg', 'y_cg']
         return func_list, FUNC_REFS
 
     def setup_tacs_problems(self, fea_assembler):
