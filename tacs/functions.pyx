@@ -85,6 +85,54 @@ cdef class CenterOfMass(Function):
         self.ptr.incref()
         return
 
+cdef class MomentOfInertia(Function):
+    """
+    Evaluates the moment of inertia of the elements about origin or cg projected onto two input vectors:
+
+        I_out = vec1^T * I_tensor * vec2
+
+    Args:
+        assembler (Assembler): TACS Assembler object that will evaluating this function.
+        direction1 (array-like[double], optional):
+          3d vector specifying first direction to project moment of inertia tensor onto (keyword argument).
+          Defaults to [0.0, 0.0, 0.0].
+        direction2 (array-like[double], optional):
+          3d vector specifying second direction to project moment of inertia tensor onto (keyword argument).
+          Defaults to [0.0, 0.0, 0.0].
+        cgFlag (bool): Flag specifying whether moment of inertia should be taken
+          about origin (False) or cg (True) (keyword argument). Defaults to False.
+    """
+    def __cinit__(self, Assembler assembler, **kwargs):
+        """
+        Wrap the function MomentOfInertia
+        """
+        cdef int cgFlag;
+        cdef double d1[3], d2[3]
+        d1[0] = d1[1] = d1[2] = 0.0
+        d2[0] = d2[1] = d2[2] = 0.0
+
+        if 'direction1' in kwargs:
+            dir = kwargs['direction1']
+            # Check if dir is a list or numpy array
+            if isinstance(dir, list) or isinstance(dir, np.ndarray):
+                dim = min(3, len(dir))
+                for i in range(dim):
+                    d1[i] = dir[i]
+
+        if 'direction2' in kwargs:
+            dir = kwargs['direction2']
+            # Check if dir is a list or numpy array
+            if isinstance(dir, list) or isinstance(dir, np.ndarray):
+                dim = min(3, len(dir))
+                for i in range(dim):
+                    d2[i] = dir[i]
+
+        cgFlag = kwargs.get('cgFlag', False);
+
+        self.ptr = new TACSMomentOfInertia(assembler.ptr, d1, d2, cgFlag)
+        self.ptr.incref()
+        return
+
 cdef class Compliance(Function):
     """
     Evaluate the compliance of the structure.
