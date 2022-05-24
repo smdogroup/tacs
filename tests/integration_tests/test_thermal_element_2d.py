@@ -14,7 +14,7 @@ The problem is then to solve for the temperature within the boundaries of the pl
 The problem basically boils down to Laplaces problem:
     grad**2 T = 0
 
-test KSTemperature, StructuralMass, and AverageTemperature functions and sensitivities
+test KSTemperature, StructuralMass, CenterOfMass, MomentOfInertia, and AverageTemperature functions and sensitivities
 '''
 
 base_dir = os.path.dirname(os.path.abspath(__file__))
