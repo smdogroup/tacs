@@ -16,12 +16,17 @@ tests StructuralMass, KSFailure, KSDisplacement and Compliance functions and sen
 base_dir = os.path.dirname(os.path.abspath(__file__))
 bdf_file = os.path.join(base_dir, "./input_files/hemisphere.bdf")
 
-FUNC_REFS = {'PLOAD4_compliance': 279300158.48951936, 'PLOAD4_ks_disp': 9.927842420503762,
-             'PLOAD4_ks_vmfailure': 29.307629374994303, 'PLOAD4_mass': 1737.357316694243,
+FUNC_REFS = {'PLOAD4_cg_x': 0.0009653731820888509, 'PLOAD4_cg_y': -9.14227063766091e-05, 'PLOAD4_cg_z': 0.49758219135768283,
+             'PLOAD4_compliance': 279300158.48951936,
+             'PLOAD4_ks_disp': 9.927842420503762,
+             'PLOAD4_ks_vmfailure': 29.307629374994303,
+             'PLOAD4_mass': 1737.357316694243,
 
-             'PLOAD2_compliance': 279300158.48951936, 'PLOAD2_ks_disp': 9.927842420503762,
-             'PLOAD2_ks_vmfailure': 29.307629374994303, 'PLOAD2_mass': 1737.357316694243}
-
+             'PLOAD2_cg_x': 0.0009653731820888509, 'PLOAD2_cg_y': -9.14227063766091e-05, 'PLOAD2_cg_z': 0.49758219135768283,
+             'PLOAD2_compliance': 279300158.48951936,
+             'PLOAD2_ks_disp': 9.927842420503762,
+             'PLOAD2_ks_vmfailure': 29.307629374994303,
+             'PLOAD2_mass': 1737.357316694243}
 
 ksweight = 10.0
 
@@ -106,10 +111,13 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
             problem.addFunction('mass', functions.StructuralMass)
             problem.addFunction('compliance', functions.Compliance)
             problem.addFunction('ks_disp', functions.KSDisplacement,
-                                   ksWeight=ksweight, direction=[-100.0, -100.0, -100.0])
+                                ksWeight=ksweight, direction=[-100.0, -100.0, -100.0])
             problem.addFunction('ks_vmfailure', functions.KSFailure,
-                                   ksWeight=ksweight)
-        func_list = ['mass', 'compliance', 'ks_disp', 'ks_vmfailure']
+                                ksWeight=ksweight)
+            problem.addFunction('cg_x', functions.CenterOfMass, direction=[1.0, 0.0, 0.0])
+            problem.addFunction('cg_y', functions.CenterOfMass, direction=[0.0, 1.0, 0.0])
+            problem.addFunction('cg_z', functions.CenterOfMass, direction=[0.0, 0.0, 1.0])
+        func_list = ['mass', 'compliance', 'ks_disp', 'ks_vmfailure', 'cg_x', 'cg_y', 'cg_z']
         return func_list, FUNC_REFS
 
     def setup_tacs_problems(self, fea_assembler):

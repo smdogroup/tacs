@@ -930,6 +930,25 @@ int TACSShellElement<quadrature, basis, director, model>::
 
     return 3;
   }
+  else if (quantityType == TACS_ELEMENT_DENSITY_MOMENT){
+    if (quantity){
+      TacsScalar Xxi[6], n0[3], X[3];
+      basis::template interpFields<3, 3>(pt, Xpts, X);
+      basis::template interpFieldsGrad<3, 3>(pt, Xpts, Xxi);
+      basis::template interpFields<3, 3>(pt, fn, n0);
+
+      TacsScalar Xd[9];
+      TacsShellAssembleFrame(Xxi, n0, Xd);
+      *detXd = det3x3(Xd);
+      TacsScalar density = con->evalDensity(elemIndex, pt, X);
+
+      quantity[0] = density * X[0];
+      quantity[1] = density * X[1];
+      quantity[2] = density * X[2];
+    }
+
+    return 3;
+  }
 
   return 0;
 }
@@ -1006,6 +1025,18 @@ void TACSShellElement<quadrature, basis, director, model>::
     basis::template interpFields<3, 3>(pt, Xpts, X);
 
     con->addDensityDVSens(elemIndex, scale*dfdq[0], pt, X, dvLen, dfdx);
+  }
+  else if (quantityType == TACS_ELEMENT_DENSITY_MOMENT){
+    TacsScalar X[3];
+    basis::template interpFields<3, 3>(pt, Xpts, X);
+
+    TacsScalar dfdm = 0.0;
+
+    for (int i = 0; i < 3; i++){
+      dfdm += scale * dfdq[i] * X[i];
+    }
+
+    con->addDensityDVSens(elemIndex, dfdm, pt, X, dvLen, dfdx);
   }
 }
 

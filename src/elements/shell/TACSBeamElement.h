@@ -1507,6 +1507,17 @@ int TACSBeamElement<quadrature, basis, director, model>::
     }
     return 3;
   }
+  else if (quantityType == TACS_ELEMENT_DENSITY_MOMENT){
+    if (quantity){
+      TacsScalar density = con->evalDensity(elemIndex, pt, X0.x);
+
+      quantity[0] = density * X0.x[0];
+      quantity[1] = density * X0.x[1];
+      quantity[2] = density * X0.x[2];
+    }
+
+    return 3;
+  }
 
   // Compute XdinvT = Xdinv * T
   A2D::Mat3x3 XdinvT;
@@ -1711,6 +1722,15 @@ void TACSBeamElement<quadrature, basis, director, model>::
       con->evalStress(elemIndex, pt, X0.x, e, s);
       con->addStressDVSens(elemIndex, scale*dfdq[0], pt, X0.x, e,
                            e, dvLen, dfdx);
+  }
+  else if (quantityType == TACS_ELEMENT_DENSITY_MOMENT){
+    TacsScalar dfdm = 0.0;
+
+    for (int i = 0; i < 3; i++){
+      dfdm += scale * dfdq[i] * X0.x[i];
+    }
+
+    con->addDensityDVSens(elemIndex, dfdm, pt, X0.x, dvLen, dfdx);
   }
 }
 
@@ -2054,6 +2074,14 @@ void TACSBeamElement<quadrature, basis, director, model>::
     for ( int i = 0; i < 6; i++ ){
       esens[i] *= 2.0;
     }
+  }
+  else if (quantityType == TACS_ELEMENT_DENSITY_MOMENT){
+    // Compute the sensitivity of the strain energy density w.r.t. the strain
+    TacsScalar density = con->evalDensity(elemIndex, pt, X0.x);
+
+    X0.xd[0] = density * dfdq[0];
+    X0.xd[1] = density * dfdq[1];
+    X0.xd[2] = density * dfdq[2];
   }
 
   // Evaluate the strain and strain derivatives from the
