@@ -72,11 +72,13 @@ class TACSMomentOfInertia : public TACSFunction {
                           const TacsScalar dvars[], const TacsScalar ddvars[],
                           TacsScalar fXptSens[] );
 
+  void getInnerProductFactor( int count, TacsScalar ip[] );
+
  private:
   // The total mass of all elements in the specified domain
-  TacsScalar totalMass, massMoment[3], I0[6];
+  TacsScalar totalMass, massMoment[3], I0;
   // cg projection direction
-  TacsScalar dir1[3], dir2[3], ip[6];
+  TacsScalar dir1[3], dir2[3];
   bool cgFlag;
 
   static const char *funcName;

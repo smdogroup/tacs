@@ -30,9 +30,7 @@ TACSMomentOfInertia::TACSMomentOfInertia( TACSAssembler *_assembler,
 TACSFunction(_assembler){
   totalMass = 0.0;
   massMoment[0] = massMoment[1] = massMoment[2] = 0.0;
-  for ( int j = 0; j < 6; j++){
-    I0[j] = 0.0;
-  }
+  I0 = 0.0;
 
   dir1[0] = TacsScalar(_dir1[0]);
   dir1[1] = TacsScalar(_dir1[1]);
@@ -41,13 +39,6 @@ TACSFunction(_assembler){
   dir2[0] = TacsScalar(_dir2[0]);
   dir2[1] = TacsScalar(_dir2[1]);
   dir2[2] = TacsScalar(_dir2[2]);
-
-  ip[0] = dir1[0] * dir2[0];
-  ip[1] = dir1[0] * dir2[1] + dir1[1] * dir2[0];
-  ip[2] = dir1[0] * dir2[2] + dir1[2] * dir2[0];
-  ip[3] = dir1[1] * dir2[1];
-  ip[4] = dir1[1] * dir2[2] + dir1[2] * dir2[1];
-  ip[5] = dir1[2] * dir2[2];
 
   cgFlag = _cgFlag;
 }
@@ -70,11 +61,8 @@ const char* TACSMomentOfInertia::getObjectName(){
   Get the function name
 */
 TacsScalar TACSMomentOfInertia::getFunctionValue(){
-  TacsScalar value = 0.0;
   // Compute moment of inertia about origin
-  for ( int j = 0; j < 6; j++){
-    value += ip[j] * I0[j];
-  }
+  TacsScalar value = I0;
 
   // Use reverse parallel axis theorem to move moment of inertia to cg
   if (cgFlag){
@@ -90,11 +78,8 @@ TacsScalar TACSMomentOfInertia::getFunctionValue(){
   Initialize the mass to zero
 */
 void TACSMomentOfInertia::initEvaluation( EvaluationType ftype ){
-  totalMass = 0.0;
+  totalMass = I0 = 0.0;
   massMoment[0] = massMoment[1] = massMoment[2] = 0.0;
-  for ( int j = 0; j < 6; j++){
-    I0[j] = 0.0;
-  }
 }
 
 /*
@@ -107,11 +92,8 @@ void TACSMomentOfInertia::finalEvaluation( EvaluationType ftype ){
   TacsScalar temp2[3] = {massMoment[0], massMoment[1], massMoment[2]};
   MPI_Allreduce(temp2, massMoment, 3, TACS_MPI_TYPE,
                 MPI_SUM, assembler->getMPIComm());
-  TacsScalar temp3[6];
-  for ( int j = 0; j < 6; j++){
-    temp3[j] = I0[j];
-  }
-  MPI_Allreduce(temp3, I0, 6, TACS_MPI_TYPE,
+  temp = I0;
+  MPI_Allreduce(&temp, &I0, 1, TACS_MPI_TYPE,
                 MPI_SUM, assembler->getMPIComm());
 }
 
@@ -162,8 +144,11 @@ void TACSMomentOfInertia::elementWiseEval( EvaluationType ftype,
                                        Xpts, vars, dvars, ddvars,
                                        &detXd, I0_elem);
 
+    TacsScalar ip[6];
+    getInnerProductFactor(count, ip);
+
     for (int j = 0; j < count; j++){
-      I0[j] += scale*weight*detXd*I0_elem[j];
+      I0 += scale*weight*detXd*I0_elem[j]*ip[j];
     }
   }
 }
@@ -233,6 +218,8 @@ void TACSMomentOfInertia::addElementDVSens( int elemIndex,
 
     if (count >= 1){
       TacsScalar dfdq[6] = {0.0};
+      TacsScalar ip[6];
+      getInnerProductFactor(count, ip);
       for (int j = 0; j < count; j++){
         dfdq[j] = scale*weight*detXd*ip[j];
       }
@@ -317,6 +304,8 @@ void TACSMomentOfInertia::getElementXptSens( int elemIndex,
     if (count >= 1){
       TacsScalar dfdq[6] = {0.0};
       TacsScalar dfddetXd = 0.0;
+      TacsScalar ip[6];
+      getInnerProductFactor(count, ip);
       for (int j = 0; j < count; j++){
         dfdq[j] = scale * weight * detXd * ip[j];
         dfddetXd += scale * weight * ip[j] * I0_elem[j];
@@ -327,5 +316,25 @@ void TACSMomentOfInertia::getElementXptSens( int elemIndex,
                                        Xpts, vars, dvars, ddvars,
                                        dfddetXd, dfdq, dfdXpts);
     }
+  }
+}
+
+/*
+  Get 2D/3D inner product factors
+*/
+void TACSMomentOfInertia::getInnerProductFactor( int count,
+                                                 TacsScalar ip[] ){
+  if (count == 3){ // 2D inner product
+    ip[0] = dir1[0] * dir2[0];
+    ip[1] = dir1[0] * dir2[1] + dir1[1] * dir2[0];
+    ip[2] = dir1[1] * dir2[1];
+  }
+  else{ // 3D inner product
+    ip[0] = dir1[0] * dir2[0];
+    ip[1] = dir1[0] * dir2[1] + dir1[1] * dir2[0];
+    ip[2] = dir1[0] * dir2[2] + dir1[2] * dir2[0];
+    ip[3] = dir1[1] * dir2[1];
+    ip[4] = dir1[1] * dir2[2] + dir1[2] * dir2[1];
+    ip[5] = dir1[2] * dir2[2];
   }
 }

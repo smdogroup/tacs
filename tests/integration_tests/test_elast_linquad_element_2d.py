@@ -8,7 +8,9 @@ Create a uniform plate under uniform plane stress
 and test KSFailure, StructuralMass, and Compliance functions and sensitivities
 '''
 
-FUNC_REFS = np.array([1.46051701859883, 25700.0, 1.75e+07, 1.5312580437770913])
+FUNC_REFS = np.array([1.46051701859883, 25700.0, 1.75e+07, 1.5312580437770913,
+                      5.00000000e+00, 5.00000000e+00,
+                      856666.6666666641, -642500.0, 856666.6666666641])
 
 # Length of plate in x/y direction
 Lx = 10.0
@@ -172,5 +174,13 @@ class ProblemTest(StaticTestCase.StaticTest):
         func_list = [functions.KSFailure(assembler, ksWeight=ksweight),
                      functions.StructuralMass(assembler),
                      functions.Compliance(assembler),
-                     functions.KSDisplacement(assembler, ksWeight=ksweight, direction=[100.0, 100.0])]
+                     functions.KSDisplacement(assembler, ksWeight=ksweight, direction=[100.0, 100.0]),
+                     functions.CenterOfMass(assembler, direction=[1.0, 0.0]),
+                     functions.CenterOfMass(assembler, direction=[0.0, 1.0]),
+                     functions.MomentOfInertia(assembler, direction1=[1.0, 0.0], direction2=[1.0, 0.0],
+                                               cgFlag=False),
+                     functions.MomentOfInertia(assembler, direction1=[1.0, 0.0], direction2=[0.0, 1.0],
+                                               cgFlag=False),
+                     functions.MomentOfInertia(assembler, direction1=[0.0, 1.0], direction2=[0.0, 1.0],
+                                               cgFlag=False)]
         return func_list, FUNC_REFS
