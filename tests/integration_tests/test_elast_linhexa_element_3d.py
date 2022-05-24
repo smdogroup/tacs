@@ -8,7 +8,7 @@ Create a uniform cube under distributed point loads
 and test KSFailure, StructuralMass, and Compliance functions and sensitivities
 '''
 
-FUNC_REFS = np.array([1.10740179e+00, 2.57000000e+06, 1.78995399e+08, 7.19255165e+00,
+FUNC_REFS = np.array([1.1074017881777185, 2570000.0, 178995399.11928475, 7.192551651904685,
                       5.00000000e+00, 5.00000000e+00, 5.00000000e+00])
 
 # Length of plate in x/y direction
