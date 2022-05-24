@@ -23,11 +23,15 @@ bdf_file = os.path.join(base_dir, "./input_files/circ-plate-dirichlet-bcs.bdf")
 FUNC_REFS = {'steady_state_avg_temp': 69.8801609399151, 'steady_state_ks_temp': 98.74014374789103,
              'steady_state_mass': 39.20272476980967,
              'steady_state_x_cg': 2.815920682086164e-10, 'steady_state_y_cg': 2.826318842831093e-10,
+             'steady_state_Ixx': 9.783919839192055, 'steady_state_Ixy': 2.640029789051368e-08,
+                                                    'steady_state_Iyy': 9.783919795061697,
 
              'transient_avg_temp': 79333.52527756922,
              'transient_ks_temp': 97.89029199587861,
              'transient_mass': 78405.4495396193,
-             'transient_x_cg': 2.1660930381681422e-08, 'transient_y_cg': 2.17409345376563e-08}
+             'transient_x_cg': 2.1660930381681422e-08, 'transient_y_cg': 2.17409345376563e-08,
+             'transient_Ixx': 19567.83967838426, 'transient_Ixy': 5.280059696105566e-05,
+                                                 'transient_Iyy': 19567.83959012328}
 
 
 # Radius of plate
@@ -117,7 +121,13 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
                                 direction=[1.0, 0.0, 0.0])
             problem.addFunction('y_cg', functions.CenterOfMass,
                                 direction=[0.0, 1.0, 0.0])
-        func_list = ['mass', 'ks_temp', 'avg_temp', 'x_cg', 'y_cg']
+            problem.addFunction('Ixx', functions.MomentOfInertia,
+                                direction1=[1.0, 0.0], direction2=[1.0, 0.0], cgFlag=True)
+            problem.addFunction('Ixy', functions.MomentOfInertia,
+                                direction1=[0.0, 1.0], direction2=[1.0, 0.0], cgFlag=True)
+            problem.addFunction('Iyy', functions.MomentOfInertia,
+                                direction1=[0.0, 1.0], direction2=[0.0, 1.0], cgFlag=True)
+        func_list = ['mass', 'ks_temp', 'avg_temp', 'x_cg', 'y_cg', 'Ixx', 'Ixy', 'Iyy']
         return func_list, FUNC_REFS
 
     def setup_tacs_problems(self, fea_assembler):
