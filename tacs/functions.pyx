@@ -99,7 +99,7 @@ cdef class MomentOfInertia(Function):
         direction2 (array-like[double], optional):
           3d vector specifying second direction to project moment of inertia tensor onto (keyword argument).
           Defaults to [0.0, 0.0, 0.0].
-        cgFlag (bool): Flag specifying whether moment of inertia should be taken
+        aboutCG (bool): Flag specifying whether moment of inertia should be taken
           about origin (False) or cg (True) (keyword argument). Defaults to False.
     """
     def __cinit__(self, Assembler assembler, **kwargs):
@@ -127,7 +127,7 @@ cdef class MomentOfInertia(Function):
                 for i in range(dim):
                     d2[i] = dir[i]
 
-        cgFlag = kwargs.get('cgFlag', False);
+        cgFlag = kwargs.get('aboutCG', False);
 
         self.ptr = new TACSMomentOfInertia(assembler.ptr, d1, d2, cgFlag)
         self.ptr.incref()

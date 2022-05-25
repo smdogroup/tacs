@@ -158,15 +158,15 @@ class ProblemTest(StaticTestCase.StaticTest):
                      functions.CenterOfMass(assembler, direction=[0.0, 1.0, 0.0]),
                      functions.CenterOfMass(assembler, direction=[0.0, 0.0, 1.0]),
                      functions.MomentOfInertia(assembler, direction1=[1.0, 0.0, 0.0], direction2=[1.0, 0.0, 0.0],
-                                               cgFlag=False),
+                                               aboutCG=False),
                      functions.MomentOfInertia(assembler, direction1=[0.0, 1.0, 0.0], direction2=[1.0, 0.0, 0.0],
-                                               cgFlag=False),
+                                               aboutCG=False),
                      functions.MomentOfInertia(assembler, direction1=[0.0, 0.0, 1.0], direction2=[1.0, 0.0, 0.0],
-                                               cgFlag=False),
+                                               aboutCG=False),
                      functions.MomentOfInertia(assembler, direction1=[0.0, 1.0, 0.0], direction2=[0.0, 1.0, 0.0],
-                                               cgFlag=False),
+                                               aboutCG=False),
                      functions.MomentOfInertia(assembler, direction1=[0.0, 1.0, 0.0], direction2=[0.0, 0.0, 1.0],
-                                               cgFlag=False),
+                                               aboutCG=False),
                      functions.MomentOfInertia(assembler, direction1=[0.0, 0.0, 1.0], direction2=[0.0, 0.0, 1.0],
-                                               cgFlag=False)]
+                                               aboutCG=False)]
         return func_list, FUNC_REFS

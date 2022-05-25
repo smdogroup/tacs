@@ -17,12 +17,18 @@ base_dir = os.path.dirname(os.path.abspath(__file__))
 bdf_file = os.path.join(base_dir, "./input_files/hemisphere.bdf")
 
 FUNC_REFS = {'PLOAD4_cg_x': 0.0009653731820888509, 'PLOAD4_cg_y': -9.14227063766091e-05, 'PLOAD4_cg_z': 0.49758219135768283,
+             'PLOAD4_I_xx': 721.1880296374977, 'PLOAD4_I_xy': 0.02506752378214014, 'PLOAD4_I_xz': -0.27765576618522025,
+                                               'PLOAD4_I_yy': 718.8517782438879,   'PLOAD4_I_yz': -0.033253217390545584,
+                                                                                   'PLOAD4_I_zz': 1152.5803780307508,
              'PLOAD4_compliance': 279300158.48951936,
              'PLOAD4_ks_disp': 9.927842420503762,
              'PLOAD4_ks_vmfailure': 29.307629374994303,
              'PLOAD4_mass': 1737.357316694243,
 
              'PLOAD2_cg_x': 0.0009653731820888509, 'PLOAD2_cg_y': -9.14227063766091e-05, 'PLOAD2_cg_z': 0.49758219135768283,
+             'PLOAD2_I_xx': 721.1880296374977, 'PLOAD2_I_xy': 0.02506752378214014, 'PLOAD2_I_xz': -0.27765576618522025,
+                                               'PLOAD2_I_yy': 718.8517782438879,   'PLOAD2_I_yz': -0.033253217390545584,
+                                                                                   'PLOAD2_I_zz': 1152.5803780307508,
              'PLOAD2_compliance': 279300158.48951936,
              'PLOAD2_ks_disp': 9.927842420503762,
              'PLOAD2_ks_vmfailure': 29.307629374994303,
@@ -117,7 +123,20 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
             problem.addFunction('cg_x', functions.CenterOfMass, direction=[1.0, 0.0, 0.0])
             problem.addFunction('cg_y', functions.CenterOfMass, direction=[0.0, 1.0, 0.0])
             problem.addFunction('cg_z', functions.CenterOfMass, direction=[0.0, 0.0, 1.0])
-        func_list = ['mass', 'compliance', 'ks_disp', 'ks_vmfailure', 'cg_x', 'cg_y', 'cg_z']
+            problem.addFunction('I_xx', functions.MomentOfInertia, direction1=[1.0, 0.0, 0.0],
+                                direction2=[1.0, 0.0, 0.0], aboutCG=True)
+            problem.addFunction('I_xy', functions.MomentOfInertia, direction1=[1.0, 0.0, 0.0],
+                                direction2=[0.0, 1.0, 0.0], aboutCG=True)
+            problem.addFunction('I_xz', functions.MomentOfInertia, direction1=[1.0, 0.0, 0.0],
+                                direction2=[0.0, 0.0, 1.0], aboutCG=True)
+            problem.addFunction('I_yy', functions.MomentOfInertia, direction1=[0.0, 1.0, 0.0],
+                                direction2=[0.0, 1.0, 0.0], aboutCG=True)
+            problem.addFunction('I_yz', functions.MomentOfInertia, direction1=[0.0, 0.0, 1.0],
+                                direction2=[0.0, 1.0, 0.0], aboutCG=True)
+            problem.addFunction('I_zz', functions.MomentOfInertia, direction1=[0.0, 0.0, 1.0],
+                                direction2=[0.0, 0.0, 1.0], aboutCG=True)
+        func_list = ['mass', 'compliance', 'ks_disp', 'ks_vmfailure', 'cg_x', 'cg_y', 'cg_z',
+                     'I_xx', 'I_xy', 'I_xz', 'I_yy', 'I_yz', 'I_zz']
         return func_list, FUNC_REFS
 
     def setup_tacs_problems(self, fea_assembler):

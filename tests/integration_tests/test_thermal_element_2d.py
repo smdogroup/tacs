@@ -122,11 +122,11 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
             problem.addFunction('y_cg', functions.CenterOfMass,
                                 direction=[0.0, 1.0, 0.0])
             problem.addFunction('Ixx', functions.MomentOfInertia,
-                                direction1=[1.0, 0.0], direction2=[1.0, 0.0], cgFlag=True)
+                                direction1=[1.0, 0.0], direction2=[1.0, 0.0], aboutCG=True)
             problem.addFunction('Ixy', functions.MomentOfInertia,
-                                direction1=[0.0, 1.0], direction2=[1.0, 0.0], cgFlag=True)
+                                direction1=[0.0, 1.0], direction2=[1.0, 0.0], aboutCG=True)
             problem.addFunction('Iyy', functions.MomentOfInertia,
-                                direction1=[0.0, 1.0], direction2=[0.0, 1.0], cgFlag=True)
+                                direction1=[0.0, 1.0], direction2=[0.0, 1.0], aboutCG=True)
         func_list = ['mass', 'ks_temp', 'avg_temp', 'x_cg', 'y_cg', 'Ixx', 'Ixy', 'Iyy']
         return func_list, FUNC_REFS
 
