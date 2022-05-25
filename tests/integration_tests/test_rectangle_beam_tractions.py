@@ -21,13 +21,19 @@ FUNC_REFS = {'gravity_compliance': 1941.637970569529,
              'gravity_x_disp': -0.3750404568908798,
              'gravity_y_disp': 656.1378755065329,
              'gravity_z_disp': 275.45079293281793,
+             'gravity_I_xx': 0.0, 'gravity_I_xy': 0.0,     'gravity_I_xz': 0.0,
+                                  'gravity_I_yy': 1.13625, 'gravity_I_yz': 0.0,
+                                                           'gravity_I_zz': 1.1278125,
 
              'traction_compliance': 4.325878285719202,
              'traction_ks_vmfailure': 9.71446798485217,
              'traction_mass': 13.500000000000004,
              'traction_x_disp': 0.009518432861763253,
              'traction_y_disp': -0.7122094288145717,
-             'traction_z_disp': 12.02223266609341}
+             'traction_z_disp': 12.02223266609341,
+             'traction_I_xx': 0.0, 'traction_I_xy': 0.0,     'traction_I_xz': 0.0,
+                                   'traction_I_yy': 1.13625, 'traction_I_yz': 0.0,
+                                                             'traction_I_zz': 1.1278125}
 
 ksweight = 10.0
 
@@ -108,7 +114,19 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
                                 ksWeight=ksweight, direction=[0.0, 10.0, 0.0])
             problem.addFunction('z_disp', functions.KSDisplacement,
                                 ksWeight=ksweight, direction=[0.0, 0.0, 10.0])
-        func_list = ['mass', 'compliance', 'x_disp', 'y_disp', 'z_disp']
+            problem.addFunction('I_xx', functions.MomentOfInertia, direction1=[1.0, 0.0, 0.0],
+                                direction2=[1.0, 0.0, 0.0], aboutCG=True)
+            problem.addFunction('I_xy', functions.MomentOfInertia, direction1=[1.0, 0.0, 0.0],
+                                direction2=[0.0, 1.0, 0.0], aboutCG=True)
+            problem.addFunction('I_xz', functions.MomentOfInertia, direction1=[1.0, 0.0, 0.0],
+                                direction2=[0.0, 0.0, 1.0], aboutCG=True)
+            problem.addFunction('I_yy', functions.MomentOfInertia, direction1=[0.0, 1.0, 0.0],
+                                direction2=[0.0, 1.0, 0.0], aboutCG=True)
+            problem.addFunction('I_yz', functions.MomentOfInertia, direction1=[0.0, 1.0, 0.0],
+                                direction2=[0.0, 0.0, 1.0], aboutCG=True)
+            problem.addFunction('I_zz', functions.MomentOfInertia, direction1=[0.0, 0.0, 1.0],
+                                direction2=[0.0, 0.0, 1.0], aboutCG=True)
+        func_list = ['mass', 'compliance', 'x_disp', 'y_disp', 'z_disp', 'I_xx', 'I_xy', 'I_xz', 'I_yy', 'I_yz', 'I_zz']
         return func_list, FUNC_REFS
 
     def setup_tacs_problems(self, fea_assembler):

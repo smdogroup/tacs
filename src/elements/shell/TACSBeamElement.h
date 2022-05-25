@@ -1518,6 +1518,31 @@ int TACSBeamElement<quadrature, basis, director, model>::
 
     return 3;
   }
+  else if (quantityType == TACS_ELEMENT_MOMENT_OF_INERTIA){
+    if (quantity){
+      TacsScalar I0[6] = {0.0};
+
+      // Evaluate the self MOI
+      TacsScalar moments[6];
+      con->evalMassMoments(elemIndex, pt, X0.x, moments);
+      I0[3] = moments[3];
+      I0[4] = moments[5];
+      I0[5] = moments[4];
+      mat3x3SymmTransformTranspose(T.A, I0, quantity);
+
+      TacsScalar density = con->evalDensity(elemIndex, pt, X0.x);
+
+      // Use parallel axis theorem to move MOI to origin
+      quantity[0] += density * (X0.x[1] * X0.x[1] + X0.x[2] * X0.x[2]);
+      quantity[1] += -density * X0.x[0] * X0.x[1];
+      quantity[2] += -density * X0.x[0] * X0.x[2];
+      quantity[3] += density * (X0.x[0] * X0.x[0] + X0.x[2] * X0.x[2]);
+      quantity[4] += -density * X0.x[2] * X0.x[1];
+      quantity[5] += density * (X0.x[0] * X0.x[0] + X0.x[1] * X0.x[1]);
+    }
+
+    return 6;
+  }
 
   // Compute XdinvT = Xdinv * T
   A2D::Mat3x3 XdinvT;
@@ -1729,6 +1754,31 @@ void TACSBeamElement<quadrature, basis, director, model>::
     for (int i = 0; i < 3; i++){
       dfdm += scale * dfdq[i] * X0.x[i];
     }
+
+    con->addDensityDVSens(elemIndex, dfdm, pt, X0.x, dvLen, dfdx);
+  }
+  else if (quantityType == TACS_ELEMENT_MOMENT_OF_INERTIA){
+
+    TacsScalar dfdI0[6] = {0.0};
+
+    // Evaluate the self MOI
+    TacsScalar dfdmoments[6] = {0.0};
+    mat3x3SymmTransformTransSens(T.A, dfdq, dfdI0);
+    dfdmoments[3] = scale * dfdI0[3];
+    dfdmoments[5] = scale * dfdI0[4];
+    dfdmoments[4] = scale * dfdI0[5];
+
+    con->addMassMomentsDVSens(elemIndex, pt, X0.x, dfdmoments, dvLen, dfdx);
+
+    TacsScalar dfdm = 0.0;
+
+    // Use parallel axis theorem to move MOI to origin
+    dfdm += scale * dfdq[0] * (X0.x[1] * X0.x[1] + X0.x[2] * X0.x[2]);
+    dfdm -= scale * dfdq[1] * X0.x[0] * X0.x[1];
+    dfdm -= scale * dfdq[2] * X0.x[0] * X0.x[2];
+    dfdm += scale * dfdq[3] * (X0.x[0] * X0.x[0] + X0.x[2] * X0.x[2]);
+    dfdm -= scale * dfdq[4] * X0.x[2] * X0.x[1];
+    dfdm += scale * dfdq[5] * (X0.x[0] * X0.x[0] + X0.x[1] * X0.x[1]);
 
     con->addDensityDVSens(elemIndex, dfdm, pt, X0.x, dvLen, dfdx);
   }
@@ -2082,6 +2132,11 @@ void TACSBeamElement<quadrature, basis, director, model>::
     X0.xd[0] = density * dfdq[0];
     X0.xd[1] = density * dfdq[1];
     X0.xd[2] = density * dfdq[2];
+  }
+  else if (quantityType == TACS_ELEMENT_MOMENT_OF_INERTIA){
+    TACSElement::addPointQuantityXptSens(elemIndex, quantityType, time, scale, n, pt, Xpts,
+                                         vars, dvars, ddvars, dfddetXd, dfdq, dfdXpts);
+    return;
   }
 
   // Evaluate the strain and strain derivatives from the

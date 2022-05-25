@@ -1089,7 +1089,6 @@ void TACSShellElement<quadrature, basis, director, model>::
 
     TacsScalar Xd[9];
     TacsShellAssembleFrame(Xxi, n0, Xd);
-    TacsScalar density = con->evalDensity(elemIndex, pt, X);
 
     TacsScalar dfdI0[6] = {0.0};
 
