@@ -10,7 +10,7 @@ The loads are applied in two euivilent load cases through the bdf:
     1. Using a PLOAD2 card
     2. Using a PLOAD4 card
 
-tests StructuralMass, KSFailure, KSDisplacement and Compliance functions and sensitivities
+tests StructuralMass, MomentOfInertia, KSFailure, KSDisplacement and Compliance functions and sensitivities
 '''
 
 base_dir = os.path.dirname(os.path.abspath(__file__))
