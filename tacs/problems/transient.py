@@ -16,6 +16,7 @@ import numpy as np
 import time
 from .base import TACSProblem
 import tacs.TACS
+import tacs.functions
 
 
 class TransientProblem(TACSProblem):
@@ -566,6 +567,35 @@ class TransientProblem(TACSProblem):
         return
 
     ####### Function eval/sensitivity methods ########
+
+    def addFunction(self, funcName, funcHandle, compIDs=None, **kwargs):
+        """
+        Generic method to add a function for TACS. It is intended to
+        be reasonably generic since the user supplies the actual
+        function handle to use. The following functions can be used:
+        KSFailure, KSTemperature, AverageTemperature, Compliance,
+        KSDisplacement, StructuralMass, HeatFlux.
+
+        Parameters
+        ----------
+        funcName : str
+            The user-supplied name for the function. This will
+            typically be a string that is meaningful to the user
+
+        funcHandle : tacs.functions
+            The function handle to use for creation. This must come
+            from the functions module in tacs.
+
+        compIDs: list
+            List of compIDs to select.
+        """
+
+        # Warn the users if these functions are attempted to be passed.
+        if funcHandle in [tacs.functions.MomentOfInertia, tacs.functions.CenterOfMass]:
+            self._TACSWarning(f"{funcHandle.__name__} is not supported for {type(self).__name__} problem types"
+                              f" and may not give consistent results.")
+
+        return TACSProblem.addFunction(self, funcName, funcHandle, compIDs, **kwargs)
 
     def evalFunctions(self, funcs, evalFuncs=None,
                       ignoreMissing=False):

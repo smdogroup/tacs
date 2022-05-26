@@ -58,7 +58,10 @@ cdef class StructuralMass(Function):
 
 cdef class CenterOfMass(Function):
     """
-    Evaluates the center of mass of the elements.
+    Evaluates the center of mass of the elements along specified axis.
+
+    .. warning:: This function is only appropriate for static analyses and
+        may give inconsistent results for transient problems.
 
     Args:
         assembler (Assembler): TACS Assembler object that will evaluating this function.
@@ -103,6 +106,9 @@ cdef class MomentOfInertia(Function):
 
         The moments of inertia are always positive, as usual:
             Ixx = int[(y^2 + z^2) * dm]
+
+    .. warning:: This function is only appropriate for static analyses and
+        may give inconsistent results for transient problems.
 
     Args:
         assembler (Assembler): TACS Assembler object that will evaluating this function.

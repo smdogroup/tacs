@@ -99,7 +99,7 @@ void TACSCenterOfMass::elementWiseEval( EvaluationType ftype,
                                             &detXd, &density);
 
     if (count >= 1){
-      totalMass += weight*detXd*density;
+      totalMass += scale*weight*detXd*density;
     }
     TacsScalar densityMoment[3];
     count = element->evalPointQuantity(elemIndex, TACS_ELEMENT_DENSITY_MOMENT,
@@ -137,7 +137,7 @@ void TACSCenterOfMass::addElementDVSens( int elemIndex,
                                            &detXd, &density);
 
     if (count >= 1){
-      TacsScalar dfdq = -massMoment/totalMass/totalMass*weight*detXd;
+      TacsScalar dfdq = -massMoment/totalMass/totalMass*scale*weight*detXd;
       element->addPointQuantityDVSens(elemIndex, TACS_ELEMENT_DENSITY,
                                       time, 1.0, i, pt,
                                       Xpts, vars, dvars, ddvars,
@@ -192,8 +192,8 @@ void TACSCenterOfMass::getElementXptSens( int elemIndex,
                                             &detXd, &density);
 
     if (count >= 1){
-      TacsScalar dfdq = -massMoment/totalMass/totalMass*weight*detXd;
-      TacsScalar dfddetXd = -massMoment/totalMass/totalMass*weight*density;
+      TacsScalar dfdq = -massMoment/totalMass/totalMass*scale*weight*detXd;
+      TacsScalar dfddetXd = -massMoment/totalMass/totalMass*scale*weight*density;
       element->addPointQuantityXptSens(elemIndex, TACS_ELEMENT_DENSITY,
                                        time, 1.0, i, pt,
                                        Xpts, vars, dvars, ddvars,

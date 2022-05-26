@@ -123,7 +123,7 @@ void TACSMomentOfInertia::elementWiseEval( EvaluationType ftype,
                                               &detXd, &density);
 
       if (count >= 1){
-        totalMass += weight*detXd*density;
+        totalMass += scale*weight*detXd*density;
       }
 
       TacsScalar densityMoment[3];
@@ -133,7 +133,7 @@ void TACSMomentOfInertia::elementWiseEval( EvaluationType ftype,
                                          &detXd, densityMoment);
 
       for (int j = 0; j < count; j++){
-        massMoment[j] += std::sqrt(scale)*weight*detXd*densityMoment[j];
+        massMoment[j] += scale*weight*detXd*densityMoment[j];
       }
     }
 
@@ -181,7 +181,7 @@ void TACSMomentOfInertia::addElementDVSens( int elemIndex,
       if (count >= 1){
         TacsScalar term2 = vec3Dot(massMoment, massMoment) * vec3Dot(dir1, dir2) \
           - vec3Dot(massMoment, dir1) * vec3Dot(massMoment, dir2);
-        TacsScalar dfdq = term2 / totalMass / totalMass * weight * detXd;
+        TacsScalar dfdq = term2 / totalMass / totalMass * scale * weight * detXd;
         element->addPointQuantityDVSens(elemIndex, TACS_ELEMENT_DENSITY,
                                         time, 1.0, i, pt,
                                         Xpts, vars, dvars, ddvars,
@@ -200,7 +200,7 @@ void TACSMomentOfInertia::addElementDVSens( int elemIndex,
           TacsScalar termj = 2.0 * vec3Dot(dir1, dir2) * massMoment[j] \
                              - vec3Dot(massMoment, dir1) * dir2[j] \
                              - vec3Dot(massMoment, dir2) * dir1[j];
-          dfdq[j] = -std::sqrt(scale) * weight * detXd / totalMass * termj;
+          dfdq[j] = -scale * weight * detXd / totalMass * termj;
         }
 
         element->addPointQuantityDVSens(elemIndex, TACS_ELEMENT_DENSITY_MOMENT,
@@ -264,8 +264,8 @@ void TACSMomentOfInertia::getElementXptSens( int elemIndex,
       if (count >= 1){
         TacsScalar term2 = vec3Dot(massMoment, massMoment) * vec3Dot(dir1, dir2) \
           - vec3Dot(massMoment, dir1) * vec3Dot(massMoment, dir2);
-        TacsScalar dfdq = term2 / totalMass / totalMass * weight * detXd;
-        TacsScalar dfddetXd = term2 / totalMass / totalMass * weight * density;
+        TacsScalar dfdq = term2 / totalMass / totalMass * scale * weight * detXd;
+        TacsScalar dfddetXd = term2 / totalMass / totalMass * scale * weight * density;
         element->addPointQuantityXptSens(elemIndex, TACS_ELEMENT_DENSITY,
                                          time, 1.0, i, pt,
                                          Xpts, vars, dvars, ddvars,
@@ -285,8 +285,8 @@ void TACSMomentOfInertia::getElementXptSens( int elemIndex,
           TacsScalar termj = 2.0 * vec3Dot(dir1, dir2) * massMoment[j] \
                              - vec3Dot(massMoment, dir1) * dir2[j] \
                              - vec3Dot(massMoment, dir2) * dir1[j];
-          dfdq[j] = -std::sqrt(scale) * weight * detXd / totalMass * termj;
-          dfddetXd += -std::sqrt(scale) * weight / totalMass * termj * densityMoment[j];
+          dfdq[j] = -scale * weight * detXd / totalMass * termj;
+          dfddetXd += -scale * weight / totalMass * termj * densityMoment[j];
         }
         element->addPointQuantityXptSens(elemIndex, TACS_ELEMENT_DENSITY_MOMENT,
                                          time, 1.0, i, pt,
