@@ -91,17 +91,16 @@ cdef class MomentOfInertia(Function):
 
         I_out = vec1^T * I_tensor * vec2
 
-    Where I_tensor is the moment of inertia tensor in the global axis:
+    Where I_tensor is the moment of inertia tensor in the global axis given below:
 
-                    Ixx  Ixy  Ixz
-
-        I_tensor =  Iyx  Iyy  Iyz
-
-                    Izx  Izy  Izz
+        |   Ixx  Ixy  Ixz
+        |   Iyx  Iyy  Iyz
+        |   Izx  Izy  Izz
 
     .. note::
         TACS uses a negative sign convention in the product of inertia definition, for example:
             Ixy = -int[x * y * dm]
+
         The moments of inertia are always positive, as usual:
             Ixx = int[(y^2 + z^2) * dm]
 
