@@ -1528,7 +1528,7 @@ int TACSBeamElement<quadrature, basis, director, model>::
       I0[3] = moments[3];
       I0[4] = moments[5];
       I0[5] = moments[4];
-      mat3x3SymmTransformTranspose(T.A, I0, quantity);
+      mat3x3SymmTransform(T.A, I0, quantity);
 
       TacsScalar density = con->evalDensity(elemIndex, pt, X0.x);
 
@@ -1763,7 +1763,7 @@ void TACSBeamElement<quadrature, basis, director, model>::
 
     // Evaluate the self MOI
     TacsScalar dfdmoments[6] = {0.0};
-    mat3x3SymmTransformTransSens(T.A, dfdq, dfdI0);
+    mat3x3SymmTransformSens(T.A, dfdq, dfdI0);
     dfdmoments[3] = scale * dfdI0[3];
     dfdmoments[5] = scale * dfdI0[4];
     dfdmoments[4] = scale * dfdI0[5];

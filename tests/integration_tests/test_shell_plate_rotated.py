@@ -9,7 +9,7 @@ about the y-axis by 45 degrees, so that it lies in a slant in the xz plane. This
 is invariant under trivial transformation: 
 a 10 kN point force at center, a 100kPa pressure applied to the surface, and a 100G gravity load. The
 perimeter of the plate is fixed in all 6 degrees of freedom. The plate comprises
-900 CQUAD4 elements and test KSFailure, StructuralMass, and Compliance functions and sensitivities
+100 CQUAD4 elements and test KSFailure, StructuralMass, MomentOfInertia, and Compliance functions and sensitivities
 '''
 
 base_dir = os.path.dirname(os.path.abspath(__file__))
@@ -17,21 +17,21 @@ bdf_file = os.path.join(base_dir, "./input_files/slanted_plate.bdf")
 
 FUNC_REFS = {'point_load_compliance': 683.8571611640772, 'point_load_ks_vmfailure': 0.5757488025913641, 'point_load_mass': 12.5,
              'point_load_cgxp': 0.5, 'point_load_cgyp': 0.5, 'point_load_cgzp': 0.0,
-             'point_load_Ixxp': 1.0416666666666536, 'point_load_Ixyp': 0.0,                'point_load_Ixzp': 0.0,
+             'point_load_Ixxp': 1.0416927083333238, 'point_load_Ixyp': 0.0,                'point_load_Ixzp': 0.0,
                                                     'point_load_Iyyp': 1.0416927083333243, 'point_load_Iyzp': 0.0,
-                                                                                           'point_load_Izzp': 2.083359375,
+                                                                                           'point_load_Izzp': 2.08333333333333,
 
              'pressure_compliance': 4679.345460326432, 'pressure_ks_vmfailure': 1.2938623156872926, 'pressure_mass': 12.5,
              'pressure_cgxp': 0.5, 'pressure_cgyp': 0.5, 'pressure_cgzp': 0.0,
-             'pressure_Ixxp': 1.0416666666666536, 'pressure_Ixyp': 0.0,                'pressure_Ixzp': 0.0,
+             'pressure_Ixxp': 1.0416927083333238, 'pressure_Ixyp': 0.0,                'pressure_Ixzp': 0.0,
                                                   'pressure_Iyyp': 1.0416927083333243, 'pressure_Iyzp': 0.0,
-                                                                                       'pressure_Izzp': 2.083359375,
+                                                                                       'pressure_Izzp': 2.08333333333333,
 
              'gravity_compliance': 70.36280588344383, 'gravity_ks_vmfailure': 0.11707320009742483, 'gravity_mass': 12.5,
              'gravity_cgxp': 0.5, 'gravity_cgyp': 0.5, 'gravity_cgzp': 0.0,
-             'gravity_Ixxp': 1.0416666666666536, 'gravity_Ixyp': 0.0,                'gravity_Ixzp': 0.0,
+             'gravity_Ixxp': 1.0416927083333238, 'gravity_Ixyp': 0.0,                'gravity_Ixzp': 0.0,
                                                  'gravity_Iyyp': 1.0416927083333243, 'gravity_Iyzp': 0.0,
-                                                                                     'gravity_Izzp': 2.083359375}
+                                                                                     'gravity_Izzp': 2.08333333333333}
 
 # KS function weight
 ksweight = 10.0
