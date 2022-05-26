@@ -1,0 +1,53 @@
+INIT MASTER(S)
+NASTRAN SYSTEM(442)=-1,SYSTEM(319)=1
+ID FEMAP,FEMAP
+SOL SESTATIC
+CEND
+  TITLE = Simcenter Nastran Static Analysis Set
+  ECHO = NONE
+  DISPLACEMENT(PLOT) = ALL
+  SPCFORCE(PLOT) = ALL
+  OLOAD(PLOT) = ALL
+  FORCE(PLOT,CORNER) = ALL
+  STRESS(PLOT,CORNER) = ALL
+  SPC = 1
+  LOAD = 1
+BEGIN BULK
+$ ***************************************************************************
+$   Written by : Femap
+$   Version    : 2021.1.0
+$   Translator : Simcenter Nastran
+$   From Model :
+$   Date       : Thu May 26 10:09:59 2022
+$   Output To  : C:\Users\trbrooks\AppData\Local\Temp\1\
+$ ***************************************************************************
+$
+PARAM,PRGPST,YES
+PARAM,POST,-1
+PARAM,OGEOM,NO
+PARAM,AUTOSPC,YES
+PARAM,K6ROT,100.
+PARAM,GRDPNT,0
+CORD2C         1       0      0.      0.      0.      0.      0.      1.+FEMAPC1
++FEMAPC1      1.      0.      1.
+CORD2S         2       0      0.      0.      0.      0.      0.      1.+FEMAPC2
++FEMAPC2      1.      0.      1.
+$ Femap Load Set 1 : Gravity
+GRAV           1       0      1.      0.      0.   -9.81
+$ Femap Constraint Set 1 : Untitled
+SPC1           1  123456       5
+$ Femap Property 4 : SPRING/DAMPER Property
+PBUSH          4       K      1.      1.      1.      1.      1.      1.
+GRID           1       0     -1.      2.     -3.       0
+GRID           2       0      4.     -5.      6.       0
+GRID           3       0      7.      8.      9.       0
+GRID           4       0      4.      5.      6.       0
+GRID           5       0      4.      5.      6.       0
+CONM2          1       2       0     10.      0.      0.      0.        +
++             1.      .5      1.      0.      0.      1.
+CONM2          2       1       0      5.      0.      0.      0.        +
++             5.      0.      0.     -.5      0.      5.
+CONM2          3       3       0     2.5      0.      0.      0.
+RBE2           4       4  123456       1       2       3
+CBUSH          5       4       4       5                               0
+ENDDATA 30ded01c
