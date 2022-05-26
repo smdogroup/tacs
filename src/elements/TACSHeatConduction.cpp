@@ -695,7 +695,7 @@ int TACSHeatConduction3D::evalPointQuantity( int elemIndex,
       quantity[2] = - density * X[2] * X[0]; // Ixz
       quantity[3] = density * (X[0] * X[0] + X[2] * X[2]); // Iyy
       quantity[4] = - density * X[1] * X[2]; // Iyz
-      quantity[5] = density * (X[1] * X[1] + X[0] * X[0]); // Iyz
+      quantity[5] = density * (X[1] * X[1] + X[0] * X[0]); // Izz
     }
 
     return 6;
