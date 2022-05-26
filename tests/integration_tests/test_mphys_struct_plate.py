@@ -19,6 +19,7 @@ bdf_file = os.path.join(base_dir, "./input_files/debug_plate.bdf")
 
 # Historical reference values for function outputs
 FUNC_REFS = {'analysis.mass': 55.6,
+             'analysis.Ixx': 74.13379667,
              'analysis.ks_vmfailure': 5.778130269059719}
 
 # Inputs to check total sensitivities wrt
@@ -45,7 +46,7 @@ class ProblemTest(OpenMDAOTestCase.OpenMDAOTest):
             self.dh = 1e-8
 
         # Callback function used to setup TACS element objects and DVs
-        def element_callback(dvNum, compID, compDescript, elemDescripts, specialDVs, **kwargs):
+        def element_callback(dv_num, comp_id, comp_descript, elem_descripts, special_dvs, **kwargs):
             rho = 2780.0  # density, kg/m^3
             E = 73.1e9  # elastic modulus, Pa
             nu = 0.33  # poisson's ratio
@@ -57,7 +58,7 @@ class ProblemTest(OpenMDAOTestCase.OpenMDAOTest):
             # Setup (isotropic) property and constitutive objects
             prop = constitutive.MaterialProperties(rho=rho, E=E, nu=nu, ys=ys)
             # Set one thickness dv for every component
-            con = constitutive.IsoShellConstitutive(prop, t=thickness, tNum=dvNum, tlb=min_thickness, tub=max_thickness)
+            con = constitutive.IsoShellConstitutive(prop, t=thickness, tNum=dv_num, tlb=min_thickness, tub=max_thickness)
 
             # For each element type in this component,
             # pass back the appropriate tacs element object
@@ -78,6 +79,8 @@ class ProblemTest(OpenMDAOTestCase.OpenMDAOTest):
             # Add TACS Functions
             problem.addFunction('mass', functions.StructuralMass)
             problem.addFunction('ks_vmfailure', functions.KSFailure, ksWeight=ksweight)
+            problem.addFunction('Ixx', functions.MomentOfInertia, direction1=[1.0, 0.0, 0.0],
+                                direction2=[1.0, 0.0, 0.0])
 
             # Add gravity load
             g = np.array([0.0, 0.0, -9.81])*100  # m/s^2
