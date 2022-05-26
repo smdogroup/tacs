@@ -972,7 +972,7 @@ int TACSShellElement<quadrature, basis, director, model>::
       con->evalMassMoments(elemIndex, pt, X, moments);
       I0[0] = I0[3] = moments[2];
       // Compute T*I0*T^{T}
-      mat3x3SymmTransform(T, I0, quantity);
+      mat3x3SymmTransformTranspose(T, I0, quantity);
 
       // Use parallel axis theorem to move MOI to origin
       quantity[0] += density * (X[1] * X[1] + X[2] * X[2]);
@@ -1095,7 +1095,7 @@ void TACSShellElement<quadrature, basis, director, model>::
 
     // Evaluate the self MOI
     TacsScalar dfdmoments[3] = {0.0};
-    mat3x3SymmTransformSens(T, dfdq, dfdI0);
+    mat3x3SymmTransformTransSens(T, dfdq, dfdI0);
     dfdmoments[2] = scale * (dfdI0[0] + dfdI0[3]);
 
     con->addMassMomentsDVSens(elemIndex, pt, X, dfdmoments, dvLen, dfdx);
