@@ -29,7 +29,7 @@ FUNC_REFS = {'steady_state_avg_temp': 69.8801609399151, 'steady_state_ks_temp': 
              'transient_avg_temp': 79333.52527756922,
              'transient_ks_temp': 97.89029199587861,
              'transient_mass': 78405.4495396193,
-             'transient_x_cg': 2.1660930381681422e-08, 'transient_y_cg': 2.17409345376563e-08,
+             'transient_x_cg': 2.8159209496185734e-10, 'transient_y_cg': 2.826321489895307e-10,
              'transient_Ixx': 19567.83967838426, 'transient_Ixy': 5.280059696105566e-05,
                                                  'transient_Iyy': 19567.83959012328}
 
