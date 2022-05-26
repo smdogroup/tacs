@@ -1,5 +1,4 @@
 import numpy as np
-from mpi4py import MPI
 from tacs import TACS, elements, constitutive, functions
 from static_analysis_base_test import StaticTestCase
 
@@ -178,9 +177,9 @@ class ProblemTest(StaticTestCase.StaticTest):
                      functions.CenterOfMass(assembler, direction=[1.0, 0.0]),
                      functions.CenterOfMass(assembler, direction=[0.0, 1.0]),
                      functions.MomentOfInertia(assembler, direction1=[1.0, 0.0], direction2=[1.0, 0.0],
-                                               aboutCG=False),
+                                               aboutCM=False),
                      functions.MomentOfInertia(assembler, direction1=[1.0, 0.0], direction2=[0.0, 1.0],
-                                               aboutCG=False),
+                                               aboutCM=False),
                      functions.MomentOfInertia(assembler, direction1=[0.0, 1.0], direction2=[0.0, 1.0],
-                                               aboutCG=False)]
+                                               aboutCM=False)]
         return func_list, FUNC_REFS

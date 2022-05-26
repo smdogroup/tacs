@@ -26,7 +26,7 @@
 TACSMomentOfInertia::TACSMomentOfInertia( TACSAssembler *_assembler,
                                           const double _dir1[],
                                           const double _dir2[],
-                                          int _cgFlag ):
+                                          int _cmFlag ):
 TACSFunction(_assembler){
   totalMass = 0.0;
   massMoment[0] = massMoment[1] = massMoment[2] = 0.0;
@@ -40,7 +40,7 @@ TACSFunction(_assembler){
   dir2[1] = TacsScalar(_dir2[1]);
   dir2[2] = TacsScalar(_dir2[2]);
 
-  cgFlag = _cgFlag;
+  cmFlag = _cmFlag;
 }
 
 /*
@@ -64,8 +64,8 @@ TacsScalar TACSMomentOfInertia::getFunctionValue(){
   // Compute moment of inertia about origin
   TacsScalar value = I0;
 
-  // Use reverse parallel axis theorem to move moment of inertia to cg
-  if (cgFlag){
+  // Use reverse parallel axis theorem to move moment of inertia to cm
+  if (cmFlag){
     TacsScalar term2 = vec3Dot(massMoment, massMoment) * vec3Dot(dir1, dir2) \
       - vec3Dot(massMoment, dir1) * vec3Dot(massMoment, dir2);
     value -= term2 / totalMass;
@@ -75,7 +75,7 @@ TacsScalar TACSMomentOfInertia::getFunctionValue(){
 }
 
 /*
-  Initialize the mass to zero
+  Initialize the mass/moments to zero
 */
 void TACSMomentOfInertia::initEvaluation( EvaluationType ftype ){
   totalMass = I0 = 0.0;
@@ -83,7 +83,7 @@ void TACSMomentOfInertia::initEvaluation( EvaluationType ftype ){
 }
 
 /*
-  Sum the mass across all MPI processes
+  Sum the mass/moments across all MPI processes
 */
 void TACSMomentOfInertia::finalEvaluation( EvaluationType ftype ){
   TacsScalar temp = totalMass;
@@ -98,7 +98,7 @@ void TACSMomentOfInertia::finalEvaluation( EvaluationType ftype ){
 }
 
 /*
-  Perform the element-wise evaluation of the TACSKSFailure function.
+  Perform the element-wise evaluation of the TACSMomentOfInertia function.
 */
 void TACSMomentOfInertia::elementWiseEval( EvaluationType ftype,
                                            int elemIndex,
@@ -113,11 +113,10 @@ void TACSMomentOfInertia::elementWiseEval( EvaluationType ftype,
     double pt[3];
     double weight = element->getQuadraturePoint(i, pt);
 
-    // Evaluate the failure index, and check whether it is an
-    // undefined quantity of interest on this element
+    // Evaluate parallel axis theorem portion of function
     TacsScalar density = 0.0, detXd = 0.0;
     int count;
-    if (cgFlag){
+    if (cmFlag){
       count = element->evalPointQuantity(elemIndex, TACS_ELEMENT_DENSITY,
                                               time, i, pt,
                                               Xpts, vars, dvars, ddvars,
@@ -138,15 +137,16 @@ void TACSMomentOfInertia::elementWiseEval( EvaluationType ftype,
       }
     }
 
+    // Evaluate moment of inertia about origin
     TacsScalar I0_elem[6];
     count = element->evalPointQuantity(elemIndex, TACS_ELEMENT_MOMENT_OF_INERTIA,
                                        time, i, pt,
                                        Xpts, vars, dvars, ddvars,
                                        &detXd, I0_elem);
 
+    // Compute inner product of I0 (i.e. v1^T.I0.v2)
     TacsScalar ip[6];
     getInnerProductFactor(count, ip);
-
     for (int j = 0; j < count; j++){
       I0 += scale*weight*detXd*I0_elem[j]*ip[j];
     }
@@ -172,7 +172,7 @@ void TACSMomentOfInertia::addElementDVSens( int elemIndex,
 
     TacsScalar density = 0.0, detXd = 0.0;
     int count;
-    if (cgFlag){
+    if (cmFlag){
       count = element->evalPointQuantity(elemIndex, TACS_ELEMENT_DENSITY,
                                              time, i, pt,
                                              Xpts, vars, dvars, ddvars,
@@ -255,7 +255,7 @@ void TACSMomentOfInertia::getElementXptSens( int elemIndex,
 
     TacsScalar density = 0.0, detXd = 0.0;
     int count;
-    if (cgFlag){
+    if (cmFlag){
       count = element->evalPointQuantity(elemIndex, TACS_ELEMENT_DENSITY,
                                               time, i, pt,
                                               Xpts, vars, dvars, ddvars,

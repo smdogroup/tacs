@@ -124,17 +124,17 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
             problem.addFunction('cg_y', functions.CenterOfMass, direction=[0.0, 1.0, 0.0])
             problem.addFunction('cg_z', functions.CenterOfMass, direction=[0.0, 0.0, 1.0])
             problem.addFunction('I_xx', functions.MomentOfInertia, direction1=[1.0, 0.0, 0.0],
-                                direction2=[1.0, 0.0, 0.0], aboutCG=True)
+                                direction2=[1.0, 0.0, 0.0], aboutCM=True)
             problem.addFunction('I_xy', functions.MomentOfInertia, direction1=[1.0, 0.0, 0.0],
-                                direction2=[0.0, 1.0, 0.0], aboutCG=True)
+                                direction2=[0.0, 1.0, 0.0], aboutCM=True)
             problem.addFunction('I_xz', functions.MomentOfInertia, direction1=[1.0, 0.0, 0.0],
-                                direction2=[0.0, 0.0, 1.0], aboutCG=True)
+                                direction2=[0.0, 0.0, 1.0], aboutCM=True)
             problem.addFunction('I_yy', functions.MomentOfInertia, direction1=[0.0, 1.0, 0.0],
-                                direction2=[0.0, 1.0, 0.0], aboutCG=True)
+                                direction2=[0.0, 1.0, 0.0], aboutCM=True)
             problem.addFunction('I_yz', functions.MomentOfInertia, direction1=[0.0, 0.0, 1.0],
-                                direction2=[0.0, 1.0, 0.0], aboutCG=True)
+                                direction2=[0.0, 1.0, 0.0], aboutCM=True)
             problem.addFunction('I_zz', functions.MomentOfInertia, direction1=[0.0, 0.0, 1.0],
-                                direction2=[0.0, 0.0, 1.0], aboutCG=True)
+                                direction2=[0.0, 0.0, 1.0], aboutCM=True)
         func_list = ['mass', 'compliance', 'ks_disp', 'ks_vmfailure', 'cg_x', 'cg_y', 'cg_z',
                      'I_xx', 'I_xy', 'I_xz', 'I_yy', 'I_yz', 'I_zz']
         return func_list, FUNC_REFS

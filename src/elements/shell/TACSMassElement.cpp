@@ -9,10 +9,8 @@
   Create the MassElement.
 */
 TACSMassElement::TACSMassElement( TACSGeneralMassConstitutive *_con ){
-
   con = _con;
   con->incref();
-
 }
 
 TACSMassElement::~TACSMassElement(){
@@ -138,7 +136,9 @@ int TACSMassElement::evalPointQuantity( int elemIndex, int quantityType,
                                         const TacsScalar ddvars[],
                                         TacsScalar *detXd,
                                         TacsScalar *quantity ){
-  *detXd = 1.0;
+  if (detXd){
+    *detXd = 1.0;
+  }
   if (quantityType == TACS_ELEMENT_DENSITY){
     if (quantity){
       *quantity = con->evalDensity(elemIndex, pt, Xpts);
@@ -162,6 +162,19 @@ int TACSMassElement::evalPointQuantity( int elemIndex, int quantityType,
     }
     return 3;
   }
+  else if (quantityType == TACS_ELEMENT_MOMENT_OF_INERTIA){
+    if (quantity){
+      TacsScalar M[21];
+      con->evalMassMatrix(elemIndex, pt, Xpts, M);
+      quantity[0] = M[0] * (Xpts[1] * Xpts[1] + Xpts[2] * Xpts[2]) + M[15]; // Ixx
+      quantity[1] = -M[0] * Xpts[0] * Xpts[1] + M[16]; // Ixy
+      quantity[2] = -M[0] * Xpts[0] * Xpts[2] + M[17]; // Ixz
+      quantity[3] = M[0] * (Xpts[0] * Xpts[0] + Xpts[2] * Xpts[2]) + M[18]; // Iyy
+      quantity[4] = -M[0] * Xpts[1] * Xpts[2] + M[19]; // Iyz
+      quantity[5] = M[0] * (Xpts[0] * Xpts[0] + Xpts[1] * Xpts[1]) + M[20]; // Izz
+    }
+    return 6;
+  }
 
   return 0;
 }
@@ -177,15 +190,20 @@ void TACSMassElement::addPointQuantityDVSens( int elemIndex, int quantityType,
                                               const TacsScalar dfdq[],
                                               int dvLen,
                                               TacsScalar dfdx[] ){
- if (quantityType == TACS_ELEMENT_DENSITY){
+  if (quantityType == TACS_ELEMENT_DENSITY){
     con->addDensityDVSens(elemIndex, scale*dfdq[0], pt, Xpts, dvLen, dfdx);
- }
- else if (quantityType == TACS_ELEMENT_DENSITY_MOMENT){
+  }
+  else if (quantityType == TACS_ELEMENT_DENSITY_MOMENT){
     TacsScalar dfdmass = 0.0;
     dfdmass += scale * dfdq[0] * Xpts[0];
     dfdmass += scale * dfdq[1] * Xpts[1];
     dfdmass += scale * dfdq[2] * Xpts[2];
     con->addDensityDVSens(elemIndex, dfdmass, pt, Xpts, dvLen, dfdx);
+  }
+  else if (quantityType == TACS_ELEMENT_MOMENT_OF_INERTIA){
+    TACSElement::addPointQuantityDVSens(elemIndex, quantityType, time, scale, n, pt, Xpts,
+                                        vars, dvars, ddvars, dfdq, dvLen, dfdx);
+    return;
   }
 }
 
@@ -205,5 +223,11 @@ void TACSMassElement::addPointQuantityXptSens( int elemIndex, int quantityType,
     dfdXpts[0] += scale * mass * dfdq[0];
     dfdXpts[1] += scale * mass * dfdq[1];
     dfdXpts[2] += scale * mass * dfdq[2];
+  }
+  else if (quantityType == TACS_ELEMENT_MOMENT_OF_INERTIA){
+    TacsScalar mass = con->evalDensity(elemIndex, pt, Xpts);
+    dfdXpts[0] += scale * mass * (2.0 * Xpts[0] * (dfdq[3] + dfdq[5]) - dfdq[1] * Xpts[1] - dfdq[2] * Xpts[2]);
+    dfdXpts[1] += scale * mass * (2.0 * Xpts[1] * (dfdq[0] + dfdq[5]) - dfdq[1] * Xpts[0] - dfdq[4] * Xpts[2]);
+    dfdXpts[2] += scale * mass * (2.0 * Xpts[2] * (dfdq[0] + dfdq[3]) - dfdq[2] * Xpts[0] - dfdq[4] * Xpts[1]);
   }
 }

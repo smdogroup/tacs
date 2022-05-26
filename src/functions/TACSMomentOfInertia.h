@@ -20,20 +20,20 @@
 #define TACS_MOMENT_OF_INERTIA_H
 
 /*
-  Compute the structural mass
+  Compute the moment of inertia about specified axes
 */
 
 #include "TACSFunction.h"
 
 /*
-  Evaluate the structural mass of the structure
+  Evaluate the moment of inertia of the structure
 */
 class TACSMomentOfInertia : public TACSFunction {
  public:
   TACSMomentOfInertia( TACSAssembler * _assembler,
                        const double _dir1[],
                        const double _dir2[],
-                       int _cgFlag=0 );
+                       int _cmFlag=0 );
   ~TACSMomentOfInertia();
 
   const char *getObjectName();
@@ -79,7 +79,7 @@ class TACSMomentOfInertia : public TACSFunction {
   TacsScalar totalMass, massMoment[3], I0;
   // cg projection direction
   TacsScalar dir1[3], dir2[3];
-  bool cgFlag;
+  bool cmFlag;
 
   static const char *funcName;
 };

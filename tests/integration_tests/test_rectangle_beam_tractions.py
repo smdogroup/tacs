@@ -116,17 +116,17 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
             problem.addFunction('z_disp', functions.KSDisplacement,
                                 ksWeight=ksweight, direction=[0.0, 0.0, 10.0])
             problem.addFunction('I_xx', functions.MomentOfInertia, direction1=[1.0, 0.0, 0.0],
-                                direction2=[1.0, 0.0, 0.0], aboutCG=True)
+                                direction2=[1.0, 0.0, 0.0], aboutCM=True)
             problem.addFunction('I_xy', functions.MomentOfInertia, direction1=[1.0, 0.0, 0.0],
-                                direction2=[0.0, 1.0, 0.0], aboutCG=True)
+                                direction2=[0.0, 1.0, 0.0], aboutCM=True)
             problem.addFunction('I_xz', functions.MomentOfInertia, direction1=[1.0, 0.0, 0.0],
-                                direction2=[0.0, 0.0, 1.0], aboutCG=True)
+                                direction2=[0.0, 0.0, 1.0], aboutCM=True)
             problem.addFunction('I_yy', functions.MomentOfInertia, direction1=[0.0, 1.0, 0.0],
-                                direction2=[0.0, 1.0, 0.0], aboutCG=True)
+                                direction2=[0.0, 1.0, 0.0], aboutCM=True)
             problem.addFunction('I_yz', functions.MomentOfInertia, direction1=[0.0, 1.0, 0.0],
-                                direction2=[0.0, 0.0, 1.0], aboutCG=True)
+                                direction2=[0.0, 0.0, 1.0], aboutCM=True)
             problem.addFunction('I_zz', functions.MomentOfInertia, direction1=[0.0, 0.0, 1.0],
-                                direction2=[0.0, 0.0, 1.0], aboutCG=True)
+                                direction2=[0.0, 0.0, 1.0], aboutCM=True)
         func_list = ['mass', 'compliance', 'x_disp', 'y_disp', 'z_disp', 'I_xx', 'I_xy', 'I_xz', 'I_yy', 'I_yz', 'I_zz']
         return func_list, FUNC_REFS
 

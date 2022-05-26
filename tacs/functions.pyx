@@ -87,9 +87,23 @@ cdef class CenterOfMass(Function):
 
 cdef class MomentOfInertia(Function):
     """
-    Evaluates the moment of inertia of the elements about origin or cg projected onto two input vectors:
+    Evaluates the moment of inertia of the elements about origin or center of mass projected onto two input vectors:
 
         I_out = vec1^T * I_tensor * vec2
+
+    Where I_tensor is the moment of inertia tensor in the global axis:
+
+                    Ixx  Ixy  Ixz
+
+        I_tensor =  Iyx  Iyy  Iyz
+
+                    Izx  Izy  Izz
+
+    .. note::
+        TACS uses a negative sign convention in the product of inertia definition, for example:
+            Ixy = -int[x * y * dm]
+        The moments of inertia are always positive, as usual:
+            Ixx = int[(y^2 + z^2) * dm]
 
     Args:
         assembler (Assembler): TACS Assembler object that will evaluating this function.
@@ -99,14 +113,14 @@ cdef class MomentOfInertia(Function):
         direction2 (array-like[double], optional):
           3d vector specifying second direction to project moment of inertia tensor onto (keyword argument).
           Defaults to [0.0, 0.0, 0.0].
-        aboutCG (bool): Flag specifying whether moment of inertia should be taken
-          about origin (False) or cg (True) (keyword argument). Defaults to False.
+        aboutCM (bool): Flag specifying whether moment of inertia should be taken
+          about origin (False) or center of mass (True) (keyword argument). Defaults to False.
     """
     def __cinit__(self, Assembler assembler, **kwargs):
         """
         Wrap the function MomentOfInertia
         """
-        cdef int cgFlag;
+        cdef int cmFlag;
         cdef double d1[3], d2[3]
         d1[0] = d1[1] = d1[2] = 0.0
         d2[0] = d2[1] = d2[2] = 0.0
@@ -127,9 +141,9 @@ cdef class MomentOfInertia(Function):
                 for i in range(dim):
                     d2[i] = dir[i]
 
-        cgFlag = kwargs.get('aboutCG', False);
+        cmFlag = kwargs.get('aboutCM', False);
 
-        self.ptr = new TACSMomentOfInertia(assembler.ptr, d1, d2, cgFlag)
+        self.ptr = new TACSMomentOfInertia(assembler.ptr, d1, d2, cmFlag)
         self.ptr.incref()
         return
 
