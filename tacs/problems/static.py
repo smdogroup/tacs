@@ -206,23 +206,24 @@ class StaticProblem(TACSProblem):
         """
         Generic method to add a function for TACS. It is intended to
         be reasonably generic since the user supplies the actual
-        function handle to use. The following functions can be used:
-        KSFailure, KSTemperature, AverageTemperature, Compliance,
-        KSDisplacement, StructuralMass, HeatFlux.
+        function handle to use. See the :py:mod:`~tacs.functions` module
+        for supported TACS eval functions.
 
         Parameters
         ----------
         funcName : str
             The user-supplied name for the function. This will
-            typically be a string that is meanful to the user
+            typically be a string that is meaningful to the user
 
-        funcHandle : tacs.functions
-            The fucntion handle to use for creation. This must come
+        funcHandle : TACS.Function
+            The function handle to use for creation. This must come
             from the functions module in tacs.
 
         compIDs: list
-            List of compIDs to select. Use pyTACS.selectCompIDs method
-            to determine this.
+            List of compIDs to select.
+
+        **kwargs:
+            Any keyword arguments to be passed to the TACS function during setup.
         """
         success = TACSProblem.addFunction(self, funcName, funcHandle, compIDs, **kwargs)
         if success:

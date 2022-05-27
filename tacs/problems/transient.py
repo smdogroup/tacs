@@ -572,9 +572,8 @@ class TransientProblem(TACSProblem):
         """
         Generic method to add a function for TACS. It is intended to
         be reasonably generic since the user supplies the actual
-        function handle to use. The following functions can be used:
-        KSFailure, KSTemperature, AverageTemperature, Compliance,
-        KSDisplacement, StructuralMass, HeatFlux.
+        function handle to use. See the :py:mod:`~tacs.functions` module
+        for supported TACS eval functions.
 
         Parameters
         ----------
@@ -582,12 +581,15 @@ class TransientProblem(TACSProblem):
             The user-supplied name for the function. This will
             typically be a string that is meaningful to the user
 
-        funcHandle : tacs.functions
+        funcHandle : TACS.Function
             The function handle to use for creation. This must come
             from the functions module in tacs.
 
         compIDs: list
             List of compIDs to select.
+
+        **kwargs:
+            Any keyword arguments to be passed to the TACS function during setup.
         """
 
         # Warn the users if these functions are attempted to be passed.
