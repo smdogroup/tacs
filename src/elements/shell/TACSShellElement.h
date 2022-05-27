@@ -971,7 +971,7 @@ int TACSShellElement<quadrature, basis, director, model>::
       TacsScalar moments[3];
       con->evalMassMoments(elemIndex, pt, X, moments);
       I0[0] = I0[3] = moments[2];
-      // Compute T^{T}*I0*T
+      // Compute T*I0*T^{T}
       mat3x3SymmTransform(T, I0, quantity);
 
       // Use parallel axis theorem to move MOI to origin

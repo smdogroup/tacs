@@ -1528,6 +1528,7 @@ int TACSBeamElement<quadrature, basis, director, model>::
       I0[3] = moments[3];
       I0[4] = moments[5];
       I0[5] = moments[4];
+      // Compute T*I0*T^{T}
       mat3x3SymmTransform(T.A, I0, quantity);
 
       TacsScalar density = con->evalDensity(elemIndex, pt, X0.x);
