@@ -704,6 +704,31 @@ class pyTACS(BaseUI):
                         k[j] = propInfo.Ki[j]
                 con = tacs.constitutive.DOFSpringConstitutive(k=k)
 
+            elif propInfo.type == 'PBAR':  # Nastran bar
+                area = propInfo.A
+                I1 = propInfo.i1
+                I2 = propInfo.i2
+                # Nastran uses negative product convention
+                I12 = -propInfo.i12
+                J = propInfo.j
+                k1 = propInfo.k1
+                k2 = propInfo.k2
+
+                if k1 is None:
+                    k1 = 1e6
+                if k2 is None:
+                    k2 = 1e6
+
+                con = tacs.constitutive.BasicBeamConstitutive(mat, A=area, Iy=I2, Iz=I1, Iyz=I12, J=J, ky=k1, kz=k2)
+
+            elif propInfo.type == 'PROD':  # Nastran rod
+                area = propInfo.A
+                J = propInfo.j
+                k1 = 0.0
+                k2 = 0.0
+
+                con = tacs.constitutive.BasicBeamConstitutive(mat, A=area, J=J, ky=k1, kz=k2)
+
             else:
                 raise self._TACSError(f"Unsupported property type '{propInfo.type}' for property number {propertyID}. ")
 
@@ -718,6 +743,12 @@ class pyTACS(BaseUI):
                     else:  # Don't support spherical/cylindrical yet
                         raise self._TACSError("Unsupported material coordinate system type "
                                               f"'{mcid.type}' for property number {propertyID}.")
+            elif propInfo.type in ['PBAR']:
+                refAxis = elemDict[propertyID]['elements'][0].g0_vector
+                transform = tacs.elements.BeamRefAxisTransform(refAxis)
+            elif propInfo.type == 'PROD':
+                refAxis = numpy.array([1.0, -1.0, 1.0])  # dummy ref_axis, not really needed for rods
+                transform = tacs.elements.BeamRefAxisTransform(refAxis)
             elif propInfo.type == 'PBUSH':
                 if elemDict[propertyID]['elements'][0].cid_ref:
                     refAxis_i = elemDict[propertyID]['elements'][0].cid_ref.i
@@ -741,6 +772,8 @@ class pyTACS(BaseUI):
                     elem = tacs.elements.Quad9Shell(transform, con)
                 elif descript in ['CTRIA3', 'CTRIAR']:
                     elem = tacs.elements.Tri3Shell(transform, con)
+                elif descript in ['CBAR', 'CROD']:
+                    elem = tacs.elements.Beam2(transform, con)
                 elif 'CTETRA' in descript:
                     # May have variable number of nodes in card
                     nnodes = len(elemInfo.nodes)

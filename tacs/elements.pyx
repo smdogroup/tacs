@@ -1035,7 +1035,7 @@ cdef class Tri3NonlinearThermalShell(Element):
         varsPerNode: 7
 
         outputElement: ``TACS.BEAM_OR_SHELL_ELEMENT``
-
+        
     Args:
         transform (ShellTransform or None): Shell transform object.
           ``None`` is equivalent to :class:`~ShellNaturalTransform`.
@@ -1045,6 +1045,106 @@ cdef class Tri3NonlinearThermalShell(Element):
         if transform is None:
             transform = ShellNaturalTransform()
         self.ptr = new TACSTri3NonlinearThermalShell(transform.ptr, con.cptr)
+        self.ptr.incref()
+
+cdef class BeamTransform:
+    cdef TACSBeamTransform *ptr
+    def __cinit__(self):
+        self.ptr = NULL
+        return
+
+    def __dealloc__(self):
+        if self.ptr != NULL:
+            self.ptr.decref()
+
+cdef class BeamRefAxisTransform(BeamTransform):
+    """
+    Class for computing the transformation from the global coordinates
+    to the beam local coordinates (used for defining stresses).
+    This class uses a projection of a user-supplied reference axis to define the beam coordinate system
+    (i.e. local :math:`y` is aligned with the reference axis.)
+
+    .. warning:: The reference direction cannot be parallel to the beam axis.
+
+    Args:
+        axis (array-like): Reference axis.
+    """
+    def __cinit__(self, axis):
+        cdef TacsScalar a[3]
+        a[0] = axis[0]
+        a[1] = axis[1]
+        a[2] = axis[2]
+        self.ptr = new TACSBeamRefAxisTransform(a)
+        self.ptr.incref()
+
+cdef class Beam2(Element):
+    """
+    A 2-node Timoshenko beam element for general linear elastic analysis.
+
+    .. note::
+        varsPerNode: 6
+
+        outputElement: ``TACS.BEAM_OR_SHELL_ELEMENT``
+
+    Args:
+        transform (BeamTransform): Beam transform object.
+        con (BeamConstitutive): Beam constitutive object.
+    """
+    def __cinit__(self, BeamTransform transform, BeamConstitutive con):
+        self.ptr = new TACSBeam2(transform.ptr, con.cptr)
+        self.ptr.incref()
+
+cdef class Beam3(Element):
+    """
+    A 3-node Timoshenko beam element for general linear elastic analysis.
+
+    .. note::
+        varsPerNode: 6
+
+        outputElement: ``TACS.BEAM_OR_SHELL_ELEMENT``
+
+    Args:
+        transform (BeamTransform): Beam transform object.
+        con (BeamConstitutive): Beam constitutive object.
+    """
+    def __cinit__(self, BeamTransform transform, BeamConstitutive con):
+        self.ptr = new TACSBeam3(transform.ptr, con.cptr)
+        self.ptr.incref()
+
+cdef class Beam2ModRot(Element):
+    """
+    A 2-node Timoshenko beam element for general nonlinear elastic analysis
+    with moderate rotations.
+
+    .. note::
+        varsPerNode: 6
+
+        outputElement: ``TACS.BEAM_OR_SHELL_ELEMENT``
+
+    Args:
+        transform (BeamTransform): Beam transform object.
+        con (BeamConstitutive): Beam constitutive object.
+    """
+    def __cinit__(self, BeamTransform transform, BeamConstitutive con):
+        self.ptr = new TACSBeam2ModRot(transform.ptr, con.cptr)
+        self.ptr.incref()
+
+cdef class Beam3ModRot(Element):
+    """
+    A 3-node Timoshenko beam element for general nonlinear elastic analysis
+    with moderate rotations.
+
+    .. note::
+        varsPerNode: 6
+
+        outputElement: ``TACS.BEAM_OR_SHELL_ELEMENT``
+
+    Args:
+        transform (BeamTransform): Beam transform object.
+        con (BeamConstitutive): Beam constitutive object.
+    """
+    def __cinit__(self, BeamTransform transform, BeamConstitutive con):
+        self.ptr = new TACSBeam3ModRot(transform.ptr, con.cptr)
         self.ptr.incref()
 
 cdef class SpringTransform:
@@ -1390,11 +1490,11 @@ cdef class MassElement(Element):
 #         self.ptr.incref()
 
 # cdef class MITCBeam(Element):
-#     def __cinit__(self, TimoshenkoConstitutive stiff,
+#     def __cinit__(self, BeamConstitutive stiff,
 #                   GibbsVector gravity=None,
 #                   GibbsVector vInit=None,
 #                   GibbsVector omegaInit=None):
-#         cdef TACSTimoshenkoConstitutive *con = _dynamicTimoshenkoConstitutive(stiff.ptr)
+#         cdef TACSBeamConstitutive *con = _dynamicBeamConstitutive(stiff.ptr)
 #         if omegaInit is not None:
 #             self.ptr = new MITC3(con, gravity.ptr,
 #                                  vInit.ptr, omegaInit.ptr)

@@ -36,6 +36,44 @@ inline void TacsShellAssembleFrame( const TacsScalar nxi[],
   Xdz[8] = 0.0;
 }
 
+inline void TacsShellAssembleFrame( const TacsScalar a[],
+                                    const TacsScalar b[],
+                                    const TacsScalar c[],
+                                    TacsScalar Xd[] ){
+  if (a){
+    Xd[0] = a[0];
+    Xd[3] = a[1];
+    Xd[6] = a[2];
+  }
+  else {
+    Xd[0] = 0.0;
+    Xd[3] = 0.0;
+    Xd[6] = 0.0;
+  }
+
+  if (b){
+    Xd[1] = b[0];
+    Xd[4] = b[1];
+    Xd[7] = b[2];
+  }
+  else {
+    Xd[1] = 0.0;
+    Xd[4] = 0.0;
+    Xd[7] = 0.0;
+  }
+
+  if (c){
+    Xd[2] = c[0];
+    Xd[5] = c[1];
+    Xd[8] = c[2];
+  }
+  else {
+    Xd[2] = 0.0;
+    Xd[5] = 0.0;
+    Xd[8] = 0.0;
+  }
+}
+
 inline void TacsShellExtractFrame( const TacsScalar Xd[],
                                    TacsScalar Xxi[],
                                    TacsScalar n[] ){

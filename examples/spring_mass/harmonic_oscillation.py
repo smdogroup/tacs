@@ -26,7 +26,7 @@ import numpy as np
 # Extension modules
 # ==============================================================================
 from tacs import pyTACS, functions, constitutive, elements
-# Begining and end time of transient problem
+# Beginning and end time of transient problem
 tStart = 0.0 # s
 tEnd = 4 * np.pi # s
 # Number of steps for transient problem
@@ -90,8 +90,8 @@ for i in range(numFreqs):
     eigVal, _ = modalProb.getVariables(i)
     # Frequency is the sqrt of the eigenvalue
     freq = np.sqrt(eigVal)
-    print("Mode %d:"%(i+1))
-    print("Frequency: %e (rad/s)" % (freq))
+    print(f"Mode {i+1}:")
+    print(f"Frequency: {freq} (rad/s)")
     print(" ")
 
 # Pull out eigen vector information for first mode

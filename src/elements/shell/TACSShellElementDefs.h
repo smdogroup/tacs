@@ -8,6 +8,9 @@
 #include "TACSShellInplaneElementModel.h"
 #include "TACSShellElement.h"
 #include "TACSThermalShellElement.h"
+#include "TACSBeamElement.h"
+#include "TACSBeamElementBasis.h"
+#include "TACSBeamElementModel.h"
 
 /*
   Linear shell elements with appropriate quadrature schemes
@@ -98,6 +101,24 @@ typedef TACSShellElement<TACSQuadCubicQuadrature, TACSShellQuadBasis<4>,
 
 typedef TACSShellElement<TACSTriLinearQuadrature, TACSShellTriLinearBasis,
                          TACSQuaternionRotation, TACSShellInplaneLinearModel> TACSTri3ShellQuaternion;
+
+typedef TACSBeamElement<TACSBeamLinearQuadrature, TACSBeamBasis<2>,
+                        TACSLinearizedRotation, TACSBeamLinearModel> TACSBeam2;
+
+typedef TACSBeamElement<TACSBeamQuadraticQuadrature, TACSBeamBasis<3>,
+                        TACSLinearizedRotation, TACSBeamLinearModel> TACSBeam3;
+
+typedef TACSBeamElement<TACSBeamLinearQuadrature, TACSBeamBasis<2>,
+                        TACSQuadraticRotation, TACSBeamLinearModel> TACSBeam2ModRot;
+
+typedef TACSBeamElement<TACSBeamQuadraticQuadrature, TACSBeamBasis<3>,
+                        TACSQuadraticRotation, TACSBeamLinearModel> TACSBeam3ModRot;
+
+typedef TACSBeamElement<TACSBeamLinearQuadrature, TACSBeamBasis<2>,
+                        TACSQuaternionRotation, TACSBeamLinearModel> TACSBeam2Quaternion;
+
+typedef TACSBeamElement<TACSBeamQuadraticQuadrature, TACSBeamBasis<3>,
+                        TACSQuaternionRotation, TACSBeamLinearModel> TACSBeam3Quaternion;
 
 /**
   Create a TACS shell element based on the name of the shell.

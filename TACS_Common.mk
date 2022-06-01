@@ -4,6 +4,7 @@ TACS_LIB = ${TACS_DIR}/lib/libtacs.a
 TACS_INCLUDE = -I${TACS_DIR}/src \
 	-I${TACS_DIR}/src/bpmat \
 	-I${TACS_DIR}/src/elements \
+	-I${TACS_DIR}/src/elements/a2d \
 	-I${TACS_DIR}/src/elements/dynamics \
 	-I${TACS_DIR}/src/elements/basis \
 	-I${TACS_DIR}/src/elements/shell \
@@ -29,4 +30,3 @@ TACS_LD_FLAGS = ${EXTRA_LD_FLAGS} ${TACS_LD_CMD} ${TACS_EXTERN_LIBS}
 	@echo
 	@echo "        --- Compiled $*.cpp successfully ---"
 	@echo
-

@@ -43,6 +43,16 @@ class TACSShellElement : public TACSElement {
     con->incref();
   }
 
+  ~TACSShellElement(){
+    if (transform){
+      transform->decref();
+    }
+
+    if (con){
+      con->decref();
+    }
+  }
+
   const char* getObjectName(){
     return "TACSShellElement";
   }
@@ -223,10 +233,10 @@ void TACSShellElement<quadrature, basis, director, model>::
                    const TacsScalar *Xpts,
                    const TacsScalar *vars,
                    const TacsScalar *dvars,
-                   TacsScalar *_Te, TacsScalar *_Ue ){
+                   TacsScalar *Te, TacsScalar *Ue ){
   // Zero the kinetic and potential energies
-  TacsScalar Te = 0.0;
-  TacsScalar Ue = 0.0;
+  TacsScalar Telem = 0.0;
+  TacsScalar Uelem = 0.0;
 
   // Compute the number of quadrature points
   const int nquad = quadrature::getNumQuadraturePoints();
@@ -294,9 +304,9 @@ void TACSShellElement<quadrature, basis, director, model>::
     TacsScalar s[9];
     con->evalStress(elemIndex, pt, X, e, s);
 
-    Ue += 0.5*detXd*(s[0]*e[0] + s[1]*e[1] + s[2]*e[2] +
-                     s[3]*e[3] + s[4]*e[4] + s[5]*e[5] +
-                     s[6]*e[6] + s[7]*e[7] + s[8]*e[8]);
+    Uelem += 0.5*detXd*(s[0]*e[0] + s[1]*e[1] + s[2]*e[2] +
+                        s[3]*e[3] + s[4]*e[4] + s[5]*e[5] +
+                        s[6]*e[6] + s[7]*e[7] + s[8]*e[8]);
 
     // Evaluate the mass moments
     TacsScalar moments[3];
@@ -307,13 +317,13 @@ void TACSShellElement<quadrature, basis, director, model>::
     basis::template interpFields<vars_per_node, 3>(pt, dvars, u0dot);
     basis::template interpFields<3, 3>(pt, ddot, d0dot);
 
-    Te += 0.5*detXd*(moments[0]*vec3Dot(u0dot, u0dot) +
-                     2.0*moments[1]*vec3Dot(u0dot, d0dot) +
-                     moments[2]*vec3Dot(d0dot, d0dot));
+    Telem += 0.5*detXd*(moments[0]*vec3Dot(u0dot, u0dot) +
+                        2.0*moments[1]*vec3Dot(u0dot, d0dot) +
+                        moments[2]*vec3Dot(d0dot, d0dot));
   }
 
-  *_Te = Te;
-  *_Ue = Ue;
+  *Te = Telem;
+  *Ue = Uelem;
 }
 
 /*
@@ -736,8 +746,9 @@ void TACSShellElement<quadrature, basis, director, model>::
   TacsScalar etn[num_nodes], etnd[num_nodes];
   TacsScalar XdinvTn[9*num_nodes], Tn[9*num_nodes];
   TacsScalar u0xn[9*num_nodes], Ctn[csize];
-  TacsShellComputeDrillStrainDeriv<vars_per_node, offset, basis, director, model>(
-    transform, Xdn, fn, vars, psi, XdinvTn, Tn, u0xn, Ctn, etn, etnd);
+  TacsShellComputeDrillStrainDeriv<vars_per_node, offset, basis, director,
+                                   model>(transform, Xdn, fn, vars, psi,
+                                          XdinvTn, Tn, u0xn, Ctn, etn, etnd);
 
   // Compute the director rates and their derivatives
   TacsScalar d[dsize], ddot[dsize], dddot[dsize], dd[dsize];
@@ -936,7 +947,8 @@ void TACSShellElement<quadrature, basis, director, model>::
                           const TacsScalar dfdq[],
                           int dvLen,
                           TacsScalar dfdx[] ){
-  if (quantityType == TACS_FAILURE_INDEX || quantityType == TACS_STRAIN_ENERGY_DENSITY){
+  if (quantityType == TACS_FAILURE_INDEX ||
+      quantityType == TACS_STRAIN_ENERGY_DENSITY){
     // Compute the node normal directions
     TacsScalar fn[3*num_nodes];
     TacsShellComputeNodeNormals<basis>(Xpts, fn);
@@ -1027,7 +1039,7 @@ void TACSShellElement<quadrature, basis, director, model>::
     TacsScalar d[dsize], ddot[dsize], dddot[dsize];
     director::template
       computeDirectorRates<vars_per_node, offset, num_nodes>(vars, dvars, ddvars, fn,
-                                                            d, ddot, dddot);
+                                                             d, ddot, dddot);
 
     // Set the total number of tying points needed for this element
     TacsScalar ety[basis::NUM_TYING_POINTS];
@@ -1101,7 +1113,6 @@ void TACSShellElement<quadrature, basis, director, model>::
                                                             dd, dfdu);
   }
   else if (quantityType == TACS_ELEMENT_DISPLACEMENT){
-
     // Compute the interpolated displacements
     basis::template addInterpFieldsTranspose<vars_per_node, 3>(pt, dfdq, dfdu);
   }

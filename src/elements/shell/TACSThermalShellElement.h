@@ -43,6 +43,16 @@ class TACSThermalShellElement : public TACSElement {
     con->incref();
   }
 
+  ~TACSThermalShellElement(){
+    if (transform){
+      transform->decref();
+    }
+
+    if (con){
+      con->decref();
+    }
+  }
+
   int getVarsPerNode(){
     return vars_per_node;
   }
