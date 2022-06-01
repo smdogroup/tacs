@@ -95,21 +95,23 @@ class TACSBeamInertialForce : public TACSElement {
       double weight = quadrature::getQuadraturePoint(quad_index, pt);
 
       // Tangent to the beam
-      TacsScalar X0xi;
+      A2D::Vec3 X0, X0xi;
 
       // Compute X, X,xi and the interpolated normal
-      basis::template interpFieldsGrad<3, 3>(pt, Xpts, &X0xi);
+      basis::template interpFields<3, 3>(pt, Xpts, X0.x);
+      basis::template interpFieldsGrad<3, 3>(pt, Xpts, X0xi.x);
 
       // Compute the determinant of the transform
-      TacsScalar detXd = X0xi;
+      A2D::Scalar detXd;
+      A2D::Vec3Norm(X0xi, detXd);
 
-      TacsScalar mass = con->evalDensity(elemIndex, pt, Xpts);
+      TacsScalar mass = con->evalDensity(elemIndex, pt, X0.x);
 
       // Compute the traction
       TacsScalar tr[3];
-      tr[0] = -detXd * weight * mass * inertiaVec[0];
-      tr[1] = -detXd * weight * mass * inertiaVec[1];
-      tr[2] = -detXd * weight * mass * inertiaVec[2];
+      tr[0] = -detXd.value * weight * mass * inertiaVec[0];
+      tr[1] = -detXd.value * weight * mass * inertiaVec[1];
+      tr[2] = -detXd.value * weight * mass * inertiaVec[2];
 
       basis::template addInterpFieldsTranspose<vars_per_node, 3>(pt, tr, res);
     }
@@ -120,4 +122,4 @@ class TACSBeamInertialForce : public TACSElement {
   TACSBeamConstitutive* con;
 };
 
-#endif // TACS_BEAM_TRACTION_H
+#endif // TACS_BEAM_INERTIAL_FORCE_H
