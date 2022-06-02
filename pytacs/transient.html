@@ -397,6 +397,27 @@ forces must already be set.</p>
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="tacs.problems.TransientProblem.addFunction">
+<span class="sig-name descname"><span class="pre">addFunction</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">funcName</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">funcHandle</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">compIDs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/problems/transient.html#TransientProblem.addFunction"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.problems.TransientProblem.addFunction" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generic method to add a function for TACS. It is intended to
+be reasonably generic since the user supplies the actual
+function handle to use. See the <a class="reference internal" href="../core/functions.html#module-tacs.functions" title="tacs.functions"><code class="xref py py-mod docutils literal notranslate"><span class="pre">functions</span></code></a> module
+for supported TACS eval functions.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>funcName</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.10)"><em>str</em></a>) -- The user-supplied name for the function. This will
+typically be a string that is meaningful to the user</p></li>
+<li><p><strong>funcHandle</strong> (<em>TACS.Function</em>) -- The function handle to use for creation. This must come
+from the functions module in tacs.</p></li>
+<li><p><strong>compIDs</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.10)"><em>list</em></a>) -- List of compIDs to select.</p></li>
+<li><p><strong>**kwargs</strong> -- Any keyword arguments to be passed to the TACS function during setup.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="tacs.problems.TransientProblem.evalFunctions">
 <span class="sig-name descname"><span class="pre">evalFunctions</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">funcs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">evalFuncs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ignoreMissing</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/problems/transient.html#TransientProblem.evalFunctions"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.problems.TransientProblem.evalFunctions" title="Permalink to this definition">¶</a></dt>
 <dd><p>This is the main routine for returning useful information from
@@ -495,27 +516,6 @@ typically used from an external solver</p></li>
 <li><p><strong>timeSteps</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><em>int</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.10)"><em>list</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><em>int</em></a><em>] or </em><em>None</em>) -- Time step index or indices to get state variables for.
 If None, returns a solution for all time steps.
 Defaults to None.</p></li>
-</ul>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="tacs.problems.TransientProblem.addFunction">
-<span class="sig-name descname"><span class="pre">addFunction</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">funcName</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">funcHandle</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">compIDs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tacs.problems.TransientProblem.addFunction" title="Permalink to this definition">¶</a></dt>
-<dd><p>Generic method to add a function for TACS. It is intended to
-be reasonably generic since the user supplies the actual
-function handle to use. The following functions can be used:
-KSFailure, KSTemperature, AverageTemperature, Compliance,
-KSDisplacement, StructuralMass, HeatFlux.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>funcName</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.10)"><em>str</em></a>) -- The user-supplied name for the function. This will
-typically be a string that is meaningful to the user</p></li>
-<li><p><strong>funcHandle</strong> (<em>tacs.functions</em>) -- The function handle to use for creation. This must come
-from the functions module in tacs.</p></li>
-<li><p><strong>compIDs</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.10)"><em>list</em></a>) -- List of compIDs to select.</p></li>
 </ul>
 </dd>
 </dl>

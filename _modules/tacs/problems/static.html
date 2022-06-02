@@ -245,23 +245,24 @@
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Generic method to add a function for TACS. It is intended to</span>
 <span class="sd">        be reasonably generic since the user supplies the actual</span>
-<span class="sd">        function handle to use. The following functions can be used:</span>
-<span class="sd">        KSFailure, KSTemperature, AverageTemperature, Compliance,</span>
-<span class="sd">        KSDisplacement, StructuralMass, HeatFlux.</span>
+<span class="sd">        function handle to use. See the :py:mod:`~tacs.functions` module</span>
+<span class="sd">        for supported TACS eval functions.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
 <span class="sd">        funcName : str</span>
 <span class="sd">            The user-supplied name for the function. This will</span>
-<span class="sd">            typically be a string that is meanful to the user</span>
+<span class="sd">            typically be a string that is meaningful to the user</span>
 
-<span class="sd">        funcHandle : tacs.functions</span>
-<span class="sd">            The fucntion handle to use for creation. This must come</span>
+<span class="sd">        funcHandle : TACS.Function</span>
+<span class="sd">            The function handle to use for creation. This must come</span>
 <span class="sd">            from the functions module in tacs.</span>
 
 <span class="sd">        compIDs: list</span>
-<span class="sd">            List of compIDs to select. Use pyTACS.selectCompIDs method</span>
-<span class="sd">            to determine this.</span>
+<span class="sd">            List of compIDs to select.</span>
+
+<span class="sd">        **kwargs:</span>
+<span class="sd">            Any keyword arguments to be passed to the TACS function during setup.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">success</span> <span class="o">=</span> <span class="n">TACSProblem</span><span class="o">.</span><span class="n">addFunction</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">funcName</span><span class="p">,</span> <span class="n">funcHandle</span><span class="p">,</span> <span class="n">compIDs</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">success</span><span class="p">:</span>
