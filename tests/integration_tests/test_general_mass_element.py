@@ -21,13 +21,14 @@ base_dir = os.path.dirname(os.path.abspath(__file__))
 bdf_file = os.path.join(base_dir, "./input_files/general_mass.bdf")
 
 FUNC_REFS = {'constant_force_mass': 9.999999999999986,
-             'constant_force_x_disp': 49.70793631821073,
-             'constant_force_y_disp': 49.70793631821073,
-             'constant_force_z_disp': 49.70793631821073,
+             'constant_force_x_disp': 49.707936318209754,
+             'constant_force_y_disp': 49.707936318209754,
+             'constant_force_z_disp': 49.707936318209754,
+
              'gravity_mass': 9.999999999999986,
              'gravity_x_disp': 0.23025850929940442,
              'gravity_y_disp': 0.23025850929940442,
-             'gravity_z_disp': 490.27400177251246}
+             'gravity_z_disp': 490.2740017725439}
 
 # Force to apply
 f = np.ones(6)

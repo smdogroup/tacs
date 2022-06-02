@@ -708,8 +708,7 @@ class pyTACS(BaseUI):
                 area = propInfo.A
                 I1 = propInfo.i1
                 I2 = propInfo.i2
-                # Nastran uses negative product convention
-                I12 = -propInfo.i12
+                I12 = propInfo.i12
                 J = propInfo.j
                 k1 = propInfo.k1
                 k2 = propInfo.k2

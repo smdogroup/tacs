@@ -1,10 +1,12 @@
 import numpy as np
 import os
-from tacs import pytacs, elements, constitutive, functions, problems
+from tacs import pytacs, elements, constitutive, functions
 from pytacs_analysis_base_test import PyTACSTestCase
 
 '''
-The nominal case is a 1m x 1m flat plate under three load cases: 
+This is the same test cases as `test_shell_plate_quad.py`, but the plate is been rotated 
+about the y-axis by 45 degrees, so that it lies in a slant in the xz plane. This test ensures that the plate solution 
+is invariant under trivial transformation: 
 a 10 kN point force at center, a 100kPa pressure applied to the surface, and a 100G gravity load. The
 perimeter of the plate is fixed in all 6 degrees of freedom. The plate comprises
 100 CQUAD4 elements and test KSFailure, StructuralMass, CenterOfMass, MomentOfInertia, 
@@ -12,28 +14,14 @@ and Compliance functions and sensitivities
 '''
 
 base_dir = os.path.dirname(os.path.abspath(__file__))
-bdf_file = os.path.join(base_dir, "./input_files/plate.bdf")
+bdf_file = os.path.join(base_dir, "./input_files/slanted_plate.bdf")
 
-FUNC_REFS = {'point_load_compliance': 683.8571611640772, 'point_load_ks_vmfailure': 0.5757488025913641, 'point_load_mass': 12.5,
-             'point_load_cgx': 0.5, 'point_load_cgy': 0.5, 'point_load_cgz': 0.0,
-             'point_load_Ixx': 1.0416927083333238, 'point_load_Ixy': 0.0,                'point_load_Ixz': 0.0,
-                                                   'point_load_Iyy': 1.0416927083333243, 'point_load_Iyz': 0.0,
-                                                                                         'point_load_Izz': 2.08333333333333,
+from test_shell_plate_quad import FUNC_REFS, ksweight
 
-             'pressure_compliance': 4679.345460326432, 'pressure_ks_vmfailure': 1.2938623156872926, 'pressure_mass': 12.5,
-             'pressure_cgx': 0.5, 'pressure_cgy': 0.5, 'pressure_cgz': 0.0,
-             'pressure_Ixx': 1.0416927083333238, 'pressure_Ixy': 0.0,                'pressure_Ixz': 0.0,
-                                                 'pressure_Iyy': 1.0416927083333243, 'pressure_Iyz': 0.0,
-                                                                                     'pressure_Izz': 2.08333333333333,
-
-             'gravity_compliance': 70.36280588344383, 'gravity_ks_vmfailure': 0.11707320009742483, 'gravity_mass': 12.5,
-             'gravity_cgx': 0.5, 'gravity_cgy': 0.5, 'gravity_cgz': 0.0,
-             'gravity_Ixx': 1.0416927083333238, 'gravity_Ixy': 0.0,                'gravity_Ixz': 0.0,
-                                                'gravity_Iyy': 1.0416927083333243, 'gravity_Iyz': 0.0,
-                                                                                   'gravity_Izz': 2.08333333333333}
-
-# KS function weight
-ksweight = 10.0
+# Define rotated coordinate frame axes
+x_prime = np.sqrt(0.5) * np.array([1.0, 0.0, 1.0])
+y_prime = np.array([0.0, 1.0, 0.0])
+z_prime = np.sqrt(0.5) * np.array([-1.0, 0.0, 1.0])
 
 class ProblemTest(PyTACSTestCase.PyTACSTest):
     N_PROCS = 2  # this is how many MPI processes to use for this TestCase.
@@ -103,23 +91,24 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
         for problem in problems:
             problem.addFunction('mass', functions.StructuralMass)
             problem.addFunction('ks_vmfailure', functions.KSFailure,
-                                ksWeight=ksweight)
+                                   ksWeight=ksweight)
             problem.addFunction('compliance', functions.Compliance)
-            problem.addFunction('cgx', functions.CenterOfMass, direction=[1.0, 0.0, 0.0])
-            problem.addFunction('cgy', functions.CenterOfMass, direction=[0.0, 1.0, 0.0])
-            problem.addFunction('cgz', functions.CenterOfMass, direction=[0.0, 0.0, 1.0])
-            problem.addFunction('Ixx', functions.MomentOfInertia, direction1=[1.0, 0.0, 0.0],
-                                direction2=[1.0, 0.0, 0.0], aboutCM=True)
-            problem.addFunction('Ixy', functions.MomentOfInertia, direction1=[1.0, 0.0, 0.0],
-                                direction2=[0.0, 1.0, 0.0], aboutCM=True)
-            problem.addFunction('Ixz', functions.MomentOfInertia, direction1=[1.0, 0.0, 0.0],
-                                direction2=[0.0, 0.0, 1.0], aboutCM=True)
-            problem.addFunction('Iyy', functions.MomentOfInertia, direction1=[0.0, 1.0, 0.0],
-                                direction2=[0.0, 1.0, 0.0], aboutCM=True)
-            problem.addFunction('Iyz', functions.MomentOfInertia, direction1=[0.0, 0.0, 1.0],
-                                direction2=[0.0, 1.0, 0.0], aboutCM=True)
-            problem.addFunction('Izz', functions.MomentOfInertia, direction1=[0.0, 0.0, 1.0],
-                                direction2=[0.0, 0.0, 1.0], aboutCM=True)
+            # Calculate cg and MOI in rotated coordinate frame
+            problem.addFunction('cgx', functions.CenterOfMass, direction=x_prime)
+            problem.addFunction('cgy', functions.CenterOfMass, direction=y_prime)
+            problem.addFunction('cgz', functions.CenterOfMass, direction=z_prime)
+            problem.addFunction('Ixx', functions.MomentOfInertia, direction1=x_prime,
+                                direction2=x_prime, aboutCM=True)
+            problem.addFunction('Ixy', functions.MomentOfInertia, direction1=x_prime,
+                                direction2=y_prime, aboutCM=True)
+            problem.addFunction('Ixz', functions.MomentOfInertia, direction1=x_prime,
+                                direction2=z_prime, aboutCM=True)
+            problem.addFunction('Iyy', functions.MomentOfInertia, direction1=y_prime,
+                                direction2=y_prime, aboutCM=True)
+            problem.addFunction('Iyz', functions.MomentOfInertia, direction1=y_prime,
+                                direction2=z_prime, aboutCM=True)
+            problem.addFunction('Izz', functions.MomentOfInertia, direction1=z_prime,
+                                direction2=z_prime, aboutCM=True)
         func_list = ['mass', 'ks_vmfailure', 'compliance', 'cgx', 'cgy', 'cgz',
                      'Ixx', 'Ixy', 'Ixz', 'Iyy', 'Iyz', 'Izz']
         return func_list, FUNC_REFS
@@ -132,7 +121,8 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
 
         # Add point force to node 81 (center of plate)
         sp = fea_assembler.createStaticProblem(name='point_load')
-        F = np.array([0.0, 0.0, 1e4, 0.0, 0.0, 0.0])
+        F = np.zeros(6)
+        F[:3] = 1e4 * z_prime
         sp.addLoadToNodes(81, F, nastranOrdering=True)
         tacs_probs.append(sp)
 
@@ -145,7 +135,7 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
 
         # Add pressure to entire plate
         sp = fea_assembler.createStaticProblem(name='gravity')
-        g = np.array([0.0, 0.0, -981.0], dtype=self.dtype)
+        g = -981.0*z_prime
         sp.addInertialLoad(g)
         tacs_probs.append(sp)
 
