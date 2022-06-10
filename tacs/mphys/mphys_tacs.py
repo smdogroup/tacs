@@ -45,7 +45,10 @@ class TacsMeshGroup(om.Group):
         mask = np.zeros([nnodes, 3], dtype=bool)
         mask[:, :] = True
         mask[mult_ids, :] = False
-        masker = MaskedConverter(input=mask_input, output=mask_output, mask=mask.flatten(), distributed=True)
+        x_orig = fea_assembler.getOrigNodes()
+        x_masked = x_orig[mask.flatten()]
+        masker = MaskedConverter(input=mask_input, output=mask_output, mask=mask.flatten(),
+                                 init_output=x_masked, distributed=True)
         self.add_subsystem('masker', masker,
                            promotes_outputs=[('x_struct0_masked', 'x_struct0')])
 
@@ -714,7 +717,7 @@ class TacsBuilder(Builder):
             offsets = np.zeros(self.comm.size, dtype=int)
             offsets[1:] = np.cumsum(dv_sizes)[:-1]
             # Gather the portions of the design variable array distributed across each processor
-            tot_ndvs = self.fea_assembler.getTotalNumDesignVars()
+            tot_ndvs = sum(dv_sizes)
             global_dvs = np.zeros(tot_ndvs, dtype=local_dvs.dtype)
             self.comm.Allgatherv(local_dvs, [global_dvs, dv_sizes, offsets, MPI.DOUBLE])
             # return the global dv array
