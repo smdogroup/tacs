@@ -455,7 +455,7 @@ class TransientProblem(TACSProblem):
 
     def addInertialLoad(self, timeStep, inertiaVector):
         """
-        This method is used to add a fixed inertial load  at a specified time step
+        This method is used to add a fixed inertial load at a specified time step
         due to a uniform acceleration over the entire model.
         This is most commonly used to model gravity loads on a model.
 
@@ -469,6 +469,26 @@ class TransientProblem(TACSProblem):
             Acceleration vector used to define inertial load.
         """
         self._addInertialLoad(self.auxElems[timeStep], inertiaVector)
+
+    def addCentrifugalLoad(self, timeStep, omegaVector, rotCenter):
+        """
+        This method is used to add a fixed centrifugal load at at specified time step
+        due to a uniform rotational velocity over the entire model.
+        This is most commonly used to model rotors, rolling aircraft, etc.
+
+        Parameters
+        ----------
+
+        timeStep : int
+            Time step index to apply load to.
+
+        omegaVector : numpy.ndarray
+            Rotational velocity vector (rad/s) used to define centrifugal load.
+
+        rotCenter : numpy.ndarray
+            Location of center of rotation used to define centrifugal load.
+        """
+        self._addCentrifugalLoad(self.auxElems[timeStep], omegaVector, rotCenter)
 
     ####### Transient solver methods ########
 
