@@ -29,7 +29,7 @@ class TACSMassElement : public TACSElement {
     Create element inertial force class
     @return The TACSElement inertial force class associated with this element. Possibly NULL.
   */
-  TACSElement* createElementInertialForce( TacsScalar g[] );
+  TACSElement* createElementInertialForce( const TacsScalar g[] );
 
   // Functions for analysis
   // ----------------------

@@ -195,7 +195,7 @@ class TACSElement : public TACSObject {
 
     @return The TACSElement traction class associated with this element. Possibly NULL.
   */
-  virtual TACSElement* createElementTraction( int faceIndex, TacsScalar t[] ){
+  virtual TACSElement* createElementTraction( int faceIndex, const TacsScalar t[] ){
     return NULL;
   }
 
@@ -213,7 +213,16 @@ class TACSElement : public TACSObject {
 
     @return The TACSElement inertial force class associated with this element. Possibly NULL.
   */
-  virtual TACSElement* createElementInertialForce( TacsScalar g[] ){
+  virtual TACSElement* createElementInertialForce( const TacsScalar g[] ){
+    return NULL;
+  }
+
+  /**
+    Create element centrifugal force class
+
+    @return The TACSElement centrifugal force class associated with this element. Possibly NULL.
+  */
+  virtual TACSElement* createElementCentrifugalForce( const TacsScalar omega[], const TacsScalar rotCenter[] ){
     return NULL;
   }
 

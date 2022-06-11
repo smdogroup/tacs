@@ -38,7 +38,7 @@ ElementType TACSMassElement::getElementType(){ return TACS_MASS_ELEMENT; }
 */
 const char * TACSMassElement::elemName = "TACSMassElement";
 
-TACSElement* TACSMassElement::createElementInertialForce( TacsScalar inertiaVec[] ){
+TACSElement* TACSMassElement::createElementInertialForce( const TacsScalar inertiaVec[] ){
   return new TACSMassInertialForce(con, inertiaVec);
 }
 

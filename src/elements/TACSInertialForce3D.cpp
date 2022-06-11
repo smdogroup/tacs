@@ -16,7 +16,7 @@
 #include "TACSElementAlgebra.h"
 
 TACSInertialForce3D::TACSInertialForce3D( int _varsPerNode, TACSConstitutive *_con,
-                                          TACSElementBasis *_basis, TacsScalar _inertiaVec[] ){
+                                          TACSElementBasis *_basis, const TacsScalar _inertiaVec[] ){
   varsPerNode = _varsPerNode;
   con = _con;  con->incref();
   basis = _basis;  basis->incref();

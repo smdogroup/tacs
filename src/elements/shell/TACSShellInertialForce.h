@@ -98,7 +98,8 @@ class TACSShellInertialForce : public TACSElement {
       double pt[3];
       double weight = quadrature::getQuadraturePoint(quad_index, pt);
 
-      TacsScalar Xxi[6], n[3];
+      TacsScalar Xxi[6], n[3], X[3];
+      basis::template interpFields<3, 3>(pt, Xpts, X);
       basis::template interpFields<3, 3>(pt, fn, n);
       basis::template interpFieldsGrad<3, 3>(pt, Xpts, Xxi);
 
@@ -110,7 +111,7 @@ class TACSShellInertialForce : public TACSElement {
       TacsScalar detXd = det3x3(Xd);
       detXd *= weight;
 
-      TacsScalar mass = con->evalDensity(elemIndex, pt, Xpts);
+      TacsScalar mass = con->evalDensity(elemIndex, pt, X);
 
       // Compute the traction
       TacsScalar tr[3];

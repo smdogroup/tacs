@@ -16,7 +16,7 @@
 #include "TACSElementAlgebra.h"
 
 TACSTraction3D::TACSTraction3D( int _varsPerNode, int _faceIndex,
-                                TACSElementBasis *_basis, TacsScalar _trac[],
+                                TACSElementBasis *_basis, const TacsScalar _trac[],
                                 int _tractionCoordinateComponent ){
   varsPerNode = _varsPerNode;
   faceIndex = _faceIndex;
