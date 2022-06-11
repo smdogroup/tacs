@@ -12,6 +12,7 @@
 #include "TACSShellTraction.h"
 #include "TACSShellPressure.h"
 #include "TACSShellInertialForce.h"
+#include "TACSShellCentrifugalForce.h"
 #include "TACSElementVerification.h"
 
 template <class quadrature, class basis, class director, class model>
@@ -123,6 +124,10 @@ class TACSShellElement : public TACSElement {
 
   TACSElement* createElementInertialForce( const TacsScalar inertiaVec[] ){
     return new TACSShellInertialForce<vars_per_node, quadrature, basis>(con, inertiaVec);
+  }
+
+  TACSElement* createElementCentrifugalForce( const TacsScalar omega[], const TacsScalar rotCenter[] ){
+    return new TACSShellCentrifugalForce<vars_per_node, quadrature, basis>(con, omega, rotCenter);
   }
 
   void computeEnergies( int elemIndex,
