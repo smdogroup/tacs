@@ -49,12 +49,13 @@ void TACSMassCentrifugalForce::addResidual( int elemIndex,
                                             const TacsScalar *dvars,
                                             const TacsScalar *ddvars,
                                             TacsScalar *res ){
+
+
   double pt[3] = {0.0, 0.0, 0.0};
 
-  // Get the element "density" (mass)
-  TacsScalar density = con->evalDensity(elemIndex, pt, X);
-
-  TacsScalar r[3], wxr[3], ac[3];
+  TacsScalar r[3], wxr[3];
+  TacsScalar ac[NUM_DISPS], f[NUM_DISPS];
+  memset(ac, 0, NUM_DISPS*sizeof(TacsScalar));
 
   // Create vector pointing from rotation center to element gpt
   r[0] = X[0] - rotCenter[0];
@@ -67,8 +68,10 @@ void TACSMassCentrifugalForce::addResidual( int elemIndex,
   // Compute centrifugal acceleration
   crossProduct(omegaVec, wxr, ac);
 
-  for (int i = 0; i < 3; i++){
-    res[i] += density * ac[i];
+  con->evalInertia(elemIndex, pt, X, ac, f);
+
+  for (int i = 0; i < NUM_DISPS; i++){
+    res[i] += f[i];
   }
 }
 
