@@ -96,12 +96,12 @@ int TACSCentrifugalForce3D::getDesignVarRange( int elemIndex, int dvLen, TacsSca
   Add the residual to the provided vector
 */
 void TACSCentrifugalForce3D::addResidual( int elemIndex,
-                                       double time,
-                                       const TacsScalar *Xpts,
-                                       const TacsScalar *vars,
-                                       const TacsScalar *dvars,
-                                       const TacsScalar *ddvars,
-                                       TacsScalar *res ){
+                                          double time,
+                                          const TacsScalar *Xpts,
+                                          const TacsScalar *vars,
+                                          const TacsScalar *dvars,
+                                          const TacsScalar *ddvars,
+                                          TacsScalar *res ){
   // Compute the number of quadrature points
   const int nquad = basis->getNumQuadraturePoints();
 
@@ -154,16 +154,16 @@ void TACSCentrifugalForce3D::addResidual( int elemIndex,
   Add the residual and Jacobians to the arrays
 */
 void TACSCentrifugalForce3D::addJacobian( int elemIndex,
-                                       double time,
-                                       TacsScalar alpha,
-                                       TacsScalar beta,
-                                       TacsScalar gamma,
-                                       const TacsScalar *Xpts,
-                                       const TacsScalar *vars,
-                                       const TacsScalar *dvars,
-                                       const TacsScalar *ddvars,
-                                       TacsScalar *res,
-                                       TacsScalar *mat ){
+                                          double time,
+                                          TacsScalar alpha,
+                                          TacsScalar beta,
+                                          TacsScalar gamma,
+                                          const TacsScalar *Xpts,
+                                          const TacsScalar *vars,
+                                          const TacsScalar *dvars,
+                                          const TacsScalar *ddvars,
+                                          TacsScalar *res,
+                                          TacsScalar *mat ){
   // Compute the number of quadrature points
   const int nquad = basis->getNumQuadraturePoints();
 

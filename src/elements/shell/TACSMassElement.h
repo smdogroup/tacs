@@ -31,6 +31,12 @@ class TACSMassElement : public TACSElement {
   */
   TACSElement* createElementInertialForce( const TacsScalar g[] );
 
+  /**
+    Create element centrifugal force class
+    @return The TACSElement centrifugal force class associated with this element. Possibly NULL.
+  */
+  TACSElement* createElementCentrifugalForce( const TacsScalar omegaVec[], const TacsScalar rotCenter[] );
+
   // Functions for analysis
   // ----------------------
   void computeEnergies( int elemIndex,

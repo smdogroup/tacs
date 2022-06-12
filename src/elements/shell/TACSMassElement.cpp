@@ -1,5 +1,6 @@
 #include "TACSMassElement.h"
 #include "TACSMassInertialForce.h"
+#include "TACSMassCentrifugalForce.h"
 
 /*
   A 6 DOF point mass element
@@ -40,6 +41,11 @@ const char * TACSMassElement::elemName = "TACSMassElement";
 
 TACSElement* TACSMassElement::createElementInertialForce( const TacsScalar inertiaVec[] ){
   return new TACSMassInertialForce(con, inertiaVec);
+}
+
+TACSElement* TACSMassElement::createElementCentrifugalForce( const TacsScalar omegaVec[],
+                                                             const TacsScalar rotCenter[] ){
+  return new TACSMassCentrifugalForce(con, omegaVec, rotCenter);
 }
 
 void TACSMassElement::computeEnergies( int elemIndex,
