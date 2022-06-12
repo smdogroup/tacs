@@ -1171,6 +1171,20 @@ class pyTACS(BaseUI):
                             inertiaVec[:3] = scale * loadInfo.scale * loadInfo.N
                             problem.addInertialLoad(inertiaVec)
 
+                        # Add any centrifugal loads
+                        elif loadInfo.type == 'RFORCE':
+                            omegaVec = np.zeros(3, dtype=self.dtype)
+                            if loadInfo.nid_ref:
+                                rotCenter = loadInfo.nid_ref.xyz
+                            else:
+                                rotCenter = np.zeros(3, dtype=self.dtype)
+                            omegaVec[:3] = scale * loadInfo.scale * np.array(loadInfo.r123)
+                            # Convert omega from rev/s to rad/s
+                            omegaVec *= 2 * np.pi
+                            # Convert omega to global coordinate system
+                            omegaVec = loadInfo.cid_ref.transform_vector_to_global(omegaVec)
+                            problem.addCentrifugalLoad(omegaVec, rotCenter)
+
                         # Add any pressure loads
                         # Pressure load card specific to shell elements
                         elif loadInfo.type == 'PLOAD2':
