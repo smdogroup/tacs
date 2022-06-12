@@ -114,7 +114,7 @@ class ElementTest(unittest.TestCase):
         # Loop through every combination of beam element class and test element matrix inner product sens
         for element in self.elements:
             with self.subTest(element=element):
-                force = element.createElementInertialForce(self.g)
+                force = element.createElementCentrifugalForce(self.omega, self.rotCenter)
                 fail = elements.TestElementMatSVSens(force, TACS.GEOMETRIC_STIFFNESS_MATRIX, self.elem_index,
                                                      self.time, self.xpts, self.vars, self.dh,
                                                      self.print_level, self.atol, self.rtol)
