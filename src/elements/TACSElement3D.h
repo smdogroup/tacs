@@ -38,6 +38,7 @@ class TACSElement3D : public TACSElement {
   TACSElement* createElementTraction( int faceIndex, const TacsScalar t[] );
   TACSElement* createElementPressure( int faceIndex, TacsScalar p );
   TACSElement* createElementInertialForce( const TacsScalar inertiaVec[] );
+  TACSElement* createElementCentrifugalForce( const TacsScalar omegaVec[], const TacsScalar rotCenter[] );
   int getNumQuadraturePoints();
   double getQuadratureWeight( int n );
   double getQuadraturePoint( int n, double pt[] );

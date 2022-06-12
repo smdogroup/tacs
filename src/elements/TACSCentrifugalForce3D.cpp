@@ -12,88 +12,90 @@
   http://www.apache.org/licenses/LICENSE-2.0
 */
 
-#include "TACSInertialForce3D.h"
+#include "TACSCentrifugalForce3D.h"
 #include "TACSElementAlgebra.h"
 
-TACSInertialForce3D::TACSInertialForce3D( int _varsPerNode, TACSConstitutive *_con,
-                                          TACSElementBasis *_basis, const TacsScalar _inertiaVec[] ){
+TACSCentrifugalForce3D::TACSCentrifugalForce3D( int _varsPerNode, TACSConstitutive *_con,
+                                                TACSElementBasis *_basis,
+                                                const TacsScalar _omegaVec[], const TacsScalar _rotCenter[] ){
   varsPerNode = _varsPerNode;
   con = _con;  con->incref();
   basis = _basis;  basis->incref();
-  memcpy(inertiaVec, _inertiaVec, 3*sizeof(TacsScalar));
+  memcpy(omegaVec, _omegaVec, 3*sizeof(TacsScalar));
+  memcpy(rotCenter, _rotCenter, 3*sizeof(TacsScalar));
 }
 
-TACSInertialForce3D::~TACSInertialForce3D(){
+TACSCentrifugalForce3D::~TACSCentrifugalForce3D(){
   con->decref();
   basis->decref();
 }
 
-const char* TACSInertialForce3D::getObjectName(){
-  return "TACSInertialForce3D";
+const char* TACSCentrifugalForce3D::getObjectName(){
+  return "TACSCentrifugalForce3D";
 }
 
 // Get the layout properties of the element
-int TACSInertialForce3D::getVarsPerNode(){
+int TACSCentrifugalForce3D::getVarsPerNode(){
   return varsPerNode;
 }
 
-int TACSInertialForce3D::getNumNodes(){
+int TACSCentrifugalForce3D::getNumNodes(){
   return basis->getNumNodes();
 }
 
-ElementLayout TACSInertialForce3D::getLayoutType(){
+ElementLayout TACSCentrifugalForce3D::getLayoutType(){
   return basis->getLayoutType();
 }
 
-TACSElementBasis* TACSInertialForce3D::getElementBasis(){
+TACSElementBasis* TACSCentrifugalForce3D::getElementBasis(){
   return basis;
 }
 
-int TACSInertialForce3D::getNumQuadraturePoints(){
+int TACSCentrifugalForce3D::getNumQuadraturePoints(){
   return basis->getNumQuadraturePoints();
 }
 
-double TACSInertialForce3D::getQuadratureWeight( int n ){
+double TACSCentrifugalForce3D::getQuadratureWeight( int n ){
   return basis->getQuadratureWeight(n);
 }
 
-double TACSInertialForce3D::getQuadraturePoint( int n, double pt[] ){
+double TACSCentrifugalForce3D::getQuadraturePoint( int n, double pt[] ){
   return basis->getQuadraturePoint(n, pt);
 }
 
-int TACSInertialForce3D::getNumElementFaces(){
+int TACSCentrifugalForce3D::getNumElementFaces(){
   return basis->getNumElementFaces();
 }
 
-int TACSInertialForce3D::getNumFaceQuadraturePoints( int face ){
+int TACSCentrifugalForce3D::getNumFaceQuadraturePoints( int face ){
   return basis->getNumFaceQuadraturePoints(face);
 }
 
-double TACSInertialForce3D::getFaceQuadraturePoint( int face, int n, double pt[],
+double TACSCentrifugalForce3D::getFaceQuadraturePoint( int face, int n, double pt[],
                                                     double tangent[] ){
   return basis->getFaceQuadraturePoint(face, n, pt, tangent);
 }
 
-int TACSInertialForce3D::getDesignVarNums( int elemIndex, int dvLen, int dvNums[] ){
+int TACSCentrifugalForce3D::getDesignVarNums( int elemIndex, int dvLen, int dvNums[] ){
   return con->getDesignVarNums(elemIndex, dvLen, dvNums);
 }
 
-int TACSInertialForce3D::setDesignVars( int elemIndex, int dvLen, const TacsScalar dvs[] ){
+int TACSCentrifugalForce3D::setDesignVars( int elemIndex, int dvLen, const TacsScalar dvs[] ){
   return con->setDesignVars(elemIndex, dvLen, dvs);
 }
 
-int TACSInertialForce3D::getDesignVars( int elemIndex, int dvLen, TacsScalar dvs[] ){
+int TACSCentrifugalForce3D::getDesignVars( int elemIndex, int dvLen, TacsScalar dvs[] ){
   return con->getDesignVars(elemIndex, dvLen, dvs);
 }
 
-int TACSInertialForce3D::getDesignVarRange( int elemIndex, int dvLen, TacsScalar lb[], TacsScalar ub[] ){
+int TACSCentrifugalForce3D::getDesignVarRange( int elemIndex, int dvLen, TacsScalar lb[], TacsScalar ub[] ){
   return con->getDesignVarRange(elemIndex, dvLen, lb, ub);
 }
 
 /*
   Add the residual to the provided vector
 */
-void TACSInertialForce3D::addResidual( int elemIndex,
+void TACSCentrifugalForce3D::addResidual( int elemIndex,
                                        double time,
                                        const TacsScalar *Xpts,
                                        const TacsScalar *vars,
@@ -126,8 +128,21 @@ void TACSInertialForce3D::addResidual( int elemIndex,
     // Get the element density
     TacsScalar density = con->evalDensity(elemIndex, pt, X);
 
+    TacsScalar r[3], wxr[3], ac[3];
+
+    // Create vector pointing from rotation center to element gpt
+    r[0] = X[0] - rotCenter[0];
+    r[1] = X[1] - rotCenter[1];
+    r[2] = X[2] - rotCenter[2];
+
+    // Compute omega x r
+    crossProduct(omegaVec, r, wxr);
+
+    // Compute centrifugal acceleration
+    crossProduct(omegaVec, wxr, ac);
+
     for ( int k = 0; k < 3; k++ ){
-      DUt[3*k] = -density * inertiaVec[k];
+      DUt[3*k] = density * ac[k];
     }
 
     // Add the weak form of the residual at this point
@@ -138,7 +153,7 @@ void TACSInertialForce3D::addResidual( int elemIndex,
 /*
   Add the residual and Jacobians to the arrays
 */
-void TACSInertialForce3D::addJacobian( int elemIndex,
+void TACSCentrifugalForce3D::addJacobian( int elemIndex,
                                        double time,
                                        TacsScalar alpha,
                                        TacsScalar beta,
@@ -175,8 +190,21 @@ void TACSInertialForce3D::addJacobian( int elemIndex,
     // Get the element density
     TacsScalar density = con->evalDensity(elemIndex, pt, X);
 
+    TacsScalar r[3], wxr[3], ac[3];
+
+    // Create vector pointing from rotation center to element gpt
+    r[0] = X[0] - rotCenter[0];
+    r[1] = X[1] - rotCenter[1];
+    r[2] = X[2] - rotCenter[2];
+
+    // Compute omega x r
+    crossProduct(omegaVec, r, wxr);
+
+    // Compute centrifugal acceleration
+    crossProduct(omegaVec, wxr, ac);
+
     for ( int k = 0; k < 3; k++ ){
-      DUt[3*k] = -density * inertiaVec[k];
+      DUt[3*k] = density * ac[k];
     }
 
     // Add the weak form of the residual at this point

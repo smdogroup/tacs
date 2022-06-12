@@ -16,6 +16,7 @@
 #include "TACSTraction3D.h"
 #include "TACSPressure3D.h"
 #include "TACSInertialForce3D.h"
+#include "TACSCentrifugalForce3D.h"
 #include "TACSConstitutive.h"
 #include "TACSElementAlgebra.h"
 
@@ -61,6 +62,13 @@ TACSElement* TACSElement3D::createElementInertialForce( const TacsScalar inertia
   int varsPerNode = getVarsPerNode();
   TACSConstitutive* con = model->getConstitutive();
   return new TACSInertialForce3D(varsPerNode, con, basis, inertiaVec);
+}
+
+TACSElement* TACSElement3D::createElementCentrifugalForce( const TacsScalar omegaVec[],
+                                                           const TacsScalar rotCenter[] ){
+  int varsPerNode = getVarsPerNode();
+  TACSConstitutive* con = model->getConstitutive();
+  return new TACSCentrifugalForce3D(varsPerNode, con, basis, omegaVec, rotCenter);
 }
 
 ElementLayout TACSElement3D::getLayoutType(){
