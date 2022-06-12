@@ -12,6 +12,7 @@
 #include "TACSElementTypes.h"
 #include "a2d.h"
 #include "TACSBeamInertialForce.h"
+#include "TACSBeamCentrifugalForce.h"
 #include "TACSBeamTraction.h"
 
 /*
@@ -311,6 +312,10 @@ class TACSBeamElement : public TACSElement {
 
   TACSElement* createElementInertialForce( const TacsScalar inertiaVec[] ){
     return new TACSBeamInertialForce<vars_per_node, quadrature, basis>(con, inertiaVec);
+  }
+
+  TACSElement* createElementCentrifugalForce( const TacsScalar omegaVec[], const TacsScalar rotCenter[] ){
+    return new TACSBeamCentrifugalForce<vars_per_node, quadrature, basis>(con, omegaVec, rotCenter);
   }
 
   void computeEnergies( int elemIndex,
