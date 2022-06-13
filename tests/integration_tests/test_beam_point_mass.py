@@ -1,5 +1,6 @@
 import os
-from tacs import pytacs, functions
+import numpy as np
+from tacs import pytacs, constitutive, elements, functions
 from pytacs_analysis_base_test import PyTACSTestCase
 
 '''
@@ -7,10 +8,6 @@ from pytacs_analysis_base_test import PyTACSTestCase
 The beam-mass assembly is rotated about the origin which generates a centrifugal load.
 The cross-sectional properties of the beam are as follows:
     A = 0.1
-    Iz = 0.2
-    Iy = 0.3
-    J = 0.4
-    Iyz = 0.1
     M_tip = 20.0
     omega = 1.0 rev/s
 Because Iyz =/= 0.0, we expect some coupling to show up in y and z bending. 
@@ -26,9 +23,9 @@ FUNC_REFS = {'centrifugal_compliance': 972.8974314464419,
              'centrifugal_x_disp': 11.787207585847018,
              'centrifugal_y_disp': 0.06931471805599453,
              'centrifugal_z_disp': 0.06931471805599453,
-             'centrifugal_I_xx': 23.5, 'centrifugal_I_xy': 0.0,                'centrifugal_I_xz': 0.0,
-                                       'centrifugal_I_yy': 41.519713656387665, 'centrifugal_I_yz': 2.7,
-                                                                               'centrifugal_I_zz': 19.019713656387665}
+             'centrifugal_I_xx': 23.5, 'centrifugal_I_xy': 0.0,               'centrifugal_I_xz': 0.0,
+                                       'centrifugal_I_yy': 33.47596365638766, 'centrifugal_I_yz': 0.0,
+                                                                               'centrifugal_I_zz': 13.628713656387657}
 
 ksweight = 10.0
 
@@ -54,8 +51,34 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
 
         fea_assembler = pytacs.pyTACS(bdf_file, comm, options=struct_options)
 
+        # Material properties
+        rho = 27.0  # density kg/m^3
+        E = 70.0e2  # Young's modulus (Pa)
+        nu = 0.3  # Poisson's ratio
+        ys = 2.7e-2  # yield stress
+
+        # Beam dimensions
+        t = 0.2     # m
+        w = 0.5  # m
+
+        # Callback function used to setup TACS element objects and DVs
+        def elem_call_back(dv_num, comp_id, comp_descript, elem_descripts, global_dvs, **kwargs):
+            # Setup (isotropic) property and constitutive objects
+            prop = constitutive.MaterialProperties(rho=rho, E=E, nu=nu, ys=ys)
+            con = constitutive.IsoRectangleBeamConstitutive(prop, t=t, tNum=dv_num, w=w, wNum=dv_num+1)
+            refAxis = np.array([0.0, 1.0, 0.0])
+            transform = elements.BeamRefAxisTransform(refAxis)
+            # pass back the appropriate tacs element object
+            elem = elements.Beam2(transform, con)
+            return elem
+
+        # Instantiate FEA Assembler
+        struct_options = {}
+
+        fea_assembler = pytacs.pyTACS(bdf_file, comm, options=struct_options)
+
         # Set up constitutive objects and elements
-        fea_assembler.initialize()
+        fea_assembler.initialize(elem_call_back)
 
         return fea_assembler
 
