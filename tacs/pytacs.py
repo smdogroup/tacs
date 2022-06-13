@@ -1179,7 +1179,7 @@ class pyTACS(BaseUI):
                         elif loadInfo.type == 'RFORCE':
                             omegaVec = np.zeros(3, dtype=self.dtype)
                             if loadInfo.nid_ref:
-                                rotCenter = loadInfo.nid_ref.xyz
+                                rotCenter = loadInfo.nid_ref.get_position()
                             else:
                                 rotCenter = np.zeros(3, dtype=self.dtype)
                             omegaVec[:3] = scale * loadInfo.scale * np.array(loadInfo.r123)
