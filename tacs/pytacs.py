@@ -1160,9 +1160,11 @@ class pyTACS(BaseUI):
 
                             loadArray = numpy.zeros(vpn)
                             if loadInfo.type == 'FORCE' and vpn >= 3:
-                                loadArray[:3] += scale * loadInfo.scaled_vector
+                                F = scale * loadInfo.scaled_vector
+                                loadArray[:3] += loadInfo.cid_ref.transform_vector_to_global(F)
                             elif loadInfo.type == 'MOMENT' and vpn >= 6:
-                                loadArray[3:6] += scale * loadInfo.scaled_vector
+                                M = scale * loadInfo.scaled_vector
+                                loadArray[3:6] += loadInfo.cid_ref.transform_vector_to_global(M)
                             problem.addLoadToNodes(nodeID, loadArray, nastranOrdering=True)
 
                         # Add any gravity loads
