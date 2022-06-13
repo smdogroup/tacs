@@ -47,19 +47,6 @@ class TACSMassCentrifugalForce : public TACSElement {
                     TacsScalar res[],
                     TacsScalar mat[] );
 
-  // Functions required to determine the derivatives w.r.t. the design variables
-  // ---------------------------------------------------------------------------
-  void addAdjResXptProduct( int elemIndex, double time,
-                            TacsScalar scale,
-                            const TacsScalar psi[],
-                            const TacsScalar Xpts[],
-                            const TacsScalar vars[],
-                            const TacsScalar dvars[],
-                            const TacsScalar ddvars[],
-                            TacsScalar fXptSens[] ){
-    return;
-  }
-
  private:
 
   static const int NUM_DISPS = 6;
