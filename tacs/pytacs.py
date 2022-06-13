@@ -1169,6 +1169,8 @@ class pyTACS(BaseUI):
                         elif loadInfo.type == 'GRAV':
                             inertiaVec = np.zeros(3, dtype=self.dtype)
                             inertiaVec[:3] = scale * loadInfo.scale * loadInfo.N
+                            # Convert acceleration to global coordinate system
+                            inertiaVec = loadInfo.cid_ref.transform_vector_to_global(inertiaVec)
                             problem.addInertialLoad(inertiaVec)
 
                         # Add any centrifugal loads
