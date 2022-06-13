@@ -755,11 +755,11 @@ class pyTACS(BaseUI):
                     transform = tacs.elements.SpringRefFrameTransform(refAxis_i, refAxis_j)
                 elif elemDict[propertyID]['elements'][0].x[0]:
                     refAxis = numpy.array(elemDict[propertyID]['elements'][0].x) \
-                              - elemDict[propertyID]['elements'][0].nodes_ref[0].xyz
+                              - elemDict[propertyID]['elements'][0].nodes_ref[0].get_position()
                     transform = tacs.elements.SpringRefAxisTransform(refAxis)
                 elif elemDict[propertyID]['elements'][0].g0_ref:
-                    refAxis = elemDict[propertyID]['elements'][0].g0_ref.xyz \
-                              - elemDict[propertyID]['elements'][0].nodes_ref[0].xyz
+                    refAxis = elemDict[propertyID]['elements'][0].g0_ref.get_position() \
+                              - elemDict[propertyID]['elements'][0].nodes_ref[0].get_position()
                     transform = tacs.elements.SpringRefAxisTransform(refAxis)
 
             # Finally set up the element objects belonging to this component
