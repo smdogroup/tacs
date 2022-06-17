@@ -768,6 +768,10 @@ cdef extern from "TACSIntegrator.h":
                            double num_steps,
                            int stages)
 
+        int iterateStage(int k, int s, TACSBVec *forces)
+        double getStageStates( int step, int stage, 
+		      TACSBVec **qS, TACSBVec **qdotS, TACSBVec **qddotS)
+
     # ABM Implementation of the integrator
     cdef cppclass TACSABMIntegrator(TACSIntegrator):
         TACSABMIntegrator(TACSAssembler *tacs,

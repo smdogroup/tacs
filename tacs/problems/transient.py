@@ -91,6 +91,7 @@ class TransientProblem(TACSProblem):
         self.tInit = tInit
         self.tFinal = tFinal
         self.numSteps = numSteps
+        self.numStages = None
 
         # Process the default options which are added to self.options
         # under the 'defaults' key. Make sure the key are lower case
@@ -114,25 +115,37 @@ class TransientProblem(TACSProblem):
 
         self.callCounter = -1
 
-        # Create a force vector for each time step
-        self.F = [self.assembler.createVec() for i in range(self.numSteps + 1)]
-        # Auxillary element object for applying tractions/pressure
-        self.auxElems = [tacs.TACS.AuxElements() for i in range(self.numSteps + 1)]
         # Initialize the initial conditions tacs vectors
         self.vars0 = self.assembler.createVec()
         self.dvars0 = self.assembler.createVec()
         self.ddvars0 = self.assembler.createVec()
 
-        # Create the BDF integrator solver
+        # Get time integration solver attributes
         order = self.getOption('integrationOrder')
         solverType = self.getOption('timeIntegrator')
-        # Chose solver type
+
+        # dictionary for converting integration order to number of stages
+        DIRK_order_to_stages = {2:1, 3:2, 4:3}
+
+        # Create the time integrator and allocate the load data structures
         if solverType.upper() == 'BDF':
             self.integrator = tacs.TACS.BDFIntegrator(self.assembler, self.tInit, self.tFinal,
                                                       float(self.numSteps), order)
+            # Create a force vector for each time step
+            self.F = [self.assembler.createVec() for i in range(self.numSteps + 1)]
+            # Auxillary element object for applying tractions/pressure
+            self.auxElems = [tacs.TACS.AuxElements() for i in range(self.numSteps + 1)]
+
         elif solverType.upper() == 'DIRK':
+            self.numStages = DIRK_order_to_stages[order]
             self.integrator = tacs.TACS.DIRKIntegrator(self.assembler, self.tInit, self.tFinal,
-                                                       float(self.numSteps), order)
+                                                       float(self.numSteps), self.numStages)
+            # Create a force vector for each time stage
+            self.F = [self.assembler.createVec() for i in range((self.numSteps + 1)*self.numStages)]
+            # Auxillary element object for applying tractions/pressure at each time stage
+            self.auxElems = [tacs.TACS.AuxElements() for i in range((self.numSteps + 1)*self.numStages)]
+
+                                        
 
         printLevel = self.getOption('printLevel')
         self.integrator.setPrintLevel(printLevel)
@@ -213,7 +226,7 @@ class TransientProblem(TACSProblem):
 
     ####### Load adding methods ########
 
-    def addLoadToComponents(self, timeStep, compIDs, F, averageLoad=False):
+    def addLoadToComponents(self, timeStep, compIDs, F, timeStage=None, averageLoad=False):
         """"
         This method is used to add a *FIXED TOTAL LOAD* on one or more
         components, defined by COMPIDs, at a specifc time instance.
@@ -228,6 +241,11 @@ class TransientProblem(TACSProblem):
 
         timeStep : int
             Time step index to apply load to.
+
+        timeStage : int or None
+            Time stage index to apply load to. Default is None, which is applicable only for 
+            multi-step methods like BDF. For multi-stage methods like DIRK, this index must 
+            be specified.
 
         compIDs : list[int] or int
             The components with added loads. Use pyTACS.selectCompIDs method
@@ -262,9 +280,16 @@ class TransientProblem(TACSProblem):
             In Thermoelasticity with varsPerNode = 7,
                 F = [fx, fy, fz, mx, my, mz, Qdot] # forces + moments + heat rate
         """
-        self._addLoadToComponents(self.F[timeStep], compIDs, F, averageLoad)
+        timeIndex = 0
+        if self.numStages is None:
+            timeIndex = timeStep
+        else:
+            assert timeStage is not None, "Time stage index must be specified for %s integrator type" % self.getOption('timeIntegrator').upper()
+            timeIndex = timeStep*self.numStages + timeStage
+        
+        self._addLoadToComponents(self.F[timeIndex], compIDs, F, averageLoad)
 
-    def addLoadToNodes(self, timeStep, nodeIDs, F, nastranOrdering=False):
+    def addLoadToNodes(self, timeStep, nodeIDs, F, timeStage=None, nastranOrdering=False):
         """
         This method is used to add a fixed point load of F to the
         selected node IDs at a specified time instance.
@@ -274,6 +299,11 @@ class TransientProblem(TACSProblem):
 
         timeStep : int
             Time step index to apply load to.
+
+        timeStage : int or None
+            Time stage index to apply load to. Default is None, which is applicable only for 
+            multi-step methods like BDF. For multi-stage methods like DIRK, this index must 
+            be specified.
 
         nodeIDs : list[int]
             The nodes IDs with added loads.
@@ -307,10 +337,16 @@ class TransientProblem(TACSProblem):
             In Thermoelasticity with varsPerNode = 7,
                 F = [fx, fy, fz, mx, my, mz, Qdot] # forces + moments + heat rate
         """
+        timeIndex = 0
+        if self.numStages is None:
+            timeIndex = timeStep
+        else:
+            assert timeStage is not None, "Time stage index must be specified for %s integrator type" % self.getOption('timeIntegrator').upper()
+            timeIndex = timeStep*self.numStages + timeStage
+        
+        self._addLoadToNodes(self.F[timeIndex], nodeIDs, F, nastranOrdering)
 
-        self._addLoadToNodes(self.F[timeStep], nodeIDs, F, nastranOrdering)
-
-    def addLoadToRHS(self, timeStep, Fapplied):
+    def addLoadToRHS(self, timeStep, Fapplied, timeStage=None):
         """"
         This method is used to add a *FIXED TOTAL LOAD* directly to the
         right hand side vector given the equation below:
@@ -330,13 +366,25 @@ class TransientProblem(TACSProblem):
         timeStep : int
             Time step index to apply load to.
 
+        timeStage : int or None
+            Time stage index to apply load to. Default is None, which is applicable only for 
+            multi-step methods like BDF. For multi-stage methods like DIRK, this index must 
+            be specified.
+
         Fapplied : numpy.ndarray or TACS.Vec
             Distributed array containing loads to applied to RHS of the problem.
 
         """
-        self._addLoadToRHS(self.F[timeStep], Fapplied)
-
-    def addTractionToComponents(self, timeStep, compIDs, tractions,
+        timeIndex = 0
+        if self.numStages is None:
+            timeIndex = timeStep
+        else:
+            assert timeStage is not None, "Time stage index must be specified for %s integrator type" % self.getOption('timeIntegrator').upper()
+            timeIndex = timeStep*self.numStages + timeStage
+        
+        self._addLoadToRHS(self.F[timeIndex], Fapplied)
+        
+    def addTractionToComponents(self, timeStep, compIDs, tractions, timeStage=None,
                                 faceIndex=0):
         """
         This method is used to add a *FIXED TOTAL TRACTION* on one or more
@@ -349,6 +397,11 @@ class TransientProblem(TACSProblem):
         timeStep : int
             Time step index to apply load to.
 
+        timeStage : int or None
+            Time stage index to apply load to. Default is None, which is applicable only for 
+            multi-step methods like BDF. For multi-stage methods like DIRK, this index must 
+            be specified.
+
         compIDs : list[int] or int
             The components with added loads. Use pyTACS.selectCompIDs method
             to determine this.
@@ -360,9 +413,16 @@ class TransientProblem(TACSProblem):
             Indicates which face (side) of element to apply traction to.
             Note: not required for certain elements (i.e. shells)
         """
-        self._addTractionToComponents(self.auxElems[timeStep], compIDs, tractions, faceIndex)
+        timeIndex = 0
+        if self.numStages is None:
+            timeIndex = timeStep
+        else:
+            assert timeStage is not None, "Time stage index must be specified for %s integrator type" % self.getOption('timeIntegrator').upper()
+            timeIndex = timeStep*self.numStages + timeStage
+        
+        self._addTractionToComponents(self.auxElems[timeIndex], compIDs, tractions, faceIndex)
 
-    def addTractionToElements(self, timeStep, elemIDs, tractions,
+    def addTractionToElements(self, timeStep, elemIDs, tractions, timeStage=None,
                               faceIndex=0, nastranOrdering=False):
         """
         This method is used to add a fixed traction to the
@@ -375,6 +435,11 @@ class TransientProblem(TACSProblem):
 
         timeStep : int
             Time step index to apply load to.
+
+        timeStage : int or None
+            Time stage index to apply load to. Default is None, which is applicable only for 
+            multi-step methods like BDF. For multi-stage methods like DIRK, this index must 
+            be specified.
 
         elemIDs : list[int]
             The global element ID numbers for which to apply the traction.
@@ -390,10 +455,16 @@ class TransientProblem(TACSProblem):
             Flag signaling whether elemIDs are in TACS (default)
             or NASTRAN ordering
         """
+        timeIndex = 0
+        if self.numStages is None:
+            timeIndex = timeStep
+        else:
+            assert timeStage is not None, "Time stage index must be specified for %s integrator type" % self.getOption('timeIntegrator').upper()
+            timeIndex = timeStep*self.numStages + timeStage
 
-        self._addTractionToElements(self.auxElems[timeStep], elemIDs, tractions, faceIndex, nastranOrdering)
+        self._addTractionToElements(self.auxElems[timeIndex], elemIDs, tractions, faceIndex, nastranOrdering)
 
-    def addPressureToComponents(self, timeStep, compIDs, pressures,
+    def addPressureToComponents(self, timeStep, compIDs, pressures, timeStage=None,
                                 faceIndex=0):
         """
         This method is used to add a *FIXED TOTAL PRESSURE* on one or more
@@ -407,6 +478,11 @@ class TransientProblem(TACSProblem):
         timeStep : int
             Time step index to apply load to.
 
+        timeStage : int or None
+            Time stage index to apply load to. Default is None, which is applicable only for 
+            multi-step methods like BDF. For multi-stage methods like DIRK, this index must 
+            be specified.
+
         compIDs : list[int] or int
             The components with added loads. Use pyTACS.selectCompIDs method
             to determine this.
@@ -418,9 +494,16 @@ class TransientProblem(TACSProblem):
             Indicates which face (side) of element to apply pressure to.
             Note: not required for certain elements (i.e. shells)
         """
-        self._addPressureToComponents(self.auxElems[timeStep], compIDs, pressures, faceIndex)
+        timeIndex = 0
+        if self.numStages is None:
+            timeIndex = timeStep
+        else:
+            assert timeStage is not None, "Time stage index must be specified for %s integrator type" % self.getOption('timeIntegrator').upper()
+            timeIndex = timeStep*self.numStages + timeStage
 
-    def addPressureToElements(self, timeStep, elemIDs, pressures,
+        self._addPressureToComponents(self.auxElems[timeIndex], compIDs, pressures, faceIndex)
+
+    def addPressureToElements(self, timeStep, elemIDs, pressures, timeStage=None,
                               faceIndex=0, nastranOrdering=False):
         """
         This method is used to add a fixed presure to the
@@ -433,6 +516,11 @@ class TransientProblem(TACSProblem):
 
         timeStep : int
             Time step index to apply load to.
+
+        timeStage : int or None
+            Time stage index to apply load to. Default is None, which is applicable only for 
+            multi-step methods like BDF. For multi-stage methods like DIRK, this index must 
+            be specified.
 
         elemIDs : list[int]
             The global element ID numbers for which to apply the pressure.
@@ -448,11 +536,17 @@ class TransientProblem(TACSProblem):
             Flag signaling whether elemIDs are in TACS (default)
             or NASTRAN ordering
         """
+        timeIndex = 0
+        if self.numStages is None:
+            timeIndex = timeStep
+        else:
+            assert timeStage is not None, "Time stage index must be specified for %s integrator type" % self.getOption('timeIntegrator').upper()
+            timeIndex = timeStep*self.numStages + timeStage
 
-        self._addPressureToElements(self.auxElems[timeStep], elemIDs, pressures,
+        self._addPressureToElements(self.auxElems[timeIndex], elemIDs, pressures,
                                     faceIndex, nastranOrdering)
 
-    def addInertialLoad(self, timeStep, inertiaVector):
+    def addInertialLoad(self, timeStep, inertiaVector, timeStage=None):
         """
         This method is used to add a fixed inertial load  at a specified time step
         due to a uniform acceleration over the entire model.
@@ -464,10 +558,22 @@ class TransientProblem(TACSProblem):
         timeStep : int
             Time step index to apply load to.
 
+        timeStage : int or None
+            Time stage index to apply load to. Default is None, which is applicable only for 
+            multi-step methods like BDF. For multi-stage methods like DIRK, this index must 
+            be specified.
+
         inertiaVector : numpy.ndarray
             Acceleration vector used to define inertial load.
         """
-        self._addInertialLoad(self.auxElems[timeStep], inertiaVector)
+        timeIndex = 0
+        if self.numStages is None:
+            timeIndex = timeStep
+        else:
+            assert timeStage is not None, "Time stage index must be specified for %s integrator type" % self.getOption('timeIntegrator').upper()
+            timeIndex = timeStep*self.numStages + timeStage
+
+        self._addInertialLoad(self.auxElems[timeIndex], inertiaVector)
 
     ####### Transient solver methods ########
 
@@ -541,11 +647,20 @@ class TransientProblem(TACSProblem):
 
         initSolveTime = time.time()
 
-        # Loop over every time step and solve transient problem
-        for i in range(self.numSteps + 1):
-            # Set the auxiliary elements for this time step (tractions/pressures)
-            self.assembler.setAuxElements(self.auxElems[i])
-            self.integrator.iterate(i, forces=self.F[i])
+        # Loop over every time instance and solve transient problem
+        if self.numStages is None:
+            for i in range(self.numSteps + 1):
+                # Set the auxiliary elements for this time step (tractions/pressures)
+                self.assembler.setAuxElements(self.auxElems[i])
+                self.integrator.iterate(i, forces=self.F[i])
+        else:
+            for i in range(self.numSteps + 1):
+                for j in range(self.numStages):
+                    # Set the auxiliary elements for this time step (tractions/pressures)
+                    timeIndex = i*self.numStages + j
+                    self.assembler.setAuxElements(self.auxElems[timeIndex])
+                    self.integrator.iterateStage(i, j, forces=self.F[timeIndex])
+
 
         solveTime = time.time()
 
