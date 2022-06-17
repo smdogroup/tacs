@@ -797,7 +797,7 @@ class TACSProblem(BaseUI):
     def _addInertialLoad(self, auxElems, inertiaVector):
         """
         This is an internal helper function for doing the addInertialLoad method for
-        inhereted TACSProblem classes. The function should NOT be called by the user should
+        inherited TACSProblem classes. The function should NOT be called by the user should
         use the addInertialLoad method for the respective problem class. The function
         is used to add a fixed inertial load due to a uniform acceleration over the entire model.
         This is most commonly used to model gravity loads on a model.
@@ -823,3 +823,37 @@ class TACSProblem(BaseUI):
             if inertiaObj is not None:
                 # Add new inertial force to auxiliary element object
                 auxElems.addElement(elemID, inertiaObj)
+
+    def _addCentrifugalLoad(self, auxElems, omegaVector, rotCenter):
+        """
+        This is an internal helper function for doing the addCentrifugalLoad method for
+        inherited TACSProblem classes. The function should NOT be called by the user should
+        use the addCentrifugalLoad method for the respective problem class. The function
+        is used to add a fixed centrifugal load due to a uniform rotational velocity over the entire model.
+        This is most commonly used to model rotors, rolling aircraft, etc.
+
+        Parameters
+        ----------
+
+        auxElems : TACS AuxElements object
+            AuxElements object to add loads to.
+
+        omegaVector : numpy.ndarray
+            Rotational velocity vector (rad/s) used to define centrifugal load.
+
+        rotCenter : numpy.ndarray
+            Location of center of rotation used to define centrifugal load.
+        """
+        # Make sure vector is right type
+        omegaVector = np.atleast_1d(omegaVector).astype(self.dtype)
+        rotCenter = np.atleast_1d(rotCenter).astype(self.dtype)
+        # Get elements on this processor
+        localElements = self.assembler.getElements()
+        # Loop through every element and apply centrifugal load
+        for elemID, elemObj in enumerate(localElements):
+            # Create appropriate centrifugal force object for this element type
+            centrifugalObj = elemObj.createElementCentrifugalForce(omegaVector, rotCenter)
+            # Centrifugal force is implemented for element
+            if centrifugalObj is not None:
+                # Add new centrifugal force to auxiliary element object
+                auxElems.addElement(elemID, centrifugalObj)

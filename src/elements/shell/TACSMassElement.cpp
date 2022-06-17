@@ -1,5 +1,6 @@
 #include "TACSMassElement.h"
 #include "TACSMassInertialForce.h"
+#include "TACSMassCentrifugalForce.h"
 
 /*
   A 6 DOF point mass element
@@ -38,8 +39,13 @@ ElementType TACSMassElement::getElementType(){ return TACS_MASS_ELEMENT; }
 */
 const char * TACSMassElement::elemName = "TACSMassElement";
 
-TACSElement* TACSMassElement::createElementInertialForce( TacsScalar inertiaVec[] ){
+TACSElement* TACSMassElement::createElementInertialForce( const TacsScalar inertiaVec[] ){
   return new TACSMassInertialForce(con, inertiaVec);
+}
+
+TACSElement* TACSMassElement::createElementCentrifugalForce( const TacsScalar omegaVec[],
+                                                             const TacsScalar rotCenter[] ){
+  return new TACSMassCentrifugalForce(con, omegaVec, rotCenter);
 }
 
 void TACSMassElement::computeEnergies( int elemIndex,
@@ -230,4 +236,24 @@ void TACSMassElement::addPointQuantityXptSens( int elemIndex, int quantityType,
     dfdXpts[1] += scale * mass * (2.0 * Xpts[1] * (dfdq[0] + dfdq[5]) - dfdq[1] * Xpts[0] - dfdq[4] * Xpts[2]);
     dfdXpts[2] += scale * mass * (2.0 * Xpts[2] * (dfdq[0] + dfdq[3]) - dfdq[2] * Xpts[0] - dfdq[4] * Xpts[1]);
   }
+}
+
+void TACSMassElement::addPointQuantitySVSens( int elemIndex, int quantityType,
+                                              double time,
+                                              TacsScalar alpha,
+                                              TacsScalar beta,
+                                              TacsScalar gamma,
+                                              int n, double pt[],
+                                              const TacsScalar Xpts[],
+                                              const TacsScalar vars[],
+                                              const TacsScalar dvars[],
+                                              const TacsScalar ddvars[],
+                                              const TacsScalar dfdq[],
+                                              TacsScalar dfdu[] ){
+  if (quantityType == TACS_ELEMENT_DISPLACEMENT){
+    dfdu[0] += alpha * dfdq[0];
+    dfdu[1] += alpha * dfdq[1];
+    dfdu[2] += alpha * dfdq[2];
+  }
+  return;
 }

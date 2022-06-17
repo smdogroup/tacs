@@ -1,29 +1,31 @@
 
-#ifndef TACS_SHELL_INERTIAL_FORCE_H
-#define TACS_SHELL_INERTIAL_FORCE_H
+#ifndef TACS_SHELL_CENTRIFUGAL_FORCE_H
+#define TACS_SHELL_CENTRIFUGAL_FORCE_H
 
 #include "TACSShellUtilities.h"
 #include "TACSElementAlgebra.h"
 #include "TACSShellConstitutive.h"
 
 template <int vars_per_node, class quadrature, class basis>
-class TACSShellInertialForce : public TACSElement {
+class TACSShellCentrifugalForce : public TACSElement {
  public:
-  TACSShellInertialForce( TACSShellConstitutive *_con,
-                          const TacsScalar _inertiaVec[] ){
+  TACSShellCentrifugalForce( TACSShellConstitutive *_con,
+                             const TacsScalar _omegaVec[],
+                             const TacsScalar _rotCenter[] ){
     con = _con;
     con->incref();
-    memcpy(inertiaVec, _inertiaVec, 3*sizeof(TacsScalar));
+    memcpy(omegaVec, _omegaVec, 3*sizeof(TacsScalar));
+    memcpy(rotCenter, _rotCenter, 3*sizeof(TacsScalar));
   }
 
-  ~TACSShellInertialForce(){
+  ~TACSShellCentrifugalForce(){
     if (con){
       con->decref();
     }
   }
 
   const char* getObjectName(){
-    return "TACSShellInertialForce";
+    return "TACSShellCentrifugalForce";
   }
 
   int getVarsPerNode(){
@@ -113,19 +115,32 @@ class TACSShellInertialForce : public TACSElement {
 
       TacsScalar mass = con->evalDensity(elemIndex, pt, X);
 
+      TacsScalar r[3], wxr[3], ac[3];
+
+      // Create vector pointing from rotation center to element gpt
+      r[0] = X[0] - rotCenter[0];
+      r[1] = X[1] - rotCenter[1];
+      r[2] = X[2] - rotCenter[2];
+
+      // Compute omega x r
+      crossProduct(omegaVec, r, wxr);
+
+      // Compute centrifugal acceleration
+      crossProduct(omegaVec, wxr, ac);
+
       // Compute the traction
       TacsScalar tr[3];
-      tr[0] = -detXd * mass * inertiaVec[0];
-      tr[1] = -detXd * mass * inertiaVec[1];
-      tr[2] = -detXd * mass * inertiaVec[2];
+      tr[0] = detXd * mass * ac[0];
+      tr[1] = detXd * mass * ac[1];
+      tr[2] = detXd * mass * ac[2];
 
       basis::template addInterpFieldsTranspose<vars_per_node, 3>(pt, tr, res);
     }
   }
 
  private:
-  TacsScalar inertiaVec[3];
+  TacsScalar omegaVec[3], rotCenter[3];
   TACSShellConstitutive* con;
 };
 
-#endif // TACS_SHELL_TRACTION_H
+#endif // TACS_SHELL_CENTRIFUGAL_FORCE_H

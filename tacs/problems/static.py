@@ -491,6 +491,23 @@ class StaticProblem(TACSProblem):
         """
         self._addInertialLoad(self.auxElems, inertiaVector)
 
+    def addCentrifugalLoad(self, omegaVector, rotCenter):
+        """
+        This method is used to add a fixed centrifugal load due to a
+        uniform rotational velocity over the entire model.
+        This is most commonly used to model rotors, rolling aircraft, etc.
+
+        Parameters
+        ----------
+
+        omegaVector : numpy.ndarray
+            Rotational velocity vector (rad/s) used to define centrifugal load.
+
+        rotCenter : numpy.ndarray
+            Location of center of rotation used to define centrifugal load.
+        """
+        self._addCentrifugalLoad(self.auxElems, omegaVector, rotCenter)
+
     ####### Static solver methods ########
 
     def _updateAssemblerVars(self):

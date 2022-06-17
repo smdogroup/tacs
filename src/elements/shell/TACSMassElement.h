@@ -29,7 +29,13 @@ class TACSMassElement : public TACSElement {
     Create element inertial force class
     @return The TACSElement inertial force class associated with this element. Possibly NULL.
   */
-  TACSElement* createElementInertialForce( TacsScalar g[] );
+  TACSElement* createElementInertialForce( const TacsScalar g[] );
+
+  /**
+    Create element centrifugal force class
+    @return The TACSElement centrifugal force class associated with this element. Possibly NULL.
+  */
+  TACSElement* createElementCentrifugalForce( const TacsScalar omegaVec[], const TacsScalar rotCenter[] );
 
   // Functions for analysis
   // ----------------------
@@ -111,9 +117,7 @@ class TACSMassElement : public TACSElement {
                                const TacsScalar dvars[],
                                const TacsScalar ddvars[],
                                const TacsScalar dfdq[],
-                               TacsScalar dfdu[] ){
-    return;
-  }
+                               TacsScalar dfdu[] );
 
   void addPointQuantityXptSens( int elemIndex, int quantityType,
                                 double time,

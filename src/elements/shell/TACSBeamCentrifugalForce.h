@@ -1,29 +1,36 @@
+#ifndef TACS_BEAM_CENTRIFUGAL_FORCE_H
+#define TACS_BEAM_CENTRIFUGAL_FORCE_H
 
-#ifndef TACS_SHELL_INERTIAL_FORCE_H
-#define TACS_SHELL_INERTIAL_FORCE_H
-
-#include "TACSShellUtilities.h"
+#include "TACSBeamElementBasis.h"
+#include "TACSBeamElementQuadrature.h"
+#include "TACSBeamUtilities.h"
+#include "TACSGaussQuadrature.h"
 #include "TACSElementAlgebra.h"
-#include "TACSShellConstitutive.h"
+#include "TACSBeamConstitutive.h"
+#include "TACSElement.h"
+#include "TACSElementTypes.h"
+#include "a2d.h"
 
 template <int vars_per_node, class quadrature, class basis>
-class TACSShellInertialForce : public TACSElement {
+class TACSBeamCentrifugalForce : public TACSElement {
  public:
-  TACSShellInertialForce( TACSShellConstitutive *_con,
-                          const TacsScalar _inertiaVec[] ){
+  TACSBeamCentrifugalForce( TACSBeamConstitutive *_con,
+                            const TacsScalar _omegaVec[],
+                            const TacsScalar _rotCenter[] ){
     con = _con;
     con->incref();
-    memcpy(inertiaVec, _inertiaVec, 3*sizeof(TacsScalar));
+    memcpy(omegaVec, _omegaVec, 3*sizeof(TacsScalar));
+    memcpy(rotCenter, _rotCenter, 3*sizeof(TacsScalar));
   }
 
-  ~TACSShellInertialForce(){
+  ~TACSBeamCentrifugalForce(){
     if (con){
       con->decref();
     }
   }
 
   const char* getObjectName(){
-    return "TACSShellInertialForce";
+    return "TACSBeamCentrifugalForce";
   }
 
   int getVarsPerNode(){
@@ -85,12 +92,9 @@ class TACSShellInertialForce : public TACSElement {
                     const TacsScalar *dvars,
                     const TacsScalar *ddvars,
                     TacsScalar *res ){
+
     // Compute the number of quadrature points
     const int nquad = quadrature::getNumQuadraturePoints();
-
-    // Compute the node normal directions
-    TacsScalar fn[3*basis::NUM_NODES];
-    TacsShellComputeNodeNormals<basis>(Xpts, fn);
 
     // Loop over each quadrature point and add the residual contribution
     for ( int quad_index = 0; quad_index < nquad; quad_index++ ){
@@ -98,34 +102,45 @@ class TACSShellInertialForce : public TACSElement {
       double pt[3];
       double weight = quadrature::getQuadraturePoint(quad_index, pt);
 
-      TacsScalar Xxi[6], n[3], X[3];
-      basis::template interpFields<3, 3>(pt, Xpts, X);
-      basis::template interpFields<3, 3>(pt, fn, n);
-      basis::template interpFieldsGrad<3, 3>(pt, Xpts, Xxi);
+      // Tangent to the beam
+      A2D::Vec3 X0, X0xi;
 
-      // Assemble the terms Xd = [Xxi; n] and Xdz
-      TacsScalar Xd[9];
-      TacsShellAssembleFrame(Xxi, n, Xd);
+      // Compute X, X,xi and the interpolated normal
+      basis::template interpFields<3, 3>(pt, Xpts, X0.x);
+      basis::template interpFieldsGrad<3, 3>(pt, Xpts, X0xi.x);
 
-      // Compute the inverse of the 3x3 Jacobian transformation
-      TacsScalar detXd = det3x3(Xd);
-      detXd *= weight;
+      // Compute the determinant of the transform
+      A2D::Scalar detXd;
+      A2D::Vec3Norm(X0xi, detXd);
 
-      TacsScalar mass = con->evalDensity(elemIndex, pt, X);
+      TacsScalar mass = con->evalDensity(elemIndex, pt, X0.x);
+
+      TacsScalar r[3], wxr[3], ac[3];
+
+      // Create vector pointing from rotation center to element gpt
+      r[0] = X0.x[0] - rotCenter[0];
+      r[1] = X0.x[1] - rotCenter[1];
+      r[2] = X0.x[2] - rotCenter[2];
+
+      // Compute omega x r
+      crossProduct(omegaVec, r, wxr);
+
+      // Compute centrifugal acceleration
+      crossProduct(omegaVec, wxr, ac);
 
       // Compute the traction
       TacsScalar tr[3];
-      tr[0] = -detXd * mass * inertiaVec[0];
-      tr[1] = -detXd * mass * inertiaVec[1];
-      tr[2] = -detXd * mass * inertiaVec[2];
+      tr[0] = detXd.value * weight * mass * ac[0];
+      tr[1] = detXd.value * weight * mass * ac[1];
+      tr[2] = detXd.value * weight * mass * ac[2];
 
       basis::template addInterpFieldsTranspose<vars_per_node, 3>(pt, tr, res);
     }
   }
 
  private:
-  TacsScalar inertiaVec[3];
-  TACSShellConstitutive* con;
+  TacsScalar omegaVec[3], rotCenter[3];
+  TACSBeamConstitutive* con;
 };
 
-#endif // TACS_SHELL_TRACTION_H
+#endif // TACS_BEAM_CENTRIFUGAL_FORCE_H

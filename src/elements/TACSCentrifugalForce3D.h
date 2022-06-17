@@ -12,21 +12,18 @@
   http://www.apache.org/licenses/LICENSE-2.0
 */
 
-#ifndef TACS_TRACTION_2D_H
-#define TACS_TRACTION_2D_H
+#ifndef TACS_CENTRIFUGAL_FORCE_3D_H
+#define TACS_CENTRIFUGAL_FORCE_3D_H
 
-#include "TACSElement2D.h"
+#include "TACSElement3D.h"
+#include "TACSConstitutive.h"
 
-class TACSTraction2D : public TACSElement {
+class TACSCentrifugalForce3D : public TACSElement {
  public:
-  TACSTraction2D( int _varsPerNode, int _faceIndex,
-                  TACSElementBasis *_basis, const TacsScalar trac[],
-                  int tractionCoordinateComponent=1 );
-  TACSTraction2D( int _varsPerNode, int _faceIndex,
-                  TACSElementBasis *_basis,
-                  void (*_getTractionComponents)(int, int, double, const TacsScalar*,
-                                                 const TacsScalar*, TacsScalar*) );
-  ~TACSTraction2D();
+  TACSCentrifugalForce3D( int _varsPerNode, TACSConstitutive *_con,
+                          TACSElementBasis *_basis,
+                          const TacsScalar _omegaVec[], const TacsScalar _rotCenter[] );
+  ~TACSCentrifugalForce3D();
 
   // Get the layout properties of the element
   const char* getObjectName();
@@ -41,6 +38,27 @@ class TACSTraction2D : public TACSElement {
   int getNumFaceQuadraturePoints( int face );
   double getFaceQuadraturePoint( int face, int n, double pt[],
                                  double tangent[] );
+
+/**
+    Retrieve the global design variable numbers associated with this element
+  */
+  int getDesignVarNums( int elemIndex, int dvLen, int dvNums[] );
+
+  /**
+    Set the element design variables from the design vector
+  */
+  int setDesignVars( int elemIndex, int dvLen, const TacsScalar dvs[] );
+
+  /**
+    Get the element design variables values
+  */
+  int getDesignVars( int elemIndex, int dvLen, TacsScalar dvs[] );
+
+  /**
+    Get the lower and upper bounds for the design variable values
+  */
+  int getDesignVarRange( int elemIndex, int dvLen,
+                         TacsScalar lb[], TacsScalar ub[] );
 
   /**
     Add the residual to the provided vector
@@ -59,12 +77,10 @@ class TACSTraction2D : public TACSElement {
                     TacsScalar *res, TacsScalar *mat );
 
  private:
-  int varsPerNode, faceIndex;
+  int varsPerNode;
+  TACSConstitutive *con;
   TACSElementBasis *basis;
-  int tractionCoordinateComponent;
-  TacsScalar trac[2*TACSElement2D::MAX_VARS_PER_NODE];
-  void (*getTractionComponents)(int, int, double, const TacsScalar*,
-                                const TacsScalar*, TacsScalar*);
+  TacsScalar omegaVec[3], rotCenter[3];
 };
 
-#endif // TACS_TRACTION_2D_H
+#endif // TACS_CENTRIFUGAL_FORCE_3D_H

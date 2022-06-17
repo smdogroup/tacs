@@ -755,11 +755,11 @@ class pyTACS(BaseUI):
                     transform = tacs.elements.SpringRefFrameTransform(refAxis_i, refAxis_j)
                 elif elemDict[propertyID]['elements'][0].x[0]:
                     refAxis = numpy.array(elemDict[propertyID]['elements'][0].x) \
-                              - elemDict[propertyID]['elements'][0].nodes_ref[0].xyz
+                              - elemDict[propertyID]['elements'][0].nodes_ref[0].get_position()
                     transform = tacs.elements.SpringRefAxisTransform(refAxis)
                 elif elemDict[propertyID]['elements'][0].g0_ref:
-                    refAxis = elemDict[propertyID]['elements'][0].g0_ref.xyz \
-                              - elemDict[propertyID]['elements'][0].nodes_ref[0].xyz
+                    refAxis = elemDict[propertyID]['elements'][0].g0_ref.get_position() \
+                              - elemDict[propertyID]['elements'][0].nodes_ref[0].get_position()
                     transform = tacs.elements.SpringRefAxisTransform(refAxis)
 
             # Finally set up the element objects belonging to this component
@@ -1096,7 +1096,7 @@ class pyTACS(BaseUI):
 
         Notes
         -----
-        Currently only supports LOAD, FORCE, MOMENT, GRAV, PLOAD2, and PLOAD4 cards.
+        Currently only supports LOAD, FORCE, MOMENT, GRAV, RFORCE, PLOAD2, and PLOAD4 cards.
         Currently only supports staticProblem (SOL 101) and modalProblems (SOL 103)
         """
 
@@ -1160,16 +1160,34 @@ class pyTACS(BaseUI):
 
                             loadArray = numpy.zeros(vpn)
                             if loadInfo.type == 'FORCE' and vpn >= 3:
-                                loadArray[:3] += scale * loadInfo.scaled_vector
+                                F = scale * loadInfo.scaled_vector
+                                loadArray[:3] += loadInfo.cid_ref.transform_vector_to_global(F)
                             elif loadInfo.type == 'MOMENT' and vpn >= 6:
-                                loadArray[3:6] += scale * loadInfo.scaled_vector
+                                M = scale * loadInfo.scaled_vector
+                                loadArray[3:6] += loadInfo.cid_ref.transform_vector_to_global(M)
                             problem.addLoadToNodes(nodeID, loadArray, nastranOrdering=True)
 
                         # Add any gravity loads
                         elif loadInfo.type == 'GRAV':
                             inertiaVec = np.zeros(3, dtype=self.dtype)
                             inertiaVec[:3] = scale * loadInfo.scale * loadInfo.N
+                            # Convert acceleration to global coordinate system
+                            inertiaVec = loadInfo.cid_ref.transform_vector_to_global(inertiaVec)
                             problem.addInertialLoad(inertiaVec)
+
+                        # Add any centrifugal loads
+                        elif loadInfo.type == 'RFORCE':
+                            omegaVec = np.zeros(3, dtype=self.dtype)
+                            if loadInfo.nid_ref:
+                                rotCenter = loadInfo.nid_ref.get_position()
+                            else:
+                                rotCenter = np.zeros(3, dtype=self.dtype)
+                            omegaVec[:3] = scale * loadInfo.scale * np.array(loadInfo.r123)
+                            # Convert omega from rev/s to rad/s
+                            omegaVec *= 2 * np.pi
+                            # Convert omega to global coordinate system
+                            omegaVec = loadInfo.cid_ref.transform_vector_to_global(omegaVec)
+                            problem.addCentrifugalLoad(omegaVec, rotCenter)
 
                         # Add any pressure loads
                         # Pressure load card specific to shell elements

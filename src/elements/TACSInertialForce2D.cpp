@@ -16,7 +16,7 @@
 #include "TACSElementAlgebra.h"
 
 TACSInertialForce2D::TACSInertialForce2D( int _varsPerNode, TACSConstitutive *_con,
-                                          TACSElementBasis *_basis, TacsScalar _inertiaVec[] ){
+                                          TACSElementBasis *_basis, const TacsScalar _inertiaVec[] ){
   varsPerNode = _varsPerNode;
   con = _con;  con->incref();
   basis = _basis;  basis->incref();
@@ -114,7 +114,7 @@ void TACSInertialForce2D::addResidual( int elemIndex,
     TacsScalar detXd = basis->getJacobianTransform(n, pt, Xpts, Xd, J);
 
     // Multiply the quadrature weight by the quadrature point
-     TacsScalar volume = weight * detXd;
+    TacsScalar volume = weight * detXd;
 
     // Evaluate the weak form of the model
     TacsScalar DUt[3*TACSElement2D::MAX_VARS_PER_NODE];
@@ -162,7 +162,7 @@ void TACSInertialForce2D::addJacobian( int elemIndex,
     TacsScalar detXd = basis->getJacobianTransform(n, pt, Xpts, Xd, J);
 
     // Multiply the quadrature weight by the quadrature point
-     TacsScalar volume = weight * detXd;
+    TacsScalar volume = weight * detXd;
 
     // Evaluate the weak form of the model
     TacsScalar DUt[3*TACSElement2D::MAX_VARS_PER_NODE];
