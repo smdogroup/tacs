@@ -89,20 +89,21 @@ class TACSBeamTraction : public TACSElement {
       double weight = quadrature::getQuadraturePoint(quad_index, pt);
 
       // Tangent to the beam
-      TacsScalar X0xi;
+      A2D::Vec3 X0xi;
 
       // Compute X, X,xi and the interpolated normal
-      basis::template interpFieldsGrad<3, 3>(pt, Xpts, &X0xi);
+      basis::template interpFieldsGrad<3, 3>(pt, Xpts, X0xi.x);
 
       // Compute the determinant of the transform
-      TacsScalar detXd = X0xi;
+      A2D::Scalar detXd;
+      A2D::Vec3Norm(X0xi, detXd);
 
       // Compute the traction
       TacsScalar tr[3];
       basis::template interpFields<3, 3>(pt, t, tr);
-      tr[0] *= -detXd * weight;
-      tr[1] *= -detXd * weight;
-      tr[2] *= -detXd * weight;
+      tr[0] *= -detXd.value * weight;
+      tr[1] *= -detXd.value * weight;
+      tr[2] *= -detXd.value * weight;
 
       basis::template addInterpFieldsTranspose<vars_per_node, 3>(pt, tr, res);
     }

@@ -15,21 +15,25 @@ StructuralMass, and Compliance functions and sensitivities.
 base_dir = os.path.dirname(os.path.abspath(__file__))
 bdf_file = os.path.join(base_dir, "./input_files/beam_model.bdf")
 
-FUNC_REFS = {'z-shear_compliance': 2.1117936117524927,
+FUNC_REFS = {'z-shear_cg_x': 0.5, 'z-shear_cg_y': 0.0, 'z-shear_cg_z': 0.0,
+             'z-shear_compliance': 2.1117936117524927,
              'z-shear_ks_vmfailure': 6.631852693984316,
              'z-shear_mass': 4.4532075864635265,
              'z-shear_x_disp': 0.0, 'z-shear_y_disp': 0.0, 'z-shear_z_disp': 19.57107469646702,
 
+             'y-shear_cg_x': 0.5, 'y-shear_cg_y': 0.0, 'y-shear_cg_z': 0.0,
              'y-shear_compliance': 2.1117936117524927,
              'y-shear_ks_vmfailure': 6.631852693984316,
              'y-shear_mass': 4.4532075864635265,
              'y-shear_x_disp': 0.0, 'y-shear_y_disp': 19.57107469646702, 'y-shear_z_disp': 0.0,
 
+             'x-axial_cg_x': 0.5, 'x-axial_cg_y': 0.0, 'x-axial_cg_z': 0.0,
              'x-axial_compliance': 0.008661493501599744,
              'x-axial_ks_vmfailure': 0.17273633763874147,
              'x-axial_mass': 4.4532075864635265,
              'x-axial_x_disp': 0.04641402830875186, 'x-axial_y_disp': 0.0, 'x-axial_z_disp': 0.0,
 
+             'x-torsion_cg_x': 0.5, 'x-torsion_cg_y': 0.0, 'x-torsion_cg_z': 0.0,
              'x-torsion_compliance': 8.151993883858584,
              'x-torsion_ks_vmfailure': 8.447664369986043,
              'x-torsion_mass': 4.4532075864635265,
@@ -114,7 +118,10 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
                                 ksWeight=ksweight, direction=[0.0, 10.0, 0.0])
             problem.addFunction('z_disp', functions.KSDisplacement,
                                 ksWeight=ksweight, direction=[0.0, 0.0, 10.0])
-        func_list = ['mass', 'compliance', 'x_disp', 'y_disp', 'z_disp']
+            problem.addFunction('cg_x', functions.CenterOfMass, direction=[1.0, 0.0, 0.0])
+            problem.addFunction('cg_y', functions.CenterOfMass, direction=[0.0, 1.0, 0.0])
+            problem.addFunction('cg_z', functions.CenterOfMass, direction=[0.0, 0.0, 1.0])
+        func_list = ['mass', 'compliance', 'x_disp', 'y_disp', 'z_disp', 'cg_x', 'cg_y', 'cg_z']
         return func_list, FUNC_REFS
 
     def setup_tacs_problems(self, fea_assembler):

@@ -21,7 +21,7 @@
 class TACSInertialForce2D : public TACSElement {
  public:
   TACSInertialForce2D( int _varsPerNode, TACSConstitutive *_con,
-                       TACSElementBasis *_basis, TacsScalar _inertiaVec[] );
+                       TACSElementBasis *_basis, const TacsScalar _inertiaVec[] );
   ~TACSInertialForce2D();
 
   // Get the layout properties of the element

@@ -16,7 +16,7 @@
 #include "TACSElementAlgebra.h"
 
 TACSInertialForce3D::TACSInertialForce3D( int _varsPerNode, TACSConstitutive *_con,
-                                          TACSElementBasis *_basis, TacsScalar _inertiaVec[] ){
+                                          TACSElementBasis *_basis, const TacsScalar _inertiaVec[] ){
   varsPerNode = _varsPerNode;
   con = _con;  con->incref();
   basis = _basis;  basis->incref();
@@ -110,11 +110,12 @@ void TACSInertialForce3D::addResidual( int elemIndex,
     double weight = basis->getQuadraturePoint(n, pt);
 
     // Get the face normal
-    TacsScalar Xd[9], J[9];
+    TacsScalar X[3], Xd[9], J[9];
+    basis->interpFields(n, pt, 3, Xpts, 1, X);
     TacsScalar detXd = basis->getJacobianTransform(n, pt, Xpts, Xd, J);
 
     // Multiply the quadrature weight by the quadrature point
-     TacsScalar volume = weight * detXd;
+    TacsScalar volume = weight * detXd;
 
     // Evaluate the weak form of the model
     TacsScalar DUt[3*TACSElement3D::MAX_VARS_PER_NODE];
@@ -123,7 +124,7 @@ void TACSInertialForce3D::addResidual( int elemIndex,
     memset(DUx, 0, 3*varsPerNode*sizeof(TacsScalar));
 
     // Get the element density
-    TacsScalar density = con->evalDensity(elemIndex, pt, Xpts);
+    TacsScalar density = con->evalDensity(elemIndex, pt, X);
 
     for ( int k = 0; k < 3; k++ ){
       DUt[3*k] = -density * inertiaVec[k];
@@ -158,7 +159,8 @@ void TACSInertialForce3D::addJacobian( int elemIndex,
     double weight = basis->getQuadraturePoint(n, pt);
 
     // Get the face normal
-    TacsScalar Xd[9], J[9];
+    TacsScalar X[3], Xd[9], J[9];
+    basis->interpFields(n, pt, 3, Xpts, 1, X);
     TacsScalar detXd = basis->getJacobianTransform(n, pt, Xpts, Xd, J);
 
     // Multiply the weight by the quadrature point
@@ -171,7 +173,7 @@ void TACSInertialForce3D::addJacobian( int elemIndex,
     memset(DUx, 0, 3*varsPerNode*sizeof(TacsScalar));
 
     // Get the element density
-    TacsScalar density = con->evalDensity(elemIndex, pt, Xpts);
+    TacsScalar density = con->evalDensity(elemIndex, pt, X);
 
     for ( int k = 0; k < 3; k++ ){
       DUt[3*k] = -density * inertiaVec[k];

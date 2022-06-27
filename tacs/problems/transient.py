@@ -16,6 +16,7 @@ import numpy as np
 import time
 from .base import TACSProblem
 import tacs.TACS
+import tacs.functions
 
 
 class TransientProblem(TACSProblem):
@@ -548,7 +549,7 @@ class TransientProblem(TACSProblem):
 
     def addInertialLoad(self, timeStep, inertiaVector, timeStage=None):
         """
-        This method is used to add a fixed inertial load  at a specified time step
+        This method is used to add a fixed inertial load at a specified time step
         due to a uniform acceleration over the entire model.
         This is most commonly used to model gravity loads on a model.
 
@@ -574,6 +575,26 @@ class TransientProblem(TACSProblem):
             timeIndex = timeStep*self.numStages + timeStage
 
         self._addInertialLoad(self.auxElems[timeIndex], inertiaVector)
+
+    def addCentrifugalLoad(self, timeStep, omegaVector, rotCenter):
+        """
+        This method is used to add a fixed centrifugal load at at specified time step
+        due to a uniform rotational velocity over the entire model.
+        This is most commonly used to model rotors, rolling aircraft, etc.
+
+        Parameters
+        ----------
+
+        timeStep : int
+            Time step index to apply load to.
+
+        omegaVector : numpy.ndarray
+            Rotational velocity vector (rad/s) used to define centrifugal load.
+
+        rotCenter : numpy.ndarray
+            Location of center of rotation used to define centrifugal load.
+        """
+        self._addCentrifugalLoad(self.auxElems[timeStep], omegaVector, rotCenter)
 
     ####### Transient solver methods ########
 
@@ -681,6 +702,37 @@ class TransientProblem(TACSProblem):
         return
 
     ####### Function eval/sensitivity methods ########
+
+    def addFunction(self, funcName, funcHandle, compIDs=None, **kwargs):
+        """
+        Generic method to add a function for TACS. It is intended to
+        be reasonably generic since the user supplies the actual
+        function handle to use. See the :py:mod:`~tacs.functions` module
+        for supported TACS eval functions.
+
+        Parameters
+        ----------
+        funcName : str
+            The user-supplied name for the function. This will
+            typically be a string that is meaningful to the user
+
+        funcHandle : TACS.Function
+            The function handle to use for creation. This must come
+            from the functions module in tacs.
+
+        compIDs: list
+            List of compIDs to select.
+
+        **kwargs:
+            Any keyword arguments to be passed to the TACS function during setup.
+        """
+
+        # Warn the users if these functions are attempted to be passed.
+        if funcHandle in [tacs.functions.MomentOfInertia, tacs.functions.CenterOfMass]:
+            self._TACSWarning(f"{funcHandle.__name__} is not supported for {type(self).__name__} problem types"
+                              f" and may not give consistent results.")
+
+        return TACSProblem.addFunction(self, funcName, funcHandle, compIDs, **kwargs)
 
     def evalFunctions(self, funcs, evalFuncs=None,
                       ignoreMissing=False):

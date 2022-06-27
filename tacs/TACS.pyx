@@ -337,6 +337,16 @@ cdef class Element:
                 return _init_Element(inertiaElem)
         return None
 
+    def createElementCentrifugalForce(self, np.ndarray[TacsScalar, ndim=1] omegaVec,
+                                      np.ndarray[TacsScalar, ndim=1] rotCenter):
+        cdef TACSElement *centrifugalElem = NULL
+        if self.ptr:
+            centrifugalElem = self.ptr.createElementCentrifugalForce(<TacsScalar*>omegaVec.data,
+                                                                     <TacsScalar*>rotCenter.data)
+            if centrifugalElem != NULL:
+                return _init_Element(centrifugalElem)
+        return None
+
     def getDesignVarsPerNode(self):
         """
         getDesignVarsPerNode(self)
