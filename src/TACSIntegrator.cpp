@@ -2301,7 +2301,7 @@ int TACSDIRKIntegrator::iterate( int k, TACSBVec *forces ){
    The states for the timesteps are saved to the q, qdot, qddot variables,
    while the stage states are saved to the qS, qdotS, and qddotS variables.
  */
-int TACSDIRKIntegrator::iterateStage( int k, int s, TACSBVec *forces)
+int TACSDIRKIntegrator::iterateStage( int k, int s, TACSBVec *forces )
 {
   // For the 0th time step, get the initial conditions and solve for the 
   // unknown states

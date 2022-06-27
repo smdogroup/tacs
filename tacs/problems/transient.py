@@ -143,10 +143,8 @@ class TransientProblem(TACSProblem):
                                                        float(self.numSteps), self.numStages)
             # Create a force vector for each time stage
             self.F = [self.assembler.createVec() for i in range((self.numSteps + 1)*self.numStages)]
-            # Auxillary element object for applying tractions/pressure at each time stage
+            # Auxiliary element object for applying tractions/pressure at each time stage
             self.auxElems = [tacs.TACS.AuxElements() for i in range((self.numSteps + 1)*self.numStages)]
-
-                                        
 
         printLevel = self.getOption('printLevel')
         self.integrator.setPrintLevel(printLevel)
@@ -219,8 +217,8 @@ class TransientProblem(TACSProblem):
 
         Returns
         ----------
-        numSteps : int
-            Number of time steps.
+        timeSteps : numpy.ndarray[float]
+            Discrete time step slices used in time integration.
         """
         timeSteps = np.linspace(self.tInit, self.tFinal, self.numSteps + 1)
         return timeSteps
@@ -240,12 +238,37 @@ class TransientProblem(TACSProblem):
         # Otherwise its zero stage
         return 0
 
+    def getTimeStages(self, timeStep):
+        """
+        Get the discrete time stage sub-intervals used in a multi-stage integration scheme.
+
+        Parameters
+        ----------
+
+        timeStep : int
+            Time step index to get stage times for.
+
+        Returns
+        ----------
+        timeStages : numpy.ndarray[float]
+            Time step slices used to discretize this time step.
+        """
+        # Check if this is a multi-stage problem and if this isn't the first time step
+        if timeStep > 0 and self.numStages:
+            timeStages = np.zeros(self.numStages)
+            for stage in range(self.numStages):
+                timeStages[stage], _, _, _ = self.integrator.getStageStates(timeStep, stage)
+        # Otherwise, there are no subintervals
+        else:
+            timeStages = np.empty(1)
+        return timeStages
+
     ####### Load adding methods ########
 
     def addLoadToComponents(self, timeStep, compIDs, F, timeStage=None, averageLoad=False):
         """"
         This method is used to add a *FIXED TOTAL LOAD* on one or more
-        components, defined by COMPIDs, at a specifc time instance.
+        components, defined by COMPIDs, at a specific time instance.
         The purpose of this routine is to add loads that remain fixed throughout
         an optimization. An example would be an engine load. This routine determines
         all the unique nodes in the FE model that are part of the requested components,
