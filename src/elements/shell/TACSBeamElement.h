@@ -1981,7 +1981,11 @@ void TACSBeamElement<quadrature, basis, director, model>::
   }
   else if (quantityType == TACS_ELEMENT_DISPLACEMENT){
     // Compute the interpolated displacements
-    basis::template addInterpFieldsTranspose<vars_per_node, 3>(pt, dfdq, dfdu);
+    TacsScalar scale[3];
+    scale[0] = alpha * dfdq[0];
+    scale[1] = alpha * dfdq[1];
+    scale[2] = alpha * dfdq[2];
+    basis::template addInterpFieldsTranspose<vars_per_node, 3>(pt, scale, dfdu);
   }
 }
 
