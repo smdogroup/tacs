@@ -88,7 +88,7 @@ class TransientProblem(TACSProblem):
         # Default setup for common problem class objects
         TACSProblem.__init__(self, assembler, comm, outputViewer, meshLoader)
 
-        # Set time interval parmeters
+        # Set time interval parameters
         self.tInit = tInit
         self.tFinal = tFinal
         self.numSteps = numSteps
@@ -225,6 +225,21 @@ class TransientProblem(TACSProblem):
         timeSteps = np.linspace(self.tInit, self.tFinal, self.numSteps + 1)
         return timeSteps
 
+    def getNumTimeStages(self):
+        """
+        Get the number of time stages used for multi-stage time integration for this problem.
+
+        Returns
+        ----------
+        numStages : int
+            Number of time stages.
+        """
+        # Check if this is a multi-stage problem
+        if self.numStages:
+            return self.numStages
+        # Otherwise its zero stage
+        return 0
+
     ####### Load adding methods ########
 
     def addLoadToComponents(self, timeStep, compIDs, F, timeStage=None, averageLoad=False):
@@ -233,7 +248,7 @@ class TransientProblem(TACSProblem):
         components, defined by COMPIDs, at a specifc time instance.
         The purpose of this routine is to add loads that remain fixed throughout
         an optimization. An example would be an engine load. This routine determines
-        all the unqiue nodes in the FE model that are part of the the requested components,
+        all the unique nodes in the FE model that are part of the requested components,
         then takes the total 'force' by F and divides by the number of nodes.
         This average load is then applied to the nodes.
 
@@ -243,11 +258,6 @@ class TransientProblem(TACSProblem):
         timeStep : int
             Time step index to apply load to.
 
-        timeStage : int or None
-            Time stage index to apply load to. Default is None, which is applicable only for 
-            multi-step methods like BDF. For multi-stage methods like DIRK, this index must 
-            be specified.
-
         compIDs : list[int] or int
             The components with added loads. Use pyTACS.selectCompIDs method
             to determine this.
@@ -255,6 +265,11 @@ class TransientProblem(TACSProblem):
         F : Numpy 1d or 2d array length (varsPerNodes) or (numNodeIDs, varsPerNodes)
             Vector(s) of 'force' to apply to each components.  If only one force vector is provided,
             force will be copied uniformly across all components.
+
+        timeStage : int or None
+            Time stage index to apply load to. Default is None, which is applicable only for
+            multi-step methods like BDF. For multi-stage methods like DIRK, this index must
+            be specified.
 
         averageLoad : bool
             Flag to determine whether load should be split evenly across all components (True)
@@ -264,7 +279,7 @@ class TransientProblem(TACSProblem):
         -----
 
         The units of the entries of the 'force' vector F are not
-        necesarily physical forces and their interpretation depends
+        necessarily physical forces and their interpretation depends
         on the physics problem being solved and the dofs included
         in the model.
 
@@ -301,17 +316,17 @@ class TransientProblem(TACSProblem):
         timeStep : int
             Time step index to apply load to.
 
-        timeStage : int or None
-            Time stage index to apply load to. Default is None, which is applicable only for 
-            multi-step methods like BDF. For multi-stage methods like DIRK, this index must 
-            be specified.
-
         nodeIDs : list[int]
             The nodes IDs with added loads.
 
         F : Numpy 1d or 2d array length (varsPerNodes) or (numNodeIDs, varsPerNodes)
             Array of force vectors, one for each node. If only one force vector is provided,
             force will be copied uniformly across all nodes.
+
+        timeStage : int or None
+            Time stage index to apply load to. Default is None, which is applicable only for
+            multi-step methods like BDF. For multi-stage methods like DIRK, this index must
+            be specified.
 
         nastranOrdering : bool
             Flag signaling whether nodeIDs are in TACS (default)
@@ -367,13 +382,13 @@ class TransientProblem(TACSProblem):
         timeStep : int
             Time step index to apply load to.
 
-        timeStage : int or None
-            Time stage index to apply load to. Default is None, which is applicable only for 
-            multi-step methods like BDF. For multi-stage methods like DIRK, this index must 
-            be specified.
-
         Fapplied : numpy.ndarray or TACS.Vec
             Distributed array containing loads to applied to RHS of the problem.
+
+        timeStage : int or None
+            Time stage index to apply load to. Default is None, which is applicable only for
+            multi-step methods like BDF. For multi-stage methods like DIRK, this index must
+            be specified.
 
         """
         timeIndex = 0
@@ -398,17 +413,17 @@ class TransientProblem(TACSProblem):
         timeStep : int
             Time step index to apply load to.
 
-        timeStage : int or None
-            Time stage index to apply load to. Default is None, which is applicable only for 
-            multi-step methods like BDF. For multi-stage methods like DIRK, this index must 
-            be specified.
-
         compIDs : list[int] or int
             The components with added loads. Use pyTACS.selectCompIDs method
             to determine this.
 
         tractions : numpy.ndarray length 1 or compIDs
             Array of traction vectors for each components
+
+        timeStage : int or None
+            Time stage index to apply load to. Default is None, which is applicable only for
+            multi-step methods like BDF. For multi-stage methods like DIRK, this index must
+            be specified.
 
         faceIndex : int
             Indicates which face (side) of element to apply traction to.
@@ -437,16 +452,16 @@ class TransientProblem(TACSProblem):
         timeStep : int
             Time step index to apply load to.
 
-        timeStage : int or None
-            Time stage index to apply load to. Default is None, which is applicable only for 
-            multi-step methods like BDF. For multi-stage methods like DIRK, this index must 
-            be specified.
-
         elemIDs : list[int]
             The global element ID numbers for which to apply the traction.
 
         tractions : numpy.ndarray 1d or 2d length varsPerNodes or (elemIDs, varsPerNodes)
             Array of traction vectors for each element
+
+        timeStage : int or None
+            Time stage index to apply load to. Default is None, which is applicable only for
+            multi-step methods like BDF. For multi-stage methods like DIRK, this index must
+            be specified.
 
         faceIndex : int
             Indicates which face (side) of element to apply traction to.
@@ -479,17 +494,17 @@ class TransientProblem(TACSProblem):
         timeStep : int
             Time step index to apply load to.
 
-        timeStage : int or None
-            Time stage index to apply load to. Default is None, which is applicable only for 
-            multi-step methods like BDF. For multi-stage methods like DIRK, this index must 
-            be specified.
-
         compIDs : list[int] or int
             The components with added loads. Use pyTACS.selectCompIDs method
             to determine this.
 
         pressures : Numpy array length 1 or compIDs
             Array of pressure values for each components
+
+        timeStage : int or None
+            Time stage index to apply load to. Default is None, which is applicable only for
+            multi-step methods like BDF. For multi-stage methods like DIRK, this index must
+            be specified.
 
         faceIndex : int
             Indicates which face (side) of element to apply pressure to.
@@ -518,16 +533,16 @@ class TransientProblem(TACSProblem):
         timeStep : int
             Time step index to apply load to.
 
-        timeStage : int or None
-            Time stage index to apply load to. Default is None, which is applicable only for 
-            multi-step methods like BDF. For multi-stage methods like DIRK, this index must 
-            be specified.
-
         elemIDs : list[int]
             The global element ID numbers for which to apply the pressure.
 
         pressures : Numpy array length 1 or elemIDs
             Array of pressure values for each element
+
+        timeStage : int or None
+            Time stage index to apply load to. Default is None, which is applicable only for
+            multi-step methods like BDF. For multi-stage methods like DIRK, this index must
+            be specified.
 
         faceIndex : int
             Indicates which face (side) of element to apply pressure to.
@@ -559,13 +574,13 @@ class TransientProblem(TACSProblem):
         timeStep : int
             Time step index to apply load to.
 
-        timeStage : int or None
-            Time stage index to apply load to. Default is None, which is applicable only for 
-            multi-step methods like BDF. For multi-stage methods like DIRK, this index must 
-            be specified.
-
         inertiaVector : numpy.ndarray
             Acceleration vector used to define inertial load.
+
+        timeStage : int or None
+            Time stage index to apply load to. Default is None, which is applicable only for
+            multi-step methods like BDF. For multi-stage methods like DIRK, this index must
+            be specified.
         """
         timeIndex = 0
         if self.numStages is None:
@@ -576,7 +591,7 @@ class TransientProblem(TACSProblem):
 
         self._addInertialLoad(self.auxElems[timeIndex], inertiaVector)
 
-    def addCentrifugalLoad(self, timeStep, omegaVector, rotCenter):
+    def addCentrifugalLoad(self, timeStep, omegaVector, rotCenter, timeStage=None):
         """
         This method is used to add a fixed centrifugal load at at specified time step
         due to a uniform rotational velocity over the entire model.
@@ -593,8 +608,21 @@ class TransientProblem(TACSProblem):
 
         rotCenter : numpy.ndarray
             Location of center of rotation used to define centrifugal load.
+
+        timeStage : int or None
+            Time stage index to apply load to. Default is None, which is applicable only for
+            multi-step methods like BDF. For multi-stage methods like DIRK, this index must
+            be specified.
         """
-        self._addCentrifugalLoad(self.auxElems[timeStep], omegaVector, rotCenter)
+        timeIndex = 0
+        if self.numStages is None:
+            timeIndex = timeStep
+        else:
+            assert timeStage is not None, "Time stage index must be specified for %s integrator type" % self.getOption(
+                'timeIntegrator').upper()
+            timeIndex = timeStep * self.numStages + timeStage
+
+        self._addCentrifugalLoad(self.auxElems[timeIndex], omegaVector, rotCenter)
 
     ####### Transient solver methods ########
 
