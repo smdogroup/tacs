@@ -4,7 +4,7 @@
 <html lang="python">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
 
     <title>pyTACS &#8212; TACS  documentation</title>
     <link rel="stylesheet" type="text/css" href="../_static/pygments.css" />
@@ -13,6 +13,7 @@
     <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
     <script src="../_static/jquery.js"></script>
     <script src="../_static/underscore.js"></script>
+    <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
     <script src="../_static/doctools.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
@@ -46,7 +47,7 @@
           <div class="body" role="main">
             
   <section id="pytacs">
-<h1>pyTACS<a class="headerlink" href="#pytacs" title="Permalink to this headline">¶</a></h1>
+<h1>pyTACS<a class="headerlink" href="#pytacs" title="Permalink to this heading">¶</a></h1>
 <p>The pyTACS interface utilizes a number of Python classes that automate the setup and running of models and analyses in TACS.
 This interface offers the following benefits over the <a class="reference internal" href="../core/TACS.html#direct"><span class="std std-ref">Direct</span></a> approach:
 has a more robust NASTRAN BDF mesh parsing capablity, improved interface for applying loads to structural problems,
@@ -54,7 +55,7 @@ fewer Python objects to keep track of when running typical analyses.
 The interface consists of two main groups of classes: an assembler class called <a class="reference internal" href="pytacs_module.html#tacs.pytacs.pyTACS" title="tacs.pytacs.pyTACS"><code class="xref py py-class docutils literal notranslate"><span class="pre">pyTACS</span></code></a> and
 a set of problem classes for analysis. The details of the interfaces will be discussed in the sections below.</p>
 <section id="workflow">
-<h2>Workflow<a class="headerlink" href="#workflow" title="Permalink to this headline">¶</a></h2>
+<h2>Workflow<a class="headerlink" href="#workflow" title="Permalink to this heading">¶</a></h2>
 <p>The most common usage of TACS is to evaluate the values and gradients of desired
 structural functions with respect to specified design variables. Using the pyTACS interface, this workflow
 proceeds as follows:</p>
@@ -116,7 +117,7 @@ repeated until the optimization criteria are satisfied.</p>
     </form>
     </div>
 </div>
-<script>$('#searchbox').show(0);</script>
+<script>document.getElementById('searchbox').style.display = "block"</script>
         </div>
       </div>
       <div class="clearer"></div>

@@ -12,6 +12,7 @@
     <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
     <script src="../../../_static/jquery.js"></script>
     <script src="../../../_static/underscore.js"></script>
+    <script src="../../../_static/_sphinx_javascript_frameworks_compat.js"></script>
     <script src="../../../_static/doctools.js"></script>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" /> 
@@ -307,8 +308,7 @@
 <span class="sd">        This method is used to add a *FIXED TOTAL LOAD* on one or more</span>
 <span class="sd">        components, defined by COMPIDs. The purpose of this routine is to add loads that</span>
 <span class="sd">        remain fixed throughout an optimization. An example would be an engine load.</span>
-<span class="sd">        This routine determines all the unique nodes in the FE model that are part of the</span>
-<span class="sd">        the requested components, then takes the total &#39;force&#39; by F and divides by the</span>
+<span class="sd">        This routine determines all the unique nodes in the FE model that are part of the         requested components, then takes the total &#39;force&#39; by F and divides by the</span>
 <span class="sd">        number of nodes. This average load is then applied to the nodes.</span>
 
 <span class="sd">        Parameters</span>
@@ -1303,7 +1303,7 @@
     </form>
     </div>
 </div>
-<script>$('#searchbox').show(0);</script>
+<script>document.getElementById('searchbox').style.display = "block"</script>
         </div>
       </div>
       <div class="clearer"></div>

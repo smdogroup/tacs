@@ -4,7 +4,7 @@
 <html lang="python">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
 
     <title>Install &#8212; TACS  documentation</title>
     <link rel="stylesheet" type="text/css" href="_static/pygments.css" />
@@ -13,6 +13,7 @@
     <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
     <script src="_static/jquery.js"></script>
     <script src="_static/underscore.js"></script>
+    <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
     <script src="_static/doctools.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
@@ -45,9 +46,9 @@
           <div class="body" role="main">
             
   <section id="install">
-<h1>Install<a class="headerlink" href="#install" title="Permalink to this headline">¶</a></h1>
+<h1>Install<a class="headerlink" href="#install" title="Permalink to this heading">¶</a></h1>
 <section id="prerequisites">
-<h2>Prerequisites<a class="headerlink" href="#prerequisites" title="Permalink to this headline">¶</a></h2>
+<h2>Prerequisites<a class="headerlink" href="#prerequisites" title="Permalink to this heading">¶</a></h2>
 <p>The following packages are required to use TACS:</p>
 <ul class="simple">
 <li><p>MPI</p></li>
@@ -68,7 +69,7 @@
 </ul>
 </section>
 <section id="basic-steps-to-compile-tacs">
-<h2>Basic steps to compile TACS<a class="headerlink" href="#basic-steps-to-compile-tacs" title="Permalink to this headline">¶</a></h2>
+<h2>Basic steps to compile TACS<a class="headerlink" href="#basic-steps-to-compile-tacs" title="Permalink to this heading">¶</a></h2>
 <ol class="arabic">
 <li><p>Clone the TACS git repository <a class="reference external" href="https://github.com/smdogroup/tacs">tacs</a></p></li>
 <li><p>In the base 'tacs' directory, copy the Makefile.in.info to Makefile.in. Edit
@@ -89,7 +90,7 @@ the following:</p>
 </ol>
 </section>
 <section id="detailed-installation-instructions">
-<h2>Detailed installation instructions<a class="headerlink" href="#detailed-installation-instructions" title="Permalink to this headline">¶</a></h2>
+<h2>Detailed installation instructions<a class="headerlink" href="#detailed-installation-instructions" title="Permalink to this heading">¶</a></h2>
 <p>The Toolbox for the Analysis of Composite Structures (TACS) is a
 parallel finite-element code written in C++, with an optional python
 interface. TACS has been implemented from the start with gradient-based
@@ -105,7 +106,7 @@ TACS. The dependencies are divided into the following categories:</p>
 </ol>
 </section>
 <section id="checking-out-the-code">
-<h2>Checking out the code<a class="headerlink" href="#checking-out-the-code" title="Permalink to this headline">¶</a></h2>
+<h2>Checking out the code<a class="headerlink" href="#checking-out-the-code" title="Permalink to this heading">¶</a></h2>
 <p>Using git checkout the source</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">git</span> <span class="n">clone</span> <span class="n">https</span><span class="p">:</span><span class="o">//</span><span class="n">github</span><span class="o">.</span><span class="n">com</span><span class="o">/</span><span class="n">smdogroup</span><span class="o">/</span><span class="n">tacs</span>
 </pre></div>
@@ -124,7 +125,7 @@ The settings in <code class="docutils literal notranslate"><span class="pre">set
 you may wish to modify these settings.</p>
 </section>
 <section id="install-dependencies">
-<h2>Install dependencies<a class="headerlink" href="#install-dependencies" title="Permalink to this headline">¶</a></h2>
+<h2>Install dependencies<a class="headerlink" href="#install-dependencies" title="Permalink to this heading">¶</a></h2>
 <p>These instructions direct you to install METIS and other dependencies in the directory <code class="docutils literal notranslate"><span class="pre">tacs/extern</span></code>.
 This location for the dependencies is not required, and indeed may not be best.
 If you already have these libraries installed, simply adjust the variables in <code class="docutils literal notranslate"><span class="pre">tacs/Makefile.in</span></code> accordingly.</p>
@@ -137,13 +138,13 @@ make
 </div>
 </section>
 <section id="make-the-c-tacs-library">
-<h2>Make the C++ TACS library<a class="headerlink" href="#make-the-c-tacs-library" title="Permalink to this headline">¶</a></h2>
+<h2>Make the C++ TACS library<a class="headerlink" href="#make-the-c-tacs-library" title="Permalink to this heading">¶</a></h2>
 <p>Return to the root TACS directory.
 Ensure that all appropriate variables are set in <code class="docutils literal notranslate"><span class="pre">Makefile.in</span></code>.
 Make the TACS libraries by running <code class="docutils literal notranslate"><span class="pre">make</span></code> from the root directory.</p>
 </section>
 <section id="f5tovtk">
-<h2>f5tovtk<a class="headerlink" href="#f5tovtk" title="Permalink to this headline">¶</a></h2>
+<h2>f5tovtk<a class="headerlink" href="#f5tovtk" title="Permalink to this heading">¶</a></h2>
 <p><code class="docutils literal notranslate"><span class="pre">f5tovtk</span></code> is an executable that converts <code class="docutils literal notranslate"><span class="pre">.f5</span></code> files to VTK format compatible with Paraview.
 After compiling the C++ libraries, go to the subdirectory <code class="docutils literal notranslate"><span class="pre">tacs/extern/f5tovtk</span></code> and make the executable there.
 It is useful to put this utility on your path if possible.
@@ -153,7 +154,7 @@ I add the directory <code class="docutils literal notranslate"><span class="pre"
 </div>
 </section>
 <section id="installing-the-python-interface">
-<h2>Installing the python interface<a class="headerlink" href="#installing-the-python-interface" title="Permalink to this headline">¶</a></h2>
+<h2>Installing the python interface<a class="headerlink" href="#installing-the-python-interface" title="Permalink to this heading">¶</a></h2>
 <p>The python interface is generated in the <code class="docutils literal notranslate"><span class="pre">tacs/tacs</span></code> sub-directory.
 The interface is generated using Cython.</p>
 <p>The python interface requires the following packages:</p>
@@ -226,7 +227,7 @@ This option is on by default in newer pip versions and therefore should not be n
     </form>
     </div>
 </div>
-<script>$('#searchbox').show(0);</script>
+<script>document.getElementById('searchbox').style.display = "block"</script>
         </div>
       </div>
       <div class="clearer"></div>

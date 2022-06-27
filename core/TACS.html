@@ -4,7 +4,7 @@
 <html lang="python">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
 
     <title>Direct &#8212; TACS  documentation</title>
     <link rel="stylesheet" type="text/css" href="../_static/pygments.css" />
@@ -13,6 +13,7 @@
     <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
     <script src="../_static/jquery.js"></script>
     <script src="../_static/underscore.js"></script>
+    <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
     <script src="../_static/doctools.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
@@ -46,14 +47,14 @@
           <div class="body" role="main">
             
   <section id="direct">
-<h1>Direct<a class="headerlink" href="#direct" title="Permalink to this headline">¶</a></h1>
+<h1>Direct<a class="headerlink" href="#direct" title="Permalink to this heading">¶</a></h1>
 <p>In the direct Python interface for TACS, the user will be responsible for setting up and bookkeeping of most TACS objects.
 This includes objects like: the MeshLoader, Assembler, state vectors, FE matrices, etc.
 This approach allows for more visibility into the workings of the C++ source code, but can be daunting for new users.
 For a more simplified user interface where most of this setup and bookkeeping has been automated for the user, see
 <a class="reference internal" href="../pytacs/pytacs.html#pytacs"><span class="std std-ref">pyTACS</span></a>.</p>
 <section id="workflow">
-<h2>Workflow<a class="headerlink" href="#workflow" title="Permalink to this headline">¶</a></h2>
+<h2>Workflow<a class="headerlink" href="#workflow" title="Permalink to this heading">¶</a></h2>
 <p>The most common usage of TACS is to evaluate the values and gradients of desired
 structural functions with respect to specified design variables. Using the direct interface, this workflow
 proceeds as follows:</p>
@@ -72,7 +73,7 @@ Improved design variable values are iteratively computed by the optimizer and St
 repeated until the optimization criteria are satisfied.</p>
 </section>
 <section id="assembler">
-<h2>Assembler<a class="headerlink" href="#assembler" title="Permalink to this headline">¶</a></h2>
+<h2>Assembler<a class="headerlink" href="#assembler" title="Permalink to this heading">¶</a></h2>
 <p>The <a class="reference internal" href="#TACS.Assembler" title="TACS.Assembler"><code class="xref py py-class docutils literal notranslate"><span class="pre">Assembler</span></code></a> object can be created using the <a class="reference internal" href="#TACS.MeshLoader" title="TACS.MeshLoader"><code class="xref py py-class docutils literal notranslate"><span class="pre">MeshLoader</span></code></a> or <a class="reference internal" href="#TACS.Creator" title="TACS.Creator"><code class="xref py py-class docutils literal notranslate"><span class="pre">Creator</span></code></a> classes. It contains the methods that allow the user to solve the finite element problem and evaluate the desired structural functions and their gradients. Once an instance has been created, its typical usage is as follows:</p>
 <ol class="arabic simple">
 <li><p>Apply loads to the model with the <a class="reference internal" href="#TACS.Assembler.applyBCs" title="TACS.Assembler.applyBCs"><code class="xref py py-func docutils literal notranslate"><span class="pre">applyBCs()</span></code></a>.</p></li>
@@ -582,7 +583,7 @@ variables</p>
 
 </section>
 <section id="meshloader">
-<h2>MeshLoader<a class="headerlink" href="#meshloader" title="Permalink to this headline">¶</a></h2>
+<h2>MeshLoader<a class="headerlink" href="#meshloader" title="Permalink to this heading">¶</a></h2>
 <p><a class="reference internal" href="#TACS.MeshLoader" title="TACS.MeshLoader"><code class="xref py py-class docutils literal notranslate"><span class="pre">MeshLoader</span></code></a> is an interface for reading in FEM data from
 NASTRAN-style files (such as .bdf files).</p>
 <p>The typical usage for a <a class="reference internal" href="#TACS.MeshLoader" title="TACS.MeshLoader"><code class="xref py py-class docutils literal notranslate"><span class="pre">MeshLoader</span></code></a> class is as follows:</p>
@@ -665,7 +666,7 @@ and any GRID/GRID* entries</p>
 
 </section>
 <section id="creator">
-<h2>Creator<a class="headerlink" href="#creator" title="Permalink to this headline">¶</a></h2>
+<h2>Creator<a class="headerlink" href="#creator" title="Permalink to this heading">¶</a></h2>
 <p>The <a class="reference internal" href="#TACS.Creator" title="TACS.Creator"><code class="xref py py-class docutils literal notranslate"><span class="pre">Creator</span></code></a> object is similar to the <a class="reference internal" href="#TACS.MeshLoader" title="TACS.MeshLoader"><code class="xref py py-class docutils literal notranslate"><span class="pre">MeshLoader</span></code></a> object, but
 sets the nodes, elements, boundary conditions, etc. manually rather than loading them
 from a NASTRAN-style file. This involves the use of the <code class="xref py py-func docutils literal notranslate"><span class="pre">setNodes()</span></code>,
@@ -703,7 +704,7 @@ object.</p>
 
 </section>
 <section id="frequencyanalysis">
-<h2>FrequencyAnalysis<a class="headerlink" href="#frequencyanalysis" title="Permalink to this headline">¶</a></h2>
+<h2>FrequencyAnalysis<a class="headerlink" href="#frequencyanalysis" title="Permalink to this heading">¶</a></h2>
 <p>The <code class="xref py py-class docutils literal notranslate"><span class="pre">FrequencyAnalysis</span></code> object solves the natural frequency eigenproblem
 and extracts the eigenvalues and eigenvectors (natural frequencies and mode shapes).
 This could be used to, for example, minimize the mass of a beam by varying element
@@ -711,7 +712,7 @@ thicknesses with a lower bound constraint on its lowest natural frequency and an
 bound constraint on the KSFailure function.</p>
 </section>
 <section id="integrator">
-<h2>Integrator<a class="headerlink" href="#integrator" title="Permalink to this headline">¶</a></h2>
+<h2>Integrator<a class="headerlink" href="#integrator" title="Permalink to this heading">¶</a></h2>
 <p>The <a class="reference internal" href="#TACS.Integrator" title="TACS.Integrator"><code class="xref py py-class docutils literal notranslate"><span class="pre">Integrator</span></code></a> class contains functions for solving the adjoint equations and governing equations forward in time. Classes for BDF, DIRK, ABM, and NBG integration inherit from this class.</p>
 <dl class="py class">
 <dt class="sig sig-object py" id="TACS.Integrator">
@@ -950,7 +951,7 @@ be slow and need to be in serial mode only</p>
     </form>
     </div>
 </div>
-<script>$('#searchbox').show(0);</script>
+<script>document.getElementById('searchbox').style.display = "block"</script>
         </div>
       </div>
       <div class="clearer"></div>

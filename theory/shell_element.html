@@ -4,7 +4,7 @@
 <html lang="python">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
 
     <title>Beam and shell elements in TACS &#8212; TACS  documentation</title>
     <link rel="stylesheet" type="text/css" href="../_static/pygments.css" />
@@ -13,6 +13,7 @@
     <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
     <script src="../_static/jquery.js"></script>
     <script src="../_static/underscore.js"></script>
+    <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
     <script src="../_static/doctools.js"></script>
     <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
@@ -47,14 +48,14 @@
           <div class="body" role="main">
             
   <section id="beam-and-shell-elements-in-tacs">
-<h1>Beam and shell elements in TACS<a class="headerlink" href="#beam-and-shell-elements-in-tacs" title="Permalink to this headline">¶</a></h1>
+<h1>Beam and shell elements in TACS<a class="headerlink" href="#beam-and-shell-elements-in-tacs" title="Permalink to this heading">¶</a></h1>
 <p>The beam and shell elements in TACS are designed to provide both linear and geometrically nonlinear analysis for static and transient analysis.
 A key feature of these elements is their flexible parameterization.
 In the case of beam elements, the rotational parametrization captures the change in orientation of the normal sections of the beam.
 For shell elements, the rotational parametrization captures the change in orientation of the shell normal.
 Small, moderate and finite rotations can be modeled.</p>
 <section id="director-parametrization">
-<h2>Director parametrization<a class="headerlink" href="#director-parametrization" title="Permalink to this headline">¶</a></h2>
+<h2>Director parametrization<a class="headerlink" href="#director-parametrization" title="Permalink to this heading">¶</a></h2>
 <p>A director is a vector that defines the orientation and length of the reference shell normal in the deformed configuration.
 In the beam and shell elements implemented in TACS, the director itself is is not required, but can be evaluated via <span class="math notranslate nohighlight">\(\mathbf{d} + \mathbf{n}\)</span>.
 The vector field <span class="math notranslate nohighlight">\(\mathbf{d}\)</span> defines the rate of change of displacement in a reference direction <span class="math notranslate nohighlight">\(\mathbf{t}\)</span> induced by an exact or approximate rotation.
@@ -123,7 +124,7 @@ In this case, the parametrization utilizes a state vector <span class="math notr
 <p>For the quaternion parametrization, this constraint is imposed at each node in the finite-element mesh.</p>
 </section>
 <section id="beam-volume-parametrization">
-<h2>Beam volume parametrization<a class="headerlink" href="#beam-volume-parametrization" title="Permalink to this headline">¶</a></h2>
+<h2>Beam volume parametrization<a class="headerlink" href="#beam-volume-parametrization" title="Permalink to this heading">¶</a></h2>
 <p>The beam volume is parametrized by a single parameter which defines the reference line of the beam <span class="math notranslate nohighlight">\(\xi \in \mathbb{R}\)</span>.
 The beam reference line location is given as</p>
 <div class="math notranslate nohighlight">
@@ -134,7 +135,7 @@ This reference direction must have a component perpendicular to the centerline o
 The total</p>
 </section>
 <section id="shell-volume-parametrization">
-<h2>Shell volume parametrization<a class="headerlink" href="#shell-volume-parametrization" title="Permalink to this headline">¶</a></h2>
+<h2>Shell volume parametrization<a class="headerlink" href="#shell-volume-parametrization" title="Permalink to this heading">¶</a></h2>
 <p>The shell is parameterized by two coordinates which define in the mid-surface of the shell <span class="math notranslate nohighlight">\(\xi = (\xi_{1}, \xi_{2})\)</span>.
 The mid-surface of the shell is computed based on the element node locations and the element shape functions</p>
 <div class="math notranslate nohighlight">
@@ -179,7 +180,7 @@ N_{i,\xi_2} \hat{\mathbf{n}}_{i} &amp; 0 \end{bmatrix} \right]
 Later, a transformation will be introduced to a local shell-oriented coordinate systen.</p>
 </section>
 <section id="displacement-parametrization">
-<h2>Displacement parametrization<a class="headerlink" href="#displacement-parametrization" title="Permalink to this headline">¶</a></h2>
+<h2>Displacement parametrization<a class="headerlink" href="#displacement-parametrization" title="Permalink to this heading">¶</a></h2>
 <p>The displacement field in the shell is parameterized using a combination of the mid-plane deflections and the through-thickness rate of deformation parameterized by <span class="math notranslate nohighlight">\(\mathbf{d}\)</span>.
 At each node in the shell element, <span class="math notranslate nohighlight">\(\mathbf{d}\)</span> is parametrized based on the rotational variables at each node, <span class="math notranslate nohighlight">\(\mathbf{q}_{i}\)</span>.
 The field <span class="math notranslate nohighlight">\(\mathbf{d}\)</span> gives the rate of change of the displacement in the through-thickness direction and is computed at each node <span class="math notranslate nohighlight">\(i\)</span></p>
@@ -216,7 +217,7 @@ N_{i,\xi_{2}} \mathbf{d}_{i}(\mathbf{q}_{i}) &amp; 0 \end{bmatrix}\]</div>
 <p>The zeroth and first order displacement gradient expressions are used to construct the shell-aligned strain expressions.</p>
 </section>
 <section id="transformation-to-local-shell-attached-frame">
-<h2>Transformation to local shell-attached frame<a class="headerlink" href="#transformation-to-local-shell-attached-frame" title="Permalink to this headline">¶</a></h2>
+<h2>Transformation to local shell-attached frame<a class="headerlink" href="#transformation-to-local-shell-attached-frame" title="Permalink to this heading">¶</a></h2>
 <p>At each point on the shell, we construct a transformation <span class="math notranslate nohighlight">\(\mathbf{T}\)</span> that transforms the displacements from a local shell-attached reference frame to the global reference frame.
 This transformation preserves the normal direction such that</p>
 <div class="math notranslate nohighlight">
@@ -228,7 +229,7 @@ After these vectors have been computed, the full transformation matrix is</p>
 <div class="math notranslate nohighlight">
 \[\mathbf{T} = \begin{bmatrix} \mathbf{t}_{1} &amp; \mathbf{t}_{2} &amp; \hat{\mathbf{n}} \end{bmatrix}\]</div>
 <section id="reference-axis-projection-transform">
-<h3>Reference axis projection transform<a class="headerlink" href="#reference-axis-projection-transform" title="Permalink to this headline">¶</a></h3>
+<h3>Reference axis projection transform<a class="headerlink" href="#reference-axis-projection-transform" title="Permalink to this heading">¶</a></h3>
 <p>The first transformation utilizes a unit reference direction, denoted <span class="math notranslate nohighlight">\(\mathbf{e}_{ref}\)</span>.
 Note: <em>the reference direction cannot be normal to the shell surface</em>.
 The reference direction is projected onto the surface of the shell to construct the local 1-direction.
@@ -241,7 +242,7 @@ The projection of the reference direction onto the shell surface takes the form<
 \[\mathbf{t}_{2} = \hat{\mathbf{n}} \times \mathbf{t}_{1}.\]</div>
 </section>
 <section id="natural-transform">
-<h3>Natural transform<a class="headerlink" href="#natural-transform" title="Permalink to this headline">¶</a></h3>
+<h3>Natural transform<a class="headerlink" href="#natural-transform" title="Permalink to this heading">¶</a></h3>
 <p>The second transformation method utilizes the first tangent direction captured via the parametrization of the shell.
 This tangent direction is always well defined and computed as</p>
 <div class="math notranslate nohighlight">
@@ -254,7 +255,7 @@ When the shell material is orthotropic the reference direction method should be 
 </section>
 </section>
 <section id="strain-expressions">
-<h2>Strain expressions<a class="headerlink" href="#strain-expressions" title="Permalink to this headline">¶</a></h2>
+<h2>Strain expressions<a class="headerlink" href="#strain-expressions" title="Permalink to this heading">¶</a></h2>
 <p>The displacement gradient is transformed into the local reference frame as</p>
 <div class="math notranslate nohighlight">
 \[\mathbf{u}_{,x} =
@@ -285,7 +286,7 @@ The zeroth order strain terms consist of both in-plane normal and shear strains 
 \[\kappa = \frac{1}{2} \left[ \mathbf{u}_{,x}^{1} + {\mathbf{u}_{,x}^{1}}^{T} \right]\]</div>
 </section>
 <section id="thermal-strain-formulation">
-<h2>Thermal strain formulation<a class="headerlink" href="#thermal-strain-formulation" title="Permalink to this headline">¶</a></h2>
+<h2>Thermal strain formulation<a class="headerlink" href="#thermal-strain-formulation" title="Permalink to this heading">¶</a></h2>
 <p>For thermoelastic analysis, we add a scalar temperature variable at each node, <span class="math notranslate nohighlight">\(\theta\)</span>.
 The scalar field is invariant under the local shell frame transformation.
 However, the derivatives of the temperature with respect to the local coordinates depend on this transofrmation.
@@ -311,7 +312,7 @@ In addition, there are coupling terms that arise due to the dependence of the th
 <p>Here <span class="math notranslate nohighlight">\(\epsilon_{T}^{0}\)</span> and <span class="math notranslate nohighlight">\(\kappa_{T}\)</span> are the components of the strain due to thermal expansion from lamination theory.</p>
 </section>
 <section id="drilling-rotation">
-<h2>Drilling rotation<a class="headerlink" href="#drilling-rotation" title="Permalink to this headline">¶</a></h2>
+<h2>Drilling rotation<a class="headerlink" href="#drilling-rotation" title="Permalink to this heading">¶</a></h2>
 <p>The rotation of the shell about the shell normal is called the drill rotation.
 In this formulation, we add a penalization between the rotation normal to the shell and the rotation computed from the in-plane rotation of the displacement.
 This penalization adds stiffness to the shell.
@@ -335,7 +336,7 @@ Linearizing the expression for <span class="math notranslate nohighlight">\(\eps
 <p>Note that for a plate in the <span class="math notranslate nohighlight">\(x-y\)</span> plane this simplifies to the relationship <span class="math notranslate nohighlight">\(\epsilon_{t} = v_{,x} - u_{,y} - 2 q_{z}\)</span>.</p>
 </section>
 <section id="mixed-interpolation-of-tensorial-components">
-<h2>Mixed Interpolation of Tensorial Components<a class="headerlink" href="#mixed-interpolation-of-tensorial-components" title="Permalink to this headline">¶</a></h2>
+<h2>Mixed Interpolation of Tensorial Components<a class="headerlink" href="#mixed-interpolation-of-tensorial-components" title="Permalink to this heading">¶</a></h2>
 <p>Shell and beam elements can suffer from locking behavior where the predictive capability of the shell or beam elements suffers.
 This locking phenomena is due to an inability of some elements to capture pure bending behavior without producing shear artificially.
 To alleviate shear and in-plane locking behavior, the shell and beam elements in TACS utilize an mixed interpolation of tensorial components (MITC) formulation.
@@ -357,11 +358,11 @@ With these definitions, the zeroth order strain components can be computed from 
 \[\epsilon_{as}^{0} = \mathbf{T}^{T} {\eta_{\mathbf{X}}^{0}}^{T} \left[ \sum_{t} N^{as}_{t}(\xi) \tilde{\epsilon}(\xi_{t}) \right] \eta_{\mathbf{X}}^{0} \mathbf{T}\]</div>
 </section>
 <section id="constitutive-relationships-for-the-shell-element">
-<h2>Constitutive relationships for the shell element<a class="headerlink" href="#constitutive-relationships-for-the-shell-element" title="Permalink to this headline">¶</a></h2>
+<h2>Constitutive relationships for the shell element<a class="headerlink" href="#constitutive-relationships-for-the-shell-element" title="Permalink to this heading">¶</a></h2>
 <p>For the shell element, the constitutive relationship is</p>
 </section>
 <section id="equations-of-motion">
-<h2>Equations of motion<a class="headerlink" href="#equations-of-motion" title="Permalink to this headline">¶</a></h2>
+<h2>Equations of motion<a class="headerlink" href="#equations-of-motion" title="Permalink to this heading">¶</a></h2>
 <blockquote>
 <div><p>The equations of motion for this element are derived using
 Lagrange's equations with constraints. Each node imposes a
@@ -382,13 +383,13 @@ constraints produce the term A^{T}*lamb.</p>
 </section>
 </section>
 <section id="director-implementation">
-<h1>Director implementation<a class="headerlink" href="#director-implementation" title="Permalink to this headline">¶</a></h1>
+<h1>Director implementation<a class="headerlink" href="#director-implementation" title="Permalink to this heading">¶</a></h1>
 </section>
 <section id="beam-element-implementation">
-<h1>Beam element implementation<a class="headerlink" href="#beam-element-implementation" title="Permalink to this headline">¶</a></h1>
+<h1>Beam element implementation<a class="headerlink" href="#beam-element-implementation" title="Permalink to this heading">¶</a></h1>
 </section>
 <section id="shell-element-implementation">
-<h1>Shell element implementation<a class="headerlink" href="#shell-element-implementation" title="Permalink to this headline">¶</a></h1>
+<h1>Shell element implementation<a class="headerlink" href="#shell-element-implementation" title="Permalink to this heading">¶</a></h1>
 <p>The shell element implementation consists of the following</p>
 <ol class="arabic simple">
 <li><p>A shell element basis that defines the shape functions and the mixed interpolation functions required for the strain interpolation.</p></li>
@@ -397,7 +398,7 @@ constraints produce the term A^{T}*lamb.</p>
 <li><p>A constitutive object that computes the stress resultants as a function of the strains.</p></li>
 </ol>
 <section id="shell-element-basis">
-<h2>Shell element basis<a class="headerlink" href="#shell-element-basis" title="Permalink to this headline">¶</a></h2>
+<h2>Shell element basis<a class="headerlink" href="#shell-element-basis" title="Permalink to this heading">¶</a></h2>
 <p>The shell element basis handles the element parametrization and quadrature points.
 It inherits from the
 computes the local tangents at each node in the mesh</p>
@@ -419,7 +420,7 @@ computes the local tangents at each node in the mesh</p>
 </div>
 </section>
 <section id="director-field-parametrization">
-<h2>Director field parametrization<a class="headerlink" href="#director-field-parametrization" title="Permalink to this headline">¶</a></h2>
+<h2>Director field parametrization<a class="headerlink" href="#director-field-parametrization" title="Permalink to this heading">¶</a></h2>
 <div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="k">virtual</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="nf">computeDirectors</span><span class="p">(</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">vars_per_node</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">offset</span><span class="p">,</span><span class="w"></span>
 <span class="w">                               </span><span class="k">const</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">num_nodes</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">TacsScalar</span><span class="w"> </span><span class="n">Xf</span><span class="p">[],</span><span class="w"></span>
 <span class="w">                               </span><span class="k">const</span><span class="w"> </span><span class="n">TacsScalar</span><span class="w"> </span><span class="n">vars</span><span class="p">[],</span><span class="w"> </span><span class="n">TacsScalar</span><span class="w"> </span><span class="n">dirs</span><span class="p">[]</span><span class="w"> </span><span class="p">);</span><span class="w"></span>
@@ -427,14 +428,14 @@ computes the local tangents at each node in the mesh</p>
 </div>
 </section>
 <section id="transformation">
-<h2>Transformation<a class="headerlink" href="#transformation" title="Permalink to this headline">¶</a></h2>
+<h2>Transformation<a class="headerlink" href="#transformation" title="Permalink to this heading">¶</a></h2>
 <p>The following computes the transformations at each of the quadrature points in the element</p>
 <div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="k">virtual</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="nf">computeTransform</span><span class="p">(</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">TacsScalar</span><span class="w"> </span><span class="n">Xd</span><span class="p">[],</span><span class="w"> </span><span class="n">TacsScalar</span><span class="w"> </span><span class="n">T</span><span class="p">[]</span><span class="w"> </span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"></span>
 </pre></div>
 </div>
 </section>
 <section id="strain-computation">
-<h2>Strain computation<a class="headerlink" href="#strain-computation" title="Permalink to this headline">¶</a></h2>
+<h2>Strain computation<a class="headerlink" href="#strain-computation" title="Permalink to this heading">¶</a></h2>
 <div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="c1">// Compute the natural curvilinear reference frame at each node</span>
 <span class="n">TacsScalar</span><span class="w"> </span><span class="n">Xf</span><span class="p">[</span><span class="mi">9</span><span class="o">*</span><span class="n">nnodes</span><span class="p">];</span><span class="w"></span>
 <span class="n">computeNodalFrames</span><span class="p">(</span><span class="n">Xpts</span><span class="p">,</span><span class="w"> </span><span class="n">Xf</span><span class="p">);</span><span class="w"></span>
@@ -533,7 +534,7 @@ computes the local tangents at each node in the mesh</p>
     </form>
     </div>
 </div>
-<script>$('#searchbox').show(0);</script>
+<script>document.getElementById('searchbox').style.display = "block"</script>
         </div>
       </div>
       <div class="clearer"></div>

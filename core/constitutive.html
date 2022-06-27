@@ -4,7 +4,7 @@
 <html lang="python">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
 
     <title>constitutive module &#8212; TACS  documentation</title>
     <link rel="stylesheet" type="text/css" href="../_static/pygments.css" />
@@ -13,6 +13,7 @@
     <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
     <script src="../_static/jquery.js"></script>
     <script src="../_static/underscore.js"></script>
+    <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
     <script src="../_static/doctools.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
@@ -46,10 +47,10 @@
           <div class="body" role="main">
             
   <section id="constitutive-module">
-<h1>constitutive module<a class="headerlink" href="#constitutive-module" title="Permalink to this headline">¶</a></h1>
+<h1>constitutive module<a class="headerlink" href="#constitutive-module" title="Permalink to this heading">¶</a></h1>
 <p>The <cite>tacs.constitutive</cite> contains classes responsible for defining constitutive behaviors for elements.</p>
 <section id="material-classes">
-<h2>Material classes<a class="headerlink" href="#material-classes" title="Permalink to this headline">¶</a></h2>
+<h2>Material classes<a class="headerlink" href="#material-classes" title="Permalink to this heading">¶</a></h2>
 <p>Most constitutive classes require a material properties class to setup. The following classes are available in TACS:</p>
 <span class="target" id="module-tacs.constitutive"></span><dl class="py class">
 <dt class="sig sig-object py" id="tacs.constitutive.MaterialProperties">
@@ -121,7 +122,7 @@ This is appropriate for 3D thermoelastic structural analysis.</p>
 </div></blockquote>
 <p>All parameters are optional and specified using a keyword arg format.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>rho</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.10)"><em>float</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#complex" title="(in Python v3.10)"><em>complex</em></a><em>, </em><em>optional</em>) -- The material density (keyword argument).</p></li>
 <li><p><strong>specific_heat</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.10)"><em>float</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#complex" title="(in Python v3.10)"><em>complex</em></a><em>, </em><em>optional</em>) -- The material specific heat (keyword argument).</p></li>
@@ -181,10 +182,10 @@ in the '3' direction (keyword argument).</p></li>
 <span class="sig-name descname"><span class="pre">getMaterialProperties</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constitutive.MaterialProperties.getMaterialProperties" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return a dictionary of the material properties</p>
 <dl class="field-list simple">
-<dt class="field-odd">Returns</dt>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
 <dd class="field-odd"><p>Dictionary holding material property information</p>
 </dd>
-<dt class="field-even">Return type</dt>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
 <dd class="field-even"><p>mat (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.10)">dict</a>)</p>
 </dd>
 </dl>
@@ -195,7 +196,7 @@ in the '3' direction (keyword argument).</p></li>
 <span class="sig-name descname"><span class="pre">setDensity</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constitutive.MaterialProperties.setDensity" title="Permalink to this definition">¶</a></dt>
 <dd><p>Set the density property values</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>rho</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.10)"><em>float</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#complex" title="(in Python v3.10)"><em>complex</em></a>) -- The material density</p>
 </dd>
 </dl>
@@ -206,7 +207,7 @@ in the '3' direction (keyword argument).</p></li>
 <span class="sig-name descname"><span class="pre">setSpecificHeat</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constitutive.MaterialProperties.setSpecificHeat" title="Permalink to this definition">¶</a></dt>
 <dd><p>Set the density property values</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>rho</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.10)"><em>float</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#complex" title="(in Python v3.10)"><em>complex</em></a>) -- The material specific heat</p>
 </dd>
 </dl>
@@ -227,7 +228,7 @@ combined in-plane loading, is supplied, the interaction coefficient
 is determined. Be careful - the value can easily fall outside
 acceptible bounds - these are tested during initialization.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>ply_thickness</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.10)"><em>float</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#complex" title="(in Python v3.10)"><em>complex</em></a>) -- The ply thickness.</p></li>
 <li><p><strong>props</strong> (<a class="reference internal" href="#tacs.constitutive.MaterialProperties" title="tacs.constitutive.MaterialProperties"><em>MaterialProperties</em></a>) -- The ply material property.</p></li>
@@ -240,14 +241,14 @@ Defaults to False (i.e. use max strength).</p></li>
 
 </section>
 <section id="constitutive-classes">
-<h2>Constitutive classes<a class="headerlink" href="#constitutive-classes" title="Permalink to this headline">¶</a></h2>
+<h2>Constitutive classes<a class="headerlink" href="#constitutive-classes" title="Permalink to this heading">¶</a></h2>
 <p>Most <code class="xref py py-class docutils literal notranslate"><span class="pre">Element</span></code> classes require a <code class="xref py py-class docutils literal notranslate"><span class="pre">Constitutive</span></code> class in their setup procedure.
 These objects typically defines mass, stiffness, failure and buckling behaviors for the elements that reference them.
 The following <code class="xref py py-class docutils literal notranslate"><span class="pre">Constitutive</span></code> classes are available in TACS:</p>
 <span class="target" id="module-0"></span><dl class="py class">
 <dt class="sig sig-object py" id="tacs.constitutive.BasicBeamConstitutive">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tacs.constitutive.</span></span><span class="sig-name descname"><span class="pre">BasicBeamConstitutive</span></span><a class="headerlink" href="#tacs.constitutive.BasicBeamConstitutive" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">tacs.constitutive.BeamConstitutive</span></code></p>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">BeamConstitutive</span></code></p>
 <p>Timoshenko theory based constitutive object for an general beam.</p>
 <blockquote>
 <div><div class="admonition note">
@@ -261,7 +262,7 @@ The following <code class="xref py py-class docutils literal notranslate"><span 
 </div>
 </div></blockquote>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>props</strong> (<a class="reference internal" href="#tacs.constitutive.MaterialProperties" title="tacs.constitutive.MaterialProperties"><em>MaterialProperties</em></a>) -- The material property.</p></li>
 <li><p><strong>A</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.10)"><em>float</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#complex" title="(in Python v3.10)"><em>complex</em></a>) -- Beam cross-sectional area (keyword argument). Defaults to 0.0.</p></li>
@@ -279,15 +280,15 @@ The following <code class="xref py py-class docutils literal notranslate"><span 
 <dl class="py class">
 <dt class="sig sig-object py" id="tacs.constitutive.CompositeShellConstitutive">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tacs.constitutive.</span></span><span class="sig-name descname"><span class="pre">CompositeShellConstitutive</span></span><a class="headerlink" href="#tacs.constitutive.CompositeShellConstitutive" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="#tacs.constitutive.ShellConstitutive" title="tacs.constitutive.ShellConstitutive"><code class="xref py py-class docutils literal notranslate"><span class="pre">tacs.constitutive.ShellConstitutive</span></code></a></p>
+<dd><p>Bases: <a class="reference internal" href="#tacs.constitutive.ShellConstitutive" title="tacs.constitutive.ShellConstitutive"><code class="xref py py-class docutils literal notranslate"><span class="pre">ShellConstitutive</span></code></a></p>
 <p>This constitutive class defines the stiffness properties for a
 composite laminate first-order shear deformation theory (FSDT) shell type element.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>ply_list</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.10)"><em>list</em></a><em>[</em><a class="reference internal" href="#tacs.constitutive.OrthotropicPly" title="tacs.constitutive.OrthotropicPly"><em>OrthotropicPly</em></a><em>]</em>) -- List of ply properties in layup.</p></li>
-<li><p><strong>ply_thicknesses</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.22)"><em>numpy.ndarray</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.10)"><em>float</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#complex" title="(in Python v3.10)"><em>complex</em></a><em>]</em>) -- Array of ply thicknesses in layup.</p></li>
-<li><p><strong>ply_angles</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.22)"><em>numpy.ndarray</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.10)"><em>float</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#complex" title="(in Python v3.10)"><em>complex</em></a><em>]</em>) -- Array of ply angles (in radians) in layup.</p></li>
+<li><p><strong>ply_thicknesses</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.23)"><em>numpy.ndarray</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.10)"><em>float</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#complex" title="(in Python v3.10)"><em>complex</em></a><em>]</em>) -- Array of ply thicknesses in layup.</p></li>
+<li><p><strong>ply_angles</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.23)"><em>numpy.ndarray</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.10)"><em>float</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#complex" title="(in Python v3.10)"><em>complex</em></a><em>]</em>) -- Array of ply angles (in radians) in layup.</p></li>
 <li><p><strong>kcorr</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.10)"><em>float</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#complex" title="(in Python v3.10)"><em>complex</em></a><em>, </em><em>optional</em>) -- FSDT shear correction factor. Defaults to 5.0/6.0.</p></li>
 </ul>
 </dd>
@@ -297,11 +298,11 @@ composite laminate first-order shear deformation theory (FSDT) shell type elemen
 <dl class="py class">
 <dt class="sig sig-object py" id="tacs.constitutive.DOFSpringConstitutive">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tacs.constitutive.</span></span><span class="sig-name descname"><span class="pre">DOFSpringConstitutive</span></span><a class="headerlink" href="#tacs.constitutive.DOFSpringConstitutive" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="#tacs.constitutive.GeneralSpringConstitutive" title="tacs.constitutive.GeneralSpringConstitutive"><code class="xref py py-class docutils literal notranslate"><span class="pre">tacs.constitutive.GeneralSpringConstitutive</span></code></a></p>
+<dd><p>Bases: <a class="reference internal" href="#tacs.constitutive.GeneralSpringConstitutive" title="tacs.constitutive.GeneralSpringConstitutive"><code class="xref py py-class docutils literal notranslate"><span class="pre">GeneralSpringConstitutive</span></code></a></p>
 <p>This is the base class for the traditional spring constitutive objects with no dof coupling.
 Assumes 6 dofs.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>k</strong> (<em>array-like</em><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.10)"><em>float</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#complex" title="(in Python v3.10)"><em>complex</em></a><em>]</em>) -- Stiffness values for all 6 dofs.</p>
 </dd>
 </dl>
@@ -310,7 +311,7 @@ Assumes 6 dofs.</p>
 <dl class="py class">
 <dt class="sig sig-object py" id="tacs.constitutive.GeneralMassConstitutive">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tacs.constitutive.</span></span><span class="sig-name descname"><span class="pre">GeneralMassConstitutive</span></span><a class="headerlink" href="#tacs.constitutive.GeneralMassConstitutive" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">tacs.TACS.Constitutive</span></code></p>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Constitutive</span></code></p>
 <p>This is the base class for the fully general point mass constitutive objects.
 Assumes 6 dofs (3 translations + 3 rotations).
 The mass properties of this object are specified using a symmetric 6 x 6 mass matrix, as shown below.</p>
@@ -325,7 +326,7 @@ The mass properties of this object are specified using a symmetric 6 x 6 mass ma
 </div>
 </div></blockquote>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>M</strong> (<em>array-like</em><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.10)"><em>float</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#complex" title="(in Python v3.10)"><em>complex</em></a><em>]</em>) -- Flattened array containing one side of symmetric mass matrix entries.</p>
 </dd>
 </dl>
@@ -334,7 +335,7 @@ The mass properties of this object are specified using a symmetric 6 x 6 mass ma
 <dl class="py class">
 <dt class="sig sig-object py" id="tacs.constitutive.GeneralSpringConstitutive">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tacs.constitutive.</span></span><span class="sig-name descname"><span class="pre">GeneralSpringConstitutive</span></span><a class="headerlink" href="#tacs.constitutive.GeneralSpringConstitutive" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">tacs.TACS.Constitutive</span></code></p>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Constitutive</span></code></p>
 <p>This is the base class for the fully general spring constitutive objects.
 Assumes 6 dofs (3 translations + 3 rotations).
 The spring properties of this object are specified using a symmetric 6 x 6 stiffness matrix, as shown below.</p>
@@ -349,7 +350,7 @@ The spring properties of this object are specified using a symmetric 6 x 6 stiff
 </div>
 </div></blockquote>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>K</strong> (<em>array-like</em><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.10)"><em>float</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#complex" title="(in Python v3.10)"><em>complex</em></a><em>]</em>) -- Flattened array containing one side of symmetric stiffness matrix entries.</p>
 </dd>
 </dl>
@@ -358,12 +359,12 @@ The spring properties of this object are specified using a symmetric 6 x 6 stiff
 <dl class="py class">
 <dt class="sig sig-object py" id="tacs.constitutive.IsoRectangleBeamConstitutive">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tacs.constitutive.</span></span><span class="sig-name descname"><span class="pre">IsoRectangleBeamConstitutive</span></span><a class="headerlink" href="#tacs.constitutive.IsoRectangleBeamConstitutive" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">tacs.constitutive.BeamConstitutive</span></code></p>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">BeamConstitutive</span></code></p>
 <p>Timoshenko theory based constitutive object for a solid rectangular beam.</p>
 <p>The thickness dimension is assumed to measured along the beam's local reference axis,
 the width is perpindicular to the reference axis.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>props</strong> (<a class="reference internal" href="#tacs.constitutive.MaterialProperties" title="tacs.constitutive.MaterialProperties"><em>MaterialProperties</em></a>) -- The material property.</p></li>
 <li><p><strong>width</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.10)"><em>float</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#complex" title="(in Python v3.10)"><em>complex</em></a><em>, </em><em>optional</em>) -- Cross-section width (keyword argument). Defaults to 1.0.</p></li>
@@ -384,11 +385,11 @@ the width is perpindicular to the reference axis.</p>
 <dl class="py class">
 <dt class="sig sig-object py" id="tacs.constitutive.IsoShellConstitutive">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tacs.constitutive.</span></span><span class="sig-name descname"><span class="pre">IsoShellConstitutive</span></span><a class="headerlink" href="#tacs.constitutive.IsoShellConstitutive" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="#tacs.constitutive.ShellConstitutive" title="tacs.constitutive.ShellConstitutive"><code class="xref py py-class docutils literal notranslate"><span class="pre">tacs.constitutive.ShellConstitutive</span></code></a></p>
+<dd><p>Bases: <a class="reference internal" href="#tacs.constitutive.ShellConstitutive" title="tacs.constitutive.ShellConstitutive"><code class="xref py py-class docutils literal notranslate"><span class="pre">ShellConstitutive</span></code></a></p>
 <p>This constitutive class defines the stiffness properties for a
 isotropic first-order shear deformation theory shell type element.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>props</strong> (<a class="reference internal" href="#tacs.constitutive.MaterialProperties" title="tacs.constitutive.MaterialProperties"><em>MaterialProperties</em></a>) -- The material property.</p></li>
 <li><p><strong>t</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.10)"><em>float</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#complex" title="(in Python v3.10)"><em>complex</em></a><em>, </em><em>optional</em>) -- The material thickness (keyword argument). Defaults to 1.0.</p></li>
@@ -404,10 +405,10 @@ isotropic first-order shear deformation theory shell type element.</p>
 <dl class="py class">
 <dt class="sig sig-object py" id="tacs.constitutive.IsoTubeBeamConstitutive">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tacs.constitutive.</span></span><span class="sig-name descname"><span class="pre">IsoTubeBeamConstitutive</span></span><a class="headerlink" href="#tacs.constitutive.IsoTubeBeamConstitutive" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">tacs.constitutive.BeamConstitutive</span></code></p>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">BeamConstitutive</span></code></p>
 <p>Timoshenko theory based constitutive object for a hollow circular beam.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>props</strong> (<a class="reference internal" href="#tacs.constitutive.MaterialProperties" title="tacs.constitutive.MaterialProperties"><em>MaterialProperties</em></a>) -- The material property.</p></li>
 <li><p><strong>d</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.10)"><em>float</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#complex" title="(in Python v3.10)"><em>complex</em></a><em>, </em><em>optional</em>) -- Tube inner diameter (keyword argument). Defaults to 1.0.</p></li>
@@ -428,17 +429,17 @@ isotropic first-order shear deformation theory shell type element.</p>
 <dl class="py class">
 <dt class="sig sig-object py" id="tacs.constitutive.LamParamShellConstitutive">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tacs.constitutive.</span></span><span class="sig-name descname"><span class="pre">LamParamShellConstitutive</span></span><a class="headerlink" href="#tacs.constitutive.LamParamShellConstitutive" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="#tacs.constitutive.ShellConstitutive" title="tacs.constitutive.ShellConstitutive"><code class="xref py py-class docutils literal notranslate"><span class="pre">tacs.constitutive.ShellConstitutive</span></code></a></p>
+<dd><p>Bases: <a class="reference internal" href="#tacs.constitutive.ShellConstitutive" title="tacs.constitutive.ShellConstitutive"><code class="xref py py-class docutils literal notranslate"><span class="pre">ShellConstitutive</span></code></a></p>
 </dd></dl>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="tacs.constitutive.PlaneStressConstitutive">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tacs.constitutive.</span></span><span class="sig-name descname"><span class="pre">PlaneStressConstitutive</span></span><a class="headerlink" href="#tacs.constitutive.PlaneStressConstitutive" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">tacs.TACS.Constitutive</span></code></p>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Constitutive</span></code></p>
 <p>This is the base class for the plane stress constitutive objects.
 All objects performing plane stress analysis should utilize this class.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>props</strong> (<a class="reference internal" href="#tacs.constitutive.MaterialProperties" title="tacs.constitutive.MaterialProperties"><em>MaterialProperties</em></a>) -- The material property.</p></li>
 <li><p><strong>t</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.10)"><em>float</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#complex" title="(in Python v3.10)"><em>complex</em></a><em>, </em><em>optional</em>) -- The material thickness (keyword argument). Defaults to 1.0.</p></li>
@@ -454,7 +455,7 @@ All objects performing plane stress analysis should utilize this class.</p>
 <dl class="py class">
 <dt class="sig sig-object py" id="tacs.constitutive.PointMassConstitutive">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tacs.constitutive.</span></span><span class="sig-name descname"><span class="pre">PointMassConstitutive</span></span><a class="headerlink" href="#tacs.constitutive.PointMassConstitutive" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="#tacs.constitutive.GeneralMassConstitutive" title="tacs.constitutive.GeneralMassConstitutive"><code class="xref py py-class docutils literal notranslate"><span class="pre">tacs.constitutive.GeneralMassConstitutive</span></code></a></p>
+<dd><p>Bases: <a class="reference internal" href="#tacs.constitutive.GeneralMassConstitutive" title="tacs.constitutive.GeneralMassConstitutive"><code class="xref py py-class docutils literal notranslate"><span class="pre">GeneralMassConstitutive</span></code></a></p>
 <p>This is the base class for the traditional point mass constitutive objects with no translation-rotation coupling.
 Assumes 6 dofs.</p>
 <blockquote>
@@ -469,7 +470,7 @@ Assumes 6 dofs.</p>
 </div>
 </div></blockquote>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>m</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.10)"><em>float</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#complex" title="(in Python v3.10)"><em>complex</em></a><em>, </em><em>optional</em>) -- Mass value (keyword argument). Defaults to 0.0.</p></li>
 <li><p><strong>I11</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.10)"><em>float</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#complex" title="(in Python v3.10)"><em>complex</em></a><em>, </em><em>optional</em>) -- Moment of inertia in '1' direction (keyword argument). Defaults to 0.0.</p></li>
@@ -486,7 +487,7 @@ Assumes 6 dofs.</p>
 <dl class="py class">
 <dt class="sig sig-object py" id="tacs.constitutive.ShellConstitutive">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tacs.constitutive.</span></span><span class="sig-name descname"><span class="pre">ShellConstitutive</span></span><a class="headerlink" href="#tacs.constitutive.ShellConstitutive" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">tacs.TACS.Constitutive</span></code></p>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Constitutive</span></code></p>
 <p>This is the base class for the shell constitutive objects.
 All objects performing shell elastic analysis should utilize this class.</p>
 <dl class="py method">
@@ -494,7 +495,7 @@ All objects performing shell elastic analysis should utilize this class.</p>
 <span class="sig-name descname"><span class="pre">setDrillingRegularization</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constitutive.ShellConstitutive.setDrillingRegularization" title="Permalink to this definition">¶</a></dt>
 <dd><p>Update regularization parameter used to stiffen shell in drilling rotation dof.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>kpenalty</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.10)"><em>float</em></a>) -- Drilling regularization parameter. Defaults to 10.0.</p>
 </dd>
 </dl>
@@ -505,11 +506,11 @@ All objects performing shell elastic analysis should utilize this class.</p>
 <dl class="py class">
 <dt class="sig sig-object py" id="tacs.constitutive.SolidConstitutive">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tacs.constitutive.</span></span><span class="sig-name descname"><span class="pre">SolidConstitutive</span></span><a class="headerlink" href="#tacs.constitutive.SolidConstitutive" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">tacs.TACS.Constitutive</span></code></p>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Constitutive</span></code></p>
 <p>This is the base class for the solid constitutive objects.
 All objects performing solid elastic analysis should utilize this class.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>props</strong> (<a class="reference internal" href="#tacs.constitutive.MaterialProperties" title="tacs.constitutive.MaterialProperties"><em>MaterialProperties</em></a>) -- The material property.</p></li>
 <li><p><strong>t</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.10)"><em>float</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#complex" title="(in Python v3.10)"><em>complex</em></a><em>, </em><em>optional</em>) -- The material &quot;thickness&quot; (keyword argument).
@@ -564,7 +565,7 @@ Weighting factor used for topology optimization. 0.0 corresponds to void,
     </form>
     </div>
 </div>
-<script>$('#searchbox').show(0);</script>
+<script>document.getElementById('searchbox').style.display = "block"</script>
         </div>
       </div>
       <div class="clearer"></div>

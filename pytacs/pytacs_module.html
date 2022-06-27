@@ -4,7 +4,7 @@
 <html lang="python">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
 
     <title>pyTACS class &#8212; TACS  documentation</title>
     <link rel="stylesheet" type="text/css" href="../_static/pygments.css" />
@@ -13,6 +13,7 @@
     <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
     <script src="../_static/jquery.js"></script>
     <script src="../_static/underscore.js"></script>
+    <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
     <script src="../_static/doctools.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
@@ -47,7 +48,7 @@
           <div class="body" role="main">
             
   <section id="module-tacs.pytacs">
-<span id="pytacs-class"></span><h1>pyTACS class<a class="headerlink" href="#module-tacs.pytacs" title="Permalink to this headline">¶</a></h1>
+<span id="pytacs-class"></span><h1>pyTACS class<a class="headerlink" href="#module-tacs.pytacs" title="Permalink to this heading">¶</a></h1>
 <p>pytacs - The Python wrapper for the TACS assembler</p>
 <p>This python interface is designed to provide a easier interface to the
 C++ layer of TACS. User-supplied hooks allow for nearly complete
@@ -75,7 +76,7 @@ for setting loads and functions, performing analysis, and gradient computations.
 </dd>
 </dl>
 <section id="options">
-<h2>Options<a class="headerlink" href="#options" title="Permalink to this headline">¶</a></h2>
+<h2>Options<a class="headerlink" href="#options" title="Permalink to this heading">¶</a></h2>
 <p>Options can be set for <a class="reference internal" href="#tacs.pytacs.pyTACS" title="tacs.pytacs.pyTACS"><code class="xref py py-class docutils literal notranslate"><span class="pre">pyTACS</span></code></a> at time of creation for the class or using the
 <a class="reference internal" href="#tacs.pytacs.pyTACS.setOption" title="tacs.pytacs.pyTACS.setOption"><code class="xref py py-meth docutils literal notranslate"><span class="pre">pyTACS.setOption</span></code></a>. Current option values for a class
 instance can be printed out using the <a class="reference internal" href="#tacs.pytacs.pyTACS.printOptions" title="tacs.pytacs.pyTACS.printOptions"><code class="xref py py-meth docutils literal notranslate"><span class="pre">pyTACS.printOption</span></code></a> method.
@@ -120,13 +121,13 @@ The following options, their default values and descriptions are listed below:</
 </div>
 </section>
 <section id="initializing">
-<h2>Initializing<a class="headerlink" href="#initializing" title="Permalink to this headline">¶</a></h2>
+<h2>Initializing<a class="headerlink" href="#initializing" title="Permalink to this heading">¶</a></h2>
 <p>Before the class can be used to create problems, it must first be initialized by calling the
 <a class="reference internal" href="#tacs.pytacs.pyTACS.initialize" title="tacs.pytacs.pyTACS.initialize"><code class="xref py py-meth docutils literal notranslate"><span class="pre">pyTACS.initialize</span></code></a> method. This method reads in all of the element cards
 from the BDF file and sets up the equivalent TACS element objects necessary for analysis. The
 class can be initialized through two ways: with or without <code class="docutils literal notranslate"><span class="pre">elemCallBack</span></code> function.</p>
 <section id="initializing-with-elemcallback">
-<h3>Initializing with elemCallBack<a class="headerlink" href="#initializing-with-elemcallback" title="Permalink to this headline">¶</a></h3>
+<h3>Initializing with elemCallBack<a class="headerlink" href="#initializing-with-elemcallback" title="Permalink to this heading">¶</a></h3>
 <p><a class="reference internal" href="#tacs.pytacs.pyTACS" title="tacs.pytacs.pyTACS"><code class="xref py py-class docutils literal notranslate"><span class="pre">pyTACS</span></code></a> can be initialized py passing a user-defined <code class="docutils literal notranslate"><span class="pre">elemCallBack</span></code> function to
 <a class="reference internal" href="#tacs.pytacs.pyTACS.initialize" title="tacs.pytacs.pyTACS.initialize"><code class="xref py py-meth docutils literal notranslate"><span class="pre">pyTACS.initialize</span></code></a>, that will be used to setup the correct
 TACS elements at runtime.</p>
@@ -137,7 +138,7 @@ TACS elements at runtime.</p>
 <dd><p>User-defined function used by <a class="reference internal" href="#tacs.pytacs.pyTACS" title="tacs.pytacs.pyTACS"><code class="xref py py-class docutils literal notranslate"><span class="pre">pyTACS</span></code></a> to setup a <a class="reference internal" href="../core/elements.html#element-classes"><span class="std std-ref">Element</span></a>
 for each element type in a given component (property) group.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>dvNum</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><em>int</em></a>) -- The current counter which must be used when creating
 constitutive object with design
@@ -155,11 +156,11 @@ Example: ['CQUAD4', CTRIA3'].</p></li>
 global DVs that have been added.</p></li>
 </ul>
 </dd>
-<dt class="field-even">Returns</dt>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>List containing as many TACS element
 objects as there are element types in <cite>elemDescripts</cite> (one for each).</p>
 </dd>
-<dt class="field-odd">Return type</dt>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>list[<a class="reference internal" href="../core/elements.html#element-classes"><span class="std std-ref">Element</span></a>]</p>
 </dd>
 </dl>
@@ -173,7 +174,7 @@ if the NASTRAN element card doesn't contain a property ID, it should not show up
 </div>
 </section>
 <section id="initializing-without-elemcallback">
-<h3>Initializing without elemCallBack<a class="headerlink" href="#initializing-without-elemcallback" title="Permalink to this headline">¶</a></h3>
+<h3>Initializing without elemCallBack<a class="headerlink" href="#initializing-without-elemcallback" title="Permalink to this heading">¶</a></h3>
 <p>If NASTRAN material property card definitions for every element exist in the BDF file,
 <a class="reference internal" href="#tacs.pytacs.pyTACS" title="tacs.pytacs.pyTACS"><code class="xref py py-class docutils literal notranslate"><span class="pre">pyTACS</span></code></a> can be initialized without a <a class="reference internal" href="#tacs.pytacs.elemCallBack" title="tacs.pytacs.elemCallBack"><code class="xref py py-func docutils literal notranslate"><span class="pre">elemCallBack()</span></code></a> function.
 This can be done by calling <a class="reference internal" href="#tacs.pytacs.pyTACS.initialize" title="tacs.pytacs.pyTACS.initialize"><code class="xref py py-meth docutils literal notranslate"><span class="pre">pyTACS.initialize</span></code></a> without any arguments.</p>
@@ -226,12 +227,12 @@ the user is recommended to setup that element through an
 </section>
 </section>
 <section id="tagging-component-groups-in-bdf">
-<h2>Tagging component groups in BDF<a class="headerlink" href="#tagging-component-groups-in-bdf" title="Permalink to this headline">¶</a></h2>
+<h2>Tagging component groups in BDF<a class="headerlink" href="#tagging-component-groups-in-bdf" title="Permalink to this heading">¶</a></h2>
 <p>Several pyTACS methods (<a class="reference internal" href="#tacs.pytacs.pyTACS.selectCompIDs" title="tacs.pytacs.pyTACS.selectCompIDs"><code class="xref py py-meth docutils literal notranslate"><span class="pre">pyTACS.selectCompIDs</span></code></a>, <a class="reference internal" href="#tacs.pytacs.elemCallBack" title="tacs.pytacs.elemCallBack"><code class="xref py py-func docutils literal notranslate"><span class="pre">elemCallBack()</span></code></a>, etc.)
 allow for the use of user-defined component labels. These labels are read in through formatted comment in the BDF file.</p>
 <p>There are currently two supported formats for labels: ICEM-format and FEMAP-format. These are described below.</p>
 <section id="icem-component-label-format">
-<h3>ICEM component label format<a class="headerlink" href="#icem-component-label-format" title="Permalink to this headline">¶</a></h3>
+<h3>ICEM component label format<a class="headerlink" href="#icem-component-label-format" title="Permalink to this heading">¶</a></h3>
 <p>In the ICEM format, the elements are organized by property groups and
 the component label is appended as a string comment above the first element in every property group.
 The string comment should start with <code class="docutils literal notranslate"><span class="pre">$</span>&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">Shell</span> <span class="pre">element</span> <span class="pre">data</span> <span class="pre">for</span> <span class="pre">family</span></code> followed by the component name.
@@ -254,7 +255,7 @@ CQUADR       102       2    3896    3899    3898    3895       2
 </div>
 </section>
 <section id="femap-component-label-format">
-<h3>FEMAP component label format<a class="headerlink" href="#femap-component-label-format" title="Permalink to this headline">¶</a></h3>
+<h3>FEMAP component label format<a class="headerlink" href="#femap-component-label-format" title="Permalink to this heading">¶</a></h3>
 <p>In the FEMAP format, the component label is appended as a string comment above each property card.
 The string comment should start with <code class="docutils literal notranslate"><span class="pre">$</span> <span class="pre">Femap</span> <span class="pre">Property</span> <span class="pre">i</span> <span class="pre">:</span></code> (where <code class="docutils literal notranslate"><span class="pre">i</span></code> is replaced with the property number the label is referencing)
 followed by the component name. No spaces are allowed within the component name. An example of this format is provided below:</p>
@@ -267,13 +268,13 @@ PSHELL         2       1      .1       1               1              0.
 </section>
 </section>
 <section id="api-reference">
-<h2>API Reference<a class="headerlink" href="#api-reference" title="Permalink to this headline">¶</a></h2>
+<h2>API Reference<a class="headerlink" href="#api-reference" title="Permalink to this heading">¶</a></h2>
 <dl class="py class">
 <dt class="sig sig-object py" id="tacs.pytacs.pyTACS">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tacs.pytacs.</span></span><span class="sig-name descname"><span class="pre">pyTACS</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fileName</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">comm</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dvNum</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scaleList</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">options</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">{}</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/pytacs.html#pyTACS"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.pytacs.pyTACS" title="Permalink to this definition">¶</a></dt>
 <dd><p>The class for working with a TACS structure</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>fileName</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.10)"><em>str</em></a>) -- The filename of the BDF file to load.</p></li>
 <li><p><strong>comm</strong> (<a class="reference external" href="https://mpi4py.readthedocs.io/en/stable/reference/mpi4py.MPI.Intracomm.html#mpi4py.MPI.Intracomm" title="(in MPI for Python v3.1)"><em>mpi4py.MPI.Intracomm</em></a>) -- The comm object on which to create the pyTACS object.</p></li>
@@ -299,7 +300,7 @@ objects. By calling this function, the internal dvNum counter
 is incremented and the user doesn't have to worry about
 it.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>descript</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.10)"><em>str</em></a>) -- A user supplied string that can be used to retrieve the
 variable number and value elemCallBackFunction.</p></li>
@@ -425,10 +426,10 @@ will select any component with 'RIB' in the description AND
 <dd><p>Return pynastran bdf object. This object can be used interactively
 to parse information (nodes, elements, loads etc) included in the bdf file.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Returns</dt>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>bdfInfo</strong> -- pyNastran bdf object.</p>
 </dd>
-<dt class="field-even">Return type</dt>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
 <dd class="field-even"><p><a class="reference external" href="https://pynastran-git.readthedocs.io/en/latest/reference/bdf/pyNastran.bdf.bdf.html#pyNastran.bdf.bdf.BDF" title="(in pyNastran 1.4-dev v1.4-dev)">pyNastran.bdf.bdf.BDF</a></p>
 </dd>
 </dl>
@@ -440,14 +441,14 @@ to parse information (nodes, elements, loads etc) included in the bdf file.</p>
 <dd><p>Return a list of component descriptions for the given component
 IDs. compIDs should come from a call to selectCompIDs</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>compIDs</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><em>int</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.10)"><em>list</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><em>int</em></a><em>] or </em><em>None</em>) -- List of integers of the compIDs numbers. If None, returns names for all components.
 Defaults to None.</p>
 </dd>
-<dt class="field-even">Returns</dt>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p><strong>compDescript</strong> -- List of strings of the names of the corresponding compIDs</p>
 </dd>
-<dt class="field-odd">Return type</dt>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.10)">list</a></p>
 </dd>
 </dl>
@@ -464,7 +465,7 @@ later time. If a elemCallBack function is not provided by the user,
 we will use pyNastran to generate one automatically from element
 properties provided in the BDF file.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>elemCallBack</strong> (<em>python function handle</em>) -- <p>The calling sequence for elemCallBack <strong>must</strong> be as
 follows:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">elemCallBack</span><span class="p">(</span><span class="n">dvNum</span><span class="p">,</span> <span class="n">compID</span><span class="p">,</span> <span class="n">compDescript</span><span class="p">,</span> <span class="n">elemDescripts</span><span class="p">,</span>
@@ -498,10 +499,10 @@ objects as there are element types in elemDescripts (one for each).</p>
 <dd><p>get the original design variables that were specified with
 during assembler creation.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Returns</dt>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>x</strong> -- The current design variable vector set in tacs.</p>
 </dd>
-<dt class="field-even">Return type</dt>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
 <dd class="field-even"><p>array</p>
 </dd>
 </dl>
@@ -513,16 +514,16 @@ during assembler creation.</p>
 <dd><p>Create a new tacs distributed design vector.
 Values are initialized to zero.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>asBVec</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.10)"><em>bool</em></a>) -- Flag that determines whether to return
 design vector as tacs <code class="xref py py-class docutils literal notranslate"><span class="pre">Vec</span></code> (True) or numpy array (False).
 Defaults to False.</p>
 </dd>
-<dt class="field-even">Returns</dt>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p><strong>x</strong> -- Distributed design variable vector</p>
 </dd>
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.22)">numpy.ndarray</a> or TACS.Vec</p>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.23)">numpy.ndarray</a> or TACS.Vec</p>
 </dd>
 </dl>
 </dd></dl>
@@ -544,11 +545,11 @@ Defaults to False.</p>
 <span class="sig-name descname"><span class="pre">getOrigNodes</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/pytacs.html#pyTACS.getOrigNodes"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.pytacs.pyTACS.getOrigNodes" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return the original mesh coordiantes read in from the meshLoader.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Returns</dt>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>coords</strong> -- Structural coordinate in array of size (N * 3) where N is
 the number of structural nodes on this processor.</p>
 </dd>
-<dt class="field-even">Return type</dt>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
 <dd class="field-even"><p>array</p>
 </dd>
 </dl>
@@ -560,16 +561,16 @@ the number of structural nodes on this processor.</p>
 <dd><p>Create a new tacs distributed node vector.
 Values are initialized to zero.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>asBVec</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.10)"><em>bool</em></a>) -- Flag that determines whether to return
 node vector as tacs <code class="xref py py-class docutils literal notranslate"><span class="pre">Vec</span></code> (True) or numpy array (False).
 Defaults to False.</p>
 </dd>
-<dt class="field-even">Returns</dt>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p><strong>xpts</strong> -- Distributed node coordinate vector</p>
 </dd>
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.22)">numpy.ndarray</a> or TACS.Vec</p>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.23)">numpy.ndarray</a> or TACS.Vec</p>
 </dd>
 </dl>
 </dd></dl>
@@ -598,16 +599,16 @@ Defaults to False.</p>
 <dd><p>Create a new tacs distributed state variable vector.
 Values are initialized to zero.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>asBVec</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.10)"><em>bool</em></a>) -- Flag that determines whether to return
 state vector as tacs <code class="xref py py-class docutils literal notranslate"><span class="pre">Vec</span></code> (True) or numpy array (False).
 Defaults to False.</p>
 </dd>
-<dt class="field-even">Returns</dt>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p><strong>vars</strong> -- Distributed state variable vector</p>
 </dd>
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.22)">numpy.ndarray</a> or TACS.Vec</p>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.23)">numpy.ndarray</a> or TACS.Vec</p>
 </dd>
 </dl>
 </dd></dl>
@@ -631,16 +632,16 @@ Defaults to False.</p>
 This object can be used to set loads, evalFunctions as well as perform
 solutions and sensitivities related to static problems</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>name</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.10)"><em>str</em></a>) -- Name to assign problem.</p></li>
 <li><p><strong>options</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.10)"><em>dict</em></a>) -- Problem-specific options to pass to StaticProblem instance (case-insensitive).</p></li>
 </ul>
 </dd>
-<dt class="field-even">Returns</dt>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p><strong>problem</strong> -- StaticProblem object used for modeling and solving static cases.</p>
 </dd>
-<dt class="field-odd">Return type</dt>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p><a class="reference internal" href="static.html#tacs.problems.StaticProblem" title="tacs.problems.StaticProblem">StaticProblem</a></p>
 </dd>
 </dl>
@@ -653,7 +654,7 @@ solutions and sensitivities related to static problems</p>
 This object can be used to set loads, evalFunctions as well as perform
 solutions and sensitivities related to transient problems</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>name</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.10)"><em>str</em></a>) -- Name to assign problem.</p></li>
 <li><p><strong>tInit</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.10)"><em>float</em></a>) -- Starting time for transient time integration</p></li>
@@ -662,10 +663,10 @@ solutions and sensitivities related to transient problems</p>
 <li><p><strong>options</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.10)"><em>dict</em></a>) -- Problem-specific options to pass to TransientProblem instance (case-insensitive).</p></li>
 </ul>
 </dd>
-<dt class="field-even">Returns</dt>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p><strong>problem</strong> -- TransientProblem object used for modeling and solving transient cases.</p>
 </dd>
-<dt class="field-odd">Return type</dt>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p><a class="reference internal" href="transient.html#tacs.problems.TransientProblem" title="tacs.problems.TransientProblem">TransientProblem</a></p>
 </dd>
 </dl>
@@ -678,7 +679,7 @@ solutions and sensitivities related to transient problems</p>
 This problem can be used to identify the natural frequencies and mode
 shapes of the model through eigenvalue analysis.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>name</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.10)"><em>str</em></a>) -- Name to assign problem.</p></li>
 <li><p><strong>sigma</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.10)"><em>float</em></a>) -- Guess for the lowest eigenvalue.
@@ -687,10 +688,10 @@ This corresponds to the lowest expected frequency squared. (rad^2/s^2)</p></li>
 <li><p><strong>options</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.10)"><em>dict</em></a>) -- Problem-specific options to pass to ModalProblem instance (case-insensitive).</p></li>
 </ul>
 </dd>
-<dt class="field-even">Returns</dt>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p><strong>problem</strong> -- ModalProblem object used for performing modal eigenvalue analysis.</p>
 </dd>
-<dt class="field-odd">Return type</dt>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p><a class="reference internal" href="modal.html#tacs.problems.ModalProblem" title="tacs.problems.ModalProblem">ModalProblem</a></p>
 </dd>
 </dl>
@@ -703,11 +704,11 @@ This corresponds to the lowest expected frequency squared. (rad^2/s^2)</p></li>
 This function assumes all loads are specified in the BDF and allows users to
 skip setting loads in Python.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Returns</dt>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>structProblems</strong> -- Dictionary containing a predfined TACSProblem for every loadcase found int the BDF.
 The dictionary keys are the loadcase IDs from the BDF.</p>
 </dd>
-<dt class="field-even">Return type</dt>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
 <dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.10)">dict</a>[TACSProblem]</p>
 </dd>
 </dl>
@@ -725,7 +726,7 @@ Currently only supports staticProblem (SOL 101) and modalProblems (SOL 103)</p>
 <dl class="py attribute">
 <dt class="sig sig-object py" id="tacs.pytacs.pyTACS.dtype">
 <span class="sig-name descname"><span class="pre">dtype</span></span><a class="headerlink" href="#tacs.pytacs.pyTACS.dtype" title="Permalink to this definition">¶</a></dt>
-<dd><p>alias of <code class="xref py py-class docutils literal notranslate"><span class="pre">numpy.float64</span></code></p>
+<dd><p>alias of <code class="xref py py-class docutils literal notranslate"><span class="pre">float64</span></code></p>
 </dd></dl>
 
 <dl class="py method">
@@ -733,7 +734,7 @@ Currently only supports staticProblem (SOL 101) and modalProblems (SOL 103)</p>
 <span class="sig-name descname"><span class="pre">getOption</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tacs.pytacs.pyTACS.getOption" title="Permalink to this definition">¶</a></dt>
 <dd><p>Get a solver option value. The name is not case sensitive.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>name</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.10)"><em>str</em></a>) -- Name of option to get</p>
 </dd>
 </dl>
@@ -758,7 +759,7 @@ options to the stdout on the root processor</p>
 <span class="sig-name descname"><span class="pre">setOption</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tacs.pytacs.pyTACS.setOption" title="Permalink to this definition">¶</a></dt>
 <dd><p>Set a solver option value. The name is not case sensitive.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>name</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.10)"><em>str</em></a>) -- Name of option to modify</p></li>
 <li><p><strong>value</strong> (<em>depends on option</em>) -- New option value to set</p></li>
@@ -819,7 +820,7 @@ options to the stdout on the root processor</p>
     </form>
     </div>
 </div>
-<script>$('#searchbox').show(0);</script>
+<script>document.getElementById('searchbox').style.display = "block"</script>
         </div>
       </div>
       <div class="clearer"></div>

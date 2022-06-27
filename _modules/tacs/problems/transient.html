@@ -12,6 +12,7 @@
     <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
     <script src="../../../_static/jquery.js"></script>
     <script src="../../../_static/underscore.js"></script>
+    <script src="../../../_static/_sphinx_javascript_frameworks_compat.js"></script>
     <script src="../../../_static/doctools.js"></script>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" /> 
@@ -127,10 +128,11 @@
         <span class="c1"># Default setup for common problem class objects</span>
         <span class="n">TACSProblem</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">assembler</span><span class="p">,</span> <span class="n">comm</span><span class="p">,</span> <span class="n">outputViewer</span><span class="p">,</span> <span class="n">meshLoader</span><span class="p">)</span>
 
-        <span class="c1"># Set time interval parmeters</span>
+        <span class="c1"># Set time interval parameters</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">tInit</span> <span class="o">=</span> <span class="n">tInit</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">tFinal</span> <span class="o">=</span> <span class="n">tFinal</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">numSteps</span> <span class="o">=</span> <span class="n">numSteps</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">numStages</span> <span class="o">=</span> <span class="kc">None</span>
 
         <span class="c1"># Process the default options which are added to self.options</span>
         <span class="c1"># under the &#39;defaults&#39; key. Make sure the key are lower case</span>
@@ -154,25 +156,35 @@
 
         <span class="bp">self</span><span class="o">.</span><span class="n">callCounter</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
 
-        <span class="c1"># Create a force vector for each time step</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">F</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">assembler</span><span class="o">.</span><span class="n">createVec</span><span class="p">()</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">numSteps</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)]</span>
-        <span class="c1"># Auxillary element object for applying tractions/pressure</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">auxElems</span> <span class="o">=</span> <span class="p">[</span><span class="n">tacs</span><span class="o">.</span><span class="n">TACS</span><span class="o">.</span><span class="n">AuxElements</span><span class="p">()</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">numSteps</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)]</span>
         <span class="c1"># Initialize the initial conditions tacs vectors</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">vars0</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">assembler</span><span class="o">.</span><span class="n">createVec</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">dvars0</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">assembler</span><span class="o">.</span><span class="n">createVec</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">ddvars0</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">assembler</span><span class="o">.</span><span class="n">createVec</span><span class="p">()</span>
 
-        <span class="c1"># Create the BDF integrator solver</span>
+        <span class="c1"># Get time integration solver attributes</span>
         <span class="n">order</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s1">&#39;integrationOrder&#39;</span><span class="p">)</span>
         <span class="n">solverType</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s1">&#39;timeIntegrator&#39;</span><span class="p">)</span>
-        <span class="c1"># Chose solver type</span>
+
+        <span class="c1"># dictionary for converting integration order to number of stages</span>
+        <span class="n">DIRK_order_to_stages</span> <span class="o">=</span> <span class="p">{</span><span class="mi">2</span><span class="p">:</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">:</span><span class="mi">2</span><span class="p">,</span> <span class="mi">4</span><span class="p">:</span><span class="mi">3</span><span class="p">}</span>
+
+        <span class="c1"># Create the time integrator and allocate the load data structures</span>
         <span class="k">if</span> <span class="n">solverType</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span> <span class="o">==</span> <span class="s1">&#39;BDF&#39;</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">integrator</span> <span class="o">=</span> <span class="n">tacs</span><span class="o">.</span><span class="n">TACS</span><span class="o">.</span><span class="n">BDFIntegrator</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">assembler</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">tInit</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">tFinal</span><span class="p">,</span>
                                                       <span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">numSteps</span><span class="p">),</span> <span class="n">order</span><span class="p">)</span>
+            <span class="c1"># Create a force vector for each time step</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">F</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">assembler</span><span class="o">.</span><span class="n">createVec</span><span class="p">()</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">numSteps</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)]</span>
+            <span class="c1"># Auxillary element object for applying tractions/pressure</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">auxElems</span> <span class="o">=</span> <span class="p">[</span><span class="n">tacs</span><span class="o">.</span><span class="n">TACS</span><span class="o">.</span><span class="n">AuxElements</span><span class="p">()</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">numSteps</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)]</span>
+
         <span class="k">elif</span> <span class="n">solverType</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span> <span class="o">==</span> <span class="s1">&#39;DIRK&#39;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">numStages</span> <span class="o">=</span> <span class="n">DIRK_order_to_stages</span><span class="p">[</span><span class="n">order</span><span class="p">]</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">integrator</span> <span class="o">=</span> <span class="n">tacs</span><span class="o">.</span><span class="n">TACS</span><span class="o">.</span><span class="n">DIRKIntegrator</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">assembler</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">tInit</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">tFinal</span><span class="p">,</span>
-                                                       <span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">numSteps</span><span class="p">),</span> <span class="n">order</span><span class="p">)</span>
+                                                       <span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">numSteps</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">numStages</span><span class="p">)</span>
+            <span class="c1"># Create a force vector for each time stage</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">F</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">assembler</span><span class="o">.</span><span class="n">createVec</span><span class="p">()</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">numSteps</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">numStages</span><span class="p">)]</span>
+            <span class="c1"># Auxiliary element object for applying tractions/pressure at each time stage</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">auxElems</span> <span class="o">=</span> <span class="p">[</span><span class="n">tacs</span><span class="o">.</span><span class="n">TACS</span><span class="o">.</span><span class="n">AuxElements</span><span class="p">()</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">numSteps</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">numStages</span><span class="p">)]</span>
 
         <span class="n">printLevel</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s1">&#39;printLevel&#39;</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">integrator</span><span class="o">.</span><span class="n">setPrintLevel</span><span class="p">(</span><span class="n">printLevel</span><span class="p">)</span>
@@ -245,21 +257,61 @@
 
 <span class="sd">        Returns</span>
 <span class="sd">        ----------</span>
-<span class="sd">        numSteps : int</span>
-<span class="sd">            Number of time steps.</span>
+<span class="sd">        timeSteps : numpy.ndarray[float]</span>
+<span class="sd">            Discrete time step slices used in time integration.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">timeSteps</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">tInit</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">tFinal</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">numSteps</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">timeSteps</span></div>
 
+<div class="viewcode-block" id="TransientProblem.getNumTimeStages"><a class="viewcode-back" href="../../../pytacs/transient.html#tacs.problems.TransientProblem.getNumTimeStages">[docs]</a>    <span class="k">def</span> <span class="nf">getNumTimeStages</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the number of time stages used for multi-stage time integration for this problem.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        ----------</span>
+<span class="sd">        numStages : int</span>
+<span class="sd">            Number of time stages.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Check if this is a multi-stage problem</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">numStages</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">numStages</span>
+        <span class="c1"># Otherwise its zero stage</span>
+        <span class="k">return</span> <span class="mi">0</span></div>
+
+<div class="viewcode-block" id="TransientProblem.getTimeStages"><a class="viewcode-back" href="../../../pytacs/transient.html#tacs.problems.TransientProblem.getTimeStages">[docs]</a>    <span class="k">def</span> <span class="nf">getTimeStages</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">timeStep</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the discrete time stage sub-intervals used in a multi-stage integration scheme.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+
+<span class="sd">        timeStep : int</span>
+<span class="sd">            Time step index to get stage times for.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        ----------</span>
+<span class="sd">        timeStages : numpy.ndarray[float]</span>
+<span class="sd">            Time step slices used to discretize this time step.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Check if this is a multi-stage problem and if this isn&#39;t the first time step</span>
+        <span class="k">if</span> <span class="n">timeStep</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">numStages</span><span class="p">:</span>
+            <span class="n">timeStages</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">numStages</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">stage</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">numStages</span><span class="p">):</span>
+                <span class="n">timeStages</span><span class="p">[</span><span class="n">stage</span><span class="p">],</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">integrator</span><span class="o">.</span><span class="n">getStageStates</span><span class="p">(</span><span class="n">timeStep</span><span class="p">,</span> <span class="n">stage</span><span class="p">)</span>
+        <span class="c1"># Otherwise, there are no subintervals</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">timeStages</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">timeStages</span></div>
+
     <span class="c1">####### Load adding methods ########</span>
 
-<div class="viewcode-block" id="TransientProblem.addLoadToComponents"><a class="viewcode-back" href="../../../pytacs/transient.html#tacs.problems.TransientProblem.addLoadToComponents">[docs]</a>    <span class="k">def</span> <span class="nf">addLoadToComponents</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">timeStep</span><span class="p">,</span> <span class="n">compIDs</span><span class="p">,</span> <span class="n">F</span><span class="p">,</span> <span class="n">averageLoad</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<div class="viewcode-block" id="TransientProblem.addLoadToComponents"><a class="viewcode-back" href="../../../pytacs/transient.html#tacs.problems.TransientProblem.addLoadToComponents">[docs]</a>    <span class="k">def</span> <span class="nf">addLoadToComponents</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">timeStep</span><span class="p">,</span> <span class="n">compIDs</span><span class="p">,</span> <span class="n">F</span><span class="p">,</span> <span class="n">timeStage</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">averageLoad</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;&quot;</span>
 <span class="sd">        This method is used to add a *FIXED TOTAL LOAD* on one or more</span>
-<span class="sd">        components, defined by COMPIDs, at a specifc time instance.</span>
+<span class="sd">        components, defined by COMPIDs, at a specific time instance.</span>
 <span class="sd">        The purpose of this routine is to add loads that remain fixed throughout</span>
 <span class="sd">        an optimization. An example would be an engine load. This routine determines</span>
-<span class="sd">        all the unqiue nodes in the FE model that are part of the the requested components,</span>
+<span class="sd">        all the unique nodes in the FE model that are part of the requested components,</span>
 <span class="sd">        then takes the total &#39;force&#39; by F and divides by the number of nodes.</span>
 <span class="sd">        This average load is then applied to the nodes.</span>
 
@@ -277,6 +329,11 @@
 <span class="sd">            Vector(s) of &#39;force&#39; to apply to each components.  If only one force vector is provided,</span>
 <span class="sd">            force will be copied uniformly across all components.</span>
 
+<span class="sd">        timeStage : int or None</span>
+<span class="sd">            Time stage index to apply load to. Default is None, which is applicable only for</span>
+<span class="sd">            multi-step methods like BDF. For multi-stage methods like DIRK, this index must</span>
+<span class="sd">            be specified.</span>
+
 <span class="sd">        averageLoad : bool</span>
 <span class="sd">            Flag to determine whether load should be split evenly across all components (True)</span>
 <span class="sd">            or copied and applied individually to each component (False). Defaults to False.</span>
@@ -285,7 +342,7 @@
 <span class="sd">        -----</span>
 
 <span class="sd">        The units of the entries of the &#39;force&#39; vector F are not</span>
-<span class="sd">        necesarily physical forces and their interpretation depends</span>
+<span class="sd">        necessarily physical forces and their interpretation depends</span>
 <span class="sd">        on the physics problem being solved and the dofs included</span>
 <span class="sd">        in the model.</span>
 
@@ -302,9 +359,16 @@
 <span class="sd">            In Thermoelasticity with varsPerNode = 7,</span>
 <span class="sd">                F = [fx, fy, fz, mx, my, mz, Qdot] # forces + moments + heat rate</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_addLoadToComponents</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">F</span><span class="p">[</span><span class="n">timeStep</span><span class="p">],</span> <span class="n">compIDs</span><span class="p">,</span> <span class="n">F</span><span class="p">,</span> <span class="n">averageLoad</span><span class="p">)</span></div>
+        <span class="n">timeIndex</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">numStages</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">timeIndex</span> <span class="o">=</span> <span class="n">timeStep</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">assert</span> <span class="n">timeStage</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">,</span> <span class="s2">&quot;Time stage index must be specified for </span><span class="si">%s</span><span class="s2"> integrator type&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s1">&#39;timeIntegrator&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span>
+            <span class="n">timeIndex</span> <span class="o">=</span> <span class="n">timeStep</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">numStages</span> <span class="o">+</span> <span class="n">timeStage</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">_addLoadToComponents</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">F</span><span class="p">[</span><span class="n">timeIndex</span><span class="p">],</span> <span class="n">compIDs</span><span class="p">,</span> <span class="n">F</span><span class="p">,</span> <span class="n">averageLoad</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="TransientProblem.addLoadToNodes"><a class="viewcode-back" href="../../../pytacs/transient.html#tacs.problems.TransientProblem.addLoadToNodes">[docs]</a>    <span class="k">def</span> <span class="nf">addLoadToNodes</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">timeStep</span><span class="p">,</span> <span class="n">nodeIDs</span><span class="p">,</span> <span class="n">F</span><span class="p">,</span> <span class="n">nastranOrdering</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<div class="viewcode-block" id="TransientProblem.addLoadToNodes"><a class="viewcode-back" href="../../../pytacs/transient.html#tacs.problems.TransientProblem.addLoadToNodes">[docs]</a>    <span class="k">def</span> <span class="nf">addLoadToNodes</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">timeStep</span><span class="p">,</span> <span class="n">nodeIDs</span><span class="p">,</span> <span class="n">F</span><span class="p">,</span> <span class="n">timeStage</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">nastranOrdering</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        This method is used to add a fixed point load of F to the</span>
 <span class="sd">        selected node IDs at a specified time instance.</span>
@@ -321,6 +385,11 @@
 <span class="sd">        F : Numpy 1d or 2d array length (varsPerNodes) or (numNodeIDs, varsPerNodes)</span>
 <span class="sd">            Array of force vectors, one for each node. If only one force vector is provided,</span>
 <span class="sd">            force will be copied uniformly across all nodes.</span>
+
+<span class="sd">        timeStage : int or None</span>
+<span class="sd">            Time stage index to apply load to. Default is None, which is applicable only for</span>
+<span class="sd">            multi-step methods like BDF. For multi-stage methods like DIRK, this index must</span>
+<span class="sd">            be specified.</span>
 
 <span class="sd">        nastranOrdering : bool</span>
 <span class="sd">            Flag signaling whether nodeIDs are in TACS (default)</span>
@@ -347,10 +416,16 @@
 <span class="sd">            In Thermoelasticity with varsPerNode = 7,</span>
 <span class="sd">                F = [fx, fy, fz, mx, my, mz, Qdot] # forces + moments + heat rate</span>
 <span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">timeIndex</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">numStages</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">timeIndex</span> <span class="o">=</span> <span class="n">timeStep</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">assert</span> <span class="n">timeStage</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">,</span> <span class="s2">&quot;Time stage index must be specified for </span><span class="si">%s</span><span class="s2"> integrator type&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s1">&#39;timeIntegrator&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span>
+            <span class="n">timeIndex</span> <span class="o">=</span> <span class="n">timeStep</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">numStages</span> <span class="o">+</span> <span class="n">timeStage</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">_addLoadToNodes</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">F</span><span class="p">[</span><span class="n">timeIndex</span><span class="p">],</span> <span class="n">nodeIDs</span><span class="p">,</span> <span class="n">F</span><span class="p">,</span> <span class="n">nastranOrdering</span><span class="p">)</span></div>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">_addLoadToNodes</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">F</span><span class="p">[</span><span class="n">timeStep</span><span class="p">],</span> <span class="n">nodeIDs</span><span class="p">,</span> <span class="n">F</span><span class="p">,</span> <span class="n">nastranOrdering</span><span class="p">)</span></div>
-
-<div class="viewcode-block" id="TransientProblem.addLoadToRHS"><a class="viewcode-back" href="../../../pytacs/transient.html#tacs.problems.TransientProblem.addLoadToRHS">[docs]</a>    <span class="k">def</span> <span class="nf">addLoadToRHS</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">timeStep</span><span class="p">,</span> <span class="n">Fapplied</span><span class="p">):</span>
+<div class="viewcode-block" id="TransientProblem.addLoadToRHS"><a class="viewcode-back" href="../../../pytacs/transient.html#tacs.problems.TransientProblem.addLoadToRHS">[docs]</a>    <span class="k">def</span> <span class="nf">addLoadToRHS</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">timeStep</span><span class="p">,</span> <span class="n">Fapplied</span><span class="p">,</span> <span class="n">timeStage</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;&quot;</span>
 <span class="sd">        This method is used to add a *FIXED TOTAL LOAD* directly to the</span>
 <span class="sd">        right hand side vector given the equation below:</span>
@@ -373,10 +448,22 @@
 <span class="sd">        Fapplied : numpy.ndarray or TACS.Vec</span>
 <span class="sd">            Distributed array containing loads to applied to RHS of the problem.</span>
 
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_addLoadToRHS</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">F</span><span class="p">[</span><span class="n">timeStep</span><span class="p">],</span> <span class="n">Fapplied</span><span class="p">)</span></div>
+<span class="sd">        timeStage : int or None</span>
+<span class="sd">            Time stage index to apply load to. Default is None, which is applicable only for</span>
+<span class="sd">            multi-step methods like BDF. For multi-stage methods like DIRK, this index must</span>
+<span class="sd">            be specified.</span>
 
-<div class="viewcode-block" id="TransientProblem.addTractionToComponents"><a class="viewcode-back" href="../../../pytacs/transient.html#tacs.problems.TransientProblem.addTractionToComponents">[docs]</a>    <span class="k">def</span> <span class="nf">addTractionToComponents</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">timeStep</span><span class="p">,</span> <span class="n">compIDs</span><span class="p">,</span> <span class="n">tractions</span><span class="p">,</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">timeIndex</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">numStages</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">timeIndex</span> <span class="o">=</span> <span class="n">timeStep</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">assert</span> <span class="n">timeStage</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">,</span> <span class="s2">&quot;Time stage index must be specified for </span><span class="si">%s</span><span class="s2"> integrator type&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s1">&#39;timeIntegrator&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span>
+            <span class="n">timeIndex</span> <span class="o">=</span> <span class="n">timeStep</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">numStages</span> <span class="o">+</span> <span class="n">timeStage</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">_addLoadToRHS</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">F</span><span class="p">[</span><span class="n">timeIndex</span><span class="p">],</span> <span class="n">Fapplied</span><span class="p">)</span></div>
+        
+<div class="viewcode-block" id="TransientProblem.addTractionToComponents"><a class="viewcode-back" href="../../../pytacs/transient.html#tacs.problems.TransientProblem.addTractionToComponents">[docs]</a>    <span class="k">def</span> <span class="nf">addTractionToComponents</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">timeStep</span><span class="p">,</span> <span class="n">compIDs</span><span class="p">,</span> <span class="n">tractions</span><span class="p">,</span> <span class="n">timeStage</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
                                 <span class="n">faceIndex</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        This method is used to add a *FIXED TOTAL TRACTION* on one or more</span>
@@ -396,13 +483,25 @@
 <span class="sd">        tractions : numpy.ndarray length 1 or compIDs</span>
 <span class="sd">            Array of traction vectors for each components</span>
 
+<span class="sd">        timeStage : int or None</span>
+<span class="sd">            Time stage index to apply load to. Default is None, which is applicable only for</span>
+<span class="sd">            multi-step methods like BDF. For multi-stage methods like DIRK, this index must</span>
+<span class="sd">            be specified.</span>
+
 <span class="sd">        faceIndex : int</span>
 <span class="sd">            Indicates which face (side) of element to apply traction to.</span>
 <span class="sd">            Note: not required for certain elements (i.e. shells)</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_addTractionToComponents</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">auxElems</span><span class="p">[</span><span class="n">timeStep</span><span class="p">],</span> <span class="n">compIDs</span><span class="p">,</span> <span class="n">tractions</span><span class="p">,</span> <span class="n">faceIndex</span><span class="p">)</span></div>
+        <span class="n">timeIndex</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">numStages</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">timeIndex</span> <span class="o">=</span> <span class="n">timeStep</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">assert</span> <span class="n">timeStage</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">,</span> <span class="s2">&quot;Time stage index must be specified for </span><span class="si">%s</span><span class="s2"> integrator type&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s1">&#39;timeIntegrator&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span>
+            <span class="n">timeIndex</span> <span class="o">=</span> <span class="n">timeStep</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">numStages</span> <span class="o">+</span> <span class="n">timeStage</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">_addTractionToComponents</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">auxElems</span><span class="p">[</span><span class="n">timeIndex</span><span class="p">],</span> <span class="n">compIDs</span><span class="p">,</span> <span class="n">tractions</span><span class="p">,</span> <span class="n">faceIndex</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="TransientProblem.addTractionToElements"><a class="viewcode-back" href="../../../pytacs/transient.html#tacs.problems.TransientProblem.addTractionToElements">[docs]</a>    <span class="k">def</span> <span class="nf">addTractionToElements</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">timeStep</span><span class="p">,</span> <span class="n">elemIDs</span><span class="p">,</span> <span class="n">tractions</span><span class="p">,</span>
+<div class="viewcode-block" id="TransientProblem.addTractionToElements"><a class="viewcode-back" href="../../../pytacs/transient.html#tacs.problems.TransientProblem.addTractionToElements">[docs]</a>    <span class="k">def</span> <span class="nf">addTractionToElements</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">timeStep</span><span class="p">,</span> <span class="n">elemIDs</span><span class="p">,</span> <span class="n">tractions</span><span class="p">,</span> <span class="n">timeStage</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
                               <span class="n">faceIndex</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">nastranOrdering</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        This method is used to add a fixed traction to the</span>
@@ -422,6 +521,11 @@
 <span class="sd">        tractions : numpy.ndarray 1d or 2d length varsPerNodes or (elemIDs, varsPerNodes)</span>
 <span class="sd">            Array of traction vectors for each element</span>
 
+<span class="sd">        timeStage : int or None</span>
+<span class="sd">            Time stage index to apply load to. Default is None, which is applicable only for</span>
+<span class="sd">            multi-step methods like BDF. For multi-stage methods like DIRK, this index must</span>
+<span class="sd">            be specified.</span>
+
 <span class="sd">        faceIndex : int</span>
 <span class="sd">            Indicates which face (side) of element to apply traction to.</span>
 <span class="sd">            Note: not required for certain elements (i.e. shells)</span>
@@ -430,10 +534,16 @@
 <span class="sd">            Flag signaling whether elemIDs are in TACS (default)</span>
 <span class="sd">            or NASTRAN ordering</span>
 <span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">timeIndex</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">numStages</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">timeIndex</span> <span class="o">=</span> <span class="n">timeStep</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">assert</span> <span class="n">timeStage</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">,</span> <span class="s2">&quot;Time stage index must be specified for </span><span class="si">%s</span><span class="s2"> integrator type&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s1">&#39;timeIntegrator&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span>
+            <span class="n">timeIndex</span> <span class="o">=</span> <span class="n">timeStep</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">numStages</span> <span class="o">+</span> <span class="n">timeStage</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">_addTractionToElements</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">auxElems</span><span class="p">[</span><span class="n">timeStep</span><span class="p">],</span> <span class="n">elemIDs</span><span class="p">,</span> <span class="n">tractions</span><span class="p">,</span> <span class="n">faceIndex</span><span class="p">,</span> <span class="n">nastranOrdering</span><span class="p">)</span></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_addTractionToElements</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">auxElems</span><span class="p">[</span><span class="n">timeIndex</span><span class="p">],</span> <span class="n">elemIDs</span><span class="p">,</span> <span class="n">tractions</span><span class="p">,</span> <span class="n">faceIndex</span><span class="p">,</span> <span class="n">nastranOrdering</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="TransientProblem.addPressureToComponents"><a class="viewcode-back" href="../../../pytacs/transient.html#tacs.problems.TransientProblem.addPressureToComponents">[docs]</a>    <span class="k">def</span> <span class="nf">addPressureToComponents</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">timeStep</span><span class="p">,</span> <span class="n">compIDs</span><span class="p">,</span> <span class="n">pressures</span><span class="p">,</span>
+<div class="viewcode-block" id="TransientProblem.addPressureToComponents"><a class="viewcode-back" href="../../../pytacs/transient.html#tacs.problems.TransientProblem.addPressureToComponents">[docs]</a>    <span class="k">def</span> <span class="nf">addPressureToComponents</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">timeStep</span><span class="p">,</span> <span class="n">compIDs</span><span class="p">,</span> <span class="n">pressures</span><span class="p">,</span> <span class="n">timeStage</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
                                 <span class="n">faceIndex</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        This method is used to add a *FIXED TOTAL PRESSURE* on one or more</span>
@@ -454,13 +564,25 @@
 <span class="sd">        pressures : Numpy array length 1 or compIDs</span>
 <span class="sd">            Array of pressure values for each components</span>
 
+<span class="sd">        timeStage : int or None</span>
+<span class="sd">            Time stage index to apply load to. Default is None, which is applicable only for</span>
+<span class="sd">            multi-step methods like BDF. For multi-stage methods like DIRK, this index must</span>
+<span class="sd">            be specified.</span>
+
 <span class="sd">        faceIndex : int</span>
 <span class="sd">            Indicates which face (side) of element to apply pressure to.</span>
 <span class="sd">            Note: not required for certain elements (i.e. shells)</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_addPressureToComponents</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">auxElems</span><span class="p">[</span><span class="n">timeStep</span><span class="p">],</span> <span class="n">compIDs</span><span class="p">,</span> <span class="n">pressures</span><span class="p">,</span> <span class="n">faceIndex</span><span class="p">)</span></div>
+        <span class="n">timeIndex</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">numStages</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">timeIndex</span> <span class="o">=</span> <span class="n">timeStep</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">assert</span> <span class="n">timeStage</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">,</span> <span class="s2">&quot;Time stage index must be specified for </span><span class="si">%s</span><span class="s2"> integrator type&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s1">&#39;timeIntegrator&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span>
+            <span class="n">timeIndex</span> <span class="o">=</span> <span class="n">timeStep</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">numStages</span> <span class="o">+</span> <span class="n">timeStage</span>
 
-<div class="viewcode-block" id="TransientProblem.addPressureToElements"><a class="viewcode-back" href="../../../pytacs/transient.html#tacs.problems.TransientProblem.addPressureToElements">[docs]</a>    <span class="k">def</span> <span class="nf">addPressureToElements</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">timeStep</span><span class="p">,</span> <span class="n">elemIDs</span><span class="p">,</span> <span class="n">pressures</span><span class="p">,</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_addPressureToComponents</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">auxElems</span><span class="p">[</span><span class="n">timeIndex</span><span class="p">],</span> <span class="n">compIDs</span><span class="p">,</span> <span class="n">pressures</span><span class="p">,</span> <span class="n">faceIndex</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="TransientProblem.addPressureToElements"><a class="viewcode-back" href="../../../pytacs/transient.html#tacs.problems.TransientProblem.addPressureToElements">[docs]</a>    <span class="k">def</span> <span class="nf">addPressureToElements</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">timeStep</span><span class="p">,</span> <span class="n">elemIDs</span><span class="p">,</span> <span class="n">pressures</span><span class="p">,</span> <span class="n">timeStage</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
                               <span class="n">faceIndex</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">nastranOrdering</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        This method is used to add a fixed presure to the</span>
@@ -480,6 +602,11 @@
 <span class="sd">        pressures : Numpy array length 1 or elemIDs</span>
 <span class="sd">            Array of pressure values for each element</span>
 
+<span class="sd">        timeStage : int or None</span>
+<span class="sd">            Time stage index to apply load to. Default is None, which is applicable only for</span>
+<span class="sd">            multi-step methods like BDF. For multi-stage methods like DIRK, this index must</span>
+<span class="sd">            be specified.</span>
+
 <span class="sd">        faceIndex : int</span>
 <span class="sd">            Indicates which face (side) of element to apply pressure to.</span>
 <span class="sd">            Note: not required for certain elements (i.e. shells)</span>
@@ -488,11 +615,17 @@
 <span class="sd">            Flag signaling whether elemIDs are in TACS (default)</span>
 <span class="sd">            or NASTRAN ordering</span>
 <span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">timeIndex</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">numStages</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">timeIndex</span> <span class="o">=</span> <span class="n">timeStep</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">assert</span> <span class="n">timeStage</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">,</span> <span class="s2">&quot;Time stage index must be specified for </span><span class="si">%s</span><span class="s2"> integrator type&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s1">&#39;timeIntegrator&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span>
+            <span class="n">timeIndex</span> <span class="o">=</span> <span class="n">timeStep</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">numStages</span> <span class="o">+</span> <span class="n">timeStage</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">_addPressureToElements</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">auxElems</span><span class="p">[</span><span class="n">timeStep</span><span class="p">],</span> <span class="n">elemIDs</span><span class="p">,</span> <span class="n">pressures</span><span class="p">,</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_addPressureToElements</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">auxElems</span><span class="p">[</span><span class="n">timeIndex</span><span class="p">],</span> <span class="n">elemIDs</span><span class="p">,</span> <span class="n">pressures</span><span class="p">,</span>
                                     <span class="n">faceIndex</span><span class="p">,</span> <span class="n">nastranOrdering</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="TransientProblem.addInertialLoad"><a class="viewcode-back" href="../../../pytacs/transient.html#tacs.problems.TransientProblem.addInertialLoad">[docs]</a>    <span class="k">def</span> <span class="nf">addInertialLoad</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">timeStep</span><span class="p">,</span> <span class="n">inertiaVector</span><span class="p">):</span>
+<div class="viewcode-block" id="TransientProblem.addInertialLoad"><a class="viewcode-back" href="../../../pytacs/transient.html#tacs.problems.TransientProblem.addInertialLoad">[docs]</a>    <span class="k">def</span> <span class="nf">addInertialLoad</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">timeStep</span><span class="p">,</span> <span class="n">inertiaVector</span><span class="p">,</span> <span class="n">timeStage</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        This method is used to add a fixed inertial load at a specified time step</span>
 <span class="sd">        due to a uniform acceleration over the entire model.</span>
@@ -506,10 +639,22 @@
 
 <span class="sd">        inertiaVector : numpy.ndarray</span>
 <span class="sd">            Acceleration vector used to define inertial load.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_addInertialLoad</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">auxElems</span><span class="p">[</span><span class="n">timeStep</span><span class="p">],</span> <span class="n">inertiaVector</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="TransientProblem.addCentrifugalLoad"><a class="viewcode-back" href="../../../pytacs/transient.html#tacs.problems.TransientProblem.addCentrifugalLoad">[docs]</a>    <span class="k">def</span> <span class="nf">addCentrifugalLoad</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">timeStep</span><span class="p">,</span> <span class="n">omegaVector</span><span class="p">,</span> <span class="n">rotCenter</span><span class="p">):</span>
+<span class="sd">        timeStage : int or None</span>
+<span class="sd">            Time stage index to apply load to. Default is None, which is applicable only for</span>
+<span class="sd">            multi-step methods like BDF. For multi-stage methods like DIRK, this index must</span>
+<span class="sd">            be specified.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">timeIndex</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">numStages</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">timeIndex</span> <span class="o">=</span> <span class="n">timeStep</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">assert</span> <span class="n">timeStage</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">,</span> <span class="s2">&quot;Time stage index must be specified for </span><span class="si">%s</span><span class="s2"> integrator type&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s1">&#39;timeIntegrator&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span>
+            <span class="n">timeIndex</span> <span class="o">=</span> <span class="n">timeStep</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">numStages</span> <span class="o">+</span> <span class="n">timeStage</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_addInertialLoad</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">auxElems</span><span class="p">[</span><span class="n">timeIndex</span><span class="p">],</span> <span class="n">inertiaVector</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="TransientProblem.addCentrifugalLoad"><a class="viewcode-back" href="../../../pytacs/transient.html#tacs.problems.TransientProblem.addCentrifugalLoad">[docs]</a>    <span class="k">def</span> <span class="nf">addCentrifugalLoad</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">timeStep</span><span class="p">,</span> <span class="n">omegaVector</span><span class="p">,</span> <span class="n">rotCenter</span><span class="p">,</span> <span class="n">timeStage</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        This method is used to add a fixed centrifugal load at at specified time step</span>
 <span class="sd">        due to a uniform rotational velocity over the entire model.</span>
@@ -526,8 +671,21 @@
 
 <span class="sd">        rotCenter : numpy.ndarray</span>
 <span class="sd">            Location of center of rotation used to define centrifugal load.</span>
+
+<span class="sd">        timeStage : int or None</span>
+<span class="sd">            Time stage index to apply load to. Default is None, which is applicable only for</span>
+<span class="sd">            multi-step methods like BDF. For multi-stage methods like DIRK, this index must</span>
+<span class="sd">            be specified.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_addCentrifugalLoad</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">auxElems</span><span class="p">[</span><span class="n">timeStep</span><span class="p">],</span> <span class="n">omegaVector</span><span class="p">,</span> <span class="n">rotCenter</span><span class="p">)</span></div>
+        <span class="n">timeIndex</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">numStages</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">timeIndex</span> <span class="o">=</span> <span class="n">timeStep</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">assert</span> <span class="n">timeStage</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">,</span> <span class="s2">&quot;Time stage index must be specified for </span><span class="si">%s</span><span class="s2"> integrator type&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span>
+                <span class="s1">&#39;timeIntegrator&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span>
+            <span class="n">timeIndex</span> <span class="o">=</span> <span class="n">timeStep</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">numStages</span> <span class="o">+</span> <span class="n">timeStage</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_addCentrifugalLoad</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">auxElems</span><span class="p">[</span><span class="n">timeIndex</span><span class="p">],</span> <span class="n">omegaVector</span><span class="p">,</span> <span class="n">rotCenter</span><span class="p">)</span></div>
 
     <span class="c1">####### Transient solver methods ########</span>
 
@@ -601,11 +759,20 @@
 
         <span class="n">initSolveTime</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
 
-        <span class="c1"># Loop over every time step and solve transient problem</span>
-        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">numSteps</span> <span class="o">+</span> <span class="mi">1</span><span class="p">):</span>
-            <span class="c1"># Set the auxiliary elements for this time step (tractions/pressures)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">assembler</span><span class="o">.</span><span class="n">setAuxElements</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">auxElems</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">integrator</span><span class="o">.</span><span class="n">iterate</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">forces</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">F</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+        <span class="c1"># Loop over every time instance and solve transient problem</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">numStages</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">numSteps</span> <span class="o">+</span> <span class="mi">1</span><span class="p">):</span>
+                <span class="c1"># Set the auxiliary elements for this time step (tractions/pressures)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">assembler</span><span class="o">.</span><span class="n">setAuxElements</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">auxElems</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">integrator</span><span class="o">.</span><span class="n">iterate</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">forces</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">F</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">numSteps</span> <span class="o">+</span> <span class="mi">1</span><span class="p">):</span>
+                <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">numStages</span><span class="p">):</span>
+                    <span class="c1"># Set the auxiliary elements for this time step (tractions/pressures)</span>
+                    <span class="n">timeIndex</span> <span class="o">=</span> <span class="n">i</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">numStages</span> <span class="o">+</span> <span class="n">j</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">assembler</span><span class="o">.</span><span class="n">setAuxElements</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">auxElems</span><span class="p">[</span><span class="n">timeIndex</span><span class="p">])</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">integrator</span><span class="o">.</span><span class="n">iterateStage</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">,</span> <span class="n">forces</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">F</span><span class="p">[</span><span class="n">timeIndex</span><span class="p">])</span>
+
 
         <span class="n">solveTime</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
 
@@ -960,7 +1127,7 @@
     </form>
     </div>
 </div>
-<script>$('#searchbox').show(0);</script>
+<script>document.getElementById('searchbox').style.display = "block"</script>
         </div>
       </div>
       <div class="clearer"></div>
