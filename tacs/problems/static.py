@@ -268,8 +268,7 @@ class StaticProblem(TACSProblem):
         This method is used to add a *FIXED TOTAL LOAD* on one or more
         components, defined by COMPIDs. The purpose of this routine is to add loads that
         remain fixed throughout an optimization. An example would be an engine load.
-        This routine determines all the unique nodes in the FE model that are part of the
-        the requested components, then takes the total 'force' by F and divides by the
+        This routine determines all the unique nodes in the FE model that are part of the         requested components, then takes the total 'force' by F and divides by the
         number of nodes. This average load is then applied to the nodes.
 
         Parameters

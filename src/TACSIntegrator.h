@@ -280,6 +280,13 @@ class TACSDIRKIntegrator : public TACSIntegrator {
   // Iterate through the forward solution
   int iterate( int k, TACSBVec *forces );
 
+  // Iterate through the forward solution - per stage
+  int iterateStage( int k, int s, TACSBVec *forces );
+
+  // Retrieve the internal states - per stage
+  double getStageStates( int step, int stage, 
+		      TACSBVec **qS, TACSBVec **qdotS, TACSBVec **qddotS);
+
   // Set-up right-hand-sides for the adjoint equations
   void initAdjoint( int step_num );
 
