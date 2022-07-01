@@ -45,7 +45,7 @@ runtime_lib_dirs = get_global_dir(['lib'])
 
 # Relative paths for the include/library directories
 rel_inc_dirs = ['src', 'src/bpmat', 'src/elements', 'src/elements/dynamics',
-                'src/elements/shell', 'src/elements/basis',
+                'src/elements/shell', 'src/elements/basis', 'src/elements/a2d',
                 'src/constitutive', 'src/functions', 'src/io']
 rel_lib_dirs = ['lib']
 libs.extend(['tacs'])
@@ -78,6 +78,17 @@ tacs_root = os.path.abspath(os.path.dirname(__file__))
 with open(os.path.join(tacs_root, 'README.md'), encoding='utf-8') as f:
     long_description = f.read()
 
+optional_dependencies = {
+    'testing': ['testflo'],
+    'docs': ['sphinx', 'breathe', 'sphinxcontrib-programoutput'],
+    'mphys': ['mphys>=0.4.0', 'openmdao'],
+}
+
+# Add an optional dependency that concatenates all others
+optional_dependencies["all"] = sorted(
+    [dependency for dependencies in optional_dependencies.values() for dependency in dependencies]
+)
+
 setup(name='tacs',
       version=0.1,
       description='Parallel finite-element analysis package',
@@ -90,15 +101,8 @@ setup(name='tacs',
           f'numpy>={numpy.__version__}',
           'mpi4py>=3.0.2',
           'scipy>=1.2.1',
-          'pynastran>=1.3.3',
-          # This package isn't actually a requirement of tacs, but of pynastran
-          # Right now 2.0.0 breaks pynastran and the pip package hasn't been updated to fix this
-          'nptyping<2.0.0',
+          'pynastran>=1.3.3'
       ],
-      extras_require={
-        'testing': ['testflo'],
-        'docs': ['sphinx', 'breathe', 'sphinxcontrib-programoutput'],
-        'mphys': ['mphys', 'openmdao'],
-      },
+      extras_require=optional_dependencies,
       packages=find_packages(include=['tacs*']),
       ext_modules=cythonize(exts, include_path=inc_dirs))

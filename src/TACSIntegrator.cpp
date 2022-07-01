@@ -2294,6 +2294,116 @@ int TACSDIRKIntegrator::iterate( int k, TACSBVec *forces ){
 }
 
 /*
+   Integration logic for DIRK, on a per-stage basis. Use this function to 
+   march in time when the forces change in time. This is necessary since
+   the forces need to be upated or evaluated for each stage of every 
+   time step for the order of accuracy of the method to be maintained.
+   The states for the timesteps are saved to the q, qdot, qddot variables,
+   while the stage states are saved to the qS, qdotS, and qddotS variables.
+ */
+int TACSDIRKIntegrator::iterateStage( int k, int s, TACSBVec *forces )
+{
+  // For the 0th time step, get the initial conditions and solve for the 
+  // unknown states
+  if (k == 0)
+  {
+    // Output the results at the initial condition if configured
+    printOptionSummary();
+
+    // TODO: getInitConditions() always returns zeros, even for nonzero entries
+    // fix getInitConditions() implementation
+
+    // Retrieve the initial conditions and set into TACS
+    assembler->getInitConditions(q[0], qdot[0], qddot[0]);
+    assembler->setBCs(q[0]); // Set the Dirichlet BCs
+    assembler->setVariables(q[0], qdot[0], qddot[0]);
+
+    // TODO: implement solveInitCondition() function in base class TACSIntegrator
+    // current implementation assumes starting from complete rest - all states zero
+    // Solve for acceleration and set into TACS
+    logTimeStep(k);
+
+    qddot[k]->zeroEntries();
+    return 0;
+  }
+
+  // evaluate the current time step size
+  double h = time[k] - time[k-1];
+
+  // evaluate the current stage time
+  double tS = time[k-1] + c[s]*h;
+
+  // evaluate the offset used to access the proper index of the stage variables
+  int offset = (k-1)*num_stages + s;
+
+  // zero the stage accelerations
+  qddotS[offset]->zeroEntries();
+
+  // initialize stage displacements with previous timestep state values
+  qS[offset]->copyValues(q[k-1]);
+  qS[offset]->axpy(c[s]*h, qdot[k-1]);
+
+  // initialize stage velocity with previous timestep state values
+  qdotS[offset]->copyValues(qdot[k-1]);
+
+  // for stages after the 0th, add previous stage acceleration contributions to 
+  // the stage displacement and stage velocity terms
+  int rInd = getRowIndex(s);
+  int prev;
+  for (int j = 0; j < s; j++)
+  {
+    prev = (k-1)*num_stages + j;
+    qS[offset]->axpy(A[rInd+j]*h*h, qddotS[prev]);
+    qdotS[offset]->axpy(a[rInd+j]*h, qddotS[prev]);
+  }
+
+  // determine the coefficients for Jacobian assembly
+  double alpha, beta, gamma;
+  getLinearizationCoeffs(s, h, &alpha, &beta, &gamma);
+
+  // solve the nonlinear system of stage equations for the stage accelerations
+  // starting with the approximated stage states
+  int newton_term = newtonSolve(alpha, beta, gamma, tS,
+                                qS[offset], qdotS[offset], qddotS[offset],
+                                forces);
+
+  // check the flag set from Newton's method to see if we have a
+  // problem at this point..
+  int fail = 0;
+  if (newton_term < 0)
+  {
+    fail = 1;
+    return fail;
+  }
+
+  // if its the final stage, update the state vectors using all the stage
+  // information associated with the current time step
+  if (s == num_stages - 1)
+  {
+    // initialize the state displacements and velocities to the previous time 
+    // step values, and zero the accelerations
+    q[k]->copyValues(q[k-1]);
+    q[k]->axpy(h, qdot[k-1]);
+    qdot[k]->copyValues(qdot[k-1]);
+    qddot[k]->zeroEntries(); 
+
+    // loop over all stages and add the scaled stage acceleration contributions
+    for (int j = 0; j < num_stages; j++)
+    {
+      prev = (k-1)*num_stages + j;
+      q[k]->axpy(B[j]*h*h, qddotS[prev]);
+      qdot[k]->axpy(b[j]*h, qddotS[prev]);
+      qddot[k]->axpy(b[j], qddotS[prev]);
+    } 
+
+    // Perform logging, tecplot export, etc. for the time step
+    logTimeStep(k);
+  }
+  
+  return 0;
+}
+
+/*
   Evaluate the functions of interest
 */
 void TACSDIRKIntegrator::evalFunctions( TacsScalar *fvals ){
@@ -2612,4 +2722,54 @@ void TACSDIRKIntegrator::postAdjoint( int k ){
 void TACSDIRKIntegrator::getAdjoint( int step_num, int func_num,
                                      TACSBVec **adjoint ){
   *adjoint = lambda[func_num];
+}
+
+/*
+  Retrieve the internal states at the specified stage of the specified time step
+*/
+double TACSDIRKIntegrator::getStageStates(int step_num, 
+                                          int stage_num,
+                                          TACSBVec** _qS,
+                                          TACSBVec** _qdotS,
+                                          TACSBVec** _qddotS)
+{
+  if (step_num == 0)
+  {
+    // stage states do not exist for the 0th time step since initial conditions
+    // are provided
+    if (_qS)
+    {
+      *_qS = q[step_num];
+    }
+    if (_qdotS)
+    {
+      *_qdotS = qdot[step_num];
+    }
+    if (_qddotS)
+    {
+      *_qddotS = qddot[step_num];
+    }
+    return time[step_num];
+  }
+  else
+  {
+    int offset = (step_num-1)*num_stages + stage_num;
+    double h = time[step_num] - time[step_num-1];
+    double tS = time[step_num-1] + c[stage_num]*h;
+
+    if (_qS)
+    {
+      *_qS = qS[offset];
+    }
+    if (_qdotS)
+    {
+      *_qdotS = qdotS[offset];
+    }
+    if (_qddotS)
+    {
+      *_qddotS = qddotS[offset];
+    }
+
+    return tS;
+  }
 }

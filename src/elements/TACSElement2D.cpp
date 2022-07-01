@@ -59,7 +59,7 @@ TACSElementModel* TACSElement2D::getElementModel(){
   return model;
 }
 
-TACSElement* TACSElement2D::createElementTraction( int faceIndex, TacsScalar t[] ){
+TACSElement* TACSElement2D::createElementTraction( int faceIndex, const TacsScalar t[] ){
   int varsPerNode = getVarsPerNode();
   return new TACSTraction2D(varsPerNode, faceIndex, basis, t);
 }
@@ -69,7 +69,7 @@ TACSElement* TACSElement2D::createElementPressure( int faceIndex, TacsScalar p )
   return new TACSPressure2D(varsPerNode, faceIndex, basis, p);
 }
 
-TACSElement* TACSElement2D::createElementInertialForce( TacsScalar inertiaVec[] ){
+TACSElement* TACSElement2D::createElementInertialForce( const TacsScalar inertiaVec[] ){
   int varsPerNode = getVarsPerNode();
   TACSConstitutive* con = model->getConstitutive();
   return new TACSInertialForce2D(varsPerNode, con, basis, inertiaVec);

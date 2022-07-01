@@ -512,6 +512,22 @@ cdef class SolidConstitutive(Constitutive):
             return _init_MaterialProperties(self.cptr.getMaterialProperties())
         return None
 
+cdef class ShellConstitutive(Constitutive):
+    """
+    This is the base class for the shell constitutive objects.
+    All objects performing shell elastic analysis should utilize this class.
+    """
+
+    def setDrillingRegularization(self, double kpenalty=10.0):
+        """
+        Update regularization parameter used to stiffen shell in drilling rotation dof.
+
+        Args:
+            kpenalty (float): Drilling regularization parameter. Defaults to 10.0.
+        """
+        if self.cptr:
+            self.cptr.setDrillingRegularization(kpenalty)
+
 cdef class IsoShellConstitutive(ShellConstitutive):
     """
     This constitutive class defines the stiffness properties for a
@@ -522,8 +538,8 @@ cdef class IsoShellConstitutive(ShellConstitutive):
         t (float or complex, optional): The material thickness (keyword argument). Defaults to 1.0.
         tNum (int, optional): Design variable number to assign to thickness (keyword argument). Defaults to -1
             (i.e. no design variable).
-        tlb (float or complex, optional): Thickness varaible lower bound (keyword argument). Defaults to 0.0.
-        tub (float or complex, optional): Thickness varaible upper bound (keyword argument). Defaults to 10.0.
+        tlb (float or complex, optional): Thickness variable lower bound (keyword argument). Defaults to 0.0.
+        tub (float or complex, optional): Thickness variable upper bound (keyword argument). Defaults to 10.0.
     """
     def __cinit__(self, *args, **kwargs):
         cdef TACSMaterialProperties *props = NULL
@@ -664,15 +680,172 @@ cdef class LamParamShellConstitutive(ShellConstitutive):
         self.ptr = self.cptr
         self.ptr.incref()
 
-cdef class TimoshenkoConstitutive(Constitutive):
-    def __cinit__(self, rhoA, rhoIy, rhoIz, rhoIyz,
-                      EA, GJ, EIy, EIz, kGAy, kGAz,
-                      np.ndarray[TacsScalar, ndim=1, mode='c'] axis):
-        self.cptr = new TACSTimoshenkoConstitutive(rhoA, rhoIy, rhoIz, rhoIyz,
-                                                  EA, GJ, EIy, EIz, kGAy, kGAz,
-                                                  <TacsScalar*>axis.data)
+cdef class BasicBeamConstitutive(BeamConstitutive):
+    """
+    Timoshenko theory based constitutive object for an general beam.
+
+     .. note::
+        TACS uses a negative sign convention in the product of inertia definition, for example:
+            Iyz = -int[y * z * dA]
+
+        The moments of area are always positive, as usual:
+            Iyy = int[(z^2 * dA]
+
+    Args:
+        props (MaterialProperties): The material property.
+        A (float or complex): Beam cross-sectional area (keyword argument). Defaults to 0.0.
+        J (float or complex): Beam polar moment of area about x-axis (keyword argument). Defaults to 0.0.
+        Iy (float or complex): Beam area moment of area about y-axis (keyword argument). Defaults to 0.0.
+        Iz (float or complex): Beam area moment of area about z-axis (keyword argument). Defaults to 0.0.
+        Iyz (float or complex): Beam product of area in yz-plane (keyword argument). Defaults to 0.0.
+        ky (float or complex): Shear correction factor in y-direction (keyword argument). Defaults to 5/6.
+        kz (float or complex): Shear correction factor in z-direction (keyword argument). Defaults to 5/6.
+    """
+    def __cinit__(self, *args, **kwargs):
+        cdef TACSMaterialProperties *props = NULL
+        cdef TacsScalar A = 0.0
+        cdef TacsScalar J = 0.0
+        cdef TacsScalar Iy = 0.0
+        cdef TacsScalar Iz = 0.0
+        cdef TacsScalar Iyz = 0.0
+        cdef TacsScalar ky = 5.0/6.0
+        cdef TacsScalar kz = 5.0/6.0
+
+        if len(args) >= 1:
+            props = (<MaterialProperties>args[0]).ptr
+        if 'A' in kwargs:
+            A = kwargs['A']
+        if 'J' in kwargs:
+            J = kwargs['J']
+        if 'Iy' in kwargs:
+            Iy = kwargs['Iy']
+        if 'Iz' in kwargs:
+            Iz = kwargs['Iz']
+        if 'Iyz' in kwargs:
+            Iyz = kwargs['Iyz']
+        if 'ky' in kwargs:
+            ky = kwargs['ky']
+        if 'kz' in kwargs:
+            kz = kwargs['kz']
+
+        self.cptr = new TACSBasicBeamConstitutive(props, A, J, Iy, Iz, Iyz, ky, kz)
         self.ptr = self.cptr
         self.ptr.incref()
+
+cdef class IsoTubeBeamConstitutive(BeamConstitutive):
+    """
+    Timoshenko theory based constitutive object for a hollow circular beam.
+
+    Args:
+        props (MaterialProperties): The material property.
+        d (float or complex, optional): Tube inner diameter (keyword argument). Defaults to 1.0.
+        dNum (int, optional): Design variable number to assign to tube diameter (keyword argument). Defaults to -1
+            (i.e. no design variable).
+        dlb (float or complex, optional): Lower bound on tube diameter (keyword argument). Defaults to 0.0.
+        dub (float or complex, optional): Upper bound on tube diameter (keyword argument). Defaults to 10.0.
+        t (float or complex, optional): Tube wall thickness (keyword argument). Defaults to 0.1.
+        tNum (int, optional): Design variable number to assign to wall thickness (keyword argument). Defaults to -1
+            (i.e. no design variable).
+        tlb (float or complex, optional): Lower bound on wall thickness (keyword argument). Defaults to 0.0.
+        tub (float or complex, optional): Upper bound on wall thickness (keyword argument). Defaults to 10.0.
+    """
+    def __cinit__(self, *args, **kwargs):
+        cdef TACSMaterialProperties *props = NULL
+        cdef TacsScalar d = 1.0
+        cdef int dNum = -1
+        cdef TacsScalar dlb = 0.0
+        cdef TacsScalar dub = 10.0
+        cdef TacsScalar t = 0.1
+        cdef int tNum = -1
+        cdef TacsScalar tlb = 0.0
+        cdef TacsScalar tub = 10.0
+
+        if len(args) >= 1:
+            props = (<MaterialProperties>args[0]).ptr
+        if 'd' in kwargs:
+            d = kwargs['d']
+        if 'dNum' in kwargs:
+            dNum = kwargs['dNum']
+        if 'dlb' in kwargs:
+            dlb = kwargs['dlb']
+        if 'dub' in kwargs:
+            dub = kwargs['dub']
+        if 't' in kwargs:
+            t = kwargs['t']
+        if 'tNum' in kwargs:
+            tNum = kwargs['tNum']
+        if 'tlb' in kwargs:
+            tlb = kwargs['tlb']
+        if 'tub' in kwargs:
+            tub = kwargs['tub']
+
+        if props is not NULL:
+            self.cptr = new TACSIsoTubeBeamConstitutive(props, d, t, dNum, tNum,
+                                                        dlb, dub, tlb, tub)
+            self.ptr = self.cptr
+            self.ptr.incref()
+        else:
+            self.ptr = NULL
+            self.cptr = NULL
+
+cdef class IsoRectangleBeamConstitutive(BeamConstitutive):
+    """
+    Timoshenko theory based constitutive object for a solid rectangular beam.
+
+    The thickness dimension is assumed to measured along the beam's local reference axis,
+    the width is perpindicular to the reference axis.
+
+    Args:
+        props (MaterialProperties): The material property.
+        width (float or complex, optional): Cross-section width (keyword argument). Defaults to 1.0.
+        wNum (int, optional): Design variable number to assign to width (keyword argument). Defaults to -1
+            (i.e. no design variable).
+        wlb (float or complex, optional): Lower bound on width (keyword argument). Defaults to 0.0.
+        wub (float or complex, optional): Upper bound on width diameter (keyword argument). Defaults to 10.0.
+        t (float or complex, optional): Cross-section thickness (keyword argument). Defaults to 0.1.
+        tNum (int, optional): Design variable number to assign to thickness (keyword argument). Defaults to -1
+            (i.e. no design variable).
+        tlb (float or complex, optional): Lower bound on thickness (keyword argument). Defaults to 0.0.
+        tub (float or complex, optional): Upper bound on thickness (keyword argument). Defaults to 10.0.
+    """
+    def __cinit__(self, *args, **kwargs):
+        cdef TACSMaterialProperties *props = NULL
+        cdef TacsScalar w = 1.0
+        cdef int wNum = -1
+        cdef TacsScalar wlb = 0.0
+        cdef TacsScalar wub = 10.0
+        cdef TacsScalar t = 0.1
+        cdef int tNum = -1
+        cdef TacsScalar tlb = 0.0
+        cdef TacsScalar tub = 10.0
+
+        if len(args) >= 1:
+            props = (<MaterialProperties>args[0]).ptr
+        if 'w' in kwargs:
+            w = kwargs['w']
+        if 'wNum' in kwargs:
+            wNum = kwargs['wNum']
+        if 'wlb' in kwargs:
+            wlb = kwargs['wlb']
+        if 'wub' in kwargs:
+            wub = kwargs['wub']
+        if 't' in kwargs:
+            t = kwargs['t']
+        if 'tNum' in kwargs:
+            tNum = kwargs['tNum']
+        if 'tlb' in kwargs:
+            tlb = kwargs['tlb']
+        if 'tub' in kwargs:
+            tub = kwargs['tub']
+
+        if props is not NULL:
+            self.cptr = new TACSIsoRectangleBeamConstitutive(props, w, t, wNum, tNum,
+                                                             wlb, wub, tlb, tub)
+            self.ptr = self.cptr
+            self.ptr.incref()
+        else:
+            self.ptr = NULL
+            self.cptr = NULL
 
 cdef class GeneralMassConstitutive(Constitutive):
     """
@@ -710,6 +883,13 @@ cdef class PointMassConstitutive(GeneralMassConstitutive):
     """
     This is the base class for the traditional point mass constitutive objects with no translation-rotation coupling.
     Assumes 6 dofs.
+
+     .. note::
+        TACS uses a negative sign convention in the product of inertia definition, for example:
+            I12 = -int[x1 * x2 * dm]
+
+        The moments of inertia are always positive, as usual:
+            I11 = int[(x2^2 + x3^2) * dm]
 
     Args:
         m (float or complex, optional): Mass value (keyword argument). Defaults to 0.0.

@@ -34,6 +34,14 @@ cdef extern from "TACSStructuralMass.h":
     cdef cppclass TACSStructuralMass(TACSFunction):
         TACSStructuralMass(TACSAssembler*)
 
+cdef extern from "TACSCenterOfMass.h":
+    cdef cppclass TACSCenterOfMass(TACSFunction):
+        TACSCenterOfMass(TACSAssembler*, const double*)
+
+cdef extern from "TACSMomentOfInertia.h":
+    cdef cppclass TACSMomentOfInertia(TACSFunction):
+        TACSMomentOfInertia(TACSAssembler*, const double*,  const double*, int)
+
 cdef extern from "TACSCompliance.h":
     cdef cppclass TACSCompliance(TACSFunction):
         TACSCompliance(TACSAssembler*)

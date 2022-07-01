@@ -1,0 +1,89 @@
+INIT MASTER(S)
+NASTRAN SYSTEM(442)=-1,SYSTEM(319)=1
+ID FEMAP,FEMAP
+SOL SESTATIC
+CEND
+  TITLE = Static Load
+  ECHO = NONE
+  DISPLACEMENT(PLOT) = ALL
+  SPCFORCE(PLOT) = ALL
+  OLOAD(PLOT) = ALL
+  FORCE(PLOT,CORNER) = ALL
+  STRESS(PLOT,CORNER) = ALL
+  SPC = 1
+  LOAD = 1
+BEGIN BULK
+$ ***************************************************************************
+$   Written by : Femap
+$   Version    : 2021.2.1
+$   Translator : Simcenter Nastran
+$   From Model : C:\Users\bfrieg\OneDrive - Umich\Desktop\Research\Task 4\TACS Solver Debugging\Time Integration Verification\Beam\test_beam.modfem
+$   Date       : Wed Jun 15 17:34:43 2022
+$   Output To  : C:\Users\bfrieg\OneDrive - Umich\Desktop\Research\Task 4\TACS Solver Debugging\Time Integration Verification\Beam\
+$ ***************************************************************************
+$
+PARAM,PRGPST,NO
+PARAM,POST,-1
+PARAM,OGEOM,NO
+PARAM,AUTOSPC,YES
+PARAM,K6ROT,100.
+PARAM,GRDPNT,0
+CORD2C         1       0      0.      0.      0.      0.      0.      1.+FEMAPC1
++FEMAPC1      1.      0.      1.        
+CORD2S         2       0      0.      0.      0.      0.      0.      1.+FEMAPC2
++FEMAPC2      1.      0.      1.        
+$ Femap Load Set 1 : Tip Load
+FORCE          1      21       0      1.      0.     10.      0.
+$ Femap Constraint Set 1 : Clamp
+SPC1           1  123456       1
+$ Femap Property 1 : Bar
+$ Femap PropShape 1 : 1,0,0.01,0.01,0.,0.,0.,0.
+$ Femap PropMethod 1 : 1,0,1,0.3
+$ Femap PropOrient 1 : 1,0,0.,1.,2.,3.,4.,-1.,0.,0.
+PBAR           1       1    1.-48.333-108.333-101.4072-9      0.        +       
++          -5.-3   -5.-3    .005   -5.-3    .005    .005   -5.-3    .005+       
++        .850116 .850116      0.
+$ Femap Material 1 : Aluminum
+MAT1           1   7.+10             .33   2700.      0.      0.        
+GRID           1       0      0.      0.      0.       0
+GRID           2       0     .05      0.      0.       0
+GRID           3       0      .1      0.      0.       0
+GRID           4       0     .15      0.      0.       0
+GRID           5       0      .2      0.      0.       0
+GRID           6       0     .25      0.      0.       0
+GRID           7       0      .3      0.      0.       0
+GRID           8       0     .35      0.      0.       0
+GRID           9       0      .4      0.      0.       0
+GRID          10       0     .45      0.      0.       0
+GRID          11       0      .5      0.      0.       0
+GRID          12       0     .55      0.      0.       0
+GRID          13       0      .6      0.      0.       0
+GRID          14       0     .65      0.      0.       0
+GRID          15       0      .7      0.      0.       0
+GRID          16       0     .75      0.      0.       0
+GRID          17       0      .8      0.      0.       0
+GRID          18       0     .85      0.      0.       0
+GRID          19       0      .9      0.      0.       0
+GRID          20       0     .95      0.      0.       0
+GRID          21       0      1.      0.      0.       0
+CBAR           1       1       1       2      0.      0.      1.
+CBAR           2       1       2       3      0.      0.      1.
+CBAR           3       1       3       4      0.      0.      1.
+CBAR           4       1       4       5      0.      0.      1.
+CBAR           5       1       5       6      0.      0.      1.
+CBAR           6       1       6       7      0.      0.      1.
+CBAR           7       1       7       8      0.      0.      1.
+CBAR           8       1       8       9      0.      0.      1.
+CBAR           9       1       9      10      0.      0.      1.
+CBAR          10       1      10      11      0.      0.      1.
+CBAR          11       1      11      12      0.      0.      1.
+CBAR          12       1      12      13      0.      0.      1.
+CBAR          13       1      13      14      0.      0.      1.
+CBAR          14       1      14      15      0.      0.      1.
+CBAR          15       1      15      16      0.      0.      1.
+CBAR          16       1      16      17      0.      0.      1.
+CBAR          17       1      17      18      0.      0.      1.
+CBAR          18       1      18      19      0.      0.      1.
+CBAR          19       1      19      20      0.      0.      1.
+CBAR          20       1      20      21      0.      0.      1.
+ENDDATA e8a4df4d

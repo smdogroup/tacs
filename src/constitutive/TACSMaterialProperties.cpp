@@ -318,6 +318,51 @@ void TACSMaterialProperties::evalThermalStrain2D( TacsScalar e[] ){
   e[2] = 0.0;
 }
 
+void TACSMaterialProperties::evalStress2D( const TacsScalar e[],
+                                           TacsScalar s[] ){
+  if (mat_type == TACS_ISOTROPIC_MATERIAL){
+    TacsScalar D = E/(1.0 - nu*nu);
+
+    s[0] = D*(e[0] + nu*e[1]);
+    s[1] = D*(e[1] + nu*e[0]);
+    s[2] = G*e[2];
+  }
+  else {
+    TacsScalar C[6];
+    evalTangentStiffness2D(C);
+    s[0] = C[0]*e[0] + C[1]*e[1] + C[2]*e[2];
+    s[1] = C[1]*e[0] + C[3]*e[1] + C[4]*e[2];
+    s[2] = C[2]*e[0] + C[4]*e[1] + C[5]*e[2];
+  }
+}
+
+void TACSMaterialProperties::evalStress3D( const TacsScalar e[],
+                                           TacsScalar s[] ){
+
+  if (mat_type == TACS_ISOTROPIC_MATERIAL){
+    TacsScalar D = E/((1.0 + nu)*(1.0 - 2.0*nu));
+
+    s[0] = D*((1.0 - nu)*e[0] + nu*e[1] + nu*e[2]);
+    s[1] = D*((1.0 - nu)*e[1] + nu*e[0] + nu*e[2]);
+    s[2] = D*((1.0 - nu)*e[2] + nu*e[0] + nu*e[1]);
+    s[3] = G*e[3];
+    s[4] = G*e[4];
+    s[5] = G*e[5];
+  }
+  else {
+    TacsScalar C[21];
+    evalTangentStiffness3D(C);
+
+    s[0] = C[0]*e[0] + C[1]*e[1]  + C[2]*e[2]  + C[3]*e[3]  + C[4]*e[4]  + C[5]*e[5];
+    s[1] = C[1]*e[0] + C[6]*e[1]  + C[7]*e[2]  + C[8]*e[3]  + C[9]*e[4]  + C[10]*e[5];
+    s[2] = C[2]*e[0] + C[7]*e[1]  + C[11]*e[2] + C[12]*e[3] + C[13]*e[4] + C[14]*e[5];
+    s[3] = C[3]*e[0] + C[8]*e[1]  + C[12]*e[2] + C[15]*e[3] + C[16]*e[4] + C[17]*e[5];
+    s[4] = C[4]*e[0] + C[9]*e[1]  + C[13]*e[2] + C[16]*e[3] + C[18]*e[4] + C[19]*e[5];
+    s[5] = C[5]*e[0] + C[10]*e[1] + C[14]*e[2] + C[17]*e[3] + C[19]*e[4] + C[20]*e[5];
+  }
+}
+
+
 /*!
   The von Mises failure criteria is the following:
 

@@ -4861,8 +4861,10 @@ void TACSAssembler::addSVSens( TacsScalar alpha,
 
   // Finish adding the values
   for ( int k = 0; k < numFuncs; k++ ){
-    dfdu[k]->endSetValues(TACS_ADD_VALUES);
-    dfdu[k]->applyBCs(bcMap);
+    if (funcs[k]){
+      dfdu[k]->endSetValues(TACS_ADD_VALUES);
+      dfdu[k]->applyBCs(bcMap);
+    }
   }
 }
 

@@ -20,7 +20,7 @@
 class TACSTraction2D : public TACSElement {
  public:
   TACSTraction2D( int _varsPerNode, int _faceIndex,
-                  TACSElementBasis *_basis, TacsScalar trac[],
+                  TACSElementBasis *_basis, const TacsScalar trac[],
                   int tractionCoordinateComponent=1 );
   TACSTraction2D( int _varsPerNode, int _faceIndex,
                   TACSElementBasis *_basis,

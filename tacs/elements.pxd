@@ -188,7 +188,14 @@ cdef extern from "TACSShellElementTransform.h":
         TACSShellNaturalTransform()
 
     cdef cppclass TACSShellRefAxisTransform(TACSShellTransform):
-        TACSShellRefAxisTransform(TacsScalar*)
+        TACSShellRefAxisTransform(const TacsScalar*)
+
+cdef extern from "TACSBeamElement.h":
+    cdef cppclass TACSBeamTransform(TACSObject):
+        pass
+
+    cdef cppclass TACSBeamRefAxisTransform(TACSBeamTransform):
+        TACSBeamRefAxisTransform(const TacsScalar*)
 
 cdef extern from "TACSShellElementDefs.h":
     cdef cppclass TACSQuad4Shell(TACSElement):
@@ -222,6 +229,70 @@ cdef extern from "TACSShellElementDefs.h":
     cdef cppclass TACSTri3ThermalShell(TACSElement):
         TACSTri3ThermalShell(TACSShellTransform*,
                              TACSShellConstitutive*)
+
+    cdef cppclass TACSQuad4NonlinearShell(TACSElement):
+        TACSQuad4NonlinearShell(TACSShellTransform*,
+                             TACSShellConstitutive*)
+    
+    cdef cppclass TACSQuad9NonlinearShell(TACSElement):
+        TACSQuad9NonlinearShell(TACSShellTransform*,
+                             TACSShellConstitutive*)
+
+    cdef cppclass TACSQuad16NonlinearShell(TACSElement):
+        TACSQuad16NonlinearShell(TACSShellTransform*,
+                             TACSShellConstitutive*)                             
+    
+    cdef cppclass TACSTri3NonlinearShell(TACSElement):
+        TACSTri3NonlinearShell(TACSShellTransform*,
+                      TACSShellConstitutive*)
+    
+    cdef cppclass TACSQuad4NonlinearThermalShell(TACSElement):
+        TACSQuad4NonlinearThermalShell(TACSShellTransform*,
+                             TACSShellConstitutive*)
+    
+    cdef cppclass TACSQuad9NonlinearThermalShell(TACSElement):
+        TACSQuad9NonlinearThermalShell(TACSShellTransform*,
+                              TACSShellConstitutive*)
+
+    cdef cppclass TACSQuad16NonlinearThermalShell(TACSElement):
+        TACSQuad16NonlinearThermalShell(TACSShellTransform*,
+                               TACSShellConstitutive*)
+
+    cdef cppclass TACSTri3NonlinearThermalShell(TACSElement):
+        TACSTri3NonlinearThermalShell(TACSShellTransform*,
+                             TACSShellConstitutive*)
+    
+    cdef cppclass TACSQuad4ShellQuaternion(TACSElement):
+        TACSQuad4ShellQuaternion(TACSShellTransform*,
+                             TACSShellConstitutive*)
+
+    cdef cppclass TACSQuad4ShellModRot(TACSElement):
+        TACSQuad4ShellModRot(TACSShellTransform*,
+                             TACSShellConstitutive*)
+ 
+    cdef cppclass TACSBeam2(TACSElement):
+        TACSBeam2(TACSBeamTransform*,
+                  TACSBeamConstitutive*)
+
+    cdef cppclass TACSBeam3(TACSElement):
+        TACSBeam3(TACSBeamTransform*,
+                  TACSBeamConstitutive*)
+
+    cdef cppclass TACSBeam2ModRot(TACSElement):
+        TACSBeam2ModRot(TACSBeamTransform*,
+                        TACSBeamConstitutive*)
+
+    cdef cppclass TACSBeam3ModRot(TACSElement):
+        TACSBeam3ModRot(TACSBeamTransform*,
+                        TACSBeamConstitutive*)
+
+    cdef cppclass TACSBeam2Quaternion(TACSElement):
+        TACSBeam2Quaternion(TACSBeamTransform*,
+                            TACSBeamConstitutive*)
+
+    cdef cppclass TACSBeam3Quaternion(TACSElement):
+        TACSBeam3Quaternion(TACSBeamTransform*,
+                            TACSBeamConstitutive*)
 
 cdef extern from "TACSSpringElementTransform.h":
     cdef cppclass TACSSpringTransform(TACSObject):
@@ -306,7 +377,7 @@ cdef extern from "TACSMassElement.h":
 
 cdef extern from  "MITC3.h":
     cdef cppclass MITC3(TACSElement):
-        MITC3(TACSTimoshenkoConstitutive *_stiff,
+        MITC3(TACSBeamConstitutive *_stiff,
               TACSGibbsVector *_gravity,
               TACSGibbsVector *_vInit,
               TACSGibbsVector *_omegaInit)

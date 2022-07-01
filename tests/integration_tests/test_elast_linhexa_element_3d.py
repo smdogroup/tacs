@@ -1,14 +1,16 @@
 import numpy as np
-from mpi4py import MPI
 from tacs import TACS, elements, constitutive, functions
 from static_analysis_base_test import StaticTestCase
 
 '''
 Create a uniform cube under distributed point loads
-and test KSFailure, StructuralMass, and Compliance functions and sensitivities
+and test KSFailure, StructuralMass, CenterOfMass, MomentOfInertia, and Compliance functions and sensitivities
 '''
 
-FUNC_REFS = np.array([1.1074017881777185, 2570000.0, 178995399.11928475, 7.192551651904685])
+FUNC_REFS = np.array([1.1074017881777185, 2570000.0, 178995399.11928475, 7.192551651904685,
+                      5.00000000e+00, 5.00000000e+00, 5.00000000e+00,
+                      171333333.33333328, -64250000.00000006, -64250000.00000006,
+                      171333333.33333328, -64250000.00000006, 171333333.33333328])
 
 # Length of plate in x/y direction
 Lx = 10.0
@@ -35,7 +37,7 @@ class ProblemTest(StaticTestCase.StaticTest):
         # Overwrite default tolerances from base class
         if dtype == complex:
             self.rtol = 1e-11
-            self.atol = 1e-8
+            self.atol = 1e-6
             self.dh = 1e-50
         else:
             self.rtol = 1e-2
@@ -150,5 +152,20 @@ class ProblemTest(StaticTestCase.StaticTest):
         func_list = [functions.KSFailure(assembler, ksWeight=ksweight),
                      functions.StructuralMass(assembler),
                      functions.Compliance(assembler),
-                     functions.KSDisplacement(assembler, ksWeight=ksweight, direction=[100.0, 100.0, 100.0])]
+                     functions.KSDisplacement(assembler, ksWeight=ksweight, direction=[100.0, 100.0, 100.0]),
+                     functions.CenterOfMass(assembler, direction=[1.0, 0.0, 0.0]),
+                     functions.CenterOfMass(assembler, direction=[0.0, 1.0, 0.0]),
+                     functions.CenterOfMass(assembler, direction=[0.0, 0.0, 1.0]),
+                     functions.MomentOfInertia(assembler, direction1=[1.0, 0.0, 0.0], direction2=[1.0, 0.0, 0.0],
+                                               aboutCM=False),
+                     functions.MomentOfInertia(assembler, direction1=[0.0, 1.0, 0.0], direction2=[1.0, 0.0, 0.0],
+                                               aboutCM=False),
+                     functions.MomentOfInertia(assembler, direction1=[0.0, 0.0, 1.0], direction2=[1.0, 0.0, 0.0],
+                                               aboutCM=False),
+                     functions.MomentOfInertia(assembler, direction1=[0.0, 1.0, 0.0], direction2=[0.0, 1.0, 0.0],
+                                               aboutCM=False),
+                     functions.MomentOfInertia(assembler, direction1=[0.0, 1.0, 0.0], direction2=[0.0, 0.0, 1.0],
+                                               aboutCM=False),
+                     functions.MomentOfInertia(assembler, direction1=[0.0, 0.0, 1.0], direction2=[0.0, 0.0, 1.0],
+                                               aboutCM=False)]
         return func_list, FUNC_REFS

@@ -32,7 +32,7 @@ Some :class:`~TACS.Element` classes require transform classes in their setup pro
 The following transform classes are available in TACS:
 
 .. automodule:: tacs.elements
-  :members: ShellNaturalTransform, ShellRefAxisTransform,
+  :members: ShellNaturalTransform, ShellRefAxisTransform, BeamRefAxisTransform,
     SpringIdentityTransform, SpringRefAxisTransform, SpringRefFrameTransform
   :show-inheritance:
 
@@ -43,6 +43,9 @@ The following :class:`~TACS.Element` classes are available in TACS:
 .. automodule:: tacs.elements
   :members: Element2D, Element3D,
     Quad4Shell, Quad9Shell, Quad16Shell, Tri3Shell,
+    Quad4NonlinearShell, Quad9NonlinearShell, Quad16NonlinearShell, Tri3NonlinearShell,
+    Quad4NonlinearThermalShell, Quad9NonlinearThermalShell, Quad16NonlinearThermalShell, Tri3NonlinearThermalShell,
     Quad4ThermalShell, Quad9ThermalShell, Quad16ThermalShell, Tri3ThermalShell,
+    Beam2, Beam3, Beam2ModRot, Beam3ModRot,
     RBE2, RBE3, MassElement, SpringElement
   :show-inheritance:

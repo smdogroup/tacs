@@ -1177,6 +1177,46 @@ static inline void mat3x3SymmTransformTranspose( const TacsScalar T[],
 }
 
 /*
+  Compute the derivative of the transformation A = T*S*T^{T}
+
+  input:
+  T:   the 3x3 transformation
+  dA:  the derivative w.r.t. the 3x3 flattened symmetric matrix
+
+  output:
+  dS:  the derivative w.r.t. the 3x3 flattened symmetric matrix
+*/
+static inline void mat3x3SymmTransformSens( const TacsScalar T[],
+                                            const TacsScalar dA[],
+                                            TacsScalar dS[] ){
+  TacsScalar dW[9];
+
+  dW[0] = T[0]*dA[0];
+  dW[1] = T[0]*dA[1] + T[3]*dA[3];
+  dW[2] = T[0]*dA[2] + T[3]*dA[4] + T[6]*dA[5];
+
+  dW[3] = T[1]*dA[0];
+  dW[4] = T[1]*dA[1] + T[4]*dA[3];
+  dW[5] = T[1]*dA[2] + T[4]*dA[4] + T[7]*dA[5];
+
+  dW[6] = T[2]*dA[0];
+  dW[7] = T[2]*dA[1] + T[5]*dA[3];
+  dW[8] = T[2]*dA[2] + T[5]*dA[4] + T[8]*dA[5];
+
+  dS[0] = (T[0]*dW[0] + T[3]*dW[1] + T[6]*dW[2]);
+  dS[1] = (T[1]*dW[0] + T[4]*dW[1] + T[7]*dW[2] +
+           T[0]*dW[3] + T[3]*dW[4] + T[6]*dW[5]);
+  dS[2] = (T[2]*dW[0] + T[5]*dW[1] + T[8]*dW[2] +
+           T[0]*dW[6] + T[3]*dW[7] + T[6]*dW[8]);
+
+  dS[3] = (T[1]*dW[3] + T[4]*dW[4] + T[7]*dW[5]);
+  dS[4] = (T[2]*dW[3] + T[5]*dW[4] + T[8]*dW[5] +
+           T[1]*dW[6] + T[4]*dW[7] + T[7]*dW[8]);
+
+  dS[5] = (T[2]*dW[6] + T[5]*dW[7] + T[8]*dW[8]);
+}
+
+/*
   Compute the derivative of the transformation A = T^{T}*S*T
 
   input:

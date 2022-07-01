@@ -23,11 +23,9 @@ History:
 # =============================================================================
 from __future__ import print_function
 import copy
-import os
 import numbers
 import numpy
 import time
-from collections import OrderedDict
 
 import numpy as np
 from mpi4py import MPI
@@ -38,13 +36,11 @@ from tacs.pymeshloader import pyMeshLoader
 
 warnings.simplefilter('default')
 
+
 class pyTACS(BaseUI):
     """
     The class for working with a TACS structure
     """
-
-    # Class name
-    objectName = 'pyTACS'
 
     # Default class options
     defaultOptions = {
@@ -71,7 +67,7 @@ class pyTACS(BaseUI):
         'writeStresses': [bool, True, 'Flag for whether to include element stresses in f5 file.'],
         'writeExtras': [bool, True, 'Flag for whether to include element extra variables in f5 file.'],
         'writeCoordinateFrame': [bool, False, 'Flag for whether to include element coordinate frames in f5 file.'],
-        'familySeparator': [str, '/', 'Family seperator character used for condensing groups in f5 file.'],
+        'familySeparator': [str, '/', 'Family separator character used for condensing groups in f5 file.'],
         'printTiming': [bool, False, 'Flag for printing out timing information for class procedures.'],
 
     }
@@ -105,9 +101,6 @@ class pyTACS(BaseUI):
 
         startTime = time.time()
 
-        # Data type (real or complex)
-        self.dtype = tacs.TACS.dtype
-
         # Set the communicator and rank -- defaults to MPI_COMM_WORLD
         if comm is None:
             comm = MPI.COMM_WORLD
@@ -133,7 +126,7 @@ class pyTACS(BaseUI):
 
         # Create and load mesh loader object.
         debugFlag = self.getOption('printDebug')
-        self.meshLoader = pyMeshLoader(self.comm, self.dtype, debugFlag)
+        self.meshLoader = pyMeshLoader(self.comm, debugFlag)
         self.meshLoader.scanBdfFile(fileName)
         self.bdfName = fileName
         # Save pynastran bdf object
@@ -148,7 +141,6 @@ class pyTACS(BaseUI):
         # Load all the component descriptions
         self.compDescripts = self.meshLoader.getComponentDescripts()
         self.elemDescripts = self.meshLoader.getElementDescripts()
-
 
         # Set the starting dvNum and scaleList
         self.dvNum = dvNum
@@ -192,7 +184,7 @@ class pyTACS(BaseUI):
                     lower=None, upper=None, scale=1.0):
         """
         This function allows adding design variables that are not
-        cleanly associated with a particular constiutive object. One
+        cleanly associated with a particular constitutive object. One
         example is the pitch of the stiffeners for blade stiffened
         panels; It often is the same for many different constitutive
         objects. By calling this function, the internal dvNum counter
@@ -215,9 +207,9 @@ class pyTACS(BaseUI):
             Scale factor for variable
         """
         self.globalDVs[descript] = {'num': self.dvNum,
-                                     'value': value,
-                                     'lowerBound': lower,
-                                     'upperBound': upper}
+                                    'value': value,
+                                    'lowerBound': lower,
+                                    'upperBound': upper}
         self.dvNum += 1
         self.scaleList.append(scale)
 
@@ -233,18 +225,18 @@ class pyTACS(BaseUI):
         domains. All of these operations boil down to selecting a
         subset of the compIDs.
 
-        This function attemps to support as many ways as possible to
+        This function attempts to support as many ways as possible to
         select parts of the structure. Easy and efficient selection of
         parts is critical to the end user.
 
-        Methods of selction:
+        Methods of selection:
 
         1. include, integer, string, list of integers and/or strings: The
-           simpliest and most direct way of selecting a component. The
+           simplest and most direct way of selecting a component. The
            user supplies the index of the componentID, a name or partial
            name, or a list of a combination of both.
 
-           For exammple::
+           For example::
 
             # Select the 11th component
             selectCompIDs(include=10)
@@ -255,15 +247,15 @@ class pyTACS(BaseUI):
             # Select any component containing 'rib.00'
             selectCompIDs(include='rib.00')
 
-            # Select any components containg 'rib.00' and 'rib.10'
+            # Select any components containing 'rib.00' and 'rib.10'
             selectCompIDs(include=['rib.00', 'rib.10'])
 
-            # Select any componet containing 'rib.00', the 11th
+            # Select any component containing 'rib.00', the 11th
             # component and any component containing 'spar'
             # (This is probably not advisable!)
             selectCompIDs(include=['rib.00', 10, 'spar'])
 
-        2. Exclude, operates similarally to 'include'. The behaviour
+        2. Exclude, operates similarly to 'include'. The behaviour
            of exclude is identical to include above, except that
            component ID's that are found using 'exclude' are
            'subtracted' from those found using include. A special
@@ -280,11 +272,11 @@ class pyTACS(BaseUI):
                selectCompIDs(exclude = [2, 3]) will return
 
                # This will return components that have 'ribs' in the
-               # componet ID, but not those that have 'le_ribs' in the
-               # componet id.
+               # component ID, but not those that have 'le_ribs' in the
+               # component id.
                selectCompIDs(include='ribs', exclude='le_ribs')
 
-        3. includeBounds, list of componets defining a region inside
+        3. includeBounds, list of components defining a region inside
            of which 'include' components will be selected. This
            functionality uses a geometric approach to select the compIDs.
            All components within the project 2D convex hull are included.
@@ -299,15 +291,15 @@ class pyTACS(BaseUI):
                selectCompIDs(include='U_SKIN', includeBound=
                    ['LE_SPAR', 'TE_SPAR', 'RIB.01', 'RIB.04'])
 
-        4. nGroup: The number of groups to divde the found componets
+        4. nGroup: The number of groups to divide the found componets
            into. Generally this will be 1. However, in certain cases, it
-           is convient to create multiple groups in one pass.
+           is convenient to create multiple groups in one pass.
 
            For example::
 
              # This will 'evenly' create 10 groups on all components
              # containing LE_SPAR. Note that once the componets are
-             # selected, they are sorted **alphetically** and assigned
+             # selected, they are sorted **alphabetically** and assigned
              # sequentially.
              selectCompIDs(include='LE_SPAR', nGroup=10)
 
@@ -329,7 +321,7 @@ class pyTACS(BaseUI):
         components (default behaviour).
 
         selectCompIDs(include=['RIB', 'SEG.01'], includeOpt='and')
-        will select any componet with 'RIB' in the description AND
+        will select any component with 'RIB' in the description AND
         'SEG.01' in the description.
         """
 
@@ -394,7 +386,7 @@ class pyTACS(BaseUI):
 
             ind = split_list(ind, nGroup)
 
-            # Finally assemble the nested list of componet IDs
+            # Finally assemble the nested list of component IDs
             tmp = []
             for i in range(len(ind)):
                 tmp.append([])
@@ -463,7 +455,7 @@ class pyTACS(BaseUI):
         This is the 'last' method to be called during the setup. The
         user should have already added all the design variables,
         domains ect. before this function is call. This function
-        finializes the problem initialization and cannot be changed at
+        finalizes the problem initialization and cannot be changed at
         later time. If a elemCallBack function is not provided by the user,
         we will use pyNastran to generate one automatically from element
         properties provided in the BDF file.
@@ -528,8 +520,8 @@ class pyTACS(BaseUI):
         # Check if any properties are in the BDF
         if self.bdfInfo.missing_properties:
             raise self._TACSError(f"BDF file '{self.bdfName}' has missing properties cards. "
-                        "Set 'debugPrint' option to True for more information."
-                        "User must define own elemCallBack function.")
+                                  "Set 'printDebug' option to True for more information. "
+                                  "User must define own elemCallBack function.")
 
         # Make sure cross-referencing is turned on in pynastran
         if self.bdfInfo.is_xrefed is False:
@@ -596,10 +588,11 @@ class pyTACS(BaseUI):
                 C33 = matInfo.G33
                 rho = matInfo.rho
                 # See if this card features anisotropic coupling terms (which we don't support yet)
-                if np.abs(C13)/(C11+C22) >= 1e-8 or np.abs(C23)/(C11+C22) >= 1e-8:
-                    self._TACSWarning(f"MAT2 card {matInfo.mid} has anisotropic stiffness components that are not currently supported. "
-                                     "These terms will be dropped and the material treated as orthotropic. "
-                                     "Result accuracy may be affected.")
+                if np.abs(C13) / (C11 + C22) >= 1e-8 or np.abs(C23) / (C11 + C22) >= 1e-8:
+                    self._TACSWarning(
+                        f"MAT2 card {matInfo.mid} has anisotropic stiffness components that are not currently supported. "
+                        "These terms will be dropped and the material treated as orthotropic. "
+                        "Result accuracy may be affected.")
                 nu12 = C12 / C22
                 nu21 = C12 / C11
                 E1 = C11 * (1 - nu12 * nu21)
@@ -610,7 +603,7 @@ class pyTACS(BaseUI):
                                                            G23=G23)
 
             else:
-                raise self._TACSError(f"Unsupported material type '{matInfo.type}' for material number {matInfo.mid}. ")
+                raise self._TACSError(f"Unsupported material type '{matInfo.type}' for material number {matInfo.mid}.")
 
             return mat
 
@@ -711,6 +704,30 @@ class pyTACS(BaseUI):
                         k[j] = propInfo.Ki[j]
                 con = tacs.constitutive.DOFSpringConstitutive(k=k)
 
+            elif propInfo.type == 'PBAR':  # Nastran bar
+                area = propInfo.A
+                I1 = propInfo.i1
+                I2 = propInfo.i2
+                I12 = propInfo.i12
+                J = propInfo.j
+                k1 = propInfo.k1
+                k2 = propInfo.k2
+
+                if k1 is None:
+                    k1 = 1e6
+                if k2 is None:
+                    k2 = 1e6
+
+                con = tacs.constitutive.BasicBeamConstitutive(mat, A=area, Iy=I2, Iz=I1, Iyz=I12, J=J, ky=k1, kz=k2)
+
+            elif propInfo.type == 'PROD':  # Nastran rod
+                area = propInfo.A
+                J = propInfo.j
+                k1 = 0.0
+                k2 = 0.0
+
+                con = tacs.constitutive.BasicBeamConstitutive(mat, A=area, J=J, ky=k1, kz=k2)
+
             else:
                 raise self._TACSError(f"Unsupported property type '{propInfo.type}' for property number {propertyID}. ")
 
@@ -724,7 +741,13 @@ class pyTACS(BaseUI):
                         transform = tacs.elements.ShellRefAxisTransform(refAxis)
                     else:  # Don't support spherical/cylindrical yet
                         raise self._TACSError("Unsupported material coordinate system type "
-                                    f"'{mcid.type}' for property number {propertyID}.")
+                                              f"'{mcid.type}' for property number {propertyID}.")
+            elif propInfo.type in ['PBAR']:
+                refAxis = elemDict[propertyID]['elements'][0].g0_vector
+                transform = tacs.elements.BeamRefAxisTransform(refAxis)
+            elif propInfo.type == 'PROD':
+                refAxis = numpy.array([1.0, -1.0, 1.0])  # dummy ref_axis, not really needed for rods
+                transform = tacs.elements.BeamRefAxisTransform(refAxis)
             elif propInfo.type == 'PBUSH':
                 if elemDict[propertyID]['elements'][0].cid_ref:
                     refAxis_i = elemDict[propertyID]['elements'][0].cid_ref.i
@@ -732,11 +755,11 @@ class pyTACS(BaseUI):
                     transform = tacs.elements.SpringRefFrameTransform(refAxis_i, refAxis_j)
                 elif elemDict[propertyID]['elements'][0].x[0]:
                     refAxis = numpy.array(elemDict[propertyID]['elements'][0].x) \
-                              - elemDict[propertyID]['elements'][0].nodes_ref[0].xyz
+                              - elemDict[propertyID]['elements'][0].nodes_ref[0].get_position()
                     transform = tacs.elements.SpringRefAxisTransform(refAxis)
                 elif elemDict[propertyID]['elements'][0].g0_ref:
-                    refAxis = elemDict[propertyID]['elements'][0].g0_ref.xyz \
-                              - elemDict[propertyID]['elements'][0].nodes_ref[0].xyz
+                    refAxis = elemDict[propertyID]['elements'][0].g0_ref.get_position() \
+                              - elemDict[propertyID]['elements'][0].nodes_ref[0].get_position()
                     transform = tacs.elements.SpringRefAxisTransform(refAxis)
 
             # Finally set up the element objects belonging to this component
@@ -748,6 +771,8 @@ class pyTACS(BaseUI):
                     elem = tacs.elements.Quad9Shell(transform, con)
                 elif descript in ['CTRIA3', 'CTRIAR']:
                     elem = tacs.elements.Tri3Shell(transform, con)
+                elif descript in ['CBAR', 'CROD']:
+                    elem = tacs.elements.Beam2(transform, con)
                 elif 'CTETRA' in descript:
                     # May have variable number of nodes in card
                     nnodes = len(elemInfo.nodes)
@@ -767,7 +792,7 @@ class pyTACS(BaseUI):
                     elem = tacs.elements.SpringElement(transform, con)
                 else:
                     raise self._TACSError("Unsupported element type "
-                                f"'{descript}' specified for property number {propertyID}.")
+                                          f"'{descript}' specified for property number {propertyID}.")
                 elemList.append(elem)
 
             return elemList, scaleList
@@ -1071,7 +1096,7 @@ class pyTACS(BaseUI):
 
         Notes
         -----
-        Currently only supports LOAD, FORCE, MOMENT, GRAV, PLOAD2, and PLOAD4 cards.
+        Currently only supports LOAD, FORCE, MOMENT, GRAV, RFORCE, PLOAD2, and PLOAD4 cards.
         Currently only supports staticProblem (SOL 101) and modalProblems (SOL 103)
         """
 
@@ -1135,16 +1160,34 @@ class pyTACS(BaseUI):
 
                             loadArray = numpy.zeros(vpn)
                             if loadInfo.type == 'FORCE' and vpn >= 3:
-                                loadArray[:3] += scale * loadInfo.scaled_vector
+                                F = scale * loadInfo.scaled_vector
+                                loadArray[:3] += loadInfo.cid_ref.transform_vector_to_global(F)
                             elif loadInfo.type == 'MOMENT' and vpn >= 6:
-                                loadArray[3:6] += scale * loadInfo.scaled_vector
+                                M = scale * loadInfo.scaled_vector
+                                loadArray[3:6] += loadInfo.cid_ref.transform_vector_to_global(M)
                             problem.addLoadToNodes(nodeID, loadArray, nastranOrdering=True)
 
                         # Add any gravity loads
                         elif loadInfo.type == 'GRAV':
                             inertiaVec = np.zeros(3, dtype=self.dtype)
                             inertiaVec[:3] = scale * loadInfo.scale * loadInfo.N
+                            # Convert acceleration to global coordinate system
+                            inertiaVec = loadInfo.cid_ref.transform_vector_to_global(inertiaVec)
                             problem.addInertialLoad(inertiaVec)
+
+                        # Add any centrifugal loads
+                        elif loadInfo.type == 'RFORCE':
+                            omegaVec = np.zeros(3, dtype=self.dtype)
+                            if loadInfo.nid_ref:
+                                rotCenter = loadInfo.nid_ref.get_position()
+                            else:
+                                rotCenter = np.zeros(3, dtype=self.dtype)
+                            omegaVec[:3] = scale * loadInfo.scale * np.array(loadInfo.r123)
+                            # Convert omega from rev/s to rad/s
+                            omegaVec *= 2 * np.pi
+                            # Convert omega to global coordinate system
+                            omegaVec = loadInfo.cid_ref.transform_vector_to_global(omegaVec)
+                            problem.addCentrifugalLoad(omegaVec, rotCenter)
 
                         # Add any pressure loads
                         # Pressure load card specific to shell elements
@@ -1159,7 +1202,7 @@ class pyTACS(BaseUI):
 
                         else:
                             self._TACSWarning("Unsupported load type "
-                                        f" '{loadInfo.type}' specified for load set number {loadInfo.sid}, skipping load")
+                                              f" '{loadInfo.type}' specified for load set number {loadInfo.sid}, skipping load")
 
             # append to list of structural problems
             structProblems[subCase.id] = problem
@@ -1214,16 +1257,16 @@ class pyTACS(BaseUI):
 
             else:
                 raise self._TACSError("Unsupported element type "
-                            f"'{elemInfo.type}' specified for PLOAD4 load set number {loadInfo.sid}.")
+                                      f"'{elemInfo.type}' specified for PLOAD4 load set number {loadInfo.sid}.")
 
             # Figure out whether or not this is a traction based on if a vector is defined
             if np.linalg.norm(loadInfo.nvector) == 0.0:
                 staticProb.addPressureToElements(elemID, pressure, faceIndex,
-                                           nastranOrdering=True)
+                                                 nastranOrdering=True)
             else:
                 trac = pressure * loadInfo.nvector
                 staticProb.addTractionToElements(elemID, trac, faceIndex,
-                                           nastranOrdering=True)
+                                                 nastranOrdering=True)
 
     def getNumComponents(self):
         """
@@ -1405,16 +1448,17 @@ class pyTACS(BaseUI):
                         numFoundElements += 1
                     else:
                         self._TACSError(f"Object of type {type(object)} returned in elemCallBack function "
-                              "is not a valid TACS element object. The \
+                                        "is not a valid TACS element object. The \
                                string representation of the offending object is: \
                                '{repr(object)}'")
 
             if numFoundElements != numElements:
                 raise self._TACSError("Could not find all required element objects in the "
-                            "return arguments from user-supplied "
-                            "elemCallBack function. {} element types ({}) are contained in Component {}, "
-                            "but only {} were returned by elemCallback.".format(numElements, repr(self.elemDescripts[i]),
-                                                                                i, numFoundElements))
+                                      "return arguments from user-supplied "
+                                      "elemCallBack function. {} element types ({}) are contained in Component {}, "
+                                      "but only {} were returned by elemCallback.".format(numElements,
+                                                                                          repr(self.elemDescripts[i]),
+                                                                                          i, numFoundElements))
 
             # Now determine the number of design variables. This is
             # NOT as simple as just getting the number of design
@@ -1443,8 +1487,8 @@ class pyTACS(BaseUI):
                 # newVars[-1]-newVars[0] + 1
                 if not len(newVars) == newVars[-1] - newVars[0] + 1:
                     raise self._TACSError("Inconsistent design variables detected. "
-                                "The added design variables are not continuous."
-                                f" The added design varibales are {repr(newVars)}.")
+                                          "The added design variables are not continuous."
+                                          f" The added design varibales are {repr(newVars)}.")
 
             # Finally increment the dvcounter
             self.dvNum += len(newVars)
@@ -1475,9 +1519,10 @@ class pyTACS(BaseUI):
                 if self.varsPerNode is None:
                     self.varsPerNode = elemVarsPerNode
                 elif self.varsPerNode != elemVarsPerNode:
-                    raise self._TACSError("Model references elements with differing numbers of variables per node (%d and %d). "
-                                "All elements must use same number of variables to be compatible." % (self.varsPerNode,
-                                                                                                    elemVarsPerNode))
+                    raise self._TACSError(
+                        "Model references elements with differing numbers of variables per node (%d and %d). "
+                        "All elements must use same number of variables to be compatible." % (self.varsPerNode,
+                                                                                              elemVarsPerNode))
 
         # If varsPerNode still hasn't been set (because there were no elements added in the callback)
         # Default to 6
@@ -1489,5 +1534,5 @@ class pyTACS(BaseUI):
         Standard error print out if the user tries to call certain pytacs methods before intializing.
         """
         error = self._TACSError("TACS assembler has not been created. "
-                        "Assembler must created first by running 'initalize' method.")
+                                "Assembler must created first by running 'initalize' method.")
         return error

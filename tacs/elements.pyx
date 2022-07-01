@@ -622,6 +622,31 @@ cdef class Quad4Shell(Element):
         self.ptr = new TACSQuad4Shell(transform.ptr, con.cptr)
         self.ptr.incref()
 
+cdef class Quad4NonlinearShell(Element):
+    """
+    A 4-node quad shell element for general geometric nonlinear elastic analysis.
+
+    This element employs a mixed interpolation of tensorial (strain)
+    components (MITC) method to avoid shear locking problems.
+
+    .. seealso:: :ref:`theory/shell_element:Mixed Interpolation of Tensorial Components`
+
+    .. note::
+        varsPerNode: 6
+
+        outputElement: ``TACS.BEAM_OR_SHELL_ELEMENT``
+
+    Args:
+        transform (ShellTransform or None): Shell transform object.
+          ``None`` is equivalent to :class:`~ShellNaturalTransform`.
+        con (ShellConstitutive): Shell constitutive object.
+    """
+    def __cinit__(self, ShellTransform transform, ShellConstitutive con):
+        if transform is None:
+            transform = ShellNaturalTransform()
+        self.ptr = new TACSQuad4NonlinearShell(transform.ptr, con.cptr)
+        self.ptr.incref()
+
 cdef class Quad9Shell(Element):
     """
     A 9-node quad shell element for general linear elastic analysis.
@@ -645,6 +670,31 @@ cdef class Quad9Shell(Element):
         if transform is None:
             transform = ShellNaturalTransform()
         self.ptr = new TACSQuad9Shell(transform.ptr, con.cptr)
+        self.ptr.incref()
+
+cdef class Quad9NonlinearShell(Element):
+    """
+    A 9-node quad shell element for general geometric nonlinear elastic analysis.
+
+    This element employs a mixed interpolation of tensorial (strain)
+    components (MITC) method to avoid shear locking problems.
+
+    .. seealso:: :ref:`theory/shell_element:Mixed Interpolation of Tensorial Components`
+
+    .. note::
+        varsPerNode: 6
+
+        outputElement: ``TACS.BEAM_OR_SHELL_ELEMENT``
+
+    Args:
+        transform (ShellTransform or None): Shell transform object.
+          ``None`` is equivalent to :class:`~ShellNaturalTransform`.
+        con (ShellConstitutive): Shell constitutive object.
+    """
+    def __cinit__(self, ShellTransform transform, ShellConstitutive con):
+        if transform is None:
+            transform = ShellNaturalTransform()
+        self.ptr = new TACSQuad9NonlinearShell(transform.ptr, con.cptr)
         self.ptr.incref()
 
 cdef class Quad16Shell(Element):
@@ -672,6 +722,31 @@ cdef class Quad16Shell(Element):
         self.ptr = new TACSQuad16Shell(transform.ptr, con.cptr)
         self.ptr.incref()
 
+cdef class Quad16NonlinearShell(Element):
+    """
+    A 16-node quad shell element for general geometric nonlinear elastic analysis.
+
+    This element employs a mixed interpolation of tensorial (strain)
+    components (MITC) method to avoid shear locking problems.
+
+    .. seealso:: :ref:`theory/shell_element:Mixed Interpolation of Tensorial Components`
+
+    .. note::
+        varsPerNode: 6
+
+        outputElement: ``TACS.BEAM_OR_SHELL_ELEMENT``
+
+    Args:
+        transform (ShellTransform or None): Shell transform object.
+          ``None`` is equivalent to :class:`~ShellNaturalTransform`.
+        con (ShellConstitutive): Shell constitutive object.
+    """
+    def __cinit__(self, ShellTransform transform, ShellConstitutive con):
+        if transform is None:
+            transform = ShellNaturalTransform()
+        self.ptr = new TACSQuad16NonlinearShell(transform.ptr, con.cptr)
+        self.ptr.incref()
+
 cdef class Tri3Shell(Element):
     """
     A 3-node triangular shell element for general linear elastic analysis.
@@ -695,6 +770,31 @@ cdef class Tri3Shell(Element):
         if transform is None:
             transform = ShellNaturalTransform()
         self.ptr = new TACSTri3Shell(transform.ptr, con.cptr)
+        self.ptr.incref()
+
+cdef class Tri3NonlinearShell(Element):
+    """
+    A 3-node triangular shell element for geometric elastic analysis.
+
+    This element employs a mixed interpolation of tensorial (strain)
+    components (MITC) method to avoid shear locking problems.
+
+    .. seealso:: :ref:`theory/shell_element:Mixed Interpolation of Tensorial Components`
+
+    .. note::
+        varsPerNode: 6
+
+        outputElement: ``TACS.BEAM_OR_SHELL_ELEMENT``
+
+    Args:
+        transform (ShellTransform or None): Shell transform object.
+          ``None`` is equivalent to :class:`~ShellNaturalTransform`.
+        con (ShellConstitutive): Shell constitutive object.
+    """
+    def __cinit__(self, ShellTransform transform, ShellConstitutive con):
+        if transform is None:
+            transform = ShellNaturalTransform()
+        self.ptr = new TACSTri3NonlinearShell(transform.ptr, con.cptr)
         self.ptr.incref()
 
 cdef class Quad4ThermalShell(Element):
@@ -722,6 +822,81 @@ cdef class Quad4ThermalShell(Element):
         self.ptr = new TACSQuad4ThermalShell(transform.ptr, con.cptr)
         self.ptr.incref()
 
+cdef class Quad4NonlinearThermalShell(Element):
+    """
+    A 4-node quad shell element for general linear thermoelastic analysis.
+
+    This element employs a mixed interpolation of tensorial (strain)
+    components (MITC) method to avoid shear locking problems.
+
+    .. seealso:: :ref:`theory/shell_element:Mixed Interpolation of Tensorial Components`
+
+    .. note::
+        varsPerNode: 7
+
+        outputElement: ``TACS.BEAM_OR_SHELL_ELEMENT``
+
+    Args:
+        transform (ShellTransform or None): Shell transform object.
+          ``None`` is equivalent to :class:`~ShellNaturalTransform`.
+        con (ShellConstitutive): Shell constitutive object.
+    """
+    def __cinit__(self, ShellTransform transform, ShellConstitutive con):
+        if transform is None:
+            transform = ShellNaturalTransform()
+        self.ptr = new TACSQuad4NonlinearThermalShell(transform.ptr, con.cptr)
+        self.ptr.incref()
+
+cdef class Quad4ShellQuaternion(Element):
+    """
+    A 4-node quad shell element for general linear thermoelastic analysis.
+
+    This element employs a mixed interpolation of tensorial (strain)
+    components (MITC) method to avoid shear locking problems.
+
+    .. seealso:: :ref:`theory/shell_element:Mixed Interpolation of Tensorial Components`
+
+    .. note::
+        varsPerNode: 8
+
+        outputElement: ``TACS.BEAM_OR_SHELL_ELEMENT``
+
+    Args:
+        transform (ShellTransform or None): Shell transform object.
+          ``None`` is equivalent to :class:`~ShellNaturalTransform`.
+        con (ShellConstitutive): Shell constitutive object.
+    """
+    def __cinit__(self, ShellTransform transform, ShellConstitutive con):
+        if transform is None:
+            transform = ShellNaturalTransform()
+        self.ptr = new TACSQuad4ShellQuaternion(transform.ptr, con.cptr)
+        self.ptr.incref()
+
+cdef class Quad4ShellModRot(Element):
+    """
+    A 4-node quad shell element for general linear thermoelastic analysis.
+
+    This element employs a mixed interpolation of tensorial (strain)
+    components (MITC) method to avoid shear locking problems.
+
+    .. seealso:: :ref:`theory/shell_element:Mixed Interpolation of Tensorial Components`
+
+    .. note::
+        varsPerNode: ??
+
+        outputElement: ``TACS.BEAM_OR_SHELL_ELEMENT``
+
+    Args:
+        transform (ShellTransform or None): Shell transform object.
+          ``None`` is equivalent to :class:`~ShellNaturalTransform`.
+        con (ShellConstitutive): Shell constitutive object.
+    """
+    def __cinit__(self, ShellTransform transform, ShellConstitutive con):
+        if transform is None:
+            transform = ShellNaturalTransform()
+        self.ptr = new TACSQuad4ShellModRot(transform.ptr, con.cptr)
+        self.ptr.incref()
+
 cdef class Quad9ThermalShell(Element):
     """
     A 9-node quad shell element for general linear thermoelastic analysis.
@@ -745,6 +920,31 @@ cdef class Quad9ThermalShell(Element):
         if transform is None:
             transform = ShellNaturalTransform()
         self.ptr = new TACSQuad9ThermalShell(transform.ptr, con.cptr)
+        self.ptr.incref()
+
+cdef class Quad9NonlinearThermalShell(Element):
+    """
+    A 9-node quad shell element for general geometric nonlinear thermoelastic analysis.
+
+    This element employs a mixed interpolation of tensorial (strain)
+    components (MITC) method to avoid shear locking problems.
+
+    .. seealso:: :ref:`theory/shell_element:Mixed Interpolation of Tensorial Components`
+
+    .. note::
+        varsPerNode: 7
+
+        outputElement: ``TACS.BEAM_OR_SHELL_ELEMENT``
+
+    Args:
+        transform (ShellTransform or None): Shell transform object.
+          ``None`` is equivalent to :class:`~ShellNaturalTransform`.
+        con (ShellConstitutive): Shell constitutive object.
+    """
+    def __cinit__(self, ShellTransform transform, ShellConstitutive con):
+        if transform is None:
+            transform = ShellNaturalTransform()
+        self.ptr = new TACSQuad9NonlinearThermalShell(transform.ptr, con.cptr)
         self.ptr.incref()
 
 cdef class Quad16ThermalShell(Element):
@@ -772,6 +972,31 @@ cdef class Quad16ThermalShell(Element):
         self.ptr = new TACSQuad16ThermalShell(transform.ptr, con.cptr)
         self.ptr.incref()
 
+cdef class Quad16NonlinearThermalShell(Element):
+    """
+    A 16-node quad shell element for general geometric nonlinear thermoelastic analysis.
+
+    This element employs a mixed interpolation of tensorial (strain)
+    components (MITC) method to avoid shear locking problems.
+
+    .. seealso:: :ref:`theory/shell_element:Mixed Interpolation of Tensorial Components`
+
+    .. note::
+        varsPerNode: 7
+
+        outputElement: ``TACS.BEAM_OR_SHELL_ELEMENT``
+
+    Args:
+        transform (ShellTransform or None): Shell transform object.
+          ``None`` is equivalent to :class:`~ShellNaturalTransform`.
+        con (ShellConstitutive): Shell constitutive object.
+    """
+    def __cinit__(self, ShellTransform transform, ShellConstitutive con):
+        if transform is None:
+            transform = ShellNaturalTransform()
+        self.ptr = new TACSQuad16NonlinearThermalShell(transform.ptr, con.cptr)
+        self.ptr.incref()
+
 cdef class Tri3ThermalShell(Element):
     """
     A 3-node triangular shell element for general linear thermoelastic analysis.
@@ -795,6 +1020,131 @@ cdef class Tri3ThermalShell(Element):
         if transform is None:
             transform = ShellNaturalTransform()
         self.ptr = new TACSTri3ThermalShell(transform.ptr, con.cptr)
+        self.ptr.incref()
+
+cdef class Tri3NonlinearThermalShell(Element):
+    """
+    A 3-node triangular shell element for general geometric nonlinear thermoelastic analysis.
+
+    This element employs a mixed interpolation of tensorial (strain)
+    components (MITC) method to avoid shear locking problems.
+
+    .. seealso:: :ref:`theory/shell_element:Mixed Interpolation of Tensorial Components`
+
+    .. note::
+        varsPerNode: 7
+
+        outputElement: ``TACS.BEAM_OR_SHELL_ELEMENT``
+        
+    Args:
+        transform (ShellTransform or None): Shell transform object.
+          ``None`` is equivalent to :class:`~ShellNaturalTransform`.
+        con (ShellConstitutive): Shell constitutive object.
+    """
+    def __cinit__(self, ShellTransform transform, ShellConstitutive con):
+        if transform is None:
+            transform = ShellNaturalTransform()
+        self.ptr = new TACSTri3NonlinearThermalShell(transform.ptr, con.cptr)
+        self.ptr.incref()
+
+cdef class BeamTransform:
+    cdef TACSBeamTransform *ptr
+    def __cinit__(self):
+        self.ptr = NULL
+        return
+
+    def __dealloc__(self):
+        if self.ptr != NULL:
+            self.ptr.decref()
+
+cdef class BeamRefAxisTransform(BeamTransform):
+    """
+    Class for computing the transformation from the global coordinates
+    to the beam local coordinates (used for defining stresses).
+    This class uses a projection of a user-supplied reference axis to define the beam coordinate system
+    (i.e. local :math:`y` is aligned with the reference axis.)
+
+    .. warning:: The reference direction cannot be parallel to the beam axis.
+
+    Args:
+        axis (array-like): Reference axis.
+    """
+    def __cinit__(self, axis):
+        cdef TacsScalar a[3]
+        a[0] = axis[0]
+        a[1] = axis[1]
+        a[2] = axis[2]
+        self.ptr = new TACSBeamRefAxisTransform(a)
+        self.ptr.incref()
+
+cdef class Beam2(Element):
+    """
+    A 2-node Timoshenko beam element for general linear elastic analysis.
+
+    .. note::
+        varsPerNode: 6
+
+        outputElement: ``TACS.BEAM_OR_SHELL_ELEMENT``
+
+    Args:
+        transform (BeamTransform): Beam transform object.
+        con (BeamConstitutive): Beam constitutive object.
+    """
+    def __cinit__(self, BeamTransform transform, BeamConstitutive con):
+        self.ptr = new TACSBeam2(transform.ptr, con.cptr)
+        self.ptr.incref()
+
+cdef class Beam3(Element):
+    """
+    A 3-node Timoshenko beam element for general linear elastic analysis.
+
+    .. note::
+        varsPerNode: 6
+
+        outputElement: ``TACS.BEAM_OR_SHELL_ELEMENT``
+
+    Args:
+        transform (BeamTransform): Beam transform object.
+        con (BeamConstitutive): Beam constitutive object.
+    """
+    def __cinit__(self, BeamTransform transform, BeamConstitutive con):
+        self.ptr = new TACSBeam3(transform.ptr, con.cptr)
+        self.ptr.incref()
+
+cdef class Beam2ModRot(Element):
+    """
+    A 2-node Timoshenko beam element for general nonlinear elastic analysis
+    with moderate rotations.
+
+    .. note::
+        varsPerNode: 6
+
+        outputElement: ``TACS.BEAM_OR_SHELL_ELEMENT``
+
+    Args:
+        transform (BeamTransform): Beam transform object.
+        con (BeamConstitutive): Beam constitutive object.
+    """
+    def __cinit__(self, BeamTransform transform, BeamConstitutive con):
+        self.ptr = new TACSBeam2ModRot(transform.ptr, con.cptr)
+        self.ptr.incref()
+
+cdef class Beam3ModRot(Element):
+    """
+    A 3-node Timoshenko beam element for general nonlinear elastic analysis
+    with moderate rotations.
+
+    .. note::
+        varsPerNode: 6
+
+        outputElement: ``TACS.BEAM_OR_SHELL_ELEMENT``
+
+    Args:
+        transform (BeamTransform): Beam transform object.
+        con (BeamConstitutive): Beam constitutive object.
+    """
+    def __cinit__(self, BeamTransform transform, BeamConstitutive con):
+        self.ptr = new TACSBeam3ModRot(transform.ptr, con.cptr)
         self.ptr.incref()
 
 cdef class SpringTransform:
@@ -1140,11 +1490,11 @@ cdef class MassElement(Element):
 #         self.ptr.incref()
 
 # cdef class MITCBeam(Element):
-#     def __cinit__(self, TimoshenkoConstitutive stiff,
+#     def __cinit__(self, BeamConstitutive stiff,
 #                   GibbsVector gravity=None,
 #                   GibbsVector vInit=None,
 #                   GibbsVector omegaInit=None):
-#         cdef TACSTimoshenkoConstitutive *con = _dynamicTimoshenkoConstitutive(stiff.ptr)
+#         cdef TACSBeamConstitutive *con = _dynamicBeamConstitutive(stiff.ptr)
 #         if omegaInit is not None:
 #             self.ptr = new MITC3(con, gravity.ptr,
 #                                  vInit.ptr, omegaInit.ptr)
