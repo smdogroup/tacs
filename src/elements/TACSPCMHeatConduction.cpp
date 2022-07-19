@@ -88,10 +88,9 @@ void TACSPCMHeatConduction2D::evalWeakIntegrand( int elemIndex,
                                                  TacsScalar DUx[] ){
   // Evaluate the density and specific heat
   TacsScalar rho = stiff->evalDensity(elemIndex, pt, X);
-  TacsScalar c = stiff->evalSpecificHeat(elemIndex, pt, X, Ut[0]);
 
   DUt[0] = 0.0;
-  DUt[1] = Ut[1];
+  DUt[1] = rho*Ut[1];
   DUt[2] = 0.0;
 
   // Compute the thermal flux from the thermal gradient
@@ -176,15 +175,8 @@ void TACSPCMHeatConduction2D::addWeakAdjProduct( int elemIndex,
                                                  const TacsScalar Psix[],
                                                  int dvLen,
                                                  TacsScalar *dfdx ){
-  // Evaluate the density
-  TacsScalar rho = stiff->evalDensity(elemIndex, pt, X);
-  TacsScalar c = stiff->evalSpecificHeat(elemIndex, pt, X, Ut[0]);
-
-  TacsScalar rho_coef = scale*(c*Ut[1]*Psi[0]);
+  TacsScalar rho_coef = scale*(Ut[1]*Psi[0]);
   stiff->addDensityDVSens(elemIndex, rho_coef, pt, X, dvLen, dfdx);
-
-  TacsScalar c_coef = scale*rho*Ut[1]*Psi[0];
-  stiff->addSpecificHeatDVSens(elemIndex, c_coef, pt, X, dvLen, dfdx, Ut[0]);
 
   stiff->addHeatFluxDVSens(elemIndex, scale, pt, X, Ux, Psix, dvLen, dfdx, Ut[0]);
 }
@@ -210,12 +202,11 @@ void TACSPCMHeatConduction2D::evalWeakAdjXptSensProduct( int elemIndex,
   dfdXd[3] = dfdXd[4] = dfdXd[5] = 0.0;
 
   TacsScalar rho = stiff->evalDensity(elemIndex, pt, X);
-  TacsScalar c = stiff->evalSpecificHeat(elemIndex, pt, X, Ut[0]);
 
   stiff->evalHeatFlux(elemIndex, pt, X, Ux, dfdPsix, Ut[0]);
   stiff->evalHeatFlux(elemIndex, pt, X, Psix, dfdUx, Ut[0]);
 
-  *product = c*rho*Psi[0]*Ut[1] + dfdUx[0]*Ux[0] + dfdUx[1]*Ux[1];
+  *product = rho*Psi[0]*Ut[1] + dfdUx[0]*Ux[0] + dfdUx[1]*Ux[1];
 }
 
 /*
@@ -399,7 +390,7 @@ void TACSPCMHeatConduction2D::getOutputData( int elemIndex,
     }
     if (write_flag & TACS_OUTPUT_STRESSES){
       TacsScalar flux[2];
-      stiff->evalHeatFlux(elemIndex, pt, X, grad, flux);
+      stiff->evalHeatFlux(elemIndex, pt, X, grad, flux, Ut[0]);
       data[0] = flux[0];
       data[1] = flux[1];
       data += 2;
@@ -409,7 +400,7 @@ void TACSPCMHeatConduction2D::getOutputData( int elemIndex,
       data[1] = stiff->evalDesignFieldValue(elemIndex, pt, X, 0);
       data[2] = stiff->evalDesignFieldValue(elemIndex, pt, X, 1);
       data[3] = stiff->evalDesignFieldValue(elemIndex, pt, X, 2);
-      data[4] = stiff->evalPhase(Ut[0]) // *** Does this need elemIndex, pt, X?
+      data[4] = stiff->evalPhase(Ut[0]); // *** Does this need elemIndex, pt, X?
       data += 5;
     }
   }

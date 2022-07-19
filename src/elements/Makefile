@@ -27,7 +27,8 @@ CXX_OBJS = FElibrary.o \
 	TACSCentrifugalForce3D.o \
 	TACSConvectiveTraction2D.o \
 	TACSConvectiveTraction3D.o \
-	TACSElementVerification.o
+	TACSElementVerification.o \
+	TACSPCMHeatConduction.o \
 
 DIR=${TACS_DIR}/src/elements
 

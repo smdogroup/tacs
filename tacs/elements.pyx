@@ -52,6 +52,7 @@ TOTAL_STRAIN_ENERGY_DENSITY = TACS_TOTAL_STRAIN_ENERGY_DENSITY
 ELEMENT_DISPLACEMENT = TACS_ELEMENT_DISPLACEMENT
 ELEMENT_STRAIN = TACS_ELEMENT_STRAIN
 ELEMENT_STRESS = TACS_ELEMENT_STRESS
+ELEMENT_PHASE = TACS_ELEMENT_PHASE
 
 # Flags for the thermomechanical model
 STEADY_STATE_MECHANICAL = TACS_STEADY_STATE_MECHANICAL
@@ -368,6 +369,20 @@ cdef class HeatConduction2D(ElementModel):
     """
     def __cinit__(self, PlaneStressConstitutive con):
         self.ptr = new TACSHeatConduction2D(con.cptr)
+        self.ptr.incref()
+
+cdef class PCMHeatConduction2D(ElementModel):
+    """
+    Model class for 2D phase change material heat conduction element.
+
+    .. note::
+        varsPerNode: 1
+
+    Args:
+        con (PhaseChangeMaterialConstitutive): Material constitutive properties.
+    """
+    def __cinit__(self, PhaseChangeMaterialConstitutive con):
+        self.ptr = new TACSPCMHeatConduction2D(con.cptr)
         self.ptr.incref()
 
 cdef class LinearElasticity2D(ElementModel):
@@ -1035,7 +1050,7 @@ cdef class Tri3NonlinearThermalShell(Element):
         varsPerNode: 7
 
         outputElement: ``TACS.BEAM_OR_SHELL_ELEMENT``
-        
+
     Args:
         transform (ShellTransform or None): Shell transform object.
           ``None`` is equivalent to :class:`~ShellNaturalTransform`.

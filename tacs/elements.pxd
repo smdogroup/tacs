@@ -36,6 +36,7 @@ cdef extern from "TACSElementTypes.h":
     const int TACS_ELEMENT_DISPLACEMENT
     const int TACS_ELEMENT_STRAIN
     const int TACS_ELEMENT_STRESS
+    const int TACS_ELEMENT_PHASE
 
 cdef extern from "TACSElementVerification.h":
     int TacsTestElementBasisFunctions(TACSElementBasis*, double, int, double, double)
@@ -117,6 +118,10 @@ cdef extern from "TACSHeatConduction.h":
 
     cdef cppclass TACSHeatConduction3D(TACSElementModel):
         TACSHeatConduction3D(TACSSolidConstitutive*)
+
+cdef extern from "TACSPCMHeatConduction.h":
+    cdef cppclass TACSPCMHeatConduction2D(TACSElementModel):
+        TACSPCMHeatConduction2D(TACSPhaseChangeMaterialConstitutive*)
 
 cdef extern from "TACSLinearElasticity.h":
     enum ElementStrainType:
@@ -233,23 +238,23 @@ cdef extern from "TACSShellElementDefs.h":
     cdef cppclass TACSQuad4NonlinearShell(TACSElement):
         TACSQuad4NonlinearShell(TACSShellTransform*,
                              TACSShellConstitutive*)
-    
+
     cdef cppclass TACSQuad9NonlinearShell(TACSElement):
         TACSQuad9NonlinearShell(TACSShellTransform*,
                              TACSShellConstitutive*)
 
     cdef cppclass TACSQuad16NonlinearShell(TACSElement):
         TACSQuad16NonlinearShell(TACSShellTransform*,
-                             TACSShellConstitutive*)                             
-    
+                             TACSShellConstitutive*)
+
     cdef cppclass TACSTri3NonlinearShell(TACSElement):
         TACSTri3NonlinearShell(TACSShellTransform*,
                       TACSShellConstitutive*)
-    
+
     cdef cppclass TACSQuad4NonlinearThermalShell(TACSElement):
         TACSQuad4NonlinearThermalShell(TACSShellTransform*,
                              TACSShellConstitutive*)
-    
+
     cdef cppclass TACSQuad9NonlinearThermalShell(TACSElement):
         TACSQuad9NonlinearThermalShell(TACSShellTransform*,
                               TACSShellConstitutive*)
@@ -261,7 +266,7 @@ cdef extern from "TACSShellElementDefs.h":
     cdef cppclass TACSTri3NonlinearThermalShell(TACSElement):
         TACSTri3NonlinearThermalShell(TACSShellTransform*,
                              TACSShellConstitutive*)
-    
+
     cdef cppclass TACSQuad4ShellQuaternion(TACSElement):
         TACSQuad4ShellQuaternion(TACSShellTransform*,
                              TACSShellConstitutive*)
@@ -269,7 +274,7 @@ cdef extern from "TACSShellElementDefs.h":
     cdef cppclass TACSQuad4ShellModRot(TACSElement):
         TACSQuad4ShellModRot(TACSShellTransform*,
                              TACSShellConstitutive*)
- 
+
     cdef cppclass TACSBeam2(TACSElement):
         TACSBeam2(TACSBeamTransform*,
                   TACSBeamConstitutive*)

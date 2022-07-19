@@ -28,12 +28,14 @@
 class TACSPhaseChangeMaterialConstitutive : public TACSConstitutive {
  public:
 
-  TACSPhaseChangeMaterialConstitutive( TACSMaterialProperties *solid_props,
-                                       TACSMaterialProperties *liquid_props,
+  TACSPhaseChangeMaterialConstitutive( TACSMaterialProperties *solid_properties,
+                                       TACSMaterialProperties *liquid_properties,
                                        TacsScalar _lh, TacsScalar _mt,
                                        TacsScalar _t=1.0, int _tNum=-1,
                                        TacsScalar _tlb=0.0, TacsScalar _tub=1.0 );
   ~TACSPhaseChangeMaterialConstitutive();
+
+  int getNumStresses();
 
   // Retrieve the global design variable numbers
   int getDesignVarNums( int elemIndex, int dvLen, int dvNums[] );
@@ -53,7 +55,7 @@ class TACSPhaseChangeMaterialConstitutive : public TACSConstitutive {
                               const TacsScalar X[], const TacsScalar U );
 
   // Evaluate the material's phase
-  int evalPhase( const TacsScalar U);
+  int evalPhase( const TacsScalar U );
 
   // Evaluate the material density
   TacsScalar evalDensity( int elemIndex, const double pt[],
@@ -64,14 +66,20 @@ class TACSPhaseChangeMaterialConstitutive : public TACSConstitutive {
                          const double pt[], const TacsScalar X[],
                          int dvLen, TacsScalar dfdx[] );
 
-  // Evaluate the specific heat
-  TacsScalar evalSpecificHeat( int elemIndex, const double pt[],
-                               const TacsScalar X[], const TacsScalar U );
+  TacsScalar evalSpecificHeat( int elemIndex,
+                               const double pt[],
+                               const TacsScalar X[] );
 
-  // Evaluate the thermal strain
-  void evalThermalStrain( int elemIndex, const double pt[],
-                          const TacsScalar X[], TacsScalar theta,
-                          TacsScalar strain[], const TacsScalar U );
+  void evalStress( int elemIndex,
+                   const double pt[],
+                   const TacsScalar X[],
+                   const TacsScalar strain[],
+                   TacsScalar stress[] );
+
+  void evalTangentStiffness( int elemIndex,
+                             const double pt[],
+                             const TacsScalar X[],
+                             TacsScalar C[] );
 
   // Evaluate the heat flux, given the thermal gradient
   void evalHeatFlux( int elemIndex, const double pt[],
@@ -94,8 +102,8 @@ class TACSPhaseChangeMaterialConstitutive : public TACSConstitutive {
 
  protected:
   // Materiial properties class
-  TACSMaterialProperties *solid_props;
-  TACSMaterialProperties *liquid_props;
+  TACSMaterialProperties *solid_properties;
+  TACSMaterialProperties *liquid_properties;
 
  private:
   // Store information about the design variable

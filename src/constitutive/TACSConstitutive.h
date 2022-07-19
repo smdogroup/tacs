@@ -345,6 +345,20 @@ class TACSConstitutive : public TACSObject {
                              TacsScalar flux[] ){}
 
   /**
+    Given the thermal gradient, compute the heat flux
+
+    @param elemIndex The local element index
+    @param pt The parametric point within the element
+    @param X The physical point location
+  */
+  virtual void evalHeatFlux( int elemIndex,
+                             const double pt[],
+                             const TacsScalar X[],
+                             const TacsScalar grad[],
+                             TacsScalar flux[],
+                             const TacsScalar U ){}
+
+  /**
     Compute the coefficients of the heat flux
 
     @param elemIndex The local element index
@@ -356,6 +370,20 @@ class TACSConstitutive : public TACSObject {
                                     const double pt[],
                                     const TacsScalar X[],
                                     TacsScalar C[] ){}
+
+  /**
+    Compute the coefficients of the heat flux
+
+    @param elemIndex The local element index
+    @param pt The parametric point within the element
+    @param X The physical point location
+    @param C The tangent heat flux matrix
+  */
+  virtual void evalTangentHeatFlux( int elemIndex,
+                                    const double pt[],
+                                    const TacsScalar X[],
+                                    TacsScalar C[],
+                                    const TacsScalar U ){}
 
   /**
     Add the derivative of the heat flux to the sensitivity array
@@ -375,6 +403,26 @@ class TACSConstitutive : public TACSObject {
                                   const TacsScalar grad[],
                                   const TacsScalar psi[],
                                   int dvLen, TacsScalar dfdx[] ){}
+
+  /**
+    Add the derivative of the heat flux to the sensitivity array
+
+    @param elemIndex The local element index
+    @param scale A scalar factor
+    @param pt The parametric point within the element
+    @param X The physical point location
+    @param psi Multiplier vector (same size as the strain)
+    @param dvLen The length of the sensitivity array
+    @param dfdx The sensitivity
+  */
+  virtual void addHeatFluxDVSens( int elemIndex,
+                                  TacsScalar scale,
+                                  const double pt[],
+                                  const TacsScalar X[],
+                                  const TacsScalar grad[],
+                                  const TacsScalar psi[],
+                                  int dvLen, TacsScalar dfdx[],
+                                  const TacsScalar U ){}
 
   /**
     Evaluate the failure index at a quadrature point

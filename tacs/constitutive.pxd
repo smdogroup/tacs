@@ -79,6 +79,16 @@ cdef extern from "TACSPlaneStressConstitutive.h":
 cdef class PlaneStressConstitutive(Constitutive):
     cdef TACSPlaneStressConstitutive *cptr
 
+cdef extern from "TACSPhaseChangeMaterialConstitutive.h":
+    cdef cppclass TACSPhaseChangeMaterialConstitutive(TACSConstitutive):
+        TACSPhaseChangeMaterialConstitutive(TACSMaterialProperties*,
+                                            TACSMaterialProperties*,
+                                            TacsScalar, TacsScalar, TacsScalar,
+                                            int, TacsScalar, TacsScalar)
+
+cdef class PhaseChangeMaterialConstitutive(Constitutive):
+    cdef TACSPhaseChangeMaterialConstitutive *cptr
+
 cdef extern from "TACSSolidConstitutive.h":
     cdef cppclass TACSSolidConstitutive(TACSConstitutive):
         TACSSolidConstitutive(TACSMaterialProperties*,

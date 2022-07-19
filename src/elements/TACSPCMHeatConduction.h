@@ -20,7 +20,7 @@
 
 class TACSPCMHeatConduction2D : public TACSElementModel {
  public:
-  TACSPCMHeatConduction2D( TACSPlaneStressConstitutive *_con );
+  TACSPCMHeatConduction2D( TACSPhaseChangeMaterialConstitutive *_con );
   ~TACSPCMHeatConduction2D();
 
   int getNumParameters();

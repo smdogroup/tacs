@@ -29,6 +29,7 @@ const int TACS_ELEMENT_STRAIN = 8;
 const int TACS_ELEMENT_STRESS = 9;
 const int TACS_ELEMENT_DENSITY_MOMENT = 10;
 const int TACS_ELEMENT_MOMENT_OF_INERTIA = 11;
+const int TACS_ELEMENT_PHASE = 12;
 
 /*
   The output flags from each element type
@@ -52,7 +53,8 @@ enum ElementType { TACS_ELEMENT_NONE=0,
                    TACS_SOLID_ELEMENT=6,
                    TACS_RIGID_ELEMENT=7,
                    TACS_MASS_ELEMENT=8,
-                   TACS_SPRING_ELEMENT=9 };
+                   TACS_SPRING_ELEMENT=9,
+                   TACS_PCM_ELEMENT=10 };
 
 /**
   Defines the element layout used for writing to an output file
