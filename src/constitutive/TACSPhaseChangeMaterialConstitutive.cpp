@@ -143,8 +143,9 @@ int TACSPhaseChangeMaterialConstitutive::evalPhase( const TacsScalar U ){
     if (U <  rhos*(cs*mt + lh)){
       return 0;
     }
+    return 1;
   }
-  return 1;
+  return 0;
 }
 
 // Evaluate the material density

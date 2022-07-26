@@ -376,7 +376,8 @@ void TACSPCMHeatConduction2D::getOutputData( int elemIndex,
     }
     if (write_flag & TACS_OUTPUT_DISPLACEMENTS){
       data[0] = Ut[0];
-      data += 1;
+      data[1] = stiff->evalTemperature(elemIndex, pt, X, Ut[0]);
+      data += 2;
     }
 
     TacsScalar grad[2];

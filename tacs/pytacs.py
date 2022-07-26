@@ -59,7 +59,8 @@ class pyTACS(BaseUI):
                                      f'\t\t tacs.TACS.SOLID_ELEMENT = {tacs.TACS.SOLID_ELEMENT}\n'
                                      f'\t\t tacs.TACS.RIGID_ELEMENT = {tacs.TACS.RIGID_ELEMENT}\n'
                                      f'\t\t tacs.TACS.MASS_ELEMENT = {tacs.TACS.MASS_ELEMENT}\n'
-                                     f'\t\t tacs.TACS.SPRING_ELEMENT = {tacs.TACS.SPRING_ELEMENT}'],
+                                     f'\t\t tacs.TACS.SPRING_ELEMENT = {tacs.TACS.SPRING_ELEMENT}\n'
+                                     f'\t\t tacs.TACS.PCM_ELEMENT = {tacs.TACS.PCM_ELEMENT}'],
         'writeConnectivity': [bool, True, 'Flag for whether to include element connectivity in f5 file.'],
         'writeNodes': [bool, True, 'Flag for whether to include nodes in f5 file.'],
         'writeDisplacements': [bool, True, 'Flag for whether to include nodal displacements in f5 file.'],
