@@ -122,7 +122,7 @@ int TacsGetOutputComponentCount( ElementType etype, int comp ){
   }
   else if (etype == TACS_PCM_ELEMENT){
     if (comp == TACS_OUTPUT_DISPLACEMENTS){
-      return 2;
+      return 1;
     }
     else if (comp == TACS_OUTPUT_STRAINS){
       return 2;
@@ -131,7 +131,7 @@ int TacsGetOutputComponentCount( ElementType etype, int comp ){
       return 2;
     }
     else if (comp == TACS_OUTPUT_EXTRAS){
-      return 5;
+      return 6;
     }
   }
 
@@ -347,7 +347,6 @@ const char* TacsGetOutputComponentName( ElementType etype,
     if (comp == TACS_OUTPUT_DISPLACEMENTS){
       switch (index){
       case 0: return "u";
-      case 1: return "dT";
       default: return NULL;
       }
     }
@@ -372,6 +371,7 @@ const char* TacsGetOutputComponentName( ElementType etype,
       case 2: return "dv2";
       case 3: return "dv3";
       case 4: return "phase";
+      case 5: return "dT";
       default: return NULL;
       }
     }

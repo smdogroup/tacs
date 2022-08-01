@@ -367,7 +367,7 @@ void TACSPCMHeatConduction2D::getOutputData( int elemIndex,
                                              const TacsScalar Ux[],
                                              int ld_data,
                                              TacsScalar *data ){
-  if (etype == TACS_SCALAR_2D_ELEMENT){
+  if (etype == TACS_PCM_ELEMENT){
     if (write_flag & TACS_OUTPUT_NODES){
       data[0] = X[0];
       data[1] = X[1];
@@ -376,8 +376,7 @@ void TACSPCMHeatConduction2D::getOutputData( int elemIndex,
     }
     if (write_flag & TACS_OUTPUT_DISPLACEMENTS){
       data[0] = Ut[0];
-      data[1] = stiff->evalTemperature(elemIndex, pt, X, Ut[0]);
-      data += 2;
+      data += 1;
     }
 
     TacsScalar grad[2];
@@ -402,7 +401,8 @@ void TACSPCMHeatConduction2D::getOutputData( int elemIndex,
       data[2] = stiff->evalDesignFieldValue(elemIndex, pt, X, 1);
       data[3] = stiff->evalDesignFieldValue(elemIndex, pt, X, 2);
       data[4] = stiff->evalPhase(Ut[0]); // *** Does this need elemIndex, pt, X?
-      data += 5;
+      data[5] = stiff->evalTemperature(elemIndex, pt, X, Ut[0]);
+      data += 6;
     }
   }
 }

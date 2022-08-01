@@ -36,7 +36,6 @@ cdef extern from "TACSElementTypes.h":
     const int TACS_ELEMENT_DISPLACEMENT
     const int TACS_ELEMENT_STRAIN
     const int TACS_ELEMENT_STRESS
-    const int TACS_ELEMENT_PHASE
 
 cdef extern from "TACSElementVerification.h":
     int TacsTestElementBasisFunctions(TACSElementBasis*, double, int, double, double)
