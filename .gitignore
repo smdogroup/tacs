@@ -2,6 +2,9 @@
 syntax: glob
 
 extern/
+!extern/Makefile
+!extern/README.md
+!extern/f5to*/
 *~
 *.in
 *.pyc
