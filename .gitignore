@@ -40,6 +40,8 @@ extern/
 *.snm
 *.toc
 tacs/*.cpp
+tacs.egg-info
+reports/
 *.pxi
 *.vtk
 *.cfg
