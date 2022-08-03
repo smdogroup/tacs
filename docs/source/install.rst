@@ -92,7 +92,17 @@ Note that METIS needs CMake to build and install.
 
 Optionally, you can also place ``UFconfig-3.6.1.tar.gz`` and ``AMD-2.2.0.tar.gz`` in the same directory if you want to use the approximate minimum degree ordering routines from AMD/UFConfig.
 
-Then, to build the dependencies, simply run ``make``.
+Then, to build the dependencies, simply run ``make``. If the build process ends with something like:
+
+::
+
+    make[2]: *** No rule to make target 'w'.  Stop.
+    make[2]: Leaving directory 'SomeDirectory/tacs/extern/metis-5.1.0/build/Linux-x86_64'
+    make[1]: *** [Makefile:64: install] Error 2
+    make[1]: Leaving directory 'SomeDirectory/tacs/extern/metis-5.1.0'
+    make: *** [Makefile:11: default] Error 1
+
+Then try manually running ``make install`` within the ``metis-5.1.0`` directory.
 
 Make the C++ TACS library
 -------------------------
