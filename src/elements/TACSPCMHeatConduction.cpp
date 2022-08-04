@@ -132,9 +132,10 @@ void TACSPCMHeatConduction2D::evalWeakMatrix( ElementMatrixType matType,
                                               TacsScalar DUx[],
                                               TacsScalar Jac[] ){
   if (matType == TACS_JACOBIAN_MATRIX){
+    TacsScalar rho = stiff->evalDensity(elemIndex, pt, X);
 
     DUt[0] = 0.0;
-    DUt[1] = Ut[1];
+    DUt[1] = rho*Ut[1];
     DUt[2] = 0.0;
 
     // Compute the thermal flux from the thermal gradient
@@ -147,14 +148,16 @@ void TACSPCMHeatConduction2D::evalWeakMatrix( ElementMatrixType matType,
     DUx[1] = flux[1];
 
     // Set the time-dependent terms
-    Jac[0] = 1.0;
+    Jac[0] = rho;
 
     // Compute the unit strain
     TacsScalar Kc[3];
     stiff->evalTangentHeatFlux(elemIndex, pt, X, Kc, Ut[0]);
 
     Jac[1] = Kc[0];
-    Jac[2] = Kc[0];
+    Jac[2] = Kc[1];
+    Jac[3] = Kc[1];
+    Jac[4] = Kc[2];
   }
 }
 

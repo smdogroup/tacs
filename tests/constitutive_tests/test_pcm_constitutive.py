@@ -15,7 +15,7 @@ class ConstitutiveTest(unittest.TestCase):
 
         # Basically, only check relative tolerance
         self.atol = 1e99
-        self.print_level = 0
+        self.print_level = 2
 
         # Set element index
         self.elem_index = 0
