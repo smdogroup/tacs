@@ -79,7 +79,7 @@ with open(os.path.join(tacs_root, 'README.md'), encoding='utf-8') as f:
     long_description = f.read()
 
 optional_dependencies = {
-    'testing': ['testflo'],
+    'testing': ['testflo>=1.4.7'],
     'docs': ['sphinx', 'breathe', 'sphinxcontrib-programoutput'],
     'mphys': ['mphys>=0.4.0', 'openmdao'],
 }
