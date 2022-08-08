@@ -84,9 +84,9 @@ with open(os.path.join(tacs_root, 'README.md'), encoding='utf-8') as f:
     long_description = f.read()
 
 optional_dependencies = {
-    'testing': ['testflo'],
+    'testing': ['testflo>=1.4.7'],
     'docs': ['sphinx', 'breathe', 'sphinxcontrib-programoutput'],
-    'mphys': ['mphys @ git+https://github.com/OpenMDAO/mphys.git', 'openmdao'],
+    'mphys': ['mphys>=0.4.0', 'openmdao'],
 }
 
 # Add an optional dependency that concatenates all others
@@ -102,14 +102,10 @@ setup(name='tacs',
       author='Graeme J. Kennedy',
       author_email='graeme.kennedy@ae.gatech.edu',
       install_requires=[
-          # Make sure the user's numpy version are at least more current than the build versions
-          f'numpy>={numpy.__version__}',
-          'mpi4py>=3.0.2',
+          'numpy',
+          'mpi4py>=3.1.0',
           'scipy>=1.2.1',
-          'pynastran>=1.3.3',
-          # This package isn't actually a requirement of tacs, but of pynastran
-          # Right now 2.0.0 breaks pynastran and the pip package hasn't been updated to fix this
-          'nptyping<2.0.0',
+          'pynastran>=1.3.3'
       ],
       extras_require=optional_dependencies,
       packages=find_packages(include=['tacs*']),

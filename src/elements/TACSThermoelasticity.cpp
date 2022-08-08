@@ -613,6 +613,25 @@ int TACSLinearThermoelasticity2D::evalPointQuantity( int elemIndex,
 
     return 2;
   }
+  else if (quantityType == TACS_ELEMENT_DENSITY_MOMENT){
+    if (quantity){
+      TacsScalar density = stiff->evalDensity(elemIndex, pt, X);
+      quantity[0] = density * X[0];
+      quantity[1] = density * X[1];
+    }
+
+    return 2;
+  }
+  else if (quantityType == TACS_ELEMENT_MOMENT_OF_INERTIA){
+    if (quantity){
+      TacsScalar density = stiff->evalDensity(elemIndex, pt, X);
+      quantity[0] = density * X[1] * X[1]; // Ixx
+      quantity[1] = - density * X[1] * X[0]; // Ixy
+      quantity[2] = density * X[0] * X[0]; // Iyy
+    }
+
+    return 3;
+  }
 
   return 0;
 }
@@ -714,6 +733,19 @@ void TACSLinearThermoelasticity2D::addPointQuantityDVSens( int elemIndex,
     // Add the contributions to the derivative from the strain
     stiff->addStressDVSens(elemIndex, scale*dfdq[0], pt, X, e,
                            e, dvLen, dfdx);
+  }
+  else if (quantityType == TACS_ELEMENT_DENSITY_MOMENT){
+    TacsScalar dfdmass = 0.0;
+    dfdmass += scale * dfdq[0] * X[0];
+    dfdmass += scale * dfdq[1] * X[1];
+    stiff->addDensityDVSens(elemIndex, dfdmass, pt, X, dvLen, dfdx);
+  }
+  else if (quantityType == TACS_ELEMENT_MOMENT_OF_INERTIA){
+    TacsScalar dfdmass = 0.0;
+    dfdmass += scale * dfdq[0] * X[1] * X[1];
+    dfdmass += -scale * dfdq[1] * X[1] * X[0];
+    dfdmass += scale * dfdq[2] * X[0] * X[0];
+    stiff->addDensityDVSens(elemIndex, dfdmass, pt, X, dvLen, dfdx);
   }
 }
 
@@ -853,6 +885,16 @@ void TACSLinearThermoelasticity2D::evalPointQuantitySens( int elemIndex,
   else if (quantityType == TACS_ELEMENT_DISPLACEMENT){
     dfdUt[0] = dfdq[0];
     dfdUt[3] = dfdq[1];
+  }
+  else if (quantityType == TACS_ELEMENT_DENSITY_MOMENT){
+    TacsScalar density = stiff->evalDensity(elemIndex, pt, X);
+    dfdX[0] = density * dfdq[0];
+    dfdX[1] = density * dfdq[1];
+  }
+  else if (quantityType == TACS_ELEMENT_MOMENT_OF_INERTIA){
+    TacsScalar density = stiff->evalDensity(elemIndex, pt, X);
+    dfdX[0] = density * (2.0 * dfdq[2] * X[0] - dfdq[1] * X[1]);
+    dfdX[1] = density * (2.0 * dfdq[0] * X[1] - dfdq[1] * X[0]);
   }
 }
 
@@ -1743,6 +1785,29 @@ int TACSLinearThermoelasticity3D::evalPointQuantity( int elemIndex,
 
     return 3;
   }
+  else if (quantityType == TACS_ELEMENT_DENSITY_MOMENT){
+    if (quantity){
+      TacsScalar density = stiff->evalDensity(elemIndex, pt, X);
+      quantity[0] = density * X[0];
+      quantity[1] = density * X[1];
+      quantity[2] = density * X[2];
+    }
+
+    return 3;
+  }
+  else if (quantityType == TACS_ELEMENT_MOMENT_OF_INERTIA){
+    if (quantity){
+      TacsScalar density = stiff->evalDensity(elemIndex, pt, X);
+      quantity[0] = density * (X[1] * X[1] + X[2] * X[2]); // Ixx
+      quantity[1] = - density * X[1] * X[0]; // Ixy
+      quantity[2] = - density * X[2] * X[0]; // Ixz
+      quantity[3] = density * (X[0] * X[0] + X[2] * X[2]); // Iyy
+      quantity[4] = - density * X[1] * X[2]; // Iyz
+      quantity[5] = density * (X[1] * X[1] + X[0] * X[0]); // Izz
+    }
+
+    return 6;
+  }
 
   return 0;
 }
@@ -1873,6 +1938,23 @@ void TACSLinearThermoelasticity3D::addPointQuantityDVSens( int elemIndex,
 
     stiff->addStressDVSens(elemIndex, scale*dfdq[0], pt, X, e,
                            e, dvLen, dfdx);
+  }
+  else if (quantityType == TACS_ELEMENT_DENSITY_MOMENT){
+    TacsScalar dfdmass = 0.0;
+    dfdmass += scale * dfdq[0] * X[0];
+    dfdmass += scale * dfdq[1] * X[1];
+    dfdmass += scale * dfdq[2] * X[2];
+    stiff->addDensityDVSens(elemIndex, dfdmass, pt, X, dvLen, dfdx);
+  }
+  else if (quantityType == TACS_ELEMENT_MOMENT_OF_INERTIA){
+    TacsScalar dfdmass = 0.0;
+    dfdmass += scale * dfdq[0] * (X[1] * X[1] + X[2] * X[2]);
+    dfdmass += -scale * dfdq[1] * X[1] * X[0];
+    dfdmass += -scale * dfdq[2] * X[2] * X[0];
+    dfdmass += scale * dfdq[3] * (X[0] * X[0] + X[2] * X[2]);
+    dfdmass += -scale * dfdq[4] * X[1] * X[2];
+    dfdmass += scale * dfdq[5] * (X[1] * X[1] + X[0] * X[0]);
+    stiff->addDensityDVSens(elemIndex, dfdmass, pt, X, dvLen, dfdx);
   }
 }
 
@@ -2061,6 +2143,18 @@ void TACSLinearThermoelasticity3D::evalPointQuantitySens( int elemIndex,
     dfdUt[0] = dfdq[0];
     dfdUt[3] = dfdq[1];
     dfdUt[6] = dfdq[2];
+  }
+  else if (quantityType == TACS_ELEMENT_DENSITY_MOMENT){
+    TacsScalar density = stiff->evalDensity(elemIndex, pt, X);
+    dfdX[0] = density * dfdq[0];
+    dfdX[1] = density * dfdq[1];
+    dfdX[2] = density * dfdq[2];
+  }
+  else if (quantityType == TACS_ELEMENT_MOMENT_OF_INERTIA){
+    TacsScalar density = stiff->evalDensity(elemIndex, pt, X);
+    dfdX[0] = density * (2.0 * X[0] * (dfdq[3] + dfdq[5]) - dfdq[1] * X[1] - dfdq[2] * X[2]);
+    dfdX[1] = density * (2.0 * X[1] * (dfdq[0] + dfdq[5]) - dfdq[1] * X[0] - dfdq[4] * X[2]);
+    dfdX[2] = density * (2.0 * X[2] * (dfdq[0] + dfdq[3]) - dfdq[2] * X[0] - dfdq[4] * X[1]);
   }
 }
 

@@ -40,14 +40,12 @@ jobs:
           - NAME: Real
             OPTIONAL: 'default'
             INTERFACE: 'interface'
-            EXAMPLES: 'default'
             PUBLISH_DOCS: true
 
           # complex versions
           - NAME: Complex
             OPTIONAL: 'complex'
             INTERFACE: 'complex_interface'
-            EXAMPLES: 'complex'
             PUBLISH_DOCS: false
 
     name: TACS ${{ matrix.NAME }} Build/Test/Docs
@@ -89,7 +87,17 @@ jobs:
           cd $TACS_DIR;
           make ${{ matrix.INTERFACE }};
           cd $TACS_DIR/examples;
-          make ${{ matrix.EXAMPLES }} TACS_DIR=$TACS_DIR METIS_INCLUDE=-I${CONDA_PREFIX}/include/ METIS_LIB="-L${CONDA_PREFIX}/lib/ -lmetis";
+          make ${{ matrix.OPTIONAL }} TACS_DIR=$TACS_DIR METIS_INCLUDE=-I${CONDA_PREFIX}/include/ METIS_LIB="-L${CONDA_PREFIX}/lib/ -lmetis";
+      - name: Install f5totec/f5tovtk
+        run: |
+          # Compile f5totec/f5tovtk
+          conda install -c timryanb tecio -q -y;
+          cd $TACS_DIR/extern/f5totec;
+          make TACS_DIR=$TACS_DIR TECIO_INCLUDE=-I${CONDA_PREFIX}/include/ TECIO_LIB=${CONDA_PREFIX}/lib/libtecio.a\
+            METIS_INCLUDE=-I${CONDA_PREFIX}/include/ METIS_LIB="-L${CONDA_PREFIX}/lib/ -lmetis";
+          cd ..;
+          cd f5tovtk;
+          make TACS_DIR=$TACS_DIR METIS_INCLUDE=-I${CONDA_PREFIX}/include/ METIS_LIB="-L${CONDA_PREFIX}/lib/ -lmetis";
       - name: Install optional dependencies
         run: |
           # Install petsc for openmdao tests

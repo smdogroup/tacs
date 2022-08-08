@@ -18,7 +18,7 @@ MAKE = make -j 8
 AR_FLAGS = rcs
 
 # Flags for debugging and regular compilation versions
-EXTRA_DEBUG_CC_FLAGS = -fPIC -g 
+EXTRA_DEBUG_CC_FLAGS = -fPIC -g
 EXTRA_CC_FLAGS = -fPIC -O3
 
 # Use this if you have problems with mpich
@@ -36,7 +36,7 @@ SO_LINK_FLAGS=-fPIC -shared
 # SO_EXT=so
 # SO_LINK_FLAGS=-fPIC -dynamiclib
 
-# This uses the default installation of LAPACK. 
+# This uses the default installation of LAPACK.
 # Use an optimized version of LAPACK if available.
 # You may also have to include -lblas as well.
 
@@ -55,10 +55,12 @@ METIS_LIB = ${TACS_DIR}/extern/metis/lib/libmetis.a
 
 # AMD is a set of routines for ordering matrices. It is not required by default.
 
-# AMD_INCLUDE = -I${TACS_DIR}/extern/AMD/Include -I${TACS_DIR}/extern/UFconfig
-# AMD_LIBS = ${TACS_DIR}/extern/AMD/Lib/libamd.a ${TACS_DIR}/extern/UFconfig/libufconfig.a
+# AMD_DIR=${TACS_DIR}/extern/AMD
+# UFCONFIG_DIR=${TACS_DIR}/extern/UFconfig
+# AMD_INCLUDE = -I${AMD_DIR}/Include -I${UFCONFIG_DIR}
+# AMD_LIBS = ${AMD_DIR}/Lib/libamd.a ${UFCONFIG_DIR}/libufconfig.a
 
-# tecio is a library for creating tecplot output files. It is only required for f5totec.
+# TECIO is a library for reading and writing tecplot data files, only required for building f5totec, can use either teciosrc or teciompisrc
 
 # TECIO_INCLUDE = -I${TACS_DIR}/extern/tecio/teciosrc
-# TECIO_LIBS = ${TACS_DIR}/extern/tecio/teciosrc/libtecio.a
+# TECIO_LIB = ${TACS_DIR}/extern/tecio/teciosrc/libtecio.a

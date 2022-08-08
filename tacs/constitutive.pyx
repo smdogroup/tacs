@@ -682,15 +682,22 @@ cdef class LamParamShellConstitutive(ShellConstitutive):
 
 cdef class BasicBeamConstitutive(BeamConstitutive):
     """
-    Timoshenko theory based constitutive object for an uncoupled beam.
+    Timoshenko theory based constitutive object for an general beam.
+
+     .. note::
+        TACS uses a negative sign convention in the product of inertia definition, for example:
+            Iyz = -int[y * z * dA]
+
+        The moments of area are always positive, as usual:
+            Iyy = int[(z^2 * dA]
 
     Args:
         props (MaterialProperties): The material property.
         A (float or complex): Beam cross-sectional area (keyword argument). Defaults to 0.0.
-        J (float or complex): Beam polar moment of inertia about x-axis (keyword argument). Defaults to 0.0.
-        Iy (float or complex): Beam area moment of inertia about y-axis (keyword argument). Defaults to 0.0.
-        Iz (float or complex): Beam area moment of inertia about z-axis (keyword argument). Defaults to 0.0.
-        Iyz (float or complex): Beam area product of inertia in yz-plane (keyword argument). Defaults to 0.0.
+        J (float or complex): Beam polar moment of area about x-axis (keyword argument). Defaults to 0.0.
+        Iy (float or complex): Beam area moment of area about y-axis (keyword argument). Defaults to 0.0.
+        Iz (float or complex): Beam area moment of area about z-axis (keyword argument). Defaults to 0.0.
+        Iyz (float or complex): Beam product of area in yz-plane (keyword argument). Defaults to 0.0.
         ky (float or complex): Shear correction factor in y-direction (keyword argument). Defaults to 5/6.
         kz (float or complex): Shear correction factor in z-direction (keyword argument). Defaults to 5/6.
     """
@@ -876,6 +883,13 @@ cdef class PointMassConstitutive(GeneralMassConstitutive):
     """
     This is the base class for the traditional point mass constitutive objects with no translation-rotation coupling.
     Assumes 6 dofs.
+
+     .. note::
+        TACS uses a negative sign convention in the product of inertia definition, for example:
+            I12 = -int[x1 * x2 * dm]
+
+        The moments of inertia are always positive, as usual:
+            I11 = int[(x2^2 + x3^2) * dm]
 
     Args:
         m (float or complex, optional): Mass value (keyword argument). Defaults to 0.0.

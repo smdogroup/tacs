@@ -45,7 +45,10 @@ class TacsMeshGroup(om.Group):
         mask = np.zeros([nnodes, 3], dtype=bool)
         mask[:, :] = True
         mask[mult_ids, :] = False
-        masker = MaskedConverter(input=mask_input, output=mask_output, mask=mask.flatten(), distributed=True)
+        x_orig = fea_assembler.getOrigNodes()
+        x_masked = x_orig[mask.flatten()]
+        masker = MaskedConverter(input=mask_input, output=mask_output, mask=mask.flatten(),
+                                 init_output=x_masked, distributed=True)
         self.add_subsystem('masker', masker,
                            promotes_outputs=[('x_struct0_masked', 'x_struct0')])
 
@@ -297,6 +300,8 @@ class TacsSolver(om.ImplicitComponent):
     def set_sp(self, sp):
         self.sp = sp
 
+# All TACS function types that should be included under mass funcs group
+MASS_FUNCS_CLASSES = [functions.StructuralMass, functions.CenterOfMass, functions.MomentOfInertia]
 
 class TacsFunctions(om.ExplicitComponent):
     """
@@ -344,7 +349,7 @@ class TacsFunctions(om.ExplicitComponent):
         for func_name in self.sp.functionList:
             func_handle = self.sp.functionList[func_name]
             # Skip any mass functions
-            if isinstance(func_handle, functions.StructuralMass) == False:
+            if type(func_handle) not in MASS_FUNCS_CLASSES:
                 self.add_output(func_name, distributed=False, shape=1, tags=["mphys_result"])
 
     def _update_internal(self, inputs):
@@ -429,7 +434,7 @@ class MassFunctions(om.ExplicitComponent):
         for func_name in self.sp.functionList:
             func_handle = self.sp.functionList[func_name]
             # Only include mass functions
-            if isinstance(func_handle, functions.StructuralMass):
+            if type(func_handle) in MASS_FUNCS_CLASSES:
                 self.add_output(func_name, distributed=False, shape=1, tags=["mphys_result"])
 
     def _update_internal(self, inputs):
@@ -611,7 +616,7 @@ class TacsFuncsGroup(om.Group):
         # Check if there are any mass functions added by user
         mass_funcs = False
         for func_handle in sp.functionList.values():
-            if isinstance(func_handle, functions.StructuralMass):
+            if type(func_handle) in MASS_FUNCS_CLASSES:
                 mass_funcs = True
 
         # Mass functions are handled in a seperate component to prevent useless adjoint solves
@@ -712,7 +717,7 @@ class TacsBuilder(Builder):
             offsets = np.zeros(self.comm.size, dtype=int)
             offsets[1:] = np.cumsum(dv_sizes)[:-1]
             # Gather the portions of the design variable array distributed across each processor
-            tot_ndvs = self.fea_assembler.getTotalNumDesignVars()
+            tot_ndvs = sum(dv_sizes)
             global_dvs = np.zeros(tot_ndvs, dtype=local_dvs.dtype)
             self.comm.Allgatherv(local_dvs, [global_dvs, dv_sizes, offsets, MPI.DOUBLE])
             # return the global dv array

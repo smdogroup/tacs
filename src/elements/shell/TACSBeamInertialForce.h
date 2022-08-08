@@ -21,6 +21,12 @@ class TACSBeamInertialForce : public TACSElement {
     memcpy(inertiaVec, _inertiaVec, 3*sizeof(TacsScalar));
   }
 
+  ~TACSBeamInertialForce(){
+    if (con){
+      con->decref();
+    }
+  }
+
   const char* getObjectName(){
     return "TACSBeamInertialForce";
   }

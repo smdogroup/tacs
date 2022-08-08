@@ -12,12 +12,13 @@
 #include "TACSShellTraction.h"
 #include "TACSShellPressure.h"
 #include "TACSShellInertialForce.h"
+#include "TACSShellCentrifugalForce.h"
 #include "TACSElementVerification.h"
 
 template <class quadrature, class basis, class director, class model>
 class TACSShellElement : public TACSElement {
  public:
-  // Offset within the solution vector to the roational
+  // Offset within the solution vector to the rotational
   // parametrization defined via the director class. Here the offset
   // is 3 corresponding to the (u, v, w) displacements of the
   // mid-surface of the shell.
@@ -113,7 +114,7 @@ class TACSShellElement : public TACSElement {
     return con->getDesignVarRange(elemIndex, dvLen, lb, ub);
   }
 
-  TACSElement* createElementTraction( int faceIndex, TacsScalar t[] ){
+  TACSElement* createElementTraction( int faceIndex, const TacsScalar t[] ){
     return new TACSShellTraction<vars_per_node, quadrature, basis>(t);
   }
 
@@ -121,8 +122,12 @@ class TACSShellElement : public TACSElement {
     return new TACSShellPressure<vars_per_node, quadrature, basis>(p);
   }
 
-  TACSElement* createElementInertialForce( TacsScalar inertiaVec[] ){
+  TACSElement* createElementInertialForce( const TacsScalar inertiaVec[] ){
     return new TACSShellInertialForce<vars_per_node, quadrature, basis>(con, inertiaVec);
+  }
+
+  TACSElement* createElementCentrifugalForce( const TacsScalar omega[], const TacsScalar rotCenter[] ){
+    return new TACSShellCentrifugalForce<vars_per_node, quadrature, basis>(con, omega, rotCenter);
   }
 
   void computeEnergies( int elemIndex,
@@ -930,6 +935,61 @@ int TACSShellElement<quadrature, basis, director, model>::
 
     return 3;
   }
+  else if (quantityType == TACS_ELEMENT_DENSITY_MOMENT){
+    if (quantity){
+      TacsScalar Xxi[6], n0[3], X[3];
+      basis::template interpFields<3, 3>(pt, Xpts, X);
+      basis::template interpFieldsGrad<3, 3>(pt, Xpts, Xxi);
+      basis::template interpFields<3, 3>(pt, fn, n0);
+
+      TacsScalar Xd[9];
+      TacsShellAssembleFrame(Xxi, n0, Xd);
+      *detXd = det3x3(Xd);
+      TacsScalar density = con->evalDensity(elemIndex, pt, X);
+
+      quantity[0] = density * X[0];
+      quantity[1] = density * X[1];
+      quantity[2] = density * X[2];
+    }
+
+    return 3;
+  }
+  else if (quantityType == TACS_ELEMENT_MOMENT_OF_INERTIA){
+    if (quantity){
+      // Compute X, X,xi and the interpolated normal n0
+      TacsScalar X[3], Xxi[6], n0[3], T[9];
+      basis::template interpFields<3, 3>(pt, Xpts, X);
+      basis::template interpFieldsGrad<3, 3>(pt, Xpts, Xxi);
+      basis::template interpFields<3, 3>(pt, fn, n0);
+
+      // Compute the transformation at the quadrature point
+      transform->computeTransform(Xxi, n0, T);
+
+      TacsScalar Xd[9];
+      TacsShellAssembleFrame(Xxi, n0, Xd);
+      *detXd = det3x3(Xd);
+      TacsScalar density = con->evalDensity(elemIndex, pt, X);
+
+      TacsScalar I0[6] = {0.0};
+
+      // Evaluate the self MOI
+      TacsScalar moments[3];
+      con->evalMassMoments(elemIndex, pt, X, moments);
+      I0[0] = I0[3] = moments[2];
+      // Compute T*I0*T^{T}
+      mat3x3SymmTransform(T, I0, quantity);
+
+      // Use parallel axis theorem to move MOI to origin
+      quantity[0] += density * (X[1] * X[1] + X[2] * X[2]);
+      quantity[1] += -density * X[0] * X[1];
+      quantity[2] += -density * X[0] * X[2];
+      quantity[3] += density * (X[0] * X[0] + X[2] * X[2]);
+      quantity[4] += -density * X[2] * X[1];
+      quantity[5] += density * (X[0] * X[0] + X[1] * X[1]);
+    }
+
+    return 6;
+  }
 
   return 0;
 }
@@ -1006,6 +1066,56 @@ void TACSShellElement<quadrature, basis, director, model>::
     basis::template interpFields<3, 3>(pt, Xpts, X);
 
     con->addDensityDVSens(elemIndex, scale*dfdq[0], pt, X, dvLen, dfdx);
+  }
+  else if (quantityType == TACS_ELEMENT_DENSITY_MOMENT){
+    TacsScalar X[3];
+    basis::template interpFields<3, 3>(pt, Xpts, X);
+
+    TacsScalar dfdm = 0.0;
+
+    for (int i = 0; i < 3; i++){
+      dfdm += scale * dfdq[i] * X[i];
+    }
+
+    con->addDensityDVSens(elemIndex, dfdm, pt, X, dvLen, dfdx);
+  }
+  else if (quantityType == TACS_ELEMENT_MOMENT_OF_INERTIA){
+    // Compute the node normal directions
+    TacsScalar fn[3*num_nodes];
+    TacsShellComputeNodeNormals<basis>(Xpts, fn);
+
+    // Compute X, X,xi and the interpolated normal n0
+    TacsScalar X[3], Xxi[6], n0[3], T[9];
+    basis::template interpFields<3, 3>(pt, Xpts, X);
+    basis::template interpFieldsGrad<3, 3>(pt, Xpts, Xxi);
+    basis::template interpFields<3, 3>(pt, fn, n0);
+
+    // Compute the transformation at the quadrature point
+    transform->computeTransform(Xxi, n0, T);
+
+    TacsScalar Xd[9];
+    TacsShellAssembleFrame(Xxi, n0, Xd);
+
+    TacsScalar dfdI0[6] = {0.0};
+
+    // Evaluate the self MOI
+    TacsScalar dfdmoments[3] = {0.0};
+    mat3x3SymmTransformSens(T, dfdq, dfdI0);
+    dfdmoments[2] = scale * (dfdI0[0] + dfdI0[3]);
+
+    con->addMassMomentsDVSens(elemIndex, pt, X, dfdmoments, dvLen, dfdx);
+
+    TacsScalar dfdm = 0.0;
+
+    // Use parallel axis theorem to move MOI to origin
+    dfdm += scale * dfdq[0] * (X[1] * X[1] + X[2] * X[2]);
+    dfdm -= scale * dfdq[1] * X[0] * X[1];
+    dfdm -= scale * dfdq[2] * X[0] * X[2];
+    dfdm += scale * dfdq[3] * (X[0] * X[0] + X[2] * X[2]);
+    dfdm -= scale * dfdq[4] * X[2] * X[1];
+    dfdm += scale * dfdq[5] * (X[0] * X[0] + X[1] * X[1]);
+
+    con->addDensityDVSens(elemIndex, dfdm, pt, X, dvLen, dfdx);
   }
 }
 

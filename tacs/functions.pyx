@@ -56,6 +56,102 @@ cdef class StructuralMass(Function):
         self.ptr.incref()
         return
 
+cdef class CenterOfMass(Function):
+    """
+    Evaluates the center of mass of the elements along specified axis.
+
+    .. warning:: This function is only appropriate for static analyses and
+        may give inconsistent results for transient problems.
+
+    Args:
+        assembler (Assembler): TACS Assembler object that will evaluating this function.
+        direction (array-like[double], optional):
+          3d vector specifying which direction to project cg position onto (keyword argument).
+          Defaults to [0.0, 0.0, 0.0].
+    """
+    def __cinit__(self, Assembler assembler, **kwargs):
+        """
+        Wrap the function CenterOfMass
+        """
+        cdef double d[3]
+        d[0] = d[1] = d[2] = 0.0
+
+        if 'direction' in kwargs:
+            dir = kwargs['direction']
+            # Check if dir is a list or numpy array
+            if isinstance(dir, list) or isinstance(dir, np.ndarray):
+                dim = min(3, len(dir))
+                for i in range(dim):
+                    d[i] = dir[i]
+
+        self.ptr = new TACSCenterOfMass(assembler.ptr, d)
+        self.ptr.incref()
+        return
+
+cdef class MomentOfInertia(Function):
+    """
+    Evaluates the moment of inertia of the elements about origin or center of mass projected onto two input vectors:
+
+        I_out = vec1^T * I_tensor * vec2
+
+    Where I_tensor is the moment of inertia tensor in the global axis given below:
+
+        |   Ixx  Ixy  Ixz
+        |   Iyx  Iyy  Iyz
+        |   Izx  Izy  Izz
+
+    .. note::
+        TACS uses a negative sign convention in the product of inertia definition, for example:
+            Ixy = -int[x * y * dm]
+
+        The moments of inertia are always positive, as usual:
+            Ixx = int[(y^2 + z^2) * dm]
+
+    .. warning:: This function is only appropriate for static analyses and
+        may give inconsistent results for transient problems.
+
+    Args:
+        assembler (Assembler): TACS Assembler object that will evaluating this function.
+        direction1 (array-like[double], optional):
+          3d vector specifying first direction to project moment of inertia tensor onto (keyword argument).
+          Defaults to [0.0, 0.0, 0.0].
+        direction2 (array-like[double], optional):
+          3d vector specifying second direction to project moment of inertia tensor onto (keyword argument).
+          Defaults to [0.0, 0.0, 0.0].
+        aboutCM (bool): Flag specifying whether moment of inertia should be taken
+          about origin (False) or center of mass (True) (keyword argument). Defaults to False.
+    """
+    def __cinit__(self, Assembler assembler, **kwargs):
+        """
+        Wrap the function MomentOfInertia
+        """
+        cdef int cmFlag;
+        cdef double d1[3], d2[3]
+        d1[0] = d1[1] = d1[2] = 0.0
+        d2[0] = d2[1] = d2[2] = 0.0
+
+        if 'direction1' in kwargs:
+            dir = kwargs['direction1']
+            # Check if dir is a list or numpy array
+            if isinstance(dir, list) or isinstance(dir, np.ndarray):
+                dim = min(3, len(dir))
+                for i in range(dim):
+                    d1[i] = dir[i]
+
+        if 'direction2' in kwargs:
+            dir = kwargs['direction2']
+            # Check if dir is a list or numpy array
+            if isinstance(dir, list) or isinstance(dir, np.ndarray):
+                dim = min(3, len(dir))
+                for i in range(dim):
+                    d2[i] = dir[i]
+
+        cmFlag = kwargs.get('aboutCM', False);
+
+        self.ptr = new TACSMomentOfInertia(assembler.ptr, d1, d2, cmFlag)
+        self.ptr.incref()
+        return
+
 cdef class Compliance(Function):
     """
     Evaluate the compliance of the structure.
