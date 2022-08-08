@@ -64,3 +64,5 @@ METIS_LIB = ${TACS_DIR}/extern/metis/lib/libmetis.a
 
 # TECIO_INCLUDE = -I${TACS_DIR}/extern/tecio/teciosrc
 # TECIO_LIB = ${TACS_DIR}/extern/tecio/teciosrc/libtecio.a
+# This may be need to be added for OpenMPI implementations
+# TECIO_LIB = ${TECIO_LIB} -lopen-pal
