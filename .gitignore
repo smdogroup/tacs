@@ -2,6 +2,8 @@
 syntax: glob
 
 extern/
+!extern/Makefile
+!extern/f5to*/
 *~
 *.in
 *.pyc
@@ -37,6 +39,8 @@ extern/
 *.snm
 *.toc
 tacs/*.cpp
+tacs.egg-info
+reports/
 *.pxi
 *.vtk
 *.cfg

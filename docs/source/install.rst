@@ -90,11 +90,19 @@ If you already have these libraries installed, simply adjust the variables in ``
 Go to the directory ``tacs/extern``. Download ``metis-5.1.0`` from ``http://glaros.dtc.umn.edu/gkhome/metis/metis/download`` and place the file ``metis-5.1.0.tar.gz`` there.
 Note that METIS needs CMake to build and install.
 
+Optionally, you can also place ``UFconfig-3.6.1.tar.gz`` and ``AMD-2.2.0.tar.gz`` in the same directory if you want to use the approximate minimum degree ordering routines from AMD/UFConfig.
+
+Then, to build the dependencies, simply run ``make``. If the build process ends with something like:
+
 ::
 
-    cd metis-5.1.0
-    make config prefix=$PWD CFLAGS="-fPIC"
-    make
+    make[2]: *** No rule to make target 'w'.  Stop.
+    make[2]: Leaving directory 'SomeDirectory/tacs/extern/metis-5.1.0/build/Linux-x86_64'
+    make[1]: *** [Makefile:64: install] Error 2
+    make[1]: Leaving directory 'SomeDirectory/tacs/extern/metis-5.1.0'
+    make: *** [Makefile:11: default] Error 1
+
+Then try manually running ``make install`` within the ``metis-5.1.0`` directory.
 
 Make the C++ TACS library
 -------------------------
@@ -103,17 +111,24 @@ Return to the root TACS directory.
 Ensure that all appropriate variables are set in ``Makefile.in``.
 Make the TACS libraries by running ``make`` from the root directory.
 
-f5tovtk
--------
+Install postprocessing tools
+----------------------------
 
-``f5tovtk`` is an executable that converts ``.f5`` files to VTK format compatible with Paraview.
-After compiling the C++ libraries, go to the subdirectory ``tacs/extern/f5tovtk`` and make the executable there.
-It is useful to put this utility on your path if possible.
+``f5tovtk`` and ``f5totec`` are executables that convert ``.f5`` files to Paraview ``.vtk`` and ``.plt`` formats compatible with Paraview and Tecplot respectively.
+After compiling the C++ TACS library, go to the subdirectory ``tacs/extern/f5tovtk`` and run ``make`` there.
+
+``f5totec`` requires Tecplot's ``tecio`` library, which can be downloaded `here <https://my.tecplot.com/portal/product-releases/tecio-library/>`_.
+After placing ``tecio.tgz`` in the ``tacs/extern`` directory, run ``make tecio`` there.
+Then run ``make`` in the ``tacs/extern/f5totec`` directory to build ``f5totec``.
+
+
+It is useful to put these utilities on your path if possible.
 I add the directory ``$HOME/bin`` to my ``PATH`` and then from the directory ``$HOME/bin`` execute
 
 ::
 
     ln -s $HOME/git/tacs/extern/f5tovtk
+    ln -s $HOME/git/tacs/extern/f5totec
 
 Installing the python interface
 -------------------------------
