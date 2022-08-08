@@ -45,7 +45,7 @@ mv ./f5tovtk ${PREFIX}/bin;
 
 cd ${TACS_DIR}/extern/f5totec;
 make default TACS_DIR=${TACS_DIR} \
-             TECIO_INCLUDE=${PREFIX}/include TECIO_LIBS=${PREFIX}/lib/libtecio.a \
+             TECIO_INCLUDE=${PREFIX}/include TECIO_LIB=${PREFIX}/lib/libtecio.a \
              LAPACK_LIBS="${LAPACK_LIBS}" \
              METIS_INCLUDE=-I${PREFIX}/include/ METIS_LIB="-L${PREFIX}/lib/ -lmetis" \
              SO_LINK_FLAGS="${F5TOVTK_SLF}" SO_EXT=${SO_EXT};
