@@ -49,6 +49,13 @@ class TACSPCMHeatConduction2D : public TACSElementModel {
                          TacsScalar lb[], TacsScalar ub[] );
 
   /**
+    Get the output element type for visualization
+  */
+  ElementType getElementType(){
+   return TACS_PCM_ELEMENT;
+  }
+
+  /**
     Get underlying tacs constitutive object for this model
   */
   TACSConstitutive* getConstitutive(){

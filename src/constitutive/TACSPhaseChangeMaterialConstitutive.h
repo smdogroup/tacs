@@ -54,6 +54,9 @@ class TACSPhaseChangeMaterialConstitutive : public TACSConstitutive {
   TacsScalar evalTemperature( int elemIndex, const double pt[],
                               const TacsScalar X[], const TacsScalar U );
 
+  // Check if the element is undergoing phase change
+  int checkPhaseChange( const TacsScalar U );
+
   // Evaluate the material's phase
   int evalPhase( const TacsScalar U );
 

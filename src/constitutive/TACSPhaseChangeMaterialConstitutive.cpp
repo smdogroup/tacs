@@ -121,8 +121,8 @@ TacsScalar TACSPhaseChangeMaterialConstitutive::evalTemperature( int elemIndex,
     TacsScalar rhos = solid_properties->getDensity();
     TacsScalar cl = liquid_properties->getSpecificHeat();
     TacsScalar rhol = liquid_properties->getDensity();
-    TacsScalar Ut = rhos*cs*mt;
-    TacsScalar Um = rhos*(cs*mt + lh);
+    TacsScalar Ut = cs*mt;
+    TacsScalar Um = (cs*mt + lh);
 
     if (U < Ut){
       return U/cs;
@@ -135,12 +135,26 @@ TacsScalar TACSPhaseChangeMaterialConstitutive::evalTemperature( int elemIndex,
   return 0.0;
 }
 
+// Check if the element is undergoing phase change
+int TACSPhaseChangeMaterialConstitutive::checkPhaseChange( const TacsScalar U ){
+  if (solid_properties){
+    TacsScalar cs = solid_properties->getSpecificHeat();
+    TacsScalar Ut = cs*mt;
+    TacsScalar Um = (cs*mt + lh);
+    if ((U >= Ut) && (U <= Um)){
+      return 1;
+    }
+    return 0;
+  }
+  return 0;
+}
+
 // Evaluate the material's phase (0=solid, 1=liquid)
 int TACSPhaseChangeMaterialConstitutive::evalPhase( const TacsScalar U ){
   if (solid_properties){
     TacsScalar cs = solid_properties->getSpecificHeat();
     TacsScalar rhos = solid_properties->getDensity();
-    if (U <  rhos*(cs*mt + lh)){
+    if (U <  (cs*mt + lh)){
       return 0;
     }
     return 1;
@@ -199,8 +213,8 @@ void TACSPhaseChangeMaterialConstitutive::evalHeatFlux( int elemIndex,
     TacsScalar rhos = solid_properties->getDensity();
     TacsScalar cl = liquid_properties->getSpecificHeat();
     TacsScalar rhol = liquid_properties->getDensity();
-    TacsScalar Ut = rhos*cs*mt;
-    TacsScalar Um = rhos*(cs*mt + lh);
+    TacsScalar Ut = cs*mt;
+    TacsScalar Um = (cs*mt + lh);
     TacsScalar t_sc;
 
     TacsScalar Kc[3];
@@ -246,8 +260,8 @@ void TACSPhaseChangeMaterialConstitutive::evalTangentHeatFlux( int elemIndex,
     TacsScalar cl = liquid_properties->getSpecificHeat();
     TacsScalar rhos = solid_properties->getDensity();
     TacsScalar rhol = liquid_properties->getDensity();
-    TacsScalar Ut = rhos*cs*mt;
-    TacsScalar Um = rhos*(cs*mt + lh);
+    TacsScalar Ut = cs*mt;
+    TacsScalar Um = (cs*mt + lh);
     if (evalPhase(U)){
       liquid_properties->evalTangentHeatFlux2D(Kc);
       t_sc = rhos/rhol;
@@ -292,8 +306,8 @@ void TACSPhaseChangeMaterialConstitutive::addHeatFluxDVSens( int elemIndex,
     TacsScalar rhos = solid_properties->getDensity();
     TacsScalar cl = liquid_properties->getSpecificHeat();
     TacsScalar rhol = liquid_properties->getDensity();
-    TacsScalar Ut = rhos*cs*mt;
-    TacsScalar Um = rhos*(cs*mt + lh);
+    TacsScalar Ut = cs*mt;
+    TacsScalar Um = (cs*mt + lh);
     TacsScalar t_sc;
 
     TacsScalar Kc[3];
