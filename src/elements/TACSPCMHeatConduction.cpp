@@ -88,6 +88,7 @@ void TACSPCMHeatConduction2D::evalWeakIntegrand( int elemIndex,
                                                  TacsScalar DUx[] ){
   // Evaluate the density and specific heat
   TacsScalar rho = stiff->evalDensity(elemIndex, pt, X);
+  TacsScalar c = stiff->evalSpecificHeat(elemIndex, pt, X);
 
   DUt[0] = 0.0;
   DUt[1] = rho*Ut[1];
@@ -133,6 +134,7 @@ void TACSPCMHeatConduction2D::evalWeakMatrix( ElementMatrixType matType,
                                               TacsScalar Jac[] ){
   if (matType == TACS_JACOBIAN_MATRIX){
     TacsScalar rho = stiff->evalDensity(elemIndex, pt, X);
+    TacsScalar c = stiff->evalSpecificHeat(elemIndex, pt, X);
 
     DUt[0] = 0.0;
     DUt[1] = rho*Ut[1];
@@ -178,6 +180,8 @@ void TACSPCMHeatConduction2D::addWeakAdjProduct( int elemIndex,
                                                  const TacsScalar Psix[],
                                                  int dvLen,
                                                  TacsScalar *dfdx ){
+  TacsScalar c = stiff->evalSpecificHeat(elemIndex, pt, X);
+
   TacsScalar rho_coef = scale*(Ut[1]*Psi[0]);
   stiff->addDensityDVSens(elemIndex, rho_coef, pt, X, dvLen, dfdx);
 
@@ -205,6 +209,7 @@ void TACSPCMHeatConduction2D::evalWeakAdjXptSensProduct( int elemIndex,
   dfdXd[3] = dfdXd[4] = dfdXd[5] = 0.0;
 
   TacsScalar rho = stiff->evalDensity(elemIndex, pt, X);
+  TacsScalar c = stiff->evalSpecificHeat(elemIndex, pt, X);
 
   stiff->evalHeatFlux(elemIndex, pt, X, Ux, dfdPsix, Ut[0]);
   stiff->evalHeatFlux(elemIndex, pt, X, Psix, dfdUx, Ut[0]);
