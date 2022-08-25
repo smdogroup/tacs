@@ -30,7 +30,7 @@ class TACSPhaseChangeMaterialConstitutive : public TACSConstitutive {
 
   TACSPhaseChangeMaterialConstitutive( TACSMaterialProperties *solid_properties,
                                        TACSMaterialProperties *liquid_properties,
-                                       TacsScalar _lh, TacsScalar _mt,
+                                       TacsScalar _lh, TacsScalar _Tm,
                                        TacsScalar _t=1.0, int _tNum=-1,
                                        TacsScalar _tlb=0.0, TacsScalar _tub=1.0 );
   ~TACSPhaseChangeMaterialConstitutive();
@@ -50,24 +50,32 @@ class TACSPhaseChangeMaterialConstitutive : public TACSConstitutive {
   int getDesignVarRange( int elemIndex, int dvLen,
                          TacsScalar lb[], TacsScalar ub[] );
 
-  // Evaluate the temperature at a given element
-  TacsScalar evalTemperature( int elemIndex, const double pt[],
-                              const TacsScalar X[], const TacsScalar U );
-
-  // Check if the element is undergoing phase change
-  int checkPhaseChange( const TacsScalar U );
+  // Compute the phase change coefficient
+  TacsScalar evalTransitionCoef( const TacsScalar T );
 
   // Evaluate the material's phase
-  int evalPhase( const TacsScalar U );
+  int evalPhase( const TacsScalar T );
 
   // Evaluate the material density
+  TacsScalar evalDensity( int elemIndex, const double pt[],
+                          const TacsScalar X[], const TacsScalar T );
+
   TacsScalar evalDensity( int elemIndex, const double pt[],
                           const TacsScalar X[] );
 
   // Add the derivative of the density
   void addDensityDVSens( int elemIndex, TacsScalar scale,
                          const double pt[], const TacsScalar X[],
+                         int dvLen, TacsScalar dfdx[], const TacsScalar T );
+
+  void addDensityDVSens( int elemIndex, TacsScalar scale,
+                         const double pt[], const TacsScalar X[],
                          int dvLen, TacsScalar dfdx[] );
+
+  TacsScalar evalSpecificHeat( int elemIndex,
+                               const double pt[],
+                               const TacsScalar X[],
+                               const TacsScalar T );
 
   TacsScalar evalSpecificHeat( int elemIndex,
                                const double pt[],
@@ -87,18 +95,30 @@ class TACSPhaseChangeMaterialConstitutive : public TACSConstitutive {
   // Evaluate the heat flux, given the thermal gradient
   void evalHeatFlux( int elemIndex, const double pt[],
                      const TacsScalar X[], const TacsScalar grad[],
-                     TacsScalar flux[], const TacsScalar U );
+                     TacsScalar flux[], const TacsScalar T );
+
+  void evalHeatFlux( int elemIndex, const double pt[],
+                     const TacsScalar X[], const TacsScalar grad[],
+                     TacsScalar flux[] );
 
   // Evaluate the tangent of the heat flux
   void evalTangentHeatFlux( int elemIndex, const double pt[],
                             const TacsScalar X[], TacsScalar Kc[],
-                            const TacsScalar U );
+                            const TacsScalar T );
+
+  void evalTangentHeatFlux( int elemIndex, const double pt[],
+                            const TacsScalar X[], TacsScalar Kc[] );
 
   // Add the derivative of the heat flux
   void addHeatFluxDVSens( int elemIndex, TacsScalar scale,
                           const double pt[], const TacsScalar X[],
                           const TacsScalar grad[], const TacsScalar psi[],
-                          int dvLen, TacsScalar dfdx[], const TacsScalar U );
+                          int dvLen, TacsScalar dfdx[], const TacsScalar T );
+
+  void addHeatFluxDVSens( int elemIndex, TacsScalar scale,
+                          const double pt[], const TacsScalar X[],
+                          const TacsScalar grad[], const TacsScalar psi[],
+                          int dvLen, TacsScalar dfdx[] );
 
   // Extra info about the constitutive class
   const char *getObjectName();
@@ -110,7 +130,7 @@ class TACSPhaseChangeMaterialConstitutive : public TACSConstitutive {
 
  private:
   // Store information about the design variable
-  TacsScalar lh, mt, t, tlb, tub;
+  TacsScalar lh, Tm, t, tlb, tub, dT;
   int tNum;
 
   static const char *psName;

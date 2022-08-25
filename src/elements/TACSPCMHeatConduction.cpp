@@ -23,8 +23,8 @@ TACSPCMHeatConduction2D::~TACSPCMHeatConduction2D(){
   stiff->decref();
 }
 
-// 0; 1;   2;    3;   4;
-// U; U,t; Ut,t; U,x; U,y;
+// 0;   1;    2;   3;   4;
+// T; T,t; T,tt; T,x; T,y
 
 const int TACSPCMHeatConduction2D::linear_Jac_pairs[] =
   {1, 1,
@@ -47,7 +47,7 @@ int TACSPCMHeatConduction2D::getDesignVarsPerNode(){
   Retrieve the global design variable numbers associated with this element
 */
 int TACSPCMHeatConduction2D::getDesignVarNums( int elemIndex, int dvLen,
-                                               int dvNums[] ){
+                                            int dvNums[] ){
   return stiff->getDesignVarNums(elemIndex, dvLen, dvNums);
 }
 
@@ -55,7 +55,7 @@ int TACSPCMHeatConduction2D::getDesignVarNums( int elemIndex, int dvLen,
   Set the element design variables from the design vector
 */
 int TACSPCMHeatConduction2D::setDesignVars( int elemIndex, int dvLen,
-                                            const TacsScalar dvs[] ){
+                                         const TacsScalar dvs[] ){
   return stiff->setDesignVars(elemIndex, dvLen, dvs);
 }
 
@@ -63,7 +63,7 @@ int TACSPCMHeatConduction2D::setDesignVars( int elemIndex, int dvLen,
   Get the element design variables values
 */
 int TACSPCMHeatConduction2D::getDesignVars( int elemIndex, int dvLen,
-                                            TacsScalar dvs[] ){
+                                         TacsScalar dvs[] ){
   return stiff->getDesignVars(elemIndex, dvLen, dvs);
 }
 
@@ -71,27 +71,27 @@ int TACSPCMHeatConduction2D::getDesignVars( int elemIndex, int dvLen,
   Get the lower and upper bounds for the design variable values
 */
 int TACSPCMHeatConduction2D::getDesignVarRange( int elemIndex, int dvLen,
-                                                TacsScalar lb[],
-                                                TacsScalar ub[] ){
+                                             TacsScalar lb[],
+                                             TacsScalar ub[] ){
   return stiff->getDesignVarRange(elemIndex, dvLen, lb, ub);
 }
 
 void TACSPCMHeatConduction2D::evalWeakIntegrand( int elemIndex,
-                                                 const double time,
-                                                 int n,
-                                                 const double pt[],
-                                                 const TacsScalar X[],
-                                                 const TacsScalar Xd[],
-                                                 const TacsScalar Ut[],
-                                                 const TacsScalar Ux[],
-                                                 TacsScalar DUt[],
-                                                 TacsScalar DUx[] ){
+                                              const double time,
+                                              int n,
+                                              const double pt[],
+                                              const TacsScalar X[],
+                                              const TacsScalar Xd[],
+                                              const TacsScalar Ut[],
+                                              const TacsScalar Ux[],
+                                              TacsScalar DUt[],
+                                              TacsScalar DUx[] ){
   // Evaluate the density and specific heat
-  TacsScalar rho = stiff->evalDensity(elemIndex, pt, X);
-  TacsScalar c = stiff->evalSpecificHeat(elemIndex, pt, X);
+  TacsScalar rho = stiff->evalDensity(elemIndex, pt, X, Ut[0]);
+  TacsScalar c = stiff->evalSpecificHeat(elemIndex, pt, X, Ut[0]);
 
   DUt[0] = 0.0;
-  DUt[1] = rho*Ut[1];
+  DUt[1] = c*rho*Ut[1];
   DUt[2] = 0.0;
 
   // Compute the thermal flux from the thermal gradient
@@ -107,9 +107,9 @@ void TACSPCMHeatConduction2D::evalWeakIntegrand( int elemIndex,
 }
 
 void TACSPCMHeatConduction2D::getWeakMatrixNonzeros( ElementMatrixType matType,
-                                                     int elemIndex,
-                                                     int *Jac_nnz,
-                                                     const int *Jac_pairs[] ){
+                                                  int elemIndex,
+                                                  int *Jac_nnz,
+                                                  const int *Jac_pairs[] ){
   if (matType == TACS_JACOBIAN_MATRIX){
     *Jac_nnz = 5;
     *Jac_pairs = linear_Jac_pairs;
@@ -121,23 +121,24 @@ void TACSPCMHeatConduction2D::getWeakMatrixNonzeros( ElementMatrixType matType,
 }
 
 void TACSPCMHeatConduction2D::evalWeakMatrix( ElementMatrixType matType,
-                                              int elemIndex,
-                                              const double time,
-                                              int n,
-                                              const double pt[],
-                                              const TacsScalar X[],
-                                              const TacsScalar Xd[],
-                                              const TacsScalar Ut[],
-                                              const TacsScalar Ux[],
-                                              TacsScalar DUt[],
-                                              TacsScalar DUx[],
-                                              TacsScalar Jac[] ){
+                                           int elemIndex,
+                                           const double time,
+                                           int n,
+                                           const double pt[],
+                                           const TacsScalar X[],
+                                           const TacsScalar Xd[],
+                                           const TacsScalar Ut[],
+                                           const TacsScalar Ux[],
+                                           TacsScalar DUt[],
+                                           TacsScalar DUx[],
+                                           TacsScalar Jac[] ){
   if (matType == TACS_JACOBIAN_MATRIX){
-    TacsScalar rho = stiff->evalDensity(elemIndex, pt, X);
-    TacsScalar c = stiff->evalSpecificHeat(elemIndex, pt, X);
+    // Evaluate the density and specific heat
+    TacsScalar rho = stiff->evalDensity(elemIndex, pt, X, Ut[0]);
+    TacsScalar c = stiff->evalSpecificHeat(elemIndex, pt, X, Ut[0]);
 
     DUt[0] = 0.0;
-    DUt[1] = rho*Ut[1];
+    DUt[1] = c*rho*Ut[1];
     DUt[2] = 0.0;
 
     // Compute the thermal flux from the thermal gradient
@@ -150,7 +151,7 @@ void TACSPCMHeatConduction2D::evalWeakMatrix( ElementMatrixType matType,
     DUx[1] = flux[1];
 
     // Set the time-dependent terms
-    Jac[0] = rho;
+    Jac[0] = c*rho;
 
     // Compute the unit strain
     TacsScalar Kc[3];
@@ -168,67 +169,72 @@ void TACSPCMHeatConduction2D::evalWeakMatrix( ElementMatrixType matType,
   equations to the design variable components
 */
 void TACSPCMHeatConduction2D::addWeakAdjProduct( int elemIndex,
-                                                 const double time,
-                                                 TacsScalar scale,
-                                                 int n,
-                                                 const double pt[],
-                                                 const TacsScalar X[],
-                                                 const TacsScalar Xd[],
-                                                 const TacsScalar Ut[],
-                                                 const TacsScalar Ux[],
-                                                 const TacsScalar Psi[],
-                                                 const TacsScalar Psix[],
-                                                 int dvLen,
-                                                 TacsScalar *dfdx ){
-  TacsScalar c = stiff->evalSpecificHeat(elemIndex, pt, X);
+                                              const double time,
+                                              TacsScalar scale,
+                                              int n,
+                                              const double pt[],
+                                              const TacsScalar X[],
+                                              const TacsScalar Xd[],
+                                              const TacsScalar Ut[],
+                                              const TacsScalar Ux[],
+                                              const TacsScalar Psi[],
+                                              const TacsScalar Psix[],
+                                              int dvLen,
+                                              TacsScalar *dfdx ){
+  // Evaluate the density
+  TacsScalar rho = stiff->evalDensity(elemIndex, pt, X, Ut[0]);
+  TacsScalar c = stiff->evalSpecificHeat(elemIndex, pt, X, Ut[0]);
 
-  TacsScalar rho_coef = scale*(Ut[1]*Psi[0]);
-  stiff->addDensityDVSens(elemIndex, rho_coef, pt, X, dvLen, dfdx);
+  TacsScalar rho_coef = scale*(c*Ut[1]*Psi[0]);
+  stiff->addDensityDVSens(elemIndex, rho_coef, pt, X, dvLen, dfdx, Ut[0]);
+
+  TacsScalar c_coef = scale*rho*Ut[1]*Psi[0];
+  stiff->addSpecificHeatDVSens(elemIndex, c_coef, pt, X, dvLen, dfdx);
 
   stiff->addHeatFluxDVSens(elemIndex, scale, pt, X, Ux, Psix, dvLen, dfdx, Ut[0]);
 }
 
 void TACSPCMHeatConduction2D::evalWeakAdjXptSensProduct( int elemIndex,
-                                                         const double time,
-                                                         int n,
-                                                         const double pt[],
-                                                         const TacsScalar X[],
-                                                         const TacsScalar Xd[],
-                                                         const TacsScalar Ut[],
-                                                         const TacsScalar Ux[],
-                                                         const TacsScalar Psi[],
-                                                         const TacsScalar Psix[],
-                                                         TacsScalar *product,
-                                                         TacsScalar dfdX[],
-                                                         TacsScalar dfdXd[],
-                                                         TacsScalar dfdUx[],
-                                                         TacsScalar dfdPsix[] ){
+                                                      const double time,
+                                                      int n,
+                                                      const double pt[],
+                                                      const TacsScalar X[],
+                                                      const TacsScalar Xd[],
+                                                      const TacsScalar Ut[],
+                                                      const TacsScalar Ux[],
+                                                      const TacsScalar Psi[],
+                                                      const TacsScalar Psix[],
+                                                      TacsScalar *product,
+                                                      TacsScalar dfdX[],
+                                                      TacsScalar dfdXd[],
+                                                      TacsScalar dfdUx[],
+                                                      TacsScalar dfdPsix[] ){
   dfdX[0] = dfdX[1] = dfdX[2] = 0.0;
 
   dfdXd[0] = dfdXd[1] = dfdXd[2] = 0.0;
   dfdXd[3] = dfdXd[4] = dfdXd[5] = 0.0;
 
-  TacsScalar rho = stiff->evalDensity(elemIndex, pt, X);
-  TacsScalar c = stiff->evalSpecificHeat(elemIndex, pt, X);
+  TacsScalar rho = stiff->evalDensity(elemIndex, pt, X, Ut[0]);
+  TacsScalar c = stiff->evalSpecificHeat(elemIndex, pt, X, Ut[0]);
 
   stiff->evalHeatFlux(elemIndex, pt, X, Ux, dfdPsix, Ut[0]);
   stiff->evalHeatFlux(elemIndex, pt, X, Psix, dfdUx, Ut[0]);
 
-  *product = rho*Psi[0]*Ut[1] + dfdUx[0]*Ux[0] + dfdUx[1]*Ux[1];
+  *product = c*rho*Psi[0]*Ut[1] + dfdUx[0]*Ux[0] + dfdUx[1]*Ux[1];
 }
 
 /*
   Evaluate a specified pointwise quantity of interest
 */
 int TACSPCMHeatConduction2D::evalPointQuantity( int elemIndex,
-                                                const int quantityType,
-                                                const double time,
-                                                int n, const double pt[],
-                                                const TacsScalar X[],
-                                                const TacsScalar Xd[],
-                                                const TacsScalar Ut[],
-                                                const TacsScalar Ux[],
-                                                TacsScalar *quantity ){
+                                             const int quantityType,
+                                             const double time,
+                                             int n, const double pt[],
+                                             const TacsScalar X[],
+                                             const TacsScalar Xd[],
+                                             const TacsScalar Ut[],
+                                             const TacsScalar Ux[],
+                                             TacsScalar *quantity ){
   if (quantityType == TACS_HEAT_FLUX){
     if (quantity){
       stiff->evalHeatFlux(elemIndex, pt, X, Ux, quantity, Ut[0]);
@@ -238,21 +244,21 @@ int TACSPCMHeatConduction2D::evalPointQuantity( int elemIndex,
   }
   else if (quantityType == TACS_TEMPERATURE){
     if (quantity){
-      *quantity = stiff->evalTemperature(elemIndex, pt, X, Ut[0]);
+      *quantity = Ut[0];
     }
 
     return 1;
   }
   else if (quantityType == TACS_ELEMENT_DENSITY){
     if (quantity){
-      *quantity = stiff->evalDensity(elemIndex, pt, X);
+      *quantity = stiff->evalDensity(elemIndex, pt, X, Ut[0]);
     }
 
     return 1;
   }
   else if (quantityType == TACS_ELEMENT_DENSITY_MOMENT){
     if (quantity){
-      TacsScalar density = stiff->evalDensity(elemIndex, pt, X);
+      TacsScalar density = stiff->evalDensity(elemIndex, pt, X, Ut[0]);
       quantity[0] = density * X[0];
       quantity[1] = density * X[1];
     }
@@ -261,7 +267,7 @@ int TACSPCMHeatConduction2D::evalPointQuantity( int elemIndex,
   }
   else if (quantityType == TACS_ELEMENT_MOMENT_OF_INERTIA){
     if (quantity){
-      TacsScalar density = stiff->evalDensity(elemIndex, pt, X);
+      TacsScalar density = stiff->evalDensity(elemIndex, pt, X, Ut[0]);
       quantity[0] = density * X[1] * X[1]; // Ixx
       quantity[1] = - density * X[1] * X[0]; // Ixy
       quantity[2] = density * X[0] * X[0]; // Iyy
@@ -278,37 +284,37 @@ int TACSPCMHeatConduction2D::evalPointQuantity( int elemIndex,
   design variables to the design vector
 */
 void TACSPCMHeatConduction2D::addPointQuantityDVSens( int elemIndex,
-                                                      const int quantityType,
-                                                      const double time,
-                                                      TacsScalar scale,
-                                                      int n, const double pt[],
-                                                      const TacsScalar X[],
-                                                      const TacsScalar Xd[],
-                                                      const TacsScalar Ut[],
-                                                      const TacsScalar Ux[],
-                                                      const TacsScalar dfdq[],
-                                                      int dvLen,
-                                                      TacsScalar dfdx[] ){
+                                                   const int quantityType,
+                                                   const double time,
+                                                   TacsScalar scale,
+                                                   int n, const double pt[],
+                                                   const TacsScalar X[],
+                                                   const TacsScalar Xd[],
+                                                   const TacsScalar Ut[],
+                                                   const TacsScalar Ux[],
+                                                   const TacsScalar dfdq[],
+                                                   int dvLen,
+                                                   TacsScalar dfdx[] ){
   if (quantityType == TACS_HEAT_FLUX){
     // Add the flux components to the heat transfer portion
     // of the governing equations
     stiff->addHeatFluxDVSens(elemIndex, scale, pt, X, Ux, dfdq, dvLen, dfdx, Ut[0]);
   }
   else if (quantityType == TACS_ELEMENT_DENSITY){
-    stiff->addDensityDVSens(elemIndex, scale*dfdq[0], pt, X, dvLen, dfdx);
+    stiff->addDensityDVSens(elemIndex, scale*dfdq[0], pt, X, dvLen, dfdx, Ut[0]);
   }
   else if (quantityType == TACS_ELEMENT_DENSITY_MOMENT){
     TacsScalar dfdmass = 0.0;
     dfdmass += scale * dfdq[0] * X[0];
     dfdmass += scale * dfdq[1] * X[1];
-    stiff->addDensityDVSens(elemIndex, dfdmass, pt, X, dvLen, dfdx);
+    stiff->addDensityDVSens(elemIndex, dfdmass, pt, X, dvLen, dfdx, Ut[0]);
   }
   else if (quantityType == TACS_ELEMENT_MOMENT_OF_INERTIA){
     TacsScalar dfdmass = 0.0;
     dfdmass += scale * dfdq[0] * X[1] * X[1];
     dfdmass += -scale * dfdq[1] * X[1] * X[0];
     dfdmass += scale * dfdq[2] * X[0] * X[0];
-    stiff->addDensityDVSens(elemIndex, dfdmass, pt, X, dvLen, dfdx);
+    stiff->addDensityDVSens(elemIndex, dfdmass, pt, X, dvLen, dfdx, Ut[0]);
   }
 }
 
@@ -317,18 +323,18 @@ void TACSPCMHeatConduction2D::addPointQuantityDVSens( int elemIndex,
   with respect to X, Ut and Ux.
 */
 void TACSPCMHeatConduction2D::evalPointQuantitySens( int elemIndex,
-                                                     const int quantityType,
-                                                     const double time,
-                                                     int n, const double pt[],
-                                                     const TacsScalar X[],
-                                                     const TacsScalar Xd[],
-                                                     const TacsScalar Ut[],
-                                                     const TacsScalar Ux[],
-                                                     const TacsScalar dfdq[],
-                                                     TacsScalar dfdX[],
-                                                     TacsScalar dfdXd[],
-                                                     TacsScalar dfdUt[],
-                                                     TacsScalar dfdUx[] ){
+                                                  const int quantityType,
+                                                  const double time,
+                                                  int n, const double pt[],
+                                                  const TacsScalar X[],
+                                                  const TacsScalar Xd[],
+                                                  const TacsScalar Ut[],
+                                                  const TacsScalar Ux[],
+                                                  const TacsScalar dfdq[],
+                                                  TacsScalar dfdX[],
+                                                  TacsScalar dfdXd[],
+                                                  TacsScalar dfdUt[],
+                                                  TacsScalar dfdUx[] ){
   dfdX[0] = dfdX[1] = dfdX[2] = 0.0;
 
   dfdXd[0] = dfdXd[1] = 0.0;
@@ -338,7 +344,6 @@ void TACSPCMHeatConduction2D::evalPointQuantitySens( int elemIndex,
 
   dfdUx[0] = dfdUx[1] = 0.0;
 
-  // **** ????
   if (quantityType == TACS_TEMPERATURE){
     dfdUt[0] = dfdq[0];
   }
@@ -347,16 +352,16 @@ void TACSPCMHeatConduction2D::evalPointQuantitySens( int elemIndex,
     TacsScalar Kc[3];
     stiff->evalTangentHeatFlux(elemIndex, pt, X, Kc, Ut[0]);
 
-    dfdUx[0] = dfdq[0]*Kc[0];
-    dfdUx[1] = dfdq[1]*Kc[0];
+    dfdUx[0] = dfdq[0]*Kc[0] + dfdq[1]*Kc[1];
+    dfdUx[1] = dfdq[0]*Kc[1] + dfdq[1]*Kc[2];
   }
   else if (quantityType == TACS_ELEMENT_DENSITY_MOMENT){
-    TacsScalar density = stiff->evalDensity(elemIndex, pt, X);
+    TacsScalar density = stiff->evalDensity(elemIndex, pt, X, Ut[0]);
     dfdX[0] = density * dfdq[0];
     dfdX[1] = density * dfdq[1];
   }
   else if (quantityType == TACS_ELEMENT_MOMENT_OF_INERTIA){
-    TacsScalar density = stiff->evalDensity(elemIndex, pt, X);
+    TacsScalar density = stiff->evalDensity(elemIndex, pt, X, Ut[0]);
     dfdX[0] = density * (2.0 * dfdq[2] * X[0] - dfdq[1] * X[1]);
     dfdX[1] = density * (2.0 * dfdq[0] * X[1] - dfdq[1] * X[0]);
   }
@@ -366,15 +371,15 @@ void TACSPCMHeatConduction2D::evalPointQuantitySens( int elemIndex,
   Get the data for visualization at a given point
 */
 void TACSPCMHeatConduction2D::getOutputData( int elemIndex,
-                                             const double time,
-                                             ElementType etype,
-                                             int write_flag,
-                                             const double pt[],
-                                             const TacsScalar X[],
-                                             const TacsScalar Ut[],
-                                             const TacsScalar Ux[],
-                                             int ld_data,
-                                             TacsScalar *data ){
+                                          const double time,
+                                          ElementType etype,
+                                          int write_flag,
+                                          const double pt[],
+                                          const TacsScalar X[],
+                                          const TacsScalar Ut[],
+                                          const TacsScalar Ux[],
+                                          int ld_data,
+                                          TacsScalar *data ){
   if (etype == TACS_PCM_ELEMENT){
     if (write_flag & TACS_OUTPUT_NODES){
       data[0] = X[0];
@@ -404,13 +409,12 @@ void TACSPCMHeatConduction2D::getOutputData( int elemIndex,
       data += 2;
     }
     if (write_flag & TACS_OUTPUT_EXTRAS){
-      data[0] = stiff->evalDensity(elemIndex, pt, X);
+      data[0] = stiff->evalDensity(elemIndex, pt, X, Ut[0]);
       data[1] = stiff->evalDesignFieldValue(elemIndex, pt, X, 0);
       data[2] = stiff->evalDesignFieldValue(elemIndex, pt, X, 1);
       data[3] = stiff->evalDesignFieldValue(elemIndex, pt, X, 2);
-      data[4] = stiff->evalPhase(Ut[0]); // *** Does this need elemIndex, pt, X?
-      data[5] = stiff->evalTemperature(elemIndex, pt, X, Ut[0]);
-      data += 6;
+      data[4] = stiff->evalPhase(Ut[0]);
+      data += 5;
     }
   }
 }
