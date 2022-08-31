@@ -82,10 +82,9 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
         """
         # Add Functions
         for problem in problems:
-            problem.addFunction('mass', functions.StructuralMass)
             problem.addFunction('ks_temp', functions.KSTemperature,
                                 ksWeight=100.0)
-        func_list = ['mass', 'ks_temp']
+        func_list = ['ks_temp']
         return func_list, FUNC_REFS
 
     def setup_tacs_problems(self, fea_assembler):

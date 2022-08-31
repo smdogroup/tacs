@@ -77,15 +77,15 @@ int TACSPCMHeatConduction2D::getDesignVarRange( int elemIndex, int dvLen,
 }
 
 void TACSPCMHeatConduction2D::evalWeakIntegrand( int elemIndex,
-                                              const double time,
-                                              int n,
-                                              const double pt[],
-                                              const TacsScalar X[],
-                                              const TacsScalar Xd[],
-                                              const TacsScalar Ut[],
-                                              const TacsScalar Ux[],
-                                              TacsScalar DUt[],
-                                              TacsScalar DUx[] ){
+                                                const double time,
+                                                int n,
+                                                const double pt[],
+                                                const TacsScalar X[],
+                                                const TacsScalar Xd[],
+                                                const TacsScalar Ut[],
+                                                const TacsScalar Ux[],
+                                                TacsScalar DUt[],
+                                                TacsScalar DUx[] ){
   // Evaluate the density and specific heat
   TacsScalar rho = stiff->evalDensity(elemIndex, pt, X, Ut[0]);
   TacsScalar c = stiff->evalSpecificHeat(elemIndex, pt, X, Ut[0]);
