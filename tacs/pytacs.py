@@ -1096,8 +1096,8 @@ class pyTACS(BaseUI):
 
         Notes
         -----
-        Currently only supports LOAD, FORCE, MOMENT, GRAV, RFORCE, PLOAD2, and PLOAD4 cards.
-        Currently only supports staticProblem (SOL 101) and modalProblems (SOL 103)
+        Currently only supports LOAD, FORCE, MOMENT, GRAV, RFORCE, PLOAD2, PLOAD4, TLOAD1, TLOAD2, and DLOAD cards.
+        Currently only supports staticProblem (SOL 101), transientProblem (SOL 109), and modalProblems (SOL 103)
         """
 
         if self.assembler is None:
@@ -1107,10 +1107,6 @@ class pyTACS(BaseUI):
         if self.bdfInfo.is_xrefed is False:
             self.bdfInfo.cross_reference()
             self.bdfInfo.is_xrefed = True
-
-        vpn = self.varsPerNode
-        loads = self.bdfInfo.loads
-        nloads = len(loads)
 
         structProblems = {}
 
@@ -1125,13 +1121,13 @@ class pyTACS(BaseUI):
             if skipCaseZero and subCase.id == 0:
                 continue
 
-            if 'SUBTITLE' in subCase.params:
-                name = subCase.params['SUBTITLE'][0]
+            if 'SUBTITLE' in subCase:
+                name = subCase['SUBTITLE'][0]
             else:
                 name = 'load_set_%.3d' % (subCase.id)
 
             if self.bdfInfo.sol == 103:
-                methodID = subCase.params['METHOD'][0]
+                methodID = subCase['METHOD'][0]
                 methodInfo = self.bdfInfo.methods[methodID]
                 if methodInfo.v1 is not None:
                     sigma = (2 * np.pi * methodInfo.v1) ** 2
@@ -1145,71 +1141,127 @@ class pyTACS(BaseUI):
                     nEigs = 20
                 problem = self.createModalProblem(name, sigma, nEigs)
 
+            elif self.bdfInfo.sol == 109:
+                # Get time step info
+                if 'TSTEP' in subCase:
+                    tStepID = subCase['TSTEP'][0]
+                    tStep = self.bdfInfo.tsteps[tStepID]
+                    nSteps = tStep.N[0]
+                    dt = tStep.DT[0]
+                # If no time step info was included, we'll skip this case
+                else:
+                    continue
+                problem = self.createTransientProblem(name, tInit=0.0, tFinal=dt*nSteps, numSteps=nSteps)
+
+                if 'DLOAD' in subCase:
+                    dloadsID = subCase['DLOAD'][0]
+                    dloadSet, dloadScale = self.bdfInfo.get_reduced_dloads(dloadsID)
+                    for dloadInfo, dscale in zip(dloadSet, dloadScale):
+                        timeSteps = problem.getTimeSteps()
+                        if dloadInfo.type in ['TLOAD1', 'TLOAD2']:
+                            if dloadInfo.type == 'TLOAD1':
+                                loadScales = dloadInfo.get_load_at_time(timeSteps, dscale)
+                            elif dloadInfo.type == 'TLOAD2':
+                                loadScales = tload2_get_load_at_time(dloadInfo, timeSteps, dscale)
+                            if dloadInfo.Type != "LOAD":
+                                self._TACSWarning("Only 'LOAD' types are supported for "
+                                                  f"'{dloadInfo.type}' card, but '{dloadInfo.type}' {dloadInfo.sid}, "
+                                                  f"was specified as {dloadInfo.Type} type")
+                            loadsID = dloadInfo.excite_id
+                        else:
+                            self._TACSWarning("Unsupported dload type "
+                                              f"'{dloadInfo.type}' specified for load set number {dloadInfo.sid},"
+                                              f" skipping load")
+                            continue
+                        # Loop through each time step and add loads to problem
+                        for timeIndex, scale in enumerate(loadScales):
+                            self._addLoadSetToProblem(problem, loadsID, scale, timeIndex)
+
             else:
                 problem = self.createStaticProblem(name)
 
-                if 'LOAD' in subCase.params:
-                    loadsID = subCase.params['LOAD'][0]
-                    # Get loads and scalers for this load case ID
-                    loadSet, loadScale, _ = self.bdfInfo.get_reduced_loads(loadsID)
-                    # Loop through every load in set and add it to problem
-                    for loadInfo, scale in zip(loadSet, loadScale):
-                        # Add any point force or moment cards
-                        if loadInfo.type == 'FORCE' or loadInfo.type == 'MOMENT':
-                            nodeID = loadInfo.node_ref.nid
-
-                            loadArray = numpy.zeros(vpn)
-                            if loadInfo.type == 'FORCE' and vpn >= 3:
-                                F = scale * loadInfo.scaled_vector
-                                loadArray[:3] += loadInfo.cid_ref.transform_vector_to_global(F)
-                            elif loadInfo.type == 'MOMENT' and vpn >= 6:
-                                M = scale * loadInfo.scaled_vector
-                                loadArray[3:6] += loadInfo.cid_ref.transform_vector_to_global(M)
-                            problem.addLoadToNodes(nodeID, loadArray, nastranOrdering=True)
-
-                        # Add any gravity loads
-                        elif loadInfo.type == 'GRAV':
-                            inertiaVec = np.zeros(3, dtype=self.dtype)
-                            inertiaVec[:3] = scale * loadInfo.scale * loadInfo.N
-                            # Convert acceleration to global coordinate system
-                            inertiaVec = loadInfo.cid_ref.transform_vector_to_global(inertiaVec)
-                            problem.addInertialLoad(inertiaVec)
-
-                        # Add any centrifugal loads
-                        elif loadInfo.type == 'RFORCE':
-                            omegaVec = np.zeros(3, dtype=self.dtype)
-                            if loadInfo.nid_ref:
-                                rotCenter = loadInfo.nid_ref.get_position()
-                            else:
-                                rotCenter = np.zeros(3, dtype=self.dtype)
-                            omegaVec[:3] = scale * loadInfo.scale * np.array(loadInfo.r123)
-                            # Convert omega from rev/s to rad/s
-                            omegaVec *= 2 * np.pi
-                            # Convert omega to global coordinate system
-                            omegaVec = loadInfo.cid_ref.transform_vector_to_global(omegaVec)
-                            problem.addCentrifugalLoad(omegaVec, rotCenter)
-
-                        # Add any pressure loads
-                        # Pressure load card specific to shell elements
-                        elif loadInfo.type == 'PLOAD2':
-                            elemIDs = loadInfo.eids
-                            pressure = scale * loadInfo.pressure
-                            problem.addPressureToElements(elemIDs, pressure, nastranOrdering=True)
-
-                        # Alternate more general pressure load type
-                        elif loadInfo.type == 'PLOAD4':
-                            self._addPressureFromPLOAD4(problem, loadInfo, scale)
-
-                        else:
-                            self._TACSWarning("Unsupported load type "
-                                              f" '{loadInfo.type}' specified for load set number {loadInfo.sid}, skipping load")
+                if 'LOAD' in subCase:
+                    # Add loads to problem
+                    loadsID = subCase['LOAD'][0]
+                    self._addLoadSetToProblem(problem, loadsID)
 
             # append to list of structural problems
             structProblems[subCase.id] = problem
 
         return structProblems
 
-    def _addPressureFromPLOAD4(self, staticProb, loadInfo, scale=1.0):
+    def _addLoadSetToProblem(self, problem, loadsID, setScale=1.0, timeStep=None):
+        """
+        Add all loads associated with a load set ID from the BDF to a
+        StaticProblem or TransientProblem class.
+        Should only be called by createTACSProbsFromBDF and not directly by user.
+        """
+        vpn = self.varsPerNode
+        # Get loads and scalers for this load case ID
+        loadSet, loadScale, _ = self.bdfInfo.get_reduced_loads(loadsID)
+        # Loop through every load in set and add it to problem
+        for loadInfo, scale in zip(loadSet, loadScale):
+            scale *= setScale
+            # Add any point force or moment cards
+            if loadInfo.type == 'FORCE' or loadInfo.type == 'MOMENT':
+                nodeID = loadInfo.node_ref.nid
+
+                loadArray = numpy.zeros(vpn)
+                if loadInfo.type == 'FORCE' and vpn >= 3:
+                    F = scale * loadInfo.scaled_vector
+                    loadArray[:3] += loadInfo.cid_ref.transform_vector_to_global(F)
+                elif loadInfo.type == 'MOMENT' and vpn >= 6:
+                    M = scale * loadInfo.scaled_vector
+                    loadArray[3:6] += loadInfo.cid_ref.transform_vector_to_global(M)
+                if isinstance(problem, tacs.problems.StaticProblem):
+                    problem.addLoadToNodes(nodeID, loadArray, nastranOrdering=True)
+                elif isinstance(problem, tacs.problems.TransientProblem):
+                    problem.addLoadToNodes(timeStep, nodeID, loadArray, nastranOrdering=True)
+
+            # Add any gravity loads
+            elif loadInfo.type == 'GRAV':
+                inertiaVec = np.zeros(3, dtype=self.dtype)
+                inertiaVec[:3] = scale * loadInfo.scale * loadInfo.N
+                # Convert acceleration to global coordinate system
+                inertiaVec = loadInfo.cid_ref.transform_vector_to_global(inertiaVec)
+                problem.addInertialLoad(inertiaVec)
+
+            # Add any centrifugal loads
+            elif loadInfo.type == 'RFORCE':
+                omegaVec = np.zeros(3, dtype=self.dtype)
+                if loadInfo.nid_ref:
+                    rotCenter = loadInfo.nid_ref.get_position()
+                else:
+                    rotCenter = np.zeros(3, dtype=self.dtype)
+                omegaVec[:3] = scale * loadInfo.scale * np.array(loadInfo.r123)
+                # Convert omega from rev/s to rad/s
+                omegaVec *= 2 * np.pi
+                # Convert omega to global coordinate system
+                omegaVec = loadInfo.cid_ref.transform_vector_to_global(omegaVec)
+                if isinstance(problem, tacs.problems.StaticProblem):
+                    problem.addCentrifugalLoad(omegaVec, rotCenter)
+                elif isinstance(problem, tacs.problems.TransientProblem):
+                    problem.addCentrifugalLoad(timeStep, omegaVec, rotCenter)
+            # Add any pressure loads
+            # Pressure load card specific to shell elements
+            elif loadInfo.type == 'PLOAD2':
+                elemIDs = loadInfo.eids
+                pressure = scale * loadInfo.pressure
+                problem.addPressureToElements(elemIDs, pressure, nastranOrdering=True)
+                if isinstance(problem, tacs.problems.StaticProblem):
+                    problem.addPressureToElements(elemIDs, pressure, nastranOrdering=True)
+                elif isinstance(problem, tacs.problems.TransientProblem):
+                    problem.addPressureToElements(timeStep, elemIDs, pressure, nastranOrdering=True)
+
+            # Alternate more general pressure load type
+            elif loadInfo.type == 'PLOAD4':
+                self._addPressureFromPLOAD4(problem, loadInfo, scale, timeStep)
+
+            else:
+                self._TACSWarning("Unsupported load type "
+                                  f" '{loadInfo.type}' specified for load set number {loadInfo.sid}, skipping load")
+
+    def _addPressureFromPLOAD4(self, problem, loadInfo, scale=1.0, timeStep=None):
         """
         Add pressure to tacs static problem from pynastran PLOAD4 card.
         Should only be called by createTACSProbsFromBDF and not directly by user.
@@ -1261,12 +1313,20 @@ class pyTACS(BaseUI):
 
             # Figure out whether or not this is a traction based on if a vector is defined
             if np.linalg.norm(loadInfo.nvector) == 0.0:
-                staticProb.addPressureToElements(elemID, pressure, faceIndex,
-                                                 nastranOrdering=True)
+                if isinstance(problem, tacs.problems.StaticProblem):
+                    problem.addPressureToElements(elemID, pressure, faceIndex,
+                                                  nastranOrdering=True)
+                elif isinstance(problem, tacs.problems.TransientProblem):
+                    problem.addPressureToElements(timeStep, elemID, pressure, faceIndex,
+                                                  nastranOrdering=True)
             else:
                 trac = pressure * loadInfo.nvector
-                staticProb.addTractionToElements(elemID, trac, faceIndex,
-                                                 nastranOrdering=True)
+                if isinstance(problem, tacs.problems.StaticProblem):
+                    problem.addTractionToElements(elemID, trac, faceIndex,
+                                                  nastranOrdering=True)
+                elif isinstance(problem, tacs.problems.TransientProblem):
+                    problem.addTractionToElements(timeStep, elemID, trac, faceIndex,
+                                                  nastranOrdering=True)
 
     def getNumComponents(self):
         """
@@ -1536,3 +1596,40 @@ class pyTACS(BaseUI):
         error = self._TACSError("TACS assembler has not been created. "
                                 "Assembler must created first by running 'initalize' method.")
         return error
+
+def tload2_get_load_at_time(tload2, time, scale=1.):
+    """
+    This is a function for interpolating the time series for the NASTRAN TLOAD2 card.
+    Usually, this would be done through pyNastran, but there's bug in its implementation
+    that prevents it from being run.
+    """
+    if isinstance(time, float):
+        time = np.array([time])
+    else:
+        time = np.asarray(time)
+
+    if isinstance(tload2.delay, float):
+        tau = tload2.delay
+    elif tload2.delay == 0 or tload2.delay is None:
+        tau = 0.0
+    else:
+        tau = tload2.delay_ref.get_delay_at_time(time)
+
+    t1 = tload2.T1 + tau
+    t2 = tload2.T2 + tau
+    freq = tload2.frequency
+    p = tload2.phase
+    f = np.zeros(time.shape, dtype=time.dtype)
+
+    i = np.where(t1 <= time)[0]
+    j = np.where(time[i] <= t2)[0]
+    i = i[j]
+    f[i] = scale * time[i] ** tload2.b * np.exp(tload2.c * time[i]) * np.cos(2 * np.pi * freq * time[i] + p)
+
+    is_spcd = False
+    #resp = f
+    if tload2.Type == 'VELO' and is_spcd:
+        f[0] = tload2.us0
+    if tload2.Type == 'ACCE' and is_spcd:
+        f[0] = tload2.vs0
+    return f
