@@ -1247,7 +1247,6 @@ class pyTACS(BaseUI):
             elif loadInfo.type == 'PLOAD2':
                 elemIDs = loadInfo.eids
                 pressure = scale * loadInfo.pressure
-                problem.addPressureToElements(elemIDs, pressure, nastranOrdering=True)
                 if isinstance(problem, tacs.problems.StaticProblem):
                     problem.addPressureToElements(elemIDs, pressure, nastranOrdering=True)
                 elif isinstance(problem, tacs.problems.TransientProblem):
@@ -1263,7 +1262,7 @@ class pyTACS(BaseUI):
 
     def _addPressureFromPLOAD4(self, problem, loadInfo, scale=1.0, timeStep=None):
         """
-        Add pressure to tacs static problem from pynastran PLOAD4 card.
+        Add pressure to tacs static/transient problem from pynastran PLOAD4 card.
         Should only be called by createTACSProbsFromBDF and not directly by user.
         """
         # Dictionary mapping nastran element face indices to TACS equivilent numbering
