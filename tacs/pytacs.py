@@ -1150,6 +1150,8 @@ class pyTACS(BaseUI):
                     dt = tStep.DT[0]
                 # If no time step info was included, we'll skip this case
                 else:
+                    self._TACSWarning(f"No TSTEP entry found in control deck for subcase number {subCase.id}, "
+                                      "skipping case.")
                     continue
                 problem = self.createTransientProblem(name, tInit=0.0, tFinal=dt*nSteps, numSteps=nSteps)
 
@@ -1162,7 +1164,7 @@ class pyTACS(BaseUI):
                             if dloadInfo.type == 'TLOAD1':
                                 loadScales = dloadInfo.get_load_at_time(timeSteps, dscale)
                             elif dloadInfo.type == 'TLOAD2':
-                                loadScales = tload2_get_load_at_time(dloadInfo, timeSteps, dscale)
+                                loadScales = _tload2_get_load_at_time(dloadInfo, timeSteps, dscale)
                             if dloadInfo.Type != "LOAD":
                                 self._TACSWarning("Only 'LOAD' types are supported for "
                                                   f"'{dloadInfo.type}' card, but '{dloadInfo.type}' {dloadInfo.sid}, "
@@ -1596,7 +1598,7 @@ class pyTACS(BaseUI):
                                 "Assembler must created first by running 'initalize' method.")
         return error
 
-def tload2_get_load_at_time(tload2, time, scale=1.):
+def _tload2_get_load_at_time(tload2, time, scale=1.):
     """
     This is a function for interpolating the time series for the NASTRAN TLOAD2 card.
     Usually, this would be done through pyNastran, but there's bug in its implementation
