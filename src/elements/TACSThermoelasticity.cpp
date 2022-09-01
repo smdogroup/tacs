@@ -1984,10 +1984,12 @@ void TACSLinearThermoelasticity3D::evalPointQuantitySens( int elemIndex,
   dfdUt[0] = dfdUt[1] = dfdUt[2] = 0.0;
   dfdUt[3] = dfdUt[4] = dfdUt[5] = 0.0;
   dfdUt[6] = dfdUt[7] = dfdUt[8] = 0.0;
+  dfdUt[9] = dfdUt[10] = dfdUt[11] = 0.0;
 
   dfdUx[0] = dfdUx[1] = dfdUx[2] = 0.0;
   dfdUx[3] = dfdUx[4] = dfdUx[5] = 0.0;
   dfdUx[6] = dfdUx[7] = dfdUx[8] = 0.0;
+  dfdUx[9] = dfdUx[10] = dfdUx[11] = 0.0;
 
   if (quantityType == TACS_FAILURE_INDEX){
     // Compute the thermal strain components
