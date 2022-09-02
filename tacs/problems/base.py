@@ -25,6 +25,8 @@ class TACSProblem(BaseUI):
         self.outputViewer = outputViewer
         # TACS pyMeshLoader object
         self.meshLoader = meshLoader
+        # pyNastran BDF object
+        self.bdfInfo = self.meshLoader.getBDFInfo()
         # MPI communicator object
         self.comm = comm
 
@@ -309,7 +311,7 @@ class TACSProblem(BaseUI):
     def _addLoadToComponents(self, FVec, compIDs, F, averageLoad=False):
         """"
         This is an internal helper function for doing the addLoadToComponents method for
-        inhereted TACSProblem classes. The function should NOT be called by the user should
+        inherited TACSProblem classes. The function should NOT be called by the user should
         use the addLoadToComponents method for the respective problem class. The function is
         used to add a *FIXED TOTAL LOAD* on one or more components, defined by COMPIDs.
         The purpose of this routine is to add loads that remain fixed throughout an optimization.
@@ -410,7 +412,7 @@ class TACSProblem(BaseUI):
     def _addLoadToNodes(self, FVec, nodeIDs, F, nastranOrdering=False):
         """
         This is an internal helper function for doing the addLoadToNodes method for
-        inhereted TACSProblem classes. The function should NOT be called by the user should
+        inherited TACSProblem classes. The function should NOT be called by the user should
         use the addLoadToNodes method for the respective problem class. The function is
         used to add a fixed point load of F to the selected node IDs.
 
@@ -510,7 +512,7 @@ class TACSProblem(BaseUI):
     def _addLoadToRHS(self, Frhs, Fapplied):
         """"
         This is an internal helper function for doing the addLoadToRHS method for
-        inhereted TACSProblem classes. The function should NOT be called by the user should
+        inherited TACSProblem classes. The function should NOT be called by the user should
         use the addLoadToRHS method for the respective problem class.
         The function is used to add a *FIXED TOTAL LOAD* directly to the
         right hand side vector given the equation below:
@@ -544,7 +546,7 @@ class TACSProblem(BaseUI):
                                  faceIndex=0):
         """
         This is an internal helper function for doing the addTractionToComponents method for
-        inhereted TACSProblem classes. The function should NOT be called by the user should
+        inherited TACSProblem classes. The function should NOT be called by the user should
         use the addTractionToComponents method for the respective problem class. The function is used
         to add a *FIXED TOTAL TRACTION* on one or more components, defined by COMPIDs. The purpose of
         this routine is to add loads that remain fixed throughout an optimization.
@@ -585,7 +587,7 @@ class TACSProblem(BaseUI):
                                faceIndex=0, nastranOrdering=False):
         """
         This is an internal helper function for doing the addTractionToElements method for
-        inhereted TACSProblem classes. The function should NOT be called by the user should
+        inherited TACSProblem classes. The function should NOT be called by the user should
         use the addTractionToElements method for the respective problem class. The function
         is used to add a fixed traction to the selected element IDs. Tractions can be specified on an
         element by element basis (if tractions is a 2d array) or set to a uniform value (if tractions is a 1d array)
@@ -593,7 +595,7 @@ class TACSProblem(BaseUI):
         Parameters
         ----------
 
-         auxElems : TACS AuxElements object
+        auxElems : TACS AuxElements object
             AuxElements object to add loads to.
 
         elemIDs : list[int]
@@ -671,7 +673,7 @@ class TACSProblem(BaseUI):
                                  faceIndex=0):
         """
         This is an internal helper function for doing the addPressureToComponents method for
-        inhereted TACSProblem classes. The function should NOT be called by the user should
+        inherited TACSProblem classes. The function should NOT be called by the user should
         use the addPressureToComponents method for the respective problem class. The function
         is used to add a *FIXED TOTAL PRESSURE* on one or more components, defined by COMPIds.
         The purpose of this routine is to add loads that remain fixed throughout an optimization.
@@ -680,7 +682,7 @@ class TACSProblem(BaseUI):
         Parameters
         ----------
 
-         auxElems : TACS AuxElements object
+        auxElems : TACS AuxElements object
             AuxElements object to add loads to.
 
         compIDs : list[int] or int
@@ -713,7 +715,7 @@ class TACSProblem(BaseUI):
                                faceIndex=0, nastranOrdering=False):
         """
         This is an internal helper function for doing the addPressureToElements method for
-        inhereted TACSProblem classes. The function should NOT be called by the user should
+        inherited TACSProblem classes. The function should NOT be called by the user should
         use the addPressureToElements method for the respective problem class. The function
         is used to add a fixed presure to the selected element IDs. Pressures can be specified on an
         element by element basis (if pressures is an array) or set to a uniform value (if pressures is a scalar)
@@ -721,7 +723,7 @@ class TACSProblem(BaseUI):
         Parameters
         ----------
 
-         auxElems : TACS AuxElements object
+        auxElems : TACS AuxElements object
             AuxElements object to add loads to.
 
         elemIDs : list[int]
@@ -857,3 +859,140 @@ class TACSProblem(BaseUI):
             if centrifugalObj is not None:
                 # Add new centrifugal force to auxiliary element object
                 auxElems.addElement(elemID, centrifugalObj)
+
+    def _addLoadFromBDF(self, FVec, auxElems, loadsID, setScale=1.0):
+        """
+        This is an internal helper function for doing the addLoadFromBDF method for
+        inherited TACSProblem classes. The function should NOT be called by the user should
+        use the addLoadFromBDF method for the respective problem class. This method is 
+        used to add a load set defined in the BDF file to the problem.
+
+        Parameters
+        ----------
+
+        FVec : TACS.Vec
+            TACS BVec to add loads to.
+
+        auxElems : TACS AuxElements object
+            AuxElements object to add loads to.
+
+        loadID : int
+            Load identification number of load set in BDF file user wishes to add to problem.
+
+        scale : float
+            Factor to scale the BDF loads by before adding to problem.
+        """
+        vpn = self.assembler.getVarsPerNode()
+        # Get loads and scalers for this load case ID
+        loadSet, loadScale, _ = self.bdfInfo.get_reduced_loads(loadsID)
+        # Loop through every load in set and add it to problem
+        for loadInfo, scale in zip(loadSet, loadScale):
+            scale *= setScale
+            # Add any point force or moment cards
+            if loadInfo.type == 'FORCE' or loadInfo.type == 'MOMENT':
+                nodeID = loadInfo.node_ref.nid
+
+                loadArray = np.zeros(vpn)
+                if loadInfo.type == 'FORCE' and vpn >= 3:
+                    F = scale * loadInfo.scaled_vector
+                    loadArray[:3] += loadInfo.cid_ref.transform_vector_to_global(F)
+                elif loadInfo.type == 'MOMENT' and vpn >= 6:
+                    M = scale * loadInfo.scaled_vector
+                    loadArray[3:6] += loadInfo.cid_ref.transform_vector_to_global(M)
+                self._addLoadToNodes(FVec, nodeID, loadArray, nastranOrdering=True)
+
+            # Add any gravity loads
+            elif loadInfo.type == 'GRAV':
+                inertiaVec = np.zeros(3, dtype=self.dtype)
+                inertiaVec[:3] = scale * loadInfo.scale * loadInfo.N
+                # Convert acceleration to global coordinate system
+                inertiaVec = loadInfo.cid_ref.transform_vector_to_global(inertiaVec)
+                self._addInertialLoad(auxElems, inertiaVec)
+
+            # Add any centrifugal loads
+            elif loadInfo.type == 'RFORCE':
+                omegaVec = np.zeros(3, dtype=self.dtype)
+                if loadInfo.nid_ref:
+                    rotCenter = loadInfo.nid_ref.get_position()
+                else:
+                    rotCenter = np.zeros(3, dtype=self.dtype)
+                omegaVec[:3] = scale * loadInfo.scale * np.array(loadInfo.r123)
+                # Convert omega from rev/s to rad/s
+                omegaVec *= 2 * np.pi
+                # Convert omega to global coordinate system
+                omegaVec = loadInfo.cid_ref.transform_vector_to_global(omegaVec)
+                self._addCentrifugalLoad(auxElems, omegaVec, rotCenter)
+
+            # Add any pressure loads
+            # Pressure load card specific to shell elements
+            elif loadInfo.type == 'PLOAD2':
+                elemIDs = loadInfo.eids
+                pressure = scale * loadInfo.pressure
+                self._addPressureToElements(auxElems, elemIDs, pressure, nastranOrdering=True)
+
+            # Alternate more general pressure load type
+            elif loadInfo.type == 'PLOAD4':
+                self._addPressureFromPLOAD4(auxElems, loadInfo, scale)
+
+            else:
+                self._TACSWarning("Unsupported load type "
+                                  f" '{loadInfo.type}' specified for load set number {loadInfo.sid}, skipping load")
+
+    def _addPressureFromPLOAD4(self, auxElems, loadInfo, scale=1.0):
+        """
+        Add pressure to tacs static/transient problem from pynastran PLOAD4 card.
+        Should only be called by createTACSProbsFromBDF and not directly by user.
+        """
+        # Dictionary mapping nastran element face indices to TACS equivilent numbering
+        nastranToTACSFaceIDDict = {'CTETRA4': {1: 1, 2: 3, 3: 2, 4: 0},
+                                   'CTETRA': {2: 1, 4: 3, 3: 2, 1: 0},
+                                   'CHEXA': {1: 4, 2: 2, 3: 0, 4: 3, 5: 0, 6: 5}}
+
+        # We don't support pressure variation across elements, for now just average it
+        pressure = scale * np.mean(loadInfo.pressures)
+        for elemInfo in loadInfo.eids_ref:
+            elemID = elemInfo.eid
+
+            # Get the correct face index number based on element type
+            if 'CTETRA' in elemInfo.type:
+                for faceIndex in elemInfo.faces:
+                    if loadInfo.g1 in elemInfo.faces[faceIndex] and \
+                            loadInfo.g34 not in elemInfo.faces[faceIndex]:
+                        # For some reason CTETRA4 is the only element that doesn't
+                        # use ANSYS face numbering convention by default
+                        if len(elemInfo.nodes) == 4:
+                            faceIndex = nastranToTACSFaceIDDict['CTETRA4'][faceIndex]
+                        else:
+                            faceIndex = nastranToTACSFaceIDDict['CTETRA'][faceIndex]
+                        # Positive pressure is inward for solid elements, flip pressure if necessary
+                        # We don't flip it for face 0, because the normal for that face points inward by convention
+                        # while the rest point outward
+                        if faceIndex != 0:
+                            pressure *= -1.0
+                        break
+
+            elif 'CHEXA' in elemInfo.type:
+                for faceIndex in elemInfo.faces:
+                    if loadInfo.g1 in elemInfo.faces[faceIndex] and \
+                            loadInfo.g34 in elemInfo.faces[faceIndex]:
+                        faceIndex = nastranToTACSFaceIDDict['CHEXA'][faceIndex]
+                        # Pressure orientation is flipped for solid elements per Nastran convention
+                        pressure *= -1.0
+                        break
+
+            elif 'CQUAD' in elemInfo.type or 'CTRIA' in elemInfo.type:
+                # Face index doesn't matter for shells, just use 0
+                faceIndex = 0
+
+            else:
+                raise self._TACSError("Unsupported element type "
+                                      f"'{elemInfo.type}' specified for PLOAD4 load set number {loadInfo.sid}.")
+
+            # Figure out whether or not this is a traction based on if a vector is defined
+            if np.linalg.norm(loadInfo.nvector) == 0.0:
+                self._addPressureToElements(auxElems, elemID, pressure, faceIndex,
+                                            nastranOrdering=True)
+            else:
+                trac = pressure * loadInfo.nvector
+                self._addTractionToElements(auxElems, elemID, trac, faceIndex,
+                                            nastranOrdering=True)

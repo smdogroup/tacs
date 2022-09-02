@@ -1155,6 +1155,7 @@ class pyTACS(BaseUI):
                     continue
                 problem = self.createTransientProblem(name, tInit=0.0, tFinal=dt*nSteps, numSteps=nSteps)
 
+                # Find dynamic load specified for this subcase
                 if 'DLOAD' in subCase:
                     dloadsID = subCase['DLOAD'][0]
                     dloadSet, dloadScale = self.bdfInfo.get_reduced_dloads(dloadsID)
@@ -1177,157 +1178,21 @@ class pyTACS(BaseUI):
                             continue
                         # Loop through each time step and add loads to problem
                         for timeIndex, scale in enumerate(loadScales):
-                            self._addLoadSetToProblem(problem, loadsID, scale, timeIndex)
+                            problem.addLoadFromBDF(timeIndex, loadsID, scale=scale)
 
             else:
                 problem = self.createStaticProblem(name)
 
+                # Find the static load specified for this test case
                 if 'LOAD' in subCase:
                     # Add loads to problem
                     loadsID = subCase['LOAD'][0]
-                    self._addLoadSetToProblem(problem, loadsID)
+                    problem.addLoadFromBDF(loadsID)
 
             # append to list of structural problems
             structProblems[subCase.id] = problem
 
         return structProblems
-
-    def _addLoadSetToProblem(self, problem, loadsID, setScale=1.0, timeStep=None):
-        """
-        Add all loads associated with a load set ID from the BDF to a
-        StaticProblem or TransientProblem class.
-        Should only be called by createTACSProbsFromBDF and not directly by user.
-        """
-        vpn = self.varsPerNode
-        # Get loads and scalers for this load case ID
-        loadSet, loadScale, _ = self.bdfInfo.get_reduced_loads(loadsID)
-        # Loop through every load in set and add it to problem
-        for loadInfo, scale in zip(loadSet, loadScale):
-            scale *= setScale
-            # Add any point force or moment cards
-            if loadInfo.type == 'FORCE' or loadInfo.type == 'MOMENT':
-                nodeID = loadInfo.node_ref.nid
-
-                loadArray = numpy.zeros(vpn)
-                if loadInfo.type == 'FORCE' and vpn >= 3:
-                    F = scale * loadInfo.scaled_vector
-                    loadArray[:3] += loadInfo.cid_ref.transform_vector_to_global(F)
-                elif loadInfo.type == 'MOMENT' and vpn >= 6:
-                    M = scale * loadInfo.scaled_vector
-                    loadArray[3:6] += loadInfo.cid_ref.transform_vector_to_global(M)
-                if isinstance(problem, tacs.problems.StaticProblem):
-                    problem.addLoadToNodes(nodeID, loadArray, nastranOrdering=True)
-                elif isinstance(problem, tacs.problems.TransientProblem):
-                    problem.addLoadToNodes(timeStep, nodeID, loadArray, nastranOrdering=True)
-
-            # Add any gravity loads
-            elif loadInfo.type == 'GRAV':
-                inertiaVec = np.zeros(3, dtype=self.dtype)
-                inertiaVec[:3] = scale * loadInfo.scale * loadInfo.N
-                # Convert acceleration to global coordinate system
-                inertiaVec = loadInfo.cid_ref.transform_vector_to_global(inertiaVec)
-                problem.addInertialLoad(inertiaVec)
-
-            # Add any centrifugal loads
-            elif loadInfo.type == 'RFORCE':
-                omegaVec = np.zeros(3, dtype=self.dtype)
-                if loadInfo.nid_ref:
-                    rotCenter = loadInfo.nid_ref.get_position()
-                else:
-                    rotCenter = np.zeros(3, dtype=self.dtype)
-                omegaVec[:3] = scale * loadInfo.scale * np.array(loadInfo.r123)
-                # Convert omega from rev/s to rad/s
-                omegaVec *= 2 * np.pi
-                # Convert omega to global coordinate system
-                omegaVec = loadInfo.cid_ref.transform_vector_to_global(omegaVec)
-                if isinstance(problem, tacs.problems.StaticProblem):
-                    problem.addCentrifugalLoad(omegaVec, rotCenter)
-                elif isinstance(problem, tacs.problems.TransientProblem):
-                    problem.addCentrifugalLoad(timeStep, omegaVec, rotCenter)
-            # Add any pressure loads
-            # Pressure load card specific to shell elements
-            elif loadInfo.type == 'PLOAD2':
-                elemIDs = loadInfo.eids
-                pressure = scale * loadInfo.pressure
-                if isinstance(problem, tacs.problems.StaticProblem):
-                    problem.addPressureToElements(elemIDs, pressure, nastranOrdering=True)
-                elif isinstance(problem, tacs.problems.TransientProblem):
-                    problem.addPressureToElements(timeStep, elemIDs, pressure, nastranOrdering=True)
-
-            # Alternate more general pressure load type
-            elif loadInfo.type == 'PLOAD4':
-                self._addPressureFromPLOAD4(problem, loadInfo, scale, timeStep)
-
-            else:
-                self._TACSWarning("Unsupported load type "
-                                  f" '{loadInfo.type}' specified for load set number {loadInfo.sid}, skipping load")
-
-    def _addPressureFromPLOAD4(self, problem, loadInfo, scale=1.0, timeStep=None):
-        """
-        Add pressure to tacs static/transient problem from pynastran PLOAD4 card.
-        Should only be called by createTACSProbsFromBDF and not directly by user.
-        """
-        # Dictionary mapping nastran element face indices to TACS equivilent numbering
-        nastranToTACSFaceIDDict = {'CTETRA4': {1: 1, 2: 3, 3: 2, 4: 0},
-                                   'CTETRA': {2: 1, 4: 3, 3: 2, 1: 0},
-                                   'CHEXA': {1: 4, 2: 2, 3: 0, 4: 3, 5: 0, 6: 5}}
-
-        # We don't support pressure variation across elements, for now just average it
-        pressure = scale * np.mean(loadInfo.pressures)
-        for elemInfo in loadInfo.eids_ref:
-            elemID = elemInfo.eid
-
-            # Get the correct face index number based on element type
-            if 'CTETRA' in elemInfo.type:
-                for faceIndex in elemInfo.faces:
-                    if loadInfo.g1 in elemInfo.faces[faceIndex] and \
-                            loadInfo.g34 not in elemInfo.faces[faceIndex]:
-                        # For some reason CTETRA4 is the only element that doesn't
-                        # use ANSYS face numbering convention by default
-                        if len(elemInfo.nodes) == 4:
-                            faceIndex = nastranToTACSFaceIDDict['CTETRA4'][faceIndex]
-                        else:
-                            faceIndex = nastranToTACSFaceIDDict['CTETRA'][faceIndex]
-                        # Positive pressure is inward for solid elements, flip pressure if necessary
-                        # We don't flip it for face 0, because the normal for that face points inward by convention
-                        # while the rest point outward
-                        if faceIndex != 0:
-                            pressure *= -1.0
-                        break
-
-            elif 'CHEXA' in elemInfo.type:
-                for faceIndex in elemInfo.faces:
-                    if loadInfo.g1 in elemInfo.faces[faceIndex] and \
-                            loadInfo.g34 in elemInfo.faces[faceIndex]:
-                        faceIndex = nastranToTACSFaceIDDict['CHEXA'][faceIndex]
-                        # Pressure orientation is flipped for solid elements per Nastran convention
-                        pressure *= -1.0
-                        break
-
-            elif 'CQUAD' in elemInfo.type or 'CTRIA' in elemInfo.type:
-                # Face index doesn't matter for shells, just use 0
-                faceIndex = 0
-
-            else:
-                raise self._TACSError("Unsupported element type "
-                                      f"'{elemInfo.type}' specified for PLOAD4 load set number {loadInfo.sid}.")
-
-            # Figure out whether or not this is a traction based on if a vector is defined
-            if np.linalg.norm(loadInfo.nvector) == 0.0:
-                if isinstance(problem, tacs.problems.StaticProblem):
-                    problem.addPressureToElements(elemID, pressure, faceIndex,
-                                                  nastranOrdering=True)
-                elif isinstance(problem, tacs.problems.TransientProblem):
-                    problem.addPressureToElements(timeStep, elemID, pressure, faceIndex,
-                                                  nastranOrdering=True)
-            else:
-                trac = pressure * loadInfo.nvector
-                if isinstance(problem, tacs.problems.StaticProblem):
-                    problem.addTractionToElements(elemID, trac, faceIndex,
-                                                  nastranOrdering=True)
-                elif isinstance(problem, tacs.problems.TransientProblem):
-                    problem.addTractionToElements(timeStep, elemID, trac, faceIndex,
-                                                  nastranOrdering=True)
 
     def getNumComponents(self):
         """
