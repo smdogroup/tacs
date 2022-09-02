@@ -510,7 +510,7 @@ class StaticProblem(TACSProblem):
 
     def addLoadFromBDF(self, loadID, scale=1.0):
         """
-        This method is used to add a load set defined in the BDF file to the problem.
+        This method is used to add a fixed load set defined in the BDF file to the problem.
 
         Parameters
         ----------

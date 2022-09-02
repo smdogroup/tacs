@@ -865,7 +865,7 @@ class TACSProblem(BaseUI):
         This is an internal helper function for doing the addLoadFromBDF method for
         inherited TACSProblem classes. The function should NOT be called by the user should
         use the addLoadFromBDF method for the respective problem class. This method is 
-        used to add a load set defined in the BDF file to the problem.
+        used to add a fixed load set defined in the BDF file to the problem.
 
         Parameters
         ----------
