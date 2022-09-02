@@ -860,7 +860,7 @@ class TACSProblem(BaseUI):
                 # Add new centrifugal force to auxiliary element object
                 auxElems.addElement(elemID, centrifugalObj)
 
-    def _addLoadFromBDF(self, FVec, auxElems, loadsID, setScale=1.0):
+    def _addLoadFromBDF(self, FVec, auxElems, loadID, setScale=1.0):
         """
         This is an internal helper function for doing the addLoadFromBDF method for
         inherited TACSProblem classes. The function should NOT be called by the user should
@@ -879,12 +879,12 @@ class TACSProblem(BaseUI):
         loadID : int
             Load identification number of load set in BDF file user wishes to add to problem.
 
-        scale : float
+        setScale : float
             Factor to scale the BDF loads by before adding to problem.
         """
         vpn = self.assembler.getVarsPerNode()
         # Get loads and scalers for this load case ID
-        loadSet, loadScale, _ = self.bdfInfo.get_reduced_loads(loadsID)
+        loadSet, loadScale, _ = self.bdfInfo.get_reduced_loads(loadID)
         # Loop through every load in set and add it to problem
         for loadInfo, scale in zip(loadSet, loadScale):
             scale *= setScale
