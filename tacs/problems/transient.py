@@ -650,7 +650,8 @@ class TransientProblem(TACSProblem):
     def addLoadFromBDF(self, timeStep, loadID, timeStage=None, scale=1.0):
         """
         This method is used to add a fixed load set defined in the BDF file to the problem
-        at a specified time instance.
+        at a specified time instance. Currently, only supports LOAD, FORCE, MOMENT, GRAV,
+        RFORCE, PLOAD2, and PLOAD4.
 
         Parameters
         ----------

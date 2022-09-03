@@ -26,7 +26,8 @@ class TACSProblem(BaseUI):
         # TACS pyMeshLoader object
         self.meshLoader = meshLoader
         # pyNastran BDF object
-        self.bdfInfo = self.meshLoader.getBDFInfo()
+        if self.meshLoader:
+            self.bdfInfo = self.meshLoader.getBDFInfo()
         # MPI communicator object
         self.comm = comm
 
@@ -866,6 +867,7 @@ class TACSProblem(BaseUI):
         inherited TACSProblem classes. The function should NOT be called by the user should
         use the addLoadFromBDF method for the respective problem class. This method is 
         used to add a fixed load set defined in the BDF file to the problem.
+        Currently, only supports LOAD, FORCE, MOMENT, GRAV, RFORCE, PLOAD2, and PLOAD4.
 
         Parameters
         ----------
