@@ -227,14 +227,14 @@ void TACSPCMHeatConduction2D::evalWeakAdjXptSensProduct( int elemIndex,
   Evaluate a specified pointwise quantity of interest
 */
 int TACSPCMHeatConduction2D::evalPointQuantity( int elemIndex,
-                                             const int quantityType,
-                                             const double time,
-                                             int n, const double pt[],
-                                             const TacsScalar X[],
-                                             const TacsScalar Xd[],
-                                             const TacsScalar Ut[],
-                                             const TacsScalar Ux[],
-                                             TacsScalar *quantity ){
+                                                const int quantityType,
+                                                const double time,
+                                                int n, const double pt[],
+                                                const TacsScalar X[],
+                                                const TacsScalar Xd[],
+                                                const TacsScalar Ut[],
+                                                const TacsScalar Ux[],
+                                                TacsScalar *quantity ){
   if (quantityType == TACS_HEAT_FLUX){
     if (quantity){
       stiff->evalHeatFlux(elemIndex, pt, X, Ux, quantity, Ut[0]);

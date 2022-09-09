@@ -61,16 +61,14 @@ class TACSPhaseChangeMaterialConstitutive : public TACSConstitutive {
                           const TacsScalar X[], const TacsScalar T );
 
   TacsScalar evalDensity( int elemIndex, const double pt[],
-                          const TacsScalar X[] );
+                          const TacsScalar X[]){
+    return evalDensity(elemIndex, pt, X, 0.0);
+    }
 
   // Add the derivative of the density
   void addDensityDVSens( int elemIndex, TacsScalar scale,
                          const double pt[], const TacsScalar X[],
                          int dvLen, TacsScalar dfdx[], const TacsScalar T );
-
-  void addDensityDVSens( int elemIndex, TacsScalar scale,
-                         const double pt[], const TacsScalar X[],
-                         int dvLen, TacsScalar dfdx[] );
 
   TacsScalar evalSpecificHeat( int elemIndex,
                                const double pt[],
@@ -79,7 +77,9 @@ class TACSPhaseChangeMaterialConstitutive : public TACSConstitutive {
 
   TacsScalar evalSpecificHeat( int elemIndex,
                                const double pt[],
-                               const TacsScalar X[] );
+                               const TacsScalar X[]){
+    return evalSpecificHeat( elemIndex, pt, X, 0.0);
+    }
 
   void evalStress( int elemIndex,
                    const double pt[],
@@ -97,28 +97,16 @@ class TACSPhaseChangeMaterialConstitutive : public TACSConstitutive {
                      const TacsScalar X[], const TacsScalar grad[],
                      TacsScalar flux[], const TacsScalar T );
 
-  void evalHeatFlux( int elemIndex, const double pt[],
-                     const TacsScalar X[], const TacsScalar grad[],
-                     TacsScalar flux[] );
-
   // Evaluate the tangent of the heat flux
   void evalTangentHeatFlux( int elemIndex, const double pt[],
                             const TacsScalar X[], TacsScalar Kc[],
                             const TacsScalar T );
-
-  void evalTangentHeatFlux( int elemIndex, const double pt[],
-                            const TacsScalar X[], TacsScalar Kc[] );
 
   // Add the derivative of the heat flux
   void addHeatFluxDVSens( int elemIndex, TacsScalar scale,
                           const double pt[], const TacsScalar X[],
                           const TacsScalar grad[], const TacsScalar psi[],
                           int dvLen, TacsScalar dfdx[], const TacsScalar T );
-
-  void addHeatFluxDVSens( int elemIndex, TacsScalar scale,
-                          const double pt[], const TacsScalar X[],
-                          const TacsScalar grad[], const TacsScalar psi[],
-                          int dvLen, TacsScalar dfdx[] );
 
   // Extra info about the constitutive class
   const char *getObjectName();

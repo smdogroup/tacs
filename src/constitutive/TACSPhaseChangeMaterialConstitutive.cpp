@@ -114,10 +114,10 @@ int TACSPhaseChangeMaterialConstitutive::getDesignVarRange( int elemIndex,
 
 // Compute the phase change coefficient
 TacsScalar TACSPhaseChangeMaterialConstitutive::evalTransitionCoef( const TacsScalar T ){
-  if (T < (Tm-dT)){
+  if (TacsRealPart(T) < TacsRealPart((Tm-dT))){
     return 0.0;
   }
-  if (T > (Tm+dT)){
+  if (TacsRealPart(T) > TacsRealPart((Tm+dT))){
     return 1.0;
   }
   // else
@@ -126,7 +126,7 @@ TacsScalar TACSPhaseChangeMaterialConstitutive::evalTransitionCoef( const TacsSc
 
 // Evaluate the material's phase (0=solid, 1=liquid)
 int TACSPhaseChangeMaterialConstitutive::evalPhase( const TacsScalar T ){
-  if (T <  Tm){
+  if (TacsRealPart(T) <  TacsRealPart(Tm)){
     return 0;
   }
   return 1;
@@ -146,12 +146,6 @@ TacsScalar TACSPhaseChangeMaterialConstitutive::evalDensity( int elemIndex,
   return 0.0;
 }
 
-TacsScalar TACSPhaseChangeMaterialConstitutive::evalDensity( int elemIndex,
-                                                             const double pt[],
-                                                             const TacsScalar X[] ){
-  return 0.0;
-}
-
 // Add the derivative of the density
 void TACSPhaseChangeMaterialConstitutive::addDensityDVSens( int elemIndex,
                                                             TacsScalar scale,
@@ -168,14 +162,6 @@ void TACSPhaseChangeMaterialConstitutive::addDensityDVSens( int elemIndex,
   }
 }
 
-void TACSPhaseChangeMaterialConstitutive::addDensityDVSens( int elemIndex,
-                                                            TacsScalar scale,
-                                                            const double pt[],
-                                                            const TacsScalar X[],
-                                                            int dvLen,
-                                                            TacsScalar dfdx[] ){
-}
-
 TacsScalar TACSPhaseChangeMaterialConstitutive::evalSpecificHeat( int elemIndex,
                                                                   const double pt[],
                                                                   const TacsScalar X[],
@@ -189,12 +175,6 @@ TacsScalar TACSPhaseChangeMaterialConstitutive::evalSpecificHeat( int elemIndex,
     TacsScalar D = exp(f1/f2);
     return cs + (cl - cs)*B + lh*D;
   }
-  return 0.0;
-}
-
-TacsScalar TACSPhaseChangeMaterialConstitutive::evalSpecificHeat( int elemIndex,
-                                                                  const double pt[],
-                                                                  const TacsScalar X[] ){
   return 0.0;
 }
 
@@ -231,13 +211,6 @@ void TACSPhaseChangeMaterialConstitutive::evalHeatFlux( int elemIndex,
   }
 }
 
-void TACSPhaseChangeMaterialConstitutive::evalHeatFlux( int elemIndex,
-                                                        const double pt[],
-                                                        const TacsScalar X[],
-                                                        const TacsScalar grad[],
-                                                        TacsScalar flux[] ){
-}
-
 // Evaluate the tangent of the heat flux
 void TACSPhaseChangeMaterialConstitutive::evalTangentHeatFlux( int elemIndex,
                                                                const double pt[],
@@ -256,12 +229,6 @@ void TACSPhaseChangeMaterialConstitutive::evalTangentHeatFlux( int elemIndex,
 
     Kc[0] *= t;  Kc[1] *= t;  Kc[2] *= t;
   }
-}
-
-void TACSPhaseChangeMaterialConstitutive::evalTangentHeatFlux( int elemIndex,
-                                                               const double pt[],
-                                                               const TacsScalar X[],
-                                                               TacsScalar Kc[] ){
 }
 
 // Add the derivative of the heat flux
@@ -288,14 +255,4 @@ void TACSPhaseChangeMaterialConstitutive::addHeatFluxDVSens( int elemIndex,
     dfdx[0] += scale*(psi[0]*(Kc[0]*grad[0] + Kc[1]*grad[1]) +
                       psi[1]*(Kc[1]*grad[0] + Kc[2]*grad[1]));
   }
-}
-
-void TACSPhaseChangeMaterialConstitutive::addHeatFluxDVSens( int elemIndex,
-                                                             TacsScalar scale,
-                                                             const double pt[],
-                                                             const TacsScalar X[],
-                                                             const TacsScalar grad[],
-                                                             const TacsScalar psi[],
-                                                             int dvLen,
-                                                             TacsScalar dfdx[] ){
 }

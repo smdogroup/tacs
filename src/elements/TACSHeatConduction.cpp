@@ -813,7 +813,7 @@ void TACSHeatConduction3D::getOutputData( int elemIndex,
                                           const TacsScalar Ux[],
                                           int ld_data,
                                           TacsScalar *data ){
-  if (etype == TACS_SCALAR_2D_ELEMENT){
+  if (etype == TACS_SCALAR_3D_ELEMENT){
     if (write_flag & TACS_OUTPUT_NODES){
       data[0] = X[0];
       data[1] = X[1];

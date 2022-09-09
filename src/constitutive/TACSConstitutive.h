@@ -125,6 +125,13 @@ class TACSConstitutive : public TACSObject {
                                   const double pt[],
                                   const TacsScalar X[] ) = 0;
 
+  virtual TacsScalar evalDensity( int elemIndex,
+                                  const double pt[],
+                                  const TacsScalar X[],
+                                  const TacsScalar u ){
+    return evalDensity(elemIndex, pt, X);
+  }
+
   /**
     Add the derivative of the pointwise mass times the given scalar
 
@@ -140,6 +147,16 @@ class TACSConstitutive : public TACSObject {
                                  const double pt[],
                                  const TacsScalar X[],
                                  int dvLen, TacsScalar dfdx[] ){}
+
+  virtual void addDensityDVSens( int elemIndex,
+                                 TacsScalar scale,
+                                 const double pt[],
+                                 const TacsScalar X[],
+                                 int dvLen, TacsScalar dfdx[],
+                                 const TacsScalar u ){
+    return addDensityDVSens(elemIndex, scale,
+                            pt, X, dvLen, dfdx);
+  }
 
   /**
     Evaluate the mass per unit length, area or volume for the element for
@@ -189,6 +206,13 @@ class TACSConstitutive : public TACSObject {
                                        const double pt[],
                                        const TacsScalar X[] ) = 0;
 
+  virtual TacsScalar evalSpecificHeat( int elemIndex,
+                                       const double pt[],
+                                       const TacsScalar X[],
+                                       const TacsScalar u ){
+    return evalSpecificHeat(elemIndex, pt, X);
+  }
+
   /**
     Add the derivative of the pointwise mass times the given scalar
 
@@ -204,6 +228,16 @@ class TACSConstitutive : public TACSObject {
                                       const double pt[],
                                       const TacsScalar X[],
                                       int dvLen, TacsScalar dfdx[] ){}
+
+  virtual void addSpecificHeatDVSens( int elemIndex,
+                                      TacsScalar scale,
+                                      const double pt[],
+                                      const TacsScalar X[],
+                                      int dvLen, TacsScalar dfdx[],
+                                      const TacsScalar u ){
+    return addSpecificHeatDVSens(elemIndex, scale,
+                                 pt, X, dvLen, dfdx);
+  }
 
   /**
     Return the stress as a function of the strain at the Gauss point
@@ -356,7 +390,10 @@ class TACSConstitutive : public TACSObject {
                              const TacsScalar X[],
                              const TacsScalar grad[],
                              TacsScalar flux[],
-                             const TacsScalar U ){}
+                             const TacsScalar u ){
+    return evalHeatFlux(elemIndex, pt,
+                        X, grad, flux);
+  }
 
   /**
     Compute the coefficients of the heat flux
@@ -383,7 +420,9 @@ class TACSConstitutive : public TACSObject {
                                     const double pt[],
                                     const TacsScalar X[],
                                     TacsScalar C[],
-                                    const TacsScalar U ){}
+                                    const TacsScalar u ){
+    return evalTangentHeatFlux(elemIndex, pt, X, C);
+  }
 
   /**
     Add the derivative of the heat flux to the sensitivity array
@@ -422,7 +461,11 @@ class TACSConstitutive : public TACSObject {
                                   const TacsScalar grad[],
                                   const TacsScalar psi[],
                                   int dvLen, TacsScalar dfdx[],
-                                  const TacsScalar U ){}
+                                  const TacsScalar u ){
+    return addHeatFluxDVSens(elemIndex, scale,
+                             pt, X, grad, psi,
+                             dvLen, dfdx);
+  }
 
   /**
     Evaluate the failure index at a quadrature point

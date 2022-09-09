@@ -10,7 +10,8 @@ Test phase change material thermal model using a single-element mesh to verify p
 base_dir = os.path.dirname(os.path.abspath(__file__))
 bdf_file = os.path.join(base_dir, "./input_files/single_element.bdf")
 
-FUNC_REFS = {'transient_ks_temp': 20.70202984802095}
+FUNC_REFS = {'Transient_ks_temp': 7.976969029014029}
+#FUNC_REFS = {'Transient_ks_temp': 20.70202984802095}
 
 class ProblemTest(PyTACSTestCase.PyTACSTest):
     N_PROCS = 2  # this is how many MPI processes to use for this TestCase.
@@ -21,9 +22,7 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
         """
 
         # Instantiate FEA Assembler
-        struct_options = {'outputElement': TACS.PCM_ELEMENT,
-                          # Finer tol needed to pass complex sens test
-                          'L2Convergence': 1e-16}
+        struct_options = {'outputElement': TACS.PCM_ELEMENT}
 
         # Instantiate the pyTACS object
         fea_assembler = pyTACS(bdf_file, comm, options=struct_options)
@@ -94,7 +93,7 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
         tacs_probs = []
 
         # Create transient problem, loads are already applied through BCs
-        tp = fea_assembler.createTransientProblem('Transient', tInit=0.0, tFinal=30.0, numSteps=40)
+        tp = fea_assembler.createTransientProblem('Transient', tInit=0.0, tFinal=8.0, numSteps=40, options={'L2Convergence':1e-16})
         tacs_probs.append(tp)
 
         # Get the time steps and define the loads
