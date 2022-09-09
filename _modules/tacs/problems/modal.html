@@ -55,35 +55,67 @@
 <span class="kn">from</span> <span class="nn">.base</span> <span class="kn">import</span> <span class="n">TACSProblem</span>
 <span class="kn">import</span> <span class="nn">tacs.TACS</span>
 
+
 <div class="viewcode-block" id="ModalProblem"><a class="viewcode-back" href="../../../pytacs/modal.html#tacs.problems.ModalProblem">[docs]</a><span class="k">class</span> <span class="nc">ModalProblem</span><span class="p">(</span><span class="n">TACSProblem</span><span class="p">):</span>
 
     <span class="c1"># Default Option List</span>
     <span class="n">defaultOptions</span> <span class="o">=</span> <span class="p">{</span>
-        <span class="s1">&#39;outputDir&#39;</span><span class="p">:</span> <span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="s1">&#39;./&#39;</span><span class="p">,</span> <span class="s1">&#39;Output directory for F5 file writer.&#39;</span><span class="p">],</span>
-
+        <span class="s2">&quot;outputDir&quot;</span><span class="p">:</span> <span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="s2">&quot;./&quot;</span><span class="p">,</span> <span class="s2">&quot;Output directory for F5 file writer.&quot;</span><span class="p">],</span>
         <span class="c1"># Solution Options</span>
-        <span class="s1">&#39;L2Convergence&#39;</span><span class="p">:</span> <span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="mf">1e-12</span><span class="p">,</span>
-                          <span class="s1">&#39;Absolute convergence tolerance for Eigenvalue solver based on l2 norm of residual.&#39;</span><span class="p">],</span>
-        <span class="s1">&#39;L2ConvergenceRel&#39;</span><span class="p">:</span> <span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="mf">1e-12</span><span class="p">,</span>
-                             <span class="s1">&#39;Relative convergence tolerance for Eigenvalue solver based on l2 norm of residual.&#39;</span><span class="p">],</span>
-        <span class="s1">&#39;subSpaceSize&#39;</span><span class="p">:</span> <span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="s1">&#39;Subspace size for Krylov solver used by Eigenvalue solver.&#39;</span><span class="p">],</span>
-        <span class="s1">&#39;nRestarts&#39;</span><span class="p">:</span> <span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="mi">15</span><span class="p">,</span> <span class="s1">&#39;Max number of resets for Krylov solver used by Eigenvalue solver.&#39;</span><span class="p">],</span>
-
+        <span class="s2">&quot;L2Convergence&quot;</span><span class="p">:</span> <span class="p">[</span>
+            <span class="nb">float</span><span class="p">,</span>
+            <span class="mf">1e-12</span><span class="p">,</span>
+            <span class="s2">&quot;Absolute convergence tolerance for Eigenvalue solver based on l2 norm of residual.&quot;</span><span class="p">,</span>
+        <span class="p">],</span>
+        <span class="s2">&quot;L2ConvergenceRel&quot;</span><span class="p">:</span> <span class="p">[</span>
+            <span class="nb">float</span><span class="p">,</span>
+            <span class="mf">1e-12</span><span class="p">,</span>
+            <span class="s2">&quot;Relative convergence tolerance for Eigenvalue solver based on l2 norm of residual.&quot;</span><span class="p">,</span>
+        <span class="p">],</span>
+        <span class="s2">&quot;subSpaceSize&quot;</span><span class="p">:</span> <span class="p">[</span>
+            <span class="nb">int</span><span class="p">,</span>
+            <span class="mi">10</span><span class="p">,</span>
+            <span class="s2">&quot;Subspace size for Krylov solver used by Eigenvalue solver.&quot;</span><span class="p">,</span>
+        <span class="p">],</span>
+        <span class="s2">&quot;nRestarts&quot;</span><span class="p">:</span> <span class="p">[</span>
+            <span class="nb">int</span><span class="p">,</span>
+            <span class="mi">15</span><span class="p">,</span>
+            <span class="s2">&quot;Max number of resets for Krylov solver used by Eigenvalue solver.&quot;</span><span class="p">,</span>
+        <span class="p">],</span>
         <span class="c1"># Output Options</span>
-        <span class="s1">&#39;writeSolution&#39;</span><span class="p">:</span> <span class="p">[</span><span class="nb">bool</span><span class="p">,</span> <span class="kc">True</span><span class="p">,</span> <span class="s1">&#39;Flag for suppressing all f5 file writing.&#39;</span><span class="p">],</span>
-        <span class="s1">&#39;numberSolutions&#39;</span><span class="p">:</span> <span class="p">[</span><span class="nb">bool</span><span class="p">,</span> <span class="kc">True</span><span class="p">,</span> <span class="s1">&#39;Flag for attaching solution counter index to f5 files.&#39;</span><span class="p">],</span>
-        <span class="s1">&#39;printTiming&#39;</span><span class="p">:</span> <span class="p">[</span><span class="nb">bool</span><span class="p">,</span> <span class="kc">False</span><span class="p">,</span> <span class="s1">&#39;Flag for printing out timing information for class procedures.&#39;</span><span class="p">],</span>
-        <span class="s1">&#39;printLevel&#39;</span><span class="p">:</span> <span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="s1">&#39;Print level for Eigenvalue solver.</span><span class="se">\n</span><span class="s1">&#39;</span>
-                               <span class="s1">&#39;</span><span class="se">\t</span><span class="s1"> Accepts:</span><span class="se">\n</span><span class="s1">&#39;</span>
-                               <span class="s1">&#39;</span><span class="se">\t\t</span><span class="s1">   0 : No printing.</span><span class="se">\n</span><span class="s1">&#39;</span>
-                               <span class="s1">&#39;</span><span class="se">\t\t</span><span class="s1">   1 : Print major iterations.</span><span class="se">\n</span><span class="s1">&#39;</span>
-                               <span class="s1">&#39;</span><span class="se">\t\t</span><span class="s1"> &gt; 1 : Print major + minor iterations.&#39;</span><span class="p">],</span>
-
+        <span class="s2">&quot;writeSolution&quot;</span><span class="p">:</span> <span class="p">[</span><span class="nb">bool</span><span class="p">,</span> <span class="kc">True</span><span class="p">,</span> <span class="s2">&quot;Flag for suppressing all f5 file writing.&quot;</span><span class="p">],</span>
+        <span class="s2">&quot;numberSolutions&quot;</span><span class="p">:</span> <span class="p">[</span>
+            <span class="nb">bool</span><span class="p">,</span>
+            <span class="kc">True</span><span class="p">,</span>
+            <span class="s2">&quot;Flag for attaching solution counter index to f5 files.&quot;</span><span class="p">,</span>
+        <span class="p">],</span>
+        <span class="s2">&quot;printTiming&quot;</span><span class="p">:</span> <span class="p">[</span>
+            <span class="nb">bool</span><span class="p">,</span>
+            <span class="kc">False</span><span class="p">,</span>
+            <span class="s2">&quot;Flag for printing out timing information for class procedures.&quot;</span><span class="p">,</span>
+        <span class="p">],</span>
+        <span class="s2">&quot;printLevel&quot;</span><span class="p">:</span> <span class="p">[</span>
+            <span class="nb">int</span><span class="p">,</span>
+            <span class="mi">0</span><span class="p">,</span>
+            <span class="s2">&quot;Print level for Eigenvalue solver.</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="s2">&quot;</span><span class="se">\t</span><span class="s2"> Accepts:</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="s2">&quot;</span><span class="se">\t\t</span><span class="s2">   0 : No printing.</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="s2">&quot;</span><span class="se">\t\t</span><span class="s2">   1 : Print major iterations.</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="s2">&quot;</span><span class="se">\t\t</span><span class="s2"> &gt; 1 : Print major + minor iterations.&quot;</span><span class="p">,</span>
+        <span class="p">],</span>
     <span class="p">}</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">sigma</span><span class="p">,</span> <span class="n">numEigs</span><span class="p">,</span>
-                 <span class="n">assembler</span><span class="p">,</span> <span class="n">comm</span><span class="p">,</span> <span class="n">outputViewer</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">meshLoader</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-                 <span class="n">options</span><span class="o">=</span><span class="p">{}):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">name</span><span class="p">,</span>
+        <span class="n">sigma</span><span class="p">,</span>
+        <span class="n">numEigs</span><span class="p">,</span>
+        <span class="n">assembler</span><span class="p">,</span>
+        <span class="n">comm</span><span class="p">,</span>
+        <span class="n">outputViewer</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">meshLoader</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">options</span><span class="o">=</span><span class="p">{},</span>
+    <span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        NOTE: This class should not be initialized directly by the user.</span>
 <span class="sd">        Use pyTACS.createModalProblem instead.</span>
@@ -128,9 +160,9 @@
         <span class="c1"># Process the default options which are added to self.options</span>
         <span class="c1"># under the &#39;defaults&#39; key. Make sure the key are lower case</span>
         <span class="n">def_keys</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">defaultOptions</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">options</span><span class="p">[</span><span class="s1">&#39;defaults&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">options</span><span class="p">[</span><span class="s2">&quot;defaults&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
         <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">def_keys</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">options</span><span class="p">[</span><span class="s1">&#39;defaults&#39;</span><span class="p">][</span><span class="n">key</span><span class="o">.</span><span class="n">lower</span><span class="p">()]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">defaultOptions</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">options</span><span class="p">[</span><span class="s2">&quot;defaults&quot;</span><span class="p">][</span><span class="n">key</span><span class="o">.</span><span class="n">lower</span><span class="p">()]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">defaultOptions</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">options</span><span class="p">[</span><span class="n">key</span><span class="o">.</span><span class="n">lower</span><span class="p">()]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">defaultOptions</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
 
         <span class="c1"># Set user-defined options</span>
@@ -158,18 +190,25 @@
         <span class="n">alpha</span> <span class="o">=</span> <span class="mf">1.0</span>
         <span class="n">beta</span> <span class="o">=</span> <span class="mf">0.0</span>
         <span class="n">gamma</span> <span class="o">=</span> <span class="mf">0.0</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">assembler</span><span class="o">.</span><span class="n">assembleJacobian</span><span class="p">(</span><span class="n">alpha</span><span class="p">,</span> <span class="n">beta</span><span class="p">,</span> <span class="n">gamma</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">K</span><span class="p">);</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assembler</span><span class="o">.</span><span class="n">assembleJacobian</span><span class="p">(</span><span class="n">alpha</span><span class="p">,</span> <span class="n">beta</span><span class="p">,</span> <span class="n">gamma</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">K</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">pc</span><span class="o">.</span><span class="n">factor</span><span class="p">()</span>  <span class="c1"># LU factorization of stiffness matrix</span>
 
-        <span class="n">subspace</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s1">&#39;subSpaceSize&#39;</span><span class="p">)</span>
-        <span class="n">restarts</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s1">&#39;nRestarts&#39;</span><span class="p">)</span>
+        <span class="n">subspace</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s2">&quot;subSpaceSize&quot;</span><span class="p">)</span>
+        <span class="n">restarts</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s2">&quot;nRestarts&quot;</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">gmres</span> <span class="o">=</span> <span class="n">tacs</span><span class="o">.</span><span class="n">TACS</span><span class="o">.</span><span class="n">KSM</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">K</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">pc</span><span class="p">,</span> <span class="n">subspace</span><span class="p">,</span> <span class="n">restarts</span><span class="p">)</span>
 
-        <span class="n">eigTol</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s1">&#39;L2Convergence&#39;</span><span class="p">)</span>
+        <span class="n">eigTol</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s2">&quot;L2Convergence&quot;</span><span class="p">)</span>
 
         <span class="c1"># Create the frequency analysis object</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">freqSolver</span> <span class="o">=</span> <span class="n">tacs</span><span class="o">.</span><span class="n">TACS</span><span class="o">.</span><span class="n">FrequencyAnalysis</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">assembler</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">sigma</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">M</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">K</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">gmres</span><span class="p">,</span>
-                                                      <span class="n">num_eigs</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">numEigs</span><span class="p">,</span> <span class="n">eig_tol</span><span class="o">=</span><span class="n">eigTol</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">freqSolver</span> <span class="o">=</span> <span class="n">tacs</span><span class="o">.</span><span class="n">TACS</span><span class="o">.</span><span class="n">FrequencyAnalysis</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">assembler</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">sigma</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">M</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">K</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">gmres</span><span class="p">,</span>
+            <span class="n">num_eigs</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">numEigs</span><span class="p">,</span>
+            <span class="n">eig_tol</span><span class="o">=</span><span class="n">eigTol</span><span class="p">,</span>
+        <span class="p">)</span>
 
 <div class="viewcode-block" id="ModalProblem.setOption"><a class="viewcode-back" href="../../../pytacs/modal.html#tacs.problems.ModalProblem.setOption">[docs]</a>    <span class="k">def</span> <span class="nf">setOption</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
@@ -187,8 +226,12 @@
         <span class="n">TACSProblem</span><span class="o">.</span><span class="n">setOption</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
 
         <span class="c1"># No need to reset solver for output options</span>
-        <span class="k">if</span> <span class="n">name</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;writesolution&#39;</span><span class="p">,</span> <span class="s1">&#39;printtiming&#39;</span><span class="p">,</span>
-                            <span class="s1">&#39;numbersolutions&#39;</span><span class="p">,</span> <span class="s1">&#39;outputdir&#39;</span><span class="p">]:</span>
+        <span class="k">if</span> <span class="n">name</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">in</span> <span class="p">[</span>
+            <span class="s2">&quot;writesolution&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;printtiming&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;numbersolutions&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;outputdir&quot;</span><span class="p">,</span>
+        <span class="p">]:</span>
             <span class="k">pass</span>
         <span class="c1"># Reset solver for all other option changes</span>
         <span class="k">else</span><span class="p">:</span>
@@ -251,46 +294,57 @@
         <span class="n">initSolveTime</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
 
         <span class="c1"># Solve the frequency analysis problem</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">freqSolver</span><span class="o">.</span><span class="n">solve</span><span class="p">(</span><span class="n">print_level</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s1">&#39;printLevel&#39;</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">freqSolver</span><span class="o">.</span><span class="n">solve</span><span class="p">(</span><span class="n">print_level</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s2">&quot;printLevel&quot;</span><span class="p">))</span>
 
         <span class="n">solveTime</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
 
         <span class="c1"># If timing was was requested print it, if the solution is nonlinear</span>
         <span class="c1"># print this information automatically if prinititerations was requested.</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s1">&#39;printTiming&#39;</span><span class="p">):</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_pp</span><span class="p">(</span><span class="s1">&#39;+--------------------------------------------------+&#39;</span><span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_pp</span><span class="p">(</span><span class="s1">&#39;|&#39;</span><span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_pp</span><span class="p">(</span><span class="s1">&#39;| TACS Solve Times:&#39;</span><span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_pp</span><span class="p">(</span><span class="s1">&#39;|&#39;</span><span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_pp</span><span class="p">(</span><span class="s1">&#39;| </span><span class="si">%-30s</span><span class="s1">: </span><span class="si">%10.3f</span><span class="s1"> sec&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="s1">&#39;TACS Setup Time&#39;</span><span class="p">,</span> <span class="n">setupProblemTime</span> <span class="o">-</span> <span class="n">startTime</span><span class="p">))</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_pp</span><span class="p">(</span><span class="s1">&#39;| </span><span class="si">%-30s</span><span class="s1">: </span><span class="si">%10.3f</span><span class="s1"> sec&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="s1">&#39;TACS Solve Init Time&#39;</span><span class="p">,</span> <span class="n">initSolveTime</span> <span class="o">-</span> <span class="n">setupProblemTime</span><span class="p">))</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_pp</span><span class="p">(</span><span class="s1">&#39;| </span><span class="si">%-30s</span><span class="s1">: </span><span class="si">%10.3f</span><span class="s1"> sec&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="s1">&#39;TACS Solve Time&#39;</span><span class="p">,</span> <span class="n">solveTime</span> <span class="o">-</span> <span class="n">initSolveTime</span><span class="p">))</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_pp</span><span class="p">(</span><span class="s1">&#39;|&#39;</span><span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_pp</span><span class="p">(</span><span class="s1">&#39;| </span><span class="si">%-30s</span><span class="s1">: </span><span class="si">%10.3f</span><span class="s1"> sec&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="s1">&#39;TACS Total Solution Time&#39;</span><span class="p">,</span> <span class="n">solveTime</span> <span class="o">-</span> <span class="n">startTime</span><span class="p">))</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_pp</span><span class="p">(</span><span class="s1">&#39;+--------------------------------------------------+&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s2">&quot;printTiming&quot;</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_pp</span><span class="p">(</span><span class="s2">&quot;+--------------------------------------------------+&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_pp</span><span class="p">(</span><span class="s2">&quot;|&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_pp</span><span class="p">(</span><span class="s2">&quot;| TACS Solve Times:&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_pp</span><span class="p">(</span><span class="s2">&quot;|&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_pp</span><span class="p">(</span>
+                <span class="s2">&quot;| </span><span class="si">%-30s</span><span class="s2">: </span><span class="si">%10.3f</span><span class="s2"> sec&quot;</span>
+                <span class="o">%</span> <span class="p">(</span><span class="s2">&quot;TACS Setup Time&quot;</span><span class="p">,</span> <span class="n">setupProblemTime</span> <span class="o">-</span> <span class="n">startTime</span><span class="p">)</span>
+            <span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_pp</span><span class="p">(</span>
+                <span class="s2">&quot;| </span><span class="si">%-30s</span><span class="s2">: </span><span class="si">%10.3f</span><span class="s2"> sec&quot;</span>
+                <span class="o">%</span> <span class="p">(</span><span class="s2">&quot;TACS Solve Init Time&quot;</span><span class="p">,</span> <span class="n">initSolveTime</span> <span class="o">-</span> <span class="n">setupProblemTime</span><span class="p">)</span>
+            <span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_pp</span><span class="p">(</span>
+                <span class="s2">&quot;| </span><span class="si">%-30s</span><span class="s2">: </span><span class="si">%10.3f</span><span class="s2"> sec&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="s2">&quot;TACS Solve Time&quot;</span><span class="p">,</span> <span class="n">solveTime</span> <span class="o">-</span> <span class="n">initSolveTime</span><span class="p">)</span>
+            <span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_pp</span><span class="p">(</span><span class="s2">&quot;|&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_pp</span><span class="p">(</span>
+                <span class="s2">&quot;| </span><span class="si">%-30s</span><span class="s2">: </span><span class="si">%10.3f</span><span class="s2"> sec&quot;</span>
+                <span class="o">%</span> <span class="p">(</span><span class="s2">&quot;TACS Total Solution Time&quot;</span><span class="p">,</span> <span class="n">solveTime</span> <span class="o">-</span> <span class="n">startTime</span><span class="p">)</span>
+            <span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_pp</span><span class="p">(</span><span class="s2">&quot;+--------------------------------------------------+&quot;</span><span class="p">)</span>
 
         <span class="k">return</span></div>
 
 <div class="viewcode-block" id="ModalProblem.getVariables"><a class="viewcode-back" href="../../../pytacs/modal.html#tacs.problems.ModalProblem.getVariables">[docs]</a>    <span class="k">def</span> <span class="nf">getVariables</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">index</span><span class="p">,</span> <span class="n">states</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">         Return the current state values for one mode of the current problem</span>
+<span class="sd">        Return the current state values for one mode of the current problem</span>
 
-<span class="sd">         Parameters</span>
-<span class="sd">         ----------</span>
-<span class="sd">         index : int</span>
-<span class="sd">             Mode index to return solution for.</span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        index : int</span>
+<span class="sd">            Mode index to return solution for.</span>
 
-<span class="sd">         states : TACS.Vec or numpy.ndarray or None</span>
-<span class="sd">             Place eigenvector for mode into this array (optional).</span>
+<span class="sd">        states : TACS.Vec or numpy.ndarray or None</span>
+<span class="sd">            Place eigenvector for mode into this array (optional).</span>
 
-<span class="sd">         Returns</span>
-<span class="sd">         --------</span>
-<span class="sd">         eigVal: float</span>
-<span class="sd">             Eigenvalue for mode corresponds to square of eigenfrequency (rad^2/s^2)</span>
+<span class="sd">        Returns</span>
+<span class="sd">        --------</span>
+<span class="sd">        eigVal: float</span>
+<span class="sd">            Eigenvalue for mode corresponds to square of eigenfrequency (rad^2/s^2)</span>
 
-<span class="sd">         states : numpy.ndarray</span>
-<span class="sd">             Eigenvector for mode</span>
-<span class="sd">         &quot;&quot;&quot;</span>
+<span class="sd">        states : numpy.ndarray</span>
+<span class="sd">            Eigenvector for mode</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">eigVal</span><span class="p">,</span> <span class="n">err</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">freqSolver</span><span class="o">.</span><span class="n">extractEigenvalue</span><span class="p">(</span><span class="n">index</span><span class="p">)</span>
         <span class="n">eigVector</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">assembler</span><span class="o">.</span><span class="n">createVec</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">freqSolver</span><span class="o">.</span><span class="n">extractEigenvector</span><span class="p">(</span><span class="n">index</span><span class="p">,</span> <span class="n">eigVector</span><span class="p">)</span>
@@ -330,7 +384,7 @@
 
         <span class="c1"># Check input</span>
         <span class="k">if</span> <span class="n">outputDir</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">outputDir</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s1">&#39;outputDir&#39;</span><span class="p">)</span>
+            <span class="n">outputDir</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s2">&quot;outputDir&quot;</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">baseName</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">baseName</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span>
@@ -339,15 +393,15 @@
         <span class="c1"># calls, add the call number</span>
         <span class="k">if</span> <span class="n">number</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="c1"># We need number based on the provided number:</span>
-            <span class="n">baseName</span> <span class="o">=</span> <span class="n">baseName</span> <span class="o">+</span> <span class="s1">&#39;_</span><span class="si">%3.3d</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">number</span>
+            <span class="n">baseName</span> <span class="o">=</span> <span class="n">baseName</span> <span class="o">+</span> <span class="s2">&quot;_</span><span class="si">%3.3d</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">number</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="c1"># if number is none, i.e. standalone, but we need to</span>
             <span class="c1"># number solutions, use internal counter</span>
-            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s1">&#39;numberSolutions&#39;</span><span class="p">):</span>
-                <span class="n">baseName</span> <span class="o">=</span> <span class="n">baseName</span> <span class="o">+</span> <span class="s1">&#39;_</span><span class="si">%3.3d</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">callCounter</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s2">&quot;numberSolutions&quot;</span><span class="p">):</span>
+                <span class="n">baseName</span> <span class="o">=</span> <span class="n">baseName</span> <span class="o">+</span> <span class="s2">&quot;_</span><span class="si">%3.3d</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">callCounter</span>
 
         <span class="c1"># Unless the writeSolution option is off write actual file:</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s1">&#39;writeSolution&#39;</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s2">&quot;writeSolution&quot;</span><span class="p">):</span>
 
             <span class="c1"># If indices is None, output all modes</span>
             <span class="k">if</span> <span class="n">indices</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
@@ -362,8 +416,8 @@
                 <span class="c1"># Set eigen mode in assembler</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">assembler</span><span class="o">.</span><span class="n">setVariables</span><span class="p">(</span><span class="n">vec</span><span class="p">)</span>
                 <span class="c1"># Write out mode shape as f5 file</span>
-                <span class="n">modeName</span> <span class="o">=</span> <span class="n">baseName</span> <span class="o">+</span> <span class="s1">&#39;_</span><span class="si">%3.3d</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">index</span>
-                <span class="n">fileName</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">outputDir</span><span class="p">,</span> <span class="n">modeName</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39;.f5&#39;</span>
+                <span class="n">modeName</span> <span class="o">=</span> <span class="n">baseName</span> <span class="o">+</span> <span class="s2">&quot;_</span><span class="si">%3.3d</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">index</span>
+                <span class="n">fileName</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">outputDir</span><span class="p">,</span> <span class="n">modeName</span><span class="p">)</span> <span class="o">+</span> <span class="s2">&quot;.f5&quot;</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">outputViewer</span><span class="o">.</span><span class="n">writeToFile</span><span class="p">(</span><span class="n">fileName</span><span class="p">)</span></div></div>
 </pre></div>
 
