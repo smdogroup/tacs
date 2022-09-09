@@ -268,7 +268,8 @@ class StaticProblem(TACSProblem):
         This method is used to add a *FIXED TOTAL LOAD* on one or more
         components, defined by COMPIDs. The purpose of this routine is to add loads that
         remain fixed throughout an optimization. An example would be an engine load.
-        This routine determines all the unique nodes in the FE model that are part of the         requested components, then takes the total 'force' by F and divides by the
+        This routine determines all the unique nodes in the FE model that are part of the
+        requested components, then takes the total 'force' by F and divides by the
         number of nodes. This average load is then applied to the nodes.
 
         Parameters
@@ -506,6 +507,22 @@ class StaticProblem(TACSProblem):
             Location of center of rotation used to define centrifugal load.
         """
         self._addCentrifugalLoad(self.auxElems, omegaVector, rotCenter)
+
+    def addLoadFromBDF(self, loadID, scale=1.0):
+        """
+        This method is used to add a fixed load set defined in the BDF file to the problem.
+        Currently, only supports LOAD, FORCE, MOMENT, GRAV, RFORCE, PLOAD2, and PLOAD4.
+
+        Parameters
+        ----------
+
+        loadID : int
+            Load identification number of load set in BDF file user wishes to add to problem.
+
+        scale : float
+            Factor to scale the BDF loads by before adding to problem.
+        """
+        self._addLoadFromBDF(self.F, self.auxElems, loadID, scale)
 
     ####### Static solver methods ########
 

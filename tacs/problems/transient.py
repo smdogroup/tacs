@@ -647,6 +647,39 @@ class TransientProblem(TACSProblem):
 
         self._addCentrifugalLoad(self.auxElems[timeIndex], omegaVector, rotCenter)
 
+    def addLoadFromBDF(self, timeStep, loadID, timeStage=None, scale=1.0):
+        """
+        This method is used to add a fixed load set defined in the BDF file to the problem
+        at a specified time instance. Currently, only supports LOAD, FORCE, MOMENT, GRAV,
+        RFORCE, PLOAD2, and PLOAD4.
+
+        Parameters
+        ----------
+
+        timeStep : int
+            Time step index to apply load to.
+
+        loadID : int
+            Load identification number of load set in BDF file user wishes to add to problem.
+
+        timeStage : int or None
+            Time stage index to apply load to. Default is None, which is applicable only for
+            multi-step methods like BDF. For multi-stage methods like DIRK, this index must
+            be specified.
+
+        scale : float
+            Factor to scale the BDF loads by before adding to problem.
+        """
+        timeIndex = 0
+        if self.numStages is None:
+            timeIndex = timeStep
+        else:
+            assert timeStage is not None, "Time stage index must be specified for %s integrator type" % self.getOption(
+                'timeIntegrator').upper()
+            timeIndex = timeStep * self.numStages + timeStage
+
+        self._addLoadFromBDF(self.F[timeIndex], self.auxElems[timeIndex], loadID, scale)
+
     ####### Transient solver methods ########
 
     def setInitConditions(self, vars=None, dvars=None, ddvars=None):
