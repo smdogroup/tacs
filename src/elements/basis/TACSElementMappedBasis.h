@@ -28,7 +28,6 @@
 
 class TACSElementMappedBasis : public TACSElementBasis {
  public:
-
   /**
     Get the face normal at a specified face quadrature point.
 
@@ -43,11 +42,9 @@ class TACSElementMappedBasis : public TACSElementBasis {
     @param normal The face (or edge) normal
     @return The area contribution
   */
-  virtual TacsScalar getFaceNormal( int face, int n,
-                                    const TacsScalar Xpts[],
-                                    TacsScalar X[],
-                                    TacsScalar Xd[],
-                                    TacsScalar normal[] );
+  virtual TacsScalar getFaceNormal(int face, int n, const TacsScalar Xpts[],
+                                   TacsScalar X[], TacsScalar Xd[],
+                                   TacsScalar normal[]);
 
   /**
     Add the derivative of the face normal into the nodal sensitivities
@@ -62,15 +59,10 @@ class TACSElementMappedBasis : public TACSElementBasis {
     @param dfdn The derivative of the function w.r.t. surface normal
     @param dfdXpts The output derivative w.r.t. the node locations
   */
-  virtual void addFaceNormalXptSens( int face, int n,
-                                     const TacsScalar A,
-                                     const TacsScalar Xd[],
-                                     const TacsScalar normal[],
-                                     const TacsScalar dfdA,
-                                     const TacsScalar dfdX[],
-                                     const TacsScalar dfdXd[],
-                                     const TacsScalar dfdn[],
-                                     TacsScalar dfdXpts[] );
+  virtual void addFaceNormalXptSens(
+      int face, int n, const TacsScalar A, const TacsScalar Xd[],
+      const TacsScalar normal[], const TacsScalar dfdA, const TacsScalar dfdX[],
+      const TacsScalar dfdXd[], const TacsScalar dfdn[], TacsScalar dfdXpts[]);
 
   /**
     Get the Jacobian transformation from computational to physical
@@ -88,10 +80,9 @@ class TACSElementMappedBasis : public TACSElementBasis {
     @param J The Jacobian transformation (inverse of Xd)
     @return The determinant of Xd
   */
-  virtual TacsScalar getJacobianTransform( int n, const double pt[],
-                                           const TacsScalar Xpts[],
-                                           TacsScalar Xd[],
-                                           TacsScalar J[] );
+  virtual TacsScalar getJacobianTransform(int n, const double pt[],
+                                          const TacsScalar Xpts[],
+                                          TacsScalar Xd[], TacsScalar J[]);
 
   /**
     Compute the derivative of the Jacobian transformation
@@ -110,30 +101,19 @@ class TACSElementMappedBasis : public TACSElementBasis {
     @param dfdJ The derivative of the function w.r.t. J
     @param dfdXpts The output derivative of the function w.r.t. Xpts
   */
-  virtual void addJacobianTransformXptSens( int n, const double pt[],
-                                            const TacsScalar Xd[],
-                                            const TacsScalar J[],
-                                            TacsScalar dfddetJ,
-                                            const TacsScalar dfXd[],
-                                            const TacsScalar dfdJ[],
-                                            TacsScalar dfdXpts[] );
+  virtual void addJacobianTransformXptSens(
+      int n, const double pt[], const TacsScalar Xd[], const TacsScalar J[],
+      TacsScalar dfddetJ, const TacsScalar dfXd[], const TacsScalar dfdJ[],
+      TacsScalar dfdXpts[]);
 
  protected:
-  static TacsScalar computeMappedFaceNormal( const int num_params,
-                                             const int num_nodes,
-                                             const double N[],
-                                             const double Nxi[],
-                                             const TacsScalar Xpts[],
-                                             const double tangents[],
-                                             TacsScalar X[],
-                                             TacsScalar Xd[],
-                                             TacsScalar n[] );
-  static TacsScalar computeMappedJacobianTransform( const int num_params,
-                                                    const int num_nodes,
-                                                    const double Nxi[],
-                                                    const TacsScalar Xpts[],
-                                                    TacsScalar Xd[],
-                                                    TacsScalar J[] );
+  static TacsScalar computeMappedFaceNormal(
+      const int num_params, const int num_nodes, const double N[],
+      const double Nxi[], const TacsScalar Xpts[], const double tangents[],
+      TacsScalar X[], TacsScalar Xd[], TacsScalar n[]);
+  static TacsScalar computeMappedJacobianTransform(
+      const int num_params, const int num_nodes, const double Nxi[],
+      const TacsScalar Xpts[], TacsScalar Xd[], TacsScalar J[]);
 };
 
-#endif // TACS_ELEMENT_MAPPED_BASIS_H
+#endif  // TACS_ELEMENT_MAPPED_BASIS_H

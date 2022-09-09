@@ -13,11 +13,9 @@
   @param fn2 The second normal direction
 */
 template <class basis>
-void TacsBeamComputeNodeNormals( const TacsScalar Xpts[],
-                                 const A2D::Vec3& axis,
-                                 TacsScalar fn1[],
-                                 TacsScalar fn2[] ){
-  for ( int i = 0; i < basis::NUM_NODES; i++ ){
+void TacsBeamComputeNodeNormals(const TacsScalar Xpts[], const A2D::Vec3& axis,
+                                TacsScalar fn1[], TacsScalar fn2[]) {
+  for (int i = 0; i < basis::NUM_NODES; i++) {
     double pt[2];
     basis::getNodePoint(i, pt);
 
@@ -65,12 +63,10 @@ void TacsBeamComputeNodeNormals( const TacsScalar Xpts[],
   @param fn2 The second normal direction
 */
 template <class basis>
-void TacsBeamAddNodeNormalsSens( const TacsScalar Xpts[],
-                                 const A2D::Vec3& axis,
-                                 const TacsScalar dfn1[],
-                                 const TacsScalar dfn2[],
-                                 TacsScalar dXpts[] ){
-  for ( int i = 0; i < basis::NUM_NODES; i++ ){
+void TacsBeamAddNodeNormalsSens(const TacsScalar Xpts[], const A2D::Vec3& axis,
+                                const TacsScalar dfn1[],
+                                const TacsScalar dfn2[], TacsScalar dXpts[]) {
+  for (int i = 0; i < basis::NUM_NODES; i++) {
     double pt[2];
     basis::getNodePoint(i, pt);
 
@@ -152,15 +148,9 @@ void TacsBeamAddNodeNormalsSens( const TacsScalar Xpts[],
 //   TacsScalar Xdinv[9];
 //   TacsScalar detXd = inv3x3(Xd, Xdinv);
 
-
 //   // Assemble the derivative of the reference frame
 //   TacsScalar Ud[9];
 //   TacsShellAssembleFrame(u0xi, d1, d2, Ud);
-
-
-
-
-
 
 //   // Compute n,xi = [dn/dxi1; dn/dxi2]
 //   TacsScalar n1xi[3], n2xi[3];
@@ -208,12 +198,6 @@ void TacsBeamAddNodeNormalsSens( const TacsScalar Xpts[],
 //   vec3Axpy(scale, d1a, tmp);
 //   mat3x3MultTrans(T, tmp, Td1a);
 
-
-
-
-
-
-
 //   // Td2a = T^{T}*d2a*e1^{T}*Xdinv*T*e1
 //   TacsScalar Td2a[3], z2Te1[3];
 //   tmp[0] = T[0];
@@ -224,20 +208,14 @@ void TacsBeamAddNodeNormalsSens( const TacsScalar Xpts[],
 //   vec3Axpy(S[0], d2a, tmp);
 //   mat3x3MultTrans(T, tmp, Td2a);
 
-
-
-
-
-
-
-
-//   // Compute the gradient of the displacement solution at the quadrature points
-//   TacsScalar u0[3], u0xi[3];
-//   basis::template interpFields<vars_per_node, 3>(pt, vars, u0);
-//   basis::template interpFieldsGrad<vars_per_node, 3>(pt, vars, u0xi);
+//   // Compute the gradient of the displacement solution at the quadrature
+//   points TacsScalar u0[3], u0xi[3]; basis::template
+//   interpFields<vars_per_node, 3>(pt, vars, u0); basis::template
+//   interpFieldsGrad<vars_per_node, 3>(pt, vars, u0xi);
 
 //   // Compute the derivative u0,x
-//   TacsShellAssembleFrame(u0xi, d01, d01, u0x); // Use u0x to store [u0,xi; d1, d2]
+//   TacsShellAssembleFrame(u0xi, d01, d01, u0x); // Use u0x to store [u0,xi;
+//   d1, d2]
 
 //   // d1x = T^{T}*d1*XdinvT + T^{T}*u0*XdinvzT
 //   // TacsScalar tmp[9];
@@ -258,10 +236,9 @@ void TacsBeamAddNodeNormalsSens( const TacsScalar Xpts[],
   Test the implementation of the shell terms for a given basis
 */
 template <int vars_per_node, class basis>
-int TacsTestBeamUtilities( double dh=1e-7,
-                           int test_print_level=2,
-                           double test_fail_atol=1e-5,
-                           double test_fail_rtol=1e-5 ){
+int TacsTestBeamUtilities(double dh = 1e-7, int test_print_level = 2,
+                          double test_fail_atol = 1e-5,
+                          double test_fail_rtol = 1e-5) {
   int fail = 0;
   /*
   const int size = vars_per_node*basis::NUM_NODES;
@@ -317,8 +294,8 @@ int TacsTestBeamUtilities( double dh=1e-7,
 
   TacsScalar XdinvT[9], XdinvzT[9];
   TacsScalar u0x[9], u1x[9];
-  TacsShellComputeDispGrad<vars_per_node, basis>(pt, Xpts, vars, fn, d, Xxi, n0, T,
-                                                 XdinvT, XdinvzT, u0x, u1x);
+  TacsShellComputeDispGrad<vars_per_node, basis>(pt, Xpts, vars, fn, d, Xxi, n0,
+T, XdinvT, XdinvzT, u0x, u1x);
 
   TacsShellAddDispGradSens<vars_per_node, basis>(pt, T, XdinvT, XdinvzT,
                                                  du0x, du1x, res, dd);
@@ -340,8 +317,8 @@ int TacsTestBeamUtilities( double dh=1e-7,
 
     // Compute the pertubation
     TacsScalar u0xt[9], u1xt[9];
-    TacsShellComputeDispGrad<vars_per_node, basis>(pt, Xpts, varst, fn, d, Xxi, n0, T,
-                                                   XdinvT, XdinvzT, u0xt, u1xt);
+    TacsShellComputeDispGrad<vars_per_node, basis>(pt, Xpts, varst, fn, d, Xxi,
+n0, T, XdinvT, XdinvzT, u0xt, u1xt);
 
     // d2u0xu1x[9*i + j] = p2f/(p(u0x[i]) p(u1x[j]))
     // d2Ctu0x[9*i + j] = p2f/(p(Ct[i]) p(u0x[j]))
@@ -447,8 +424,8 @@ int TacsTestBeamUtilities( double dh=1e-7,
 
     // Compute the pertubation
     TacsScalar u0xt[9], u1xt[9];
-    TacsShellComputeDispGrad<vars_per_node, basis>(pt, Xpts, vars, fn, dt, Xxi, n0, T,
-                                                   XdinvT, XdinvzT, u0xt, u1xt);
+    TacsShellComputeDispGrad<vars_per_node, basis>(pt, Xpts, vars, fn, dt, Xxi,
+n0, T, XdinvT, XdinvzT, u0xt, u1xt);
 
     // d2u0xu1x[9*i + j] = p2f/(p(u0x[i]) p(u1x[j]))
     // d2Ctu0x[9*i + j] = p2f/(p(Ct[i]) p(u0x[j]))
@@ -505,5 +482,4 @@ int TacsTestBeamUtilities( double dh=1e-7,
   return fail;
 }
 
-
-#endif // TACS_BEAM_UTILITIES_H
+#endif  // TACS_BEAM_UTILITIES_H
