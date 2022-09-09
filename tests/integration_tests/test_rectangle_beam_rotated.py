@@ -3,7 +3,7 @@ import os
 from tacs import pytacs, elements, constitutive, functions
 from pytacs_analysis_base_test import PyTACSTestCase
 
-'''
+"""
 This is the same test cases as `test_rectangle_beam_tractions.py`, but the beam has been rotated 
 about the y-axis by 45 degrees, so that it lies in a slant in the xz plane. This test ensures that the beam solution 
 is invariant under trivial transformation: 
@@ -14,7 +14,7 @@ The cross-section is a solid rectangle with the following properties:
     t = 0.05
 We apply two load cases: a distributed gravity and distributed traction case.
 We test KSDisplacement, KSFailure, StructuralMass, and Compliance functions and sensitivities.
-'''
+"""
 
 base_dir = os.path.dirname(os.path.abspath(__file__))
 bdf_file = os.path.join(base_dir, "./input_files/beam_model_skewed.bdf")
@@ -28,8 +28,10 @@ x_prime = np.sqrt(0.5) * np.array([1.0, 0.0, 1.0])
 y_prime = np.array([0.0, 1.0, 0.0])
 z_prime = np.sqrt(0.5) * np.array([-1.0, 0.0, 1.0])
 
+
 class ProblemTest(PyTACSTestCase.PyTACSTest):
     N_PROCS = 2  # this is how many MPI processes to use for this TestCase.
+
     def setup_pytacs(self, comm, dtype):
         """
         Setup mesh and pytacs object for problem we will be testing.
@@ -56,10 +58,14 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
         w = 0.1  # m
 
         # Callback function used to setup TACS element objects and DVs
-        def elem_call_back(dv_num, comp_id, comp_descript, elem_descripts, global_dvs, **kwargs):
+        def elem_call_back(
+            dv_num, comp_id, comp_descript, elem_descripts, global_dvs, **kwargs
+        ):
             # Setup (isotropic) property and constitutive objects
             prop = constitutive.MaterialProperties(rho=rho, E=E, nu=nu, ys=ys)
-            con = constitutive.IsoRectangleBeamConstitutive(prop, t=t, tNum=dv_num, w=w, wNum=dv_num+1)
+            con = constitutive.IsoRectangleBeamConstitutive(
+                prop, t=t, tNum=dv_num, w=w, wNum=dv_num + 1
+            )
             refAxis = y_prime
             transform = elements.BeamRefAxisTransform(refAxis)
             # pass back the appropriate tacs element object
@@ -95,37 +101,48 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
         """
         # Add Functions
         for problem in problems:
-            problem.addFunction('mass', functions.StructuralMass)
-            problem.addFunction('compliance', functions.Compliance)
-            problem.addFunction('ks_vmfailure', functions.KSFailure,
-                                ksWeight=ksweight)
+            problem.addFunction("mass", functions.StructuralMass)
+            problem.addFunction("compliance", functions.Compliance)
+            problem.addFunction("ks_vmfailure", functions.KSFailure, ksWeight=ksweight)
             # Get displacements in rotated coordinate frame
-            problem.addFunction('x_disp', functions.KSDisplacement,
-                                ksWeight=ksweight, direction=10.0*x_prime)
-            problem.addFunction('y_disp', functions.KSDisplacement,
-                                ksWeight=ksweight, direction=10.0*y_prime)
-            problem.addFunction('z_disp', functions.KSDisplacement,
-                                ksWeight=ksweight, direction=10.0*z_prime)
-        func_list = ['mass', 'compliance', 'x_disp', 'y_disp', 'z_disp']
+            problem.addFunction(
+                "x_disp",
+                functions.KSDisplacement,
+                ksWeight=ksweight,
+                direction=10.0 * x_prime,
+            )
+            problem.addFunction(
+                "y_disp",
+                functions.KSDisplacement,
+                ksWeight=ksweight,
+                direction=10.0 * y_prime,
+            )
+            problem.addFunction(
+                "z_disp",
+                functions.KSDisplacement,
+                ksWeight=ksweight,
+                direction=10.0 * z_prime,
+            )
+        func_list = ["mass", "compliance", "x_disp", "y_disp", "z_disp"]
         return func_list, FUNC_REFS
 
     def setup_tacs_problems(self, fea_assembler):
         """
         Setup pytacs object for problems we will be testing.
         """
-        grav_prob = fea_assembler.createStaticProblem('gravity')
-        grav_vec = -10.0*x_prime + 3.0*y_prime + 5.0*z_prime
+        grav_prob = fea_assembler.createStaticProblem("gravity")
+        grav_vec = -10.0 * x_prime + 3.0 * y_prime + 5.0 * z_prime
         grav_prob.addInertialLoad(grav_vec)
 
-        trac_prob = fea_assembler.createStaticProblem('traction')
-        trac_vec = 1.0*x_prime - 2.0*y_prime + 3.0*z_prime
+        trac_prob = fea_assembler.createStaticProblem("traction")
+        trac_vec = 1.0 * x_prime - 2.0 * y_prime + 3.0 * z_prime
         trac_prob.addTractionToComponents([0], trac_vec)
 
         tacs_probs = [grav_prob, trac_prob]
 
         # Set convergence to be tight for test
         for problem in tacs_probs:
-            problem.setOption('L2Convergence', 1e-20)
-            problem.setOption('L2ConvergenceRel', 1e-20)
+            problem.setOption("L2Convergence", 1e-20)
+            problem.setOption("L2ConvergenceRel", 1e-20)
 
         return tacs_probs

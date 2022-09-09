@@ -23,31 +23,64 @@ class TransientProblem(TACSProblem):
 
     # Default Option List
     defaultOptions = {
-        'outputDir': [str, './', 'Output directory for F5 file writer.'],
-
+        "outputDir": [str, "./", "Output directory for F5 file writer."],
         # Solution Options
-        'timeIntegrator': [str, 'BDF', "Time integration scheme to use. Currently supports 'BDF' and 'DIRK'."],
-        'integrationOrder': [int, 2, "Integration order for time marching scheme."],
-        'L2Convergence': [float, 1e-12, 'Absolute convergence tolerance for integrator based on l2 norm of residual.'],
-        'L2ConvergenceRel': [float, 1e-12,
-                             'Relative convergence tolerance for integrator based on l2 norm of residual.'],
-        'jacAssemblyFreq': [int, 1, 'How frequently to reassemble Jacobian during time integration process.'],
-
+        "timeIntegrator": [
+            str,
+            "BDF",
+            "Time integration scheme to use. Currently supports 'BDF' and 'DIRK'.",
+        ],
+        "integrationOrder": [int, 2, "Integration order for time marching scheme."],
+        "L2Convergence": [
+            float,
+            1e-12,
+            "Absolute convergence tolerance for integrator based on l2 norm of residual.",
+        ],
+        "L2ConvergenceRel": [
+            float,
+            1e-12,
+            "Relative convergence tolerance for integrator based on l2 norm of residual.",
+        ],
+        "jacAssemblyFreq": [
+            int,
+            1,
+            "How frequently to reassemble Jacobian during time integration process.",
+        ],
         # Output Options
-        'writeSolution': [bool, True, 'Flag for suppressing all f5 file writing.'],
-        'numberSolutions': [bool, True, 'Flag for attaching solution counter index to f5 files.'],
-        'printTiming': [bool, False, 'Flag for printing out timing information for class procedures.'],
-        'printLevel': [int, 0, 'Print level for integration solver.\n'
-                               '\t Accepts:\n'
-                               '\t\t   0 : No printing.\n'
-                               '\t\t   1 : Print major iterations.\n'
-                               '\t\t > 1 : Print major + minor iterations.'],
-
+        "writeSolution": [bool, True, "Flag for suppressing all f5 file writing."],
+        "numberSolutions": [
+            bool,
+            True,
+            "Flag for attaching solution counter index to f5 files.",
+        ],
+        "printTiming": [
+            bool,
+            False,
+            "Flag for printing out timing information for class procedures.",
+        ],
+        "printLevel": [
+            int,
+            0,
+            "Print level for integration solver.\n"
+            "\t Accepts:\n"
+            "\t\t   0 : No printing.\n"
+            "\t\t   1 : Print major iterations.\n"
+            "\t\t > 1 : Print major + minor iterations.",
+        ],
     }
 
-    def __init__(self, name, tInit, tFinal, numSteps,
-                 assembler, comm, outputViewer=None, meshLoader=None,
-                 options={}):
+    def __init__(
+        self,
+        name,
+        tInit,
+        tFinal,
+        numSteps,
+        assembler,
+        comm,
+        outputViewer=None,
+        meshLoader=None,
+        options={},
+    ):
         """
         NOTE: This class should not be initialized directly by the user.
         Use pyTACS.createTransientProblem instead.
@@ -97,9 +130,9 @@ class TransientProblem(TACSProblem):
         # Process the default options which are added to self.options
         # under the 'defaults' key. Make sure the key are lower case
         def_keys = self.defaultOptions.keys()
-        self.options['defaults'] = {}
+        self.options["defaults"] = {}
         for key in def_keys:
-            self.options['defaults'][key.lower()] = self.defaultOptions[key]
+            self.options["defaults"][key.lower()] = self.defaultOptions[key]
             self.options[key.lower()] = self.defaultOptions[key]
 
         # Set user-defined options
@@ -122,44 +155,56 @@ class TransientProblem(TACSProblem):
         self.ddvars0 = self.assembler.createVec()
 
         # Get time integration solver attributes
-        order = self.getOption('integrationOrder')
-        solverType = self.getOption('timeIntegrator')
+        order = self.getOption("integrationOrder")
+        solverType = self.getOption("timeIntegrator")
 
         # dictionary for converting integration order to number of stages
-        DIRK_order_to_stages = {2:1, 3:2, 4:3}
+        DIRK_order_to_stages = {2: 1, 3: 2, 4: 3}
 
         # Create the time integrator and allocate the load data structures
-        if solverType.upper() == 'BDF':
-            self.integrator = tacs.TACS.BDFIntegrator(self.assembler, self.tInit, self.tFinal,
-                                                      float(self.numSteps), order)
+        if solverType.upper() == "BDF":
+            self.integrator = tacs.TACS.BDFIntegrator(
+                self.assembler, self.tInit, self.tFinal, float(self.numSteps), order
+            )
             # Create a force vector for each time step
             self.F = [self.assembler.createVec() for i in range(self.numSteps + 1)]
             # Auxillary element object for applying tractions/pressure
             self.auxElems = [tacs.TACS.AuxElements() for i in range(self.numSteps + 1)]
 
-        elif solverType.upper() == 'DIRK':
+        elif solverType.upper() == "DIRK":
             self.numStages = DIRK_order_to_stages[order]
-            self.integrator = tacs.TACS.DIRKIntegrator(self.assembler, self.tInit, self.tFinal,
-                                                       float(self.numSteps), self.numStages)
+            self.integrator = tacs.TACS.DIRKIntegrator(
+                self.assembler,
+                self.tInit,
+                self.tFinal,
+                float(self.numSteps),
+                self.numStages,
+            )
             # Create a force vector for each time stage
-            self.F = [self.assembler.createVec() for i in range((self.numSteps + 1)*self.numStages)]
+            self.F = [
+                self.assembler.createVec()
+                for i in range((self.numSteps + 1) * self.numStages)
+            ]
             # Auxiliary element object for applying tractions/pressure at each time stage
-            self.auxElems = [tacs.TACS.AuxElements() for i in range((self.numSteps + 1)*self.numStages)]
+            self.auxElems = [
+                tacs.TACS.AuxElements()
+                for i in range((self.numSteps + 1) * self.numStages)
+            ]
 
-        printLevel = self.getOption('printLevel')
+        printLevel = self.getOption("printLevel")
         self.integrator.setPrintLevel(printLevel)
         # Set solver tolerances
-        atol = self.getOption('L2Convergence')
+        atol = self.getOption("L2Convergence")
         self.integrator.setAbsTol(atol)
-        rtol = self.getOption('L2ConvergenceRel')
+        rtol = self.getOption("L2ConvergenceRel")
         self.integrator.setRelTol(rtol)
         # Jacobian assembly frequency
-        jacFreq = self.getOption('jacAssemblyFreq')
+        jacFreq = self.getOption("jacAssemblyFreq")
         self.integrator.setJacAssemblyFreq(jacFreq)
 
         # Set output viewer for integrator
         self.integrator.setFH5(self.outputViewer)
-        outputDir = self.getOption('outputDir')
+        outputDir = self.getOption("outputDir")
         self.integrator.setOutputPrefix(outputDir)
 
     def setOption(self, name, value):
@@ -178,22 +223,26 @@ class TransientProblem(TACSProblem):
         TACSProblem.setOption(self, name, value)
 
         # Update tolerances
-        if 'l2convergence' in name.lower():
+        if "l2convergence" in name.lower():
             # Set solver tolerances
-            atol = self.getOption('L2Convergence')
+            atol = self.getOption("L2Convergence")
             self.integrator.setAbsTol(atol)
-            rtol = self.getOption('L2ConvergenceRel')
+            rtol = self.getOption("L2ConvergenceRel")
             self.integrator.setRelTol(rtol)
-        elif name.lower() == 'printlevel':
-            printLevel = self.getOption('printLevel')
+        elif name.lower() == "printlevel":
+            printLevel = self.getOption("printLevel")
             self.integrator.setPrintLevel(printLevel)
-        elif name.lower() == 'jacassemblyfreq':
+        elif name.lower() == "jacassemblyfreq":
             # Jacobian assembly frequency
-            jacFreq = self.getOption('jacAssemblyFreq')
+            jacFreq = self.getOption("jacAssemblyFreq")
             self.integrator.setJacAssemblyFreq(jacFreq)
         # No need to reset solver for output options
-        elif name.lower() in ['writesolution', 'printtiming',
-                              'numbersolutions', 'outputdir']:
+        elif name.lower() in [
+            "writesolution",
+            "printtiming",
+            "numbersolutions",
+            "outputdir",
+        ]:
             pass
         # Reset solver for all other option changes
         else:
@@ -257,7 +306,9 @@ class TransientProblem(TACSProblem):
         if timeStep > 0 and self.numStages:
             timeStages = np.zeros(self.numStages)
             for stage in range(self.numStages):
-                timeStages[stage], _, _, _ = self.integrator.getStageStates(timeStep, stage)
+                timeStages[stage], _, _, _ = self.integrator.getStageStates(
+                    timeStep, stage
+                )
         # Otherwise, there are no subintervals
         else:
             timeStages = np.empty(1)
@@ -265,8 +316,10 @@ class TransientProblem(TACSProblem):
 
     ####### Load adding methods ########
 
-    def addLoadToComponents(self, timeStep, compIDs, F, timeStage=None, averageLoad=False):
-        """"
+    def addLoadToComponents(
+        self, timeStep, compIDs, F, timeStage=None, averageLoad=False
+    ):
+        """ "
         This method is used to add a *FIXED TOTAL LOAD* on one or more
         components, defined by COMPIDs, at a specific time instance.
         The purpose of this routine is to add loads that remain fixed throughout
@@ -323,12 +376,17 @@ class TransientProblem(TACSProblem):
         if self.numStages is None:
             timeIndex = timeStep
         else:
-            assert timeStage is not None, "Time stage index must be specified for %s integrator type" % self.getOption('timeIntegrator').upper()
-            timeIndex = timeStep*self.numStages + timeStage
-        
+            assert timeStage is not None, (
+                "Time stage index must be specified for %s integrator type"
+                % self.getOption("timeIntegrator").upper()
+            )
+            timeIndex = timeStep * self.numStages + timeStage
+
         self._addLoadToComponents(self.F[timeIndex], compIDs, F, averageLoad)
 
-    def addLoadToNodes(self, timeStep, nodeIDs, F, timeStage=None, nastranOrdering=False):
+    def addLoadToNodes(
+        self, timeStep, nodeIDs, F, timeStage=None, nastranOrdering=False
+    ):
         """
         This method is used to add a fixed point load of F to the
         selected node IDs at a specified time instance.
@@ -380,13 +438,16 @@ class TransientProblem(TACSProblem):
         if self.numStages is None:
             timeIndex = timeStep
         else:
-            assert timeStage is not None, "Time stage index must be specified for %s integrator type" % self.getOption('timeIntegrator').upper()
-            timeIndex = timeStep*self.numStages + timeStage
-        
+            assert timeStage is not None, (
+                "Time stage index must be specified for %s integrator type"
+                % self.getOption("timeIntegrator").upper()
+            )
+            timeIndex = timeStep * self.numStages + timeStage
+
         self._addLoadToNodes(self.F[timeIndex], nodeIDs, F, nastranOrdering)
 
     def addLoadToRHS(self, timeStep, Fapplied, timeStage=None):
-        """"
+        """ "
         This method is used to add a *FIXED TOTAL LOAD* directly to the
         right hand side vector given the equation below:
 
@@ -418,13 +479,17 @@ class TransientProblem(TACSProblem):
         if self.numStages is None:
             timeIndex = timeStep
         else:
-            assert timeStage is not None, "Time stage index must be specified for %s integrator type" % self.getOption('timeIntegrator').upper()
-            timeIndex = timeStep*self.numStages + timeStage
-        
+            assert timeStage is not None, (
+                "Time stage index must be specified for %s integrator type"
+                % self.getOption("timeIntegrator").upper()
+            )
+            timeIndex = timeStep * self.numStages + timeStage
+
         self._addLoadToRHS(self.F[timeIndex], Fapplied)
-        
-    def addTractionToComponents(self, timeStep, compIDs, tractions, timeStage=None,
-                                faceIndex=0):
+
+    def addTractionToComponents(
+        self, timeStep, compIDs, tractions, timeStage=None, faceIndex=0
+    ):
         """
         This method is used to add a *FIXED TOTAL TRACTION* on one or more
         components, defined by COMPIDs, at specified time instance. The purpose of
@@ -456,13 +521,25 @@ class TransientProblem(TACSProblem):
         if self.numStages is None:
             timeIndex = timeStep
         else:
-            assert timeStage is not None, "Time stage index must be specified for %s integrator type" % self.getOption('timeIntegrator').upper()
-            timeIndex = timeStep*self.numStages + timeStage
-        
-        self._addTractionToComponents(self.auxElems[timeIndex], compIDs, tractions, faceIndex)
+            assert timeStage is not None, (
+                "Time stage index must be specified for %s integrator type"
+                % self.getOption("timeIntegrator").upper()
+            )
+            timeIndex = timeStep * self.numStages + timeStage
 
-    def addTractionToElements(self, timeStep, elemIDs, tractions, timeStage=None,
-                              faceIndex=0, nastranOrdering=False):
+        self._addTractionToComponents(
+            self.auxElems[timeIndex], compIDs, tractions, faceIndex
+        )
+
+    def addTractionToElements(
+        self,
+        timeStep,
+        elemIDs,
+        tractions,
+        timeStage=None,
+        faceIndex=0,
+        nastranOrdering=False,
+    ):
         """
         This method is used to add a fixed traction to the
         selected element IDs at specified time instance.
@@ -498,13 +575,19 @@ class TransientProblem(TACSProblem):
         if self.numStages is None:
             timeIndex = timeStep
         else:
-            assert timeStage is not None, "Time stage index must be specified for %s integrator type" % self.getOption('timeIntegrator').upper()
-            timeIndex = timeStep*self.numStages + timeStage
+            assert timeStage is not None, (
+                "Time stage index must be specified for %s integrator type"
+                % self.getOption("timeIntegrator").upper()
+            )
+            timeIndex = timeStep * self.numStages + timeStage
 
-        self._addTractionToElements(self.auxElems[timeIndex], elemIDs, tractions, faceIndex, nastranOrdering)
+        self._addTractionToElements(
+            self.auxElems[timeIndex], elemIDs, tractions, faceIndex, nastranOrdering
+        )
 
-    def addPressureToComponents(self, timeStep, compIDs, pressures, timeStage=None,
-                                faceIndex=0):
+    def addPressureToComponents(
+        self, timeStep, compIDs, pressures, timeStage=None, faceIndex=0
+    ):
         """
         This method is used to add a *FIXED TOTAL PRESSURE* on one or more
         components, defined by COMPIDs, at specified time instance. The purpose of this routine is
@@ -537,13 +620,25 @@ class TransientProblem(TACSProblem):
         if self.numStages is None:
             timeIndex = timeStep
         else:
-            assert timeStage is not None, "Time stage index must be specified for %s integrator type" % self.getOption('timeIntegrator').upper()
-            timeIndex = timeStep*self.numStages + timeStage
+            assert timeStage is not None, (
+                "Time stage index must be specified for %s integrator type"
+                % self.getOption("timeIntegrator").upper()
+            )
+            timeIndex = timeStep * self.numStages + timeStage
 
-        self._addPressureToComponents(self.auxElems[timeIndex], compIDs, pressures, faceIndex)
+        self._addPressureToComponents(
+            self.auxElems[timeIndex], compIDs, pressures, faceIndex
+        )
 
-    def addPressureToElements(self, timeStep, elemIDs, pressures, timeStage=None,
-                              faceIndex=0, nastranOrdering=False):
+    def addPressureToElements(
+        self,
+        timeStep,
+        elemIDs,
+        pressures,
+        timeStage=None,
+        faceIndex=0,
+        nastranOrdering=False,
+    ):
         """
         This method is used to add a fixed presure to the
         selected element IDs at specified time instance.
@@ -579,11 +674,15 @@ class TransientProblem(TACSProblem):
         if self.numStages is None:
             timeIndex = timeStep
         else:
-            assert timeStage is not None, "Time stage index must be specified for %s integrator type" % self.getOption('timeIntegrator').upper()
-            timeIndex = timeStep*self.numStages + timeStage
+            assert timeStage is not None, (
+                "Time stage index must be specified for %s integrator type"
+                % self.getOption("timeIntegrator").upper()
+            )
+            timeIndex = timeStep * self.numStages + timeStage
 
-        self._addPressureToElements(self.auxElems[timeIndex], elemIDs, pressures,
-                                    faceIndex, nastranOrdering)
+        self._addPressureToElements(
+            self.auxElems[timeIndex], elemIDs, pressures, faceIndex, nastranOrdering
+        )
 
     def addInertialLoad(self, timeStep, inertiaVector, timeStage=None):
         """
@@ -609,8 +708,11 @@ class TransientProblem(TACSProblem):
         if self.numStages is None:
             timeIndex = timeStep
         else:
-            assert timeStage is not None, "Time stage index must be specified for %s integrator type" % self.getOption('timeIntegrator').upper()
-            timeIndex = timeStep*self.numStages + timeStage
+            assert timeStage is not None, (
+                "Time stage index must be specified for %s integrator type"
+                % self.getOption("timeIntegrator").upper()
+            )
+            timeIndex = timeStep * self.numStages + timeStage
 
         self._addInertialLoad(self.auxElems[timeIndex], inertiaVector)
 
@@ -641,8 +743,10 @@ class TransientProblem(TACSProblem):
         if self.numStages is None:
             timeIndex = timeStep
         else:
-            assert timeStage is not None, "Time stage index must be specified for %s integrator type" % self.getOption(
-                'timeIntegrator').upper()
+            assert timeStage is not None, (
+                "Time stage index must be specified for %s integrator type"
+                % self.getOption("timeIntegrator").upper()
+            )
             timeIndex = timeStep * self.numStages + timeStage
 
         self._addCentrifugalLoad(self.auxElems[timeIndex], omegaVector, rotCenter)
@@ -674,8 +778,10 @@ class TransientProblem(TACSProblem):
         if self.numStages is None:
             timeIndex = timeStep
         else:
-            assert timeStage is not None, "Time stage index must be specified for %s integrator type" % self.getOption(
-                'timeIntegrator').upper()
+            assert timeStage is not None, (
+                "Time stage index must be specified for %s integrator type"
+                % self.getOption("timeIntegrator").upper()
+            )
             timeIndex = timeStep * self.numStages + timeStage
 
         self._addLoadFromBDF(self.F[timeIndex], self.auxElems[timeIndex], loadID, scale)
@@ -734,7 +840,9 @@ class TransientProblem(TACSProblem):
 
         self.assembler.setDesignVars(self.x)
         self.assembler.setNodes(self.Xpts)
-        self.assembler.setInitConditions(vec=self.vars0, dvec=self.dvars0, ddvec=self.ddvars0)
+        self.assembler.setInitConditions(
+            vec=self.vars0, dvec=self.dvars0, ddvec=self.ddvars0
+        )
 
     def solve(self):
         """
@@ -762,26 +870,36 @@ class TransientProblem(TACSProblem):
             for i in range(self.numSteps + 1):
                 for j in range(self.numStages):
                     # Set the auxiliary elements for this time step (tractions/pressures)
-                    timeIndex = i*self.numStages + j
+                    timeIndex = i * self.numStages + j
                     self.assembler.setAuxElements(self.auxElems[timeIndex])
                     self.integrator.iterateStage(i, j, forces=self.F[timeIndex])
-
 
         solveTime = time.time()
 
         # If timing was was requested print it, if the solution is nonlinear
         # print this information automatically if printTiming was requested.
-        if self.getOption('printTiming'):
-            self._pp('+--------------------------------------------------+')
-            self._pp('|')
-            self._pp('| TACS Solve Times:')
-            self._pp('|')
-            self._pp('| %-30s: %10.3f sec' % ('TACS Setup Time', setupProblemTime - startTime))
-            self._pp('| %-30s: %10.3f sec' % ('TACS Solve Init Time', initSolveTime - setupProblemTime))
-            self._pp('| %-30s: %10.3f sec' % ('TACS Solve Time', solveTime - initSolveTime))
-            self._pp('|')
-            self._pp('| %-30s: %10.3f sec' % ('TACS Total Solution Time', solveTime - startTime))
-            self._pp('+--------------------------------------------------+')
+        if self.getOption("printTiming"):
+            self._pp("+--------------------------------------------------+")
+            self._pp("|")
+            self._pp("| TACS Solve Times:")
+            self._pp("|")
+            self._pp(
+                "| %-30s: %10.3f sec"
+                % ("TACS Setup Time", setupProblemTime - startTime)
+            )
+            self._pp(
+                "| %-30s: %10.3f sec"
+                % ("TACS Solve Init Time", initSolveTime - setupProblemTime)
+            )
+            self._pp(
+                "| %-30s: %10.3f sec" % ("TACS Solve Time", solveTime - initSolveTime)
+            )
+            self._pp("|")
+            self._pp(
+                "| %-30s: %10.3f sec"
+                % ("TACS Total Solution Time", solveTime - startTime)
+            )
+            self._pp("+--------------------------------------------------+")
 
         return
 
@@ -813,13 +931,14 @@ class TransientProblem(TACSProblem):
 
         # Warn the users if these functions are attempted to be passed.
         if funcHandle in [tacs.functions.MomentOfInertia, tacs.functions.CenterOfMass]:
-            self._TACSWarning(f"{funcHandle.__name__} is not supported for {type(self).__name__} problem types"
-                              f" and may not give consistent results.")
+            self._TACSWarning(
+                f"{funcHandle.__name__} is not supported for {type(self).__name__} problem types"
+                f" and may not give consistent results."
+            )
 
         return TACSProblem.addFunction(self, funcName, funcHandle, compIDs, **kwargs)
 
-    def evalFunctions(self, funcs, evalFuncs=None,
-                      ignoreMissing=False):
+    def evalFunctions(self, funcs, evalFuncs=None, ignoreMissing=False):
         """
         This is the main routine for returning useful information from
         pytacs. The functions corresponding to the strings in
@@ -858,14 +977,15 @@ class TransientProblem(TACSProblem):
         if not ignoreMissing:
             for f in evalFuncs:
                 if f not in self.functionList:
-                    raise self._TACSError(f"Supplied function '{f}' has not been added "
-                                          "using addFunction().")
+                    raise self._TACSError(
+                        f"Supplied function '{f}' has not been added "
+                        "using addFunction()."
+                    )
 
         setupProblemTime = time.time()
 
         # Fast parallel function evaluation of structural funcs:
-        handles = [self.functionList[f] for f in evalFuncs if
-                   f in self.functionList]
+        handles = [self.functionList[f] for f in evalFuncs if f in self.functionList]
         # Set functions for integrator
         self.integrator.setFunctions(handles)
         # Evaluate functions
@@ -877,23 +997,35 @@ class TransientProblem(TACSProblem):
         i = 0
         for f in evalFuncs:
             if f in self.functionList:
-                key = self.name + '_%s' % f
+                key = self.name + "_%s" % f
                 funcs[key] = funcVals[i]
                 i += 1
 
         dictAssignTime = time.time()
 
-        if self.getOption('printTiming'):
-            self._pp('+--------------------------------------------------+')
-            self._pp('|')
-            self._pp('| TACS Function Times:')
-            self._pp('|')
-            self._pp('| %-30s: %10.3f sec' % ('TACS Function Setup Time', setupProblemTime - startTime))
-            self._pp('| %-30s: %10.3f sec' % ('TACS Function Eval Time', functionEvalTime - setupProblemTime))
-            self._pp('| %-30s: %10.3f sec' % ('TACS Dict Time', dictAssignTime - functionEvalTime))
-            self._pp('|')
-            self._pp('| %-30s: %10.3f sec' % ('TACS Function Time', dictAssignTime - startTime))
-            self._pp('+--------------------------------------------------+')
+        if self.getOption("printTiming"):
+            self._pp("+--------------------------------------------------+")
+            self._pp("|")
+            self._pp("| TACS Function Times:")
+            self._pp("|")
+            self._pp(
+                "| %-30s: %10.3f sec"
+                % ("TACS Function Setup Time", setupProblemTime - startTime)
+            )
+            self._pp(
+                "| %-30s: %10.3f sec"
+                % ("TACS Function Eval Time", functionEvalTime - setupProblemTime)
+            )
+            self._pp(
+                "| %-30s: %10.3f sec"
+                % ("TACS Dict Time", dictAssignTime - functionEvalTime)
+            )
+            self._pp("|")
+            self._pp(
+                "| %-30s: %10.3f sec"
+                % ("TACS Function Time", dictAssignTime - startTime)
+            )
+            self._pp("+--------------------------------------------------+")
 
     def evalFunctionsSens(self, funcsSens, evalFuncs=None):
         """
@@ -931,12 +1063,12 @@ class TransientProblem(TACSProblem):
 
         for f in evalFuncs:
             if f not in self.functionList:
-                raise self._TACSError("Supplied function has not been added "
-                                      "using addFunction()")
+                raise self._TACSError(
+                    "Supplied function has not been added " "using addFunction()"
+                )
 
         # Fast parallel function evaluation of structural funcs:
-        handles = [self.functionList[f] for f in evalFuncs if
-                   f in self.functionList]
+        handles = [self.functionList[f] for f in evalFuncs if f in self.functionList]
         # Set functions for integrator
         self.integrator.setFunctions(handles)
 
@@ -952,7 +1084,7 @@ class TransientProblem(TACSProblem):
 
         # Recast sensitivities into dict for user
         for i, f in enumerate(evalFuncs):
-            key = self.name + '_%s' % f
+            key = self.name + "_%s" % f
             # Finalize sensitivity arrays across all procs
             dvSens = self.integrator.getGradient(i)
             dvSens.beginSetValues()
@@ -961,20 +1093,28 @@ class TransientProblem(TACSProblem):
             xptSens.beginSetValues()
             xptSens.endSetValues()
             # Return sensitivities as array in sens dict
-            funcsSens[key] = {self.varName: dvSens.getArray().copy(),
-                              self.coordName: xptSens.getArray().copy()}
+            funcsSens[key] = {
+                self.varName: dvSens.getArray().copy(),
+                self.coordName: xptSens.getArray().copy(),
+            }
 
         totalSensitivityTime = time.time()
 
-        if self.getOption('printTiming'):
-            self._pp('+--------------------------------------------------+')
-            self._pp('|')
-            self._pp('| TACS Adjoint Times:')
-            print('|')
-            print('| %-30s: %10.3f sec' % ('Adjoint solve time', adjointFinishedTime - startTime))
-            print('|')
-            print('| %-30s: %10.3f sec' % ('Complete Sensitivity Time', totalSensitivityTime - startTime))
-            print('+--------------------------------------------------+')
+        if self.getOption("printTiming"):
+            self._pp("+--------------------------------------------------+")
+            self._pp("|")
+            self._pp("| TACS Adjoint Times:")
+            print("|")
+            print(
+                "| %-30s: %10.3f sec"
+                % ("Adjoint solve time", adjointFinishedTime - startTime)
+            )
+            print("|")
+            print(
+                "| %-30s: %10.3f sec"
+                % ("Complete Sensitivity Time", totalSensitivityTime - startTime)
+            )
+            print("+--------------------------------------------------+")
 
     ####### Post processing methods ########
 
@@ -1068,7 +1208,7 @@ class TransientProblem(TACSProblem):
 
         # Check input
         if outputDir is None:
-            outputDir = self.getOption('outputDir')
+            outputDir = self.getOption("outputDir")
 
         if baseName is None:
             baseName = self.name
@@ -1077,15 +1217,15 @@ class TransientProblem(TACSProblem):
         # calls, add the call number
         if number is not None:
             # We need number based on the provided number:
-            baseName = baseName + '_%3.3d' % number
+            baseName = baseName + "_%3.3d" % number
         else:
             # if number is none, i.e. standalone, but we need to
             # number solutions, use internal counter
-            if self.getOption('numberSolutions'):
-                baseName = baseName + '_%3.3d' % self.callCounter
+            if self.getOption("numberSolutions"):
+                baseName = baseName + "_%3.3d" % self.callCounter
 
         # Unless the writeSolution option is off write actual file:
-        if self.getOption('writeSolution'):
+        if self.getOption("writeSolution"):
 
             # If timeSteps is None, output all modes
             if timeSteps is None:
@@ -1100,6 +1240,6 @@ class TransientProblem(TACSProblem):
                 # Set eigen mode in assembler
                 self.assembler.setVariables(vec)
                 # Write out mode shape as f5 file
-                modeName = baseName + '_%3.3d' % timeStep
-                fileName = os.path.join(outputDir, modeName) + '.f5'
+                modeName = baseName + "_%3.3d" % timeStep
+                fileName = os.path.join(outputDir, modeName) + ".f5"
                 self.outputViewer.writeToFile(fileName)

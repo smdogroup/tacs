@@ -3,7 +3,7 @@ from tacs import TACS
 import unittest
 from mpi4py import MPI
 
-'''
+"""
 This is a base class for static problem unit test cases.
 This base class will test function evaluations and total 
 and partial sensitivities for the user-specified problem 
@@ -20,10 +20,10 @@ below for more details.
 
 NOTE: The child class must NOT implement its own setUp method 
 for the unittest class. This is handled in the base class.
-'''
+"""
+
 
 class StaticTestCase:
-
     class StaticTest(unittest.TestCase):
         def setUp(self):
             self.dtype = TACS.dtype
@@ -40,7 +40,7 @@ class StaticTestCase:
                 self.dh = 1e-5
 
             # Set the MPI communicator
-            if not hasattr(self, 'comm'):
+            if not hasattr(self, "comm"):
                 self.comm = MPI.COMM_WORLD
 
             # Setup user-specified assembler for this test
@@ -75,7 +75,9 @@ class StaticTestCase:
             self.ans_pert = self.assembler.createVec()
             self.xpts_pert = self.assembler.createNodeVec()
             # Populate force and perturbation vectors based on user-defined method
-            self.setup_tacs_vecs(self.assembler, self.f, self.dv_pert, self.ans_pert, self.xpts_pert)
+            self.setup_tacs_vecs(
+                self.assembler, self.f, self.dv_pert, self.ans_pert, self.xpts_pert
+            )
 
             # Zero out any bc nodes in the state variable vec (if the user didn't already do this)
             self.assembler.applyBCs(self.ans_pert)
@@ -108,15 +110,21 @@ class StaticTestCase:
             Setup mesh and tacs assembler for problem we will be testing.
             Must be defined in child class that inherits from this class.
             """
-            raise NotImplementedError("Child class must implement a 'setup_assembler' method")
+            raise NotImplementedError(
+                "Child class must implement a 'setup_assembler' method"
+            )
             return
 
-        def setup_tacs_vecs(self, assembler, force_vec, dv_pert_vec, ans_pert_vec, xpts_pert_vec):
+        def setup_tacs_vecs(
+            self, assembler, force_vec, dv_pert_vec, ans_pert_vec, xpts_pert_vec
+        ):
             """
             Setup user-defined vectors for analysis and fd/cs sensitivity verification.
             Must be defined in child class that inherits from this class.
             """
-            raise NotImplementedError("Child class must implement a 'setup_tacs_vecs' method")
+            raise NotImplementedError(
+                "Child class must implement a 'setup_tacs_vecs' method"
+            )
             return
 
         def setup_funcs(self, assembler):
@@ -124,7 +132,9 @@ class StaticTestCase:
             Create a list of functions to be tested and their reference values for the problem.
             Must be defined in child class that inherits from this class.
             """
-            raise NotImplementedError("Child class must implement a 'setup_funcs' method")
+            raise NotImplementedError(
+                "Child class must implement a 'setup_funcs' method"
+            )
             return
 
         def test_solve(self):
@@ -138,7 +148,9 @@ class StaticTestCase:
             func_vals = self.run_solve()
 
             # Test functions values against historical values
-            np.testing.assert_allclose(func_vals, self.func_ref, rtol=self.rtol, atol=self.atol)
+            np.testing.assert_allclose(
+                func_vals, self.func_ref, rtol=self.rtol, atol=self.atol
+            )
 
         def test_partial_dv_sensitivities(self):
             """
@@ -168,8 +180,9 @@ class StaticTestCase:
             for i in range(len(self.func_list)):
                 with self.subTest(function=self.func_list[i]):
                     dfddv_proj_i = self.dfddv_list[i].dot(self.dv_pert)
-                    np.testing.assert_allclose(dfddv_proj_i, fdv_sens_approx[i],
-                                               rtol=self.rtol, atol=self.atol)
+                    np.testing.assert_allclose(
+                        dfddv_proj_i, fdv_sens_approx[i], rtol=self.rtol, atol=self.atol
+                    )
 
         def test_partial_xpt_sensitivities(self):
             """
@@ -199,7 +212,12 @@ class StaticTestCase:
             for i in range(len(self.func_list)):
                 with self.subTest(function=self.func_list[i]):
                     dfdx_proj_i = self.dfdx_list[i].dot(self.xpts_pert)
-                    np.testing.assert_allclose(dfdx_proj_i, f_xpt_sens_approx[i], rtol=self.rtol, atol=self.atol)
+                    np.testing.assert_allclose(
+                        dfdx_proj_i,
+                        f_xpt_sens_approx[i],
+                        rtol=self.rtol,
+                        atol=self.atol,
+                    )
 
         def test_partial_sv_sensitivities(self):
             """
@@ -212,7 +230,9 @@ class StaticTestCase:
             func_vals = self.run_solve()
 
             # Compute the partial derivative w.r.t. state variables
-            self.assembler.addSVSens(self.func_list, self.dfdu_list, self.alpha, self.beta, self.gamma)
+            self.assembler.addSVSens(
+                self.func_list, self.dfdu_list, self.alpha, self.beta, self.gamma
+            )
 
             # Compute the total derivative w.r.t. material design variables using fd/cs
             self.perturb_tacs_vec(self.ans1, self.ans0, self.ans_pert)
@@ -227,8 +247,9 @@ class StaticTestCase:
             for i in range(len(self.func_list)):
                 with self.subTest(function=self.func_list[i]):
                     dfdu_proj_i = self.dfdu_list[i].dot(self.ans_pert)
-                    np.testing.assert_allclose(dfdu_proj_i, f_u_sens_approx[i],
-                                               rtol=self.rtol, atol=self.atol)
+                    np.testing.assert_allclose(
+                        dfdu_proj_i, f_u_sens_approx[i], rtol=self.rtol, atol=self.atol
+                    )
 
         def test_total_dv_sensitivities(self):
             """
@@ -243,7 +264,9 @@ class StaticTestCase:
             # Compute the total derivative w.r.t. material design variables using adjoint
             self.run_adjoints()
             self.assembler.addDVSens(self.func_list, self.dfddv_list, 1.0)
-            self.assembler.addAdjointResProducts(self.adjoint_list, self.dfddv_list, -1.0)
+            self.assembler.addAdjointResProducts(
+                self.adjoint_list, self.dfddv_list, -1.0
+            )
             # Accumulate sensitivity across all procs
             self.set_tacs_vec_values(self.dfddv_list)
 
@@ -258,8 +281,9 @@ class StaticTestCase:
             for i in range(len(self.func_list)):
                 with self.subTest(function=self.func_list[i]):
                     dfddv_proj_i = self.dfddv_list[i].dot(self.dv_pert)
-                    np.testing.assert_allclose(dfddv_proj_i, fdv_sens_approx[i],
-                                               rtol=self.rtol, atol=self.atol)
+                    np.testing.assert_allclose(
+                        dfddv_proj_i, fdv_sens_approx[i], rtol=self.rtol, atol=self.atol
+                    )
 
         def test_total_xpt_sensitivities(self):
             """
@@ -274,7 +298,9 @@ class StaticTestCase:
             # Compute the total derivative w.r.t. nodal xpt locations using adjoint
             self.run_adjoints()
             self.assembler.addXptSens(self.func_list, self.dfdx_list, 1.0)
-            self.assembler.addAdjointResXptSensProducts(self.adjoint_list, self.dfdx_list, -1.0)
+            self.assembler.addAdjointResXptSensProducts(
+                self.adjoint_list, self.dfdx_list, -1.0
+            )
             # Accumulate sensitivity across all procs
             self.set_tacs_vec_values(self.dfdx_list)
 
@@ -289,7 +315,12 @@ class StaticTestCase:
             for i in range(len(self.func_list)):
                 with self.subTest(function=self.func_list[i]):
                     dfdx_proj_i = self.dfdx_list[i].dot(self.xpts_pert)
-                    np.testing.assert_allclose(dfdx_proj_i, f_xpt_sens_approx[i], rtol=self.rtol, atol=self.atol)
+                    np.testing.assert_allclose(
+                        dfdx_proj_i,
+                        f_xpt_sens_approx[i],
+                        rtol=self.rtol,
+                        atol=self.atol,
+                    )
 
         def run_solve(self, dv=None, xpts=None):
             """
@@ -309,14 +340,15 @@ class StaticTestCase:
 
             # Assemble the stiffness matrix
             self.assembler.zeroVariables()
-            self.assembler.assembleJacobian(self.alpha, self.beta, self.gamma, self.res0, self.mat)
+            self.assembler.assembleJacobian(
+                self.alpha, self.beta, self.gamma, self.res0, self.mat
+            )
             self.pc.factor()
 
             # zero out bc terms in force
             self.assembler.applyBCs(self.f)
             # add force vector to residual (R = Ku - f)
             self.res0.axpy(-1.0, self.f)
-
 
             # Solve the linear system
             self.gmres.solve(self.res0, self.ans0)
@@ -340,11 +372,15 @@ class StaticTestCase:
             self.assembler.setNodes(self.xpts0)
 
             # Assemble the transpose stiffness matrix
-            self.assembler.assembleJacobian(self.alpha, self.beta, self.gamma, None, self.mat, TACS.TRANSPOSE)
+            self.assembler.assembleJacobian(
+                self.alpha, self.beta, self.gamma, None, self.mat, TACS.TRANSPOSE
+            )
             self.pc.factor()
 
             # Solve for the adjoint variables
-            self.assembler.addSVSens(self.func_list, self.dfdu_list, self.alpha, self.beta, self.gamma)
+            self.assembler.addSVSens(
+                self.func_list, self.dfdu_list, self.alpha, self.beta, self.gamma
+            )
             for i in range(len(self.func_list)):
                 self.gmres.solve(self.dfdu_list[i], self.adjoint_list[i])
 

@@ -3,12 +3,14 @@ from mpi4py import MPI
 from tacs import TACS, elements, constitutive, functions
 from static_analysis_base_test import StaticTestCase
 
-'''
+"""
 Create a uniform cube under distributed inertial loads due to gravity
 and test KSFailure, StructuralMass, and Compliance functions and sensitivities
-'''
+"""
 
-FUNC_REFS = np.array([1.0746641568224446, 2.57000000e+06, 261520068.475311, 2.2061198102971846])
+FUNC_REFS = np.array(
+    [1.0746641568224446, 2.57000000e06, 261520068.475311, 2.2061198102971846]
+)
 
 # Length of cube in x/y direction
 Lx = 10.0
@@ -25,6 +27,7 @@ g = np.array([0.0, 0.0, -9810.0], dtype=TACS.dtype)
 
 # KS function weight
 ksweight = 10.0
+
 
 class ProblemTest(StaticTestCase.StaticTest):
 
@@ -66,7 +69,9 @@ class ProblemTest(StaticTestCase.StaticTest):
             y = np.linspace(0, Ly, ny + 1, dtype)
             z = np.linspace(0, Lz, nz + 1, dtype)
             xyz = np.zeros([nx + 1, ny + 1, nz + 1, 3], dtype)
-            xyz[:, :, :, 0], xyz[:, :, :, 1], xyz[:, :, :, 2] = np.meshgrid(x, y, z, indexing='ij')
+            xyz[:, :, :, 0], xyz[:, :, :, 1], xyz[:, :, :, 2] = np.meshgrid(
+                x, y, z, indexing="ij"
+            )
             x, y, z = xyz[:, :, :, 0], xyz[:, :, :, 1], xyz[:, :, :, 2]
 
             node_ids = np.arange(num_nodes).reshape(nx + 1, ny + 1, nz + 1)
@@ -75,14 +80,18 @@ class ProblemTest(StaticTestCase.StaticTest):
             for i in range(nx):
                 for j in range(ny):
                     for k in range(nz):
-                        conn.append([node_ids[i, j, k],
-                                     node_ids[i + 1, j, k],
-                                     node_ids[i, j + 1, k],
-                                     node_ids[i + 1, j + 1, k],
-                                     node_ids[i, j, k + 1],
-                                     node_ids[i + 1, j, k + 1],
-                                     node_ids[i, j + 1, k + 1],
-                                     node_ids[i + 1, j + 1, k + 1]])
+                        conn.append(
+                            [
+                                node_ids[i, j, k],
+                                node_ids[i + 1, j, k],
+                                node_ids[i, j + 1, k],
+                                node_ids[i + 1, j + 1, k],
+                                node_ids[i, j, k + 1],
+                                node_ids[i + 1, j, k + 1],
+                                node_ids[i, j + 1, k + 1],
+                                node_ids[i + 1, j + 1, k + 1],
+                            ]
+                        )
 
             conn = np.array(conn, dtype=np.intc).flatten()
             ptr = np.arange(0, 8 * num_elems + 1, 8, dtype=np.intc)
@@ -118,7 +127,9 @@ class ProblemTest(StaticTestCase.StaticTest):
 
         return assembler
 
-    def setup_tacs_vecs(self, assembler, force_vec, dv_pert_vec, ans_pert_vec, xpts_pert_vec):
+    def setup_tacs_vecs(
+        self, assembler, force_vec, dv_pert_vec, ans_pert_vec, xpts_pert_vec
+    ):
         """
         Setup user-defined vectors for analysis and fd/cs sensitivity verification
         """
@@ -158,8 +169,12 @@ class ProblemTest(StaticTestCase.StaticTest):
         """
         Create a list of functions to be tested and their reference values for the problem
         """
-        func_list = [functions.KSFailure(assembler, ksWeight=ksweight),
-                     functions.StructuralMass(assembler),
-                     functions.Compliance(assembler),
-                     functions.KSDisplacement(assembler, ksWeight=ksweight, direction=[-1e2, -1e2, -1e2])]
+        func_list = [
+            functions.KSFailure(assembler, ksWeight=ksweight),
+            functions.StructuralMass(assembler),
+            functions.Compliance(assembler),
+            functions.KSDisplacement(
+                assembler, ksWeight=ksweight, direction=[-1e2, -1e2, -1e2]
+            ),
+        ]
         return func_list, FUNC_REFS

@@ -2,15 +2,28 @@ import numpy as np
 from tacs import TACS, elements, constitutive, functions
 from static_analysis_base_test import StaticTestCase
 
-'''
+"""
 Create a uniform cube under distributed point loads
 and test KSFailure, StructuralMass, CenterOfMass, MomentOfInertia, and Compliance functions and sensitivities
-'''
+"""
 
-FUNC_REFS = np.array([1.1074017881777185, 2570000.0, 178995399.11928475, 7.192551651904685,
-                      5.00000000e+00, 5.00000000e+00, 5.00000000e+00,
-                      171333333.33333328, -64250000.00000006, -64250000.00000006,
-                      171333333.33333328, -64250000.00000006, 171333333.33333328])
+FUNC_REFS = np.array(
+    [
+        1.1074017881777185,
+        2570000.0,
+        178995399.11928475,
+        7.192551651904685,
+        5.00000000e00,
+        5.00000000e00,
+        5.00000000e00,
+        171333333.33333328,
+        -64250000.00000006,
+        -64250000.00000006,
+        171333333.33333328,
+        -64250000.00000006,
+        171333333.33333328,
+    ]
+)
 
 # Length of plate in x/y direction
 Lx = 10.0
@@ -24,6 +37,7 @@ nz = 3
 
 # KS function weight
 ksweight = 10.0
+
 
 class ProblemTest(StaticTestCase.StaticTest):
 
@@ -65,7 +79,9 @@ class ProblemTest(StaticTestCase.StaticTest):
             y = np.linspace(0, Ly, ny + 1, dtype)
             z = np.linspace(0, Lz, nz + 1, dtype)
             xyz = np.zeros([nx + 1, ny + 1, nz + 1, 3], dtype)
-            xyz[:, :, :, 0], xyz[:, :, :, 1], xyz[:, :, :, 2] = np.meshgrid(x, y, z, indexing='ij')
+            xyz[:, :, :, 0], xyz[:, :, :, 1], xyz[:, :, :, 2] = np.meshgrid(
+                x, y, z, indexing="ij"
+            )
             x, y, z = xyz[:, :, :, 0], xyz[:, :, :, 1], xyz[:, :, :, 2]
 
             node_ids = np.arange(num_nodes).reshape(nx + 1, ny + 1, nz + 1)
@@ -74,14 +90,18 @@ class ProblemTest(StaticTestCase.StaticTest):
             for i in range(nx):
                 for j in range(ny):
                     for k in range(nz):
-                        conn.append([node_ids[i, j, k],
-                                     node_ids[i + 1, j, k],
-                                     node_ids[i, j + 1, k],
-                                     node_ids[i + 1, j + 1, k],
-                                     node_ids[i, j, k + 1],
-                                     node_ids[i + 1, j, k + 1],
-                                     node_ids[i, j + 1, k + 1],
-                                     node_ids[i + 1, j + 1, k + 1]])
+                        conn.append(
+                            [
+                                node_ids[i, j, k],
+                                node_ids[i + 1, j, k],
+                                node_ids[i, j + 1, k],
+                                node_ids[i + 1, j + 1, k],
+                                node_ids[i, j, k + 1],
+                                node_ids[i + 1, j, k + 1],
+                                node_ids[i, j + 1, k + 1],
+                                node_ids[i + 1, j + 1, k + 1],
+                            ]
+                        )
 
             conn = np.array(conn, dtype=np.intc).flatten()
             ptr = np.arange(0, 8 * num_elems + 1, 8, dtype=np.intc)
@@ -105,7 +125,9 @@ class ProblemTest(StaticTestCase.StaticTest):
 
         return assembler
 
-    def setup_tacs_vecs(self, assembler, force_vec, dv_pert_vec, ans_pert_vec, xpts_pert_vec):
+    def setup_tacs_vecs(
+        self, assembler, force_vec, dv_pert_vec, ans_pert_vec, xpts_pert_vec
+    ):
         """
         Setup user-defined vectors for analysis and fd/cs sensitivity verification
         """
@@ -149,23 +171,51 @@ class ProblemTest(StaticTestCase.StaticTest):
         """
         Create a list of functions to be tested and their reference values for the problem
         """
-        func_list = [functions.KSFailure(assembler, ksWeight=ksweight),
-                     functions.StructuralMass(assembler),
-                     functions.Compliance(assembler),
-                     functions.KSDisplacement(assembler, ksWeight=ksweight, direction=[100.0, 100.0, 100.0]),
-                     functions.CenterOfMass(assembler, direction=[1.0, 0.0, 0.0]),
-                     functions.CenterOfMass(assembler, direction=[0.0, 1.0, 0.0]),
-                     functions.CenterOfMass(assembler, direction=[0.0, 0.0, 1.0]),
-                     functions.MomentOfInertia(assembler, direction1=[1.0, 0.0, 0.0], direction2=[1.0, 0.0, 0.0],
-                                               aboutCM=False),
-                     functions.MomentOfInertia(assembler, direction1=[0.0, 1.0, 0.0], direction2=[1.0, 0.0, 0.0],
-                                               aboutCM=False),
-                     functions.MomentOfInertia(assembler, direction1=[0.0, 0.0, 1.0], direction2=[1.0, 0.0, 0.0],
-                                               aboutCM=False),
-                     functions.MomentOfInertia(assembler, direction1=[0.0, 1.0, 0.0], direction2=[0.0, 1.0, 0.0],
-                                               aboutCM=False),
-                     functions.MomentOfInertia(assembler, direction1=[0.0, 1.0, 0.0], direction2=[0.0, 0.0, 1.0],
-                                               aboutCM=False),
-                     functions.MomentOfInertia(assembler, direction1=[0.0, 0.0, 1.0], direction2=[0.0, 0.0, 1.0],
-                                               aboutCM=False)]
+        func_list = [
+            functions.KSFailure(assembler, ksWeight=ksweight),
+            functions.StructuralMass(assembler),
+            functions.Compliance(assembler),
+            functions.KSDisplacement(
+                assembler, ksWeight=ksweight, direction=[100.0, 100.0, 100.0]
+            ),
+            functions.CenterOfMass(assembler, direction=[1.0, 0.0, 0.0]),
+            functions.CenterOfMass(assembler, direction=[0.0, 1.0, 0.0]),
+            functions.CenterOfMass(assembler, direction=[0.0, 0.0, 1.0]),
+            functions.MomentOfInertia(
+                assembler,
+                direction1=[1.0, 0.0, 0.0],
+                direction2=[1.0, 0.0, 0.0],
+                aboutCM=False,
+            ),
+            functions.MomentOfInertia(
+                assembler,
+                direction1=[0.0, 1.0, 0.0],
+                direction2=[1.0, 0.0, 0.0],
+                aboutCM=False,
+            ),
+            functions.MomentOfInertia(
+                assembler,
+                direction1=[0.0, 0.0, 1.0],
+                direction2=[1.0, 0.0, 0.0],
+                aboutCM=False,
+            ),
+            functions.MomentOfInertia(
+                assembler,
+                direction1=[0.0, 1.0, 0.0],
+                direction2=[0.0, 1.0, 0.0],
+                aboutCM=False,
+            ),
+            functions.MomentOfInertia(
+                assembler,
+                direction1=[0.0, 1.0, 0.0],
+                direction2=[0.0, 0.0, 1.0],
+                aboutCM=False,
+            ),
+            functions.MomentOfInertia(
+                assembler,
+                direction1=[0.0, 0.0, 1.0],
+                direction2=[0.0, 0.0, 1.0],
+                aboutCM=False,
+            ),
+        ]
         return func_list, FUNC_REFS

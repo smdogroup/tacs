@@ -2,6 +2,7 @@ from tacs import TACS, constitutive, elements
 import numpy as np
 import unittest
 
+
 class ElementTest(unittest.TestCase):
     def setUp(self):
         max_nodes = 64
@@ -47,23 +48,39 @@ class ElementTest(unittest.TestCase):
         ys = 270.0
         cte = 24.0e-6
         kappa = 230.0
-        self.props = constitutive.MaterialProperties(rho=rho, specific_heat=specific_heat,
-                                                     E=E, nu=nu, ys=ys, cte=cte, kappa=kappa)
+        self.props = constitutive.MaterialProperties(
+            rho=rho,
+            specific_heat=specific_heat,
+            E=E,
+            nu=nu,
+            ys=ys,
+            cte=cte,
+            kappa=kappa,
+        )
 
         ref_axis = np.array([0.0, 1.0, 1.0], dtype=self.dtype)
-        self.transforms = [elements.ShellNaturalTransform(), elements.ShellRefAxisTransform(ref_axis)]
+        self.transforms = [
+            elements.ShellNaturalTransform(),
+            elements.ShellRefAxisTransform(ref_axis),
+        ]
 
         # TACS shell elements of various orders and types
-        self.elements = [elements.Tri3Shell,
-                         elements.Quad4Shell,
-                         elements.Quad9Shell,
-                         elements.Quad16Shell]
+        self.elements = [
+            elements.Tri3Shell,
+            elements.Quad4Shell,
+            elements.Quad9Shell,
+            elements.Quad16Shell,
+        ]
 
         # Create stiffness (need class)
         self.con = constitutive.IsoShellConstitutive(self.props, t=1.0, tNum=0)
 
         # Set matrix types
-        self.matrix_types = [TACS.STIFFNESS_MATRIX, TACS.MASS_MATRIX, TACS.GEOMETRIC_STIFFNESS_MATRIX]
+        self.matrix_types = [
+            TACS.STIFFNESS_MATRIX,
+            TACS.MASS_MATRIX,
+            TACS.GEOMETRIC_STIFFNESS_MATRIX,
+        ]
 
         # Seed random number generator in tacs for consistent test results
         elements.SeedRandomGenerator(0)
@@ -75,10 +92,23 @@ class ElementTest(unittest.TestCase):
                 for element_handle in self.elements:
                     with self.subTest(element=element_handle):
                         element = element_handle(transform, self.con)
-                        traction = element.createElementTraction(self.faceIndex, self.trac_vec)
-                        fail = elements.TestElementJacobian(traction, self.elem_index, self.time, self.xpts,
-                                                            self.vars, self.dvars, self.ddvars, -1, self.dh,
-                                                            self.print_level, self.atol, self.rtol)
+                        traction = element.createElementTraction(
+                            self.faceIndex, self.trac_vec
+                        )
+                        fail = elements.TestElementJacobian(
+                            traction,
+                            self.elem_index,
+                            self.time,
+                            self.xpts,
+                            self.vars,
+                            self.dvars,
+                            self.ddvars,
+                            -1,
+                            self.dh,
+                            self.print_level,
+                            self.atol,
+                            self.rtol,
+                        )
                         self.assertFalse(fail)
 
     def test_adj_res_product(self):
@@ -88,11 +118,24 @@ class ElementTest(unittest.TestCase):
                 for element_handle in self.elements:
                     with self.subTest(element=element_handle):
                         element = element_handle(transform, self.con)
-                        traction = element.createElementTraction(self.faceIndex, self.trac_vec)
+                        traction = element.createElementTraction(
+                            self.faceIndex, self.trac_vec
+                        )
                         dvs = element.getDesignVars(self.elem_index)
-                        fail = elements.TestAdjResProduct(traction, self.elem_index, self.time, self.xpts,
-                                                          self.vars, self.dvars, self.ddvars, dvs, self.dh,
-                                                          self.print_level, self.atol, self.rtol)
+                        fail = elements.TestAdjResProduct(
+                            traction,
+                            self.elem_index,
+                            self.time,
+                            self.xpts,
+                            self.vars,
+                            self.dvars,
+                            self.ddvars,
+                            dvs,
+                            self.dh,
+                            self.print_level,
+                            self.atol,
+                            self.rtol,
+                        )
                         self.assertFalse(fail)
 
     def test_adj_res_xpt_product(self):
@@ -102,10 +145,22 @@ class ElementTest(unittest.TestCase):
                 for element_handle in self.elements:
                     with self.subTest(element=element_handle):
                         element = element_handle(transform, self.con)
-                        traction = element.createElementTraction(self.faceIndex, self.trac_vec)
-                        fail = elements.TestAdjResXptProduct(traction, self.elem_index, self.time, self.xpts,
-                                                             self.vars, self.dvars, self.ddvars, self.dh,
-                                                             self.print_level, self.atol, self.rtol)
+                        traction = element.createElementTraction(
+                            self.faceIndex, self.trac_vec
+                        )
+                        fail = elements.TestAdjResXptProduct(
+                            traction,
+                            self.elem_index,
+                            self.time,
+                            self.xpts,
+                            self.vars,
+                            self.dvars,
+                            self.ddvars,
+                            self.dh,
+                            self.print_level,
+                            self.atol,
+                            self.rtol,
+                        )
                         self.assertFalse(fail)
 
     def test_element_mat_dv_sens(self):
@@ -115,13 +170,25 @@ class ElementTest(unittest.TestCase):
                 for element_handle in self.elements:
                     with self.subTest(element=element_handle):
                         element = element_handle(transform, self.con)
-                        traction = element.createElementTraction(self.faceIndex, self.trac_vec)
+                        traction = element.createElementTraction(
+                            self.faceIndex, self.trac_vec
+                        )
                         dvs = element.getDesignVars(self.elem_index)
                         for matrix_type in self.matrix_types:
                             with self.subTest(matrix_type=matrix_type):
-                                fail = elements.TestElementMatDVSens(traction, matrix_type, self.elem_index,
-                                                                     self.time, self.xpts, self.vars, dvs, self.dh,
-                                                                     self.print_level, self.atol, self.rtol)
+                                fail = elements.TestElementMatDVSens(
+                                    traction,
+                                    matrix_type,
+                                    self.elem_index,
+                                    self.time,
+                                    self.xpts,
+                                    self.vars,
+                                    dvs,
+                                    self.dh,
+                                    self.print_level,
+                                    self.atol,
+                                    self.rtol,
+                                )
                                 self.assertFalse(fail)
 
     def test_element_mat_sv_sens(self):
@@ -131,8 +198,19 @@ class ElementTest(unittest.TestCase):
                 for element_handle in self.elements:
                     with self.subTest(element=element_handle):
                         element = element_handle(transform, self.con)
-                        traction = element.createElementTraction(self.faceIndex, self.trac_vec)
-                        fail = elements.TestElementMatSVSens(traction, TACS.GEOMETRIC_STIFFNESS_MATRIX, self.elem_index,
-                                                             self.time, self.xpts, self.vars, self.dh,
-                                                             self.print_level, self.atol, self.rtol)
+                        traction = element.createElementTraction(
+                            self.faceIndex, self.trac_vec
+                        )
+                        fail = elements.TestElementMatSVSens(
+                            traction,
+                            TACS.GEOMETRIC_STIFFNESS_MATRIX,
+                            self.elem_index,
+                            self.time,
+                            self.xpts,
+                            self.vars,
+                            self.dh,
+                            self.print_level,
+                            self.atol,
+                            self.rtol,
+                        )
                         self.assertFalse(fail)

@@ -2,6 +2,7 @@ from tacs import TACS, constitutive, elements
 import numpy as np
 import unittest
 
+
 class ElementTest(unittest.TestCase):
     def setUp(self):
         num_nodes = 2
@@ -28,8 +29,7 @@ class ElementTest(unittest.TestCase):
         self.time = 0.0
 
         # Set the variable arrays
-        self.xpts = np.array([0.0, 0.0, 0.0,
-                              1.0, 0.0, 0.0], dtype=self.dtype)
+        self.xpts = np.array([0.0, 0.0, 0.0, 1.0, 0.0, 0.0], dtype=self.dtype)
         np.random.seed(30)  # Seed random numbers for deterministic/repeatable tests
         self.vars = np.random.rand(num_vars).astype(self.dtype)
         self.dvars = self.vars.copy()
@@ -37,18 +37,26 @@ class ElementTest(unittest.TestCase):
 
         ref_axis1 = np.array([0.0, 1.0, 0.0], dtype=self.dtype)
         ref_axis2 = np.array([1.0, 0.0, 0.0], dtype=self.dtype)
-        self.transforms = [elements.SpringIdentityTransform(),
-                           elements.SpringRefAxisTransform(ref_axis1),
-                           elements.SpringRefFrameTransform(ref_axis1, ref_axis2)]
+        self.transforms = [
+            elements.SpringIdentityTransform(),
+            elements.SpringRefAxisTransform(ref_axis1),
+            elements.SpringRefFrameTransform(ref_axis1, ref_axis2),
+        ]
 
         # Create stiffness (need class)
         K = np.ones(21, dtype=self.dtype)
         k = np.arange(1, 7, dtype=self.dtype)
-        self.con_objects = [constitutive.GeneralSpringConstitutive(K=K),
-                            constitutive.DOFSpringConstitutive(k=k)]
+        self.con_objects = [
+            constitutive.GeneralSpringConstitutive(K=K),
+            constitutive.DOFSpringConstitutive(k=k),
+        ]
 
         # Set matrix types
-        self.matrix_types = [TACS.STIFFNESS_MATRIX, TACS.MASS_MATRIX, TACS.GEOMETRIC_STIFFNESS_MATRIX]
+        self.matrix_types = [
+            TACS.STIFFNESS_MATRIX,
+            TACS.MASS_MATRIX,
+            TACS.GEOMETRIC_STIFFNESS_MATRIX,
+        ]
 
         # Seed random number generator in tacs for consistent test results
         elements.SeedRandomGenerator(0)
@@ -64,9 +72,19 @@ class ElementTest(unittest.TestCase):
                 for con in self.con_objects:
                     with self.subTest(con=con):
                         element = elements.SpringElement(transform, con)
-                        fail = elements.TestElementResidual(element, self.elem_index, self.time, self.xpts,
-                                                            self.vars, self.dvars, self.ddvars, dh,
-                                                            self.print_level, self.atol, rtol)
+                        fail = elements.TestElementResidual(
+                            element,
+                            self.elem_index,
+                            self.time,
+                            self.xpts,
+                            self.vars,
+                            self.dvars,
+                            self.ddvars,
+                            dh,
+                            self.print_level,
+                            self.atol,
+                            rtol,
+                        )
                         self.assertFalse(fail)
 
     def test_element_jacobian(self):
@@ -76,9 +94,20 @@ class ElementTest(unittest.TestCase):
                 for con in self.con_objects:
                     with self.subTest(con=con):
                         element = elements.SpringElement(transform, con)
-                        fail = elements.TestElementJacobian(element, self.elem_index, self.time, self.xpts,
-                                                            self.vars, self.dvars, self.ddvars, -1, self.dh,
-                                                            self.print_level, self.atol, self.rtol)
+                        fail = elements.TestElementJacobian(
+                            element,
+                            self.elem_index,
+                            self.time,
+                            self.xpts,
+                            self.vars,
+                            self.dvars,
+                            self.ddvars,
+                            -1,
+                            self.dh,
+                            self.print_level,
+                            self.atol,
+                            self.rtol,
+                        )
                         self.assertFalse(fail)
 
     def test_adj_res_product(self):
@@ -89,9 +118,20 @@ class ElementTest(unittest.TestCase):
                     with self.subTest(con=con):
                         element = elements.SpringElement(transform, con)
                         dvs = element.getDesignVars(self.elem_index)
-                        fail = elements.TestAdjResProduct(element, self.elem_index, self.time, self.xpts,
-                                                          self.vars, self.dvars, self.ddvars, dvs, self.dh,
-                                                          self.print_level, self.atol, self.rtol)
+                        fail = elements.TestAdjResProduct(
+                            element,
+                            self.elem_index,
+                            self.time,
+                            self.xpts,
+                            self.vars,
+                            self.dvars,
+                            self.ddvars,
+                            dvs,
+                            self.dh,
+                            self.print_level,
+                            self.atol,
+                            self.rtol,
+                        )
                         self.assertFalse(fail)
 
     def test_adj_res_xpt_product(self):
@@ -101,9 +141,19 @@ class ElementTest(unittest.TestCase):
                 for con in self.con_objects:
                     with self.subTest(con=con):
                         element = elements.SpringElement(transform, con)
-                        fail = elements.TestAdjResXptProduct(element, self.elem_index, self.time, self.xpts,
-                                                             self.vars, self.dvars, self.ddvars, self.dh,
-                                                             self.print_level, self.atol, self.rtol)
+                        fail = elements.TestAdjResXptProduct(
+                            element,
+                            self.elem_index,
+                            self.time,
+                            self.xpts,
+                            self.vars,
+                            self.dvars,
+                            self.ddvars,
+                            self.dh,
+                            self.print_level,
+                            self.atol,
+                            self.rtol,
+                        )
                         self.assertFalse(fail)
 
     def test_element_mat_dv_sens(self):
@@ -116,9 +166,19 @@ class ElementTest(unittest.TestCase):
                         dvs = element.getDesignVars(self.elem_index)
                         for matrix_type in self.matrix_types:
                             with self.subTest(matrix_type=matrix_type):
-                                fail = elements.TestElementMatDVSens(element, matrix_type, self.elem_index,
-                                                                     self.time, self.xpts, self.vars, dvs, self.dh,
-                                                                     self.print_level, self.atol, self.rtol)
+                                fail = elements.TestElementMatDVSens(
+                                    element,
+                                    matrix_type,
+                                    self.elem_index,
+                                    self.time,
+                                    self.xpts,
+                                    self.vars,
+                                    dvs,
+                                    self.dh,
+                                    self.print_level,
+                                    self.atol,
+                                    self.rtol,
+                                )
                                 self.assertFalse(fail)
 
     def test_element_mat_sv_sens(self):
@@ -129,7 +189,16 @@ class ElementTest(unittest.TestCase):
                 for con in self.con_objects:
                     with self.subTest(con=con):
                         element = elements.SpringElement(transform, con)
-                        fail = elements.TestElementMatSVSens(element, TACS.GEOMETRIC_STIFFNESS_MATRIX, self.elem_index,
-                                                             self.time, self.xpts, self.vars, self.dh,
-                                                             self.print_level, self.atol, self.rtol)
+                        fail = elements.TestElementMatSVSens(
+                            element,
+                            TACS.GEOMETRIC_STIFFNESS_MATRIX,
+                            self.elem_index,
+                            self.time,
+                            self.xpts,
+                            self.vars,
+                            self.dh,
+                            self.print_level,
+                            self.atol,
+                            self.rtol,
+                        )
                         self.assertFalse(fail)

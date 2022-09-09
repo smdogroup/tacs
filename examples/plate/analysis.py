@@ -44,33 +44,37 @@ comm = MPI.COMM_WORLD
 
 # Instantiate FEAAssembler
 structOptions = {
-    'printtiming':True,
+    "printtiming": True,
 }
 
-bdfFile = os.path.join(os.path.dirname(__file__), 'plate.bdf')
+bdfFile = os.path.join(os.path.dirname(__file__), "plate.bdf")
 FEAAssembler = pyTACS(bdfFile, comm=comm, options=structOptions)
+
 
 def elemCallBack(dvNum, compID, compDescript, elemDescripts, specialDVs, **kwargs):
     # Material properties
-    rho = 2500.0        # density kg/m^3
-    E = 70e9            # Young's modulus (Pa)
-    nu = 0.3            # Poisson's ratio
-    ys = 464.0e6        # yield stress
+    rho = 2500.0  # density kg/m^3
+    E = 70e9  # Young's modulus (Pa)
+    nu = 0.3  # Poisson's ratio
+    ys = 464.0e6  # yield stress
 
     # Plate geometry
-    tplate = 0.005    # 1 mm
-    tMin = 0.0001    # 0.1 mm
-    tMax = 0.05     # 5 cm
+    tplate = 0.005  # 1 mm
+    tMin = 0.0001  # 0.1 mm
+    tMax = 0.05  # 5 cm
 
     # Set up property model
     prop = constitutive.MaterialProperties(rho=rho, E=E, nu=nu, ys=ys)
     # Set up constitutive model
-    con = constitutive.IsoShellConstitutive(prop, t=tplate, tNum=dvNum, tlb=tMin, tub=tMax)
+    con = constitutive.IsoShellConstitutive(
+        prop, t=tplate, tNum=dvNum, tlb=tMin, tub=tMax
+    )
     transform = None
     # Set up element
     elem = elements.Quad4Shell(transform, con)
     scale = [100.0]
     return elem, scale
+
 
 # Set up constitutive objects and elements
 FEAAssembler.initialize(elemCallBack)
@@ -79,10 +83,10 @@ FEAAssembler.initialize(elemCallBack)
 allProblems = []
 
 # Setup static problem
-staticProb = FEAAssembler.createStaticProblem(name='point_force')
+staticProb = FEAAssembler.createStaticProblem(name="point_force")
 # Add functions
-staticProb.addFunction('mass', functions.StructuralMass)
-staticProb.addFunction('ks_vmfailure', functions.KSFailure, ksWeight=100.0)
+staticProb.addFunction("mass", functions.StructuralMass)
+staticProb.addFunction("ks_vmfailure", functions.KSFailure, ksWeight=100.0)
 # Add point force to node 481 (center of plate)
 F = np.array([0.0, 0.0, Q, 0.0, 0.0, 0.0])
 staticProb.addLoadToNodes(481, F, nastranOrdering=True)
@@ -91,12 +95,13 @@ allProblems.append(staticProb)
 
 # Setup transient problem
 # turn on print for solver in options
-transientOptions = {'printlevel':1}
-transientProb = FEAAssembler.createTransientProblem(name='pressure', tInit=0.0, tFinal=10.0, numSteps=50,
-                                                    options=transientOptions)
+transientOptions = {"printlevel": 1}
+transientProb = FEAAssembler.createTransientProblem(
+    name="pressure", tInit=0.0, tFinal=10.0, numSteps=50, options=transientOptions
+)
 # Add functions
-transientProb.addFunction('mass', functions.StructuralMass)
-transientProb.addFunction('ks_vmfailure', functions.KSFailure, ksWeight=100.0)
+transientProb.addFunction("mass", functions.StructuralMass)
+transientProb.addFunction("ks_vmfailure", functions.KSFailure, ksWeight=100.0)
 # Add presure load over plate
 # pynastran bdf object for parsing mesh info
 bdfInfo = FEAAssembler.getBDFInfo()
