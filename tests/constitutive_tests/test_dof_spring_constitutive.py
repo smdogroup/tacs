@@ -2,6 +2,7 @@ from tacs import TACS, constitutive, elements
 import numpy as np
 import unittest
 
+
 class ConstitutiveTest(unittest.TestCase):
     def setUp(self):
         # fd/cs step size
@@ -45,42 +46,104 @@ class ConstitutiveTest(unittest.TestCase):
 
     def test_constitutive_density(self):
         # Test density dv sensitivity
-        fail = constitutive.TestConstitutiveDensity(self.con, self.elem_index, self.pt, self.x,
-                                                    self.dvs, self.dh, self.print_level, self.atol, self.rtol)
+        fail = constitutive.TestConstitutiveDensity(
+            self.con,
+            self.elem_index,
+            self.pt,
+            self.x,
+            self.dvs,
+            self.dh,
+            self.print_level,
+            self.atol,
+            self.rtol,
+        )
         self.assertFalse(fail)
 
     def test_constitutive_specific_heat(self):
         # Test specific heat dv sensitivity
-        fail = constitutive.TestConstitutiveSpecificHeat(self.con, self.elem_index, self.pt, self.x,
-                                                         self.dvs, self.dh, self.print_level, self.atol, self.rtol)
+        fail = constitutive.TestConstitutiveSpecificHeat(
+            self.con,
+            self.elem_index,
+            self.pt,
+            self.x,
+            self.dvs,
+            self.dh,
+            self.print_level,
+            self.atol,
+            self.rtol,
+        )
         self.assertFalse(fail)
 
     def test_constitutive_heat_flux(self):
         # Test heat flux dv sensitivity
-        fail = constitutive.TestConstitutiveHeatFlux(self.con, self.elem_index, self.pt, self.x,
-                                                     self.dvs, self.dh, self.print_level, self.atol, self.rtol)
+        fail = constitutive.TestConstitutiveHeatFlux(
+            self.con,
+            self.elem_index,
+            self.pt,
+            self.x,
+            self.dvs,
+            self.dh,
+            self.print_level,
+            self.atol,
+            self.rtol,
+        )
         self.assertFalse(fail)
 
     def test_constitutive_stress(self):
         # Test stress dv sensitivity
-        fail = constitutive.TestConstitutiveStress(self.con, self.elem_index, self.pt, self.x,
-                                                   self.dvs, self.dh, self.print_level, self.atol, self.rtol)
+        fail = constitutive.TestConstitutiveStress(
+            self.con,
+            self.elem_index,
+            self.pt,
+            self.x,
+            self.dvs,
+            self.dh,
+            self.print_level,
+            self.atol,
+            self.rtol,
+        )
         self.assertFalse(fail)
 
     def test_constitutive_thermal_strain(self):
         # Test thermal strain dv sensitivity
-        fail = constitutive.TestConstitutiveThermalStrain(self.con, self.elem_index, self.pt, self.x,
-                                                          self.dvs, self.dh, self.print_level, self.atol, self.rtol)
+        fail = constitutive.TestConstitutiveThermalStrain(
+            self.con,
+            self.elem_index,
+            self.pt,
+            self.x,
+            self.dvs,
+            self.dh,
+            self.print_level,
+            self.atol,
+            self.rtol,
+        )
         self.assertFalse(fail)
 
     def test_constitutive_failure(self):
         # Test failure dv sensitivity
-        fail = constitutive.TestConstitutiveFailure(self.con, self.elem_index, self.pt, self.x,
-                                                    self.dvs, self.dh, self.print_level, self.atol, self.rtol)
+        fail = constitutive.TestConstitutiveFailure(
+            self.con,
+            self.elem_index,
+            self.pt,
+            self.x,
+            self.dvs,
+            self.dh,
+            self.print_level,
+            self.atol,
+            self.rtol,
+        )
         self.assertFalse(fail)
 
     def test_constitutive_failure_strain_sens(self):
         # Test failure dv sensitivity
-        fail = constitutive.TestConstitutiveFailureStrainSens(self.con, self.elem_index, self.pt, self.x,
-                                                              self.dh, self.print_level, self.atol, self.rtol)
+        fail = constitutive.TestConstitutiveFailureStrainSens(
+            self.con,
+            self.elem_index,
+            self.pt,
+            self.x,
+            self.dh,
+            self.print_level,
+            self.atol,
+            self.rtol,
+        )
         self.assertFalse(fail)

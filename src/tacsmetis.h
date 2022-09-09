@@ -25,8 +25,8 @@
 #else
 // Otherwise, assume metis is compiled with C
 extern "C" {
-  #include "metis.h"
+#include "metis.h"
 }
-#endif // TACS_CPLUSPLUS_METIS
+#endif  // TACS_CPLUSPLUS_METIS
 
 #endif

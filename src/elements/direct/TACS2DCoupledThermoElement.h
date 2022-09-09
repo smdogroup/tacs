@@ -10,9 +10,9 @@
   Not for commercial purposes.
 */
 
-#include "ThermoElements.h"
 #include "CoupledThermoPlaneStressStiffness.h"
 #include "FElibrary.h"
+#include "ThermoElements.h"
 
 /*
   The following class defines a generic two-dimensional element
@@ -23,78 +23,71 @@
   the element computations is consumed in the inner product of the
   B-matrix with the constitutive matrix.
 */
-template<int NUM_NODES>
+template <int NUM_NODES>
 class TACS2DCoupledThermoElement : public ThermoQuad {
  public:
   // Define some constants for this element type
-  static const int NUM_DISPS = 3; // u, v, dT
+  static const int NUM_DISPS = 3;  // u, v, dT
   static const int NUM_STRESSES = 3;
   static const int NUM_EXTRAS = 4;
-  static const int NUM_VARIABLES = 3*NUM_NODES; // u, v, dT
+  static const int NUM_VARIABLES = 3 * NUM_NODES;  // u, v, dT
 
-  TACS2DCoupledThermoElement( CoupledThermoPlaneStressStiffness * _stiff,
-                              ElementBehaviorType type,
-                              int _component );
+  TACS2DCoupledThermoElement(CoupledThermoPlaneStressStiffness *_stiff,
+                             ElementBehaviorType type, int _component);
   ~TACS2DCoupledThermoElement();
 
   // Compute the position vector and its derivative
   // ----------------------------------------------
-  void planeJacobian( TacsScalar X[], TacsScalar Xa[],
-                      const double N[], const double Na[],
-                      const double Nb[],
-                      const TacsScalar Xpts[] );
+  void planeJacobian(TacsScalar X[], TacsScalar Xa[], const double N[],
+                     const double Na[], const double Nb[],
+                     const TacsScalar Xpts[]);
   // Compute the displacement gradient
   // ---------------------------------
-  void getDisplacement( TacsScalar U[], const double N[],
-                        const TacsScalar vars[] );
-  void getDisplGradient( TacsScalar Ud[], const TacsScalar J[],
-                         const double Na[], const double Nb[],
-                         const TacsScalar vars[] );
-  void getDisplGradientSens( TacsScalar Ud[], TacsScalar UdSens[],
-                             const TacsScalar J[], const TacsScalar JSens[],
-                             const double Na[], const double Nb[],
-                             const TacsScalar vars[] );
-  void getTemperature( TacsScalar T[], const double N[],
-                       const TacsScalar vars[] );
+  void getDisplacement(TacsScalar U[], const double N[],
+                       const TacsScalar vars[]);
+  void getDisplGradient(TacsScalar Ud[], const TacsScalar J[],
+                        const double Na[], const double Nb[],
+                        const TacsScalar vars[]);
+  void getDisplGradientSens(TacsScalar Ud[], TacsScalar UdSens[],
+                            const TacsScalar J[], const TacsScalar JSens[],
+                            const double Na[], const double Nb[],
+                            const TacsScalar vars[]);
+  void getTemperature(TacsScalar T[], const double N[],
+                      const TacsScalar vars[]);
   // Evaluate the strain in the element
   // ----------------------------------
-  void evalStrain( TacsScalar strain[], const TacsScalar J[],
-                   const double Na[], const double Nb[],
-                   const TacsScalar vars[] );
-  void evalBT( TacsScalar strain[], const TacsScalar J[],
-               const double Na[], const double Nb[],
-               const TacsScalar vars[] );
+  void evalStrain(TacsScalar strain[], const TacsScalar J[], const double Na[],
+                  const double Nb[], const TacsScalar vars[]);
+  void evalBT(TacsScalar strain[], const TacsScalar J[], const double Na[],
+              const double Nb[], const TacsScalar vars[]);
 
   // Compute the derivative of the strain with respect to vars
   // ---------------------------------------------------------
-  void getBmat( TacsScalar B[], const TacsScalar J[],
-                const double Na[], const double Nb[],
-                const TacsScalar vars[] );
-  void getBmatTemp( TacsScalar B[], const TacsScalar J[],
-                    const double Na[], const double Nb[],
-                    const TacsScalar vars[] );
+  void getBmat(TacsScalar B[], const TacsScalar J[], const double Na[],
+               const double Nb[], const TacsScalar vars[]);
+  void getBmatTemp(TacsScalar B[], const TacsScalar J[], const double Na[],
+                   const double Nb[], const TacsScalar vars[]);
 
   // Compute the derivative of the strain with respect to the nodal coordinates
   // --------------------------------------------------------------------------
-  void addStrainXptSens( TacsScalar sens[], TacsScalar scale,
-                         const TacsScalar strainSens[],
-                         const TacsScalar J[], const TacsScalar Xa[],
-                         const double Na[],  const double Nb[],
-                         const TacsScalar vars[] );
+  void addStrainXptSens(TacsScalar sens[], TacsScalar scale,
+                        const TacsScalar strainSens[], const TacsScalar J[],
+                        const TacsScalar Xa[], const double Na[],
+                        const double Nb[], const TacsScalar vars[]);
 
   // The design variable query functions
   // -----------------------------------
-  void setDesignVars( const TacsScalar dvs[], int numDVs );
-  void getDesignVars( TacsScalar dvs[], int numDVs );
-  void getDesignVarRange( TacsScalar lowerBound[],
-                          TacsScalar upperBound[], int numDVs );
+  void setDesignVars(const TacsScalar dvs[], int numDVs);
+  void getDesignVars(TacsScalar dvs[], int numDVs);
+  void getDesignVarRange(TacsScalar lowerBound[], TacsScalar upperBound[],
+                         int numDVs);
 
   // Get the variable information
   // ----------------------------
-  const char * displacementName( int i );
-  const char * stressName( int i );
-  const char * strainName( int i );
-  const char * extraName( int i );
+  const char *displacementName(int i);
+  const char *stressName(int i);
+  const char *strainName(int i);
+  const char *extraName(int i);
   int numDisplacements();
   int numStresses();
   int numNodes();
@@ -104,112 +97,94 @@ class TACS2DCoupledThermoElement : public ThermoQuad {
 
   // Compute the kinetic and potential energy within the element
   // -----------------------------------------------------------
-  void computeEnergies( double time, TacsScalar *_Te, TacsScalar *_Pe,
-                        const TacsScalar Xpts[], const TacsScalar vars[],
-                        const TacsScalar dvars[] );
+  void computeEnergies(double time, TacsScalar *_Te, TacsScalar *_Pe,
+                       const TacsScalar Xpts[], const TacsScalar vars[],
+                       const TacsScalar dvars[]);
 
   // Compute the residual of the governing equations
   // -----------------------------------------------
-  void addResidual( double time, TacsScalar res[], const TacsScalar Xpts[],
-                    const TacsScalar vars[], const TacsScalar dvars[],
-                    const TacsScalar ddvars[] );
+  void addResidual(double time, TacsScalar res[], const TacsScalar Xpts[],
+                   const TacsScalar vars[], const TacsScalar dvars[],
+                   const TacsScalar ddvars[]);
 
   // Compute the Jacobian of the governing equations
   // -----------------------------------------------
-  void addJacobian( double time, TacsScalar J[],
-                    double alpha, double beta, double gamma,
-                    const TacsScalar Xpts[], const TacsScalar vars[],
-                    const TacsScalar dvars[], const TacsScalar ddvars[] );
+  void addJacobian(double time, TacsScalar J[], double alpha, double beta,
+                   double gamma, const TacsScalar Xpts[],
+                   const TacsScalar vars[], const TacsScalar dvars[],
+                   const TacsScalar ddvars[]);
 
   // Add the product of the adjoint with the derivative of the design variables
   // --------------------------------------------------------------------------
-  void addAdjResProduct( double time, double scale,
-                         TacsScalar dvSens[], int dvLen,
-                         const TacsScalar psi[], const TacsScalar Xpts[],
-                         const TacsScalar vars[], const TacsScalar dvars[],
-                         const TacsScalar ddvars[] );
+  void addAdjResProduct(double time, double scale, TacsScalar dvSens[],
+                        int dvLen, const TacsScalar psi[],
+                        const TacsScalar Xpts[], const TacsScalar vars[],
+                        const TacsScalar dvars[], const TacsScalar ddvars[]);
 
   // Add the product of the adjoint with the derivative of the design variables
   // --------------------------------------------------------------------------
-  void addAdjResXptProduct( double time, double scale,
-                            TacsScalar fXptSens[],
-                            const TacsScalar psi[],
-                            const TacsScalar Xpts[],
-                            const TacsScalar vars[],
-                            const TacsScalar dvars[],
-                            const TacsScalar ddvars[] );
+  void addAdjResXptProduct(double time, double scale, TacsScalar fXptSens[],
+                           const TacsScalar psi[], const TacsScalar Xpts[],
+                           const TacsScalar vars[], const TacsScalar dvars[],
+                           const TacsScalar ddvars[]);
 
   // Retrieve a specific time-independent matrix from the element
   // ------------------------------------------------------------
-  void getMatType( ElementMatrixType matType,
-                   TacsScalar mat[],
-                   const TacsScalar Xpts[],
-                   const TacsScalar vars[] );
+  void getMatType(ElementMatrixType matType, TacsScalar mat[],
+                  const TacsScalar Xpts[], const TacsScalar vars[]);
 
   // Functions for evaluating global functionals of interest
   // -------------------------------------------------------
-  CoupledThermoPlaneStressStiffness* getConstitutive(){ return stiff; }
+  CoupledThermoPlaneStressStiffness *getConstitutive() { return stiff; }
 
   // Evaluate the determinant of the Jacobian and its derivative
   // -----------------------------------------------------------
-  TacsScalar getDetJacobian( const double * pt, const TacsScalar Xpts[] );
-  TacsScalar getDetJacobianXptSens( TacsScalar * sh, const double * pt,
-                                    const TacsScalar Xpts[] );
+  TacsScalar getDetJacobian(const double *pt, const TacsScalar Xpts[]);
+  TacsScalar getDetJacobianXptSens(TacsScalar *sh, const double *pt,
+                                   const TacsScalar Xpts[]);
 
   // Compute the point-wise strain and its derivative
   // ------------------------------------------------
-  void getStrain( TacsScalar strain[], const double pt[],
-                  const TacsScalar Xpts[], const TacsScalar vars[] );
-  void getEffStrain( TacsScalar strain[], const double pt[],
-                     const TacsScalar Xpts[],
-                     const TacsScalar vars[] );
-  void addStrainXptSens( TacsScalar strainXptSens[],
-                         const double pt[],
-                         const TacsScalar scale,
-                         const TacsScalar strainSens[],
-                         const TacsScalar Xpts[],
-                         const TacsScalar vars[] );
+  void getStrain(TacsScalar strain[], const double pt[],
+                 const TacsScalar Xpts[], const TacsScalar vars[]);
+  void getEffStrain(TacsScalar strain[], const double pt[],
+                    const TacsScalar Xpts[], const TacsScalar vars[]);
+  void addStrainXptSens(TacsScalar strainXptSens[], const double pt[],
+                        const TacsScalar scale, const TacsScalar strainSens[],
+                        const TacsScalar Xpts[], const TacsScalar vars[]);
 
-  void addStrainSVSens( TacsScalar strainSVSens[],
-                        const double pt[],
-                        const TacsScalar scale,
-                        const TacsScalar strainSens[],
-                        const TacsScalar Xpts[],
-                        const TacsScalar vars[] );
-  void addEffStrainSVSens( TacsScalar strainSVSens[],
-                           const double pt[],
-                           const TacsScalar scale,
-                           const TacsScalar strainSens[],
-                           const TacsScalar Xpts[],
-                           const TacsScalar vars[],
-                           int vars_j=0 );
-  void getBT( TacsScalar strain[], const double pt[],
-              const TacsScalar Xpts[], const TacsScalar vars[] );
-  void addBTSVSens( TacsScalar strainSVSens[],
-                    const double pt[],
-                    const TacsScalar scale,
-                    const TacsScalar strainSens[],
-                    const TacsScalar Xpts[],
-                    const TacsScalar vars[] );
+  void addStrainSVSens(TacsScalar strainSVSens[], const double pt[],
+                       const TacsScalar scale, const TacsScalar strainSens[],
+                       const TacsScalar Xpts[], const TacsScalar vars[]);
+  void addEffStrainSVSens(TacsScalar strainSVSens[], const double pt[],
+                          const TacsScalar scale, const TacsScalar strainSens[],
+                          const TacsScalar Xpts[], const TacsScalar vars[],
+                          int vars_j = 0);
+  void getBT(TacsScalar strain[], const double pt[], const TacsScalar Xpts[],
+             const TacsScalar vars[]);
+  void addBTSVSens(TacsScalar strainSVSens[], const double pt[],
+                   const TacsScalar scale, const TacsScalar strainSens[],
+                   const TacsScalar Xpts[], const TacsScalar vars[]);
+
  protected:
   ElementBehaviorType strain_type;
   CoupledThermoPlaneStressStiffness *stiff;
 
  private:
-  static const char * dispNames[NUM_DISPS];
-  static const char * stressNames[NUM_STRESSES];
-  static const char * strainNames[NUM_STRESSES];
-  static const char * extraNames[NUM_EXTRAS];
+  static const char *dispNames[NUM_DISPS];
+  static const char *stressNames[NUM_STRESSES];
+  static const char *strainNames[NUM_STRESSES];
+  static const char *extraNames[NUM_EXTRAS];
   int conduction, convection, radiation;
 };
 /*
   The constructor for the 2D element matrix with thermal loading
 */
 template <int NUM_NODES>
-TACS2DCoupledThermoElement<NUM_NODES>::TACS2DCoupledThermoElement( CoupledThermoPlaneStressStiffness *_stiff,
-                                                                   ElementBehaviorType type,
-                                                                   int component ) :
-ThermoQuad(component){
+TACS2DCoupledThermoElement<NUM_NODES>::TACS2DCoupledThermoElement(
+    CoupledThermoPlaneStressStiffness *_stiff, ElementBehaviorType type,
+    int component)
+    : ThermoQuad(component) {
   strain_type = type;
   stiff = _stiff;
   stiff->incref();
@@ -219,7 +194,7 @@ ThermoQuad(component){
 }
 
 template <int NUM_NODES>
-TACS2DCoupledThermoElement<NUM_NODES>::~TACS2DCoupledThermoElement(){
+TACS2DCoupledThermoElement<NUM_NODES>::~TACS2DCoupledThermoElement() {
   stiff->decref();
 }
 
@@ -228,47 +203,50 @@ TACS2DCoupledThermoElement<NUM_NODES>::~TACS2DCoupledThermoElement(){
   and stresses
 */
 template <int NUM_NODES>
-const char * TACS2DCoupledThermoElement<NUM_NODES>::dispNames[] = { "u", "v","dT" };
+const char *TACS2DCoupledThermoElement<NUM_NODES>::dispNames[] = {"u", "v",
+                                                                  "dT"};
 
 template <int NUM_NODES>
-const char * TACS2DCoupledThermoElement<NUM_NODES>::stressNames[] = { "sxx", "syy", "sxy" };
+const char *TACS2DCoupledThermoElement<NUM_NODES>::stressNames[] = {
+    "sxx", "syy", "sxy"};
 
 template <int NUM_NODES>
-const char * TACS2DCoupledThermoElement<NUM_NODES>::strainNames[] = { "exx", "eyy", "exy"};
+const char *TACS2DCoupledThermoElement<NUM_NODES>::strainNames[] = {
+    "exx", "eyy", "exy"};
 
 template <int NUM_NODES>
-const char * TACS2DCoupledThermoElement<NUM_NODES>::extraNames[] = { "lambda", "buckling",
-                                                                     "dv1", "dv2" };
+const char *TACS2DCoupledThermoElement<NUM_NODES>::extraNames[] = {
+    "lambda", "buckling", "dv1", "dv2"};
 
 /*
   Get the names of the displacements/stress etc.
 */
 template <int NUM_NODES>
-const char * TACS2DCoupledThermoElement<NUM_NODES>::displacementName( int i ){
-  if (i >= 0 && i < NUM_DISPS){
+const char *TACS2DCoupledThermoElement<NUM_NODES>::displacementName(int i) {
+  if (i >= 0 && i < NUM_DISPS) {
     return dispNames[i];
   }
   return NULL;
 }
 template <int NUM_NODES>
-const char * TACS2DCoupledThermoElement<NUM_NODES>::stressName( int i ){
-  if (i >= 0 && i < NUM_STRESSES){
+const char *TACS2DCoupledThermoElement<NUM_NODES>::stressName(int i) {
+  if (i >= 0 && i < NUM_STRESSES) {
     return stressNames[i];
   }
   return NULL;
 }
 
 template <int NUM_NODES>
-const char * TACS2DCoupledThermoElement<NUM_NODES>::strainName( int i ){
-  if (i >= 0 && i < NUM_STRESSES){
+const char *TACS2DCoupledThermoElement<NUM_NODES>::strainName(int i) {
+  if (i >= 0 && i < NUM_STRESSES) {
     return strainNames[i];
   }
   return NULL;
 }
 
 template <int NUM_NODES>
-const char * TACS2DCoupledThermoElement<NUM_NODES>::extraName( int i ){
-  if (i >= 0 && i < NUM_EXTRAS){
+const char *TACS2DCoupledThermoElement<NUM_NODES>::extraName(int i) {
+  if (i >= 0 && i < NUM_EXTRAS) {
     return extraNames[i];
   }
   return NULL;
@@ -278,32 +256,32 @@ const char * TACS2DCoupledThermoElement<NUM_NODES>::extraName( int i ){
   Retrieve information about the number of displacements/stress etc.
 */
 template <int NUM_NODES>
-int TACS2DCoupledThermoElement<NUM_NODES>::numDisplacements(){
+int TACS2DCoupledThermoElement<NUM_NODES>::numDisplacements() {
   return NUM_DISPS;
 }
 
 template <int NUM_NODES>
-int TACS2DCoupledThermoElement<NUM_NODES>::numStresses(){
+int TACS2DCoupledThermoElement<NUM_NODES>::numStresses() {
   return NUM_STRESSES;
 }
 
 template <int NUM_NODES>
-int TACS2DCoupledThermoElement<NUM_NODES>::numNodes(){
+int TACS2DCoupledThermoElement<NUM_NODES>::numNodes() {
   return NUM_NODES;
 }
 
 template <int NUM_NODES>
-int TACS2DCoupledThermoElement<NUM_NODES>::numVariables(){
+int TACS2DCoupledThermoElement<NUM_NODES>::numVariables() {
   return NUM_VARIABLES;
 }
 
 template <int NUM_NODES>
-int TACS2DCoupledThermoElement<NUM_NODES>::numExtras(){
+int TACS2DCoupledThermoElement<NUM_NODES>::numExtras() {
   return NUM_EXTRAS;
 }
 
 template <int NUM_NODES>
-ElementType TACS2DCoupledThermoElement<NUM_NODES>::getElementType(){
+ElementType TACS2DCoupledThermoElement<NUM_NODES>::getElementType() {
   return TACS_PLANE_STRESS;
 }
 
@@ -311,25 +289,24 @@ ElementType TACS2DCoupledThermoElement<NUM_NODES>::getElementType(){
   Set the design variable values
 */
 template <int NUM_NODES>
-void TACS2DCoupledThermoElement<NUM_NODES>::setDesignVars( const TacsScalar dvs[],
-                                                           int numDVs ){
+void TACS2DCoupledThermoElement<NUM_NODES>::setDesignVars(
+    const TacsScalar dvs[], int numDVs) {
   stiff->setDesignVars(dvs, numDVs);
 }
 /*
   Retrive the design variable numbers
 */
 template <int NUM_NODES>
-void TACS2DCoupledThermoElement<NUM_NODES>::getDesignVars( TacsScalar dvs[],
-                                                           int numDVs ){
+void TACS2DCoupledThermoElement<NUM_NODES>::getDesignVars(TacsScalar dvs[],
+                                                          int numDVs) {
   stiff->getDesignVars(dvs, numDVs);
 }
 /*
   Set the design variable lower/upper bounds in the provided arrays
 */
 template <int NUM_NODES>
-void TACS2DCoupledThermoElement<NUM_NODES>::getDesignVarRange( TacsScalar lowerBound[],
-                                                               TacsScalar upperBound[],
-                                                               int numDVs ){
+void TACS2DCoupledThermoElement<NUM_NODES>::getDesignVarRange(
+    TacsScalar lowerBound[], TacsScalar upperBound[], int numDVs) {
   stiff->getDesignVarRange(lowerBound, upperBound, numDVs);
 }
 /*
@@ -346,27 +323,25 @@ void TACS2DCoupledThermoElement<NUM_NODES>::getDesignVarRange( TacsScalar lowerB
   Xpts:        the nodal locations
 */
 template <int NUM_NODES>
-void TACS2DCoupledThermoElement<NUM_NODES>::planeJacobian( TacsScalar X[],
-                                                           TacsScalar Xa[],
-                                                           const double N[],
-                                                           const double Na[],
-                                                           const double Nb[],
-                                                           const TacsScalar Xpts[] ){
+void TACS2DCoupledThermoElement<NUM_NODES>::planeJacobian(
+    TacsScalar X[], TacsScalar Xa[], const double N[], const double Na[],
+    const double Nb[], const TacsScalar Xpts[]) {
   X[0] = X[1] = 0.0;
   Xa[0] = Xa[1] = Xa[2] = Xa[3] = 0.0;
 
-  for ( int i = 0; i < NUM_NODES; i++ ){
-    X[0] += Xpts[0]*N[0];
-    X[1] += Xpts[1]*N[0];
+  for (int i = 0; i < NUM_NODES; i++) {
+    X[0] += Xpts[0] * N[0];
+    X[1] += Xpts[1] * N[0];
 
-    Xa[0] += Xpts[0]*Na[0];
-    Xa[1] += Xpts[0]*Nb[0];
+    Xa[0] += Xpts[0] * Na[0];
+    Xa[1] += Xpts[0] * Nb[0];
 
-    Xa[2] += Xpts[1]*Na[0];
-    Xa[3] += Xpts[1]*Nb[0];
+    Xa[2] += Xpts[1] * Na[0];
+    Xa[3] += Xpts[1] * Nb[0];
 
     N++;
-    Na++; Nb++;
+    Na++;
+    Nb++;
     Xpts += 3;
   }
 }
@@ -375,15 +350,14 @@ void TACS2DCoupledThermoElement<NUM_NODES>::planeJacobian( TacsScalar X[],
   Compute the displacement given the provided values of the shape functions
 */
 template <int NUM_NODES>
-void TACS2DCoupledThermoElement<NUM_NODES>::getDisplacement( TacsScalar U[],
-                                                             const double N[],
-                                                             const TacsScalar vars[] ){
+void TACS2DCoupledThermoElement<NUM_NODES>::getDisplacement(
+    TacsScalar U[], const double N[], const TacsScalar vars[]) {
   // Zero the displacement values
   U[0] = U[1] = 0.0;
 
-  for ( int i = 0; i < NUM_NODES; i++ ){
-    U[0] += N[0]*vars[0];
-    U[1] += N[0]*vars[1];
+  for (int i = 0; i < NUM_NODES; i++) {
+    U[0] += N[0] * vars[0];
+    U[1] += N[0] * vars[1];
 
     N++;
     vars += 3;
@@ -406,32 +380,31 @@ void TACS2DCoupledThermoElement<NUM_NODES>::getDisplacement( TacsScalar U[],
   vars:       the element variables
 */
 template <int NUM_NODES>
-void TACS2DCoupledThermoElement<NUM_NODES>::getDisplGradient( TacsScalar Ud[],
-                                                              const TacsScalar J[],
-                                                              const double Na[],
-                                                              const double Nb[],
-                                                              const TacsScalar vars[] ){
+void TACS2DCoupledThermoElement<NUM_NODES>::getDisplGradient(
+    TacsScalar Ud[], const TacsScalar J[], const double Na[], const double Nb[],
+    const TacsScalar vars[]) {
   TacsScalar Ua[4];
   Ua[0] = Ua[1] = Ua[2] = Ua[3] = 0.0;
 
   // Compute the derivative of the u,v displacements with
   // respect to the parametric locations within the element
-  for ( int i = 0; i < NUM_NODES; i++ ){
-    Ua[0] += vars[0]*Na[0];
-    Ua[1] += vars[0]*Nb[0];
+  for (int i = 0; i < NUM_NODES; i++) {
+    Ua[0] += vars[0] * Na[0];
+    Ua[1] += vars[0] * Nb[0];
 
-    Ua[2] += vars[1]*Na[0];
-    Ua[3] += vars[1]*Nb[0];
+    Ua[2] += vars[1] * Na[0];
+    Ua[3] += vars[1] * Nb[0];
 
-    Na++; Nb++;
+    Na++;
+    Nb++;
     vars += 3;
   }
   // Compute the displacement gradient: Ud = Ua*J
-  Ud[0] = Ua[0]*J[0] + Ua[1]*J[2];
-  Ud[2] = Ua[2]*J[0] + Ua[3]*J[2];
+  Ud[0] = Ua[0] * J[0] + Ua[1] * J[2];
+  Ud[2] = Ua[2] * J[0] + Ua[3] * J[2];
 
-  Ud[1] = Ua[0]*J[1] + Ua[1]*J[3];
-  Ud[3] = Ua[2]*J[1] + Ua[3]*J[3];
+  Ud[1] = Ua[0] * J[1] + Ua[1] * J[3];
+  Ud[3] = Ua[2] * J[1] + Ua[3] * J[3];
 }
 /*
   Compute the term B*T where B is the derivative of the shape functions wrt x,y
@@ -447,26 +420,26 @@ void TACS2DCoupledThermoElement<NUM_NODES>::getDisplGradient( TacsScalar Ud[],
   vars:       the element variables
 */
 template <int NUM_NODES>
-void TACS2DCoupledThermoElement<NUM_NODES>::evalBT( TacsScalar strain[],
-                                                    const TacsScalar J[],
-                                                    const double Na[],
-                                                    const double Nb[],
-                                                    const TacsScalar vars[] ){
+void TACS2DCoupledThermoElement<NUM_NODES>::evalBT(TacsScalar strain[],
+                                                   const TacsScalar J[],
+                                                   const double Na[],
+                                                   const double Nb[],
+                                                   const TacsScalar vars[]) {
   TacsScalar Ua[2];
   Ua[0] = Ua[1] = 0.0;
 
   // Compute the derivative of the u,v displacements with
   // respect to the parametric locations within the element
-  for ( int i = 0; i < NUM_NODES; i++ ){
-    Ua[0] += vars[2]*Na[0];
-    Ua[1] += vars[2]*Nb[0];
+  for (int i = 0; i < NUM_NODES; i++) {
+    Ua[0] += vars[2] * Na[0];
+    Ua[1] += vars[2] * Nb[0];
 
-    Na++; Nb++;
+    Na++;
+    Nb++;
     vars += 3;
   }
-  strain[0] = Ua[0]*J[0]+Ua[1]*J[2];
-  strain[1] = Ua[0]*J[1]+Ua[1]*J[3];
-
+  strain[0] = Ua[0] * J[0] + Ua[1] * J[2];
+  strain[1] = Ua[0] * J[1] + Ua[1] * J[3];
 }
 /*
   Compute the displacement gradient and the derivative of the
@@ -488,54 +461,51 @@ void TACS2DCoupledThermoElement<NUM_NODES>::evalBT( TacsScalar strain[],
   vars:       the element variables
 */
 template <int NUM_NODES>
-void TACS2DCoupledThermoElement<NUM_NODES>::getDisplGradientSens( TacsScalar Ud[],
-                                                                  TacsScalar UdSens[],
-                                                                  const TacsScalar J[],
-                                                                  const TacsScalar JSens[],
-                                                                  const double Na[],
-                                                                  const double Nb[],
-                                                                  const TacsScalar vars[] ){
+void TACS2DCoupledThermoElement<NUM_NODES>::getDisplGradientSens(
+    TacsScalar Ud[], TacsScalar UdSens[], const TacsScalar J[],
+    const TacsScalar JSens[], const double Na[], const double Nb[],
+    const TacsScalar vars[]) {
   TacsScalar Ua[4];
   Ua[0] = Ua[1] = Ua[2] = Ua[3] = 0.0;
 
   // Compute the derivative of the u,v displacements with
   // respect to the parametric locations within the element
-  for ( int i = 0; i < NUM_NODES; i++ ){
-    Ua[0] += vars[0]*Na[0];
-    Ua[1] += vars[0]*Nb[0];
+  for (int i = 0; i < NUM_NODES; i++) {
+    Ua[0] += vars[0] * Na[0];
+    Ua[1] += vars[0] * Nb[0];
 
-    Ua[2] += vars[1]*Na[0];
-    Ua[3] += vars[1]*Nb[0];
+    Ua[2] += vars[1] * Na[0];
+    Ua[3] += vars[1] * Nb[0];
 
-    Na++; Nb++;
+    Na++;
+    Nb++;
     vars += 3;
   }
 
   // Compute the displacement gradient: Ud = Ua*J
-  Ud[0] = Ua[0]*J[0] + Ua[1]*J[2]; // u,x
-  Ud[2] = Ua[2]*J[0] + Ua[3]*J[2]; // v,x
+  Ud[0] = Ua[0] * J[0] + Ua[1] * J[2];  // u,x
+  Ud[2] = Ua[2] * J[0] + Ua[3] * J[2];  // v,x
 
-  Ud[1] = Ua[0]*J[1] + Ua[1]*J[3]; // u,y
-  Ud[3] = Ua[2]*J[1] + Ua[3]*J[3]; // v,y
+  Ud[1] = Ua[0] * J[1] + Ua[1] * J[3];  // u,y
+  Ud[3] = Ua[2] * J[1] + Ua[3] * J[3];  // v,y
 
   // Compute the derivative of the displacement gradient
-  UdSens[0] = Ua[0]*JSens[0] + Ua[1]*JSens[2];
-  UdSens[2] = Ua[2]*JSens[0] + Ua[3]*JSens[2];
+  UdSens[0] = Ua[0] * JSens[0] + Ua[1] * JSens[2];
+  UdSens[2] = Ua[2] * JSens[0] + Ua[3] * JSens[2];
 
-  UdSens[1] = Ua[0]*JSens[1] + Ua[1]*JSens[3];
-  UdSens[3] = Ua[2]*JSens[1] + Ua[3]*JSens[3];
+  UdSens[1] = Ua[0] * JSens[1] + Ua[1] * JSens[3];
+  UdSens[3] = Ua[2] * JSens[1] + Ua[3] * JSens[3];
 }
 /*
   Compute the temperature given the provided values of the shape functions
 */
 template <int NUM_NODES>
-void TACS2DCoupledThermoElement<NUM_NODES>::getTemperature( TacsScalar T[],
-                                                            const double N[],
-                                                            const TacsScalar vars[] ){
+void TACS2DCoupledThermoElement<NUM_NODES>::getTemperature(
+    TacsScalar T[], const double N[], const TacsScalar vars[]) {
   // Zero the temperature values
   T[0] = 0.0;
-  for ( int i = 0; i < NUM_NODES; i++ ){
-    T[0] += N[0]*vars[2];
+  for (int i = 0; i < NUM_NODES; i++) {
+    T[0] += N[0] * vars[2];
 
     N++;
     vars += 3;
@@ -555,25 +525,22 @@ void TACS2DCoupledThermoElement<NUM_NODES>::getTemperature( TacsScalar T[],
   vars:       the variables
 */
 template <int NUM_NODES>
-void TACS2DCoupledThermoElement<NUM_NODES>::evalStrain( TacsScalar strain[],
-                                                        const TacsScalar J[],
-                                                        const double Na[],
-                                                        const double Nb[],
-                                                        const TacsScalar vars[] ){
+void TACS2DCoupledThermoElement<NUM_NODES>::evalStrain(
+    TacsScalar strain[], const TacsScalar J[], const double Na[],
+    const double Nb[], const TacsScalar vars[]) {
   // Compute the displacement gradient
   TacsScalar Ud[4];
   getDisplGradient(Ud, J, Na, Nb, vars);
 
   // Compute the strain using either linear or nonlinear expression
-  if (strain_type == LINEAR){
+  if (strain_type == LINEAR) {
     strain[0] = Ud[0];
     strain[1] = Ud[3];
     strain[2] = Ud[1] + Ud[2];
-  }
-  else {
-    strain[0] = Ud[0] + 0.5*(Ud[0]*Ud[0] + Ud[2]*Ud[2]);
-    strain[1] = Ud[3] + 0.5*(Ud[1]*Ud[1] + Ud[3]*Ud[3]);
-    strain[2] = Ud[1] + Ud[2] + (Ud[0]*Ud[1] + Ud[2]*Ud[3]);
+  } else {
+    strain[0] = Ud[0] + 0.5 * (Ud[0] * Ud[0] + Ud[2] * Ud[2]);
+    strain[1] = Ud[3] + 0.5 * (Ud[1] * Ud[1] + Ud[3] * Ud[3]);
+    strain[2] = Ud[1] + Ud[2] + (Ud[0] * Ud[1] + Ud[2] * Ud[3]);
   }
 }
 
@@ -581,17 +548,17 @@ void TACS2DCoupledThermoElement<NUM_NODES>::evalStrain( TacsScalar strain[],
   Compute the derivative of the strain with respect to vars
 */
 template <int NUM_NODES>
-void TACS2DCoupledThermoElement<NUM_NODES>::getBmat( TacsScalar B[],
-                                                     const TacsScalar J[],
-                                                     const double Na[],
-                                                     const double Nb[],
-                                                     const TacsScalar vars[] ){
-  if (strain_type == LINEAR){
+void TACS2DCoupledThermoElement<NUM_NODES>::getBmat(TacsScalar B[],
+                                                    const TacsScalar J[],
+                                                    const double Na[],
+                                                    const double Nb[],
+                                                    const TacsScalar vars[]) {
+  if (strain_type == LINEAR) {
     // If this is a linear element, then things are relative easy to
     // deal with - we just compute B alternatively by row
-    for ( int i = 0; i < NUM_NODES; i++ ){
-      TacsScalar Dx = Na[0]*J[0] + Nb[0]*J[2];
-      TacsScalar Dy = Na[0]*J[1] + Nb[0]*J[3];
+    for (int i = 0; i < NUM_NODES; i++) {
+      TacsScalar Dx = Na[0] * J[0] + Nb[0] * J[2];
+      TacsScalar Dy = Na[0] * J[1] + Nb[0] * J[3];
       B[0] = Dx;
       B[1] = 0.0;
       B[2] = Dy;
@@ -602,31 +569,32 @@ void TACS2DCoupledThermoElement<NUM_NODES>::getBmat( TacsScalar B[],
       B[2] = Dx;
       B += 3;
 
-      Na++; Nb++;
+      Na++;
+      Nb++;
     }
-  }
-  else {
+  } else {
     // Compute the displacement gradient: Ud = Ua*J
     TacsScalar Ud[4];
     getDisplGradient(Ud, J, Na, Nb, vars);
 
     // Compute the derivative of the strain with respect to
     // the nodal displacements
-    for ( int i = 0; i < NUM_NODES; i++ ){
-      TacsScalar Dx = Na[0]*J[0] + Nb[0]*J[2];
-      TacsScalar Dy = Na[0]*J[1] + Nb[0]*J[3];
+    for (int i = 0; i < NUM_NODES; i++) {
+      TacsScalar Dx = Na[0] * J[0] + Nb[0] * J[2];
+      TacsScalar Dy = Na[0] * J[1] + Nb[0] * J[3];
 
-      B[0] = Dx + Ud[0]*Dx;
-      B[1] = Ud[1]*Dy;
-      B[2] = Dy + Dx*Ud[1] + Ud[0]*Dy;
+      B[0] = Dx + Ud[0] * Dx;
+      B[1] = Ud[1] * Dy;
+      B[2] = Dy + Dx * Ud[1] + Ud[0] * Dy;
       B += 3;
 
-      B[0] = Ud[2]*Dx;
-      B[1] = Dy + Ud[3]*Dy;
-      B[2] = Dx + Dx*Ud[3] + Ud[2]*Dy;
+      B[0] = Ud[2] * Dx;
+      B[1] = Dy + Ud[3] * Dy;
+      B[2] = Dx + Dx * Ud[3] + Ud[2] * Dy;
       B += 3;
 
-      Na++; Nb++;
+      Na++;
+      Nb++;
     }
   }
 }
@@ -634,20 +602,19 @@ void TACS2DCoupledThermoElement<NUM_NODES>::getBmat( TacsScalar B[],
   Compute the derivative of the shape functions [2xNUM_NODES]
 */
 template <int NUM_NODES>
-void TACS2DCoupledThermoElement<NUM_NODES>::getBmatTemp( TacsScalar B[],
-                                                         const TacsScalar J[],
-                                                         const double Na[],
-                                                         const double Nb[],
-                                                         const TacsScalar vars[] ){
-  if (strain_type == LINEAR){
-    for ( int i = 0; i < NUM_NODES; i++ ){
-      TacsScalar Dx = Na[0]*J[0] + Nb[0]*J[2];
-      TacsScalar Dy = Na[0]*J[1] + Nb[0]*J[3];
+void TACS2DCoupledThermoElement<NUM_NODES>::getBmatTemp(
+    TacsScalar B[], const TacsScalar J[], const double Na[], const double Nb[],
+    const TacsScalar vars[]) {
+  if (strain_type == LINEAR) {
+    for (int i = 0; i < NUM_NODES; i++) {
+      TacsScalar Dx = Na[0] * J[0] + Nb[0] * J[2];
+      TacsScalar Dy = Na[0] * J[1] + Nb[0] * J[3];
 
       B[0] = Dx;
       B[1] = Dy;
       B += 2;
-      Na++; Nb++;
+      Na++;
+      Nb++;
     }
   }
 }
@@ -686,134 +653,144 @@ void TACS2DCoupledThermoElement<NUM_NODES>::getBmatTemp( TacsScalar B[],
   d2 = Na[0]*J[1] + Nb[0]*J[3]
 */
 template <int NUM_NODES>
-void TACS2DCoupledThermoElement<NUM_NODES>::addStrainXptSens( TacsScalar sens[],
-                                                              TacsScalar scale,
-                                                              const TacsScalar strainSens[],
-                                                              const TacsScalar J[],
-                                                              const TacsScalar Xa[],
-                                                              const double Na[],
-                                                              const double Nb[],
-                                                              const TacsScalar vars[] ){
+void TACS2DCoupledThermoElement<NUM_NODES>::addStrainXptSens(
+    TacsScalar sens[], TacsScalar scale, const TacsScalar strainSens[],
+    const TacsScalar J[], const TacsScalar Xa[], const double Na[],
+    const double Nb[], const TacsScalar vars[]) {
   // Compute the derivative of the u,v,w displacements with
   // respect to the parametric locations within the element
   TacsScalar Ua[4];
   Ua[0] = Ua[1] = Ua[2] = Ua[3] = 0.0;
 
   const double *na = Na, *nb = Nb;
-  for ( int i = 0; i < NUM_NODES; i++ ){
-    Ua[0] += vars[0]*na[0];
-    Ua[1] += vars[0]*nb[0];
+  for (int i = 0; i < NUM_NODES; i++) {
+    Ua[0] += vars[0] * na[0];
+    Ua[1] += vars[0] * nb[0];
 
-    Ua[2] += vars[1]*na[0];
-    Ua[3] += vars[1]*nb[0];
+    Ua[2] += vars[1] * na[0];
+    Ua[3] += vars[1] * nb[0];
 
-    na++; nb++;
+    na++;
+    nb++;
     vars += 3;
   }
 
   // Compute the scaled strain sensitivity
   TacsScalar eSens[3];
-  eSens[0] = scale*strainSens[0];
-  eSens[1] = scale*strainSens[1];
-  eSens[2] = scale*strainSens[2];
+  eSens[0] = scale * strainSens[0];
+  eSens[1] = scale * strainSens[1];
+  eSens[2] = scale * strainSens[2];
 
-  if (strain_type == LINEAR){
-    for ( int i = 0; i < NUM_NODES; i++ ){
+  if (strain_type == LINEAR) {
+    for (int i = 0; i < NUM_NODES; i++) {
       // JSens = -J*d(Xa)/dx*J
-      TacsScalar d1 = -(Na[0]*J[0] + Nb[0]*J[2]);
-      TacsScalar d2 = -(Na[0]*J[1] + Nb[0]*J[3]);
+      TacsScalar d1 = -(Na[0] * J[0] + Nb[0] * J[2]);
+      TacsScalar d2 = -(Na[0] * J[1] + Nb[0] * J[3]);
 
       // The derivative of the inverse transformation matrix
       // in each coordinate direction
       TacsScalar Ja[4], Jb[4];
-      Ja[0] = d1*J[0];   Ja[1] = d2*J[0];
-      Ja[2] = d1*J[2];   Ja[3] = d2*J[2];
+      Ja[0] = d1 * J[0];
+      Ja[1] = d2 * J[0];
+      Ja[2] = d1 * J[2];
+      Ja[3] = d2 * J[2];
 
-      Jb[0] = d1*J[1];   Jb[1] = d2*J[1];
-      Jb[2] = d1*J[3];   Jb[3] = d2*J[3];
+      Jb[0] = d1 * J[1];
+      Jb[1] = d2 * J[1];
+      Jb[2] = d1 * J[3];
+      Jb[3] = d2 * J[3];
 
       // Compute the derivative of the displacement gradient
       // with respect to each of the three coordinate directions
       // displacement gradient: Ud = Ua*J
       TacsScalar Uda[4];
-      Uda[0] = Ua[0]*Ja[0] + Ua[1]*Ja[2];
-      Uda[2] = Ua[2]*Ja[0] + Ua[3]*Ja[2];
+      Uda[0] = Ua[0] * Ja[0] + Ua[1] * Ja[2];
+      Uda[2] = Ua[2] * Ja[0] + Ua[3] * Ja[2];
 
-      Uda[1] = Ua[0]*Ja[1] + Ua[1]*Ja[3];
-      Uda[3] = Ua[2]*Ja[1] + Ua[3]*Ja[3];
+      Uda[1] = Ua[0] * Ja[1] + Ua[1] * Ja[3];
+      Uda[3] = Ua[2] * Ja[1] + Ua[3] * Ja[3];
 
       TacsScalar Udb[4];
-      Udb[0] = Ua[0]*Jb[0] + Ua[1]*Jb[2];
-      Udb[2] = Ua[2]*Jb[0] + Ua[3]*Jb[2];
+      Udb[0] = Ua[0] * Jb[0] + Ua[1] * Jb[2];
+      Udb[2] = Ua[2] * Jb[0] + Ua[3] * Jb[2];
 
-      Udb[1] = Ua[0]*Jb[1] + Ua[1]*Jb[3];
-      Udb[3] = Ua[2]*Jb[1] + Ua[3]*Jb[3];
+      Udb[1] = Ua[0] * Jb[1] + Ua[1] * Jb[3];
+      Udb[3] = Ua[2] * Jb[1] + Ua[3] * Jb[3];
 
-      sens[0] += (Uda[0]*eSens[0] + Uda[3]*eSens[1] +
-                 (Uda[1] + Uda[2])*eSens[2]);
+      sens[0] += (Uda[0] * eSens[0] + Uda[3] * eSens[1] +
+                  (Uda[1] + Uda[2]) * eSens[2]);
       sens++;
 
-      sens[0] += (Udb[0]*eSens[0] + Udb[3]*eSens[1] +
-                  (Udb[1] + Udb[2])*eSens[2]);
+      sens[0] += (Udb[0] * eSens[0] + Udb[3] * eSens[1] +
+                  (Udb[1] + Udb[2]) * eSens[2]);
       sens += 2;
 
-      Na++; Nb++;
+      Na++;
+      Nb++;
     }
-  }
-  else {
+  } else {
     // Compute the displacement gradient: Ud = Ua*J
     TacsScalar Ud[4];
-    Ud[0] = Ua[0]*J[0] + Ua[1]*J[2];
-    Ud[2] = Ua[2]*J[0] + Ua[3]*J[2];
+    Ud[0] = Ua[0] * J[0] + Ua[1] * J[2];
+    Ud[2] = Ua[2] * J[0] + Ua[3] * J[2];
 
-    Ud[1] = Ua[0]*J[1] + Ua[1]*J[3];
-    Ud[3] = Ua[2]*J[1] + Ua[3]*J[3];
+    Ud[1] = Ua[0] * J[1] + Ua[1] * J[3];
+    Ud[3] = Ua[2] * J[1] + Ua[3] * J[3];
 
-    for ( int i = 0; i < NUM_NODES; i++ ){
+    for (int i = 0; i < NUM_NODES; i++) {
       // JSens = -J*d(Xa)/dx*J
-      TacsScalar d1 = -(Na[0]*J[0] + Nb[0]*J[2]);
-      TacsScalar d2 = -(Na[0]*J[1] + Nb[0]*J[3]);
+      TacsScalar d1 = -(Na[0] * J[0] + Nb[0] * J[2]);
+      TacsScalar d2 = -(Na[0] * J[1] + Nb[0] * J[3]);
 
       // The derivative of the inverse transformation matrix
       // in each coordinate direction
       TacsScalar Ja[4], Jb[4];
-      Ja[0] = d1*J[0];   Ja[1] = d2*J[0];
-      Ja[2] = d1*J[2];   Ja[3] = d2*J[2];
+      Ja[0] = d1 * J[0];
+      Ja[1] = d2 * J[0];
+      Ja[2] = d1 * J[2];
+      Ja[3] = d2 * J[2];
 
-      Jb[0] = d1*J[1];   Jb[1] = d2*J[1];
-      Jb[2] = d1*J[3];   Jb[3] = d2*J[3];
+      Jb[0] = d1 * J[1];
+      Jb[1] = d2 * J[1];
+      Jb[2] = d1 * J[3];
+      Jb[3] = d2 * J[3];
 
       // Compute the derivative of the displacement gradient
       // with respect to each of the three coordinate directions
       // displacement gradient: Ud = Ua*J
       TacsScalar Uda[4];
-      Uda[0] = Ua[0]*Ja[0] + Ua[1]*Ja[2];
-      Uda[2] = Ua[2]*Ja[0] + Ua[3]*Ja[2];
+      Uda[0] = Ua[0] * Ja[0] + Ua[1] * Ja[2];
+      Uda[2] = Ua[2] * Ja[0] + Ua[3] * Ja[2];
 
-      Uda[1] = Ua[0]*Ja[1] + Ua[1]*Ja[3];
-      Uda[3] = Ua[2]*Ja[1] + Ua[3]*Ja[3];
+      Uda[1] = Ua[0] * Ja[1] + Ua[1] * Ja[3];
+      Uda[3] = Ua[2] * Ja[1] + Ua[3] * Ja[3];
 
       TacsScalar Udb[4];
-      Udb[0] = Ua[0]*Jb[0] + Ua[1]*Jb[2];
-      Udb[2] = Ua[2]*Jb[0] + Ua[3]*Jb[2];
+      Udb[0] = Ua[0] * Jb[0] + Ua[1] * Jb[2];
+      Udb[2] = Ua[2] * Jb[0] + Ua[3] * Jb[2];
 
-      Udb[1] = Ua[0]*Jb[1] + Ua[1]*Jb[3];
-      Udb[3] = Ua[2]*Jb[1] + Ua[3]*Jb[3];
+      Udb[1] = Ua[0] * Jb[1] + Ua[1] * Jb[3];
+      Udb[3] = Ua[2] * Jb[1] + Ua[3] * Jb[3];
 
       // Compute the derivative of the strain
-      sens[0] += ((Uda[0] + (Ud[0]*Uda[0] + Ud[2]*Uda[2]))*eSens[0] +
-                  (Uda[3] + (Ud[1]*Uda[1] + Ud[3]*Uda[3]))*eSens[1] +
-                  (Uda[1] + Uda[2] + (Uda[0]*Ud[1] + Uda[2]*Ud[3] +
-                                      Ud[0]*Uda[1] + Ud[2]*Uda[3]))*eSens[2]);
+      sens[0] += ((Uda[0] + (Ud[0] * Uda[0] + Ud[2] * Uda[2])) * eSens[0] +
+                  (Uda[3] + (Ud[1] * Uda[1] + Ud[3] * Uda[3])) * eSens[1] +
+                  (Uda[1] + Uda[2] +
+                   (Uda[0] * Ud[1] + Uda[2] * Ud[3] + Ud[0] * Uda[1] +
+                    Ud[2] * Uda[3])) *
+                      eSens[2]);
       sens++;
 
-      sens[0] += ((Udb[0] + (Ud[0]*Udb[0] + Ud[2]*Udb[2]))*eSens[0] +
-                  (Udb[3] + (Ud[1]*Udb[1] + Ud[3]*Udb[3]))*eSens[1] +
-                  (Udb[1] + Udb[2] + (Udb[0]*Ud[1] + Udb[2]*Ud[3] +
-                                      Ud[0]*Udb[1] + Ud[2]*Udb[3]))*eSens[2]);
+      sens[0] += ((Udb[0] + (Ud[0] * Udb[0] + Ud[2] * Udb[2])) * eSens[0] +
+                  (Udb[3] + (Ud[1] * Udb[1] + Ud[3] * Udb[3])) * eSens[1] +
+                  (Udb[1] + Udb[2] +
+                   (Udb[0] * Ud[1] + Udb[2] * Ud[3] + Ud[0] * Udb[1] +
+                    Ud[2] * Udb[3])) *
+                      eSens[2]);
       sens += 2;
 
-      Na++; Nb++;
+      Na++;
+      Nb++;
     }
   }
 }
@@ -831,12 +808,9 @@ void TACS2DCoupledThermoElement<NUM_NODES>::addStrainXptSens( TacsScalar sens[],
   dvars:   the time derivatives of the nodal variables
 */
 template <int NUM_NODES>
-void TACS2DCoupledThermoElement<NUM_NODES>::computeEnergies( double time,
-                                                             TacsScalar *_Te,
-                                                             TacsScalar *_Pe,
-                                                             const TacsScalar Xpts[],
-                                                             const TacsScalar vars[],
-                                                             const TacsScalar dvars[] ){
+void TACS2DCoupledThermoElement<NUM_NODES>::computeEnergies(
+    double time, TacsScalar *_Te, TacsScalar *_Pe, const TacsScalar Xpts[],
+    const TacsScalar vars[], const TacsScalar dvars[]) {
   // Compute the kinetic and potential energy
   TacsScalar Te = 0.0, Pe = 0.0;
 
@@ -887,9 +861,13 @@ void TACS2DCoupledThermoElement<NUM_NODES>::computeEnergies( double time,
   /*   stiff->calculateStress(pt, estrain, stress); */
   /*   // Compute the contribution from the potential energy */
   /*   // (B*u-e_{th})^{T}*D*(B*u-e_{th}) */
-  /*   // Pe += 0.5*h*(stress[0]*strain[0] + stress[1]*strain[1] + stress[2]*strain[2]); */
-  /*   Pe += 0.5*h*(stress[0]*estrain[0] + stress[1]*estrain[1] + stress[2]*estrain[2]); */
-  /*   // ------------------------------------------------------------------------------- */
+  /*   // Pe += 0.5*h*(stress[0]*strain[0] + stress[1]*strain[1] +
+   * stress[2]*strain[2]); */
+  /*   Pe += 0.5*h*(stress[0]*estrain[0] + stress[1]*estrain[1] +
+   * stress[2]*estrain[2]); */
+  /*   //
+   * -------------------------------------------------------------------------------
+   */
   /*   // Add thermal energy due to heat conduction */
   /*   strain[0] = strain[1] = 0.0; */
   /*   // Compute the term B*T */
@@ -898,8 +876,11 @@ void TACS2DCoupledThermoElement<NUM_NODES>::computeEnergies( double time,
   /*   // Compute the term D*B*T */
   /*   stiff->calculateConduction(pt, strain,stress); */
   /*   // Add the term T^{T}*B^{T}*D*B*T*0.5 */
-  /*   Pe += 0.5*h*(stress[0]*strain[0] + stress[1]*strain[1] + stress[2]*strain[2]);     */
-  /*   // ------------------------------------------------------------------------------ */
+  /*   Pe += 0.5*h*(stress[0]*strain[0] + stress[1]*strain[1] +
+   * stress[2]*strain[2]);     */
+  /*   //
+   * ------------------------------------------------------------------------------
+   */
 
   /*   // Get value of the mass/area at this point */
   /*   TacsScalar mass; */
@@ -928,22 +909,20 @@ void TACS2DCoupledThermoElement<NUM_NODES>::computeEnergies( double time,
   Xpts:    the element nodal locations in R^{3}
 */
 template <int NUM_NODES>
-void TACS2DCoupledThermoElement<NUM_NODES>::addResidual( double time,
-                                                         TacsScalar *res,
-                                                         const TacsScalar Xpts[],
-                                                         const TacsScalar vars[],
-                                                         const TacsScalar dvars[],
-                                                         const TacsScalar ddvars[] ){
+void TACS2DCoupledThermoElement<NUM_NODES>::addResidual(
+    double time, TacsScalar *res, const TacsScalar Xpts[],
+    const TacsScalar vars[], const TacsScalar dvars[],
+    const TacsScalar ddvars[]) {
   // The shape functions associated with the element
   double N[NUM_NODES];
   double Na[NUM_NODES], Nb[NUM_NODES];
 
   // The derivative of the stress with respect to the strain
-  TacsScalar B[NUM_STRESSES*2*NUM_NODES];
+  TacsScalar B[NUM_STRESSES * 2 * NUM_NODES];
 
   // Get the number of quadrature points
   int numGauss = getNumGaussPts();
-  for ( int n = 0; n < numGauss; n++ ){
+  for (int n = 0; n < numGauss; n++) {
     // Retrieve the quadrature points and weight
     double pt[3];
     double weight = getGaussWtsPts(n, pt);
@@ -959,7 +938,7 @@ void TACS2DCoupledThermoElement<NUM_NODES>::addResidual( double time,
     // Compute the determinant of Xa and the transformation
     TacsScalar J[4];
     TacsScalar h = FElibrary::jacobian2d(Xa, J);
-    h = h*weight;
+    h = h * weight;
 
     // Compute the strain
     TacsScalar strain[NUM_STRESSES];
@@ -974,12 +953,14 @@ void TACS2DCoupledThermoElement<NUM_NODES>::addResidual( double time,
     getBmat(B, J, Na, Nb, vars);
     TacsScalar *b = B;
     // Input into corresponding residual position
-    for ( int i = 0; i < NUM_NODES; i++ ){
+    for (int i = 0; i < NUM_NODES; i++) {
       // Contribution to u
-      res[3*i] += h*(b[0]*stress[0] + b[1]*stress[1] + b[2]*stress[2]);
+      res[3 * i] +=
+          h * (b[0] * stress[0] + b[1] * stress[1] + b[2] * stress[2]);
       b += NUM_STRESSES;
       // Contribution to v
-      res[3*i+1] += h*(b[0]*stress[0] + b[1]*stress[1] + b[2]*stress[2]);
+      res[3 * i + 1] +=
+          h * (b[0] * stress[0] + b[1] * stress[1] + b[2] * stress[2]);
       b += NUM_STRESSES;
     }
 
@@ -991,41 +972,41 @@ void TACS2DCoupledThermoElement<NUM_NODES>::addResidual( double time,
     // Add the contribution from the inertial terms
     TacsScalar d2Udt2[2];
     getDisplacement(d2Udt2, N, ddvars);
-    for ( int i = 0; i < NUM_NODES; i++ ){
-      res[3*i] += h*mass*N[i]*d2Udt2[0];
-      res[3*i+1] += h*mass*N[i]*d2Udt2[1];
+    for (int i = 0; i < NUM_NODES; i++) {
+      res[3 * i] += h * mass * N[i] * d2Udt2[0];
+      res[3 * i + 1] += h * mass * N[i] * d2Udt2[1];
     }
 
-    if (conduction){
+    if (conduction) {
       // Add heat transfer component to the residual
       // ----------------------------------------------------
       // Vector phi [3x1]
-      TacsScalar phi[] = {1.0,1.0,0.0};
+      TacsScalar phi[] = {1.0, 1.0, 0.0};
       stress[0] = stress[1] = stress[2] = 0.0;
       // Compute D*alpha*phi [3x1]
       stiff->calculateThermal(pt, phi, stress);
       // Get the derivative of the strain with respect to the nodal
       // displacements [NUM_STRESSESx2*NUM_NODES]
-      memset(B, 0.0, NUM_STRESSES*2*NUM_NODES*sizeof(TacsScalar));
+      memset(B, 0.0, NUM_STRESSES * 2 * NUM_NODES * sizeof(TacsScalar));
       getBmat(B, J, Na, Nb, vars);
       b = NULL;
       b = B;
-      TacsScalar q[2*NUM_NODES];
-      memset(q, 0.0, 2*NUM_NODES*sizeof(TacsScalar));
+      TacsScalar q[2 * NUM_NODES];
+      memset(q, 0.0, 2 * NUM_NODES * sizeof(TacsScalar));
       // Compute B^{T}*D*alpha*phi [2xNUM_NODESx1]
-      for ( int i = 0; i < 2*NUM_NODES; i++ ){
-        q[i] += (b[0]*stress[0] + b[1]*stress[1]);
+      for (int i = 0; i < 2 * NUM_NODES; i++) {
+        q[i] += (b[0] * stress[0] + b[1] * stress[1]);
         b += NUM_STRESSES;
       }
       // Get the temperature N^{T}*T
       TacsScalar T = 0.0;
-      for ( int i = 0; i < NUM_NODES; i++ ){
-        T += N[i]*vars[3*i+2];
+      for (int i = 0; i < NUM_NODES; i++) {
+        T += N[i] * vars[3 * i + 2];
       }
       // Input into the displacement components of the residual
-      for ( int i = 0; i < NUM_NODES; i++ ){
-        res[3*i] -= q[2*i]*h*T;
-        res[3*i+1] -= q[2*i+1]*h*T;
+      for (int i = 0; i < NUM_NODES; i++) {
+        res[3 * i] -= q[2 * i] * h * T;
+        res[3 * i + 1] -= q[2 * i + 1] * h * T;
       }
       // Evaluate the product B*dT [2x1]
       strain[0] = strain[1] = 0.0;
@@ -1039,12 +1020,12 @@ void TACS2DCoupledThermoElement<NUM_NODES>::addResidual( double time,
       b = B;
       // Evaluate the product B^{T}*D*B*T to input into the
       // temperature components
-      for ( int i = 0; i < NUM_NODES; i++ ){
-        res[3*i+2] += h*(b[0]*stress[0] + b[1]*stress[1]);
+      for (int i = 0; i < NUM_NODES; i++) {
+        res[3 * i + 2] += h * (b[0] * stress[0] + b[1] * stress[1]);
         b += 2;
       }
-    } // end if conduction
-  } // end for int n = 0; n < numGauss
+    }  // end if conduction
+  }    // end for int n = 0; n < numGauss
 }
 /*
   Add the Jacobian of the governing equations - the exact Jacobian of
@@ -1063,26 +1044,21 @@ void TACS2DCoupledThermoElement<NUM_NODES>::addResidual( double time,
   ddvars:  second time derivative of the element variables
 */
 template <int NUM_NODES>
-void TACS2DCoupledThermoElement<NUM_NODES>::addJacobian( double time,
-                                                         TacsScalar mat[],
-                                                         double alpha,
-                                                         double beta,
-                                                         double gamma,
-                                                         const TacsScalar Xpts[],
-                                                         const TacsScalar vars[],
-                                                         const TacsScalar dvars[],
-                                                         const TacsScalar ddvars[] ){
+void TACS2DCoupledThermoElement<NUM_NODES>::addJacobian(
+    double time, TacsScalar mat[], double alpha, double beta, double gamma,
+    const TacsScalar Xpts[], const TacsScalar vars[], const TacsScalar dvars[],
+    const TacsScalar ddvars[]) {
   // The shape functions associated with the element
   double N[NUM_NODES];
   double Na[NUM_NODES], Nb[NUM_NODES];
 
   // The derivative of the stress with respect to the strain
-  TacsScalar B[NUM_STRESSES*2*NUM_NODES];
+  TacsScalar B[NUM_STRESSES * 2 * NUM_NODES];
 
   // Get the number of quadrature points
   int numGauss = getNumGaussPts();
 
-  for ( int n = 0; n < numGauss; n++ ){
+  for (int n = 0; n < numGauss; n++) {
     // Retrieve the quadrature points and weight
     double pt[3];
     double weight = getGaussWtsPts(n, pt);
@@ -1095,8 +1071,8 @@ void TACS2DCoupledThermoElement<NUM_NODES>::addJacobian( double time,
     // Compute the determinant of Xa and the transformation
     TacsScalar J[4];
     TacsScalar h = FElibrary::jacobian2d(Xa, J);
-    h = h*weight;
-    if (alpha != 0.0){
+    h = h * weight;
+    if (alpha != 0.0) {
       // Compute the strain which is the product B*u
       TacsScalar strain[NUM_STRESSES];
       evalStrain(strain, J, Na, Nb, vars);
@@ -1110,45 +1086,45 @@ void TACS2DCoupledThermoElement<NUM_NODES>::addJacobian( double time,
       getBmat(B, J, Na, Nb, vars);
       // Fill-in the upper portion of the matrix
       TacsScalar *bj = B;
-      for ( int j = 0; j < NUM_NODES; j++ ){
-        for ( int jj = 0; jj < 2; jj++ ){
+      for (int j = 0; j < NUM_NODES; j++) {
+        for (int jj = 0; jj < 2; jj++) {
           // Compute the product of D*B at the given point
           TacsScalar bs[NUM_STRESSES];
           stiff->calculateStress(pt, bj, bs);
           bj += NUM_STRESSES;
-          for ( int i = 0; i < NUM_NODES; i++ ){
-            for ( int ii = 0; ii < 2; ii++ ){
-              const TacsScalar *bi = &B[3*(2*i + ii)];
-              mat[NUM_VARIABLES*(3*j + jj) + (3*i + ii)] +=
-                alpha*h*(bi[0]*bs[0] + bi[1]*bs[1] + bi[2]*bs[2]);
-            } // end for int ii = 0; ii < 2
-          } // end for int i = 0; i < NUM_NODES
-        } // end for int ii = 0; ii < 2
-      } // end for int j = 0; j < NUM_NODES
-    } // end if alpha != 0.0
+          for (int i = 0; i < NUM_NODES; i++) {
+            for (int ii = 0; ii < 2; ii++) {
+              const TacsScalar *bi = &B[3 * (2 * i + ii)];
+              mat[NUM_VARIABLES * (3 * j + jj) + (3 * i + ii)] +=
+                  alpha * h * (bi[0] * bs[0] + bi[1] * bs[1] + bi[2] * bs[2]);
+            }  // end for int ii = 0; ii < 2
+          }    // end for int i = 0; i < NUM_NODES
+        }      // end for int ii = 0; ii < 2
+      }        // end for int j = 0; j < NUM_NODES
+    }          // end if alpha != 0.0
     // ----------------------------------------------------------------
-    if (gamma != 0.0){
+    if (gamma != 0.0) {
       // Get value of the mass/area at this point
       TacsScalar mass;
       stiff->getPointwiseMass(pt, &mass);
       // Add the contributions from the stiffness matrix
-      TacsScalar scale = gamma*h*mass;
-      for ( int j = 0; j < NUM_NODES; j++ ){
-        for ( int i = 0; i < NUM_NODES; i++ ){
-          mat[(3*j)*NUM_VARIABLES+3*i] += scale*N[i]*N[j];
-          mat[(3*j+1)*NUM_VARIABLES+3*i+1] += scale*N[i]*N[j];
+      TacsScalar scale = gamma * h * mass;
+      for (int j = 0; j < NUM_NODES; j++) {
+        for (int i = 0; i < NUM_NODES; i++) {
+          mat[(3 * j) * NUM_VARIABLES + 3 * i] += scale * N[i] * N[j];
+          mat[(3 * j + 1) * NUM_VARIABLES + 3 * i + 1] += scale * N[i] * N[j];
         }
       }
-    } // end if (gamma != 0.0)
+    }  // end if (gamma != 0.0)
     // ---------------------------------------------------------------
     // Add contribution of heat transfer to the Jacobian
     // Add heat conduction to the 'bottom right' of the Jacobian [H]
     // [NUM_NODESxNUM_NODES]
-    if (conduction){
+    if (conduction) {
       // Compute the nonsymmetric part of the Jacobian i.e. matrix L
-      memset(B, 0.0, NUM_STRESSES*2*NUM_NODES*sizeof(TacsScalar));
-      TacsScalar s[NUM_STRESSES], BDs[2*NUM_NODES];
-      memset(BDs, 0.0, 2*NUM_NODES*sizeof(TacsScalar));
+      memset(B, 0.0, NUM_STRESSES * 2 * NUM_NODES * sizeof(TacsScalar));
+      TacsScalar s[NUM_STRESSES], BDs[2 * NUM_NODES];
+      memset(BDs, 0.0, 2 * NUM_NODES * sizeof(TacsScalar));
       // Get the coefficient of thermal expansion
       TacsScalar phi[] = {1.0, 1.0, 0.0};
       // Get B [NUM_STRESSESx2*NUM_NODES];
@@ -1157,42 +1133,42 @@ void TACS2DCoupledThermoElement<NUM_NODES>::addJacobian( double time,
       // Compute the vector D*phi*aT [NUM_STRESSESx1]
       stiff->calculateThermal(pt, phi, s);
       // Compute the vector B^{T}*D*phi*aT [2xNUM_NODESx1]
-      for ( int i = 0; i < 2*NUM_NODES; i++ ){
-        BDs[i] += (bj[0]*s[0]+bj[1]*s[1]);
+      for (int i = 0; i < 2 * NUM_NODES; i++) {
+        BDs[i] += (bj[0] * s[0] + bj[1] * s[1]);
         bj += NUM_STRESSES;
       }
-      for ( int j = 0; j < NUM_NODES; j++ ){
-        for ( int jj = 0; jj < 2; jj++ ){
-          for ( int i = 0; i < NUM_NODES; i++ ){
-            for ( int ii = 2; ii < 3; ii++ ){
-              mat[NUM_VARIABLES*(3*j + jj) + (3*i + ii)] -=
-                h*alpha*BDs[2*j+jj]*N[i];
+      for (int j = 0; j < NUM_NODES; j++) {
+        for (int jj = 0; jj < 2; jj++) {
+          for (int i = 0; i < NUM_NODES; i++) {
+            for (int ii = 2; ii < 3; ii++) {
+              mat[NUM_VARIABLES * (3 * j + jj) + (3 * i + ii)] -=
+                  h * alpha * BDs[2 * j + jj] * N[i];
             }
           }
         }
       }
       // Get the B matrix [2xNUM_NODES] associated with the heat transfer
       // problem
-      memset(B, 0.0, 2*NUM_NODES*sizeof(TacsScalar));
+      memset(B, 0.0, 2 * NUM_NODES * sizeof(TacsScalar));
       getBmatTemp(B, J, Na, Nb, vars);
       bj = B;
-      for ( int j = 0; j < NUM_NODES; j++ ){
-        for ( int jj = 2; jj < 3; jj++ ){
+      for (int j = 0; j < NUM_NODES; j++) {
+        for (int jj = 2; jj < 3; jj++) {
           // Compute the product of Dtemp*Btemp [2xNUM_NODES] at the given point
-          TacsScalar bs[2]; // column of B
+          TacsScalar bs[2];  // column of B
           stiff->calculateConduction(pt, bj, bs);
           bj += 2;
-          for ( int i = 0; i < NUM_NODES; i++ ){
-            for ( int ii = 2; ii < 3; ii++ ){
-              const TacsScalar *bi = &B[2*i];
-              mat[NUM_VARIABLES*(3*j + jj) + (3*i + ii)] +=
-                alpha*h*(bi[0]*bs[0] + bi[1]*bs[1]);
-            } // end for int ii = 2; ii < 3
-          } // end for int i = 0; i < NUM_NODES
-        } // end for int jj = 2; jj < 3
+          for (int i = 0; i < NUM_NODES; i++) {
+            for (int ii = 2; ii < 3; ii++) {
+              const TacsScalar *bi = &B[2 * i];
+              mat[NUM_VARIABLES * (3 * j + jj) + (3 * i + ii)] +=
+                  alpha * h * (bi[0] * bs[0] + bi[1] * bs[1]);
+            }  // end for int ii = 2; ii < 3
+          }    // end for int i = 0; i < NUM_NODES
+        }      // end for int jj = 2; jj < 3
       }
-    } // end if conduction
-  } // end for int n = 0; n < numGauss
+    }  // end if conduction
+  }    // end for int n = 0; n < numGauss
 }
 /*
   Add the product of the adjoint vector times the derivative of the
@@ -1208,24 +1184,21 @@ void TACS2DCoupledThermoElement<NUM_NODES>::addJacobian( double time,
   Xpts:    the element nodal locations in R^{3}
 */
 template <int NUM_NODES>
-void TACS2DCoupledThermoElement<NUM_NODES>::addAdjResProduct( double time, double scale,
-                                                              TacsScalar dvSens[], int dvLen,
-                                                              const TacsScalar psi[],
-                                                              const TacsScalar Xpts[],
-                                                              const TacsScalar vars[],
-                                                              const TacsScalar dvars[],
-                                                              const TacsScalar ddvars[] ){
+void TACS2DCoupledThermoElement<NUM_NODES>::addAdjResProduct(
+    double time, double scale, TacsScalar dvSens[], int dvLen,
+    const TacsScalar psi[], const TacsScalar Xpts[], const TacsScalar vars[],
+    const TacsScalar dvars[], const TacsScalar ddvars[]) {
   // The shape functions associated with the element
   double N[NUM_NODES];
   double Na[NUM_NODES], Nb[NUM_NODES];
 
   // The derivative of the stress with respect to the strain
-  TacsScalar B[NUM_STRESSES*NUM_VARIABLES];
+  TacsScalar B[NUM_STRESSES * NUM_VARIABLES];
 
   // Get the number of quadrature points
   int numGauss = getNumGaussPts();
 
-  for ( int n = 0; n < numGauss; n++ ){
+  for (int n = 0; n < numGauss; n++) {
     // Retrieve the quadrature points and weights
     double pt[3];
     double weight = getGaussWtsPts(n, pt);
@@ -1242,16 +1215,16 @@ void TACS2DCoupledThermoElement<NUM_NODES>::addAdjResProduct( double time, doubl
     TacsScalar J[4];
     TacsScalar h = FElibrary::jacobian2d(Xa, J);
 
-    h = h*weight;
+    h = h * weight;
     // -------------------------------------------------
     // Split psi into its displacement and temperature components and
     // reassemble at the end of the function
-    TacsScalar psi_u[2*NUM_NODES], psi_t[NUM_NODES];
+    TacsScalar psi_u[2 * NUM_NODES], psi_t[NUM_NODES];
     int iu = 0, it = 0;
-    for ( int i = 0; i < NUM_NODES; i++){
-      psi_u[iu] = 1.0*psi[3*i];
-      psi_u[iu+1] = 1.0*psi[3*i+1];
-      psi_t[it] = 1.0*psi[3*i+2];
+    for (int i = 0; i < NUM_NODES; i++) {
+      psi_u[iu] = 1.0 * psi[3 * i];
+      psi_u[iu + 1] = 1.0 * psi[3 * i + 1];
+      psi_t[it] = 1.0 * psi[3 * i + 2];
       iu += 2;
       it++;
     }
@@ -1265,53 +1238,53 @@ void TACS2DCoupledThermoElement<NUM_NODES>::addAdjResProduct( double time, doubl
 
     // Compute the product of psi_u^{T}*B^{T}
     TacsScalar bpsi[NUM_STRESSES];
-    memset(bpsi, 0, NUM_STRESSES*sizeof(TacsScalar));
+    memset(bpsi, 0, NUM_STRESSES * sizeof(TacsScalar));
 
     TacsScalar *b = B;
     TacsScalar *ps = psi_u;
-    for ( int i = 0; i < 2*NUM_NODES; i++ ){
-      bpsi[0] += ps[0]*b[0];
-      bpsi[1] += ps[0]*b[1];
-      bpsi[2] += ps[0]*b[2];
+    for (int i = 0; i < 2 * NUM_NODES; i++) {
+      bpsi[0] += ps[0] * b[0];
+      bpsi[1] += ps[0] * b[1];
+      bpsi[2] += ps[0] * b[2];
       b += NUM_STRESSES;
       ps++;
     }
     // Compute the term alpha*psi_u^{T}*B^{T}*dC/dx*B*u (contribution
     // of structural model)
-    stiff->addStressDVSens(pt, strain, scale*h, bpsi, dvSens, dvLen);
+    stiff->addStressDVSens(pt, strain, scale * h, bpsi, dvSens, dvLen);
     // Add the contribution of the coupling terms dL/dx
     TacsScalar T = 0.0;
     // Compute the term N^{T}*T
-    for (int i = 0; i < NUM_NODES; i++){
-      T += N[i]*vars[3*i+2];
+    for (int i = 0; i < NUM_NODES; i++) {
+      T += N[i] * vars[3 * i + 2];
     }
     // Compute the vector -{1,1,0}*N^{T}*T
-    TacsScalar phi[] = {-T,-T,0.0};
+    TacsScalar phi[] = {-T, -T, 0.0};
     // Add the term alpha*psi_u^{T}*B^{T}*dC/dx*a*{1,1,0}*N^{T}*T
-    stiff->addThermalDVSens(pt, phi, scale*h, bpsi, dvSens, dvLen);
+    stiff->addThermalDVSens(pt, phi, scale * h, bpsi, dvSens, dvLen);
     // Add the contribution of the heat transfer terms
     strain[0] = strain[1] = 0.0;
     // Compute the term B*T
     evalBT(strain, J, Na, Nb, vars);
-    // Get the B matrix [NUM_DIRECTIONxNUM_NODES] associated with the heat transfer problem
+    // Get the B matrix [NUM_DIRECTIONxNUM_NODES] associated with the heat
+    // transfer problem
     getBmatTemp(B, J, Na, Nb, vars);
     // Initialize the term psi_t^{T}*B^{T}
-    memset(bpsi, 0, NUM_STRESSES*sizeof(TacsScalar));
+    memset(bpsi, 0, NUM_STRESSES * sizeof(TacsScalar));
     b = NULL;
     b = B;
     ps = NULL;
     ps = psi_t;
-    for ( int i = 0; i < NUM_NODES; i++ ){
-      bpsi[0] += ps[0]*b[0];
-      bpsi[1] += ps[0]*b[1];
+    for (int i = 0; i < NUM_NODES; i++) {
+      bpsi[0] += ps[0] * b[0];
+      bpsi[1] += ps[0] * b[1];
       b += 2;
       ps++;
     }
     // Compute the term alpha*psi_t^{T}*B^{T}*dC/dx*B*T (contribution
     // of heat transfer model)
-    stiff->addConductionDVSens(pt, strain, scale*h, bpsi, dvSens,
-                               dvLen);
-  } // end for int n = 0; n < numGauss
+    stiff->addConductionDVSens(pt, strain, scale * h, bpsi, dvSens, dvLen);
+  }  // end for int n = 0; n < numGauss
 }
 
 /*
@@ -1331,14 +1304,10 @@ void TACS2DCoupledThermoElement<NUM_NODES>::addAdjResProduct( double time, doubl
   ddvars:    the second time derivative of the element variables
 */
 template <int NUM_NODES>
-void TACS2DCoupledThermoElement<NUM_NODES>::addAdjResXptProduct( double time, double scale,
-                                                                 TacsScalar fXptSens[],
-                                                                 const TacsScalar psi[],
-                                                                 const TacsScalar Xpts[],
-                                                                 const TacsScalar vars[],
-                                                                 const TacsScalar dvars[],
-                                                                 const TacsScalar ddvars[] ){
-
+void TACS2DCoupledThermoElement<NUM_NODES>::addAdjResXptProduct(
+    double time, double scale, TacsScalar fXptSens[], const TacsScalar psi[],
+    const TacsScalar Xpts[], const TacsScalar vars[], const TacsScalar dvars[],
+    const TacsScalar ddvars[]) {
   /* // The shape functions associated with the element */
   /* double N[NUM_NODES]; */
   /* double Na[NUM_NODES], Nb[NUM_NODES]; */
@@ -1396,14 +1365,13 @@ void TACS2DCoupledThermoElement<NUM_NODES>::addAdjResXptProduct( double time, do
   matOr:       the matrix orientation either NORMAL or TRANSPOSE
 */
 template <int NUM_NODES>
-void TACS2DCoupledThermoElement<NUM_NODES>::getMatType( ElementMatrixType matType,
-                                                        TacsScalar mat[],
-                                                        const TacsScalar Xpts[],
-                                                        const TacsScalar vars[] ){
-  memset(mat, 0, NUM_VARIABLES*NUM_VARIABLES*sizeof(TacsScalar));
+void TACS2DCoupledThermoElement<NUM_NODES>::getMatType(
+    ElementMatrixType matType, TacsScalar mat[], const TacsScalar Xpts[],
+    const TacsScalar vars[]) {
+  memset(mat, 0, NUM_VARIABLES * NUM_VARIABLES * sizeof(TacsScalar));
 
   // The mass matrix
-  if (matType == MASS_MATRIX){
+  if (matType == MASS_MATRIX) {
     // The shape functions associated with the element
     double N[NUM_NODES];
     double Na[NUM_NODES], Nb[NUM_NODES];
@@ -1411,7 +1379,7 @@ void TACS2DCoupledThermoElement<NUM_NODES>::getMatType( ElementMatrixType matTyp
     // Get the number of quadrature points
     int numGauss = getNumGaussPts();
 
-    for ( int n = 0; n < numGauss; n++ ){
+    for (int n = 0; n < numGauss; n++) {
       // Retrieve the quadrature points and weight
       double pt[3];
       double weight = getGaussWtsPts(n, pt);
@@ -1427,25 +1395,25 @@ void TACS2DCoupledThermoElement<NUM_NODES>::getMatType( ElementMatrixType matTyp
       // Compute the determinant of Xa and the transformation
       TacsScalar J[4];
       TacsScalar h = FElibrary::jacobian2d(Xa, J);
-      h = h*weight;
+      h = h * weight;
 
       // Get the pointwise mass
       TacsScalar ptmass[3];
       stiff->getPointwiseMass(pt, ptmass);
 
       // Fill-in the upper-portion of the matrix
-      for ( int j = 0; j < NUM_NODES; j++ ){
-        for ( int i = 0; i <= j; i++ ){
-          TacsScalar d = h*ptmass[0]*N[i]*N[j];
-          mat[(3*i)*NUM_VARIABLES+3*j] += d;
-          mat[(3*i+1)*NUM_VARIABLES+3*j+1] += d;
+      for (int j = 0; j < NUM_NODES; j++) {
+        for (int i = 0; i <= j; i++) {
+          TacsScalar d = h * ptmass[0] * N[i] * N[j];
+          mat[(3 * i) * NUM_VARIABLES + 3 * j] += d;
+          mat[(3 * i + 1) * NUM_VARIABLES + 3 * j + 1] += d;
         }
       }
     }
     // Apply symmetry to the matrix
-    for ( int j = 0; j < NUM_VARIABLES; j++ ){
-      for ( int i = 0; i < j; i++ ){
-        mat[j + i*NUM_VARIABLES] = mat[i + j*NUM_VARIABLES];
+    for (int j = 0; j < NUM_VARIABLES; j++) {
+      for (int i = 0; i < j; i++) {
+        mat[j + i * NUM_VARIABLES] = mat[i + j * NUM_VARIABLES];
       }
     }
   }
@@ -1461,8 +1429,8 @@ void TACS2DCoupledThermoElement<NUM_NODES>::getMatType( ElementMatrixType matTyp
   Xpts:  the element nodes
 */
 template <int NUM_NODES>
-TacsScalar TACS2DCoupledThermoElement<NUM_NODES>::getDetJacobian( const double pt[],
-                                                                  const TacsScalar Xpts[] ){
+TacsScalar TACS2DCoupledThermoElement<NUM_NODES>::getDetJacobian(
+    const double pt[], const TacsScalar Xpts[]) {
   // Compute the element shape functions
   double N[NUM_NODES];
   double Na[NUM_NODES], Nb[NUM_NODES];
@@ -1491,9 +1459,8 @@ TacsScalar TACS2DCoupledThermoElement<NUM_NODES>::getDetJacobian( const double p
   Xpts:  the element nodes
 */
 template <int NUM_NODES>
-TacsScalar TACS2DCoupledThermoElement<NUM_NODES>::getDetJacobianXptSens( TacsScalar * hXptSens,
-                                                                         const double * pt,
-                                                                         const TacsScalar Xpts[] ){
+TacsScalar TACS2DCoupledThermoElement<NUM_NODES>::getDetJacobianXptSens(
+    TacsScalar *hXptSens, const double *pt, const TacsScalar Xpts[]) {
   // Compute the element shape functions
   double N[NUM_NODES];
   double Na[NUM_NODES], Nb[NUM_NODES];
@@ -1508,12 +1475,12 @@ TacsScalar TACS2DCoupledThermoElement<NUM_NODES>::getDetJacobianXptSens( TacsSca
   TacsScalar J[4];
   TacsScalar h = FElibrary::jacobian2d(Xa, J);
 
-  for ( int i = 0; i < NUM_NODES; i++ ){
-    for ( int k = 0; k < 2; k++ ){
+  for (int i = 0; i < NUM_NODES; i++) {
+    for (int k = 0; k < 2; k++) {
       TacsScalar XaSens[4];
       XaSens[0] = XaSens[1] = XaSens[2] = XaSens[3] = 0.0;
-      XaSens[2*k] = Na[i];
-      XaSens[2*k+1] = Nb[i];
+      XaSens[2 * k] = Na[i];
+      XaSens[2 * k + 1] = Nb[i];
 
       FElibrary::jacobian2dSens(Xa, XaSens, &hXptSens[0]);
       hXptSens++;
@@ -1539,10 +1506,10 @@ TacsScalar TACS2DCoupledThermoElement<NUM_NODES>::getDetJacobianXptSens( TacsSca
   Xpts:     the element nodal locations
 */
 template <int NUM_NODES>
-void TACS2DCoupledThermoElement<NUM_NODES>::getStrain( TacsScalar strain[],
-                                                       const double pt[],
-                                                       const TacsScalar Xpts[],
-                                                       const TacsScalar vars[] ){
+void TACS2DCoupledThermoElement<NUM_NODES>::getStrain(TacsScalar strain[],
+                                                      const double pt[],
+                                                      const TacsScalar Xpts[],
+                                                      const TacsScalar vars[]) {
   // The shape functions associated with the element
   double N[NUM_NODES];
   double Na[NUM_NODES], Nb[NUM_NODES];
@@ -1574,10 +1541,9 @@ void TACS2DCoupledThermoElement<NUM_NODES>::getStrain( TacsScalar strain[],
   Xpts:     the element nodal locations
 */
 template <int NUM_NODES>
-void TACS2DCoupledThermoElement<NUM_NODES>::getEffStrain( TacsScalar strain[],
-                                                          const double pt[],
-                                                          const TacsScalar Xpts[],
-                                                          const TacsScalar vars[] ){
+void TACS2DCoupledThermoElement<NUM_NODES>::getEffStrain(
+    TacsScalar strain[], const double pt[], const TacsScalar Xpts[],
+    const TacsScalar vars[]) {
   // The shape functions associated with the element
   double N[NUM_NODES];
   double Na[NUM_NODES], Nb[NUM_NODES];
@@ -1614,18 +1580,16 @@ void TACS2DCoupledThermoElement<NUM_NODES>::getEffStrain( TacsScalar strain[],
   Xpts:        the element nodal locations
 */
 template <int NUM_NODES>
-void TACS2DCoupledThermoElement<NUM_NODES>::addStrainSVSens( TacsScalar strainSVSens[],
-                                                             const double pt[],
-                                                             const TacsScalar scale,
-                                                             const TacsScalar strainSens[],
-                                                             const TacsScalar Xpts[],
-                                                             const TacsScalar vars[]){
+void TACS2DCoupledThermoElement<NUM_NODES>::addStrainSVSens(
+    TacsScalar strainSVSens[], const double pt[], const TacsScalar scale,
+    const TacsScalar strainSens[], const TacsScalar Xpts[],
+    const TacsScalar vars[]) {
   // The shape functions associated with the element
   double N[NUM_NODES];
   double Na[NUM_NODES], Nb[NUM_NODES];
 
   // The derivative of the stress with respect to the strain
-  TacsScalar B[NUM_STRESSES*NUM_VARIABLES];
+  TacsScalar B[NUM_STRESSES * NUM_VARIABLES];
 
   // Compute the element shape functions
   getShapeFunctions(pt, N, Na, Nb);
@@ -1643,14 +1607,14 @@ void TACS2DCoupledThermoElement<NUM_NODES>::addStrainSVSens( TacsScalar strainSV
   // displacements
   getBmat(B, J, Na, Nb, vars);
   TacsScalar *b = B;
-  for ( int i = 0; i < NUM_NODES; i++ ){
-    strainSVSens[3*i] += scale*(strainSens[0]*b[0] +
-                                strainSens[1]*b[1] +
-                                strainSens[2]*b[2]);
+  for (int i = 0; i < NUM_NODES; i++) {
+    strainSVSens[3 * i] +=
+        scale *
+        (strainSens[0] * b[0] + strainSens[1] * b[1] + strainSens[2] * b[2]);
     b += NUM_STRESSES;
-    strainSVSens[3*i+1] += scale*(strainSens[0]*b[0] +
-                                  strainSens[1]*b[1] +
-                                  strainSens[2]*b[2]);
+    strainSVSens[3 * i + 1] +=
+        scale *
+        (strainSens[0] * b[0] + strainSens[1] * b[1] + strainSens[2] * b[2]);
     b += NUM_STRESSES;
   }
 }
@@ -1672,19 +1636,16 @@ void TACS2DCoupledThermoElement<NUM_NODES>::addStrainSVSens( TacsScalar strainSV
   Xpts:        the element nodal locations
 */
 template <int NUM_NODES>
-void TACS2DCoupledThermoElement<NUM_NODES>::addEffStrainSVSens( TacsScalar strainSVSens[],
-                                                                const double pt[],
-                                                                const TacsScalar scale,
-                                                                const TacsScalar strainSens[],
-                                                                const TacsScalar Xpts[],
-                                                                const TacsScalar vars[],
-                                                                int vars_j ){
+void TACS2DCoupledThermoElement<NUM_NODES>::addEffStrainSVSens(
+    TacsScalar strainSVSens[], const double pt[], const TacsScalar scale,
+    const TacsScalar strainSens[], const TacsScalar Xpts[],
+    const TacsScalar vars[], int vars_j) {
   // The shape functions associated with the element
   double N[NUM_NODES];
   double Na[NUM_NODES], Nb[NUM_NODES];
 
   // The derivative of the stress with respect to the strain
-  TacsScalar B[NUM_STRESSES*NUM_VARIABLES];
+  TacsScalar B[NUM_STRESSES * NUM_VARIABLES];
 
   // Compute the element shape functions
   getShapeFunctions(pt, N, Na, Nb);
@@ -1704,23 +1665,23 @@ void TACS2DCoupledThermoElement<NUM_NODES>::addEffStrainSVSens( TacsScalar strai
 
   // --------------------------------------------------
   TacsScalar *b = B;
-  for ( int i = 0; i < NUM_NODES; i++ ){
+  for (int i = 0; i < NUM_NODES; i++) {
     // Derivative wrt u
-    strainSVSens[3*i] += scale*(strainSens[0]*b[0] +
-                                strainSens[1]*b[1] +
-                                strainSens[2]*b[2]);
+    strainSVSens[3 * i] +=
+        scale *
+        (strainSens[0] * b[0] + strainSens[1] * b[1] + strainSens[2] * b[2]);
     b += NUM_STRESSES;
     // Derivative wrt v
-    strainSVSens[3*i+1] += scale*(strainSens[0]*b[0] +
-                                  strainSens[1]*b[1] +
-                                  strainSens[2]*b[2]);
+    strainSVSens[3 * i + 1] +=
+        scale *
+        (strainSens[0] * b[0] + strainSens[1] * b[1] + strainSens[2] * b[2]);
     b += NUM_STRESSES;
     // Derivative wrt dT
     TacsScalar aT = stiff->getEffThermalAlpha(vars_j);
 
     aT *= N[i];
-    strainSVSens[3*i+2] -= scale*(strainSens[0]*aT+
-                                  strainSens[1]*aT);
+    strainSVSens[3 * i + 2] -=
+        scale * (strainSens[0] * aT + strainSens[1] * aT);
   }
   // ----------------------------------------------------
 }
@@ -1739,12 +1700,10 @@ void TACS2DCoupledThermoElement<NUM_NODES>::addEffStrainSVSens( TacsScalar strai
   Xpts:      the nodal locations
 */
 template <int NUM_NODES>
-void TACS2DCoupledThermoElement<NUM_NODES>::addStrainXptSens( TacsScalar strainXptSens[],
-                                                              const double pt[],
-                                                              const TacsScalar scale,
-                                                              const TacsScalar strainSens[],
-                                                              const TacsScalar Xpts[],
-                                                              const TacsScalar vars[] ){
+void TACS2DCoupledThermoElement<NUM_NODES>::addStrainXptSens(
+    TacsScalar strainXptSens[], const double pt[], const TacsScalar scale,
+    const TacsScalar strainSens[], const TacsScalar Xpts[],
+    const TacsScalar vars[]) {
   // The shape functions associated with the element
   double N[NUM_NODES];
   double Na[NUM_NODES], Nb[NUM_NODES];
@@ -1776,10 +1735,10 @@ void TACS2DCoupledThermoElement<NUM_NODES>::addStrainXptSens( TacsScalar strainX
   Xpts:     the element nodal locations
 */
 template <int NUM_NODES>
-void TACS2DCoupledThermoElement<NUM_NODES>::getBT( TacsScalar strain[],
-                                                   const double pt[],
-                                                   const TacsScalar Xpts[],
-                                                   const TacsScalar vars[] ){
+void TACS2DCoupledThermoElement<NUM_NODES>::getBT(TacsScalar strain[],
+                                                  const double pt[],
+                                                  const TacsScalar Xpts[],
+                                                  const TacsScalar vars[]) {
   // The shape functions associated with the element
   double N[NUM_NODES];
   double Na[NUM_NODES], Nb[NUM_NODES];
@@ -1816,18 +1775,16 @@ void TACS2DCoupledThermoElement<NUM_NODES>::getBT( TacsScalar strain[],
   Xpts:        the element nodal locations
 */
 template <int NUM_NODES>
-void TACS2DCoupledThermoElement<NUM_NODES>::addBTSVSens( TacsScalar strainSVSens[],
-                                                         const double pt[],
-                                                         const TacsScalar scale,
-                                                         const TacsScalar strainSens[],
-                                                         const TacsScalar Xpts[],
-                                                         const TacsScalar vars[]){
+void TACS2DCoupledThermoElement<NUM_NODES>::addBTSVSens(
+    TacsScalar strainSVSens[], const double pt[], const TacsScalar scale,
+    const TacsScalar strainSens[], const TacsScalar Xpts[],
+    const TacsScalar vars[]) {
   // The shape functions associated with the element
   double N[NUM_NODES];
   double Na[NUM_NODES], Nb[NUM_NODES];
 
   // The derivative of the stress with respect to the strain
-  TacsScalar B[2*NUM_NODES];
+  TacsScalar B[2 * NUM_NODES];
 
   // Compute the element shape functions
   getShapeFunctions(pt, N, Na, Nb);
@@ -1845,12 +1802,11 @@ void TACS2DCoupledThermoElement<NUM_NODES>::addBTSVSens( TacsScalar strainSVSens
   // displacements
   getBmatTemp(B, J, Na, Nb, vars);
   TacsScalar *b = B;
-  for ( int i = 0; i < NUM_NODES; i++ ){
-    strainSVSens[3*i+2] += scale*(strainSens[0]*b[0] +
-                                  strainSens[1]*b[1]);
+  for (int i = 0; i < NUM_NODES; i++) {
+    strainSVSens[3 * i + 2] +=
+        scale * (strainSens[0] * b[0] + strainSens[1] * b[1]);
     b += 2;
   }
 }
 
-
-#endif // TACS_2D_COUPLED_THERMO_ELEMENT_H
+#endif  // TACS_2D_COUPLED_THERMO_ELEMENT_H

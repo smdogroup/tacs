@@ -3,7 +3,7 @@ import os
 from tacs import pytacs, TACS, elements, constitutive, functions, problems
 from pytacs_analysis_base_test import PyTACSTestCase
 
-'''
+"""
 A 6 DOF spring element fixed at node 1 with a uniform force of 100 N applied in each direction. 
 
 The stiffness values for the spring are given below:
@@ -13,24 +13,28 @@ kz = 3 N/m
 krx = 4 N/m
 kry = 5 N/m
 krz = 6 N/m
-'''
+"""
 
 base_dir = os.path.dirname(os.path.abspath(__file__))
 bdf_file = os.path.join(base_dir, "./input_files/simple_spring.bdf")
 
-FUNC_REFS = {'uniform_force_mass': 0.0,
-             'uniform_force_compliance': 24500.000000000007,
-             'uniform_force_x_disp': 99.93068528194402,
-             'uniform_force_y_disp': 49.930685281944015,
-             'uniform_force_z_disp': 33.264018615277344}
+FUNC_REFS = {
+    "uniform_force_mass": 0.0,
+    "uniform_force_compliance": 24500.000000000007,
+    "uniform_force_x_disp": 99.93068528194402,
+    "uniform_force_y_disp": 49.930685281944015,
+    "uniform_force_z_disp": 33.264018615277344,
+}
 
 # Force to apply
-f = np.ones(6) *100.0
+f = np.ones(6) * 100.0
 
 ksweight = 10.0
 
+
 class ProblemTest(PyTACSTestCase.PyTACSTest):
     N_PROCS = 1  # this is how many MPI processes to use for this TestCase.
+
     def setup_pytacs(self, comm, dtype):
         """
         Setup mesh and pytacs object for problem we will be testing.
@@ -51,7 +55,9 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
 
         fea_assembler = pytacs.pyTACS(bdf_file, comm, options=struct_options)
 
-        def elemCallBack(dvNum, compID, compDescript, elemDescripts, globalDVs, **kwargs):
+        def elemCallBack(
+            dvNum, compID, compDescript, elemDescripts, globalDVs, **kwargs
+        ):
             # Set one thickness dv for every component
             k = np.arange(6) + 1
             con = constitutive.DOFSpringConstitutive(k=k)
@@ -82,15 +88,27 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
         """
         # Add Functions
         for problem in problems:
-            problem.addFunction('mass', functions.StructuralMass)
-            problem.addFunction('compliance', functions.Compliance)
-            problem.addFunction('x_disp', functions.KSDisplacement,
-                                ksWeight=ksweight, direction=[1.0, 0.0, 0.0])
-            problem.addFunction('y_disp', functions.KSDisplacement,
-                                ksWeight=ksweight, direction=[0.0, 1.0, 0.0])
-            problem.addFunction('z_disp', functions.KSDisplacement,
-                                ksWeight=ksweight, direction=[0.0, 0.0, 1.0])
-        func_list = ['mass', 'compliance', 'x_disp', 'y_disp', 'z_disp']
+            problem.addFunction("mass", functions.StructuralMass)
+            problem.addFunction("compliance", functions.Compliance)
+            problem.addFunction(
+                "x_disp",
+                functions.KSDisplacement,
+                ksWeight=ksweight,
+                direction=[1.0, 0.0, 0.0],
+            )
+            problem.addFunction(
+                "y_disp",
+                functions.KSDisplacement,
+                ksWeight=ksweight,
+                direction=[0.0, 1.0, 0.0],
+            )
+            problem.addFunction(
+                "z_disp",
+                functions.KSDisplacement,
+                ksWeight=ksweight,
+                direction=[0.0, 0.0, 1.0],
+            )
+        func_list = ["mass", "compliance", "x_disp", "y_disp", "z_disp"]
         return func_list, FUNC_REFS
 
     def setup_tacs_problems(self, fea_assembler):
@@ -98,6 +116,6 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
         Setup pytacs object for problems we will be testing.
         """
         # Create tacs transient problem
-        problem = fea_assembler.createStaticProblem('uniform_force')
+        problem = fea_assembler.createStaticProblem("uniform_force")
         problem.addLoadToNodes(1, f, nastranOrdering=False)
         return [problem]

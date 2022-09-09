@@ -3,27 +3,31 @@ import os
 from tacs import pytacs, TACS, elements, constitutive, functions, problems
 from pytacs_analysis_base_test import PyTACSTestCase
 
-'''
+"""
 10m x 1m x 1m Square beam constructed from tetrahedral elements. The beam is cantilevered at
 one end and rotated about its base at a constant angular velocity. This leads to a pure axial loading on the model.
 A second case is run where the beam is hung under a uniform gravity load.
 
 test StructuralMass and Compliance functions and sensitivities
-'''
+"""
 
 base_dir = os.path.dirname(os.path.abspath(__file__))
 bdf_file = os.path.join(base_dir, "./input_files/solid_beam.bdf")
 
-FUNC_REFS = {'Centrifugal_compliance': 21447856.343444135,
-             'Centrifugal_ks_disp': 5.04476307317472,
-             'Centrifugal_mass': 27000.00000000002}
+FUNC_REFS = {
+    "Centrifugal_compliance": 21447856.343444135,
+    "Centrifugal_ks_disp": 5.04476307317472,
+    "Centrifugal_mass": 27000.00000000002,
+}
 
 omega = 2 * np.pi * np.array([0.0, -10.0, 0.0])
 rotCenter = np.array([0.5, 0.5, 0.0])
 ksweight = 10.0
 
+
 class ProblemTest(PyTACSTestCase.PyTACSTest):
     N_PROCS = 2  # this is how many MPI processes to use for this TestCase.
+
     def setup_pytacs(self, comm, dtype):
         """
         Setup mesh and pytacs object for problem we will be testing.
@@ -44,12 +48,14 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
 
         fea_assembler = pytacs.pyTACS(bdf_file, comm, options=struct_options)
 
-        def elem_call_back(dv_num, comp_id, comp_descript, elem_descripts, special_dvs, **kwargs):
+        def elem_call_back(
+            dv_num, comp_id, comp_descript, elem_descripts, special_dvs, **kwargs
+        ):
             # Material properties
             rho = 2700.0  # density kg/m^3
             E = 70e9  # Youngs modulus Pa
-            nu = 0.3 # poissons ratio
-            ys = 270e6 # yield strength Pa
+            nu = 0.3  # poissons ratio
+            ys = 270e6  # yield strength Pa
 
             # Setup property and constitutive objects
             prop = constitutive.MaterialProperties(rho=rho, E=E, nu=nu, ys=ys)
@@ -88,11 +94,15 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
         """
         # Add Functions
         for problem in problems:
-            problem.addFunction('mass', functions.StructuralMass)
-            problem.addFunction('compliance', functions.Compliance)
-            problem.addFunction('ks_disp', functions.KSDisplacement,
-                                ksWeight=ksweight, direction=[0.0, 0.0, 100.0])
-        func_list = ['mass', 'compliance', 'ks_disp']
+            problem.addFunction("mass", functions.StructuralMass)
+            problem.addFunction("compliance", functions.Compliance)
+            problem.addFunction(
+                "ks_disp",
+                functions.KSDisplacement,
+                ksWeight=ksweight,
+                direction=[0.0, 0.0, 100.0],
+            )
+        func_list = ["mass", "compliance", "ks_disp"]
         return func_list, FUNC_REFS
 
     def setup_tacs_problems(self, fea_assembler):

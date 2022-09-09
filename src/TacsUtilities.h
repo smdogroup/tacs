@@ -17,12 +17,12 @@
 
 #include "TACSObject.h"
 
-int TacsIntegerComparator( const void *a, const void *b );
+int TacsIntegerComparator(const void *a, const void *b);
 
 /**
   Sort an array of integers
 */
-int TacsSort( int len, int *array );
+int TacsSort(int len, int *array);
 
 /**
   Sort a list by argument
@@ -34,7 +34,7 @@ int TacsSort( int len, int *array );
   @param values The array of values
   @param array The array of indices sorted so that values[array[i]] is ascending
 */
-int TacsArgSort( int len, const TacsScalar *values, int *array );
+int TacsArgSort(int len, const TacsScalar *values, int *array);
 
 /**
   Sort an array and return the number of unique design variables within
@@ -42,13 +42,13 @@ int TacsArgSort( int len, const TacsScalar *values, int *array );
   return value is the number of non-negative design variables
   &dvNums[start] is the start of the new array of unique design vars...
 */
-int TacsUniqueSort( int len, int *array );
+int TacsUniqueSort(int len, int *array);
 
 /**
   Locate a value within a sorted array
 */
-inline int* TacsSearchArray( int value, int len, const int *array ){
-  return (int*)bsearch(&value, array, len, sizeof(int), TacsIntegerComparator);
+inline int *TacsSearchArray(int value, int len, const int *array) {
+  return (int *)bsearch(&value, array, len, sizeof(int), TacsIntegerComparator);
 }
 
 /**
@@ -61,7 +61,7 @@ inline int* TacsSearchArray( int value, int len, const int *array ){
 
   Memory requirements: note that len(a) >= na + nb
 */
-int TacsMergeSortedArrays( int na, int *a, int nb, const int *b );
+int TacsMergeSortedArrays(int na, int *a, int nb, const int *b);
 
 /**
   Find the interval such that the given index satisfies:
@@ -72,7 +72,7 @@ int TacsMergeSortedArrays( int na, int *a, int nb, const int *b );
   to the length of the intv array which is one more than the
   total number of intervals.
 */
-int TacsFindInterval( int index, int len, const int intv[] );
+int TacsFindInterval(int index, int len, const int intv[]);
 
 /**
   Match the intervals in a list of sorted variables.
@@ -82,14 +82,14 @@ int TacsFindInterval( int index, int len, const int intv[] );
 
   vars[ptr[n]] <= ownerRange[n]
 */
-void TacsMatchIntervals( int size, const int range[],
-                         int nvars, const int vars[], int ptr[] );
+void TacsMatchIntervals(int size, const int range[], int nvars,
+                        const int vars[], int ptr[]);
 
 /*!
   Extend an array and copy values from the old to the new array
 */
-void TacsExtendArray( int **_array, int oldlen, int newlen );
-void TacsExtendArray( TacsScalar **_array, int oldlen, int newlen );
+void TacsExtendArray(int **_array, int oldlen, int newlen);
+void TacsExtendArray(TacsScalar **_array, int oldlen, int newlen);
 
 /**
   Sort and uniquify a CSR data structure.
@@ -99,53 +99,52 @@ void TacsExtendArray( TacsScalar **_array, int oldlen, int newlen );
   @param cols The column indices
   @param remove_diag Flag indicating whether to remove diagonal entries
 */
-void TacsSortAndUniquifyCSR( int nvars, int *rowp, int *cols,
-                             int remove_diag=0 );
+void TacsSortAndUniquifyCSR(int nvars, int *rowp, int *cols,
+                            int remove_diag = 0);
 
 /*
   Reorder locally based on RCM-reordering
 */
-int TacsComputeRCMOrder( const int nvars, const int *rowp, const int *cols,
-                         int *rcm_order, int root, int n_rcm_iters );
+int TacsComputeRCMOrder(const int nvars, const int *rowp, const int *cols,
+                        int *rcm_order, int root, int n_rcm_iters);
 
 /*
   Compute the multicolor order via a greedy algorithm
 */
-int TacsComputeSerialMultiColor( const int nvars, const int *rowp,
-                                 const int *cols, int *colors,
-                                 int *new_vars );
+int TacsComputeSerialMultiColor(const int nvars, const int *rowp,
+                                const int *cols, int *colors, int *new_vars);
 
 /*
   Hash table implementation for storing a set of integers
 */
 class TACSIndexHash : public TACSObject {
  public:
-  TACSIndexHash( int approx_size, int _increment_size=-1 );
+  TACSIndexHash(int approx_size, int _increment_size = -1);
   ~TACSIndexHash();
 
   /*
     Add an entry to the hash table
   */
-  int addEntry( int i );
+  int addEntry(int i);
 
   /*
     Convert the hash table to an array
   */
-  void toArray( int *_size, int **_array );
+  void toArray(int *_size, int **_array);
 
  private:
-  void reset( int new_table_size );
+  void reset(int new_table_size);
 
   // The hash entry corresponding to an (i,j) entry in the matrix
   class HashEntry {
-    public:
+   public:
     int i;
     HashEntry *next;
   };
 
   // An entry in the linked list of hash nodes
   class MemNode {
-    public:
+   public:
     int size;
     int current;
     HashEntry *array;
@@ -174,33 +173,32 @@ class TACSIndexHash : public TACSObject {
 */
 class TACSMatrixHash : public TACSObject {
  public:
-  TACSMatrixHash( int approx_size, int _increment_size=-1 );
+  TACSMatrixHash(int approx_size, int _increment_size = -1);
   ~TACSMatrixHash();
 
   /*
     Add an entry to the hash table
   */
-  int addEntry( int i, int j );
+  int addEntry(int i, int j);
 
   /*
     Convert the hash table to an array
   */
-  void tocsr( int *_nrows, int **_rows,
-              int **_rowp, int **_cols );
+  void tocsr(int *_nrows, int **_rows, int **_rowp, int **_cols);
 
  private:
-  void reset( int new_table_size );
+  void reset(int new_table_size);
 
   // The hash entry corresponding to an (i,j) entry in the matrix
   class HashEntry {
-    public:
+   public:
     int i, j;
     HashEntry *next;
   };
 
   // An entry in the linked list of hash nodes
   class MemNode {
-    public:
+   public:
     int size;
     int current;
     HashEntry *array;
@@ -222,4 +220,4 @@ class TACSMatrixHash : public TACSObject {
   MemNode *mem_root, *mem;
 };
 
-#endif // TACS_UTILITIES_H
+#endif  // TACS_UTILITIES_H

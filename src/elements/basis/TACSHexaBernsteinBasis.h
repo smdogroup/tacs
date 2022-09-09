@@ -23,17 +23,17 @@
 class TACSQuadraticHexaBernsteinBasis : public TACSElementBasis {
  public:
   ElementLayout getLayoutType();
-  void getVisPoint( int n, double pt[] );
+  void getVisPoint(int n, double pt[]);
   int getNumNodes();
   int getNumParameters();
   int getNumQuadraturePoints();
-  double getQuadratureWeight( int n );
-  double getQuadraturePoint( int n, double pt[] );
+  double getQuadratureWeight(int n);
+  double getQuadraturePoint(int n, double pt[]);
   int getNumElementFaces();
-  int getNumFaceQuadraturePoints( int face );
-  double getFaceQuadraturePoint( int face, int n, double pt[], double t[] );
-  void computeBasis( const double pt[], double N[] );
-  void computeBasisGradient( const double pt[], double N[], double Nxi[] );
+  int getNumFaceQuadraturePoints(int face);
+  double getFaceQuadraturePoint(int face, int n, double pt[], double t[]);
+  void computeBasis(const double pt[], double N[]);
+  void computeBasisGradient(const double pt[], double N[], double Nxi[]);
 };
 
 /**
@@ -42,17 +42,17 @@ class TACSQuadraticHexaBernsteinBasis : public TACSElementBasis {
 class TACSCubicHexaBernsteinBasis : public TACSElementBasis {
  public:
   ElementLayout getLayoutType();
-  void getVisPoint( int n, double pt[] );
+  void getVisPoint(int n, double pt[]);
   int getNumNodes();
   int getNumParameters();
   int getNumQuadraturePoints();
-  double getQuadratureWeight( int n );
-  double getQuadraturePoint( int n, double pt[] );
+  double getQuadratureWeight(int n);
+  double getQuadraturePoint(int n, double pt[]);
   int getNumElementFaces();
-  int getNumFaceQuadraturePoints( int face );
-  double getFaceQuadraturePoint( int face, int n, double pt[], double t[] );
-  void computeBasis( const double pt[], double N[] );
-  void computeBasisGradient( const double pt[], double N[], double Nxi[] );
+  int getNumFaceQuadraturePoints(int face);
+  double getFaceQuadraturePoint(int face, int n, double pt[], double t[]);
+  void computeBasis(const double pt[], double N[]);
+  void computeBasisGradient(const double pt[], double N[], double Nxi[]);
 };
 
-#endif // TACS_HEXA_BERNSTEIN_BASIS_H
+#endif  // TACS_HEXA_BERNSTEIN_BASIS_H

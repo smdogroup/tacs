@@ -15,35 +15,67 @@ import time
 from .base import TACSProblem
 import tacs.TACS
 
+
 class ModalProblem(TACSProblem):
 
     # Default Option List
     defaultOptions = {
-        'outputDir': [str, './', 'Output directory for F5 file writer.'],
-
+        "outputDir": [str, "./", "Output directory for F5 file writer."],
         # Solution Options
-        'L2Convergence': [float, 1e-12,
-                          'Absolute convergence tolerance for Eigenvalue solver based on l2 norm of residual.'],
-        'L2ConvergenceRel': [float, 1e-12,
-                             'Relative convergence tolerance for Eigenvalue solver based on l2 norm of residual.'],
-        'subSpaceSize': [int, 10, 'Subspace size for Krylov solver used by Eigenvalue solver.'],
-        'nRestarts': [int, 15, 'Max number of resets for Krylov solver used by Eigenvalue solver.'],
-
+        "L2Convergence": [
+            float,
+            1e-12,
+            "Absolute convergence tolerance for Eigenvalue solver based on l2 norm of residual.",
+        ],
+        "L2ConvergenceRel": [
+            float,
+            1e-12,
+            "Relative convergence tolerance for Eigenvalue solver based on l2 norm of residual.",
+        ],
+        "subSpaceSize": [
+            int,
+            10,
+            "Subspace size for Krylov solver used by Eigenvalue solver.",
+        ],
+        "nRestarts": [
+            int,
+            15,
+            "Max number of resets for Krylov solver used by Eigenvalue solver.",
+        ],
         # Output Options
-        'writeSolution': [bool, True, 'Flag for suppressing all f5 file writing.'],
-        'numberSolutions': [bool, True, 'Flag for attaching solution counter index to f5 files.'],
-        'printTiming': [bool, False, 'Flag for printing out timing information for class procedures.'],
-        'printLevel': [int, 0, 'Print level for Eigenvalue solver.\n'
-                               '\t Accepts:\n'
-                               '\t\t   0 : No printing.\n'
-                               '\t\t   1 : Print major iterations.\n'
-                               '\t\t > 1 : Print major + minor iterations.'],
-
+        "writeSolution": [bool, True, "Flag for suppressing all f5 file writing."],
+        "numberSolutions": [
+            bool,
+            True,
+            "Flag for attaching solution counter index to f5 files.",
+        ],
+        "printTiming": [
+            bool,
+            False,
+            "Flag for printing out timing information for class procedures.",
+        ],
+        "printLevel": [
+            int,
+            0,
+            "Print level for Eigenvalue solver.\n"
+            "\t Accepts:\n"
+            "\t\t   0 : No printing.\n"
+            "\t\t   1 : Print major iterations.\n"
+            "\t\t > 1 : Print major + minor iterations.",
+        ],
     }
 
-    def __init__(self, name, sigma, numEigs,
-                 assembler, comm, outputViewer=None, meshLoader=None,
-                 options={}):
+    def __init__(
+        self,
+        name,
+        sigma,
+        numEigs,
+        assembler,
+        comm,
+        outputViewer=None,
+        meshLoader=None,
+        options={},
+    ):
         """
         NOTE: This class should not be initialized directly by the user.
         Use pyTACS.createModalProblem instead.
@@ -88,9 +120,9 @@ class ModalProblem(TACSProblem):
         # Process the default options which are added to self.options
         # under the 'defaults' key. Make sure the key are lower case
         def_keys = self.defaultOptions.keys()
-        self.options['defaults'] = {}
+        self.options["defaults"] = {}
         for key in def_keys:
-            self.options['defaults'][key.lower()] = self.defaultOptions[key]
+            self.options["defaults"][key.lower()] = self.defaultOptions[key]
             self.options[key.lower()] = self.defaultOptions[key]
 
         # Set user-defined options
@@ -118,18 +150,25 @@ class ModalProblem(TACSProblem):
         alpha = 1.0
         beta = 0.0
         gamma = 0.0
-        self.assembler.assembleJacobian(alpha, beta, gamma, None, self.K);
+        self.assembler.assembleJacobian(alpha, beta, gamma, None, self.K)
         self.pc.factor()  # LU factorization of stiffness matrix
 
-        subspace = self.getOption('subSpaceSize')
-        restarts = self.getOption('nRestarts')
+        subspace = self.getOption("subSpaceSize")
+        restarts = self.getOption("nRestarts")
         self.gmres = tacs.TACS.KSM(self.K, self.pc, subspace, restarts)
 
-        eigTol = self.getOption('L2Convergence')
+        eigTol = self.getOption("L2Convergence")
 
         # Create the frequency analysis object
-        self.freqSolver = tacs.TACS.FrequencyAnalysis(self.assembler, self.sigma, self.M, self.K, self.gmres,
-                                                      num_eigs=self.numEigs, eig_tol=eigTol)
+        self.freqSolver = tacs.TACS.FrequencyAnalysis(
+            self.assembler,
+            self.sigma,
+            self.M,
+            self.K,
+            self.gmres,
+            num_eigs=self.numEigs,
+            eig_tol=eigTol,
+        )
 
     def setOption(self, name, value):
         """
@@ -147,8 +186,12 @@ class ModalProblem(TACSProblem):
         TACSProblem.setOption(self, name, value)
 
         # No need to reset solver for output options
-        if name.lower() in ['writesolution', 'printtiming',
-                            'numbersolutions', 'outputdir']:
+        if name.lower() in [
+            "writesolution",
+            "printtiming",
+            "numbersolutions",
+            "outputdir",
+        ]:
             pass
         # Reset solver for all other option changes
         else:
@@ -211,46 +254,57 @@ class ModalProblem(TACSProblem):
         initSolveTime = time.time()
 
         # Solve the frequency analysis problem
-        self.freqSolver.solve(print_level=self.getOption('printLevel'))
+        self.freqSolver.solve(print_level=self.getOption("printLevel"))
 
         solveTime = time.time()
 
         # If timing was was requested print it, if the solution is nonlinear
         # print this information automatically if prinititerations was requested.
-        if self.getOption('printTiming'):
-            self._pp('+--------------------------------------------------+')
-            self._pp('|')
-            self._pp('| TACS Solve Times:')
-            self._pp('|')
-            self._pp('| %-30s: %10.3f sec' % ('TACS Setup Time', setupProblemTime - startTime))
-            self._pp('| %-30s: %10.3f sec' % ('TACS Solve Init Time', initSolveTime - setupProblemTime))
-            self._pp('| %-30s: %10.3f sec' % ('TACS Solve Time', solveTime - initSolveTime))
-            self._pp('|')
-            self._pp('| %-30s: %10.3f sec' % ('TACS Total Solution Time', solveTime - startTime))
-            self._pp('+--------------------------------------------------+')
+        if self.getOption("printTiming"):
+            self._pp("+--------------------------------------------------+")
+            self._pp("|")
+            self._pp("| TACS Solve Times:")
+            self._pp("|")
+            self._pp(
+                "| %-30s: %10.3f sec"
+                % ("TACS Setup Time", setupProblemTime - startTime)
+            )
+            self._pp(
+                "| %-30s: %10.3f sec"
+                % ("TACS Solve Init Time", initSolveTime - setupProblemTime)
+            )
+            self._pp(
+                "| %-30s: %10.3f sec" % ("TACS Solve Time", solveTime - initSolveTime)
+            )
+            self._pp("|")
+            self._pp(
+                "| %-30s: %10.3f sec"
+                % ("TACS Total Solution Time", solveTime - startTime)
+            )
+            self._pp("+--------------------------------------------------+")
 
         return
 
     def getVariables(self, index, states=None):
         """
-         Return the current state values for one mode of the current problem
+        Return the current state values for one mode of the current problem
 
-         Parameters
-         ----------
-         index : int
-             Mode index to return solution for.
+        Parameters
+        ----------
+        index : int
+            Mode index to return solution for.
 
-         states : TACS.Vec or numpy.ndarray or None
-             Place eigenvector for mode into this array (optional).
+        states : TACS.Vec or numpy.ndarray or None
+            Place eigenvector for mode into this array (optional).
 
-         Returns
-         --------
-         eigVal: float
-             Eigenvalue for mode corresponds to square of eigenfrequency (rad^2/s^2)
+        Returns
+        --------
+        eigVal: float
+            Eigenvalue for mode corresponds to square of eigenfrequency (rad^2/s^2)
 
-         states : numpy.ndarray
-             Eigenvector for mode
-         """
+        states : numpy.ndarray
+            Eigenvector for mode
+        """
         eigVal, err = self.freqSolver.extractEigenvalue(index)
         eigVector = self.assembler.createVec()
         self.freqSolver.extractEigenvector(index, eigVector)
@@ -290,7 +344,7 @@ class ModalProblem(TACSProblem):
 
         # Check input
         if outputDir is None:
-            outputDir = self.getOption('outputDir')
+            outputDir = self.getOption("outputDir")
 
         if baseName is None:
             baseName = self.name
@@ -299,15 +353,15 @@ class ModalProblem(TACSProblem):
         # calls, add the call number
         if number is not None:
             # We need number based on the provided number:
-            baseName = baseName + '_%3.3d' % number
+            baseName = baseName + "_%3.3d" % number
         else:
             # if number is none, i.e. standalone, but we need to
             # number solutions, use internal counter
-            if self.getOption('numberSolutions'):
-                baseName = baseName + '_%3.3d' % self.callCounter
+            if self.getOption("numberSolutions"):
+                baseName = baseName + "_%3.3d" % self.callCounter
 
         # Unless the writeSolution option is off write actual file:
-        if self.getOption('writeSolution'):
+        if self.getOption("writeSolution"):
 
             # If indices is None, output all modes
             if indices is None:
@@ -322,6 +376,6 @@ class ModalProblem(TACSProblem):
                 # Set eigen mode in assembler
                 self.assembler.setVariables(vec)
                 # Write out mode shape as f5 file
-                modeName = baseName + '_%3.3d' % index
-                fileName = os.path.join(outputDir, modeName) + '.f5'
+                modeName = baseName + "_%3.3d" % index
+                fileName = os.path.join(outputDir, modeName) + ".f5"
                 self.outputViewer.writeToFile(fileName)

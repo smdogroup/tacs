@@ -37,28 +37,31 @@ comm = MPI.COMM_WORLD
 
 # Instantiate FEAAssembler
 structOptions = {
-    'printtiming':True,
+    "printtiming": True,
 }
 
-bdfFile = os.path.join(os.path.dirname(__file__), 'disk.bdf')
+bdfFile = os.path.join(os.path.dirname(__file__), "disk.bdf")
 FEAAssembler = pyTACS(bdfFile, comm=comm, options=structOptions)
+
 
 def elemCallBack(dvNum, compID, compDescript, elemDescripts, specialDVs, **kwargs):
     # Material properties
-    rho = 2700.0        # density kg/m^3
-    E = 70e9            # Young's modulus (Pa)
-    nu = 0.3            # Poisson's ratio
-    ys = 270.0e6        # yield stress
+    rho = 2700.0  # density kg/m^3
+    E = 70e9  # Young's modulus (Pa)
+    nu = 0.3  # Poisson's ratio
+    ys = 270.0e6  # yield stress
 
     # Plate geometry
-    tplate = 0.001    # 1 mm
-    tMin = 0.0001    # 0.1 mm
-    tMax = 0.05     # 5 cm
+    tplate = 0.001  # 1 mm
+    tMin = 0.0001  # 0.1 mm
+    tMax = 0.05  # 5 cm
 
     # Set up property model
     prop = constitutive.MaterialProperties(rho=rho, E=E, nu=nu, ys=ys)
     # Set up constitutive model
-    con = constitutive.IsoShellConstitutive(prop, t=tplate, tNum=dvNum, tlb=tMin, tub=tMax)
+    con = constitutive.IsoShellConstitutive(
+        prop, t=tplate, tNum=dvNum, tlb=tMin, tub=tMax
+    )
     transform = None
     # Set up quad/tri elements
     elemList = []
@@ -68,18 +71,21 @@ def elemCallBack(dvNum, compID, compDescript, elemDescripts, specialDVs, **kwarg
         elif elemDescript == "CTRIA3":
             elem = elements.Tri3Shell(transform, con)
         else:
-            raise AttributeError(f"Element descript of type {elemDescript} not recognized.")
+            raise AttributeError(
+                f"Element descript of type {elemDescript} not recognized."
+            )
         elemList.append(elem)
     return elemList
+
 
 # Set up constitutive objects and elements
 FEAAssembler.initialize(elemCallBack)
 
 # Setup static problem
-staticProb = FEAAssembler.createStaticProblem(name='centrifugal')
+staticProb = FEAAssembler.createStaticProblem(name="centrifugal")
 # Add functions
-staticProb.addFunction('mass', functions.StructuralMass)
-staticProb.addFunction('ks_vmfailure', functions.KSFailure, ksWeight=100.0)
+staticProb.addFunction("mass", functions.StructuralMass)
+staticProb.addFunction("ks_vmfailure", functions.KSFailure, ksWeight=100.0)
 # Centrifugal inertial loads about center of disk
 staticProb.addCentrifugalLoad(omega, rotCenter)
 

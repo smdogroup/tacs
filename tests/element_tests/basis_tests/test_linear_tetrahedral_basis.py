@@ -23,16 +23,19 @@ class BasisTest(unittest.TestCase):
         elements.SeedRandomGenerator(0)
 
     def test_element_basis_functions(self):
-        fail = elements.TestElementBasisFunctions(self.basis, self.dh, self.print_level,
-                                                  self.atol, self.rtol)
+        fail = elements.TestElementBasisFunctions(
+            self.basis, self.dh, self.print_level, self.atol, self.rtol
+        )
         self.assertFalse(fail)
 
     def test_element_basis_face_normals(self):
-        fail = elements.TestElementBasisFaceNormals(self.basis, self.dh, self.print_level,
-                                                    self.atol, self.rtol)
+        fail = elements.TestElementBasisFaceNormals(
+            self.basis, self.dh, self.print_level, self.atol, self.rtol
+        )
         self.assertFalse(fail)
 
     def test_element_basis_jacobian_transform(self):
-        fail = elements.TestElementBasisJacobianTransform(self.basis, self.dh, self.print_level,
-                                                          self.atol, self.rtol)
+        fail = elements.TestElementBasisJacobianTransform(
+            self.basis, self.dh, self.print_level, self.atol, self.rtol
+        )
         self.assertFalse(fail)

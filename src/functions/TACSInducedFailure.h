@@ -62,50 +62,51 @@
 
 class TACSInducedFailure : public TACSFunction {
  public:
-  enum InducedNormType { EXPONENTIAL, POWER,
-                         EXPONENTIAL_SQUARED, POWER_SQUARED,
-                         DISCRETE_EXPONENTIAL,
-                         DISCRETE_POWER,
-                         DISCRETE_EXPONENTIAL_SQUARED,
-                         DISCRETE_POWER_SQUARED };
+  enum InducedNormType {
+    EXPONENTIAL,
+    POWER,
+    EXPONENTIAL_SQUARED,
+    POWER_SQUARED,
+    DISCRETE_EXPONENTIAL,
+    DISCRETE_POWER,
+    DISCRETE_EXPONENTIAL_SQUARED,
+    DISCRETE_POWER_SQUARED
+  };
 
-  TACSInducedFailure( TACSAssembler *_assembler, double _P );
+  TACSInducedFailure(TACSAssembler *_assembler, double _P);
   ~TACSInducedFailure();
 
   // Retrieve the name of the function
   // ---------------------------------
-  const char* getObjectName();
+  const char *getObjectName();
 
   // Set parameters to control how the induced functions are evaluated
   // -----------------------------------------------------------------
-  void setParameter( double _P );
+  void setParameter(double _P);
   double getParameter();
-  void setInducedType( InducedNormType _norm_type );
+  void setInducedType(InducedNormType _norm_type);
 
   // Set the value of the failure offset for numerical stability
   // -----------------------------------------------------------
-  void setMaxFailOffset( TacsScalar _maxFail ){
-    maxFail = _maxFail;
-  }
+  void setMaxFailOffset(TacsScalar _maxFail) { maxFail = _maxFail; }
 
   /**
      Initialize the function for the given type of evaluation
   */
-  void initEvaluation( EvaluationType ftype );
+  void initEvaluation(EvaluationType ftype);
 
   /**
      Perform an element-wise integration over this element.
   */
-  void elementWiseEval( EvaluationType ftype,
-                        int elemIndex, TACSElement *element,
-                        double time, TacsScalar scale,
-                        const TacsScalar Xpts[], const TacsScalar vars[],
-                        const TacsScalar dvars[], const TacsScalar ddvars[] );
+  void elementWiseEval(EvaluationType ftype, int elemIndex,
+                       TACSElement *element, double time, TacsScalar scale,
+                       const TacsScalar Xpts[], const TacsScalar vars[],
+                       const TacsScalar dvars[], const TacsScalar ddvars[]);
 
   /**
      Finalize the function evaluation for the specified eval type.
   */
-  void finalEvaluation( EvaluationType ftype );
+  void finalEvaluation(EvaluationType ftype);
 
   /**
      Get the value of the function
@@ -115,35 +116,35 @@ class TACSInducedFailure : public TACSFunction {
   /**
      Evaluate the derivative of the function w.r.t. state variables
   */
-  void getElementSVSens( int elemIndex, TACSElement *element, double time,
-                         TacsScalar alpha, TacsScalar beta, TacsScalar gamma,
-                         const TacsScalar Xpts[], const TacsScalar vars[],
-                         const TacsScalar dvars[], const TacsScalar ddvars[],
-                         TacsScalar *elemSVSens );
+  void getElementSVSens(int elemIndex, TACSElement *element, double time,
+                        TacsScalar alpha, TacsScalar beta, TacsScalar gamma,
+                        const TacsScalar Xpts[], const TacsScalar vars[],
+                        const TacsScalar dvars[], const TacsScalar ddvars[],
+                        TacsScalar *elemSVSens);
 
   /**
      Add the derivative of the function w.r.t. the design variables
   */
-  void addElementDVSens( int elemIndex, TACSElement *element,
-                         double time, TacsScalar scale,
-                         const TacsScalar Xpts[], const TacsScalar vars[],
-                         const TacsScalar dvars[], const TacsScalar ddvars[],
-                         int dvLen, TacsScalar dfdx[] );
+  void addElementDVSens(int elemIndex, TACSElement *element, double time,
+                        TacsScalar scale, const TacsScalar Xpts[],
+                        const TacsScalar vars[], const TacsScalar dvars[],
+                        const TacsScalar ddvars[], int dvLen,
+                        TacsScalar dfdx[]);
 
   /**
      Evaluate the derivative of the function w.r.t. the node locations
   */
-  void getElementXptSens( int elemIndex, TACSElement *element,
-                          double time, TacsScalar scale,
-                          const TacsScalar Xpts[], const TacsScalar vars[],
-                          const TacsScalar dvars[], const TacsScalar ddvars[],
-                          TacsScalar fXptSens[] );
+  void getElementXptSens(int elemIndex, TACSElement *element, double time,
+                         TacsScalar scale, const TacsScalar Xpts[],
+                         const TacsScalar vars[], const TacsScalar dvars[],
+                         const TacsScalar ddvars[], TacsScalar fXptSens[]);
+
  private:
   // The type of norm to evaluate
   InducedNormType normType;
 
-  TacsScalar maxFail; // The maximum failure function at a Gauss point
-  TacsScalar failNumer, failDenom; // The numerator and denominator
+  TacsScalar maxFail;  // The maximum failure function at a Gauss point
+  TacsScalar failNumer, failDenom;  // The numerator and denominator
 
   // The P in the P-norm
   double P;
@@ -152,4 +153,4 @@ class TACSInducedFailure : public TACSFunction {
   static const char *funcName;
 };
 
-#endif // TACS_INDUCED_FAILURE_H
+#endif  // TACS_INDUCED_FAILURE_H

@@ -3,10 +3,10 @@ from mpi4py import MPI
 from tacs import TACS, elements, constitutive, functions
 from transient_analysis_base_test import TransientTestCase
 
-'''
+"""
 Create a cantilevered beam of linear quad shells under a tip shear load
 and test KSFailure, StructuralMass, and Compliance functions and sensitivities
-'''
+"""
 
 FUNC_REFS = np.array([0.5649403439860506, 2570.0, 33623.67205557248])
 
@@ -29,8 +29,10 @@ delta_fz = 1.0e4
 # KS function weight
 ksweight = 10.0
 
+
 class ProblemTest(TransientTestCase.TransientTest):
     N_PROCS = 2  # this is how many MPI processes to use for this TestCase.
+
     def setup_assembler(self, comm, dtype):
         """
         Setup mesh and tacs assembler for problem we will be testing.
@@ -66,7 +68,7 @@ class ProblemTest(TransientTestCase.TransientTest):
             x = np.linspace(0, Lx, nx + 1, dtype)
             y = np.linspace(0, Ly, ny + 1, dtype)
             xyz = np.zeros([nx + 1, ny + 1, 3], dtype)
-            xyz[:, :, 0], xyz[:, :, 1] = np.meshgrid(x, y, indexing='ij')
+            xyz[:, :, 0], xyz[:, :, 1] = np.meshgrid(x, y, indexing="ij")
 
             node_ids = np.arange(num_nodes).reshape(nx + 1, ny + 1)
 
@@ -74,10 +76,14 @@ class ProblemTest(TransientTestCase.TransientTest):
             conn = []
             for i in range(nx):
                 for j in range(ny):
-                    conn.append([node_ids[i, j],
-                                 node_ids[i + 1, j],
-                                 node_ids[i, j + 1],
-                                 node_ids[i + 1, j + 1]])
+                    conn.append(
+                        [
+                            node_ids[i, j],
+                            node_ids[i + 1, j],
+                            node_ids[i, j + 1],
+                            node_ids[i + 1, j + 1],
+                        ]
+                    )
 
             conn = np.array(conn, dtype=np.intc).flatten()
             ptr = np.arange(0, 4 * num_elems + 1, 4, dtype=np.intc)
@@ -109,8 +115,9 @@ class ProblemTest(TransientTestCase.TransientTest):
         order = 2
 
         # Set the file output format
-        integrator = TACS.BDFIntegrator(assembler, tinit, tfinal,
-                                        float(num_steps), order)
+        integrator = TACS.BDFIntegrator(
+            assembler, tinit, tfinal, float(num_steps), order
+        )
 
         return integrator
 
@@ -153,7 +160,9 @@ class ProblemTest(TransientTestCase.TransientTest):
         """
         Create a list of functions to be tested and their reference values for the problem
         """
-        func_list = [functions.KSFailure(assembler, ksWeight=ksweight),
-                     functions.StructuralMass(assembler),
-                     functions.Compliance(assembler)]
+        func_list = [
+            functions.KSFailure(assembler, ksWeight=ksweight),
+            functions.StructuralMass(assembler),
+            functions.Compliance(assembler),
+        ]
         return func_list, FUNC_REFS

@@ -24,24 +24,21 @@
 
 class TACSBasicBeamConstitutive : public TACSBeamConstitutive {
  public:
-  TACSBasicBeamConstitutive( TacsScalar EA,
-                             TacsScalar EI22, TacsScalar EI33, TacsScalar EI23,
-                             TacsScalar GJ,
-                             TacsScalar kG22, TacsScalar kG33, TacsScalar kG23,
-                             TacsScalar m00,
-                             TacsScalar m11, TacsScalar m22, TacsScalar m33,
-                             TacsScalar xm2, TacsScalar xm3,
-                             TacsScalar xc2, TacsScalar xc3,
-                             TacsScalar xk2, TacsScalar xk3,
-                             TacsScalar muS );
-  TACSBasicBeamConstitutive( TacsScalar rhoA, TacsScalar rhoIy,
-                             TacsScalar rhoIz, TacsScalar rhoIyz,
-                             TacsScalar EA, TacsScalar GJ,
-                             TacsScalar EIy, TacsScalar EIz,
-                             TacsScalar kGAy, TacsScalar kGAz );
-  TACSBasicBeamConstitutive( TACSMaterialProperties *properties,
-                             TacsScalar A, TacsScalar J, TacsScalar Iy, TacsScalar Iz, TacsScalar Iyz,
-                             TacsScalar ky=5.0/6.0, TacsScalar kz=5.0/6.0 );
+  TACSBasicBeamConstitutive(TacsScalar EA, TacsScalar EI22, TacsScalar EI33,
+                            TacsScalar EI23, TacsScalar GJ, TacsScalar kG22,
+                            TacsScalar kG33, TacsScalar kG23, TacsScalar m00,
+                            TacsScalar m11, TacsScalar m22, TacsScalar m33,
+                            TacsScalar xm2, TacsScalar xm3, TacsScalar xc2,
+                            TacsScalar xc3, TacsScalar xk2, TacsScalar xk3,
+                            TacsScalar muS);
+  TACSBasicBeamConstitutive(TacsScalar rhoA, TacsScalar rhoIy, TacsScalar rhoIz,
+                            TacsScalar rhoIyz, TacsScalar EA, TacsScalar GJ,
+                            TacsScalar EIy, TacsScalar EIz, TacsScalar kGAy,
+                            TacsScalar kGAz);
+  TACSBasicBeamConstitutive(TACSMaterialProperties *properties, TacsScalar A,
+                            TacsScalar J, TacsScalar Iy, TacsScalar Iz,
+                            TacsScalar Iyz, TacsScalar ky = 5.0 / 6.0,
+                            TacsScalar kz = 5.0 / 6.0);
 
   ~TACSBasicBeamConstitutive();
 
@@ -56,10 +53,8 @@ class TACSBasicBeamConstitutive : public TACSBeamConstitutive {
     @param X The point location
     @return The moments of the mass
   */
-  void evalMassMoments( int elemIndex,
-                        const double pt[],
-                        const TacsScalar X[],
-                        TacsScalar moments[] ){
+  void evalMassMoments(int elemIndex, const double pt[], const TacsScalar X[],
+                       TacsScalar moments[]) {
     moments[0] = rho[0];
     moments[1] = rho[1];
     moments[2] = rho[2];
@@ -78,42 +73,40 @@ class TACSBasicBeamConstitutive : public TACSBeamConstitutive {
     @param dvLen the length of the sensitivity array
     @param dfdx The sensitivity array
   */
-  virtual void addMassMomentsDVSens( int elemIndex,
-                                     const double pt[],
-                                     const TacsScalar X[],
-                                     const TacsScalar scale[],
-                                     int dvLen, TacsScalar dfdx[] ){}
+  virtual void addMassMomentsDVSens(int elemIndex, const double pt[],
+                                    const TacsScalar X[],
+                                    const TacsScalar scale[], int dvLen,
+                                    TacsScalar dfdx[]) {}
 
   /**
     Evaluate the mass per unit length of the beam
   */
-  TacsScalar evalDensity( int elemIndex, const double pt[],
-                          const TacsScalar X[] ){
+  TacsScalar evalDensity(int elemIndex, const double pt[],
+                         const TacsScalar X[]) {
     return rho[0];
   }
 
   /**
      Compute the stress at the material point, given the strain value
   */
-  void evalStress( int elemIndex, const double pt[],
-                   const TacsScalar X[], const TacsScalar e[],
-                   TacsScalar s[] ){
+  void evalStress(int elemIndex, const double pt[], const TacsScalar X[],
+                  const TacsScalar e[], TacsScalar s[]) {
     computeStress(C, e, s);
   }
 
   /**
      Compute (or in this case copy) the values of the tangent stiffness matrix
   */
-  void evalTangentStiffness( int elemIndex, const double pt[],
-                             const TacsScalar X[], TacsScalar C0[] ){
+  void evalTangentStiffness(int elemIndex, const double pt[],
+                            const TacsScalar X[], TacsScalar C0[]) {
     memcpy(C0, C, NUM_TANGENT_STIFFNESS_ENTRIES * sizeof(TacsScalar));
   }
 
   /**
      Evaluate the specific heat
   */
-  TacsScalar evalSpecificHeat( int elemIndex, const double pt[],
-                               const TacsScalar X[] ){
+  TacsScalar evalSpecificHeat(int elemIndex, const double pt[],
+                              const TacsScalar X[]) {
     return 0.0;
   }
 
@@ -134,4 +127,4 @@ class TACSBasicBeamConstitutive : public TACSBeamConstitutive {
   static const char *constName;
 };
 
-#endif // TACS_BASIC_BEAM_CONSTITUTIVE_H
+#endif  // TACS_BASIC_BEAM_CONSTITUTIVE_H

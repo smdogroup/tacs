@@ -1,9 +1,9 @@
 #include "TACSAssembler.h"
 #include "TACSBuckling.h"
-#include "TACSToFH5.h"
-#include "TACSMeshLoader.h"
 #include "TACSIsoShellConstitutive.h"
+#include "TACSMeshLoader.h"
 #include "TACSShellElementDefs.h"
+#include "TACSToFH5.h"
 // #include "TACSPanelAnalysis.h"
 
 // /*
@@ -188,7 +188,7 @@
   2. The results will be written to files in the ./results/ directory.
   If no such directory exists, then no results will be written.
 */
-int main( int argc, char *argv[] ){
+int main(int argc, char *argv[]) {
   MPI_Init(&argc, &argv);
 
   // Depending on the arguments, load in a different
@@ -199,16 +199,16 @@ int main( int argc, char *argv[] ){
   double dh = 1e-6;
   int shear_flag = 0;
   int use_lapack = 0;
-  for ( int k = 0; k < argc; k++ ){
-    if (strcmp(argv[k], "shear") == 0){
+  for (int k = 0; k < argc; k++) {
+    if (strcmp(argv[k], "shear") == 0) {
       bdf_file = shear_file;
       shear_flag = 1;
     }
-    if (strcmp(argv[k], "lapack") == 0){
+    if (strcmp(argv[k], "lapack") == 0) {
       use_lapack = 1;
     }
-    if (sscanf(argv[k], "fd=%le", &dh) == 1){
-      if (dh > 0.1){
+    if (sscanf(argv[k], "fd=%le", &dh) == 1) {
+      if (dh > 0.1) {
         dh = 0.1;
       }
       printf("Using difference step size: %le\n", dh);
@@ -222,7 +222,7 @@ int main( int argc, char *argv[] ){
   // The thickness of the skin, base and stiffener
   TacsScalar tskin = 1.0;
   TacsScalar tbase = tskin;
-  TacsScalar tstiff = 1.2*tskin;
+  TacsScalar tstiff = 1.2 * tskin;
 
   // The material properties used for the skin/base and stiffener
   TacsScalar rho = 2750.0, E = 70.0e3, nu = 0.3;
@@ -231,41 +231,44 @@ int main( int argc, char *argv[] ){
   TacsScalar cte = 24.0e-6;
   TacsScalar kappa = 230.0;
 
-  TACSMaterialProperties *props =
-    new TACSMaterialProperties(rho, specific_heat, E, nu, yield_stress, cte, kappa);
+  TACSMaterialProperties *props = new TACSMaterialProperties(
+      rho, specific_heat, E, nu, yield_stress, cte, kappa);
 
   TacsScalar axis[] = {1.0, 0.0, 0.0};
   TACSShellTransform *transform = new TACSShellRefAxisTransform(axis);
 
   // Create the stiffness objects for the skin/base and stiffener
-  TACSIsoShellConstitutive *stiff_skin = new TACSIsoShellConstitutive(props, tskin, 0);
-  TACSIsoShellConstitutive *stiff_base = new TACSIsoShellConstitutive(props, tbase, 1);
+  TACSIsoShellConstitutive *stiff_skin =
+      new TACSIsoShellConstitutive(props, tskin, 0);
+  TACSIsoShellConstitutive *stiff_base =
+      new TACSIsoShellConstitutive(props, tbase, 1);
   TACSIsoShellConstitutive *stiff_stiffener =
-    new TACSIsoShellConstitutive(props, tstiff, 2);
+      new TACSIsoShellConstitutive(props, tstiff, 2);
 
   // Allocate the elements associated with the skin/stiffener/base
   TACSElement *skin = NULL, *base = NULL, *stiffener = NULL;
   skin = TacsCreateShellByName("TACSQuad16Shell", transform, stiff_skin);
   base = TacsCreateShellByName("TACSQuad16Shell", transform, stiff_base);
-  stiffener = TacsCreateShellByName("TACSQuad16Shell", transform, stiff_stiffener);
+  stiffener =
+      TacsCreateShellByName("TACSQuad16Shell", transform, stiff_stiffener);
 
   // Set the loading conditions which depends on whether or not a
   // shear flag is used
   TacsScalar Nx = -1.0, Nxy = 0.0;
-  if (shear_flag){
+  if (shear_flag) {
     Nx = 0.0;
     Nxy = 1.0;
   }
 
-//   // When using complex mode, we cannot use the tacs panel analysis
-// #ifndef TACS_USE_COMPLEX
-//   TacsScalar theta = -15.0/180.0*M_PI;
-//   if (rank == 0){
-//     printf("theta = %8.1f\n", theta*180.0/M_PI);
-//     panel_test(stiff_skin, stiff_base, stiff_stiffener, theta,
-//                Nx, Nxy, use_lapack);
-//   }
-// #endif // TACS_USE_COMPLEX
+  //   // When using complex mode, we cannot use the tacs panel analysis
+  // #ifndef TACS_USE_COMPLEX
+  //   TacsScalar theta = -15.0/180.0*M_PI;
+  //   if (rank == 0){
+  //     printf("theta = %8.1f\n", theta*180.0/M_PI);
+  //     panel_test(stiff_skin, stiff_base, stiff_stiffener, theta,
+  //                Nx, Nxy, use_lapack);
+  //   }
+  // #endif // TACS_USE_COMPLEX
 
   // Load in the .bdf file using the TACS mesh loader
   TACSMeshLoader *mesh = new TACSMeshLoader(MPI_COMM_WORLD);
@@ -285,17 +288,15 @@ int main( int argc, char *argv[] ){
   assembler->incref();
 
   // Output for visualization
-  int write_flag = (TACS_OUTPUT_CONNECTIVITY |
-                    TACS_OUTPUT_NODES |
-                    TACS_OUTPUT_DISPLACEMENTS |
-                    TACS_OUTPUT_STRAINS |
-                    TACS_OUTPUT_STRESSES |
-                    TACS_OUTPUT_EXTRAS);
-  TACSToFH5 *f5 = new TACSToFH5(assembler, TACS_BEAM_OR_SHELL_ELEMENT, write_flag);
+  int write_flag = (TACS_OUTPUT_CONNECTIVITY | TACS_OUTPUT_NODES |
+                    TACS_OUTPUT_DISPLACEMENTS | TACS_OUTPUT_STRAINS |
+                    TACS_OUTPUT_STRESSES | TACS_OUTPUT_EXTRAS);
+  TACSToFH5 *f5 =
+      new TACSToFH5(assembler, TACS_BEAM_OR_SHELL_ELEMENT, write_flag);
   f5->incref();
 
-  int lev_fill = 5000; // ILU(k) fill in
-  int fill = 8.0; // Expected number of non-zero entries
+  int lev_fill = 5000;  // ILU(k) fill in
+  int fill = 8.0;       // Expected number of non-zero entries
 
   // These calls compute the symbolic factorization and allocate
   // the space required for the preconditioners
@@ -306,8 +307,8 @@ int main( int argc, char *argv[] ){
 
   // Now, set up the solver
   int gmres_iters = 15;
-  int nrestart = 0; // Number of allowed restarts
-  int is_flexible = 0; // Is a flexible preconditioner?
+  int nrestart = 0;     // Number of allowed restarts
+  int is_flexible = 0;  // Is a flexible preconditioner?
 
   GMRES *ksm = new GMRES(aux_mat, pc, gmres_iters, nrestart, is_flexible);
   ksm->setTolerances(1e-12, 1e-30);
@@ -328,8 +329,8 @@ int main( int argc, char *argv[] ){
   KSMPrint *ksm_print = new KSMPrintStdout("KSM", rank, freq);
 
   // Allocate the linear buckling analysis object
-  TACSLinearBuckling *linear_buckling
-    = new TACSLinearBuckling(assembler, sigma, gmat, kmat, aux_mat, ksm,
+  TACSLinearBuckling *linear_buckling =
+      new TACSLinearBuckling(assembler, sigma, gmat, kmat, aux_mat, ksm,
                              max_lanczos, neigvals, eig_tol);
   linear_buckling->incref();
   linear_buckling->solve(NULL, ksm_print);
@@ -340,114 +341,114 @@ int main( int argc, char *argv[] ){
   TacsScalar error = 0.0, eigvalue = 0.0;
   eigvalue = linear_buckling->extractEigenvalue(0, &error);
 
-//   // Compute the derivative of the eigenvalue
-//   TacsScalar *fdvSens = new TacsScalar[ ndvs ];
-//   linear_buckling->evalEigenDVSens(0, fdvSens, ndvs);
+  //   // Compute the derivative of the eigenvalue
+  //   TacsScalar *fdvSens = new TacsScalar[ ndvs ];
+  //   linear_buckling->evalEigenDVSens(0, fdvSens, ndvs);
 
-//   // Now, compute the FD approximation
-//   TacsScalar *x = new TacsScalar[ ndvs ];
-//   tacs->getDesignVars(x, ndvs);
+  //   // Now, compute the FD approximation
+  //   TacsScalar *x = new TacsScalar[ ndvs ];
+  //   tacs->getDesignVars(x, ndvs);
 
-//   // Compute the projected derivative. Set the direction such that it
-//   // lies along the positive gradient component directions.
-//   TacsScalar proj = 0.0;
-//   for ( int i = 0; i < ndvs; i++ ){
-//     proj += fabs(fdvSens[i]);
-//   }
+  //   // Compute the projected derivative. Set the direction such that it
+  //   // lies along the positive gradient component directions.
+  //   TacsScalar proj = 0.0;
+  //   for ( int i = 0; i < ndvs; i++ ){
+  //     proj += fabs(fdvSens[i]);
+  //   }
 
-// #ifdef TACS_USE_COMPLEX
-//   // Use a complex-step perturbation
-//   for ( int i = 0; i < ndvs; i++ ){
-//     if (TacsRealPart(fdvSens[i]) > 0.0){
-//       x[i] = x[i] + TacsScalar(0.0, dh);
-//     }
-//     else {
-//       x[i] = x[i] - TacsScalar(0.0, dh);
-//     }
-//   }
-// #else
-//   // Use finite-difference perturbation
-//   for ( int i = 0; i < ndvs; i++ ){
-//     if (fdvSens[i] > 0.0){
-//       x[i] = x[i] + dh;
-//     }
-//     else {
-//       x[i] = x[i] - dh;
-//     }
-//   }
-// #endif // TACS_USE_COMPLEX
+  // #ifdef TACS_USE_COMPLEX
+  //   // Use a complex-step perturbation
+  //   for ( int i = 0; i < ndvs; i++ ){
+  //     if (TacsRealPart(fdvSens[i]) > 0.0){
+  //       x[i] = x[i] + TacsScalar(0.0, dh);
+  //     }
+  //     else {
+  //       x[i] = x[i] - TacsScalar(0.0, dh);
+  //     }
+  //   }
+  // #else
+  //   // Use finite-difference perturbation
+  //   for ( int i = 0; i < ndvs; i++ ){
+  //     if (fdvSens[i] > 0.0){
+  //       x[i] = x[i] + dh;
+  //     }
+  //     else {
+  //       x[i] = x[i] - dh;
+  //     }
+  //   }
+  // #endif // TACS_USE_COMPLEX
 
-//   // Set the new design variable values
-//   tacs->setDesignVars(x, ndvs);
+  //   // Set the new design variable values
+  //   tacs->setDesignVars(x, ndvs);
 
-//   // Solve the buckling problem again
-//   linear_buckling->solve(NULL, ksm_print);
-//   TacsScalar eigvalue1 =
-//     linear_buckling->extractEigenvalue(0, &error);
+  //   // Solve the buckling problem again
+  //   linear_buckling->solve(NULL, ksm_print);
+  //   TacsScalar eigvalue1 =
+  //     linear_buckling->extractEigenvalue(0, &error);
 
-//   // Evaluate the finite-difference or complex-step approximation
-// #ifdef TACS_USE_COMPLEX
-//   TacsScalar pfd = TacsImagPart(eigvalue1)/dh;
-// #else
-//   TacsScalar pfd = (eigvalue1 - eigvalue)/dh;
-// #endif // TACS_USE_COMPLEX
+  //   // Evaluate the finite-difference or complex-step approximation
+  // #ifdef TACS_USE_COMPLEX
+  //   TacsScalar pfd = TacsImagPart(eigvalue1)/dh;
+  // #else
+  //   TacsScalar pfd = (eigvalue1 - eigvalue)/dh;
+  // #endif // TACS_USE_COMPLEX
 
-//   // Write out the projected error
-//   if (rank == 0){
-//     printf("%15s %15s %15s %15s\n",
-//            "<p, df/dx>", "FD", "Err", "Rel err");
-//     printf("%15.8e %15.8e %15.8e %15.8e\n",
-//            TacsRealPart(proj), TacsRealPart(pfd), TacsRealPart(proj - pfd),
-//            TacsRealPart((proj - pfd)/proj));
-//   }
+  //   // Write out the projected error
+  //   if (rank == 0){
+  //     printf("%15s %15s %15s %15s\n",
+  //            "<p, df/dx>", "FD", "Err", "Rel err");
+  //     printf("%15.8e %15.8e %15.8e %15.8e\n",
+  //            TacsRealPart(proj), TacsRealPart(pfd), TacsRealPart(proj - pfd),
+  //            TacsRealPart((proj - pfd)/proj));
+  //   }
 
-//   delete [] fdvSens;
-//   delete [] x;
+  //   delete [] fdvSens;
+  //   delete [] x;
 
-//   // Write out the results to a file. Iterate through the eigenvectors
-//   // and print out each one using the TACSToFH5 converter
-//   TACSBVec *vec = tacs->createVec();
-//   vec->incref();
+  //   // Write out the results to a file. Iterate through the eigenvectors
+  //   // and print out each one using the TACSToFH5 converter
+  //   TACSBVec *vec = tacs->createVec();
+  //   vec->incref();
 
-//   for ( int k = 0; k < neigvals; k++ ){
-//     TacsScalar error = 0.0, eigvalue = 0.0;
-//     eigvalue = linear_buckling->extractEigenvector(k, vec, &error);
+  //   for ( int k = 0; k < neigvals; k++ ){
+  //     TacsScalar error = 0.0, eigvalue = 0.0;
+  //     eigvalue = linear_buckling->extractEigenvector(k, vec, &error);
 
-//     double Lx = 450.0;
-//     double b = 110.0;
-//     double hs = 20.0;
-//     double wb = 35.0;
+  //     double Lx = 450.0;
+  //     double b = 110.0;
+  //     double hs = 20.0;
+  //     double wb = 35.0;
 
-//     if (shear_flag){
-//       TacsScalar Nxy_crit = G*((tskin*(b - wb) +
-//                                 tbase*wb)/b)*(eigvalue/Lx);
+  //     if (shear_flag){
+  //       TacsScalar Nxy_crit = G*((tskin*(b - wb) +
+  //                                 tbase*wb)/b)*(eigvalue/Lx);
 
-//       if (rank == 0){
-//         printf("TACS eigs[%2d]: %15.6f\n", k, TacsRealPart(Nxy_crit));
-//       }
-//     }
-//     else {
-//       TacsScalar Nx_crit = E*((tskin*(b - wb) +
-//                                tbase*wb + tstiff*hs)/b)*(eigvalue/Lx);
+  //       if (rank == 0){
+  //         printf("TACS eigs[%2d]: %15.6f\n", k, TacsRealPart(Nxy_crit));
+  //       }
+  //     }
+  //     else {
+  //       TacsScalar Nx_crit = E*((tskin*(b - wb) +
+  //                                tbase*wb + tstiff*hs)/b)*(eigvalue/Lx);
 
-//       if (rank == 0){
-//         printf("TACS eigs[%2d]: %15.6f\n", k, TacsRealPart(Nx_crit));
-//       }
-//     }
+  //       if (rank == 0){
+  //         printf("TACS eigs[%2d]: %15.6f\n", k, TacsRealPart(Nx_crit));
+  //       }
+  //     }
 
-//     // Set the local variables
-//     tacs->setVariables(vec);
-//     char file_name[256];
-//     sprintf(file_name, "results/tacs_buckling_mode%02d.f5", k);
-//     f5->writeToFile(file_name);
-//   }
+  //     // Set the local variables
+  //     tacs->setVariables(vec);
+  //     char file_name[256];
+  //     sprintf(file_name, "results/tacs_buckling_mode%02d.f5", k);
+  //     f5->writeToFile(file_name);
+  //   }
 
-//   linear_buckling->decref();
-//   vec->decref();
-//   mesh->decref();
-//   ksm->decref();
-//   pc->decref();
-//   tacs->decref();
+  //   linear_buckling->decref();
+  //   vec->decref();
+  //   mesh->decref();
+  //   ksm->decref();
+  //   pc->decref();
+  //   tacs->decref();
 
   MPI_Finalize();
   return (0);

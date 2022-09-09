@@ -13,22 +13,21 @@
 */
 
 #include "TACSMassCentrifugalForce.h"
+
 #include "TACSElementAlgebra.h"
 
-TACSMassCentrifugalForce::TACSMassCentrifugalForce( TACSGeneralMassConstitutive *_con,
-                                                    const TacsScalar _omegaVec[],
-                                                    const TacsScalar _rotCenter[] ){
+TACSMassCentrifugalForce::TACSMassCentrifugalForce(
+    TACSGeneralMassConstitutive *_con, const TacsScalar _omegaVec[],
+    const TacsScalar _rotCenter[]) {
   con = _con;
   con->incref();
-  memcpy(omegaVec, _omegaVec, 3*sizeof(TacsScalar));
-  memcpy(rotCenter, _rotCenter, 3*sizeof(TacsScalar));
+  memcpy(omegaVec, _omegaVec, 3 * sizeof(TacsScalar));
+  memcpy(rotCenter, _rotCenter, 3 * sizeof(TacsScalar));
 }
 
-TACSMassCentrifugalForce::~TACSMassCentrifugalForce(){
-  con->decref();
-}
+TACSMassCentrifugalForce::~TACSMassCentrifugalForce() { con->decref(); }
 
-const char* TACSMassCentrifugalForce::getObjectName(){
+const char *TACSMassCentrifugalForce::getObjectName() {
   return "TACSMassCentrifugalForce";
 }
 
@@ -42,20 +41,14 @@ int TACSMassCentrifugalForce::getNumNodes() { return NUM_NODES; }
 /*
   Add the residual to the provided vector
 */
-void TACSMassCentrifugalForce::addResidual( int elemIndex,
-                                            double time,
-                                            const TacsScalar *X,
-                                            const TacsScalar *vars,
-                                            const TacsScalar *dvars,
-                                            const TacsScalar *ddvars,
-                                            TacsScalar *res ){
-
-
+void TACSMassCentrifugalForce::addResidual(
+    int elemIndex, double time, const TacsScalar *X, const TacsScalar *vars,
+    const TacsScalar *dvars, const TacsScalar *ddvars, TacsScalar *res) {
   double pt[3] = {0.0, 0.0, 0.0};
 
   TacsScalar r[3], wxr[3];
   TacsScalar ac[NUM_DISPS], f[NUM_DISPS];
-  memset(ac, 0, NUM_DISPS*sizeof(TacsScalar));
+  memset(ac, 0, NUM_DISPS * sizeof(TacsScalar));
 
   // Create vector pointing from rotation center to element gpt
   r[0] = X[0] - rotCenter[0];
@@ -70,7 +63,7 @@ void TACSMassCentrifugalForce::addResidual( int elemIndex,
 
   con->evalInertia(elemIndex, pt, X, ac, f);
 
-  for (int i = 0; i < NUM_DISPS; i++){
+  for (int i = 0; i < NUM_DISPS; i++) {
     res[i] += f[i];
   }
 }
@@ -78,16 +71,10 @@ void TACSMassCentrifugalForce::addResidual( int elemIndex,
 /*
   Add the residual and Jacobians to the arrays
 */
-void TACSMassCentrifugalForce::addJacobian( int elemIndex,
-                                            double time,
-                                            TacsScalar alpha,
-                                            TacsScalar beta,
-                                            TacsScalar gamma,
-                                            const TacsScalar *X,
-                                            const TacsScalar *vars,
-                                            const TacsScalar *dvars,
-                                            const TacsScalar *ddvars,
-                                            TacsScalar *res,
-                                            TacsScalar *mat ){
+void TACSMassCentrifugalForce::addJacobian(
+    int elemIndex, double time, TacsScalar alpha, TacsScalar beta,
+    TacsScalar gamma, const TacsScalar *X, const TacsScalar *vars,
+    const TacsScalar *dvars, const TacsScalar *ddvars, TacsScalar *res,
+    TacsScalar *mat) {
   addResidual(elemIndex, time, X, vars, dvars, ddvars, res);
 }

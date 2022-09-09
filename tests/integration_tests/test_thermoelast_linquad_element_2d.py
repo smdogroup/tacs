@@ -3,7 +3,7 @@ from mpi4py import MPI
 from tacs import TACS, elements, constitutive, functions
 from static_analysis_base_test import StaticTestCase
 
-'''
+"""
   The following example demonstrates the use of TACS on a temperature
   loaded plate.
 
@@ -19,9 +19,17 @@ from static_analysis_base_test import StaticTestCase
   TACSAssembler interface itself.
 
   This test is based on the "tutorial" script under the examples directory.
-'''
+"""
 
-FUNC_REFS = np.array([0.981072186947658, 2700.0, 30.508623116027273, 56.92510895125915, 1.377153264551044])
+FUNC_REFS = np.array(
+    [
+        0.981072186947658,
+        2700.0,
+        30.508623116027273,
+        56.92510895125915,
+        1.377153264551044,
+    ]
+)
 
 # Length of plate in x/y direction
 Lx = 1.0
@@ -33,6 +41,7 @@ ny = 10
 
 # KS function weight
 ksweight = 10.0
+
 
 class ProblemTest(StaticTestCase.StaticTest):
 
@@ -77,8 +86,9 @@ class ProblemTest(StaticTestCase.StaticTest):
 
         # There are no dependent nodes in this problem
         num_dependent_nodes = 0
-        assembler = TACS.Assembler.create(comm, vars_per_node,
-                                          num_owned_nodes, num_elements, num_dependent_nodes)
+        assembler = TACS.Assembler.create(
+            comm, vars_per_node, num_owned_nodes, num_elements, num_dependent_nodes
+        )
 
         # Set the global element index for the first and last element
         # in the partition
@@ -91,7 +101,7 @@ class ProblemTest(StaticTestCase.StaticTest):
             last_elem = nx * ny
             last_node = (nx + 1) * (ny + 1)
 
-        '''
+        """
         The element connectivity defines the mapping between the element
         and its corresponding nodes. The node numbers are global. Since
         the number of nodes per element may vary, we also provide a
@@ -100,7 +110,7 @@ class ProblemTest(StaticTestCase.StaticTest):
         TACSAssembler directly.
 
         In this case we know that we only ever have 4 nodes per element.
-        '''
+        """
 
         # The elements are ordered as (i + j*nx)
         ptr = np.zeros(num_elements + 1, dtype=np.intc)
@@ -131,16 +141,23 @@ class ProblemTest(StaticTestCase.StaticTest):
         ys = 270.0
         cte = 24.0e-6
         kappa = 230.0
-        props = constitutive.MaterialProperties(rho=rho, specific_heat=specific_heat, E=E, nu=nu, ys=ys,
-                                                alpha=cte, kappa=kappa)
+        props = constitutive.MaterialProperties(
+            rho=rho,
+            specific_heat=specific_heat,
+            E=E,
+            nu=nu,
+            ys=ys,
+            alpha=cte,
+            kappa=kappa,
+        )
 
-        '''
+        """
         Create the element. This element class consists of a constitutive
         object, which stores information about the material, a model class
         which computes the variational form of the governing equations based
         on input from the basis class, which contains the basis functions and
         quadrature scheme for the element.
-        '''
+        """
         linear_basis = elements.LinearQuadBasis()
 
         element_list = []
@@ -164,7 +181,10 @@ class ProblemTest(StaticTestCase.StaticTest):
         # Set the boundary conditions - this will only record the
         # boundary conditions on its own nodes
         for i in range(nx + 1):
-            bc_nodes = np.array([i, i + (nx + 1) * ny, i * (nx + 1), (i + 1) * (nx + 1) - 1], dtype=np.intc)
+            bc_nodes = np.array(
+                [i, i + (nx + 1) * ny, i * (nx + 1), (i + 1) * (nx + 1) - 1],
+                dtype=np.intc,
+            )
             bc_values = np.array([0.0, 0.0, 6.0 * i], dtype=dtype)
             bc_vars = np.array([0, 1, 2], dtype=np.intc)
             assembler.addBCs(bc_nodes, bc_vars, bc_values)
@@ -177,7 +197,9 @@ class ProblemTest(StaticTestCase.StaticTest):
 
         # Get the local node locations
         Xpts = X.getArray()
-        for k, node in zip(range(0, 3 * num_owned_nodes, 3), range(first_node, last_node)):
+        for k, node in zip(
+            range(0, 3 * num_owned_nodes, 3), range(first_node, last_node)
+        ):
             i = node % (nx + 1)
             j = node // (nx + 1)
             Xpts[k] = i * Lx / nx
@@ -191,7 +213,9 @@ class ProblemTest(StaticTestCase.StaticTest):
 
         return assembler
 
-    def setup_tacs_vecs(self, assembler, force_vec, dv_pert_vec, ans_pert_vec, xpts_pert_vec):
+    def setup_tacs_vecs(
+        self, assembler, force_vec, dv_pert_vec, ans_pert_vec, xpts_pert_vec
+    ):
         """
         Setup user-defined vectors for analysis and fd/cs sensitivity verification
         """
@@ -235,10 +259,14 @@ class ProblemTest(StaticTestCase.StaticTest):
         """
         Create a list of functions to be tested and their reference values for the problem
         """
-        func_list = [functions.KSFailure(assembler, ksWeight=ksweight),
-                     functions.StructuralMass(assembler),
-                     functions.AverageTemperature(assembler),
-                     functions.KSTemperature(assembler, ksWeight=ksweight),
-                     functions.KSDisplacement(assembler, ksWeight=ksweight, direction=[1e3, 1e3])]
-        func_list[0].setKSFailureType('continuous')
+        func_list = [
+            functions.KSFailure(assembler, ksWeight=ksweight),
+            functions.StructuralMass(assembler),
+            functions.AverageTemperature(assembler),
+            functions.KSTemperature(assembler, ksWeight=ksweight),
+            functions.KSDisplacement(
+                assembler, ksWeight=ksweight, direction=[1e3, 1e3]
+            ),
+        ]
+        func_list[0].setKSFailureType("continuous")
         return func_list, FUNC_REFS

@@ -26,25 +26,27 @@ import numpy as np
 # Extension modules
 # ==============================================================================
 from tacs import pyTACS, functions, constitutive, elements
+
 # Beginning and end time of transient problem
-tStart = 0.0 # s
-tEnd = 4 * np.pi # s
+tStart = 0.0  # s
+tEnd = 4 * np.pi  # s
 # Number of steps for transient problem
 nSteps = 100
 
 # Force vector to apply to mass
-Fmax = 1.0 # N
-freqBaseline = 1.5 # rad/s
+Fmax = 1.0  # N
+freqBaseline = 1.5  # rad/s
 
 comm = MPI.COMM_WORLD
 
 # Instantiate FEAAssembler
 structOptions = {
-    'printtiming':True,
+    "printtiming": True,
 }
 
-bdfFile = os.path.join(os.path.dirname(__file__), 'mass_spring.bdf')
+bdfFile = os.path.join(os.path.dirname(__file__), "mass_spring.bdf")
 FEAAssembler = pyTACS(bdfFile, comm, options=structOptions)
+
 
 def elemCallBack(dvNum, compID, compDescript, elemDescripts, globalDVs, **kwargs):
     # Setup spring element
@@ -57,11 +59,12 @@ def elemCallBack(dvNum, compID, compDescript, elemDescripts, globalDVs, **kwargs
     elem = elements.SpringElement(transform, con)
     return elem
 
+
 # Set up TACS Assembler
 FEAAssembler.initialize(elemCallBack)
 
 # create baseline transient problems
-baselineProb = FEAAssembler.createTransientProblem('baseline', tStart, tEnd, nSteps)
+baselineProb = FEAAssembler.createTransientProblem("baseline", tStart, tEnd, nSteps)
 
 # Apply sinusoidal force at each time step
 timeSteps = baselineProb.getTimeSteps()
@@ -81,7 +84,7 @@ for step_i in range(len(timeSteps)):
     baselineProb.getVariables(step_i, states=stateHistory[step_i, :, :].reshape(-1))
 
 # Create a modal problem to find natural frequencies of system
-modalProb = FEAAssembler.createModalProblem('freq_analysis', sigma=0.8, numEigs=6)
+modalProb = FEAAssembler.createModalProblem("freq_analysis", sigma=0.8, numEigs=6)
 # Solve the modal problem
 modalProb.solve()
 # Print out each found eigenfrequency
@@ -99,7 +102,7 @@ eigVal0, eigVec0 = modalProb.getVariables(0)
 freq0 = np.sqrt(eigVal0)
 
 # Create a new transient problem where we force the model at resonance
-resonanceProb = FEAAssembler.createTransientProblem('resonance', tStart, tEnd, nSteps)
+resonanceProb = FEAAssembler.createTransientProblem("resonance", tStart, tEnd, nSteps)
 # Apply sinusoidal force at each time step
 timeSteps = resonanceProb.getTimeSteps()
 for step_i, time in enumerate(timeSteps):
@@ -115,15 +118,37 @@ for step_i in range(len(timeSteps)):
     resonanceProb.getVariables(step_i, states=newStateHistory[step_i, :, :].reshape(-1))
 
 # Plot results for first 3 dofs
-plt.plot(timeSteps, stateHistory[:, 1, 0], 'r-',
-         timeSteps, stateHistory[:, 1, 1], 'g-',
-         timeSteps, stateHistory[:, 1, 2], 'b-',
-         timeSteps, newStateHistory[:, 1, 0], 'r--',
-         timeSteps, newStateHistory[:, 1, 1], 'g--',
-         timeSteps, newStateHistory[:, 1, 2], 'b--')
-plt.legend(['dof 1 (baseline)', 'dof 2 (baseline)', 'dof 3 (baseline)',
-            'dof 1 (resonance)', 'dof 2 (resonance)', 'dof 3 (resonance)'])
-plt.ylabel('displacement (m)')
-plt.xlabel('time (s)')
+plt.plot(
+    timeSteps,
+    stateHistory[:, 1, 0],
+    "r-",
+    timeSteps,
+    stateHistory[:, 1, 1],
+    "g-",
+    timeSteps,
+    stateHistory[:, 1, 2],
+    "b-",
+    timeSteps,
+    newStateHistory[:, 1, 0],
+    "r--",
+    timeSteps,
+    newStateHistory[:, 1, 1],
+    "g--",
+    timeSteps,
+    newStateHistory[:, 1, 2],
+    "b--",
+)
+plt.legend(
+    [
+        "dof 1 (baseline)",
+        "dof 2 (baseline)",
+        "dof 3 (baseline)",
+        "dof 1 (resonance)",
+        "dof 2 (resonance)",
+        "dof 3 (resonance)",
+    ]
+)
+plt.ylabel("displacement (m)")
+plt.xlabel("time (s)")
 # Show transient plot
 plt.show()

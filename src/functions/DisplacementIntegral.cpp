@@ -13,6 +13,7 @@
 */
 
 #include "DisplacementIntegral.h"
+
 #include "TACSAssembler.h"
 
 /*
@@ -20,15 +21,12 @@
 */
 class DisplacementIntCtx : public TACSFunctionCtx {
  public:
-  DisplacementIntCtx( TACSFunction *func,
-                      int maxNodes ){
+  DisplacementIntCtx(TACSFunction *func, int maxNodes) {
     // Allocate the working array
-    N = new double[ maxNodes ];
+    N = new double[maxNodes];
     value = 0.0;
   }
-  ~DisplacementIntCtx(){
-    delete [] N;
-  }
+  ~DisplacementIntCtx() { delete[] N; }
 
   // Data to be used for the function computation
   TacsScalar value;
@@ -38,10 +36,10 @@ class DisplacementIntCtx : public TACSFunctionCtx {
 /*
   Initialize the TACSDisplacementIntegral class properties
 */
-TACSDisplacementIntegral::TACSDisplacementIntegral( TACSAssembler *_tacs,
-                                                    const TacsScalar _dir[] ):
-TACSFunction(_tacs, TACSFunction::ENTIRE_DOMAIN,
-             TACSFunction::SINGLE_STAGE, 0){
+TACSDisplacementIntegral::TACSDisplacementIntegral(TACSAssembler *_tacs,
+                                                   const TacsScalar _dir[])
+    : TACSFunction(_tacs, TACSFunction::ENTIRE_DOMAIN,
+                   TACSFunction::SINGLE_STAGE, 0) {
   maxNumNodes = _tacs->getMaxElementNodes();
   dir[0] = _dir[0];
   dir[1] = _dir[1];
@@ -49,58 +47,53 @@ TACSFunction(_tacs, TACSFunction::ENTIRE_DOMAIN,
   value = 0.0;
 }
 
-TACSDisplacementIntegral::~TACSDisplacementIntegral(){}
+TACSDisplacementIntegral::~TACSDisplacementIntegral() {}
 
 /*
   TACSDisplacementIntegral function name
 */
-const char * TACSDisplacementIntegral::funcName = "TACSDisplacementIntegral";
+const char *TACSDisplacementIntegral::funcName = "TACSDisplacementIntegral";
 
 /*
   Return the function name
 */
-const char *TACSDisplacementIntegral::functionName(){
-  return funcName;
-}
+const char *TACSDisplacementIntegral::functionName() { return funcName; }
 
 /*
   Retrieve the function value
 */
-TacsScalar TACSDisplacementIntegral::getFunctionValue(){
-  return value;
-}
+TacsScalar TACSDisplacementIntegral::getFunctionValue() { return value; }
 
 /*
   Allocate and return the function-specific context
 */
-TACSFunctionCtx *TACSDisplacementIntegral::createFunctionCtx(){
+TACSFunctionCtx *TACSDisplacementIntegral::createFunctionCtx() {
   return new DisplacementIntCtx(this, maxNumNodes);
 }
 
 /*
   Initialize the internal values stored within the KS function
 */
-void TACSDisplacementIntegral::initEvaluation( EvaluationType ftype ){
+void TACSDisplacementIntegral::initEvaluation(EvaluationType ftype) {
   value = 0.0;
 }
 
 /*
   Reduce the function values across all MPI processes
 */
-void TACSDisplacementIntegral::finalEvaluation( EvaluationType ftype ){
+void TACSDisplacementIntegral::finalEvaluation(EvaluationType ftype) {
   TacsScalar temp = value;
-  MPI_Allreduce(&temp, &value, 1, TACS_MPI_TYPE,
-                MPI_SUM, tacs->getMPIComm());
+  MPI_Allreduce(&temp, &value, 1, TACS_MPI_TYPE, MPI_SUM, tacs->getMPIComm());
 }
 
 /*
   Initialize the context for either integration or initialization
 */
-void TACSDisplacementIntegral::initThread( const double tcoef,
-                                     EvaluationType ftype,
-                                     TACSFunctionCtx *fctx ){
-  DisplacementIntCtx *ctx = dynamic_cast<DisplacementIntCtx*>(fctx);
-  if (ctx){
+void TACSDisplacementIntegral::initThread(const double tcoef,
+                                          EvaluationType ftype,
+                                          TACSFunctionCtx *fctx) {
+  DisplacementIntCtx *ctx = dynamic_cast<DisplacementIntCtx *>(fctx);
+  if (ctx) {
     ctx->value = 0.0;
   }
 }
@@ -108,23 +101,19 @@ void TACSDisplacementIntegral::initThread( const double tcoef,
 /*
   Perform the element-wise evaluation of the TACSDisplacementIntegral function.
 */
-void TACSDisplacementIntegral::elementWiseEval( EvaluationType ftype,
-                                                TACSElement *element,
-                                                int elemNum,
-                                                const TacsScalar Xpts[],
-                                                const TacsScalar vars[],
-                                                const TacsScalar dvars[],
-                                                const TacsScalar ddvars[],
-                                                TACSFunctionCtx *fctx ){
-  DisplacementIntCtx *ctx = dynamic_cast<DisplacementIntCtx*>(fctx);
-  if (ctx){
+void TACSDisplacementIntegral::elementWiseEval(
+    EvaluationType ftype, TACSElement *element, int elemNum,
+    const TacsScalar Xpts[], const TacsScalar vars[], const TacsScalar dvars[],
+    const TacsScalar ddvars[], TACSFunctionCtx *fctx) {
+  DisplacementIntCtx *ctx = dynamic_cast<DisplacementIntCtx *>(fctx);
+  if (ctx) {
     // Get the number of quadrature points for this element
     const int numGauss = element->getNumGaussPts();
     const int numDisps = element->numDisplacements();
     const int numNodes = element->numNodes();
 
     // With the first iteration, find the maximum over the domain
-    for ( int i = 0; i < numGauss; i++ ){
+    for (int i = 0; i < numGauss; i++) {
       // Get the Gauss points one at a time
       double pt[3];
       double weight = element->getGaussWtsPts(i, pt);
@@ -135,15 +124,13 @@ void TACSDisplacementIntegral::elementWiseEval( EvaluationType ftype,
       const TacsScalar *d = vars;
 
       TacsScalar value = 0.0;
-      for ( int j = 0; j < numNodes; j++ ){
-        if (numDisps == 1){
-          value += dir[0]*N[0]*d[0];
-        }
-        else if (numDisps == 2){
-          value += N[0]*(dir[0]*d[0] + dir[1]*d[1]);
-        }
-        else {
-          value += N[0]*(dir[0]*d[0] + dir[1]*d[1] + dir[2]*d[2]);
+      for (int j = 0; j < numNodes; j++) {
+        if (numDisps == 1) {
+          value += dir[0] * N[0] * d[0];
+        } else if (numDisps == 2) {
+          value += N[0] * (dir[0] * d[0] + dir[1] * d[1]);
+        } else {
+          value += N[0] * (dir[0] * d[0] + dir[1] * d[1] + dir[2] * d[2]);
         }
         d += numDisps;
         N++;
@@ -153,7 +140,7 @@ void TACSDisplacementIntegral::elementWiseEval( EvaluationType ftype,
       TacsScalar h = element->getDetJacobian(pt, Xpts);
       h *= weight;
 
-      ctx->value += h*value;
+      ctx->value += h * value;
     }
   }
 }
@@ -162,11 +149,11 @@ void TACSDisplacementIntegral::elementWiseEval( EvaluationType ftype,
   For each thread used to evaluate the function, call the
   post-evaluation code once.
 */
-void TACSDisplacementIntegral::finalThread( const double tcoef,
-                                            EvaluationType ftype,
-                                            TACSFunctionCtx *fctx ){
-  DisplacementIntCtx *ctx = dynamic_cast<DisplacementIntCtx*>(fctx);
-  if (ctx){
+void TACSDisplacementIntegral::finalThread(const double tcoef,
+                                           EvaluationType ftype,
+                                           TACSFunctionCtx *fctx) {
+  DisplacementIntCtx *ctx = dynamic_cast<DisplacementIntCtx *>(fctx);
+  if (ctx) {
     value += ctx->value;
   }
 }
@@ -175,32 +162,26 @@ void TACSDisplacementIntegral::finalThread( const double tcoef,
   These functions are used to determine the sensitivity of the
   function with respect to the state variables.
 */
-void TACSDisplacementIntegral::getElementSVSens( double alpha,
-                                                 double beta,
-                                                 double gamma,
-                                                 TacsScalar *elemSVSens,
-                                                 TACSElement *element,
-                                                 int elemNum,
-                                                 const TacsScalar Xpts[],
-                                                 const TacsScalar vars[],
-                                                 const TacsScalar dvars[],
-                                                 const TacsScalar ddvars[],
-                                                 TACSFunctionCtx *fctx ){
-  DisplacementIntCtx *ctx = dynamic_cast<DisplacementIntCtx*>(fctx);
+void TACSDisplacementIntegral::getElementSVSens(
+    double alpha, double beta, double gamma, TacsScalar *elemSVSens,
+    TACSElement *element, int elemNum, const TacsScalar Xpts[],
+    const TacsScalar vars[], const TacsScalar dvars[],
+    const TacsScalar ddvars[], TACSFunctionCtx *fctx) {
+  DisplacementIntCtx *ctx = dynamic_cast<DisplacementIntCtx *>(fctx);
 
   // Zero the derivative of the function w.r.t. the element state
   // variables
   int numVars = element->numVariables();
-  memset(elemSVSens, 0, numVars*sizeof(TacsScalar));
+  memset(elemSVSens, 0, numVars * sizeof(TacsScalar));
 
-  if (ctx){
+  if (ctx) {
     // Get the number of quadrature points for this element
     const int numGauss = element->getNumGaussPts();
     const int numDisps = element->numDisplacements();
     const int numNodes = element->numNodes();
 
     // With the first iteration, find the maximum over the domain
-    for ( int i = 0; i < numGauss; i++ ){
+    for (int i = 0; i < numGauss; i++) {
       // Get the Gauss points one at a time
       double pt[3];
       double weight = element->getGaussWtsPts(i, pt);
@@ -211,15 +192,13 @@ void TACSDisplacementIntegral::getElementSVSens( double alpha,
       const TacsScalar *d = vars;
 
       TacsScalar value = 0.0;
-      for ( int j = 0; j < numNodes; j++ ){
-        if (numDisps == 1){
-          value += dir[0]*N[0]*d[0];
-        }
-        else if (numDisps == 2){
-          value += N[0]*(dir[0]*d[0] + dir[1]*d[1]);
-        }
-        else {
-          value += N[0]*(dir[0]*d[0] + dir[1]*d[1] + dir[2]*d[2]);
+      for (int j = 0; j < numNodes; j++) {
+        if (numDisps == 1) {
+          value += dir[0] * N[0] * d[0];
+        } else if (numDisps == 2) {
+          value += N[0] * (dir[0] * d[0] + dir[1] * d[1]);
+        } else {
+          value += N[0] * (dir[0] * d[0] + dir[1] * d[1] + dir[2] * d[2]);
         }
         d += numDisps;
         N++;
@@ -233,18 +212,16 @@ void TACSDisplacementIntegral::getElementSVSens( double alpha,
       // element nodes again to set the derivative
       N = ctx->N;
       TacsScalar *s = elemSVSens;
-      for ( int j = 0; j < numNodes; j++ ){
-        if (numDisps == 1){
-          s[0] += h*dir[0]*N[0];
-        }
-        else if (numDisps == 2){
-          s[0] += h*dir[0]*N[0];
-          s[1] += h*dir[1]*N[0];
-        }
-        else {
-          s[0] += h*dir[0]*N[0];
-          s[1] += h*dir[1]*N[0];
-          s[2] += h*dir[2]*N[0];
+      for (int j = 0; j < numNodes; j++) {
+        if (numDisps == 1) {
+          s[0] += h * dir[0] * N[0];
+        } else if (numDisps == 2) {
+          s[0] += h * dir[0] * N[0];
+          s[1] += h * dir[1] * N[0];
+        } else {
+          s[0] += h * dir[0] * N[0];
+          s[1] += h * dir[1] * N[0];
+          s[2] += h * dir[2] * N[0];
         }
         s += numDisps;
         N++;
@@ -257,28 +234,19 @@ void TACSDisplacementIntegral::getElementSVSens( double alpha,
   Determine the derivative of the function with respect to
   the element nodal locations
 */
-void TACSDisplacementIntegral::getElementXptSens( const double tcoef,
-                                                  TacsScalar fXptSens[],
-                                                  TACSElement *element,
-                                                  int elemNum,
-                                                  const TacsScalar Xpts[],
-                                                  const TacsScalar vars[],
-                                                  const TacsScalar dvars[],
-                                                  const TacsScalar ddvars[],
-                                                  TACSFunctionCtx *fctx ){}
+void TACSDisplacementIntegral::getElementXptSens(
+    const double tcoef, TacsScalar fXptSens[], TACSElement *element,
+    int elemNum, const TacsScalar Xpts[], const TacsScalar vars[],
+    const TacsScalar dvars[], const TacsScalar ddvars[],
+    TACSFunctionCtx *fctx) {}
 
 /*
   Determine the derivative of the function with respect to
   the design variables defined by the element - usually just
   the constitutive/material design variables.
 */
-void TACSDisplacementIntegral::addElementDVSens( const double tcoef,
-                                                 TacsScalar *fdvSens,
-                                                 int numDVs,
-                                                 TACSElement *element,
-                                                 int elemNum,
-                                                 const TacsScalar Xpts[],
-                                                 const TacsScalar vars[],
-                                                 const TacsScalar dvars[],
-                                                 const TacsScalar ddvars[],
-                                                 TACSFunctionCtx *fctx ){}
+void TACSDisplacementIntegral::addElementDVSens(
+    const double tcoef, TacsScalar *fdvSens, int numDVs, TACSElement *element,
+    int elemNum, const TacsScalar Xpts[], const TacsScalar vars[],
+    const TacsScalar dvars[], const TacsScalar ddvars[],
+    TACSFunctionCtx *fctx) {}

@@ -39,103 +39,100 @@
 */
 class TACSLamParamShellConstitutive : public TACSShellConstitutive {
  public:
-  TACSLamParamShellConstitutive( TACSOrthotropicPly * _orthoPly,
-                                 TacsScalar _t, int _t_num,
-                                 TacsScalar _min_t, TacsScalar _max_t,
-                                 TacsScalar _f0, TacsScalar _f45, TacsScalar _f90,
-                                 int _f0_num, int _f45_num, int _f90_num,
-                                 TacsScalar _min_f0, TacsScalar _min_f45, TacsScalar _min_f90,
-                                 TacsScalar _W1, TacsScalar _W3,
-                                 int _W1_num, int _W3_num,
-                                 TacsScalar _ksWeight, TacsScalar _epsilon );
+  TACSLamParamShellConstitutive(TACSOrthotropicPly *_orthoPly, TacsScalar _t,
+                                int _t_num, TacsScalar _min_t,
+                                TacsScalar _max_t, TacsScalar _f0,
+                                TacsScalar _f45, TacsScalar _f90, int _f0_num,
+                                int _f45_num, int _f90_num, TacsScalar _min_f0,
+                                TacsScalar _min_f45, TacsScalar _min_f90,
+                                TacsScalar _W1, TacsScalar _W3, int _W1_num,
+                                int _W3_num, TacsScalar _ksWeight,
+                                TacsScalar _epsilon);
   ~TACSLamParamShellConstitutive();
 
   // Retrieve the global design variable numbers
-  int getDesignVarNums( int elemIndex, int dvLen, int dvNums[] );
+  int getDesignVarNums(int elemIndex, int dvLen, int dvNums[]);
 
   // Set the element design variable from the design vector
-  int setDesignVars( int elemIndex, int dvLen, const TacsScalar dvs[] );
+  int setDesignVars(int elemIndex, int dvLen, const TacsScalar dvs[]);
 
   // Get the element design variables values
-  int getDesignVars( int elemIndex, int dvLen, TacsScalar dvs[] );
+  int getDesignVars(int elemIndex, int dvLen, TacsScalar dvs[]);
 
   // Get the lower and upper bounds for the design variable values
-  int getDesignVarRange( int elemIndex, int dvLen,
-                         TacsScalar lb[], TacsScalar ub[] );
+  int getDesignVarRange(int elemIndex, int dvLen, TacsScalar lb[],
+                        TacsScalar ub[]);
 
   // Evaluate the mass per unit area
-  TacsScalar evalDensity( int elemIndex, const double pt[],
-                          const TacsScalar X[] );
+  TacsScalar evalDensity(int elemIndex, const double pt[],
+                         const TacsScalar X[]);
 
   // Add the derivative of the density w.r.t. the design variables
-  void addDensityDVSens( int elemIndex, TacsScalar scale,
-                         const double pt[], const TacsScalar X[],
-                         int dvLen, TacsScalar dfdx[] );
+  void addDensityDVSens(int elemIndex, TacsScalar scale, const double pt[],
+                        const TacsScalar X[], int dvLen, TacsScalar dfdx[]);
 
   // Evaluate the mass moments
-  void evalMassMoments( int elemIndex, const double pt[],
-                        const TacsScalar X[], TacsScalar moments[] );
+  void evalMassMoments(int elemIndex, const double pt[], const TacsScalar X[],
+                       TacsScalar moments[]);
 
   // Add the sensitivity of the mass moments
-  void addMassMomentsDVSens( int elemIndex, const double pt[],
-                             const TacsScalar X[], const TacsScalar scale[],
-                             int dvLen, TacsScalar dfdx[] );
+  void addMassMomentsDVSens(int elemIndex, const double pt[],
+                            const TacsScalar X[], const TacsScalar scale[],
+                            int dvLen, TacsScalar dfdx[]);
 
   // Evaluate the specific heat
-  TacsScalar evalSpecificHeat( int elemIndex, const double pt[],
-                               const TacsScalar X[] );
+  TacsScalar evalSpecificHeat(int elemIndex, const double pt[],
+                              const TacsScalar X[]);
 
   // Evaluate the stress
-  void evalStress( int elemIndex, const double pt[], const TacsScalar X[],
-                   const TacsScalar e[], TacsScalar s[] );
+  void evalStress(int elemIndex, const double pt[], const TacsScalar X[],
+                  const TacsScalar e[], TacsScalar s[]);
 
   // Add the derivative of the product of stress with a vector psi to dfdx
-  void addStressDVSens( int elemIndex, TacsScalar scale, const double pt[],
-                        const TacsScalar X[], const TacsScalar strain[],
-                        const TacsScalar psi[], int dvLen, TacsScalar dfdx[] );
+  void addStressDVSens(int elemIndex, TacsScalar scale, const double pt[],
+                       const TacsScalar X[], const TacsScalar strain[],
+                       const TacsScalar psi[], int dvLen, TacsScalar dfdx[]);
 
   // Evaluate the tangent stiffness
-  void evalTangentStiffness( int elemIndex, const double pt[],
-                             const TacsScalar X[], TacsScalar C[] );
+  void evalTangentStiffness(int elemIndex, const double pt[],
+                            const TacsScalar X[], TacsScalar C[]);
 
   // Calculate the point-wise failure criteria
-  TacsScalar evalFailure( int elemIndex, const double pt[],
-                          const TacsScalar X[], const TacsScalar e[] );
+  TacsScalar evalFailure(int elemIndex, const double pt[], const TacsScalar X[],
+                         const TacsScalar e[]);
 
   // Evaluate the derivative of the failure criteria w.r.t. the strain
-  TacsScalar evalFailureStrainSens( int elemIndex, const double pt[],
-                                    const TacsScalar X[], const TacsScalar e[],
-                                    TacsScalar sens[] );
+  TacsScalar evalFailureStrainSens(int elemIndex, const double pt[],
+                                   const TacsScalar X[], const TacsScalar e[],
+                                   TacsScalar sens[]);
 
   // Add the derivative of the failure criteria w.r.t. the design variables
-  void addFailureDVSens( int elemIndex, TacsScalar scale,
-                         const double pt[], const TacsScalar X[],
-                         const TacsScalar strain[],
-                         int dvLen, TacsScalar dfdx[] );
+  void addFailureDVSens(int elemIndex, TacsScalar scale, const double pt[],
+                        const TacsScalar X[], const TacsScalar strain[],
+                        int dvLen, TacsScalar dfdx[]);
 
   // Get the object name
-  const char *getObjectName(){ return constName; }
+  const char *getObjectName() { return constName; }
 
   // Retrieve the design variable for plotting purposes
-  TacsScalar evalDesignFieldValue( int elemIndex, const double pt[],
-                                   const TacsScalar X[], int index );
+  TacsScalar evalDesignFieldValue(int elemIndex, const double pt[],
+                                  const TacsScalar X[], int index);
 
  private:
   static const int NUM_FAIL_ANGLES = 4;
 
   // Calculate the failure properties
-  void computeFailure( const TacsScalar strain[],
-                       TacsScalar fvals[], TacsScalar *_max );
-  void computeFailureStrainSens( const TacsScalar strain[],
-                                 const TacsScalar weights[],
-                                 TacsScalar sens[] );
+  void computeFailure(const TacsScalar strain[], TacsScalar fvals[],
+                      TacsScalar *_max);
+  void computeFailureStrainSens(const TacsScalar strain[],
+                                const TacsScalar weights[], TacsScalar sens[]);
 
   // Check that the matrix is positive definite (used for testing)
-  int checkDeterminant( const TacsScalar a[] );
+  int checkDeterminant(const TacsScalar a[]);
 
   // Get the stiffness matrices based on the current parameter values
-  void getStiffness( TacsScalar A[], TacsScalar B[], TacsScalar D[],
-                     TacsScalar As[], TacsScalar *drill );
+  void getStiffness(TacsScalar A[], TacsScalar B[], TacsScalar D[],
+                    TacsScalar As[], TacsScalar *drill);
 
   // The number of design variables
   int numDesignVars;
@@ -145,26 +142,26 @@ class TACSLamParamShellConstitutive : public TACSShellConstitutive {
 
   // The values of the material invariants
   TacsScalar U1, U2, U3, U4, U5;
-  TacsScalar U6, U7; // The invariants for shear
+  TacsScalar U6, U7;  // The invariants for shear
 
   TACSOrthotropicPly *orthoPly;
   TacsScalar ksWeight, epsilon;
 
   // The thickness information
-  TacsScalar t; // The thickness of the laminate
-  int tNum; // The design variable number
-  TacsScalar tlb, tub; // The lower and upper bounds
+  TacsScalar t;         // The thickness of the laminate
+  int tNum;             // The design variable number
+  TacsScalar tlb, tub;  // The lower and upper bounds
 
   // The ply fraction information
-  int n0, n45, n90; // The fraction dv numbers
-  TacsScalar f0, f45, f90; // The fraction values
-  TacsScalar min_f0, min_f45, min_f90; // The lower fraction bounds
+  int n0, n45, n90;                     // The fraction dv numbers
+  TacsScalar f0, f45, f90;              // The fraction values
+  TacsScalar min_f0, min_f45, min_f90;  // The lower fraction bounds
 
   // The lamination parameter values
-  int nW1, nW3; // The design variable numbers
-  TacsScalar W1, W3; // The lamination parameter values
+  int nW1, nW3;       // The design variable numbers
+  TacsScalar W1, W3;  // The lamination parameter values
 
   static const char *constName;
 };
 
-#endif // TACS_LAM_PARAM_SHELL_CONSTITUTIVE_H
+#endif  // TACS_LAM_PARAM_SHELL_CONSTITUTIVE_H

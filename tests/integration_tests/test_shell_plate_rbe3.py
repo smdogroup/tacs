@@ -3,7 +3,7 @@ from mpi4py import MPI
 from tacs import TACS, elements, constitutive, functions
 from static_analysis_base_test import StaticTestCase
 
-'''
+"""
 Create a two separate cantilevered plates connected by an RBE3 element.
 Apply a load at the RBE3 center node and test KSFailure, StructuralMass, 
 and Compliance functions and sensitivities
@@ -15,9 +15,11 @@ and Compliance functions and sensitivities
 |          | /  \ |          |
 |          |/    \|          |
 ------------       -----------
-'''
+"""
 
-FUNC_REFS = np.array([1.2205891205367805, 51400.0, 3368332.5161940744, 2.748016507122232])
+FUNC_REFS = np.array(
+    [1.2205891205367805, 51400.0, 3368332.5161940744, 2.748016507122232]
+)
 
 # Length of plate in x/y direction
 Lx = 10.0
@@ -36,6 +38,7 @@ ksweight = 10.0
 
 class ProblemTest(StaticTestCase.StaticTest):
     N_PROCS = 2  # this is how many MPI processes to use for this TestCase.
+
     def setup_assembler(self, comm, dtype):
         """
         Setup mesh and tacs assembler for problem we will be testing.
@@ -72,7 +75,7 @@ class ProblemTest(StaticTestCase.StaticTest):
             x = np.linspace(0, Lx, nx + 1, dtype)
             y = np.linspace(0, Ly, ny + 1, dtype)
             left_xyz = np.zeros([nx + 1, ny + 1, 3], dtype)
-            left_xyz[:, :, 0], left_xyz[:, :, 1] = np.meshgrid(x, y, indexing='ij')
+            left_xyz[:, :, 0], left_xyz[:, :, 1] = np.meshgrid(x, y, indexing="ij")
 
             left_node_ids = np.arange(num_nodes, dtype=np.intc).reshape(nx + 1, ny + 1)
 
@@ -89,14 +92,22 @@ class ProblemTest(StaticTestCase.StaticTest):
             conn = []
             for i in range(nx):
                 for j in range(ny):
-                    conn.extend([left_node_ids[i, j],
-                                 left_node_ids[i + 1, j],
-                                 left_node_ids[i, j + 1],
-                                 left_node_ids[i + 1, j + 1]])
-                    conn.extend([right_node_ids[i, j],
-                                 right_node_ids[i + 1, j],
-                                 right_node_ids[i, j + 1],
-                                 right_node_ids[i + 1, j + 1]])
+                    conn.extend(
+                        [
+                            left_node_ids[i, j],
+                            left_node_ids[i + 1, j],
+                            left_node_ids[i, j + 1],
+                            left_node_ids[i + 1, j + 1],
+                        ]
+                    )
+                    conn.extend(
+                        [
+                            right_node_ids[i, j],
+                            right_node_ids[i + 1, j],
+                            right_node_ids[i, j + 1],
+                            right_node_ids[i + 1, j + 1],
+                        ]
+                    )
 
             # Append connectivity for rbe element
             center_node_id = num_nodes
@@ -156,7 +167,9 @@ class ProblemTest(StaticTestCase.StaticTest):
 
         return assembler
 
-    def setup_tacs_vecs(self, assembler, force_vec, dv_pert_vec, ans_pert_vec, xpts_pert_vec):
+    def setup_tacs_vecs(
+        self, assembler, force_vec, dv_pert_vec, ans_pert_vec, xpts_pert_vec
+    ):
         """
         Setup user-defined vectors for analysis and fd/cs sensitivity verification
         """
@@ -177,7 +190,9 @@ class ProblemTest(StaticTestCase.StaticTest):
 
         # Apply distributed forces at tip of beam
         # Apply Qxx
-        f_array[np.logical_and(local_x == 1.5 * Lx, local_y == 0.5 * Ly), :] = applied_force
+        f_array[
+            np.logical_and(local_x == 1.5 * Lx, local_y == 0.5 * Ly), :
+        ] = applied_force
 
         # Create temporary dv vec for doing fd/cs
         dv_pert_array = dv_pert_vec.getArray()
@@ -201,8 +216,12 @@ class ProblemTest(StaticTestCase.StaticTest):
         """
         Create a list of functions to be tested and their reference values for the problem
         """
-        func_list = [functions.KSFailure(assembler, ksWeight=ksweight),
-                     functions.StructuralMass(assembler),
-                     functions.Compliance(assembler),
-                     functions.KSDisplacement(assembler, ksWeight=ksweight, direction=[1.0, 1.0, 1.0])]
+        func_list = [
+            functions.KSFailure(assembler, ksWeight=ksweight),
+            functions.StructuralMass(assembler),
+            functions.Compliance(assembler),
+            functions.KSDisplacement(
+                assembler, ksWeight=ksweight, direction=[1.0, 1.0, 1.0]
+            ),
+        ]
         return func_list, FUNC_REFS
