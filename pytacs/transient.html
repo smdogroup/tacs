@@ -451,6 +451,26 @@ be specified.</p></li>
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="tacs.problems.TransientProblem.addLoadFromBDF">
+<span class="sig-name descname"><span class="pre">addLoadFromBDF</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">timeStep</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">loadID</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeStage</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scale</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/problems/transient.html#TransientProblem.addLoadFromBDF"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.problems.TransientProblem.addLoadFromBDF" title="Permalink to this definition">¶</a></dt>
+<dd><p>This method is used to add a fixed load set defined in the BDF file to the problem
+at a specified time instance. Currently, only supports LOAD, FORCE, MOMENT, GRAV,
+RFORCE, PLOAD2, and PLOAD4.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>timeStep</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><em>int</em></a>) -- Time step index to apply load to.</p></li>
+<li><p><strong>loadID</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><em>int</em></a>) -- Load identification number of load set in BDF file user wishes to add to problem.</p></li>
+<li><p><strong>timeStage</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><em>int</em></a><em> or </em><em>None</em>) -- Time stage index to apply load to. Default is None, which is applicable only for
+multi-step methods like BDF. For multi-stage methods like DIRK, this index must
+be specified.</p></li>
+<li><p><strong>scale</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.10)"><em>float</em></a>) -- Factor to scale the BDF loads by before adding to problem.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="tacs.problems.TransientProblem.setInitConditions">
 <span class="sig-name descname"><span class="pre">setInitConditions</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">vars</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dvars</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ddvars</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/problems/transient.html#TransientProblem.setInitConditions"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.problems.TransientProblem.setInitConditions" title="Permalink to this definition">¶</a></dt>
 <dd><p>Set the initial conditions associated with this problem</p>

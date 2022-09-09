@@ -687,6 +687,39 @@
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_addCentrifugalLoad</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">auxElems</span><span class="p">[</span><span class="n">timeIndex</span><span class="p">],</span> <span class="n">omegaVector</span><span class="p">,</span> <span class="n">rotCenter</span><span class="p">)</span></div>
 
+<div class="viewcode-block" id="TransientProblem.addLoadFromBDF"><a class="viewcode-back" href="../../../pytacs/transient.html#tacs.problems.TransientProblem.addLoadFromBDF">[docs]</a>    <span class="k">def</span> <span class="nf">addLoadFromBDF</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">timeStep</span><span class="p">,</span> <span class="n">loadID</span><span class="p">,</span> <span class="n">timeStage</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="mf">1.0</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        This method is used to add a fixed load set defined in the BDF file to the problem</span>
+<span class="sd">        at a specified time instance. Currently, only supports LOAD, FORCE, MOMENT, GRAV,</span>
+<span class="sd">        RFORCE, PLOAD2, and PLOAD4.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+
+<span class="sd">        timeStep : int</span>
+<span class="sd">            Time step index to apply load to.</span>
+
+<span class="sd">        loadID : int</span>
+<span class="sd">            Load identification number of load set in BDF file user wishes to add to problem.</span>
+
+<span class="sd">        timeStage : int or None</span>
+<span class="sd">            Time stage index to apply load to. Default is None, which is applicable only for</span>
+<span class="sd">            multi-step methods like BDF. For multi-stage methods like DIRK, this index must</span>
+<span class="sd">            be specified.</span>
+
+<span class="sd">        scale : float</span>
+<span class="sd">            Factor to scale the BDF loads by before adding to problem.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">timeIndex</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">numStages</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">timeIndex</span> <span class="o">=</span> <span class="n">timeStep</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">assert</span> <span class="n">timeStage</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">,</span> <span class="s2">&quot;Time stage index must be specified for </span><span class="si">%s</span><span class="s2"> integrator type&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span>
+                <span class="s1">&#39;timeIntegrator&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span>
+            <span class="n">timeIndex</span> <span class="o">=</span> <span class="n">timeStep</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">numStages</span> <span class="o">+</span> <span class="n">timeStage</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_addLoadFromBDF</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">F</span><span class="p">[</span><span class="n">timeIndex</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">auxElems</span><span class="p">[</span><span class="n">timeIndex</span><span class="p">],</span> <span class="n">loadID</span><span class="p">,</span> <span class="n">scale</span><span class="p">)</span></div>
+
     <span class="c1">####### Transient solver methods ########</span>
 
 <div class="viewcode-block" id="TransientProblem.setInitConditions"><a class="viewcode-back" href="../../../pytacs/transient.html#tacs.problems.TransientProblem.setInitConditions">[docs]</a>    <span class="k">def</span> <span class="nf">setInitConditions</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">vars</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">dvars</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ddvars</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>

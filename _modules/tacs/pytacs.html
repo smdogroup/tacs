@@ -1136,8 +1136,8 @@
 
 <span class="sd">        Notes</span>
 <span class="sd">        -----</span>
-<span class="sd">        Currently only supports LOAD, FORCE, MOMENT, GRAV, RFORCE, PLOAD2, and PLOAD4 cards.</span>
-<span class="sd">        Currently only supports staticProblem (SOL 101) and modalProblems (SOL 103)</span>
+<span class="sd">        Currently only supports LOAD, FORCE, MOMENT, GRAV, RFORCE, PLOAD2, PLOAD4, TLOAD1, TLOAD2, and DLOAD cards.</span>
+<span class="sd">        Currently only supports staticProblem (SOL 101), transientProblem (SOL 109), and modalProblems (SOL 103)</span>
 <span class="sd">        &quot;&quot;&quot;</span>
 
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">assembler</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
@@ -1147,10 +1147,6 @@
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">bdfInfo</span><span class="o">.</span><span class="n">is_xrefed</span> <span class="ow">is</span> <span class="kc">False</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">bdfInfo</span><span class="o">.</span><span class="n">cross_reference</span><span class="p">()</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">bdfInfo</span><span class="o">.</span><span class="n">is_xrefed</span> <span class="o">=</span> <span class="kc">True</span>
-
-        <span class="n">vpn</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">varsPerNode</span>
-        <span class="n">loads</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">bdfInfo</span><span class="o">.</span><span class="n">loads</span>
-        <span class="n">nloads</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">loads</span><span class="p">)</span>
 
         <span class="n">structProblems</span> <span class="o">=</span> <span class="p">{}</span>
 
@@ -1165,13 +1161,13 @@
             <span class="k">if</span> <span class="n">skipCaseZero</span> <span class="ow">and</span> <span class="n">subCase</span><span class="o">.</span><span class="n">id</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
                 <span class="k">continue</span>
 
-            <span class="k">if</span> <span class="s1">&#39;SUBTITLE&#39;</span> <span class="ow">in</span> <span class="n">subCase</span><span class="o">.</span><span class="n">params</span><span class="p">:</span>
-                <span class="n">name</span> <span class="o">=</span> <span class="n">subCase</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;SUBTITLE&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+            <span class="k">if</span> <span class="s1">&#39;SUBTITLE&#39;</span> <span class="ow">in</span> <span class="n">subCase</span><span class="p">:</span>
+                <span class="n">name</span> <span class="o">=</span> <span class="n">subCase</span><span class="p">[</span><span class="s1">&#39;SUBTITLE&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="n">name</span> <span class="o">=</span> <span class="s1">&#39;load_set_</span><span class="si">%.3d</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">subCase</span><span class="o">.</span><span class="n">id</span><span class="p">)</span>
 
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">bdfInfo</span><span class="o">.</span><span class="n">sol</span> <span class="o">==</span> <span class="mi">103</span><span class="p">:</span>
-                <span class="n">methodID</span> <span class="o">=</span> <span class="n">subCase</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;METHOD&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+                <span class="n">methodID</span> <span class="o">=</span> <span class="n">subCase</span><span class="p">[</span><span class="s1">&#39;METHOD&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
                 <span class="n">methodInfo</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">bdfInfo</span><span class="o">.</span><span class="n">methods</span><span class="p">[</span><span class="n">methodID</span><span class="p">]</span>
                 <span class="k">if</span> <span class="n">methodInfo</span><span class="o">.</span><span class="n">v1</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
                     <span class="n">sigma</span> <span class="o">=</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">*</span> <span class="n">methodInfo</span><span class="o">.</span><span class="n">v1</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span>
@@ -1185,128 +1181,58 @@
                     <span class="n">nEigs</span> <span class="o">=</span> <span class="mi">20</span>
                 <span class="n">problem</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">createModalProblem</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">sigma</span><span class="p">,</span> <span class="n">nEigs</span><span class="p">)</span>
 
+            <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">bdfInfo</span><span class="o">.</span><span class="n">sol</span> <span class="o">==</span> <span class="mi">109</span><span class="p">:</span>
+                <span class="c1"># Get time step info</span>
+                <span class="k">if</span> <span class="s1">&#39;TSTEP&#39;</span> <span class="ow">in</span> <span class="n">subCase</span><span class="p">:</span>
+                    <span class="n">tStepID</span> <span class="o">=</span> <span class="n">subCase</span><span class="p">[</span><span class="s1">&#39;TSTEP&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+                    <span class="n">tStep</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">bdfInfo</span><span class="o">.</span><span class="n">tsteps</span><span class="p">[</span><span class="n">tStepID</span><span class="p">]</span>
+                    <span class="n">nSteps</span> <span class="o">=</span> <span class="n">tStep</span><span class="o">.</span><span class="n">N</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+                    <span class="n">dt</span> <span class="o">=</span> <span class="n">tStep</span><span class="o">.</span><span class="n">DT</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+                <span class="c1"># If no time step info was included, we&#39;ll skip this case</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_TACSWarning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;No TSTEP entry found in control deck for subcase number </span><span class="si">{</span><span class="n">subCase</span><span class="o">.</span><span class="n">id</span><span class="si">}</span><span class="s2">, &quot;</span>
+                                      <span class="s2">&quot;skipping case.&quot;</span><span class="p">)</span>
+                    <span class="k">continue</span>
+                <span class="n">problem</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">createTransientProblem</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">tInit</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">tFinal</span><span class="o">=</span><span class="n">dt</span><span class="o">*</span><span class="n">nSteps</span><span class="p">,</span> <span class="n">numSteps</span><span class="o">=</span><span class="n">nSteps</span><span class="p">)</span>
+
+                <span class="c1"># Find dynamic load specified for this subcase</span>
+                <span class="k">if</span> <span class="s1">&#39;DLOAD&#39;</span> <span class="ow">in</span> <span class="n">subCase</span><span class="p">:</span>
+                    <span class="n">dloadsID</span> <span class="o">=</span> <span class="n">subCase</span><span class="p">[</span><span class="s1">&#39;DLOAD&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+                    <span class="n">dloadSet</span><span class="p">,</span> <span class="n">dloadScale</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">bdfInfo</span><span class="o">.</span><span class="n">get_reduced_dloads</span><span class="p">(</span><span class="n">dloadsID</span><span class="p">)</span>
+                    <span class="k">for</span> <span class="n">dloadInfo</span><span class="p">,</span> <span class="n">dscale</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">dloadSet</span><span class="p">,</span> <span class="n">dloadScale</span><span class="p">):</span>
+                        <span class="n">timeSteps</span> <span class="o">=</span> <span class="n">problem</span><span class="o">.</span><span class="n">getTimeSteps</span><span class="p">()</span>
+                        <span class="k">if</span> <span class="n">dloadInfo</span><span class="o">.</span><span class="n">type</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;TLOAD1&#39;</span><span class="p">,</span> <span class="s1">&#39;TLOAD2&#39;</span><span class="p">]:</span>
+                            <span class="k">if</span> <span class="n">dloadInfo</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="s1">&#39;TLOAD1&#39;</span><span class="p">:</span>
+                                <span class="n">loadScales</span> <span class="o">=</span> <span class="n">dloadInfo</span><span class="o">.</span><span class="n">get_load_at_time</span><span class="p">(</span><span class="n">timeSteps</span><span class="p">,</span> <span class="n">dscale</span><span class="p">)</span>
+                            <span class="k">elif</span> <span class="n">dloadInfo</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="s1">&#39;TLOAD2&#39;</span><span class="p">:</span>
+                                <span class="n">loadScales</span> <span class="o">=</span> <span class="n">_tload2_get_load_at_time</span><span class="p">(</span><span class="n">dloadInfo</span><span class="p">,</span> <span class="n">timeSteps</span><span class="p">,</span> <span class="n">dscale</span><span class="p">)</span>
+                            <span class="k">if</span> <span class="n">dloadInfo</span><span class="o">.</span><span class="n">Type</span> <span class="o">!=</span> <span class="s2">&quot;LOAD&quot;</span><span class="p">:</span>
+                                <span class="bp">self</span><span class="o">.</span><span class="n">_TACSWarning</span><span class="p">(</span><span class="s2">&quot;Only &#39;LOAD&#39; types are supported for &quot;</span>
+                                                  <span class="sa">f</span><span class="s2">&quot;&#39;</span><span class="si">{</span><span class="n">dloadInfo</span><span class="o">.</span><span class="n">type</span><span class="si">}</span><span class="s2">&#39; card, but &#39;</span><span class="si">{</span><span class="n">dloadInfo</span><span class="o">.</span><span class="n">type</span><span class="si">}</span><span class="s2">&#39; </span><span class="si">{</span><span class="n">dloadInfo</span><span class="o">.</span><span class="n">sid</span><span class="si">}</span><span class="s2">, &quot;</span>
+                                                  <span class="sa">f</span><span class="s2">&quot;was specified as </span><span class="si">{</span><span class="n">dloadInfo</span><span class="o">.</span><span class="n">Type</span><span class="si">}</span><span class="s2"> type&quot;</span><span class="p">)</span>
+                            <span class="n">loadsID</span> <span class="o">=</span> <span class="n">dloadInfo</span><span class="o">.</span><span class="n">excite_id</span>
+                        <span class="k">else</span><span class="p">:</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">_TACSWarning</span><span class="p">(</span><span class="s2">&quot;Unsupported dload type &quot;</span>
+                                              <span class="sa">f</span><span class="s2">&quot;&#39;</span><span class="si">{</span><span class="n">dloadInfo</span><span class="o">.</span><span class="n">type</span><span class="si">}</span><span class="s2">&#39; specified for load set number </span><span class="si">{</span><span class="n">dloadInfo</span><span class="o">.</span><span class="n">sid</span><span class="si">}</span><span class="s2">,&quot;</span>
+                                              <span class="sa">f</span><span class="s2">&quot; skipping load&quot;</span><span class="p">)</span>
+                            <span class="k">continue</span>
+                        <span class="c1"># Loop through each time step and add loads to problem</span>
+                        <span class="k">for</span> <span class="n">timeIndex</span><span class="p">,</span> <span class="n">scale</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">loadScales</span><span class="p">):</span>
+                            <span class="n">problem</span><span class="o">.</span><span class="n">addLoadFromBDF</span><span class="p">(</span><span class="n">timeIndex</span><span class="p">,</span> <span class="n">loadsID</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="n">scale</span><span class="p">)</span>
+
             <span class="k">else</span><span class="p">:</span>
                 <span class="n">problem</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">createStaticProblem</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
 
-                <span class="k">if</span> <span class="s1">&#39;LOAD&#39;</span> <span class="ow">in</span> <span class="n">subCase</span><span class="o">.</span><span class="n">params</span><span class="p">:</span>
-                    <span class="n">loadsID</span> <span class="o">=</span> <span class="n">subCase</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;LOAD&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
-                    <span class="c1"># Get loads and scalers for this load case ID</span>
-                    <span class="n">loadSet</span><span class="p">,</span> <span class="n">loadScale</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">bdfInfo</span><span class="o">.</span><span class="n">get_reduced_loads</span><span class="p">(</span><span class="n">loadsID</span><span class="p">)</span>
-                    <span class="c1"># Loop through every load in set and add it to problem</span>
-                    <span class="k">for</span> <span class="n">loadInfo</span><span class="p">,</span> <span class="n">scale</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">loadSet</span><span class="p">,</span> <span class="n">loadScale</span><span class="p">):</span>
-                        <span class="c1"># Add any point force or moment cards</span>
-                        <span class="k">if</span> <span class="n">loadInfo</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="s1">&#39;FORCE&#39;</span> <span class="ow">or</span> <span class="n">loadInfo</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="s1">&#39;MOMENT&#39;</span><span class="p">:</span>
-                            <span class="n">nodeID</span> <span class="o">=</span> <span class="n">loadInfo</span><span class="o">.</span><span class="n">node_ref</span><span class="o">.</span><span class="n">nid</span>
-
-                            <span class="n">loadArray</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">vpn</span><span class="p">)</span>
-                            <span class="k">if</span> <span class="n">loadInfo</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="s1">&#39;FORCE&#39;</span> <span class="ow">and</span> <span class="n">vpn</span> <span class="o">&gt;=</span> <span class="mi">3</span><span class="p">:</span>
-                                <span class="n">F</span> <span class="o">=</span> <span class="n">scale</span> <span class="o">*</span> <span class="n">loadInfo</span><span class="o">.</span><span class="n">scaled_vector</span>
-                                <span class="n">loadArray</span><span class="p">[:</span><span class="mi">3</span><span class="p">]</span> <span class="o">+=</span> <span class="n">loadInfo</span><span class="o">.</span><span class="n">cid_ref</span><span class="o">.</span><span class="n">transform_vector_to_global</span><span class="p">(</span><span class="n">F</span><span class="p">)</span>
-                            <span class="k">elif</span> <span class="n">loadInfo</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="s1">&#39;MOMENT&#39;</span> <span class="ow">and</span> <span class="n">vpn</span> <span class="o">&gt;=</span> <span class="mi">6</span><span class="p">:</span>
-                                <span class="n">M</span> <span class="o">=</span> <span class="n">scale</span> <span class="o">*</span> <span class="n">loadInfo</span><span class="o">.</span><span class="n">scaled_vector</span>
-                                <span class="n">loadArray</span><span class="p">[</span><span class="mi">3</span><span class="p">:</span><span class="mi">6</span><span class="p">]</span> <span class="o">+=</span> <span class="n">loadInfo</span><span class="o">.</span><span class="n">cid_ref</span><span class="o">.</span><span class="n">transform_vector_to_global</span><span class="p">(</span><span class="n">M</span><span class="p">)</span>
-                            <span class="n">problem</span><span class="o">.</span><span class="n">addLoadToNodes</span><span class="p">(</span><span class="n">nodeID</span><span class="p">,</span> <span class="n">loadArray</span><span class="p">,</span> <span class="n">nastranOrdering</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-
-                        <span class="c1"># Add any gravity loads</span>
-                        <span class="k">elif</span> <span class="n">loadInfo</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="s1">&#39;GRAV&#39;</span><span class="p">:</span>
-                            <span class="n">inertiaVec</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
-                            <span class="n">inertiaVec</span><span class="p">[:</span><span class="mi">3</span><span class="p">]</span> <span class="o">=</span> <span class="n">scale</span> <span class="o">*</span> <span class="n">loadInfo</span><span class="o">.</span><span class="n">scale</span> <span class="o">*</span> <span class="n">loadInfo</span><span class="o">.</span><span class="n">N</span>
-                            <span class="c1"># Convert acceleration to global coordinate system</span>
-                            <span class="n">inertiaVec</span> <span class="o">=</span> <span class="n">loadInfo</span><span class="o">.</span><span class="n">cid_ref</span><span class="o">.</span><span class="n">transform_vector_to_global</span><span class="p">(</span><span class="n">inertiaVec</span><span class="p">)</span>
-                            <span class="n">problem</span><span class="o">.</span><span class="n">addInertialLoad</span><span class="p">(</span><span class="n">inertiaVec</span><span class="p">)</span>
-
-                        <span class="c1"># Add any centrifugal loads</span>
-                        <span class="k">elif</span> <span class="n">loadInfo</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="s1">&#39;RFORCE&#39;</span><span class="p">:</span>
-                            <span class="n">omegaVec</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
-                            <span class="k">if</span> <span class="n">loadInfo</span><span class="o">.</span><span class="n">nid_ref</span><span class="p">:</span>
-                                <span class="n">rotCenter</span> <span class="o">=</span> <span class="n">loadInfo</span><span class="o">.</span><span class="n">nid_ref</span><span class="o">.</span><span class="n">get_position</span><span class="p">()</span>
-                            <span class="k">else</span><span class="p">:</span>
-                                <span class="n">rotCenter</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
-                            <span class="n">omegaVec</span><span class="p">[:</span><span class="mi">3</span><span class="p">]</span> <span class="o">=</span> <span class="n">scale</span> <span class="o">*</span> <span class="n">loadInfo</span><span class="o">.</span><span class="n">scale</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">loadInfo</span><span class="o">.</span><span class="n">r123</span><span class="p">)</span>
-                            <span class="c1"># Convert omega from rev/s to rad/s</span>
-                            <span class="n">omegaVec</span> <span class="o">*=</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span>
-                            <span class="c1"># Convert omega to global coordinate system</span>
-                            <span class="n">omegaVec</span> <span class="o">=</span> <span class="n">loadInfo</span><span class="o">.</span><span class="n">cid_ref</span><span class="o">.</span><span class="n">transform_vector_to_global</span><span class="p">(</span><span class="n">omegaVec</span><span class="p">)</span>
-                            <span class="n">problem</span><span class="o">.</span><span class="n">addCentrifugalLoad</span><span class="p">(</span><span class="n">omegaVec</span><span class="p">,</span> <span class="n">rotCenter</span><span class="p">)</span>
-
-                        <span class="c1"># Add any pressure loads</span>
-                        <span class="c1"># Pressure load card specific to shell elements</span>
-                        <span class="k">elif</span> <span class="n">loadInfo</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="s1">&#39;PLOAD2&#39;</span><span class="p">:</span>
-                            <span class="n">elemIDs</span> <span class="o">=</span> <span class="n">loadInfo</span><span class="o">.</span><span class="n">eids</span>
-                            <span class="n">pressure</span> <span class="o">=</span> <span class="n">scale</span> <span class="o">*</span> <span class="n">loadInfo</span><span class="o">.</span><span class="n">pressure</span>
-                            <span class="n">problem</span><span class="o">.</span><span class="n">addPressureToElements</span><span class="p">(</span><span class="n">elemIDs</span><span class="p">,</span> <span class="n">pressure</span><span class="p">,</span> <span class="n">nastranOrdering</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-
-                        <span class="c1"># Alternate more general pressure load type</span>
-                        <span class="k">elif</span> <span class="n">loadInfo</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="s1">&#39;PLOAD4&#39;</span><span class="p">:</span>
-                            <span class="bp">self</span><span class="o">.</span><span class="n">_addPressureFromPLOAD4</span><span class="p">(</span><span class="n">problem</span><span class="p">,</span> <span class="n">loadInfo</span><span class="p">,</span> <span class="n">scale</span><span class="p">)</span>
-
-                        <span class="k">else</span><span class="p">:</span>
-                            <span class="bp">self</span><span class="o">.</span><span class="n">_TACSWarning</span><span class="p">(</span><span class="s2">&quot;Unsupported load type &quot;</span>
-                                              <span class="sa">f</span><span class="s2">&quot; &#39;</span><span class="si">{</span><span class="n">loadInfo</span><span class="o">.</span><span class="n">type</span><span class="si">}</span><span class="s2">&#39; specified for load set number </span><span class="si">{</span><span class="n">loadInfo</span><span class="o">.</span><span class="n">sid</span><span class="si">}</span><span class="s2">, skipping load&quot;</span><span class="p">)</span>
+                <span class="c1"># Find the static load specified for this test case</span>
+                <span class="k">if</span> <span class="s1">&#39;LOAD&#39;</span> <span class="ow">in</span> <span class="n">subCase</span><span class="p">:</span>
+                    <span class="c1"># Add loads to problem</span>
+                    <span class="n">loadsID</span> <span class="o">=</span> <span class="n">subCase</span><span class="p">[</span><span class="s1">&#39;LOAD&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+                    <span class="n">problem</span><span class="o">.</span><span class="n">addLoadFromBDF</span><span class="p">(</span><span class="n">loadsID</span><span class="p">)</span>
 
             <span class="c1"># append to list of structural problems</span>
             <span class="n">structProblems</span><span class="p">[</span><span class="n">subCase</span><span class="o">.</span><span class="n">id</span><span class="p">]</span> <span class="o">=</span> <span class="n">problem</span>
 
         <span class="k">return</span> <span class="n">structProblems</span></div>
-
-    <span class="k">def</span> <span class="nf">_addPressureFromPLOAD4</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">staticProb</span><span class="p">,</span> <span class="n">loadInfo</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="mf">1.0</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Add pressure to tacs static problem from pynastran PLOAD4 card.</span>
-<span class="sd">        Should only be called by createTACSProbsFromBDF and not directly by user.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="c1"># Dictionary mapping nastran element face indices to TACS equivilent numbering</span>
-        <span class="n">nastranToTACSFaceIDDict</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;CTETRA4&#39;</span><span class="p">:</span> <span class="p">{</span><span class="mi">1</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">:</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">4</span><span class="p">:</span> <span class="mi">0</span><span class="p">},</span>
-                                   <span class="s1">&#39;CTETRA&#39;</span><span class="p">:</span> <span class="p">{</span><span class="mi">2</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">4</span><span class="p">:</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">:</span> <span class="mi">0</span><span class="p">},</span>
-                                   <span class="s1">&#39;CHEXA&#39;</span><span class="p">:</span> <span class="p">{</span><span class="mi">1</span><span class="p">:</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">2</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">4</span><span class="p">:</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">5</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">6</span><span class="p">:</span> <span class="mi">5</span><span class="p">}}</span>
-
-        <span class="c1"># We don&#39;t support pressure variation across elements, for now just average it</span>
-        <span class="n">pressure</span> <span class="o">=</span> <span class="n">scale</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">loadInfo</span><span class="o">.</span><span class="n">pressures</span><span class="p">)</span>
-        <span class="k">for</span> <span class="n">elemInfo</span> <span class="ow">in</span> <span class="n">loadInfo</span><span class="o">.</span><span class="n">eids_ref</span><span class="p">:</span>
-            <span class="n">elemID</span> <span class="o">=</span> <span class="n">elemInfo</span><span class="o">.</span><span class="n">eid</span>
-
-            <span class="c1"># Get the correct face index number based on element type</span>
-            <span class="k">if</span> <span class="s1">&#39;CTETRA&#39;</span> <span class="ow">in</span> <span class="n">elemInfo</span><span class="o">.</span><span class="n">type</span><span class="p">:</span>
-                <span class="k">for</span> <span class="n">faceIndex</span> <span class="ow">in</span> <span class="n">elemInfo</span><span class="o">.</span><span class="n">faces</span><span class="p">:</span>
-                    <span class="k">if</span> <span class="n">loadInfo</span><span class="o">.</span><span class="n">g1</span> <span class="ow">in</span> <span class="n">elemInfo</span><span class="o">.</span><span class="n">faces</span><span class="p">[</span><span class="n">faceIndex</span><span class="p">]</span> <span class="ow">and</span> \
-                            <span class="n">loadInfo</span><span class="o">.</span><span class="n">g34</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">elemInfo</span><span class="o">.</span><span class="n">faces</span><span class="p">[</span><span class="n">faceIndex</span><span class="p">]:</span>
-                        <span class="c1"># For some reason CTETRA4 is the only element that doesn&#39;t</span>
-                        <span class="c1"># use ANSYS face numbering convention by default</span>
-                        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">elemInfo</span><span class="o">.</span><span class="n">nodes</span><span class="p">)</span> <span class="o">==</span> <span class="mi">4</span><span class="p">:</span>
-                            <span class="n">faceIndex</span> <span class="o">=</span> <span class="n">nastranToTACSFaceIDDict</span><span class="p">[</span><span class="s1">&#39;CTETRA4&#39;</span><span class="p">][</span><span class="n">faceIndex</span><span class="p">]</span>
-                        <span class="k">else</span><span class="p">:</span>
-                            <span class="n">faceIndex</span> <span class="o">=</span> <span class="n">nastranToTACSFaceIDDict</span><span class="p">[</span><span class="s1">&#39;CTETRA&#39;</span><span class="p">][</span><span class="n">faceIndex</span><span class="p">]</span>
-                        <span class="c1"># Positive pressure is inward for solid elements, flip pressure if necessary</span>
-                        <span class="c1"># We don&#39;t flip it for face 0, because the normal for that face points inward by convention</span>
-                        <span class="c1"># while the rest point outward</span>
-                        <span class="k">if</span> <span class="n">faceIndex</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
-                            <span class="n">pressure</span> <span class="o">*=</span> <span class="o">-</span><span class="mf">1.0</span>
-                        <span class="k">break</span>
-
-            <span class="k">elif</span> <span class="s1">&#39;CHEXA&#39;</span> <span class="ow">in</span> <span class="n">elemInfo</span><span class="o">.</span><span class="n">type</span><span class="p">:</span>
-                <span class="k">for</span> <span class="n">faceIndex</span> <span class="ow">in</span> <span class="n">elemInfo</span><span class="o">.</span><span class="n">faces</span><span class="p">:</span>
-                    <span class="k">if</span> <span class="n">loadInfo</span><span class="o">.</span><span class="n">g1</span> <span class="ow">in</span> <span class="n">elemInfo</span><span class="o">.</span><span class="n">faces</span><span class="p">[</span><span class="n">faceIndex</span><span class="p">]</span> <span class="ow">and</span> \
-                            <span class="n">loadInfo</span><span class="o">.</span><span class="n">g34</span> <span class="ow">in</span> <span class="n">elemInfo</span><span class="o">.</span><span class="n">faces</span><span class="p">[</span><span class="n">faceIndex</span><span class="p">]:</span>
-                        <span class="n">faceIndex</span> <span class="o">=</span> <span class="n">nastranToTACSFaceIDDict</span><span class="p">[</span><span class="s1">&#39;CHEXA&#39;</span><span class="p">][</span><span class="n">faceIndex</span><span class="p">]</span>
-                        <span class="c1"># Pressure orientation is flipped for solid elements per Nastran convention</span>
-                        <span class="n">pressure</span> <span class="o">*=</span> <span class="o">-</span><span class="mf">1.0</span>
-                        <span class="k">break</span>
-
-            <span class="k">elif</span> <span class="s1">&#39;CQUAD&#39;</span> <span class="ow">in</span> <span class="n">elemInfo</span><span class="o">.</span><span class="n">type</span> <span class="ow">or</span> <span class="s1">&#39;CTRIA&#39;</span> <span class="ow">in</span> <span class="n">elemInfo</span><span class="o">.</span><span class="n">type</span><span class="p">:</span>
-                <span class="c1"># Face index doesn&#39;t matter for shells, just use 0</span>
-                <span class="n">faceIndex</span> <span class="o">=</span> <span class="mi">0</span>
-
-            <span class="k">else</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TACSError</span><span class="p">(</span><span class="s2">&quot;Unsupported element type &quot;</span>
-                                      <span class="sa">f</span><span class="s2">&quot;&#39;</span><span class="si">{</span><span class="n">elemInfo</span><span class="o">.</span><span class="n">type</span><span class="si">}</span><span class="s2">&#39; specified for PLOAD4 load set number </span><span class="si">{</span><span class="n">loadInfo</span><span class="o">.</span><span class="n">sid</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
-
-            <span class="c1"># Figure out whether or not this is a traction based on if a vector is defined</span>
-            <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">loadInfo</span><span class="o">.</span><span class="n">nvector</span><span class="p">)</span> <span class="o">==</span> <span class="mf">0.0</span><span class="p">:</span>
-                <span class="n">staticProb</span><span class="o">.</span><span class="n">addPressureToElements</span><span class="p">(</span><span class="n">elemID</span><span class="p">,</span> <span class="n">pressure</span><span class="p">,</span> <span class="n">faceIndex</span><span class="p">,</span>
-                                                 <span class="n">nastranOrdering</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="n">trac</span> <span class="o">=</span> <span class="n">pressure</span> <span class="o">*</span> <span class="n">loadInfo</span><span class="o">.</span><span class="n">nvector</span>
-                <span class="n">staticProb</span><span class="o">.</span><span class="n">addTractionToElements</span><span class="p">(</span><span class="n">elemID</span><span class="p">,</span> <span class="n">trac</span><span class="p">,</span> <span class="n">faceIndex</span><span class="p">,</span>
-                                                 <span class="n">nastranOrdering</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
 <div class="viewcode-block" id="pyTACS.getNumComponents"><a class="viewcode-back" href="../../pytacs/pytacs_module.html#tacs.pytacs.pyTACS.getNumComponents">[docs]</a>    <span class="k">def</span> <span class="nf">getNumComponents</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
@@ -1576,6 +1502,43 @@
         <span class="n">error</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TACSError</span><span class="p">(</span><span class="s2">&quot;TACS assembler has not been created. &quot;</span>
                                 <span class="s2">&quot;Assembler must created first by running &#39;initalize&#39; method.&quot;</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">error</span></div>
+
+<span class="k">def</span> <span class="nf">_tload2_get_load_at_time</span><span class="p">(</span><span class="n">tload2</span><span class="p">,</span> <span class="n">time</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="mf">1.</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    This is a function for interpolating the time series for the NASTRAN TLOAD2 card.</span>
+<span class="sd">    Usually, this would be done through pyNastran, but there&#39;s bug in its implementation</span>
+<span class="sd">    that prevents it from being run.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">time</span><span class="p">,</span> <span class="nb">float</span><span class="p">):</span>
+        <span class="n">time</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">time</span><span class="p">])</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">time</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">time</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">tload2</span><span class="o">.</span><span class="n">delay</span><span class="p">,</span> <span class="nb">float</span><span class="p">):</span>
+        <span class="n">tau</span> <span class="o">=</span> <span class="n">tload2</span><span class="o">.</span><span class="n">delay</span>
+    <span class="k">elif</span> <span class="n">tload2</span><span class="o">.</span><span class="n">delay</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">or</span> <span class="n">tload2</span><span class="o">.</span><span class="n">delay</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">tau</span> <span class="o">=</span> <span class="mf">0.0</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">tau</span> <span class="o">=</span> <span class="n">tload2</span><span class="o">.</span><span class="n">delay_ref</span><span class="o">.</span><span class="n">get_delay_at_time</span><span class="p">(</span><span class="n">time</span><span class="p">)</span>
+
+    <span class="n">t1</span> <span class="o">=</span> <span class="n">tload2</span><span class="o">.</span><span class="n">T1</span> <span class="o">+</span> <span class="n">tau</span>
+    <span class="n">t2</span> <span class="o">=</span> <span class="n">tload2</span><span class="o">.</span><span class="n">T2</span> <span class="o">+</span> <span class="n">tau</span>
+    <span class="n">freq</span> <span class="o">=</span> <span class="n">tload2</span><span class="o">.</span><span class="n">frequency</span>
+    <span class="n">p</span> <span class="o">=</span> <span class="n">tload2</span><span class="o">.</span><span class="n">phase</span>
+    <span class="n">f</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">time</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
+
+    <span class="n">i</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">t1</span> <span class="o">&lt;=</span> <span class="n">time</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">j</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">time</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">&lt;=</span> <span class="n">t2</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">i</span> <span class="o">=</span> <span class="n">i</span><span class="p">[</span><span class="n">j</span><span class="p">]</span>
+    <span class="n">f</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">scale</span> <span class="o">*</span> <span class="n">time</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">**</span> <span class="n">tload2</span><span class="o">.</span><span class="n">b</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">tload2</span><span class="o">.</span><span class="n">c</span> <span class="o">*</span> <span class="n">time</span><span class="p">[</span><span class="n">i</span><span class="p">])</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">*</span> <span class="n">freq</span> <span class="o">*</span> <span class="n">time</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">+</span> <span class="n">p</span><span class="p">)</span>
+
+    <span class="n">is_spcd</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="c1">#resp = f</span>
+    <span class="k">if</span> <span class="n">tload2</span><span class="o">.</span><span class="n">Type</span> <span class="o">==</span> <span class="s1">&#39;VELO&#39;</span> <span class="ow">and</span> <span class="n">is_spcd</span><span class="p">:</span>
+        <span class="n">f</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">tload2</span><span class="o">.</span><span class="n">us0</span>
+    <span class="k">if</span> <span class="n">tload2</span><span class="o">.</span><span class="n">Type</span> <span class="o">==</span> <span class="s1">&#39;ACCE&#39;</span> <span class="ow">and</span> <span class="n">is_spcd</span><span class="p">:</span>
+        <span class="n">f</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">tload2</span><span class="o">.</span><span class="n">vs0</span>
+    <span class="k">return</span> <span class="n">f</span>
 </pre></div>
 
             <div class="clearer"></div>

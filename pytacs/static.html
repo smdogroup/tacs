@@ -193,7 +193,8 @@ the number of structural nodes on this processor.</p>
 This method is used to add a <em>FIXED TOTAL LOAD</em> on one or more
 components, defined by COMPIDs. The purpose of this routine is to add loads that
 remain fixed throughout an optimization. An example would be an engine load.
-This routine determines all the unique nodes in the FE model that are part of the         requested components, then takes the total 'force' by F and divides by the
+This routine determines all the unique nodes in the FE model that are part of the
+requested components, then takes the total 'force' by F and divides by the
 number of nodes. This average load is then applied to the nodes.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -396,6 +397,21 @@ This is most commonly used to model rotors, rolling aircraft, etc.</p>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>omegaVector</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.23)"><em>numpy.ndarray</em></a>) -- Rotational velocity vector (rad/s) used to define centrifugal load.</p></li>
 <li><p><strong>rotCenter</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.23)"><em>numpy.ndarray</em></a>) -- Location of center of rotation used to define centrifugal load.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.problems.StaticProblem.addLoadFromBDF">
+<span class="sig-name descname"><span class="pre">addLoadFromBDF</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">loadID</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scale</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/problems/static.html#StaticProblem.addLoadFromBDF"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.problems.StaticProblem.addLoadFromBDF" title="Permalink to this definition">¶</a></dt>
+<dd><p>This method is used to add a fixed load set defined in the BDF file to the problem.
+Currently, only supports LOAD, FORCE, MOMENT, GRAV, RFORCE, PLOAD2, and PLOAD4.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>loadID</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><em>int</em></a>) -- Load identification number of load set in BDF file user wishes to add to problem.</p></li>
+<li><p><strong>scale</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.10)"><em>float</em></a>) -- Factor to scale the BDF loads by before adding to problem.</p></li>
 </ul>
 </dd>
 </dl>

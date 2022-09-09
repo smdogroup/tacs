@@ -308,7 +308,8 @@
 <span class="sd">        This method is used to add a *FIXED TOTAL LOAD* on one or more</span>
 <span class="sd">        components, defined by COMPIDs. The purpose of this routine is to add loads that</span>
 <span class="sd">        remain fixed throughout an optimization. An example would be an engine load.</span>
-<span class="sd">        This routine determines all the unique nodes in the FE model that are part of the         requested components, then takes the total &#39;force&#39; by F and divides by the</span>
+<span class="sd">        This routine determines all the unique nodes in the FE model that are part of the</span>
+<span class="sd">        requested components, then takes the total &#39;force&#39; by F and divides by the</span>
 <span class="sd">        number of nodes. This average load is then applied to the nodes.</span>
 
 <span class="sd">        Parameters</span>
@@ -546,6 +547,22 @@
 <span class="sd">            Location of center of rotation used to define centrifugal load.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_addCentrifugalLoad</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">auxElems</span><span class="p">,</span> <span class="n">omegaVector</span><span class="p">,</span> <span class="n">rotCenter</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="StaticProblem.addLoadFromBDF"><a class="viewcode-back" href="../../../pytacs/static.html#tacs.problems.StaticProblem.addLoadFromBDF">[docs]</a>    <span class="k">def</span> <span class="nf">addLoadFromBDF</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">loadID</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="mf">1.0</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        This method is used to add a fixed load set defined in the BDF file to the problem.</span>
+<span class="sd">        Currently, only supports LOAD, FORCE, MOMENT, GRAV, RFORCE, PLOAD2, and PLOAD4.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+
+<span class="sd">        loadID : int</span>
+<span class="sd">            Load identification number of load set in BDF file user wishes to add to problem.</span>
+
+<span class="sd">        scale : float</span>
+<span class="sd">            Factor to scale the BDF loads by before adding to problem.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_addLoadFromBDF</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">F</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">auxElems</span><span class="p">,</span> <span class="n">loadID</span><span class="p">,</span> <span class="n">scale</span><span class="p">)</span></div>
 
     <span class="c1">####### Static solver methods ########</span>
 
