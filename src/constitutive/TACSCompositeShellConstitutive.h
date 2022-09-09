@@ -24,55 +24,53 @@
 
 class TACSCompositeShellConstitutive : public TACSShellConstitutive {
  public:
-  TACSCompositeShellConstitutive( int _num_plies,
-                                  TACSOrthotropicPly **_ply_props,
-                                  const TacsScalar *_ply_thickness,
-                                  const TacsScalar *_ply_angles,
-                                  TacsScalar _kcorr=5.0/6.0 );
+  TACSCompositeShellConstitutive(int _num_plies,
+                                 TACSOrthotropicPly **_ply_props,
+                                 const TacsScalar *_ply_thickness,
+                                 const TacsScalar *_ply_angles,
+                                 TacsScalar _kcorr = 5.0 / 6.0);
   ~TACSCompositeShellConstitutive();
 
   // Evaluate the material density
-  TacsScalar evalDensity( int elemIndex, const double pt[],
-                          const TacsScalar X[] );
+  TacsScalar evalDensity(int elemIndex, const double pt[],
+                         const TacsScalar X[]);
 
   // Evaluate the mass moments
-  void evalMassMoments( int elemIndex, const double pt[],
-                        const TacsScalar X[], TacsScalar moments[] );
+  void evalMassMoments(int elemIndex, const double pt[], const TacsScalar X[],
+                       TacsScalar moments[]);
 
   // Evaluate the specific heat
-  TacsScalar evalSpecificHeat( int elemIndex, const double pt[],
-                               const TacsScalar X[] );
+  TacsScalar evalSpecificHeat(int elemIndex, const double pt[],
+                              const TacsScalar X[]);
 
   // Evaluate the stresss
-  void evalStress( int elemIndex, const double pt[], const TacsScalar X[],
-                   const TacsScalar strain[], TacsScalar stress[] );
+  void evalStress(int elemIndex, const double pt[], const TacsScalar X[],
+                  const TacsScalar strain[], TacsScalar stress[]);
 
   // Evaluate failure
-  TacsScalar evalFailure( int elemIndex, const double pt[],
-                          const TacsScalar X[], const TacsScalar e[] );
+  TacsScalar evalFailure(int elemIndex, const double pt[], const TacsScalar X[],
+                         const TacsScalar e[]);
 
   // Evaluate the derivative of the failure criteria w.r.t. the strain
-  TacsScalar evalFailureStrainSens( int elemIndex, const double pt[],
-                                    const TacsScalar X[], const TacsScalar e[],
-                                    TacsScalar sens[] );
+  TacsScalar evalFailureStrainSens(int elemIndex, const double pt[],
+                                   const TacsScalar X[], const TacsScalar e[],
+                                   TacsScalar sens[]);
 
   // Evaluate the tangent stiffness
-  void evalTangentStiffness( int elemIndex, const double pt[],
-                             const TacsScalar X[], TacsScalar C[] );
+  void evalTangentStiffness(int elemIndex, const double pt[],
+                            const TacsScalar X[], TacsScalar C[]);
 
   // Evaluate the thermal strain
-  void evalThermalStrain( int elemIndex, const double pt[],
-                          const TacsScalar X[], TacsScalar theta,
-                          TacsScalar strain[] );
+  void evalThermalStrain(int elemIndex, const double pt[], const TacsScalar X[],
+                         TacsScalar theta, TacsScalar strain[]);
 
   // Evaluate the heat flux, given the thermal gradient
-  void evalHeatFlux( int elemIndex, const double pt[],
-                     const TacsScalar X[], const TacsScalar grad[],
-                     TacsScalar flux[] );
+  void evalHeatFlux(int elemIndex, const double pt[], const TacsScalar X[],
+                    const TacsScalar grad[], TacsScalar flux[]);
 
   // Evaluate the tangent of the heat flux
-  void evalTangentHeatFlux( int elemIndex, const double pt[],
-                            const TacsScalar X[], TacsScalar C[] );
+  void evalTangentHeatFlux(int elemIndex, const double pt[],
+                           const TacsScalar X[], TacsScalar C[]);
 
   // The name of the constitutive object
   const char *getObjectName();
@@ -87,7 +85,8 @@ class TACSCompositeShellConstitutive : public TACSShellConstitutive {
   // The object name
   static const char *constName;
 
-  void getLaminaStrain( TacsScalar strain[], const TacsScalar rmStrain[], TacsScalar tp );
+  void getLaminaStrain(TacsScalar strain[], const TacsScalar rmStrain[],
+                       TacsScalar tp);
 };
 
-#endif // TACS_COMPOSITE_SHELL_CONSTITUTIVE_H
+#endif  // TACS_COMPOSITE_SHELL_CONSTITUTIVE_H

@@ -19,58 +19,56 @@
 
 class TACSConvectiveTraction3D : public TACSElement {
  public:
-  TACSConvectiveTraction3D( int _varsPerNode, int _faceIndex,
-                            int _fieldIndex, TacsScalar alpha,
-                            TacsScalar _refValue, TACSElementBasis *_basis );
+  TACSConvectiveTraction3D(int _varsPerNode, int _faceIndex, int _fieldIndex,
+                           TacsScalar alpha, TacsScalar _refValue,
+                           TACSElementBasis *_basis);
   ~TACSConvectiveTraction3D();
 
   // Get the layout properties of the element
   int getVarsPerNode();
   int getNumNodes();
   ElementLayout getLayoutType();
-  TACSElementBasis* getElementBasis();
+  TACSElementBasis *getElementBasis();
   int getNumQuadraturePoints();
-  double getQuadratureWeight( int n );
-  double getQuadraturePoint( int n, double pt[] );
+  double getQuadratureWeight(int n);
+  double getQuadraturePoint(int n, double pt[]);
   int getNumElementFaces();
-  int getNumFaceQuadraturePoints( int face );
-  double getFaceQuadraturePoint( int face, int n, double pt[],
-                                 double tangent[] );
+  int getNumFaceQuadraturePoints(int face);
+  double getFaceQuadraturePoint(int face, int n, double pt[], double tangent[]);
 
   /**
     Add the residual to the provided vector
   */
-  void addResidual( int elemIndex, double time, const TacsScalar *Xpts,
-                    const TacsScalar *vars, const TacsScalar *dvars,
-                    const TacsScalar *ddvars, TacsScalar *res );
+  void addResidual(int elemIndex, double time, const TacsScalar *Xpts,
+                   const TacsScalar *vars, const TacsScalar *dvars,
+                   const TacsScalar *ddvars, TacsScalar *res);
 
   /**
     Add the residual and Jacobians to the arrays
   */
-  void addJacobian( int elemIndex, double time,
-                    TacsScalar alpha, TacsScalar beta, TacsScalar gamma,
-                    const TacsScalar *Xpts, const TacsScalar *vars,
-                    const TacsScalar *dvars, const TacsScalar *ddvars,
-                    TacsScalar *res, TacsScalar *mat );
+  void addJacobian(int elemIndex, double time, TacsScalar alpha,
+                   TacsScalar beta, TacsScalar gamma, const TacsScalar *Xpts,
+                   const TacsScalar *vars, const TacsScalar *dvars,
+                   const TacsScalar *ddvars, TacsScalar *res, TacsScalar *mat);
 
   /**
     Add the derivative of the product of the adjoint variables w.r.t.
     the material design variables
   */
-  void addAdjResProduct( int elemIndex, double time, TacsScalar scale,
-                         const TacsScalar psi[], const TacsScalar Xpts[],
-                         const TacsScalar vars[], const TacsScalar dvars[],
-                         const TacsScalar ddvars[],
-                         int dvLen, TacsScalar dvSens[] );
+  void addAdjResProduct(int elemIndex, double time, TacsScalar scale,
+                        const TacsScalar psi[], const TacsScalar Xpts[],
+                        const TacsScalar vars[], const TacsScalar dvars[],
+                        const TacsScalar ddvars[], int dvLen,
+                        TacsScalar dvSens[]);
 
   /**
     Add the derivative of the product of the adjoint variables and the
     residuals with respect to the node locations
   */
-  void addAdjResXptProduct( int elemIndex, double time, TacsScalar scale,
-                            const TacsScalar psi[], const TacsScalar Xpts[],
-                            const TacsScalar vars[], const TacsScalar dvars[],
-                            const TacsScalar ddvars[], TacsScalar fXptSens[] );
+  void addAdjResXptProduct(int elemIndex, double time, TacsScalar scale,
+                           const TacsScalar psi[], const TacsScalar Xpts[],
+                           const TacsScalar vars[], const TacsScalar dvars[],
+                           const TacsScalar ddvars[], TacsScalar fXptSens[]);
 
  private:
   int varsPerNode, faceIndex, fieldIndex;
@@ -78,4 +76,4 @@ class TACSConvectiveTraction3D : public TACSElement {
   TACSElementBasis *basis;
 };
 
-#endif // TACS_CONVECTIVE_TRACTION_3D_H
+#endif  // TACS_CONVECTIVE_TRACTION_3D_H

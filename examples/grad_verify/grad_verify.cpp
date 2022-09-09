@@ -1,11 +1,11 @@
 #include "TACSAssembler.h"
+#include "TACSCompliance.h"
+#include "TACSInducedFailure.h"
+#include "TACSIsoShellConstitutive.h"
+#include "TACSKSFailure.h"
 #include "TACSMeshLoader.h"
 #include "TACSShellElementDefs.h"
-#include "TACSCompliance.h"
-#include "TACSKSFailure.h"
-#include "TACSInducedFailure.h"
 #include "TACSStructuralMass.h"
-#include "TACSIsoShellConstitutive.h"
 
 /*
   The following code takes as input a bdf file (which contains only
@@ -25,7 +25,7 @@
   fd=%f            specify the finite-difference (or CS) interval
   num_threads=%d   specify the number of pthreads
 */
-int main( int argc, char * argv[] ){
+int main(int argc, char *argv[]) {
   // Initialize MPI
   MPI_Init(&argc, &argv);
 
@@ -35,22 +35,21 @@ int main( int argc, char * argv[] ){
   // The number of pthreads to use
   int num_threads = 1;
 
-  for ( int k = 1; k < argc; k++ ){
-    if (sscanf(argv[k], "num_threads=%d", &num_threads) == 1){
+  for (int k = 1; k < argc; k++) {
+    if (sscanf(argv[k], "num_threads=%d", &num_threads) == 1) {
       break;
     }
   }
 
   // Check if the input file exists, if not quit
-  const char * bdf_file = argv[1];
+  const char *bdf_file = argv[1];
   FILE *file_test = NULL;
-  if ((file_test = fopen(bdf_file, "r"))){
+  if ((file_test = fopen(bdf_file, "r"))) {
     fclose(file_test);
-  }
-  else {
+  } else {
     int rank;
     MPI_Comm_rank(comm, &rank);
-    if (rank == 0){
+    if (rank == 0) {
       fprintf(stderr, "Input file %s not found\n", bdf_file);
     }
 
@@ -59,7 +58,7 @@ int main( int argc, char * argv[] ){
   }
 
   // Create the TACS mesh loader class and load in the data file
-  TACSMeshLoader * mesh = new TACSMeshLoader(comm);
+  TACSMeshLoader *mesh = new TACSMeshLoader(comm);
   mesh->incref();
 
   // Scan the BDF file to get the input data
@@ -70,16 +69,16 @@ int main( int argc, char * argv[] ){
   MPI_Comm_rank(comm, &rank);
 
   // Set properties needed to create stiffness object
-  TacsScalar rho = 2500.0; // density, kg/m^3
+  TacsScalar rho = 2500.0;  // density, kg/m^3
   TacsScalar specific_heat = 921.096;
-  TacsScalar E = 70e9; // elastic modulus, Pa
-  TacsScalar nu = 0.3; // poisson's ratio
-  TacsScalar ys = 350e6; // yield stress, Pa
-  TacsScalar cte = 24.0e-6; // Coefficient of thermal expansion
-  TacsScalar kappa = 230.0; // Thermal conductivity
+  TacsScalar E = 70e9;       // elastic modulus, Pa
+  TacsScalar nu = 0.3;       // poisson's ratio
+  TacsScalar ys = 350e6;     // yield stress, Pa
+  TacsScalar cte = 24.0e-6;  // Coefficient of thermal expansion
+  TacsScalar kappa = 230.0;  // Thermal conductivity
 
   TACSMaterialProperties *props =
-    new TACSMaterialProperties(rho, specific_heat, E, nu, ys, cte, kappa);
+      new TACSMaterialProperties(rho, specific_heat, E, nu, ys, cte, kappa);
 
   TACSShellTransform *transform = new TACSShellNaturalTransform();
 
@@ -91,14 +90,14 @@ int main( int argc, char * argv[] ){
   // are not in meters). However, this code can still be be
   // use for gradient verification purposes.
   int num_comp = mesh->getNumComponents();
-  for ( int k = 0; k < num_comp; k++ ){
+  for (int k = 0; k < num_comp; k++) {
     const char *descriptor = mesh->getElementDescript(k);
     TacsScalar thickness = 0.01;
     int thickness_index = k;
     TacsScalar min_thickness = 0.01;
     TacsScalar max_thickness = 0.20;
-    TACSShellConstitutive *con = new TACSIsoShellConstitutive(props,
-      thickness, thickness_index, min_thickness, max_thickness);
+    TACSShellConstitutive *con = new TACSIsoShellConstitutive(
+        props, thickness, thickness_index, min_thickness, max_thickness);
 
     // Initialize element object
     TACSElement *elem = TacsCreateShellByName(descriptor, transform, con);
@@ -118,13 +117,11 @@ int main( int argc, char * argv[] ){
   assembler->setNumThreads(num_threads);
 
   // Create an TACSToFH5 object for writing output to files
-  int write_flag = (TACS_OUTPUT_CONNECTIVITY |
-                    TACS_OUTPUT_NODES |
-                    TACS_OUTPUT_DISPLACEMENTS |
-                    TACS_OUTPUT_STRAINS |
-                    TACS_OUTPUT_STRESSES |
-                    TACS_OUTPUT_EXTRAS);
-  TACSToFH5 *f5 = new TACSToFH5(assembler, TACS_BEAM_OR_SHELL_ELEMENT, write_flag);
+  int write_flag = (TACS_OUTPUT_CONNECTIVITY | TACS_OUTPUT_NODES |
+                    TACS_OUTPUT_DISPLACEMENTS | TACS_OUTPUT_STRAINS |
+                    TACS_OUTPUT_STRESSES | TACS_OUTPUT_EXTRAS);
+  TACSToFH5 *f5 =
+      new TACSToFH5(assembler, TACS_BEAM_OR_SHELL_ELEMENT, write_flag);
   f5->incref();
 
   // Set a gravity load
@@ -174,7 +171,7 @@ int main( int argc, char * argv[] ){
   funcs[3] = func;
 
   // Set the induced norm failure types
-  TACSInducedFailure * ifunc = new TACSInducedFailure(assembler, 20.0);
+  TACSInducedFailure *ifunc = new TACSInducedFailure(assembler, 20.0);
   ifunc->setInducedType(TACSInducedFailure::EXPONENTIAL);
   funcs[4] = ifunc;
 
@@ -206,7 +203,7 @@ int main( int argc, char * argv[] ){
   ifunc->setInducedType(TACSInducedFailure::DISCRETE_POWER_SQUARED);
   funcs[11] = ifunc;
 
-  for ( int k = 0; k < NUM_FUNCS; k++ ){
+  for (int k = 0; k < NUM_FUNCS; k++) {
     funcs[k]->incref();
   }
 
@@ -251,7 +248,7 @@ int main( int argc, char * argv[] ){
   pert->setRand(1.0, 2.0);
 
   TACSBVec *dfdx[NUM_FUNCS];
-  for ( int k = 0; k < NUM_FUNCS; k++ ){
+  for (int k = 0; k < NUM_FUNCS; k++) {
     dfdx[k] = assembler->createDesignVec();
     dfdx[k]->incref();
   }
@@ -262,15 +259,16 @@ int main( int argc, char * argv[] ){
   // Scan any remaining arguments that may be required
   int test_flag = 0;
   double dh = 1e-6;
-  for ( int k = 0; k < argc; k++ ){
-    if (sscanf(argv[k], "dh=%lf", &dh) == 1){}
-    if (strcmp(argv[k], "test") == 0){
+  for (int k = 0; k < argc; k++) {
+    if (sscanf(argv[k], "dh=%lf", &dh) == 1) {
+    }
+    if (strcmp(argv[k], "test") == 0) {
       test_flag = 1;
     }
   }
 
   // Print out the finite-difference interval
-  if (rank == 0){
+  if (rank == 0) {
 #ifdef TACS_USE_COMPLEX
     printf("Complex-step interval: %le\n", dh);
 #else
@@ -287,13 +285,13 @@ int main( int argc, char * argv[] ){
   assembler->setVariables(ans);
 
   // Write the solution to an .f5 file
-  if (f5){
+  if (f5) {
     // Find the location of the first '.' in the string
-    char * outfile = new char[ strlen(bdf_file)+5 ];
+    char *outfile = new char[strlen(bdf_file) + 5];
     int len = strlen(bdf_file);
-    int i = len-1;
-    for ( ; i >= 0; i-- ){
-      if (bdf_file[i] == '.'){
+    int i = len - 1;
+    for (; i >= 0; i--) {
+      if (bdf_file[i] == '.') {
         break;
       }
     }
@@ -306,7 +304,7 @@ int main( int argc, char * argv[] ){
 
     // Write out the file
     f5->writeToFile(outfile);
-    delete [] outfile;
+    delete[] outfile;
   }
 
   // Evaluate each of the functions
@@ -319,7 +317,7 @@ int main( int argc, char * argv[] ){
   // Create the adjoint variables for each function of interest
   TACSBVec *adjoints[NUM_FUNCS];
   TACSBVec *dfdu[NUM_FUNCS];
-  for ( int j = 0; j < NUM_FUNCS; j++ ){
+  for (int j = 0; j < NUM_FUNCS; j++) {
     adjoints[j] = assembler->createVec();
     adjoints[j]->incref();
     dfdu[j] = assembler->createVec();
@@ -331,7 +329,7 @@ int main( int argc, char * argv[] ){
   assembler->addSVSens(1.0, 0.0, 0.0, NUM_FUNCS, funcs, dfdu);
 
   // Solve all of the adjoint equations
-  for ( int j = 0; j < NUM_FUNCS; j++ ){
+  for (int j = 0; j < NUM_FUNCS; j++) {
     gmres->solve(dfdu[j], adjoints[j]);
   }
 
@@ -339,30 +337,30 @@ int main( int argc, char * argv[] ){
   assembler->addAdjointResProducts(-1.0, NUM_FUNCS, adjoints, dfdx);
 
   // Delete all of the adjoints
-  for ( int j = 0; j < NUM_FUNCS; j++ ){
+  for (int j = 0; j < NUM_FUNCS; j++) {
     adjoints[j]->decref();
     dfdu[j]->decref();
   }
 
   // Add up the contributions across all processors
-  for ( int k = 0; k < NUM_FUNCS; k++ ){
+  for (int k = 0; k < NUM_FUNCS; k++) {
     dfdx[k]->beginSetValues(TACS_ADD_VALUES);
   }
-  for ( int k = 0; k < NUM_FUNCS; k++ ){
+  for (int k = 0; k < NUM_FUNCS; k++) {
     dfdx[k]->endSetValues(TACS_ADD_VALUES);
   }
 
   // Test the function that will be used
-  if (test_flag){
+  if (test_flag) {
     // Test the derivatives of the functions of interest w.r.t. the
     // state and design variables
-    for ( int k = 0; k < NUM_FUNCS; k++ ){
+    for (int k = 0; k < NUM_FUNCS; k++) {
       assembler->testFunction(funcs[k], dh);
     }
   }
 
   TacsScalar fd[NUM_FUNCS], dfdp[NUM_FUNCS];
-  for ( int k = 0; k < NUM_FUNCS; k++ ){
+  for (int k = 0; k < NUM_FUNCS; k++) {
     dfdp[k] = dfdx[k]->dot(pert);
   }
 
@@ -387,11 +385,11 @@ int main( int argc, char * argv[] ){
 
   // Compute their derivative based on the complex component
   // of the function value
-  for ( int j = 0; j < NUM_FUNCS; j++ ){
-    fd[j] = TacsImagPart(fvals[j])/dh;
+  for (int j = 0; j < NUM_FUNCS; j++) {
+    fd[j] = TacsImagPart(fvals[j]) / dh;
   }
 
-#else // !TACS_USE_COMPLEX
+#else   // !TACS_USE_COMPLEX
   // Test the structural sensitivities
   // (xvals[ok] + dh)
   xtemp->copyValues(xvals);
@@ -429,22 +427,18 @@ int main( int argc, char * argv[] ){
 
   // Complete the finite-difference computation for each function
   assembler->evalFunctions(NUM_FUNCS, funcs, fd);
-  for ( int k = 0; k < NUM_FUNCS; k++ ){
-    fd[k] = 0.5*(fvals[k] - fd[k])/dh;
+  for (int k = 0; k < NUM_FUNCS; k++) {
+    fd[k] = 0.5 * (fvals[k] - fd[k]) / dh;
   }
-#endif // TACS_USE_COMPLEX
+#endif  // TACS_USE_COMPLEX
 
-  if (rank == 0){
+  if (rank == 0) {
     printf("Structural sensitivities\n");
-    for ( int k = 0; k < NUM_FUNCS; k++ ){
-      printf("Sensitivities for funcion %s\n",
-             funcs[k]->getObjectName());
-      printf("%25s %25s %25s\n",
-             "Adjoint", "FD/CS", "Abs. error");
-      printf("%25.15e %25.15e %25.15e\n",
-              TacsRealPart(dfdp[k]),
-              TacsRealPart(fd[k]),
-              TacsRealPart((dfdp[k] - fd[k])/fd[k]));
+    for (int k = 0; k < NUM_FUNCS; k++) {
+      printf("Sensitivities for funcion %s\n", funcs[k]->getObjectName());
+      printf("%25s %25s %25s\n", "Adjoint", "FD/CS", "Abs. error");
+      printf("%25.15e %25.15e %25.15e\n", TacsRealPart(dfdp[k]),
+             TacsRealPart(fd[k]), TacsRealPart((dfdp[k] - fd[k]) / fd[k]));
     }
   }
 
@@ -453,7 +447,7 @@ int main( int argc, char * argv[] ){
   assembler->decref();
   gmres->decref();
 
-  for ( int k = 0; k < NUM_FUNCS; k++ ){
+  for (int k = 0; k < NUM_FUNCS; k++) {
     funcs[k]->incref();
   }
 

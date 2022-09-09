@@ -27,8 +27,9 @@
   calculating the Jacobians for element stiffness matricies.
 */
 
-#include <stdlib.h>
 #include <math.h>
+#include <stdlib.h>
+
 #include "TACSObject.h"
 
 /*
@@ -40,8 +41,7 @@
   Gauss-Lobatto) quadrature schemes that include the end points of the
   interval.
 */
-enum QuadratureType { GAUSS_QUADRATURE,
-                      LOBATTO_QUADRATURE };
+enum QuadratureType { GAUSS_QUADRATURE, LOBATTO_QUADRATURE };
 
 TACS_BEGIN_NAMESPACE(FElibrary)
 
@@ -58,22 +58,22 @@ TACS_BEGIN_NAMESPACE(FElibrary)
   least susceptibility to truncation error.
 */
 template <class ScalarType>
-void solveQERoots( ScalarType * r1, ScalarType * r2,
-                   ScalarType a, ScalarType b, ScalarType c ){
-  ScalarType discrim = b*b - 4.0*a*c;
-  if (TacsRealPart(discrim) < 0.0){
+void solveQERoots(ScalarType* r1, ScalarType* r2, ScalarType a, ScalarType b,
+                  ScalarType c) {
+  ScalarType discrim = b * b - 4.0 * a * c;
+  if (TacsRealPart(discrim) < 0.0) {
     *r1 = *r2 = 0.0;
     return;
   }
 
-  if (TacsRealPart(a) == 0.0){
-    if (TacsRealPart(b) == 0.0){
+  if (TacsRealPart(a) == 0.0) {
+    if (TacsRealPart(b) == 0.0) {
       *r1 = *r2 = 0.0;
       return;
     }
 
     // Solve b*x + c = 0
-    *r1 = - c/b;
+    *r1 = -c / b;
     *r2 = 0.0;
     return;
   }
@@ -82,13 +82,12 @@ void solveQERoots( ScalarType * r1, ScalarType * r2,
   // avoid truncation error
   discrim = sqrt(discrim);
 
-  if (TacsRealPart(b) > 0.0){
-    *r1 = -(b + discrim)/(2.0*a);
-    *r2 = c/((*r1)*a);
-  }
-  else { // b < 0.0
-    *r1 = -(b - discrim)/(2.0*a);
-    *r2 = c/((*r1)*a);
+  if (TacsRealPart(b) > 0.0) {
+    *r1 = -(b + discrim) / (2.0 * a);
+    *r2 = c / ((*r1) * a);
+  } else {  // b < 0.0
+    *r1 = -(b - discrim) / (2.0 * a);
+    *r2 = c / ((*r1) * a);
   }
 }
 
@@ -98,7 +97,7 @@ void solveQERoots( ScalarType * r1, ScalarType * r2,
   input:
   k: the order of the basis to test
 */
-void bspline_basis_test( int k );
+void bspline_basis_test(int k);
 
 /*
   Find the interval for the computing the basis function
@@ -109,7 +108,7 @@ void bspline_basis_test( int k );
   n: the number of control points
   k: the order of the b-spline
 */
-int bspline_interval( double u, const double * T, int n, int k );
+int bspline_interval(double u, const double* T, int n, int k);
 
 /*
   Evaluate the basis functions and optionally their derivatives
@@ -127,9 +126,8 @@ int bspline_interval( double u, const double * T, int n, int k );
   u is on the idx-th knot span such that u is in the interval
   u \in [Tu[idx], Tu[idx+1])
 */
-void bspline_basis( double * N, const int idx, const double u,
-                    const double * Tu,
-                    const int ku, double * work );
+void bspline_basis(double* N, const int idx, const double u, const double* Tu,
+                   const int ku, double* work);
 
 /*
   Compute the derivative of the b-spline basis
@@ -147,9 +145,9 @@ void bspline_basis( double * N, const int idx, const double u,
   u is on the idx-th knot span such that u is in the interval
   u \in [Tu[idx], Tu[idx+1])
 */
-void bspline_basis_derivative( double * N, const int idx, const double u,
-                               int ideriv, const double * Tu,
-                               const int ku, double * work );
+void bspline_basis_derivative(double* N, const int idx, const double u,
+                              int ideriv, const double* Tu, const int ku,
+                              double* work);
 
 /*
   Evaluate the one-dimensional b-spline
@@ -170,9 +168,9 @@ void bspline_basis_derivative( double * N, const int idx, const double u,
   returns:
   the value of the interpolant (or its derivative) at u
 */
-TacsScalar bspline1d( const double u, const int idu, const double * Tu,
-                      const int nu, const int ku, const TacsScalar * coef,
-                      double * work );
+TacsScalar bspline1d(const double u, const int idu, const double* Tu,
+                     const int nu, const int ku, const TacsScalar* coef,
+                     double* work);
 
 /*
   Evaluate a two-dimensional tensor product b-spline
@@ -193,12 +191,10 @@ TacsScalar bspline1d( const double u, const int idu, const double * Tu,
   returns:
   the value of the interpolant (or its derivative) at u
 */
-TacsScalar bspline2d( const double u, const double v,
-                      const int idu, const int idv,
-                      const double * Tu, const double * Tv,
-                      const int nu, const int nv, const int ku, const int kv,
-                      const TacsScalar * coef,
-                      double * work );
+TacsScalar bspline2d(const double u, const double v, const int idu,
+                     const int idv, const double* Tu, const double* Tv,
+                     const int nu, const int nv, const int ku, const int kv,
+                     const TacsScalar* coef, double* work);
 
 /*
   Evaluate a three-dimensional tensor product b-spline
@@ -221,19 +217,18 @@ TacsScalar bspline2d( const double u, const double v,
   returns:
   the value of the interpolant (or its derivative) at u
 */
-TacsScalar bspline3d( const double u, const double v, const double w,
-                      const int idu, const int idv, const int idw,
-                      const double * Tu, const double * Tv, const double * Tw,
-                      const int nu, const int nv, const int nw,
-                      const int ku, const int kv, const int kw,
-                      const TacsScalar * coef,
-                      double * work );
+TacsScalar bspline3d(const double u, const double v, const double w,
+                     const int idu, const int idv, const int idw,
+                     const double* Tu, const double* Tv, const double* Tw,
+                     const int nu, const int nv, const int nw, const int ku,
+                     const int kv, const int kw, const TacsScalar* coef,
+                     double* work);
 
 /*
   C1 functions for one dimensional problems
 */
-void cubicHP( double N[], double Na[], double Naa[], double a );
-void quinticHP( double N[], double Na[], double Naa[], double a );
+void cubicHP(double N[], double Na[], double Naa[], double a);
+void quinticHP(double N[], double Na[], double Naa[], double a);
 
 TACS_END_NAMESPACE
 

@@ -43,48 +43,46 @@
 */
 class TACSCreator : public TACSObject {
  public:
-  TACSCreator( MPI_Comm comm, int _vars_per_node );
+  TACSCreator(MPI_Comm comm, int _vars_per_node);
   ~TACSCreator();
 
   // Set the connectivity for the global mesh
   // ----------------------------------------
-  void setGlobalConnectivity( int _num_nodes, int _num_elements,
-                              const int *_elem_node_ptr,
-                              const int *_elem_node_conn,
-                              const int *_elem_id_nums );
+  void setGlobalConnectivity(int _num_nodes, int _num_elements,
+                             const int *_elem_node_ptr,
+                             const int *_elem_node_conn,
+                             const int *_elem_id_nums);
 
   // Set the boundary conditions
   // ---------------------------
-  void setBoundaryConditions( int _num_bcs,
-                              const int *_bc_nodes,
-                              const int *_bc_ptr=NULL,
-                              const int *_bc_vars=NULL,
-                              const TacsScalar *_bc_vals=NULL );
+  void setBoundaryConditions(int _num_bcs, const int *_bc_nodes,
+                             const int *_bc_ptr = NULL,
+                             const int *_bc_vars = NULL,
+                             const TacsScalar *_bc_vals = NULL);
 
   // Set the dependent node connectivity and weights
   // -----------------------------------------------
-  void setDependentNodes( int num_dep_nodes,
-                          const int *_dep_node_ptr,
-                          const int *_dep_node_conn,
-                          const double *_dep_node_weights );
+  void setDependentNodes(int num_dep_nodes, const int *_dep_node_ptr,
+                         const int *_dep_node_conn,
+                         const double *_dep_node_weights);
 
   // Set the nodal locations
   // -----------------------
-  void setNodes( const TacsScalar *_Xpts );
+  void setNodes(const TacsScalar *_Xpts);
 
   // Set the type of ordering to use
   // -------------------------------
-  void setReorderingType( TACSAssembler::OrderingType _order_type,
-                          TACSAssembler::MatrixOrderingType _mat_type );
+  void setReorderingType(TACSAssembler::OrderingType _order_type,
+                         TACSAssembler::MatrixOrderingType _mat_type);
 
   // Partition the mesh
   // ------------------
-  void partitionMesh( int split_size=0, const int *part=NULL );
+  void partitionMesh(int split_size = 0, const int *part = NULL);
 
   // Set the elements into TACS creator
   // ----------------------------------
-  void setElements( int _num_elems, TACSElement **_elements );
-  void setElementCreator( TACSElement* (*func)(int, int) );
+  void setElements(int _num_elems, TACSElement **_elements);
+  void setElementCreator(TACSElement *(*func)(int, int));
 
   // Create the TACSAssembler object
   // -------------------------------
@@ -92,26 +90,24 @@ class TACSCreator : public TACSObject {
 
   // Get local element numbers with the given set of element-id numbers
   // ------------------------------------------------------------------
-  int getElementIdNums( int num_ids, int *ids, int **elem_nums );
+  int getElementIdNums(int num_ids, int *ids, int **elem_nums);
 
   // Convert from the list of nodes from the original serial ordering
   // ----------------------------------------------------------------
-  void getAssemblerNodeNums( TACSAssembler *tacs,
-                              int num_orig_nodes,
-                              const int *orig_nodes,
-                              int *num_dist_nodes,
-                              int **new_nodes );
+  void getAssemblerNodeNums(TACSAssembler *tacs, int num_orig_nodes,
+                            const int *orig_nodes, int *num_dist_nodes,
+                            int **new_nodes);
 
   // Get the new node numbers and element partition on the root proc
   // ---------------------------------------------------------------
-  int getNodeNums( const int **_new_nodes );
-  int getElementPartition( const int **_partition );
-  void getNumOwnedNodes( int **_owned_nodes );
-  void getNumOwnedElements( int **_owned_elements );
+  int getNodeNums(const int **_new_nodes);
+  int getElementPartition(const int **_partition);
+  void getNumOwnedNodes(int **_owned_nodes);
+  void getNumOwnedElements(int **_owned_elements);
 
  private:
   // The magic element-generator function pointer
-  TACSElement* (*element_creator)( int local, int elem_id );
+  TACSElement *(*element_creator)(int local, int elem_id);
 
   // Set the type of reordering to use
   int use_reordering;
@@ -165,4 +161,4 @@ class TACSCreator : public TACSObject {
   int *local_elem_id_nums;
 };
 
-#endif // TACS_CREATOR_H
+#endif  // TACS_CREATOR_H

@@ -21,30 +21,21 @@
 
 const int TacsMeshLoaderNumElementTypes = 10;
 
-const char *TacsMeshLoaderElementTypes[] =
-  {"CBAR",
-   "CQUADR",
-   "CQUAD4",
-   "CQUAD8",
-   "CQUAD9",
-   "CQUAD",
-   "CHEXA27",
-   "CHEXA",
-   "CTRIA3",
-   "CTETRA"};
+const char *TacsMeshLoaderElementTypes[] = {
+    "CBAR",  "CQUADR",  "CQUAD4", "CQUAD8", "CQUAD9",
+    "CQUAD", "CHEXA27", "CHEXA",  "CTRIA3", "CTETRA"};
 
 // Lower and upper limits for the number of nodes
-const int TacsMeshLoaderElementLimits[][2] = {
-  {2, 2}, // CBAR
-  {4, 4}, // CQUADR
-  {4, 4}, // CQUAD4
-  {8, 8}, // CQUAD8
-  {9, 9}, // CQUAD9
-  {9, 9}, // CQUAD
-  {27, 27}, // CHEXA27
-  {8, 8}, // CHEXA
-  {3, 3}, // CTRIA3
-  {4, 10}}; // CTETRA
+const int TacsMeshLoaderElementLimits[][2] = {{2, 2},    // CBAR
+                                              {4, 4},    // CQUADR
+                                              {4, 4},    // CQUAD4
+                                              {8, 8},    // CQUAD8
+                                              {9, 9},    // CQUAD9
+                                              {9, 9},    // CQUAD
+                                              {27, 27},  // CHEXA27
+                                              {8, 8},    // CHEXA
+                                              {3, 3},    // CTRIA3
+                                              {4, 10}};  // CTETRA
 
 /*
   This class provides a limited capability to read in nodal and
@@ -64,28 +55,28 @@ const int TacsMeshLoaderElementLimits[][2] = {
   in to the object based on the component number.
 */
 
+#include "TACSAuxElements.h"
 #include "TACSCreator.h"
 #include "TACSToFH5.h"
-#include "TACSAuxElements.h"
 
 class TACSMeshLoader : public TACSObject {
  public:
-  TACSMeshLoader( MPI_Comm _comm );
+  TACSMeshLoader(MPI_Comm _comm);
   ~TACSMeshLoader();
 
   // Read a BDF file for input
   // -------------------------
-  int scanBDFFile( const char *file_name );
+  int scanBDFFile(const char *file_name);
 
   // Get information about the mesh after scanning
   // ---------------------------------------------
   int getNumComponents();
-  const char *getComponentDescript( int comp_num );
-  const char *getElementDescript( int comp_num );
+  const char *getComponentDescript(int comp_num);
+  const char *getElementDescript(int comp_num);
 
   // Set the elements corresponding to each of the component numbers
   // ---------------------------------------------------------------
-  void setElement( int component_num, TACSElement *_element );
+  void setElement(int component_num, TACSElement *_element);
 
   // Retrieve the element numbers corresponding to the given
   // component numbers
@@ -95,41 +86,39 @@ class TACSMeshLoader : public TACSObject {
 
   // Create a TACSToFH5 file writer
   // ------------------------------
-  TACSToFH5 *createTACSToFH5( TACSAssembler *tacs,
-                              ElementType elem_type,
-                              int write_flag );
+  TACSToFH5 *createTACSToFH5(TACSAssembler *tacs, ElementType elem_type,
+                             int write_flag);
 
   // Distribute the mesh and create TACS
   // -----------------------------------
-  TACSAssembler *createTACS( int vars_per_node,
-                             TACSAssembler::OrderingType order_type =
-                             TACSAssembler::NATURAL_ORDER,
-                             TACSAssembler::MatrixOrderingType mat_type =
-                             TACSAssembler::DIRECT_SCHUR);
+  TACSAssembler *createTACS(
+      int vars_per_node,
+      TACSAssembler::OrderingType order_type = TACSAssembler::NATURAL_ORDER,
+      TACSAssembler::MatrixOrderingType mat_type = TACSAssembler::DIRECT_SCHUR);
 
   // Set the domain of a structural function with component numbers
   // --------------------------------------------------------------
-  void addFunctionDomain( TACSFunction *function,
-                          int num_comps, int comp_nums[] );
+  void addFunctionDomain(TACSFunction *function, int num_comps,
+                         int comp_nums[]);
 
   // Add the auxiliary element to the given component
   // ------------------------------------------------
-  void addAuxElement( TACSAuxElements *aux, int component_num,
-                      TACSElement *_element );
+  void addAuxElement(TACSAuxElements *aux, int component_num,
+                     TACSElement *_element);
 
   // Get the node numbers in the Assembler object from the file number
   // -----------------------------------------------------------------
-  void getAssemblerNodeNums( TACSAssembler *assembler,
-                             int num_nodes, int *node_nums,
-                             int *num_new_nodes, int **new_nodes );
+  void getAssemblerNodeNums(TACSAssembler *assembler, int num_nodes,
+                            int *node_nums, int *num_new_nodes,
+                            int **new_nodes);
 
   // Get the connectivity and boundary conditions
   // --------------------------------------------
-  void getConnectivity( int *_num_nodes, int *_num_elements,
-                        const int **_elem_node_ptr, const int **_elem_node_conn,
-                        const int **_elem_component, const TacsScalar **_Xpts );
-  void getBCs( int *_num_bcs, const int **_bc_nodes, const int **_bc_vars,
-               const int **_bc_ptr, const TacsScalar **_bc_vals );
+  void getConnectivity(int *_num_nodes, int *_num_elements,
+                       const int **_elem_node_ptr, const int **_elem_node_conn,
+                       const int **_elem_component, const TacsScalar **_Xpts);
+  void getBCs(int *_num_bcs, const int **_bc_nodes, const int **_bc_vars,
+              const int **_bc_ptr, const TacsScalar **_bc_vals);
 
  private:
   // Communicator for all processors
@@ -170,4 +159,4 @@ class TACSMeshLoader : public TACSObject {
   TacsScalar *bc_vals;
 };
 
-#endif // TACS_MESH_LOADER_H
+#endif  // TACS_MESH_LOADER_H

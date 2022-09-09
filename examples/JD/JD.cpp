@@ -8,23 +8,21 @@
 
 #include "JD.h"
 
-OctCreator::OctCreator( TMRBoundaryConditions *_bcs,
-                        TMROctForest *_forest,
-                        TMRStiffnessProperties *_stiff_props) :
-  TMROctConformTACSTopoCreator( _bcs, 1, _forest, -1,
-                                TMR_GAUSS_LOBATTO_POINTS ){
+OctCreator::OctCreator(TMRBoundaryConditions *_bcs, TMROctForest *_forest,
+                       TMRStiffnessProperties *_stiff_props)
+    : TMROctConformTACSTopoCreator(_bcs, 1, _forest, -1,
+                                   TMR_GAUSS_LOBATTO_POINTS) {
   bcs = _bcs;
   forest = _forest;
   stiff_props = _stiff_props;
 }
 
-TACSElement* OctCreator::createElement( int order, TMROctant *oct,
-                                        int nweights, const int *index,
-                                        TMROctForest *filter ){
-
+TACSElement *OctCreator::createElement(int order, TMROctant *oct, int nweights,
+                                       const int *index, TMROctForest *filter) {
   TMROctConstitutive *con = new TMROctConstitutive(stiff_props, forest);
   con->incref();
-  TACSLinearElasticity3D *model = new TACSLinearElasticity3D(con, TACS_LINEAR_STRAIN);
+  TACSLinearElasticity3D *model =
+      new TACSLinearElasticity3D(con, TACS_LINEAR_STRAIN);
   model->incref();
   TACSLinearHexaBasis *basis = new TACSLinearHexaBasis();
   basis->incref();
@@ -33,23 +31,20 @@ TACSElement* OctCreator::createElement( int order, TMROctant *oct,
   return elem;
 }
 
-CreatorCallback::CreatorCallback( TMRBoundaryConditions *_bcs,
-                                  TMRStiffnessProperties *_stiff_props ){
+CreatorCallback::CreatorCallback(TMRBoundaryConditions *_bcs,
+                                 TMRStiffnessProperties *_stiff_props) {
   bcs = _bcs;
   stiff_props = _stiff_props;
 }
 
-OctCreator* CreatorCallback::creator_callback( TMROctForest *forest ){
-
+OctCreator *CreatorCallback::creator_callback(TMROctForest *forest) {
   OctCreator *creator = new OctCreator(bcs, forest, stiff_props);
   return creator;
 }
 
-Mfilter::Mfilter( int _N, int _nlevels,
-                  TACSAssembler *_assembler[],
-                  TMROctForest *_filter[],
-                  double _r) :
-TMRHelmholtzPUFilter(_N, _nlevels, _assembler, _filter) {
+Mfilter::Mfilter(int _N, int _nlevels, TACSAssembler *_assembler[],
+                 TMROctForest *_filter[], double _r)
+    : TMRHelmholtzPUFilter(_N, _nlevels, _assembler, _filter) {
   // Get rank
   MPI_Comm_rank(_assembler[0]->getMPIComm(), &mpi_rank);
 
@@ -59,13 +54,12 @@ TMRHelmholtzPUFilter(_N, _nlevels, _assembler, _filter) {
   r = _r;
 }
 
-int Mfilter::getInteriorStencil( int diagonal_index,
-                                 int npts, const TacsScalar Xpts[],
-                                 double alpha[] ){
+int Mfilter::getInteriorStencil(int diagonal_index, int npts,
+                                const TacsScalar Xpts[], double alpha[]) {
   // Create a 3-by-3 matrix H in flat(1d) format
   double H[9];
-  memset(H, 0, sizeof(double)*9);
-  H[0] = H[4] = H[8] = r*r;  // set diagonal entries to be r^2
+  memset(H, 0, sizeof(double) * 9);
+  H[0] = H[4] = H[8] = r * r;  // set diagonal entries to be r^2
 
   // Create optimization problem data object
   opt_data = new OptFilterWeights(diagonal_index, npts, 3, Xpts, H, 9);
@@ -80,12 +74,12 @@ int Mfilter::getInteriorStencil( int diagonal_index,
 
   // Set lower bounds
   double lb[ndim];
-  memset(lb, 0, sizeof(double)*ndim);
+  memset(lb, 0, sizeof(double) * ndim);
   nlopt_set_lower_bounds(opt, lb);
 
   // Add equality constraints
   double cons_tol[ncon];
-  for (int i = 0; i < ncon; i++){
+  for (int i = 0; i < ncon; i++) {
     cons_tol[i] = 1e-6;
   }
   nlopt_add_equality_mconstraint(opt, ncon, constraint, opt_data, cons_tol);
@@ -96,22 +90,24 @@ int Mfilter::getInteriorStencil( int diagonal_index,
 
   // Set initial point
   double w0[ndim];
-  for (int i = 0; i < ndim; i++){
+  for (int i = 0; i < ndim; i++) {
     w0[i] = 1.0;
   }
 
   // Optimize
   double minf;
   int flag = nlopt_optimize(opt, w0, &minf);
-  if (flag < 0){
-    if (mpi_rank == 0){
-      printf("[Error] Optimization failed for interior stencil!, flag = %d\n", flag);
+  if (flag < 0) {
+    if (mpi_rank == 0) {
+      printf("[Error] Optimization failed for interior stencil!, flag = %d\n",
+             flag);
     }
     exit(-1);
   }
 
   // if (mpi_rank == 0){
-  //   printf("[MfilterInterior] Optimization converged, nfev_obj = %d, nfev_con = %d, flag = %d\n",
+  //   printf("[MfilterInterior] Optimization converged, nfev_obj = %d, nfev_con
+  //   = %d, flag = %d\n",
   //          opt_data->get_nfev_obj(), opt_data->get_nfev_con(), flag);
   // }
 
@@ -125,20 +121,20 @@ int Mfilter::getInteriorStencil( int diagonal_index,
   nlopt_destroy(opt);
 }
 
-int Mfilter::getBoundaryStencil( int diagonal_index,
-                                 const TacsScalar n[], int npts,
-                                 const TacsScalar Xpts[], double alpha[] ){
+int Mfilter::getBoundaryStencil(int diagonal_index, const TacsScalar n[],
+                                int npts, const TacsScalar Xpts[],
+                                double alpha[]) {
   // Create a 2-by-2 matrix H in flat format
   double H[4];
-  memset(H, 0, sizeof(double)*4);
-  H[0] = H[3] = r*r;
+  memset(H, 0, sizeof(double) * 4);
+  H[0] = H[3] = r * r;
 
   /* Reduce to a 2d problem */
 
   int index = 0;
   TacsScalar temp = fabs(n[0]);
-  for ( int i = 0; i < 3; i++ ){
-    if (fabs(n[i]) < temp){
+  for (int i = 0; i < 3; i++) {
+    if (fabs(n[i]) < temp) {
       temp = fabs(n[i]);
       index = i;
     }
@@ -151,38 +147,38 @@ int Mfilter::getBoundaryStencil( int diagonal_index,
   t[index] = 1.0;
 
   // t2 = cross(t, n)
-  t2[0] = t[1]*n[2] - t[2]*n[1];
-  t2[1] = t[2]*n[0] - t[0]*n[2];
-  t2[2] = t[0]*n[1] - t[1]*n[0];
+  t2[0] = t[1] * n[2] - t[2] * n[1];
+  t2[1] = t[2] * n[0] - t[0] * n[2];
+  t2[2] = t[0] * n[1] - t[1] * n[0];
 
   // t1 = cross(n,t2)
-  t1[0] = n[1]*t2[2] - n[2]*t2[1];
-  t1[1] = n[2]*t2[0] - n[0]*t2[2];
-  t1[2] = n[0]*t2[1] - n[1]*t2[0];
+  t1[0] = n[1] * t2[2] - n[2] * t2[1];
+  t1[1] = n[2] * t2[0] - n[0] * t2[2];
+  t1[2] = n[0] * t2[1] - n[1] * t2[0];
 
   // Reduce the problem
-  TacsScalar Xt[2*npts];
+  TacsScalar Xt[2 * npts];
 
   // Compute diff = X - X[diag, :]
   TacsScalar Xdiag[3];
-  for ( int i = 0; i < 3; i++ ){
-    Xdiag[i] = Xpts[3*diagonal_index+i];
+  for (int i = 0; i < 3; i++) {
+    Xdiag[i] = Xpts[3 * diagonal_index + i];
   }
-  TacsScalar diff[3*npts];
-  for ( int i = 0; i < npts; i++ ){
-    for ( int j = 0; j < 3; j++ ){
-      diff[3*i+j] = Xpts[3*i+j] - Xdiag[j];
+  TacsScalar diff[3 * npts];
+  for (int i = 0; i < npts; i++) {
+    for (int j = 0; j < 3; j++) {
+      diff[3 * i + j] = Xpts[3 * i + j] - Xdiag[j];
     }
   }
 
   // Xt[:,0] = dot(diff, t1)
   // Xt[:,1] = dot(diff, t2)
-  for (int i = 0; i < npts; i++){
-    Xt[2*i] = 0.0;
-    Xt[2*i+1] = 0.0;
-    for (int j = 0; j < 3; j++){
-      Xt[2*i] += diff[3*i+j]*t1[j];
-      Xt[2*i+1] += diff[3*i+j]*t2[j];
+  for (int i = 0; i < npts; i++) {
+    Xt[2 * i] = 0.0;
+    Xt[2 * i + 1] = 0.0;
+    for (int j = 0; j < 3; j++) {
+      Xt[2 * i] += diff[3 * i + j] * t1[j];
+      Xt[2 * i + 1] += diff[3 * i + j] * t2[j];
     }
   }
 
@@ -199,12 +195,12 @@ int Mfilter::getBoundaryStencil( int diagonal_index,
 
   // Set lower bounds
   double lb[ndim];
-  memset(lb, 0, sizeof(double)*ndim);
+  memset(lb, 0, sizeof(double) * ndim);
   nlopt_set_lower_bounds(opt, lb);
 
   // Add equality constraints
   double cons_tol[ncon];
-  for (int i = 0; i < ncon; i++){
+  for (int i = 0; i < ncon; i++) {
     cons_tol[i] = 1e-6;
   }
   nlopt_add_equality_mconstraint(opt, ncon, constraint, opt_data, cons_tol);
@@ -215,22 +211,24 @@ int Mfilter::getBoundaryStencil( int diagonal_index,
 
   // Set initial point
   double w0[ndim];
-  for (int i = 0; i < ndim; i++){
+  for (int i = 0; i < ndim; i++) {
     w0[i] = 1.0;
   }
 
   // Optimize
   double minf;
   int flag = nlopt_optimize(opt, w0, &minf);
-  if (flag < 0){
-    if (mpi_rank == 0){
-      printf("[Error] Optimization failed for boundary stencil!, flag = %d\n", flag);
+  if (flag < 0) {
+    if (mpi_rank == 0) {
+      printf("[Error] Optimization failed for boundary stencil!, flag = %d\n",
+             flag);
     }
     exit(-1);
   }
 
   // if (mpi_rank == 0){
-  //   printf("[MfilterBoundary] Optimization converged, nfev_obj = %d, nfev_con = %d, flag = %d\n",
+  //   printf("[MfilterBoundary] Optimization converged, nfev_obj = %d, nfev_con
+  //   = %d, flag = %d\n",
   //          opt_data->get_nfev_obj(), opt_data->get_nfev_con(), flag);
   // }
 
@@ -244,35 +242,35 @@ int Mfilter::getBoundaryStencil( int diagonal_index,
   nlopt_destroy(opt);
 }
 
-MFilterCreator::MFilterCreator( double _r0_frac, int _N, double _a ){
+MFilterCreator::MFilterCreator(double _r0_frac, int _N, double _a) {
   r0_frac = _r0_frac;
   N = _N;
   a = _a;
 }
 
 // TMRLagrangeFilter* MFilterCreator::create_filter( int nlevels,
-//                                                   TACSAssembler *assemblers[],
-//                                                   TMROctForest *filters[]){
-//   TMRLagrangeFilter *mfilter = new TMRLagrangeFilter(nlevels, assemblers, filters);
-//   mfilter->incref();
+//                                                   TACSAssembler
+//                                                   *assemblers[], TMROctForest
+//                                                   *filters[]){
+//   TMRLagrangeFilter *mfilter = new TMRLagrangeFilter(nlevels, assemblers,
+//   filters); mfilter->incref();
 //   // mfilter->initialize();
 //   return mfilter;
 // }
 
-Mfilter* MFilterCreator::create_filter( int nlevels,
-                                        TACSAssembler *assemblers[],
-                                        TMROctForest *filters[] ){
-  double r = a*r0_frac;
+Mfilter *MFilterCreator::create_filter(int nlevels, TACSAssembler *assemblers[],
+                                       TMROctForest *filters[]) {
+  double r = a * r0_frac;
   Mfilter *mfilter = new Mfilter(N, nlevels, assemblers, filters, r);
   mfilter->incref();
   mfilter->initialize();
   return mfilter;
 }
 
-TopoProblemCreator::TopoProblemCreator( TMROctForest *_forest,
-                                        CreatorCallback *_creator_callback_obj,
-                                        MFilterCreator *_filter_creator, int _nlevels,
-                                        int _use_galerkin ){
+TopoProblemCreator::TopoProblemCreator(TMROctForest *_forest,
+                                       CreatorCallback *_creator_callback_obj,
+                                       MFilterCreator *_filter_creator,
+                                       int _nlevels, int _use_galerkin) {
   forest = _forest;
   creator_callback_obj = _creator_callback_obj;
   filter_creator = _filter_creator;
@@ -280,25 +278,24 @@ TopoProblemCreator::TopoProblemCreator( TMROctForest *_forest,
   use_galerkin = _use_galerkin;
 }
 
-TopoProblemCreator::~TopoProblemCreator(){
-  for (int i = 0; i < nlevels; i++){
-    if (assemblers[i]){
+TopoProblemCreator::~TopoProblemCreator() {
+  for (int i = 0; i < nlevels; i++) {
+    if (assemblers[i]) {
       assemblers[i]->decref();
     }
-    if (filters[i]){
+    if (filters[i]) {
       filters[i]->decref();
     }
-    if (forests[i]){
+    if (forests[i]) {
       forests[i]->decref();
     }
-    if (mg){
+    if (mg) {
       mg->decref();
     }
   }
-
 }
 
-TMRTopoProblem* TopoProblemCreator::createTopoProblem(){
+TMRTopoProblem *TopoProblemCreator::createTopoProblem() {
   int repartition = 1;
   int lowest_order = 2;
   TACSAssembler::OrderingType ordering = TACSAssembler::MULTICOLOR_ORDER;
@@ -322,7 +319,7 @@ TMRTopoProblem* TopoProblemCreator::createTopoProblem(){
   assemblers[0] = creator->createTACS(forest, ordering);
   assemblers[0]->incref();
 
-  for (int i = 0; i < nlevels-1; i++) {
+  for (int i = 0; i < nlevels - 1; i++) {
     int order = forests[i]->getMeshOrder();
     TMRInterpolationType interp = forests[i]->getInterpType();
 
@@ -330,10 +327,9 @@ TMRTopoProblem* TopoProblemCreator::createTopoProblem(){
     if (order > lowest_order) {
       _forest = forests[i]->duplicate();
       _forest->incref();
-      order = order-1;
+      order = order - 1;
       _forest->setMeshOrder(order, interp);
-    }
-    else{
+    } else {
       _forest = forests[i]->coarsen();
       _forest->incref();
       _forest->setMeshOrder(order, interp);
@@ -345,10 +341,10 @@ TMRTopoProblem* TopoProblemCreator::createTopoProblem(){
 
     creator->decref();
     creator = creator_callback_obj->creator_callback(_forest);
-    forests[i+1] = _forest;
-    filters[i+1] = _forest;
-    assemblers[i+1] = creator->createTACS(_forest, ordering);
-    assemblers[i+1]->incref();
+    forests[i + 1] = _forest;
+    filters[i + 1] = _forest;
+    assemblers[i + 1] = creator->createTACS(_forest, ordering);
+    assemblers[i + 1]->incref();
   }
   creator->decref();
 
@@ -361,29 +357,31 @@ TMRTopoProblem* TopoProblemCreator::createTopoProblem(){
   mg->incref();
 
   // Create the TMRTopoFilter object
-  Mfilter *filter_obj = filter_creator->create_filter(nlevels, assemblers, filters);
+  Mfilter *filter_obj =
+      filter_creator->create_filter(nlevels, assemblers, filters);
 
   // Create problem
   int gmres_subspace = 50;
   double rtol = 1e-9;
-  TMRTopoProblem *problem = new TMRTopoProblem(filter_obj, mg, gmres_subspace, rtol);
+  TMRTopoProblem *problem =
+      new TMRTopoProblem(filter_obj, mg, gmres_subspace, rtol);
   return problem;
 }
 
-MassObj::MassObj(double _m_fixed){
+MassObj::MassObj(double _m_fixed) {
   m_fixed = _m_fixed;
   filter = NULL;
   allocated = 0;
 }
 
-MassObj::~MassObj(){
-  if (allocated){
+MassObj::~MassObj() {
+  if (allocated) {
     mass_func->decref();
   }
 }
 
-void MassObj::evalObj( TMRTopoFilter *_filter, TACSMg *dummy, TacsScalar *val ) {
-  if(!filter){
+void MassObj::evalObj(TMRTopoFilter *_filter, TACSMg *dummy, TacsScalar *val) {
+  if (!filter) {
     allocated = 1;
 
     filter = _filter;
@@ -399,16 +397,16 @@ void MassObj::evalObj( TMRTopoFilter *_filter, TACSMg *dummy, TacsScalar *val ) 
   return;
 }
 
-void MassObj::evalGrad( TMRTopoFilter *dummy1, TACSMg *dummy2, TACSBVec *dfdx ){
+void MassObj::evalGrad(TMRTopoFilter *dummy1, TACSMg *dummy2, TACSBVec *dfdx) {
   dfdx->zeroEntries();
-  assembler->addDVSens(1/m_fixed, 1, &mass_func, &dfdx);
+  assembler->addDVSens(1 / m_fixed, 1, &mass_func, &dfdx);
   return;
 }
 
-FrequencyConstr::FrequencyConstr( TMROctForest *_forest, double _len0,
-                                 double _lambda0,
-                                 int _max_jd_size, int _max_gmres_size,
-                                 double _ksrho, double _non_design_mass ){
+FrequencyConstr::FrequencyConstr(TMROctForest *_forest, double _len0,
+                                 double _lambda0, int _max_jd_size,
+                                 int _max_gmres_size, double _ksrho,
+                                 double _non_design_mass) {
   allocated = 0;
 
   forest = _forest;
@@ -424,7 +422,7 @@ FrequencyConstr::FrequencyConstr( TMROctForest *_forest, double _len0,
 }
 
 FrequencyConstr::~FrequencyConstr() {
-  if(allocated){
+  if (allocated) {
     ksm_print->decref();
 
     svec->decref();
@@ -439,10 +437,10 @@ FrequencyConstr::~FrequencyConstr() {
       deig[i]->decref();
     }
 
-    delete [] eig;
-    delete [] eta;
-    delete [] eigv;
-    delete [] deig;
+    delete[] eig;
+    delete[] eta;
+    delete[] eigv;
+    delete[] deig;
 
     rho->decref();
     rho_original->decref();
@@ -454,10 +452,9 @@ FrequencyConstr::~FrequencyConstr() {
   }
 }
 
-void FrequencyConstr::evalConstr( TMRTopoFilter *_filter, TACSMg *_mg,
-                                  int nconstr, TacsScalar* vals ){
-  if(!allocated){
-
+void FrequencyConstr::evalConstr(TMRTopoFilter *_filter, TACSMg *_mg,
+                                 int nconstr, TacsScalar *vals) {
+  if (!allocated) {
     allocated = 1;
 
     // KSMprint object
@@ -489,8 +486,8 @@ void FrequencyConstr::evalConstr( TMRTopoFilter *_filter, TACSMg *_mg,
 
     eig = new TacsScalar[num_eigenvalues];
     eta = new TacsScalar[num_eigenvalues];
-    eigv = new TACSBVec*[num_eigenvalues];
-    deig = new TACSBVec*[num_eigenvalues];
+    eigv = new TACSBVec *[num_eigenvalues];
+    deig = new TACSBVec *[num_eigenvalues];
 
     for (int i = 0; i < num_eigenvalues; i++) {
       eigv[i] = assembler->createVec();
@@ -515,7 +512,8 @@ void FrequencyConstr::evalConstr( TMRTopoFilter *_filter, TACSMg *_mg,
     oper->incref();
 
     // Create the Jacobi-Davidson eigensolver
-    jd = new TACSJacobiDavidson(oper, num_eigenvalues, max_jd_size, max_gmres_size);
+    jd = new TACSJacobiDavidson(oper, num_eigenvalues, max_jd_size,
+                                max_gmres_size);
     jd->incref();
     jd->setTolerances(1e-6, 1e-6, 1e-6, 1e-12);
     jd->setThetaCutoff(0.01);
@@ -534,27 +532,27 @@ void FrequencyConstr::evalConstr( TMRTopoFilter *_filter, TACSMg *_mg,
     double tol = 1e-6;
     xmin = lx - tol;
     xmax = lx + tol;
-    ymin = 0.25*ly - tol;
-    ymax = 0.75*ly + tol;
-    zmin = 0.0*lz - tol;
-    zmax = 0.2*lz + tol;
+    ymin = 0.25 * ly - tol;
+    ymax = 0.75 * ly + tol;
+    zmin = 0.0 * lz - tol;
+    zmax = 0.2 * lz + tol;
 
-    for ( int i = offset; i < n_local_nodes; i++ ) {
-      if ( xmin < Xpts[i].x < xmax ) {
-        if ( ymin < Xpts[i].y < ymax ) {
-          if ( zmin < Xpts[i].z < zmax ) {
-            mvals[i-offset] = 1.0;
+    for (int i = offset; i < n_local_nodes; i++) {
+      if (xmin < Xpts[i].x < xmax) {
+        if (ymin < Xpts[i].y < ymax) {
+          if (zmin < Xpts[i].z < zmax) {
+            mvals[i - offset] = 1.0;
           }
         }
       }
     }
 
     // Assemble the m0 matrix
-    assembler->getDesignVars(dv);  // Get current dv
-    assembler->setDesignVars(mvec); // set dv to mvec only and assemble mat
+    assembler->getDesignVars(dv);    // Get current dv
+    assembler->setDesignVars(mvec);  // set dv to mvec only and assemble mat
     assembler->assembleMatType(TACS_MASS_MATRIX, m0mat);
     m0mat->scale(non_design_mass);
-    assembler->setDesignVars(dv); // Set dv back
+    assembler->setDesignVars(dv);  // Set dv back
   }
 
   assembler->assembleMatType(TACS_STIFFNESS_MATRIX, Amat);
@@ -567,7 +565,8 @@ void FrequencyConstr::evalConstr( TMRTopoFilter *_filter, TACSMg *_mg,
   Amat->axpy(-lambda0, mmat);  // --> done assemble A = K - lambda0*M
   assembler->applyBCs(Amat);
 
-  mgmat->axpy(-0.95*lambda0, mmat); // --> done assemble mgmat = K - 0.95*lambda0*M
+  mgmat->axpy(-0.95 * lambda0,
+              mmat);  // --> done assemble mgmat = K - 0.95*lambda0*M
   assembler->applyBCs(mgmat);
 
   mg->assembleGalerkinMat();
@@ -576,15 +575,16 @@ void FrequencyConstr::evalConstr( TMRTopoFilter *_filter, TACSMg *_mg,
   // Solve
   int print_level = 1;
   jd->solve(ksm_print, print_level);
-  if ( jd->getNumConvergedEigenvalues() < num_eigenvalues ) {
-    if ( rank == 0 ) {
+  if (jd->getNumConvergedEigenvalues() < num_eigenvalues) {
+    if (rank == 0) {
       printf("[Warning] JD failed to converge, starting rerun...\n");
     }
     jd->solve(ksm_print, print_level);
     int nconvd = jd->getNumConvergedEigenvalues();
-    if ( nconvd < num_eigenvalues ) {
-      if ( rank == 0 ) {
-        printf("[Error] No enough eigenvalues converged! (%d/%d)\n", nconvd, num_eigenvalues);
+    if (nconvd < num_eigenvalues) {
+      if (rank == 0) {
+        printf("[Error] No enough eigenvalues converged! (%d/%d)\n", nconvd,
+               num_eigenvalues);
       }
       exit(-1);
     }
@@ -600,40 +600,39 @@ void FrequencyConstr::evalConstr( TMRTopoFilter *_filter, TACSMg *_mg,
 
   // Compute KS aggregation
   TacsScalar eig_min = eig[0];
-  for ( int i = 0; i < num_eigenvalues; i++ ) {
-    if ( eig[i] < eig_min ) {
+  for (int i = 0; i < num_eigenvalues; i++) {
+    if (eig[i] < eig_min) {
       eig_min = eig[i];
     }
   }
 
   TacsScalar beta = 0.0;
-  for ( int i = 0; i < num_eigenvalues; i++ ) {
-    eta[i] = exp(-ksrho*(eig[i] - eig_min));
+  for (int i = 0; i < num_eigenvalues; i++) {
+    eta[i] = exp(-ksrho * (eig[i] - eig_min));
     beta += eta[i];
   }
 
-  TacsScalar ks = (eig_min - log(beta)/ksrho);
-  for ( int i = 0; i < num_eigenvalues; i++ ) {
+  TacsScalar ks = (eig_min - log(beta) / ksrho);
+  for (int i = 0; i < num_eigenvalues; i++) {
     eta[i] /= beta;
   }
 
   vals[0] = ks;
 }
 
-void FrequencyConstr::evalConstrGrad( TMRTopoFilter *dummy1, TACSMg *dummy2,
-                                      int nconstr, TACSBVec **vecs ) {
-
+void FrequencyConstr::evalConstrGrad(TMRTopoFilter *dummy1, TACSMg *dummy2,
+                                     int nconstr, TACSBVec **vecs) {
   // We only have one constraint
   TACSBVec *dcdrho = vecs[0];
 
   dcdrho->zeroEntries();
 
-  for ( int i = 0; i < num_eigenvalues; i++ ) {
+  for (int i = 0; i < num_eigenvalues; i++) {
     TacsScalar coeff = eta[i];
     deig[i]->zeroEntries();
-    assembler->addMatDVSensInnerProduct(coeff, TACS_STIFFNESS_MATRIX,
-                                        eigv[i], eigv[i], deig[i]);
-    assembler->addMatDVSensInnerProduct(-coeff*lambda0, TACS_MASS_MATRIX,
+    assembler->addMatDVSensInnerProduct(coeff, TACS_STIFFNESS_MATRIX, eigv[i],
+                                        eigv[i], deig[i]);
+    assembler->addMatDVSensInnerProduct(-coeff * lambda0, TACS_MASS_MATRIX,
                                         eigv[i], eigv[i], deig[i]);
     deig[i]->beginSetValues(TACS_ADD_VALUES);
     deig[i]->endSetValues(TACS_ADD_VALUES);
@@ -641,12 +640,12 @@ void FrequencyConstr::evalConstrGrad( TMRTopoFilter *dummy1, TACSMg *dummy2,
   }
 }
 
-void FrequencyConstr::qn_correction( ParOptVec *x, ParOptScalar z[], ParOptVec *dummy,
-                                     ParOptVec *s, ParOptVec *y ) {
-
-  s_wrap = dynamic_cast<ParOptBVecWrap*>(s);
+void FrequencyConstr::qn_correction(ParOptVec *x, ParOptScalar z[],
+                                    ParOptVec *dummy, ParOptVec *s,
+                                    ParOptVec *y) {
+  s_wrap = dynamic_cast<ParOptBVecWrap *>(s);
   s_tacs = s_wrap->vec;
-  y_wrap = dynamic_cast<ParOptBVecWrap*>(y);
+  y_wrap = dynamic_cast<ParOptBVecWrap *>(y);
   y_tacs = y_wrap->vec;
 
   TacsScalar h = 1e-8;
@@ -662,27 +661,31 @@ void FrequencyConstr::qn_correction( ParOptVec *x, ParOptScalar z[], ParOptVec *
   // set density = rho + h*s
   assembler->setDesignVars(rho);
 
-  for ( int i = 0; i < num_eigenvalues; i++ ) {
+  for (int i = 0; i < num_eigenvalues; i++) {
     TacsScalar coeff1 = eta[i];
-    assembler->addMatDVSensInnerProduct(coeff1, TACS_STIFFNESS_MATRIX, eigv[i], eigv[i], temp);
-    TacsScalar coeff2 = -eta[i]*lambda0;
-    assembler->addMatDVSensInnerProduct(coeff2, TACS_MASS_MATRIX, eigv[i], eigv[i], temp);
+    assembler->addMatDVSensInnerProduct(coeff1, TACS_STIFFNESS_MATRIX, eigv[i],
+                                        eigv[i], temp);
+    TacsScalar coeff2 = -eta[i] * lambda0;
+    assembler->addMatDVSensInnerProduct(coeff2, TACS_MASS_MATRIX, eigv[i],
+                                        eigv[i], temp);
   }
 
   // Set density = rho
   assembler->setDesignVars(rho_original);
 
-  for ( int i = 0; i < num_eigenvalues; i++ ) {
+  for (int i = 0; i < num_eigenvalues; i++) {
     TacsScalar coeff1 = eta[i];
-    assembler->addMatDVSensInnerProduct(-coeff1, TACS_STIFFNESS_MATRIX, eigv[i], eigv[i], temp);
-    TacsScalar coeff2 = -eta[i]*lambda0;
-    assembler->addMatDVSensInnerProduct(-coeff2, TACS_MASS_MATRIX, eigv[i], eigv[i], temp);
+    assembler->addMatDVSensInnerProduct(-coeff1, TACS_STIFFNESS_MATRIX, eigv[i],
+                                        eigv[i], temp);
+    TacsScalar coeff2 = -eta[i] * lambda0;
+    assembler->addMatDVSensInnerProduct(-coeff2, TACS_MASS_MATRIX, eigv[i],
+                                        eigv[i], temp);
   }
 
   temp->beginSetValues(TACS_ADD_VALUES);
   temp->endSetValues(TACS_ADD_VALUES);
 
-  update->axpy(1.0/h, temp);
+  update->axpy(1.0 / h, temp);
 
   if (svec->dot(update)) {
     filter->applyTranspose(update, update);
@@ -690,13 +693,13 @@ void FrequencyConstr::qn_correction( ParOptVec *x, ParOptScalar z[], ParOptVec *
   }
 }
 
-OutputCallback::OutputCallback( TACSAssembler *_assembler, int _iter_offset ) {
+OutputCallback::OutputCallback(TACSAssembler *_assembler, int _iter_offset) {
   assembler = _assembler;
   xt = assembler->createDesignVec();
   xt->incref();
 
   flag = TACS_OUTPUT_CONNECTIVITY | TACS_OUTPUT_NODES |
-          TACS_OUTPUT_DISPLACEMENTS | TACS_OUTPUT_EXTRAS;
+         TACS_OUTPUT_DISPLACEMENTS | TACS_OUTPUT_EXTRAS;
   f5 = new TACSToFH5(assembler, TACS_SOLID_ELEMENT, flag);
   f5->incref();
 
@@ -712,21 +715,12 @@ OutputCallback::~OutputCallback() {
   Create the TMRTopoProblem object and set up the topology optimization
   problem
 */
-ProblemCreator::ProblemCreator( TMROctForest *forest,
-                                TMRBoundaryConditions *bcs,
-                                TMRStiffnessProperties *stiff_props,
-                                int nlevels,
-                                double lambda0,
-                                double ksrho,
-                                double vol_frac,
-                                double r0_frac,
-                                double len0,
-                                double density,
-                                int qn_correction,
-                                double non_design_mass,
-                                int max_jd_size,
-                                int max_gmres_size ){
-
+ProblemCreator::ProblemCreator(TMROctForest *forest, TMRBoundaryConditions *bcs,
+                               TMRStiffnessProperties *stiff_props, int nlevels,
+                               double lambda0, double ksrho, double vol_frac,
+                               double r0_frac, double len0, double density,
+                               int qn_correction, double non_design_mass,
+                               int max_jd_size, int max_gmres_size) {
   // Create filter object
   int N = 20;
   filter_creator = new MFilterCreator(r0_frac, N, len0);
@@ -736,40 +730,40 @@ ProblemCreator::ProblemCreator( TMROctForest *forest,
 
   int use_galerkin = 1;
 
-  tpc = new TopoProblemCreator(forest, creator_callback_obj,
-                               filter_creator, nlevels, use_galerkin);
+  tpc = new TopoProblemCreator(forest, creator_callback_obj, filter_creator,
+                               nlevels, use_galerkin);
   problem = tpc->createTopoProblem();
 
   // Compute fixed mass
   double AR = 1.0;
-  double lx = len0*AR;
+  double lx = len0 * AR;
   double ly = len0;
   double lz = len0;
-  double vol = lx*ly*lz;
-  double m_fixed = vol_frac*vol*density;
+  double vol = lx * ly * lz;
+  double m_fixed = vol_frac * vol * density;
 
   // Add objective callback
   mass_obj = new MassObj(m_fixed);
   mass_obj->incref();
 
-  problem->addObjectiveCallback(mass_obj, forwarder_objval,
-                                mass_obj, forwarder_objgrad);
+  problem->addObjectiveCallback(mass_obj, forwarder_objval, mass_obj,
+                                forwarder_objgrad);
 
   // Add constraint callback
   freq_con = new FrequencyConstr(forest, len0, lambda0, max_jd_size,
                                  max_gmres_size, ksrho, non_design_mass);
   freq_con->incref();
 
-  problem->addConstraintCallback(1, 1, freq_con, forwarder_conval,
-                                 freq_con, forwarder_congrad);
+  problem->addConstraintCallback(1, 1, freq_con, forwarder_conval, freq_con,
+                                 forwarder_congrad);
 
   // Use Quasi-Newton update correction if specified
-  if (qn_correction){
+  if (qn_correction) {
     problem->addQnCorrectionCallback(1, freq_con, forwarder_qn);
   }
 }
 
-ProblemCreator::~ProblemCreator(){
+ProblemCreator::~ProblemCreator() {
   filter_creator->decref();
   creator_callback_obj->decref();
   mass_obj->decref();
@@ -777,53 +771,47 @@ ProblemCreator::~ProblemCreator(){
   tpc->decref();
 }
 
-TMRTopoProblem* ProblemCreator::get_problem(){
-  return problem;
-}
+TMRTopoProblem *ProblemCreator::get_problem() { return problem; }
 
-OptFilterWeights::OptFilterWeights( int _diagonal_index,
-                                    int _npts,
-                                    int _dim,
-                                    const TacsScalar _Xpts[],
-                                    double _H[],
-                                    int _n_entries_H ){
+OptFilterWeights::OptFilterWeights(int _diagonal_index, int _npts, int _dim,
+                                   const TacsScalar _Xpts[], double _H[],
+                                   int _n_entries_H) {
   nfev_con = 0;
   nfev_obj = 0;
 
   diagonal_index = _diagonal_index;
   npts = _npts;
-  dim = _dim; // Dimension of Xpts
+  dim = _dim;    // Dimension of Xpts
   Xpts = _Xpts;  // flat array of length 3*npts
-  H = _H; //  flat array of length _n_entries_H
+  H = _H;        //  flat array of length _n_entries_H
   n_entries_H = _n_entries_H;
 
   /*
     Compute the normalization
   */
   TacsScalar Xdiag[dim];
-  for ( int i = 0; i < dim; i++ ){
-    Xdiag[i] = Xpts[dim*diagonal_index+i];
+  for (int i = 0; i < dim; i++) {
+    Xdiag[i] = Xpts[dim * diagonal_index + i];
   }
 
-  TacsScalar diff[dim*npts];
-  for ( int i = 0; i < npts; i++ ){
-    for ( int j = 0; j < dim; j++ ){
-      diff[dim*i+j] = Xpts[dim*i+j] - Xdiag[j];
+  TacsScalar diff[dim * npts];
+  for (int i = 0; i < npts; i++) {
+    for (int j = 0; j < dim; j++) {
+      diff[dim * i + j] = Xpts[dim * i + j] - Xdiag[j];
     }
   }
 
   TacsScalar max_square_sum = 0.0;
-  for ( int j = 0; j < dim; j++ ){
-    max_square_sum += diff[j]*diff[j];
-
+  for (int j = 0; j < dim; j++) {
+    max_square_sum += diff[j] * diff[j];
   }
   TacsScalar s;
-  for ( int i = 0; i < npts; i++ ){
+  for (int i = 0; i < npts; i++) {
     s = 0.0;
-    for ( int j = 0; j < dim; j++ ){
-      s += diff[dim*i+j]*diff[dim*i+j];
+    for (int j = 0; j < dim; j++) {
+      s += diff[dim * i + j] * diff[dim * i + j];
     }
-    if (max_square_sum < s){
+    if (max_square_sum < s) {
       max_square_sum = s;
     }
   }
@@ -834,77 +822,80 @@ OptFilterWeights::OptFilterWeights( int _diagonal_index,
     Compute the constraint matrix
   */
 
-  if (dim == 2){
+  if (dim == 2) {
     ncon = 5;
-    size_A = ncon*(npts-1);
+    size_A = ncon * (npts - 1);
     size_b = ncon;
 
     // Create A and b
-    A = new double [size_A];
-    b = new double [size_b];
-    memset( A, 0, sizeof(double)*size_A );
-    memset( b, 0, sizeof(double)*size_b );
+    A = new double[size_A];
+    b = new double[size_b];
+    memset(A, 0, sizeof(double) * size_A);
+    memset(b, 0, sizeof(double) * size_b);
 
     // Populate b
-    b[2] = H[0];  // H[0,0]
-    b[3] = H[3];  // H[1,1]
-    b[4] = 2.0*H[1];  //H[0,1]
+    b[2] = H[0];        // H[0,0]
+    b[3] = H[3];        // H[1,1]
+    b[4] = 2.0 * H[1];  // H[0,1]
 
     // Populate A
     int index = 0;
-    for ( int i = 0; i < npts; i++ ){
-      if ( i != diagonal_index ){
-        TacsScalar dx = (Xpts[2*i  ] - Xpts[2*diagonal_index  ])/delta;
-        TacsScalar dy = (Xpts[2*i+1] - Xpts[2*diagonal_index+1])/delta;
+    for (int i = 0; i < npts; i++) {
+      if (i != diagonal_index) {
+        TacsScalar dx = (Xpts[2 * i] - Xpts[2 * diagonal_index]) / delta;
+        TacsScalar dy =
+            (Xpts[2 * i + 1] - Xpts[2 * diagonal_index + 1]) / delta;
 
-        A[0*(npts-1)+index] = dx;
-        A[1*(npts-1)+index] = dy;
-        A[2*(npts-1)+index] = 0.5*dx*dx;
-        A[3*(npts-1)+index] = 0.5*dy*dy;
-        A[4*(npts-1)+index] = dx*dy;
+        A[0 * (npts - 1) + index] = dx;
+        A[1 * (npts - 1) + index] = dy;
+        A[2 * (npts - 1) + index] = 0.5 * dx * dx;
+        A[3 * (npts - 1) + index] = 0.5 * dy * dy;
+        A[4 * (npts - 1) + index] = dx * dy;
         index += 1;
       }
     }
   }
 
-  else if (dim == 3){
+  else if (dim == 3) {
     ncon = 9;
-    size_A = ncon*(npts-1);
+    size_A = ncon * (npts - 1);
     size_b = ncon;
 
     // Create A matrix and b vector
-    A = new double [size_A];
-    b = new double [size_b];
-    memset( A, 0, sizeof(double)*size_A );
-    memset( b, 0, sizeof(double)*size_b );
+    A = new double[size_A];
+    b = new double[size_b];
+    memset(A, 0, sizeof(double) * size_A);
+    memset(b, 0, sizeof(double) * size_b);
 
     // Populate b
-    b[3] = H[0];  // H[0, 0]
-    b[4] = H[4];  // H[1, 1]
-    b[5] = H[8];  // H[2, 2]
-    b[6] = 2*H[5];  // H[1, 2]
-    b[7] = 2*H[2];  // H[0, 2]
-    b[8] = 2*H[1];  // H[0, 1]
+    b[3] = H[0];      // H[0, 0]
+    b[4] = H[4];      // H[1, 1]
+    b[5] = H[8];      // H[2, 2]
+    b[6] = 2 * H[5];  // H[1, 2]
+    b[7] = 2 * H[2];  // H[0, 2]
+    b[8] = 2 * H[1];  // H[0, 1]
 
     // Populate A
     int index = 0;
-    for ( int i = 0; i < npts; i++ ){
-      if ( i != diagonal_index ){
-        TacsScalar dx = (Xpts[3*i  ] - Xpts[3*diagonal_index  ])/delta;
-        TacsScalar dy = (Xpts[3*i+1] - Xpts[3*diagonal_index+1])/delta;
-        TacsScalar dz = (Xpts[3*i+2] - Xpts[3*diagonal_index+2])/delta;
+    for (int i = 0; i < npts; i++) {
+      if (i != diagonal_index) {
+        TacsScalar dx = (Xpts[3 * i] - Xpts[3 * diagonal_index]) / delta;
+        TacsScalar dy =
+            (Xpts[3 * i + 1] - Xpts[3 * diagonal_index + 1]) / delta;
+        TacsScalar dz =
+            (Xpts[3 * i + 2] - Xpts[3 * diagonal_index + 2]) / delta;
 
-        A[0*(npts-1)+index] = dx;
-        A[1*(npts-1)+index] = dy;
-        A[2*(npts-1)+index] = dz;
+        A[0 * (npts - 1) + index] = dx;
+        A[1 * (npts - 1) + index] = dy;
+        A[2 * (npts - 1) + index] = dz;
 
-        A[3*(npts-1)+index] = 0.5*dx*dx;
-        A[4*(npts-1)+index] = 0.5*dy*dy;
-        A[5*(npts-1)+index] = 0.5*dz*dz;
+        A[3 * (npts - 1) + index] = 0.5 * dx * dx;
+        A[4 * (npts - 1) + index] = 0.5 * dy * dy;
+        A[5 * (npts - 1) + index] = 0.5 * dz * dz;
 
-        A[6*(npts-1)+index] = dy*dz;
-        A[7*(npts-1)+index] = dx*dz;
-        A[8*(npts-1)+index] = dx*dy;
+        A[6 * (npts - 1) + index] = dy * dz;
+        A[7 * (npts - 1) + index] = dx * dz;
+        A[8 * (npts - 1) + index] = dx * dy;
         index += 1;
       }
     }
@@ -917,19 +908,19 @@ OptFilterWeights::OptFilterWeights( int _diagonal_index,
 }
 
 OptFilterWeights::~OptFilterWeights() {
-  delete [] A;
-  delete [] b;
+  delete[] A;
+  delete[] b;
 }
 
-void OptFilterWeights::set_alphas(double *w, double *alpha){
-  for (int i = 0; i < npts; i++){
+void OptFilterWeights::set_alphas(double *w, double *alpha) {
+  for (int i = 0; i < npts; i++) {
     alpha[i] = 0.0;
   }
   int index = 0;
-  for (int i = 0; i < npts; i++){
-    if( i != diagonal_index){
-      alpha[i] = w[index] / (delta*delta);
-      alpha[diagonal_index] += w[index] / (delta*delta);
+  for (int i = 0; i < npts; i++) {
+    if (i != diagonal_index) {
+      alpha[i] = w[index] / (delta * delta);
+      alpha[diagonal_index] += w[index] / (delta * delta);
       index += 1;
     }
   }
@@ -937,17 +928,15 @@ void OptFilterWeights::set_alphas(double *w, double *alpha){
   alpha[diagonal_index] += 1.0;
 }
 
-double objective( unsigned n, const double *w,
-                  double *grad, void *data ){
-
+double objective(unsigned n, const double *w, double *grad, void *data) {
   // Cast data to be type of OptFilterWeights class
-  OptFilterWeights *opt_data = static_cast<OptFilterWeights*>(data);
+  OptFilterWeights *opt_data = static_cast<OptFilterWeights *>(data);
 
   // Compute objective value and gradient
   double obj_val = 0.0;
-  for ( int i = 0; i < n; i++ ){
-    obj_val += 0.5*w[i]*w[i];
-    if (grad){
+  for (int i = 0; i < n; i++) {
+    obj_val += 0.5 * w[i] * w[i];
+    if (grad) {
       grad[i] = w[i];
     }
   }
@@ -958,27 +947,26 @@ double objective( unsigned n, const double *w,
   return obj_val;
 }
 
-void constraint( unsigned ncon, double *cons,
-                 unsigned n, const double *w,
-                 double *grad, void *data ){
+void constraint(unsigned ncon, double *cons, unsigned n, const double *w,
+                double *grad, void *data) {
   // Cast data to be type of OptFilterWeights class
-  OptFilterWeights *opt_data = static_cast<OptFilterWeights*>(data);
+  OptFilterWeights *opt_data = static_cast<OptFilterWeights *>(data);
 
   // Compute constraint value:
   // c = dot(A, w) - b
   double *A = opt_data->get_A();
   double *b = opt_data->get_b();
-  for ( int m = 0; m < ncon; m++ ){
+  for (int m = 0; m < ncon; m++) {
     cons[m] = -b[m];
-    for ( int i = 0; i < n; i++ ){
-      cons[m] += A[m*n+i]*w[i];
+    for (int i = 0; i < n; i++) {
+      cons[m] += A[m * n + i] * w[i];
     }
   }
 
   // Compute constraint gradient:
   // dc = A
-  if (grad){
-    for ( int i = 0; i < ncon*n; i++ ){
+  if (grad) {
+    for (int i = 0; i < ncon * n; i++) {
       grad[i] = A[i];
     }
   }
@@ -987,8 +975,7 @@ void constraint( unsigned ncon, double *cons,
   opt_data->con_counter_inc();
 }
 
-int main( int argc, char *argv[] ){
-
+int main(int argc, char *argv[]) {
   /* Parameters */
 
   int check_gradient = 0;
@@ -1019,10 +1006,10 @@ int main( int argc, char *argv[] ){
 
   /* Material and stiffness properties */
 
-  TACSMaterialProperties *mat_props = new TACSMaterialProperties(
-    2600.0, 921.0, 70e3, 0.3, 100.0, 24e-6, 230.0);
+  TACSMaterialProperties *mat_props =
+      new TACSMaterialProperties(2600.0, 921.0, 70e3, 0.3, 100.0, 24e-6, 230.0);
   TMRStiffnessProperties *stiff_props = new TMRStiffnessProperties(
-    1, &mat_props, qval, 0.2, 1e-3, TMR_RAMP_PENALTY, qval);
+      1, &mat_props, qval, 0.2, 1e-3, TMR_RAMP_PENALTY, qval);
   mat_props->incref();
   stiff_props->incref();
 
@@ -1066,7 +1053,7 @@ int main( int argc, char *argv[] ){
 
   // Set topology for forest
   forest->setTopology(topo);
-  forest->createTrees(mg_levels-1);
+  forest->createTrees(mg_levels - 1);
 
   // Export mesh to vtk
   const char *vtk = "test.vtk";
@@ -1081,10 +1068,10 @@ int main( int argc, char *argv[] ){
   bcs->addBoundaryCondition("fixed", 3, bcs_nums, bcs_vals);
 
   /* Create topology problem instance */
-  ProblemCreator *pcr = new ProblemCreator(forest, bcs, stiff_props, mg_levels, lambda0,
-                                           ksrho, vol_frac, r0_frac, len0, density,
-                                           qn_correction, non_design_mass, max_jd_size,
-                                           max_gmres_size);
+  ProblemCreator *pcr =
+      new ProblemCreator(forest, bcs, stiff_props, mg_levels, lambda0, ksrho,
+                         vol_frac, r0_frac, len0, density, qn_correction,
+                         non_design_mass, max_jd_size, max_gmres_size);
   pcr->incref();
   TMRTopoProblem *problem = pcr->get_problem();
   problem->incref();
@@ -1096,7 +1083,7 @@ int main( int argc, char *argv[] ){
   problem->initialize();
 
   // Check gradient
-  if (check_gradient){
+  if (check_gradient) {
     // ParOptVec *xt = problem->createDesignVec();
     // xt->incref();
     // xt->set(0.95);
@@ -1132,8 +1119,10 @@ int main( int argc, char *argv[] ){
   paropt_options->setOption("abs_res_tol", 1e-8);
   paropt_options->setOption("starting_point_strategy", "affine_step");
   paropt_options->setOption("barrier_strategy", "mehrotra_predictor_corrector");
-  paropt_options->setOption("tr_steering_barrier_strategy", "mehrotra_predictor_corrector");
-  paropt_options->setOption("tr_steering_starting_point_strategy", "affine_step");
+  paropt_options->setOption("tr_steering_barrier_strategy",
+                            "mehrotra_predictor_corrector");
+  paropt_options->setOption("tr_steering_starting_point_strategy",
+                            "affine_step");
   paropt_options->setOption("use_line_search", 0);
   paropt_options->setOption("max_major_iters", 200);
 
@@ -1143,8 +1132,6 @@ int main( int argc, char *argv[] ){
 
   // Optimize
   optimizer->optimize();
-
-
 
   // Free memory
   mat_props->decref();

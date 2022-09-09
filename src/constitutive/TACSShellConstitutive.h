@@ -33,8 +33,8 @@ class TACSShellConstitutive : public TACSConstitutive {
   static const int NUM_STRESSES = 9;
   static const int NUM_TANGENT_STIFFNESS_ENTRIES = 22;
 
-  TACSShellConstitutive(){}
-  virtual ~TACSShellConstitutive(){}
+  TACSShellConstitutive() {}
+  virtual ~TACSShellConstitutive() {}
 
   // Get the number of stresses
   int getNumStresses();
@@ -49,10 +49,8 @@ class TACSShellConstitutive : public TACSConstitutive {
     @param X The point location
     @return The moments of the mass
   */
-  virtual void evalMassMoments( int elemIndex,
-                                const double pt[],
-                                const TacsScalar X[],
-                                TacsScalar moments[] ) = 0;
+  virtual void evalMassMoments(int elemIndex, const double pt[],
+                               const TacsScalar X[], TacsScalar moments[]) = 0;
 
   /**
     Add the derivative of the pointwise mass times the given scalar
@@ -64,27 +62,26 @@ class TACSShellConstitutive : public TACSConstitutive {
     @param dvLen the length of the sensitivity array
     @param dfdx The sensitivity array
   */
-  virtual void addMassMomentsDVSens( int elemIndex,
-                                     const double pt[],
-                                     const TacsScalar X[],
-                                     const TacsScalar scale[],
-                                     int dvLen, TacsScalar dfdx[] ){}
+  virtual void addMassMomentsDVSens(int elemIndex, const double pt[],
+                                    const TacsScalar X[],
+                                    const TacsScalar scale[], int dvLen,
+                                    TacsScalar dfdx[]) {}
 
   // Set the drilling regularization value
-  static void setDrillingRegularization( double kval );
+  static void setDrillingRegularization(double kval);
 
   // Extract the tangent
-  static void extractTangentStiffness( const TacsScalar *C,
-                                       const TacsScalar **A, const TacsScalar **B,
-                                       const TacsScalar **D, const TacsScalar **As,
-                                       TacsScalar *drill );
+  static void extractTangentStiffness(const TacsScalar *C, const TacsScalar **A,
+                                      const TacsScalar **B,
+                                      const TacsScalar **D,
+                                      const TacsScalar **As, TacsScalar *drill);
 
   // Once the stiffness matrices have been evaluated, use this
   // function to compute the stress given the strain components
-  static inline void computeStress( const TacsScalar A[], const TacsScalar B[],
-                                    const TacsScalar D[], const TacsScalar As[],
-                                    const TacsScalar drill, const TacsScalar e[],
-                                    TacsScalar s[] );
+  static inline void computeStress(const TacsScalar A[], const TacsScalar B[],
+                                   const TacsScalar D[], const TacsScalar As[],
+                                   const TacsScalar drill, const TacsScalar e[],
+                                   TacsScalar s[]);
 
   // The name of the constitutive object
   const char *getObjectName();
@@ -117,25 +114,28 @@ class TACSShellConstitutive : public TACSConstitutive {
   [As] = [ As[0] As[1] ]
   .      [ As[1] As[2] ]
 */
-inline void TACSShellConstitutive::computeStress( const TacsScalar A[],
-                                                  const TacsScalar B[],
-                                                  const TacsScalar D[],
-                                                  const TacsScalar As[],
-                                                  const TacsScalar drill,
-                                                  const TacsScalar e[],
-                                                  TacsScalar s[] ){
-  s[0] = A[0]*e[0]+A[1]*e[1]+A[2]*e[2] + B[0]*e[3]+B[1]*e[4]+B[2]*e[5];
-  s[1] = A[1]*e[0]+A[3]*e[1]+A[4]*e[2] + B[1]*e[3]+B[3]*e[4]+B[4]*e[5];
-  s[2] = A[2]*e[0]+A[4]*e[1]+A[5]*e[2] + B[2]*e[3]+B[4]*e[4]+B[5]*e[5];
+inline void TACSShellConstitutive::computeStress(
+    const TacsScalar A[], const TacsScalar B[], const TacsScalar D[],
+    const TacsScalar As[], const TacsScalar drill, const TacsScalar e[],
+    TacsScalar s[]) {
+  s[0] = A[0] * e[0] + A[1] * e[1] + A[2] * e[2] + B[0] * e[3] + B[1] * e[4] +
+         B[2] * e[5];
+  s[1] = A[1] * e[0] + A[3] * e[1] + A[4] * e[2] + B[1] * e[3] + B[3] * e[4] +
+         B[4] * e[5];
+  s[2] = A[2] * e[0] + A[4] * e[1] + A[5] * e[2] + B[2] * e[3] + B[4] * e[4] +
+         B[5] * e[5];
 
-  s[3] = B[0]*e[0]+B[1]*e[1]+B[2]*e[2] + D[0]*e[3]+D[1]*e[4]+D[2]*e[5];
-  s[4] = B[1]*e[0]+B[3]*e[1]+B[4]*e[2] + D[1]*e[3]+D[3]*e[4]+D[4]*e[5];
-  s[5] = B[2]*e[0]+B[4]*e[1]+B[5]*e[2] + D[2]*e[3]+D[4]*e[4]+D[5]*e[5];
+  s[3] = B[0] * e[0] + B[1] * e[1] + B[2] * e[2] + D[0] * e[3] + D[1] * e[4] +
+         D[2] * e[5];
+  s[4] = B[1] * e[0] + B[3] * e[1] + B[4] * e[2] + D[1] * e[3] + D[3] * e[4] +
+         D[4] * e[5];
+  s[5] = B[2] * e[0] + B[4] * e[1] + B[5] * e[2] + D[2] * e[3] + D[4] * e[4] +
+         D[5] * e[5];
 
-  s[6] = As[0]*e[6]+As[1]*e[7];
-  s[7] = As[1]*e[6]+As[2]*e[7];
+  s[6] = As[0] * e[6] + As[1] * e[7];
+  s[7] = As[1] * e[6] + As[2] * e[7];
 
-  s[8] = drill*e[8];
+  s[8] = drill * e[8];
 }
 
 #endif

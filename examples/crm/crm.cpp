@@ -1,9 +1,9 @@
-#include "TACSMeshLoader.h"
 #include "TACSIsoShellConstitutive.h"
-#include "TACSShellElementDefs.h"
 #include "TACSKSFailure.h"
+#include "TACSMeshLoader.h"
+#include "TACSShellElementDefs.h"
 
-int main( int argc, char **argv ){
+int main(int argc, char **argv) {
   // Intialize MPI and declare communicator
   MPI_Init(&argc, &argv);
   MPI_Comm comm = MPI_COMM_WORLD;
@@ -15,12 +15,12 @@ int main( int argc, char **argv ){
   double dh = 1e-30;
 #else
   double dh = 1e-6;
-#endif // TACS_USE_COMPLEX
+#endif  // TACS_USE_COMPLEX
 
   // Scan the arguments to check for a manual step size
-  for ( int k = 0; k < argc; k++ ){
-    if (sscanf(argv[k], "dh=%lf", &dh) == 1){
-      if (rank == 0){
+  for (int k = 0; k < argc; k++) {
+    if (sscanf(argv[k], "dh=%lf", &dh) == 1) {
+      if (rank == 0) {
         printf("Using step size dh = %e\n", dh);
       }
     }
@@ -38,28 +38,28 @@ int main( int argc, char **argv ){
   int num_components = mesh->getNumComponents();
 
   // Set properties needed to create stiffness object
-  TacsScalar rho = 2500.0; // density, kg/m^3
+  TacsScalar rho = 2500.0;  // density, kg/m^3
   TacsScalar specific_heat = 921.096;
-  TacsScalar E = 70e9; // elastic modulus, Pa
-  TacsScalar nu = 0.3; // poisson's ratio
-  TacsScalar ys = 350e6; // yield stress, Pa
-  TacsScalar cte = 24.0e-6; // Coefficient of thermal expansion
-  TacsScalar kappa = 230.0; // Thermal conductivity
+  TacsScalar E = 70e9;       // elastic modulus, Pa
+  TacsScalar nu = 0.3;       // poisson's ratio
+  TacsScalar ys = 350e6;     // yield stress, Pa
+  TacsScalar cte = 24.0e-6;  // Coefficient of thermal expansion
+  TacsScalar kappa = 230.0;  // Thermal conductivity
 
   TACSMaterialProperties *props =
-    new TACSMaterialProperties(rho, specific_heat, E, nu, ys, cte, kappa);
+      new TACSMaterialProperties(rho, specific_heat, E, nu, ys, cte, kappa);
 
   TACSShellTransform *transform = new TACSShellNaturalTransform();
 
   // Loop over components, creating constituitive object for each
-  for ( int i = 0; i < num_components; i++ ){
+  for (int i = 0; i < num_components; i++) {
     const char *descriptor = mesh->getElementDescript(i);
     TacsScalar thickness = 0.01;
     int thickness_index = i;
     TacsScalar min_thickness = 0.01;
     TacsScalar max_thickness = 0.20;
-    TACSShellConstitutive *con = new TACSIsoShellConstitutive(props,
-      thickness, thickness_index, min_thickness, max_thickness);
+    TACSShellConstitutive *con = new TACSIsoShellConstitutive(
+        props, thickness, thickness_index, min_thickness, max_thickness);
 
     // Initialize element object
     TACSElement *shell = TacsCreateShellByName(descriptor, transform, con);
@@ -85,11 +85,11 @@ int main( int argc, char **argv ){
   assembler->getDesignVars(x);
 
   // Create matrix and vectors
-  TACSBVec *ans = assembler->createVec(); // displacements and rotations
-  TACSBVec *f = assembler->createVec(); // loads
-  TACSBVec *res = assembler->createVec(); // The residual
+  TACSBVec *ans = assembler->createVec();  // displacements and rotations
+  TACSBVec *f = assembler->createVec();    // loads
+  TACSBVec *res = assembler->createVec();  // The residual
   TACSBVec *adjoint = assembler->createVec();
-  TACSSchurMat *mat = assembler->createSchurMat(); // stiffness matrix
+  TACSSchurMat *mat = assembler->createSchurMat();  // stiffness matrix
 
   // Increment reference count to the matrix/vectors
   ans->incref();
@@ -108,7 +108,7 @@ int main( int argc, char **argv ){
   // Set all the entries in load vector to specified value
   TacsScalar *force_vals;
   int size = f->getArray(&force_vals);
-  for ( int k = 2; k < size; k += 6 ){
+  for (int k = 2; k < size; k += 6) {
     force_vals[k] += 100.0;
   }
   assembler->applyBCs(f);
@@ -117,7 +117,7 @@ int main( int argc, char **argv ){
   // Jacobian and solve the linear system for the displacements
   double alpha = 1.0, beta = 0.0, gamma = 0.0;
   assembler->assembleJacobian(alpha, beta, gamma, NULL, mat);
-  pc->factor(); // LU factorization of stiffness matrix
+  pc->factor();  // LU factorization of stiffness matrix
   pc->applyFactor(f, ans);
   assembler->setVariables(ans);
 
@@ -172,14 +172,14 @@ int main( int argc, char **argv ){
 #else
   xnew->copyValues(x);
   xnew->axpy(dh, p);
-#endif // TACS_USE_COMPLEX
+#endif  // TACS_USE_COMPLEX
 
   // Set the perturbed design variable values
   assembler->setDesignVars(xnew);
 
   // Re-solve the linear system
   assembler->assembleJacobian(alpha, beta, gamma, NULL, mat);
-  pc->factor(); // LU factorization of stiffness matrix
+  pc->factor();  // LU factorization of stiffness matrix
   pc->applyFactor(f, ans);
   assembler->setVariables(ans);
 
@@ -187,16 +187,16 @@ int main( int argc, char **argv ){
   TacsScalar fval2;
   assembler->evalFunctions(1, &func, &fval2);
 
-  if (rank == 0){
+  if (rank == 0) {
     printf("Adjoint:       %15.8e\n", TacsRealPart(dfdp));
 #ifdef TACS_USE_COMPLEX
-    double fd = TacsImagPart(fval2)/dh;
+    double fd = TacsImagPart(fval2) / dh;
     printf("Complex step:  %15.8e\n", fd);
 #else
-    double fd = (fval2 - fval)/dh;
+    double fd = (fval2 - fval) / dh;
     printf("Finite-diff:   %15.8e\n", fd);
-#endif // TACS_USE_COMPLEX
-    printf("Rel error:     %15.8e\n", TacsRealPart((fd - dfdp)/dfdp));
+#endif  // TACS_USE_COMPLEX
+    printf("Rel error:     %15.8e\n", TacsRealPart((fd - dfdp) / dfdp));
   }
 
   // Reset the design variable values
@@ -226,33 +226,31 @@ int main( int argc, char **argv ){
 
   // Solve the equations again
   assembler->assembleJacobian(alpha, beta, gamma, NULL, mat);
-  pc->factor(); // LU factorization of stiffness matrix
+  pc->factor();  // LU factorization of stiffness matrix
   pc->applyFactor(f, ans);
   assembler->setVariables(ans);
 
   // Re-evaluate the function
   assembler->evalFunctions(1, &func, &fval2);
 
-  if (rank == 0){
+  if (rank == 0) {
     printf("Adjoint:       %15.8e\n", TacsRealPart(dfdp));
 #ifdef TACS_USE_COMPLEX
-    double fd = TacsImagPart(fval2)/dh;
+    double fd = TacsImagPart(fval2) / dh;
     printf("Complex step:  %15.8e\n", fd);
 #else
-    double fd = (fval2 - fval)/dh;
+    double fd = (fval2 - fval) / dh;
     printf("Finite-diff:   %15.8e\n", fd);
-#endif // TACS_USE_COMPLEX
-    printf("Rel error:     %15.8e\n", TacsRealPart((fd - dfdp)/dfdp));
+#endif  // TACS_USE_COMPLEX
+    printf("Rel error:     %15.8e\n", TacsRealPart((fd - dfdp) / dfdp));
   }
 
   // Create an TACSToFH5 object for writing output to files
-  int write_flag = (TACS_OUTPUT_CONNECTIVITY |
-                    TACS_OUTPUT_NODES |
-                    TACS_OUTPUT_DISPLACEMENTS |
-                    TACS_OUTPUT_STRAINS |
-                    TACS_OUTPUT_STRESSES |
-                    TACS_OUTPUT_EXTRAS);
-  TACSToFH5 *f5 = new TACSToFH5(assembler, TACS_BEAM_OR_SHELL_ELEMENT, write_flag);
+  int write_flag = (TACS_OUTPUT_CONNECTIVITY | TACS_OUTPUT_NODES |
+                    TACS_OUTPUT_DISPLACEMENTS | TACS_OUTPUT_STRAINS |
+                    TACS_OUTPUT_STRESSES | TACS_OUTPUT_EXTRAS);
+  TACSToFH5 *f5 =
+      new TACSToFH5(assembler, TACS_BEAM_OR_SHELL_ELEMENT, write_flag);
   f5->incref();
   f5->writeToFile("ucrm.f5");
   f5->decref();

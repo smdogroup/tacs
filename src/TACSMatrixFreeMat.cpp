@@ -14,7 +14,7 @@
 
 #include "TACSMatrixFreeMat.h"
 
-TACSMatrixFreeMat::TACSMatrixFreeMat( TACSAssembler *_assembler ){
+TACSMatrixFreeMat::TACSMatrixFreeMat(TACSAssembler *_assembler) {
   assembler = _assembler;
   assembler->incref();
   data_size = 0;
@@ -24,55 +24,52 @@ TACSMatrixFreeMat::TACSMatrixFreeMat( TACSAssembler *_assembler ){
   matType = TACS_JACOBIAN_MATRIX;
 }
 
-TACSMatrixFreeMat::~TACSMatrixFreeMat(){
+TACSMatrixFreeMat::~TACSMatrixFreeMat() {
   assembler->decref();
-  if (data){
-    delete [] data;
+  if (data) {
+    delete[] data;
   }
-  if (temp){
-    delete [] temp;
+  if (temp) {
+    delete[] temp;
   }
 }
 
-void TACSMatrixFreeMat::assembleMatrixFreeData( ElementMatrixType _matType,
-                                                double alpha,
-                                                double beta,
-                                                double gamma ){
-  if (data){
-    delete [] data;
+void TACSMatrixFreeMat::assembleMatrixFreeData(ElementMatrixType _matType,
+                                               double alpha, double beta,
+                                               double gamma) {
+  if (data) {
+    delete[] data;
   }
-  if (temp){
-    delete [] temp;
+  if (temp) {
+    delete[] temp;
   }
   matType = _matType;
   assembler->getMatrixFreeDataSize(matType, &data_size, &temp_size);
-  data = new TacsScalar[ data_size ];
-  temp = new TacsScalar[ temp_size ];
+  data = new TacsScalar[data_size];
+  temp = new TacsScalar[temp_size];
   assembler->assembleMatrixFreeData(matType, alpha, beta, gamma, data);
 }
 
-TACSVec *TACSMatrixFreeMat::createVec(){
-  return assembler->createVec();
-}
+TACSVec *TACSMatrixFreeMat::createVec() { return assembler->createVec(); }
 
-void TACSMatrixFreeMat::mult( TACSVec *tx, TACSVec *ty ){
-  TACSBVec *x = dynamic_cast<TACSBVec*>(tx);
-  TACSBVec *y = dynamic_cast<TACSBVec*>(ty);
-  if (x && y){
+void TACSMatrixFreeMat::mult(TACSVec *tx, TACSVec *ty) {
+  TACSBVec *x = dynamic_cast<TACSBVec *>(tx);
+  TACSBVec *y = dynamic_cast<TACSBVec *>(ty);
+  if (x && y) {
     y->zeroEntries();
-    assembler->addMatrixFreeVecProduct(matType, data, temp, x, y, TACS_MAT_NORMAL);
+    assembler->addMatrixFreeVecProduct(matType, data, temp, x, y,
+                                       TACS_MAT_NORMAL);
   }
 }
 
-void TACSMatrixFreeMat::multTranspose( TACSVec *tx, TACSVec *ty ){
-  TACSBVec *x = dynamic_cast<TACSBVec*>(tx);
-  TACSBVec *y = dynamic_cast<TACSBVec*>(ty);
-  if (x && y){
+void TACSMatrixFreeMat::multTranspose(TACSVec *tx, TACSVec *ty) {
+  TACSBVec *x = dynamic_cast<TACSBVec *>(tx);
+  TACSBVec *y = dynamic_cast<TACSBVec *>(ty);
+  if (x && y) {
     y->zeroEntries();
-    assembler->addMatrixFreeVecProduct(matType, data, temp, x, y, TACS_MAT_TRANSPOSE);
+    assembler->addMatrixFreeVecProduct(matType, data, temp, x, y,
+                                       TACS_MAT_TRANSPOSE);
   }
 }
 
-const char *TACSMatrixFreeMat::getObjectName(){
-  return "TACSMatrixFreeMat";
-}
+const char *TACSMatrixFreeMat::getObjectName() { return "TACSMatrixFreeMat"; }

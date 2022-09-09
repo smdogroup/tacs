@@ -9,15 +9,13 @@
   R.R.A. Martins All rights reserved.
 */
 
-const char * TACSDOFSpringConstitutive::constName = "TACSDOFSpringConstitutive";
-const char * TACSDOFSpringConstitutive::constitutiveName(){
-  return constName;
-}
+const char* TACSDOFSpringConstitutive::constName = "TACSDOFSpringConstitutive";
+const char* TACSDOFSpringConstitutive::constitutiveName() { return constName; }
 
-TACSDOFSpringConstitutive::TACSDOFSpringConstitutive( TacsScalar k[] ){
+TACSDOFSpringConstitutive::TACSDOFSpringConstitutive(TacsScalar k[]) {
   // Set the diagonal terms based on 6 DOF stiffness
-  C[ 0] = k[0];
-  C[ 6] = k[1];
+  C[0] = k[0];
+  C[6] = k[1];
   C[11] = k[2];
   C[15] = k[3];
   C[18] = k[4];

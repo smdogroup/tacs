@@ -1,19 +1,22 @@
+#include "TACSBeamElement.h"
+#include "TACSConstitutiveVerification.h"
 #include "TACSElementVerification.h"
 #include "TACSIsoTubeBeamConstitutive.h"
-#include "TACSBeamElement.h"
 #include "TACSShellElementDefs.h"
-#include "TACSConstitutiveVerification.h"
 
 typedef TACSBeamElement<TACSBeamQuadraticQuadrature, TACSBeamBasis<3>,
-                        TACSLinearizedRotation, TACSBeamLinearModel> TACSQuadBeam;
+                        TACSLinearizedRotation, TACSBeamLinearModel>
+    TACSQuadBeam;
 
 typedef TACSBeamElement<TACSBeamQuadraticQuadrature, TACSBeamBasis<3>,
-                        TACSQuadraticRotation, TACSBeamLinearModel> TACSQuadBeamModRot;
+                        TACSQuadraticRotation, TACSBeamLinearModel>
+    TACSQuadBeamModRot;
 
 typedef TACSBeamElement<TACSBeamQuadraticQuadrature, TACSBeamBasis<3>,
-                        TACSQuaternionRotation, TACSBeamLinearModel> TACSQuadBeamQuaternion;
+                        TACSQuaternionRotation, TACSBeamLinearModel>
+    TACSQuadBeamQuaternion;
 
-int main( int argc, char *argv[] ){
+int main(int argc, char *argv[]) {
   MPI_Init(&argc, &argv);
 
   // Get the rank
@@ -27,7 +30,7 @@ int main( int argc, char *argv[] ){
   TACSBeamRefAxisTransform *transform = new TACSBeamRefAxisTransform(axis);
   transform->incref();
 
-  TacsScalar rho = 0.0; // 2700.0;
+  TacsScalar rho = 0.0;  // 2700.0;
   TacsScalar specific_heat = 921.096;
   TacsScalar E = 70e3;
   TacsScalar nu = 0.3;
@@ -36,7 +39,7 @@ int main( int argc, char *argv[] ){
   TacsScalar kappa = 230.0;
 
   TACSMaterialProperties *props =
-    new TACSMaterialProperties(rho, specific_heat, E, nu, ys, cte, kappa);
+      new TACSMaterialProperties(rho, specific_heat, E, nu, ys, cte, kappa);
 
   TacsScalar inner = 0.12;
   TacsScalar wall = 0.05;
@@ -45,10 +48,8 @@ int main( int argc, char *argv[] ){
   TacsScalar inner_ub = 0.5, wall_ub = 0.5;
 
   TACSIsoTubeBeamConstitutive *stiff =
-    new TACSIsoTubeBeamConstitutive(props, inner, wall,
-                                    inner_dv, wall_dv,
-                                    inner_lb, inner_ub,
-                                    wall_lb, wall_ub);
+      new TACSIsoTubeBeamConstitutive(props, inner, wall, inner_dv, wall_dv,
+                                      inner_lb, inner_ub, wall_lb, wall_ub);
   TacsTestConstitutive(stiff, 0);
 
   TACSElement *beam = new TACSQuadBeam(transform, stiff);
@@ -58,40 +59,40 @@ int main( int argc, char *argv[] ){
 
   int vars_per_node = beam->getVarsPerNode();
   int num_nodes = beam->getNumNodes();
-  int num_vars = num_nodes*vars_per_node;
+  int num_vars = num_nodes * vars_per_node;
   double time = 0.0;
   int elemIndex = 0;
 
   // Set the state variables
-  TacsScalar *vars = new TacsScalar[ num_vars ];
-  TacsScalar *dvars = new TacsScalar[ num_vars ];
-  TacsScalar *ddvars = new TacsScalar[ num_vars ];
+  TacsScalar *vars = new TacsScalar[num_vars];
+  TacsScalar *dvars = new TacsScalar[num_vars];
+  TacsScalar *ddvars = new TacsScalar[num_vars];
   TacsGenerateRandomArray(vars, num_vars);
   TacsGenerateRandomArray(dvars, num_vars);
   TacsGenerateRandomArray(ddvars, num_vars);
 
   // Set the node locations
-  TacsScalar *Xpts = new TacsScalar[ 3*num_nodes ];
-  TacsGenerateRandomArray(Xpts, 3*num_nodes);
+  TacsScalar *Xpts = new TacsScalar[3 * num_nodes];
+  TacsGenerateRandomArray(Xpts, 3 * num_nodes);
 
   // Zero out the multipliers so the residual test passes
-  if (vars_per_node == 8){
-    for ( int i = 0; i < num_nodes; i++ ){
-      vars[vars_per_node*i + 7] = 0.0;
+  if (vars_per_node == 8) {
+    for (int i = 0; i < num_nodes; i++) {
+      vars[vars_per_node * i + 7] = 0.0;
     }
   }
 
-  // Check the residual formulation against Lagrange's equations. Not all elements
-  // will pass this test - for instance the thermal beam elements.
+  // Check the residual formulation against Lagrange's equations. Not all
+  // elements will pass this test - for instance the thermal beam elements.
   TacsTestElementResidual(beam, elemIndex, time, Xpts, vars, dvars, ddvars);
 
   // Test the quantity derivative implementation
-  TacsTestElementQuantityDVSens(beam, elemIndex, TACS_FAILURE_INDEX,
-                                time, Xpts, vars, dvars, ddvars);
-  TacsTestElementQuantitySVSens(beam, elemIndex, TACS_FAILURE_INDEX,
-                                time, Xpts, vars, dvars, ddvars);
-  TacsTestElementQuantityXptSens(beam, elemIndex, TACS_FAILURE_INDEX,
-                                 time, Xpts, vars, dvars, ddvars);
+  TacsTestElementQuantityDVSens(beam, elemIndex, TACS_FAILURE_INDEX, time, Xpts,
+                                vars, dvars, ddvars);
+  TacsTestElementQuantitySVSens(beam, elemIndex, TACS_FAILURE_INDEX, time, Xpts,
+                                vars, dvars, ddvars);
+  TacsTestElementQuantityXptSens(beam, elemIndex, TACS_FAILURE_INDEX, time,
+                                 Xpts, vars, dvars, ddvars);
 
   TacsTestAdjResXptProduct(beam, elemIndex, time, Xpts, vars, dvars, ddvars);
 
@@ -105,11 +106,12 @@ int main( int argc, char *argv[] ){
   beam->getDesignVars(elemIndex, dvLen, xelem);
 
   // Set the design variable numbers into the design variable vector
-  for ( int i = 0; i < ndvs; i++ ){
+  for (int i = 0; i < ndvs; i++) {
     x[dvNums[i]] = xelem[i];
   }
 
-  TacsTestAdjResProduct(beam, elemIndex, time, Xpts, vars, dvars, ddvars, dvLen, x);
+  TacsTestAdjResProduct(beam, elemIndex, time, Xpts, vars, dvars, ddvars, dvLen,
+                        x);
 
   beam->decref();
 
