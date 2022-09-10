@@ -50,6 +50,12 @@ complex:
 	  echo; (cd $$subdir && $(MAKE) complex); \
 	done
 
+complex_debug:
+	@for subdir in $(EXAMPLE_SUBDIRS) ; do \
+	  echo "making $@ in $$subdir"; \
+	  echo; (cd $$subdir && $(MAKE) complex_debug); \
+	done
+
 test:
 	@for subdir in $(EXAMPLE_SUBDIRS) ; do \
 	  echo "making $@ in $$subdir"; \

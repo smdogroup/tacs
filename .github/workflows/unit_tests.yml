@@ -38,13 +38,13 @@ jobs:
         include:
           # real versions
           - NAME: Real
-            OPTIONAL: 'default'
+            OPTIONAL: 'debug'
             INTERFACE: 'interface'
             PUBLISH_DOCS: true
 
           # complex versions
           - NAME: Complex
-            OPTIONAL: 'complex'
+            OPTIONAL: 'complex_debug'
             INTERFACE: 'complex_interface'
             PUBLISH_DOCS: false
 
