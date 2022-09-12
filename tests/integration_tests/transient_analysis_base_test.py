@@ -3,7 +3,7 @@ from tacs import TACS
 import unittest
 from mpi4py import MPI
 
-'''
+"""
 This is a base class for transient problem unit test cases.
 This base class will test function evaluations and total
 sensitivities for the user-specified problem that inherits from it.
@@ -20,10 +20,10 @@ below for more details.
 
 NOTE: The child class must NOT implement its own setUp method 
 for the unittest class. This is handled in the base class.
-'''
+"""
+
 
 class TransientTestCase:
-
     class TransientTest(unittest.TestCase):
         def setUp(self):
             self.dtype = TACS.dtype
@@ -40,7 +40,7 @@ class TransientTestCase:
                 self.dh = 1e-5
 
             # Set the MPI communicator
-            if not hasattr(self, 'comm'):
+            if not hasattr(self, "comm"):
                 self.comm = MPI.COMM_WORLD
 
             # Setup user-specified assembler for this test
@@ -63,11 +63,15 @@ class TransientTestCase:
             self.num_steps = self.integrator.getNumTimeSteps()
 
             # Setup force and perturbation vectors used for fd/cs projections
-            self.f_list = [self.assembler.createVec() for i in range(self.num_steps+1)]
+            self.f_list = [
+                self.assembler.createVec() for i in range(self.num_steps + 1)
+            ]
             self.dv_pert = self.assembler.createDesignVec()
             self.xpts_pert = self.assembler.createNodeVec()
             # Populate force and perturbation vectors based on user-defined method
-            self.setup_tacs_vecs(self.assembler, self.f_list, self.dv_pert, self.xpts_pert)
+            self.setup_tacs_vecs(
+                self.assembler, self.f_list, self.dv_pert, self.xpts_pert
+            )
 
             # Create the function list
             self.func_list, self.func_ref = self.setup_funcs(self.assembler)
@@ -79,7 +83,9 @@ class TransientTestCase:
             Setup mesh and tacs assembler for problem we will be testing.
             Must be defined in child class that inherits from this class.
             """
-            raise NotImplementedError("Child class must implement a 'setup_assembler' method")
+            raise NotImplementedError(
+                "Child class must implement a 'setup_assembler' method"
+            )
             return
 
         def setup_integrator(self, assembler):
@@ -87,7 +93,9 @@ class TransientTestCase:
             Setup tacs integrator responsible for solving transient problem we will be testing.
             Must be defined in child class that inherits from this class.
             """
-            raise NotImplementedError("Child class must implement a 'setup_integrator' method")
+            raise NotImplementedError(
+                "Child class must implement a 'setup_integrator' method"
+            )
             return
 
         def setup_tacs_vecs(self, assembler, force_vec, dv_pert_vec, xpts_pert_vec):
@@ -95,7 +103,9 @@ class TransientTestCase:
             Setup user-defined vectors for analysis and fd/cs sensitivity verification.
             Must be defined in child class that inherits from this class.
             """
-            raise NotImplementedError("Child class must implement a 'setup_tacs_vecs' method")
+            raise NotImplementedError(
+                "Child class must implement a 'setup_tacs_vecs' method"
+            )
             return
 
         def setup_funcs(self, assembler):
@@ -103,7 +113,9 @@ class TransientTestCase:
             Create a list of functions to be tested and their reference values for the problem.
             Must be defined in child class that inherits from this class.
             """
-            raise NotImplementedError("Child class must implement a 'setup_funcs' method")
+            raise NotImplementedError(
+                "Child class must implement a 'setup_funcs' method"
+            )
             return
 
         def test_solve(self):
@@ -117,7 +129,9 @@ class TransientTestCase:
             func_vals = self.run_solve()
 
             # Test functions values against historical values
-            np.testing.assert_allclose(func_vals, self.func_ref, rtol=self.rtol, atol=self.atol)
+            np.testing.assert_allclose(
+                func_vals, self.func_ref, rtol=self.rtol, atol=self.atol
+            )
 
         def test_total_dv_sensitivities(self):
             """
@@ -144,8 +158,9 @@ class TransientTestCase:
                 with self.subTest(function=self.func_list[i]):
                     dfddv = self.integrator.getGradient(i)
                     dfddv_proj_i = dfddv.dot(self.dv_pert)
-                    np.testing.assert_allclose(dfddv_proj_i, fdv_sens_approx[i],
-                                               rtol=self.rtol, atol=self.atol)
+                    np.testing.assert_allclose(
+                        dfddv_proj_i, fdv_sens_approx[i], rtol=self.rtol, atol=self.atol
+                    )
 
         def test_total_xpt_sensitivities(self):
             """
@@ -172,7 +187,12 @@ class TransientTestCase:
                 with self.subTest(function=self.func_list[i]):
                     dfdx = self.integrator.getXptGradient(i)
                     dfdx_proj_i = dfdx.dot(self.xpts_pert)
-                    np.testing.assert_allclose(dfdx_proj_i, f_xpt_sens_approx[i], rtol=self.rtol, atol=self.atol)
+                    np.testing.assert_allclose(
+                        dfdx_proj_i,
+                        f_xpt_sens_approx[i],
+                        rtol=self.rtol,
+                        atol=self.atol,
+                    )
 
         def run_solve(self, dv=None, xpts=None):
             """

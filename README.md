@@ -1,5 +1,6 @@
 [![Build, unit tests, and docs](https://github.com/smdogroup/tacs/actions/workflows/unit_tests.yml/badge.svg)](https://github.com/smdogroup/tacs/actions/workflows/unit_tests.yml)
-[![Anaconda-Server Badge](https://anaconda.org/timryanb/tacs/badges/license.svg)](https://anaconda.org/timryanb/tacs)
+[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
+[![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 
 [![Anaconda-Server Badge](https://anaconda.org/timryanb/tacs/badges/installer/conda.svg)](https://anaconda.org/timryanb/tacs)
 [![Anaconda-Server Badge](https://anaconda.org/timryanb/tacs/badges/version.svg)](https://anaconda.org/timryanb/tacs)

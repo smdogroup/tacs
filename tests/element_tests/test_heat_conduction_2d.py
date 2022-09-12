@@ -2,6 +2,7 @@ from tacs import TACS, elements, constitutive
 import numpy as np
 import unittest
 
+
 class ModelTest(unittest.TestCase):
     def setUp(self):
         # fd/cs step size
@@ -29,8 +30,15 @@ class ModelTest(unittest.TestCase):
         ys = 270.0
         cte = 24.0e-6
         kappa = 230.0
-        self.props = constitutive.MaterialProperties(rho=rho, specific_heat=specific_heat,
-                                                     E=E, nu=nu, ys=ys, cte=cte, kappa=kappa)
+        self.props = constitutive.MaterialProperties(
+            rho=rho,
+            specific_heat=specific_heat,
+            E=E,
+            nu=nu,
+            ys=ys,
+            cte=cte,
+            kappa=kappa,
+        )
 
         # Create stiffness (need class)
         con = constitutive.PlaneStressConstitutive(self.props, t=1.0, tNum=0)
@@ -42,11 +50,25 @@ class ModelTest(unittest.TestCase):
         elements.SeedRandomGenerator(0)
 
     def test_element_model_jacobian(self):
-        fail = elements.TestElementModelJacobian(self.model, self.elem_index, self.time, self.dh,
-                                                 self.print_level, self.atol, self.rtol)
+        fail = elements.TestElementModelJacobian(
+            self.model,
+            self.elem_index,
+            self.time,
+            self.dh,
+            self.print_level,
+            self.atol,
+            self.rtol,
+        )
         self.assertFalse(fail)
 
     def test_element_model_adj_xpt_sens_product(self):
-        fail = elements.TestElementModelAdjXptSensProduct(self.model, self.elem_index, self.time, self.dh,
-                                                          self.print_level, self.atol, self.rtol)
+        fail = elements.TestElementModelAdjXptSensProduct(
+            self.model,
+            self.elem_index,
+            self.time,
+            self.dh,
+            self.print_level,
+            self.atol,
+            self.rtol,
+        )
         self.assertFalse(fail)

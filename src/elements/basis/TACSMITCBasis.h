@@ -26,7 +26,8 @@ class TACSMITCBasis : public TACSElementBasis {
   static const int MAX_NUM_TYING_POINTS = 16;
 
   //! Set the total number of tying field points
-  static const int MAX_TOTAL_TYING_POINTS = MAX_NUM_TYING_FIELDS*MAX_NUM_TYING_POINTS;
+  static const int MAX_TOTAL_TYING_POINTS =
+      MAX_NUM_TYING_FIELDS * MAX_NUM_TYING_POINTS;
 
   /**
     Get the number of tying fields associated with the element
@@ -41,7 +42,7 @@ class TACSMITCBasis : public TACSElementBasis {
     @param The tying field index
     @return The number of tying points within the element
   */
-  virtual int getNumTyingPoints( int field ) = 0;
+  virtual int getNumTyingPoints(int field) = 0;
 
   /**
     Get the parametric location of the given tying point
@@ -50,7 +51,7 @@ class TACSMITCBasis : public TACSElementBasis {
     @param ty The tying point index
     @param pt The parametric location of the tying point
   */
-  virtual void getTyingPoint( int field, int ty, double pt[] ) = 0;
+  virtual void getTyingPoint(int field, int ty, double pt[]) = 0;
 
   /**
     Get the field gradient of the solution fields at the specified tying point
@@ -67,14 +68,13 @@ class TACSMITCBasis : public TACSElementBasis {
     @param vars The node locations
     @param Xd The derivative of the position w.r.t. computational parameters
     @param U The values of the field variables
-    @param Ud The derivative of the field variables w.r.t. computational parameters
+    @param Ud The derivative of the field variables w.r.t. computational
+    parameters
   */
-  void getTyingPointGradient( int field, int ty, const double pt[],
-                              const TacsScalar Xpts[],
-                              const int vars_per_node,
-                              const TacsScalar vars[],
-                              TacsScalar Xd[], TacsScalar U[],
-                              TacsScalar Ud[] );
+  void getTyingPointGradient(int field, int ty, const double pt[],
+                             const TacsScalar Xpts[], const int vars_per_node,
+                             const TacsScalar vars[], TacsScalar Xd[],
+                             TacsScalar U[], TacsScalar Ud[]);
 
   /**
     Interpolate the tying quantities in the parametric space to obtain
@@ -85,9 +85,8 @@ class TACSMITCBasis : public TACSElementBasis {
     @param qty The quantity values at the tying point locations
     @param Uty The tying field values at the quadrature point
   */
-  virtual void interpTyingField( int n, const double pt[],
-                                 const TacsScalar qty[],
-                                 TacsScalar Uty[] );
+  virtual void interpTyingField(int n, const double pt[],
+                                const TacsScalar qty[], TacsScalar Uty[]);
 
   /**
     Add the transpose of the interpolation to the tying field values
@@ -97,9 +96,9 @@ class TACSMITCBasis : public TACSElementBasis {
     @param Uty The derivatives w.r.t. the tying field values
     @param rty The residual at the tying points
   */
-  virtual void addInterpTyingFieldTranspose( int n, const double pt[],
-                                             const TacsScalar Uty[],
-                                             TacsScalar rty[] );
+  virtual void addInterpTyingFieldTranspose(int n, const double pt[],
+                                            const TacsScalar Uty[],
+                                            TacsScalar rty[]);
 
   /**
     Add the weak form of the governing equations to the residual
@@ -114,25 +113,18 @@ class TACSMITCBasis : public TACSElementBasis {
     @param res The residual
     @param resty The residual for the tying points
   */
-  void addWeakResidual( int n, const double pt[],
-                        TacsScalar weight,
-                        const TacsScalar J[],
-                        const int vars_per_node,
-                        TacsScalar DUt[],
-                        TacsScalar DUx[],
-                        TacsScalar res[],
-                        TacsScalar resty[] );
+  void addWeakResidual(int n, const double pt[], TacsScalar weight,
+                       const TacsScalar J[], const int vars_per_node,
+                       TacsScalar DUt[], TacsScalar DUx[], TacsScalar res[],
+                       TacsScalar resty[]);
 
   /*
     Add the residual from a tying point
 
   */
-  void addTyingResidual( int field, int ty,
-                         const double pt[],
-                         const int vars_per_node,
-                         const TacsScalar DU[],
-                         const TacsScalar DUd[],
-                         TacsScalar res[] );
+  void addTyingResidual(int field, int ty, const double pt[],
+                        const int vars_per_node, const TacsScalar DU[],
+                        const TacsScalar DUd[], TacsScalar res[]);
 
   /**
     Compute the tying field interpolation.
@@ -144,9 +136,7 @@ class TACSMITCBasis : public TACSElementBasis {
     @param pt The parametric location of the quadrature point
     @param N The shape functions for the tying field
   */
-  virtual void computeTyingBasis( int field,
-                                  const double pt[],
-                                  double N[] ) = 0;
+  virtual void computeTyingBasis(int field, const double pt[], double N[]) = 0;
 };
 
-#endif // TACS_MITC_BASIS_H
+#endif  // TACS_MITC_BASIS_H

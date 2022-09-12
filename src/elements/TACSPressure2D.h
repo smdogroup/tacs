@@ -19,39 +19,37 @@
 
 class TACSPressure2D : public TACSElement {
  public:
-  TACSPressure2D( int _varsPerNode, int _faceIndex,
-                  TACSElementBasis *_basis, TacsScalar p );
+  TACSPressure2D(int _varsPerNode, int _faceIndex, TACSElementBasis *_basis,
+                 TacsScalar p);
   ~TACSPressure2D();
 
   // Get the layout properties of the element
-  const char* getObjectName();
+  const char *getObjectName();
   int getVarsPerNode();
   int getNumNodes();
   ElementLayout getLayoutType();
-  TACSElementBasis* getElementBasis();
+  TACSElementBasis *getElementBasis();
   int getNumQuadraturePoints();
-  double getQuadratureWeight( int n );
-  double getQuadraturePoint( int n, double pt[] );
+  double getQuadratureWeight(int n);
+  double getQuadraturePoint(int n, double pt[]);
   int getNumElementFaces();
-  int getNumFaceQuadraturePoints( int face );
-  double getFaceQuadraturePoint( int face, int n, double pt[],
-                                 double tangent[] );
+  int getNumFaceQuadraturePoints(int face);
+  double getFaceQuadraturePoint(int face, int n, double pt[], double tangent[]);
 
   /**
     Add the residual to the provided vector
   */
-  void addResidual( int elemIndex, double time, const TacsScalar *Xpts,
-                    const TacsScalar *vars, const TacsScalar *dvars,
-                    const TacsScalar *ddvars, TacsScalar *res );
+  void addResidual(int elemIndex, double time, const TacsScalar *Xpts,
+                   const TacsScalar *vars, const TacsScalar *dvars,
+                   const TacsScalar *ddvars, TacsScalar *res);
 
   /**
     Add the residual and Jacobians to the arrays
   */
-  void addJacobian( int elemIndex, double time,
-                    TacsScalar alpha, TacsScalar beta, TacsScalar gamma,
-                    const TacsScalar *Xpts, const TacsScalar *vars,
-                    const TacsScalar *dvars, const TacsScalar *ddvars,
-                    TacsScalar *res, TacsScalar *mat );
+  void addJacobian(int elemIndex, double time, TacsScalar alpha,
+                   TacsScalar beta, TacsScalar gamma, const TacsScalar *Xpts,
+                   const TacsScalar *vars, const TacsScalar *dvars,
+                   const TacsScalar *ddvars, TacsScalar *res, TacsScalar *mat);
 
  private:
   int varsPerNode, faceIndex;
@@ -59,4 +57,4 @@ class TACSPressure2D : public TACSElement {
   TacsScalar p;
 };
 
-#endif // TACS_PRESSURE_2D_H
+#endif  // TACS_PRESSURE_2D_H

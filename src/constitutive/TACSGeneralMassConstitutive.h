@@ -30,39 +30,40 @@ class TACSGeneralMassConstitutive : public TACSConstitutive {
  public:
   static const int NUM_STRESSES = 0;
 
-  TACSGeneralMassConstitutive( const TacsScalar _M[] );
+  TACSGeneralMassConstitutive(const TacsScalar _M[]);
 
   TACSGeneralMassConstitutive();
 
   int getNumStresses();
 
-  // Given the mass matrix and an acceleration vector, evaluate the inertial forces
-  void evalInertia( int elemIndex, const double pt[], const TacsScalar X[],
-                    const TacsScalar ddu[], TacsScalar f[] );
-
+  // Given the mass matrix and an acceleration vector, evaluate the inertial
+  // forces
+  void evalInertia(int elemIndex, const double pt[], const TacsScalar X[],
+                   const TacsScalar ddu[], TacsScalar f[]);
 
   // Evaluate the mass matrix
-  void evalMassMatrix( int elemIndex, const double pt[], const TacsScalar X[], TacsScalar C[] );
+  void evalMassMatrix(int elemIndex, const double pt[], const TacsScalar X[],
+                      TacsScalar C[]);
 
   // Evaluate the material density
-  TacsScalar evalDensity( int elemIndex, const double pt[],
-                          const TacsScalar X[] );
+  TacsScalar evalDensity(int elemIndex, const double pt[],
+                         const TacsScalar X[]);
 
   // Evaluate the specific heat
-  TacsScalar evalSpecificHeat( int elemIndex, const double pt[],
-                               const TacsScalar X[] ){
+  TacsScalar evalSpecificHeat(int elemIndex, const double pt[],
+                              const TacsScalar X[]) {
     return 0.0;
   }
 
   // Evaluate the stresss
-  void evalStress( int elemIndex, const double pt[], const TacsScalar X[],
-                   const TacsScalar strain[], TacsScalar stress[] ){
+  void evalStress(int elemIndex, const double pt[], const TacsScalar X[],
+                  const TacsScalar strain[], TacsScalar stress[]) {
     return;
   }
 
   // Evaluate the tangent stiffness
-  void evalTangentStiffness( int elemIndex, const double pt[],
-                             const TacsScalar X[], TacsScalar C[] ){
+  void evalTangentStiffness(int elemIndex, const double pt[],
+                            const TacsScalar X[], TacsScalar C[]) {
     return;
   }
 
@@ -74,8 +75,7 @@ class TACSGeneralMassConstitutive : public TACSConstitutive {
   TacsScalar M[21];
 
  private:
-
   static const char *name;
 };
 
-#endif // TACS_GENERAL_MASS_CONSTITUTIVE_H
+#endif  // TACS_GENERAL_MASS_CONSTITUTIVE_H

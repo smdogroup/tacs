@@ -2,14 +2,24 @@ import numpy as np
 from tacs import TACS, elements, constitutive, functions
 from static_analysis_base_test import StaticTestCase
 
-'''
+"""
 Create a uniform plate under uniform plane stress 
 and test KSFailure, StructuralMass, and Compliance functions and sensitivities
-'''
+"""
 
-FUNC_REFS = np.array([1.46051701859883, 25700.0, 1.75e+07, 1.5312580437770913,
-                      5.00000000e+00, 5.00000000e+00,
-                      856666.6666666641, -642500.0, 856666.6666666641])
+FUNC_REFS = np.array(
+    [
+        1.46051701859883,
+        25700.0,
+        1.75e07,
+        1.5312580437770913,
+        5.00000000e00,
+        5.00000000e00,
+        856666.6666666641,
+        -642500.0,
+        856666.6666666641,
+    ]
+)
 
 # Length of plate in x/y direction
 Lx = 10.0
@@ -27,8 +37,10 @@ Nxy = -175e5
 # KS function weight
 ksweight = 10.0
 
+
 class ProblemTest(StaticTestCase.StaticTest):
     N_PROCS = 1  # this is how many MPI processes to use for this TestCase.
+
     def setup_assembler(self, comm, dtype):
         """
         Setup mesh and tacs assembler for problem we will be testing.
@@ -55,7 +67,7 @@ class ProblemTest(StaticTestCase.StaticTest):
             x = np.linspace(0, Lx, nx + 1, dtype)
             y = np.linspace(0, Ly, ny + 1, dtype)
             xyz = np.zeros([nx + 1, ny + 1, 3], dtype)
-            xyz[:, :, 0], xyz[:, :, 1] = np.meshgrid(x, y, indexing='ij')
+            xyz[:, :, 0], xyz[:, :, 1] = np.meshgrid(x, y, indexing="ij")
 
             node_ids = np.arange(num_nodes).reshape(nx + 1, ny + 1)
 
@@ -63,10 +75,14 @@ class ProblemTest(StaticTestCase.StaticTest):
             conn = []
             for i in range(nx):
                 for j in range(ny):
-                    conn.append([node_ids[i, j],
-                                 node_ids[i + 1, j],
-                                 node_ids[i, j + 1],
-                                 node_ids[i + 1, j + 1]])
+                    conn.append(
+                        [
+                            node_ids[i, j],
+                            node_ids[i + 1, j],
+                            node_ids[i, j + 1],
+                            node_ids[i + 1, j + 1],
+                        ]
+                    )
 
             conn = np.array(conn, dtype=np.intc).flatten()
             ptr = np.arange(0, 4 * num_elems + 1, 4, dtype=np.intc)
@@ -130,7 +146,9 @@ class ProblemTest(StaticTestCase.StaticTest):
 
         return assembler
 
-    def setup_tacs_vecs(self, assembler, force_vec, dv_pert_vec, ans_pert_vec, xpts_pert_vec):
+    def setup_tacs_vecs(
+        self, assembler, force_vec, dv_pert_vec, ans_pert_vec, xpts_pert_vec
+    ):
         """
         Setup user-defined vectors for analysis and fd/cs sensitivity verification
         """
@@ -170,16 +188,23 @@ class ProblemTest(StaticTestCase.StaticTest):
         """
         Create a list of functions to be tested and their reference values for the problem
         """
-        func_list = [functions.KSFailure(assembler, ksWeight=ksweight),
-                     functions.StructuralMass(assembler),
-                     functions.Compliance(assembler),
-                     functions.KSDisplacement(assembler, ksWeight=ksweight, direction=[100.0, 100.0]),
-                     functions.CenterOfMass(assembler, direction=[1.0, 0.0]),
-                     functions.CenterOfMass(assembler, direction=[0.0, 1.0]),
-                     functions.MomentOfInertia(assembler, direction1=[1.0, 0.0], direction2=[1.0, 0.0],
-                                               aboutCM=False),
-                     functions.MomentOfInertia(assembler, direction1=[1.0, 0.0], direction2=[0.0, 1.0],
-                                               aboutCM=False),
-                     functions.MomentOfInertia(assembler, direction1=[0.0, 1.0], direction2=[0.0, 1.0],
-                                               aboutCM=False)]
+        func_list = [
+            functions.KSFailure(assembler, ksWeight=ksweight),
+            functions.StructuralMass(assembler),
+            functions.Compliance(assembler),
+            functions.KSDisplacement(
+                assembler, ksWeight=ksweight, direction=[100.0, 100.0]
+            ),
+            functions.CenterOfMass(assembler, direction=[1.0, 0.0]),
+            functions.CenterOfMass(assembler, direction=[0.0, 1.0]),
+            functions.MomentOfInertia(
+                assembler, direction1=[1.0, 0.0], direction2=[1.0, 0.0], aboutCM=False
+            ),
+            functions.MomentOfInertia(
+                assembler, direction1=[1.0, 0.0], direction2=[0.0, 1.0], aboutCM=False
+            ),
+            functions.MomentOfInertia(
+                assembler, direction1=[0.0, 1.0], direction2=[0.0, 1.0], aboutCM=False
+            ),
+        ]
         return func_list, FUNC_REFS

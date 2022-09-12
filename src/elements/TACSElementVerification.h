@@ -23,57 +23,47 @@
   Assign variables randomly to an array. This is useful for
   testing various things.
  */
-void TacsSeedRandomGenerator( int seed  );
-void TacsGenerateRandomArray( TacsReal *array, int size,
-                              TacsReal lower=-1.0,
-                              TacsReal upper=1.0 );
-void TacsGenerateRandomArray( TacsComplex *array, int size,
-                              TacsComplex lower=-1.0,
-                              TacsComplex upper=1.0 );
+void TacsSeedRandomGenerator(int seed);
+void TacsGenerateRandomArray(TacsReal *array, int size, TacsReal lower = -1.0,
+                             TacsReal upper = 1.0);
+void TacsGenerateRandomArray(TacsComplex *array, int size,
+                             TacsComplex lower = -1.0, TacsComplex upper = 1.0);
 
 /*
   Find the largest absolute value of the difference between the
   arrays a and b
 */
-double TacsGetMaxError( TacsScalar *a, TacsScalar *b, int size,
-                        int *max_index );
+double TacsGetMaxError(TacsScalar *a, TacsScalar *b, int size, int *max_index);
 
 /*
   Find the maximum relative error between a and b and return the
 */
-double TacsGetMaxRelError( TacsScalar *a, TacsScalar *b, int size,
-                           int *max_index );
+double TacsGetMaxRelError(TacsScalar *a, TacsScalar *b, int size,
+                          int *max_index);
 
 /*
   Print out the values and the relative errors
 */
-void TacsPrintErrorComponents( FILE *fp, const char *descript,
-                               TacsScalar *a, TacsScalar *b,
-                               int size );
+void TacsPrintErrorComponents(FILE *fp, const char *descript, TacsScalar *a,
+                              TacsScalar *b, int size);
 
 /*
   Perturb the input variables in the forward sense
 */
-void TacsForwardDiffPerturb( TacsScalar *out, int size,
-                             const TacsScalar *orig,
-                             const TacsScalar *pert,
-                             double dh );
+void TacsForwardDiffPerturb(TacsScalar *out, int size, const TacsScalar *orig,
+                            const TacsScalar *pert, double dh);
 
 /*
   Perturb the variables in the backward sense
 */
-void TacsBackwardDiffPerturb( TacsScalar *out, int size,
-                              const TacsScalar *orig,
-                              const TacsScalar *pert,
-                              double dh );
+void TacsBackwardDiffPerturb(TacsScalar *out, int size, const TacsScalar *orig,
+                             const TacsScalar *pert, double dh);
 
 /*
   Form the forward approximation
 */
-void TacsFormDiffApproximate( TacsScalar *forward,
-                              const TacsScalar *backward,
-                              int size,
-                              TacsScalar dh );
+void TacsFormDiffApproximate(TacsScalar *forward, const TacsScalar *backward,
+                             int size, TacsScalar dh);
 
 /**
   Test the residual implementation against the Lagrangian equations
@@ -91,17 +81,12 @@ void TacsFormDiffApproximate( TacsScalar *forward,
   @param test_fail_atol The test absolute tolerance
   @param test_fail_rtol The test relative tolerance
 */
-int TacsTestElementResidual( TACSElement *element,
-                             int elemIndex,
-                             double time,
-                             const TacsScalar Xpts[],
-                             const TacsScalar vars[],
-                             const TacsScalar dvars[],
-                             const TacsScalar ddvars[],
-                             double dh=1e-7,
-                             int test_print_level=2,
-                             double test_fail_atol=1e-5,
-                             double test_fail_rtol=1e-5 );
+int TacsTestElementResidual(TACSElement *element, int elemIndex, double time,
+                            const TacsScalar Xpts[], const TacsScalar vars[],
+                            const TacsScalar dvars[], const TacsScalar ddvars[],
+                            double dh = 1e-7, int test_print_level = 2,
+                            double test_fail_atol = 1e-5,
+                            double test_fail_rtol = 1e-5);
 
 /**
   Test the Jacobian matrix implementation against the residual.
@@ -117,18 +102,13 @@ int TacsTestElementResidual( TACSElement *element,
   @param test_fail_atol The test absolute tolerance
   @param test_fail_rtol The test relative tolerance
 */
-int TacsTestElementJacobian( TACSElement *element,
-                             int elemIndex,
-                             double time,
-                             const TacsScalar Xpts[],
-                             const TacsScalar vars[],
-                             const TacsScalar dvars[],
-                             const TacsScalar ddvars[],
-                             int col=-1,
-                             double dh=1e-7,
-                             int test_print_level=2,
-                             double test_fail_atol=1e-5,
-                             double test_fail_rtol=1e-5 );
+int TacsTestElementJacobian(TACSElement *element, int elemIndex, double time,
+                            const TacsScalar Xpts[], const TacsScalar vars[],
+                            const TacsScalar dvars[], const TacsScalar ddvars[],
+                            int col = -1, double dh = 1e-7,
+                            int test_print_level = 2,
+                            double test_fail_atol = 1e-5,
+                            double test_fail_rtol = 1e-5);
 
 /**
   Test the Jacobian matrix implementation against the residual.
@@ -144,18 +124,14 @@ int TacsTestElementJacobian( TACSElement *element,
   @param test_fail_atol The test absolute tolerance
   @param test_fail_rtol The test relative tolerance
 */
-int TacsTestElementMatFreeJacobian( TACSElement *element,
-                                    int elemIndex,
-                                    double time,
-                                    const TacsScalar Xpts[],
-                                    const TacsScalar vars[],
-                                    const TacsScalar dvars[],
-                                    const TacsScalar ddvars[],
-                                    int col=-1,
-                                    double dh=1e-7,
-                                    int test_print_level=2,
-                                    double test_fail_atol=1e-5,
-                                    double test_fail_rtol=1e-5 );
+int TacsTestElementMatFreeJacobian(TACSElement *element, int elemIndex,
+                                   double time, const TacsScalar Xpts[],
+                                   const TacsScalar vars[],
+                                   const TacsScalar dvars[],
+                                   const TacsScalar ddvars[], int col = -1,
+                                   double dh = 1e-7, int test_print_level = 2,
+                                   double test_fail_atol = 1e-5,
+                                   double test_fail_rtol = 1e-5);
 
 /**
   Test the adjoint-residual product implementation
@@ -173,19 +149,13 @@ int TacsTestElementMatFreeJacobian( TACSElement *element,
   @param test_fail_atol The test absolute tolerance
   @param test_fail_rtol The test relative tolerance
 */
-int TacsTestAdjResProduct( TACSElement *element,
-                           int elemIndex,
-                           double time,
-                           const TacsScalar Xpts[],
-                           const TacsScalar vars[],
-                           const TacsScalar dvars[],
-                           const TacsScalar ddvars[],
-                           int dvLen,
-                           const TacsScalar *x,
-                           double dh=1e-7,
-                           int test_print_level=2,
-                           double test_fail_atol=1e-5,
-                           double test_fail_rtol=1e-5 );
+int TacsTestAdjResProduct(TACSElement *element, int elemIndex, double time,
+                          const TacsScalar Xpts[], const TacsScalar vars[],
+                          const TacsScalar dvars[], const TacsScalar ddvars[],
+                          int dvLen, const TacsScalar *x, double dh = 1e-7,
+                          int test_print_level = 2,
+                          double test_fail_atol = 1e-5,
+                          double test_fail_rtol = 1e-5);
 
 /**
   Test the adjoint-residual product implementation
@@ -201,17 +171,13 @@ int TacsTestAdjResProduct( TACSElement *element,
   @param test_fail_atol The test absolute tolerance
   @param test_fail_rtol The test relative tolerance
 */
-int TacsTestAdjResXptProduct( TACSElement *element,
-                              int elemIndex,
-                              double time,
-                              const TacsScalar Xpts[],
-                              const TacsScalar vars[],
-                              const TacsScalar dvars[],
-                              const TacsScalar ddvars[],
-                              double dh=1e-7,
-                              int test_print_level=2,
-                              double test_fail_atol=1e-5,
-                              double test_fail_rtol=1e-5 );
+int TacsTestAdjResXptProduct(TACSElement *element, int elemIndex, double time,
+                             const TacsScalar Xpts[], const TacsScalar vars[],
+                             const TacsScalar dvars[],
+                             const TacsScalar ddvars[], double dh = 1e-7,
+                             int test_print_level = 2,
+                             double test_fail_atol = 1e-5,
+                             double test_fail_rtol = 1e-5);
 
 /**
   Test the matrix design variable sensitivity implementation
@@ -229,18 +195,13 @@ int TacsTestAdjResXptProduct( TACSElement *element,
   @param test_fail_atol The test absolute tolerance
   @param test_fail_rtol The test relative tolerance
 */
-int TacsTestElementMatDVSens( TACSElement *element,
-                              ElementMatrixType elemType,
-                              int elemIndex,
-                              double time,
-                              const TacsScalar Xpts[],
-                              const TacsScalar vars[],
-                              int dvLen,
-                              const TacsScalar *x,
-                              double dh=1e-7,
-                              int test_print_level=2,
-                              double test_fail_atol=1e-5,
-                              double test_fail_rtol=1e-5 );
+int TacsTestElementMatDVSens(TACSElement *element, ElementMatrixType elemType,
+                             int elemIndex, double time,
+                             const TacsScalar Xpts[], const TacsScalar vars[],
+                             int dvLen, const TacsScalar *x, double dh = 1e-7,
+                             int test_print_level = 2,
+                             double test_fail_atol = 1e-5,
+                             double test_fail_rtol = 1e-5);
 
 /**
   Test the matrix design variable sensitivity implementation
@@ -256,16 +217,12 @@ int TacsTestElementMatDVSens( TACSElement *element,
   @param test_fail_atol The test absolute tolerance
   @param test_fail_rtol The test relative tolerance
 */
-int TacsTestElementMatSVSens( TACSElement *element,
-                              ElementMatrixType elemType,
-                              int elemIndex,
-                              double time,
-                              const TacsScalar Xpts[],
-                              const TacsScalar vars[],
-                              double dh=1e-7,
-                              int test_print_level=2,
-                              double test_fail_atol=1e-5,
-                              double test_fail_rtol=1e-5 );
+int TacsTestElementMatSVSens(TACSElement *element, ElementMatrixType elemType,
+                             int elemIndex, double time,
+                             const TacsScalar Xpts[], const TacsScalar vars[],
+                             double dh = 1e-7, int test_print_level = 2,
+                             double test_fail_atol = 1e-5,
+                             double test_fail_rtol = 1e-5);
 
 /**
   Test the quantity output design variable sensitivities
@@ -283,18 +240,11 @@ int TacsTestElementMatSVSens( TACSElement *element,
   @param test_fail_atol The test absolute tolerance
   @param test_fail_rtol The test relative tolerance
 */
-int TacsTestElementQuantityDVSens( TACSElement *element,
-                                   int elemIndex,
-                                   int quantityType,
-                                   double time,
-                                   const TacsScalar Xpts[],
-                                   const TacsScalar vars[],
-                                   const TacsScalar dvars[],
-                                   const TacsScalar ddvars[],
-                                   double dh=1e-7,
-                                   int test_print_level=2,
-                                   double test_fail_atol=1e-5,
-                                   double test_fail_rtol=1e-5 );
+int TacsTestElementQuantityDVSens(
+    TACSElement *element, int elemIndex, int quantityType, double time,
+    const TacsScalar Xpts[], const TacsScalar vars[], const TacsScalar dvars[],
+    const TacsScalar ddvars[], double dh = 1e-7, int test_print_level = 2,
+    double test_fail_atol = 1e-5, double test_fail_rtol = 1e-5);
 
 /**
   Test the quantity output state variable sensitivities
@@ -310,18 +260,11 @@ int TacsTestElementQuantityDVSens( TACSElement *element,
   @param test_fail_atol The test absolute tolerance
   @param test_fail_rtol The test relative tolerance
 */
-int TacsTestElementQuantitySVSens( TACSElement *element,
-                                   int elemIndex,
-                                   int quantityType,
-                                   double time,
-                                   const TacsScalar Xpts[],
-                                   const TacsScalar vars[],
-                                   const TacsScalar dvars[],
-                                   const TacsScalar ddvars[],
-                                   double dh=1e-7,
-                                   int test_print_level=2,
-                                   double test_fail_atol=1e-5,
-                                   double test_fail_rtol=1e-5 );
+int TacsTestElementQuantitySVSens(
+    TACSElement *element, int elemIndex, int quantityType, double time,
+    const TacsScalar Xpts[], const TacsScalar vars[], const TacsScalar dvars[],
+    const TacsScalar ddvars[], double dh = 1e-7, int test_print_level = 2,
+    double test_fail_atol = 1e-5, double test_fail_rtol = 1e-5);
 
 /**
   Test the quantity output element node sensitivities
@@ -337,18 +280,11 @@ int TacsTestElementQuantitySVSens( TACSElement *element,
   @param test_fail_atol The test absolute tolerance
   @param test_fail_rtol The test relative tolerance
 */
-int TacsTestElementQuantityXptSens( TACSElement *element,
-                                    int elemIndex,
-                                    int quantityType,
-                                    double time,
-                                    const TacsScalar Xpts[],
-                                    const TacsScalar vars[],
-                                    const TacsScalar dvars[],
-                                    const TacsScalar ddvars[],
-                                    double dh=1e-7,
-                                    int test_print_level=2,
-                                    double test_fail_atol=1e-5,
-                                    double test_fail_rtol=1e-5 );
+int TacsTestElementQuantityXptSens(
+    TACSElement *element, int elemIndex, int quantityType, double time,
+    const TacsScalar Xpts[], const TacsScalar vars[], const TacsScalar dvars[],
+    const TacsScalar ddvars[], double dh = 1e-7, int test_print_level = 2,
+    double test_fail_atol = 1e-5, double test_fail_rtol = 1e-5);
 
 /**
   Test if the basis function derivatives are implemented correct
@@ -359,11 +295,9 @@ int TacsTestElementQuantityXptSens( TACSElement *element,
   @param test_fail_atol The test absolute tolerance
   @param test_fail_rtol The test relative tolerance
 */
-int TacsTestElementBasisFunctions( TACSElementBasis *basis,
-                                   double dh,
-                                   int test_print_level,
-                                   double test_fail_atol,
-                                   double test_fail_rtol );
+int TacsTestElementBasisFunctions(TACSElementBasis *basis, double dh,
+                                  int test_print_level, double test_fail_atol,
+                                  double test_fail_rtol);
 
 /**
   Test if the basis face normals are implemented correct
@@ -374,11 +308,9 @@ int TacsTestElementBasisFunctions( TACSElementBasis *basis,
   @param test_fail_atol The test absolute tolerance
   @param test_fail_rtol The test relative tolerance
 */
-int TacsTestElementBasisFaceNormals( TACSElementBasis *basis,
-                                     double dh,
-                                     int test_print_level,
-                                     double test_fail_atol,
-                                     double test_fail_rtol );
+int TacsTestElementBasisFaceNormals(TACSElementBasis *basis, double dh,
+                                    int test_print_level, double test_fail_atol,
+                                    double test_fail_rtol);
 
 /**
   Test if the basis jacobian transform is implemented correct
@@ -389,11 +321,10 @@ int TacsTestElementBasisFaceNormals( TACSElementBasis *basis,
   @param test_fail_atol The test absolute tolerance
   @param test_fail_rtol The test relative tolerance
 */
-int TacsTestElementBasisJacobianTransform( TACSElementBasis *basis,
-                                           double dh,
-                                           int test_print_level,
-                                           double test_fail_atol,
-                                           double test_fail_rtol );
+int TacsTestElementBasisJacobianTransform(TACSElementBasis *basis, double dh,
+                                          int test_print_level,
+                                          double test_fail_atol,
+                                          double test_fail_rtol);
 
 /**
   Test if the basis function derivatives are implemented correct
@@ -404,11 +335,9 @@ int TacsTestElementBasisJacobianTransform( TACSElementBasis *basis,
   @param test_fail_atol The test absolute tolerance
   @param test_fail_rtol The test relative tolerance
 */
-int TacsTestElementBasis( TACSElementBasis *basis,
-                          double dh=1e-7,
-                          int test_print_level=2,
-                          double test_fail_atol=1e-5,
-                          double test_fail_rtol=1e-5 );
+int TacsTestElementBasis(TACSElementBasis *basis, double dh = 1e-7,
+                         int test_print_level = 2, double test_fail_atol = 1e-5,
+                         double test_fail_rtol = 1e-5);
 
 /**
   Test the element model Jacobian
@@ -419,13 +348,10 @@ int TacsTestElementBasis( TACSElementBasis *basis,
   @param test_fail_atol The test absolute tolerance
   @param test_fail_rtol The test relative tolerance
 */
-int TacsTestElementModelJacobian( TACSElementModel *model,
-                                  int elemIndex,
-                                  const double time,
-                                  double dh,
-                                  int test_print_level,
-                                  double test_fail_atol,
-                                  double test_fail_rtol );
+int TacsTestElementModelJacobian(TACSElementModel *model, int elemIndex,
+                                 const double time, double dh,
+                                 int test_print_level, double test_fail_atol,
+                                 double test_fail_rtol);
 
 /**
   Test the element model adjoint xpt sens product
@@ -436,13 +362,11 @@ int TacsTestElementModelJacobian( TACSElementModel *model,
   @param test_fail_atol The test absolute tolerance
   @param test_fail_rtol The test relative tolerance
 */
-int TacsTestElementModelAdjXptSensProduct( TACSElementModel *model,
-                                           int elemIndex,
-                                           const double time,
-                                           double dh,
-                                           int test_print_level,
-                                           double test_fail_atol,
-                                           double test_fail_rtol );
+int TacsTestElementModelAdjXptSensProduct(TACSElementModel *model,
+                                          int elemIndex, const double time,
+                                          double dh, int test_print_level,
+                                          double test_fail_atol,
+                                          double test_fail_rtol);
 
 /**
   Test the element model functions
@@ -453,12 +377,9 @@ int TacsTestElementModelAdjXptSensProduct( TACSElementModel *model,
   @param test_fail_atol The test absolute tolerance
   @param test_fail_rtol The test relative tolerance
 */
-int TacsTestElementModel( TACSElementModel *model,
-                          int elemIndex,
-                          const double time,
-                          double dh=1e-7,
-                          int test_print_level=2,
-                          double test_fail_atol=1e-5,
-                          double test_fail_rtol=1e-5 );
+int TacsTestElementModel(TACSElementModel *model, int elemIndex,
+                         const double time, double dh = 1e-7,
+                         int test_print_level = 2, double test_fail_atol = 1e-5,
+                         double test_fail_rtol = 1e-5);
 
-#endif // TACS_ELEMENT_VERIFICATION_H
+#endif  // TACS_ELEMENT_VERIFICATION_H

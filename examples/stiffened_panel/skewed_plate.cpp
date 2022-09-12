@@ -1,11 +1,10 @@
 #include "TACSAssembler.h"
 #include "TACSBuckling.h"
-#include "TACSToFH5.h"
-#include "TACSMeshLoader.h"
 #include "TACSIsoShellConstitutive.h"
+#include "TACSMeshLoader.h"
 #include "TACSShellElementDefs.h"
+#include "TACSToFH5.h"
 // #include "TACSPanelAnalysis.h"
-
 
 // /*
 //   The TACSPanelAnalysis object cannot be used in complex mode because
@@ -85,9 +84,9 @@
 //   panel->decref();
 // }
 
-#endif // TACS_USE_COMPLEX
+#endif  // TACS_USE_COMPLEX
 
-int main( int argc, char *argv[] ){
+int main(int argc, char *argv[]) {
   MPI_Init(&argc, &argv);
 
   // Flag to indicate
@@ -100,22 +99,22 @@ int main( int argc, char *argv[] ){
   double Nx = -1.0, Nxy = 0.0;
 
   // Parse the input arguments
-  for ( int i = 0; i < argc; i++ ){
-    if (sscanf(argv[i], "theta=%lf", &theta) == 1){
+  for (int i = 0; i < argc; i++) {
+    if (sscanf(argv[i], "theta=%lf", &theta) == 1) {
       // Convert from degrees to radians
-      theta *= (M_PI/180.0);
+      theta *= (M_PI / 180.0);
       continue;
     }
-    if (sscanf(argv[i], "Nx=%lf", &Nx) == 1){
+    if (sscanf(argv[i], "Nx=%lf", &Nx) == 1) {
       continue;
     }
-    if (sscanf(argv[i], "Nxy=%lf", &Nxy) == 1){
+    if (sscanf(argv[i], "Nxy=%lf", &Nxy) == 1) {
       continue;
     }
-    if (strcmp(argv[i], "composite") == 0){
+    if (strcmp(argv[i], "composite") == 0) {
       isotropic_flag = 1;
     }
-    if (strcmp(argv[i], "isotropic") == 0){
+    if (strcmp(argv[i], "isotropic") == 0) {
       isotropic_flag = 1;
     }
   }
@@ -132,20 +131,18 @@ int main( int argc, char *argv[] ){
   TacsScalar rho = 0.0, t = 0.0;
   TacsScalar E = 0.0, nu = 0.0;
 
-  if (isotropic_flag){
+  if (isotropic_flag) {
     // Set the values of the thickness, modulus and Poisson ratio
-    rho = 2750.0e-9; // kg/mm^3
-    t = 1.0; // mm
-    E = 70e3; // MPa
-    nu = 0.3; // dimensionless
+    rho = 2750.0e-9;  // kg/mm^3
+    t = 1.0;          // mm
+    E = 70e3;         // MPa
+    nu = 0.3;         // dimensionless
 
-    TacsScalar kcorr = 5.0/6.0, yield_stress = 464e6;
-    stiff = new isoFSDTStiffness(rho, E, nu, kcorr,
-                                 yield_stress, t);
+    TacsScalar kcorr = 5.0 / 6.0, yield_stress = 464e6;
+    stiff = new isoFSDTStiffness(rho, E, nu, kcorr, yield_stress, t);
     stiff->incref();
-  }
-  else {
-    TacsScalar tply = 0.125; // mm
+  } else {
+    TacsScalar tply = 0.125;  // mm
 
     TacsScalar E1 = 164.0e3;
     TacsScalar E2 = 0.83e3;
@@ -158,34 +155,30 @@ int main( int argc, char *argv[] ){
     TacsScalar Xc = 1040.0;
     TacsScalar Yt = 73.0;
     TacsScalar Yc = 173.0;
-    TacsScalar S  = 183.0;
+    TacsScalar S = 183.0;
 
     // Set the equivalent values of the thickness, modulus and Poisson
     // ratio
-    rho = 1670.0e-9; // kg/mm^3
-    t = 4.0*tply; // mm
-    E = E1; // MPa
-    nu = nu12; // dimensionless
+    rho = 1670.0e-9;  // kg/mm^3
+    t = 4.0 * tply;   // mm
+    E = E1;           // MPa
+    nu = nu12;        // dimensionless
 
-    OrthoPly *ortho_ply = new OrthoPly(tply, rho,
-                                        E1, E2, nu12,
-                                        G12, G23, G13,
-                                        Xt, Xc, Yt, Yc, S);
+    OrthoPly *ortho_ply =
+        new OrthoPly(tply, rho, E1, E2, nu12, G12, G23, G13, Xt, Xc, Yt, Yc, S);
 
-
-    TacsScalar kcorr = 5.0/6.0;
+    TacsScalar kcorr = 5.0 / 6.0;
     int num_plies = 4;
     OrthoPly *ortho_plies[4];
-    ortho_plies[0] = ortho_plies[1] =
-      ortho_plies[2] = ortho_plies[3] = ortho_ply;
+    ortho_plies[0] = ortho_plies[1] = ortho_plies[2] = ortho_plies[3] =
+        ortho_ply;
 
-    TacsScalar ply_angles[4] = {-M_PI/4.0, M_PI/4.0,
-                                M_PI/4.0, -M_PI/4.0};
-    TacsScalar thickness[4] = { 0.125, 0.125, 0.125, 0.125 };
+    TacsScalar ply_angles[4] = {-M_PI / 4.0, M_PI / 4.0, M_PI / 4.0,
+                                -M_PI / 4.0};
+    TacsScalar thickness[4] = {0.125, 0.125, 0.125, 0.125};
 
     // Allocate the FSDTStiffness object
-    stiff = new compFSDTStiffness(ortho_plies, kcorr,
-                                  thickness, ply_angles,
+    stiff = new compFSDTStiffness(ortho_plies, kcorr, thickness, ply_angles,
                                   num_plies);
     stiff->incref();
   }
@@ -196,8 +189,8 @@ int main( int argc, char *argv[] ){
 
   // Estimate the buckling loads and geometric parameters for the plate
   double a = 100.0;
-  double b = a*cos(theta);
-  TacsScalar Dt = (t*t*t*E)/(12.0*(1.0 - nu*nu));
+  double b = a * cos(theta);
+  TacsScalar Dt = (t * t * t * E) / (12.0 * (1.0 - nu * nu));
 
 #ifndef TACS_USE_COMPLEX
   // Extract the stiffness matrices from the constitutive object
@@ -212,21 +205,21 @@ int main( int argc, char *argv[] ){
   TacsScalar freq[nfreq];
   skewed_test(stiff, theta, a, b, Nx, Nxy, loads, nloads, freq, nfreq);
 
-  if (rank == 0){
+  if (rank == 0) {
     stiff->printStiffness();
 
     printf("Nx    = %8.1f\n", Nx);
     printf("Nxy   = %8.1f\n", Nxy);
-    printf("theta = %8.1f\n", theta*180.0/M_PI);
+    printf("theta = %8.1f\n", theta * 180.0 / M_PI);
 
-    for ( int k = 0; k < nloads; k++ ){
-      printf("load[%2d] = %15.6f  k_crit = %15.6f\n",
-             k, loads[k], (loads[k]*a*a)/(M_PI*M_PI*Dt));
+    for (int k = 0; k < nloads; k++) {
+      printf("load[%2d] = %15.6f  k_crit = %15.6f\n", k, loads[k],
+             (loads[k] * a * a) / (M_PI * M_PI * Dt));
     }
 
-    for ( int k = 0; k < nfreq; k++ ){
+    for (int k = 0; k < nfreq; k++) {
       printf("freq[%2d] = %15.6f   Omega = %15.6f\n", k, freq[k],
-             freq[k]*a*a*sqrt(rho*t/Dt));
+             freq[k] * a * a * sqrt(rho * t / Dt));
     }
   }
 #endif
@@ -243,17 +236,16 @@ int main( int argc, char *argv[] ){
   tacs->incref();
 
   // Output for visualization
-  int write_flag = (TACSElement::OUTPUT_NODES |
-                    TACSElement::OUTPUT_DISPLACEMENTS |
-                    TACSElement::OUTPUT_STRAINS |
-                    TACSElement::OUTPUT_STRESSES |
-                    TACSElement::OUTPUT_EXTRAS);
+  int write_flag =
+      (TACSElement::OUTPUT_NODES | TACSElement::OUTPUT_DISPLACEMENTS |
+       TACSElement::OUTPUT_STRAINS | TACSElement::OUTPUT_STRESSES |
+       TACSElement::OUTPUT_EXTRAS);
 
   TACSToFH5 *f5 = new TACSToFH5(tacs, TACS_SHELL, write_flag);
   f5->incref();
 
-  int lev_fill = 5000; // ILU(k) fill in
-  int fill = 8.0;      // Expected number of non-zero entries
+  int lev_fill = 5000;  // ILU(k) fill in
+  int fill = 8.0;       // Expected number of non-zero entries
 
   // These calls compute the symbolic factorization and allocate
   // the space required for the preconditioners
@@ -264,8 +256,8 @@ int main( int argc, char *argv[] ){
 
   // Now, set up the solver
   int gmres_iters = 15;
-  int nrestart = 0; // Number of allowed restarts
-  int is_flexible = 0; // Is a flexible preconditioner?
+  int nrestart = 0;     // Number of allowed restarts
+  int is_flexible = 0;  // Is a flexible preconditioner?
 
   GMRES *ksm = new GMRES(aux_mat, pc, gmres_iters, nrestart, is_flexible);
   ksm->setTolerances(1e-12, 1e-30);
@@ -283,30 +275,29 @@ int main( int argc, char *argv[] ){
   int output_freq = 1;
   KSMPrint *ksm_print = new KSMPrintStdout("KSM", rank, output_freq);
 
-  TACSLinearBuckling *
-    linear_buckling = new TACSLinearBuckling(tacs, sigma, gmat, kmat, aux_mat, ksm,
-                                             max_lanczos, num_eigvals, eig_tol);
+  TACSLinearBuckling *linear_buckling = new TACSLinearBuckling(
+      tacs, sigma, gmat, kmat, aux_mat, ksm, max_lanczos, num_eigvals, eig_tol);
   linear_buckling->incref();
   linear_buckling->solve(NULL, ksm_print);
   f5->writeToFile("results/load_path.f5");
 
-  TACSBVec *vec = tacs->createVec(); vec->incref();
+  TACSBVec *vec = tacs->createVec();
+  vec->incref();
 
-  for ( int k = 0; k < num_eigvals; k++ ){
+  for (int k = 0; k < num_eigvals; k++) {
     TacsScalar error;
-    TacsScalar eigvalue =
-      linear_buckling->extractEigenvector(k, vec, &error);
+    TacsScalar eigvalue = linear_buckling->extractEigenvector(k, vec, &error);
 
     TacsScalar N_crit = 0.0;
-    if (Nx < -0.1){
-      N_crit = 0.001*t*E*eigvalue;
+    if (Nx < -0.1) {
+      N_crit = 0.001 * t * E * eigvalue;
+    } else {
+      N_crit = 0.001 * t * 0.5 * E / (1.0 + nu) * eigvalue;
     }
-    else {
-      N_crit = 0.001*t*0.5*E/(1.0+nu)*eigvalue;
-    }
-    if (rank == 0){
-      printf("TACS eigs[%2d]: %15.6f k_crit = %15.6f\n",
-             k, TacsRealPart(N_crit), TacsRealPart((N_crit*a*a)/(M_PI*M_PI*Dt)));
+    if (rank == 0) {
+      printf("TACS eigs[%2d]: %15.6f k_crit = %15.6f\n", k,
+             TacsRealPart(N_crit),
+             TacsRealPart((N_crit * a * a) / (M_PI * M_PI * Dt)));
     }
 
     // Set the local variables
@@ -318,16 +309,14 @@ int main( int argc, char *argv[] ){
 
   sigma = 10.0;
 
-  TACSFrequencyAnalysis *
-    freq_analysis = new TACSFrequencyAnalysis(tacs, sigma, kmat, aux_mat, ksm,
-                                              max_lanczos, num_eigvals, eig_tol);
+  TACSFrequencyAnalysis *freq_analysis = new TACSFrequencyAnalysis(
+      tacs, sigma, kmat, aux_mat, ksm, max_lanczos, num_eigvals, eig_tol);
   freq_analysis->incref();
   freq_analysis->solve(ksm_print);
 
-  for ( int k = 0; k < num_eigvals; k++ ){
+  for (int k = 0; k < num_eigvals; k++) {
     TacsScalar error;
-    TacsScalar eigvalue =
-      freq_analysis->extractEigenvector(k, vec, &error);
+    TacsScalar eigvalue = freq_analysis->extractEigenvector(k, vec, &error);
     eigvalue = sqrt(eigvalue);
 
     // Set the local variables
@@ -336,10 +325,10 @@ int main( int argc, char *argv[] ){
     sprintf(file_name, "results/tacs_mode%02d.f5", k);
     f5->writeToFile(file_name);
 
-    if (rank == 0){
-      printf("TACS eigs[%2d]: %15.6f Omega = %15.6f\n",
-             k, TacsRealPart(eigvalue),
-             TacsRealPart(eigvalue*a*a*sqrt(rho*t/Dt)));
+    if (rank == 0) {
+      printf("TACS eigs[%2d]: %15.6f Omega = %15.6f\n", k,
+             TacsRealPart(eigvalue),
+             TacsRealPart(eigvalue * a * a * sqrt(rho * t / Dt)));
     }
   }
 

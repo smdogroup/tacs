@@ -56,58 +56,57 @@
 */
 class TACSMg : public TACSPc {
  public:
-  TACSMg( MPI_Comm comm, int _nlevels, double _sor_omega=1.0,
-          int _sor_iters=1, int _sor_symmetric=0 );
+  TACSMg(MPI_Comm comm, int _nlevels, double _sor_omega = 1.0,
+         int _sor_iters = 1, int _sor_symmetric = 0);
   ~TACSMg();
 
   // Set the data for the multi-grid level
   // -------------------------------------
-  void setLevel( int level, TACSAssembler *_assembler,
-                 TACSBVecInterp *interp=NULL,
-                 int _iters=1, int _use_galerkin=0,
-                 TACSMat *_mat=NULL, TACSPc *_smoother=NULL );
+  void setLevel(int level, TACSAssembler *_assembler,
+                TACSBVecInterp *interp = NULL, int _iters = 1,
+                int _use_galerkin = 0, TACSMat *_mat = NULL,
+                TACSPc *_smoother = NULL);
 
   // Set the state/design variables of all lower finite-element models
   // -----------------------------------------------------------------
-  void setVariables( TACSBVec *vec );
-  void setDesignVars( TACSBVec *x );
+  void setVariables(TACSBVec *vec);
+  void setDesignVars(TACSBVec *x);
 
   // Assemble the given finite-element matrix at all levels
   // ------------------------------------------------------
-  void assembleJacobian( double alpha, double beta, double gamma,
-                         TACSBVec *res=NULL,
-                         MatrixOrientation matOr=TACS_MAT_NORMAL );
-  void assembleMatType( ElementMatrixType matType=TACS_STIFFNESS_MATRIX,
-                        MatrixOrientation matOr=TACS_MAT_NORMAL );
-  void assembleMatCombo( ElementMatrixType matTypes[],
-                         TacsScalar scale[], int nmats,
-                         MatrixOrientation matOr=TACS_MAT_NORMAL );
+  void assembleJacobian(double alpha, double beta, double gamma,
+                        TACSBVec *res = NULL,
+                        MatrixOrientation matOr = TACS_MAT_NORMAL);
+  void assembleMatType(ElementMatrixType matType = TACS_STIFFNESS_MATRIX,
+                       MatrixOrientation matOr = TACS_MAT_NORMAL);
+  void assembleMatCombo(ElementMatrixType matTypes[], TacsScalar scale[],
+                        int nmats, MatrixOrientation matOr = TACS_MAT_NORMAL);
   int assembleGalerkinMat();
 
   // Methods required by the TACSPc class
   // ------------------------------------
-  void applyFactor( TACSVec *x, TACSVec *y );
+  void applyFactor(TACSVec *x, TACSVec *y);
   void factor();
 
   // Solve the problem using the full multi-grid method
   // --------------------------------------------------
-  void solve( TACSBVec *bvec, TACSBVec *xvec, int max_iters=200,
-              double rtol=1e-8, double atol=1e-30 );
+  void solve(TACSBVec *bvec, TACSBVec *xvec, int max_iters = 200,
+             double rtol = 1e-8, double atol = 1e-30);
 
   // Retrieve the matrix from the specified level
   // --------------------------------------------
-  void getMat( TACSMat **_mat );
-  TACSMat *getMat( int level );
-  TACSAssembler *getAssembler( int level );
-  TACSBVecInterp *getInterpolation( int level );
+  void getMat(TACSMat **_mat);
+  TACSMat *getMat(int level);
+  TACSAssembler *getAssembler(int level);
+  TACSBVecInterp *getInterpolation(int level);
 
   // Set the solution monitor context
   // --------------------------------
-  void setMonitor( KSMPrint *_monitor );
+  void setMonitor(KSMPrint *_monitor);
 
  private:
   // Recursive function to apply multi-grid at each level
-  void applyMg( int level );
+  void applyMg(int level);
 
   // The MPI communicator for this object
   MPI_Comm comm;
@@ -140,11 +139,10 @@ class TACSMg : public TACSPc {
   double *cumulative_level_time;
 
   // The matrices/preconditioner objects required for multigrid
-  TACSMat *root_mat; // The root matrix
-  TACSPc *root_pc; // The root direct solver
-  TACSMat **mat; // The matrices associated with each level
-  TACSPc **pc; // The smoothers for all but the lowest level
+  TACSMat *root_mat;  // The root matrix
+  TACSPc *root_pc;    // The root direct solver
+  TACSMat **mat;      // The matrices associated with each level
+  TACSPc **pc;        // The smoothers for all but the lowest level
 };
 
-#endif // TACS_MG_H
-
+#endif  // TACS_MG_H

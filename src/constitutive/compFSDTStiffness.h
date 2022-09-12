@@ -36,32 +36,30 @@
 */
 class compFSDTStiffness : public FSDTStiffness {
  public:
-  compFSDTStiffness( OrthoPly **_ortho_ply, TacsScalar _kcorr,
-                     TacsScalar *_thickness, TacsScalar *_ply_angles,
-                     int _num_plies );
+  compFSDTStiffness(OrthoPly **_ortho_ply, TacsScalar _kcorr,
+                    TacsScalar *_thickness, TacsScalar *_ply_angles,
+                    int _num_plies);
   ~compFSDTStiffness();
 
   const char *constitutiveName();
 
   // Functions required by FSDTStiffness
   // -----------------------------------
-  TacsScalar getStiffness( const double pt[],
-                           TacsScalar A[], TacsScalar B[],
-                           TacsScalar D[], TacsScalar As[] );
-  void getPointwiseMass( const double pt[], TacsScalar mass[] );
+  TacsScalar getStiffness(const double pt[], TacsScalar A[], TacsScalar B[],
+                          TacsScalar D[], TacsScalar As[]);
+  void getPointwiseMass(const double pt[], TacsScalar mass[]);
 
   // Compute the failure criteria
   // ----------------------------
-  void failure( const double pt[], const TacsScalar strain[],
-                TacsScalar *fail );
+  void failure(const double pt[], const TacsScalar strain[], TacsScalar *fail);
 
  private:
   // Get the strain in a particular lamina -- still in the global ref. axis
-  void getLaminaStrain( TacsScalar strain[],
-                        const TacsScalar rmStrain[], TacsScalar tp );
+  void getLaminaStrain(TacsScalar strain[], const TacsScalar rmStrain[],
+                       TacsScalar tp);
 
-  TacsScalar evalFailLoads( const TacsScalar constStrain[],
-                            const TacsScalar linStrain[] );
+  TacsScalar evalFailLoads(const TacsScalar constStrain[],
+                           const TacsScalar linStrain[]);
 
   // The composite data
   // ------------------

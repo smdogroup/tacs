@@ -1,14 +1,12 @@
-#include "TACSIntegrator.h"
-
-#include "TACSMeshLoader.h"
-#include "MITC9.h"
-#include "isoFSDTStiffness.h"
-#include "TACSShellTraction.h"
-
-#include "KSFailure.h"
-#include "StructuralMass.h"
 #include "Compliance.h"
 #include "InducedFailure.h"
+#include "KSFailure.h"
+#include "MITC9.h"
+#include "StructuralMass.h"
+#include "TACSIntegrator.h"
+#include "TACSMeshLoader.h"
+#include "TACSShellTraction.h"
+#include "isoFSDTStiffness.h"
 
 /*
   Code for testing adjoints with plate example. Use command line
@@ -25,15 +23,14 @@
   print_level: 0, 1, 2
 */
 const char *help_string[] = {
-  "TACS time-dependent analysis of a plate located in plate.bdf",
-  "num_funcs=1,2,3 and 12  : Number of functions for adjoint problem",
-  "num_threads=1,2,3...    : Number of threads to use",
-  "print_level=0,1,2       : Controls the amount of information to print",
-  "write_solution=0,1,2... : Controls the frequency of f5 file output",
-  "convert_mesh=0,1        : Converts the mesh to coordinate ordering" };
+    "TACS time-dependent analysis of a plate located in plate.bdf",
+    "num_funcs=1,2,3 and 12  : Number of functions for adjoint problem",
+    "num_threads=1,2,3...    : Number of threads to use",
+    "print_level=0,1,2       : Controls the amount of information to print",
+    "write_solution=0,1,2... : Controls the frequency of f5 file output",
+    "convert_mesh=0,1        : Converts the mesh to coordinate ordering"};
 
-int main( int argc, char **argv ){
-
+int main(int argc, char **argv) {
   // Intialize MPI and declare communicator
   MPI_Init(&argc, &argv);
 
@@ -49,12 +46,11 @@ int main( int argc, char **argv ){
   int convert_mesh = 0;
   double dh = 1e-7;
 
-  for ( int i = 0; i < argc; i++ ){
-
+  for (int i = 0; i < argc; i++) {
     // Determine whether or not to test gradients with complex step
-    if (strcmp("--help", argv[i]) == 0){
-      if (rank == 0){
-        for ( int k = 0; k < 6; k++ ){
+    if (strcmp("--help", argv[i]) == 0) {
+      if (rank == 0) {
+        for (int k = 0; k < 6; k++) {
           printf("%s\n", help_string[k]);
         }
       }
@@ -63,55 +59,67 @@ int main( int argc, char **argv ){
     }
 
     // Determine the complex/finite-difference step interval
-    if (sscanf(argv[i], "dh=%lf", &dh) == 1){
-      if (rank == 0){
+    if (sscanf(argv[i], "dh=%lf", &dh) == 1) {
+      if (rank == 0) {
         printf("Difference interval : %g\n", dh);
       }
     }
 
     // Determine the number of functions for adjoint
-    if (sscanf(argv[i], "num_funcs=%d", &num_funcs) == 1){
-      if (num_funcs < 0){ num_funcs = 1; }
-      if (rank == 0){
+    if (sscanf(argv[i], "num_funcs=%d", &num_funcs) == 1) {
+      if (num_funcs < 0) {
+        num_funcs = 1;
+      }
+      if (rank == 0) {
         printf("Number of functions : %d\n", num_funcs);
       }
     }
 
     // How frequent to write the f5 files
-    if (sscanf(argv[i], "write_solution=%d", &write_solution) == 1){
-      if (write_solution < 0){ write_solution = 0; }
-      if (rank == 0){
+    if (sscanf(argv[i], "write_solution=%d", &write_solution) == 1) {
+      if (write_solution < 0) {
+        write_solution = 0;
+      }
+      if (rank == 0) {
         printf("Write solution freq : %d\n", write_solution);
       }
     }
 
     // Set the print level
-    if (sscanf(argv[i], "print_level=%d", &print_level) == 1){
-      if (print_level < 0){ print_level = 1; }
-      if (print_level > 3){ print_level = 3; }
-      if (rank == 0){
+    if (sscanf(argv[i], "print_level=%d", &print_level) == 1) {
+      if (print_level < 0) {
+        print_level = 1;
+      }
+      if (print_level > 3) {
+        print_level = 3;
+      }
+      if (rank == 0) {
         printf("Print level : %d\n", print_level);
       }
     }
 
     // Determine the number of threads
-    if (sscanf(argv[i], "num_threads=%d", &num_threads) == 1){
-      if (num_threads < 0){ num_threads = 1; }
-      if (num_threads > 24){ num_threads = 24; }
-      if (rank == 0){
+    if (sscanf(argv[i], "num_threads=%d", &num_threads) == 1) {
+      if (num_threads < 0) {
+        num_threads = 1;
+      }
+      if (num_threads > 24) {
+        num_threads = 24;
+      }
+      if (rank == 0) {
         printf("Number of threads : %d\n", num_threads);
       }
     }
 
     // Determine whether or not to convert the
     // connectivities to coordinate ordering
-    if (sscanf(argv[i], "convert_mesh=%d", &convert_mesh) == 1){
-      if (convert_mesh != 1){
+    if (sscanf(argv[i], "convert_mesh=%d", &convert_mesh) == 1) {
+      if (convert_mesh != 1) {
         convert_mesh = 0;
       } else {
         convert_mesh = 1;
       }
-      if (rank == 0){
+      if (rank == 0) {
         printf("Convert mesh to coordinate order : %d\n", convert_mesh);
       }
     }
@@ -130,11 +138,11 @@ int main( int argc, char **argv ){
   int num_components = mesh->getNumComponents();
 
   // Set properties for structural elements
-  double rho   = 2500.0;  // density, kg/m^3
-  double E     = 70e9;    // elastic modulus, Pa
-  double nu    = 0.3;     // poisson's ratio
-  double kcorr = 5.0/6.0; // shear correction factor
-  double ys    = 350e6;   // yield stress, Pa
+  double rho = 2500.0;       // density, kg/m^3
+  double E = 70e9;           // elastic modulus, Pa
+  double nu = 0.3;           // poisson's ratio
+  double kcorr = 5.0 / 6.0;  // shear correction factor
+  double ys = 350e6;         // yield stress, Pa
 
   // Set properties for dynamics
   TacsScalar g[] = {0.0, 0.0, -9.81};
@@ -144,23 +152,24 @@ int main( int argc, char **argv ){
   /* TacsScalar v_init[] = {0.1, 0.1, 0.1};  */
   /* TacsScalar omega_init[] = {0.3, 0.1, 0.2}; */
 
-  TACSGibbsVector *gravity = new TACSGibbsVector(g);  gravity->incref();
-  TACSGibbsVector *v0 = new TACSGibbsVector(v_init); v0->incref();
-  TACSGibbsVector *omega0  = new TACSGibbsVector(omega_init); omega0->incref();
+  TACSGibbsVector *gravity = new TACSGibbsVector(g);
+  gravity->incref();
+  TACSGibbsVector *v0 = new TACSGibbsVector(v_init);
+  v0->incref();
+  TACSGibbsVector *omega0 = new TACSGibbsVector(omega_init);
+  omega0->incref();
 
   // Variables per node
   int vars_per_node = 0;
 
   // Loop over components, creating constituitive object for each
-  for ( int i = 0; i < num_components; i++ ) {
-    const char *descriptor    = mesh->getElementDescript(i);
+  for (int i = 0; i < num_components; i++) {
+    const char *descriptor = mesh->getElementDescript(i);
     double min_thickness = 5.0e-3;
     double max_thickness = 2.0e-2;
     double thickness = 5.0e-3;
-    isoFSDTStiffness *stiff
-      = new isoFSDTStiffness(rho, E, nu, kcorr, ys,
-                             thickness, i,
-                             min_thickness, max_thickness);
+    isoFSDTStiffness *stiff = new isoFSDTStiffness(
+        rho, E, nu, kcorr, ys, thickness, i, min_thickness, max_thickness);
     stiff->incref();
 
     TacsScalar axis[] = {1.0, 0.0, 0.0};
@@ -171,8 +180,7 @@ int main( int argc, char **argv ){
 
     // Create element object using constituitive information and type
     // defined in the descriptor
-    if (strcmp(descriptor, "CQUAD9") == 0 ||
-        strcmp(descriptor, "CQUAD") == 0 ){
+    if (strcmp(descriptor, "CQUAD9") == 0 || strcmp(descriptor, "CQUAD") == 0) {
       element = new MITC9(stiff, gravity, v0, omega0);
       element->incref();
 
@@ -182,10 +190,9 @@ int main( int argc, char **argv ){
 
       stiff->decref();
       element->decref();
-    }
-    else {
-      printf("[%d] TACS Warning: Unsupported element %s in BDF file\n",
-            rank, descriptor);
+    } else {
+      printf("[%d] TACS Warning: Unsupported element %s in BDF file\n", rank,
+             descriptor);
     }
   }
 
@@ -194,13 +201,12 @@ int main( int argc, char **argv ){
   tacs->incref();
 
   // Create an TACSToFH5 object for writing output to files
-  unsigned int write_flag = (TACSElement::OUTPUT_NODES |
-                             TACSElement::OUTPUT_DISPLACEMENTS |
-                             TACSElement::OUTPUT_STRAINS |
-                             TACSElement::OUTPUT_STRESSES |
-                             TACSElement::OUTPUT_EXTRAS);
+  unsigned int write_flag =
+      (TACSElement::OUTPUT_NODES | TACSElement::OUTPUT_DISPLACEMENTS |
+       TACSElement::OUTPUT_STRAINS | TACSElement::OUTPUT_STRESSES |
+       TACSElement::OUTPUT_EXTRAS);
 
-  TACSToFH5 * f5 = new TACSToFH5(tacs, TACS_SHELL, write_flag);
+  TACSToFH5 *f5 = new TACSToFH5(tacs, TACS_SHELL, write_flag);
   f5->incref();
 
   /*-----------------------------------------------------------------*/
@@ -210,24 +216,21 @@ int main( int argc, char **argv ){
   int num_dvs = num_components;
 
   // Create functions of interest
-  TACSFunction * func[num_funcs];
-  if (num_funcs == 1){
+  TACSFunction *func[num_funcs];
+  if (num_funcs == 1) {
     func[0] = new TACSCompliance(tacs);
-  }
-  else if (num_funcs == 2){
+  } else if (num_funcs == 2) {
     func[0] = new TACSKSFailure(tacs, 100.0);
 
     // Set the induced norm failure types
     TACSInducedFailure *ifunc = new TACSInducedFailure(tacs, 20.0);
     ifunc->setInducedType(TACSInducedFailure::EXPONENTIAL);
     func[1] = ifunc;
-  }
-  else if (num_funcs == 3){
+  } else if (num_funcs == 3) {
     func[0] = new TACSKSFailure(tacs, 100.0);
     func[1] = new TACSCompliance(tacs);
     func[2] = new TACSStructuralMass(tacs);
-  }
-  else if (num_funcs == 12){
+  } else if (num_funcs == 12) {
     // Place functions into the func list
     func[0] = new TACSStructuralMass(tacs);
     func[1] = new TACSCompliance(tacs);
@@ -242,7 +245,7 @@ int main( int argc, char **argv ){
     func[3] = ksfunc;
 
     // Set the induced norm failure types
-    TACSInducedFailure * ifunc = new TACSInducedFailure(tacs, 20.0);
+    TACSInducedFailure *ifunc = new TACSInducedFailure(tacs, 20.0);
     ifunc->setInducedType(TACSInducedFailure::EXPONENTIAL);
     func[4] = ifunc;
 
@@ -275,27 +278,27 @@ int main( int argc, char **argv ){
     func[11] = ifunc;
   }
 
-  for ( int i = 0; i < num_funcs; i++){
+  for (int i = 0; i < num_funcs; i++) {
     func[i]->incref();
   }
 
-  TacsScalar *funcVals     = new TacsScalar[num_funcs]; // adjoint
-  TacsScalar *funcValsTmp  = new TacsScalar[num_funcs]; // CSD
-  TacsScalar *funcVals1    = new TacsScalar[num_funcs]; // forward/reverse
+  TacsScalar *funcVals = new TacsScalar[num_funcs];     // adjoint
+  TacsScalar *funcValsTmp = new TacsScalar[num_funcs];  // CSD
+  TacsScalar *funcVals1 = new TacsScalar[num_funcs];    // forward/reverse
 
-  TacsScalar *dfdx    = new TacsScalar[num_funcs*num_dvs]; // adjoint
-  TacsScalar *dfdx1   = new TacsScalar[num_funcs*num_dvs]; // CSD
-  TacsScalar *dfdxTmp = new TacsScalar[num_funcs*num_dvs]; // forward/reverse
+  TacsScalar *dfdx = new TacsScalar[num_funcs * num_dvs];     // adjoint
+  TacsScalar *dfdx1 = new TacsScalar[num_funcs * num_dvs];    // CSD
+  TacsScalar *dfdxTmp = new TacsScalar[num_funcs * num_dvs];  // forward/reverse
 
   // Create an array of design variables
-  TacsScalar *x = new TacsScalar[ num_dvs ];
+  TacsScalar *x = new TacsScalar[num_dvs];
   x[0] = 0.02;
 
   // Set paramters for time marching
-  double tinit             = 0.0;
-  double tfinal            = 0.005;
-  for ( int k = 0; k < argc; k++ ){
-    if (sscanf(argv[k], "tfinal=%lf", &tfinal) == 1){
+  double tinit = 0.0;
+  double tfinal = 0.005;
+  for (int k = 0; k < argc; k++) {
+    if (sscanf(argv[k], "tfinal=%lf", &tfinal) == 1) {
     }
   }
   int num_steps_per_sec = 1000;
@@ -305,8 +308,8 @@ int main( int argc, char **argv ){
 
   // Check the BDF integrator
   int bdf_order = 3;
-  TACSIntegrator *bdf = new TACSBDFIntegrator(tacs, tinit, tfinal,
-                                              num_steps_per_sec, bdf_order);
+  TACSIntegrator *bdf =
+      new TACSBDFIntegrator(tacs, tinit, tfinal, num_steps_per_sec, bdf_order);
   bdf->incref();
 
   // Set options
@@ -321,8 +324,7 @@ int main( int argc, char **argv ){
   // Check the DIRK integrator
   int num_stages = 2;
   TACSIntegrator *dirk = new TACSDIRKIntegrator(tacs, tinit, tfinal,
-                                                num_steps_per_sec,
-                                                num_stages);
+                                                num_steps_per_sec, num_stages);
   dirk->incref();
 
   // Set options
@@ -339,24 +341,22 @@ int main( int argc, char **argv ){
   v0->decref();
   omega0->decref();
 
-  for ( int i = 0; i < num_funcs; i++){
+  for (int i = 0; i < num_funcs; i++) {
     func[i]->decref();
   }
 
   tacs->decref();
 
-  delete [] dfdx;
-  delete [] dfdx1;
-  delete [] dfdxTmp;
+  delete[] dfdx;
+  delete[] dfdx1;
+  delete[] dfdxTmp;
 
-  delete [] x;
+  delete[] x;
 
-  delete [] funcVals;
-  delete [] funcVals1;
-  delete [] funcValsTmp;
+  delete[] funcVals;
+  delete[] funcVals1;
+  delete[] funcValsTmp;
 
   MPI_Finalize();
   return 0;
 }
-
-

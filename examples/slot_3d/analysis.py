@@ -25,7 +25,7 @@ comm = MPI.COMM_WORLD
 # Instantiate FEAAssembler
 structOptions = {}
 
-bdfFile = os.path.join(os.path.dirname(__file__), 'slot.bdf')
+bdfFile = os.path.join(os.path.dirname(__file__), "slot.bdf")
 # Load BDF file
 FEAAssembler = pyTACS(bdfFile, comm, options=structOptions)
 # Set up TACS Assembler
@@ -36,15 +36,16 @@ FEAAssembler.initialize()
 # Setup static problem
 # ==============================================================================
 # Static problem
-evalFuncs = ['mass', 'ks_vmfailure']
+evalFuncs = ["mass", "ks_vmfailure"]
 # Read in forces from BDF and create tacs static problems
 SPs = FEAAssembler.createTACSProbsFromBDF()
 
 # Set up eval functions
 for spID in SPs:
-    SPs[spID].addFunction('mass', functions.StructuralMass)
-    SPs[spID].addFunction('ks_vmfailure', functions.KSFailure, safetyFactor=1.5,
-                          ksWeight=100.0)
+    SPs[spID].addFunction("mass", functions.StructuralMass)
+    SPs[spID].addFunction(
+        "ks_vmfailure", functions.KSFailure, safetyFactor=1.5, ksWeight=100.0
+    )
 
 # Solve state
 for spID in SPs:

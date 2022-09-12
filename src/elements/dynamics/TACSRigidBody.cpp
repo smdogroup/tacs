@@ -13,6 +13,7 @@
 */
 
 #include "TACSRigidBody.h"
+
 #include "TACSElementAlgebra.h"
 #include "TACSElementQuaternion.h"
 
@@ -24,36 +25,33 @@
   A generic constructor for the rigid body where the user can directly
   supply the information about the geometry
 */
-TACSRigidBodyViz::TACSRigidBodyViz( int _npts, int _nelems,
-                                    TacsScalar *_Xpt, int _conn[],
-                                    TACSGibbsVector *vref ){
+TACSRigidBodyViz::TACSRigidBodyViz(int _npts, int _nelems, TacsScalar *_Xpt,
+                                   int _conn[], TACSGibbsVector *vref) {
   init(_npts, _nelems, _Xpt, _conn, vref);
 }
 
 /*
   Create a cube for visualization
 */
-TACSRigidBodyViz::TACSRigidBodyViz( TacsScalar Lx,
-                                    TacsScalar Ly,
-                                    TacsScalar Lz ){
+TACSRigidBodyViz::TACSRigidBodyViz(TacsScalar Lx, TacsScalar Ly,
+                                   TacsScalar Lz) {
   // Create an array with the cube
   int index[27];
-  int elem_conn[9*6];
-  TacsScalar X[3*26];
+  int elem_conn[9 * 6];
+  TacsScalar X[3 * 26];
 
   // Set the point locations
   int count = 0;
-  for ( int kk = 0; kk < 3; kk++ ){
-    for ( int jj = 0; jj < 3; jj++ ){
-      for ( int ii = 0; ii < 3; ii++ ){
-        if (ii == 1 && jj == 1 && kk == 1){
-          index[ii + 3*jj + 9*kk] = -1;
-        }
-        else {
-          X[3*count] = (0.5*ii - 0.5)*Lx;
-          X[3*count+1] = (0.5*jj - 0.5)*Ly;
-          X[3*count+2] = (0.5*kk - 0.5)*Lz;
-          index[ii + 3*jj + 9*kk] = count;
+  for (int kk = 0; kk < 3; kk++) {
+    for (int jj = 0; jj < 3; jj++) {
+      for (int ii = 0; ii < 3; ii++) {
+        if (ii == 1 && jj == 1 && kk == 1) {
+          index[ii + 3 * jj + 9 * kk] = -1;
+        } else {
+          X[3 * count] = (0.5 * ii - 0.5) * Lx;
+          X[3 * count + 1] = (0.5 * jj - 0.5) * Ly;
+          X[3 * count + 2] = (0.5 * kk - 0.5) * Lz;
+          index[ii + 3 * jj + 9 * kk] = count;
           count++;
         }
       }
@@ -62,30 +60,30 @@ TACSRigidBodyViz::TACSRigidBodyViz( TacsScalar Lx,
 
   // Create the ii-surfaces
   int elem = 0;
-  for ( int ii = 0; ii < 3; ii += 2 ){
-    for ( int kk = 0; kk < 3; kk++ ){
-      for ( int jj = 0; jj < 3; jj++ ){
-        elem_conn[9*elem + jj + 3*kk] = index[ii + 3*jj + 9*kk];
+  for (int ii = 0; ii < 3; ii += 2) {
+    for (int kk = 0; kk < 3; kk++) {
+      for (int jj = 0; jj < 3; jj++) {
+        elem_conn[9 * elem + jj + 3 * kk] = index[ii + 3 * jj + 9 * kk];
       }
     }
     elem++;
   }
 
   // Create the jj-surfaces
-  for ( int jj = 0; jj < 3; jj += 2 ){
-    for ( int kk = 0; kk < 3; kk++ ){
-      for ( int ii = 0; ii < 3; ii++ ){
-        elem_conn[9*elem + ii + 3*kk] = index[ii + 3*jj + 9*kk];
+  for (int jj = 0; jj < 3; jj += 2) {
+    for (int kk = 0; kk < 3; kk++) {
+      for (int ii = 0; ii < 3; ii++) {
+        elem_conn[9 * elem + ii + 3 * kk] = index[ii + 3 * jj + 9 * kk];
       }
     }
     elem++;
   }
 
   // Create the kk-surfaces
-  for ( int kk = 0; kk < 3; kk += 2 ){
-    for ( int jj = 0; jj < 3; jj++ ){
-      for ( int ii = 0; ii < 3; ii++ ){
-        elem_conn[9*elem + ii + 3*jj] = index[ii + 3*jj + 9*kk];
+  for (int kk = 0; kk < 3; kk += 2) {
+    for (int jj = 0; jj < 3; jj++) {
+      for (int ii = 0; ii < 3; ii++) {
+        elem_conn[9 * elem + ii + 3 * jj] = index[ii + 3 * jj + 9 * kk];
       }
     }
     elem++;
@@ -98,49 +96,58 @@ TACSRigidBodyViz::TACSRigidBodyViz( TacsScalar Lx,
 /*
   Initialize the rigid body mesh
 */
-void TACSRigidBodyViz::init( int _npts, int _nelems,
-                             TacsScalar *_Xpt, int _conn[],
-                             TACSGibbsVector *vref ){
+void TACSRigidBodyViz::init(int _npts, int _nelems, TacsScalar *_Xpt,
+                            int _conn[], TACSGibbsVector *vref) {
   // Copy over the inputs
-  npts   = _npts;
+  npts = _npts;
   nelems = _nelems;
 
-  conn = new int[ 9*nelems ];
-  memcpy(conn, _conn, 9*nelems*sizeof(int));
+  conn = new int[9 * nelems];
+  memcpy(conn, _conn, 9 * nelems * sizeof(int));
 
-  Xpts = new TacsScalar[npts*3];
-  if (vref){
+  Xpts = new TacsScalar[npts * 3];
+  if (vref) {
     const TacsScalar *vorig;
     vref->getVector(&vorig);
-    for ( int i = 0; i < npts; i++ ){
-      Xpts[i*3+0] = _Xpt[i*3+0] - vorig[0];
-      Xpts[i*3+1] = _Xpt[i*3+1] - vorig[1];
-      Xpts[i*3+2] = _Xpt[i*3+2] - vorig[2];
+    for (int i = 0; i < npts; i++) {
+      Xpts[i * 3 + 0] = _Xpt[i * 3 + 0] - vorig[0];
+      Xpts[i * 3 + 1] = _Xpt[i * 3 + 1] - vorig[1];
+      Xpts[i * 3 + 2] = _Xpt[i * 3 + 2] - vorig[2];
     }
-  }
-  else {
-    memcpy(Xpts, _Xpt, 3*npts*sizeof(TacsScalar));
+  } else {
+    memcpy(Xpts, _Xpt, 3 * npts * sizeof(TacsScalar));
   }
 }
 
 /*
   Destructor
 */
-TACSRigidBodyViz::~TACSRigidBodyViz(){
-  if (Xpts) { delete [] Xpts; }
-  if (conn) { delete [] conn; }
+TACSRigidBodyViz::~TACSRigidBodyViz() {
+  if (Xpts) {
+    delete[] Xpts;
+  }
+  if (conn) {
+    delete[] conn;
+  }
 }
 
 /*
   Get the mesh for the rigid body
 */
-void TACSRigidBodyViz::getMesh( int *_npts, int *_nelems,
-                                const TacsScalar **_Xpts,
-                                const int **_conn ){
-  if(_npts){ *_npts = npts; }
-  if(_nelems){ *_nelems = nelems; }
-  if(_Xpts){ *_Xpts = Xpts; }
-  if(_conn){ *_conn = conn; }
+void TACSRigidBodyViz::getMesh(int *_npts, int *_nelems,
+                               const TacsScalar **_Xpts, const int **_conn) {
+  if (_npts) {
+    *_npts = npts;
+  }
+  if (_nelems) {
+    *_nelems = nelems;
+  }
+  if (_Xpts) {
+    *_Xpts = Xpts;
+  }
+  if (_conn) {
+    *_conn = conn;
+  }
 }
 
 /*
@@ -155,34 +162,31 @@ void TACSRigidBodyViz::getMesh( int *_npts, int *_nelems,
   size:       the number of values
   rel_err:    relative error tolerance
 */
-static void writeErrorComponents( FILE *fp, const char *descript,
-                                  TacsScalar *a, TacsScalar *fd,
-                                  int size, double rel_err=1e-12 ){
+static void writeErrorComponents(FILE *fp, const char *descript, TacsScalar *a,
+                                 TacsScalar *fd, int size,
+                                 double rel_err = 1e-12) {
   int print_flag = 1;
-  for ( int i = 0; i < size; i++ ){
+  for (int i = 0; i < size; i++) {
     double rel = 0.0;
-    if (a[i] != 0.0){
-      rel = fabs(TacsRealPart((a[i] - fd[i])/a[i]));
-    }
-    else {
+    if (a[i] != 0.0) {
+      rel = fabs(TacsRealPart((a[i] - fd[i]) / a[i]));
+    } else {
       rel = fabs(TacsRealPart((a[i] - fd[i])));
     }
 
-    if (rel > rel_err || a[i] != a[i] || fd[i] != fd[i]){
-      if (print_flag){
-        fprintf(fp, "%*s[   ] %15s %15s %15s\n",
-                (int)strlen(descript), "Val", "Analytic",
-                "Approximate", "Rel. Error");
+    if (rel > rel_err || a[i] != a[i] || fd[i] != fd[i]) {
+      if (print_flag) {
+        fprintf(fp, "%*s[   ] %15s %15s %15s\n", (int)strlen(descript), "Val",
+                "Analytic", "Approximate", "Rel. Error");
         print_flag = 0;
       }
-      if (a[i] != 0.0){
-        fprintf(fp, "%s[%3d] %15.6e %15.6e %15.4e\n",
-                descript, i, TacsRealPart(a[i]), TacsRealPart(fd[i]),
-                fabs(TacsRealPart((a[i] - fd[i])/a[i])));
-      }
-      else {
-        fprintf(fp, "%s[%3d] %15.6e %15.6e\n",
-                descript, i, TacsRealPart(a[i]), TacsRealPart(fd[i]));
+      if (a[i] != 0.0) {
+        fprintf(fp, "%s[%3d] %15.6e %15.6e %15.4e\n", descript, i,
+                TacsRealPart(a[i]), TacsRealPart(fd[i]),
+                fabs(TacsRealPart((a[i] - fd[i]) / a[i])));
+      } else {
+        fprintf(fp, "%s[%3d] %15.6e %15.6e\n", descript, i, TacsRealPart(a[i]),
+                TacsRealPart(fd[i]));
       }
     }
   }
@@ -202,9 +206,8 @@ static void writeErrorComponents( FILE *fp, const char *descript,
   r1:    (r1 - r0)/||r1 - r0|| forms the first direction
   r2:    direction perpendicular to (r1 - r0) used as second direction
 */
-TACSRefFrame::TACSRefFrame( TACSGibbsVector *_r0,
-                            TACSGibbsVector *_r1,
-                            TACSGibbsVector *_r2 ){
+TACSRefFrame::TACSRefFrame(TACSGibbsVector *_r0, TACSGibbsVector *_r1,
+                           TACSGibbsVector *_r2) {
   r0 = _r0;
   r1 = _r1;
   r2 = _r2;
@@ -217,7 +220,7 @@ TACSRefFrame::TACSRefFrame( TACSGibbsVector *_r0,
 /*
   Free the allocated memory
 */
-TACSRefFrame::~TACSRefFrame(){
+TACSRefFrame::~TACSRefFrame() {
   r0->decref();
   r1->decref();
   r2->decref();
@@ -226,9 +229,7 @@ TACSRefFrame::~TACSRefFrame(){
 /*
   Retrieve the rotation matrix from the global to local coordinates
 */
-void TACSRefFrame::getRotation( const TacsScalar **_C ){
-  *_C = C;
-}
+void TACSRefFrame::getRotation(const TacsScalar **_C) { *_C = C; }
 
 /*
   Update the coordinate frame to reflect any changes to the vectors
@@ -238,7 +239,7 @@ void TACSRefFrame::getRotation( const TacsScalar **_C ){
   calculation. This will enable the modification of reference frames
   based solely on moving points.
 */
-void TACSRefFrame::initialize(){
+void TACSRefFrame::initialize() {
   // Get the counts of the design variables
   int elemIndex = 0;
   r0offset = 0;
@@ -259,10 +260,10 @@ void TACSRefFrame::initialize(){
 
   // Compute the first row of the transformation matrix
   TacsScalar C1norm = sqrt(vec3Dot(d1, d1));
-  TacsScalar invC1norm = 1.0/C1norm;
-  C[0] = invC1norm*d1[0];
-  C[1] = invC1norm*d1[1];
-  C[2] = invC1norm*d1[2];
+  TacsScalar invC1norm = 1.0 / C1norm;
+  C[0] = invC1norm * d1[0];
+  C[1] = invC1norm * d1[1];
+  C[2] = invC1norm * d1[2];
 
   // Compute the second vector for the off-axis direction
   TacsScalar d2[3];
@@ -273,16 +274,16 @@ void TACSRefFrame::initialize(){
   // Orthogonalize the first and second vectors
   TacsScalar dot = vec3Dot(&C[0], d2);
   TacsScalar s2[3];
-  s2[0] = d2[0] - dot*C[0];
-  s2[1] = d2[1] - dot*C[1];
-  s2[2] = d2[2] - dot*C[2];
+  s2[0] = d2[0] - dot * C[0];
+  s2[1] = d2[1] - dot * C[1];
+  s2[2] = d2[2] - dot * C[2];
 
   // Normalize the vector
   TacsScalar C2norm = sqrt(vec3Dot(s2, s2));
-  TacsScalar invC2norm = 1.0/C2norm;
-  C[3] = invC2norm*s2[0];
-  C[4] = invC2norm*s2[1];
-  C[5] = invC2norm*s2[2];
+  TacsScalar invC2norm = 1.0 / C2norm;
+  C[3] = invC2norm * s2[0];
+  C[4] = invC2norm * s2[1];
+  C[5] = invC2norm * s2[2];
 
   // Compute the third basis vector (stored as the third row in
   // rotation matrix). We use compute handed dextral set of basis
@@ -301,17 +302,17 @@ void TACSRefFrame::initialize(){
   vec3NormDeriv(C2norm, s2, dC2ds2);
 
   TacsScalar ds2d2[9];
-  ds2d2[0] = 1.0 - C[0]*C[0];
-  ds2d2[1] = -C[0]*C[1];
-  ds2d2[2] = -C[0]*C[2];
+  ds2d2[0] = 1.0 - C[0] * C[0];
+  ds2d2[1] = -C[0] * C[1];
+  ds2d2[2] = -C[0] * C[2];
 
-  ds2d2[3] = -C[1]*C[0];
-  ds2d2[4] = 1.0 - C[1]*C[1];
-  ds2d2[5] = -C[1]*C[2];
+  ds2d2[3] = -C[1] * C[0];
+  ds2d2[4] = 1.0 - C[1] * C[1];
+  ds2d2[5] = -C[1] * C[2];
 
-  ds2d2[6] = -C[2]*C[0];
-  ds2d2[7] = -C[2]*C[1];
-  ds2d2[8] = 1.0 - C[2]*C[2];
+  ds2d2[6] = -C[2] * C[0];
+  ds2d2[7] = -C[2] * C[1];
+  ds2d2[8] = 1.0 - C[2] * C[2];
 
   // Compute dC2d2 = dC2ds2*ds2d2
   mat3x3MatMult(dC2ds2, ds2d2, dC2d2);
@@ -319,17 +320,17 @@ void TACSRefFrame::initialize(){
   // Compute the derivative dC2d1 = dC2ds2*ds2dC1*dC1d1
   // First find the derivative of s2 w.r.t. C1
   TacsScalar ds2dC1[9];
-  ds2dC1[0] = -(dot + C[0]*d2[0]);
-  ds2dC1[1] = -C[0]*d2[1];
-  ds2dC1[2] = -C[0]*d2[2];
+  ds2dC1[0] = -(dot + C[0] * d2[0]);
+  ds2dC1[1] = -C[0] * d2[1];
+  ds2dC1[2] = -C[0] * d2[2];
 
-  ds2dC1[3] = -C[1]*d2[0];
-  ds2dC1[4] = -(dot + C[1]*d2[1]);
-  ds2dC1[5] = -C[1]*d2[2];
+  ds2dC1[3] = -C[1] * d2[0];
+  ds2dC1[4] = -(dot + C[1] * d2[1]);
+  ds2dC1[5] = -C[1] * d2[2];
 
-  ds2dC1[6] = -C[2]*d2[0];
-  ds2dC1[7] = -C[2]*d2[1];
-  ds2dC1[8] = -(dot + C[2]*d2[2]);
+  ds2dC1[6] = -C[2] * d2[0];
+  ds2dC1[7] = -C[2] * d2[1];
+  ds2dC1[8] = -(dot + C[2] * d2[2]);
 
   // Compute the product to find the derivative of C2 w.r.t. d1
   TacsScalar tmp[9];
@@ -340,9 +341,7 @@ void TACSRefFrame::initialize(){
 /*
   Get the design variables numbers from the relevant vectors
 */
-int TACSRefFrame::getDesignVarNums( int elemIndex,
-                                    int dvLen,
-                                    int dvNums[] ){
+int TACSRefFrame::getDesignVarNums(int elemIndex, int dvLen, int dvNums[]) {
   int count = 0;
   count += r0->getDesignVarNums(elemIndex, dvLen, &dvNums[count]);
   count += r1->getDesignVarNums(elemIndex, dvLen, &dvNums[count]);
@@ -350,7 +349,6 @@ int TACSRefFrame::getDesignVarNums( int elemIndex,
 
   return count;
 }
-
 
 /*
   Set the design variables into the three points which define the
@@ -361,9 +359,8 @@ int TACSRefFrame::getDesignVarNums( int elemIndex,
   dvs:     the design variable values
   numDVs:  the number of design vars/array length
 */
-int TACSRefFrame::setDesignVars( int elemIndex,
-                                 int dvLen,
-                                 const TacsScalar dvs[] ){
+int TACSRefFrame::setDesignVars(int elemIndex, int dvLen,
+                                const TacsScalar dvs[]) {
   // Set the design varibles
   int count = 0;
   count += r0->setDesignVars(elemIndex, dvLen, &dvs[count]);
@@ -386,9 +383,7 @@ int TACSRefFrame::setDesignVars( int elemIndex,
   output:
   dvs:     the design variable values
 */
-int TACSRefFrame::getDesignVars( int elemIndex,
-                                 int dvLen,
-                                 TacsScalar dvs[] ){
+int TACSRefFrame::getDesignVars(int elemIndex, int dvLen, TacsScalar dvs[]) {
   // Set the design varibles
   int count = 0;
   count += r0->getDesignVars(elemIndex, dvLen, &dvs[count]);
@@ -422,10 +417,9 @@ int TACSRefFrame::getDesignVars( int elemIndex,
   output:
   fdvSens:  the derivatives are added to this array
 */
-void TACSRefFrame::addRotationAdjResProduct( const TacsScalar psi[],
-                                             const TacsScalar phi[],
-                                             int dvLen,
-                                             TacsScalar fdvSens[] ){
+void TACSRefFrame::addRotationAdjResProduct(const TacsScalar psi[],
+                                            const TacsScalar phi[], int dvLen,
+                                            TacsScalar fdvSens[]) {
   // Temporary vector
   TacsScalar tmp[3];
 
@@ -469,18 +463,18 @@ void TACSRefFrame::addRotationAdjResProduct( const TacsScalar psi[],
   numDVs: the number of design variables
   dh:     the step size for the central-difference formula
 */
-void TACSRefFrame::testRotation( double dh ){
+void TACSRefFrame::testRotation(double dh) {
   // Allocate design variable arrays
   int elemIndex = 0;
   int numDVs = getDesignVarNums(0, 0, NULL);
-  TacsScalar *x = new TacsScalar[ numDVs ];
-  TacsScalar *product = new TacsScalar[ numDVs ];
+  TacsScalar *x = new TacsScalar[numDVs];
+  TacsScalar *product = new TacsScalar[numDVs];
 
   // Set random values into the psi/phi vectors
   TacsScalar psi[3], phi[3];
-  for ( int k = 0; k < 3; k++ ){
-    psi[k] = -0.5 + (1.0*rand())/RAND_MAX;
-    phi[k] = -0.5 + (1.0*rand())/RAND_MAX;
+  for (int k = 0; k < 3; k++) {
+    psi[k] = -0.5 + (1.0 * rand()) / RAND_MAX;
+    phi[k] = -0.5 + (1.0 * rand()) / RAND_MAX;
   }
 
   // Get the variables and make sure that they are consistent
@@ -488,7 +482,7 @@ void TACSRefFrame::testRotation( double dh ){
   setDesignVars(elemIndex, numDVs, x);
 
   // Compute the derivative and store it in fdvSens
-  memset(product, 0, numDVs*sizeof(TacsScalar));
+  memset(product, 0, numDVs * sizeof(TacsScalar));
   addRotationAdjResProduct(psi, phi, numDVs, product);
 
   // Set the vectors to zero
@@ -496,7 +490,7 @@ void TACSRefFrame::testRotation( double dh ){
   memset(fd, 0, sizeof(fd));
 
   // Set the vectors
-  for ( int i = 0; i < numDVs; i++ ){
+  for (int i = 0; i < numDVs; i++) {
     TacsScalar t[3];
     TacsScalar xtmp = x[i];
 
@@ -505,7 +499,7 @@ void TACSRefFrame::testRotation( double dh ){
     x[i] = xtmp + TacsScalar(0.0, dh);
     setDesignVars(elemIndex, numDVs, x);
     mat3x3Mult(C, phi, t);
-    fd[i] = TacsImagPart(vec3Dot(psi, t))/dh;
+    fd[i] = TacsImagPart(vec3Dot(psi, t)) / dh;
 #else
     // Evaluate C at (x + dh)
     x[i] = xtmp + dh;
@@ -519,8 +513,8 @@ void TACSRefFrame::testRotation( double dh ){
     mat3x3Mult(C, phi, t);
     TacsScalar f2 = vec3Dot(psi, t);
 
-    fd[i] = 0.5*(f1 - f2)/dh;
-#endif // TACS_USE_COMPLEX
+    fd[i] = 0.5 * (f1 - f2) / dh;
+#endif  // TACS_USE_COMPLEX
     x[i] = xtmp;
   }
 
@@ -530,8 +524,8 @@ void TACSRefFrame::testRotation( double dh ){
   writeErrorComponents(stdout, "TACSRefFrame", product, fd, 9);
 
   // Free the allocated memory
-  delete [] x;
-  delete [] product;
+  delete[] x;
+  delete[] product;
 }
 
 /*
@@ -543,22 +537,19 @@ void TACSRefFrame::testRotation( double dh ){
   J:          the symmetric second moment of inertia
   g:          the acceleration due to gravity in the global frame
 */
-TACSRigidBody::TACSRigidBody( TACSRefFrame *_CRef,
-                              const TacsScalar _mass,
-                              const TacsScalar _cRef[],
-                              const TacsScalar _JRef[],
-                              TACSGibbsVector *_rInit,
-                              TACSGibbsVector *_vInit,
-                              TACSGibbsVector *_omegaInit,
-                              TACSGibbsVector *_gvec ){
+TACSRigidBody::TACSRigidBody(TACSRefFrame *_CRef, const TacsScalar _mass,
+                             const TacsScalar _cRef[], const TacsScalar _JRef[],
+                             TACSGibbsVector *_rInit, TACSGibbsVector *_vInit,
+                             TACSGibbsVector *_omegaInit,
+                             TACSGibbsVector *_gvec) {
   // Copy over the property values
   mass = _mass;
 
   // Copy over the inertial properties in the Ref reference frame
-  for ( int k = 0; k < 3; k++ ){
+  for (int k = 0; k < 3; k++) {
     cRef[k] = _cRef[k];
   }
-  for ( int k = 0; k < 6; k++ ){
+  for (int k = 0; k < 6; k++) {
     JRef[k] = _JRef[k];
   }
 
@@ -567,9 +558,9 @@ TACSRigidBody::TACSRigidBody( TACSRefFrame *_CRef,
 
   // Copy over the initial vectors. Note that these vectors
   // are in the global reference frame.
-  gvec      = _gvec;
-  rInit     = _rInit;
-  vInit     = _vInit;
+  gvec = _gvec;
+  rInit = _rInit;
+  vInit = _vInit;
   omegaInit = _omegaInit;
 
   // Increment the reference counts for things
@@ -582,8 +573,7 @@ TACSRigidBody::TACSRigidBody( TACSRefFrame *_CRef,
   // Initialize the design variable numbers for the inertial properties
   massDV = -1;
   cDV[0] = cDV[1] = cDV[2] = -1;
-  JDV[0] = JDV[1] = JDV[2] =
-    JDV[3] = JDV[4] = JDV[5] = -1;
+  JDV[0] = JDV[1] = JDV[2] = JDV[3] = JDV[4] = JDV[5] = -1;
 
   viz = NULL;
 
@@ -594,29 +584,25 @@ TACSRigidBody::TACSRigidBody( TACSRefFrame *_CRef,
 /*
   Decrease the reference counts to everything
 */
-TACSRigidBody::~TACSRigidBody(){
+TACSRigidBody::~TACSRigidBody() {
   CRef->decref();
   gvec->decref();
   rInit->decref();
   vInit->decref();
   omegaInit->decref();
-  if (viz) { viz->decref(); }
+  if (viz) {
+    viz->decref();
+  }
 }
 
 // Set the element name
 const char *TACSRigidBody::elem_name = "TACSRigidBody";
 
-int TACSRigidBody::getVarsPerNode(){
-  return 8;
-}
+int TACSRigidBody::getVarsPerNode() { return 8; }
 
-int TACSRigidBody::getNumNodes(){
-  return 1;
-}
+int TACSRigidBody::getNumNodes() { return 1; }
 
-ElementLayout TACSRigidBody::getLayoutType(){
-  return TACS_POINT_ELEMENT;
-}
+ElementLayout TACSRigidBody::getLayoutType() { return TACS_POINT_ELEMENT; }
 
 /*
   Set the design variable numbers associated with the inertial
@@ -627,16 +613,15 @@ ElementLayout TACSRigidBody::getLayoutType(){
   cDV:      design variable numbers for the first moment of mass
   JDV:      design variable numbers for the second moments of mass
 */
-void TACSRigidBody::setDesignVarNums( int _massDV,
-                                      const int _cDV[],
-                                      const int _JDV[] ){
+void TACSRigidBody::setDesignVarNums(int _massDV, const int _cDV[],
+                                     const int _JDV[]) {
   massDV = _massDV;
-  if (_cDV){
+  if (_cDV) {
     cDV[0] = _cDV[0];
     cDV[1] = _cDV[1];
     cDV[2] = _cDV[2];
   }
- if (_JDV){
+  if (_JDV) {
     JDV[0] = _JDV[0];
     JDV[1] = _JDV[1];
     JDV[2] = _JDV[2];
@@ -649,27 +634,26 @@ void TACSRigidBody::setDesignVarNums( int _massDV,
 /*
   Set the design variable values
 */
-int TACSRigidBody::setDesignVars( int elemIndex,
-                                  int dvLen,
-                                  const TacsScalar dvs[] ){
+int TACSRigidBody::setDesignVars(int elemIndex, int dvLen,
+                                 const TacsScalar dvs[]) {
   // Set the mass design variable
   int count = 0;
-  if (massDV >= 0 && massDV < dvLen){
+  if (massDV >= 0 && massDV < dvLen) {
     mass = dvs[count];
     count++;
   }
 
   // Set the moment of mass variable
-  for ( int k = 0; k < 3; k++ ){
-    if (cDV[k] >= 0 && cDV[k] < dvLen){
+  for (int k = 0; k < 3; k++) {
+    if (cDV[k] >= 0 && cDV[k] < dvLen) {
       cRef[k] = dvs[count];
       count++;
     }
   }
 
   // Set the second moment of mass variables
-  for ( int k = 0; k < 6; k++ ){
-    if (JDV[k] >= 0 && JDV[k] < dvLen){
+  for (int k = 0; k < 6; k++) {
+    if (JDV[k] >= 0 && JDV[k] < dvLen) {
       JRef[k] = dvs[count];
       count++;
     }
@@ -694,27 +678,25 @@ int TACSRigidBody::setDesignVars( int elemIndex,
 /*
   Retrieve the design variable numbers
 */
-int TACSRigidBody::getDesignVarNums( int elemIndex,
-                                     int dvLen,
-                                     int *dvNums ){
+int TACSRigidBody::getDesignVarNums(int elemIndex, int dvLen, int *dvNums) {
   // Get the mass design variable
   int count = 0;
-  if (massDV >= 0 && massDV < dvLen){
+  if (massDV >= 0 && massDV < dvLen) {
     dvNums[count] = massDV;
     count++;
   }
 
   // Get the moment of mass variables
-  for ( int k = 0; k < 3; k++ ){
-    if (cDV[k] >= 0 && cDV[k] < dvLen){
+  for (int k = 0; k < 3; k++) {
+    if (cDV[k] >= 0 && cDV[k] < dvLen) {
       dvNums[count] = cDV[k];
       count++;
     }
   }
 
   // Get the second moment of mass variables
-  for ( int k = 0; k < 6; k++ ){
-    if (JDV[k] >= 0 && JDV[k] < dvLen){
+  for (int k = 0; k < 6; k++) {
+    if (JDV[k] >= 0 && JDV[k] < dvLen) {
       dvNums[count] = JDV[k];
       count++;
     }
@@ -735,27 +717,25 @@ int TACSRigidBody::getDesignVarNums( int elemIndex,
 /*
   Retrieve the design variable values
 */
-int TACSRigidBody::getDesignVars( int elemIndex,
-                                  int dvLen,
-                                  TacsScalar dvs[] ){
+int TACSRigidBody::getDesignVars(int elemIndex, int dvLen, TacsScalar dvs[]) {
   // Get the mass design variable
   int count = 0;
-  if (massDV >= 0 && massDV < dvLen){
+  if (massDV >= 0 && massDV < dvLen) {
     dvs[count] = mass;
     count++;
   }
 
   // Get the moment of mass variables
-  for ( int k = 0; k < 3; k++ ){
-    if (cDV[k] >= 0 && cDV[k] < dvLen){
+  for (int k = 0; k < 3; k++) {
+    if (cDV[k] >= 0 && cDV[k] < dvLen) {
       dvs[count] = cRef[k];
       count++;
     }
   }
 
   // Get the second moment of mass variables
-  for ( int k = 0; k < 6; k++ ){
-    if (JDV[k] >= 0 && JDV[k] < dvLen){
+  for (int k = 0; k < 6; k++) {
+    if (JDV[k] >= 0 && JDV[k] < dvLen) {
       dvs[count] = JRef[k];
       count++;
     }
@@ -776,10 +756,8 @@ int TACSRigidBody::getDesignVars( int elemIndex,
 /*
   Retrieve the design variable range
 */
-int TACSRigidBody::getDesignVarRange( int elemIndex,
-                                      int dvLen,
-                                      TacsScalar lb[],
-                                      TacsScalar ub[] ){
+int TACSRigidBody::getDesignVarRange(int elemIndex, int dvLen, TacsScalar lb[],
+                                     TacsScalar ub[]) {
   return 0;
 }
 
@@ -787,7 +765,7 @@ int TACSRigidBody::getDesignVarRange( int elemIndex,
   Set the inertial properties in the global frame based on the
   inertial properties in the reference frame
 */
-void TACSRigidBody::updateInertialProperties(){
+void TACSRigidBody::updateInertialProperties() {
   const TacsScalar *C;
   CRef->getRotation(&C);
 
@@ -837,14 +815,12 @@ void TACSRigidBody::updateInertialProperties(){
   qkin:  the kinematic variables
   qdyn:  the dynamic variable values
 */
-void TACSRigidBody::getInitConditions( int elemIndex,
-                                       const TacsScalar X[],
-                                       TacsScalar vars[],
-                                       TacsScalar dvars[],
-                                       TacsScalar ddvars[] ){
+void TACSRigidBody::getInitConditions(int elemIndex, const TacsScalar X[],
+                                      TacsScalar vars[], TacsScalar dvars[],
+                                      TacsScalar ddvars[]) {
   // Set everything to zero first
-  memset(vars, 0, 8*sizeof(TacsScalar));
-  memset(dvars, 0, 8*sizeof(TacsScalar));
+  memset(vars, 0, 8 * sizeof(TacsScalar));
+  memset(dvars, 0, 8 * sizeof(TacsScalar));
 
   // Set eta = 1.0
   vars[3] = 1.0;
@@ -869,9 +845,9 @@ void TACSRigidBody::getInitConditions( int elemIndex,
   dvars[2] = v[2] + t[2];
 
   // Set the time-derivative of the quaternions
-  dvars[4] = 0.5*w[0];
-  dvars[5] = 0.5*w[1];
-  dvars[6] = 0.5*w[2];
+  dvars[4] = 0.5 * w[0];
+  dvars[5] = 0.5 * w[1];
+  dvars[6] = 0.5 * w[2];
 
   // Set the accelerations omega^{x}*omega^{x}*r
   crossProduct(1.0, w, t, &ddvars[0]);
@@ -880,9 +856,7 @@ void TACSRigidBody::getInitConditions( int elemIndex,
 /*
   Retrieve the position of the rigid body
 */
-TACSGibbsVector* TACSRigidBody::getInitPosition(){
-  return rInit;
-}
+TACSGibbsVector *TACSRigidBody::getInitPosition() { return rInit; }
 
 /*
   Compute the kinematic and potential energies of the rigid body
@@ -908,13 +882,11 @@ TACSGibbsVector* TACSRigidBody::getInitPosition(){
   Te:   the kinematic energy
   Pe:   the potential energy
 */
-void TACSRigidBody::computeEnergies( int elemIndex,
-                                     double time,
-                                     const TacsScalar X[],
-                                     const TacsScalar vars[],
-                                     const TacsScalar dvars[],
-                                     TacsScalar *Te,
-                                     TacsScalar *Pe ){
+void TACSRigidBody::computeEnergies(int elemIndex, double time,
+                                    const TacsScalar X[],
+                                    const TacsScalar vars[],
+                                    const TacsScalar dvars[], TacsScalar *Te,
+                                    TacsScalar *Pe) {
   // Get the acceleration due to gravity
   const TacsScalar *g;
   gvec->getVector(&g);
@@ -938,12 +910,12 @@ void TACSRigidBody::computeEnergies( int elemIndex,
   computeSRateProduct(eta, eps, deta, deps, omega);
 
   // Add the contribution from the linear motion
-  *Te = 0.5*mass*vec3Dot(v0, v0);
+  *Te = 0.5 * mass * vec3Dot(v0, v0);
 
   // Add the contribution from the angular velocity
   TacsScalar tmp[3];
   mat3x3SymmMult(J, omega, tmp);
-  *Te += 0.5*vec3Dot(omega, tmp);
+  *Te += 0.5 * vec3Dot(omega, tmp);
 
   // Transform the velocity from the inertial to body-fixed frame
   TacsScalar v[3];
@@ -955,7 +927,7 @@ void TACSRigidBody::computeEnergies( int elemIndex,
 
   // Compute the potential energy
   mat3x3Mult(C, g, tmp);
-  *Pe = -(mass*vec3Dot(r0, g) + vec3Dot(c, tmp));
+  *Pe = -(mass * vec3Dot(r0, g) + vec3Dot(c, tmp));
 }
 
 /*
@@ -995,13 +967,10 @@ void TACSRigidBody::computeEnergies( int elemIndex,
   output:
   res:     the residual of the governing equations
 */
-void TACSRigidBody::addResidual( int elemIndex,
-                                 double time,
-                                 const TacsScalar *Xpts,
-                                 const TacsScalar *vars,
-                                 const TacsScalar *dvars,
-                                 const TacsScalar *ddvars,
-                                 TacsScalar *res ){
+void TACSRigidBody::addResidual(int elemIndex, double time,
+                                const TacsScalar *Xpts, const TacsScalar *vars,
+                                const TacsScalar *dvars,
+                                const TacsScalar *ddvars, TacsScalar *res) {
   // Get the acceleration due to gravity
   const TacsScalar *g;
   gvec->getVector(&g);
@@ -1041,9 +1010,9 @@ void TACSRigidBody::addResidual( int elemIndex,
 
   // Complete the governing equations for the translational
   // degrees of freedom
-  res[0] += mass*(a0[0] - g[0]) - t1[0];
-  res[1] += mass*(a0[1] - g[1]) - t1[1];
-  res[2] += mass*(a0[2] - g[2]) - t1[2];
+  res[0] += mass * (a0[0] - g[0]) - t1[0];
+  res[1] += mass * (a0[1] - g[1]) - t1[1];
+  res[2] += mass * (a0[2] - g[2]) - t1[2];
 
   // Compute the residual of the governing equations for
   // the rotational terms
@@ -1059,8 +1028,7 @@ void TACSRigidBody::addResidual( int elemIndex,
   mat3x3SymmMultAdd(J, domega, t2);
 
   // Add res += S^{T}*t2
-  addSRateTransProduct(1.0, eta, eps, t2,
-                       &res[3], &res[4]);
+  addSRateTransProduct(1.0, eta, eps, t2, &res[3], &res[4]);
 
   // Compute t2 = J*omega + c^{x}*C*dot{r}
   mat3x3Mult(C, v0, t1);
@@ -1068,42 +1036,34 @@ void TACSRigidBody::addResidual( int elemIndex,
   mat3x3SymmMultAdd(J, omega, t2);
 
   // Add res[3:] += 2.0*dot{S}^{T}*t2
-  addSRateTransProduct(2.0, deta, deps, t2,
-                       &res[3], &res[4]);
+  addSRateTransProduct(2.0, deta, deps, t2, &res[3], &res[4]);
 
   // Add res += D(dot(r))^{T}*c^{x}*omega
   crossProduct(1.0, c, omega, t1);
-  addDMatTransProduct(1.0, v0, t1, eta, eps,
-                      &res[3], &res[4]);
+  addDMatTransProduct(1.0, v0, t1, eta, eps, &res[3], &res[4]);
 
   // Add res -= D(g)^{T}*c
-  addDMatTransProduct(-1.0, g, c, eta, eps,
-                      &res[3], &res[4]);
+  addDMatTransProduct(-1.0, g, c, eta, eps, &res[3], &res[4]);
 
   // Add the Lagrange multiplier term
-  res[3] += 2.0*eta*vars[7];
-  res[4] += 2.0*eps[0]*vars[7];
-  res[5] += 2.0*eps[1]*vars[7];
-  res[6] += 2.0*eps[2]*vars[7];
+  res[3] += 2.0 * eta * vars[7];
+  res[4] += 2.0 * eps[0] * vars[7];
+  res[5] += 2.0 * eps[1] * vars[7];
+  res[6] += 2.0 * eps[2] * vars[7];
 
   // Compute the quaternion constraint
-  res[7] += eta*eta + vec3Dot(eps, eps) - 1.0;
+  res[7] += eta * eta + vec3Dot(eps, eps) - 1.0;
 }
 
 /*
   Compute the Jacobian of the governing equations
 */
-void TACSRigidBody::addJacobian( int elemIndex,
-                                 double time,
-                                 TacsScalar alpha,
-                                 TacsScalar beta,
-                                 TacsScalar gamma,
-                                 const TacsScalar *Xpts,
-                                 const TacsScalar *vars,
-                                 const TacsScalar *dvars,
-                                 const TacsScalar *ddvars,
-                                 TacsScalar *res,
-                                 TacsScalar *mat ){
+void TACSRigidBody::addJacobian(int elemIndex, double time, TacsScalar alpha,
+                                TacsScalar beta, TacsScalar gamma,
+                                const TacsScalar *Xpts, const TacsScalar *vars,
+                                const TacsScalar *dvars,
+                                const TacsScalar *ddvars, TacsScalar *res,
+                                TacsScalar *mat) {
   addResidual(elemIndex, time, Xpts, vars, dvars, ddvars, res);
 
   // Get the acceleration due to gravity
@@ -1142,9 +1102,9 @@ void TACSRigidBody::addJacobian( int elemIndex,
 
   // Add the components from the position governing equation
   // -------------------------------------------------------
-  mat[0] += gamma*mass;
-  mat[9] += gamma*mass;
-  mat[18] += gamma*mass;
+  mat[0] += gamma * mass;
+  mat[9] += gamma * mass;
+  mat[18] += gamma * mass;
 
   // Temporary 3x4 matrices
   TacsScalar A[12], B[12];
@@ -1193,7 +1153,7 @@ void TACSRigidBody::addJacobian( int elemIndex,
   addBlock4x3x3Product(S, B, &mat[24], 8);
 
   // Add the term  2*beta*dot{S}^{T}*c^{x}*C
-  setMatSkew(2.0*beta, c, A);
+  setMatSkew(2.0 * beta, c, A);
   mat3x3MatMult(A, C, B);
   addBlock4x3x3Product(Sdot, B, &mat[24], 8);
 
@@ -1209,14 +1169,14 @@ void TACSRigidBody::addJacobian( int elemIndex,
   addBlock3x4Product(gamma, S, A, &mat[27], 8);
 
   // Add dot{S}^{T}*J*S
-  addBlock3x4Product(2.0*beta, Sdot, A, &mat[27], 8);
+  addBlock3x4Product(2.0 * beta, Sdot, A, &mat[27], 8);
 
   // Add -alpha*S^{T}*J*ddot{S}
   addBlock3x4Product(-alpha, A, Sddot, &mat[27], 8);
 
   // Add the term -2*alpha*dot{S}^{T}*J*dot{S}
   matSymmMat3x4Mult(J, Sdot, A);
-  addBlock3x4Product(-2.0*alpha, Sdot, A, &mat[27], 8);
+  addBlock3x4Product(-2.0 * alpha, Sdot, A, &mat[27], 8);
 
   // Compute S^{T}*c^{x}*(C*v0)^{x}*S
   TacsScalar v[3];
@@ -1225,7 +1185,7 @@ void TACSRigidBody::addJacobian( int elemIndex,
   // Compute t1 = J*omega + c^{x}*(C*dot{r})
   mat3x3SymmMult(J, omega, t1);
   crossProductAdd(1.0, c, v, t1);
-  addSRateMatTransDeriv(2.0*beta, t1, &mat[27], 8);
+  addSRateMatTransDeriv(2.0 * beta, t1, &mat[27], 8);
 
   // Add the term D(dot{r})^{T}*c^{x}*S
   setMatSkew(beta, c, A);
@@ -1271,7 +1231,7 @@ void TACSRigidBody::addJacobian( int elemIndex,
   // Add the term 2*dot{S}^{T}*c^{x}*D(dot{r})
   setMatSkew(1.0, c, A);
   matMat3x4Mult(A, Dv0, B);
-  addBlock3x4Product(2.0*alpha, Sdot, B, &mat[27], 8);
+  addBlock3x4Product(2.0 * alpha, Sdot, B, &mat[27], 8);
 
   // Add the derivative: d(D(v0)^{T}*t1)/dq with t1 = c^{x}*omega
   crossProduct(1.0, c, omega, t1);
@@ -1286,20 +1246,20 @@ void TACSRigidBody::addJacobian( int elemIndex,
   addBlockDMatTransDeriv(-alpha, g, c, &mat[27], 8);
 
   // Add the terms from the Lagrange multipliers
-  mat[31] += 2.0*alpha*eta;
-  mat[39] += 2.0*alpha*eps[0];
-  mat[47] += 2.0*alpha*eps[1];
-  mat[55] += 2.0*alpha*eps[2];
+  mat[31] += 2.0 * alpha * eta;
+  mat[39] += 2.0 * alpha * eps[0];
+  mat[47] += 2.0 * alpha * eps[1];
+  mat[55] += 2.0 * alpha * eps[2];
 
-  mat[59] += 2.0*alpha*eta;
-  mat[60] += 2.0*alpha*eps[0];
-  mat[61] += 2.0*alpha*eps[1];
-  mat[62] += 2.0*alpha*eps[2];
+  mat[59] += 2.0 * alpha * eta;
+  mat[60] += 2.0 * alpha * eps[0];
+  mat[61] += 2.0 * alpha * eps[1];
+  mat[62] += 2.0 * alpha * eps[2];
 
-  mat[27] += 2.0*alpha*vars[7];
-  mat[36] += 2.0*alpha*vars[7];
-  mat[45] += 2.0*alpha*vars[7];
-  mat[54] += 2.0*alpha*vars[7];
+  mat[27] += 2.0 * alpha * vars[7];
+  mat[36] += 2.0 * alpha * vars[7];
+  mat[45] += 2.0 * alpha * vars[7];
+  mat[54] += 2.0 * alpha * vars[7];
 }
 
 /*
@@ -1322,7 +1282,7 @@ void TACSRigidBody::addJacobian( int elemIndex,
   d(f(q, dq))/dt .=
   (f(q + dt*dq, dq + dt*ddq) - f(q - dt*dq, dq - dt*ddq))/dt
 */
-void TACSRigidBody::testResidual( double dh ){
+void TACSRigidBody::testResidual(double dh) {
   double time = 0.0;
 
   // Set the position vector
@@ -1332,27 +1292,27 @@ void TACSRigidBody::testResidual( double dh ){
   TacsScalar vars[8], dvars[8], ddvars[8];
 
   // Compute the variable values
-  for ( int i = 0; i < 7; i++ ){
-    vars[i] = -1.0 + 2.0*rand()/RAND_MAX;
-    dvars[i] = -1.0 + 2.0*rand()/RAND_MAX;
-    ddvars[i] = -1.0 + 2.0*rand()/RAND_MAX;
+  for (int i = 0; i < 7; i++) {
+    vars[i] = -1.0 + 2.0 * rand() / RAND_MAX;
+    dvars[i] = -1.0 + 2.0 * rand() / RAND_MAX;
+    ddvars[i] = -1.0 + 2.0 * rand() / RAND_MAX;
   }
 
   // Set the Largange multipliers to zero
   vars[7] = dvars[7] = ddvars[7] = 0.0;
 
   // Normalize the rotation variables
-  TacsScalar e = 1.0/sqrt(vars[3]*vars[3] +
-                          vec3Dot(&vars[4], &vars[4]));
-  for ( int i = 0; i < 4; i++ ){
-    vars[3+i] *= e;
+  TacsScalar e = 1.0 / sqrt(vars[3] * vars[3] + vec3Dot(&vars[4], &vars[4]));
+  for (int i = 0; i < 4; i++) {
+    vars[3 + i] *= e;
   }
 
   // Normalize the time derivatives so that they lie within
   // the null space of the quaternion constraint
-  dvars[3] = -vec3Dot(&vars[4], &dvars[4])/vars[3];
-  ddvars[3] = -((dvars[3]*dvars[3] + vec3Dot(&dvars[4], &dvars[4])) +
-                vec3Dot(&vars[4], &ddvars[4]))/vars[3];
+  dvars[3] = -vec3Dot(&vars[4], &dvars[4]) / vars[3];
+  ddvars[3] = -((dvars[3] * dvars[3] + vec3Dot(&dvars[4], &dvars[4])) +
+                vec3Dot(&vars[4], &ddvars[4])) /
+              vars[3];
 
   // Temporary vectors containing the derivative
   TacsScalar fd[8], res1[8], res2[8];
@@ -1361,13 +1321,13 @@ void TACSRigidBody::testResidual( double dh ){
   TacsScalar q[8], dq[8];
 
   // Compute the values of the variables at (t + dt)
-  for ( int i = 0; i < 8; i++ ){
-    q[i] = vars[i] + dh*dvars[i];
-    dq[i] = dvars[i] + dh*ddvars[i];
+  for (int i = 0; i < 8; i++) {
+    q[i] = vars[i] + dh * dvars[i];
+    dq[i] = dvars[i] + dh * ddvars[i];
   }
 
   // Evaluate the derivative w.r.t. dot{q}
-  for ( int i = 0; i < 8; i++ ){
+  for (int i = 0; i < 8; i++) {
     // Evaluate the finite-difference for component i
     TacsScalar T1, P1, T2, P2;
     TacsScalar dqtmp = dq[i];
@@ -1378,18 +1338,18 @@ void TACSRigidBody::testResidual( double dh ){
     computeEnergies(0, time, X, q, dq, &T2, &P2);
 
     // Compute and store the approximation
-    res1[i] = 0.5*((T1 - P1) - (T2 - P2))/dh;
+    res1[i] = 0.5 * ((T1 - P1) - (T2 - P2)) / dh;
     dq[i] = dqtmp;
   }
 
   // Compute the values of the variables at (t - dt)
-  for ( int i = 0; i < 8; i++ ){
-    q[i] = vars[i] - dh*dvars[i];
-    dq[i] = dvars[i] - dh*ddvars[i];
+  for (int i = 0; i < 8; i++) {
+    q[i] = vars[i] - dh * dvars[i];
+    dq[i] = dvars[i] - dh * ddvars[i];
   }
 
   // Evaluate the derivative w.r.t. dot{q}
-  for ( int i = 0; i < 8; i++ ){
+  for (int i = 0; i < 8; i++) {
     // Evaluate the finite-difference for component i
     TacsScalar T1, P1, T2, P2;
     TacsScalar dqtmp = dq[i];
@@ -1400,24 +1360,24 @@ void TACSRigidBody::testResidual( double dh ){
     computeEnergies(0, time, X, q, dq, &T2, &P2);
 
     // Compute and store the approximation
-    res2[i] = 0.5*((T1 - P1) - (T2 - P2))/dh;
+    res2[i] = 0.5 * ((T1 - P1) - (T2 - P2)) / dh;
     dq[i] = dqtmp;
   }
 
   // Evaluate the finite-difference for the first term in Largrange's
   // equations of motion
-  for ( int i = 0; i < 8; i++ ){
-    fd[i] = 0.5*(res1[i] - res2[i])/dh;
+  for (int i = 0; i < 8; i++) {
+    fd[i] = 0.5 * (res1[i] - res2[i]) / dh;
   }
 
   // Reset the values of q and dq at time t
-  for ( int i = 0; i < 8; i++ ){
+  for (int i = 0; i < 8; i++) {
     q[i] = vars[i];
     dq[i] = dvars[i];
   }
 
   // Compute the contribution from dL/dq^{T}
-  for ( int i = 0; i < 8; i++ ){
+  for (int i = 0; i < 8; i++) {
     // Evaluate the finite-difference for component i
     TacsScalar T1, P1, T2, P2;
     TacsScalar qtmp = q[i];
@@ -1428,17 +1388,17 @@ void TACSRigidBody::testResidual( double dh ){
     computeEnergies(0, time, X, q, dq, &T2, &P2);
 
     // Compute and store the approximation
-    res1[i] = 0.5*((T1 - P1) - (T2 - P2))/dh;
+    res1[i] = 0.5 * ((T1 - P1) - (T2 - P2)) / dh;
     q[i] = qtmp;
   }
 
   // Add the result to the finite-difference result
-  for ( int i = 0; i < 8; i++ ){
+  for (int i = 0; i < 8; i++) {
     fd[i] -= res1[i];
   }
 
   // Evaluate the residual using the code
-  memset(res1, 0, 8*sizeof(TacsScalar));
+  memset(res1, 0, 8 * sizeof(TacsScalar));
   addResidual(0, time, X, vars, dvars, ddvars, res1);
 
   // Write out the error components
@@ -1456,10 +1416,8 @@ void TACSRigidBody::testResidual( double dh ){
   beta:    coefficient for the time derivative variables
   gamma:   coefficient for the second time derivative variables
 */
-void TACSRigidBody::testJacobian( double dh,
-                                  TacsScalar alpha,
-                                  TacsScalar beta,
-                                  TacsScalar gamma ){
+void TACSRigidBody::testJacobian(double dh, TacsScalar alpha, TacsScalar beta,
+                                 TacsScalar gamma) {
   double time = 0.0;
 
   // Set the position vector
@@ -1469,10 +1427,10 @@ void TACSRigidBody::testJacobian( double dh,
   TacsScalar vars[8], dvars[8], ddvars[8];
 
   // Compute the variable values
-  for ( int i = 0; i < 8; i++ ){
-    vars[i] = -1.0 + 2.0*rand()/RAND_MAX;
-    dvars[i] = -1.0 + 2.0*rand()/RAND_MAX;
-    ddvars[i] = -1.0 + 2.0*rand()/RAND_MAX;
+  for (int i = 0; i < 8; i++) {
+    vars[i] = -1.0 + 2.0 * rand() / RAND_MAX;
+    dvars[i] = -1.0 + 2.0 * rand() / RAND_MAX;
+    ddvars[i] = -1.0 + 2.0 * rand() / RAND_MAX;
   }
 
   // The computed Jacobian of the element matrix
@@ -1488,96 +1446,91 @@ void TACSRigidBody::testJacobian( double dh,
   TacsScalar q[8], dq[8], ddq[8];
 
   // Set random perburbed values
-  for ( int i = 0; i < 8; i++ ){
-    perb[i] = -1.0 + 2.0*rand()/RAND_MAX;
+  for (int i = 0; i < 8; i++) {
+    perb[i] = -1.0 + 2.0 * rand() / RAND_MAX;
   }
 
-  for ( int ii = 0; ii < 8; ii++ ){
-    memset(perb, 0, 8*sizeof(TacsScalar));
+  for (int ii = 0; ii < 8; ii++) {
+    memset(perb, 0, 8 * sizeof(TacsScalar));
     perb[ii] = 1.0;
 
 #ifdef TACS_USE_COMPLEX
     // Set the values for the first evaluation
-    TacsScalar a = TacsScalar(0.0, dh*TacsRealPart(alpha));
-    TacsScalar b = TacsScalar(0.0, dh*TacsRealPart(beta));
-    TacsScalar c = TacsScalar(0.0, dh*TacsRealPart(gamma));
-    for ( int i = 0; i < 8; i++ ){
-      q[i] = vars[i] + a*perb[i];
-      dq[i] = dvars[i] + b*perb[i];
-      ddq[i] = ddvars[i] + c*perb[i];
+    TacsScalar a = TacsScalar(0.0, dh * TacsRealPart(alpha));
+    TacsScalar b = TacsScalar(0.0, dh * TacsRealPart(beta));
+    TacsScalar c = TacsScalar(0.0, dh * TacsRealPart(gamma));
+    for (int i = 0; i < 8; i++) {
+      q[i] = vars[i] + a * perb[i];
+      dq[i] = dvars[i] + b * perb[i];
+      ddq[i] = ddvars[i] + c * perb[i];
     }
 
     // Get the residual at vars + alpha*perb, ... etc.
-    memset(fd, 0, 8*sizeof(TacsScalar));
+    memset(fd, 0, 8 * sizeof(TacsScalar));
     addResidual(0, time, X, q, dq, ddq, fd);
 
     // Form the finite-difference matrix-vector approximation
-    for ( int i = 0; i < 8; i++ ){
-      fd[i] = TacsImagPart(fd[i])/dh;
+    for (int i = 0; i < 8; i++) {
+      fd[i] = TacsImagPart(fd[i]) / dh;
     }
 #else
     // Set the values for the first evaluation
-    for ( int i = 0; i < 8; i++ ){
-      q[i] = vars[i] + dh*alpha*perb[i];
-      dq[i] = dvars[i] + dh*beta*perb[i];
-      ddq[i] = ddvars[i] + dh*gamma*perb[i];
+    for (int i = 0; i < 8; i++) {
+      q[i] = vars[i] + dh * alpha * perb[i];
+      dq[i] = dvars[i] + dh * beta * perb[i];
+      ddq[i] = ddvars[i] + dh * gamma * perb[i];
     }
 
     // Get the residual at vars + alpha*perb, ... etc.
-    memset(fd, 0, 8*sizeof(TacsScalar));
+    memset(fd, 0, 8 * sizeof(TacsScalar));
     addResidual(0, time, X, q, dq, ddq, fd);
 
     // Set the values for the first evaluation
-    for ( int i = 0; i < 8; i++ ){
-      q[i] = vars[i] - dh*alpha*perb[i];
-      dq[i] = dvars[i] - dh*beta*perb[i];
-      ddq[i] = ddvars[i] - dh*gamma*perb[i];
+    for (int i = 0; i < 8; i++) {
+      q[i] = vars[i] - dh * alpha * perb[i];
+      dq[i] = dvars[i] - dh * beta * perb[i];
+      ddq[i] = ddvars[i] - dh * gamma * perb[i];
     }
 
     // Get the residual at vars + alpha*perb, ... etc.
-    memset(res, 0, 8*sizeof(TacsScalar));
+    memset(res, 0, 8 * sizeof(TacsScalar));
     addResidual(0, time, X, q, dq, ddq, res);
 
     // Form the finite-difference matrix-vector approximation
-    for ( int i = 0; i < 8; i++ ){
-      fd[i] = 0.5*(fd[i] - res[i])/dh;
+    for (int i = 0; i < 8; i++) {
+      fd[i] = 0.5 * (fd[i] - res[i]) / dh;
     }
-#endif // TACS_USE_COMPLEX
+#endif  // TACS_USE_COMPLEX
 
     // Get the Jacobian computed by the element
-    memset(mat, 0, 64*sizeof(TacsScalar));
-    addJacobian(0, time, alpha, beta, gamma,
-                X, vars, dvars, ddvars, res, mat);
+    memset(mat, 0, 64 * sizeof(TacsScalar));
+    addJacobian(0, time, alpha, beta, gamma, X, vars, dvars, ddvars, res, mat);
 
     // Compute the product: res = J*perb
     // Recall that the Jacobian matrix is stored in row-major order
-    memset(res, 0, 8*sizeof(TacsScalar));
-    for ( int i = 0; i < 8; i++ ){
-      for ( int j = 0; j < 8; j++ ){
-        res[i] += mat[8*i + j]*perb[j];
+    memset(res, 0, 8 * sizeof(TacsScalar));
+    for (int i = 0; i < 8; i++) {
+      for (int j = 0; j < 8; j++) {
+        res[i] += mat[8 * i + j] * perb[j];
       }
     }
 
     // Print out the results to stdout
     char outname[128];
     sprintf(outname, "Jacobian col %d", ii);
-    writeErrorComponents(stdout, outname,
-                         res, fd, 8);
+    writeErrorComponents(stdout, outname, res, fd, 8);
   }
 }
 
 /*
   Retrieve the data associated with the element
 */
-void TACSRigidBody::getOutputData( int elemIndex,
-                                   ElementType etype,
-                                   int write_flag,
-                                   const TacsScalar Xpts[],
-                                   const TacsScalar vars[],
-                                   const TacsScalar dvars[],
-                                   const TacsScalar ddvars[],
-                                   int ld_data,
-                                   TacsScalar *data ){
+void TACSRigidBody::getOutputData(int elemIndex, ElementType etype,
+                                  int write_flag, const TacsScalar Xpts[],
+                                  const TacsScalar vars[],
+                                  const TacsScalar dvars[],
+                                  const TacsScalar ddvars[], int ld_data,
+                                  TacsScalar *data) {
   // Get the initial vector location
   const TacsScalar *rinit;
   rInit->getVector(&rinit);
@@ -1602,20 +1555,20 @@ void TACSRigidBody::getOutputData( int elemIndex,
 
   // Set the locations/variables for all the points from the
   // body-fixed reference frame
-  for ( int i = 0; i < npts; i++ ){
+  for (int i = 0; i < npts; i++) {
     int index = 0;
 
     // Compute the initial base-points for each node
-    const TacsScalar *x = &X[3*i];
+    const TacsScalar *x = &X[3 * i];
 
-    if (write_flag & TACS_OUTPUT_NODES){
+    if (write_flag & TACS_OUTPUT_NODES) {
       // Write out the nodal locations
-      for ( int k = 0; k < 3; k++ ){
-        data[index+k] = TacsRealPart(rinit[k] + x[k]);
+      for (int k = 0; k < 3; k++) {
+        data[index + k] = TacsRealPart(rinit[k] + x[k]);
       }
       index += 3;
     }
-    if (write_flag & TACS_OUTPUT_DISPLACEMENTS){
+    if (write_flag & TACS_OUTPUT_DISPLACEMENTS) {
       // Compute the new point location
       TacsScalar xr[3], xpt[3];
       mat3x3MultTrans(Cr, x, xr);
@@ -1623,8 +1576,8 @@ void TACSRigidBody::getOutputData( int elemIndex,
 
       // xinit = xinit + Cr^{T}*x
       // xfinal = xinit + x + u0 + C^{T}*x
-      for ( int k = 0; k < 3; k++ ){
-        data[index+k] = TacsRealPart(u0[k] + xpt[k] - x[k]);
+      for (int k = 0; k < 3; k++) {
+        data[index + k] = TacsRealPart(u0[k] + xpt[k] - x[k]);
       }
       index += 3;
 
@@ -1633,8 +1586,8 @@ void TACSRigidBody::getOutputData( int elemIndex,
       index++;
 
       // Add the epsilon quaternion components
-      for ( int k = 0; k < 3; k++ ){
-        data[index+k] = TacsRealPart(eps[k]);
+      for (int k = 0; k < 3; k++) {
+        data[index + k] = TacsRealPart(eps[k]);
       }
       index += 3;
 
@@ -1648,8 +1601,10 @@ void TACSRigidBody::getOutputData( int elemIndex,
 /*
   Sets the visualization information for the rigid body
 */
-void TACSRigidBody::setVisualization( TACSRigidBodyViz *_viz ){
-  if (viz) { viz->decref(); }
+void TACSRigidBody::setVisualization(TACSRigidBodyViz *_viz) {
+  if (viz) {
+    viz->decref();
+  }
   viz = _viz;
   viz->incref();
 }

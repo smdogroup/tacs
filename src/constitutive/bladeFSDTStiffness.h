@@ -49,73 +49,71 @@ class bladeFSDTStiffness : public FSDTStiffness {
  public:
   static const int NUM_PLIES = 4;
 
-  bladeFSDTStiffness( OrthoPly * _ortho_ply, TacsScalar _kcorr,
-                      TacsScalar _Lx, int _Lx_num,
-                      TacsScalar _sp, int _sp_num,
-                      TacsScalar _sh, int _sh_num,
-                      TacsScalar _st, int _st_num,
-                      TacsScalar _t, int _t_num,
-                      int _pf_nums[], int _stiff_pf_nums[] );
+  bladeFSDTStiffness(OrthoPly* _ortho_ply, TacsScalar _kcorr, TacsScalar _Lx,
+                     int _Lx_num, TacsScalar _sp, int _sp_num, TacsScalar _sh,
+                     int _sh_num, TacsScalar _st, int _st_num, TacsScalar _t,
+                     int _t_num, int _pf_nums[], int _stiff_pf_nums[]);
   ~bladeFSDTStiffness();
 
   // Set non-default values
   // ----------------------
-  void setStiffenerPitchBounds( TacsScalar _sp_low, TacsScalar _sp_high );
-  void setStiffenerHeightBounds( TacsScalar _sh_low, TacsScalar _sh_high );
-  void setStiffenerThicknessBounds( TacsScalar _st_low, TacsScalar _st_high );
-  void setStiffenerPlyFractionBounds( TacsScalar _pf_low[], TacsScalar _pf_high[] );
-  void setStiffenerPlyFractions( TacsScalar _pf[] );
-  void setThicknessBounds( TacsScalar _t_low, TacsScalar _t_high );
-  void setPlyFractionBounds( TacsScalar _pf_low[], TacsScalar _pf_high[] );
-  void setPlyFractions( TacsScalar _pf[] );
+  void setStiffenerPitchBounds(TacsScalar _sp_low, TacsScalar _sp_high);
+  void setStiffenerHeightBounds(TacsScalar _sh_low, TacsScalar _sh_high);
+  void setStiffenerThicknessBounds(TacsScalar _st_low, TacsScalar _st_high);
+  void setStiffenerPlyFractionBounds(TacsScalar _pf_low[],
+                                     TacsScalar _pf_high[]);
+  void setStiffenerPlyFractions(TacsScalar _pf[]);
+  void setThicknessBounds(TacsScalar _t_low, TacsScalar _t_high);
+  void setPlyFractionBounds(TacsScalar _pf_low[], TacsScalar _pf_high[]);
+  void setPlyFractions(TacsScalar _pf[]);
 
-  void setKSWeight( double _ks_weight );
+  void setKSWeight(double _ks_weight);
 
   // Retrieve the critical loads
   // ---------------------------
-  void getCriticalGlobalLoads( TacsScalar * Nx, TacsScalar * Nxy );
-  void getCriticalPanelLoads( TacsScalar * Nx, TacsScalar * Nxy );
-  void getCriticalStiffenerLoads( TacsScalar * Nx, TacsScalar * Nxy );
+  void getCriticalGlobalLoads(TacsScalar* Nx, TacsScalar* Nxy);
+  void getCriticalPanelLoads(TacsScalar* Nx, TacsScalar* Nxy);
+  void getCriticalStiffenerLoads(TacsScalar* Nx, TacsScalar* Nxy);
 
   // Compute the critical shear loads and the sensitivities
   // ------------------------------------------------------
-  TacsScalar calcCriticalShearLoad( TacsScalar D1, TacsScalar D2,
-				    TacsScalar D3, TacsScalar L );
-  TacsScalar calcCriticalShearLoadSens( TacsScalar D1, TacsScalar D2,
-					TacsScalar D3, TacsScalar L,
-					TacsScalar sD1, TacsScalar sD2,
-					TacsScalar sD3, TacsScalar sL );
+  TacsScalar calcCriticalShearLoad(TacsScalar D1, TacsScalar D2, TacsScalar D3,
+                                   TacsScalar L);
+  TacsScalar calcCriticalShearLoadSens(TacsScalar D1, TacsScalar D2,
+                                       TacsScalar D3, TacsScalar L,
+                                       TacsScalar sD1, TacsScalar sD2,
+                                       TacsScalar sD3, TacsScalar sL);
 
   // Retrieve the local loads
   // ------------------------
-  void getPanelLoads( const TacsScalar stress[],
-                      TacsScalar * Nx, TacsScalar * Nxy );
-  void getStiffenerLoads( const TacsScalar stress[],
-                          TacsScalar * Nx, TacsScalar * Nxy );
+  void getPanelLoads(const TacsScalar stress[], TacsScalar* Nx,
+                     TacsScalar* Nxy);
+  void getStiffenerLoads(const TacsScalar stress[], TacsScalar* Nx,
+                         TacsScalar* Nxy);
 
   // Functions for panel-only optimizations
   // --------------------------------------
-  TacsScalar getFailureCriterion( const TacsScalar stress[] );
-  TacsScalar getBucklingCriterion( const TacsScalar stress[] );
+  TacsScalar getFailureCriterion(const TacsScalar stress[]);
+  TacsScalar getBucklingCriterion(const TacsScalar stress[]);
 
   // Additional constraint evaluation functions
   // ------------------------------------------
   int isLinear();
   int getNumCon();
   int getConCSRSize();
-  int getConRange( int offset, TacsScalar lb[], TacsScalar ub[] );
-  int addConCSR( int offset, int rowp[], int cols[] );
-  int evalCon( int offset, TacsScalar con[] );
-  int evalConDVSens( int offset, TacsScalar Acol[],
-                     const int rowp[], const int cols[] );
+  int getConRange(int offset, TacsScalar lb[], TacsScalar ub[]);
+  int addConCSR(int offset, int rowp[], int cols[]);
+  int evalCon(int offset, TacsScalar con[]);
+  int evalConDVSens(int offset, TacsScalar Acol[], const int rowp[],
+                    const int cols[]);
 
   // Design variable information set up
   // ----------------------------------
-  int ownsDesignVar( const int dvNum ) const;
-  void setDesignVars( const TacsScalar dvs[], int numDVs );
-  void getDesignVars( TacsScalar dvs[], int numDVs );
-  void getDesignVarRange( TacsScalar lowerBound[],
-			  TacsScalar upperBound[], int numDVs );
+  int ownsDesignVar(const int dvNum) const;
+  void setDesignVars(const TacsScalar dvs[], int numDVs);
+  void getDesignVars(TacsScalar dvs[], int numDVs);
+  void getDesignVarRange(TacsScalar lowerBound[], TacsScalar upperBound[],
+                         int numDVs);
   int getLxNum();
 
   int getNumDesignVars();
@@ -123,55 +121,48 @@ class bladeFSDTStiffness : public FSDTStiffness {
 
   // Functions required by FSDTStiffness
   // -----------------------------------
-  void getPointwiseMass( const double gpt[], TacsScalar mass[] );
-  void pointwiseMassDVSens( int dvNum,
-                            const double gpt[], TacsScalar mass[] );
-  void addPointwiseMassDVSens( const double pt[], const TacsScalar alpha[],
-			       TacsScalar dvSens[], int dvLen );
+  void getPointwiseMass(const double gpt[], TacsScalar mass[]);
+  void pointwiseMassDVSens(int dvNum, const double gpt[], TacsScalar mass[]);
+  void addPointwiseMassDVSens(const double pt[], const TacsScalar alpha[],
+                              TacsScalar dvSens[], int dvLen);
   TacsScalar getDensity();
   // Get the stiffness matrices and their derivatives
   // ------------------------------------------------
-  TacsScalar getStiffness( const double gpt[],
-                           TacsScalar A[], TacsScalar B[],
-                           TacsScalar D[], TacsScalar As[] );
-  TacsScalar getStiffnessDVSens( int dvNum, const double gpt[],
-                                 TacsScalar sA[], TacsScalar sB[],
-                                 TacsScalar sD[], TacsScalar sAs[] );
-  void addStiffnessDVSens( const double pt[],
-                           const TacsScalar e[], const TacsScalar psi[],
-                           TacsScalar rotPsi,
-                           TacsScalar fdvSens[], int dvLen );
-  TacsScalar calculateStressDVSens( const double pt[],
-                                           const TacsScalar strain[],
-                                           TacsScalar s_sens[],
-                                           int dvNum );
+  TacsScalar getStiffness(const double gpt[], TacsScalar A[], TacsScalar B[],
+                          TacsScalar D[], TacsScalar As[]);
+  TacsScalar getStiffnessDVSens(int dvNum, const double gpt[], TacsScalar sA[],
+                                TacsScalar sB[], TacsScalar sD[],
+                                TacsScalar sAs[]);
+  void addStiffnessDVSens(const double pt[], const TacsScalar e[],
+                          const TacsScalar psi[], TacsScalar rotPsi,
+                          TacsScalar fdvSens[], int dvLen);
+  TacsScalar calculateStressDVSens(const double pt[], const TacsScalar strain[],
+                                   TacsScalar s_sens[], int dvNum);
 
   // Calculate the point-wise failure criteria
   // -----------------------------------------
-  void failure( const double gpt[], const TacsScalar strain[],
-                TacsScalar * fail );
-  void failureStrainSens( const double gpt[], const TacsScalar strain[],
-                          TacsScalar sens[] );
-  void failureDVSens( int dvNum, const double gpt[],
-                      const TacsScalar strain[], TacsScalar * failSens );
-  void addFailureDVSens( const double pt[], const TacsScalar strain[],
-			 TacsScalar alpha, TacsScalar dvSens[], int dvLen );
+  void failure(const double gpt[], const TacsScalar strain[], TacsScalar* fail);
+  void failureStrainSens(const double gpt[], const TacsScalar strain[],
+                         TacsScalar sens[]);
+  void failureDVSens(int dvNum, const double gpt[], const TacsScalar strain[],
+                     TacsScalar* failSens);
+  void addFailureDVSens(const double pt[], const TacsScalar strain[],
+                        TacsScalar alpha, TacsScalar dvSens[], int dvLen);
 
   // Calculate the buckling criteria
   // -------------------------------
-  void buckling( const TacsScalar strain[], TacsScalar * bval );
-  void bucklingStrainSens( const TacsScalar strain[],
-                           TacsScalar * bvalSens );
-  void bucklingDVSens( int dvNum, const TacsScalar strain[],
-                       TacsScalar * bvalSens );
-  void addBucklingDVSens( const TacsScalar strain[], TacsScalar alpha,
-			  TacsScalar dvSens[], int dvLen );
+  void buckling(const TacsScalar strain[], TacsScalar* bval);
+  void bucklingStrainSens(const TacsScalar strain[], TacsScalar* bvalSens);
+  void bucklingDVSens(int dvNum, const TacsScalar strain[],
+                      TacsScalar* bvalSens);
+  void addBucklingDVSens(const TacsScalar strain[], TacsScalar alpha,
+                         TacsScalar dvSens[], int dvLen);
 
-  const char * constitutiveName() const;
+  const char* constitutiveName() const;
 
   // Retrieve the design variable for plotting purposes
   // --------------------------------------------------
-  TacsScalar getDVOutputValue( int dv_index, const double gpt[] );
+  TacsScalar getDVOutputValue(int dv_index, const double gpt[]);
 
   // Write the buckling properties to stdout
   // ---------------------------------------
@@ -185,33 +176,30 @@ class bladeFSDTStiffness : public FSDTStiffness {
   void calcBucklingProps();
 
   // Calculate the derivative of the buckling loads
-  void calcBucklingPropsDVSens( int dvNum, TacsScalar * sNx_global_crit,
-                                TacsScalar * sNxy_global_crit,
-                                TacsScalar * sNx_panel_crit,
-                                TacsScalar * sNxy_panel_crit,
-                                TacsScalar * sNx_weak_stiff_crit,
-                                TacsScalar * sNx_strong_stiff_crit );
+  void calcBucklingPropsDVSens(int dvNum, TacsScalar* sNx_global_crit,
+                               TacsScalar* sNxy_global_crit,
+                               TacsScalar* sNx_panel_crit,
+                               TacsScalar* sNxy_panel_crit,
+                               TacsScalar* sNx_weak_stiff_crit,
+                               TacsScalar* sNx_strong_stiff_crit);
 
   // Calculate the failure criteria
-  int calcFail( const TacsScalar strain[],
-                TacsScalar fail[], TacsScalar * _max );
-  void calcFailStrainSens( const TacsScalar strain[],
-			   const TacsScalar weights[],
-                           TacsScalar sens[] );
-  TacsScalar calcFailDVSens( int dvNum, const TacsScalar strain[],
-			     const TacsScalar weights[] );
+  int calcFail(const TacsScalar strain[], TacsScalar fail[], TacsScalar* _max);
+  void calcFailStrainSens(const TacsScalar strain[], const TacsScalar weights[],
+                          TacsScalar sens[]);
+  TacsScalar calcFailDVSens(int dvNum, const TacsScalar strain[],
+                            const TacsScalar weights[]);
 
   // Calculate the buckling criteria
-  int calcBuckling( const TacsScalar strain[],
-                    TacsScalar bval[], TacsScalar * _max );
-  void calcBucklingStrainSens( const TacsScalar strain[],
-			       const TacsScalar weights[],
-                               TacsScalar sens[] );
-  TacsScalar calcBucklingDVSens( int dvNum, const TacsScalar strain[],
-				 const TacsScalar weights[] );
+  int calcBuckling(const TacsScalar strain[], TacsScalar bval[],
+                   TacsScalar* _max);
+  void calcBucklingStrainSens(const TacsScalar strain[],
+                              const TacsScalar weights[], TacsScalar sens[]);
+  TacsScalar calcBucklingDVSens(int dvNum, const TacsScalar strain[],
+                                const TacsScalar weights[]);
 
   static const int NUM_BUCKLING = 4;
-  static const int MAX_NUM_FAIL = 3*NUM_PLIES;
+  static const int MAX_NUM_FAIL = 3 * NUM_PLIES;
 
   // Stiffener information
   // ---------------------
@@ -231,14 +219,14 @@ class bladeFSDTStiffness : public FSDTStiffness {
   // stiffener height
   TacsScalar sf_fraction;
 
-  int num_pf_con; // Number of ply-fraction constraints: 0, 1 or 2
+  int num_pf_con;  // Number of ply-fraction constraints: 0, 1 or 2
 
   // Ply percentage information
   // --------------------------
   int num_stiff_pf_unique;
   int stiff_pf_nums[NUM_PLIES], stiff_pf_unique[NUM_PLIES];
   TacsScalar stiff_pf[NUM_PLIES], stiff_ply_angles[NUM_PLIES],
-    stiff_pf_low[NUM_PLIES], stiff_pf_high[NUM_PLIES];
+      stiff_pf_low[NUM_PLIES], stiff_pf_high[NUM_PLIES];
 
   // Panel information
   // -----------------
@@ -249,8 +237,8 @@ class bladeFSDTStiffness : public FSDTStiffness {
   // Ply percentage information
   int num_pf_unique;
   int pf_nums[NUM_PLIES], pf_unique[NUM_PLIES];
-  TacsScalar pf[NUM_PLIES], ply_angles[NUM_PLIES],
-    pf_low[NUM_PLIES], pf_high[NUM_PLIES];
+  TacsScalar pf[NUM_PLIES], ply_angles[NUM_PLIES], pf_low[NUM_PLIES],
+      pf_high[NUM_PLIES];
 
   // Panel dimension information
   TacsScalar Lx;
@@ -274,12 +262,12 @@ class bladeFSDTStiffness : public FSDTStiffness {
   TacsScalar k_penalty;
 
   // Information about the stiffeners
-  OrthoPly * ortho_ply;
+  OrthoPly* ortho_ply;
 
-  TacsScalar kcorr; // The shear correction factor
-  double ks_weight; // The ks weight for the failure envelope calculations
+  TacsScalar kcorr;  // The shear correction factor
+  double ks_weight;  // The ks weight for the failure envelope calculations
 
-  static const char * constName;
+  static const char* constName;
 };
 
 #endif

@@ -32,16 +32,12 @@
   @param test_fail_atol The test absolute tolerance
   @param test_fail_rtol The test relative tolerance
 */
-int TacsTestConstitutiveDensity( TACSConstitutive *con,
-                                 int elemIndex,
-                                 const double pt[],
-                                 const TacsScalar X[],
-                                 int ndvs,
-                                 const TacsScalar *dvs,
-                                 double dh=1e-7,
-                                 int test_print_level=2,
-                                 double test_fail_atol=1e-5,
-                                 double test_fail_rtol=1e-5 );
+int TacsTestConstitutiveDensity(TACSConstitutive *con, int elemIndex,
+                                const double pt[], const TacsScalar X[],
+                                int ndvs, const TacsScalar *dvs,
+                                double dh = 1e-7, int test_print_level = 2,
+                                double test_fail_atol = 1e-5,
+                                double test_fail_rtol = 1e-5);
 
 /**
   Test the specific heat design variable sensitivity implementation.
@@ -57,16 +53,12 @@ int TacsTestConstitutiveDensity( TACSConstitutive *con,
   @param test_fail_atol The test absolute tolerance
   @param test_fail_rtol The test relative tolerance
 */
-int TacsTestConstitutiveSpecificHeat( TACSConstitutive *con,
-                                      int elemIndex,
-                                      const double pt[],
-                                      const TacsScalar X[],
-                                      int ndvs,
-                                      const TacsScalar *dvs,
-                                      double dh,
-                                      int test_print_level,
-                                      double test_fail_atol,
-                                      double test_fail_rtol );
+int TacsTestConstitutiveSpecificHeat(TACSConstitutive *con, int elemIndex,
+                                     const double pt[], const TacsScalar X[],
+                                     int ndvs, const TacsScalar *dvs, double dh,
+                                     int test_print_level,
+                                     double test_fail_atol,
+                                     double test_fail_rtol);
 
 /**
   Test the heat flux design variable sensitivity implementation.
@@ -82,16 +74,11 @@ int TacsTestConstitutiveSpecificHeat( TACSConstitutive *con,
   @param test_fail_atol The test absolute tolerance
   @param test_fail_rtol The test relative tolerance
 */
-int TacsTestConstitutiveHeatFlux( TACSConstitutive *con,
-                                  int elemIndex,
-                                  const double pt[],
-                                  const TacsScalar X[],
-                                  int ndvs,
-                                  const TacsScalar *dvs,
-                                  double dh,
-                                  int test_print_level,
-                                  double test_fail_atol,
-                                  double test_fail_rtol );
+int TacsTestConstitutiveHeatFlux(TACSConstitutive *con, int elemIndex,
+                                 const double pt[], const TacsScalar X[],
+                                 int ndvs, const TacsScalar *dvs, double dh,
+                                 int test_print_level, double test_fail_atol,
+                                 double test_fail_rtol);
 
 /**
   Test the stress design variable sensitivity implementation.
@@ -107,16 +94,11 @@ int TacsTestConstitutiveHeatFlux( TACSConstitutive *con,
   @param test_fail_atol The test absolute tolerance
   @param test_fail_rtol The test relative tolerance
 */
-int TacsTestConstitutiveStress( TACSConstitutive *con,
-                                int elemIndex,
-                                const double pt[],
-                                const TacsScalar X[],
-                                int ndvs,
-                                const TacsScalar *dvs,
-                                double dh,
-                                int test_print_level,
-                                double test_fail_atol,
-                                double test_fail_rtol );
+int TacsTestConstitutiveStress(TACSConstitutive *con, int elemIndex,
+                               const double pt[], const TacsScalar X[],
+                               int ndvs, const TacsScalar *dvs, double dh,
+                               int test_print_level, double test_fail_atol,
+                               double test_fail_rtol);
 
 /**
   Test the stress design variable sensitivity implementation.
@@ -132,16 +114,12 @@ int TacsTestConstitutiveStress( TACSConstitutive *con,
   @param test_fail_atol The test absolute tolerance
   @param test_fail_rtol The test relative tolerance
 */
-int TacsTestConstitutiveThermalStrain( TACSConstitutive *con,
-                                       int elemIndex,
-                                       const double pt[],
-                                       const TacsScalar X[],
-                                       int ndvs,
-                                       const TacsScalar *dvs,
-                                       double dh,
-                                       int test_print_level,
-                                       double test_fail_atol,
-                                       double test_fail_rtol );
+int TacsTestConstitutiveThermalStrain(TACSConstitutive *con, int elemIndex,
+                                      const double pt[], const TacsScalar X[],
+                                      int ndvs, const TacsScalar *dvs,
+                                      double dh, int test_print_level,
+                                      double test_fail_atol,
+                                      double test_fail_rtol);
 
 /**
   Test the failure design variable sensitivity implementation.
@@ -157,16 +135,11 @@ int TacsTestConstitutiveThermalStrain( TACSConstitutive *con,
   @param test_fail_atol The test absolute tolerance
   @param test_fail_rtol The test relative tolerance
 */
-int TacsTestConstitutiveFailure( TACSConstitutive *con,
-                                 int elemIndex,
-                                 const double pt[],
-                                 const TacsScalar X[],
-                                 int ndvs,
-                                 const TacsScalar *dvs,
-                                 double dh,
-                                 int test_print_level,
-                                 double test_fail_atol,
-                                 double test_fail_rtol );
+int TacsTestConstitutiveFailure(TACSConstitutive *con, int elemIndex,
+                                const double pt[], const TacsScalar X[],
+                                int ndvs, const TacsScalar *dvs, double dh,
+                                int test_print_level, double test_fail_atol,
+                                double test_fail_rtol);
 
 /**
   Test the failure strain sensitivity implementation.
@@ -180,14 +153,12 @@ int TacsTestConstitutiveFailure( TACSConstitutive *con,
   @param test_fail_atol The test absolute tolerance
   @param test_fail_rtol The test relative tolerance
 */
-int TacsTestConstitutiveFailureStrainSens( TACSConstitutive *con,
-                                           int elemIndex,
-                                           const double pt[],
-                                           const TacsScalar X[],
-                                           double dh,
-                                           int test_print_level,
-                                           double test_fail_atol,
-                                           double test_fail_rtol );
+int TacsTestConstitutiveFailureStrainSens(TACSConstitutive *con, int elemIndex,
+                                          const double pt[],
+                                          const TacsScalar X[], double dh,
+                                          int test_print_level,
+                                          double test_fail_atol,
+                                          double test_fail_rtol);
 
 /**
   Test the implementation of the constitutive object.
@@ -199,11 +170,8 @@ int TacsTestConstitutiveFailureStrainSens( TACSConstitutive *con,
   @param test_fail_atol The test absolute tolerance
   @param test_fail_rtol The test relative tolerance
 */
-int TacsTestConstitutive( TACSConstitutive *con,
-                          int elemIndex,
-                          double dh=1e-7,
-                          int test_print_level=2,
-                          double test_fail_atol=1e-5,
-                          double test_fail_rtol=1e-5 );
+int TacsTestConstitutive(TACSConstitutive *con, int elemIndex, double dh = 1e-7,
+                         int test_print_level = 2, double test_fail_atol = 1e-5,
+                         double test_fail_rtol = 1e-5);
 
-#endif // TACS_CONSTITUTIVE_VERIFICATION_H
+#endif  // TACS_CONSTITUTIVE_VERIFICATION_H

@@ -2,6 +2,7 @@ from tacs import TACS, elements, constitutive
 import numpy as np
 import unittest
 
+
 class ElementTest(unittest.TestCase):
     def setUp(self):
         num_nodes = 1
@@ -29,7 +30,7 @@ class ElementTest(unittest.TestCase):
         self.time = 0.0
 
         # Set the variable arrays
-        np.random.seed(30) # Seed random numbers for deterministic/repeatable tests
+        np.random.seed(30)  # Seed random numbers for deterministic/repeatable tests
         self.vars = np.random.rand(num_vars).astype(self.dtype)
         self.dvars = self.vars.copy()
         self.ddvars = self.vars.copy()
@@ -46,26 +47,45 @@ class ElementTest(unittest.TestCase):
         self.rotCenter = np.array([4.0, -5.0, 6.0], dtype=self.dtype)
 
         # Create constitutive classes
-        self.con_objects = [constitutive.GeneralMassConstitutive(M=M),
-                            constitutive.PointMassConstitutive(m=m, I11=I11, I22=I22, I33=I33,
-                                                               I12=I12, I13=I13, I23=I23)]
+        self.con_objects = [
+            constitutive.GeneralMassConstitutive(M=M),
+            constitutive.PointMassConstitutive(
+                m=m, I11=I11, I22=I22, I33=I33, I12=I12, I13=I13, I23=I23
+            ),
+        ]
 
         # Set matrix types
-        self.matrix_types = [TACS.STIFFNESS_MATRIX, TACS.MASS_MATRIX, TACS.GEOMETRIC_STIFFNESS_MATRIX]
+        self.matrix_types = [
+            TACS.STIFFNESS_MATRIX,
+            TACS.MASS_MATRIX,
+            TACS.GEOMETRIC_STIFFNESS_MATRIX,
+        ]
 
         # Seed random number generator in tacs for consistent test results
         elements.SeedRandomGenerator(0)
-
 
     def test_element_jacobian(self):
         # Loop through each combination of consstitutive object and test Jacobian
         for con in self.con_objects:
             with self.subTest(con=con.getObjectName()):
                 element = elements.MassElement(con)
-                force = element.createElementCentrifugalForce(self.omega, self.rotCenter)
-                fail = elements.TestElementJacobian(force, self.elem_index, self.time, self.xpts,
-                                                    self.vars, self.dvars, self.ddvars, -1, self.dh,
-                                                    self.print_level, self.atol, self.rtol)
+                force = element.createElementCentrifugalForce(
+                    self.omega, self.rotCenter
+                )
+                fail = elements.TestElementJacobian(
+                    force,
+                    self.elem_index,
+                    self.time,
+                    self.xpts,
+                    self.vars,
+                    self.dvars,
+                    self.ddvars,
+                    -1,
+                    self.dh,
+                    self.print_level,
+                    self.atol,
+                    self.rtol,
+                )
                 self.assertFalse(fail)
 
     def test_adj_res_product(self):
@@ -73,11 +93,24 @@ class ElementTest(unittest.TestCase):
         for con in self.con_objects:
             with self.subTest(con=con.getObjectName()):
                 element = elements.MassElement(con)
-                force = element.createElementCentrifugalForce(self.omega, self.rotCenter)
+                force = element.createElementCentrifugalForce(
+                    self.omega, self.rotCenter
+                )
                 dvs = force.getDesignVars(self.elem_index)
-                fail = elements.TestAdjResProduct(force, self.elem_index, self.time, self.xpts,
-                                                  self.vars, self.dvars, self.ddvars, dvs, self.dh,
-                                                  self.print_level, self.atol, self.rtol)
+                fail = elements.TestAdjResProduct(
+                    force,
+                    self.elem_index,
+                    self.time,
+                    self.xpts,
+                    self.vars,
+                    self.dvars,
+                    self.ddvars,
+                    dvs,
+                    self.dh,
+                    self.print_level,
+                    self.atol,
+                    self.rtol,
+                )
                 self.assertFalse(fail)
 
     def test_adj_res_xpt_product(self):
@@ -85,10 +118,22 @@ class ElementTest(unittest.TestCase):
         for con in self.con_objects:
             with self.subTest(con=con.getObjectName()):
                 element = elements.MassElement(con)
-                force = element.createElementCentrifugalForce(self.omega, self.rotCenter)
-                fail = elements.TestAdjResXptProduct(force, self.elem_index, self.time, self.xpts,
-                                                     self.vars, self.dvars, self.ddvars, self.dh,
-                                                     self.print_level, self.atol, self.rtol)
+                force = element.createElementCentrifugalForce(
+                    self.omega, self.rotCenter
+                )
+                fail = elements.TestAdjResXptProduct(
+                    force,
+                    self.elem_index,
+                    self.time,
+                    self.xpts,
+                    self.vars,
+                    self.dvars,
+                    self.ddvars,
+                    self.dh,
+                    self.print_level,
+                    self.atol,
+                    self.rtol,
+                )
                 self.assertFalse(fail)
 
     def test_element_mat_dv_sens(self):
@@ -96,13 +141,25 @@ class ElementTest(unittest.TestCase):
         for con in self.con_objects:
             with self.subTest(con=con.getObjectName()):
                 element = elements.MassElement(con)
-                force = element.createElementCentrifugalForce(self.omega, self.rotCenter)
+                force = element.createElementCentrifugalForce(
+                    self.omega, self.rotCenter
+                )
                 dvs = force.getDesignVars(self.elem_index)
                 for matrix_type in self.matrix_types:
                     with self.subTest(matrix_type=matrix_type):
-                        fail = elements.TestElementMatDVSens(force, matrix_type, self.elem_index,
-                                                             self.time, self.xpts, self.vars, dvs, self.dh,
-                                                             self.print_level, self.atol, self.rtol)
+                        fail = elements.TestElementMatDVSens(
+                            force,
+                            matrix_type,
+                            self.elem_index,
+                            self.time,
+                            self.xpts,
+                            self.vars,
+                            dvs,
+                            self.dh,
+                            self.print_level,
+                            self.atol,
+                            self.rtol,
+                        )
                         self.assertFalse(fail)
 
     def test_element_mat_sv_sens(self):
@@ -110,8 +167,19 @@ class ElementTest(unittest.TestCase):
         for con in self.con_objects:
             with self.subTest(con=con.getObjectName()):
                 element = elements.MassElement(con)
-                force = element.createElementCentrifugalForce(self.omega, self.rotCenter)
-                fail = elements.TestElementMatSVSens(force, TACS.GEOMETRIC_STIFFNESS_MATRIX, self.elem_index,
-                                                     self.time, self.xpts, self.vars, self.dh,
-                                                     self.print_level, self.atol, self.rtol)
+                force = element.createElementCentrifugalForce(
+                    self.omega, self.rotCenter
+                )
+                fail = elements.TestElementMatSVSens(
+                    force,
+                    TACS.GEOMETRIC_STIFFNESS_MATRIX,
+                    self.elem_index,
+                    self.time,
+                    self.xpts,
+                    self.vars,
+                    self.dh,
+                    self.print_level,
+                    self.atol,
+                    self.rtol,
+                )
                 self.assertFalse(fail)

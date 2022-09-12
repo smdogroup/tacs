@@ -16,9 +16,10 @@
   http://www.apache.org/licenses/LICENSE-2.0
 */
 
-#include <stdio.h>
-#include <math.h>
 #include "KSM.h"
+
+#include <math.h>
+#include <stdio.h>
 
 /*
   Implementation of various Krylov-subspace methods
@@ -34,7 +35,7 @@
   bsize:    the block size
   num_bcs:  an estimate of the number of boundary conditions
 */
-TACSBcMap::TACSBcMap( int _bsize, int num_bcs ){
+TACSBcMap::TACSBcMap(int _bsize, int num_bcs) {
   // Set the block size
   bsize = _bsize;
 
@@ -43,22 +44,22 @@ TACSBcMap::TACSBcMap( int _bsize, int num_bcs ){
   max_size = num_bcs;
 
   // Set the increment to be equal to the number of bcs set
-  bc_increment = max_size+1;
+  bc_increment = max_size + 1;
 
   nbcs = 0;
-  nodes = new int[ max_size ];
-  vars = new int[ max_size ];
-  values = new TacsScalar[ bsize*max_size ];
+  nodes = new int[max_size];
+  vars = new int[max_size];
+  values = new TacsScalar[bsize * max_size];
 }
 
 /*
   Delete all boundary condition information that this
   object allocated
 */
-TACSBcMap::~TACSBcMap(){
-  delete [] nodes;
-  delete [] vars;
-  delete [] values;
+TACSBcMap::~TACSBcMap() {
+  delete[] nodes;
+  delete[] vars;
+  delete[] values;
 }
 
 /*
@@ -72,23 +73,23 @@ TACSBcMap::~TACSBcMap(){
   bc_vals:    the value to apply
   nvals:      the number of values to apply at this node
 */
-void TACSBcMap::addBC( int node, int nvals,
-                       const int *bc_vars, const TacsScalar *bc_vals ){
+void TACSBcMap::addBC(int node, int nvals, const int *bc_vars,
+                      const TacsScalar *bc_vals) {
   // If the number of boundary conditions exceeds the available
   // space, allocate more space and copy over the arrays
-  if (nbcs >= max_size){
+  if (nbcs >= max_size) {
     max_size = max_size + bc_increment;
-    int *temp_nodes = new int[ max_size ];
-    int *temp_vars = new int[ max_size ];
-    TacsScalar *temp_values = new TacsScalar[ bsize*max_size ];
-    memcpy(temp_nodes, nodes, nbcs*sizeof(int));
-    memcpy(temp_vars, vars, nbcs*sizeof(int));
-    memcpy(temp_values, values, bsize*nbcs*sizeof(TacsScalar));
+    int *temp_nodes = new int[max_size];
+    int *temp_vars = new int[max_size];
+    TacsScalar *temp_values = new TacsScalar[bsize * max_size];
+    memcpy(temp_nodes, nodes, nbcs * sizeof(int));
+    memcpy(temp_vars, vars, nbcs * sizeof(int));
+    memcpy(temp_values, values, bsize * nbcs * sizeof(TacsScalar));
 
     // Free the old arrays
-    delete [] nodes;
-    delete [] vars;
-    delete [] values;
+    delete[] nodes;
+    delete[] vars;
+    delete[] values;
 
     // Copy over the new arrays
     nodes = temp_nodes;
@@ -98,26 +99,24 @@ void TACSBcMap::addBC( int node, int nvals,
 
   // Set the new variable information
   nodes[nbcs] = node;
-  memset(&values[bsize*nbcs], 0, bsize*sizeof(TacsScalar));
+  memset(&values[bsize * nbcs], 0, bsize * sizeof(TacsScalar));
   vars[nbcs] = 0;
 
-  if (bc_vars && bc_vals){
-    for ( int i = 0; i < nvals; i++ ){
-      if (bc_vars[i] >= 0 && bc_vars[i] < bsize){
+  if (bc_vars && bc_vals) {
+    for (int i = 0; i < nvals; i++) {
+      if (bc_vars[i] >= 0 && bc_vars[i] < bsize) {
         vars[nbcs] = vars[nbcs] | (1 << bc_vars[i]);
-        values[bsize*nbcs + bc_vars[i]] = bc_vals[i];
+        values[bsize * nbcs + bc_vars[i]] = bc_vals[i];
       }
     }
-  }
-  else if (bc_vars){
-    for ( int i = 0; i < nvals; i++ ){
-      if (bc_vars[i] >= 0 && bc_vars[i] < bsize){
+  } else if (bc_vars) {
+    for (int i = 0; i < nvals; i++) {
+      if (bc_vars[i] >= 0 && bc_vars[i] < bsize) {
         vars[nbcs] = vars[nbcs] | (1 << bc_vars[i]);
       }
     }
-  }
-  else {
-    for ( int i = 0; (i < nvals && i < bsize); i++ ){
+  } else {
+    for (int i = 0; (i < nvals && i < bsize); i++) {
       vars[nbcs] = vars[nbcs] | (1 << i);
     }
   }
@@ -136,22 +135,22 @@ void TACSBcMap::addBC( int node, int nvals,
   node:   the global node number
   vars:   value of the binary flags indicating which unknowns to zero
 */
-void TACSBcMap::addBinaryFlagBC( int node, int _vars ){
+void TACSBcMap::addBinaryFlagBC(int node, int _vars) {
   // If the number of boundary conditions exceeds the available
   // space, allocate more space and copy over the arrays
-  if (nbcs >= max_size){
+  if (nbcs >= max_size) {
     max_size = max_size + bc_increment;
-    int *temp_nodes = new int[ max_size ];
-    int *temp_vars = new int[ max_size ];
-    TacsScalar *temp_values = new TacsScalar[ bsize*max_size ];
-    memcpy(temp_nodes, nodes, nbcs*sizeof(int));
-    memcpy(temp_vars, vars, nbcs*sizeof(int));
-    memcpy(temp_values, values, bsize*nbcs*sizeof(TacsScalar));
+    int *temp_nodes = new int[max_size];
+    int *temp_vars = new int[max_size];
+    TacsScalar *temp_values = new TacsScalar[bsize * max_size];
+    memcpy(temp_nodes, nodes, nbcs * sizeof(int));
+    memcpy(temp_vars, vars, nbcs * sizeof(int));
+    memcpy(temp_values, values, bsize * nbcs * sizeof(TacsScalar));
 
     // Free the old arrays
-    delete [] nodes;
-    delete [] vars;
-    delete [] values;
+    delete[] nodes;
+    delete[] vars;
+    delete[] values;
 
     // Copy over the new arrays
     nodes = temp_nodes;
@@ -161,7 +160,7 @@ void TACSBcMap::addBinaryFlagBC( int node, int _vars ){
 
   // Set the new variable information
   nodes[nbcs] = node;
-  memset(&values[bsize*nbcs], 0, bsize*sizeof(TacsScalar));
+  memset(&values[bsize * nbcs], 0, bsize * sizeof(TacsScalar));
   vars[nbcs] = _vars;
   nbcs++;
 }
@@ -175,20 +174,27 @@ void TACSBcMap::addBinaryFlagBC( int node, int _vars ){
   vars:        node unknown numbers to apply boundary conditions
   values:      the values of the boundary conditions to apply
 */
-int TACSBcMap::getBCs( const int **_nodes,
-                       const int **_vars,
-                       TacsScalar **_values ){
-  if (_nodes){ *_nodes = nodes; }
-  if (_vars){ *_vars = vars; }
-  if (_values){ *_values = values; }
+int TACSBcMap::getBCs(const int **_nodes, const int **_vars,
+                      TacsScalar **_values) {
+  if (_nodes) {
+    *_nodes = nodes;
+  }
+  if (_vars) {
+    *_vars = vars;
+  }
+  if (_values) {
+    *_values = values;
+  }
   return nbcs;
 }
 
 /*
   Retrieve the boundary condition node numbers
 */
-int TACSBcMap::getBCNodeNums( int **_nodes ){
-  if (_nodes){ *_nodes = nodes; }
+int TACSBcMap::getBCNodeNums(int **_nodes) {
+  if (_nodes) {
+    *_nodes = nodes;
+  }
   return nbcs;
 }
 
@@ -203,22 +209,22 @@ int TACSBcMap::getBCNodeNums( int **_nodes ){
   ans: an array of the dot product results
   m:   the number of vectors in x
 */
-void TACSVec::mdot( TACSVec **x, TacsScalar *ans, int m ){
-  for ( int k = 0; k < m; k++ ){
+void TACSVec::mdot(TACSVec **x, TacsScalar *ans, int m) {
+  for (int k = 0; k < m; k++) {
     ans[k] = dot(x[k]);
   }
 }
 
-const char *TACSMat::getObjectName(){ return matName; }
+const char *TACSMat::getObjectName() { return matName; }
 const char *TACSMat::matName = "TACSMat";
 
-const char *TACSPc::getObjectName(){ return pcName; }
+const char *TACSPc::getObjectName() { return pcName; }
 const char *TACSPc::pcName = "TACSPc";
 
-const char *KSMPrint::getObjectName(){ return printName; }
+const char *KSMPrint::getObjectName() { return printName; }
 const char *KSMPrint::printName = "TACSPrint";
 
-const char *TACSKsm::getObjectName(){ return ksmName; }
+const char *TACSKsm::getObjectName() { return ksmName; }
 const char *TACSKsm::ksmName = "TACSKsm";
 
 /*
@@ -230,20 +236,20 @@ const char *TACSKsm::ksmName = "TACSKsm";
   rank:     print out the result only if rank == 0
   freq:     print out the result with this frequency
 */
-KSMPrintStdout::KSMPrintStdout( const char *_descript, int _rank, int _freq ){
+KSMPrintStdout::KSMPrintStdout(const char *_descript, int _rank, int _freq) {
   rank = _rank;
   freq = _freq;
-  if (freq < 1){ freq = 1; }
+  if (freq < 1) {
+    freq = 1;
+  }
 
   // Copy the description string to a local array
   size_t n = strlen(_descript);
-  descript = new char[ n+1 ];
+  descript = new char[n + 1];
   strcpy(descript, _descript);
 }
 
-KSMPrintStdout::~KSMPrintStdout(){
-  delete [] descript;
-}
+KSMPrintStdout::~KSMPrintStdout() { delete[] descript; }
 
 /*
   Print the residual norm for the given iteration on the root processor
@@ -252,8 +258,8 @@ KSMPrintStdout::~KSMPrintStdout(){
   iter:  the iteration count
   res:   the residual normal
 */
-void KSMPrintStdout::printResidual( int iter, TacsScalar res ){
-  if ((iter == 0 || iter % freq == 0) && rank == 0){
+void KSMPrintStdout::printResidual(int iter, TacsScalar res) {
+  if ((iter == 0 || iter % freq == 0) && rank == 0) {
     printf("%s[%3d]: %15.8e\n", descript, iter, TacsRealPart(res));
   }
 }
@@ -264,8 +270,8 @@ void KSMPrintStdout::printResidual( int iter, TacsScalar res ){
   input:
   cstr: the information string to print out
 */
-void KSMPrintStdout::print( const char *cstr ){
-  if (rank == 0){
+void KSMPrintStdout::print(const char *cstr) {
+  if (rank == 0) {
     printf("%s", cstr);
   }
 }
@@ -279,42 +285,48 @@ void KSMPrintStdout::print( const char *cstr ){
   rank:     output/create file if rank == 0
   freq:     the frequency to generate output
 */
-KSMPrintFile::KSMPrintFile( const char *filename, const char *_descript,
-                            int _rank, int _freq ){
+KSMPrintFile::KSMPrintFile(const char *filename, const char *_descript,
+                           int _rank, int _freq) {
   rank = _rank;
   freq = _freq;
-  if (freq <= 0){ freq = 1; }
+  if (freq <= 0) {
+    freq = 1;
+  }
 
   // Copy the description to a local array
   size_t n = strlen(_descript);
-  descript = new char[ n+1 ];
+  descript = new char[n + 1];
   strcpy(descript, _descript);
 
   fp = NULL;
-  if (rank == 0){
+  if (rank == 0) {
     fp = fopen(filename, "w");
   }
 }
 
-KSMPrintFile::~KSMPrintFile(){
-  if (fp){ fclose(fp); }
-  delete [] descript;
+KSMPrintFile::~KSMPrintFile() {
+  if (fp) {
+    fclose(fp);
+  }
+  delete[] descript;
 }
 
 /*
   Print the residual out to the file
 */
-void KSMPrintFile::printResidual( int iter, TacsScalar res ){
-  if ((iter == 0 || iter % freq == 0) && rank == 0){
-    if (fp){ fprintf(fp, "%s[%d]: %15.8e\n", descript, iter, TacsRealPart(res)); }
+void KSMPrintFile::printResidual(int iter, TacsScalar res) {
+  if ((iter == 0 || iter % freq == 0) && rank == 0) {
+    if (fp) {
+      fprintf(fp, "%s[%d]: %15.8e\n", descript, iter, TacsRealPart(res));
+    }
   }
 }
 
 /*
   Print a string out to the file
 */
-void KSMPrintFile::print( const char *cstr ){
-  if (fp){
+void KSMPrintFile::print(const char *cstr) {
+  if (fp) {
     fprintf(fp, "%s", cstr);
     fflush(fp);
   }
@@ -332,7 +344,7 @@ void KSMPrintFile::print( const char *cstr ){
   reset:  reset the CG iterations every 'reset' iterations
   nouter: the number of resets to try before giving up
 */
-PCG::PCG( TACSMat *_mat, TACSPc *_pc, int _reset, int _nouter ){
+PCG::PCG(TACSMat *_mat, TACSPc *_pc, int _reset, int _nouter) {
   monitor = NULL;
 
   mat = _mat;
@@ -360,7 +372,7 @@ PCG::PCG( TACSMat *_mat, TACSPc *_pc, int _reset, int _nouter ){
   P->incref();
 }
 
-PCG::~PCG(){
+PCG::~PCG() {
   mat->decref();
   pc->decref();
 
@@ -373,37 +385,44 @@ PCG::~PCG(){
 /*
   Set the operators for the preconditioned conjugate gradient method.
 */
-void PCG::setOperators( TACSMat *_mat, TACSPc *_pc ){
-  if (_mat){
+void PCG::setOperators(TACSMat *_mat, TACSPc *_pc) {
+  if (_mat) {
     _mat->incref();
-    if (mat){ mat->decref(); }
+    if (mat) {
+      mat->decref();
+    }
     mat = _mat;
   }
-  if (_pc){
+  if (_pc) {
     _pc->incref();
-    if (pc){ pc->decref(); }
+    if (pc) {
+      pc->decref();
+    }
     pc = _pc;
   }
 }
 
-void PCG::getOperators( TACSMat **_mat, TACSPc **_pc ){
-  if (_mat){*_mat = mat; }
-  if (_pc){*_pc = pc; }
+void PCG::getOperators(TACSMat **_mat, TACSPc **_pc) {
+  if (_mat) {
+    *_mat = mat;
+  }
+  if (_pc) {
+    *_pc = pc;
+  }
 }
 
-void PCG::setTolerances( double _rtol, double _atol ){
+void PCG::setTolerances(double _rtol, double _atol) {
   rtol = _rtol;
   atol = _atol;
 }
 
-void PCG::setMonitor( KSMPrint *_monitor ){
+void PCG::setMonitor(KSMPrint *_monitor) {
   _monitor->incref();
-  if (monitor){
+  if (monitor) {
     monitor->decref();
   }
   monitor = _monitor;
 }
-
 
 /*
   Solve the linear system with the preconditioned conjugate gradient
@@ -414,64 +433,63 @@ void PCG::setMonitor( KSMPrint *_monitor ){
   x:          the solution vector
   zero_guess: flag to indicate whether to start with x = 0
 */
-void PCG::solve( TACSVec *b, TACSVec *x, int zero_guess ){
+void PCG::solve(TACSVec *b, TACSVec *x, int zero_guess) {
   int solve_flag = 0;
   TacsScalar rhs_norm = 0.0;
   // R, Z and P are work-vectors
   // R == the residual
 
-  for ( int count = 0; count < nouter; count++ ){
+  for (int count = 0; count < nouter; count++) {
     // R is the residual
-    if (zero_guess && count == 0){
+    if (zero_guess && count == 0) {
       // If the initial guess is zero
       x->zeroEntries();  // Set x = 0
       R->copyValues(b);  // R = b
-    }
-    else {
-      mat->mult(x, R);        // R = A*x
-      R->axpby(1.0, -1.0, b); // R = b - A*x
+    } else {
+      mat->mult(x, R);         // R = A*x
+      R->axpby(1.0, -1.0, b);  // R = b - A*x
     }
 
-    if (count == 0){
+    if (count == 0) {
       rhs_norm = R->norm();
     }
 
-    if (monitor && count == 0){
+    if (monitor && count == 0) {
       monitor->printResidual(0, rhs_norm);
     }
 
-    if (TacsRealPart(rhs_norm) > atol){
+    if (TacsRealPart(rhs_norm) > atol) {
       // Apply the preconditioner
       pc->applyFactor(R, Z);
 
       // Copy Z to P, ie. P = Z
       P->copyValues(Z);
 
-      for ( int i = 0; i < reset; i++ ){
-        mat->mult(P, work);                     // work = A*P
-        TacsScalar temp = R->dot(Z);            // (R,Z)
-        TacsScalar alpha = temp/(work->dot(P)); // alpha = (R,Z)/(A*P,P)
-        x->axpy(alpha, P);                      // x = x + alpha*P
-        R->axpy(-alpha, work);                  // R' = R - alpha*A*P
-        pc->applyFactor(R, Z);                  // Z' = M^{-1} R
-        TacsScalar beta = R->dot(Z)/temp;       // beta = (R',Z')/(R,Z)
-        P->axpby(1.0, beta, Z);                 // P' = Z' + beta*P
+      for (int i = 0; i < reset; i++) {
+        mat->mult(P, work);                        // work = A*P
+        TacsScalar temp = R->dot(Z);               // (R,Z)
+        TacsScalar alpha = temp / (work->dot(P));  // alpha = (R,Z)/(A*P,P)
+        x->axpy(alpha, P);                         // x = x + alpha*P
+        R->axpy(-alpha, work);                     // R' = R - alpha*A*P
+        pc->applyFactor(R, Z);                     // Z' = M^{-1} R
+        TacsScalar beta = R->dot(Z) / temp;        // beta = (R',Z')/(R,Z)
+        P->axpby(1.0, beta, Z);                    // P' = Z' + beta*P
 
         TacsScalar norm = R->norm();
 
-        if (monitor){
-          monitor->printResidual(i+1, norm);
+        if (monitor) {
+          monitor->printResidual(i + 1, norm);
         }
 
         if (TacsRealPart(norm) < atol ||
-            TacsRealPart(norm) < rtol*TacsRealPart(rhs_norm)){
+            TacsRealPart(norm) < rtol * TacsRealPart(rhs_norm)) {
           solve_flag = 1;
           break;
         }
       }
     }
 
-    if (solve_flag){
+    if (solve_flag) {
       break;
     }
   }
@@ -487,10 +505,10 @@ void PCG::solve( TACSVec *b, TACSVec *x, int zero_guess ){
   q' = q - w h
   w^{T} q' = w^{T} q - w^{T} w w^{T} q
 */
-static void ClassicalGramSchmidt( TacsScalar *h, TACSVec *q,
-                                  TACSVec **w, int nvecs ){
+static void ClassicalGramSchmidt(TacsScalar *h, TACSVec *q, TACSVec **w,
+                                 int nvecs) {
   q->mdot(w, h, nvecs);
-  for ( int j = 0; j < nvecs; j++ ){
+  for (int j = 0; j < nvecs; j++) {
     q->axpy(-h[j], w[j]);
   }
 }
@@ -498,9 +516,9 @@ static void ClassicalGramSchmidt( TacsScalar *h, TACSVec *q,
 /*
   Modified Gram-Schmidt orthogonalization
 */
-static void ModifiedGramSchmidt( TacsScalar *h, TACSVec *q,
-                                 TACSVec **w, int nvecs ){
-  for ( int j = 0; j < nvecs; j++ ){
+static void ModifiedGramSchmidt(TacsScalar *h, TACSVec *q, TACSVec **w,
+                                int nvecs) {
+  for (int j = 0; j < nvecs; j++) {
     h[j] = w[j]->dot(q);
     q->axpy(-h[j], w[j]);
   }
@@ -519,8 +537,8 @@ static void ModifiedGramSchmidt( TacsScalar *h, TACSVec *q,
   nrestart:   the number of restarts before we give up
   isFlexible: is the preconditioner actually flexible? If so use FGMRES
 */
-GMRES::GMRES( TACSMat *_mat, TACSPc *_pc, int _m, int _nrestart,
-              int _isFlexible ){
+GMRES::GMRES(TACSMat *_mat, TACSPc *_pc, int _m, int _nrestart,
+             int _isFlexible) {
   init(_mat, _pc, _m, _nrestart, _isFlexible);
 }
 
@@ -533,7 +551,7 @@ GMRES::GMRES( TACSMat *_mat, TACSPc *_pc, int _m, int _nrestart,
   m:        the size of the Krylov subspace
   nrestart: try this many times before giving up
 */
-GMRES::GMRES( TACSMat *_mat, int _m, int _nrestart ){
+GMRES::GMRES(TACSMat *_mat, int _m, int _nrestart) {
   init(_mat, NULL, _m, _nrestart, 0);
 }
 
@@ -542,9 +560,8 @@ GMRES::GMRES( TACSMat *_mat, int _m, int _nrestart ){
 
   This is called by both of the two constructors above.
 */
-void GMRES::init( TACSMat *_mat, TACSPc *_pc,
-                  int _m, int _nrestart, int _isFlexible ){
-
+void GMRES::init(TACSMat *_mat, TACSPc *_pc, int _m, int _nrestart,
+                 int _isFlexible) {
   orthogonalize = ModifiedGramSchmidt;
   monitor = NULL;
   monitor_time = 0;
@@ -556,10 +573,9 @@ void GMRES::init( TACSMat *_mat, TACSPc *_pc,
   pc = _pc;
   mat->incref();
 
-  if (pc){
+  if (pc) {
     pc->incref();
-  }
-  else {
+  } else {
     // If there's no Pc then it doesn't have to be a flexible variant
     isFlexible = 0;
   }
@@ -571,21 +587,20 @@ void GMRES::init( TACSMat *_mat, TACSPc *_pc,
   // Allocate the subspace of vectors
   work = NULL;  // Required only for regular GMRES
   Z = NULL;     // Required only for flexible GMRES
-  W = new TACSVec*[ msub+1 ];
+  W = new TACSVec *[msub + 1];
 
-  for ( int i = 0; i < msub+1; i++ ){
+  for (int i = 0; i < msub + 1; i++) {
     W[i] = mat->createVec();
     W[i]->incref();
   }
 
-  if (isFlexible){
-    Z = new TACSVec*[ msub ];
-    for ( int i = 0; i < msub; i++ ){
+  if (isFlexible) {
+    Z = new TACSVec *[msub];
+    for (int i = 0; i < msub; i++) {
       Z[i] = mat->createVec();
       Z[i]->incref();
     }
-  }
-  else if (pc){
+  } else if (pc) {
     // Allocate the work array
     work = mat->createVec();
     work->incref();
@@ -594,57 +609,63 @@ void GMRES::init( TACSMat *_mat, TACSPc *_pc,
   // Allocate space for the Hessenberg matrix
   // This is a (msub+1) x msub matrix with non-zeros
   // on and above the first diagonal below the main diagonal
-  Hptr = new int[ msub+1 ];
+  Hptr = new int[msub + 1];
   Hptr[0] = 0;
 
-  for ( int i = 0; i < msub; i++ ){
-    Hptr[i+1] = Hptr[i] + i+2;
+  for (int i = 0; i < msub; i++) {
+    Hptr[i + 1] = Hptr[i] + i + 2;
   }
 
   int size = Hptr[msub];
-  H = new TacsScalar[ size ];      // The Hessenberg matrix
-  res = new TacsScalar[ msub+1 ];  // The residual
+  H = new TacsScalar[size];        // The Hessenberg matrix
+  res = new TacsScalar[msub + 1];  // The residual
 
-  memset(H, 0, size*sizeof(TacsScalar));
-  memset(res, 0, (msub+1)*sizeof(TacsScalar));
+  memset(H, 0, size * sizeof(TacsScalar));
+  memset(res, 0, (msub + 1) * sizeof(TacsScalar));
 
   // Allocate the terms that represent the unitary Q matrix
   // in the QR factorixation of H
-  Qsin = new TacsScalar[ msub ];
-  Qcos = new TacsScalar[ msub ];
+  Qsin = new TacsScalar[msub];
+  Qcos = new TacsScalar[msub];
 
-  memset(Qsin, 0, msub*sizeof(TacsScalar));
-  memset(Qcos, 0, msub*sizeof(TacsScalar));
+  memset(Qsin, 0, msub * sizeof(TacsScalar));
+  memset(Qcos, 0, msub * sizeof(TacsScalar));
 }
 
 /*
   Free the data/memory allocated by GMRES
 */
-GMRES::~GMRES(){
+GMRES::~GMRES() {
   mat->decref();
 
-  if (pc){   pc->decref(); }
-  if (work){ work->decref(); }
+  if (pc) {
+    pc->decref();
+  }
+  if (work) {
+    work->decref();
+  }
 
-  if (Z){
-    for ( int i = 0; i < msub; i++ ){
+  if (Z) {
+    for (int i = 0; i < msub; i++) {
       Z[i]->decref();
     }
-    delete [] Z;
+    delete[] Z;
   }
 
-  for ( int i = 0; i < msub+1; i++ ){
+  for (int i = 0; i < msub + 1; i++) {
     W[i]->decref();
   }
-  delete [] W;
+  delete[] W;
 
-  if (monitor){ monitor->decref(); }
+  if (monitor) {
+    monitor->decref();
+  }
 
-  delete [] H;
-  delete [] Hptr;
-  delete [] res;
-  delete [] Qsin;
-  delete [] Qcos;
+  delete[] H;
+  delete[] Hptr;
+  delete[] res;
+  delete[] Qsin;
+  delete[] Qcos;
 }
 
 /*
@@ -655,15 +676,19 @@ GMRES::~GMRES(){
   mat: the new matrix operator (possibly NULL)
   pc:  the new preconditioner operator (possibly NULL)
 */
-void GMRES::setOperators( TACSMat *_mat, TACSPc *_pc ){
-  if (_mat){
+void GMRES::setOperators(TACSMat *_mat, TACSPc *_pc) {
+  if (_mat) {
     _mat->incref();
-    if (mat){ mat->decref(); }
+    if (mat) {
+      mat->decref();
+    }
     mat = _mat;
   }
-  if (_pc){
+  if (_pc) {
     _pc->incref();
-    if (pc){ pc->decref(); }
+    if (pc) {
+      pc->decref();
+    }
     pc = _pc;
   }
 }
@@ -675,9 +700,13 @@ void GMRES::setOperators( TACSMat *_mat, TACSPc *_pc ){
   mat: the matrix
   pc:  the preconditioner
 */
-void GMRES::getOperators( TACSMat **_mat, TACSPc **_pc ){
-  if (_mat){*_mat = mat; }
-  if (_pc){*_pc = pc; }
+void GMRES::getOperators(TACSMat **_mat, TACSPc **_pc) {
+  if (_mat) {
+    *_mat = mat;
+  }
+  if (_pc) {
+    *_pc = pc;
+  }
 }
 
 /*
@@ -688,7 +717,7 @@ void GMRES::getOperators( TACSMat **_mat, TACSPc **_pc ){
   rtol: the relative tolerance ||r_k|| < rtol*||r_0||
   atol: the absolute tolerancne ||r_k|| < atol
 */
-void GMRES::setTolerances( double _rtol, double _atol ){
+void GMRES::setTolerances(double _rtol, double _atol) {
   rtol = _rtol;
   atol = _atol;
 }
@@ -700,9 +729,9 @@ void GMRES::setTolerances( double _rtol, double _atol ){
   input:
   monitor: the KSMPrint monitor object
 */
-void GMRES::setMonitor( KSMPrint *_monitor ){
+void GMRES::setMonitor(KSMPrint *_monitor) {
   _monitor->incref();
-  if (monitor){
+  if (monitor) {
     monitor->decref();
   }
   monitor = _monitor;
@@ -714,11 +743,10 @@ void GMRES::setMonitor( KSMPrint *_monitor ){
 
   Unless you have a good reason, you should use modified Gram-Schmidt.
 */
-void GMRES::setOrthoType( enum OrthoType otype ){
-  if (otype == CLASSICAL_GRAM_SCHMIDT){
+void GMRES::setOrthoType(enum OrthoType otype) {
+  if (otype == CLASSICAL_GRAM_SCHMIDT) {
     orthogonalize = ClassicalGramSchmidt;
-  }
-  else {
+  } else {
     orthogonalize = ModifiedGramSchmidt;
   }
 }
@@ -727,13 +755,9 @@ void GMRES::setOrthoType( enum OrthoType otype ){
   Set a flag to also monitor the time spent in various operations
   internally.
 */
-void GMRES::setTimeMonitor(){
-  monitor_time = 1;
-}
+void GMRES::setTimeMonitor() { monitor_time = 1; }
 
-const char *GMRES::getObjectName(){
-  return gmresName;
-}
+const char *GMRES::getObjectName() { return gmresName; }
 
 const char *GMRES::gmresName = "GMRES";
 
@@ -748,111 +772,116 @@ const char *GMRES::gmresName = "GMRES";
   x:          the solution vector (with possibly significant entries)
   zero_guess: flag to indicate whether to zero entries of x before solution
 */
-void GMRES::solve( TACSVec *b, TACSVec *x, int zero_guess ){
+void GMRES::solve(TACSVec *b, TACSVec *x, int zero_guess) {
   TacsScalar rhs_norm = 0.0;
   int solve_flag = 0;
 
   double t_pc = 0.0, t_ortho = 0.0;
   double t_total = 0.0;
 
-  if (monitor_time){ t_total = MPI_Wtime(); }
+  if (monitor_time) {
+    t_total = MPI_Wtime();
+  }
 
-  for ( int count = 0 ; count < nrestart+1; count++ ){
+  for (int count = 0; count < nrestart + 1; count++) {
     // Compute the residual
-    if (zero_guess && count == 0){
+    if (zero_guess && count == 0) {
       // If the initial guess is zero
-      x->zeroEntries();    // Set x = 0
-      W[0]->copyValues(b); // W[0] = b
+      x->zeroEntries();     // Set x = 0
+      W[0]->copyValues(b);  // W[0] = b
 
       res[0] = W[0]->norm();
-      W[0]->scale(1.0/res[0]); // W[0] = b/|| b ||
-    }
-    else {
+      W[0]->scale(1.0 / res[0]);  // W[0] = b/|| b ||
+    } else {
       // If the initial guess is non-zero or restarting
       mat->mult(x, W[0]);
-      W[0]->axpy(-1.0, b); // W[0] = A*x - b
+      W[0]->axpy(-1.0, b);  // W[0] = A*x - b
 
       res[0] = W[0]->norm();
-      W[0]->scale(-1.0/res[0]); // W[0] = (b - A*x)/|| b - A*x ||
+      W[0]->scale(-1.0 / res[0]);  // W[0] = (b - A*x)/|| b - A*x ||
     }
 
-    if (monitor){
+    if (monitor) {
       monitor->printResidual(0, fabs(TacsRealPart(res[0])));
     }
 
-    if (count == 0){
-      rhs_norm = res[0]; // The initial residual
+    if (count == 0) {
+      rhs_norm = res[0];  // The initial residual
     }
 
-    int niters = 0; // Keep track of the size of the Hessenberg matrix
+    int niters = 0;  // Keep track of the size of the Hessenberg matrix
 
-    if (TacsRealPart(res[0]) < atol){
+    if (TacsRealPart(res[0]) < atol) {
       break;
     }
 
-    for ( int i = 0; i < msub; i++ ){
-      if (monitor_time){ t_pc -= MPI_Wtime(); }
-      if (isFlexible){
+    for (int i = 0; i < msub; i++) {
+      if (monitor_time) {
+        t_pc -= MPI_Wtime();
+      }
+      if (isFlexible) {
         // Apply the preconditioner, Z[i] = M^{-1} W[i]
         pc->applyFactor(W[i], Z[i]);
-        mat->mult(Z[i], W[i+1]);  // W[i+1] = A*Z[i] = A*M^{-1}*W[i]
-      }
-      else {
-        if (pc){
+        mat->mult(Z[i], W[i + 1]);  // W[i+1] = A*Z[i] = A*M^{-1}*W[i]
+      } else {
+        if (pc) {
           // Apply the preconditioner, work = M^{-1} W[i]
           pc->applyFactor(W[i], work);
-          mat->mult(work, W[i+1]); // W[i+1] = A*work = A*M^{-1}*W[i]
-        }
-        else {
-          mat->mult(W[i], W[i+1]); // Compute W[i+1] = A*W[i]
+          mat->mult(work, W[i + 1]);  // W[i+1] = A*work = A*M^{-1}*W[i]
+        } else {
+          mat->mult(W[i], W[i + 1]);  // Compute W[i+1] = A*W[i]
         }
       }
-      if (monitor_time){
+      if (monitor_time) {
         double t0 = MPI_Wtime();
-        t_pc += t0; t_ortho -= t0;
+        t_pc += t0;
+        t_ortho -= t0;
       }
 
       // Build the orthogonal basis using MGS
-      orthogonalize(&H[Hptr[i]], W[i+1], W, i+1);
-      if (monitor_time){ t_ortho += MPI_Wtime(); }
+      orthogonalize(&H[Hptr[i]], W[i + 1], W, i + 1);
+      if (monitor_time) {
+        t_ortho += MPI_Wtime();
+      }
 
-      H[i+1 + Hptr[i]] = W[i+1]->norm(); // H[i+1,i] = || W[i+1] ||
-      W[i+1]->scale(1.0/H[i+1 + Hptr[i]]); // W[i+1] = W[i+1]/|| W[i+1] ||
+      H[i + 1 + Hptr[i]] = W[i + 1]->norm();  // H[i+1,i] = || W[i+1] ||
+      W[i + 1]->scale(1.0 /
+                      H[i + 1 + Hptr[i]]);  // W[i+1] = W[i+1]/|| W[i+1] ||
 
       // Apply the existing part of Q to the new components of
       // the Hessenberg matrix
       TacsScalar h1, h2;
-      for ( int k = 0; k < i; k++ ){
-        h1 = H[k   + Hptr[i]];
-        h2 = H[k+1 + Hptr[i]];
-        H[k   + Hptr[i]] =  h1*Qcos[k] + h2*Qsin[k];
-        H[k+1 + Hptr[i]] = -h1*Qsin[k] + h2*Qcos[k];
+      for (int k = 0; k < i; k++) {
+        h1 = H[k + Hptr[i]];
+        h2 = H[k + 1 + Hptr[i]];
+        H[k + Hptr[i]] = h1 * Qcos[k] + h2 * Qsin[k];
+        H[k + 1 + Hptr[i]] = -h1 * Qsin[k] + h2 * Qcos[k];
       }
 
       // Now, compute the rotation for the new column that was just added
-      h1 = H[i   + Hptr[i]];
-      h2 = H[i+1 + Hptr[i]];
-      TacsScalar sq = sqrt(h1*h1 + h2*h2);
+      h1 = H[i + Hptr[i]];
+      h2 = H[i + 1 + Hptr[i]];
+      TacsScalar sq = sqrt(h1 * h1 + h2 * h2);
 
-      Qcos[i] = h1/sq;
-      Qsin[i] = h2/sq;
-      H[i   + Hptr[i]] =  h1*Qcos[i] + h2*Qsin[i];
-      H[i+1 + Hptr[i]] = -h1*Qsin[i] + h2*Qcos[i];
+      Qcos[i] = h1 / sq;
+      Qsin[i] = h2 / sq;
+      H[i + Hptr[i]] = h1 * Qcos[i] + h2 * Qsin[i];
+      H[i + 1 + Hptr[i]] = -h1 * Qsin[i] + h2 * Qcos[i];
 
       // Update the residual
       h1 = res[i];
       // h2 = res[i+1]; = 0
-      res[i]   =   h1*Qcos[i];
-      res[i+1] = - h1*Qsin[i];
+      res[i] = h1 * Qcos[i];
+      res[i + 1] = -h1 * Qsin[i];
 
-      if (monitor){
-        monitor->printResidual(i+1, fabs(TacsRealPart(res[i+1])));
+      if (monitor) {
+        monitor->printResidual(i + 1, fabs(TacsRealPart(res[i + 1])));
       }
 
       niters++;
 
-      if (fabs(TacsRealPart(res[i+1])) < atol ||
-          fabs(TacsRealPart(res[i+1])) < rtol*TacsRealPart(rhs_norm)){
+      if (fabs(TacsRealPart(res[i + 1])) < atol ||
+          fabs(TacsRealPart(res[i + 1])) < rtol * TacsRealPart(rhs_norm)) {
         // Set the solve flag
         solve_flag = 1;
 
@@ -864,27 +893,25 @@ void GMRES::solve( TACSVec *b, TACSVec *x, int zero_guess ){
     // Arnoldi vectors. H is upper triangular
 
     // Compute the weights
-    for ( int i = niters-1; i >= 0; i-- ){
-      for ( int j = i+1; j < niters; j++ ){ //
-        res[i] = res[i] - H[i + Hptr[j]]*res[j];
+    for (int i = niters - 1; i >= 0; i--) {
+      for (int j = i + 1; j < niters; j++) {  //
+        res[i] = res[i] - H[i + Hptr[j]] * res[j];
       }
-      res[i] = res[i]/H[i + Hptr[i]];
+      res[i] = res[i] / H[i + Hptr[i]];
     }
 
     // Compute the linear combination
-    if (isFlexible){ // Flexible variant
-      for ( int i = 0; i < niters; i++ ){
+    if (isFlexible) {  // Flexible variant
+      for (int i = 0; i < niters; i++) {
         x->axpy(res[i], Z[i]);
       }
-    }
-    else if (!pc){   // If there's no pc
-      for ( int i = 0; i < niters; i++ ){
+    } else if (!pc) {  // If there's no pc
+      for (int i = 0; i < niters; i++) {
         x->axpy(res[i], W[i]);
       }
-    }
-    else {             // If the pc isn't flexible
+    } else {  // If the pc isn't flexible
       work->zeroEntries();
-      for ( int i = 0; i < niters; i++ ){
+      for (int i = 0; i < niters; i++) {
         work->axpy(res[i], W[i]);
       }
 
@@ -893,12 +920,12 @@ void GMRES::solve( TACSVec *b, TACSVec *x, int zero_guess ){
       x->axpy(1.0, W[0]);
     }
 
-    if (solve_flag){
+    if (solve_flag) {
       break;
     }
   }
 
-  if (monitor_time && monitor){
+  if (monitor_time && monitor) {
     t_total = MPI_Wtime() - t_total;
     char str_mat[80], str_ort[80], str_tot[80];
     sprintf(str_mat, "pc-mat time %10.6f\n", t_pc);
@@ -924,8 +951,8 @@ void GMRES::solve( TACSVec *b, TACSVec *x, int zero_guess ){
   msub:       the size of the underlying GMRES (FGMRES) subspace
   isFlexible: flag to indicate required use of flexible GCROT
 */
-GCROT::GCROT( TACSMat *_mat, TACSPc *_pc, int _outer, int _max_outer,
-              int _msub, int _isFlexible ){
+GCROT::GCROT(TACSMat *_mat, TACSPc *_pc, int _outer, int _max_outer, int _msub,
+             int _isFlexible) {
   init(_mat, _pc, _outer, _max_outer, _msub, _isFlexible);
 }
 
@@ -933,7 +960,7 @@ GCROT::GCROT( TACSMat *_mat, TACSPc *_pc, int _outer, int _max_outer,
   Create the GCROT linear system solver without a preconditioner. Note
   that this variant is never flexible.
 */
-GCROT::GCROT( TACSMat *_mat, int _outer, int _max_outer, int _msub ){
+GCROT::GCROT(TACSMat *_mat, int _outer, int _max_outer, int _msub) {
   init(_mat, NULL, _outer, _max_outer, _msub, 0);
 }
 
@@ -944,22 +971,21 @@ GCROT::GCROT( TACSMat *_mat, int _outer, int _max_outer, int _msub ){
   After initialization, no new significant memory allocation is
   required.
 */
-void GCROT::init( TACSMat *_mat, TACSPc *_pc, int _outer, int _max_outer,
-                  int _msub, int _isFlexible ){
+void GCROT::init(TACSMat *_mat, TACSPc *_pc, int _outer, int _max_outer,
+                 int _msub, int _isFlexible) {
   monitor = NULL;
-  msub = _msub;             // Size of the F/GMRES subspace
-  outer = _outer;           // Number of outer iterations
-  max_outer = _max_outer;   // Maximum number of outer iterations
-  isFlexible = _isFlexible; // Flexible variant?
+  msub = _msub;              // Size of the F/GMRES subspace
+  outer = _outer;            // Number of outer iterations
+  max_outer = _max_outer;    // Maximum number of outer iterations
+  isFlexible = _isFlexible;  // Flexible variant?
 
   mat = _mat;
   pc = _pc;
   mat->incref();
 
-  if (pc){
+  if (pc) {
     pc->incref();
-  }
-  else {
+  } else {
     // If there's no Pc then it doesn't have to be a flexible variant
     isFlexible = 0;
   }
@@ -969,18 +995,18 @@ void GCROT::init( TACSMat *_mat, TACSPc *_pc, int _outer, int _max_outer,
   atol = 1e-30;
 
   // Allocate the subspace of vectors
-  Z = NULL;     // Required only for flexible GMRES
-  W = new TACSVec*[ msub+1 ];
+  Z = NULL;  // Required only for flexible GMRES
+  W = new TACSVec *[msub + 1];
 
-  for ( int i = 0; i < msub+1; i++ ){
+  for (int i = 0; i < msub + 1; i++) {
     W[i] = mat->createVec();
     W[i]->incref();
   }
 
-  if (isFlexible){
-    Z = new TACSVec*[ msub ];
+  if (isFlexible) {
+    Z = new TACSVec *[msub];
 
-    for ( int i = 0; i < msub; i++ ){
+    for (int i = 0; i < msub; i++) {
       Z[i] = mat->createVec();
       Z[i]->incref();
     }
@@ -994,10 +1020,10 @@ void GCROT::init( TACSMat *_mat, TACSPc *_pc, int _outer, int _max_outer,
   c_hat->incref();
   u_hat->incref();
 
-  U = new TACSVec*[ outer ];
-  C = new TACSVec*[ outer ];
+  U = new TACSVec *[outer];
+  C = new TACSVec *[outer];
 
-  for ( int i = 0; i < outer; i++ ){
+  for (int i = 0; i < outer; i++) {
     U[i] = mat->createVec();
     U[i]->incref();
     C[i] = mat->createVec();
@@ -1010,82 +1036,94 @@ void GCROT::init( TACSMat *_mat, TACSPc *_pc, int _outer, int _max_outer,
   Hptr = new int[msub + 1];
   Hptr[0] = 0;
 
-  for ( int i = 0; i < msub; i++ ){
-    Hptr[i+1] = Hptr[i] + i+2;
+  for (int i = 0; i < msub; i++) {
+    Hptr[i + 1] = Hptr[i] + i + 2;
   }
 
   int size = Hptr[msub];
-  H   = new TacsScalar[size];        // The Hessenberg matrix
-  res = new TacsScalar[ msub+1 ];  // The residual
-  B   = new TacsScalar[ msub*outer ];
+  H = new TacsScalar[size];        // The Hessenberg matrix
+  res = new TacsScalar[msub + 1];  // The residual
+  B = new TacsScalar[msub * outer];
 
-  memset(H, 0, size*sizeof(TacsScalar));
-  memset(res, 0, (msub+1)*sizeof(TacsScalar));
-  memset(B, 0, msub*outer*sizeof(TacsScalar));
+  memset(H, 0, size * sizeof(TacsScalar));
+  memset(res, 0, (msub + 1) * sizeof(TacsScalar));
+  memset(B, 0, msub * outer * sizeof(TacsScalar));
 
   // Allocate the terms that represent the unitary Q matrix
   // in the QR factorixation of H
-  Qsin = new TacsScalar[ msub ];
-  Qcos = new TacsScalar[ msub ];
+  Qsin = new TacsScalar[msub];
+  Qcos = new TacsScalar[msub];
 
-  memset(Qsin, 0, msub*sizeof(TacsScalar));
-  memset(Qcos, 0, msub*sizeof(TacsScalar));
+  memset(Qsin, 0, msub * sizeof(TacsScalar));
+  memset(Qcos, 0, msub * sizeof(TacsScalar));
 }
 
 /*
   Delete the object and free all the data
 */
-GCROT::~GCROT(){
+GCROT::~GCROT() {
   mat->decref();
 
-  if (pc){ pc->decref(); }
+  if (pc) {
+    pc->decref();
+  }
 
   R->decref();
   u_hat->decref();
   c_hat->decref();
 
-  for ( int i = 0; i < outer; i++ ){
-    if (U[i]){ U[i]->decref(); }
-    if (C[i]){ C[i]->decref(); }
+  for (int i = 0; i < outer; i++) {
+    if (U[i]) {
+      U[i]->decref();
+    }
+    if (C[i]) {
+      C[i]->decref();
+    }
   }
 
-  delete [] U;
-  delete [] C;
+  delete[] U;
+  delete[] C;
 
-  if (Z){
-    for ( int i = 0; i < msub; i++ ){
+  if (Z) {
+    for (int i = 0; i < msub; i++) {
       Z[i]->decref();
     }
-    delete [] Z;
+    delete[] Z;
   }
 
-  for ( int i = 0; i < msub+1; i++ ){
+  for (int i = 0; i < msub + 1; i++) {
     W[i]->decref();
   }
-  delete [] W;
+  delete[] W;
 
-  if (monitor){ monitor->decref(); }
+  if (monitor) {
+    monitor->decref();
+  }
 
-  delete [] H;
-  delete [] Hptr;
-  delete [] res;
-  delete [] B;
-  delete [] Qsin;
-  delete [] Qcos;
+  delete[] H;
+  delete[] Hptr;
+  delete[] res;
+  delete[] B;
+  delete[] Qsin;
+  delete[] Qcos;
 }
 
 /*
   Set the matrix/preconditioner operators used for GCROT
 */
-void GCROT::setOperators( TACSMat *_mat, TACSPc *_pc ){
-  if (_mat){
+void GCROT::setOperators(TACSMat *_mat, TACSPc *_pc) {
+  if (_mat) {
     _mat->incref();
-    if (mat){ mat->decref(); }
+    if (mat) {
+      mat->decref();
+    }
     mat = _mat;
   }
-  if (_pc){
+  if (_pc) {
     _pc->incref();
-    if (pc){ pc->decref(); }
+    if (pc) {
+      pc->decref();
+    }
     pc = _pc;
   }
 }
@@ -1093,15 +1131,19 @@ void GCROT::setOperators( TACSMat *_mat, TACSPc *_pc ){
 /*
   Retrieve the matrix/preconditioner operators set in the GCROT object
 */
-void GCROT::getOperators( TACSMat **_mat, TACSPc **_pc ){
-  if (_mat){*_mat = mat; }
-  if (_pc){*_pc = pc; }
+void GCROT::getOperators(TACSMat **_mat, TACSPc **_pc) {
+  if (_mat) {
+    *_mat = mat;
+  }
+  if (_pc) {
+    *_pc = pc;
+  }
 }
 
 /*
   Set the relative and absolute convergence tolerances for GCROT
 */
-void GCROT::setTolerances( double _rtol, double _atol ){
+void GCROT::setTolerances(double _rtol, double _atol) {
   rtol = _rtol;
   atol = _atol;
 }
@@ -1109,17 +1151,15 @@ void GCROT::setTolerances( double _rtol, double _atol ){
 /*
   Set the residual/solution monitor object
 */
-void GCROT::setMonitor( KSMPrint *_monitor ){
+void GCROT::setMonitor(KSMPrint *_monitor) {
   _monitor->incref();
-  if (monitor){
+  if (monitor) {
     monitor->decref();
   }
   monitor = _monitor;
 }
 
-const char *GCROT::getObjectName(){
-  return gcrotName;
-}
+const char *GCROT::getObjectName() { return gcrotName; }
 
 const char *GCROT::gcrotName = "GCROT";
 
@@ -1132,114 +1172,113 @@ const char *GCROT::gcrotName = "GCROT";
   x:          the solution vector
   zero_guess: flag to treat x as an initial guess or zero
 */
-void GCROT::solve( TACSVec *b, TACSVec *x, int zero_guess ){
+void GCROT::solve(TACSVec *b, TACSVec *x, int zero_guess) {
   TacsScalar rhs_norm = 0.0;
   int solve_flag = 0;
   int mat_iters = 0;
 
   // Compute the residual
-  if (zero_guess){
+  if (zero_guess) {
     // If the initial guess is zero
-    x->zeroEntries();    // Set x = 0
+    x->zeroEntries();  // Set x = 0
     R->copyValues(b);  // R = b
-  }
-  else {
+  } else {
     // If the initial guess is non-zero or restarting
-    mat->mult(x, R);      // R = A*x
+    mat->mult(x, R);  // R = A*x
     mat_iters++;
-    R->axpy(-1.0, b);     // R = A*x - b
-    R->scale(-1.0);       // R = b - A*x0
+    R->axpy(-1.0, b);  // R = A*x - b
+    R->scale(-1.0);    // R = b - A*x0
   }
 
-  rhs_norm = R->norm(); // The initial residual
+  rhs_norm = R->norm();  // The initial residual
 
-  if (TacsRealPart(rhs_norm) < atol){
+  if (TacsRealPart(rhs_norm) < atol) {
     return;
   }
 
-  for ( int count = 0 ; count < max_outer; count++ ){
+  for (int count = 0; count < max_outer; count++) {
     // Size of the U/C subspaces
-    int outer_size = (count < outer ? count : outer); // min(count, outer);
-    int niters = 0; // The size of the Hessenberg matrix
+    int outer_size = (count < outer ? count : outer);  // min(count, outer);
+    int niters = 0;  // The size of the Hessenberg matrix
 
-    W[0]->copyValues(R); // W[0] = R
+    W[0]->copyValues(R);  // W[0] = R
     res[0] = W[0]->norm();
-    W[0]->scale(1.0/res[0]); // W[0] = b/|| b ||
+    W[0]->scale(1.0 / res[0]);  // W[0] = b/|| b ||
 
-    if (monitor){
+    if (monitor) {
       monitor->printResidual(mat_iters, fabs(TacsRealPart(res[0])));
     }
 
     // The inner F/GMRES loop
-    for ( int i = 0; i < msub; i++ ){
-      if (isFlexible){
+    for (int i = 0; i < msub; i++) {
+      if (isFlexible) {
         // Apply the preconditioner, Z[i] = M^{-1} W[i]
         pc->applyFactor(W[i], Z[i]);
-        mat->mult(Z[i], W[i+1]); // W[i+1] = A*Z[i] = A*M^{-1}*W[i]
-      }
-      else {
-        if (pc){
+        mat->mult(Z[i], W[i + 1]);  // W[i+1] = A*Z[i] = A*M^{-1}*W[i]
+      } else {
+        if (pc) {
           // Use u_hat here as a temporary array
           // Apply the preconditioner, work = M^{-1} W[i]
           pc->applyFactor(W[i], u_hat);
-          mat->mult(u_hat, W[i+1]); // W[i+1] = A*work = A*M^{-1}*W[i]
-        }
-        else {
-          mat->mult(W[i], W[i+1]); // Compute W[i+1] = A*W[i]
+          mat->mult(u_hat, W[i + 1]);  // W[i+1] = A*work = A*M^{-1}*W[i]
+        } else {
+          mat->mult(W[i], W[i + 1]);  // Compute W[i+1] = A*W[i]
         }
       }
       mat_iters++;
 
       // First, orthonormalize W[i+1] w.r.t.
       // the basis C[j] j = 0 .. outer_size-1 B is (outer_size, msub)
-      for ( int j = 0; j < outer_size; j++ ){
-        B[j*msub + i] = W[i+1]->dot(C[j]); // B[j,i] = dot( W[i+1], C[j] )
-        W[i+1]->axpy(-B[j*msub + i], C[j]); // W[i+1] = W[i+1] - B[j,i]*C[j]
+      for (int j = 0; j < outer_size; j++) {
+        B[j * msub + i] = W[i + 1]->dot(C[j]);  // B[j,i] = dot( W[i+1], C[j] )
+        W[i + 1]->axpy(-B[j * msub + i],
+                       C[j]);  // W[i+1] = W[i+1] - B[j,i]*C[j]
       }
 
       // Build expand the orthogonal basis using MGS
-      for ( int j = i; j >= 0; j-- ){
-        H[j + Hptr[i]] = W[i+1]->dot(W[j]); // H[j,i] = dot( W[i+1], W[i] )
-        W[i+1]->axpy(-H[j + Hptr[i]], W[j]); // W[i+1] = W[i+1] - H[j,i]*W[j]
+      for (int j = i; j >= 0; j--) {
+        H[j + Hptr[i]] = W[i + 1]->dot(W[j]);   // H[j,i] = dot( W[i+1], W[i] )
+        W[i + 1]->axpy(-H[j + Hptr[i]], W[j]);  // W[i+1] = W[i+1] - H[j,i]*W[j]
       }
 
-      H[i+1 + Hptr[i]] = W[i+1]->norm(); // H[i+1,i] = || W[i+1] ||
-      W[i+1]->scale(1.0/H[i+1 + Hptr[i]]); // W[i+1] = W[i+1]/|| W[i+1] ||
+      H[i + 1 + Hptr[i]] = W[i + 1]->norm();  // H[i+1,i] = || W[i+1] ||
+      W[i + 1]->scale(1.0 /
+                      H[i + 1 + Hptr[i]]);  // W[i+1] = W[i+1]/|| W[i+1] ||
 
       // Apply the existing part of Q to the new components of
       // the Hessenberg matrix
       TacsScalar h1, h2;
-      for ( int k = 0; k < i; k++ ){
-        h1 = H[k   + Hptr[i]];
-        h2 = H[k+1 + Hptr[i]];
-        H[k   + Hptr[i]] =  h1*Qcos[k] + h2*Qsin[k];
-        H[k+1 + Hptr[i]] = -h1*Qsin[k] + h2*Qcos[k];
+      for (int k = 0; k < i; k++) {
+        h1 = H[k + Hptr[i]];
+        h2 = H[k + 1 + Hptr[i]];
+        H[k + Hptr[i]] = h1 * Qcos[k] + h2 * Qsin[k];
+        H[k + 1 + Hptr[i]] = -h1 * Qsin[k] + h2 * Qcos[k];
       }
 
       // Now, compute the rotation for the new column that was just added
-      h1 = H[i   + Hptr[i]];
-      h2 = H[i+1 + Hptr[i]];
-      TacsScalar sq = sqrt(h1*h1 + h2*h2);
+      h1 = H[i + Hptr[i]];
+      h2 = H[i + 1 + Hptr[i]];
+      TacsScalar sq = sqrt(h1 * h1 + h2 * h2);
 
-      Qcos[i] = h1/sq;
-      Qsin[i] = h2/sq;
-      H[i   + Hptr[i]] =  h1*Qcos[i] + h2*Qsin[i];
-      H[i+1 + Hptr[i]] = -h1*Qsin[i] + h2*Qcos[i];
+      Qcos[i] = h1 / sq;
+      Qsin[i] = h2 / sq;
+      H[i + Hptr[i]] = h1 * Qcos[i] + h2 * Qsin[i];
+      H[i + 1 + Hptr[i]] = -h1 * Qsin[i] + h2 * Qcos[i];
 
       // Update the residual
       h1 = res[i];
       // h2 = res[i+1]; = 0
-      res[i]   =   h1*Qcos[i];
-      res[i+1] = - h1*Qsin[i];
+      res[i] = h1 * Qcos[i];
+      res[i + 1] = -h1 * Qsin[i];
 
-      if (monitor){
-        monitor->printResidual(mat_iters, fabs(TacsRealPart(res[i+1])));
+      if (monitor) {
+        monitor->printResidual(mat_iters, fabs(TacsRealPart(res[i + 1])));
       }
 
       niters++;
 
-      if (fabs(TacsRealPart(res[i+1])) < atol ||
-          fabs(TacsRealPart(res[i+1])) < rtol*TacsRealPart(rhs_norm)){
+      if (fabs(TacsRealPart(res[i + 1])) < atol ||
+          fabs(TacsRealPart(res[i + 1])) < rtol * TacsRealPart(rhs_norm)) {
         // Set the solve flag
         solve_flag = 1;
 
@@ -1252,34 +1291,32 @@ void GCROT::solve( TACSVec *b, TACSVec *x, int zero_guess ){
     // H is now upper triangular
 
     // Compute the weights
-    for ( int i = niters-1; i >= 0; i-- ){
+    for (int i = niters - 1; i >= 0; i--) {
       // Compute res[i] = res[i] - H[i,j]*res[j];
-      for ( int j = i+1; j < niters; j++ ){
-        res[i] = res[i] - H[i + Hptr[j]]*res[j];
+      for (int j = i + 1; j < niters; j++) {
+        res[i] = res[i] - H[i + Hptr[j]] * res[j];
       }
-      res[i] = res[i]/H[i + Hptr[i]];
+      res[i] = res[i] / H[i + Hptr[i]];
     }
 
     // u_hat = Z*y - U*B*y
     // where y = the weights computed from the inner GMRES loop above
 
     // Compute the linear combination
-    if (isFlexible){ // Flexible variant
+    if (isFlexible) {  // Flexible variant
       u_hat->zeroEntries();
-      for ( int i = 0; i < niters; i++ ){
+      for (int i = 0; i < niters; i++) {
         u_hat->axpy(res[i], Z[i]);
       }
-    }
-    else if (!pc){   // If there's no pc
+    } else if (!pc) {  // If there's no pc
       u_hat->zeroEntries();
-      for ( int i = 0; i < niters; i++ ){
+      for (int i = 0; i < niters; i++) {
         u_hat->axpy(res[i], W[i]);
       }
-    }
-    else {             // If the pc isn't flexible
+    } else {  // If the pc isn't flexible
       // Use c_hat here as a temporary array
       c_hat->zeroEntries();
-      for ( int i = 0; i < niters; i++ ){
+      for (int i = 0; i < niters; i++) {
         c_hat->axpy(res[i], W[i]);
       }
 
@@ -1290,10 +1327,10 @@ void GCROT::solve( TACSVec *b, TACSVec *x, int zero_guess ){
     // Now complete u_hat by computing u_hat = u_hat - U*B*y
     // Here y = res
     // Note that B is (outer_size,msub)
-    for ( int i = 0; i < outer_size; i++ ){
+    for (int i = 0; i < outer_size; i++) {
       TacsScalar bsum = TacsScalar(0.0);
-      for ( int j = 0; j < niters; j++ ){
-        bsum = bsum + B[i*msub + j]*res[j];
+      for (int j = 0; j < niters; j++) {
+        bsum = bsum + B[i * msub + j] * res[j];
       }
 
       u_hat->axpy(-bsum, U[i]);
@@ -1304,34 +1341,36 @@ void GCROT::solve( TACSVec *b, TACSVec *x, int zero_guess ){
     // Compute c_hat = W*H*y
     // The Hessenberg matrix has been modified by pre-multiplying by Q
     // now, undo these rotations and multiply by Q^{T}
-    for ( int i = 0; i < niters; i++ ){
+    for (int i = 0; i < niters; i++) {
       TacsScalar h1, h2;
-      for ( int k = i; k >= 0; k-- ){
-        h1 = H[k   + Hptr[i]];
-        h2 = H[k+1 + Hptr[i]];
-        H[k   + Hptr[i]] =  h1*Qcos[k] - h2*Qsin[k];
-        H[k+1 + Hptr[i]] =  h1*Qsin[k] + h2*Qcos[k];
+      for (int k = i; k >= 0; k--) {
+        h1 = H[k + Hptr[i]];
+        h2 = H[k + 1 + Hptr[i]];
+        H[k + Hptr[i]] = h1 * Qcos[k] - h2 * Qsin[k];
+        H[k + 1 + Hptr[i]] = h1 * Qsin[k] + h2 * Qcos[k];
       }
     }
 
     // The matrix H is (niters+1) by (niters) // H[i,j] = H[i + Hptr[j]]
     // y = the variables res is niters
-    for ( int i = 0; i < niters+1; i++ ){
+    for (int i = 0; i < niters + 1; i++) {
       TacsScalar hsum = TacsScalar(0.0);
-      int j = i-1;
-      if (i == 0){ j = 0; }
+      int j = i - 1;
+      if (i == 0) {
+        j = 0;
+      }
 
       // hsum = hsum + H[i,j]*res[j]
-      for ( ; j < niters; j++ ){
-        hsum += H[i + Hptr[j]]*res[j];
+      for (; j < niters; j++) {
+        hsum += H[i + Hptr[j]] * res[j];
       }
 
       c_hat->axpy(hsum, W[i]);
     }
 
     TacsScalar cnorm = c_hat->norm();
-    c_hat->scale(1.0/cnorm);
-    u_hat->scale(1.0/cnorm);
+    c_hat->scale(1.0 / cnorm);
+    u_hat->scale(1.0 / cnorm);
 
     // Update the residual and solution
     TacsScalar alpha = R->dot(c_hat);
@@ -1343,7 +1382,7 @@ void GCROT::solve( TACSVec *b, TACSVec *x, int zero_guess ){
     // R->axpy( -1.0, b );     // R = A*x - b
     // R->scale( -1.0 );
 
-    if (solve_flag){
+    if (solve_flag) {
       break;
     }
 
@@ -1355,9 +1394,9 @@ void GCROT::solve( TACSVec *b, TACSVec *x, int zero_guess ){
     TACSVec *c = c_hat;
 
     // This is the size of the subspace on the next iteration
-    outer_size = (count+1 < outer ? count+1 : outer);
+    outer_size = (count + 1 < outer ? count + 1 : outer);
 
-    for ( int i = 0; i < outer_size; i++ ){
+    for (int i = 0; i < outer_size; i++) {
       TACSVec *tu = U[i];
       TACSVec *tc = C[i];
 
@@ -1377,15 +1416,14 @@ void GCROT::solve( TACSVec *b, TACSVec *x, int zero_guess ){
   Create the preconditioner class with the specified
   matrix/preconditioner pair
 */
-KsmPreconditioner::KsmPreconditioner( TACSMat *_mat,
-                                      TACSPc *_pc ){
+KsmPreconditioner::KsmPreconditioner(TACSMat *_mat, TACSPc *_pc) {
   mat = _mat;
   pc = _pc;
   mat->incref();
   pc->incref();
 }
 
-KsmPreconditioner::~KsmPreconditioner(){
+KsmPreconditioner::~KsmPreconditioner() {
   mat->decref();
   pc->decref();
 }
@@ -1393,47 +1431,52 @@ KsmPreconditioner::~KsmPreconditioner(){
 /*
   Create a solution vector using the direct preconditioner
 */
-TACSVec *KsmPreconditioner::createVec(){
-  return mat->createVec();
-}
+TACSVec *KsmPreconditioner::createVec() { return mat->createVec(); }
 
 /*
   Set the operators for the direct preconditioner
 */
-void KsmPreconditioner::setOperators( TACSMat *_mat, TACSPc *_pc ){
-  if (_mat){ _mat->incref(); }
+void KsmPreconditioner::setOperators(TACSMat *_mat, TACSPc *_pc) {
+  if (_mat) {
+    _mat->incref();
+  }
   mat->decref();
   mat = _mat;
 
-  if (_pc){ _pc->incref(); }
+  if (_pc) {
+    _pc->incref();
+  }
   pc->decref();
   pc = _pc;
 }
 
-void KsmPreconditioner::getOperators( TACSMat **_mat, TACSPc **_pc ){
-  if (_mat){*_mat = mat; }
-  if (_pc){*_pc = pc; }
+void KsmPreconditioner::getOperators(TACSMat **_mat, TACSPc **_pc) {
+  if (_mat) {
+    *_mat = mat;
+  }
+  if (_pc) {
+    *_pc = pc;
+  }
 }
 
 /*
   'Solve' the problem - this is only really a solution if a direct
   solver is used. This is often the case within TACS.
 */
-void KsmPreconditioner::solve( TACSVec *b, TACSVec *x,
-                               int zero_guess ){
+void KsmPreconditioner::solve(TACSVec *b, TACSVec *x, int zero_guess) {
   pc->applyFactor(b, x);
 }
 
 /*
   The solution tolerances have no effect.
 */
-void KsmPreconditioner::setTolerances( double _rtol, double _atol ){}
+void KsmPreconditioner::setTolerances(double _rtol, double _atol) {}
 
 /*
   Set a solution monitor - don't monitor anything since there are
   no real iterations
 */
-void KsmPreconditioner::setMonitor( KSMPrint *monitor ){
+void KsmPreconditioner::setMonitor(KSMPrint *monitor) {
   // Delete the monitor if it's allocated as an argument
   monitor->incref();
   monitor->decref();

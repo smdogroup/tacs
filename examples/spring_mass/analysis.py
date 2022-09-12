@@ -45,11 +45,12 @@ comm = MPI.COMM_WORLD
 
 # Instantiate FEAAssembler
 structOptions = {
-    'printtiming':True,
+    "printtiming": True,
 }
 
-bdfFile = os.path.join(os.path.dirname(__file__), 'mass_spring.bdf')
+bdfFile = os.path.join(os.path.dirname(__file__), "mass_spring.bdf")
 FEAAssembler = pyTACS(bdfFile, comm, options=structOptions)
+
 
 def elemCallBack(dvNum, compID, compDescript, elemDescripts, globalDVs, **kwargs):
     # Setup spring element
@@ -62,15 +63,18 @@ def elemCallBack(dvNum, compID, compDescript, elemDescripts, globalDVs, **kwargs
     elem = elements.SpringElement(transform, con)
     return elem
 
+
 # Set up TACS Assembler
 FEAAssembler.initialize(elemCallBack)
 
 # create tacs transient problems
-problem = FEAAssembler.createTransientProblem('step_force', 0.0, 2*np.pi, 100)
+problem = FEAAssembler.createTransientProblem("step_force", 0.0, 2 * np.pi, 100)
 
 # Add functions
-problem.addFunction('mass', functions.StructuralMass)
-problem.addFunction('max_x_disp', functions.KSDisplacement, ksWeight=100.0, direction=[1.0, 0.0, 0.0])
+problem.addFunction("mass", functions.StructuralMass)
+problem.addFunction(
+    "max_x_disp", functions.KSDisplacement, ksWeight=100.0, direction=[1.0, 0.0, 0.0]
+)
 
 timeSteps = problem.getTimeSteps()
 for step_i, time in enumerate(timeSteps):
@@ -92,9 +96,16 @@ for step_i in range(len(timeSteps)):
     problem.getVariables(step_i, states=stateHistory[step_i, :, :].reshape(-1))
 
 # Plot results for first 3 dofs
-plt.plot(timeSteps, stateHistory[:, 1, 0], timeSteps, stateHistory[:, 1, 1], timeSteps, stateHistory[:, 1, 2])
-plt.legend(['dof 1', 'dof 2', 'dof 3'])
-plt.ylabel('displacement (m)')
-plt.xlabel('time (s)')
+plt.plot(
+    timeSteps,
+    stateHistory[:, 1, 0],
+    timeSteps,
+    stateHistory[:, 1, 1],
+    timeSteps,
+    stateHistory[:, 1, 2],
+)
+plt.legend(["dof 1", "dof 2", "dof 3"])
+plt.ylabel("displacement (m)")
+plt.xlabel("time (s)")
 if __name__ == "__main__":
     plt.show()

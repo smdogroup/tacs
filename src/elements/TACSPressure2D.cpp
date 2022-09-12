@@ -13,81 +13,66 @@
 */
 
 #include "TACSPressure2D.h"
+
 #include "TACSElementAlgebra.h"
 
-TACSPressure2D::TACSPressure2D( int _varsPerNode, int _faceIndex,
-                                TACSElementBasis *_basis, TacsScalar _p ){
+TACSPressure2D::TACSPressure2D(int _varsPerNode, int _faceIndex,
+                               TACSElementBasis *_basis, TacsScalar _p) {
   varsPerNode = _varsPerNode;
   faceIndex = _faceIndex;
-  basis = _basis;  basis->incref();
+  basis = _basis;
+  basis->incref();
   p = _p;
 }
 
-TACSPressure2D::~TACSPressure2D(){
-  basis->decref();
-}
+TACSPressure2D::~TACSPressure2D() { basis->decref(); }
 
-const char* TACSPressure2D::getObjectName(){
-  return "TACSPressure2D";
-}
+const char *TACSPressure2D::getObjectName() { return "TACSPressure2D"; }
 
 // Get the layout properties of the element
-int TACSPressure2D::getVarsPerNode(){
-  return varsPerNode;
-}
+int TACSPressure2D::getVarsPerNode() { return varsPerNode; }
 
-int TACSPressure2D::getNumNodes(){
-  return basis->getNumNodes();
-}
+int TACSPressure2D::getNumNodes() { return basis->getNumNodes(); }
 
-ElementLayout TACSPressure2D::getLayoutType(){
-  return basis->getLayoutType();
-}
+ElementLayout TACSPressure2D::getLayoutType() { return basis->getLayoutType(); }
 
-TACSElementBasis* TACSPressure2D::getElementBasis(){
-  return basis;
-}
+TACSElementBasis *TACSPressure2D::getElementBasis() { return basis; }
 
-int TACSPressure2D::getNumQuadraturePoints(){
+int TACSPressure2D::getNumQuadraturePoints() {
   return basis->getNumQuadraturePoints();
 }
 
-double TACSPressure2D::getQuadratureWeight( int n ){
+double TACSPressure2D::getQuadratureWeight(int n) {
   return basis->getQuadratureWeight(n);
 }
 
-double TACSPressure2D::getQuadraturePoint( int n, double pt[] ){
+double TACSPressure2D::getQuadraturePoint(int n, double pt[]) {
   return basis->getQuadraturePoint(n, pt);
 }
 
-int TACSPressure2D::getNumElementFaces(){
-  return basis->getNumElementFaces();
-}
+int TACSPressure2D::getNumElementFaces() { return basis->getNumElementFaces(); }
 
-int TACSPressure2D::getNumFaceQuadraturePoints( int face ){
+int TACSPressure2D::getNumFaceQuadraturePoints(int face) {
   return basis->getNumFaceQuadraturePoints(face);
 }
 
-double TACSPressure2D::getFaceQuadraturePoint( int face, int n, double pt[],
-                                               double tangent[] ){
+double TACSPressure2D::getFaceQuadraturePoint(int face, int n, double pt[],
+                                              double tangent[]) {
   return basis->getFaceQuadraturePoint(face, n, pt, tangent);
 }
 
 /*
   Add the residual to the provided vector
 */
-void TACSPressure2D::addResidual( int elemIndex,
-                                  double time,
-                                  const TacsScalar *Xpts,
-                                  const TacsScalar *vars,
-                                  const TacsScalar *dvars,
-                                  const TacsScalar *ddvars,
-                                  TacsScalar *res ){
+void TACSPressure2D::addResidual(int elemIndex, double time,
+                                 const TacsScalar *Xpts, const TacsScalar *vars,
+                                 const TacsScalar *dvars,
+                                 const TacsScalar *ddvars, TacsScalar *res) {
   // Compute the number of quadrature points
   const int nquad = basis->getNumFaceQuadraturePoints(faceIndex);
 
   // Loop over each quadrature point and add the residual contribution
-  for ( int n = 0; n < nquad; n++ ){
+  for (int n = 0; n < nquad; n++) {
     // Get the quadrature weight
     double pt[3], tangent[6];
     double weight = basis->getFaceQuadraturePoint(faceIndex, n, pt, tangent);
@@ -104,13 +89,13 @@ void TACSPressure2D::addResidual( int elemIndex,
     area *= weight;
 
     // Evaluate the weak form of the model
-    TacsScalar DUt[3*TACSElement2D::MAX_VARS_PER_NODE];
-    TacsScalar DUx[2*TACSElement2D::MAX_VARS_PER_NODE];
-    memset(DUt, 0, 3*varsPerNode*sizeof(TacsScalar));
-    memset(DUx, 0, 2*varsPerNode*sizeof(TacsScalar));
+    TacsScalar DUt[3 * TACSElement2D::MAX_VARS_PER_NODE];
+    TacsScalar DUx[2 * TACSElement2D::MAX_VARS_PER_NODE];
+    memset(DUt, 0, 3 * varsPerNode * sizeof(TacsScalar));
+    memset(DUx, 0, 2 * varsPerNode * sizeof(TacsScalar));
 
-    for ( int k = 0; k < 2; k++ ){
-      DUt[3*k] = -p * normal[k];
+    for (int k = 0; k < 2; k++) {
+      DUt[3 * k] = -p * normal[k];
     }
 
     // Add the weak form of the residual at this point
@@ -121,22 +106,17 @@ void TACSPressure2D::addResidual( int elemIndex,
 /*
   Add the residual and Jacobians to the arrays
 */
-void TACSPressure2D::addJacobian( int elemIndex,
-                                  double time,
-                                  TacsScalar alpha,
-                                  TacsScalar beta,
-                                  TacsScalar gamma,
-                                  const TacsScalar *Xpts,
-                                  const TacsScalar *vars,
-                                  const TacsScalar *dvars,
-                                  const TacsScalar *ddvars,
-                                  TacsScalar *res,
-                                  TacsScalar *mat ){
+void TACSPressure2D::addJacobian(int elemIndex, double time, TacsScalar alpha,
+                                 TacsScalar beta, TacsScalar gamma,
+                                 const TacsScalar *Xpts, const TacsScalar *vars,
+                                 const TacsScalar *dvars,
+                                 const TacsScalar *ddvars, TacsScalar *res,
+                                 TacsScalar *mat) {
   // Compute the number of quadrature points
   const int nquad = basis->getNumFaceQuadraturePoints(faceIndex);
 
   // Loop over each quadrature point and add the residual contribution
-  for ( int n = 0; n < nquad; n++ ){
+  for (int n = 0; n < nquad; n++) {
     // Get the quadrature weight
     double pt[3], tangent[6];
     double weight = basis->getFaceQuadraturePoint(faceIndex, n, pt, tangent);
@@ -153,13 +133,13 @@ void TACSPressure2D::addJacobian( int elemIndex,
     area *= weight;
 
     // Evaluate the weak form of the model
-    TacsScalar DUt[3*TACSElement2D::MAX_VARS_PER_NODE];
-    TacsScalar DUx[2*TACSElement2D::MAX_VARS_PER_NODE];
-    memset(DUt, 0, 3*varsPerNode*sizeof(TacsScalar));
-    memset(DUx, 0, 2*varsPerNode*sizeof(TacsScalar));
+    TacsScalar DUt[3 * TACSElement2D::MAX_VARS_PER_NODE];
+    TacsScalar DUx[2 * TACSElement2D::MAX_VARS_PER_NODE];
+    memset(DUt, 0, 3 * varsPerNode * sizeof(TacsScalar));
+    memset(DUx, 0, 2 * varsPerNode * sizeof(TacsScalar));
 
-    for ( int k = 0; k < 2; k++ ){
-      DUt[3*k] = -p * normal[k];
+    for (int k = 0; k < 2; k++) {
+      DUt[3 * k] = -p * normal[k];
     }
 
     // Add the weak form of the residual at this point

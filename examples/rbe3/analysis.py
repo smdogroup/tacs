@@ -21,7 +21,7 @@ from tacs import pyTACS, functions
 
 comm = MPI.COMM_WORLD
 
-bdfFile = os.path.join(os.path.dirname(__file__), 'rbe3.bdf')
+bdfFile = os.path.join(os.path.dirname(__file__), "rbe3.bdf")
 # Load BDF file
 FEAAssembler = pyTACS(bdfFile, comm=comm)
 # Set up TACS Assembler
@@ -35,8 +35,10 @@ SPs = FEAAssembler.createTACSProbsFromBDF()
 funcs = {}
 for problem in SPs.values():
     # Add eval functions to problem
-    problem.addFunction('mass', functions.StructuralMass)
-    problem.addFunction('ks_disp', functions.KSDisplacement, ksWeight=100.0, direction=[1.0, 1.0, 1.0])
+    problem.addFunction("mass", functions.StructuralMass)
+    problem.addFunction(
+        "ks_disp", functions.KSDisplacement, ksWeight=100.0, direction=[1.0, 1.0, 1.0]
+    )
     # Solve
     problem.solve()
     # Evaluate functions

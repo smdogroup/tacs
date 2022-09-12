@@ -1,6 +1,6 @@
 #include "TACSBlockCyclicMat.h"
 
-int main( int argc, char *argv[] ){
+int main(int argc, char *argv[]) {
   MPI_Init(&argc, &argv);
   TacsInitialize();
 
@@ -20,9 +20,9 @@ int main( int argc, char *argv[] ){
   int size = mat->getLocalVecSize();
 
   // Allocate the vectors for the size of matrix
-  TacsScalar *x = new TacsScalar[ size ];
-  TacsScalar *y = new TacsScalar[ size ];
-  for ( int i = 0; i < size; i++ ){
+  TacsScalar *x = new TacsScalar[size];
+  TacsScalar *y = new TacsScalar[size];
+  for (int i = 0; i < size; i++) {
     x[i] = 1.0;
   }
 
@@ -30,7 +30,7 @@ int main( int argc, char *argv[] ){
   double tm = MPI_Wtime();
   mat->mult(x, y);
   tm = MPI_Wtime() - tm;
-  memcpy(x, y, size*sizeof(TacsScalar));
+  memcpy(x, y, size * sizeof(TacsScalar));
 
   // Factor the matrix
   double tf = MPI_Wtime();
@@ -44,8 +44,8 @@ int main( int argc, char *argv[] ){
 
   // Compute the error
   TacsScalar error[2] = {0.0, 0.0};
-  for ( int i = 0; i < size; i++ ){
-    error[0] += (y[i] - 1.0)*(y[i] - 1.0);
+  for (int i = 0; i < size; i++) {
+    error[0] += (y[i] - 1.0) * (y[i] - 1.0);
     error[1] += x[i];
   }
 
@@ -55,7 +55,7 @@ int main( int argc, char *argv[] ){
 
   int rank;
   MPI_Comm_rank(comm, &rank);
-  if (rank == 0){
+  if (rank == 0) {
     printf("Multiply time:     %15.10e\n", tm);
     printf("Factor time:       %15.10e\n", tf);
     printf("Apply factor time: %15.10e\n", ta);

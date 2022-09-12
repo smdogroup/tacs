@@ -3,12 +3,12 @@ from tacs import TACS, elements, constitutive, functions
 from static_analysis_base_test import StaticTestCase
 import os
 
-'''
+"""
 Load in a bdf file with tetrahedral elements, apply a load,
 and test KSFailure, StructuralMass, and Compliance functions and sensitivities.
 
 This test is based on the "tetrahedral" script under the examples directory.
-'''
+"""
 
 FUNC_REFS = np.array([1.2622791020763084, 172800.0, 16.257419866831018])
 
@@ -17,6 +17,7 @@ bdf_file = os.path.join(base_dir, "./input_files/5x5x5_cube.bdf")
 
 # KS function weight
 ksweight = 10.0
+
 
 class ProblemTest(StaticTestCase.StaticTest):
 
@@ -49,8 +50,15 @@ class ProblemTest(StaticTestCase.StaticTest):
         ys = 270.0
         cte = 24.0e-6
         kappa = 230.0
-        props = constitutive.MaterialProperties(rho=rho, specific_heat=specific_heat, E=E, nu=nu, ys=ys,
-                                                alpha=cte, kappa=kappa)
+        props = constitutive.MaterialProperties(
+            rho=rho,
+            specific_heat=specific_heat,
+            E=E,
+            nu=nu,
+            ys=ys,
+            alpha=cte,
+            kappa=kappa,
+        )
         # Create the stiffness object
         stiff = constitutive.SolidConstitutive(props, t=1.0, tNum=0)
 
@@ -90,7 +98,9 @@ class ProblemTest(StaticTestCase.StaticTest):
 
         return assembler
 
-    def setup_tacs_vecs(self, assembler, force_vec, dv_pert_vec, ans_pert_vec, xpts_pert_vec):
+    def setup_tacs_vecs(
+        self, assembler, force_vec, dv_pert_vec, ans_pert_vec, xpts_pert_vec
+    ):
         """
         Setup user-defined vectors for analysis and fd/cs sensitivity verification
         """
@@ -122,7 +132,9 @@ class ProblemTest(StaticTestCase.StaticTest):
         """
         Create a list of functions to be tested and their reference values for the problem
         """
-        func_list = [functions.KSFailure(assembler, ksWeight=ksweight),
-                     functions.StructuralMass(assembler),
-                     functions.Compliance(assembler)]
+        func_list = [
+            functions.KSFailure(assembler, ksWeight=ksweight),
+            functions.StructuralMass(assembler),
+            functions.Compliance(assembler),
+        ]
         return func_list, FUNC_REFS

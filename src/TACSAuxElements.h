@@ -23,8 +23,8 @@
   TACSAuxElements implementation
 */
 
-#include "TACSObject.h"
 #include "TACSElement.h"
+#include "TACSObject.h"
 
 /*
   The following class defines a single auxiliary element and
@@ -51,7 +51,7 @@ class TACSAuxElem {
 */
 class TACSAuxElements : public TACSObject {
  public:
-  TACSAuxElements( int _num_elems=100 );
+  TACSAuxElements(int _num_elems = 100);
   ~TACSAuxElements();
 
   // Sort the list of elements
@@ -60,25 +60,25 @@ class TACSAuxElements : public TACSObject {
 
   // Add a single element
   // --------------------
-  void addElement( int num, TACSElement *elem );
+  void addElement(int num, TACSElement *elem);
 
   // Add an entire list of elements
   // ------------------------------
-  void addElements( int nums[], TACSElement **elem, int num_elems );
+  void addElements(int nums[], TACSElement **elem, int num_elems);
 
   // Get the elements and sort them (if they are not already)
   // --------------------------------------------------------
-  int getAuxElements( TACSAuxElem **elems );
+  int getAuxElements(TACSAuxElem **elems);
 
   // Functions to control the design variables
   // -----------------------------------------
-  void getDesignVars( int numDVs, TacsScalar dvs[] );
-  void setDesignVars( int numDVs, const TacsScalar dvs[] );
-  void getDesignVarRange( int numDVs, TacsScalar lb[], TacsScalar ub[] );
+  void getDesignVars(int numDVs, TacsScalar dvs[]);
+  void setDesignVars(int numDVs, const TacsScalar dvs[]);
+  void getDesignVarRange(int numDVs, TacsScalar lb[], TacsScalar ub[]);
 
   // Print the name of the TACSObject
   // --------------------------------
-  const char* TACSObjectName(){ return auxName; }
+  const char *TACSObjectName() { return auxName; }
 
  private:
   // Keep track of whether the element list has been sorted
@@ -98,4 +98,4 @@ class TACSAuxElements : public TACSObject {
   static const char *auxName;
 };
 
-#endif // TACS_AUXILIARY_ELEMENTS_H
+#endif  // TACS_AUXILIARY_ELEMENTS_H

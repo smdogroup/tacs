@@ -28,21 +28,20 @@ class TACSNodeMap : public TACSObject {
   // Contro the type of variable map
   enum NodeMapType { DISTRIBUTED, GLOBAL };
 
-  TACSNodeMap( MPI_Comm _comm, int _N,
-               NodeMapType vtype=DISTRIBUTED );
+  TACSNodeMap(MPI_Comm _comm, int _N, NodeMapType vtype = DISTRIBUTED);
   ~TACSNodeMap();
 
   int getNumNodes();
   MPI_Comm getMPIComm();
-  void getOwnerRange( const int **_ownerRange );
-  int getNodeOwner( int node );
+  void getOwnerRange(const int **_ownerRange);
+  int getNodeOwner(int node);
 
  private:
-  NodeMapType ntype; // The type of variable map
-  MPI_Comm comm; // The MPI communicator
-  int mpiSize, mpiRank; // The size/rank of the processor
-  int *ownerRange; // The ownership range of the variables
-  int N; // Number of nodes on this processor
+  NodeMapType ntype;     // The type of variable map
+  MPI_Comm comm;         // The MPI communicator
+  int mpiSize, mpiRank;  // The size/rank of the processor
+  int *ownerRange;       // The ownership range of the variables
+  int N;                 // Number of nodes on this processor
 };
 
-#endif // TACS_NODE_MAP_H
+#endif  // TACS_NODE_MAP_H

@@ -18,9 +18,9 @@
 
 #include "TACSAuxElements.h"
 
-static int compare_elems( const void *a, const void *b ){
-  const TACSAuxElem *ao = static_cast<const TACSAuxElem*>(a);
-  const TACSAuxElem *bo = static_cast<const TACSAuxElem*>(b);
+static int compare_elems(const void *a, const void *b) {
+  const TACSAuxElem *ao = static_cast<const TACSAuxElem *>(a);
+  const TACSAuxElem *bo = static_cast<const TACSAuxElem *>(b);
 
   return ao->num - bo->num;
 }
@@ -33,9 +33,9 @@ const char *TACSAuxElements::auxName = "TACSAuxElements";
   input:
   num_elems:  an estimate of the number of elements that will be added
 */
-TACSAuxElements::TACSAuxElements( int _num_elems ){
+TACSAuxElements::TACSAuxElements(int _num_elems) {
   max_elements = (_num_elems < 100 ? 100 : _num_elems);
-  aux = new TACSAuxElem[ max_elements ];
+  aux = new TACSAuxElem[max_elements];
   num_elements = 0;
   is_sorted = 0;
 }
@@ -43,11 +43,11 @@ TACSAuxElements::TACSAuxElements( int _num_elems ){
 /*
   Free all the auxiliary element data
 */
-TACSAuxElements::~TACSAuxElements(){
-  for ( int i = 0; i < num_elements; i++ ){
+TACSAuxElements::~TACSAuxElements() {
+  for (int i = 0; i < num_elements; i++) {
     aux[i].elem->decref();
   }
-  delete [] aux;
+  delete[] aux;
 }
 
 /*
@@ -55,8 +55,8 @@ TACSAuxElements::~TACSAuxElements(){
   in ascending order. This is required within the TACSAssembler object
   for efficient residual assembly operations.
 */
-void TACSAuxElements::sort(){
-  if (!is_sorted){
+void TACSAuxElements::sort() {
+  if (!is_sorted) {
     qsort(aux, num_elements, sizeof(TACSAuxElem), compare_elems);
     is_sorted = 1;
   }
@@ -75,14 +75,14 @@ void TACSAuxElements::sort(){
   num:   the TACSAssembler element number
   elem:  the TACSElement pointer
 */
-void TACSAuxElements::addElement( int num, TACSElement *elem ){
+void TACSAuxElements::addElement(int num, TACSElement *elem) {
   // The array is not large enough to handle a new element
   // Create a new array and copy over the values
-  if (num_elements >= max_elements){
+  if (num_elements >= max_elements) {
     max_elements *= 2;
-    TACSAuxElem *tmp = new TACSAuxElem[ max_elements ];
-    memcpy(tmp, aux, num_elements*sizeof(TACSAuxElem));
-    delete [] aux;
+    TACSAuxElem *tmp = new TACSAuxElem[max_elements];
+    memcpy(tmp, aux, num_elements * sizeof(TACSAuxElem));
+    delete[] aux;
     aux = tmp;
   }
 
@@ -108,20 +108,20 @@ void TACSAuxElements::addElement( int num, TACSElement *elem ){
   elem:        an array of axuiliary elements
   num_elems:   the number of elements in the arrays
 */
-void TACSAuxElements::addElements( int nums[], TACSElement **elem,
-                                   int num_elems ){
+void TACSAuxElements::addElements(int nums[], TACSElement **elem,
+                                  int num_elems) {
   // The array is not large enough to handle a new element
   // Create a new array and copy over the values
-  if (num_elements + num_elems >= max_elements){
-    max_elements = 2*max_elements + num_elems;
-    TACSAuxElem *tmp = new TACSAuxElem[ max_elements ];
-    memcpy(tmp, aux, num_elements*sizeof(TACSAuxElem));
-    delete [] aux;
+  if (num_elements + num_elems >= max_elements) {
+    max_elements = 2 * max_elements + num_elems;
+    TACSAuxElem *tmp = new TACSAuxElem[max_elements];
+    memcpy(tmp, aux, num_elements * sizeof(TACSAuxElem));
+    delete[] aux;
     aux = tmp;
   }
 
   // Insert the new element into the list
-  for ( int k = 0; k < num_elems; k++ ){
+  for (int k = 0; k < num_elems; k++) {
     elem[k]->incref();
     aux[num_elements].elem = elem[k];
     aux[num_elements].num = nums[k];
@@ -135,7 +135,7 @@ void TACSAuxElements::addElements( int nums[], TACSElement **elem,
 /*
   Get the elements and sort them (if they are not already)
 */
-int TACSAuxElements::getAuxElements( TACSAuxElem **_elems ){
+int TACSAuxElements::getAuxElements(TACSAuxElem **_elems) {
   *_elems = aux;
   return num_elements;
 }
@@ -143,8 +143,8 @@ int TACSAuxElements::getAuxElements( TACSAuxElem **_elems ){
 /*
   Get the design variables from all auxiliary elements
 */
-void TACSAuxElements::getDesignVars( int numDVs, TacsScalar dvs[] ){
-  for ( int i = 0; i < num_elements; i++ ){
+void TACSAuxElements::getDesignVars(int numDVs, TacsScalar dvs[]) {
+  for (int i = 0; i < num_elements; i++) {
     aux[i].elem->getDesignVars(i, numDVs, dvs);
   }
 }
@@ -152,8 +152,8 @@ void TACSAuxElements::getDesignVars( int numDVs, TacsScalar dvs[] ){
 /*
   Set the design variables from all auxiliary elements
 */
-void TACSAuxElements::setDesignVars( int numDVs, const TacsScalar dvs[] ){
-  for ( int i = 0; i < num_elements; i++ ){
+void TACSAuxElements::setDesignVars(int numDVs, const TacsScalar dvs[]) {
+  for (int i = 0; i < num_elements; i++) {
     aux[i].elem->setDesignVars(i, numDVs, dvs);
   }
 }
@@ -161,9 +161,9 @@ void TACSAuxElements::setDesignVars( int numDVs, const TacsScalar dvs[] ){
 /*
   Get the range of design variable values from all auxiliary elements
 */
-void TACSAuxElements::getDesignVarRange( int numDVs, TacsScalar lb[],
-                                         TacsScalar ub[] ){
-  for ( int i = 0; i < num_elements; i++ ){
+void TACSAuxElements::getDesignVarRange(int numDVs, TacsScalar lb[],
+                                        TacsScalar ub[]) {
+  for (int i = 0; i < num_elements; i++) {
     aux[i].elem->getDesignVarRange(i, numDVs, lb, ub);
   }
 }

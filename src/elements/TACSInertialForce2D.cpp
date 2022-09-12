@@ -13,98 +13,97 @@
 */
 
 #include "TACSInertialForce2D.h"
+
 #include "TACSElementAlgebra.h"
 
-TACSInertialForce2D::TACSInertialForce2D( int _varsPerNode, TACSConstitutive *_con,
-                                          TACSElementBasis *_basis, const TacsScalar _inertiaVec[] ){
+TACSInertialForce2D::TACSInertialForce2D(int _varsPerNode,
+                                         TACSConstitutive *_con,
+                                         TACSElementBasis *_basis,
+                                         const TacsScalar _inertiaVec[]) {
   varsPerNode = _varsPerNode;
-  con = _con;  con->incref();
-  basis = _basis;  basis->incref();
-  memcpy(inertiaVec, _inertiaVec, 2*sizeof(TacsScalar));
+  con = _con;
+  con->incref();
+  basis = _basis;
+  basis->incref();
+  memcpy(inertiaVec, _inertiaVec, 2 * sizeof(TacsScalar));
 }
 
-TACSInertialForce2D::~TACSInertialForce2D(){
+TACSInertialForce2D::~TACSInertialForce2D() {
   con->decref();
   basis->decref();
 }
 
-const char* TACSInertialForce2D::getObjectName(){
+const char *TACSInertialForce2D::getObjectName() {
   return "TACSInertialForce2D";
 }
 
 // Get the layout properties of the element
-int TACSInertialForce2D::getVarsPerNode(){
-  return varsPerNode;
-}
+int TACSInertialForce2D::getVarsPerNode() { return varsPerNode; }
 
-int TACSInertialForce2D::getNumNodes(){
-  return basis->getNumNodes();
-}
+int TACSInertialForce2D::getNumNodes() { return basis->getNumNodes(); }
 
-ElementLayout TACSInertialForce2D::getLayoutType(){
+ElementLayout TACSInertialForce2D::getLayoutType() {
   return basis->getLayoutType();
 }
 
-TACSElementBasis* TACSInertialForce2D::getElementBasis(){
-  return basis;
-}
+TACSElementBasis *TACSInertialForce2D::getElementBasis() { return basis; }
 
-int TACSInertialForce2D::getNumQuadraturePoints(){
+int TACSInertialForce2D::getNumQuadraturePoints() {
   return basis->getNumQuadraturePoints();
 }
 
-double TACSInertialForce2D::getQuadratureWeight( int n ){
+double TACSInertialForce2D::getQuadratureWeight(int n) {
   return basis->getQuadratureWeight(n);
 }
 
-double TACSInertialForce2D::getQuadraturePoint( int n, double pt[] ){
+double TACSInertialForce2D::getQuadraturePoint(int n, double pt[]) {
   return basis->getQuadraturePoint(n, pt);
 }
 
-int TACSInertialForce2D::getNumElementFaces(){
+int TACSInertialForce2D::getNumElementFaces() {
   return basis->getNumElementFaces();
 }
 
-int TACSInertialForce2D::getNumFaceQuadraturePoints( int face ){
+int TACSInertialForce2D::getNumFaceQuadraturePoints(int face) {
   return basis->getNumFaceQuadraturePoints(face);
 }
 
-double TACSInertialForce2D::getFaceQuadraturePoint( int face, int n, double pt[],
-                                                    double tangent[] ){
+double TACSInertialForce2D::getFaceQuadraturePoint(int face, int n, double pt[],
+                                                   double tangent[]) {
   return basis->getFaceQuadraturePoint(face, n, pt, tangent);
 }
 
-int TACSInertialForce2D::getDesignVarNums( int elemIndex, int dvLen, int dvNums[] ){
+int TACSInertialForce2D::getDesignVarNums(int elemIndex, int dvLen,
+                                          int dvNums[]) {
   return con->getDesignVarNums(elemIndex, dvLen, dvNums);
 }
 
-int TACSInertialForce2D::setDesignVars( int elemIndex, int dvLen, const TacsScalar dvs[] ){
+int TACSInertialForce2D::setDesignVars(int elemIndex, int dvLen,
+                                       const TacsScalar dvs[]) {
   return con->setDesignVars(elemIndex, dvLen, dvs);
 }
 
-int TACSInertialForce2D::getDesignVars( int elemIndex, int dvLen, TacsScalar dvs[] ){
+int TACSInertialForce2D::getDesignVars(int elemIndex, int dvLen,
+                                       TacsScalar dvs[]) {
   return con->getDesignVars(elemIndex, dvLen, dvs);
 }
 
-int TACSInertialForce2D::getDesignVarRange( int elemIndex, int dvLen, TacsScalar lb[], TacsScalar ub[] ){
+int TACSInertialForce2D::getDesignVarRange(int elemIndex, int dvLen,
+                                           TacsScalar lb[], TacsScalar ub[]) {
   return con->getDesignVarRange(elemIndex, dvLen, lb, ub);
 }
 
 /*
   Add the residual to the provided vector
 */
-void TACSInertialForce2D::addResidual( int elemIndex,
-                                       double time,
-                                       const TacsScalar *Xpts,
-                                       const TacsScalar *vars,
-                                       const TacsScalar *dvars,
-                                       const TacsScalar *ddvars,
-                                       TacsScalar *res ){
+void TACSInertialForce2D::addResidual(
+    int elemIndex, double time, const TacsScalar *Xpts, const TacsScalar *vars,
+    const TacsScalar *dvars, const TacsScalar *ddvars, TacsScalar *res) {
   // Compute the number of quadrature points
   const int nquad = basis->getNumQuadraturePoints();
 
   // Loop over each quadrature point and add the residual contribution
-  for ( int n = 0; n < nquad; n++ ){
+  for (int n = 0; n < nquad; n++) {
     // Get the quadrature weight
     double pt[3];
     double weight = basis->getQuadraturePoint(n, pt);
@@ -117,16 +116,16 @@ void TACSInertialForce2D::addResidual( int elemIndex,
     TacsScalar volume = weight * detXd;
 
     // Evaluate the weak form of the model
-    TacsScalar DUt[3*TACSElement2D::MAX_VARS_PER_NODE];
-    TacsScalar DUx[2*TACSElement2D::MAX_VARS_PER_NODE];
-    memset(DUt, 0, 3*varsPerNode*sizeof(TacsScalar));
-    memset(DUx, 0, 2*varsPerNode*sizeof(TacsScalar));
+    TacsScalar DUt[3 * TACSElement2D::MAX_VARS_PER_NODE];
+    TacsScalar DUx[2 * TACSElement2D::MAX_VARS_PER_NODE];
+    memset(DUt, 0, 3 * varsPerNode * sizeof(TacsScalar));
+    memset(DUx, 0, 2 * varsPerNode * sizeof(TacsScalar));
 
     // Get the element density
     TacsScalar density = con->evalDensity(elemIndex, pt, Xpts);
 
-    for ( int k = 0; k < 2; k++ ){
-      DUt[3*k] = -density * inertiaVec[k];
+    for (int k = 0; k < 2; k++) {
+      DUt[3 * k] = -density * inertiaVec[k];
     }
 
     // Add the weak form of the residual at this point
@@ -137,22 +136,18 @@ void TACSInertialForce2D::addResidual( int elemIndex,
 /*
   Add the residual and Jacobians to the arrays
 */
-void TACSInertialForce2D::addJacobian( int elemIndex,
-                                       double time,
-                                       TacsScalar alpha,
-                                       TacsScalar beta,
-                                       TacsScalar gamma,
-                                       const TacsScalar *Xpts,
-                                       const TacsScalar *vars,
-                                       const TacsScalar *dvars,
-                                       const TacsScalar *ddvars,
-                                       TacsScalar *res,
-                                       TacsScalar *mat ){
+void TACSInertialForce2D::addJacobian(int elemIndex, double time,
+                                      TacsScalar alpha, TacsScalar beta,
+                                      TacsScalar gamma, const TacsScalar *Xpts,
+                                      const TacsScalar *vars,
+                                      const TacsScalar *dvars,
+                                      const TacsScalar *ddvars, TacsScalar *res,
+                                      TacsScalar *mat) {
   // Compute the number of quadrature points
   const int nquad = basis->getNumQuadraturePoints();
 
   // Loop over each quadrature point and add the residual contribution
-  for ( int n = 0; n < nquad; n++ ){
+  for (int n = 0; n < nquad; n++) {
     // Get the quadrature weight
     double pt[3];
     double weight = basis->getQuadraturePoint(n, pt);
@@ -165,16 +160,16 @@ void TACSInertialForce2D::addJacobian( int elemIndex,
     TacsScalar volume = weight * detXd;
 
     // Evaluate the weak form of the model
-    TacsScalar DUt[3*TACSElement2D::MAX_VARS_PER_NODE];
-    TacsScalar DUx[2*TACSElement2D::MAX_VARS_PER_NODE];
-    memset(DUt, 0, 3*varsPerNode*sizeof(TacsScalar));
-    memset(DUx, 0, 2*varsPerNode*sizeof(TacsScalar));
+    TacsScalar DUt[3 * TACSElement2D::MAX_VARS_PER_NODE];
+    TacsScalar DUx[2 * TACSElement2D::MAX_VARS_PER_NODE];
+    memset(DUt, 0, 3 * varsPerNode * sizeof(TacsScalar));
+    memset(DUx, 0, 2 * varsPerNode * sizeof(TacsScalar));
 
     // Get the element density
     TacsScalar density = con->evalDensity(elemIndex, pt, Xpts);
 
-    for ( int k = 0; k < 2; k++ ){
-      DUt[3*k] = -density * inertiaVec[k];
+    for (int k = 0; k < 2; k++) {
+      DUt[3 * k] = -density * inertiaVec[k];
     }
 
     // Add the weak form of the residual at this point

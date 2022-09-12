@@ -54,29 +54,26 @@
 */
 class TACSKSFailure : public TACSFunction {
  public:
-  enum KSFailureType { DISCRETE, CONTINUOUS,
-                       PNORM_DISCRETE, PNORM_CONTINUOUS };
+  enum KSFailureType { DISCRETE, CONTINUOUS, PNORM_DISCRETE, PNORM_CONTINUOUS };
 
-  TACSKSFailure( TACSAssembler * _assembler, double ksWeight,
-                 double alpha=1.0, double safetyFactor=1.0 );
+  TACSKSFailure(TACSAssembler *_assembler, double ksWeight, double alpha = 1.0,
+                double safetyFactor = 1.0);
   ~TACSKSFailure();
 
   /**
     Get the object/function name
   */
-  const char* getObjectName();
+  const char *getObjectName();
 
   // Set parameters for the KS function
   // ----------------------------------
-  void setKSFailureType( enum KSFailureType type );
+  void setKSFailureType(enum KSFailureType type);
   double getParameter();
-  void setParameter( double _ksWeight );
+  void setParameter(double _ksWeight);
 
   // Set the value of the failure offset for numerical stability
   // -----------------------------------------------------------
-  void setMaxFailOffset( TacsScalar _maxFail ){
-    maxFail = _maxFail;
-  }
+  void setMaxFailOffset(TacsScalar _maxFail) { maxFail = _maxFail; }
 
   /**
     Get the maximum failure value
@@ -86,21 +83,20 @@ class TACSKSFailure : public TACSFunction {
   /**
      Initialize the function for the given type of evaluation
   */
-  void initEvaluation( EvaluationType ftype );
+  void initEvaluation(EvaluationType ftype);
 
   /**
      Perform an element-wise integration over this element.
   */
-  void elementWiseEval( EvaluationType ftype,
-                        int elemIndex, TACSElement *element,
-                        double time, TacsScalar scale,
-                        const TacsScalar Xpts[], const TacsScalar vars[],
-                        const TacsScalar dvars[], const TacsScalar ddvars[] );
+  void elementWiseEval(EvaluationType ftype, int elemIndex,
+                       TACSElement *element, double time, TacsScalar scale,
+                       const TacsScalar Xpts[], const TacsScalar vars[],
+                       const TacsScalar dvars[], const TacsScalar ddvars[]);
 
   /**
      Finalize the function evaluation for the specified eval type.
   */
-  void finalEvaluation( EvaluationType ftype );
+  void finalEvaluation(EvaluationType ftype);
 
   /**
      Get the value of the function
@@ -110,29 +106,28 @@ class TACSKSFailure : public TACSFunction {
   /**
      Evaluate the derivative of the function w.r.t. state variables
   */
-  void getElementSVSens( int elemIndex, TACSElement *element, double time,
-                         TacsScalar alpha, TacsScalar beta, TacsScalar gamma,
-                         const TacsScalar Xpts[], const TacsScalar vars[],
-                         const TacsScalar dvars[], const TacsScalar ddvars[],
-                         TacsScalar *elemSVSens );
+  void getElementSVSens(int elemIndex, TACSElement *element, double time,
+                        TacsScalar alpha, TacsScalar beta, TacsScalar gamma,
+                        const TacsScalar Xpts[], const TacsScalar vars[],
+                        const TacsScalar dvars[], const TacsScalar ddvars[],
+                        TacsScalar *elemSVSens);
 
   /**
      Add the derivative of the function w.r.t. the design variables
   */
-  void addElementDVSens( int elemIndex, TACSElement *element,
-                         double time, TacsScalar scale,
-                         const TacsScalar Xpts[], const TacsScalar vars[],
-                         const TacsScalar dvars[], const TacsScalar ddvars[],
-                         int dvLen, TacsScalar dfdx[] );
+  void addElementDVSens(int elemIndex, TACSElement *element, double time,
+                        TacsScalar scale, const TacsScalar Xpts[],
+                        const TacsScalar vars[], const TacsScalar dvars[],
+                        const TacsScalar ddvars[], int dvLen,
+                        TacsScalar dfdx[]);
 
   /**
      Evaluate the derivative of the function w.r.t. the node locations
   */
-  void getElementXptSens( int elemIndex, TACSElement *element,
-                          double time, TacsScalar scale,
-                          const TacsScalar Xpts[], const TacsScalar vars[],
-                          const TacsScalar dvars[], const TacsScalar ddvars[],
-                          TacsScalar fXptSens[] );
+  void getElementXptSens(int elemIndex, TACSElement *element, double time,
+                         TacsScalar scale, const TacsScalar Xpts[],
+                         const TacsScalar vars[], const TacsScalar dvars[],
+                         const TacsScalar ddvars[], TacsScalar fXptSens[]);
 
  private:
   // The type of aggregation to use
@@ -158,4 +153,4 @@ class TACSKSFailure : public TACSFunction {
   TacsScalar invPnorm;
 };
 
-#endif // TACS_KS_FAILURE_H
+#endif  // TACS_KS_FAILURE_H

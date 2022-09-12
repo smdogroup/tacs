@@ -22,22 +22,22 @@
 #include "TACSGeneralMassConstitutive.h"
 
 /**
-  This is the base class for the traditional point mass constitutive objects with no translation-rotation coupling.
-  Assumes 6 dofs.
+  This is the base class for the traditional point mass constitutive objects
+  with no translation-rotation coupling. Assumes 6 dofs.
 
 */
 class TACSPointMassConstitutive : public TACSGeneralMassConstitutive {
  public:
-
-  TACSPointMassConstitutive( TacsScalar m, TacsScalar I11=0.0, TacsScalar I22=0.0, TacsScalar I33=0.0,
-                             TacsScalar I12=0.0, TacsScalar I13=0.0, TacsScalar I23=0.0 );
+  TACSPointMassConstitutive(TacsScalar m, TacsScalar I11 = 0.0,
+                            TacsScalar I22 = 0.0, TacsScalar I33 = 0.0,
+                            TacsScalar I12 = 0.0, TacsScalar I13 = 0.0,
+                            TacsScalar I23 = 0.0);
 
   // Extra info about the constitutive class
   const char *getObjectName();
 
  private:
-
   static const char *name;
 };
 
-#endif // TACS_POINT_MASS_CONSTITUTIVE_H
+#endif  // TACS_POINT_MASS_CONSTITUTIVE_H

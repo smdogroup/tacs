@@ -15,9 +15,9 @@
 #ifndef TACS_ELEMENT_MODEL_H
 #define TACS_ELEMENT_MODEL_H
 
-#include "TACSObject.h"
-#include "TACSElementTypes.h"
 #include "TACSConstitutive.h"
+#include "TACSElementTypes.h"
+#include "TACSObject.h"
 
 /**
   TACSElementModel defines a physical model class independent of a
@@ -42,9 +42,7 @@ class TACSElementModel : public TACSObject {
   /**
     Return the number of design variables per "design node"
   */
-  virtual int getDesignVarsPerNode(){
-    return 1;
-  }
+  virtual int getDesignVarsPerNode() { return 1; }
 
   /**
     Retrieve the global design variable numbers associated with this element
@@ -56,7 +54,7 @@ class TACSElementModel : public TACSObject {
     @param dvNums An array of the design variable numbers for this element
     @return The number of design variable numbers defined by the model
   */
-  virtual int getDesignVarNums( int elemIndex, int dvLen, int dvNums[] ){
+  virtual int getDesignVarNums(int elemIndex, int dvLen, int dvNums[]) {
     return 0;
   }
 
@@ -68,8 +66,7 @@ class TACSElementModel : public TACSObject {
     @param dvs The design variable values
     @return The number of design variable numbers defined by the model
   */
-  virtual int setDesignVars( int elemIndex,
-                             int dvLen, const TacsScalar dvs[] ){
+  virtual int setDesignVars(int elemIndex, int dvLen, const TacsScalar dvs[]) {
     return 0;
   }
 
@@ -81,8 +78,7 @@ class TACSElementModel : public TACSObject {
     @param dvs The design variable values
     @return The number of design variable numbers defined by the model
   */
-  virtual int getDesignVars( int elemIndex,
-                             int dvLen, TacsScalar dvs[] ){
+  virtual int getDesignVars(int elemIndex, int dvLen, TacsScalar dvs[]) {
     return 0;
   }
 
@@ -95,9 +91,9 @@ class TACSElementModel : public TACSObject {
     @param lowerBound The design variable upper bounds
     @return The number of design variable numbers defined by the model
   */
-  virtual int getDesignVarRange( int elemIndex, int dvLen,
-                                 TacsScalar lowerBound[],
-                                 TacsScalar upperBound[] ){
+  virtual int getDesignVarRange(int elemIndex, int dvLen,
+                                TacsScalar lowerBound[],
+                                TacsScalar upperBound[]) {
     return 0;
   }
 
@@ -106,9 +102,7 @@ class TACSElementModel : public TACSObject {
 
     @return The TACSConstitutive object used by this model
   */
-  virtual TACSConstitutive* getConstitutive(){
-    return NULL;
-  }
+  virtual TACSConstitutive *getConstitutive() { return NULL; }
 
   /**
     Evaluate the point-wise integrand for the weak form of the governing
@@ -159,15 +153,11 @@ class TACSElementModel : public TACSObject {
     @param DUt Coefficients of the time-dependent weak form
     @param DUx Coefficients of the spatial-derivative weak form
   */
-  virtual void evalWeakIntegrand( int elemIndex,
-                                  const double time,
-                                  int n, const double pt[],
-                                  const TacsScalar X[],
-                                  const TacsScalar Xd[],
-                                  const TacsScalar Ut[],
-                                  const TacsScalar Ux[],
-                                  TacsScalar DUt[],
-                                  TacsScalar DUx[] ) = 0;
+  virtual void evalWeakIntegrand(int elemIndex, const double time, int n,
+                                 const double pt[], const TacsScalar X[],
+                                 const TacsScalar Xd[], const TacsScalar Ut[],
+                                 const TacsScalar Ux[], TacsScalar DUt[],
+                                 TacsScalar DUx[]) = 0;
 
   /**
      Add the product of the adjoint with the derivative w.r.t. design
@@ -187,18 +177,13 @@ class TACSElementModel : public TACSObject {
      @param dvLen The length of the design variable vector
      @param fdvSens The derivative vector
   */
-  virtual void addWeakAdjProduct( int elemIndex,
-                                  const double time,
-                                  TacsScalar scale,
-                                  int n, const double pt[],
-                                  const TacsScalar X[],
-                                  const TacsScalar Xd[],
-                                  const TacsScalar Ut[],
-                                  const TacsScalar Ux[],
-                                  const TacsScalar Psi[],
-                                  const TacsScalar Psix[],
-                                  int dvLen,
-                                  TacsScalar *fdvSens ){}
+  virtual void addWeakAdjProduct(int elemIndex, const double time,
+                                 TacsScalar scale, int n, const double pt[],
+                                 const TacsScalar X[], const TacsScalar Xd[],
+                                 const TacsScalar Ut[], const TacsScalar Ux[],
+                                 const TacsScalar Psi[],
+                                 const TacsScalar Psix[], int dvLen,
+                                 TacsScalar *fdvSens) {}
 
   /**
     Compute the spatial derivatives of the point-wise product of the adjoint
@@ -219,31 +204,23 @@ class TACSElementModel : public TACSObject {
     @param dfdUx The derivative of the product with respect to Ux
     @param dfdPsix The derivative of the product with respect to Psix
   */
-  virtual void evalWeakAdjXptSensProduct( int elemIndex,
-                                          const double time,
-                                          int n, const double pt[],
-                                          const TacsScalar X[],
-                                          const TacsScalar Xd[],
-                                          const TacsScalar Ut[],
-                                          const TacsScalar Ux[],
-                                          const TacsScalar Psi[],
-                                          const TacsScalar Psix[],
-                                          TacsScalar *product,
-                                          TacsScalar dfdX[],
-                                          TacsScalar dfdXd[],
-                                          TacsScalar dfdUx[],
-                                          TacsScalar dfdPsix[] ){
+  virtual void evalWeakAdjXptSensProduct(
+      int elemIndex, const double time, int n, const double pt[],
+      const TacsScalar X[], const TacsScalar Xd[], const TacsScalar Ut[],
+      const TacsScalar Ux[], const TacsScalar Psi[], const TacsScalar Psix[],
+      TacsScalar *product, TacsScalar dfdX[], TacsScalar dfdXd[],
+      TacsScalar dfdUx[], TacsScalar dfdPsix[]) {
     *product = 0.0;
     dfdX[0] = dfdX[1] = dfdX[2] = 0.0;
     const int vars_per_node = getVarsPerNode();
     const int num_params = getNumParameters();
 
-    for ( int i = 0; i < num_params*vars_per_node; i++ ){
+    for (int i = 0; i < num_params * vars_per_node; i++) {
       dfdUx[i] = 0.0;
       dfdPsix[i] = 0.0;
     }
 
-    for ( int i = 0; i < 3*num_params; i++ ){
+    for (int i = 0; i < 3 * num_params; i++) {
       dfdXd[i] = 0.0;
     }
   }
@@ -254,12 +231,11 @@ class TACSElementModel : public TACSObject {
     @param matType The type of matrix to use
     @param elemIndex The element index
     @param Jac_nnz Number of non-zeros
-    @param Jac_pairs Indicex pairs of the non-zero entries in the Jacobian matrix
+    @param Jac_pairs Indicex pairs of the non-zero entries in the Jacobian
+    matrix
   */
-  virtual void getWeakMatrixNonzeros( ElementMatrixType matType,
-                                      int elemIndex,
-                                      int *Jac_nnz,
-                                      const int *Jac_pairs[] ) = 0;
+  virtual void getWeakMatrixNonzeros(ElementMatrixType matType, int elemIndex,
+                                     int *Jac_nnz, const int *Jac_pairs[]) = 0;
 
   /**
     Evaluate the Jacobian of the point-wise integrand for the weak form of
@@ -306,17 +282,12 @@ class TACSElementModel : public TACSObject {
     @param DUx Coefficients of the spatial-derivative weak form
     @param Jac Jacobian entries of the weak form
   */
-  virtual void evalWeakMatrix( ElementMatrixType matType,
-                               int elemIndex,
-                               const double time,
-                               int n, const double pt[],
-                               const TacsScalar X[],
-                               const TacsScalar Xd[],
-                               const TacsScalar Ut[],
-                               const TacsScalar Ux[],
-                               TacsScalar DUt[],
-                               TacsScalar DUx[],
-                               TacsScalar Jac[] ) = 0;
+  virtual void evalWeakMatrix(ElementMatrixType matType, int elemIndex,
+                              const double time, int n, const double pt[],
+                              const TacsScalar X[], const TacsScalar Xd[],
+                              const TacsScalar Ut[], const TacsScalar Ux[],
+                              TacsScalar DUt[], TacsScalar DUx[],
+                              TacsScalar Jac[]) = 0;
 
   /**
     Add the derivative of the matrix inner product with respect to the
@@ -338,21 +309,14 @@ class TACSElementModel : public TACSObject {
     @param dvLen The length of the design sensitivity array
     @param dfdx The derivative array being computed
   */
-  virtual void addWeakMatDVSens( ElementMatrixType matType,
-                                 int elemIndex,
-                                 const double time,
-                                 TacsScalar scale,
-                                 int n, const double pt[],
-                                 const TacsScalar X[],
-                                 const TacsScalar Xd[],
-                                 const TacsScalar Ut[],
-                                 const TacsScalar Ux[],
-                                 const TacsScalar Psi[],
-                                 const TacsScalar Psix[],
-                                 const TacsScalar Phi[],
-                                 const TacsScalar Phix[],
-                                 int dvLen,
-                                 TacsScalar dfdx[] ){}
+  virtual void addWeakMatDVSens(ElementMatrixType matType, int elemIndex,
+                                const double time, TacsScalar scale, int n,
+                                const double pt[], const TacsScalar X[],
+                                const TacsScalar Xd[], const TacsScalar Ut[],
+                                const TacsScalar Ux[], const TacsScalar Psi[],
+                                const TacsScalar Psix[], const TacsScalar Phi[],
+                                const TacsScalar Phix[], int dvLen,
+                                TacsScalar dfdx[]) {}
 
   /**
     Evaluate the derivative of the matrix inner product with respect to the
@@ -374,28 +338,19 @@ class TACSElementModel : public TACSObject {
     @param dfdU Derivative of the inner product w.r.t. U
     @param dfdUx Derivative of the inner product w.r.t. Ux
   */
-  virtual void evalWeakMatSVSens( ElementMatrixType matType,
-                                  int elemIndex,
-                                  const double time,
-                                  TacsScalar scale,
-                                  int n, const double pt[],
-                                  const TacsScalar X[],
-                                  const TacsScalar Xd[],
-                                  const TacsScalar Ut[],
-                                  const TacsScalar Ux[],
-                                  const TacsScalar Psi[],
-                                  const TacsScalar Psix[],
-                                  const TacsScalar Phi[],
-                                  const TacsScalar Phix[],
-                                  TacsScalar dfdU[],
-                                  TacsScalar dfdUx[] ){
+  virtual void evalWeakMatSVSens(
+      ElementMatrixType matType, int elemIndex, const double time,
+      TacsScalar scale, int n, const double pt[], const TacsScalar X[],
+      const TacsScalar Xd[], const TacsScalar Ut[], const TacsScalar Ux[],
+      const TacsScalar Psi[], const TacsScalar Psix[], const TacsScalar Phi[],
+      const TacsScalar Phix[], TacsScalar dfdU[], TacsScalar dfdUx[]) {
     const int vars_per_node = getVarsPerNode();
     const int num_params = getNumParameters();
 
-    for ( int i = 0; i < 3*vars_per_node; i++ ){
+    for (int i = 0; i < 3 * vars_per_node; i++) {
       dfdU[i] = 0.0;
     }
-    for ( int i = 0; i < num_params*vars_per_node; i++ ){
+    for (int i = 0; i < num_params * vars_per_node; i++) {
       dfdUx[i] = 0.0;
     }
   }
@@ -421,15 +376,11 @@ class TACSElementModel : public TACSObject {
      @param quantity The quantity of interest
      @return Length of the quantity computed (a scalar or physical vector)
   */
-  virtual int evalPointQuantity( int elemIndex,
-                                 const int quantityType,
-                                 const double time,
-                                 int n, const double pt[],
-                                 const TacsScalar X[],
-                                 const TacsScalar Xd[],
-                                 const TacsScalar Ut[],
-                                 const TacsScalar Ux[],
-                                 TacsScalar *quantity ){
+  virtual int evalPointQuantity(int elemIndex, const int quantityType,
+                                const double time, int n, const double pt[],
+                                const TacsScalar X[], const TacsScalar Xd[],
+                                const TacsScalar Ut[], const TacsScalar Ux[],
+                                TacsScalar *quantity) {
     return 0;
   }
 
@@ -450,18 +401,11 @@ class TACSElementModel : public TACSObject {
      @param dvLen The length of the design sensitivity array
      @param dfdx The derivative array being computed
   */
-  virtual void addPointQuantityDVSens( int elemIndex,
-                                       const int quantityType,
-                                       const double time,
-                                       TacsScalar scale,
-                                       int n, const double pt[],
-                                       const TacsScalar X[],
-                                       const TacsScalar Xd[],
-                                       const TacsScalar Ut[],
-                                       const TacsScalar Ux[],
-                                       const TacsScalar dfdq[],
-                                       int dvLen,
-                                       TacsScalar dfdx[] ){}
+  virtual void addPointQuantityDVSens(
+      int elemIndex, const int quantityType, const double time,
+      TacsScalar scale, int n, const double pt[], const TacsScalar X[],
+      const TacsScalar Xd[], const TacsScalar Ut[], const TacsScalar Ux[],
+      const TacsScalar dfdq[], int dvLen, TacsScalar dfdx[]) {}
 
   /**
      Evaluate the derivatives of the point-wise quantity of interest
@@ -481,19 +425,12 @@ class TACSElementModel : public TACSObject {
      @param dfdX The derivative of the function w.r.t. Ut
      @param dfdX The derivative of the function w.r.t. Ux
   */
-  virtual void evalPointQuantitySens( int elemIndex,
-                                      const int quantityType,
-                                      const double time,
-                                      int n, const double pt[],
-                                      const TacsScalar X[],
-                                      const TacsScalar Xd[],
-                                      const TacsScalar Ut[],
-                                      const TacsScalar Ux[],
-                                      const TacsScalar dfdq[],
-                                      TacsScalar dfdX[],
-                                      TacsScalar dfdXd[],
-                                      TacsScalar dfdUt[],
-                                      TacsScalar dfdUx[] ){}
+  virtual void evalPointQuantitySens(
+      int elemIndex, const int quantityType, const double time, int n,
+      const double pt[], const TacsScalar X[], const TacsScalar Xd[],
+      const TacsScalar Ut[], const TacsScalar Ux[], const TacsScalar dfdq[],
+      TacsScalar dfdX[], TacsScalar dfdXd[], TacsScalar dfdUt[],
+      TacsScalar dfdUx[]) {}
 
   /**
     Generate a line of output for a single visualization point
@@ -508,16 +445,11 @@ class TACSElementModel : public TACSObject {
     @param Uddot The second time derivatives of the state variables
     @param Ux The spatial derivatives of the state variables
   */
-  virtual void getOutputData( int elemIndex,
-                              const double time,
-                              ElementType etype,
-                              int write_flag,
-                              const double pt[],
-                              const TacsScalar X[],
-                              const TacsScalar Ut[],
-                              const TacsScalar Ux[],
-                              int ld_data,
-                              TacsScalar *data ){}
+  virtual void getOutputData(int elemIndex, const double time,
+                             ElementType etype, int write_flag,
+                             const double pt[], const TacsScalar X[],
+                             const TacsScalar Ut[], const TacsScalar Ux[],
+                             int ld_data, TacsScalar *data) {}
 };
 
-#endif // TACS_ELEMENT_MODEL_H
+#endif  // TACS_ELEMENT_MODEL_H
