@@ -22,8 +22,6 @@ elif [[ $scalar == "real" ]]; then
 fi
 
 cp Makefile.in.info Makefile.in;
-echo $MAKE_TACS
-echo $PIP_TACS
 make ${OPTIONAL} TACS_DIR=${TACS_DIR} \
      LAPACK_LIBS="${LAPACK_LIBS}" \
      METIS_INCLUDE=-I${PREFIX}/include/ METIS_LIB="-L${PREFIX}/lib/ -lmetis" \
