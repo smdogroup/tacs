@@ -9,47 +9,46 @@
 
   The following code uses templates to allow for arbitrary order elements.
 */
-#include "TACS2DCoupledThermoElement.h"
 #include "FElibrary.h"
+#include "TACS2DCoupledThermoElement.h"
 #include "TACSElement.h"
 
 template <int order>
-class PlaneStressCoupledThermoQuad : public TACS2DCoupledThermoElement<order*order>{
+class PlaneStressCoupledThermoQuad
+    : public TACS2DCoupledThermoElement<order * order> {
  public:
-  PlaneStressCoupledThermoQuad( CoupledThermoPlaneStressStiffness *_stiff,
-                                ElementBehaviorType type=LINEAR,
-                                int _componentNum=0 );
+  PlaneStressCoupledThermoQuad(CoupledThermoPlaneStressStiffness *_stiff,
+                               ElementBehaviorType type = LINEAR,
+                               int _componentNum = 0);
   ~PlaneStressCoupledThermoQuad();
 
   // Return the name of this element
   // -------------------------------
-  const char *elementName(){ return elemName; }
+  const char *elementName() { return elemName; }
 
   // Retrieve the shape functions
   // ----------------------------
-  void getShapeFunctions( const double pt[], double N[] );
-  void getShapeFunctions( const double pt[], double N[],
-                          double Na[], double Nb[] );
+  void getShapeFunctions(const double pt[], double N[]);
+  void getShapeFunctions(const double pt[], double N[], double Na[],
+                         double Nb[]);
 
   // Retrieve the Gauss points/weights
   // ---------------------------------
   int getNumGaussPts();
-  double getGaussWtsPts( const int num, double pt[] );
+  double getGaussWtsPts(const int num, double pt[]);
 
   // Functions for post-processing
   // -----------------------------
-  void addOutputCount( int *nelems, int *nnodes, int *ncsr );
-  void getOutputData( unsigned int out_type,
-                      double *data, int ld_data,
-                      const TacsScalar Xpts[],
-                      const TacsScalar vars[] );
-  void getOutputConnectivity( int *con, int node );
+  void addOutputCount(int *nelems, int *nnodes, int *ncsr);
+  void getOutputData(unsigned int out_type, double *data, int ld_data,
+                     const TacsScalar Xpts[], const TacsScalar vars[]);
+  void getOutputConnectivity(int *con, int node);
 
  private:
   // The knot locations for the basis functions
   double knots[order];
 
-  static const int NUM_NODES = order*order;
+  static const int NUM_NODES = order * order;
 
   // The Gauss quadrature scheme
   int numGauss;
@@ -60,69 +59,69 @@ class PlaneStressCoupledThermoQuad : public TACS2DCoupledThermoElement<order*ord
 };
 
 template <int order>
-PlaneStressCoupledThermoQuad<order>::PlaneStressCoupledThermoQuad( CoupledThermoPlaneStressStiffness *_stiff,
-                                                     ElementBehaviorType type,
-                                                     int _componentNum ):
-TACS2DCoupledThermoElement<order*order>(_stiff, type, _componentNum){
+PlaneStressCoupledThermoQuad<order>::PlaneStressCoupledThermoQuad(
+    CoupledThermoPlaneStressStiffness *_stiff, ElementBehaviorType type,
+    int _componentNum)
+    : TACS2DCoupledThermoElement<order * order>(_stiff, type, _componentNum) {
   numGauss = FElibrary::getGaussPtsWts(order, &gaussPts, &gaussWts);
   // Set the knot locations
-  if (order == 2){
+  if (order == 2) {
     knots[0] = -1.0;
     knots[1] = 1.0;
-  }
-  else if (order == 3){
+  } else if (order == 3) {
     knots[0] = -1.0;
     knots[1] = 0.0;
     knots[2] = 1.0;
-  }
-  else {
+  } else {
     // Set a co-sine spacing for the knot locations
-    for ( int k = 0; k < order; k++ ){
-      knots[k] = -cos(M_PI*k/(order-1));
+    for (int k = 0; k < order; k++) {
+      knots[k] = -cos(M_PI * k / (order - 1));
     }
   }
 }
 
 template <int order>
-PlaneStressCoupledThermoQuad<order>::~PlaneStressCoupledThermoQuad(){}
+PlaneStressCoupledThermoQuad<order>::~PlaneStressCoupledThermoQuad() {}
 
 template <int order>
-const char *PlaneStressCoupledThermoQuad<order>::elemName = "PlaneStressCoupledThermoQuad";
+const char *PlaneStressCoupledThermoQuad<order>::elemName =
+    "PlaneStressCoupledThermoQuad";
 /*
   Get the number of Gauss points in the Gauss quadrature scheme
 */
 template <int order>
-int PlaneStressCoupledThermoQuad<order>::getNumGaussPts(){
-  return numGauss*numGauss;
+int PlaneStressCoupledThermoQuad<order>::getNumGaussPts() {
+  return numGauss * numGauss;
 }
 
 /*
   Get the Gauss points
 */
 template <int order>
-double PlaneStressCoupledThermoQuad<order>::getGaussWtsPts( int npoint, double pt[] ){
+double PlaneStressCoupledThermoQuad<order>::getGaussWtsPts(int npoint,
+                                                           double pt[]) {
   // Compute the n/m/p indices of the Gauss quadrature scheme
-  int m = (int)((npoint)/(numGauss));
-  int n = npoint - numGauss*m;
+  int m = (int)((npoint) / (numGauss));
+  int n = npoint - numGauss * m;
 
   pt[0] = gaussPts[n];
   pt[1] = gaussPts[m];
 
-  return gaussWts[n]*gaussWts[m];
+  return gaussWts[n] * gaussWts[m];
 }
 
 /*
   Evaluate the shape functions and their derivatives
 */
 template <int order>
-void PlaneStressCoupledThermoQuad<order>::getShapeFunctions( const double pt[],
-                                                             double N[] ){
+void PlaneStressCoupledThermoQuad<order>::getShapeFunctions(const double pt[],
+                                                            double N[]) {
   double na[order], nb[order];
   FElibrary::lagrangeSFKnots(na, pt[0], knots, order);
   FElibrary::lagrangeSFKnots(nb, pt[1], knots, order);
-  for ( int j = 0; j < order; j++ ){
-    for ( int i = 0; i < order; i++ ){
-      N[i + j*order] = na[i]*nb[j];
+  for (int j = 0; j < order; j++) {
+    for (int i = 0; i < order; i++) {
+      N[i + j * order] = na[i] * nb[j];
     }
   }
 }
@@ -132,18 +131,19 @@ void PlaneStressCoupledThermoQuad<order>::getShapeFunctions( const double pt[],
   parametric element location
 */
 template <int order>
-void PlaneStressCoupledThermoQuad<order>::getShapeFunctions( const double pt[],
-                                                             double N[],
-                                                             double Na[], double Nb[] ){
+void PlaneStressCoupledThermoQuad<order>::getShapeFunctions(const double pt[],
+                                                            double N[],
+                                                            double Na[],
+                                                            double Nb[]) {
   double na[order], nb[order];
   double dna[order], dnb[order];
   FElibrary::lagrangeSFKnots(na, dna, pt[0], knots, order);
   FElibrary::lagrangeSFKnots(nb, dnb, pt[1], knots, order);
-  for ( int j = 0; j < order; j++ ){
-    for ( int i = 0; i < order; i++ ){
-      N[i + j*order] = na[i]*nb[j];
-      Na[i + j*order] = dna[i]*nb[j];
-      Nb[i + j*order] = na[i]*dnb[j];
+  for (int j = 0; j < order; j++) {
+    for (int i = 0; i < order; i++) {
+      N[i + j * order] = na[i] * nb[j];
+      Na[i + j * order] = dna[i] * nb[j];
+      Nb[i + j * order] = na[i] * dnb[j];
     }
   }
 }
@@ -153,11 +153,12 @@ void PlaneStressCoupledThermoQuad<order>::getShapeFunctions( const double pt[],
   this element.
 */
 template <int order>
-void PlaneStressCoupledThermoQuad<order>::addOutputCount( int *nelems,
-                                                          int *nnodes, int *ncsr ){
-  *nelems += (order-1)*(order-1);
-  *nnodes += order*order;
-  *ncsr += 4*(order-1)*(order-1);
+void PlaneStressCoupledThermoQuad<order>::addOutputCount(int *nelems,
+                                                         int *nnodes,
+                                                         int *ncsr) {
+  *nelems += (order - 1) * (order - 1);
+  *nnodes += order * order;
+  *ncsr += 4 * (order - 1) * (order - 1);
 }
 
 /*
@@ -182,14 +183,12 @@ void PlaneStressCoupledThermoQuad<order>::addOutputCount( int *nelems,
   Xpts:     the element nodal locations
 */
 template <int order>
-void PlaneStressCoupledThermoQuad<order>::getOutputData( unsigned int out_type,
-                                                         double *data, int ld_data,
-                                                         const TacsScalar Xpts[],
-                                                         const TacsScalar vars[] ){
-
-  for ( int m = 0; m < order; m++ ){
-    for ( int n = 0; n < order; n++ ){
-      int p = n + order*m;
+void PlaneStressCoupledThermoQuad<order>::getOutputData(
+    unsigned int out_type, double *data, int ld_data, const TacsScalar Xpts[],
+    const TacsScalar vars[]) {
+  for (int m = 0; m < order; m++) {
+    for (int n = 0; n < order; n++) {
+      int p = n + order * m;
       int index = 0;
       // Set the parametric point to extract the data
       double pt[2];
@@ -200,23 +199,23 @@ void PlaneStressCoupledThermoQuad<order>::getOutputData( unsigned int out_type,
       double Na[NUM_NODES], Nb[NUM_NODES];
       getShapeFunctions(pt, N, Na, Nb);
 
-      if (out_type & TACSElement::OUTPUT_NODES){
-        for ( int k = 0; k < 3; k++ ){
+      if (out_type & TACSElement::OUTPUT_NODES) {
+        for (int k = 0; k < 3; k++) {
           TacsScalar X = 0.0;
-          for (int i = 0; i < NUM_NODES; i++){
-            X += N[i]*Xpts[3*p+k];
+          for (int i = 0; i < NUM_NODES; i++) {
+            X += N[i] * Xpts[3 * p + k];
           }
-          data[index+k] = TacsRealPart(X);
+          data[index + k] = TacsRealPart(X);
         }
         index += 3;
       }
-      if (out_type & TACSElement::OUTPUT_DISPLACEMENTS){
-        for ( int k = 0; k < 3; k++ ){
+      if (out_type & TACSElement::OUTPUT_DISPLACEMENTS) {
+        for (int k = 0; k < 3; k++) {
           TacsScalar u = 0.0;
-          for (int i = 0; i < NUM_NODES; i++){
-            u += N[i]*vars[3*p+k];
+          for (int i = 0; i < NUM_NODES; i++) {
+            u += N[i] * vars[3 * p + k];
           }
-          data[index+k] = TacsRealPart(u);
+          data[index + k] = TacsRealPart(u);
         }
         index += 3;
       }
@@ -233,42 +232,42 @@ void PlaneStressCoupledThermoQuad<order>::getOutputData( unsigned int out_type,
       // Compute the strain
       TacsScalar strain[3];
       this->evalStrain(strain, J, Na, Nb, vars);
-      if (out_type & TACSElement::OUTPUT_STRAINS){
-        for ( int k = 0; k < 3; k++ ){
-          data[index+k] = TacsRealPart(strain[k]);
+      if (out_type & TACSElement::OUTPUT_STRAINS) {
+        for (int k = 0; k < 3; k++) {
+          data[index + k] = TacsRealPart(strain[k]);
         }
         index += 3;
       }
-      if (out_type & TACSElement::OUTPUT_STRESSES){
+      if (out_type & TACSElement::OUTPUT_STRESSES) {
         // Calculate the stress D*B*u at the current point
         TacsScalar stress[3];
         this->stiff->calculateStress(pt, strain, stress);
-        for ( int k = 0; k < 3; k++ ){
-          data[index+k] = TacsRealPart(stress[k]);
+        for (int k = 0; k < 3; k++) {
+          data[index + k] = TacsRealPart(stress[k]);
         }
         index += 3;
       }
-      if (out_type & TACSElement::OUTPUT_EXTRAS){
+      if (out_type & TACSElement::OUTPUT_EXTRAS) {
         // Get the temperature
         TacsScalar T[] = {0.0};
-        ThermoQuad *elem = dynamic_cast<ThermoQuad*>(this);
-        if (elem){
+        ThermoQuad *elem = dynamic_cast<ThermoQuad *>(this);
+        if (elem) {
           elem->getTemperature(T, N, vars);
         }
         // Compute the failure value
         TacsScalar lambda = 0.0;
         CoupledThermoPlaneStressStiffness *con =
-          dynamic_cast<CoupledThermoPlaneStressStiffness*>(this->stiff);
-        if (con){
+            dynamic_cast<CoupledThermoPlaneStressStiffness *>(this->stiff);
+        if (con) {
           con->failure(pt, T, strain, &lambda);
         }
         data[index] = TacsRealPart(lambda);
 
         this->stiff->buckling(strain, &lambda);
-        data[index+1] = TacsRealPart(lambda);
+        data[index + 1] = TacsRealPart(lambda);
 
-        data[index+2] = TacsRealPart(this->stiff->getDVOutputValue(0, pt));
-        data[index+3] = TacsRealPart(this->stiff->getDVOutputValue(1, pt));
+        data[index + 2] = TacsRealPart(this->stiff->getDVOutputValue(0, pt));
+        data[index + 3] = TacsRealPart(this->stiff->getDVOutputValue(1, pt));
 
         index += this->NUM_EXTRAS;
       }
@@ -292,17 +291,18 @@ void PlaneStressCoupledThermoQuad<order>::getOutputData( unsigned int out_type,
   less global
 */
 template <int order>
-void PlaneStressCoupledThermoQuad<order>::getOutputConnectivity( int *con, int node ){
+void PlaneStressCoupledThermoQuad<order>::getOutputConnectivity(int *con,
+                                                                int node) {
   int p = 0;
-  for ( int m = 0; m < order-1; m++ ){
-    for ( int n = 0; n < order-1; n++ ){
-      con[4*p]   = node + n   + m*order;
-      con[4*p+1] = node + n+1 + m*order;
-      con[4*p+2] = node + n+1 + (m+1)*order;
-      con[4*p+3] = node + n   + (m+1)*order;
+  for (int m = 0; m < order - 1; m++) {
+    for (int n = 0; n < order - 1; n++) {
+      con[4 * p] = node + n + m * order;
+      con[4 * p + 1] = node + n + 1 + m * order;
+      con[4 * p + 2] = node + n + 1 + (m + 1) * order;
+      con[4 * p + 3] = node + n + (m + 1) * order;
       p++;
     }
   }
 }
 
-#endif // TACS_PLANE_STRESS_THERMO_QUAD_H
+#endif  // TACS_PLANE_STRESS_THERMO_QUAD_H

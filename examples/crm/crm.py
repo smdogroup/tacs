@@ -2,7 +2,7 @@
 # this example goes through the process of setting up the using the
 # tacs assembler directly as opposed to using the pyTACS user interface (see analysis.py):
 # loading a mesh, creating elements, evaluating functions, solution, and output
-from __future__ import print_function   
+from __future__ import print_function
 
 # Import necessary libraries
 import numpy as np
@@ -11,17 +11,17 @@ from mpi4py import MPI
 from tacs import TACS, elements, constitutive, functions
 
 # Load structural mesh from BDF file
-bdfFile = os.path.join(os.path.dirname(__file__), 'CRM_box_2nd.bdf')
+bdfFile = os.path.join(os.path.dirname(__file__), "CRM_box_2nd.bdf")
 tacs_comm = MPI.COMM_WORLD
 struct_mesh = TACS.MeshLoader(tacs_comm)
 struct_mesh.scanBDFFile(bdfFile)
 
 # Set constitutive properties
-rho = 2500.0 # density, kg/m^3
-E = 70e9 # elastic modulus, Pa
-nu = 0.3 # poisson's ratio
-kcorr = 5.0 / 6.0 # shear correction factor
-ys = 350e6 # yield stress, Pa
+rho = 2500.0  # density, kg/m^3
+E = 70e9  # elastic modulus, Pa
+nu = 0.3  # poisson's ratio
+kcorr = 5.0 / 6.0  # shear correction factor
+ys = 350e6  # yield stress, Pa
 min_thickness = 0.002
 max_thickness = 0.20
 thickness = 0.02
@@ -33,7 +33,9 @@ for i in range(num_components):
     # Setup (isotropic) property and constitutive objects
     prop = constitutive.MaterialProperties(rho=rho, E=E, nu=nu, ys=ys)
     # Set one thickness dv for every component
-    stiff = constitutive.IsoShellConstitutive(prop, t=thickness, tMin=min_thickness, tMax=max_thickness, tNum=i)
+    stiff = constitutive.IsoShellConstitutive(
+        prop, t=thickness, tMin=min_thickness, tMax=max_thickness, tNum=i
+    )
 
     element = None
     transform = None
@@ -62,8 +64,8 @@ tacs.setNodes(X)
 
 # Create the forces
 forces = tacs.createVec()
-force_array = forces.getArray() 
-force_array[2::6] += 100.0 # uniform load in z direction
+force_array = forces.getArray()
+force_array[2::6] += 100.0  # uniform load in z direction
 tacs.applyBCs(forces)
 
 # Set up and solve the analysis problem
@@ -130,7 +132,7 @@ xnew = tacs.createDesignVec()
 xnew.copyValues(x)
 if TACS.dtype is complex:
     dh = 1e-30
-    xnew.axpy(dh*1j, xpert)
+    xnew.axpy(dh * 1j, xpert)
 else:
     dh = 1e-6
     xnew.axpy(dh, xpert)
@@ -149,22 +151,22 @@ tacs.setVariables(u)
 fvals2 = tacs.evalFunctions(funcs)
 
 if TACS.dtype is complex:
-    fd = fvals2.imag/dh
+    fd = fvals2.imag / dh
 else:
-    fd = (fvals2 - fvals1)/dh
+    fd = (fvals2 - fvals1) / dh
 
 result = xpert.dot(fdv_sens)
 if tacs_comm.rank == 0:
-    print('FD:      ', fd[0])
-    print('Result:  ', result)
-    print('Rel err: ', (result - fd[0])/result)
+    print("FD:      ", fd[0])
+    print("Result:  ", result)
+    print("Rel err: ", (result - fd[0]) / result)
 
 # Reset the old variable values
 tacs.setDesignVars(x)
 
 if TACS.dtype is complex:
     dh = 1e-30
-    X.axpy(dh*1j, pert)
+    X.axpy(dh * 1j, pert)
 else:
     dh = 1e-6
     X.axpy(dh, pert)
@@ -183,24 +185,26 @@ tacs.setVariables(u)
 fvals2 = tacs.evalFunctions(funcs)
 
 if TACS.dtype is complex:
-    fd = fvals2.imag/dh
+    fd = fvals2.imag / dh
 else:
-    fd = (fvals2 - fvals1)/dh
+    fd = (fvals2 - fvals1) / dh
 
 # Compute the projected derivative
 result = pert.dot(fXptSens)
 
 if tacs_comm.rank == 0:
-    print('FD:      ', fd[0])
-    print('Result:  ', result)
-    print('Rel err: ', (result - fd[0])/result)
+    print("FD:      ", fd[0])
+    print("Result:  ", result)
+    print("Rel err: ", (result - fd[0]) / result)
 
 # Output for visualization
-flag = (TACS.OUTPUT_CONNECTIVITY |
-        TACS.OUTPUT_NODES |
-        TACS.OUTPUT_DISPLACEMENTS |
-        TACS.OUTPUT_STRAINS |
-        TACS.OUTPUT_STRESSES |
-        TACS.OUTPUT_EXTRAS)
+flag = (
+    TACS.OUTPUT_CONNECTIVITY
+    | TACS.OUTPUT_NODES
+    | TACS.OUTPUT_DISPLACEMENTS
+    | TACS.OUTPUT_STRAINS
+    | TACS.OUTPUT_STRESSES
+    | TACS.OUTPUT_EXTRAS
+)
 f5 = TACS.ToFH5(tacs, TACS.BEAM_OR_SHELL_ELEMENT, flag)
-f5.writeToFile('ucrm.f5')
+f5.writeToFile("ucrm.f5")

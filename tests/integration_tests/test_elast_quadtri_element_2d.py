@@ -3,10 +3,10 @@ from mpi4py import MPI
 from tacs import TACS, elements, constitutive, functions
 from static_analysis_base_test import StaticTestCase
 
-'''
+"""
 Create a uniform plate of quadratic triangles under uniform edge loading
 and test KSFailure, StructuralMass, and Compliance functions and sensitivities
-'''
+"""
 
 FUNC_REFS = np.array([2.007845956565272, 25700.0, 17567887.317833334])
 
@@ -25,6 +25,7 @@ Nxy = -175e5
 
 # KS function weight
 ksweight = 10.0
+
 
 class ProblemTest(StaticTestCase.StaticTest):
 
@@ -68,27 +69,35 @@ class ProblemTest(StaticTestCase.StaticTest):
             x = np.linspace(0, Lx, 2 * nx + 1, dtype)
             y = np.linspace(0, Ly, 2 * ny + 1, dtype)
             xyz = np.zeros([2 * nx + 1, 2 * ny + 1, 3], dtype)
-            xyz[:, :, 0], xyz[:, :, 1] = np.meshgrid(x, y, indexing='ij')
+            xyz[:, :, 0], xyz[:, :, 1] = np.meshgrid(x, y, indexing="ij")
             node_ids = np.arange(num_nodes).reshape((2 * nx + 1, 2 * ny + 1))
 
             conn = []
             for j in range(ny):
                 for i in range(nx):
                     # Append the first set of nodes
-                    conn.append([node_ids[2 * i, 2 * j],
-                                 node_ids[2 * i + 2, 2 * j],
-                                 node_ids[2 * i + 2, 2 * j + 2],
-                                 node_ids[2 * i + 1, 2 * j],
-                                 node_ids[2 * i + 2, 2 * j + 1],
-                                 node_ids[2 * i + 1, 2 * j + 1]])
+                    conn.append(
+                        [
+                            node_ids[2 * i, 2 * j],
+                            node_ids[2 * i + 2, 2 * j],
+                            node_ids[2 * i + 2, 2 * j + 2],
+                            node_ids[2 * i + 1, 2 * j],
+                            node_ids[2 * i + 2, 2 * j + 1],
+                            node_ids[2 * i + 1, 2 * j + 1],
+                        ]
+                    )
 
                     # Append the second set of nodes
-                    conn.append([node_ids[2 * i, 2 * j + 2],
-                                 node_ids[2 * i, 2 * j],
-                                 node_ids[2 * i + 2, 2 * j + 2],
-                                 node_ids[2 * i, 2 * j + 1],
-                                 node_ids[2 * i + 1, 2 * j + 1],
-                                 node_ids[2 * i + 1, 2 * j + 2]])
+                    conn.append(
+                        [
+                            node_ids[2 * i, 2 * j + 2],
+                            node_ids[2 * i, 2 * j],
+                            node_ids[2 * i + 2, 2 * j + 2],
+                            node_ids[2 * i, 2 * j + 1],
+                            node_ids[2 * i + 1, 2 * j + 1],
+                            node_ids[2 * i + 1, 2 * j + 2],
+                        ]
+                    )
             # Set the node pointers
             conn = np.array(conn, dtype=np.intc).flatten()
             ptr = np.arange(0, 6 * num_elems + 1, 6, dtype=np.intc)
@@ -115,7 +124,9 @@ class ProblemTest(StaticTestCase.StaticTest):
 
         return assembler
 
-    def setup_tacs_vecs(self, assembler, force_vec, dv_pert_vec, ans_pert_vec, xpts_pert_vec):
+    def setup_tacs_vecs(
+        self, assembler, force_vec, dv_pert_vec, ans_pert_vec, xpts_pert_vec
+    ):
         """
         Setup user-defined vectors for analysis and fd/cs sensitivity verification
         """
@@ -177,7 +188,9 @@ class ProblemTest(StaticTestCase.StaticTest):
         """
         Create a list of functions to be tested and their reference values for the problem
         """
-        func_list = [functions.KSFailure(assembler, ksWeight=ksweight, safetyFactor=1.5),
-                     functions.StructuralMass(assembler),
-                     functions.Compliance(assembler)]
+        func_list = [
+            functions.KSFailure(assembler, ksWeight=ksweight, safetyFactor=1.5),
+            functions.StructuralMass(assembler),
+            functions.Compliance(assembler),
+        ]
         return func_list, FUNC_REFS

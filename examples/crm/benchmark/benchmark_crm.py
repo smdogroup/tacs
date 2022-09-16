@@ -1,6 +1,6 @@
-'''
+"""
 This script is used to regression test the example against historical values.
-'''
+"""
 
 import numpy as np
 import unittest
@@ -8,11 +8,12 @@ import sys
 import os
 
 # Set the path to the example script we're testing
-example_path = os.path.join(os.path.dirname(__file__), '..')
+example_path = os.path.join(os.path.dirname(__file__), "..")
 sys.path.append(example_path)
 
 # Reference values for eval functions
 FUNC_REF = [1.070354064387641]
+
 
 class ExampleBenchmark(unittest.TestCase):
 
@@ -21,6 +22,7 @@ class ExampleBenchmark(unittest.TestCase):
     def setUp(self):
         # Import the example to automatically run the script
         import crm
+
         self.example = crm
 
     def benchmark_funcs(self):

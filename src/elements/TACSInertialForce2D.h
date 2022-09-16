@@ -15,65 +15,63 @@
 #ifndef TACS_INERTIAL_FORCE_2D_H
 #define TACS_INERTIAL_FORCE_2D_H
 
-#include "TACSElement2D.h"
 #include "TACSConstitutive.h"
+#include "TACSElement2D.h"
 
 class TACSInertialForce2D : public TACSElement {
  public:
-  TACSInertialForce2D( int _varsPerNode, TACSConstitutive *_con,
-                       TACSElementBasis *_basis, const TacsScalar _inertiaVec[] );
+  TACSInertialForce2D(int _varsPerNode, TACSConstitutive *_con,
+                      TACSElementBasis *_basis, const TacsScalar _inertiaVec[]);
   ~TACSInertialForce2D();
 
   // Get the layout properties of the element
-  const char* getObjectName();
+  const char *getObjectName();
   int getVarsPerNode();
   int getNumNodes();
   ElementLayout getLayoutType();
-  TACSElementBasis* getElementBasis();
+  TACSElementBasis *getElementBasis();
   int getNumQuadraturePoints();
-  double getQuadratureWeight( int n );
-  double getQuadraturePoint( int n, double pt[] );
+  double getQuadratureWeight(int n);
+  double getQuadraturePoint(int n, double pt[]);
   int getNumElementFaces();
-  int getNumFaceQuadraturePoints( int face );
-  double getFaceQuadraturePoint( int face, int n, double pt[],
-                                 double tangent[] );
+  int getNumFaceQuadraturePoints(int face);
+  double getFaceQuadraturePoint(int face, int n, double pt[], double tangent[]);
 
-/**
-    Retrieve the global design variable numbers associated with this element
-  */
-  int getDesignVarNums( int elemIndex, int dvLen, int dvNums[] );
+  /**
+      Retrieve the global design variable numbers associated with this element
+    */
+  int getDesignVarNums(int elemIndex, int dvLen, int dvNums[]);
 
   /**
     Set the element design variables from the design vector
   */
-  int setDesignVars( int elemIndex, int dvLen, const TacsScalar dvs[] );
+  int setDesignVars(int elemIndex, int dvLen, const TacsScalar dvs[]);
 
   /**
     Get the element design variables values
   */
-  int getDesignVars( int elemIndex, int dvLen, TacsScalar dvs[] );
+  int getDesignVars(int elemIndex, int dvLen, TacsScalar dvs[]);
 
   /**
     Get the lower and upper bounds for the design variable values
   */
-  int getDesignVarRange( int elemIndex, int dvLen,
-                         TacsScalar lb[], TacsScalar ub[] );
+  int getDesignVarRange(int elemIndex, int dvLen, TacsScalar lb[],
+                        TacsScalar ub[]);
 
   /**
     Add the residual to the provided vector
   */
-  void addResidual( int elemIndex, double time, const TacsScalar *Xpts,
-                    const TacsScalar *vars, const TacsScalar *dvars,
-                    const TacsScalar *ddvars, TacsScalar *res );
+  void addResidual(int elemIndex, double time, const TacsScalar *Xpts,
+                   const TacsScalar *vars, const TacsScalar *dvars,
+                   const TacsScalar *ddvars, TacsScalar *res);
 
   /**
     Add the residual and Jacobians to the arrays
   */
-  void addJacobian( int elemIndex, double time,
-                    TacsScalar alpha, TacsScalar beta, TacsScalar gamma,
-                    const TacsScalar *Xpts, const TacsScalar *vars,
-                    const TacsScalar *dvars, const TacsScalar *ddvars,
-                    TacsScalar *res, TacsScalar *mat );
+  void addJacobian(int elemIndex, double time, TacsScalar alpha,
+                   TacsScalar beta, TacsScalar gamma, const TacsScalar *Xpts,
+                   const TacsScalar *vars, const TacsScalar *dvars,
+                   const TacsScalar *ddvars, TacsScalar *res, TacsScalar *mat);
 
  private:
   int varsPerNode;
@@ -82,4 +80,4 @@ class TACSInertialForce2D : public TACSElement {
   TacsScalar inertiaVec[2];
 };
 
-#endif // TACS_INERTIAL_FORCE_2D_H
+#endif  // TACS_INERTIAL_FORCE_2D_H

@@ -5,9 +5,8 @@
 #include "TACSElementVerification.h"
 #include "TACSShellElementTransform.h"
 
-inline void TacsShellAssembleFrame( const TacsScalar Xxi[],
-                                    const TacsScalar n[],
-                                    TacsScalar Xd[] ){
+inline void TacsShellAssembleFrame(const TacsScalar Xxi[], const TacsScalar n[],
+                                   TacsScalar Xd[]) {
   Xd[0] = Xxi[0];
   Xd[1] = Xxi[1];
   Xd[2] = n[0];
@@ -21,8 +20,7 @@ inline void TacsShellAssembleFrame( const TacsScalar Xxi[],
   Xd[8] = n[2];
 }
 
-inline void TacsShellAssembleFrame( const TacsScalar nxi[],
-                                    TacsScalar Xdz[] ){
+inline void TacsShellAssembleFrame(const TacsScalar nxi[], TacsScalar Xdz[]) {
   Xdz[0] = nxi[0];
   Xdz[1] = nxi[1];
   Xdz[2] = 0.0;
@@ -36,47 +34,41 @@ inline void TacsShellAssembleFrame( const TacsScalar nxi[],
   Xdz[8] = 0.0;
 }
 
-inline void TacsShellAssembleFrame( const TacsScalar a[],
-                                    const TacsScalar b[],
-                                    const TacsScalar c[],
-                                    TacsScalar Xd[] ){
-  if (a){
+inline void TacsShellAssembleFrame(const TacsScalar a[], const TacsScalar b[],
+                                   const TacsScalar c[], TacsScalar Xd[]) {
+  if (a) {
     Xd[0] = a[0];
     Xd[3] = a[1];
     Xd[6] = a[2];
-  }
-  else {
+  } else {
     Xd[0] = 0.0;
     Xd[3] = 0.0;
     Xd[6] = 0.0;
   }
 
-  if (b){
+  if (b) {
     Xd[1] = b[0];
     Xd[4] = b[1];
     Xd[7] = b[2];
-  }
-  else {
+  } else {
     Xd[1] = 0.0;
     Xd[4] = 0.0;
     Xd[7] = 0.0;
   }
 
-  if (c){
+  if (c) {
     Xd[2] = c[0];
     Xd[5] = c[1];
     Xd[8] = c[2];
-  }
-  else {
+  } else {
     Xd[2] = 0.0;
     Xd[5] = 0.0;
     Xd[8] = 0.0;
   }
 }
 
-inline void TacsShellExtractFrame( const TacsScalar Xd[],
-                                   TacsScalar Xxi[],
-                                   TacsScalar n[] ){
+inline void TacsShellExtractFrame(const TacsScalar Xd[], TacsScalar Xxi[],
+                                  TacsScalar n[]) {
   Xxi[0] = Xd[0];
   Xxi[1] = Xd[1];
   n[0] = Xd[2];
@@ -90,8 +82,7 @@ inline void TacsShellExtractFrame( const TacsScalar Xd[],
   n[2] = Xd[8];
 }
 
-inline void TacsShellExtractFrame( const TacsScalar Xd[],
-                                   TacsScalar Xxi[] ){
+inline void TacsShellExtractFrame(const TacsScalar Xd[], TacsScalar Xxi[]) {
   Xxi[0] = Xd[0];
   Xxi[1] = Xd[1];
 
@@ -102,68 +93,67 @@ inline void TacsShellExtractFrame( const TacsScalar Xd[],
   Xxi[5] = Xd[7];
 }
 
-inline void TacsShellExtractFrameSens( const TacsScalar d2u0d[],
-                                       TacsScalar d2u0xi[] ){
+inline void TacsShellExtractFrameSens(const TacsScalar d2u0d[],
+                                      TacsScalar d2u0xi[]) {
   // Extract the second derivatives
-  for ( int j = 0; j < 6; j++ ){
-    int jj = 3*(j / 2) + (j % 2);
-    for ( int i = 0; i < 6; i++ ){
-      int ii = 3*(i / 2) + (i % 2);
+  for (int j = 0; j < 6; j++) {
+    int jj = 3 * (j / 2) + (j % 2);
+    for (int i = 0; i < 6; i++) {
+      int ii = 3 * (i / 2) + (i % 2);
 
-      d2u0xi[6*j + i] = d2u0d[9*jj + ii];
+      d2u0xi[6 * j + i] = d2u0d[9 * jj + ii];
     }
   }
 }
 
-inline void TacsShellExtractFrameSens( const TacsScalar d2u0d[],
-                                       TacsScalar d2u0xi[],
-                                       TacsScalar d2d0[],
-                                       TacsScalar d2d0u0xi[] ){
+inline void TacsShellExtractFrameSens(const TacsScalar d2u0d[],
+                                      TacsScalar d2u0xi[], TacsScalar d2d0[],
+                                      TacsScalar d2d0u0xi[]) {
   // Extract the second derivatives
-  for ( int j = 0; j < 6; j++ ){
-    int jj = 3*(j / 2) + (j % 2);
-    for ( int i = 0; i < 6; i++ ){
-      int ii = 3*(i / 2) + (i % 2);
+  for (int j = 0; j < 6; j++) {
+    int jj = 3 * (j / 2) + (j % 2);
+    for (int i = 0; i < 6; i++) {
+      int ii = 3 * (i / 2) + (i % 2);
 
-      d2u0xi[6*j + i] = d2u0d[9*jj + ii];
+      d2u0xi[6 * j + i] = d2u0d[9 * jj + ii];
     }
   }
 
-  for ( int j = 0; j < 3; j++ ){
-    int jj = 3*j + 2;
-    for ( int i = 0; i < 3; i++ ){
-      int ii = 3*i + 2;
-      d2d0[3*j + i] = d2u0d[9*jj + ii];
+  for (int j = 0; j < 3; j++) {
+    int jj = 3 * j + 2;
+    for (int i = 0; i < 3; i++) {
+      int ii = 3 * i + 2;
+      d2d0[3 * j + i] = d2u0d[9 * jj + ii];
     }
   }
 
-  for ( int j = 0; j < 3; j++ ){
-    int jj = 3*j + 2;
-    for ( int i = 0; i < 6; i++ ){
-      int ii = 3*(i / 2) + (i % 2);
-      d2d0u0xi[6*j + i] = d2u0d[9*jj + ii];
+  for (int j = 0; j < 3; j++) {
+    int jj = 3 * j + 2;
+    for (int i = 0; i < 6; i++) {
+      int ii = 3 * (i / 2) + (i % 2);
+      d2d0u0xi[6 * j + i] = d2u0d[9 * jj + ii];
     }
   }
 }
 
-inline void TacsShellExtractFrameMixedSens( const TacsScalar d2u0du1d[],
-                                            TacsScalar d2d0xiu0xi[],
-                                            TacsScalar d2d0d0xi[] ){
+inline void TacsShellExtractFrameMixedSens(const TacsScalar d2u0du1d[],
+                                           TacsScalar d2d0xiu0xi[],
+                                           TacsScalar d2d0d0xi[]) {
   // Extract the second derivatives
-  for ( int j = 0; j < 6; j++ ){
-    int jj = 3*(j / 2) + (j % 2);
-    for ( int i = 0; i < 6; i++ ){
-      int ii = 3*(i / 2) + (i % 2);
+  for (int j = 0; j < 6; j++) {
+    int jj = 3 * (j / 2) + (j % 2);
+    for (int i = 0; i < 6; i++) {
+      int ii = 3 * (i / 2) + (i % 2);
 
-      d2d0xiu0xi[6*i + j] = d2u0du1d[9*jj + ii];
+      d2d0xiu0xi[6 * i + j] = d2u0du1d[9 * jj + ii];
     }
   }
 
-  for ( int j = 0; j < 3; j++ ){
-    int jj = 3*j + 2;
-    for ( int i = 0; i < 6; i++ ){
-      int ii = 3*(i / 2) + (i % 2);
-      d2d0d0xi[6*j + i] = d2u0du1d[9*jj + ii];
+  for (int j = 0; j < 3; j++) {
+    int jj = 3 * j + 2;
+    for (int i = 0; i < 6; i++) {
+      int ii = 3 * (i / 2) + (i % 2);
+      d2d0d0xi[6 * j + i] = d2u0du1d[9 * jj + ii];
     }
   }
 }
@@ -174,135 +164,125 @@ inline void TacsShellExtractFrameMixedSens( const TacsScalar d2u0du1d[],
   C = T^{T}*A*B
   dA = T*dC*B^{T}
 */
-inline void mat3x3TransMatMatHessian( const TacsScalar T[],
-                                      const TacsScalar B[],
-                                      const TacsScalar d2C[],
-                                      TacsScalar d2A[] ){
+inline void mat3x3TransMatMatHessian(const TacsScalar T[], const TacsScalar B[],
+                                     const TacsScalar d2C[], TacsScalar d2A[]) {
   // Compute the second derivatives
   TacsScalar tmp2[81], t1[9], t2[9];
-  for ( int i = 0; i < 9; i++ ){
-    mat3x3MatTransMult(&d2C[9*i], B, t1);
-    mat3x3MatMult(T, t1, &tmp2[9*i]);
+  for (int i = 0; i < 9; i++) {
+    mat3x3MatTransMult(&d2C[9 * i], B, t1);
+    mat3x3MatMult(T, t1, &tmp2[9 * i]);
   }
 
-  for ( int i = 0; i < 9; i++ ){
-    for ( int j = 0; j < 9; j++ ){
-      t1[j] = tmp2[i + 9*j];
+  for (int i = 0; i < 9; i++) {
+    for (int j = 0; j < 9; j++) {
+      t1[j] = tmp2[i + 9 * j];
     }
 
     mat3x3MatTransMult(t1, B, t2);
     mat3x3MatMult(T, t2, t1);
 
-    for ( int j = 0; j < 9; j++ ){
-      d2A[i + 9*j] = t1[j];
+    for (int j = 0; j < 9; j++) {
+      d2A[i + 9 * j] = t1[j];
     }
   }
 }
 
-inline void mat3x3TransMatMatHessianAdd( const TacsScalar T[],
-                                         const TacsScalar B[],
-                                         const TacsScalar d2C[],
-                                         TacsScalar d2A[] ){
+inline void mat3x3TransMatMatHessianAdd(const TacsScalar T[],
+                                        const TacsScalar B[],
+                                        const TacsScalar d2C[],
+                                        TacsScalar d2A[]) {
   // Compute the second derivatives
   TacsScalar tmp2[81], t1[9], t2[9];
-  for ( int i = 0; i < 9; i++ ){
-    mat3x3MatTransMult(&d2C[9*i], B, t1);
-    mat3x3MatMult(T, t1, &tmp2[9*i]);
+  for (int i = 0; i < 9; i++) {
+    mat3x3MatTransMult(&d2C[9 * i], B, t1);
+    mat3x3MatMult(T, t1, &tmp2[9 * i]);
   }
 
-  for ( int i = 0; i < 9; i++ ){
-    for ( int j = 0; j < 9; j++ ){
-      t1[j] = tmp2[i + 9*j];
+  for (int i = 0; i < 9; i++) {
+    for (int j = 0; j < 9; j++) {
+      t1[j] = tmp2[i + 9 * j];
     }
 
     mat3x3MatTransMult(t1, B, t2);
     mat3x3MatMult(T, t2, t1);
 
-    for ( int j = 0; j < 9; j++ ){
-      d2A[i + 9*j] += t1[j];
+    for (int j = 0; j < 9; j++) {
+      d2A[i + 9 * j] += t1[j];
     }
   }
 }
 
-
-inline void mat3x3TransMatMatHessian( const TacsScalar T1[],
-                                      const TacsScalar T2[],
-                                      const TacsScalar B1[],
-                                      const TacsScalar B2[],
-                                      const TacsScalar d2C[],
-                                      TacsScalar d2A[] ){
+inline void mat3x3TransMatMatHessian(const TacsScalar T1[],
+                                     const TacsScalar T2[],
+                                     const TacsScalar B1[],
+                                     const TacsScalar B2[],
+                                     const TacsScalar d2C[], TacsScalar d2A[]) {
   // Compute the second derivatives
   TacsScalar tmp2[81], t1[9], t2[9];
-  for ( int i = 0; i < 9; i++ ){
-    mat3x3MatTransMult(&d2C[9*i], B1, t1);
-    mat3x3MatMult(T1, t1, &tmp2[9*i]);
+  for (int i = 0; i < 9; i++) {
+    mat3x3MatTransMult(&d2C[9 * i], B1, t1);
+    mat3x3MatMult(T1, t1, &tmp2[9 * i]);
   }
 
-  for ( int i = 0; i < 9; i++ ){
-    for ( int j = 0; j < 9; j++ ){
-      t1[j] = tmp2[i + 9*j];
+  for (int i = 0; i < 9; i++) {
+    for (int j = 0; j < 9; j++) {
+      t1[j] = tmp2[i + 9 * j];
     }
 
     mat3x3MatTransMult(t1, B2, t2);
     mat3x3MatMult(T2, t2, t1);
 
-    for ( int j = 0; j < 9; j++ ){
-      d2A[i + 9*j] = t1[j];
+    for (int j = 0; j < 9; j++) {
+      d2A[i + 9 * j] = t1[j];
     }
   }
 }
 
-inline void mat3x3TransMatMatHessianAdd( const TacsScalar T1[],
-                                         const TacsScalar T2[],
-                                         const TacsScalar B1[],
-                                         const TacsScalar B2[],
-                                         const TacsScalar d2C[],
-                                         TacsScalar d2A[] ){
+inline void mat3x3TransMatMatHessianAdd(
+    const TacsScalar T1[], const TacsScalar T2[], const TacsScalar B1[],
+    const TacsScalar B2[], const TacsScalar d2C[], TacsScalar d2A[]) {
   // Compute the second derivatives
   TacsScalar tmp2[81], t1[9], t2[9];
-  for ( int i = 0; i < 9; i++ ){
-    mat3x3MatTransMult(&d2C[9*i], B1, t1);
-    mat3x3MatMult(T1, t1, &tmp2[9*i]);
+  for (int i = 0; i < 9; i++) {
+    mat3x3MatTransMult(&d2C[9 * i], B1, t1);
+    mat3x3MatMult(T1, t1, &tmp2[9 * i]);
   }
 
-  for ( int i = 0; i < 9; i++ ){
-    for ( int j = 0; j < 9; j++ ){
-      t1[j] = tmp2[i + 9*j];
+  for (int i = 0; i < 9; i++) {
+    for (int j = 0; j < 9; j++) {
+      t1[j] = tmp2[i + 9 * j];
     }
 
     mat3x3MatTransMult(t1, B2, t2);
     mat3x3MatMult(T2, t2, t1);
 
-    for ( int j = 0; j < 9; j++ ){
-      d2A[i + 9*j] += t1[j];
+    for (int j = 0; j < 9; j++) {
+      d2A[i + 9 * j] += t1[j];
     }
   }
 }
 
-inline void mat3x3TransMatMatHessianAddSymm( const TacsScalar T1[],
-                                             const TacsScalar T2[],
-                                             const TacsScalar B1[],
-                                             const TacsScalar B2[],
-                                             const TacsScalar d2C[],
-                                             TacsScalar d2A[] ){
+inline void mat3x3TransMatMatHessianAddSymm(
+    const TacsScalar T1[], const TacsScalar T2[], const TacsScalar B1[],
+    const TacsScalar B2[], const TacsScalar d2C[], TacsScalar d2A[]) {
   // Compute the second derivatives
   TacsScalar tmp2[81], t1[9], t2[9];
-  for ( int i = 0; i < 9; i++ ){
-    mat3x3MatTransMult(&d2C[9*i], B1, t1);
-    mat3x3MatMult(T1, t1, &tmp2[9*i]);
+  for (int i = 0; i < 9; i++) {
+    mat3x3MatTransMult(&d2C[9 * i], B1, t1);
+    mat3x3MatMult(T1, t1, &tmp2[9 * i]);
   }
 
-  for ( int i = 0; i < 9; i++ ){
-    for ( int j = 0; j < 9; j++ ){
-      t1[j] = tmp2[i + 9*j];
+  for (int i = 0; i < 9; i++) {
+    for (int j = 0; j < 9; j++) {
+      t1[j] = tmp2[i + 9 * j];
     }
 
     mat3x3MatTransMult(t1, B2, t2);
     mat3x3MatMult(T2, t2, t1);
 
-    for ( int j = 0; j < 9; j++ ){
-      d2A[i + 9*j] += t1[j];
-      d2A[j + 9*i] += t1[j];
+    for (int j = 0; j < 9; j++) {
+      d2A[i + 9 * j] += t1[j];
+      d2A[j + 9 * i] += t1[j];
     }
   }
 }
@@ -319,11 +299,10 @@ inline void mat3x3TransMatMatHessianAddSymm( const TacsScalar T1[],
   @param fnorm Optional: the norm of the cross-product
 */
 template <class basis>
-void TacsShellComputeNodeNormals( const TacsScalar Xpts[],
-                                  TacsScalar fn[],
-                                  TacsScalar Xdn[]=NULL,
-                                  TacsScalar fnorm[]=NULL ){
-  for ( int i = 0; i < basis::NUM_NODES; i++ ){
+void TacsShellComputeNodeNormals(const TacsScalar Xpts[], TacsScalar fn[],
+                                 TacsScalar Xdn[] = NULL,
+                                 TacsScalar fnorm[] = NULL) {
+  for (int i = 0; i < basis::NUM_NODES; i++) {
     double pt[2];
     basis::getNodePoint(i, pt);
 
@@ -341,23 +320,23 @@ void TacsShellComputeNodeNormals( const TacsScalar Xpts[],
     b[2] = Xxi[5];
 
     // Compute the normal direction at the point
-    crossProduct(a, b, &fn[3*i]);
+    crossProduct(a, b, &fn[3 * i]);
 
     // Compute the 2-norm of the vector in the normal direction
-    TacsScalar norm = sqrt(vec3Dot(&fn[3*i], &fn[3*i]));
+    TacsScalar norm = sqrt(vec3Dot(&fn[3 * i], &fn[3 * i]));
 
     // Save the 2-norm value if the fnorm argument is not NULL
-    if (fnorm){
+    if (fnorm) {
       fnorm[i] = norm;
     }
 
     // Scale the normal direction
-    if (norm != 0.0){
-      vec3Scale(1.0/norm, &fn[3*i]);
+    if (norm != 0.0) {
+      vec3Scale(1.0 / norm, &fn[3 * i]);
     }
 
-    if (Xdn){
-      TacsShellAssembleFrame(Xxi, &fn[3*i], &Xdn[9*i]);
+    if (Xdn) {
+      TacsShellAssembleFrame(Xxi, &fn[3 * i], &Xdn[9 * i]);
     }
   }
 }
@@ -380,18 +359,13 @@ void TacsShellComputeNodeNormals( const TacsScalar Xpts[],
   @param u1x Derivative of the through-thickness disp. in local x coordinates
 */
 template <int vars_per_node, class basis>
-TacsScalar TacsShellComputeDispGrad( const double pt[],
-                                     const TacsScalar Xpts[],
-                                     const TacsScalar vars[],
-                                     const TacsScalar fn[],
-                                     const TacsScalar d[],
-                                     const TacsScalar Xxi[],
-                                     const TacsScalar n0[],
-                                     const TacsScalar T[],
-                                     TacsScalar XdinvT[],
-                                     TacsScalar XdinvzT[],
-                                     TacsScalar u0x[],
-                                     TacsScalar u1x[] ){
+TacsScalar TacsShellComputeDispGrad(const double pt[], const TacsScalar Xpts[],
+                                    const TacsScalar vars[],
+                                    const TacsScalar fn[], const TacsScalar d[],
+                                    const TacsScalar Xxi[],
+                                    const TacsScalar n0[], const TacsScalar T[],
+                                    TacsScalar XdinvT[], TacsScalar XdinvzT[],
+                                    TacsScalar u0x[], TacsScalar u1x[]) {
   // Compute n,xi = [dn/dxi1; dn/dxi2]
   TacsScalar nxi[6];
   basis::template interpFieldsGrad<3, 3>(pt, fn, nxi);
@@ -408,7 +382,7 @@ TacsScalar TacsShellComputeDispGrad( const double pt[],
   // Compute negXdinvXdz = -Xdinv*Xdz
   TacsScalar negXdinvXdz[9];
   mat3x3MatMult(Xdinv, Xdz, negXdinvXdz);
-  for ( int i = 0; i < 9; i++ ){
+  for (int i = 0; i < 9; i++) {
     negXdinvXdz[i] *= -1.0;
   }
 
@@ -429,11 +403,11 @@ TacsScalar TacsShellComputeDispGrad( const double pt[],
   basis::template interpFieldsGrad<vars_per_node, 3>(pt, vars, u0xi);
 
   // Compute the derivative u0,x
-  TacsShellAssembleFrame(u0xi, d0, u0x); // Use u0x to store [u0,xi; d0]
+  TacsShellAssembleFrame(u0xi, d0, u0x);  // Use u0x to store [u0,xi; d0]
 
   // u1x = T^{T}*u1d*XdinvT + T^{T}*u0d*XdinvzT
   TacsScalar tmp[9];
-  TacsShellAssembleFrame(d0xi, u1x); // Use u1x to store [d0,xi; 0]
+  TacsShellAssembleFrame(d0xi, u1x);  // Use u1x to store [d0,xi; 0]
   mat3x3MatMult(u1x, XdinvT, tmp);
   mat3x3MatMultAdd(u0x, XdinvzT, tmp);
   mat3x3TransMatMult(T, tmp, u1x);
@@ -468,22 +442,12 @@ TacsScalar TacsShellComputeDispGrad( const double pt[],
   @param u1xd Derivative of u1x
 */
 template <int vars_per_node, class basis>
-TacsScalar TacsShellComputeDispGradDeriv( const double pt[],
-                                          const TacsScalar Xpts[],
-                                          const TacsScalar vars[],
-                                          const TacsScalar fn[],
-                                          const TacsScalar d[],
-                                          const TacsScalar Xxi[],
-                                          const TacsScalar n0[],
-                                          const TacsScalar T[],
-                                          const TacsScalar varsd[],
-                                          const TacsScalar dd[],
-                                          TacsScalar XdinvT[],
-                                          TacsScalar XdinvzT[],
-                                          TacsScalar u0x[],
-                                          TacsScalar u1x[],
-                                          TacsScalar u0xd[],
-                                          TacsScalar u1xd[] ){
+TacsScalar TacsShellComputeDispGradDeriv(
+    const double pt[], const TacsScalar Xpts[], const TacsScalar vars[],
+    const TacsScalar fn[], const TacsScalar d[], const TacsScalar Xxi[],
+    const TacsScalar n0[], const TacsScalar T[], const TacsScalar varsd[],
+    const TacsScalar dd[], TacsScalar XdinvT[], TacsScalar XdinvzT[],
+    TacsScalar u0x[], TacsScalar u1x[], TacsScalar u0xd[], TacsScalar u1xd[]) {
   // Compute n,xi = [dn/dxi1; dn/dxi2]
   TacsScalar nxi[6];
   basis::template interpFieldsGrad<3, 3>(pt, fn, nxi);
@@ -500,7 +464,7 @@ TacsScalar TacsShellComputeDispGradDeriv( const double pt[],
   // Compute negXdinvXdz = -Xdinv*Xdz
   TacsScalar negXdinvXdz[9];
   mat3x3MatMult(Xdinv, Xdz, negXdinvXdz);
-  for ( int i = 0; i < 9; i++ ){
+  for (int i = 0; i < 9; i++) {
     negXdinvXdz[i] *= -1.0;
   }
 
@@ -524,17 +488,17 @@ TacsScalar TacsShellComputeDispGradDeriv( const double pt[],
   basis::template interpFieldsGrad<vars_per_node, 3>(pt, varsd, u0xid);
 
   // Compute the derivative u0,x
-  TacsShellAssembleFrame(u0xi, d0, u0x); // Use u0x to store [u0,xi; d0]
+  TacsShellAssembleFrame(u0xi, d0, u0x);  // Use u0x to store [u0,xi; d0]
   TacsShellAssembleFrame(u0xid, d0d, u0xd);
 
   // u1x = T^{T}*(u0d*(-Xdinv*Xdz) + u1d)*Xdinv*T
   TacsScalar tmp[9];
-  TacsShellAssembleFrame(d0xi, u1x); // Use u1x to store [d0,xi; 0]
+  TacsShellAssembleFrame(d0xi, u1x);  // Use u1x to store [d0,xi; 0]
   mat3x3MatMult(u1x, XdinvT, tmp);
   mat3x3MatMultAdd(u0x, XdinvzT, tmp);
   mat3x3TransMatMult(T, tmp, u1x);
 
-  TacsShellAssembleFrame(d0xid, u1xd); // Use u1x to store [d0,xi; 0]
+  TacsShellAssembleFrame(d0xid, u1xd);  // Use u1x to store [d0,xi; 0]
   mat3x3MatMult(u1xd, XdinvT, tmp);
   mat3x3MatMultAdd(u0xd, XdinvzT, tmp);
   mat3x3TransMatMult(T, tmp, u1xd);
@@ -564,14 +528,11 @@ TacsScalar TacsShellComputeDispGradDeriv( const double pt[],
   @param dd Residual intermediate for the director field
 */
 template <int vars_per_node, class basis>
-void TacsShellAddDispGradSens( const double pt[],
-                               const TacsScalar T[],
-                               const TacsScalar XdinvT[],
-                               const TacsScalar XdinvzT[],
-                               const TacsScalar du0x[],
-                               const TacsScalar du1x[],
-                               TacsScalar res[],
-                               TacsScalar dd[] ){
+void TacsShellAddDispGradSens(const double pt[], const TacsScalar T[],
+                              const TacsScalar XdinvT[],
+                              const TacsScalar XdinvzT[],
+                              const TacsScalar du0x[], const TacsScalar du1x[],
+                              TacsScalar res[], TacsScalar dd[]) {
   // Compute du0d = T*du0x*XdinvT^{T} + T*du1x*XdinvzT^{T}
   TacsScalar du0d[9], tmp[9];
   mat3x3MatTransMult(du1x, XdinvzT, tmp);
@@ -596,8 +557,9 @@ void TacsShellAddDispGradSens( const double pt[],
   basis::template addInterpFieldsGradTranspose<3, 3>(pt, dd0xi, dd);
 
   // Compute the gradient of the displacement solution at the quadrature points
-  if (res){
-    basis::template addInterpFieldsGradTranspose<vars_per_node, 3>(pt, du0xi, res);
+  if (res) {
+    basis::template addInterpFieldsGradTranspose<vars_per_node, 3>(pt, du0xi,
+                                                                   res);
   }
 }
 
@@ -618,16 +580,13 @@ void TacsShellAddDispGradSens( const double pt[],
   @param d2du The mixed Jacobian matrix intermediate for displacements/d
 */
 template <int vars_per_node, class basis>
-void TacsShellAddDispGradHessian( const double pt[],
-                                  const TacsScalar T[],
-                                  const TacsScalar XdinvT[],
-                                  const TacsScalar XdinvzT[],
-                                  const TacsScalar d2u0x[],
-                                  const TacsScalar d2u1x[],
-                                  const TacsScalar d2u0xu1x[],
-                                  TacsScalar mat[],
-                                  TacsScalar d2d[],
-                                  TacsScalar d2du[] ){
+void TacsShellAddDispGradHessian(const double pt[], const TacsScalar T[],
+                                 const TacsScalar XdinvT[],
+                                 const TacsScalar XdinvzT[],
+                                 const TacsScalar d2u0x[],
+                                 const TacsScalar d2u1x[],
+                                 const TacsScalar d2u0xu1x[], TacsScalar mat[],
+                                 TacsScalar d2d[], TacsScalar d2du[]) {
   // d2u0d = d2u0x*[d(u0x)/d(u0d)]^2 +
   //         d2u1x*[d(u1x)/d(u0d)]^2 +
   //         d2u0xu1x*[d(u0x)/d(u0d)*d(u1x)/d(u0x)]
@@ -659,15 +618,18 @@ void TacsShellAddDispGradHessian( const double pt[],
   // df/(d(u0d)d(u1d))
   basis::template addInterpFieldsOuterProduct<3, 3, 3, 3>(pt, d2d0, d2d);
   basis::template addInterpGradOuterProduct<3, 3, 3, 3>(pt, d2d0xi, d2d);
-  basis::template addInterpGradMixedOuterProduct<3, 3, 3, 3>(pt, d2d0d0xi, d2d0d0xi, d2d);
+  basis::template addInterpGradMixedOuterProduct<3, 3, 3, 3>(pt, d2d0d0xi,
+                                                             d2d0d0xi, d2d);
 
   // df/(d(d0)d(u0xi))
-  basis::template addInterpGradMixedOuterProduct<3, 3, 3, 3>(pt, d2d0u0xi, NULL, d2du);
+  basis::template addInterpGradMixedOuterProduct<3, 3, 3, 3>(pt, d2d0u0xi, NULL,
+                                                             d2du);
   basis::template addInterpGradOuterProduct<3, 3, 3, 3>(pt, d2d0xiu0xi, d2du);
 
   // Add the contribution to the Jacobian matrix
-  if (mat){
-    basis::template addInterpGradOuterProduct<vars_per_node, vars_per_node, 3, 3>(pt, d2u0xi, mat);
+  if (mat) {
+    basis::template addInterpGradOuterProduct<vars_per_node, vars_per_node, 3,
+                                              3>(pt, d2u0xi, mat);
   }
 }
 
@@ -684,24 +646,21 @@ void TacsShellAddDispGradHessian( const double pt[],
   @param Ctn The rotation matrix at each node
   @param etn The drill strain penalty value at each node
 */
-template <int vars_per_node, int offset, class basis, class director, class model>
-void TacsShellComputeDrillStrain( TACSShellTransform *transform,
-                                  const TacsScalar Xdn[],
-                                  const TacsScalar fn[],
-                                  const TacsScalar vars[],
-                                  TacsScalar XdinvTn[],
-                                  TacsScalar Tn[],
-                                  TacsScalar u0xn[],
-                                  TacsScalar Ctn[],
-                                  TacsScalar etn[] ){
-  for ( int i = 0; i < basis::NUM_NODES; i++ ){
+template <int vars_per_node, int offset, class basis, class director,
+          class model>
+void TacsShellComputeDrillStrain(TACSShellTransform *transform,
+                                 const TacsScalar Xdn[], const TacsScalar fn[],
+                                 const TacsScalar vars[], TacsScalar XdinvTn[],
+                                 TacsScalar Tn[], TacsScalar u0xn[],
+                                 TacsScalar Ctn[], TacsScalar etn[]) {
+  for (int i = 0; i < basis::NUM_NODES; i++) {
     double pt[2];
     basis::getNodePoint(i, pt);
 
     // Compute the transformation at the node
     TacsScalar Xxi[6];
-    TacsShellExtractFrame(&Xdn[9*i], Xxi);
-    transform->computeTransform(Xxi, &fn[3*i], &Tn[9*i]);
+    TacsShellExtractFrame(&Xdn[9 * i], Xxi);
+    transform->computeTransform(Xxi, &fn[3 * i], &Tn[9 * i]);
 
     // Compute the field gradient at the node
     TacsScalar u0xi[6];
@@ -709,27 +668,27 @@ void TacsShellComputeDrillStrain( TACSShellTransform *transform,
 
     // Compute the inverse transformation
     TacsScalar Xdinv[9];
-    inv3x3(&Xdn[9*i], Xdinv);
+    inv3x3(&Xdn[9 * i], Xdinv);
 
     // Compute XdinvT = Xdinv*T
-    mat3x3MatMult(Xdinv, &Tn[9*i], &XdinvTn[9*i]);
-    TacsShellAssembleFrame(u0xi, &u0xn[9*i]); // Use u0x to store [u0,xi; 0]
+    mat3x3MatMult(Xdinv, &Tn[9 * i], &XdinvTn[9 * i]);
+    TacsShellAssembleFrame(u0xi, &u0xn[9 * i]);  // Use u0x to store [u0,xi; 0]
 
     // Compute the rotation matrix at this node
     TacsScalar C[9], tmp[9];
-    director::template
-      computeRotationMat<vars_per_node, offset, 1>(&vars[vars_per_node*i], C);
+    director::template computeRotationMat<vars_per_node, offset, 1>(
+        &vars[vars_per_node * i], C);
 
     // Compute Ct = T^{T}*C*T
-    mat3x3TransMatMult(&Tn[9*i], C, tmp);
-    mat3x3MatMult(tmp, &Tn[9*i], &Ctn[9*i]);
+    mat3x3TransMatMult(&Tn[9 * i], C, tmp);
+    mat3x3MatMult(tmp, &Tn[9 * i], &Ctn[9 * i]);
 
     // Compute the transformation u0x = T^{T}*ueta*Xdinv*T
     // u0x = T^{T}*u0d*Xdinv*T
-    mat3x3MatMult(&u0xn[9*i], &XdinvTn[9*i], tmp);
-    mat3x3TransMatMult(&Tn[9*i], tmp, &u0xn[9*i]);
+    mat3x3MatMult(&u0xn[9 * i], &XdinvTn[9 * i], tmp);
+    mat3x3TransMatMult(&Tn[9 * i], tmp, &u0xn[9 * i]);
 
-    etn[i] = director::evalDrillStrain(&u0xn[9*i], &Ctn[9*i]);
+    etn[i] = director::evalDrillStrain(&u0xn[9 * i], &Ctn[9 * i]);
   }
 }
 
@@ -747,26 +706,21 @@ void TacsShellComputeDrillStrain( TACSShellTransform *transform,
   @param Ctn The rotation matrix at each node
   @param etn The drill strain penalty value at each node
 */
-template <int vars_per_node, int offset, class basis, class director, class model>
-void TacsShellComputeDrillStrainDeriv( TACSShellTransform *transform,
-                                       const TacsScalar Xdn[],
-                                       const TacsScalar fn[],
-                                       const TacsScalar vars[],
-                                       const TacsScalar varsd[],
-                                       TacsScalar XdinvTn[],
-                                       TacsScalar Tn[],
-                                       TacsScalar u0xn[],
-                                       TacsScalar Ctn[],
-                                       TacsScalar etn[],
-                                       TacsScalar etnd[] ){
-  for ( int i = 0; i < basis::NUM_NODES; i++ ){
+template <int vars_per_node, int offset, class basis, class director,
+          class model>
+void TacsShellComputeDrillStrainDeriv(
+    TACSShellTransform *transform, const TacsScalar Xdn[],
+    const TacsScalar fn[], const TacsScalar vars[], const TacsScalar varsd[],
+    TacsScalar XdinvTn[], TacsScalar Tn[], TacsScalar u0xn[], TacsScalar Ctn[],
+    TacsScalar etn[], TacsScalar etnd[]) {
+  for (int i = 0; i < basis::NUM_NODES; i++) {
     double pt[2];
     basis::getNodePoint(i, pt);
 
     // Compute the transformation at the node
     TacsScalar Xxi[6];
-    TacsShellExtractFrame(&Xdn[9*i], Xxi);
-    transform->computeTransform(Xxi, &fn[3*i], &Tn[9*i]);
+    TacsShellExtractFrame(&Xdn[9 * i], Xxi);
+    transform->computeTransform(Xxi, &fn[3 * i], &Tn[9 * i]);
 
     // Compute the field gradient at the node
     TacsScalar u0xi[6], u0xid[6];
@@ -775,37 +729,37 @@ void TacsShellComputeDrillStrainDeriv( TACSShellTransform *transform,
 
     // Compute the inverse transformation
     TacsScalar Xdinv[9];
-    inv3x3(&Xdn[9*i], Xdinv);
+    inv3x3(&Xdn[9 * i], Xdinv);
 
     // Compute XdinvT = Xdinv*T
     TacsScalar u0xnd[9];
-    mat3x3MatMult(Xdinv, &Tn[9*i], &XdinvTn[9*i]);
-    TacsShellAssembleFrame(u0xi, &u0xn[9*i]); // Use u0x to store [u0,xi; 0]
+    mat3x3MatMult(Xdinv, &Tn[9 * i], &XdinvTn[9 * i]);
+    TacsShellAssembleFrame(u0xi, &u0xn[9 * i]);  // Use u0x to store [u0,xi; 0]
     TacsShellAssembleFrame(u0xid, u0xnd);
 
     // Compute the rotation matrix at this node
     TacsScalar C[9], Cd[9], tmp[9];
-    director::template
-      computeRotationMatDeriv<vars_per_node, offset, 1>(&vars[vars_per_node*i],
-                                                        &varsd[vars_per_node*i], C, Cd);
+    director::template computeRotationMatDeriv<vars_per_node, offset, 1>(
+        &vars[vars_per_node * i], &varsd[vars_per_node * i], C, Cd);
 
     // Compute Ct = T^{T}*C*T
-    mat3x3TransMatMult(&Tn[9*i], C, tmp);
-    mat3x3MatMult(tmp, &Tn[9*i], &Ctn[9*i]);
+    mat3x3TransMatMult(&Tn[9 * i], C, tmp);
+    mat3x3MatMult(tmp, &Tn[9 * i], &Ctn[9 * i]);
 
     TacsScalar Ctnd[9];
-    mat3x3TransMatMult(&Tn[9*i], Cd, tmp);
-    mat3x3MatMult(tmp, &Tn[9*i], Ctnd);
+    mat3x3TransMatMult(&Tn[9 * i], Cd, tmp);
+    mat3x3MatMult(tmp, &Tn[9 * i], Ctnd);
 
     // Compute the transformation u0x = T^{T}*ueta*Xdinv*T
     // u0x = T^{T}*u0d*Xdinv*T
-    mat3x3MatMult(&u0xn[9*i], &XdinvTn[9*i], tmp);
-    mat3x3TransMatMult(&Tn[9*i], tmp, &u0xn[9*i]);
+    mat3x3MatMult(&u0xn[9 * i], &XdinvTn[9 * i], tmp);
+    mat3x3TransMatMult(&Tn[9 * i], tmp, &u0xn[9 * i]);
 
-    mat3x3MatMult(u0xnd, &XdinvTn[9*i], tmp);
-    mat3x3TransMatMult(&Tn[9*i], tmp, u0xnd);
+    mat3x3MatMult(u0xnd, &XdinvTn[9 * i], tmp);
+    mat3x3TransMatMult(&Tn[9 * i], tmp, u0xnd);
 
-    etn[i] = director::evalDrillStrainDeriv(&u0xn[9*i], &Ctn[9*i], u0xnd, Ctnd, &etnd[i]);
+    etn[i] = director::evalDrillStrainDeriv(&u0xn[9 * i], &Ctn[9 * i], u0xnd,
+                                            Ctnd, &etnd[i]);
   }
 }
 
@@ -823,44 +777,43 @@ void TacsShellComputeDrillStrainDeriv( TACSShellTransform *transform,
   @param detn The derivative of the drill strain penalty value at each node
   @param res The element residual
 */
-template <int vars_per_node, int offset, class basis, class director, class model>
-void TacsShellAddDrillStrainSens( const TacsScalar Xdn[],
-                                  const TacsScalar fn[],
-                                  const TacsScalar vars[],
-                                  const TacsScalar XdinvTn[],
-                                  const TacsScalar Tn[],
-                                  const TacsScalar u0xn[],
-                                  const TacsScalar Ctn[],
-                                  const TacsScalar detn[],
-                                  TacsScalar res[] ){
-  for ( int i = 0; i < basis::NUM_NODES; i++ ){
+template <int vars_per_node, int offset, class basis, class director,
+          class model>
+void TacsShellAddDrillStrainSens(const TacsScalar Xdn[], const TacsScalar fn[],
+                                 const TacsScalar vars[],
+                                 const TacsScalar XdinvTn[],
+                                 const TacsScalar Tn[], const TacsScalar u0xn[],
+                                 const TacsScalar Ctn[],
+                                 const TacsScalar detn[], TacsScalar res[]) {
+  for (int i = 0; i < basis::NUM_NODES; i++) {
     double pt[2];
     basis::getNodePoint(i, pt);
 
     TacsScalar du0x[9], dCt[9];
-    director::evalDrillStrainSens(detn[i], &u0xn[9*i], &Ctn[9*i], du0x, dCt);
+    director::evalDrillStrainSens(detn[i], &u0xn[9 * i], &Ctn[9 * i], du0x,
+                                  dCt);
 
     // Compute dCpt = T*dCt*T^{T}
     TacsScalar dCpt[9], tmp[9];
-    mat3x3MatMult(&Tn[9*i], dCt, tmp);
-    mat3x3MatTransMult(tmp, &Tn[9*i], dCpt);
+    mat3x3MatMult(&Tn[9 * i], dCt, tmp);
+    mat3x3MatTransMult(tmp, &Tn[9 * i], dCpt);
 
-    director::template
-      addRotationMatResidual<vars_per_node, offset, 1>(&vars[i*vars_per_node],
-                                                       dCpt, &res[i*vars_per_node]);
+    director::template addRotationMatResidual<vars_per_node, offset, 1>(
+        &vars[i * vars_per_node], dCpt, &res[i * vars_per_node]);
 
     // Compute du0d = T*du0x*XdinvT^{T} + T*du1x*XdinvzT^{T}
     TacsScalar du0d[9];
-    mat3x3MatTransMult(du0x, &XdinvTn[9*i], tmp);
-    mat3x3MatMult(&Tn[9*i], tmp, du0d);
+    mat3x3MatTransMult(du0x, &XdinvTn[9 * i], tmp);
+    mat3x3MatMult(&Tn[9 * i], tmp, du0d);
 
     // du0d = [du0xi; dd0]
     TacsScalar du0xi[6];
     TacsShellExtractFrame(du0d, du0xi);
 
-    // Compute the gradient of the displacement solution at the quadrature points
-    basis::template
-      addInterpFieldsGradTranspose<vars_per_node, 3>(pt, du0xi, res);
+    // Compute the gradient of the displacement solution at the quadrature
+    // points
+    basis::template addInterpFieldsGradTranspose<vars_per_node, 3>(pt, du0xi,
+                                                                   res);
   }
 }
 
@@ -876,121 +829,119 @@ void TacsShellAddDrillStrainSens( const TacsScalar Xdn[],
   @param u0xn The derivative of the displacements at each node
   @param Ctn The rotation matrix at each node
   @param detn The derivative of the drill strain penalty value at each node
-  @param d2etn The second derivative of the drill strain penalty value at each node
+  @param d2etn The second derivative of the drill strain penalty value at each
+  node
   @param res The element residual
   @param mat The element Jacobian matrix
 */
-template <int vars_per_node, int offset, class basis, class director, class model>
-void TacsShellAddDrillStrainHessian( const TacsScalar Xdn[],
-                                     const TacsScalar fn[],
-                                     const TacsScalar vars[],
-                                     const TacsScalar XdinvTn[],
-                                     const TacsScalar Tn[],
-                                     const TacsScalar u0xn[],
-                                     const TacsScalar Ctn[],
-                                     const TacsScalar detn[],
-                                     const TacsScalar d2etn[],
-                                     TacsScalar res[],
-                                     TacsScalar mat[] ){
+template <int vars_per_node, int offset, class basis, class director,
+          class model>
+void TacsShellAddDrillStrainHessian(
+    const TacsScalar Xdn[], const TacsScalar fn[], const TacsScalar vars[],
+    const TacsScalar XdinvTn[], const TacsScalar Tn[], const TacsScalar u0xn[],
+    const TacsScalar Ctn[], const TacsScalar detn[], const TacsScalar d2etn[],
+    TacsScalar res[], TacsScalar mat[]) {
   // Zero the derivative of the rotation
-  const int size = vars_per_node*basis::NUM_NODES;
+  const int size = vars_per_node * basis::NUM_NODES;
   const int num_nodes = basis::NUM_NODES;
 
-  TacsScalar drot[num_nodes*size];
-  memset(drot, 0, num_nodes*size*sizeof(TacsScalar));
+  TacsScalar drot[num_nodes * size];
+  memset(drot, 0, num_nodes * size * sizeof(TacsScalar));
 
-  for ( int i = 0; i < num_nodes; i++ ){
+  for (int i = 0; i < num_nodes; i++) {
     // Set the
-    TacsScalar *t = &drot[i*size];
+    TacsScalar *t = &drot[i * size];
 
     // Get the node location
     double pt[2];
     basis::getNodePoint(i, pt);
 
     TacsScalar du0x[9], dCt[9];
-    director::evalDrillStrainSens(1.0, &u0xn[9*i], &Ctn[9*i], du0x, dCt);
+    director::evalDrillStrainSens(1.0, &u0xn[9 * i], &Ctn[9 * i], du0x, dCt);
 
     // Compute dCpt = T*dCt*T^{T}
     TacsScalar dCpt[9], tmp[9];
-    mat3x3MatMult(&Tn[9*i], dCt, tmp);
-    mat3x3MatTransMult(tmp, &Tn[9*i], dCpt);
+    mat3x3MatMult(&Tn[9 * i], dCt, tmp);
+    mat3x3MatTransMult(tmp, &Tn[9 * i], dCpt);
 
-    director::template
-      addRotationMatResidual<vars_per_node, offset, 1>(&vars[i*vars_per_node], dCpt,
-                                                       &t[i*vars_per_node]);
+    director::template addRotationMatResidual<vars_per_node, offset, 1>(
+        &vars[i * vars_per_node], dCpt, &t[i * vars_per_node]);
 
     // Compute du0d = T*du0x*XdinvT^{T} + T*du1x*XdinvzT^{T}
     TacsScalar du0d[9];
-    mat3x3MatTransMult(du0x, &XdinvTn[9*i], tmp);
-    mat3x3MatMult(&Tn[9*i], tmp, du0d);
+    mat3x3MatTransMult(du0x, &XdinvTn[9 * i], tmp);
+    mat3x3MatMult(&Tn[9 * i], tmp, du0d);
 
     // du0d = [du0xi; dd0]
     TacsScalar du0xi[6];
     TacsShellExtractFrame(du0d, du0xi);
 
-    // Compute the gradient of the displacement solution at the quadrature points
-    basis::template
-      addInterpFieldsGradTranspose<vars_per_node, 3>(pt, du0xi, t);
+    // Compute the gradient of the displacement solution at the quadrature
+    // points
+    basis::template addInterpFieldsGradTranspose<vars_per_node, 3>(pt, du0xi,
+                                                                   t);
   }
 
   // Add the contribution to the residual from the drilling rotation
-  if (res){
-    for ( int i = 0; i < num_nodes; i++ ){
-      const TacsScalar *t = &drot[i*size];
-      for ( int j = 0; j < size; j++ ){
-        res[j] += detn[i]*t[j];
+  if (res) {
+    for (int i = 0; i < num_nodes; i++) {
+      const TacsScalar *t = &drot[i * size];
+      for (int j = 0; j < size; j++) {
+        res[j] += detn[i] * t[j];
       }
     }
   }
 
   // Add the contributions to the Jacobian
-  for ( int i = 0; i < num_nodes; i++ ){
+  for (int i = 0; i < num_nodes; i++) {
     TacsScalar t[size];
-    memset(t, 0, size*sizeof(TacsScalar)); // *const TacsScalar *t1 = &drot[i*size];
+    memset(
+        t, 0,
+        size * sizeof(TacsScalar));  // *const TacsScalar *t1 = &drot[i*size];
 
-    for ( int j = 0; j < num_nodes; j++ ){
-      const TacsScalar *t1 = &drot[j*size];
-      for ( int ii = 0; ii < size; ii++ ){
-        t[ii] += d2etn[i*num_nodes + j]*t1[ii];
+    for (int j = 0; j < num_nodes; j++) {
+      const TacsScalar *t1 = &drot[j * size];
+      for (int ii = 0; ii < size; ii++) {
+        t[ii] += d2etn[i * num_nodes + j] * t1[ii];
       }
     }
 
-    const TacsScalar *t2 = &drot[i*size];
-    for ( int ii = 0; ii < size; ii++ ){
-      for ( int jj = 0; jj < size; jj++ ){
-        mat[ii*size + jj] += t[ii]*t2[jj];
+    const TacsScalar *t2 = &drot[i * size];
+    for (int ii = 0; ii < size; ii++) {
+      for (int jj = 0; jj < size; jj++) {
+        mat[ii * size + jj] += t[ii] * t2[jj];
       }
     }
   }
 
-  for ( int i = 0; i < num_nodes; i++ ){
+  for (int i = 0; i < num_nodes; i++) {
     // Get the node location
     double pt[2];
     basis::getNodePoint(i, pt);
 
     TacsScalar d2u0x[81], d2Ct[81], d2Ctu0x[81];
-    director::evalDrillStrainHessian(detn[i], &u0xn[9*i], &Ctn[9*i],
-                                     d2u0x, d2Ct, d2Ctu0x);
+    director::evalDrillStrainHessian(detn[i], &u0xn[9 * i], &Ctn[9 * i], d2u0x,
+                                     d2Ct, d2Ctu0x);
 
     // Compute the second derivative w.r.t. u0d
     TacsScalar d2u0d[81];
-    mat3x3TransMatMatHessian(&Tn[9*i], &XdinvTn[9*i], d2u0x, d2u0d);
+    mat3x3TransMatMatHessian(&Tn[9 * i], &XdinvTn[9 * i], d2u0x, d2u0d);
 
     // // Compute the second derivative w.r.t. Cpt
     TacsScalar d2Cpt[81];
-    mat3x3TransMatMatHessian(&Tn[9*i], &Tn[9*i], d2Ct, d2Cpt);
+    mat3x3TransMatMatHessian(&Tn[9 * i], &Tn[9 * i], d2Ct, d2Cpt);
 
     // d2C0u0d = Ctu0x*[d(u0x)/d(u0d)]*[d(Ct)/d(Cpt)]
     TacsScalar d2Cptu0d[81];
-    mat3x3TransMatMatHessianAdd(&Tn[9*i], &Tn[9*i], &XdinvTn[9*i], &Tn[9*i],
-                                d2Ctu0x, d2Cptu0d);
+    mat3x3TransMatMatHessianAdd(&Tn[9 * i], &Tn[9 * i], &XdinvTn[9 * i],
+                                &Tn[9 * i], d2Ctu0x, d2Cptu0d);
 
     // Extract the shell frame
     TacsScalar d2u0xi[36];
     TacsShellExtractFrameSens(d2u0d, d2u0xi);
 
-    basis::template
-      addInterpGradOuterProduct<vars_per_node, vars_per_node, 3, 3>(pt, d2u0xi, mat);
+    basis::template addInterpGradOuterProduct<vars_per_node, vars_per_node, 3,
+                                              3>(pt, d2u0xi, mat);
   }
 }
 
@@ -1008,102 +959,102 @@ void TacsShellAddDrillStrainHessian( const TacsScalar Xdn[],
   @param d2etyd The second derivative of the tying strain and the director
 */
 template <class basis>
-void TacsShellAddTyingDispCoupling( const double pt[],
-                                    const TacsScalar T[],
-                                    const TacsScalar XdinvT[],
-                                    const TacsScalar XdinvzT[],
-                                    const TacsScalar d2e0tyu0x[],
-                                    const TacsScalar d2e0tyu1x[],
-                                    TacsScalar d2etyu[],
-                                    TacsScalar d2etyd[] ){
-  const int usize = 3*basis::NUM_NODES;
-  const int dsize = 3*basis::NUM_NODES;
+void TacsShellAddTyingDispCoupling(const double pt[], const TacsScalar T[],
+                                   const TacsScalar XdinvT[],
+                                   const TacsScalar XdinvzT[],
+                                   const TacsScalar d2e0tyu0x[],
+                                   const TacsScalar d2e0tyu1x[],
+                                   TacsScalar d2etyu[], TacsScalar d2etyd[]) {
+  const int usize = 3 * basis::NUM_NODES;
+  const int dsize = 3 * basis::NUM_NODES;
 
   // Compute d2gtyu0d, d2gtyu1d
   TacsScalar d2gtyu0d[54], d2gtyu1d[54];
   TacsScalar tmp0d[54], tmp1d[54];
-  for ( int k = 0; k < 6; k++ ){
+  for (int k = 0; k < 6; k++) {
     // Compute du0d = T*du0x*XdinvT^{T} + T*du1x*XdinvzT^{T}
     TacsScalar tmp[9];
-    mat3x3MatTransMult(&d2e0tyu1x[9*k], XdinvzT, tmp);
-    mat3x3MatTransMultAdd(&d2e0tyu0x[9*k], XdinvT, tmp);
-    mat3x3MatMult(T, tmp, &tmp0d[9*k]);
+    mat3x3MatTransMult(&d2e0tyu1x[9 * k], XdinvzT, tmp);
+    mat3x3MatTransMultAdd(&d2e0tyu0x[9 * k], XdinvT, tmp);
+    mat3x3MatMult(T, tmp, &tmp0d[9 * k]);
 
     // Compute du1d = T*du1x*XdinvT^{T}
-    mat3x3MatTransMult(&d2e0tyu1x[9*k], XdinvT, tmp);
-    mat3x3MatMult(T, tmp, &tmp1d[9*k]);
+    mat3x3MatTransMult(&d2e0tyu1x[9 * k], XdinvT, tmp);
+    mat3x3MatMult(T, tmp, &tmp1d[9 * k]);
   }
 
   // Perform the sensitivity transformation
-  for ( int k = 0; k < 9; k++ ){
+  for (int k = 0; k < 9; k++) {
     TacsScalar t0[6], out[6];
-    for ( int kk = 0; kk < 6; kk++ ){
-      t0[kk] = tmp0d[9*kk + k];
+    for (int kk = 0; kk < 6; kk++) {
+      t0[kk] = tmp0d[9 * kk + k];
     }
     mat3x3SymmTransformTransSens(XdinvT, t0, out);
-    for ( int kk = 0; kk < 6; kk++ ){
-      d2gtyu0d[9*kk + k] = out[kk];
+    for (int kk = 0; kk < 6; kk++) {
+      d2gtyu0d[9 * kk + k] = out[kk];
     }
   }
 
-  for ( int k = 0; k < 9; k++ ){
+  for (int k = 0; k < 9; k++) {
     TacsScalar t0[6], out[6];
-    for ( int kk = 0; kk < 6; kk++ ){
-      t0[kk] = tmp1d[9*kk + k];
+    for (int kk = 0; kk < 6; kk++) {
+      t0[kk] = tmp1d[9 * kk + k];
     }
     mat3x3SymmTransformTransSens(XdinvT, t0, out);
-    for ( int kk = 0; kk < 6; kk++ ){
-      d2gtyu1d[9*kk + k] = out[kk];
+    for (int kk = 0; kk < 6; kk++) {
+      d2gtyu1d[9 * kk + k] = out[kk];
     }
   }
 
-  TacsScalar d2gtyu[6*usize], d2gtyd[6*dsize];
-  memset(d2gtyu, 0, 6*usize*sizeof(TacsScalar));
-  memset(d2gtyd, 0, 6*dsize*sizeof(TacsScalar));
+  TacsScalar d2gtyu[6 * usize], d2gtyd[6 * dsize];
+  memset(d2gtyu, 0, 6 * usize * sizeof(TacsScalar));
+  memset(d2gtyd, 0, 6 * dsize * sizeof(TacsScalar));
 
-  for ( int k = 0; k < 6; k++ ){
+  for (int k = 0; k < 6; k++) {
     // du0d = [du0xi; dd0]
     TacsScalar du0xi[6], dd0[3];
-    TacsShellExtractFrame(&d2gtyu0d[9*k], du0xi, dd0);
+    TacsShellExtractFrame(&d2gtyu0d[9 * k], du0xi, dd0);
 
     TacsScalar dd0xi[6];
-    TacsShellExtractFrame(&d2gtyu1d[9*k], dd0xi);
+    TacsShellExtractFrame(&d2gtyu1d[9 * k], dd0xi);
 
     // Compute the director field and the gradient of the director
     // field at the specified point
-    basis::template addInterpFieldsTranspose<3, 3>(pt, dd0, &d2gtyd[dsize*k]);
-    basis::template addInterpFieldsGradTranspose<3, 3>(pt, dd0xi, &d2gtyd[dsize*k]);
-    basis::template addInterpFieldsGradTranspose<3, 3>(pt, du0xi, &d2gtyu[usize*k]);
+    basis::template addInterpFieldsTranspose<3, 3>(pt, dd0, &d2gtyd[dsize * k]);
+    basis::template addInterpFieldsGradTranspose<3, 3>(pt, dd0xi,
+                                                       &d2gtyd[dsize * k]);
+    basis::template addInterpFieldsGradTranspose<3, 3>(pt, du0xi,
+                                                       &d2gtyu[usize * k]);
   }
 
   // Add the values into d2etyu and d2etyd
-  for ( int k = 0; k < usize; k++ ){
+  for (int k = 0; k < usize; k++) {
     TacsScalar t1[6], t2[basis::NUM_TYING_POINTS];
-    memset(t2, 0, basis::NUM_TYING_POINTS*sizeof(TacsScalar));
+    memset(t2, 0, basis::NUM_TYING_POINTS * sizeof(TacsScalar));
 
-    for ( int kk = 0; kk < 6; kk++ ){
-      t1[kk] = d2gtyu[usize*kk + k];
+    for (int kk = 0; kk < 6; kk++) {
+      t1[kk] = d2gtyu[usize * kk + k];
     }
 
     basis::addInterpTyingStrainTranspose(pt, t1, t2);
 
-    for ( int kk = 0; kk < basis::NUM_TYING_POINTS; kk++ ){
-      d2etyu[kk*usize + k] += t2[kk];
+    for (int kk = 0; kk < basis::NUM_TYING_POINTS; kk++) {
+      d2etyu[kk * usize + k] += t2[kk];
     }
   }
 
-  for ( int k = 0; k < dsize; k++ ){
+  for (int k = 0; k < dsize; k++) {
     TacsScalar t1[6], t2[basis::NUM_TYING_POINTS];
-    memset(t2, 0, basis::NUM_TYING_POINTS*sizeof(TacsScalar));
+    memset(t2, 0, basis::NUM_TYING_POINTS * sizeof(TacsScalar));
 
-    for ( int kk = 0; kk < 6; kk++ ){
-      t1[kk] = d2gtyd[dsize*kk + k];
+    for (int kk = 0; kk < 6; kk++) {
+      t1[kk] = d2gtyd[dsize * kk + k];
     }
 
     basis::addInterpTyingStrainTranspose(pt, t1, t2);
 
-    for ( int kk = 0; kk < basis::NUM_TYING_POINTS; kk++ ){
-      d2etyd[kk*dsize + k] += t2[kk];
+    for (int kk = 0; kk < basis::NUM_TYING_POINTS; kk++) {
+      d2etyd[kk * dsize + k] += t2[kk];
     }
   }
 }
@@ -1112,14 +1063,13 @@ void TacsShellAddTyingDispCoupling( const double pt[],
   Test the implementation of the shell terms for a given basis
 */
 template <int vars_per_node, class basis>
-int TacsTestShellUtilities( double dh=1e-7,
-                            int test_print_level=2,
-                            double test_fail_atol=1e-5,
-                            double test_fail_rtol=1e-5 ){
-  const int size = vars_per_node*basis::NUM_NODES;
-  const int usize = 3*basis::NUM_NODES;
-  const int dsize = 3*basis::NUM_NODES;
-  const int xsize = 3*basis::NUM_NODES;
+int TacsTestShellUtilities(double dh = 1e-7, int test_print_level = 2,
+                           double test_fail_atol = 1e-5,
+                           double test_fail_rtol = 1e-5) {
+  const int size = vars_per_node * basis::NUM_NODES;
+  const int usize = 3 * basis::NUM_NODES;
+  const int dsize = 3 * basis::NUM_NODES;
+  const int xsize = 3 * basis::NUM_NODES;
 
   double pt[2];
   TacsGenerateRandomArray(pt, 2);
@@ -1151,92 +1101,91 @@ int TacsTestShellUtilities( double dh=1e-7,
   TacsGenerateRandomArray(d2u0xu1x, 81);
 
   // Symmetrize the random matrices
-  for ( int i = 0; i < 9; i++ ){
-    for ( int j = i+1; j < 9; j++ ){
-      d2u0x[9*i + j] = d2u0x[9*j + i];
-      d2u1x[9*i + j] = d2u1x[9*j + i];
+  for (int i = 0; i < 9; i++) {
+    for (int j = i + 1; j < 9; j++) {
+      d2u0x[9 * i + j] = d2u0x[9 * j + i];
+      d2u1x[9 * i + j] = d2u1x[9 * j + i];
     }
   }
 
-  TacsScalar res[size], mat[size*size];
-  memset(res, 0, size*sizeof(TacsScalar));
-  memset(mat, 0, size*size*sizeof(TacsScalar));
+  TacsScalar res[size], mat[size * size];
+  memset(res, 0, size * sizeof(TacsScalar));
+  memset(mat, 0, size * size * sizeof(TacsScalar));
 
-  TacsScalar dd[dsize], d2d[dsize*dsize], d2du[usize*dsize];
-  memset(dd, 0, dsize*sizeof(TacsScalar));
-  memset(d2d, 0, dsize*dsize*sizeof(TacsScalar));
-  memset(d2du, 0, usize*dsize*sizeof(TacsScalar));
+  TacsScalar dd[dsize], d2d[dsize * dsize], d2du[usize * dsize];
+  memset(dd, 0, dsize * sizeof(TacsScalar));
+  memset(d2d, 0, dsize * dsize * sizeof(TacsScalar));
+  memset(d2du, 0, usize * dsize * sizeof(TacsScalar));
 
   TacsScalar XdinvT[9], XdinvzT[9];
   TacsScalar u0x[9], u1x[9];
-  TacsShellComputeDispGrad<vars_per_node, basis>(pt, Xpts, vars, fn, d, Xxi, n0, T,
-                                                 XdinvT, XdinvzT, u0x, u1x);
+  TacsShellComputeDispGrad<vars_per_node, basis>(pt, Xpts, vars, fn, d, Xxi, n0,
+                                                 T, XdinvT, XdinvzT, u0x, u1x);
 
-  TacsShellAddDispGradSens<vars_per_node, basis>(pt, T, XdinvT, XdinvzT,
-                                                 du0x, du1x, res, dd);
-  TacsShellAddDispGradHessian<vars_per_node, basis>(pt, T, XdinvT, XdinvzT,
-                                                    d2u0x, d2u1x, d2u0xu1x,
-                                                    mat, d2d, d2du);
+  TacsShellAddDispGradSens<vars_per_node, basis>(pt, T, XdinvT, XdinvzT, du0x,
+                                                 du1x, res, dd);
+  TacsShellAddDispGradHessian<vars_per_node, basis>(
+      pt, T, XdinvT, XdinvzT, d2u0x, d2u1x, d2u0xu1x, mat, d2d, d2du);
 
   // Now, check the result
-  TacsScalar fdmat[size*size], fddu[dsize*usize];
-  for ( int k = 0; k < size; k++ ){
+  TacsScalar fdmat[size * size], fddu[dsize * usize];
+  for (int k = 0; k < size; k++) {
     TacsScalar varst[size];
-    memcpy(varst, vars, size*sizeof(TacsScalar));
+    memcpy(varst, vars, size * sizeof(TacsScalar));
 
 #ifdef TACS_USE_COMPLEX
     varst[k] = vars[k] + TacsScalar(0.0, dh);
 #else
     varst[k] = vars[k] + dh;
-#endif // TACS_USE_COMPLEX
+#endif  // TACS_USE_COMPLEX
 
     // Compute the pertubation
     TacsScalar u0xt[9], u1xt[9];
-    TacsShellComputeDispGrad<vars_per_node, basis>(pt, Xpts, varst, fn, d, Xxi, n0, T,
-                                                   XdinvT, XdinvzT, u0xt, u1xt);
+    TacsShellComputeDispGrad<vars_per_node, basis>(
+        pt, Xpts, varst, fn, d, Xxi, n0, T, XdinvT, XdinvzT, u0xt, u1xt);
 
     // d2u0xu1x[9*i + j] = p2f/(p(u0x[i]) p(u1x[j]))
     // d2Ctu0x[9*i + j] = p2f/(p(Ct[i]) p(u0x[j]))
 
     // Compute the perturbed values based on the outputs
     TacsScalar du0xt[9], du1xt[9];
-    for ( int i = 0; i < 9; i++ ){
+    for (int i = 0; i < 9; i++) {
       du0xt[i] = du0x[i];
       du1xt[i] = du1x[i];
-      for ( int j = 0; j < 9; j++ ){
-        du0xt[i] += d2u0x[9*i + j]*(u0xt[j] - u0x[j]) +
-                    d2u0xu1x[9*i + j]*(u1xt[j] - u1x[j]);
+      for (int j = 0; j < 9; j++) {
+        du0xt[i] += d2u0x[9 * i + j] * (u0xt[j] - u0x[j]) +
+                    d2u0xu1x[9 * i + j] * (u1xt[j] - u1x[j]);
 
-        du1xt[i] += d2u1x[9*i + j]*(u1xt[j] - u1x[j]) +
-                    d2u0xu1x[9*j + i]*(u0xt[j] - u0x[j]);
+        du1xt[i] += d2u1x[9 * i + j] * (u1xt[j] - u1x[j]) +
+                    d2u0xu1x[9 * j + i] * (u0xt[j] - u0x[j]);
       }
     }
 
     TacsScalar rest[size], ddt[dsize];
-    memset(rest, 0, size*sizeof(TacsScalar));
-    memset(ddt, 0, dsize*sizeof(TacsScalar));
+    memset(rest, 0, size * sizeof(TacsScalar));
+    memset(ddt, 0, dsize * sizeof(TacsScalar));
     TacsShellAddDispGradSens<vars_per_node, basis>(pt, T, XdinvT, XdinvzT,
                                                    du0xt, du1xt, rest, ddt);
 
     // Place the result in the arrays...
-    for ( int j = 0; j < size; j++ ){
+    for (int j = 0; j < size; j++) {
 #ifdef TACS_USE_COMPLEX
-      fdmat[k + size*j] = TacsImagPart(rest[j])/dh;
+      fdmat[k + size * j] = TacsImagPart(rest[j]) / dh;
 #else
-      fdmat[k + size*j] = (rest[j] - res[j])/dh;
-#endif // TACS_USE_COMPLEX
+      fdmat[k + size * j] = (rest[j] - res[j]) / dh;
+#endif  // TACS_USE_COMPLEX
     }
 
-    if (k % vars_per_node < 3){
+    if (k % vars_per_node < 3) {
       // Compute the u-index
-      int index = 3*(k / vars_per_node) + k % vars_per_node;
+      int index = 3 * (k / vars_per_node) + k % vars_per_node;
 
-      for ( int j = 0; j < dsize; j++ ){
+      for (int j = 0; j < dsize; j++) {
 #ifdef TACS_USE_COMPLEX
-        fddu[index + usize*j] = TacsImagPart(ddt[j])/dh;
+        fddu[index + usize * j] = TacsImagPart(ddt[j]) / dh;
 #else
-        fddu[index + usize*j] = (ddt[j] - dd[j])/dh;
-#endif // TACS_USE_COMPLEX
+        fddu[index + usize * j] = (ddt[j] - dd[j]) / dh;
+#endif  // TACS_USE_COMPLEX
       }
     }
   }
@@ -1249,111 +1198,117 @@ int TacsTestShellUtilities( double dh=1e-7,
   int fail = 0;
 
   // Compute the error
-  max_err = TacsGetMaxError(mat, fdmat, size*size, &max_err_index);
-  max_rel = TacsGetMaxRelError(mat, fdmat, size*size, &max_rel_index);
+  max_err = TacsGetMaxError(mat, fdmat, size * size, &max_err_index);
+  max_rel = TacsGetMaxRelError(mat, fdmat, size * size, &max_rel_index);
 
-  if (test_print_level > 0){
+  if (test_print_level > 0) {
     fprintf(stderr, "Testing the derivative w.r.t. vars\n");
-    fprintf(stderr, "Max Err: %10.4e in component %d.\n",
-            max_err, max_err_index);
-    fprintf(stderr, "Max REr: %10.4e in component %d.\n",
-            max_rel, max_rel_index);
+    fprintf(stderr, "Max Err: %10.4e in component %d.\n", max_err,
+            max_err_index);
+    fprintf(stderr, "Max REr: %10.4e in component %d.\n", max_rel,
+            max_rel_index);
   }
   // Print the error if required
-  if (test_print_level > 1){
-    TacsPrintErrorComponents(stderr, "mat", mat, fdmat, size*size);
+  if (test_print_level > 1) {
+    TacsPrintErrorComponents(stderr, "mat", mat, fdmat, size * size);
   }
-  if (test_print_level){ fprintf(stderr, "\n"); }
+  if (test_print_level) {
+    fprintf(stderr, "\n");
+  }
 
   fail = (max_err > test_fail_atol || max_rel > test_fail_rtol);
 
   // Compute the error
-  max_err = TacsGetMaxError(d2du, fddu, usize*dsize, &max_err_index);
-  max_rel = TacsGetMaxRelError(d2du, fddu, usize*dsize, &max_rel_index);
+  max_err = TacsGetMaxError(d2du, fddu, usize * dsize, &max_err_index);
+  max_rel = TacsGetMaxRelError(d2du, fddu, usize * dsize, &max_rel_index);
 
-  if (test_print_level > 0){
+  if (test_print_level > 0) {
     fprintf(stderr, "Testing the derivative w.r.t. d and vars\n");
-    fprintf(stderr, "Max Err: %10.4e in component %d.\n",
-            max_err, max_err_index);
-    fprintf(stderr, "Max REr: %10.4e in component %d.\n",
-            max_rel, max_rel_index);
+    fprintf(stderr, "Max Err: %10.4e in component %d.\n", max_err,
+            max_err_index);
+    fprintf(stderr, "Max REr: %10.4e in component %d.\n", max_rel,
+            max_rel_index);
   }
   // Print the error if required
-  if (test_print_level > 1){
-    TacsPrintErrorComponents(stderr, "d2du", d2du, fddu, usize*dsize);
+  if (test_print_level > 1) {
+    TacsPrintErrorComponents(stderr, "d2du", d2du, fddu, usize * dsize);
   }
-  if (test_print_level){ fprintf(stderr, "\n"); }
+  if (test_print_level) {
+    fprintf(stderr, "\n");
+  }
 
   fail = (max_err > test_fail_atol || max_rel > test_fail_rtol);
 
-  TacsScalar fddd[dsize*dsize];
-  for ( int k = 0; k < dsize; k++ ){
+  TacsScalar fddd[dsize * dsize];
+  for (int k = 0; k < dsize; k++) {
     TacsScalar dt[dsize];
-    memcpy(dt, d, dsize*sizeof(TacsScalar));
+    memcpy(dt, d, dsize * sizeof(TacsScalar));
 
 #ifdef TACS_USE_COMPLEX
     dt[k] = d[k] + TacsScalar(0.0, dh);
 #else
     dt[k] = d[k] + dh;
-#endif // TACS_USE_COMPLEX
+#endif  // TACS_USE_COMPLEX
 
     // Compute the pertubation
     TacsScalar u0xt[9], u1xt[9];
-    TacsShellComputeDispGrad<vars_per_node, basis>(pt, Xpts, vars, fn, dt, Xxi, n0, T,
-                                                   XdinvT, XdinvzT, u0xt, u1xt);
+    TacsShellComputeDispGrad<vars_per_node, basis>(
+        pt, Xpts, vars, fn, dt, Xxi, n0, T, XdinvT, XdinvzT, u0xt, u1xt);
 
     // d2u0xu1x[9*i + j] = p2f/(p(u0x[i]) p(u1x[j]))
     // d2Ctu0x[9*i + j] = p2f/(p(Ct[i]) p(u0x[j]))
 
     // Compute the perturbed values based on the outputs
     TacsScalar du0xt[9], du1xt[9];
-    for ( int i = 0; i < 9; i++ ){
+    for (int i = 0; i < 9; i++) {
       du0xt[i] = du0x[i];
       du1xt[i] = du1x[i];
-      for ( int j = 0; j < 9; j++ ){
-        du0xt[i] += d2u0x[9*i + j]*(u0xt[j] - u0x[j]) +
-                    d2u0xu1x[9*i + j]*(u1xt[j] - u1x[j]);
+      for (int j = 0; j < 9; j++) {
+        du0xt[i] += d2u0x[9 * i + j] * (u0xt[j] - u0x[j]) +
+                    d2u0xu1x[9 * i + j] * (u1xt[j] - u1x[j]);
 
-        du1xt[i] += d2u1x[9*i + j]*(u1xt[j] - u1x[j]) +
-                    d2u0xu1x[9*j + i]*(u0xt[j] - u0x[j]);
+        du1xt[i] += d2u1x[9 * i + j] * (u1xt[j] - u1x[j]) +
+                    d2u0xu1x[9 * j + i] * (u0xt[j] - u0x[j]);
       }
     }
 
     TacsScalar rest[size], ddt[dsize];
-    memset(rest, 0, size*sizeof(TacsScalar));
-    memset(ddt, 0, dsize*sizeof(TacsScalar));
+    memset(rest, 0, size * sizeof(TacsScalar));
+    memset(ddt, 0, dsize * sizeof(TacsScalar));
     TacsShellAddDispGradSens<vars_per_node, basis>(pt, T, XdinvT, XdinvzT,
                                                    du0xt, du1xt, rest, ddt);
 
-    for ( int j = 0; j < dsize; j++ ){
+    for (int j = 0; j < dsize; j++) {
 #ifdef TACS_USE_COMPLEX
-      fddd[k + dsize*j] = TacsImagPart(ddt[j])/dh;
+      fddd[k + dsize * j] = TacsImagPart(ddt[j]) / dh;
 #else
-      fddd[k + dsize*j] = (ddt[j] - dd[j])/dh;
-#endif // TACS_USE_COMPLEX
+      fddd[k + dsize * j] = (ddt[j] - dd[j]) / dh;
+#endif  // TACS_USE_COMPLEX
     }
   }
 
   // Compute the error
-  max_err = TacsGetMaxError(d2d, fddd, dsize*dsize, &max_err_index);
-  max_rel = TacsGetMaxRelError(d2d, fddd, dsize*dsize, &max_rel_index);
+  max_err = TacsGetMaxError(d2d, fddd, dsize * dsize, &max_err_index);
+  max_rel = TacsGetMaxRelError(d2d, fddd, dsize * dsize, &max_rel_index);
 
-  if (test_print_level > 0){
+  if (test_print_level > 0) {
     fprintf(stderr, "Testing the derivative w.r.t. d\n");
-    fprintf(stderr, "Max Err: %10.4e in component %d.\n",
-            max_err, max_err_index);
-    fprintf(stderr, "Max REr: %10.4e in component %d.\n",
-            max_rel, max_rel_index);
+    fprintf(stderr, "Max Err: %10.4e in component %d.\n", max_err,
+            max_err_index);
+    fprintf(stderr, "Max REr: %10.4e in component %d.\n", max_rel,
+            max_rel_index);
   }
   // Print the error if required
-  if (test_print_level > 1){
-    TacsPrintErrorComponents(stderr, "d2d", d2d, fddd, dsize*dsize);
+  if (test_print_level > 1) {
+    TacsPrintErrorComponents(stderr, "d2d", d2d, fddd, dsize * dsize);
   }
-  if (test_print_level){ fprintf(stderr, "\n"); }
+  if (test_print_level) {
+    fprintf(stderr, "\n");
+  }
 
   fail = (max_err > test_fail_atol || max_rel > test_fail_rtol);
 
   return fail;
 }
 
-#endif // TACS_SHELL_UTILITIES_H
+#endif  // TACS_SHELL_UTILITIES_H

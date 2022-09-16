@@ -3,12 +3,14 @@ from mpi4py import MPI
 from tacs import TACS, elements, constitutive, functions
 from transient_analysis_base_test import TransientTestCase
 
-'''
+"""
 Create a uniform cube under distributed point loads with sinusoidal variation in time
 and test KSFailure, StructuralMass, and Compliance functions and sensitivities
-'''
+"""
 
-FUNC_REFS = np.array([1.0078196208590282, 2570000.0, 89660446.16938959, 7.653054063858885])
+FUNC_REFS = np.array(
+    [1.0078196208590282, 2570000.0, 89660446.16938959, 7.653054063858885]
+)
 
 # Length of plate in x/y/z direction
 Lx = 10.0
@@ -34,8 +36,10 @@ fhz = 0.5
 # KS function weight
 ksweight = 10.0
 
+
 class ProblemTest(TransientTestCase.TransientTest):
-    N_PROCS = 2 # this is how many MPI processes to use for this TestCase.
+    N_PROCS = 2  # this is how many MPI processes to use for this TestCase.
+
     def setup_assembler(self, comm, dtype):
         """
         Setup mesh and tacs assembler for problem we will be testing.
@@ -72,7 +76,9 @@ class ProblemTest(TransientTestCase.TransientTest):
             y = np.linspace(0, Ly, ny + 1, dtype)
             z = np.linspace(0, Lz, nz + 1, dtype)
             xyz = np.zeros([nx + 1, ny + 1, nz + 1, 3], dtype)
-            xyz[:, :, :, 0], xyz[:, :, :, 1], xyz[:, :, :, 2] = np.meshgrid(x, y, z, indexing='ij')
+            xyz[:, :, :, 0], xyz[:, :, :, 1], xyz[:, :, :, 2] = np.meshgrid(
+                x, y, z, indexing="ij"
+            )
             x, y, z = xyz[:, :, :, 0], xyz[:, :, :, 1], xyz[:, :, :, 2]
 
             node_ids = np.arange(num_nodes).reshape(nx + 1, ny + 1, nz + 1)
@@ -81,14 +87,18 @@ class ProblemTest(TransientTestCase.TransientTest):
             for i in range(nx):
                 for j in range(ny):
                     for k in range(nz):
-                        conn.append([node_ids[i, j, k],
-                                     node_ids[i + 1, j, k],
-                                     node_ids[i, j + 1, k],
-                                     node_ids[i + 1, j + 1, k],
-                                     node_ids[i, j, k + 1],
-                                     node_ids[i + 1, j, k + 1],
-                                     node_ids[i, j + 1, k + 1],
-                                     node_ids[i + 1, j + 1, k + 1]])
+                        conn.append(
+                            [
+                                node_ids[i, j, k],
+                                node_ids[i + 1, j, k],
+                                node_ids[i, j + 1, k],
+                                node_ids[i + 1, j + 1, k],
+                                node_ids[i, j, k + 1],
+                                node_ids[i + 1, j, k + 1],
+                                node_ids[i, j + 1, k + 1],
+                                node_ids[i + 1, j + 1, k + 1],
+                            ]
+                        )
 
             conn = np.array(conn, dtype=np.intc).flatten()
             ptr = np.arange(0, 8 * num_elems + 1, 8, dtype=np.intc)
@@ -120,8 +130,9 @@ class ProblemTest(TransientTestCase.TransientTest):
         num_stages = 2
 
         # Set the file output format
-        integrator = TACS.DIRKIntegrator(assembler, tinit, tfinal,
-                                        float(num_steps), num_stages)
+        integrator = TACS.DIRKIntegrator(
+            assembler, tinit, tfinal, float(num_steps), num_stages
+        )
 
         return integrator
 
@@ -170,8 +181,12 @@ class ProblemTest(TransientTestCase.TransientTest):
         """
         Create a list of functions to be tested and their reference values for the problem
         """
-        func_list = [functions.KSFailure(assembler, ksWeight=ksweight),
-                     functions.StructuralMass(assembler),
-                     functions.Compliance(assembler),
-                     functions.KSDisplacement(assembler, ksWeight=ksweight, direction=[100.0, 100.0, 100.0])]
+        func_list = [
+            functions.KSFailure(assembler, ksWeight=ksweight),
+            functions.StructuralMass(assembler),
+            functions.Compliance(assembler),
+            functions.KSDisplacement(
+                assembler, ksWeight=ksweight, direction=[100.0, 100.0, 100.0]
+            ),
+        ]
         return func_list, FUNC_REFS

@@ -1,5 +1,6 @@
 import tacs.TACS
 
+
 class BaseUI:
     """
     Base class to be inherited by all pyTACS classes.
@@ -24,11 +25,11 @@ class BaseUI:
         name = name.lower()
 
         # Try to the option in the option dictionary
-        defOptions = self.options['defaults']
+        defOptions = self.options["defaults"]
         try:
             defOptions[name]
         except KeyError:
-            self._TACSWarning(f'\'{name}\' is not a valid option')
+            self._TACSWarning(f"'{name}' is not a valid option")
             return
 
         # Now we know the option exists, lets check if the type is ok:
@@ -38,9 +39,11 @@ class BaseUI:
             description = defOptions[name][2]
             self.options[name] = [type(value), value, description]
         else:
-            raise self._TACSError("Datatype for Option %s was not valid. "
-                        "Expected data type is %s. Received data type "
-                        " is %s." % (name, self.options[name][0], type(value)))
+            raise self._TACSError(
+                "Datatype for Option %s was not valid. "
+                "Expected data type is %s. Received data type "
+                " is %s." % (name, self.options[name][0], type(value))
+            )
 
     def getOption(self, name):
         """
@@ -55,11 +58,11 @@ class BaseUI:
         # Redefine the getOption def from the base class so we can
         # mane sure the name is lowercase
 
-        def_options = self.options['defaults']
+        def_options = self.options["defaults"]
         if name.lower() in def_options:
             return self.options[name.lower()][1]
         else:
-            raise AttributeError(repr(name) + ' is not a valid option name')
+            raise AttributeError(repr(name) + " is not a valid option name")
 
     def printOptions(self):
         """
@@ -68,14 +71,14 @@ class BaseUI:
         """
         # Class name
         header = type(self).__name__
-        if hasattr(self, 'name'):
+        if hasattr(self, "name"):
             # Append problem name, if TACSProblem
             header += f" ('{self.name}')"
         self._pp("+----------------------------------------+")
         self._pp("|" + f"{header} options:".center(40) + "|")
         self._pp("+----------------------------------------+")
         for name in self.options:
-            if name != 'defaults':
+            if name != "defaults":
                 if self.options[name][0] == str:
                     self._pp(f"'{name}': '{self.options[name][1]}'")
                 else:
@@ -94,7 +97,7 @@ class BaseUI:
         print("+----------------------------------------+")
         print("|" + f"{header} default options:".center(40) + "|")
         print("+----------------------------------------+")
-        if hasattr(cls, 'defaultOptions'):
+        if hasattr(cls, "defaultOptions"):
             for name in cls.defaultOptions:
                 if cls.defaultOptions[name][0] == str:
                     print(f"'{name}': '{cls.defaultOptions[name][1]}'")
@@ -107,28 +110,28 @@ class BaseUI:
     #                      Utility Functions
     # ---------------------------------------------------------------------------
     def _pp(self, printStr):
-        """ Simple parallel print"""
+        """Simple parallel print"""
         if self.comm.rank == 0:
             print(printStr)
 
     def _info(self, message, maxLen=80, box=False):
-        """ Generic function for writing an info message. """
+        """Generic function for writing an info message."""
 
         if self.comm.rank == 0:
             # Class name
             header = type(self).__name__
-            if hasattr(self, 'name'):
+            if hasattr(self, "name"):
                 # Append problem name, if TACSProblem
                 header += f" ('{self.name}')"
             if not box:
-                objectInfo = f'{header} Info: '
+                objectInfo = f"{header} Info: "
                 print(objectInfo, end="")
                 i = len(objectInfo) + 1
                 aux = message.split()
                 for word in aux:
                     if len(word) + i > 120:
-                        print(' ')
-                        print(' ' * 6, end="")
+                        print(" ")
+                        print(" " * 6, end="")
                         i = 0
 
                     print(word, end=" ")
@@ -136,15 +139,15 @@ class BaseUI:
 
                 print()
             else:
-                print('+' + '-' * (maxLen - 2) + '+')
-                objectInfo = f'| {header} Info: '
+                print("+" + "-" * (maxLen - 2) + "+")
+                objectInfo = f"| {header} Info: "
                 print(objectInfo, end="")
                 i = len(objectInfo) + 1
                 aux = message.split()
                 for word in aux:
                     if len(word) + i > maxLen - 2:
-                        print(' ' * (80 - i) + '|')
-                        print('|', end="")
+                        print(" " * (80 - i) + "|")
+                        print("|", end="")
                         i = 2
                         print(word, end=" ")
                         i += len(word) + 1
@@ -152,8 +155,10 @@ class BaseUI:
                         print(word, end=" ")
                         i += len(word) + 1
 
-                print(' ' * (maxLen - i) + '|')
-                print('+' + '-' * (maxLen - 2) + '+', )
+                print(" " * (maxLen - i) + "|")
+                print(
+                    "+" + "-" * (maxLen - 2) + "+",
+                )
 
     # Misc Functions
     def _flatten(self, l, ltypes=(list, tuple)):
@@ -167,7 +172,7 @@ class BaseUI:
                     i -= 1
                     break
                 else:
-                    l[i:i + 1] = l[i]
+                    l[i : i + 1] = l[i]
             i += 1
         return ltype(l)
 
@@ -178,21 +183,21 @@ class BaseUI:
         if self.comm.rank == 0:
             # Class name
             header = type(self).__name__
-            if hasattr(self, 'name'):
+            if hasattr(self, "name"):
                 # Append problem name, if TACSProblem
                 header += f" ('{self.name}')"
-            msg = '\n+' + '-' * 78 + '+' + '\n'
-            objectWarning = f'| {header} Warning: '
+            msg = "\n+" + "-" * 78 + "+" + "\n"
+            objectWarning = f"| {header} Warning: "
             msg += objectWarning
             i = len(objectWarning) - 1
             for word in message.split():
                 if len(word) + i + 1 > 78:  # Finish line and start new one
-                    msg += ' ' * (78 - i) + '|\n| ' + word + ' '
+                    msg += " " * (78 - i) + "|\n| " + word + " "
                     i = 1 + len(word) + 1
                 else:
-                    msg += word + ' '
+                    msg += word + " "
                     i += len(word) + 1
-            msg += ' ' * (78 - i) + '|\n' + '+' + '-' * 78 + '+' + '\n'
+            msg += " " * (78 - i) + "|\n" + "+" + "-" * 78 + "+" + "\n"
             print(msg)
 
     def _TACSError(self, message):
@@ -201,10 +206,11 @@ class BaseUI:
         """
         # Class name
         header = type(self).__name__
-        if hasattr(self, 'name'):
+        if hasattr(self, "name"):
             # Append problem name, if TACSProblem
             header += f" ('{self.name}')"
         return Error(header, message)
+
 
 class Error(Exception):
     """
@@ -213,19 +219,17 @@ class Error(Exception):
     """
 
     def __init__(self, objName, message):
-        msg = '\n+' + '-' * 78 + '+' + '\n'
-        objectError = '| %s Error: '%(objName)
+        msg = "\n+" + "-" * 78 + "+" + "\n"
+        objectError = "| %s Error: " % (objName)
         msg += objectError
         i = len(objectError) - 1
         for word in message.split():
             if len(word) + i + 1 > 78:  # Finish line and start new one
-                msg += ' ' * (78 - i) + '|\n| ' + word + ' '
+                msg += " " * (78 - i) + "|\n| " + word + " "
                 i = 1 + len(word) + 1
             else:
-                msg += word + ' '
+                msg += word + " "
                 i += len(word) + 1
-        msg += ' ' * (78 - i) + '|\n' + '+' + '-' * 78 + '+' + '\n'
+        msg += " " * (78 - i) + "|\n" + "+" + "-" * 78 + "+" + "\n"
         print(msg)
         Exception.__init__(self)
-
-

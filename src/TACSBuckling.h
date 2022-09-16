@@ -24,10 +24,10 @@
   analysis of eigenvalues.
 */
 
-#include "TACSAssembler.h"
 #include "GSEP.h"
-#include "TACSMg.h"
 #include "JacobiDavidson.h"
+#include "TACSAssembler.h"
+#include "TACSMg.h"
 
 /*
   Linearized buckling analysis code.
@@ -42,33 +42,31 @@
 */
 class TACSLinearBuckling : public TACSObject {
  public:
-  TACSLinearBuckling( TACSAssembler *_assembler,
-                      TacsScalar _sigma,
-                      TACSMat *_gmat, TACSMat *_kmat,
-                      TACSMat *_aux_mat, TACSKsm *_solver,
-                      int _max_lanczos_vecs,
-                      int _num_eigvals, double _eig_tol );
+  TACSLinearBuckling(TACSAssembler *_assembler, TacsScalar _sigma,
+                     TACSMat *_gmat, TACSMat *_kmat, TACSMat *_aux_mat,
+                     TACSKsm *_solver, int _max_lanczos_vecs, int _num_eigvals,
+                     double _eig_tol);
   ~TACSLinearBuckling();
 
   // Retrieve the instance of TACSAssembler
   // --------------------------------------
-  TACSAssembler* getAssembler(){ return assembler; }
+  TACSAssembler *getAssembler() { return assembler; }
 
   // Functions to set the shift value
   // --------------------------------
   TacsScalar getSigma();
-  void setSigma( TacsScalar sigma );
+  void setSigma(TacsScalar sigma);
 
   // Solve the eigenvalue problem
   // ----------------------------
-  void solve( TACSVec *rhs=NULL, KSMPrint *ksm_print=NULL );
-  void evalEigenDVSens( int n, TACSBVec *dfdx );
+  void solve(TACSVec *rhs = NULL, KSMPrint *ksm_print = NULL);
+  void evalEigenDVSens(int n, TACSBVec *dfdx);
 
   // Extract the eigenvalue or check the solution
   // --------------------------------------------
-  TacsScalar extractEigenvalue( int n, TacsScalar *error );
-  TacsScalar extractEigenvector( int n, TACSBVec *ans, TacsScalar *error );
-  void checkEigenvector( int n );
+  TacsScalar extractEigenvalue(int n, TacsScalar *error);
+  TacsScalar extractEigenvector(int n, TACSBVec *ans, TacsScalar *error);
+  void checkEigenvector(int n);
   TacsScalar checkOrthogonality();
   void printOrthogonality();
 
@@ -94,7 +92,7 @@ class TACSLinearBuckling : public TACSObject {
   TACSMat *aux_mat, *kmat, *gmat;
 
   // Vectors used in the analysis
-  TACSBVec *path; // The solution path
+  TACSBVec *path;  // The solution path
   TACSBVec *res, *update, *eigvec;
 
   // The multigrid object -- only defined if a multigrid
@@ -123,42 +121,36 @@ class TACSLinearBuckling : public TACSObject {
 */
 class TACSFrequencyAnalysis : public TACSObject {
  public:
-  TACSFrequencyAnalysis( TACSAssembler *_assembler,
-                         TacsScalar _sigma,
-                         TACSMat *_mmat, TACSMat *_kmat,
-                         TACSKsm *_solver, int max_lanczos,
-                         int num_eigvals, double _eig_tol );
+  TACSFrequencyAnalysis(TACSAssembler *_assembler, TacsScalar _sigma,
+                        TACSMat *_mmat, TACSMat *_kmat, TACSKsm *_solver,
+                        int max_lanczos, int num_eigvals, double _eig_tol);
 
-  TACSFrequencyAnalysis( TACSAssembler *_assembler,
-                         TacsScalar _sigma,
-                         TACSMat *_mmat, TACSMat *_kmat,
-                         TACSMat *_pcmat, TACSPc *_pc,
-                         int max_jd_size,
-                         int fgmres_size, int num_eigvals,
-                         double eigtol=1e-9,
-                         double eig_rtol=1e-9,
-                         double eig_atol=1e-30,
-                         int num_recycle=0,
-                         JDRecycleType recycle_type=JD_NUM_RECYCLE );
+  TACSFrequencyAnalysis(TACSAssembler *_assembler, TacsScalar _sigma,
+                        TACSMat *_mmat, TACSMat *_kmat, TACSMat *_pcmat,
+                        TACSPc *_pc, int max_jd_size, int fgmres_size,
+                        int num_eigvals, double eigtol = 1e-9,
+                        double eig_rtol = 1e-9, double eig_atol = 1e-30,
+                        int num_recycle = 0,
+                        JDRecycleType recycle_type = JD_NUM_RECYCLE);
 
   ~TACSFrequencyAnalysis();
 
   // Retrieve the instance of TACSAssembler
   // --------------------------------------
-  TACSAssembler* getAssembler(){ return assembler; }
+  TACSAssembler *getAssembler() { return assembler; }
 
   // Solve the generalized eigenvalue problem
   // ----------------------------------------
   TacsScalar getSigma();
-  void setSigma( TacsScalar _sigma );
-  void solve( KSMPrint *ksm_print=NULL, int print_level=0 );
-  void evalEigenDVSens( int n, TACSBVec *dfdx );
+  void setSigma(TacsScalar _sigma);
+  void solve(KSMPrint *ksm_print = NULL, int print_level = 0);
+  void evalEigenDVSens(int n, TACSBVec *dfdx);
 
   // Extract and check the solution
   // ------------------------------
-  TacsScalar extractEigenvalue( int n, TacsScalar *error );
-  TacsScalar extractEigenvector( int n, TACSBVec *ans, TacsScalar *error );
-  void checkEigenvector( int n );
+  TacsScalar extractEigenvalue(int n, TacsScalar *error);
+  TacsScalar extractEigenvector(int n, TACSBVec *ans, TacsScalar *error);
+  void checkEigenvector(int n);
   TacsScalar checkOrthogonality();
 
  private:
@@ -166,11 +158,11 @@ class TACSFrequencyAnalysis : public TACSObject {
   TACSAssembler *assembler;
 
   // The matrices used in the analysis
-  TACSMat *mmat; // The mass matrix
-  TACSMat *kmat; // The stiffness matrix
-  TACSMat *pcmat; // Matrix associated with the preconditioner (JD)
-  TACSKsm *solver; // Associated with kmat
-  TACSPc *pc; // The preconditioner
+  TACSMat *mmat;    // The mass matrix
+  TACSMat *kmat;    // The stiffness matrix
+  TACSMat *pcmat;   // Matrix associated with the preconditioner (JD)
+  TACSKsm *solver;  // Associated with kmat
+  TACSPc *pc;       // The preconditioner
 
   // The multigrid object -- only defined if a multigrid
   // preconditioner is used
@@ -190,4 +182,4 @@ class TACSFrequencyAnalysis : public TACSObject {
   TACSBVec *eigvec, *res;
 };
 
-#endif // TACS_BUCKLING_H
+#endif  // TACS_BUCKLING_H

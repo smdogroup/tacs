@@ -21,54 +21,50 @@
   The following code uses templates to allow for arbitrary order elements.
 */
 
-#include "TACS2DElement.h"
 #include "FElibrary.h"
+#include "TACS2DElement.h"
 #include "TACSElement.h"
 
 template <int order>
-class PlaneStressQuad : public TACS2DElement<order*order> {
+class PlaneStressQuad : public TACS2DElement<order * order> {
  public:
-  PlaneStressQuad( PlaneStressStiffness *_stiff,
-                   ElementBehaviorType type=LINEAR,
-                   int _componentNum=0 );
+  PlaneStressQuad(PlaneStressStiffness *_stiff,
+                  ElementBehaviorType type = LINEAR, int _componentNum = 0);
   ~PlaneStressQuad();
 
   // Return the name of this element
   // -------------------------------
-  const char *elementName(){ return elemName; }
+  const char *elementName() { return elemName; }
 
   // Retrieve the shape functions
   // ----------------------------
-  void getShapeFunctions( const double pt[], double N[] );
-  void getShapeFunctions( const double pt[], double N[],
-                          double Na[], double Nb[] );
+  void getShapeFunctions(const double pt[], double N[]);
+  void getShapeFunctions(const double pt[], double N[], double Na[],
+                         double Nb[]);
 
   // Retrieve the Gauss points/weights
   // ---------------------------------
   int getNumGaussPts();
-  double getGaussWtsPts( const int num, double pt[] );
+  double getGaussWtsPts(const int num, double pt[]);
 
   // Add the localized error
   // -----------------------
-  void addLocalizedError( double time, TacsScalar err[],
-                          const TacsScalar adjoint[],
-                          const TacsScalar Xpts[],
-                          const TacsScalar vars[] );
+  void addLocalizedError(double time, TacsScalar err[],
+                         const TacsScalar adjoint[], const TacsScalar Xpts[],
+                         const TacsScalar vars[]);
 
   // Functions for post-processing
   // -----------------------------
-  void addOutputCount( int *nelems, int *nnodes, int *ncsr );
-  void getOutputData( unsigned int out_type,
-                      double *data, int ld_data,
-                      const TacsScalar Xpts[],
-                      const TacsScalar vars[] );
-  void getOutputConnectivity( int *con, int node );
+  void addOutputCount(int *nelems, int *nnodes, int *ncsr);
+  void getOutputData(unsigned int out_type, double *data, int ld_data,
+                     const TacsScalar Xpts[], const TacsScalar vars[]);
+  void getOutputConnectivity(int *con, int node);
 
  protected:
-  void getPartUnityShapeFunctions( const double pt[],
-                                   double N[], double Na[], double Nb[] );
+  void getPartUnityShapeFunctions(const double pt[], double N[], double Na[],
+                                  double Nb[]);
 
-  static const int NUM_NODES = order*order;
+  static const int NUM_NODES = order * order;
 
   // The knot locations for the basis functions
   double knots[order];
@@ -82,32 +78,30 @@ class PlaneStressQuad : public TACS2DElement<order*order> {
 };
 
 template <int order>
-PlaneStressQuad<order>::PlaneStressQuad( PlaneStressStiffness *_stiff,
-                                         ElementBehaviorType type,
-                                         int _componentNum ):
-TACS2DElement<order*order>(_stiff, type, _componentNum){
+PlaneStressQuad<order>::PlaneStressQuad(PlaneStressStiffness *_stiff,
+                                        ElementBehaviorType type,
+                                        int _componentNum)
+    : TACS2DElement<order * order>(_stiff, type, _componentNum) {
   numGauss = FElibrary::getGaussPtsWts(order, &gaussPts, &gaussWts);
 
   // Set the knot locations
-  if (order == 2){
+  if (order == 2) {
     knots[0] = -1.0;
     knots[1] = 1.0;
-  }
-  else if (order == 3){
+  } else if (order == 3) {
     knots[0] = -1.0;
     knots[1] = 0.0;
     knots[2] = 1.0;
-  }
-  else {
+  } else {
     // Set a co-sine spacing for the knot locations
-    for ( int k = 0; k < order; k++ ){
-      knots[k] = -cos(M_PI*k/(order-1));
+    for (int k = 0; k < order; k++) {
+      knots[k] = -cos(M_PI * k / (order - 1));
     }
   }
 }
 
 template <int order>
-PlaneStressQuad<order>::~PlaneStressQuad(){}
+PlaneStressQuad<order>::~PlaneStressQuad() {}
 
 template <int order>
 const char *PlaneStressQuad<order>::elemName = "PlaneStressQuad";
@@ -116,37 +110,36 @@ const char *PlaneStressQuad<order>::elemName = "PlaneStressQuad";
   Get the number of Gauss points in the Gauss quadrature scheme
 */
 template <int order>
-int PlaneStressQuad<order>::getNumGaussPts(){
-  return numGauss*numGauss;
+int PlaneStressQuad<order>::getNumGaussPts() {
+  return numGauss * numGauss;
 }
 
 /*
   Get the Gauss points
 */
 template <int order>
-double PlaneStressQuad<order>::getGaussWtsPts( int npoint, double pt[] ){
+double PlaneStressQuad<order>::getGaussWtsPts(int npoint, double pt[]) {
   // Compute the n/m/p indices of the Gauss quadrature scheme
-  int m = (int)((npoint)/(numGauss));
-  int n = npoint - numGauss*m;
+  int m = (int)((npoint) / (numGauss));
+  int n = npoint - numGauss * m;
 
   pt[0] = gaussPts[n];
   pt[1] = gaussPts[m];
 
-  return gaussWts[n]*gaussWts[m];
+  return gaussWts[n] * gaussWts[m];
 }
 
 /*
   Evaluate the shape functions and their derivatives
 */
 template <int order>
-void PlaneStressQuad<order>::getShapeFunctions( const double pt[],
-                                                double N[] ){
+void PlaneStressQuad<order>::getShapeFunctions(const double pt[], double N[]) {
   double na[order], nb[order];
   FElibrary::lagrangeSFKnots(na, pt[0], knots, order);
   FElibrary::lagrangeSFKnots(nb, pt[1], knots, order);
-  for ( int j = 0; j < order; j++ ){
-    for ( int i = 0; i < order; i++ ){
-      N[i + j*order] = na[i]*nb[j];
+  for (int j = 0; j < order; j++) {
+    for (int i = 0; i < order; i++) {
+      N[i + j * order] = na[i] * nb[j];
     }
   }
 }
@@ -156,17 +149,17 @@ void PlaneStressQuad<order>::getShapeFunctions( const double pt[],
   parametric element location
 */
 template <int order>
-void PlaneStressQuad<order>::getShapeFunctions( const double pt[], double N[],
-                                                double Na[], double Nb[] ){
+void PlaneStressQuad<order>::getShapeFunctions(const double pt[], double N[],
+                                               double Na[], double Nb[]) {
   double na[order], nb[order];
   double dna[order], dnb[order];
   FElibrary::lagrangeSFKnots(na, dna, pt[0], knots, order);
   FElibrary::lagrangeSFKnots(nb, dnb, pt[1], knots, order);
-  for ( int j = 0; j < order; j++ ){
-    for ( int i = 0; i < order; i++ ){
-      N[i + j*order] = na[i]*nb[j];
-      Na[i + j*order] = dna[i]*nb[j];
-      Nb[i + j*order] = na[i]*dnb[j];
+  for (int j = 0; j < order; j++) {
+    for (int i = 0; i < order; i++) {
+      N[i + j * order] = na[i] * nb[j];
+      Na[i + j * order] = dna[i] * nb[j];
+      Nb[i + j * order] = na[i] * dnb[j];
     }
   }
 }
@@ -175,34 +168,33 @@ void PlaneStressQuad<order>::getShapeFunctions( const double pt[], double N[],
   Get the partition of unity shape functions and their derivatives
 */
 template <int order>
-void PlaneStressQuad<order>::getPartUnityShapeFunctions( const double pt[],
-                                                         double N[],
-                                                         double Na[],
-                                                         double Nb[] ){
-  N[0] = 0.25*(1.0 - pt[0])*(1.0 - pt[1]);
-  N[1] = 0.25*(1.0 + pt[0])*(1.0 - pt[1]);
-  N[2] = 0.25*(1.0 - pt[0])*(1.0 + pt[1]);
-  N[3] = 0.25*(1.0 + pt[0])*(1.0 + pt[1]);
+void PlaneStressQuad<order>::getPartUnityShapeFunctions(const double pt[],
+                                                        double N[], double Na[],
+                                                        double Nb[]) {
+  N[0] = 0.25 * (1.0 - pt[0]) * (1.0 - pt[1]);
+  N[1] = 0.25 * (1.0 + pt[0]) * (1.0 - pt[1]);
+  N[2] = 0.25 * (1.0 - pt[0]) * (1.0 + pt[1]);
+  N[3] = 0.25 * (1.0 + pt[0]) * (1.0 + pt[1]);
 
-  Na[0] =-0.25*(1.0 - pt[1]);
-  Na[1] = 0.25*(1.0 - pt[1]);
-  Na[2] =-0.25*(1.0 + pt[1]);
-  Na[3] = 0.25*(1.0 + pt[1]);
+  Na[0] = -0.25 * (1.0 - pt[1]);
+  Na[1] = 0.25 * (1.0 - pt[1]);
+  Na[2] = -0.25 * (1.0 + pt[1]);
+  Na[3] = 0.25 * (1.0 + pt[1]);
 
-  Nb[0] =-0.25*(1.0 - pt[0]);
-  Nb[1] =-0.25*(1.0 + pt[0]);
-  Nb[2] = 0.25*(1.0 - pt[0]);
-  Nb[3] = 0.25*(1.0 + pt[0]);
+  Nb[0] = -0.25 * (1.0 - pt[0]);
+  Nb[1] = -0.25 * (1.0 + pt[0]);
+  Nb[2] = 0.25 * (1.0 - pt[0]);
+  Nb[3] = 0.25 * (1.0 + pt[0]);
 }
 
 /*
   Add the localized error
 */
 template <int order>
-void PlaneStressQuad<order>::addLocalizedError( double time, TacsScalar err[],
-                                                const TacsScalar adjoint[],
-                                                const TacsScalar Xpts[],
-                                                const TacsScalar vars[] ){
+void PlaneStressQuad<order>::addLocalizedError(double time, TacsScalar err[],
+                                               const TacsScalar adjoint[],
+                                               const TacsScalar Xpts[],
+                                               const TacsScalar vars[]) {
   // The shape functions associated with the element
   double N[NUM_NODES];
   double Na[NUM_NODES], Nb[NUM_NODES];
@@ -210,13 +202,13 @@ void PlaneStressQuad<order>::addLocalizedError( double time, TacsScalar err[],
   // The derivative of the stress with respect to the strain
   const int NUM_DISPS = 2;
   const int NUM_STRESSES = 3;
-  const int NUM_VARIABLES = NUM_DISPS*NUM_NODES;
-  TacsScalar B[NUM_STRESSES*NUM_VARIABLES];
+  const int NUM_VARIABLES = NUM_DISPS * NUM_NODES;
+  TacsScalar B[NUM_STRESSES * NUM_VARIABLES];
 
   // Get the number of quadrature points
   int numGauss = getNumGaussPts();
 
-  for ( int n = 0; n < numGauss; n++ ){
+  for (int n = 0; n < numGauss; n++) {
     // Retrieve the quadrature points and weight
     double pt[3];
     double weight = getGaussWtsPts(n, pt);
@@ -232,7 +224,7 @@ void PlaneStressQuad<order>::addLocalizedError( double time, TacsScalar err[],
     // Compute the determinant of Xa and the transformation
     TacsScalar J[4];
     TacsScalar h = FElibrary::jacobian2d(Xa, J);
-    h = h*weight;
+    h = h * weight;
 
     // Compute the strain
     TacsScalar strain[NUM_STRESSES];
@@ -242,7 +234,7 @@ void PlaneStressQuad<order>::addLocalizedError( double time, TacsScalar err[],
     TacsScalar stress[NUM_STRESSES];
     this->stiff->calculateStress(pt, strain, stress);
 
-    for ( int node = 0; node < 4; node++ ){
+    for (int node = 0; node < 4; node++) {
       // Compute the element shape functions
       getShapeFunctions(pt, N, Na, Nb);
 
@@ -252,9 +244,9 @@ void PlaneStressQuad<order>::addLocalizedError( double time, TacsScalar err[],
 
       // Modify the shape functions to account for the partition of
       // unity term
-      for ( int i = 0; i < order*order; i++ ){
-        Na[i] = Np[node]*Na[i] + N[i]*Npa[node];
-        Nb[i] = Np[node]*Nb[i] + N[i]*Npb[node];
+      for (int i = 0; i < order * order; i++) {
+        Na[i] = Np[node] * Na[i] + N[i] * Npa[node];
+        Nb[i] = Np[node] * Nb[i] + N[i] * Npb[node];
       }
 
       // Get the derivative of the strain with respect to the nodal
@@ -266,17 +258,18 @@ void PlaneStressQuad<order>::addLocalizedError( double time, TacsScalar err[],
 
       // Compute the local product of the stress/strain
       TacsScalar product = 0.0;
-      for ( int i = 0; i < NUM_NODES; i++ ){
-        for ( int ii = 0; ii < NUM_DISPS; ii++ ){
-          product += adj[ii]*h*(b[0]*stress[0] + b[1]*stress[1] + b[2]*stress[2]);
+      for (int i = 0; i < NUM_NODES; i++) {
+        for (int ii = 0; ii < NUM_DISPS; ii++) {
+          product += adj[ii] * h *
+                     (b[0] * stress[0] + b[1] * stress[1] + b[2] * stress[2]);
           b += NUM_STRESSES;
         }
         adj += NUM_DISPS;
       }
 
       // Add the result to the localized error
-      err[(node % 2)*(order-1) +
-          (node/2)*order*(order-1)] += product;
+      err[(node % 2) * (order - 1) + (node / 2) * order * (order - 1)] +=
+          product;
     }
   }
 }
@@ -286,11 +279,11 @@ void PlaneStressQuad<order>::addLocalizedError( double time, TacsScalar err[],
   this element.
 */
 template <int order>
-void PlaneStressQuad<order>::addOutputCount( int *nelems,
-                                             int *nnodes, int *ncsr ){
-  *nelems += (order-1)*(order-1);
-  *nnodes += order*order;
-  *ncsr += 4*(order-1)*(order-1);
+void PlaneStressQuad<order>::addOutputCount(int *nelems, int *nnodes,
+                                            int *ncsr) {
+  *nelems += (order - 1) * (order - 1);
+  *nnodes += order * order;
+  *ncsr += 4 * (order - 1) * (order - 1);
 }
 
 /*
@@ -315,23 +308,22 @@ void PlaneStressQuad<order>::addOutputCount( int *nelems,
   Xpts:     the element nodal locations
 */
 template <int order>
-void PlaneStressQuad<order>::getOutputData( unsigned int out_type,
-                                            double *data, int ld_data,
-                                            const TacsScalar Xpts[],
-                                            const TacsScalar vars[] ){
-  for ( int m = 0; m < order; m++ ){
-    for ( int n = 0; n < order; n++ ){
-      int p = n + order*m;
+void PlaneStressQuad<order>::getOutputData(unsigned int out_type, double *data,
+                                           int ld_data, const TacsScalar Xpts[],
+                                           const TacsScalar vars[]) {
+  for (int m = 0; m < order; m++) {
+    for (int n = 0; n < order; n++) {
+      int p = n + order * m;
       int index = 0;
-      if (out_type & TACSElement::OUTPUT_NODES){
-        for ( int k = 0; k < 3; k++ ){
-          data[index+k] = TacsRealPart(Xpts[3*p+k]);
+      if (out_type & TACSElement::OUTPUT_NODES) {
+        for (int k = 0; k < 3; k++) {
+          data[index + k] = TacsRealPart(Xpts[3 * p + k]);
         }
         index += 3;
       }
-      if (out_type & TACSElement::OUTPUT_DISPLACEMENTS){
-        for ( int k = 0; k < 2; k++ ){
-          data[index+k] = TacsRealPart(vars[2*p+k]);
+      if (out_type & TACSElement::OUTPUT_DISPLACEMENTS) {
+        for (int k = 0; k < 2; k++) {
+          data[index + k] = TacsRealPart(vars[2 * p + k]);
         }
         index += 2;
       }
@@ -359,33 +351,33 @@ void PlaneStressQuad<order>::getOutputData( unsigned int out_type,
       TacsScalar strain[3];
       this->evalStrain(strain, J, Na, Nb, vars);
 
-      if (out_type & TACSElement::OUTPUT_STRAINS){
-        for ( int k = 0; k < 3; k++ ){
-          data[index+k] = TacsRealPart(strain[k]);
+      if (out_type & TACSElement::OUTPUT_STRAINS) {
+        for (int k = 0; k < 3; k++) {
+          data[index + k] = TacsRealPart(strain[k]);
         }
         index += 3;
       }
-      if (out_type & TACSElement::OUTPUT_STRESSES){
+      if (out_type & TACSElement::OUTPUT_STRESSES) {
         // Calculate the strain at the current point
         TacsScalar stress[3];
         this->stiff->calculateStress(pt, strain, stress);
 
-        for ( int k = 0; k < 3; k++ ){
-          data[index+k] = TacsRealPart(stress[k]);
+        for (int k = 0; k < 3; k++) {
+          data[index + k] = TacsRealPart(stress[k]);
         }
         index += 3;
       }
-      if (out_type & TACSElement::OUTPUT_EXTRAS){
+      if (out_type & TACSElement::OUTPUT_EXTRAS) {
         // Compute the failure value
         TacsScalar lambda;
         this->stiff->failure(pt, strain, &lambda);
         data[index] = TacsRealPart(lambda);
 
         this->stiff->buckling(strain, &lambda);
-        data[index+1] = TacsRealPart(lambda);
+        data[index + 1] = TacsRealPart(lambda);
 
-        data[index+2] = TacsRealPart(this->stiff->getDVOutputValue(0, pt));
-        data[index+3] = TacsRealPart(this->stiff->getDVOutputValue(1, pt));
+        data[index + 2] = TacsRealPart(this->stiff->getDVOutputValue(0, pt));
+        data[index + 3] = TacsRealPart(this->stiff->getDVOutputValue(1, pt));
 
         index += this->NUM_EXTRAS;
       }
@@ -409,14 +401,14 @@ void PlaneStressQuad<order>::getOutputData( unsigned int out_type,
   less global
 */
 template <int order>
-void PlaneStressQuad<order>::getOutputConnectivity( int *con, int node ){
+void PlaneStressQuad<order>::getOutputConnectivity(int *con, int node) {
   int p = 0;
-  for ( int m = 0; m < order-1; m++ ){
-    for ( int n = 0; n < order-1; n++ ){
-      con[4*p]   = node + n   + m*order;
-      con[4*p+1] = node + n+1 + m*order;
-      con[4*p+2] = node + n+1 + (m+1)*order;
-      con[4*p+3] = node + n   + (m+1)*order;
+  for (int m = 0; m < order - 1; m++) {
+    for (int n = 0; n < order - 1; n++) {
+      con[4 * p] = node + n + m * order;
+      con[4 * p + 1] = node + n + 1 + m * order;
+      con[4 * p + 2] = node + n + 1 + (m + 1) * order;
+      con[4 * p + 3] = node + n + (m + 1) * order;
       p++;
     }
   }

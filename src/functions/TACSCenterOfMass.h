@@ -30,8 +30,7 @@
 */
 class TACSCenterOfMass : public TACSFunction {
  public:
-  TACSCenterOfMass( TACSAssembler * _assembler,
-                    const double _dir[] );
+  TACSCenterOfMass(TACSAssembler *_assembler, const double _dir[]);
   ~TACSCenterOfMass();
 
   const char *getObjectName();
@@ -39,13 +38,12 @@ class TACSCenterOfMass : public TACSFunction {
   /**
     Member functions to integrate the function value
   */
-  void initEvaluation( EvaluationType ftype );
-  void elementWiseEval( EvaluationType ftype,
-                        int elemIndex, TACSElement *element,
-                        double time, TacsScalar scale,
-                        const TacsScalar Xpts[], const TacsScalar vars[],
-                        const TacsScalar dvars[], const TacsScalar ddvars[] );
-  void finalEvaluation( EvaluationType ftype );
+  void initEvaluation(EvaluationType ftype);
+  void elementWiseEval(EvaluationType ftype, int elemIndex,
+                       TACSElement *element, double time, TacsScalar scale,
+                       const TacsScalar Xpts[], const TacsScalar vars[],
+                       const TacsScalar dvars[], const TacsScalar ddvars[]);
+  void finalEvaluation(EvaluationType ftype);
 
   /**
     Return the value of the function
@@ -55,20 +53,19 @@ class TACSCenterOfMass : public TACSFunction {
   /**
      Add the derivative of the function w.r.t. the design variables
   */
-  void addElementDVSens( int elemIndex, TACSElement *element,
-                         double time, TacsScalar scale,
-                         const TacsScalar Xpts[], const TacsScalar vars[],
-                         const TacsScalar dvars[], const TacsScalar ddvars[],
-                         int dvLen, TacsScalar dfdx[] );
+  void addElementDVSens(int elemIndex, TACSElement *element, double time,
+                        TacsScalar scale, const TacsScalar Xpts[],
+                        const TacsScalar vars[], const TacsScalar dvars[],
+                        const TacsScalar ddvars[], int dvLen,
+                        TacsScalar dfdx[]);
 
   /**
      Evaluate the derivative of the function w.r.t. the node locations
   */
-  void getElementXptSens( int elemIndex, TACSElement *element,
-                          double time, TacsScalar scale,
-                          const TacsScalar Xpts[], const TacsScalar vars[],
-                          const TacsScalar dvars[], const TacsScalar ddvars[],
-                          TacsScalar fXptSens[] );
+  void getElementXptSens(int elemIndex, TACSElement *element, double time,
+                         TacsScalar scale, const TacsScalar Xpts[],
+                         const TacsScalar vars[], const TacsScalar dvars[],
+                         const TacsScalar ddvars[], TacsScalar fXptSens[]);
 
  private:
   // The total mass of all elements in the specified domain
@@ -79,4 +76,4 @@ class TACSCenterOfMass : public TACSFunction {
   static const char *funcName;
 };
 
-#endif // TACS_CENTER_OF_MASS_H
+#endif  // TACS_CENTER_OF_MASS_H

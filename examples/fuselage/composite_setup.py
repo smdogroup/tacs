@@ -28,10 +28,23 @@ nrepeats = nplies // len(qi_angles)
 # Callback function used to setup TACS element objects and DVs
 def elemCallBack(dvNum, compID, compDescript, elemDescripts, globalDVs, **kwargs):
     # Setup (orthotropic) property and constitutive objects
-    ortho_prop = constitutive.MaterialProperties(rho=rho, specific_heat=specific_heat,
-                                                 E1=E1, E2=E2, nu12=nu12, G12=G12, G13=G13, G23=G13,
-                                                 Xt=Xt, Xc=Xc, Yt=Yt, Yc=Yc, S12=S12,
-                                                 cte=cte, kappa=kappa)
+    ortho_prop = constitutive.MaterialProperties(
+        rho=rho,
+        specific_heat=specific_heat,
+        E1=E1,
+        E2=E2,
+        nu12=nu12,
+        G12=G12,
+        G13=G13,
+        G23=G13,
+        Xt=Xt,
+        Xc=Xc,
+        Yt=Yt,
+        Yc=Yc,
+        S12=S12,
+        cte=cte,
+        kappa=kappa,
+    )
 
     ortho_ply = constitutive.OrthotropicPly(ply_thickness, ortho_prop)
 
@@ -43,23 +56,29 @@ def elemCallBack(dvNum, compID, compDescript, elemDescripts, globalDVs, **kwargs
 
     # Setup composite constitutive object
     # NOTE: The CompositeShellConstitutive has no design variables
-    con = constitutive.CompositeShellConstitutive(ortho_layup, ply_thicknesses, ply_angles)
+    con = constitutive.CompositeShellConstitutive(
+        ortho_layup, ply_thicknesses, ply_angles
+    )
 
     # For each element type in this component,
     # pass back the appropriate tacs element object
     elemList = []
 
     # Set reference axis for plies, this determines what direction aligns with 0 degrees for the laminate
-    if 'MAIN_FLOOR' in compDescript or 'CARGO_FLOOR' in compDescript or 'SKIN' in compDescript:
+    if (
+        "MAIN_FLOOR" in compDescript
+        or "CARGO_FLOOR" in compDescript
+        or "SKIN" in compDescript
+    ):
         ref_axis = np.array([0.0, 0.0, 1.0])
-    else: # Bulkheads, floor beams, and frames
+    else:  # Bulkheads, floor beams, and frames
         ref_axis = np.array([0.0, 1.0, 0.0])
     transform = elements.ShellRefAxisTransform(ref_axis)
 
     for elemDescript in elemDescripts:
-        if elemDescript in ['CQUAD4', 'CQUADR']:
+        if elemDescript in ["CQUAD4", "CQUADR"]:
             elem = elements.Quad4Shell(transform, con)
-        elif elemDescript in ['CTRIA3', 'CTRIAR']:
+        elif elemDescript in ["CTRIA3", "CTRIAR"]:
             elem = elements.Tri3Shell(transform, con)
         else:
             print("Uh oh, '%s' not recognized" % (elemDescript))

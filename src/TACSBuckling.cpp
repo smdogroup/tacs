@@ -17,6 +17,7 @@
 */
 
 #include "TACSBuckling.h"
+
 #include "tacslapack.h"
 
 /*
@@ -47,13 +48,11 @@
   num_eigvals:  Number of converged eigenvalues required
   eig_tol:      Tolerance of the eigenvalues
 */
-TACSLinearBuckling::TACSLinearBuckling( TACSAssembler *_assembler,
-                                        TacsScalar _sigma,
-                                        TACSMat *_gmat, TACSMat *_kmat,
-                                        TACSMat *_aux_mat, TACSKsm *_solver,
-                                        int _max_lanczos_vecs,
-                                        int _num_eigvals,
-                                        double _eig_tol ){
+TACSLinearBuckling::TACSLinearBuckling(TACSAssembler *_assembler,
+                                       TacsScalar _sigma, TACSMat *_gmat,
+                                       TACSMat *_kmat, TACSMat *_aux_mat,
+                                       TACSKsm *_solver, int _max_lanczos_vecs,
+                                       int _num_eigvals, double _eig_tol) {
   // Copy pointer to the TACS assembler object
   assembler = _assembler;
   assembler->incref();
@@ -76,30 +75,34 @@ TACSLinearBuckling::TACSLinearBuckling( TACSAssembler *_assembler,
 
   // Check that the matrix associated with the solver object is the auxiliary
   // matrix. If not, complain about it.
-  if (mat != aux_mat){
-    fprintf(stderr, "TACSBuckling: Error, solver must be associated with the "
+  if (mat != aux_mat) {
+    fprintf(stderr,
+            "TACSBuckling: Error, solver must be associated with the "
             "auxiliary matrix\n");
   }
 
   // Check that the auxiliary matrix, geometric stiffness and stiffness
   // matrices are different objects
-  if (aux_mat == kmat){
-    fprintf(stderr, "TACSBuckling: Error, stiffness and auxiliary matrices "
+  if (aux_mat == kmat) {
+    fprintf(stderr,
+            "TACSBuckling: Error, stiffness and auxiliary matrices "
             "must be different instances\n");
   }
-  if (aux_mat == gmat){
-    fprintf(stderr, "TACSBuckling: Error, geometric stiffness and auxiliary "
+  if (aux_mat == gmat) {
+    fprintf(stderr,
+            "TACSBuckling: Error, geometric stiffness and auxiliary "
             "matrices must be different instances\n");
   }
-  if (gmat == kmat){
-    fprintf(stderr, "TACSBuckling: Error, geometric stiffness and stiffness "
+  if (gmat == kmat) {
+    fprintf(stderr,
+            "TACSBuckling: Error, geometric stiffness and stiffness "
             "matrices must be different instances\n");
   }
 
   // Check if the preconditioner is actually a multigrid object. If
   // so, then we have to allocate extra data to store things for each
   // multigrid level.
-  mg = dynamic_cast<TACSMg*>(pc);
+  mg = dynamic_cast<TACSMg *>(pc);
 
   // Store the spectral shift info
   sigma = _sigma;
@@ -116,8 +119,7 @@ TACSLinearBuckling::TACSLinearBuckling( TACSAssembler *_assembler,
   // Allocate the eigenvalue solver
   sep = new SEP(ep_op, max_lanczos_vecs, SEP::FULL, assembler->getBcMap());
   sep->incref();
-  sep->setTolerances(eig_tol, SEP::SMALLEST_MAGNITUDE,
-                     num_eigvals);
+  sep->setTolerances(eig_tol, SEP::SMALLEST_MAGNITUDE, num_eigvals);
 
   // Allocate temporary local vectors
   res = assembler->createVec();
@@ -133,7 +135,7 @@ TACSLinearBuckling::TACSLinearBuckling( TACSAssembler *_assembler,
 /*
   Destructor object for the buckling object
 */
-TACSLinearBuckling::~TACSLinearBuckling(){
+TACSLinearBuckling::~TACSLinearBuckling() {
   // Dereference the matrix objects
   aux_mat->decref();
   gmat->decref();
@@ -157,14 +159,12 @@ TACSLinearBuckling::~TACSLinearBuckling(){
 /*
   Retrieve the value of sigma
 */
-TacsScalar TACSLinearBuckling::getSigma(){
-  return sigma;
-}
+TacsScalar TACSLinearBuckling::getSigma() { return sigma; }
 
 /*
   Set a different value for the shift parameter
 */
-void TACSLinearBuckling::setSigma( TacsScalar _sigma ){
+void TACSLinearBuckling::setSigma(TacsScalar _sigma) {
   sigma = _sigma;
   ep_op->setSigma(sigma);
 }
@@ -193,18 +193,18 @@ void TACSLinearBuckling::setSigma( TacsScalar _sigma ){
 
   (K + sigma G)^{-1} K x = lambda/(lambda - sigma) x
 */
-void TACSLinearBuckling::solve( TACSVec *rhs, KSMPrint *ksm_print ){
+void TACSLinearBuckling::solve(TACSVec *rhs, KSMPrint *ksm_print) {
   // Zero the variables
   assembler->zeroVariables();
 
-  if (mg){
+  if (mg) {
     double alpha = 1.0, beta = 0.0, gamma = 0.0;
     mg->assembleJacobian(alpha, beta, gamma, res);
     mg->factor();
 
     // Add the right-hand-side due to external forces
-    if (rhs){
-      //res->axpy(1.0, rhs);
+    if (rhs) {
+      // res->axpy(1.0, rhs);
       assembler->applyBCs(res);
     }
 
@@ -223,8 +223,7 @@ void TACSLinearBuckling::solve( TACSVec *rhs, KSMPrint *ksm_print ){
     // Assemble the geometric stiffness matrix and the stiffness matrix itself
     assembler->assembleMatType(TACS_STIFFNESS_MATRIX, kmat);
     assembler->assembleMatType(TACS_GEOMETRIC_STIFFNESS_MATRIX, gmat);
-  }
-  else {
+  } else {
     // Compute the stiffness matrix and copy the values to the
     // auxiliary matrix used to solve for the load path.
     assembler->assembleMatType(TACS_STIFFNESS_MATRIX, kmat);
@@ -234,7 +233,7 @@ void TACSLinearBuckling::solve( TACSVec *rhs, KSMPrint *ksm_print ){
     assembler->assembleRes(res);
 
     // If need to add rhs
-    if (rhs){
+    if (rhs) {
       res->axpy(-1.0, rhs);
       assembler->applyBCs(res);
     }
@@ -262,37 +261,34 @@ void TACSLinearBuckling::solve( TACSVec *rhs, KSMPrint *ksm_print ){
 /*!
   Extract the eigenvalue from the analysis.
 */
-TacsScalar TACSLinearBuckling::extractEigenvalue( int n,
-                                                  TacsScalar *error ){
+TacsScalar TACSLinearBuckling::extractEigenvalue(int n, TacsScalar *error) {
   return sep->extractEigenvalue(n, error);
 }
 
 /*!
   Extract the eigenvector and eigenvalue from the eigenvalue analysis
 */
-TacsScalar TACSLinearBuckling::extractEigenvector( int n, TACSBVec *ans,
-                                                   TacsScalar *error ){
+TacsScalar TACSLinearBuckling::extractEigenvector(int n, TACSBVec *ans,
+                                                  TacsScalar *error) {
   return sep->extractEigenvector(n, ans, error);
 }
 
 /*
   Return ||I - Q^{T}Q ||_{F}
 */
-TacsScalar TACSLinearBuckling::checkOrthogonality(){
+TacsScalar TACSLinearBuckling::checkOrthogonality() {
   return sep->checkOrthogonality();
 }
 
 /*
   Print the components of the matrix Q^{T}Q
 */
-void TACSLinearBuckling::printOrthogonality(){
-  sep->printOrthogonality();
-}
+void TACSLinearBuckling::printOrthogonality() { sep->printOrthogonality(); }
 
 /*!
   Check the actual residual for the given eigenvalue
 */
-void TACSLinearBuckling::checkEigenvector( int n ){
+void TACSLinearBuckling::checkEigenvector(int n) {
   // Test the eignevalue
   TACSBVec *t1 = assembler->createVec();
   TACSBVec *t2 = assembler->createVec();
@@ -316,15 +312,15 @@ void TACSLinearBuckling::checkEigenvector( int n ){
   TacsScalar t2n = t2->norm();
 
   // Print out the norms of the products K*eigvec and G*eigvec
-  if (rank == 0){
-    printf("|K*e| = %15.5e  \n|G*e| = %15.5e \n",
-           TacsRealPart(t1n), TacsRealPart(t2n));
+  if (rank == 0) {
+    printf("|K*e| = %15.5e  \n|G*e| = %15.5e \n", TacsRealPart(t1n),
+           TacsRealPart(t2n));
   }
 
   // Add the two vectors together and print out the error
   t1->axpy(eig, t2);
   t1n = t1->norm();
-  if (rank == 0){
+  if (rank == 0) {
     printf("||K*e + lambda*G*e|| = %15.5e \n", TacsRealPart(t1n));
   }
 
@@ -365,8 +361,7 @@ void TACSLinearBuckling::checkEigenvector( int n ){
 
   K*psi = d(u^{T}*G*u)/d(path)
 */
-void TACSLinearBuckling::evalEigenDVSens( int n,
-                                          TACSBVec *dfdx ){
+void TACSLinearBuckling::evalEigenDVSens(int n, TACSBVec *dfdx) {
   // Zero the derivative
   dfdx->zeroEntries();
 
@@ -380,18 +375,17 @@ void TACSLinearBuckling::evalEigenDVSens( int n,
   TacsScalar eig = extractEigenvector(n, eigvec, &error);
 
   // Evaluate the partial derivative for the stiffness matrix
-  assembler->addMatDVSensInnerProduct(1.0, TACS_STIFFNESS_MATRIX,
-                                      eigvec, eigvec, dfdx);
+  assembler->addMatDVSensInnerProduct(1.0, TACS_STIFFNESS_MATRIX, eigvec,
+                                      eigvec, dfdx);
 
   // Evaluate the derivative of the geometric stiffness matrix
-  assembler->addMatDVSensInnerProduct(TacsRealPart(eig),
-                                      TACS_GEOMETRIC_STIFFNESS_MATRIX,
-                                      eigvec, eigvec, dfdx);
+  assembler->addMatDVSensInnerProduct(
+      TacsRealPart(eig), TACS_GEOMETRIC_STIFFNESS_MATRIX, eigvec, eigvec, dfdx);
 
   // Evaluate derivative of the inner product with respect to
   // the path variables
-  assembler->evalMatSVSensInnerProduct(TACS_GEOMETRIC_STIFFNESS_MATRIX,
-                                       eigvec, eigvec, res);
+  assembler->evalMatSVSensInnerProduct(TACS_GEOMETRIC_STIFFNESS_MATRIX, eigvec,
+                                       eigvec, res);
 
   // Solve for the adjoint vector and evaluate the derivative of
   // the adjoint-residual inner product
@@ -406,7 +400,7 @@ void TACSLinearBuckling::evalEigenDVSens( int n,
   dfdx->endSetValues(TACS_ADD_VALUES);
 
   // Scale the final result
-  dfdx->scale(-1.0/scale);
+  dfdx->scale(-1.0 / scale);
 }
 
 /*!
@@ -428,14 +422,11 @@ void TACSLinearBuckling::evalEigenDVSens( int n,
   num_eigvals: the number of eigenvalues to use
   eig_tol:     the eigenproblem tolerance
 */
-TACSFrequencyAnalysis::TACSFrequencyAnalysis( TACSAssembler *_assembler,
-                                              TacsScalar _sigma,
-                                              TACSMat *_mmat,
-                                              TACSMat *_kmat,
-                                              TACSKsm *_solver,
-                                              int max_lanczos,
-                                              int num_eigvals,
-                                              double eig_tol ){
+TACSFrequencyAnalysis::TACSFrequencyAnalysis(TACSAssembler *_assembler,
+                                             TacsScalar _sigma, TACSMat *_mmat,
+                                             TACSMat *_kmat, TACSKsm *_solver,
+                                             int max_lanczos, int num_eigvals,
+                                             double eig_tol) {
   // Store the TACSAssembler pointer
   assembler = _assembler;
   assembler->incref();
@@ -446,7 +437,7 @@ TACSFrequencyAnalysis::TACSFrequencyAnalysis( TACSAssembler *_assembler,
   // Store the stiffness/mass matrices
   mmat = _mmat;
   kmat = _kmat;
-  if (mmat){
+  if (mmat) {
     mmat->incref();
   }
   kmat->incref();
@@ -458,15 +449,16 @@ TACSFrequencyAnalysis::TACSFrequencyAnalysis( TACSAssembler *_assembler,
   solver->incref();
   solver->getOperators(&mat, &pc);
 
-  if (mat != kmat){
-    fprintf(stderr, "Error, solver must be associated with the "
+  if (mat != kmat) {
+    fprintf(stderr,
+            "Error, solver must be associated with the "
             "stiffness matrix\n");
   }
 
   // Check if the preconditioner is actually a multigrid object. If
   // so, then we have to allocate extra data to store things for each
   // multigrid level.
-  mg = dynamic_cast<TACSMg*>(pc);
+  mg = dynamic_cast<TACSMg *>(pc);
 
   // Allocate vectors that are required for the eigenproblem
   eigvec = assembler->createVec();
@@ -475,27 +467,24 @@ TACSFrequencyAnalysis::TACSFrequencyAnalysis( TACSAssembler *_assembler,
   res->incref();
 
   // Allocate the eigenproblem operator
-  if (mmat){
+  if (mmat) {
     ep_op = new EPGeneralizedShiftInvert(sigma, solver, mmat);
     ep_op->incref();
     simple_ep_op = NULL;
-  }
-  else{
+  } else {
     simple_ep_op = new EPShiftInvert(sigma, solver);
     simple_ep_op->incref();
     ep_op = NULL;
   }
 
   // Allocate the symmetric eigenproblem solver
-  if (mmat){
+  if (mmat) {
     sep = new SEP(ep_op, max_lanczos, SEP::FULL, assembler->getBcMap());
-  }
-  else{
+  } else {
     sep = new SEP(simple_ep_op, max_lanczos, SEP::FULL, assembler->getBcMap());
   }
   sep->incref();
-  sep->setTolerances(eig_tol, SEP::SMALLEST_MAGNITUDE,
-                     num_eigvals);
+  sep->setTolerances(eig_tol, SEP::SMALLEST_MAGNITUDE, num_eigvals);
 
   // Set unallocated objects to NULL
   pcmat = NULL;
@@ -522,20 +511,11 @@ TACSFrequencyAnalysis::TACSFrequencyAnalysis( TACSAssembler *_assembler,
   num_eigvals: the number of eigenvalues to use
   eig_tol:     the eigenproblem tolerance
 */
-TACSFrequencyAnalysis::TACSFrequencyAnalysis( TACSAssembler *_assembler,
-                                              TacsScalar _init_eig,
-                                              TACSMat *_mmat,
-                                              TACSMat *_kmat,
-                                              TACSMat *_pcmat,
-                                              TACSPc *_pc,
-                                              int max_jd_size,
-                                              int fgmres_size,
-                                              int num_eigvals,
-                                              double eigtol,
-                                              double eig_rtol,
-                                              double eig_atol,
-                                              int num_recycle,
-                                              JDRecycleType recycle_type ){
+TACSFrequencyAnalysis::TACSFrequencyAnalysis(
+    TACSAssembler *_assembler, TacsScalar _init_eig, TACSMat *_mmat,
+    TACSMat *_kmat, TACSMat *_pcmat, TACSPc *_pc, int max_jd_size,
+    int fgmres_size, int num_eigvals, double eigtol, double eig_rtol,
+    double eig_atol, int num_recycle, JDRecycleType recycle_type) {
   // Store the TACSAssembler pointer
   assembler = _assembler;
   assembler->incref();
@@ -549,8 +529,9 @@ TACSFrequencyAnalysis::TACSFrequencyAnalysis( TACSAssembler *_assembler,
   pcmat = _pcmat;
   pc = _pc;
 
-  if (!pcmat){
-    fprintf(stderr, "TACSFrequency: Error, the preconditioner matrix associated "
+  if (!pcmat) {
+    fprintf(stderr,
+            "TACSFrequency: Error, the preconditioner matrix associated "
             "with the Jacobi-Davidson method cannot be NULL\n");
   }
   mmat->incref();
@@ -560,7 +541,7 @@ TACSFrequencyAnalysis::TACSFrequencyAnalysis( TACSAssembler *_assembler,
   // Check if the preconditioner is actually a multigrid object. If
   // so, then we have to allocate extra data to store things for each
   // multigrid level.
-  mg = dynamic_cast<TACSMg*>(pc);
+  mg = dynamic_cast<TACSMg *>(pc);
 
   // Allocate vectors that are required for the eigenproblem
   eigvec = assembler->createVec();
@@ -569,19 +550,15 @@ TACSFrequencyAnalysis::TACSFrequencyAnalysis( TACSAssembler *_assembler,
   res->incref();
 
   // Allocate the Jacobi-Davidson operator
-  if (mg){
-    jd_op = new TACSJDFrequencyOperator(assembler, kmat, mmat,
-                                        pcmat, mg);
-  }
-  else {
-    jd_op = new TACSJDFrequencyOperator(assembler, kmat, mmat,
-                                        pcmat, pc);
+  if (mg) {
+    jd_op = new TACSJDFrequencyOperator(assembler, kmat, mmat, pcmat, mg);
+  } else {
+    jd_op = new TACSJDFrequencyOperator(assembler, kmat, mmat, pcmat, pc);
   }
   jd_op->incref();
 
   // Allocate the Jacobi-Davidson solver
-  jd = new TACSJacobiDavidson(jd_op, num_eigvals, max_jd_size,
-                              fgmres_size);
+  jd = new TACSJacobiDavidson(jd_op, num_eigvals, max_jd_size, fgmres_size);
   jd->incref();
 
   // Set unallocated objects to NULL
@@ -599,22 +576,21 @@ TACSFrequencyAnalysis::TACSFrequencyAnalysis( TACSAssembler *_assembler,
 /*
   Deallocate all of the stored data
 */
-TACSFrequencyAnalysis::~TACSFrequencyAnalysis(){
+TACSFrequencyAnalysis::~TACSFrequencyAnalysis() {
   assembler->decref();
   eigvec->decref();
   res->decref();
 
-  if (jd){
+  if (jd) {
     jd_op->decref();
     jd->decref();
-  }
-  else{
+  } else {
     solver->decref();
     sep->decref();
-    if (ep_op){
+    if (ep_op) {
       ep_op->decref();
     }
-    if (simple_ep_op){
+    if (simple_ep_op) {
       simple_ep_op->decref();
     }
   }
@@ -623,19 +599,16 @@ TACSFrequencyAnalysis::~TACSFrequencyAnalysis(){
 /*
   Retrieve the value of sigma
 */
-TacsScalar TACSFrequencyAnalysis::getSigma(){
-  return sigma;
-}
+TacsScalar TACSFrequencyAnalysis::getSigma() { return sigma; }
 
 /*
   Set the eigenvalue estimate.
 */
-void TACSFrequencyAnalysis::setSigma( TacsScalar _sigma ){
+void TACSFrequencyAnalysis::setSigma(TacsScalar _sigma) {
   sigma = _sigma;
-  if (ep_op){
+  if (ep_op) {
     ep_op->setSigma(_sigma);
-  }
-  else if (jd_op){
+  } else if (jd_op) {
     jd_op->setEigenvalueEstimate(TacsRealPart(_sigma));
   }
 }
@@ -643,12 +616,11 @@ void TACSFrequencyAnalysis::setSigma( TacsScalar _sigma ){
 /*
   Solve the eigenvalue problem
 */
-void TACSFrequencyAnalysis::solve( KSMPrint *ksm_print,
-                                   int print_level ){
+void TACSFrequencyAnalysis::solve(KSMPrint *ksm_print, int print_level) {
   // Zero the variables
   assembler->zeroVariables();
-  if (jd){
-    if (mg){
+  if (jd) {
+    if (mg) {
       // Assemble the mass matrix
       assembler->assembleMatType(TACS_MASS_MATRIX, mmat);
       assembler->assembleMatType(TACS_STIFFNESS_MATRIX, kmat);
@@ -656,53 +628,49 @@ void TACSFrequencyAnalysis::solve( KSMPrint *ksm_print,
       // Assemble the linear combination
       mg->assembleMatType(TACS_STIFFNESS_MATRIX);
       mg->factor();
-    }
-    else {
+    } else {
       assembler->assembleMatType(TACS_MASS_MATRIX, mmat);
       assembler->assembleMatType(TACS_STIFFNESS_MATRIX, kmat);
     }
 
     // Keep track of the computational time
     double t0 = 0.0;
-    if (ksm_print && print_level > 0){
+    if (ksm_print && print_level > 0) {
       t0 = MPI_Wtime();
     }
 
     // Solve the problem using Jacobi-Davidson
     jd->solve(ksm_print, print_level);
 
-    if (ksm_print && print_level > 0){
+    if (ksm_print && print_level > 0) {
       t0 = MPI_Wtime() - t0;
 
       char line[256];
       sprintf(line, "JD computational time: %15.6f\n", t0);
       ksm_print->print(line);
     }
-  }
-  else{
-    if (mg){
+  } else {
+    if (mg) {
       // Assemble the mass matrix
-      ElementMatrixType matTypes[2] = {TACS_STIFFNESS_MATRIX,
-                                       TACS_MASS_MATRIX};
+      ElementMatrixType matTypes[2] = {TACS_STIFFNESS_MATRIX, TACS_MASS_MATRIX};
       TacsScalar scale[2] = {1.0, -sigma};
 
       // Assemble the mass matrix
-      if (mmat){
+      if (mmat) {
         assembler->assembleMatType(TACS_MASS_MATRIX, mmat);
       }
 
       // Assemble the linear combination
       mg->assembleMatCombo(matTypes, scale, 2);
-    }
-    else {
+    } else {
       // Assemble the stiffness and mass matrices
       assembler->assembleMatType(TACS_STIFFNESS_MATRIX, kmat);
-      if (mmat){
+      if (mmat) {
         assembler->assembleMatType(TACS_MASS_MATRIX, mmat);
       }
 
       // Form the shifted operator and factor it
-      if (mmat){
+      if (mmat) {
         kmat->axpy(-sigma, mmat);
       }
       kmat->applyBCs(assembler->getBcMap());
@@ -710,7 +678,7 @@ void TACSFrequencyAnalysis::solve( KSMPrint *ksm_print,
 
     // Keep track of the computational time
     double t0 = 0.0;
-    if (ksm_print && print_level > 0){
+    if (ksm_print && print_level > 0) {
       t0 = MPI_Wtime();
     }
 
@@ -720,7 +688,7 @@ void TACSFrequencyAnalysis::solve( KSMPrint *ksm_print,
     // Solve the problem using Jacobi-Davidson
     sep->solve(ksm_print);
 
-    if (ksm_print && print_level > 0){
+    if (ksm_print && print_level > 0) {
       t0 = MPI_Wtime() - t0;
 
       char line[256];
@@ -733,12 +701,10 @@ void TACSFrequencyAnalysis::solve( KSMPrint *ksm_print,
 /*!
   Extract the eigenvalue from the analysis
 */
-TacsScalar TACSFrequencyAnalysis::extractEigenvalue( int n,
-                                                     TacsScalar *error ){
-  if (sep){
+TacsScalar TACSFrequencyAnalysis::extractEigenvalue(int n, TacsScalar *error) {
+  if (sep) {
     return sep->extractEigenvalue(n, error);
-  }
-  else {
+  } else {
     // Error should be NULL unless needed
     return jd->extractEigenvalue(n, error);
   }
@@ -747,12 +713,11 @@ TacsScalar TACSFrequencyAnalysis::extractEigenvalue( int n,
 /*!
   Extract the eigenvector and eigenvalue from the eigenvalue analysis
 */
-TacsScalar TACSFrequencyAnalysis::extractEigenvector( int n, TACSBVec *ans,
-                                                      TacsScalar *error ){
-  if (sep){
+TacsScalar TACSFrequencyAnalysis::extractEigenvector(int n, TACSBVec *ans,
+                                                     TacsScalar *error) {
+  if (sep) {
     return sep->extractEigenvector(n, ans, error);
-  }
-  else {
+  } else {
     // Error should be NULL unless needed
     return jd->extractEigenvector(n, ans, error);
   }
@@ -761,11 +726,10 @@ TacsScalar TACSFrequencyAnalysis::extractEigenvector( int n, TACSBVec *ans,
 /*
   Check the orthogonality of the Lanczos subspace
 */
-TacsScalar TACSFrequencyAnalysis::checkOrthogonality(){
-  if (sep){
+TacsScalar TACSFrequencyAnalysis::checkOrthogonality() {
+  if (sep) {
     return sep->checkOrthogonality();
-  }
-  else {
+  } else {
     fprintf(stderr,
             "TACSFrequency: No orthogonality check for Jacobi-Davidson\n");
     return 0.0;
@@ -792,8 +756,7 @@ TacsScalar TACSFrequencyAnalysis::checkOrthogonality(){
 
   (u^{T}*M*u)*d(lambda)/dx = u^{T}*(dK/dx - lambda*dM/dx)*u
 */
-void TACSFrequencyAnalysis::evalEigenDVSens( int n,
-                                             TACSBVec *dfdx ){
+void TACSFrequencyAnalysis::evalEigenDVSens(int n, TACSBVec *dfdx) {
   // Zero the derivative
   dfdx->zeroEntries();
 
@@ -802,18 +765,18 @@ void TACSFrequencyAnalysis::evalEigenDVSens( int n,
   TacsScalar eig = extractEigenvector(n, eigvec, &error);
 
   // Evaluate the partial derivative for the stiffness matrix
-  assembler->addMatDVSensInnerProduct(1.0, TACS_STIFFNESS_MATRIX,
-                                      eigvec, eigvec, dfdx);
+  assembler->addMatDVSensInnerProduct(1.0, TACS_STIFFNESS_MATRIX, eigvec,
+                                      eigvec, dfdx);
 
   // Evaluate the derivative of the geometric stiffness matrix
   assembler->addMatDVSensInnerProduct(-TacsRealPart(eig), TACS_MASS_MATRIX,
                                       eigvec, eigvec, dfdx);
 
   // Finish computing the derivative
-  if (mmat){
+  if (mmat) {
     mmat->mult(eigvec, res);
   }
-  TacsScalar scale = 1.0/res->dot(eigvec);
+  TacsScalar scale = 1.0 / res->dot(eigvec);
 
   dfdx->beginSetValues(TACS_ADD_VALUES);
   dfdx->endSetValues(TACS_ADD_VALUES);
@@ -823,11 +786,11 @@ void TACSFrequencyAnalysis::evalEigenDVSens( int n,
 /*!
   Check the actual residual for the given eigenvalue
 */
-void TACSFrequencyAnalysis::checkEigenvector( int n ){
+void TACSFrequencyAnalysis::checkEigenvector(int n) {
   // Assemble the stiffness/mass matrices
   assembler->zeroVariables();
   assembler->assembleMatType(TACS_STIFFNESS_MATRIX, kmat);
-  if (mmat){
+  if (mmat) {
     assembler->assembleMatType(TACS_MASS_MATRIX, mmat);
   }
 
@@ -843,13 +806,13 @@ void TACSFrequencyAnalysis::checkEigenvector( int n ){
 
   // Multiply to get the t
   kmat->mult(eigvec, t1);
-  if (mmat){
+  if (mmat) {
     mmat->mult(eigvec, t2);
   }
 
   // Print out the norms of the products K*eigvec and G*eigvec
-  printf("|K*e| = %15.5e  \n|M*e| = %15.5e \n",
-         TacsRealPart(t1->norm()), TacsRealPart(t2->norm()));
+  printf("|K*e| = %15.5e  \n|M*e| = %15.5e \n", TacsRealPart(t1->norm()),
+         TacsRealPart(t2->norm()));
 
   // Add the two vectors together and print out the error
   t1->axpy(-eig, t2);

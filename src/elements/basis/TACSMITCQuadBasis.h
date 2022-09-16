@@ -20,41 +20,41 @@
 class TACSLinearMITCQuadBasis : public TACSMITCBasis {
  public:
   ElementLayout getLayoutType();
-  void getVisPoint( int n, double pt[] );
+  void getVisPoint(int n, double pt[]);
   int getNumNodes();
   int getNumParameters();
   int getNumQuadraturePoints();
-  double getQuadratureWeight( int n );
-  double getQuadraturePoint( int n, double pt[] );
+  double getQuadratureWeight(int n);
+  double getQuadraturePoint(int n, double pt[]);
   int getNumElementFaces();
-  int getNumFaceQuadraturePoints( int face );
-  double getFaceQuadraturePoint( int face, int n, double pt[], double t[] );
+  int getNumFaceQuadraturePoints(int face);
+  double getFaceQuadraturePoint(int face, int n, double pt[], double t[]);
   int getNumTyingFields();
-  int getNumTyingPoints( int field );
-  void getTyingPoint( int field, int ty, double pt[] );
-  void computeBasis( const double pt[], double N[] );
-  void computeBasisGradient( const double pt[], double N[], double Nxi[] );
-  void computeTyingBasis( int field, const double pt[], double N[] );
+  int getNumTyingPoints(int field);
+  void getTyingPoint(int field, int ty, double pt[]);
+  void computeBasis(const double pt[], double N[]);
+  void computeBasisGradient(const double pt[], double N[], double Nxi[]);
+  void computeTyingBasis(int field, const double pt[], double N[]);
 };
 
 class TACSQuadraticMITCQuadBasis : public TACSMITCBasis {
  public:
   ElementLayout getLayoutType();
-  void getVisPoint( int n, double pt[] );
+  void getVisPoint(int n, double pt[]);
   int getNumNodes();
   int getNumParameters();
   int getNumQuadraturePoints();
-  double getQuadratureWeight( int n );
-  double getQuadraturePoint( int n, double pt[] );
+  double getQuadratureWeight(int n);
+  double getQuadraturePoint(int n, double pt[]);
   int getNumElementFaces();
-  int getNumFaceQuadraturePoints( int face );
-  double getFaceQuadraturePoint( int face, int n, double pt[], double t[] );
+  int getNumFaceQuadraturePoints(int face);
+  double getFaceQuadraturePoint(int face, int n, double pt[], double t[]);
   int getNumTyingFields();
-  int getNumTyingPoints( int field );
-  void getTyingPoint( int field, int ty, double pt[] );
-  void computeBasis( const double pt[], double N[] );
-  void computeBasisGradient( const double pt[], double N[], double Nxi[] );
-  void computeTyingBasis( int field, const double pt[], double N[] );
+  int getNumTyingPoints(int field);
+  void getTyingPoint(int field, int ty, double pt[]);
+  void computeBasis(const double pt[], double N[]);
+  void computeBasisGradient(const double pt[], double N[], double Nxi[]);
+  void computeTyingBasis(int field, const double pt[], double N[]);
 };
 
-#endif // TACS_MITC_QUAD_BASIS_H
+#endif  // TACS_MITC_QUAD_BASIS_H

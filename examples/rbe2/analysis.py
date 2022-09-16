@@ -24,10 +24,10 @@ comm = MPI.COMM_WORLD
 
 # Instantiate FEASolver
 structOptions = {
-    'printtiming':True,
+    "printtiming": True,
 }
 
-bdfFile = os.path.join(os.path.dirname(__file__), 'rbe_test.bdf')
+bdfFile = os.path.join(os.path.dirname(__file__), "rbe_test.bdf")
 FEAAssembler = pyTACS(bdfFile, comm, options=structOptions)
 # Set up TACS Assembler
 # Don't need a elemCallBack since property info exists in bdf

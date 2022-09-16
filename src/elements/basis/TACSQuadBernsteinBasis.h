@@ -23,17 +23,17 @@
 class TACSQuadraticQuadBernsteinBasis : public TACSElementBasis {
  public:
   ElementLayout getLayoutType();
-  void getVisPoint( int n, double pt[] );
+  void getVisPoint(int n, double pt[]);
   int getNumNodes();
   int getNumParameters();
   int getNumQuadraturePoints();
-  double getQuadratureWeight( int n );
-  double getQuadraturePoint( int n, double pt[] );
+  double getQuadratureWeight(int n);
+  double getQuadraturePoint(int n, double pt[]);
   int getNumElementFaces();
-  int getNumFaceQuadraturePoints( int face );
-  double getFaceQuadraturePoint( int face, int n, double pt[], double t[] );
-  void computeBasis( const double pt[], double N[] );
-  void computeBasisGradient( const double pt[], double N[], double Nxi[] );
+  int getNumFaceQuadraturePoints(int face);
+  double getFaceQuadraturePoint(int face, int n, double pt[], double t[]);
+  void computeBasis(const double pt[], double N[]);
+  void computeBasisGradient(const double pt[], double N[], double Nxi[]);
 };
 
 /**
@@ -42,17 +42,17 @@ class TACSQuadraticQuadBernsteinBasis : public TACSElementBasis {
 class TACSCubicQuadBernsteinBasis : public TACSElementBasis {
  public:
   ElementLayout getLayoutType();
-  void getVisPoint( int n, double pt[] );
+  void getVisPoint(int n, double pt[]);
   int getNumNodes();
   int getNumParameters();
   int getNumQuadraturePoints();
-  double getQuadratureWeight( int n );
-  double getQuadraturePoint( int n, double pt[] );
+  double getQuadratureWeight(int n);
+  double getQuadraturePoint(int n, double pt[]);
   int getNumElementFaces();
-  int getNumFaceQuadraturePoints( int face );
-  double getFaceQuadraturePoint( int face, int n, double pt[], double t[] );
-  void computeBasis( const double pt[], double N[] );
-  void computeBasisGradient( const double pt[], double N[], double Nxi[] );
+  int getNumFaceQuadraturePoints(int face);
+  double getFaceQuadraturePoint(int face, int n, double pt[], double t[]);
+  void computeBasis(const double pt[], double N[]);
+  void computeBasisGradient(const double pt[], double N[], double Nxi[]);
 };
 
 /**
@@ -61,17 +61,17 @@ class TACSCubicQuadBernsteinBasis : public TACSElementBasis {
 class TACSQuarticQuadBernsteinBasis : public TACSElementBasis {
  public:
   ElementLayout getLayoutType();
-  void getVisPoint( int n, double pt[] );
+  void getVisPoint(int n, double pt[]);
   int getNumNodes();
   int getNumParameters();
   int getNumQuadraturePoints();
-  double getQuadratureWeight( int n );
-  double getQuadraturePoint( int n, double pt[] );
+  double getQuadratureWeight(int n);
+  double getQuadraturePoint(int n, double pt[]);
   int getNumElementFaces();
-  int getNumFaceQuadraturePoints( int face );
-  double getFaceQuadraturePoint( int face, int n, double pt[], double t[] );
-  void computeBasis( const double pt[], double N[] );
-  void computeBasisGradient( const double pt[], double N[], double Nxi[] );
+  int getNumFaceQuadraturePoints(int face);
+  double getFaceQuadraturePoint(int face, int n, double pt[], double t[]);
+  void computeBasis(const double pt[], double N[]);
+  void computeBasisGradient(const double pt[], double N[], double Nxi[]);
 };
 
 /**
@@ -80,17 +80,17 @@ class TACSQuarticQuadBernsteinBasis : public TACSElementBasis {
 class TACSQuinticQuadBernsteinBasis : public TACSElementBasis {
  public:
   ElementLayout getLayoutType();
-  void getVisPoint( int n, double pt[] );
+  void getVisPoint(int n, double pt[]);
   int getNumNodes();
   int getNumParameters();
   int getNumQuadraturePoints();
-  double getQuadratureWeight( int n );
-  double getQuadraturePoint( int n, double pt[] );
+  double getQuadratureWeight(int n);
+  double getQuadraturePoint(int n, double pt[]);
   int getNumElementFaces();
-  int getNumFaceQuadraturePoints( int face );
-  double getFaceQuadraturePoint( int face, int n, double pt[], double t[] );
-  void computeBasis( const double pt[], double N[] );
-  void computeBasisGradient( const double pt[], double N[], double Nxi[] );
+  int getNumFaceQuadraturePoints(int face);
+  double getFaceQuadraturePoint(int face, int n, double pt[], double t[]);
+  void computeBasis(const double pt[], double N[]);
+  void computeBasisGradient(const double pt[], double N[], double Nxi[]);
 };
 
-#endif // TACS_QUAD_BERNSTEIN_BASIS_H
+#endif  // TACS_QUAD_BERNSTEIN_BASIS_H

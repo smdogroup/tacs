@@ -3,25 +3,33 @@ import os
 from tacs import pytacs, TACS, elements, constitutive, functions, problems
 from pytacs_analysis_base_test import PyTACSTestCase
 
-'''
+"""
 Cylindrical beam constructed from shell elements. The beam is cantilevered at
 one end and loaded at the other using an RBE3.
 
 test StructuralMass and Compliance functions and sensitivities
-'''
+"""
 
 base_dir = os.path.dirname(os.path.abspath(__file__))
 bdf_file = os.path.join(base_dir, "./input_files/cylinder.bdf")
 
-FUNC_REFS = {'Axial_compliance': 0.004606292990644062, 'Axial_mass': 208.58647120309135,
-             'Shear-Bending_compliance': 0.32883253964394005, 'Shear-Bending_mass': 208.58647120309135,
-             'Moment-Bending_compliance': 0.03744304905762492, 'Moment-Bending_mass': 208.58647120309135,
-             'Torsion_compliance': 0.05100479047600847, 'Torsion_mass': 208.58647120309135,
-             'Combined_compliance': 0.4218866721681868, 'Combined_mass': 208.58647120309135}
+FUNC_REFS = {
+    "Axial_compliance": 0.004606292990644062,
+    "Axial_mass": 208.58647120309135,
+    "Shear-Bending_compliance": 0.32883253964394005,
+    "Shear-Bending_mass": 208.58647120309135,
+    "Moment-Bending_compliance": 0.03744304905762492,
+    "Moment-Bending_mass": 208.58647120309135,
+    "Torsion_compliance": 0.05100479047600847,
+    "Torsion_mass": 208.58647120309135,
+    "Combined_compliance": 0.4218866721681868,
+    "Combined_mass": 208.58647120309135,
+}
 
 
 class ProblemTest(PyTACSTestCase.PyTACSTest):
     N_PROCS = 2  # this is how many MPI processes to use for this TestCase.
+
     def setup_pytacs(self, comm, dtype):
         """
         Setup mesh and pytacs object for problem we will be testing.
@@ -66,9 +74,9 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
         """
         # Add Functions
         for problem in problems:
-            problem.addFunction('mass', functions.StructuralMass)
-            problem.addFunction('compliance', functions.Compliance)
-        func_list = ['mass', 'compliance']
+            problem.addFunction("mass", functions.StructuralMass)
+            problem.addFunction("compliance", functions.Compliance)
+        func_list = ["mass", "compliance"]
         return func_list, FUNC_REFS
 
     def setup_tacs_problems(self, fea_assembler):

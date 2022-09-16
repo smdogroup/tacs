@@ -23,37 +23,66 @@ class StaticProblem(TACSProblem):
 
     # Default options for class
     defaultOptions = {
-        'outputDir': [str, './', 'Output directory for F5 file writer.'],
-
+        "outputDir": [str, "./", "Output directory for F5 file writer."],
         # Solution Options
-        'KSMSolver': [str, 'GMRES', "Krylov subspace method to use for linear solver. Currently only supports 'GMRES'"],
-        'orderingType': [int, tacs.TACS.ND_ORDER, "Ordering type to use for matrix partitioning.\n"
-                                                  '\t Acceptable values are:\n'
-                                                  f'\t\t tacs.TACS.NATURAL_ORDER = {tacs.TACS.NATURAL_ORDER}\n'
-                                                  f'\t\t tacs.TACS.RCM_ORDER = {tacs.TACS.RCM_ORDER}\n'
-                                                  f'\t\t tacs.TACS.ND_ORDER = {tacs.TACS.ND_ORDER}\n'
-                                                  f'\t\t tacs.TACS.TACS_AMD_ORDER = {tacs.TACS.TACS_AMD_ORDER}\n'
-                                                  f'\t\t tacs.TACS.MULTICOLOR_ORDER = {tacs.TACS.MULTICOLOR_ORDER}'],
-        'PCFillLevel': [int, 1000, 'Preconditioner fill level.'],
-        'PCFillRatio': [float, 20.0, 'Preconditioner fill ratio.'],
-        'subSpaceSize': [int, 10, 'Subspace size for Krylov solver.'],
-        'nRestarts': [int, 15, 'Max number of restarts for Krylov solver.'],
-        'flexible': [bool, True, 'Flag for whether the preconditioner is flexible.'],
-        'L2Convergence': [float, 1e-12,
-                          'Absolute convergence tolerance for linear solver based on l2 norm of residual.'],
-        'L2ConvergenceRel': [float, 1e-12,
-                             'Relative convergence tolerance for linear solver based on l2 norm of residual.'],
-        'useMonitor': [bool, False, 'Flag for whether to attach a debug monitor to the linear solver.'],
-        'monitorFrequency': [int, 10, 'Print frequency for sub iterations of linear solver.'],
-
+        "KSMSolver": [
+            str,
+            "GMRES",
+            "Krylov subspace method to use for linear solver. Currently only supports 'GMRES'",
+        ],
+        "orderingType": [
+            int,
+            tacs.TACS.ND_ORDER,
+            "Ordering type to use for matrix partitioning.\n"
+            "\t Acceptable values are:\n"
+            f"\t\t tacs.TACS.NATURAL_ORDER = {tacs.TACS.NATURAL_ORDER}\n"
+            f"\t\t tacs.TACS.RCM_ORDER = {tacs.TACS.RCM_ORDER}\n"
+            f"\t\t tacs.TACS.ND_ORDER = {tacs.TACS.ND_ORDER}\n"
+            f"\t\t tacs.TACS.TACS_AMD_ORDER = {tacs.TACS.TACS_AMD_ORDER}\n"
+            f"\t\t tacs.TACS.MULTICOLOR_ORDER = {tacs.TACS.MULTICOLOR_ORDER}",
+        ],
+        "PCFillLevel": [int, 1000, "Preconditioner fill level."],
+        "PCFillRatio": [float, 20.0, "Preconditioner fill ratio."],
+        "subSpaceSize": [int, 10, "Subspace size for Krylov solver."],
+        "nRestarts": [int, 15, "Max number of restarts for Krylov solver."],
+        "flexible": [bool, True, "Flag for whether the preconditioner is flexible."],
+        "L2Convergence": [
+            float,
+            1e-12,
+            "Absolute convergence tolerance for linear solver based on l2 norm of residual.",
+        ],
+        "L2ConvergenceRel": [
+            float,
+            1e-12,
+            "Relative convergence tolerance for linear solver based on l2 norm of residual.",
+        ],
+        "useMonitor": [
+            bool,
+            False,
+            "Flag for whether to attach a debug monitor to the linear solver.",
+        ],
+        "monitorFrequency": [
+            int,
+            10,
+            "Print frequency for sub iterations of linear solver.",
+        ],
         # Output Options
-        'writeSolution': [bool, True, 'Flag for suppressing all f5 file writing.'],
-        'numberSolutions': [bool, True, 'Flag for attaching solution counter index to f5 files.'],
-        'printTiming': [bool, False, 'Flag for printing out timing information for class procedures.'],
-
+        "writeSolution": [bool, True, "Flag for suppressing all f5 file writing."],
+        "numberSolutions": [
+            bool,
+            True,
+            "Flag for attaching solution counter index to f5 files.",
+        ],
+        "printTiming": [
+            bool,
+            False,
+            "Flag for printing out timing information for class procedures.",
+        ],
     }
 
-    def __init__(self, name, assembler, comm, outputViewer=None, meshLoader=None, options={}):
+    def __init__(
+        self, name, assembler, comm, outputViewer=None, meshLoader=None, options={}
+    ):
         """
         NOTE: This class should not be initialized directly by the user.
         Use pyTACS.createStaticProblem instead.
@@ -89,9 +118,9 @@ class StaticProblem(TACSProblem):
         # Process the default options which are added to self.options
         # under the 'defaults' key. Make sure the key are lower case
         def_keys = self.defaultOptions.keys()
-        self.options['defaults'] = {}
+        self.options["defaults"] = {}
         for key in def_keys:
-            self.options['defaults'][key.lower()] = self.defaultOptions[key]
+            self.options["defaults"][key.lower()] = self.defaultOptions[key]
             self.options[key.lower()] = self.defaultOptions[key]
 
         # Set user-defined options
@@ -135,7 +164,7 @@ class StaticProblem(TACSProblem):
         opt = self.getOption
 
         # Tangent Stiffness --- process the ordering option here:
-        ordering = opt('orderingType')
+        ordering = opt("orderingType")
 
         self.K = self.assembler.createSchurMat(ordering)
 
@@ -146,31 +175,43 @@ class StaticProblem(TACSProblem):
         self.alpha = 1.0
         self.beta = 0.0
         self.gamma = 0.0
-        self.assembler.assembleJacobian(self.alpha, self.beta, self.gamma, self.res, self.K)
+        self.assembler.assembleJacobian(
+            self.alpha, self.beta, self.gamma, self.res, self.K
+        )
 
         reorderSchur = 1
-        self.PC = tacs.TACS.Pc(self.K, lev_fill=opt('PCFillLevel'),
-                               ratio_fill=opt('PCFillRatio'), reorder=reorderSchur)
+        self.PC = tacs.TACS.Pc(
+            self.K,
+            lev_fill=opt("PCFillLevel"),
+            ratio_fill=opt("PCFillRatio"),
+            reorder=reorderSchur,
+        )
 
         # Operator, fill level, fill ratio, msub, rtol, ataol
-        if opt('KSMSolver').upper() == 'GMRES':
+        if opt("KSMSolver").upper() == "GMRES":
             self.KSM = tacs.TACS.KSM(
-                self.K, self.PC, opt('subSpaceSize'), opt('nRestarts'),
-                opt('flexible'))
+                self.K, self.PC, opt("subSpaceSize"), opt("nRestarts"), opt("flexible")
+            )
         # TODO: Fix this
         # elif opt('KSMSolver').upper() == 'GCROT':
         #    self.KSM = tacs.TACS.GCROT(
         #        self.K, self.PC, opt('subSpaceSize'), opt('subSpaceSize'),
         #        opt('nRestarts'), opt('flexible'))
         else:
-            raise self._TACSError("Unknown KSMSolver option. Valid options are "
-                                  "'GMRES' or 'GCROT'")
+            raise self._TACSError(
+                "Unknown KSMSolver option. Valid options are " "'GMRES' or 'GCROT'"
+            )
 
-        self.KSM.setTolerances(self.getOption('L2ConvergenceRel'),
-                               self.getOption('L2Convergence'))
+        self.KSM.setTolerances(
+            self.getOption("L2ConvergenceRel"), self.getOption("L2Convergence")
+        )
 
-        if opt('useMonitor'):
-            self.KSM.setMonitor(self.comm, _descript=opt('KSMSolver').upper(), freq=opt('monitorFrequency'))
+        if opt("useMonitor"):
+            self.KSM.setMonitor(
+                self.comm,
+                _descript=opt("KSMSolver").upper(),
+                freq=opt("monitorFrequency"),
+            )
 
         # Linear solver factor flag
         self._factorOnNext = True
@@ -191,12 +232,17 @@ class StaticProblem(TACSProblem):
         TACSProblem.setOption(self, name, value)
 
         # Update tolerances
-        if 'l2convergence' in name.lower():
-            self.KSM.setTolerances(self.getOption('L2ConvergenceRel'),
-                                   self.getOption('L2Convergence'))
+        if "l2convergence" in name.lower():
+            self.KSM.setTolerances(
+                self.getOption("L2ConvergenceRel"), self.getOption("L2Convergence")
+            )
         # No need to reset solver for output options
-        elif name.lower() in ['writesolution', 'printtiming',
-                              'numbersolutions', 'outputdir']:
+        elif name.lower() in [
+            "writesolution",
+            "printtiming",
+            "numbersolutions",
+            "outputdir",
+        ]:
             pass
         # Reset solver for all other option changes
         else:
@@ -264,11 +310,12 @@ class StaticProblem(TACSProblem):
     ####### Load adding methods ########
 
     def addLoadToComponents(self, compIDs, F, averageLoad=False):
-        """"
+        """ "
         This method is used to add a *FIXED TOTAL LOAD* on one or more
         components, defined by COMPIDs. The purpose of this routine is to add loads that
         remain fixed throughout an optimization. An example would be an engine load.
-        This routine determines all the unique nodes in the FE model that are part of the         requested components, then takes the total 'force' by F and divides by the
+        This routine determines all the unique nodes in the FE model that are part of the
+        requested components, then takes the total 'force' by F and divides by the
         number of nodes. This average load is then applied to the nodes.
 
         Parameters
@@ -353,7 +400,7 @@ class StaticProblem(TACSProblem):
         self._addLoadToNodes(self.F, nodeIDs, F, nastranOrdering)
 
     def addLoadToRHS(self, Fapplied):
-        """"
+        """ "
         This method is used to add a *FIXED TOTAL LOAD* directly to the
         right hand side vector given the equation below:
 
@@ -373,8 +420,7 @@ class StaticProblem(TACSProblem):
         """
         self._addLoadToRHS(self.F, Fapplied)
 
-    def addTractionToComponents(self, compIDs, tractions,
-                                faceIndex=0):
+    def addTractionToComponents(self, compIDs, tractions, faceIndex=0):
         """
         This method is used to add a *FIXED TOTAL TRACTION* on one or more
         components, defined by COMPIDs. The purpose of this routine is
@@ -396,8 +442,9 @@ class StaticProblem(TACSProblem):
         """
         self._addTractionToComponents(self.auxElems, compIDs, tractions, faceIndex)
 
-    def addTractionToElements(self, elemIDs, tractions,
-                              faceIndex=0, nastranOrdering=False):
+    def addTractionToElements(
+        self, elemIDs, tractions, faceIndex=0, nastranOrdering=False
+    ):
         """
         This method is used to add a fixed traction to the
         selected element IDs. Tractions can be specified on an
@@ -422,10 +469,11 @@ class StaticProblem(TACSProblem):
             or NASTRAN ordering
         """
 
-        self._addTractionToElements(self.auxElems, elemIDs, tractions, faceIndex, nastranOrdering)
+        self._addTractionToElements(
+            self.auxElems, elemIDs, tractions, faceIndex, nastranOrdering
+        )
 
-    def addPressureToComponents(self, compIDs, pressures,
-                                faceIndex=0):
+    def addPressureToComponents(self, compIDs, pressures, faceIndex=0):
         """
         This method is used to add a *FIXED TOTAL PRESSURE* on one or more
         components, defined by COMPIds. The purpose of this routine is
@@ -448,8 +496,9 @@ class StaticProblem(TACSProblem):
         """
         self._addPressureToComponents(self.auxElems, compIDs, pressures, faceIndex)
 
-    def addPressureToElements(self, elemIDs, pressures,
-                              faceIndex=0, nastranOrdering=False):
+    def addPressureToElements(
+        self, elemIDs, pressures, faceIndex=0, nastranOrdering=False
+    ):
         """
         This method is used to add a fixed presure to the
         selected element IDs. Pressures can be specified on an
@@ -474,8 +523,9 @@ class StaticProblem(TACSProblem):
             or NASTRAN ordering
         """
 
-        self._addPressureToElements(self.auxElems, elemIDs, pressures,
-                                    faceIndex, nastranOrdering)
+        self._addPressureToElements(
+            self.auxElems, elemIDs, pressures, faceIndex, nastranOrdering
+        )
 
     def addInertialLoad(self, inertiaVector):
         """
@@ -507,6 +557,22 @@ class StaticProblem(TACSProblem):
         """
         self._addCentrifugalLoad(self.auxElems, omegaVector, rotCenter)
 
+    def addLoadFromBDF(self, loadID, scale=1.0):
+        """
+        This method is used to add a fixed load set defined in the BDF file to the problem.
+        Currently, only supports LOAD, FORCE, MOMENT, GRAV, RFORCE, PLOAD2, and PLOAD4.
+
+        Parameters
+        ----------
+
+        loadID : int
+            Load identification number of load set in BDF file user wishes to add to problem.
+
+        scale : float
+            Factor to scale the BDF loads by before adding to problem.
+        """
+        self._addLoadFromBDF(self.F, self.auxElems, loadID, scale)
+
     ####### Static solver methods ########
 
     def _updateAssemblerVars(self):
@@ -531,7 +597,9 @@ class StaticProblem(TACSProblem):
         """
 
         if self._factorOnNext:
-            self.assembler.assembleJacobian(self.alpha, self.beta, self.gamma, self.res, self.K)
+            self.assembler.assembleJacobian(
+                self.alpha, self.beta, self.gamma, self.res, self.K
+            )
             self.PC.factor()
             self._factorOnNext = False
 
@@ -600,27 +668,46 @@ class StaticProblem(TACSProblem):
 
         # If timing was was requested print it, if the solution is nonlinear
         # print this information automatically if prinititerations was requested.
-        if self.getOption('printTiming'):
-            self._pp('+--------------------------------------------------+')
-            self._pp('|')
-            self._pp('| TACS Solve Times:')
-            self._pp('|')
-            self._pp('| %-30s: %10.3f sec' % ('TACS Setup Time', setupProblemTime - startTime))
-            self._pp('| %-30s: %10.3f sec' % ('TACS Solve Init Time', initSolveTime - setupProblemTime))
-            self._pp('| %-30s: %10.3f sec' % ('TACS Init Norm Time', initNormTime - initSolveTime))
-            self._pp('| %-30s: %10.3f sec' % ('TACS Solve Time', solveTime - initNormTime))
-            self._pp('| %-30s: %10.3f sec' % ('TACS State Update Time', stateUpdateTime - solveTime))
-            self._pp('| %-30s: %10.3f sec' % ('TACS Final Norm Time', finalNormTime - stateUpdateTime))
-            self._pp('|')
-            self._pp('| %-30s: %10.3f sec' % ('TACS Total Solution Time', finalNormTime - startTime))
-            self._pp('+--------------------------------------------------+')
+        if self.getOption("printTiming"):
+            self._pp("+--------------------------------------------------+")
+            self._pp("|")
+            self._pp("| TACS Solve Times:")
+            self._pp("|")
+            self._pp(
+                "| %-30s: %10.3f sec"
+                % ("TACS Setup Time", setupProblemTime - startTime)
+            )
+            self._pp(
+                "| %-30s: %10.3f sec"
+                % ("TACS Solve Init Time", initSolveTime - setupProblemTime)
+            )
+            self._pp(
+                "| %-30s: %10.3f sec"
+                % ("TACS Init Norm Time", initNormTime - initSolveTime)
+            )
+            self._pp(
+                "| %-30s: %10.3f sec" % ("TACS Solve Time", solveTime - initNormTime)
+            )
+            self._pp(
+                "| %-30s: %10.3f sec"
+                % ("TACS State Update Time", stateUpdateTime - solveTime)
+            )
+            self._pp(
+                "| %-30s: %10.3f sec"
+                % ("TACS Final Norm Time", finalNormTime - stateUpdateTime)
+            )
+            self._pp("|")
+            self._pp(
+                "| %-30s: %10.3f sec"
+                % ("TACS Total Solution Time", finalNormTime - startTime)
+            )
+            self._pp("+--------------------------------------------------+")
 
         return
 
     ####### Function eval/sensitivity methods ########
 
-    def evalFunctions(self, funcs, evalFuncs=None,
-                      ignoreMissing=False):
+    def evalFunctions(self, funcs, evalFuncs=None, ignoreMissing=False):
         """
         This is the main routine for returning useful information from
         pytacs. The functions corresponding to the strings in
@@ -659,14 +746,15 @@ class StaticProblem(TACSProblem):
         if not ignoreMissing:
             for f in evalFuncs:
                 if f not in self.functionList:
-                    raise self._TACSError(f"Supplied function '{f}' has not been added "
-                                          "using addFunction().")
+                    raise self._TACSError(
+                        f"Supplied function '{f}' has not been added "
+                        "using addFunction()."
+                    )
 
         setupProblemTime = time.time()
 
         # Fast parallel function evaluation of structural funcs:
-        handles = [self.functionList[f] for f in evalFuncs if
-                   f in self.functionList]
+        handles = [self.functionList[f] for f in evalFuncs if f in self.functionList]
         funcVals = self.assembler.evalFunctions(handles)
 
         functionEvalTime = time.time()
@@ -675,23 +763,35 @@ class StaticProblem(TACSProblem):
         i = 0
         for f in evalFuncs:
             if f in self.functionList:
-                key = self.name + '_%s' % f
+                key = self.name + "_%s" % f
                 funcs[key] = funcVals[i]
                 i += 1
 
         dictAssignTime = time.time()
 
-        if self.getOption('printTiming'):
-            self._pp('+--------------------------------------------------+')
-            self._pp('|')
-            self._pp('| TACS Function Times:')
-            self._pp('|')
-            self._pp('| %-30s: %10.3f sec' % ('TACS Function Setup Time', setupProblemTime - startTime))
-            self._pp('| %-30s: %10.3f sec' % ('TACS Function Eval Time', functionEvalTime - setupProblemTime))
-            self._pp('| %-30s: %10.3f sec' % ('TACS Dict Time', dictAssignTime - functionEvalTime))
-            self._pp('|')
-            self._pp('| %-30s: %10.3f sec' % ('TACS Function Time', dictAssignTime - startTime))
-            self._pp('+--------------------------------------------------+')
+        if self.getOption("printTiming"):
+            self._pp("+--------------------------------------------------+")
+            self._pp("|")
+            self._pp("| TACS Function Times:")
+            self._pp("|")
+            self._pp(
+                "| %-30s: %10.3f sec"
+                % ("TACS Function Setup Time", setupProblemTime - startTime)
+            )
+            self._pp(
+                "| %-30s: %10.3f sec"
+                % ("TACS Function Eval Time", functionEvalTime - setupProblemTime)
+            )
+            self._pp(
+                "| %-30s: %10.3f sec"
+                % ("TACS Dict Time", dictAssignTime - functionEvalTime)
+            )
+            self._pp("|")
+            self._pp(
+                "| %-30s: %10.3f sec"
+                % ("TACS Function Time", dictAssignTime - startTime)
+            )
+            self._pp("+--------------------------------------------------+")
 
     def evalFunctionsSens(self, funcsSens, evalFuncs=None):
         """
@@ -734,8 +834,9 @@ class StaticProblem(TACSProblem):
         adjoints = []
         for f in evalFuncs:
             if f not in self.functionList:
-                raise self._TACSError("Supplied function has not been added "
-                                      "using addFunction()")
+                raise self._TACSError(
+                    "Supplied function has not been added " "using addFunction()"
+                )
             else:
                 # Populate the lists with the tacs bvecs
                 # we'll need for each adjoint/sens calculation
@@ -779,28 +880,46 @@ class StaticProblem(TACSProblem):
 
         # Recast sensititivities into dict for user
         for i, f in enumerate(evalFuncs):
-            key = self.name + '_%s' % f
+            key = self.name + "_%s" % f
             # Return sensitivities as array in sens dict
-            funcsSens[key] = {self.varName: dvSenses[i].getArray().copy(),
-                              self.coordName: xptSenses[i].getArray().copy()}
+            funcsSens[key] = {
+                self.varName: dvSenses[i].getArray().copy(),
+                self.coordName: xptSenses[i].getArray().copy(),
+            }
 
         totalSensitivityTime = time.time()
 
-        if self.getOption('printTiming'):
-            self._pp('+--------------------------------------------------+')
-            self._pp('|')
-            self._pp('| TACS Adjoint Times:')
-            print('|')
-            print('| %-30s: %10.3f sec' % ('TACS Sens Setup Problem Time', setupProblemTime - startTime))
-            print('| %-30s: %10.3f sec' % (
-                'TACS Adjoint RHS Time', adjointRHSTime - setupProblemTime))
+        if self.getOption("printTiming"):
+            self._pp("+--------------------------------------------------+")
+            self._pp("|")
+            self._pp("| TACS Adjoint Times:")
+            print("|")
+            print(
+                "| %-30s: %10.3f sec"
+                % ("TACS Sens Setup Problem Time", setupProblemTime - startTime)
+            )
+            print(
+                "| %-30s: %10.3f sec"
+                % ("TACS Adjoint RHS Time", adjointRHSTime - setupProblemTime)
+            )
             for f in evalFuncs:
-                print('| %-30s: %10.3f sec' % (
-                    'TACS Adjoint Solve Time - %s' % (f), adjointEndTime[f] - adjointStartTime[f]))
-            print('| %-30s: %10.3f sec' % ('Total Sensitivity Time', totalSensitivityTime - adjointFinishedTime))
-            print('|')
-            print('| %-30s: %10.3f sec' % ('Complete Sensitivity Time', totalSensitivityTime - startTime))
-            print('+--------------------------------------------------+')
+                print(
+                    "| %-30s: %10.3f sec"
+                    % (
+                        "TACS Adjoint Solve Time - %s" % (f),
+                        adjointEndTime[f] - adjointStartTime[f],
+                    )
+                )
+            print(
+                "| %-30s: %10.3f sec"
+                % ("Total Sensitivity Time", totalSensitivityTime - adjointFinishedTime)
+            )
+            print("|")
+            print(
+                "| %-30s: %10.3f sec"
+                % ("Complete Sensitivity Time", totalSensitivityTime - startTime)
+            )
+            print("+--------------------------------------------------+")
 
     def addSVSens(self, evalFuncs, svSensList):
         """
@@ -818,17 +937,22 @@ class StaticProblem(TACSProblem):
         self._updateAssemblerVars()
 
         # Get list of TACS function handles from evalFuncs
-        funcHandles = [self.functionList[f] for f in evalFuncs if
-                       f in self.functionList]
+        funcHandles = [
+            self.functionList[f] for f in evalFuncs if f in self.functionList
+        ]
 
         # Create a tacs BVec copy for the operation if the output is a numpy array
         if isinstance(svSensList[0], np.ndarray):
-            svSensBVecList = [self._arrayToVec(svSensArray) for svSensArray in svSensList]
+            svSensBVecList = [
+                self._arrayToVec(svSensArray) for svSensArray in svSensList
+            ]
         # Otherwise the input is already a BVec and we can do the operation in place
         else:
             svSensBVecList = svSensList
 
-        self.assembler.addSVSens(funcHandles, svSensBVecList, self.alpha, self.beta, self.gamma)
+        self.assembler.addSVSens(
+            funcHandles, svSensBVecList, self.alpha, self.beta, self.gamma
+        )
 
         # Update from the BVec values, if the input was a numpy array
         if isinstance(svSensList[0], np.ndarray):
@@ -854,12 +978,15 @@ class StaticProblem(TACSProblem):
         self._updateAssemblerVars()
 
         # Get list of TACS function handles from evalFuncs
-        funcHandles = [self.functionList[f] for f in evalFuncs if
-                       f in self.functionList]
+        funcHandles = [
+            self.functionList[f] for f in evalFuncs if f in self.functionList
+        ]
 
         # Create a tacs BVec copy for the operation if the output is a numpy array
         if isinstance(dvSensList[0], np.ndarray):
-            dvSensBVecList = [self._arrayToDesignVec(dvSensArray) for dvSensArray in dvSensList]
+            dvSensBVecList = [
+                self._arrayToDesignVec(dvSensArray) for dvSensArray in dvSensList
+            ]
         # Otherwise the input is already a BVec and we can do the operation in place
         else:
             dvSensBVecList = dvSensList
@@ -897,7 +1024,9 @@ class StaticProblem(TACSProblem):
 
         # Create a tacs BVec copy for the operation if the output is a numpy array
         if isinstance(adjointlist[0], np.ndarray):
-            adjointBVeclist = [self._arrayToVec(adjointArray) for adjointArray in adjointlist]
+            adjointBVeclist = [
+                self._arrayToVec(adjointArray) for adjointArray in adjointlist
+            ]
         # Otherwise the input is already a BVec and we can do the operation in place
         else:
             adjointBVeclist = adjointlist
@@ -908,7 +1037,9 @@ class StaticProblem(TACSProblem):
 
         # Create a tacs BVec copy for the operation if the output is a numpy array
         if isinstance(dvSensList[0], np.ndarray):
-            dvSensBVecList = [self._arrayToDesignVec(dvSensArray) for dvSensArray in dvSensList]
+            dvSensBVecList = [
+                self._arrayToDesignVec(dvSensArray) for dvSensArray in dvSensList
+            ]
         # Otherwise the input is already a BVec and we can do the operation in place
         else:
             dvSensBVecList = dvSensList
@@ -945,12 +1076,15 @@ class StaticProblem(TACSProblem):
         self._updateAssemblerVars()
 
         # Get list of TACS function handles from evalFuncs
-        funcHandles = [self.functionList[f] for f in evalFuncs if
-                       f in self.functionList]
+        funcHandles = [
+            self.functionList[f] for f in evalFuncs if f in self.functionList
+        ]
 
         # Create a tacs BVec copy for the operation if the output is a numpy array
         if isinstance(xptSensList[0], np.ndarray):
-            xptSensBVecList = [self._arrayToNodeVec(xptSensArray) for xptSensArray in xptSensList]
+            xptSensBVecList = [
+                self._arrayToNodeVec(xptSensArray) for xptSensArray in xptSensList
+            ]
         # Otherwise the input is already a BVec and we can do the operation in place
         else:
             xptSensBVecList = xptSensList
@@ -988,7 +1122,9 @@ class StaticProblem(TACSProblem):
 
         # Create a tacs BVec copy for the operation if the output is a numpy array
         if isinstance(adjointlist[0], np.ndarray):
-            adjointBVeclist = [self._arrayToVec(adjointArray) for adjointArray in adjointlist]
+            adjointBVeclist = [
+                self._arrayToVec(adjointArray) for adjointArray in adjointlist
+            ]
         # Otherwise the input is already a BVec and we can do the operation in place
         else:
             adjointBVeclist = adjointlist
@@ -999,12 +1135,16 @@ class StaticProblem(TACSProblem):
 
         # Create a tacs BVec copy for the operation if the output is a numpy array
         if isinstance(xptSensList[0], np.ndarray):
-            xptSensBVecList = [self._arrayToNodeVec(xptSensArray) for xptSensArray in xptSensList]
+            xptSensBVecList = [
+                self._arrayToNodeVec(xptSensArray) for xptSensArray in xptSensList
+            ]
         # Otherwise the input is already a BVec and we can do the operation in place
         else:
             xptSensBVecList = xptSensList
 
-        self.assembler.addAdjointResXptSensProducts(adjointBVeclist, xptSensBVecList, scale)
+        self.assembler.addAdjointResXptSensProducts(
+            adjointBVeclist, xptSensBVecList, scale
+        )
 
         # Finalize sensitivity arrays across all procs
         for xptSensBVec in xptSensBVecList:
@@ -1226,7 +1366,7 @@ class StaticProblem(TACSProblem):
 
         # Check input
         if outputDir is None:
-            outputDir = self.getOption('outputDir')
+            outputDir = self.getOption("outputDir")
 
         if baseName is None:
             baseName = self.name
@@ -1235,14 +1375,14 @@ class StaticProblem(TACSProblem):
         # calls, add the call number
         if number is not None:
             # We need number based on the provided number:
-            baseName = baseName + '_%3.3d' % number
+            baseName = baseName + "_%3.3d" % number
         else:
             # if number is none, i.e. standalone, but we need to
             # number solutions, use internal counter
-            if self.getOption('numberSolutions'):
-                baseName = baseName + '_%3.3d' % self.callCounter
+            if self.getOption("numberSolutions"):
+                baseName = baseName + "_%3.3d" % self.callCounter
 
         # Unless the writeSolution option is off write actual file:
-        if self.getOption('writeSolution'):
-            base = os.path.join(outputDir, baseName) + '.f5'
+        if self.getOption("writeSolution"):
+            base = os.path.join(outputDir, baseName) + ".f5"
             self.outputViewer.writeToFile(base)

@@ -34,7 +34,7 @@ import tacs.TACS, tacs.constitutive, tacs.elements, tacs.functions, tacs.problem
 from .utilities import BaseUI
 from tacs.pymeshloader import pyMeshLoader
 
-warnings.simplefilter('default')
+warnings.simplefilter("default")
 
 
 class pyTACS(BaseUI):
@@ -45,35 +45,72 @@ class pyTACS(BaseUI):
     # Default class options
     defaultOptions = {
         # Meshloader options
-        'printDebug': [bool, False, 'Flag for whether to print debug information while loading file.'],
-
+        "printDebug": [
+            bool,
+            False,
+            "Flag for whether to print debug information while loading file.",
+        ],
         # Output Options
-        'outputElement': [int, None, 'Specifies which element type should be written out in the f5 file.\n'
-                                     '\t If None, the type will be inferred from the first element in the model.\n'
-                                     '\t Acceptable values are:\n'
-                                     f'\t\t tacs.TACS.ELEMENT_NONE = {tacs.TACS.ELEMENT_NONE}\n'
-                                     f'\t\t tacs.TACS.SCALAR_2D_ELEMENT = {tacs.TACS.SCALAR_2D_ELEMENT}\n'
-                                     f'\t\t tacs.TACS.SCALAR_3D_ELEMENT = {tacs.TACS.SCALAR_3D_ELEMENT}\n'
-                                     f'\t\t tacs.TACS.BEAM_OR_SHELL_ELEMENT = {tacs.TACS.BEAM_OR_SHELL_ELEMENT}\n'
-                                     f'\t\t tacs.TACS.PLANE_STRESS_ELEMENT = {tacs.TACS.PLANE_STRESS_ELEMENT}\n'
-                                     f'\t\t tacs.TACS.SOLID_ELEMENT = {tacs.TACS.SOLID_ELEMENT}\n'
-                                     f'\t\t tacs.TACS.RIGID_ELEMENT = {tacs.TACS.RIGID_ELEMENT}\n'
-                                     f'\t\t tacs.TACS.MASS_ELEMENT = {tacs.TACS.MASS_ELEMENT}\n'
-                                     f'\t\t tacs.TACS.SPRING_ELEMENT = {tacs.TACS.SPRING_ELEMENT}'],
-        'writeConnectivity': [bool, True, 'Flag for whether to include element connectivity in f5 file.'],
-        'writeNodes': [bool, True, 'Flag for whether to include nodes in f5 file.'],
-        'writeDisplacements': [bool, True, 'Flag for whether to include nodal displacements in f5 file.'],
-        'writeStrains': [bool, True, 'Flag for whether to include element strains in f5 file.'],
-        'writeStresses': [bool, True, 'Flag for whether to include element stresses in f5 file.'],
-        'writeExtras': [bool, True, 'Flag for whether to include element extra variables in f5 file.'],
-        'writeCoordinateFrame': [bool, False, 'Flag for whether to include element coordinate frames in f5 file.'],
-        'familySeparator': [str, '/', 'Family separator character used for condensing groups in f5 file.'],
-        'printTiming': [bool, False, 'Flag for printing out timing information for class procedures.'],
-
+        "outputElement": [
+            int,
+            None,
+            "Specifies which element type should be written out in the f5 file.\n"
+            "\t If None, the type will be inferred from the first element in the model.\n"
+            "\t Acceptable values are:\n"
+            f"\t\t tacs.TACS.ELEMENT_NONE = {tacs.TACS.ELEMENT_NONE}\n"
+            f"\t\t tacs.TACS.SCALAR_2D_ELEMENT = {tacs.TACS.SCALAR_2D_ELEMENT}\n"
+            f"\t\t tacs.TACS.SCALAR_3D_ELEMENT = {tacs.TACS.SCALAR_3D_ELEMENT}\n"
+            f"\t\t tacs.TACS.BEAM_OR_SHELL_ELEMENT = {tacs.TACS.BEAM_OR_SHELL_ELEMENT}\n"
+            f"\t\t tacs.TACS.PLANE_STRESS_ELEMENT = {tacs.TACS.PLANE_STRESS_ELEMENT}\n"
+            f"\t\t tacs.TACS.SOLID_ELEMENT = {tacs.TACS.SOLID_ELEMENT}\n"
+            f"\t\t tacs.TACS.RIGID_ELEMENT = {tacs.TACS.RIGID_ELEMENT}\n"
+            f"\t\t tacs.TACS.MASS_ELEMENT = {tacs.TACS.MASS_ELEMENT}\n"
+            f"\t\t tacs.TACS.SPRING_ELEMENT = {tacs.TACS.SPRING_ELEMENT}",
+        ],
+        "writeConnectivity": [
+            bool,
+            True,
+            "Flag for whether to include element connectivity in f5 file.",
+        ],
+        "writeNodes": [bool, True, "Flag for whether to include nodes in f5 file."],
+        "writeDisplacements": [
+            bool,
+            True,
+            "Flag for whether to include nodal displacements in f5 file.",
+        ],
+        "writeStrains": [
+            bool,
+            True,
+            "Flag for whether to include element strains in f5 file.",
+        ],
+        "writeStresses": [
+            bool,
+            True,
+            "Flag for whether to include element stresses in f5 file.",
+        ],
+        "writeExtras": [
+            bool,
+            True,
+            "Flag for whether to include element extra variables in f5 file.",
+        ],
+        "writeCoordinateFrame": [
+            bool,
+            False,
+            "Flag for whether to include element coordinate frames in f5 file.",
+        ],
+        "familySeparator": [
+            str,
+            "/",
+            "Family separator character used for condensing groups in f5 file.",
+        ],
+        "printTiming": [
+            bool,
+            False,
+            "Flag for printing out timing information for class procedures.",
+        ],
     }
 
-    def __init__(self, fileName, comm=None, dvNum=0,
-                 scaleList=None, options={}):
+    def __init__(self, fileName, comm=None, dvNum=0, scaleList=None, options={}):
         """
 
         Parameters
@@ -111,9 +148,9 @@ class pyTACS(BaseUI):
         # under the 'defaults' key. Make sure the key are lower case
         self.options = {}
         def_keys = self.defaultOptions.keys()
-        self.options['defaults'] = {}
+        self.options["defaults"] = {}
         for key in def_keys:
-            self.options['defaults'][key.lower()] = self.defaultOptions[key]
+            self.options["defaults"][key.lower()] = self.defaultOptions[key]
             self.options[key.lower()] = self.defaultOptions[key]
 
         # Process the user-supplied options
@@ -125,7 +162,7 @@ class pyTACS(BaseUI):
         importTime = time.time()
 
         # Create and load mesh loader object.
-        debugFlag = self.getOption('printDebug')
+        debugFlag = self.getOption("printDebug")
         self.meshLoader = pyMeshLoader(self.comm, debugFlag)
         self.meshLoader.scanBdfFile(fileName)
         self.bdfName = fileName
@@ -167,21 +204,34 @@ class pyTACS(BaseUI):
         self.assembler = None
 
         initFinishTime = time.time()
-        if self.getOption('printTiming'):
-            self._pp('+--------------------------------------------------+')
-            self._pp('|')
-            self._pp('| TACS Init Times:')
-            self._pp('|')
-            self._pp('| %-30s: %10.3f sec' % ('TACS Module Time', importTime - startTime))
-            self._pp('| %-30s: %10.3f sec' % ('TACS Meshload Time', meshLoadTime - importTime))
-            self._pp('| %-30s: %10.3f sec' % ('TACS DV Processing Time', DVPreprocTime - meshLoadTime))
-            self._pp('| %-30s: %10.3f sec' % ('TACS Finalize Initialization Time', initFinishTime - DVPreprocTime))
-            self._pp('|')
-            self._pp('| %-30s: %10.3f sec' % ('TACS Total Initialization Time', initFinishTime - startTime))
-            self._pp('+--------------------------------------------------+')
+        if self.getOption("printTiming"):
+            self._pp("+--------------------------------------------------+")
+            self._pp("|")
+            self._pp("| TACS Init Times:")
+            self._pp("|")
+            self._pp(
+                "| %-30s: %10.3f sec" % ("TACS Module Time", importTime - startTime)
+            )
+            self._pp(
+                "| %-30s: %10.3f sec"
+                % ("TACS Meshload Time", meshLoadTime - importTime)
+            )
+            self._pp(
+                "| %-30s: %10.3f sec"
+                % ("TACS DV Processing Time", DVPreprocTime - meshLoadTime)
+            )
+            self._pp(
+                "| %-30s: %10.3f sec"
+                % ("TACS Finalize Initialization Time", initFinishTime - DVPreprocTime)
+            )
+            self._pp("|")
+            self._pp(
+                "| %-30s: %10.3f sec"
+                % ("TACS Total Initialization Time", initFinishTime - startTime)
+            )
+            self._pp("+--------------------------------------------------+")
 
-    def addGlobalDV(self, descript, value,
-                    lower=None, upper=None, scale=1.0):
+    def addGlobalDV(self, descript, value, lower=None, upper=None, scale=1.0):
         """
         This function allows adding design variables that are not
         cleanly associated with a particular constitutive object. One
@@ -206,16 +256,26 @@ class pyTACS(BaseUI):
         scale : float
             Scale factor for variable
         """
-        self.globalDVs[descript] = {'num': self.dvNum,
-                                    'value': value,
-                                    'lowerBound': lower,
-                                    'upperBound': upper}
+        self.globalDVs[descript] = {
+            "num": self.dvNum,
+            "value": value,
+            "lowerBound": lower,
+            "upperBound": upper,
+        }
         self.dvNum += 1
         self.scaleList.append(scale)
 
-    def selectCompIDs(self, include=None, exclude=None,
-                      includeBounds=None, nGroup=1, includeOp='or',
-                      excludeOp='or', projectVector=None, **kwargs):
+    def selectCompIDs(
+        self,
+        include=None,
+        exclude=None,
+        includeBounds=None,
+        nGroup=1,
+        includeOp="or",
+        excludeOp="or",
+        projectVector=None,
+        **kwargs,
+    ):
         """
         This is the most important function of the entire setup
         process. The basic idea is as follow: We have a list of nComp
@@ -359,8 +419,10 @@ class pyTACS(BaseUI):
             # First check that nGroup <= len(compIDs), print warning
             # and clip if not
             if nGroup > len(compIDs):
-                self._TACSWarning(f'nGroup={nGroup} is larger than the number of\
-                selected components={len(compIDs)}. nGroup will be clipped to {nGroup}')
+                self._TACSWarning(
+                    f"nGroup={nGroup} is larger than the number of\
+                selected components={len(compIDs)}. nGroup will be clipped to {nGroup}"
+                )
                 nGroup = len(compIDs)
 
             # Pluck out the component descriptions again and we will
@@ -380,9 +442,10 @@ class pyTACS(BaseUI):
             # possible, in the integer sense.
             def split_list(alist, wanted_parts=1):
                 length = len(alist)
-                return [alist[i * length // wanted_parts:
-                              (i + 1) * length // wanted_parts]
-                        for i in range(wanted_parts)]
+                return [
+                    alist[i * length // wanted_parts : (i + 1) * length // wanted_parts]
+                    for i in range(wanted_parts)
+                ]
 
             ind = split_list(ind, nGroup)
 
@@ -519,9 +582,11 @@ class pyTACS(BaseUI):
 
         # Check if any properties are in the BDF
         if self.bdfInfo.missing_properties:
-            raise self._TACSError(f"BDF file '{self.bdfName}' has missing properties cards. "
-                                  "Set 'printDebug' option to True for more information. "
-                                  "User must define own elemCallBack function.")
+            raise self._TACSError(
+                f"BDF file '{self.bdfName}' has missing properties cards. "
+                "Set 'printDebug' option to True for more information. "
+                "User must define own elemCallBack function."
+            )
 
         # Make sure cross-referencing is turned on in pynastran
         if self.bdfInfo.is_xrefed is False:
@@ -535,16 +600,16 @@ class pyTACS(BaseUI):
             propertyID = element.pid
             if propertyID not in elemDict:
                 elemDict[propertyID] = {}
-                elemDict[propertyID]['elements'] = []
-                elemDict[propertyID]['dvs'] = {}
-            elemDict[propertyID]['elements'].append(element)
+                elemDict[propertyID]["elements"] = []
+                elemDict[propertyID]["dvs"] = {}
+            elemDict[propertyID]["elements"].append(element)
 
         # Create a dictionary to sort all design variables
         for dv in self.bdfInfo.dvprels:
             propertyID = self.bdfInfo.dvprels[dv].pid
             dvName = self.bdfInfo.dvprels[dv].pname_fid
             self.dvNum = max(self.dvNum, self.bdfInfo.dvprels[dv].dvids[0])
-            elemDict[propertyID]['dvs'][dvName] = self.bdfInfo.dvprels[dv]
+            elemDict[propertyID]["dvs"][dvName] = self.bdfInfo.dvprels[dv]
         # Create option for user to specify scale values in BDF
         self.scaleList = [1.0] * self.dvNum
 
@@ -552,12 +617,16 @@ class pyTACS(BaseUI):
         # For a pynastran mat card
         def matCallBack(matInfo):
             # Nastran isotropic material card
-            if matInfo.type == 'MAT1':
-                mat = tacs.constitutive.MaterialProperties(rho=matInfo.rho, E=matInfo.e,
-                                                           nu=matInfo.nu, ys=matInfo.St,
-                                                           alpha=matInfo.a)
+            if matInfo.type == "MAT1":
+                mat = tacs.constitutive.MaterialProperties(
+                    rho=matInfo.rho,
+                    E=matInfo.e,
+                    nu=matInfo.nu,
+                    ys=matInfo.St,
+                    alpha=matInfo.a,
+                )
             # Nastran orthotropic material card
-            elif matInfo.type == 'MAT8':
+            elif matInfo.type == "MAT8":
                 E1 = matInfo.e11
                 E2 = matInfo.e22
                 nu12 = matInfo.nu12
@@ -576,10 +645,22 @@ class pyTACS(BaseUI):
                 Yc = matInfo.Yc
                 S12 = matInfo.S
                 # TODO: add alpha
-                mat = tacs.constitutive.MaterialProperties(rho=rho, E1=E1, E2=E2, nu12=nu12, G12=G12, G13=G13, G23=G23,
-                                                           Xt=Xt, Xc=Xc, Yt=Yt, Yc=Yc, S12=S12)
+                mat = tacs.constitutive.MaterialProperties(
+                    rho=rho,
+                    E1=E1,
+                    E2=E2,
+                    nu12=nu12,
+                    G12=G12,
+                    G13=G13,
+                    G23=G23,
+                    Xt=Xt,
+                    Xc=Xc,
+                    Yt=Yt,
+                    Yc=Yc,
+                    S12=S12,
+                )
             # Nastran 2D anisotropic material card
-            elif matInfo.type == 'MAT2':
+            elif matInfo.type == "MAT2":
                 C11 = matInfo.G11
                 C12 = matInfo.G12
                 C22 = matInfo.G22
@@ -588,74 +669,86 @@ class pyTACS(BaseUI):
                 C33 = matInfo.G33
                 rho = matInfo.rho
                 # See if this card features anisotropic coupling terms (which we don't support yet)
-                if np.abs(C13) / (C11 + C22) >= 1e-8 or np.abs(C23) / (C11 + C22) >= 1e-8:
+                if (
+                    np.abs(C13) / (C11 + C22) >= 1e-8
+                    or np.abs(C23) / (C11 + C22) >= 1e-8
+                ):
                     self._TACSWarning(
                         f"MAT2 card {matInfo.mid} has anisotropic stiffness components that are not currently supported. "
                         "These terms will be dropped and the material treated as orthotropic. "
-                        "Result accuracy may be affected.")
+                        "Result accuracy may be affected."
+                    )
                 nu12 = C12 / C22
                 nu21 = C12 / C11
                 E1 = C11 * (1 - nu12 * nu21)
                 E2 = C22 * (1 - nu12 * nu21)
                 G12 = G13 = G23 = C33
                 # TODO: add alpha
-                mat = tacs.constitutive.MaterialProperties(rho=rho, E1=E1, E2=E2, nu12=nu12, G12=G12, G13=G13,
-                                                           G23=G23)
+                mat = tacs.constitutive.MaterialProperties(
+                    rho=rho, E1=E1, E2=E2, nu12=nu12, G12=G12, G13=G13, G23=G23
+                )
 
             else:
-                raise self._TACSError(f"Unsupported material type '{matInfo.type}' for material number {matInfo.mid}.")
+                raise self._TACSError(
+                    f"Unsupported material type '{matInfo.type}' for material number {matInfo.mid}."
+                )
 
             return mat
 
-        def elemCallBack(dvNum, compID, compDescript, elemDescripts, globalDVs, **kwargs):
+        def elemCallBack(
+            dvNum, compID, compDescript, elemDescripts, globalDVs, **kwargs
+        ):
             # Initialize scale list for design variables we will add
             scaleList = []
 
             # Get the Nastran property ID
-            propertyID = kwargs['propID']
+            propertyID = kwargs["propID"]
             propInfo = self.bdfInfo.properties[propertyID]
-            elemInfo = elemDict[propertyID]['elements'][0]
+            elemInfo = elemDict[propertyID]["elements"][0]
 
             # First we define the material object
             mat = None
             # This property only references one material
-            if hasattr(propInfo, 'mid_ref'):
+            if hasattr(propInfo, "mid_ref"):
                 matInfo = propInfo.mid_ref
                 mat = matCallBack(matInfo)
             # This property references multiple materials (maybe a laminate)
-            elif hasattr(propInfo, 'mids_ref'):
+            elif hasattr(propInfo, "mids_ref"):
                 mat = []
                 for matInfo in propInfo.mids_ref:
                     mat.append(matCallBack(matInfo))
 
             # Next we define the constitutive object
-            if propInfo.type == 'PSHELL':  # Nastran isotropic shell
+            if propInfo.type == "PSHELL":  # Nastran isotropic shell
                 kcorr = propInfo.tst
 
-                if 'T' in elemDict[propertyID]['dvs']:
-                    thickness = elemDict[propertyID]['dvs']['T'].dvids_ref[0].xinit
-                    tNum = elemDict[propertyID]['dvs']['T'].dvids[0] - 1
-                    minThickness = elemDict[propertyID]['dvs']['T'].dvids_ref[0].xlb
-                    maxThickness = elemDict[propertyID]['dvs']['T'].dvids_ref[0].xub
-                    name = elemDict[propertyID]['dvs']['T'].dvids_ref[0].label
-                    self.scaleList[tNum - 1] = elemDict[propertyID]['dvs']['T'].coeffs[0]
+                if "T" in elemDict[propertyID]["dvs"]:
+                    thickness = elemDict[propertyID]["dvs"]["T"].dvids_ref[0].xinit
+                    tNum = elemDict[propertyID]["dvs"]["T"].dvids[0] - 1
+                    minThickness = elemDict[propertyID]["dvs"]["T"].dvids_ref[0].xlb
+                    maxThickness = elemDict[propertyID]["dvs"]["T"].dvids_ref[0].xub
+                    name = elemDict[propertyID]["dvs"]["T"].dvids_ref[0].label
+                    self.scaleList[tNum - 1] = elemDict[propertyID]["dvs"]["T"].coeffs[
+                        0
+                    ]
                 else:
                     thickness = propInfo.t
                     tNum = -1
                     minThickness = 0.0
                     maxThickness = 1e20
 
-                con = tacs.constitutive.IsoShellConstitutive(mat, t=thickness,
-                                                             tlb=minThickness, tub=maxThickness, tNum=tNum)
+                con = tacs.constitutive.IsoShellConstitutive(
+                    mat, t=thickness, tlb=minThickness, tub=maxThickness, tNum=tNum
+                )
 
-            elif propInfo.type == 'PCOMP':  # Nastran composite shell
+            elif propInfo.type == "PCOMP":  # Nastran composite shell
                 numPlies = propInfo.nplies
                 plyThicknesses = []
                 plyAngles = []
                 plyMats = []
 
                 # if the laminate is symmetric, mirror the ply indices
-                if propInfo.lam == 'SYM':
+                if propInfo.lam == "SYM":
                     plyIndices = list(range(numPlies / 2))
                     plyIndices.extend(plyIndices[::-1])
                 else:
@@ -664,7 +757,9 @@ class pyTACS(BaseUI):
                 # Loop through plies and setup each entry in layup
                 for ply_i in plyIndices:
                     plyThicknesses.append(propInfo.thicknesses[ply_i])
-                    plyMat = tacs.constitutive.OrthotropicPly(plyThicknesses[ply_i], mat[ply_i])
+                    plyMat = tacs.constitutive.OrthotropicPly(
+                        plyThicknesses[ply_i], mat[ply_i]
+                    )
                     plyMats.append(plyMat)
                     plyAngles.append(np.deg2rad(propInfo.thetas[ply_i]))
 
@@ -672,39 +767,46 @@ class pyTACS(BaseUI):
                 plyThicknesses = np.array(plyThicknesses, dtype=self.dtype)
                 plyAngles = np.array(plyAngles, dtype=self.dtype)
 
-                if propInfo.lam is None or propInfo.lam in ['SYM', 'MEM']:
+                if propInfo.lam is None or propInfo.lam in ["SYM", "MEM"]:
                     # Discrete laminate class (not for optimization)
-                    con = tacs.constitutive.CompositeShellConstitutive(plyMats, plyThicknesses, plyAngles)
+                    con = tacs.constitutive.CompositeShellConstitutive(
+                        plyMats, plyThicknesses, plyAngles
+                    )
                     # Need to add functionality to consider only membrane in TACS for type = MEM
 
                 else:
-                    raise self._TACSError(f"Unrecognized LAM type '{propInfo.lam}' for PCOMP number {propertyID}.")
+                    raise self._TACSError(
+                        f"Unrecognized LAM type '{propInfo.lam}' for PCOMP number {propertyID}."
+                    )
 
-            elif propInfo.type == 'PSOLID':  # Nastran solid property
-                if 'T' in elemDict[propertyID]['dvs']:
-                    thickness = elemDict[propertyID]['dvs']['T'].dvids_ref[0].xinit
-                    tNum = elemDict[propertyID]['dvs']['T'].dvids[0] - 1
-                    minThickness = elemDict[propertyID]['dvs']['T'].dvids_ref[0].xlb
-                    maxThickness = elemDict[propertyID]['dvs']['T'].dvids_ref[0].xub
-                    name = elemDict[propertyID]['dvs']['T'].dvids_ref[0].label
-                    self.scaleList[tNum - 1] = elemDict[propertyID]['dvs']['T'].coeffs[0]
+            elif propInfo.type == "PSOLID":  # Nastran solid property
+                if "T" in elemDict[propertyID]["dvs"]:
+                    thickness = elemDict[propertyID]["dvs"]["T"].dvids_ref[0].xinit
+                    tNum = elemDict[propertyID]["dvs"]["T"].dvids[0] - 1
+                    minThickness = elemDict[propertyID]["dvs"]["T"].dvids_ref[0].xlb
+                    maxThickness = elemDict[propertyID]["dvs"]["T"].dvids_ref[0].xub
+                    name = elemDict[propertyID]["dvs"]["T"].dvids_ref[0].label
+                    self.scaleList[tNum - 1] = elemDict[propertyID]["dvs"]["T"].coeffs[
+                        0
+                    ]
                 else:
                     thickness = 1.0
                     tNum = -1
                     minThickness = 0.0
                     maxThickness = 10.0
 
-                con = tacs.constitutive.SolidConstitutive(mat, t=thickness,
-                                                          tlb=minThickness, tub=maxThickness, tNum=tNum)
+                con = tacs.constitutive.SolidConstitutive(
+                    mat, t=thickness, tlb=minThickness, tub=maxThickness, tNum=tNum
+                )
 
-            elif propInfo.type == 'PBUSH':  # Nastran spring
+            elif propInfo.type == "PBUSH":  # Nastran spring
                 k = numpy.zeros(6)
                 for j in range(len(k)):
-                    if (propInfo.Ki[j]):
+                    if propInfo.Ki[j]:
                         k[j] = propInfo.Ki[j]
                 con = tacs.constitutive.DOFSpringConstitutive(k=k)
 
-            elif propInfo.type == 'PBAR':  # Nastran bar
+            elif propInfo.type == "PBAR":  # Nastran bar
                 area = propInfo.A
                 I1 = propInfo.i1
                 I2 = propInfo.i2
@@ -718,62 +820,82 @@ class pyTACS(BaseUI):
                 if k2 is None:
                     k2 = 1e6
 
-                con = tacs.constitutive.BasicBeamConstitutive(mat, A=area, Iy=I2, Iz=I1, Iyz=I12, J=J, ky=k1, kz=k2)
+                con = tacs.constitutive.BasicBeamConstitutive(
+                    mat, A=area, Iy=I2, Iz=I1, Iyz=I12, J=J, ky=k1, kz=k2
+                )
 
-            elif propInfo.type == 'PROD':  # Nastran rod
+            elif propInfo.type == "PROD":  # Nastran rod
                 area = propInfo.A
                 J = propInfo.j
                 k1 = 0.0
                 k2 = 0.0
 
-                con = tacs.constitutive.BasicBeamConstitutive(mat, A=area, J=J, ky=k1, kz=k2)
+                con = tacs.constitutive.BasicBeamConstitutive(
+                    mat, A=area, J=J, ky=k1, kz=k2
+                )
 
             else:
-                raise self._TACSError(f"Unsupported property type '{propInfo.type}' for property number {propertyID}. ")
+                raise self._TACSError(
+                    f"Unsupported property type '{propInfo.type}' for property number {propertyID}. "
+                )
 
             # Set up transform object which may be required for certain elements
             transform = None
-            if propInfo.type in ['PSHELL', 'PCOMP']:
-                mcid = elemDict[propertyID]['elements'][0].theta_mcid_ref
+            if propInfo.type in ["PSHELL", "PCOMP"]:
+                mcid = elemDict[propertyID]["elements"][0].theta_mcid_ref
                 if mcid:
-                    if mcid.type == 'CORD2R':
+                    if mcid.type == "CORD2R":
                         refAxis = mcid.i
                         transform = tacs.elements.ShellRefAxisTransform(refAxis)
                     else:  # Don't support spherical/cylindrical yet
-                        raise self._TACSError("Unsupported material coordinate system type "
-                                              f"'{mcid.type}' for property number {propertyID}.")
-            elif propInfo.type in ['PBAR']:
-                refAxis = elemDict[propertyID]['elements'][0].g0_vector
+                        raise self._TACSError(
+                            "Unsupported material coordinate system type "
+                            f"'{mcid.type}' for property number {propertyID}."
+                        )
+            elif propInfo.type in ["PBAR"]:
+                refAxis = elemDict[propertyID]["elements"][0].g0_vector
                 transform = tacs.elements.BeamRefAxisTransform(refAxis)
-            elif propInfo.type == 'PROD':
-                refAxis = numpy.array([1.0, -1.0, 1.0])  # dummy ref_axis, not really needed for rods
+            elif propInfo.type == "PROD":
+                refAxis = numpy.array(
+                    [1.0, -1.0, 1.0]
+                )  # dummy ref_axis, not really needed for rods
                 transform = tacs.elements.BeamRefAxisTransform(refAxis)
-            elif propInfo.type == 'PBUSH':
-                if elemDict[propertyID]['elements'][0].cid_ref:
-                    refAxis_i = elemDict[propertyID]['elements'][0].cid_ref.i
-                    refAxis_j = elemDict[propertyID]['elements'][0].cid_ref.j
-                    transform = tacs.elements.SpringRefFrameTransform(refAxis_i, refAxis_j)
-                elif elemDict[propertyID]['elements'][0].x[0]:
-                    refAxis = numpy.array(elemDict[propertyID]['elements'][0].x) \
-                              - elemDict[propertyID]['elements'][0].nodes_ref[0].get_position()
+            elif propInfo.type == "PBUSH":
+                if elemDict[propertyID]["elements"][0].cid_ref:
+                    refAxis_i = elemDict[propertyID]["elements"][0].cid_ref.i
+                    refAxis_j = elemDict[propertyID]["elements"][0].cid_ref.j
+                    transform = tacs.elements.SpringRefFrameTransform(
+                        refAxis_i, refAxis_j
+                    )
+                elif elemDict[propertyID]["elements"][0].x[0]:
+                    refAxis = (
+                        numpy.array(elemDict[propertyID]["elements"][0].x)
+                        - elemDict[propertyID]["elements"][0]
+                        .nodes_ref[0]
+                        .get_position()
+                    )
                     transform = tacs.elements.SpringRefAxisTransform(refAxis)
-                elif elemDict[propertyID]['elements'][0].g0_ref:
-                    refAxis = elemDict[propertyID]['elements'][0].g0_ref.get_position() \
-                              - elemDict[propertyID]['elements'][0].nodes_ref[0].get_position()
+                elif elemDict[propertyID]["elements"][0].g0_ref:
+                    refAxis = (
+                        elemDict[propertyID]["elements"][0].g0_ref.get_position()
+                        - elemDict[propertyID]["elements"][0]
+                        .nodes_ref[0]
+                        .get_position()
+                    )
                     transform = tacs.elements.SpringRefAxisTransform(refAxis)
 
             # Finally set up the element objects belonging to this component
             elemList = []
             for descript in elemDescripts:
-                if descript in ['CQUAD4', 'CQUADR']:
+                if descript in ["CQUAD4", "CQUADR"]:
                     elem = tacs.elements.Quad4Shell(transform, con)
-                elif descript in ['CQUAD9', 'CQUAD']:
+                elif descript in ["CQUAD9", "CQUAD"]:
                     elem = tacs.elements.Quad9Shell(transform, con)
-                elif descript in ['CTRIA3', 'CTRIAR']:
+                elif descript in ["CTRIA3", "CTRIAR"]:
                     elem = tacs.elements.Tri3Shell(transform, con)
-                elif descript in ['CBAR', 'CROD']:
+                elif descript in ["CBAR", "CROD"]:
                     elem = tacs.elements.Beam2(transform, con)
-                elif 'CTETRA' in descript:
+                elif "CTETRA" in descript:
                     # May have variable number of nodes in card
                     nnodes = len(elemInfo.nodes)
                     if nnodes == 4:
@@ -781,18 +903,22 @@ class pyTACS(BaseUI):
                     elif nnodes == 10:
                         basis = tacs.elements.QuadraticTetrahedralBasis()
                     else:
-                        raise self._TACSError(f"TACS does not currently support CTETRA elements with {nnodes} nodes.")
+                        raise self._TACSError(
+                            f"TACS does not currently support CTETRA elements with {nnodes} nodes."
+                        )
                     model = tacs.elements.LinearElasticity3D(con)
                     elem = tacs.elements.Element3D(model, basis)
-                elif descript in ['CHEXA8', 'CHEXA']:
+                elif descript in ["CHEXA8", "CHEXA"]:
                     basis = tacs.elements.LinearHexaBasis()
                     model = tacs.elements.LinearElasticity3D(con)
                     elem = tacs.elements.Element3D(model, basis)
-                elif descript == 'CBUSH':
+                elif descript == "CBUSH":
                     elem = tacs.elements.SpringElement(transform, con)
                 else:
-                    raise self._TACSError("Unsupported element type "
-                                          f"'{descript}' specified for property number {propertyID}.")
+                    raise self._TACSError(
+                        "Unsupported element type "
+                        f"'{descript}' specified for property number {propertyID}."
+                    )
                 elemList.append(elem)
 
             return elemList, scaleList
@@ -1005,8 +1131,9 @@ class pyTACS(BaseUI):
         if self.assembler is None:
             raise self._initializeError()
 
-        problem = tacs.problems.static.StaticProblem(name, self.assembler, self.comm,
-                                                     self.outputViewer, self.meshLoader, options)
+        problem = tacs.problems.static.StaticProblem(
+            name, self.assembler, self.comm, self.outputViewer, self.meshLoader, options
+        )
         # Set with original design vars and coordinates, in case they have changed
         problem.setDesignVars(self.x0)
         problem.setNodes(self.Xpts0)
@@ -1039,10 +1166,17 @@ class pyTACS(BaseUI):
         if self.assembler is None:
             raise self._initializeError()
 
-        problem = tacs.problems.transient.TransientProblem(name, tInit, tFinal, numSteps,
-                                                           self.assembler, self.comm, self.outputViewer,
-                                                           self.meshLoader,
-                                                           options)
+        problem = tacs.problems.transient.TransientProblem(
+            name,
+            tInit,
+            tFinal,
+            numSteps,
+            self.assembler,
+            self.comm,
+            self.outputViewer,
+            self.meshLoader,
+            options,
+        )
         # Set with original design vars and coordinates, in case they have changed
         problem.setDesignVars(self.x0)
         problem.setNodes(self.Xpts0)
@@ -1074,9 +1208,16 @@ class pyTACS(BaseUI):
         if self.assembler is None:
             raise self._initializeError()
 
-        problem = tacs.problems.modal.ModalProblem(name, sigma, numEigs,
-                                                   self.assembler, self.comm, self.outputViewer, self.meshLoader,
-                                                   options)
+        problem = tacs.problems.modal.ModalProblem(
+            name,
+            sigma,
+            numEigs,
+            self.assembler,
+            self.comm,
+            self.outputViewer,
+            self.meshLoader,
+            options,
+        )
         # Set with original design vars and coordinates, in case they have changed
         problem.setDesignVars(self.x0)
         problem.setNodes(self.Xpts0)
@@ -1096,8 +1237,8 @@ class pyTACS(BaseUI):
 
         Notes
         -----
-        Currently only supports LOAD, FORCE, MOMENT, GRAV, RFORCE, PLOAD2, and PLOAD4 cards.
-        Currently only supports staticProblem (SOL 101) and modalProblems (SOL 103)
+        Currently only supports LOAD, FORCE, MOMENT, GRAV, RFORCE, PLOAD2, PLOAD4, TLOAD1, TLOAD2, and DLOAD cards.
+        Currently only supports staticProblem (SOL 101), transientProblem (SOL 109), and modalProblems (SOL 103)
         """
 
         if self.assembler is None:
@@ -1107,10 +1248,6 @@ class pyTACS(BaseUI):
         if self.bdfInfo.is_xrefed is False:
             self.bdfInfo.cross_reference()
             self.bdfInfo.is_xrefed = True
-
-        vpn = self.varsPerNode
-        loads = self.bdfInfo.loads
-        nloads = len(loads)
 
         structProblems = {}
 
@@ -1125,13 +1262,13 @@ class pyTACS(BaseUI):
             if skipCaseZero and subCase.id == 0:
                 continue
 
-            if 'SUBTITLE' in subCase.params:
-                name = subCase.params['SUBTITLE'][0]
+            if "SUBTITLE" in subCase:
+                name = subCase["SUBTITLE"][0]
             else:
-                name = 'load_set_%.3d' % (subCase.id)
+                name = "load_set_%.3d" % (subCase.id)
 
             if self.bdfInfo.sol == 103:
-                methodID = subCase.params['METHOD'][0]
+                methodID = subCase["METHOD"][0]
                 methodInfo = self.bdfInfo.methods[methodID]
                 if methodInfo.v1 is not None:
                     sigma = (2 * np.pi * methodInfo.v1) ** 2
@@ -1145,128 +1282,70 @@ class pyTACS(BaseUI):
                     nEigs = 20
                 problem = self.createModalProblem(name, sigma, nEigs)
 
+            elif self.bdfInfo.sol == 109:
+                # Get time step info
+                if "TSTEP" in subCase:
+                    tStepID = subCase["TSTEP"][0]
+                    tStep = self.bdfInfo.tsteps[tStepID]
+                    nSteps = tStep.N[0]
+                    dt = tStep.DT[0]
+                # If no time step info was included, we'll skip this case
+                else:
+                    self._TACSWarning(
+                        f"No TSTEP entry found in control deck for subcase number {subCase.id}, "
+                        "skipping case."
+                    )
+                    continue
+                problem = self.createTransientProblem(
+                    name, tInit=0.0, tFinal=dt * nSteps, numSteps=nSteps
+                )
+
+                # Find dynamic load specified for this subcase
+                if "DLOAD" in subCase:
+                    dloadsID = subCase["DLOAD"][0]
+                    dloadSet, dloadScale = self.bdfInfo.get_reduced_dloads(dloadsID)
+                    for dloadInfo, dscale in zip(dloadSet, dloadScale):
+                        timeSteps = problem.getTimeSteps()
+                        if dloadInfo.type in ["TLOAD1", "TLOAD2"]:
+                            if dloadInfo.type == "TLOAD1":
+                                loadScales = dloadInfo.get_load_at_time(
+                                    timeSteps, dscale
+                                )
+                            elif dloadInfo.type == "TLOAD2":
+                                loadScales = _tload2_get_load_at_time(
+                                    dloadInfo, timeSteps, dscale
+                                )
+                            if dloadInfo.Type != "LOAD":
+                                self._TACSWarning(
+                                    "Only 'LOAD' types are supported for "
+                                    f"'{dloadInfo.type}' card, but '{dloadInfo.type}' {dloadInfo.sid}, "
+                                    f"was specified as {dloadInfo.Type} type"
+                                )
+                            loadsID = dloadInfo.excite_id
+                        else:
+                            self._TACSWarning(
+                                "Unsupported dload type "
+                                f"'{dloadInfo.type}' specified for load set number {dloadInfo.sid},"
+                                f" skipping load"
+                            )
+                            continue
+                        # Loop through each time step and add loads to problem
+                        for timeIndex, scale in enumerate(loadScales):
+                            problem.addLoadFromBDF(timeIndex, loadsID, scale=scale)
+
             else:
                 problem = self.createStaticProblem(name)
 
-                if 'LOAD' in subCase.params:
-                    loadsID = subCase.params['LOAD'][0]
-                    # Get loads and scalers for this load case ID
-                    loadSet, loadScale, _ = self.bdfInfo.get_reduced_loads(loadsID)
-                    # Loop through every load in set and add it to problem
-                    for loadInfo, scale in zip(loadSet, loadScale):
-                        # Add any point force or moment cards
-                        if loadInfo.type == 'FORCE' or loadInfo.type == 'MOMENT':
-                            nodeID = loadInfo.node_ref.nid
-
-                            loadArray = numpy.zeros(vpn)
-                            if loadInfo.type == 'FORCE' and vpn >= 3:
-                                F = scale * loadInfo.scaled_vector
-                                loadArray[:3] += loadInfo.cid_ref.transform_vector_to_global(F)
-                            elif loadInfo.type == 'MOMENT' and vpn >= 6:
-                                M = scale * loadInfo.scaled_vector
-                                loadArray[3:6] += loadInfo.cid_ref.transform_vector_to_global(M)
-                            problem.addLoadToNodes(nodeID, loadArray, nastranOrdering=True)
-
-                        # Add any gravity loads
-                        elif loadInfo.type == 'GRAV':
-                            inertiaVec = np.zeros(3, dtype=self.dtype)
-                            inertiaVec[:3] = scale * loadInfo.scale * loadInfo.N
-                            # Convert acceleration to global coordinate system
-                            inertiaVec = loadInfo.cid_ref.transform_vector_to_global(inertiaVec)
-                            problem.addInertialLoad(inertiaVec)
-
-                        # Add any centrifugal loads
-                        elif loadInfo.type == 'RFORCE':
-                            omegaVec = np.zeros(3, dtype=self.dtype)
-                            if loadInfo.nid_ref:
-                                rotCenter = loadInfo.nid_ref.get_position()
-                            else:
-                                rotCenter = np.zeros(3, dtype=self.dtype)
-                            omegaVec[:3] = scale * loadInfo.scale * np.array(loadInfo.r123)
-                            # Convert omega from rev/s to rad/s
-                            omegaVec *= 2 * np.pi
-                            # Convert omega to global coordinate system
-                            omegaVec = loadInfo.cid_ref.transform_vector_to_global(omegaVec)
-                            problem.addCentrifugalLoad(omegaVec, rotCenter)
-
-                        # Add any pressure loads
-                        # Pressure load card specific to shell elements
-                        elif loadInfo.type == 'PLOAD2':
-                            elemIDs = loadInfo.eids
-                            pressure = scale * loadInfo.pressure
-                            problem.addPressureToElements(elemIDs, pressure, nastranOrdering=True)
-
-                        # Alternate more general pressure load type
-                        elif loadInfo.type == 'PLOAD4':
-                            self._addPressureFromPLOAD4(problem, loadInfo, scale)
-
-                        else:
-                            self._TACSWarning("Unsupported load type "
-                                              f" '{loadInfo.type}' specified for load set number {loadInfo.sid}, skipping load")
+                # Find the static load specified for this test case
+                if "LOAD" in subCase:
+                    # Add loads to problem
+                    loadsID = subCase["LOAD"][0]
+                    problem.addLoadFromBDF(loadsID)
 
             # append to list of structural problems
             structProblems[subCase.id] = problem
 
         return structProblems
-
-    def _addPressureFromPLOAD4(self, staticProb, loadInfo, scale=1.0):
-        """
-        Add pressure to tacs static problem from pynastran PLOAD4 card.
-        Should only be called by createTACSProbsFromBDF and not directly by user.
-        """
-        # Dictionary mapping nastran element face indices to TACS equivilent numbering
-        nastranToTACSFaceIDDict = {'CTETRA4': {1: 1, 2: 3, 3: 2, 4: 0},
-                                   'CTETRA': {2: 1, 4: 3, 3: 2, 1: 0},
-                                   'CHEXA': {1: 4, 2: 2, 3: 0, 4: 3, 5: 0, 6: 5}}
-
-        # We don't support pressure variation across elements, for now just average it
-        pressure = scale * np.mean(loadInfo.pressures)
-        for elemInfo in loadInfo.eids_ref:
-            elemID = elemInfo.eid
-
-            # Get the correct face index number based on element type
-            if 'CTETRA' in elemInfo.type:
-                for faceIndex in elemInfo.faces:
-                    if loadInfo.g1 in elemInfo.faces[faceIndex] and \
-                            loadInfo.g34 not in elemInfo.faces[faceIndex]:
-                        # For some reason CTETRA4 is the only element that doesn't
-                        # use ANSYS face numbering convention by default
-                        if len(elemInfo.nodes) == 4:
-                            faceIndex = nastranToTACSFaceIDDict['CTETRA4'][faceIndex]
-                        else:
-                            faceIndex = nastranToTACSFaceIDDict['CTETRA'][faceIndex]
-                        # Positive pressure is inward for solid elements, flip pressure if necessary
-                        # We don't flip it for face 0, because the normal for that face points inward by convention
-                        # while the rest point outward
-                        if faceIndex != 0:
-                            pressure *= -1.0
-                        break
-
-            elif 'CHEXA' in elemInfo.type:
-                for faceIndex in elemInfo.faces:
-                    if loadInfo.g1 in elemInfo.faces[faceIndex] and \
-                            loadInfo.g34 in elemInfo.faces[faceIndex]:
-                        faceIndex = nastranToTACSFaceIDDict['CHEXA'][faceIndex]
-                        # Pressure orientation is flipped for solid elements per Nastran convention
-                        pressure *= -1.0
-                        break
-
-            elif 'CQUAD' in elemInfo.type or 'CTRIA' in elemInfo.type:
-                # Face index doesn't matter for shells, just use 0
-                faceIndex = 0
-
-            else:
-                raise self._TACSError("Unsupported element type "
-                                      f"'{elemInfo.type}' specified for PLOAD4 load set number {loadInfo.sid}.")
-
-            # Figure out whether or not this is a traction based on if a vector is defined
-            if np.linalg.norm(loadInfo.nvector) == 0.0:
-                staticProb.addPressureToElements(elemID, pressure, faceIndex,
-                                                 nastranOrdering=True)
-            else:
-                trac = pressure * loadInfo.nvector
-                staticProb.addTractionToElements(elemID, trac, faceIndex,
-                                                 nastranOrdering=True)
 
     def getNumComponents(self):
         """
@@ -1280,15 +1359,15 @@ class pyTACS(BaseUI):
 
         self.fam = []
         for i in range(self.nComp):
-            aux = self.compDescripts[i].split(self.getOption('familySeparator'))
+            aux = self.compDescripts[i].split(self.getOption("familySeparator"))
             self.fam.append(aux[0])
 
         # Uniqify them and sort
         self.fam = sorted(numpy.unique(self.fam))
 
-        self.compFam = numpy.zeros(self.nComp, dtype='intc')
+        self.compFam = numpy.zeros(self.nComp, dtype="intc")
         for i in range(self.nComp):
-            aux = self.compDescripts[i].split(self.getOption('familySeparator'))
+            aux = self.compDescripts[i].split(self.getOption("familySeparator"))
             self.compFam[i] = self.fam.index(aux[0])
 
     def _createOutputViewer(self):
@@ -1300,38 +1379,37 @@ class pyTACS(BaseUI):
         # Depending on the user supplied options generate the
         # write_flag
         write_flag = 0
-        if self.getOption('writeConnectivity'):
+        if self.getOption("writeConnectivity"):
             write_flag |= tacs.TACS.OUTPUT_CONNECTIVITY
-        if self.getOption('writeNodes'):
+        if self.getOption("writeNodes"):
             write_flag |= tacs.TACS.OUTPUT_NODES
-        if self.getOption('writeDisplacements'):
+        if self.getOption("writeDisplacements"):
             write_flag |= tacs.TACS.OUTPUT_DISPLACEMENTS
-        if self.getOption('writeStrains'):
+        if self.getOption("writeStrains"):
             write_flag |= tacs.TACS.OUTPUT_STRAINS
-        if self.getOption('writeStresses'):
+        if self.getOption("writeStresses"):
             write_flag |= tacs.TACS.OUTPUT_STRESSES
-        if self.getOption('writeExtras'):
+        if self.getOption("writeExtras"):
             write_flag |= tacs.TACS.OUTPUT_EXTRAS
-        if self.getOption('writeCoordinateFrame'):
+        if self.getOption("writeCoordinateFrame"):
             write_flag |= tacs.TACS.OUTPUT_COORDINATES
 
         # Create actual viewer
-        if self.getOption('outputElement') is not None:
-            elementType = self.getOption('outputElement')
+        if self.getOption("outputElement") is not None:
+            elementType = self.getOption("outputElement")
         else:
             # Set the output type based on the first element in the model
             elem = self.meshLoader.getElementObjectForElemID(0, nastranOrdering=False)
             elementType = elem.getElementType()
 
-        self.outputViewer = tacs.TACS.ToFH5(
-            self.assembler, elementType, write_flag)
+        self.outputViewer = tacs.TACS.ToFH5(self.assembler, elementType, write_flag)
 
         # Set the names of each of the output families
         for i in range(len(self.fam)):
             self.outputViewer.setComponentName(i, self.fam[i])
 
     def _getCompIDs(self, op, *inList):
-        """ Internal method to return the component IDs mathing
+        """Internal method to return the component IDs mathing
         information in inList"""
 
         # First recursively flatten the inList in case it was nested:
@@ -1348,8 +1426,10 @@ class pyTACS(BaseUI):
                 if item >= 0 and item < self.nComp:
                     compIDs[-1].append(item)
                 else:
-                    self._TACSWarning(f'Trying to add component ID of {item}, which\
-                    is out of the range 0 <= compID < {self.nComp}')
+                    self._TACSWarning(
+                        f"Trying to add component ID of {item}, which\
+                    is out of the range 0 <= compID < {self.nComp}"
+                    )
 
             elif isinstance(item, str):
                 # This is a little inefficinet here; loop over
@@ -1360,11 +1440,13 @@ class pyTACS(BaseUI):
                     if item in self.compDescripts[i].upper():
                         compIDs[-1].append(i)
             else:
-                self._TACSWarning(f'Unidentifiable information given for \'include\'\
-                or \'exclude\'. Valid data are integers 0 <= i < {self.nComp}, or \
-                strings.')
+                self._TACSWarning(
+                    f"Unidentifiable information given for 'include'\
+                or 'exclude'. Valid data are integers 0 <= i < {self.nComp}, or \
+                strings."
+                )
 
-        if op == 'and':
+        if op == "and":
             # First convert each entry to a set:
             for i in range(len(compIDs)):
                 compIDs[i] = set(compIDs[i])
@@ -1399,8 +1481,14 @@ class pyTACS(BaseUI):
             propID = list(self.bdfInfo.property_ids)[i]
 
             # Call the user function
-            result = elemCallBack(self.dvNum, compID, compDescript, self.elemDescripts[i], self.globalDVs,
-                                  propID=propID)
+            result = elemCallBack(
+                self.dvNum,
+                compID,
+                compDescript,
+                self.elemDescripts[i],
+                self.globalDVs,
+                propID=propID,
+            )
 
             # For maximum flexibiliy, multiple pieces of information
             # can be returned. At a minimum, the element objects
@@ -1417,7 +1505,7 @@ class pyTACS(BaseUI):
 
             if isinstance(result, tuple):
                 elemObjects = result[0]
-                if hasattr(result[1], '__iter__'):
+                if hasattr(result[1], "__iter__"):
                     # Iterable item, the scale list:
                     scaleList = result[1]
                 elif isinstance(result[1], numbers.Number):
@@ -1425,14 +1513,17 @@ class pyTACS(BaseUI):
                 else:
                     print(result[1])
                     # Don't know what it is:
-                    self._TACSWarning("Could not identify objects returned \
+                    self._TACSWarning(
+                        "Could not identify objects returned \
                     from elemCallBack. Valid return objects are: \
                     A list of TACS element objects (required, first), \
                     an iterable object \
                     (eg, list or array) containing the scaling parameters \
                     for the added design variables (optional, second). The \
                     string representation of the offending object is: \
-                    '%s'" % repr(result[1]))
+                    '%s'"
+                        % repr(result[1])
+                    )
 
             else:
                 elemObjects = result
@@ -1447,18 +1538,22 @@ class pyTACS(BaseUI):
                     if isinstance(object, tacs.TACS.Element):
                         numFoundElements += 1
                     else:
-                        self._TACSError(f"Object of type {type(object)} returned in elemCallBack function "
-                                        "is not a valid TACS element object. The \
+                        self._TACSError(
+                            f"Object of type {type(object)} returned in elemCallBack function "
+                            "is not a valid TACS element object. The \
                                string representation of the offending object is: \
-                               '{repr(object)}'")
+                               '{repr(object)}'"
+                        )
 
             if numFoundElements != numElements:
-                raise self._TACSError("Could not find all required element objects in the "
-                                      "return arguments from user-supplied "
-                                      "elemCallBack function. {} element types ({}) are contained in Component {}, "
-                                      "but only {} were returned by elemCallback.".format(numElements,
-                                                                                          repr(self.elemDescripts[i]),
-                                                                                          i, numFoundElements))
+                raise self._TACSError(
+                    "Could not find all required element objects in the "
+                    "return arguments from user-supplied "
+                    "elemCallBack function. {} element types ({}) are contained in Component {}, "
+                    "but only {} were returned by elemCallback.".format(
+                        numElements, repr(self.elemDescripts[i]), i, numFoundElements
+                    )
+                )
 
             # Now determine the number of design variables. This is
             # NOT as simple as just getting the number of design
@@ -1486,9 +1581,11 @@ class pyTACS(BaseUI):
                 # Now the length of newVars must the same as
                 # newVars[-1]-newVars[0] + 1
                 if not len(newVars) == newVars[-1] - newVars[0] + 1:
-                    raise self._TACSError("Inconsistent design variables detected. "
-                                          "The added design variables are not continuous."
-                                          f" The added design varibales are {repr(newVars)}.")
+                    raise self._TACSError(
+                        "Inconsistent design variables detected. "
+                        "The added design variables are not continuous."
+                        f" The added design varibales are {repr(newVars)}."
+                    )
 
             # Finally increment the dvcounter
             self.dvNum += len(newVars)
@@ -1499,10 +1596,12 @@ class pyTACS(BaseUI):
                 else:
                     # Make sure that the scaleList is the correct length.
                     if len(scaleList) != len(newVars):
-                        self._TACSWarning(f'An incorrect number of scale variables \
+                        self._TACSWarning(
+                            f"An incorrect number of scale variables \
                         were returned. There were {len(newVars)} variables added, but only \
                         {len(scaleList)} scale variables returned. The scale for these \
-                        variables will be set to 1.0. The scale variables are {repr(scaleList)}.')
+                        variables will be set to 1.0. The scale variables are {repr(scaleList)}."
+                        )
                         self.scaleList.extend(numpy.ones(len(newVars)))
                     else:
                         self.scaleList.extend(scaleList)
@@ -1521,8 +1620,9 @@ class pyTACS(BaseUI):
                 elif self.varsPerNode != elemVarsPerNode:
                     raise self._TACSError(
                         "Model references elements with differing numbers of variables per node (%d and %d). "
-                        "All elements must use same number of variables to be compatible." % (self.varsPerNode,
-                                                                                              elemVarsPerNode))
+                        "All elements must use same number of variables to be compatible."
+                        % (self.varsPerNode, elemVarsPerNode)
+                    )
 
         # If varsPerNode still hasn't been set (because there were no elements added in the callback)
         # Default to 6
@@ -1533,6 +1633,51 @@ class pyTACS(BaseUI):
         """
         Standard error print out if the user tries to call certain pytacs methods before intializing.
         """
-        error = self._TACSError("TACS assembler has not been created. "
-                                "Assembler must created first by running 'initalize' method.")
+        error = self._TACSError(
+            "TACS assembler has not been created. "
+            "Assembler must created first by running 'initalize' method."
+        )
         return error
+
+
+def _tload2_get_load_at_time(tload2, time, scale=1.0):
+    """
+    This is a function for interpolating the time series for the NASTRAN TLOAD2 card.
+    Usually, this would be done through pyNastran, but there's bug in its implementation
+    that prevents it from being run.
+    """
+    if isinstance(time, float):
+        time = np.array([time])
+    else:
+        time = np.asarray(time)
+
+    if isinstance(tload2.delay, float):
+        tau = tload2.delay
+    elif tload2.delay == 0 or tload2.delay is None:
+        tau = 0.0
+    else:
+        tau = tload2.delay_ref.get_delay_at_time(time)
+
+    t1 = tload2.T1 + tau
+    t2 = tload2.T2 + tau
+    freq = tload2.frequency
+    p = tload2.phase
+    f = np.zeros(time.shape, dtype=time.dtype)
+
+    i = np.where(t1 <= time)[0]
+    j = np.where(time[i] <= t2)[0]
+    i = i[j]
+    f[i] = (
+        scale
+        * time[i] ** tload2.b
+        * np.exp(tload2.c * time[i])
+        * np.cos(2 * np.pi * freq * time[i] + p)
+    )
+
+    is_spcd = False
+    # resp = f
+    if tload2.Type == "VELO" and is_spcd:
+        f[0] = tload2.us0
+    if tload2.Type == "ACCE" and is_spcd:
+        f[0] = tload2.vs0
+    return f

@@ -9,38 +9,36 @@
   R.R.A. Martins All rights reserved.
 */
 
-const char * TACSGeneralSpringConstitutive::constName = "TACSGeneralSpringConstitutive";
-const char * TACSGeneralSpringConstitutive::constitutiveName(){
+const char* TACSGeneralSpringConstitutive::constName =
+    "TACSGeneralSpringConstitutive";
+const char* TACSGeneralSpringConstitutive::constitutiveName() {
   return constName;
 }
 
-TACSGeneralSpringConstitutive::TACSGeneralSpringConstitutive( TacsScalar _C[] ){
-
+TACSGeneralSpringConstitutive::TACSGeneralSpringConstitutive(TacsScalar _C[]) {
   // Copy stiffness matrix entries
-  memcpy(C, _C, 21*sizeof(TacsScalar));
+  memcpy(C, _C, 21 * sizeof(TacsScalar));
 }
 
-TACSGeneralSpringConstitutive::TACSGeneralSpringConstitutive(){
+TACSGeneralSpringConstitutive::TACSGeneralSpringConstitutive() {
   // Spring has zero stiffness
-  memset(C, 0, 21*sizeof(TacsScalar));
-
+  memset(C, 0, 21 * sizeof(TacsScalar));
 }
 
-int TACSGeneralSpringConstitutive::getNumStresses(){
-  return NUM_STRESSES;
-}
+int TACSGeneralSpringConstitutive::getNumStresses() { return NUM_STRESSES; }
 
-void TACSGeneralSpringConstitutive::evalStress( int elemIndex,
-                                                const double pt[], const TacsScalar X[],
-                                                const TacsScalar strain[], TacsScalar stress[] ){
+void TACSGeneralSpringConstitutive::evalStress(int elemIndex, const double pt[],
+                                               const TacsScalar X[],
+                                               const TacsScalar strain[],
+                                               TacsScalar stress[]) {
   TacsScalar Ct[21];
   evalTangentStiffness(elemIndex, pt, X, Ct);
   calcStress(Ct, strain, stress);
 }
 
-void TACSGeneralSpringConstitutive::evalTangentStiffness( int elemIndex,
-                                                          const double pt[],
-                                                          const TacsScalar X[],
-                                                          TacsScalar Ct[] ){
-  memcpy(Ct, C, 21*sizeof(TacsScalar));
+void TACSGeneralSpringConstitutive::evalTangentStiffness(int elemIndex,
+                                                         const double pt[],
+                                                         const TacsScalar X[],
+                                                         TacsScalar Ct[]) {
+  memcpy(Ct, C, 21 * sizeof(TacsScalar));
 }

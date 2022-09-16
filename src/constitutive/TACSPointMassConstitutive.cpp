@@ -20,16 +20,14 @@
 
 const char* TACSPointMassConstitutive::name = "TACSPointMassConstitutive";
 
-const char* TACSPointMassConstitutive::getObjectName(){
-  return name;
-}
+const char* TACSPointMassConstitutive::getObjectName() { return name; }
 
 /*
   PointMassConstitutive member function definitions
 */
-TACSPointMassConstitutive::TACSPointMassConstitutive( TacsScalar m,
-                                                      TacsScalar I11, TacsScalar I22, TacsScalar I33,
-                                                      TacsScalar I12, TacsScalar I13, TacsScalar I23 ){
+TACSPointMassConstitutive::TACSPointMassConstitutive(
+    TacsScalar m, TacsScalar I11, TacsScalar I22, TacsScalar I33,
+    TacsScalar I12, TacsScalar I13, TacsScalar I23) {
   M[0] = M[6] = M[11] = m;
   M[15] = I11;
   M[18] = I22;

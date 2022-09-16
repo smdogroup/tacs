@@ -17,6 +17,7 @@
 */
 
 #include "TACSFunction.h"
+
 #include "TACSAssembler.h"
 #include "TacsUtilities.h"
 
@@ -34,10 +35,8 @@
   funcEval:      the type of evaluation to use
   maxElems:      the maximum number of elements expected
 */
-TACSFunction::TACSFunction( TACSAssembler *_assembler,
-                            DomainType _funcDomain,
-                            StageType _funcStages,
-                            int _maxElems ){
+TACSFunction::TACSFunction(TACSAssembler *_assembler, DomainType _funcDomain,
+                           StageType _funcStages, int _maxElems) {
   assembler = _assembler;
   assembler->incref();
 
@@ -54,9 +53,9 @@ TACSFunction::TACSFunction( TACSAssembler *_assembler,
 /*
   Destroy the TACSFunction base class
 */
-TACSFunction::~TACSFunction(){
-  if (elemNums){
-    delete [] elemNums;
+TACSFunction::~TACSFunction() {
+  if (elemNums) {
+    delete[] elemNums;
   }
   assembler->decref();
 }
@@ -64,14 +63,14 @@ TACSFunction::~TACSFunction(){
 /*
   Retrieve the type of domain specified by this object
 */
-enum TACSFunction::DomainType TACSFunction::getDomainType(){
+enum TACSFunction::DomainType TACSFunction::getDomainType() {
   return funcDomain;
 }
 
 /*
   Retrieve the type of function
 */
-enum TACSFunction::StageType TACSFunction::getStageType(){
+enum TACSFunction::StageType TACSFunction::getStageType() {
   return funcStageType;
 }
 
@@ -83,28 +82,25 @@ enum TACSFunction::StageType TACSFunction::getStageType(){
   elemNums: the element numbers used to set the domain
   numElems: the number of elements to add
 */
-void TACSFunction::setDomain( int _numElems, const int _elemNums[] ){
-  if (funcDomain == NO_DOMAIN){
-    fprintf(stderr, "Cannot set function domain for %s\n",
-            getObjectName());
+void TACSFunction::setDomain(int _numElems, const int _elemNums[]) {
+  if (funcDomain == NO_DOMAIN) {
+    fprintf(stderr, "Cannot set function domain for %s\n", getObjectName());
     return;
-  }
-  else {
+  } else {
     funcDomain = SUB_DOMAIN;
 
-    if (_numElems > maxElems){
-      if (elemNums){
-        delete [] elemNums;
+    if (_numElems > maxElems) {
+      if (elemNums) {
+        delete[] elemNums;
       }
       numElems = _numElems;
       maxElems = _numElems;
-      elemNums = new int[ maxElems ];
-    }
-    else {
+      elemNums = new int[maxElems];
+    } else {
       numElems = _numElems;
     }
 
-    memcpy(elemNums, _elemNums, numElems*sizeof(int));
+    memcpy(elemNums, _elemNums, numElems * sizeof(int));
     numElems = TacsUniqueSort(numElems, elemNums);
   }
 }
@@ -120,36 +116,33 @@ void TACSFunction::setDomain( int _numElems, const int _elemNums[] ){
   elemNums: the element numbers to add to the domain
   numElems: the number of elements to add
 */
-void TACSFunction::addDomain( int _numElems, const int _elemNums[] ){
-  if (funcDomain == NO_DOMAIN){
-    fprintf(stderr, "Cannot add function domain for %s\n",
-            getObjectName());
+void TACSFunction::addDomain(int _numElems, const int _elemNums[]) {
+  if (funcDomain == NO_DOMAIN) {
+    fprintf(stderr, "Cannot add function domain for %s\n", getObjectName());
     return;
-  }
-  else {
+  } else {
     funcDomain = SUB_DOMAIN;
 
-    if (_numElems + numElems > maxElems){
+    if (_numElems + numElems > maxElems) {
       maxElems = _numElems + numElems;
-      int *temp = new int[ maxElems ];
+      int *temp = new int[maxElems];
 
       int i = 0;
-      for ( ; i < numElems; i++ ){
+      for (; i < numElems; i++) {
         temp[i] = elemNums[i];
       }
-      for ( ; i < maxElems; i++ ){
-        temp[i] = _elemNums[i-numElems];
+      for (; i < maxElems; i++) {
+        temp[i] = _elemNums[i - numElems];
       }
       numElems = i;
 
-      if (elemNums){
-        delete [] elemNums;
+      if (elemNums) {
+        delete[] elemNums;
       }
 
       elemNums = temp;
-    }
-    else {
-      for ( int i = 0; i < _numElems; i++, numElems++ ){
+    } else {
+      for (int i = 0; i < _numElems; i++, numElems++) {
         elemNums[numElems] = _elemNums[i];
       }
     }
@@ -161,21 +154,19 @@ void TACSFunction::addDomain( int _numElems, const int _elemNums[] ){
 /*
   Get the elements in the domain of this object
 */
-int TACSFunction::getElementNums( const int **_elemNums ){
-  if (_elemNums){ *_elemNums = elemNums; }
+int TACSFunction::getElementNums(const int **_elemNums) {
+  if (_elemNums) {
+    *_elemNums = elemNums;
+  }
   return numElems;
 }
 
 /*
   Get the TACSAssembler object associated with this function
 */
-TACSAssembler* TACSFunction::getAssembler(){
-  return assembler;
-}
+TACSAssembler *TACSFunction::getAssembler() { return assembler; }
 
 /*
   Retrieve the object name
 */
-const char* TACSFunction::getObjectName(){
-  return "TACSFunction";
-}
+const char *TACSFunction::getObjectName() { return "TACSFunction"; }

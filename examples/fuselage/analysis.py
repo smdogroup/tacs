@@ -32,10 +32,10 @@ comm = MPI.COMM_WORLD
 
 # Instantiate FEAAssembler
 structOptions = {
-    'printtiming': True,
+    "printtiming": True,
 }
 
-bdfFile = os.path.join(os.path.dirname(__file__), 'fuselage.bdf')
+bdfFile = os.path.join(os.path.dirname(__file__), "fuselage.bdf")
 FEAAssembler = pyTACS(bdfFile, options=structOptions, comm=comm)
 
 # Load a composite or isotropic elemCallBack depending on user input
@@ -48,19 +48,19 @@ else:
 FEAAssembler.initialize(elemCallBack)
 
 # Setup static problem
-problem = FEAAssembler.createStaticProblem('pressurization')
+problem = FEAAssembler.createStaticProblem("pressurization")
 
 # Add loads to problem
 # Apply cabin pressure to fuselage skins
-compIDs = FEAAssembler.selectCompIDs('SKIN')
-p = 101.3e3 # Pa
+compIDs = FEAAssembler.selectCompIDs("SKIN")
+p = 101.3e3  # Pa
 problem.addPressureToComponents(compIDs, p)
 # Apply gravity load to fuselage
 problem.addInertialLoad([0.0, -9.81, 0.0])
 
 # Add eval functions to problem
-problem.addFunction('mass', functions.StructuralMass)
-problem.addFunction('ks_failure', functions.KSFailure, ksWeight=100.0, safetyFactor=1.5)
+problem.addFunction("mass", functions.StructuralMass)
+problem.addFunction("ks_failure", functions.KSFailure, ksWeight=100.0, safetyFactor=1.5)
 
 # Solve problem
 problem.solve()

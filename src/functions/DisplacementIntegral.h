@@ -22,7 +22,7 @@
 */
 class TACSDisplacementIntegral : public TACSFunction {
  public:
-  TACSDisplacementIntegral( TACSAssembler *_tacs, const TacsScalar _dir[] );
+  TACSDisplacementIntegral(TACSAssembler *_tacs, const TacsScalar _dir[]);
   ~TACSDisplacementIntegral();
 
   // Retrieve the name of the function
@@ -35,22 +35,17 @@ class TACSDisplacementIntegral : public TACSFunction {
 
   // Collective calls on the TACS MPI Comm
   // -------------------------------------
-  void initEvaluation( EvaluationType ftype );
-  void finalEvaluation( EvaluationType ftype );
+  void initEvaluation(EvaluationType ftype);
+  void finalEvaluation(EvaluationType ftype);
 
   // Functions for integration over the structural domain on each thread
   // -------------------------------------------------------------------
-  void initThread( double tcoef,
-                   EvaluationType ftype,
-                   TACSFunctionCtx *ctx );
-  void elementWiseEval( EvaluationType ftype,
-                        TACSElement *element, int elemNum,
-                        const TacsScalar Xpts[], const TacsScalar vars[],
-                        const TacsScalar dvars[], const TacsScalar ddvars[],
-                        TACSFunctionCtx *ctx );
-  void finalThread( double tcoef,
-                    EvaluationType ftype,
-                    TACSFunctionCtx *ctx );
+  void initThread(double tcoef, EvaluationType ftype, TACSFunctionCtx *ctx);
+  void elementWiseEval(EvaluationType ftype, TACSElement *element, int elemNum,
+                       const TacsScalar Xpts[], const TacsScalar vars[],
+                       const TacsScalar dvars[], const TacsScalar ddvars[],
+                       TACSFunctionCtx *ctx);
+  void finalThread(double tcoef, EvaluationType ftype, TACSFunctionCtx *ctx);
 
   // Return the value of the function
   // --------------------------------
@@ -58,28 +53,27 @@ class TACSDisplacementIntegral : public TACSFunction {
 
   // State variable sensitivities
   // ----------------------------
-  void getElementSVSens( double alpha, double beta, double gamma,
-                         TacsScalar *elemSVSens,
-                         TACSElement *element, int elemNum,
-                         const TacsScalar Xpts[], const TacsScalar vars[],
-                         const TacsScalar dvars[], const TacsScalar ddvars[],
-                         TACSFunctionCtx *ctx );
+  void getElementSVSens(double alpha, double beta, double gamma,
+                        TacsScalar *elemSVSens, TACSElement *element,
+                        int elemNum, const TacsScalar Xpts[],
+                        const TacsScalar vars[], const TacsScalar dvars[],
+                        const TacsScalar ddvars[], TACSFunctionCtx *ctx);
 
   // Design variable sensitivity evaluation
   // --------------------------------------
-  void addElementDVSens( double tcoef, TacsScalar *fdvSens, int numDVs,
-                         TACSElement *element, int elemNum,
-                         const TacsScalar Xpts[], const TacsScalar vars[],
-                         const TacsScalar dvars[], const TacsScalar ddvars[],
-                         TACSFunctionCtx *ctx );
+  void addElementDVSens(double tcoef, TacsScalar *fdvSens, int numDVs,
+                        TACSElement *element, int elemNum,
+                        const TacsScalar Xpts[], const TacsScalar vars[],
+                        const TacsScalar dvars[], const TacsScalar ddvars[],
+                        TACSFunctionCtx *ctx);
 
   // Nodal sensitivities
   // -------------------
-  void getElementXptSens( double tcoef, TacsScalar fXptSens[],
-                          TACSElement *element, int elemNum,
-                          const TacsScalar Xpts[], const TacsScalar vars[],
-                          const TacsScalar dvars[], const TacsScalar ddvars[],
-                          TACSFunctionCtx *ctx );
+  void getElementXptSens(double tcoef, TacsScalar fXptSens[],
+                         TACSElement *element, int elemNum,
+                         const TacsScalar Xpts[], const TacsScalar vars[],
+                         const TacsScalar dvars[], const TacsScalar ddvars[],
+                         TACSFunctionCtx *ctx);
 
  private:
   // The name of the function
@@ -95,4 +89,4 @@ class TACSDisplacementIntegral : public TACSFunction {
   int maxNumNodes;
 };
 
-#endif // TACS_DISPLACEMENT_INTEGRAL_H
+#endif  // TACS_DISPLACEMENT_INTEGRAL_H
