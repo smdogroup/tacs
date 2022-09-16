@@ -30,7 +30,7 @@ class ConstitutiveTest(unittest.TestCase):
         kappa = 1.0  # Thermal conductivity W/(m⋅K)
         cp = 1.0  # Specific heat J/(kg⋅K)
         lh = 10.0  # Latent heat J/kg
-        mt = 10.0  # Melting temperature (relative) K
+        mt = 0.0  # Melting temperature (relative) K
 
         solid_prop = constitutive.MaterialProperties(rho=rho, kappa=2.0*kappa, specific_heat=cp)
         liquid_prop = constitutive.MaterialProperties(rho=0.95*rho, kappa=kappa, specific_heat=1.1*cp)

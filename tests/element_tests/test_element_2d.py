@@ -20,7 +20,7 @@ class ElementTest(unittest.TestCase):
 
         # Basically, only check relative tolerance
         self.atol = 1e99
-        self.print_level = 0
+        self.print_level = 2
 
         # Set element index
         self.elem_index = 0
@@ -57,13 +57,13 @@ class ElementTest(unittest.TestCase):
 
         # Create stiffness (need class)
         con = constitutive.PlaneStressConstitutive(self.props, t=1.0, tNum=0)
-        pcm_con = constitutive.PhaseChangeMaterialConstitutive(self.props, props2, mt=10.0, lh=0.0, t=1.0, tNum=0)
+        pcm_con = constitutive.PhaseChangeMaterialConstitutive(self.props, props2, mt=0.0, lh=0.0, t=1.0, tNum=0)
 
         # Set the model type
-        self.models = [elements.HeatConduction2D(con),
-                       elements.LinearElasticity2D(con),
+        self.models = [#elements.HeatConduction2D(con),
+                       #elements.LinearElasticity2D(con),
                        #elements.LinearElasticity2D(con2d, elements.TACS_NONLINEAR_STRAIN),
-                       elements.LinearThermoelasticity2D(con),
+                       #elements.LinearThermoelasticity2D(con),
                        elements.PCMHeatConduction2D(pcm_con)]
 
         # Set matrix types
