@@ -337,6 +337,72 @@ class TACSDIRKIntegrator : public TACSIntegrator {
 };
 
 /*
+  ESDIRK integration scheme for TACS. *No adjoint implementation yet*
+*/
+class TACSESDIRKIntegrator : public TACSIntegrator
+{
+  public:
+    // Constructor
+    TACSESDIRKIntegrator( TACSAssembler * _tacs,
+                          double _tinit,
+                          double _tfinal,
+                          double _num_steps,
+                          int _num_stages );
+
+    // Destructor
+    ~TACSESDIRKIntegrator();
+
+    // Iterate through the forward solution
+    int iterate(int k, TACSBVec* forces);
+    
+    // Iterate through the forward solution - per stage 
+    int iterateStage(int k, int s, TACSBVec* forces);
+
+    // Retrieve the internal states - per stage
+    double getStageStates(int step_num, int stage_num,
+		                      TACSBVec** qS, TACSBVec** qdotS, TACSBVec** qddotS);
+
+    // Evaluate the functions of interest
+    void evalFunctions(TacsScalar* fvals);
+
+    // Get the adjoint value for the given function - adjoint not implemented yet
+    void getAdjoint(int step_num, int func_num,
+                    TACSBVec **adjoint);
+
+  private:
+    // set the first-order descirption integration coefficients
+    void setupDefaultCoeffs();
+
+    // set the second-order description integration coefficients
+    void setupSecondCoeffs();
+
+    // return the stage coefficients from the Butcher Tableau
+    double getACoeff(const int i, const int j);
+
+    // check the Butcher Tableau for consistency
+    void checkButcherTableau();
+
+    // get the row index of the a/A coefficient matrix for the stage
+    int getRowIndex(int stage_num);
+
+    // get the linearization coefficients for the given step/stage
+    void getLinearizationCoeffs(const int stage, const double h,
+		                            double* alpha, double* beta, double* gamma);
+
+    // the number of stages for this method
+    int num_stages;
+
+    // the states at every stage
+    TACSBVec **qS, **qdotS, **qddotS;
+
+    // the (first-order) Butcher Tableau coefficients for the integration scheme
+    double *a, *b, *c;
+
+    // the second order coefficients for the integration scheme
+    double *A, *B;
+};
+
+/*
   Adams-Bashforth-Moulton integration scheme for TACS
 */
 /*

@@ -159,7 +159,8 @@ class TransientProblem(TACSProblem):
         solverType = self.getOption("timeIntegrator")
 
         # dictionary for converting integration order to number of stages
-        DIRK_order_to_stages = {2: 1, 3: 2, 4: 3}
+        DIRK_order_to_stages = {2:1, 3:2, 4:3}
+        ESDIRK_order_to_stages = {3:4, 4:6, 5:8}
 
         # Create the time integrator and allocate the load data structures
         if solverType.upper() == "BDF":
@@ -191,7 +192,16 @@ class TransientProblem(TACSProblem):
                 for i in range((self.numSteps + 1) * self.numStages)
             ]
 
-        printLevel = self.getOption("printLevel")
+        elif solverType.upper() == 'ESDIRK':
+            self.numStages = ESDIRK_order_to_stages[order]
+            self.integrator = tacs.TACS.ESDIRKIntegrator(self.assembler, self.tInit, self.tFinal,
+                                                         float(self.numSteps), self.numStages)
+            # Create a force vector for each time stage
+            self.F = [self.assembler.createVec() for i in range((self.numSteps + 1)*self.numStages)]
+            # Auxiliary element object for applying tractions/pressure at each time stage
+            self.auxElems = [tacs.TACS.AuxElements() for i in range((self.numSteps + 1)*self.numStages)]
+
+        printLevel = self.getOption('printLevel')
         self.integrator.setPrintLevel(printLevel)
         # Set solver tolerances
         atol = self.getOption("L2Convergence")
@@ -903,6 +913,88 @@ class TransientProblem(TACSProblem):
 
         return
 
+    def prepIterativeSolve(self):
+        """
+        Prepare to solve the time integrated transient problem.
+        """
+        self.callCounter += 1
+
+        # set problem vars to assembler
+        self._updateAssemblerVars()
+
+        return
+
+    def solveTimeInstance(self, timeStep, timeStage=None, Fext=None):
+        """
+        Iterate a single time instance in the time integrated transient problem.
+        Useful for iterating an aeroelastic problem that is tightly coupled, 
+        where intermediate structural states need to be passed to an external
+        fluid solver.
+        
+        Requires the user to use an outer for-loop over the number of time 
+        steps/stages of the problem.
+
+        Parameters
+        ----------
+        timeStep : int
+            Time step index to iterate
+
+        timeStage : int or None
+            Time stage index to iterate. If not None, solver must be multistage 
+
+        Fext : TACS.Vec or numpy.ndarray or None
+            If Fext is not None, add this force vector to the loads applied at 
+            this time instance. Fext must be sized such that the flattened array
+            is (numOwnedNodes*numVarsPerNode) in length. Useful for applying
+            aerodynamic loads which change at every time instance in a tighly 
+            coupled aeroelastic solution.
+
+        Examples
+        --------
+        >>> transientProblem.prepIterativeSolve()
+        >>> for step in range(transientProblem.numSteps + 1):
+        >>>     for stage in range(transientProblem.numStages):
+        >>>         # assume load array comes from an external CFD solver...
+        >>>         Fext = externalCFDSolver.solve(step, stage)
+        >>>         # iterate the transient problem in TACS
+        >>>         transientProblem.solveTimeInstance(timeStep=step, timeStage=stage, Fext=Fext)
+        >>>         # get the necessary structural states for coupling
+        >>>         time, states, dstates, ddstates = transientProblem.getVariables(timeStep=step, timeStage=stage)
+        """
+        # evaluate the time index
+        if timeStage is None:
+            timeIndex = timeStep
+        else:
+            # check that the integrator is multistage
+            assert self.numStages is not None , \
+                f"current integrator type {self.getOption('timeIntegrator').upper()} is not multistage, choose a multistage integrator from {['DIRK','ESDIRK']}"
+            timeIndex = timeStep*self.numStages + timeStage
+        
+        # set the loads - do not change self.F[timeIndex] in place
+        FVec = self.assembler.createVec()
+        FVec.copyValues(self.F[timeIndex])
+        if Fext is not None:
+            if isinstance(Fext, tacs.TACS.Vec):
+                FVec.axpy(1., Fext)
+            elif isinstance(Fext, np.ndarray):
+                if Fext.ndim > 1:
+                    Fext = Fext.ravel()
+                FextVec = self.assembler.createVec()
+                Fext_array = FextVec.getArray()
+                Fext_array[:] = Fext
+                FVec.axpy(1., FextVec)
+
+        # set the auxiliary elements for this time step (tractions/pressures)
+        self.assembler.setAuxElements(self.auxElems[timeIndex])
+
+        # iterate this time instance
+        if timeStage is None:
+            self.integrator.iterate(timeIndex, forces=FVec)
+        else:
+            self.integrator.iterateStage(timeStep, timeStage, forces=FVec)
+
+        return
+
     ####### Function eval/sensitivity methods ########
 
     def addFunction(self, funcName, funcHandle, compIDs=None, **kwargs):
@@ -1118,7 +1210,7 @@ class TransientProblem(TACSProblem):
 
     ####### Post processing methods ########
 
-    def getVariables(self, timeStep, states=None, dstates=None, ddstates=None):
+    def getVariables(self, timeStep, timeStage=None, states=None, dstates=None, ddstates=None):
         """
         Return the current state values for the current problem
 
@@ -1126,6 +1218,9 @@ class TransientProblem(TACSProblem):
         ----------
         timeStep : int
             Time step index to get state variables for.
+
+        timeStage : int or None
+            Time stage index to get state variables for. 
 
         states : TACS.Vec or numpy.ndarray or None
             If states is not None, place the state variables into this array (optional).
@@ -1139,7 +1234,7 @@ class TransientProblem(TACSProblem):
         Returns
         --------
         time: float
-            The time at specified step
+            The time at specified time instance
 
         states : TACS.Vec or numpy.ndarray
             The state variables.
@@ -1153,7 +1248,13 @@ class TransientProblem(TACSProblem):
         """
 
         # Get BVecs for time instance
-        time, q, qdot, qddot = self.integrator.getStates(timeStep)
+        if timeStage is None:
+            time, q, qdot, qddot = self.integrator.getStates(timeStep)
+        else:
+            # check that the integrator is multistage
+            assert self.numStages is not None , \
+                f"current integrator type {self.getOption('timeIntegrator').upper()} is not multistage, choose a multistage integrator from {['DIRK','ESDIRK']}"
+            time, q, qdot, qddot = self.integrator.getStageStates(timeStep, timeStage)
 
         # Convert to arrays
         qArray = q.getArray()
