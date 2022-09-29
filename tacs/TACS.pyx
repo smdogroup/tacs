@@ -3571,6 +3571,49 @@ cdef class DIRKIntegrator(Integrator):
         time = dirk.getStageStates(step_num, stage_num, &cq, &cqdot, &cqddot)
         return time, _init_Vec(cq), _init_Vec(cqdot), _init_Vec(cqddot)
 
+
+cdef class ESDIRKIntegrator(Integrator):
+    """
+    Explicit first-stage, Singly Diagonally-Implicit-Runge-Kutta integration 
+    class. This supports up to fifth-order accuracy in time and domain. Four-
+    stage ESDIRK is third-order accurate, six-stage ESDIRK is fourth-order 
+    accurate, and eight-stage ESDIRK is fifth-order accurate.
+    """
+    def __cinit__(self, Assembler tacs,
+                  double tinit, double tfinal,
+                  double num_steps,
+                  int stages):
+        self.ptr = new TACSESDIRKIntegrator(tacs.ptr, tinit, tfinal,
+                                            num_steps, stages)
+        self.ptr.incref()
+        return
+
+    def iterateStage(self, int step_num, int stage_num, Vec forces=None):
+        """
+        iterateStage(self, int step_num, Vec forces=None)
+
+        Solve the nonlinear system at current time stage of the current time step
+        """
+        cdef TACSESDIRKIntegrator *esdirk = <TACSESDIRKIntegrator*> self.ptr
+        cdef TACSBVec *fvec = NULL
+        if forces is not None:
+            fvec = forces.ptr
+        return esdirk.iterateStage(step_num, stage_num, fvec)
+
+    def getStageStates(self, int step_num, int stage_num):
+        """
+        getStageStates(self, int step_num, int stage_num)
+
+        TACS state vectors are returned at the given time stage of the given time step
+        """
+        cdef TACSESDIRKIntegrator *esdirk = <TACSESDIRKIntegrator*> self.ptr
+        cdef double time
+        cdef TACSBVec *cq = NULL
+        cdef TACSBVec *cqdot = NULL
+        cdef TACSBVec *cqddot = NULL
+        time = esdirk.getStageStates(step_num, stage_num, &cq, &cqdot, &cqddot)
+        return time, _init_Vec(cq), _init_Vec(cqdot), _init_Vec(cqddot)
+
 cdef class ABMIntegrator(Integrator):
     """
     Adams-Bashforth-Moulton method for integration. This currently
