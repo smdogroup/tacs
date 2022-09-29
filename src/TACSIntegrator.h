@@ -339,67 +339,62 @@ class TACSDIRKIntegrator : public TACSIntegrator {
 /*
   ESDIRK integration scheme for TACS. *No adjoint implementation yet*
 */
-class TACSESDIRKIntegrator : public TACSIntegrator
-{
-  public:
-    // Constructor
-    TACSESDIRKIntegrator( TACSAssembler * _tacs,
-                          double _tinit,
-                          double _tfinal,
-                          double _num_steps,
-                          int _num_stages );
+class TACSESDIRKIntegrator : public TACSIntegrator {
+ public:
+  // Constructor
+  TACSESDIRKIntegrator(TACSAssembler *_tacs, double _tinit, double _tfinal,
+                       double _num_steps, int _num_stages);
 
-    // Destructor
-    ~TACSESDIRKIntegrator();
+  // Destructor
+  ~TACSESDIRKIntegrator();
 
-    // Iterate through the forward solution
-    int iterate(int k, TACSBVec* forces);
-    
-    // Iterate through the forward solution - per stage 
-    int iterateStage(int k, int s, TACSBVec* forces);
+  // Iterate through the forward solution
+  int iterate(int k, TACSBVec *forces);
 
-    // Retrieve the internal states - per stage
-    double getStageStates(int step_num, int stage_num,
-		                      TACSBVec** qS, TACSBVec** qdotS, TACSBVec** qddotS);
+  // Iterate through the forward solution - per stage
+  int iterateStage(int k, int s, TACSBVec *forces);
 
-    // Evaluate the functions of interest
-    void evalFunctions(TacsScalar* fvals);
+  // Retrieve the internal states - per stage
+  double getStageStates(int step_num, int stage_num, TACSBVec **qS,
+                        TACSBVec **qdotS, TACSBVec **qddotS);
 
-    // Get the adjoint value for the given function - adjoint not implemented yet
-    void getAdjoint(int step_num, int func_num,
-                    TACSBVec **adjoint);
+  // Evaluate the functions of interest
+  void evalFunctions(TacsScalar *fvals);
 
-  private:
-    // set the first-order descirption integration coefficients
-    void setupDefaultCoeffs();
+  // Get the adjoint value for the given function - adjoint not implemented yet
+  void getAdjoint(int step_num, int func_num, TACSBVec **adjoint);
 
-    // set the second-order description integration coefficients
-    void setupSecondCoeffs();
+ private:
+  // set the first-order descirption integration coefficients
+  void setupDefaultCoeffs();
 
-    // return the stage coefficients from the Butcher Tableau
-    double getACoeff(const int i, const int j);
+  // set the second-order description integration coefficients
+  void setupSecondCoeffs();
 
-    // check the Butcher Tableau for consistency
-    void checkButcherTableau();
+  // return the stage coefficients from the Butcher Tableau
+  double getACoeff(const int i, const int j);
 
-    // get the row index of the a/A coefficient matrix for the stage
-    int getRowIndex(int stage_num);
+  // check the Butcher Tableau for consistency
+  void checkButcherTableau();
 
-    // get the linearization coefficients for the given step/stage
-    void getLinearizationCoeffs(const int stage, const double h,
-		                            double* alpha, double* beta, double* gamma);
+  // get the row index of the a/A coefficient matrix for the stage
+  int getRowIndex(int stage_num);
 
-    // the number of stages for this method
-    int num_stages;
+  // get the linearization coefficients for the given step/stage
+  void getLinearizationCoeffs(const int stage, const double h, double *alpha,
+                              double *beta, double *gamma);
 
-    // the states at every stage
-    TACSBVec **qS, **qdotS, **qddotS;
+  // the number of stages for this method
+  int num_stages;
 
-    // the (first-order) Butcher Tableau coefficients for the integration scheme
-    double *a, *b, *c;
+  // the states at every stage
+  TACSBVec **qS, **qdotS, **qddotS;
 
-    // the second order coefficients for the integration scheme
-    double *A, *B;
+  // the (first-order) Butcher Tableau coefficients for the integration scheme
+  double *a, *b, *c;
+
+  // the second order coefficients for the integration scheme
+  double *A, *B;
 };
 
 /*
