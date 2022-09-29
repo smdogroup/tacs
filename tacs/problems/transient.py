@@ -935,7 +935,7 @@ class TransientProblem(TACSProblem):
 
         return
 
-    def solveTimeInstance(self, timeStep, timeStage=None, Fext=None):
+    def iterate(self, timeStep, timeStage=None, Fext=None):
         """
         Iterate a single time instance in the time integrated transient problem.
         Useful for iterating an aeroelastic problem that is tightly coupled,
@@ -968,7 +968,7 @@ class TransientProblem(TACSProblem):
         >>>         # assume load array comes from an external CFD solver...
         >>>         Fext = externalCFDSolver.solve(step, stage)
         >>>         # iterate the transient problem in TACS
-        >>>         transientProblem.solveTimeInstance(timeStep=step, timeStage=stage, Fext=Fext)
+        >>>         transientProblem.iterate(timeStep=step, timeStage=stage, Fext=Fext)
         >>>         # get the necessary structural states for coupling
         >>>         time, states, dstates, ddstates = transientProblem.getVariables(timeStep=step, timeStage=stage)
         """
