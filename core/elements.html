@@ -15,6 +15,7 @@
     <script src="../_static/underscore.js"></script>
     <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
     <script src="../_static/doctools.js"></script>
+    <script src="../_static/sphinx_highlight.js"></script>
     <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
@@ -1026,10 +1027,70 @@ independent node dof's are attached to the eleemnt.</p></li>
     <h3><a href="../index.html">Table of Contents</a></h3>
     <ul>
 <li><a class="reference internal" href="#">elements module</a><ul>
-<li><a class="reference internal" href="#basis-classes">Basis classes</a></li>
-<li><a class="reference internal" href="#model-classes">Model classes</a></li>
-<li><a class="reference internal" href="#transform-classes">Transform classes</a></li>
-<li><a class="reference internal" href="#element-classes">Element classes</a></li>
+<li><a class="reference internal" href="#basis-classes">Basis classes</a><ul>
+<li><a class="reference internal" href="#tacs.elements.LinearTetrahedralBasis"><code class="docutils literal notranslate"><span class="pre">LinearTetrahedralBasis</span></code></a></li>
+<li><a class="reference internal" href="#tacs.elements.QuadraticTetrahedralBasis"><code class="docutils literal notranslate"><span class="pre">QuadraticTetrahedralBasis</span></code></a></li>
+<li><a class="reference internal" href="#tacs.elements.CubicTetrahedralBasis"><code class="docutils literal notranslate"><span class="pre">CubicTetrahedralBasis</span></code></a></li>
+<li><a class="reference internal" href="#tacs.elements.LinearHexaBasis"><code class="docutils literal notranslate"><span class="pre">LinearHexaBasis</span></code></a></li>
+<li><a class="reference internal" href="#tacs.elements.QuadraticHexaBasis"><code class="docutils literal notranslate"><span class="pre">QuadraticHexaBasis</span></code></a></li>
+<li><a class="reference internal" href="#tacs.elements.CubicHexaBasis"><code class="docutils literal notranslate"><span class="pre">CubicHexaBasis</span></code></a></li>
+<li><a class="reference internal" href="#tacs.elements.LinearQuadBasis"><code class="docutils literal notranslate"><span class="pre">LinearQuadBasis</span></code></a></li>
+<li><a class="reference internal" href="#tacs.elements.QuadraticQuadBasis"><code class="docutils literal notranslate"><span class="pre">QuadraticQuadBasis</span></code></a></li>
+<li><a class="reference internal" href="#tacs.elements.CubicQuadBasis"><code class="docutils literal notranslate"><span class="pre">CubicQuadBasis</span></code></a></li>
+<li><a class="reference internal" href="#tacs.elements.QuarticQuadBasis"><code class="docutils literal notranslate"><span class="pre">QuarticQuadBasis</span></code></a></li>
+<li><a class="reference internal" href="#tacs.elements.QuinticQuadBasis"><code class="docutils literal notranslate"><span class="pre">QuinticQuadBasis</span></code></a></li>
+<li><a class="reference internal" href="#tacs.elements.LinearTriangleBasis"><code class="docutils literal notranslate"><span class="pre">LinearTriangleBasis</span></code></a></li>
+<li><a class="reference internal" href="#tacs.elements.QuadraticTriangleBasis"><code class="docutils literal notranslate"><span class="pre">QuadraticTriangleBasis</span></code></a></li>
+<li><a class="reference internal" href="#tacs.elements.CubicTriangleBasis"><code class="docutils literal notranslate"><span class="pre">CubicTriangleBasis</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#model-classes">Model classes</a><ul>
+<li><a class="reference internal" href="#tacs.elements.HeatConduction2D"><code class="docutils literal notranslate"><span class="pre">HeatConduction2D</span></code></a></li>
+<li><a class="reference internal" href="#tacs.elements.HeatConduction3D"><code class="docutils literal notranslate"><span class="pre">HeatConduction3D</span></code></a></li>
+<li><a class="reference internal" href="#tacs.elements.LinearElasticity2D"><code class="docutils literal notranslate"><span class="pre">LinearElasticity2D</span></code></a></li>
+<li><a class="reference internal" href="#tacs.elements.LinearElasticity3D"><code class="docutils literal notranslate"><span class="pre">LinearElasticity3D</span></code></a></li>
+<li><a class="reference internal" href="#tacs.elements.LinearThermoelasticity2D"><code class="docutils literal notranslate"><span class="pre">LinearThermoelasticity2D</span></code></a></li>
+<li><a class="reference internal" href="#tacs.elements.LinearThermoelasticity3D"><code class="docutils literal notranslate"><span class="pre">LinearThermoelasticity3D</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#transform-classes">Transform classes</a><ul>
+<li><a class="reference internal" href="#tacs.elements.ShellNaturalTransform"><code class="docutils literal notranslate"><span class="pre">ShellNaturalTransform</span></code></a></li>
+<li><a class="reference internal" href="#tacs.elements.ShellRefAxisTransform"><code class="docutils literal notranslate"><span class="pre">ShellRefAxisTransform</span></code></a></li>
+<li><a class="reference internal" href="#tacs.elements.BeamRefAxisTransform"><code class="docutils literal notranslate"><span class="pre">BeamRefAxisTransform</span></code></a></li>
+<li><a class="reference internal" href="#tacs.elements.SpringIdentityTransform"><code class="docutils literal notranslate"><span class="pre">SpringIdentityTransform</span></code></a></li>
+<li><a class="reference internal" href="#tacs.elements.SpringRefAxisTransform"><code class="docutils literal notranslate"><span class="pre">SpringRefAxisTransform</span></code></a></li>
+<li><a class="reference internal" href="#tacs.elements.SpringRefFrameTransform"><code class="docutils literal notranslate"><span class="pre">SpringRefFrameTransform</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#element-classes">Element classes</a><ul>
+<li><a class="reference internal" href="#tacs.elements.Element2D"><code class="docutils literal notranslate"><span class="pre">Element2D</span></code></a></li>
+<li><a class="reference internal" href="#tacs.elements.Element3D"><code class="docutils literal notranslate"><span class="pre">Element3D</span></code></a></li>
+<li><a class="reference internal" href="#tacs.elements.Quad4Shell"><code class="docutils literal notranslate"><span class="pre">Quad4Shell</span></code></a></li>
+<li><a class="reference internal" href="#tacs.elements.Quad9Shell"><code class="docutils literal notranslate"><span class="pre">Quad9Shell</span></code></a></li>
+<li><a class="reference internal" href="#tacs.elements.Quad16Shell"><code class="docutils literal notranslate"><span class="pre">Quad16Shell</span></code></a></li>
+<li><a class="reference internal" href="#tacs.elements.Tri3Shell"><code class="docutils literal notranslate"><span class="pre">Tri3Shell</span></code></a></li>
+<li><a class="reference internal" href="#tacs.elements.Quad4NonlinearShell"><code class="docutils literal notranslate"><span class="pre">Quad4NonlinearShell</span></code></a></li>
+<li><a class="reference internal" href="#tacs.elements.Quad9NonlinearShell"><code class="docutils literal notranslate"><span class="pre">Quad9NonlinearShell</span></code></a></li>
+<li><a class="reference internal" href="#tacs.elements.Quad16NonlinearShell"><code class="docutils literal notranslate"><span class="pre">Quad16NonlinearShell</span></code></a></li>
+<li><a class="reference internal" href="#tacs.elements.Tri3NonlinearShell"><code class="docutils literal notranslate"><span class="pre">Tri3NonlinearShell</span></code></a></li>
+<li><a class="reference internal" href="#tacs.elements.Quad4NonlinearThermalShell"><code class="docutils literal notranslate"><span class="pre">Quad4NonlinearThermalShell</span></code></a></li>
+<li><a class="reference internal" href="#tacs.elements.Quad9NonlinearThermalShell"><code class="docutils literal notranslate"><span class="pre">Quad9NonlinearThermalShell</span></code></a></li>
+<li><a class="reference internal" href="#tacs.elements.Quad16NonlinearThermalShell"><code class="docutils literal notranslate"><span class="pre">Quad16NonlinearThermalShell</span></code></a></li>
+<li><a class="reference internal" href="#tacs.elements.Tri3NonlinearThermalShell"><code class="docutils literal notranslate"><span class="pre">Tri3NonlinearThermalShell</span></code></a></li>
+<li><a class="reference internal" href="#tacs.elements.Quad4ThermalShell"><code class="docutils literal notranslate"><span class="pre">Quad4ThermalShell</span></code></a></li>
+<li><a class="reference internal" href="#tacs.elements.Quad9ThermalShell"><code class="docutils literal notranslate"><span class="pre">Quad9ThermalShell</span></code></a></li>
+<li><a class="reference internal" href="#tacs.elements.Quad16ThermalShell"><code class="docutils literal notranslate"><span class="pre">Quad16ThermalShell</span></code></a></li>
+<li><a class="reference internal" href="#tacs.elements.Tri3ThermalShell"><code class="docutils literal notranslate"><span class="pre">Tri3ThermalShell</span></code></a></li>
+<li><a class="reference internal" href="#tacs.elements.Beam2"><code class="docutils literal notranslate"><span class="pre">Beam2</span></code></a></li>
+<li><a class="reference internal" href="#tacs.elements.Beam3"><code class="docutils literal notranslate"><span class="pre">Beam3</span></code></a></li>
+<li><a class="reference internal" href="#tacs.elements.Beam2ModRot"><code class="docutils literal notranslate"><span class="pre">Beam2ModRot</span></code></a></li>
+<li><a class="reference internal" href="#tacs.elements.Beam3ModRot"><code class="docutils literal notranslate"><span class="pre">Beam3ModRot</span></code></a></li>
+<li><a class="reference internal" href="#tacs.elements.RBE2"><code class="docutils literal notranslate"><span class="pre">RBE2</span></code></a></li>
+<li><a class="reference internal" href="#tacs.elements.RBE3"><code class="docutils literal notranslate"><span class="pre">RBE3</span></code></a></li>
+<li><a class="reference internal" href="#tacs.elements.MassElement"><code class="docutils literal notranslate"><span class="pre">MassElement</span></code></a></li>
+<li><a class="reference internal" href="#tacs.elements.SpringElement"><code class="docutils literal notranslate"><span class="pre">SpringElement</span></code></a></li>
+</ul>
+</li>
 </ul>
 </li>
 </ul>

@@ -15,6 +15,7 @@
     <script src="../_static/underscore.js"></script>
     <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
     <script src="../_static/doctools.js"></script>
+    <script src="../_static/sphinx_highlight.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
     <link rel="next" title="TransientProblem" href="transient.html" />
@@ -799,7 +800,54 @@ optimization</p>
     <ul>
 <li><a class="reference internal" href="#">StaticProblem</a><ul>
 <li><a class="reference internal" href="#options">Options</a></li>
-<li><a class="reference internal" href="#api-reference">API Reference</a></li>
+<li><a class="reference internal" href="#api-reference">API Reference</a><ul>
+<li><a class="reference internal" href="#tacs.problems.StaticProblem"><code class="docutils literal notranslate"><span class="pre">StaticProblem</span></code></a><ul>
+<li><a class="reference internal" href="#tacs.problems.StaticProblem.setOption"><code class="docutils literal notranslate"><span class="pre">StaticProblem.setOption()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.problems.StaticProblem.addFunction"><code class="docutils literal notranslate"><span class="pre">StaticProblem.addFunction()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.problems.StaticProblem.setDesignVars"><code class="docutils literal notranslate"><span class="pre">StaticProblem.setDesignVars()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.problems.StaticProblem.setNodes"><code class="docutils literal notranslate"><span class="pre">StaticProblem.setNodes()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.problems.StaticProblem.addLoadToComponents"><code class="docutils literal notranslate"><span class="pre">StaticProblem.addLoadToComponents()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.problems.StaticProblem.addLoadToNodes"><code class="docutils literal notranslate"><span class="pre">StaticProblem.addLoadToNodes()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.problems.StaticProblem.addLoadToRHS"><code class="docutils literal notranslate"><span class="pre">StaticProblem.addLoadToRHS()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.problems.StaticProblem.addTractionToComponents"><code class="docutils literal notranslate"><span class="pre">StaticProblem.addTractionToComponents()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.problems.StaticProblem.addTractionToElements"><code class="docutils literal notranslate"><span class="pre">StaticProblem.addTractionToElements()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.problems.StaticProblem.addPressureToComponents"><code class="docutils literal notranslate"><span class="pre">StaticProblem.addPressureToComponents()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.problems.StaticProblem.addPressureToElements"><code class="docutils literal notranslate"><span class="pre">StaticProblem.addPressureToElements()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.problems.StaticProblem.addInertialLoad"><code class="docutils literal notranslate"><span class="pre">StaticProblem.addInertialLoad()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.problems.StaticProblem.addCentrifugalLoad"><code class="docutils literal notranslate"><span class="pre">StaticProblem.addCentrifugalLoad()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.problems.StaticProblem.addLoadFromBDF"><code class="docutils literal notranslate"><span class="pre">StaticProblem.addLoadFromBDF()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.problems.StaticProblem.solve"><code class="docutils literal notranslate"><span class="pre">StaticProblem.solve()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.problems.StaticProblem.evalFunctions"><code class="docutils literal notranslate"><span class="pre">StaticProblem.evalFunctions()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.problems.StaticProblem.evalFunctionsSens"><code class="docutils literal notranslate"><span class="pre">StaticProblem.evalFunctionsSens()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.problems.StaticProblem.addSVSens"><code class="docutils literal notranslate"><span class="pre">StaticProblem.addSVSens()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.problems.StaticProblem.addDVSens"><code class="docutils literal notranslate"><span class="pre">StaticProblem.addDVSens()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.problems.StaticProblem.addAdjointResProducts"><code class="docutils literal notranslate"><span class="pre">StaticProblem.addAdjointResProducts()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.problems.StaticProblem.addXptSens"><code class="docutils literal notranslate"><span class="pre">StaticProblem.addXptSens()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.problems.StaticProblem.addAdjointResXptSensProducts"><code class="docutils literal notranslate"><span class="pre">StaticProblem.addAdjointResXptSensProducts()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.problems.StaticProblem.getResidual"><code class="docutils literal notranslate"><span class="pre">StaticProblem.getResidual()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.problems.StaticProblem.addTransposeJacVecProduct"><code class="docutils literal notranslate"><span class="pre">StaticProblem.addTransposeJacVecProduct()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.problems.StaticProblem.zeroVariables"><code class="docutils literal notranslate"><span class="pre">StaticProblem.zeroVariables()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.problems.StaticProblem.solveAdjoint"><code class="docutils literal notranslate"><span class="pre">StaticProblem.solveAdjoint()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.problems.StaticProblem.getVariables"><code class="docutils literal notranslate"><span class="pre">StaticProblem.getVariables()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.problems.StaticProblem.setVariables"><code class="docutils literal notranslate"><span class="pre">StaticProblem.setVariables()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.problems.StaticProblem.writeSolution"><code class="docutils literal notranslate"><span class="pre">StaticProblem.writeSolution()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.problems.StaticProblem.dtype"><code class="docutils literal notranslate"><span class="pre">StaticProblem.dtype</span></code></a></li>
+<li><a class="reference internal" href="#tacs.problems.StaticProblem.getDesignVars"><code class="docutils literal notranslate"><span class="pre">StaticProblem.getDesignVars()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.problems.StaticProblem.getFunctionKeys"><code class="docutils literal notranslate"><span class="pre">StaticProblem.getFunctionKeys()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.problems.StaticProblem.getNodes"><code class="docutils literal notranslate"><span class="pre">StaticProblem.getNodes()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.problems.StaticProblem.getNumCoordinates"><code class="docutils literal notranslate"><span class="pre">StaticProblem.getNumCoordinates()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.problems.StaticProblem.getNumDesignVars"><code class="docutils literal notranslate"><span class="pre">StaticProblem.getNumDesignVars()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.problems.StaticProblem.getNumOwnedNodes"><code class="docutils literal notranslate"><span class="pre">StaticProblem.getNumOwnedNodes()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.problems.StaticProblem.getNumVariables"><code class="docutils literal notranslate"><span class="pre">StaticProblem.getNumVariables()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.problems.StaticProblem.getOption"><code class="docutils literal notranslate"><span class="pre">StaticProblem.getOption()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.problems.StaticProblem.getVarsPerNode"><code class="docutils literal notranslate"><span class="pre">StaticProblem.getVarsPerNode()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.problems.StaticProblem.printDefaultOptions"><code class="docutils literal notranslate"><span class="pre">StaticProblem.printDefaultOptions()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.problems.StaticProblem.printOptions"><code class="docutils literal notranslate"><span class="pre">StaticProblem.printOptions()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.problems.StaticProblem.setVarName"><code class="docutils literal notranslate"><span class="pre">StaticProblem.setVarName()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
 </ul>
 </li>
 </ul>

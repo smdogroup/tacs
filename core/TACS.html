@@ -15,6 +15,7 @@
     <script src="../_static/underscore.js"></script>
     <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
     <script src="../_static/doctools.js"></script>
+    <script src="../_static/sphinx_highlight.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
     <link rel="next" title="pyTACS" href="../pytacs/pytacs.html" />
@@ -922,11 +923,134 @@ be slow and need to be in serial mode only</p>
     <ul>
 <li><a class="reference internal" href="#">Direct</a><ul>
 <li><a class="reference internal" href="#workflow">Workflow</a></li>
-<li><a class="reference internal" href="#assembler">Assembler</a></li>
-<li><a class="reference internal" href="#meshloader">MeshLoader</a></li>
-<li><a class="reference internal" href="#creator">Creator</a></li>
+<li><a class="reference internal" href="#assembler">Assembler</a><ul>
+<li><a class="reference internal" href="#TACS.Assembler"><code class="docutils literal notranslate"><span class="pre">Assembler</span></code></a><ul>
+<li><a class="reference internal" href="#TACS.Assembler.addAdjointResProducts"><code class="docutils literal notranslate"><span class="pre">Assembler.addAdjointResProducts()</span></code></a></li>
+<li><a class="reference internal" href="#TACS.Assembler.addAdjointResXptSensProducts"><code class="docutils literal notranslate"><span class="pre">Assembler.addAdjointResXptSensProducts()</span></code></a></li>
+<li><a class="reference internal" href="#TACS.Assembler.addDVSens"><code class="docutils literal notranslate"><span class="pre">Assembler.addDVSens()</span></code></a></li>
+<li><a class="reference internal" href="#TACS.Assembler.addJacobianVecProduct"><code class="docutils literal notranslate"><span class="pre">Assembler.addJacobianVecProduct()</span></code></a></li>
+<li><a class="reference internal" href="#TACS.Assembler.addMatDVSensInnerProduct"><code class="docutils literal notranslate"><span class="pre">Assembler.addMatDVSensInnerProduct()</span></code></a></li>
+<li><a class="reference internal" href="#TACS.Assembler.addSVSens"><code class="docutils literal notranslate"><span class="pre">Assembler.addSVSens()</span></code></a></li>
+<li><a class="reference internal" href="#TACS.Assembler.addXptSens"><code class="docutils literal notranslate"><span class="pre">Assembler.addXptSens()</span></code></a></li>
+<li><a class="reference internal" href="#TACS.Assembler.applyBCs"><code class="docutils literal notranslate"><span class="pre">Assembler.applyBCs()</span></code></a></li>
+<li><a class="reference internal" href="#TACS.Assembler.applyMatBCs"><code class="docutils literal notranslate"><span class="pre">Assembler.applyMatBCs()</span></code></a></li>
+<li><a class="reference internal" href="#TACS.Assembler.assembleJacobian"><code class="docutils literal notranslate"><span class="pre">Assembler.assembleJacobian()</span></code></a></li>
+<li><a class="reference internal" href="#TACS.Assembler.assembleMatCombo"><code class="docutils literal notranslate"><span class="pre">Assembler.assembleMatCombo()</span></code></a></li>
+<li><a class="reference internal" href="#TACS.Assembler.assembleMatType"><code class="docutils literal notranslate"><span class="pre">Assembler.assembleMatType()</span></code></a></li>
+<li><a class="reference internal" href="#TACS.Assembler.assembleRes"><code class="docutils literal notranslate"><span class="pre">Assembler.assembleRes()</span></code></a></li>
+<li><a class="reference internal" href="#TACS.Assembler.computeReordering"><code class="docutils literal notranslate"><span class="pre">Assembler.computeReordering()</span></code></a></li>
+<li><a class="reference internal" href="#TACS.Assembler.copyVariables"><code class="docutils literal notranslate"><span class="pre">Assembler.copyVariables()</span></code></a></li>
+<li><a class="reference internal" href="#TACS.Assembler.create"><code class="docutils literal notranslate"><span class="pre">Assembler.create()</span></code></a></li>
+<li><a class="reference internal" href="#TACS.Assembler.createDesignVec"><code class="docutils literal notranslate"><span class="pre">Assembler.createDesignVec()</span></code></a></li>
+<li><a class="reference internal" href="#TACS.Assembler.createMat"><code class="docutils literal notranslate"><span class="pre">Assembler.createMat()</span></code></a></li>
+<li><a class="reference internal" href="#TACS.Assembler.createNodeVec"><code class="docutils literal notranslate"><span class="pre">Assembler.createNodeVec()</span></code></a></li>
+<li><a class="reference internal" href="#TACS.Assembler.createSchurMat"><code class="docutils literal notranslate"><span class="pre">Assembler.createSchurMat()</span></code></a></li>
+<li><a class="reference internal" href="#TACS.Assembler.createVec"><code class="docutils literal notranslate"><span class="pre">Assembler.createVec()</span></code></a></li>
+<li><a class="reference internal" href="#TACS.Assembler.evalEnergies"><code class="docutils literal notranslate"><span class="pre">Assembler.evalEnergies()</span></code></a></li>
+<li><a class="reference internal" href="#TACS.Assembler.evalFunctions"><code class="docutils literal notranslate"><span class="pre">Assembler.evalFunctions()</span></code></a></li>
+<li><a class="reference internal" href="#TACS.Assembler.getBcMap"><code class="docutils literal notranslate"><span class="pre">Assembler.getBcMap()</span></code></a></li>
+<li><a class="reference internal" href="#TACS.Assembler.getDesignVarRange"><code class="docutils literal notranslate"><span class="pre">Assembler.getDesignVarRange()</span></code></a></li>
+<li><a class="reference internal" href="#TACS.Assembler.getDesignVars"><code class="docutils literal notranslate"><span class="pre">Assembler.getDesignVars()</span></code></a></li>
+<li><a class="reference internal" href="#TACS.Assembler.getElementData"><code class="docutils literal notranslate"><span class="pre">Assembler.getElementData()</span></code></a></li>
+<li><a class="reference internal" href="#TACS.Assembler.getElementNodes"><code class="docutils literal notranslate"><span class="pre">Assembler.getElementNodes()</span></code></a></li>
+<li><a class="reference internal" href="#TACS.Assembler.getElements"><code class="docutils literal notranslate"><span class="pre">Assembler.getElements()</span></code></a></li>
+<li><a class="reference internal" href="#TACS.Assembler.getInitConditions"><code class="docutils literal notranslate"><span class="pre">Assembler.getInitConditions()</span></code></a></li>
+<li><a class="reference internal" href="#TACS.Assembler.getMPIComm"><code class="docutils literal notranslate"><span class="pre">Assembler.getMPIComm()</span></code></a></li>
+<li><a class="reference internal" href="#TACS.Assembler.getNodes"><code class="docutils literal notranslate"><span class="pre">Assembler.getNodes()</span></code></a></li>
+<li><a class="reference internal" href="#TACS.Assembler.getNumDependentNodes"><code class="docutils literal notranslate"><span class="pre">Assembler.getNumDependentNodes()</span></code></a></li>
+<li><a class="reference internal" href="#TACS.Assembler.getNumElements"><code class="docutils literal notranslate"><span class="pre">Assembler.getNumElements()</span></code></a></li>
+<li><a class="reference internal" href="#TACS.Assembler.getNumNodes"><code class="docutils literal notranslate"><span class="pre">Assembler.getNumNodes()</span></code></a></li>
+<li><a class="reference internal" href="#TACS.Assembler.getNumOwnedNodes"><code class="docutils literal notranslate"><span class="pre">Assembler.getNumOwnedNodes()</span></code></a></li>
+<li><a class="reference internal" href="#TACS.Assembler.getOwnerRange"><code class="docutils literal notranslate"><span class="pre">Assembler.getOwnerRange()</span></code></a></li>
+<li><a class="reference internal" href="#TACS.Assembler.getReordering"><code class="docutils literal notranslate"><span class="pre">Assembler.getReordering()</span></code></a></li>
+<li><a class="reference internal" href="#TACS.Assembler.getSimulationTime"><code class="docutils literal notranslate"><span class="pre">Assembler.getSimulationTime()</span></code></a></li>
+<li><a class="reference internal" href="#TACS.Assembler.getVariables"><code class="docutils literal notranslate"><span class="pre">Assembler.getVariables()</span></code></a></li>
+<li><a class="reference internal" href="#TACS.Assembler.getVarsPerNode"><code class="docutils literal notranslate"><span class="pre">Assembler.getVarsPerNode()</span></code></a></li>
+<li><a class="reference internal" href="#TACS.Assembler.initialize"><code class="docutils literal notranslate"><span class="pre">Assembler.initialize()</span></code></a></li>
+<li><a class="reference internal" href="#TACS.Assembler.reorderVec"><code class="docutils literal notranslate"><span class="pre">Assembler.reorderVec()</span></code></a></li>
+<li><a class="reference internal" href="#TACS.Assembler.setAuxElements"><code class="docutils literal notranslate"><span class="pre">Assembler.setAuxElements()</span></code></a></li>
+<li><a class="reference internal" href="#TACS.Assembler.setBCValuesFromVec"><code class="docutils literal notranslate"><span class="pre">Assembler.setBCValuesFromVec()</span></code></a></li>
+<li><a class="reference internal" href="#TACS.Assembler.setBCs"><code class="docutils literal notranslate"><span class="pre">Assembler.setBCs()</span></code></a></li>
+<li><a class="reference internal" href="#TACS.Assembler.setDependentNodes"><code class="docutils literal notranslate"><span class="pre">Assembler.setDependentNodes()</span></code></a></li>
+<li><a class="reference internal" href="#TACS.Assembler.setDesignVars"><code class="docutils literal notranslate"><span class="pre">Assembler.setDesignVars()</span></code></a></li>
+<li><a class="reference internal" href="#TACS.Assembler.setElementConnectivity"><code class="docutils literal notranslate"><span class="pre">Assembler.setElementConnectivity()</span></code></a></li>
+<li><a class="reference internal" href="#TACS.Assembler.setElements"><code class="docutils literal notranslate"><span class="pre">Assembler.setElements()</span></code></a></li>
+<li><a class="reference internal" href="#TACS.Assembler.setInitConditions"><code class="docutils literal notranslate"><span class="pre">Assembler.setInitConditions()</span></code></a></li>
+<li><a class="reference internal" href="#TACS.Assembler.setNodes"><code class="docutils literal notranslate"><span class="pre">Assembler.setNodes()</span></code></a></li>
+<li><a class="reference internal" href="#TACS.Assembler.setNumThreads"><code class="docutils literal notranslate"><span class="pre">Assembler.setNumThreads()</span></code></a></li>
+<li><a class="reference internal" href="#TACS.Assembler.setSimulationTime"><code class="docutils literal notranslate"><span class="pre">Assembler.setSimulationTime()</span></code></a></li>
+<li><a class="reference internal" href="#TACS.Assembler.setVariables"><code class="docutils literal notranslate"><span class="pre">Assembler.setVariables()</span></code></a></li>
+<li><a class="reference internal" href="#TACS.Assembler.testElement"><code class="docutils literal notranslate"><span class="pre">Assembler.testElement()</span></code></a></li>
+<li><a class="reference internal" href="#TACS.Assembler.testFunction"><code class="docutils literal notranslate"><span class="pre">Assembler.testFunction()</span></code></a></li>
+<li><a class="reference internal" href="#TACS.Assembler.zeroDDotVariables"><code class="docutils literal notranslate"><span class="pre">Assembler.zeroDDotVariables()</span></code></a></li>
+<li><a class="reference internal" href="#TACS.Assembler.zeroDotVariables"><code class="docutils literal notranslate"><span class="pre">Assembler.zeroDotVariables()</span></code></a></li>
+<li><a class="reference internal" href="#TACS.Assembler.zeroVariables"><code class="docutils literal notranslate"><span class="pre">Assembler.zeroVariables()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a class="reference internal" href="#meshloader">MeshLoader</a><ul>
+<li><a class="reference internal" href="#TACS.MeshLoader"><code class="docutils literal notranslate"><span class="pre">MeshLoader</span></code></a><ul>
+<li><a class="reference internal" href="#TACS.MeshLoader.addAuxElement"><code class="docutils literal notranslate"><span class="pre">MeshLoader.addAuxElement()</span></code></a></li>
+<li><a class="reference internal" href="#TACS.MeshLoader.addFunctionDomain"><code class="docutils literal notranslate"><span class="pre">MeshLoader.addFunctionDomain()</span></code></a></li>
+<li><a class="reference internal" href="#TACS.MeshLoader.createTACS"><code class="docutils literal notranslate"><span class="pre">MeshLoader.createTACS()</span></code></a></li>
+<li><a class="reference internal" href="#TACS.MeshLoader.getBCs"><code class="docutils literal notranslate"><span class="pre">MeshLoader.getBCs()</span></code></a></li>
+<li><a class="reference internal" href="#TACS.MeshLoader.getComponentDescript"><code class="docutils literal notranslate"><span class="pre">MeshLoader.getComponentDescript()</span></code></a></li>
+<li><a class="reference internal" href="#TACS.MeshLoader.getConnectivity"><code class="docutils literal notranslate"><span class="pre">MeshLoader.getConnectivity()</span></code></a></li>
+<li><a class="reference internal" href="#TACS.MeshLoader.getElementDescript"><code class="docutils literal notranslate"><span class="pre">MeshLoader.getElementDescript()</span></code></a></li>
+<li><a class="reference internal" href="#TACS.MeshLoader.getNumComponents"><code class="docutils literal notranslate"><span class="pre">MeshLoader.getNumComponents()</span></code></a></li>
+<li><a class="reference internal" href="#TACS.MeshLoader.scanBDFFile"><code class="docutils literal notranslate"><span class="pre">MeshLoader.scanBDFFile()</span></code></a></li>
+<li><a class="reference internal" href="#TACS.MeshLoader.setElement"><code class="docutils literal notranslate"><span class="pre">MeshLoader.setElement()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a class="reference internal" href="#creator">Creator</a><ul>
+<li><a class="reference internal" href="#TACS.Creator"><code class="docutils literal notranslate"><span class="pre">Creator</span></code></a><ul>
+<li><a class="reference internal" href="#TACS.Creator.getElementPartition"><code class="docutils literal notranslate"><span class="pre">Creator.getElementPartition()</span></code></a></li>
+<li><a class="reference internal" href="#TACS.Creator.setBoundaryConditions"><code class="docutils literal notranslate"><span class="pre">Creator.setBoundaryConditions()</span></code></a></li>
+<li><a class="reference internal" href="#TACS.Creator.setElements"><code class="docutils literal notranslate"><span class="pre">Creator.setElements()</span></code></a></li>
+<li><a class="reference internal" href="#TACS.Creator.setGlobalConnectivity"><code class="docutils literal notranslate"><span class="pre">Creator.setGlobalConnectivity()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
 <li><a class="reference internal" href="#frequencyanalysis">FrequencyAnalysis</a></li>
-<li><a class="reference internal" href="#integrator">Integrator</a></li>
+<li><a class="reference internal" href="#integrator">Integrator</a><ul>
+<li><a class="reference internal" href="#TACS.Integrator"><code class="docutils literal notranslate"><span class="pre">Integrator</span></code></a><ul>
+<li><a class="reference internal" href="#TACS.Integrator.checkGradients"><code class="docutils literal notranslate"><span class="pre">Integrator.checkGradients()</span></code></a></li>
+<li><a class="reference internal" href="#TACS.Integrator.evalFunctions"><code class="docutils literal notranslate"><span class="pre">Integrator.evalFunctions()</span></code></a></li>
+<li><a class="reference internal" href="#TACS.Integrator.getAdjoint"><code class="docutils literal notranslate"><span class="pre">Integrator.getAdjoint()</span></code></a></li>
+<li><a class="reference internal" href="#TACS.Integrator.getGradient"><code class="docutils literal notranslate"><span class="pre">Integrator.getGradient()</span></code></a></li>
+<li><a class="reference internal" href="#TACS.Integrator.getNumTimeSteps"><code class="docutils literal notranslate"><span class="pre">Integrator.getNumTimeSteps()</span></code></a></li>
+<li><a class="reference internal" href="#TACS.Integrator.getStates"><code class="docutils literal notranslate"><span class="pre">Integrator.getStates()</span></code></a></li>
+<li><a class="reference internal" href="#TACS.Integrator.getXptGradient"><code class="docutils literal notranslate"><span class="pre">Integrator.getXptGradient()</span></code></a></li>
+<li><a class="reference internal" href="#TACS.Integrator.initAdjoint"><code class="docutils literal notranslate"><span class="pre">Integrator.initAdjoint()</span></code></a></li>
+<li><a class="reference internal" href="#TACS.Integrator.integrate"><code class="docutils literal notranslate"><span class="pre">Integrator.integrate()</span></code></a></li>
+<li><a class="reference internal" href="#TACS.Integrator.integrateAdjoint"><code class="docutils literal notranslate"><span class="pre">Integrator.integrateAdjoint()</span></code></a></li>
+<li><a class="reference internal" href="#TACS.Integrator.iterate"><code class="docutils literal notranslate"><span class="pre">Integrator.iterate()</span></code></a></li>
+<li><a class="reference internal" href="#TACS.Integrator.iterateAdjoint"><code class="docutils literal notranslate"><span class="pre">Integrator.iterateAdjoint()</span></code></a></li>
+<li><a class="reference internal" href="#TACS.Integrator.loadStates"><code class="docutils literal notranslate"><span class="pre">Integrator.loadStates()</span></code></a></li>
+<li><a class="reference internal" href="#TACS.Integrator.persistStates"><code class="docutils literal notranslate"><span class="pre">Integrator.persistStates()</span></code></a></li>
+<li><a class="reference internal" href="#TACS.Integrator.postAdjoint"><code class="docutils literal notranslate"><span class="pre">Integrator.postAdjoint()</span></code></a></li>
+<li><a class="reference internal" href="#TACS.Integrator.setAbsTol"><code class="docutils literal notranslate"><span class="pre">Integrator.setAbsTol()</span></code></a></li>
+<li><a class="reference internal" href="#TACS.Integrator.setFH5"><code class="docutils literal notranslate"><span class="pre">Integrator.setFH5()</span></code></a></li>
+<li><a class="reference internal" href="#TACS.Integrator.setFunctions"><code class="docutils literal notranslate"><span class="pre">Integrator.setFunctions()</span></code></a></li>
+<li><a class="reference internal" href="#TACS.Integrator.setInitNewtonDeltaFraction"><code class="docutils literal notranslate"><span class="pre">Integrator.setInitNewtonDeltaFraction()</span></code></a></li>
+<li><a class="reference internal" href="#TACS.Integrator.setJacAssemblyFreq"><code class="docutils literal notranslate"><span class="pre">Integrator.setJacAssemblyFreq()</span></code></a></li>
+<li><a class="reference internal" href="#TACS.Integrator.setKrylovSubspaceMethod"><code class="docutils literal notranslate"><span class="pre">Integrator.setKrylovSubspaceMethod()</span></code></a></li>
+<li><a class="reference internal" href="#TACS.Integrator.setMaxNewtonIters"><code class="docutils literal notranslate"><span class="pre">Integrator.setMaxNewtonIters()</span></code></a></li>
+<li><a class="reference internal" href="#TACS.Integrator.setOutputFrequency"><code class="docutils literal notranslate"><span class="pre">Integrator.setOutputFrequency()</span></code></a></li>
+<li><a class="reference internal" href="#TACS.Integrator.setOutputPrefix"><code class="docutils literal notranslate"><span class="pre">Integrator.setOutputPrefix()</span></code></a></li>
+<li><a class="reference internal" href="#TACS.Integrator.setPrintLevel"><code class="docutils literal notranslate"><span class="pre">Integrator.setPrintLevel()</span></code></a></li>
+<li><a class="reference internal" href="#TACS.Integrator.setRelTol"><code class="docutils literal notranslate"><span class="pre">Integrator.setRelTol()</span></code></a></li>
+<li><a class="reference internal" href="#TACS.Integrator.setTimeInterval"><code class="docutils literal notranslate"><span class="pre">Integrator.setTimeInterval()</span></code></a></li>
+<li><a class="reference internal" href="#TACS.Integrator.setUseLapack"><code class="docutils literal notranslate"><span class="pre">Integrator.setUseLapack()</span></code></a></li>
+<li><a class="reference internal" href="#TACS.Integrator.setUseSchurMat"><code class="docutils literal notranslate"><span class="pre">Integrator.setUseSchurMat()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
 </ul>
 </li>
 </ul>

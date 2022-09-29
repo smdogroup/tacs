@@ -14,6 +14,7 @@
     <script src="../../../_static/underscore.js"></script>
     <script src="../../../_static/_sphinx_javascript_frameworks_compat.js"></script>
     <script src="../../../_static/doctools.js"></script>
+    <script src="../../../_static/sphinx_highlight.js"></script>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" /> 
   </head><body>
@@ -200,6 +201,7 @@
 
         <span class="c1"># dictionary for converting integration order to number of stages</span>
         <span class="n">DIRK_order_to_stages</span> <span class="o">=</span> <span class="p">{</span><span class="mi">2</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">4</span><span class="p">:</span> <span class="mi">3</span><span class="p">}</span>
+        <span class="n">ESDIRK_order_to_stages</span> <span class="o">=</span> <span class="p">{</span><span class="mi">3</span><span class="p">:</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">4</span><span class="p">:</span> <span class="mi">6</span><span class="p">,</span> <span class="mi">5</span><span class="p">:</span> <span class="mi">8</span><span class="p">}</span>
 
         <span class="c1"># Create the time integrator and allocate the load data structures</span>
         <span class="k">if</span> <span class="n">solverType</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span> <span class="o">==</span> <span class="s2">&quot;BDF&quot;</span><span class="p">:</span>
@@ -214,6 +216,26 @@
         <span class="k">elif</span> <span class="n">solverType</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span> <span class="o">==</span> <span class="s2">&quot;DIRK&quot;</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">numStages</span> <span class="o">=</span> <span class="n">DIRK_order_to_stages</span><span class="p">[</span><span class="n">order</span><span class="p">]</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">integrator</span> <span class="o">=</span> <span class="n">tacs</span><span class="o">.</span><span class="n">TACS</span><span class="o">.</span><span class="n">DIRKIntegrator</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">assembler</span><span class="p">,</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">tInit</span><span class="p">,</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">tFinal</span><span class="p">,</span>
+                <span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">numSteps</span><span class="p">),</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">numStages</span><span class="p">,</span>
+            <span class="p">)</span>
+            <span class="c1"># Create a force vector for each time stage</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">F</span> <span class="o">=</span> <span class="p">[</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">assembler</span><span class="o">.</span><span class="n">createVec</span><span class="p">()</span>
+                <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">numSteps</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">numStages</span><span class="p">)</span>
+            <span class="p">]</span>
+            <span class="c1"># Auxiliary element object for applying tractions/pressure at each time stage</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">auxElems</span> <span class="o">=</span> <span class="p">[</span>
+                <span class="n">tacs</span><span class="o">.</span><span class="n">TACS</span><span class="o">.</span><span class="n">AuxElements</span><span class="p">()</span>
+                <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">numSteps</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">numStages</span><span class="p">)</span>
+            <span class="p">]</span>
+
+        <span class="k">elif</span> <span class="n">solverType</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span> <span class="o">==</span> <span class="s2">&quot;ESDIRK&quot;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">numStages</span> <span class="o">=</span> <span class="n">ESDIRK_order_to_stages</span><span class="p">[</span><span class="n">order</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">integrator</span> <span class="o">=</span> <span class="n">tacs</span><span class="o">.</span><span class="n">TACS</span><span class="o">.</span><span class="n">ESDIRKIntegrator</span><span class="p">(</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">assembler</span><span class="p">,</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">tInit</span><span class="p">,</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">tFinal</span><span class="p">,</span>
@@ -943,6 +965,89 @@
 
         <span class="k">return</span></div>
 
+<div class="viewcode-block" id="TransientProblem.prepIterativeSolve"><a class="viewcode-back" href="../../../pytacs/transient.html#tacs.problems.TransientProblem.prepIterativeSolve">[docs]</a>    <span class="k">def</span> <span class="nf">prepIterativeSolve</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Prepare to solve the time integrated transient problem.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">callCounter</span> <span class="o">+=</span> <span class="mi">1</span>
+
+        <span class="c1"># set problem vars to assembler</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_updateAssemblerVars</span><span class="p">()</span>
+
+        <span class="k">return</span></div>
+
+<div class="viewcode-block" id="TransientProblem.solveTimeInstance"><a class="viewcode-back" href="../../../pytacs/transient.html#tacs.problems.TransientProblem.solveTimeInstance">[docs]</a>    <span class="k">def</span> <span class="nf">solveTimeInstance</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">timeStep</span><span class="p">,</span> <span class="n">timeStage</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">Fext</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Iterate a single time instance in the time integrated transient problem.</span>
+<span class="sd">        Useful for iterating an aeroelastic problem that is tightly coupled,</span>
+<span class="sd">        where intermediate structural states need to be passed to an external</span>
+<span class="sd">        fluid solver.</span>
+
+<span class="sd">        Requires the user to use an outer for-loop over the number of time</span>
+<span class="sd">        steps/stages of the problem.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        timeStep : int</span>
+<span class="sd">            Time step index to iterate</span>
+
+<span class="sd">        timeStage : int or None</span>
+<span class="sd">            Time stage index to iterate. If not None, solver must be multistage</span>
+
+<span class="sd">        Fext : TACS.Vec or numpy.ndarray or None</span>
+<span class="sd">            If Fext is not None, add this force vector to the loads applied at</span>
+<span class="sd">            this time instance. Fext must be sized such that the flattened array</span>
+<span class="sd">            is (numOwnedNodes*numVarsPerNode) in length. Useful for applying</span>
+<span class="sd">            aerodynamic loads which change at every time instance in a tighly</span>
+<span class="sd">            coupled aeroelastic solution.</span>
+
+<span class="sd">        Examples</span>
+<span class="sd">        --------</span>
+<span class="sd">        &gt;&gt;&gt; transientProblem.prepIterativeSolve()</span>
+<span class="sd">        &gt;&gt;&gt; for step in range(transientProblem.numSteps + 1):</span>
+<span class="sd">        &gt;&gt;&gt;     for stage in range(transientProblem.numStages):</span>
+<span class="sd">        &gt;&gt;&gt;         # assume load array comes from an external CFD solver...</span>
+<span class="sd">        &gt;&gt;&gt;         Fext = externalCFDSolver.solve(step, stage)</span>
+<span class="sd">        &gt;&gt;&gt;         # iterate the transient problem in TACS</span>
+<span class="sd">        &gt;&gt;&gt;         transientProblem.solveTimeInstance(timeStep=step, timeStage=stage, Fext=Fext)</span>
+<span class="sd">        &gt;&gt;&gt;         # get the necessary structural states for coupling</span>
+<span class="sd">        &gt;&gt;&gt;         time, states, dstates, ddstates = transientProblem.getVariables(timeStep=step, timeStage=stage)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># evaluate the time index</span>
+        <span class="k">if</span> <span class="n">timeStage</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">timeIndex</span> <span class="o">=</span> <span class="n">timeStep</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># check that the integrator is multistage</span>
+            <span class="k">assert</span> <span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">numStages</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+            <span class="p">),</span> <span class="sa">f</span><span class="s2">&quot;current integrator type </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s1">&#39;timeIntegrator&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span><span class="si">}</span><span class="s2"> is not multistage, choose a multistage integrator from </span><span class="si">{</span><span class="p">[</span><span class="s1">&#39;DIRK&#39;</span><span class="p">,</span><span class="s1">&#39;ESDIRK&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="n">timeIndex</span> <span class="o">=</span> <span class="n">timeStep</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">numStages</span> <span class="o">+</span> <span class="n">timeStage</span>
+
+        <span class="c1"># set the loads - do not change self.F[timeIndex] in place</span>
+        <span class="n">FVec</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">assembler</span><span class="o">.</span><span class="n">createVec</span><span class="p">()</span>
+        <span class="n">FVec</span><span class="o">.</span><span class="n">copyValues</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">F</span><span class="p">[</span><span class="n">timeIndex</span><span class="p">])</span>
+        <span class="k">if</span> <span class="n">Fext</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">Fext</span><span class="p">,</span> <span class="n">tacs</span><span class="o">.</span><span class="n">TACS</span><span class="o">.</span><span class="n">Vec</span><span class="p">):</span>
+                <span class="n">FVec</span><span class="o">.</span><span class="n">axpy</span><span class="p">(</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">Fext</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">Fext</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
+                <span class="k">if</span> <span class="n">Fext</span><span class="o">.</span><span class="n">ndim</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+                    <span class="n">Fext</span> <span class="o">=</span> <span class="n">Fext</span><span class="o">.</span><span class="n">ravel</span><span class="p">()</span>
+                <span class="n">FextVec</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">assembler</span><span class="o">.</span><span class="n">createVec</span><span class="p">()</span>
+                <span class="n">Fext_array</span> <span class="o">=</span> <span class="n">FextVec</span><span class="o">.</span><span class="n">getArray</span><span class="p">()</span>
+                <span class="n">Fext_array</span><span class="p">[:]</span> <span class="o">=</span> <span class="n">Fext</span>
+                <span class="n">FVec</span><span class="o">.</span><span class="n">axpy</span><span class="p">(</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">FextVec</span><span class="p">)</span>
+
+        <span class="c1"># set the auxiliary elements for this time step (tractions/pressures)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assembler</span><span class="o">.</span><span class="n">setAuxElements</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">auxElems</span><span class="p">[</span><span class="n">timeIndex</span><span class="p">])</span>
+
+        <span class="c1"># iterate this time instance</span>
+        <span class="k">if</span> <span class="n">timeStage</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">integrator</span><span class="o">.</span><span class="n">iterate</span><span class="p">(</span><span class="n">timeIndex</span><span class="p">,</span> <span class="n">forces</span><span class="o">=</span><span class="n">FVec</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">integrator</span><span class="o">.</span><span class="n">iterateStage</span><span class="p">(</span><span class="n">timeStep</span><span class="p">,</span> <span class="n">timeStage</span><span class="p">,</span> <span class="n">forces</span><span class="o">=</span><span class="n">FVec</span><span class="p">)</span>
+
+        <span class="k">return</span></div>
+
     <span class="c1">####### Function eval/sensitivity methods ########</span>
 
 <div class="viewcode-block" id="TransientProblem.addFunction"><a class="viewcode-back" href="../../../pytacs/transient.html#tacs.problems.TransientProblem.addFunction">[docs]</a>    <span class="k">def</span> <span class="nf">addFunction</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">funcName</span><span class="p">,</span> <span class="n">funcHandle</span><span class="p">,</span> <span class="n">compIDs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
@@ -1158,7 +1263,9 @@
 
     <span class="c1">####### Post processing methods ########</span>
 
-<div class="viewcode-block" id="TransientProblem.getVariables"><a class="viewcode-back" href="../../../pytacs/transient.html#tacs.problems.TransientProblem.getVariables">[docs]</a>    <span class="k">def</span> <span class="nf">getVariables</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">timeStep</span><span class="p">,</span> <span class="n">states</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">dstates</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ddstates</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<div class="viewcode-block" id="TransientProblem.getVariables"><a class="viewcode-back" href="../../../pytacs/transient.html#tacs.problems.TransientProblem.getVariables">[docs]</a>    <span class="k">def</span> <span class="nf">getVariables</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">timeStep</span><span class="p">,</span> <span class="n">timeStage</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">states</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">dstates</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ddstates</span><span class="o">=</span><span class="kc">None</span>
+    <span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Return the current state values for the current problem</span>
 
@@ -1166,6 +1273,9 @@
 <span class="sd">        ----------</span>
 <span class="sd">        timeStep : int</span>
 <span class="sd">            Time step index to get state variables for.</span>
+
+<span class="sd">        timeStage : int or None</span>
+<span class="sd">            Time stage index to get state variables for.</span>
 
 <span class="sd">        states : TACS.Vec or numpy.ndarray or None</span>
 <span class="sd">            If states is not None, place the state variables into this array (optional).</span>
@@ -1179,7 +1289,7 @@
 <span class="sd">        Returns</span>
 <span class="sd">        --------</span>
 <span class="sd">        time: float</span>
-<span class="sd">            The time at specified step</span>
+<span class="sd">            The time at specified time instance</span>
 
 <span class="sd">        states : TACS.Vec or numpy.ndarray</span>
 <span class="sd">            The state variables.</span>
@@ -1193,7 +1303,14 @@
 <span class="sd">        &quot;&quot;&quot;</span>
 
         <span class="c1"># Get BVecs for time instance</span>
-        <span class="n">time</span><span class="p">,</span> <span class="n">q</span><span class="p">,</span> <span class="n">qdot</span><span class="p">,</span> <span class="n">qddot</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">integrator</span><span class="o">.</span><span class="n">getStates</span><span class="p">(</span><span class="n">timeStep</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">timeStage</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">time</span><span class="p">,</span> <span class="n">q</span><span class="p">,</span> <span class="n">qdot</span><span class="p">,</span> <span class="n">qddot</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">integrator</span><span class="o">.</span><span class="n">getStates</span><span class="p">(</span><span class="n">timeStep</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># check that the integrator is multistage</span>
+            <span class="k">assert</span> <span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">numStages</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+            <span class="p">),</span> <span class="sa">f</span><span class="s2">&quot;current integrator type </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s1">&#39;timeIntegrator&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span><span class="si">}</span><span class="s2"> is not multistage, choose a multistage integrator from </span><span class="si">{</span><span class="p">[</span><span class="s1">&#39;DIRK&#39;</span><span class="p">,</span><span class="s1">&#39;ESDIRK&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="n">time</span><span class="p">,</span> <span class="n">q</span><span class="p">,</span> <span class="n">qdot</span><span class="p">,</span> <span class="n">qddot</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">integrator</span><span class="o">.</span><span class="n">getStageStates</span><span class="p">(</span><span class="n">timeStep</span><span class="p">,</span> <span class="n">timeStage</span><span class="p">)</span>
 
         <span class="c1"># Convert to arrays</span>
         <span class="n">qArray</span> <span class="o">=</span> <span class="n">q</span><span class="o">.</span><span class="n">getArray</span><span class="p">()</span>

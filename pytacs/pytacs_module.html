@@ -15,6 +15,7 @@
     <script src="../_static/underscore.js"></script>
     <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
     <script src="../_static/doctools.js"></script>
+    <script src="../_static/sphinx_highlight.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
     <link rel="next" title="Problem classes" href="problems.html" />
@@ -786,7 +787,10 @@ options to the stdout on the root processor</p>
 <li><a class="reference internal" href="#">pyTACS class</a><ul>
 <li><a class="reference internal" href="#options">Options</a></li>
 <li><a class="reference internal" href="#initializing">Initializing</a><ul>
-<li><a class="reference internal" href="#initializing-with-elemcallback">Initializing with elemCallBack</a></li>
+<li><a class="reference internal" href="#initializing-with-elemcallback">Initializing with elemCallBack</a><ul>
+<li><a class="reference internal" href="#tacs.pytacs.elemCallBack"><code class="docutils literal notranslate"><span class="pre">elemCallBack()</span></code></a></li>
+</ul>
+</li>
 <li><a class="reference internal" href="#initializing-without-elemcallback">Initializing without elemCallBack</a></li>
 </ul>
 </li>
@@ -795,7 +799,39 @@ options to the stdout on the root processor</p>
 <li><a class="reference internal" href="#femap-component-label-format">FEMAP component label format</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#api-reference">API Reference</a></li>
+<li><a class="reference internal" href="#api-reference">API Reference</a><ul>
+<li><a class="reference internal" href="#tacs.pytacs.pyTACS"><code class="docutils literal notranslate"><span class="pre">pyTACS</span></code></a><ul>
+<li><a class="reference internal" href="#tacs.pytacs.pyTACS.addGlobalDV"><code class="docutils literal notranslate"><span class="pre">pyTACS.addGlobalDV()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.pytacs.pyTACS.selectCompIDs"><code class="docutils literal notranslate"><span class="pre">pyTACS.selectCompIDs()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.pytacs.pyTACS.getBDFInfo"><code class="docutils literal notranslate"><span class="pre">pyTACS.getBDFInfo()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.pytacs.pyTACS.getCompNames"><code class="docutils literal notranslate"><span class="pre">pyTACS.getCompNames()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.pytacs.pyTACS.initialize"><code class="docutils literal notranslate"><span class="pre">pyTACS.initialize()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.pytacs.pyTACS.getOrigDesignVars"><code class="docutils literal notranslate"><span class="pre">pyTACS.getOrigDesignVars()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.pytacs.pyTACS.createDesignVec"><code class="docutils literal notranslate"><span class="pre">pyTACS.createDesignVec()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.pytacs.pyTACS.getNumDesignVars"><code class="docutils literal notranslate"><span class="pre">pyTACS.getNumDesignVars()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.pytacs.pyTACS.getTotalNumDesignVars"><code class="docutils literal notranslate"><span class="pre">pyTACS.getTotalNumDesignVars()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.pytacs.pyTACS.getOrigNodes"><code class="docutils literal notranslate"><span class="pre">pyTACS.getOrigNodes()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.pytacs.pyTACS.createNodeVec"><code class="docutils literal notranslate"><span class="pre">pyTACS.createNodeVec()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.pytacs.pyTACS.getNumOwnedNodes"><code class="docutils literal notranslate"><span class="pre">pyTACS.getNumOwnedNodes()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.pytacs.pyTACS.getNumOwnedMultiplierNodes"><code class="docutils literal notranslate"><span class="pre">pyTACS.getNumOwnedMultiplierNodes()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.pytacs.pyTACS.getLocalMultiplierNodeIDs"><code class="docutils literal notranslate"><span class="pre">pyTACS.getLocalMultiplierNodeIDs()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.pytacs.pyTACS.createVec"><code class="docutils literal notranslate"><span class="pre">pyTACS.createVec()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.pytacs.pyTACS.getVarsPerNode"><code class="docutils literal notranslate"><span class="pre">pyTACS.getVarsPerNode()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.pytacs.pyTACS.applyBCsToVec"><code class="docutils literal notranslate"><span class="pre">pyTACS.applyBCsToVec()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.pytacs.pyTACS.createStaticProblem"><code class="docutils literal notranslate"><span class="pre">pyTACS.createStaticProblem()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.pytacs.pyTACS.createTransientProblem"><code class="docutils literal notranslate"><span class="pre">pyTACS.createTransientProblem()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.pytacs.pyTACS.createModalProblem"><code class="docutils literal notranslate"><span class="pre">pyTACS.createModalProblem()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.pytacs.pyTACS.createTACSProbsFromBDF"><code class="docutils literal notranslate"><span class="pre">pyTACS.createTACSProbsFromBDF()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.pytacs.pyTACS.getNumComponents"><code class="docutils literal notranslate"><span class="pre">pyTACS.getNumComponents()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.pytacs.pyTACS.dtype"><code class="docutils literal notranslate"><span class="pre">pyTACS.dtype</span></code></a></li>
+<li><a class="reference internal" href="#tacs.pytacs.pyTACS.getOption"><code class="docutils literal notranslate"><span class="pre">pyTACS.getOption()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.pytacs.pyTACS.printDefaultOptions"><code class="docutils literal notranslate"><span class="pre">pyTACS.printDefaultOptions()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.pytacs.pyTACS.printOptions"><code class="docutils literal notranslate"><span class="pre">pyTACS.printOptions()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.pytacs.pyTACS.setOption"><code class="docutils literal notranslate"><span class="pre">pyTACS.setOption()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
 </ul>
 </li>
 </ul>
