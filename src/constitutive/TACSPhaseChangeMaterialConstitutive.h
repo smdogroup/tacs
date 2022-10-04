@@ -53,6 +53,8 @@ class TACSPhaseChangeMaterialConstitutive : public TACSConstitutive {
   // Compute the phase change coefficient
   TacsScalar evalTransitionCoef( const TacsScalar T );
 
+  TacsScalar evalTransitionCoefSVSens( const TacsScalar T );
+
   // Evaluate the material's phase
   int evalPhase( const TacsScalar T );
 
@@ -70,6 +72,10 @@ class TACSPhaseChangeMaterialConstitutive : public TACSConstitutive {
                          const double pt[], const TacsScalar X[],
                          int dvLen, TacsScalar dfdx[], const TacsScalar T );
 
+  void addDensitySVSens( int elemIndex, const double pt[],
+                         const TacsScalar X[], TacsScalar dfdu[],
+                         const TacsScalar T );
+
   TacsScalar evalSpecificHeat( int elemIndex,
                                const double pt[],
                                const TacsScalar X[],
@@ -80,6 +86,10 @@ class TACSPhaseChangeMaterialConstitutive : public TACSConstitutive {
                                const TacsScalar X[]){
     return evalSpecificHeat( elemIndex, pt, X, 0.0);
     }
+
+  void addSpecificHeatSVSens( int elemIndex, const double pt[],
+                              const TacsScalar X[], TacsScalar dfdu[],
+                              const TacsScalar T );
 
   void evalStress( int elemIndex,
                    const double pt[],
@@ -107,6 +117,10 @@ class TACSPhaseChangeMaterialConstitutive : public TACSConstitutive {
                           const double pt[], const TacsScalar X[],
                           const TacsScalar grad[], const TacsScalar psi[],
                           int dvLen, TacsScalar dfdx[], const TacsScalar T );
+
+  void addKappaSVSens( int elemIndex, const double pt[],
+                       const TacsScalar X[],
+                       TacsScalar dfdu[], const TacsScalar T );
 
   // Extra info about the constitutive class
   const char *getObjectName();

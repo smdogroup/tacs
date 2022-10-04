@@ -10,8 +10,8 @@ Test phase change material thermal model using a single-element mesh to verify p
 base_dir = os.path.dirname(os.path.abspath(__file__))
 bdf_file = os.path.join(base_dir, "./input_files/single_element.bdf")
 
-FUNC_REFS = {'Transient_ks_temp': 7.976969029014029}
-#FUNC_REFS = {'Transient_ks_temp': 20.70202984802095}
+#FUNC_REFS = {'Transient_ks_temp': 7.976969029014029}
+FUNC_REFS = {'Transient_ks_temp': 20.70202984802095}
 
 class ProblemTest(PyTACSTestCase.PyTACSTest):
     N_PROCS = 2  # this is how many MPI processes to use for this TestCase.
@@ -35,7 +35,7 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
         kappa = 1.0  # Thermal conductivity W/(m⋅K)
         cp = 1.0  # Specific heat J/(kg⋅K)
         lh = 10.0  # Latent heat J/kg
-        mt = 10.0  # Melting temperature (relative) K
+        Tm = 10.0  # Melting temperature (relative) K
 
         # The callback function to define the element properties
         def elemCallBack(dvNum, compID, compDescript, elemDescripts, globalDVs, **kwargs):
@@ -44,7 +44,7 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
             prop = constitutive.MaterialProperties(rho=rho, kappa=kappa, specific_heat=cp)
 
             # Set one thickness value for every component
-            con = constitutive.PhaseChangeMaterialConstitutive(prop, prop, lh=lh, mt=mt, t=tplate, tNum=-1)
+            con = constitutive.PhaseChangeMaterialConstitutive(prop, prop, lh=lh, Tm=Tm, t=tplate, tNum=-1)
 
             # For each element type in this component,
             # pass back the appropriate tacs element object
@@ -93,7 +93,7 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
         tacs_probs = []
 
         # Create transient problem, loads are already applied through BCs
-        tp = fea_assembler.createTransientProblem('Transient', tInit=0.0, tFinal=8.0, numSteps=40, options={'L2Convergence':1e-16})
+        tp = fea_assembler.createTransientProblem('Transient', tInit=0.0, tFinal=30.0, numSteps=40, options={'L2Convergence':1e-16})
         tacs_probs.append(tp)
 
         # Get the time steps and define the loads

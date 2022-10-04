@@ -124,6 +124,18 @@ TacsScalar TACSPhaseChangeMaterialConstitutive::evalTransitionCoef( const TacsSc
   return (T - Tm + dT)/(2.0*dT);
 }
 
+// Compute the phase change coefficient
+TacsScalar TACSPhaseChangeMaterialConstitutive::evalTransitionCoefSVSens( const TacsScalar T ){
+  if (TacsRealPart(T) < TacsRealPart((Tm-dT))){
+    return 0.0;
+  }
+  if (TacsRealPart(T) > TacsRealPart((Tm+dT))){
+    return 0.0;
+  }
+  // else
+  return 1.0/(2.0*dT);
+}
+
 // Evaluate the material's phase (0=solid, 1=liquid)
 int TACSPhaseChangeMaterialConstitutive::evalPhase( const TacsScalar T ){
   if (TacsRealPart(T) <  TacsRealPart(Tm)){
@@ -162,6 +174,19 @@ void TACSPhaseChangeMaterialConstitutive::addDensityDVSens( int elemIndex,
   }
 }
 
+void TACSPhaseChangeMaterialConstitutive::addDensitySVSens( int elemIndex,
+                                                            const double pt[],
+                                                            const TacsScalar X[],
+                                                            TacsScalar dfdu[],
+                                                            const TacsScalar T ){
+  if (solid_properties && liquid_properties && tNum >= 0){
+    TacsScalar dBdT = evalTransitionCoefSVSens(T);
+    TacsScalar rhos = solid_properties->getDensity();
+    TacsScalar rhol = liquid_properties->getDensity();
+    dfdu[0] = t*(rhol - rhos)*dBdT;
+  }
+}
+
 TacsScalar TACSPhaseChangeMaterialConstitutive::evalSpecificHeat( int elemIndex,
                                                                   const double pt[],
                                                                   const TacsScalar X[],
@@ -176,6 +201,22 @@ TacsScalar TACSPhaseChangeMaterialConstitutive::evalSpecificHeat( int elemIndex,
     return cs + (cl - cs)*B + lh*D;
   }
   return 0.0;
+}
+
+void TACSPhaseChangeMaterialConstitutive::addSpecificHeatSVSens( int elemIndex,
+                                                                 const double pt[],
+                                                                 const TacsScalar X[],
+                                                                 TacsScalar dfdu[],
+                                                                 const TacsScalar T ){
+  if (solid_properties && liquid_properties && tNum >= 0){
+    TacsScalar dBdT = evalTransitionCoefSVSens(T);
+    TacsScalar cs = solid_properties->getSpecificHeat();
+    TacsScalar cl = liquid_properties->getSpecificHeat();
+    TacsScalar f1 = -(T-Tm)*(T-Tm)/(dT*dT);
+    TacsScalar f2 = pow(dT*dT, 0.5)/3.14159265359;
+    TacsScalar dDdT = (-2.0/f2)*exp(f1/f2)*(T-Tm)/(dT*dT);
+    dfdu[0] = (cl - cs)*dBdT + lh*dDdT;
+  }
 }
 
 void TACSPhaseChangeMaterialConstitutive::evalStress( int elemIndex,
@@ -254,5 +295,22 @@ void TACSPhaseChangeMaterialConstitutive::addHeatFluxDVSens( int elemIndex,
 
     dfdx[0] += scale*(psi[0]*(Kc[0]*grad[0] + Kc[1]*grad[1]) +
                       psi[1]*(Kc[1]*grad[0] + Kc[2]*grad[1]));
+  }
+}
+
+void TACSPhaseChangeMaterialConstitutive::addKappaSVSens( int elemIndex,
+                                                          const double pt[],
+                                                          const TacsScalar X[],
+                                                          TacsScalar dfdu[],
+                                                          const TacsScalar T ){
+  if (solid_properties && liquid_properties && tNum >= 0){
+    TacsScalar dBdT = evalTransitionCoefSVSens(T);
+
+    TacsScalar Kcs[3], Kcl[3];
+    solid_properties->evalTangentHeatFlux2D(Kcs);
+    liquid_properties->evalTangentHeatFlux2D(Kcl);
+    dfdu[0] = t*(Kcl[0] - Kcs[0])*dBdT;
+    dfdu[1] = t*(Kcl[1] - Kcs[1])*dBdT;
+    dfdu[2] = t*(Kcl[2] - Kcs[2])*dBdT;
   }
 }

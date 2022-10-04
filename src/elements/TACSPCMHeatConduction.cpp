@@ -29,7 +29,10 @@ TACSPCMHeatConduction2D::~TACSPCMHeatConduction2D(){
 const int TACSPCMHeatConduction2D::linear_Jac_pairs[] =
   {1, 1,
    3, 3, 3, 4,
-   4, 3, 4, 4};
+   4, 3, 4, 4,
+   1, 0,
+   3, 0,
+   4, 0};
 
 int TACSPCMHeatConduction2D::getNumParameters(){
   return 2;
@@ -111,7 +114,7 @@ void TACSPCMHeatConduction2D::getWeakMatrixNonzeros( ElementMatrixType matType,
                                                   int *Jac_nnz,
                                                   const int *Jac_pairs[] ){
   if (matType == TACS_JACOBIAN_MATRIX){
-    *Jac_nnz = 5;
+    *Jac_nnz = 8;
     *Jac_pairs = linear_Jac_pairs;
   }
   else {
@@ -121,17 +124,17 @@ void TACSPCMHeatConduction2D::getWeakMatrixNonzeros( ElementMatrixType matType,
 }
 
 void TACSPCMHeatConduction2D::evalWeakMatrix( ElementMatrixType matType,
-                                           int elemIndex,
-                                           const double time,
-                                           int n,
-                                           const double pt[],
-                                           const TacsScalar X[],
-                                           const TacsScalar Xd[],
-                                           const TacsScalar Ut[],
-                                           const TacsScalar Ux[],
-                                           TacsScalar DUt[],
-                                           TacsScalar DUx[],
-                                           TacsScalar Jac[] ){
+                                              int elemIndex,
+                                              const double time,
+                                              int n,
+                                              const double pt[],
+                                              const TacsScalar X[],
+                                              const TacsScalar Xd[],
+                                              const TacsScalar Ut[],
+                                              const TacsScalar Ux[],
+                                              TacsScalar DUt[],
+                                              TacsScalar DUx[],
+                                              TacsScalar Jac[] ){
   if (matType == TACS_JACOBIAN_MATRIX){
     // Evaluate the density and specific heat
     TacsScalar rho = stiff->evalDensity(elemIndex, pt, X, Ut[0]);
@@ -161,6 +164,19 @@ void TACSPCMHeatConduction2D::evalWeakMatrix( ElementMatrixType matType,
     Jac[2] = Kc[1];
     Jac[3] = Kc[1];
     Jac[4] = Kc[2];
+
+    // Add the terms from the material temperature dependance
+    TacsScalar drho_du[1], dc_du[1];
+    stiff->addDensitySVSens(elemIndex, pt, X, drho_du, Ut[0]);
+    stiff->addSpecificHeatSVSens(elemIndex, pt, X, dc_du, Ut[0]);
+
+    Jac[5] = (drho_du[0]*c + rho*dc_du[0])*Ut[1];
+
+    TacsScalar dk_du[3];
+    stiff->addKappaSVSens(elemIndex, pt, X, dk_du, Ut[0]);
+
+    Jac[6] = dk_du[0]*grad[0] + dk_du[1]*grad[1];
+    Jac[7] = dk_du[1]*grad[0] + dk_du[2]*grad[1];
   }
 }
 
@@ -169,18 +185,18 @@ void TACSPCMHeatConduction2D::evalWeakMatrix( ElementMatrixType matType,
   equations to the design variable components
 */
 void TACSPCMHeatConduction2D::addWeakAdjProduct( int elemIndex,
-                                              const double time,
-                                              TacsScalar scale,
-                                              int n,
-                                              const double pt[],
-                                              const TacsScalar X[],
-                                              const TacsScalar Xd[],
-                                              const TacsScalar Ut[],
-                                              const TacsScalar Ux[],
-                                              const TacsScalar Psi[],
-                                              const TacsScalar Psix[],
-                                              int dvLen,
-                                              TacsScalar *dfdx ){
+                                                 const double time,
+                                                 TacsScalar scale,
+                                                 int n,
+                                                 const double pt[],
+                                                 const TacsScalar X[],
+                                                 const TacsScalar Xd[],
+                                                 const TacsScalar Ut[],
+                                                 const TacsScalar Ux[],
+                                                 const TacsScalar Psi[],
+                                                 const TacsScalar Psix[],
+                                                 int dvLen,
+                                                 TacsScalar *dfdx ){
   // Evaluate the density
   TacsScalar rho = stiff->evalDensity(elemIndex, pt, X, Ut[0]);
   TacsScalar c = stiff->evalSpecificHeat(elemIndex, pt, X, Ut[0]);

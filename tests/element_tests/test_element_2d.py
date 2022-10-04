@@ -46,18 +46,18 @@ class ElementTest(unittest.TestCase):
         self.props = constitutive.MaterialProperties(rho=rho, specific_heat=specific_heat,
                                                      E=E, nu=nu, ys=ys, cte=cte, kappa=kappa)
         props2 = constitutive.MaterialProperties(rho=1.05*rho, specific_heat=1.1*specific_heat,
-                                                 cte=cte, kappa=0.9*kappa)
+                                                 kappa=0.1*kappa)
 
         # Create the basis functions for 2D
-        self.bases = [elements.LinearTriangleBasis(),
-                      elements.QuadraticTriangleBasis(),
+        self.bases = [#elements.LinearTriangleBasis(),
+                      #elements.QuadraticTriangleBasis(),
                       elements.LinearQuadBasis(),
-                      elements.QuadraticQuadBasis(),
-                      elements.CubicQuadBasis()]
+                      elements.QuadraticQuadBasis()]#,
+                      #elements.CubicQuadBasis()]
 
         # Create stiffness (need class)
         con = constitutive.PlaneStressConstitutive(self.props, t=1.0, tNum=0)
-        pcm_con = constitutive.PhaseChangeMaterialConstitutive(self.props, props2, mt=0.0, lh=0.0, t=1.0, tNum=0)
+        pcm_con = constitutive.PhaseChangeMaterialConstitutive(self.props, props2, Tm=0.0, lh=0.0, t=1.0, tNum=0)
 
         # Set the model type
         self.models = [#elements.HeatConduction2D(con),

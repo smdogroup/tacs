@@ -155,7 +155,7 @@ class TACSPCMHeatConduction2D : public TACSElementModel {
   TACSPhaseChangeMaterialConstitutive *stiff;
 
   // Constant member data
-  static const int linear_Jac_pairs[10];
+  static const int linear_Jac_pairs[16];
 };
 
 #endif // TACS_PCM_HEAT_CONDUCTION_H

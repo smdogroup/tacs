@@ -26,13 +26,13 @@ class ModelTest(unittest.TestCase):
         kappa = 1.0  # Thermal conductivity W/(m⋅K)
         cp = 1.0  # Specific heat J/(kg⋅K)
         lh = 10.0  # Latent heat J/kg
-        mt = 0.0  # Melting temperature (relative) K
+        Tm = 0.0  # Melting temperature (relative) K
 
         solid_prop = constitutive.MaterialProperties(rho=rho, kappa=2.0*kappa, specific_heat=cp)
-        liquid_prop = constitutive.MaterialProperties(rho=0.95*rho, kappa=kappa, specific_heat=1.1*cp)
+        liquid_prop = constitutive.MaterialProperties(rho=0.95*rho, kappa=0.1*kappa, specific_heat=1.1*cp)
 
         # Set one thickness value for every component
-        con = constitutive.PhaseChangeMaterialConstitutive(solid_prop, liquid_prop, lh=lh, mt=mt, t=0.1, tNum=-1)
+        con = constitutive.PhaseChangeMaterialConstitutive(solid_prop, liquid_prop, lh=lh, Tm=Tm, t=0.1, tNum=-1)
 
         # Create the model for 2D
         self.model = elements.PCMHeatConduction2D(con)
