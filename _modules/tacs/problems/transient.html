@@ -976,7 +976,7 @@
 
         <span class="k">return</span></div>
 
-<div class="viewcode-block" id="TransientProblem.solveTimeInstance"><a class="viewcode-back" href="../../../pytacs/transient.html#tacs.problems.TransientProblem.solveTimeInstance">[docs]</a>    <span class="k">def</span> <span class="nf">solveTimeInstance</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">timeStep</span><span class="p">,</span> <span class="n">timeStage</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">Fext</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<div class="viewcode-block" id="TransientProblem.iterate"><a class="viewcode-back" href="../../../pytacs/transient.html#tacs.problems.TransientProblem.iterate">[docs]</a>    <span class="k">def</span> <span class="nf">iterate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">timeStep</span><span class="p">,</span> <span class="n">timeStage</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">Fext</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Iterate a single time instance in the time integrated transient problem.</span>
 <span class="sd">        Useful for iterating an aeroelastic problem that is tightly coupled,</span>
@@ -1009,7 +1009,7 @@
 <span class="sd">        &gt;&gt;&gt;         # assume load array comes from an external CFD solver...</span>
 <span class="sd">        &gt;&gt;&gt;         Fext = externalCFDSolver.solve(step, stage)</span>
 <span class="sd">        &gt;&gt;&gt;         # iterate the transient problem in TACS</span>
-<span class="sd">        &gt;&gt;&gt;         transientProblem.solveTimeInstance(timeStep=step, timeStage=stage, Fext=Fext)</span>
+<span class="sd">        &gt;&gt;&gt;         transientProblem.iterate(timeStep=step, timeStage=stage, Fext=Fext)</span>
 <span class="sd">        &gt;&gt;&gt;         # get the necessary structural states for coupling</span>
 <span class="sd">        &gt;&gt;&gt;         time, states, dstates, ddstates = transientProblem.getVariables(timeStep=step, timeStage=stage)</span>
 <span class="sd">        &quot;&quot;&quot;</span>
