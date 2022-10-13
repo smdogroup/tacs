@@ -35,7 +35,7 @@ Basic steps to compile TACS
     * ``LAPACK_LIBS``: linking arguments for the LAPACK libraries
     * ``METIS_DIR``: set the location of METIS
     * ``SUITESPARSE_DIR``: *optional* set location of SuiteSparse
-    * ``TECIO_DIR`` and ``TECIO_LIB``: *optional* set location of TecIO
+    * ``TECIO_DIR``: *optional* set location of TecIO
 
 #. To compile, from the base directory, run ``make`` then ``make interface``
 #. To set up the Python interface, run ``python setup.py develop --user``
