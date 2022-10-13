@@ -19,7 +19,7 @@ To use the python interface to TACS you will also require:
 
 Optional packages:
 
-* AMD - TACS can use the approximate minimum degree ordering routines from AMD/UFConfig
+* SuiteSparse - TACS can use the approximate minimum degree (AMD) ordering routines from SuiteSparse
 * TecIO - to convert TACS FH5 output files to tecplot-compatible files
 
 Basic steps to compile TACS
@@ -33,8 +33,9 @@ Basic steps to compile TACS
     * ``TACS_DIR``: the root director of TACS
     * ``CXX``: the C++ compiler, must be MPI-enabled
     * ``LAPACK_LIBS``: linking arguments for the LAPACK libraries
-    * ``METIS_INCLUDE`` and ``METIS_LIB``: set the include/linking arguments for METIS
-    * ``AMD_INCLUDE`` and ``AMD_LIBS``: *optional* set include/linking arguments for AMD
+    * ``METIS_DIR``: set the location of METIS
+    * ``SUITESPARSE_DIR``: *optional* set location of SuiteSparse
+    * ``TECIO_DIR``: *optional* set location of TecIO
 
 #. To compile, from the base directory, run ``make`` then ``make interface``
 #. To set up the Python interface, run ``python setup.py develop --user``
@@ -74,7 +75,9 @@ Make sure to set the following:
 #. ``TACS_DIR``: the root director of TACS
 #. ``CXX``: the C++ compiler, must be MPI-enabled
 #. ``LAPACK_LIBS``: linking arguments for the LAPACK libraries
-#. ``METIS_INCLUDE`` and ``METIS_LIB``: set the include/linking arguments for METIS
+#. ``METIS_DIR``: set the location of METIS
+#. ``SUITESPARSE_DIR``: *optional* set location of SuiteSparse
+#. ``TECIO_DIR``: *optional* set location of TecIO (note you can use either the ``teciosrc`` or ``teciompisrc`` implementations)
 
 In addition, it is recommended to copy the default python settings by copying ``setup.cfg.info`` to ``setup.cfg``.
 The settings in ``setup.cfg.info`` are intended for development, if you are just going to use the code as-is,
@@ -87,10 +90,13 @@ These instructions direct you to install METIS and other dependencies in the dir
 This location for the dependencies is not required, and indeed may not be best.
 If you already have these libraries installed, simply adjust the variables in ``tacs/Makefile.in`` accordingly.
 
-Go to the directory ``tacs/extern``. Download ``metis-5.1.0`` from ``http://glaros.dtc.umn.edu/gkhome/metis/metis/download`` and place the file ``metis-5.1.0.tar.gz`` there.
+Go to the directory ``tacs/extern``. Download ``metis-5.1.0`` from `<http://glaros.dtc.umn.edu/gkhome/metis/metis/download>`_ and place the file ``metis-5.1.0.tar.gz`` there.
 Note that METIS needs CMake to build and install.
 
-Optionally, you can also place ``UFconfig-3.6.1.tar.gz`` and ``AMD-2.2.0.tar.gz`` in the same directory if you want to use the approximate minimum degree ordering routines from AMD/UFConfig.
+Optionally, you can also place ``SuiteSparse-5.13.0.tar.gz`` (available from `<https://github.com/DrTimothyAldenDavis/SuiteSparse/releases>`_) in the same directory if you want to use the approximate minimum degree ordering routines from SuiteSparse.
+
+Also optionally, place ``tecio.tgz`` (available from `<https://www.tecplot.com/products/tecio-library/>`_) in the same directory if you want to build ``f5totec``.
+Note that TecIO requires the boost library, which can be install with ``sudo apt-get install libboost-dev`` on debian systems.
 
 Then, to build the dependencies, simply run ``make``. If the build process ends with something like:
 
@@ -117,9 +123,7 @@ Install postprocessing tools
 ``f5tovtk`` and ``f5totec`` are executables that convert ``.f5`` files to Paraview ``.vtk`` and ``.plt`` formats compatible with Paraview and Tecplot respectively.
 After compiling the C++ TACS library, go to the subdirectory ``tacs/extern/f5tovtk`` and run ``make`` there.
 
-``f5totec`` requires Tecplot's ``tecio`` library, which can be downloaded `here <https://my.tecplot.com/portal/product-releases/tecio-library/>`_.
-After placing ``tecio.tgz`` in the ``tacs/extern`` directory, run ``make tecio`` there.
-Then run ``make`` in the ``tacs/extern/f5totec`` directory to build ``f5totec``.
+``f5totec`` requires Tecplot's ``tecio`` library, the installation of which is described above.
 
 
 It is useful to put these utilities on your path if possible.

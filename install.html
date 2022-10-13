@@ -65,7 +65,7 @@
 </ul>
 <p>Optional packages:</p>
 <ul class="simple">
-<li><p>AMD - TACS can use the approximate minimum degree ordering routines from AMD/UFConfig</p></li>
+<li><p>SuiteSparse - TACS can use the approximate minimum degree (AMD) ordering routines from SuiteSparse</p></li>
 <li><p>TecIO - to convert TACS FH5 output files to tecplot-compatible files</p></li>
 </ul>
 </section>
@@ -81,8 +81,9 @@ the following:</p>
 <li><p><code class="docutils literal notranslate"><span class="pre">TACS_DIR</span></code>: the root director of TACS</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">CXX</span></code>: the C++ compiler, must be MPI-enabled</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">LAPACK_LIBS</span></code>: linking arguments for the LAPACK libraries</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">METIS_INCLUDE</span></code> and <code class="docutils literal notranslate"><span class="pre">METIS_LIB</span></code>: set the include/linking arguments for METIS</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">AMD_INCLUDE</span></code> and <code class="docutils literal notranslate"><span class="pre">AMD_LIBS</span></code>: <em>optional</em> set include/linking arguments for AMD</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">METIS_DIR</span></code>: set the location of METIS</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">SUITESPARSE_DIR</span></code>: <em>optional</em> set location of SuiteSparse</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">TECIO_DIR</span></code>: <em>optional</em> set location of TecIO</p></li>
 </ul>
 </div></blockquote>
 </li>
@@ -119,7 +120,9 @@ Make sure to set the following:</p>
 <li><p><code class="docutils literal notranslate"><span class="pre">TACS_DIR</span></code>: the root director of TACS</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">CXX</span></code>: the C++ compiler, must be MPI-enabled</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">LAPACK_LIBS</span></code>: linking arguments for the LAPACK libraries</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">METIS_INCLUDE</span></code> and <code class="docutils literal notranslate"><span class="pre">METIS_LIB</span></code>: set the include/linking arguments for METIS</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">METIS_DIR</span></code>: set the location of METIS</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">SUITESPARSE_DIR</span></code>: <em>optional</em> set location of SuiteSparse</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">TECIO_DIR</span></code>: <em>optional</em> set location of TecIO (note you can use either the <code class="docutils literal notranslate"><span class="pre">teciosrc</span></code> or <code class="docutils literal notranslate"><span class="pre">teciompisrc</span></code> implementations)</p></li>
 </ol>
 <p>In addition, it is recommended to copy the default python settings by copying <code class="docutils literal notranslate"><span class="pre">setup.cfg.info</span></code> to <code class="docutils literal notranslate"><span class="pre">setup.cfg</span></code>.
 The settings in <code class="docutils literal notranslate"><span class="pre">setup.cfg.info</span></code> are intended for development, if you are just going to use the code as-is,
@@ -130,9 +133,11 @@ you may wish to modify these settings.</p>
 <p>These instructions direct you to install METIS and other dependencies in the directory <code class="docutils literal notranslate"><span class="pre">tacs/extern</span></code>.
 This location for the dependencies is not required, and indeed may not be best.
 If you already have these libraries installed, simply adjust the variables in <code class="docutils literal notranslate"><span class="pre">tacs/Makefile.in</span></code> accordingly.</p>
-<p>Go to the directory <code class="docutils literal notranslate"><span class="pre">tacs/extern</span></code>. Download <code class="docutils literal notranslate"><span class="pre">metis-5.1.0</span></code> from <code class="docutils literal notranslate"><span class="pre">http://glaros.dtc.umn.edu/gkhome/metis/metis/download</span></code> and place the file <code class="docutils literal notranslate"><span class="pre">metis-5.1.0.tar.gz</span></code> there.
+<p>Go to the directory <code class="docutils literal notranslate"><span class="pre">tacs/extern</span></code>. Download <code class="docutils literal notranslate"><span class="pre">metis-5.1.0</span></code> from <a class="reference external" href="http://glaros.dtc.umn.edu/gkhome/metis/metis/download">http://glaros.dtc.umn.edu/gkhome/metis/metis/download</a> and place the file <code class="docutils literal notranslate"><span class="pre">metis-5.1.0.tar.gz</span></code> there.
 Note that METIS needs CMake to build and install.</p>
-<p>Optionally, you can also place <code class="docutils literal notranslate"><span class="pre">UFconfig-3.6.1.tar.gz</span></code> and <code class="docutils literal notranslate"><span class="pre">AMD-2.2.0.tar.gz</span></code> in the same directory if you want to use the approximate minimum degree ordering routines from AMD/UFConfig.</p>
+<p>Optionally, you can also place <code class="docutils literal notranslate"><span class="pre">SuiteSparse-5.13.0.tar.gz</span></code> (available from <a class="reference external" href="https://github.com/DrTimothyAldenDavis/SuiteSparse/releases">https://github.com/DrTimothyAldenDavis/SuiteSparse/releases</a>) in the same directory if you want to use the approximate minimum degree ordering routines from SuiteSparse.</p>
+<p>Also optionally, place <code class="docutils literal notranslate"><span class="pre">tecio.tgz</span></code> (available from <a class="reference external" href="https://www.tecplot.com/products/tecio-library/">https://www.tecplot.com/products/tecio-library/</a>) in the same directory if you want to build <code class="docutils literal notranslate"><span class="pre">f5totec</span></code>.
+Note that TecIO requires the boost library, which can be install with <code class="docutils literal notranslate"><span class="pre">sudo</span> <span class="pre">apt-get</span> <span class="pre">install</span> <span class="pre">libboost-dev</span></code> on debian systems.</p>
 <p>Then, to build the dependencies, simply run <code class="docutils literal notranslate"><span class="pre">make</span></code>. If the build process ends with something like:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">make</span><span class="p">[</span><span class="mi">2</span><span class="p">]:</span> <span class="o">***</span> <span class="n">No</span> <span class="n">rule</span> <span class="n">to</span> <span class="n">make</span> <span class="n">target</span> <span class="s1">&#39;w&#39;</span><span class="o">.</span>  <span class="n">Stop</span><span class="o">.</span>
 <span class="n">make</span><span class="p">[</span><span class="mi">2</span><span class="p">]:</span> <span class="n">Leaving</span> <span class="n">directory</span> <span class="s1">&#39;SomeDirectory/tacs/extern/metis-5.1.0/build/Linux-x86_64&#39;</span>
@@ -153,9 +158,7 @@ Make the TACS libraries by running <code class="docutils literal notranslate"><s
 <h2>Install postprocessing tools<a class="headerlink" href="#install-postprocessing-tools" title="Permalink to this heading">¶</a></h2>
 <p><code class="docutils literal notranslate"><span class="pre">f5tovtk</span></code> and <code class="docutils literal notranslate"><span class="pre">f5totec</span></code> are executables that convert <code class="docutils literal notranslate"><span class="pre">.f5</span></code> files to Paraview <code class="docutils literal notranslate"><span class="pre">.vtk</span></code> and <code class="docutils literal notranslate"><span class="pre">.plt</span></code> formats compatible with Paraview and Tecplot respectively.
 After compiling the C++ TACS library, go to the subdirectory <code class="docutils literal notranslate"><span class="pre">tacs/extern/f5tovtk</span></code> and run <code class="docutils literal notranslate"><span class="pre">make</span></code> there.</p>
-<p><code class="docutils literal notranslate"><span class="pre">f5totec</span></code> requires Tecplot's <code class="docutils literal notranslate"><span class="pre">tecio</span></code> library, which can be downloaded <a class="reference external" href="https://my.tecplot.com/portal/product-releases/tecio-library/">here</a>.
-After placing <code class="docutils literal notranslate"><span class="pre">tecio.tgz</span></code> in the <code class="docutils literal notranslate"><span class="pre">tacs/extern</span></code> directory, run <code class="docutils literal notranslate"><span class="pre">make</span> <span class="pre">tecio</span></code> there.
-Then run <code class="docutils literal notranslate"><span class="pre">make</span></code> in the <code class="docutils literal notranslate"><span class="pre">tacs/extern/f5totec</span></code> directory to build <code class="docutils literal notranslate"><span class="pre">f5totec</span></code>.</p>
+<p><code class="docutils literal notranslate"><span class="pre">f5totec</span></code> requires Tecplot's <code class="docutils literal notranslate"><span class="pre">tecio</span></code> library, the installation of which is described above.</p>
 <p>It is useful to put these utilities on your path if possible.
 I add the directory <code class="docutils literal notranslate"><span class="pre">$HOME/bin</span></code> to my <code class="docutils literal notranslate"><span class="pre">PATH</span></code> and then from the directory <code class="docutils literal notranslate"><span class="pre">$HOME/bin</span></code> execute</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span>ln -s $HOME/git/tacs/extern/f5tovtk
