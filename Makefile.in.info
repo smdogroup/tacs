@@ -53,16 +53,20 @@ LAPACK_LIBS = -L/usr/lib/ -llapack -lpthread -lblas
 METIS_INCLUDE = -I${TACS_DIR}/extern/metis/include/
 METIS_LIB = ${TACS_DIR}/extern/metis/lib/libmetis.a
 
-# AMD is a set of routines for ordering matrices. It is not required by default.
+# AMD is a set of routines for ordering matrices, included in the SuiteSparse package. It is not required by default.
 
-# AMD_DIR=${TACS_DIR}/extern/AMD
-# UFCONFIG_DIR=${TACS_DIR}/extern/UFconfig
-# AMD_INCLUDE = -I${AMD_DIR}/Include -I${UFCONFIG_DIR}
-# AMD_LIBS = ${AMD_DIR}/Lib/libamd.a ${UFCONFIG_DIR}/libufconfig.a
+# SUITESPARSE_DIR = ${TACS_DIR}/extern/SuiteSparse-5.13.0
+# The variables below should not need to be altered if you are installing SuiteSparse from the standard release tarball
+
+# SUITESPARSE_CONFIG_DIR = ${SUITESPARSE_DIR}/SuiteSparse_config
+# AMD_DIR = ${SUITESPARSE_DIR}/AMD
+# AMD_INCLUDE = -I${AMD_DIR}/Include -I${SUITESPARSE_CONFIG_DIR}
+# AMD_LIBS = ${AMD_DIR}/Lib/libamd.a ${SUITESPARSE_CONFIG_DIR}/libsuitesparseconfig.a
 
 # TECIO is a library for reading and writing tecplot data files, only required for building f5totec, can use either teciosrc or teciompisrc
+# TECIO_DIR = ${TACS_DIR}/extern/tecio/teciompisrc
+# TECIO_INCLUDE = -I${TECIO_DIR}
+# TECIO_LIB = ${TECIO_DIR}/libteciompi.a
 
-# TECIO_INCLUDE = -I${TACS_DIR}/extern/tecio/teciosrc
-# TECIO_LIB = ${TACS_DIR}/extern/tecio/teciosrc/libtecio.a
-# This may be need to be added for OpenMPI implementations
+# This may be need to be added to build f5totec with openmpi
 # TECIO_LIB = ${TECIO_LIB} -lopen-pal
