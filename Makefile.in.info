@@ -50,7 +50,8 @@ LAPACK_LIBS = -L/usr/lib/ -llapack -lpthread -lblas
 # -DTACS_CPLUSPLUS_METIS to the TACS_DEF arguments below. If you
 # compile METIS using a C compiler, there should be no issues.
 
-METIS_INCLUDE = -I${TACS_DIR}/extern/metis/include/
+METIS_DIR = ${TACS_DIR}/extern/metis
+METIS_INCLUDE = -I${METIS_DIR}/include/
 METIS_LIB = ${TACS_DIR}/extern/metis/lib/libmetis.a
 
 # AMD is a set of routines for ordering matrices, included in the SuiteSparse package. It is not required by default.
@@ -69,4 +70,4 @@ METIS_LIB = ${TACS_DIR}/extern/metis/lib/libmetis.a
 # TECIO_LIB = ${TECIO_DIR}/libtecio*.a
 
 # This may be need to be added to build f5totec with openmpi
-# TECIO_LIB = ${TECIO_LIB} -lopen-pal
+# TECIO_LIB += -lopen-pal
