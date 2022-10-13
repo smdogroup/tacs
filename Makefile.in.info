@@ -66,7 +66,7 @@ METIS_LIB = ${TACS_DIR}/extern/metis/lib/libmetis.a
 # TECIO is a library for reading and writing tecplot data files, only required for building f5totec, can use either teciosrc or teciompisrc
 # TECIO_DIR = ${TACS_DIR}/extern/tecio/teciompisrc
 # TECIO_INCLUDE = -I${TECIO_DIR}
-# TECIO_LIB = ${TECIO_DIR}/libteciompi.a
+# TECIO_LIB = ${TECIO_DIR}/libtecio*.a
 
 # This may be need to be added to build f5totec with openmpi
 # TECIO_LIB = ${TECIO_LIB} -lopen-pal
