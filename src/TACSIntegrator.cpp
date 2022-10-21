@@ -2724,3 +2724,694 @@ double TACSDIRKIntegrator::getStageStates(int step_num, int stage_num,
     return tS;
   }
 }
+
+/*
+  constructor for TACSESDIRKIntegrator
+
+Input:
+
+_tacs: 		the TACS assembler
+_tinit:		the initial time
+_tfinal:		the final time
+_num_steps: 	the number of time steps to take
+_num_stages: 	the number of Runge-Kutta stages between steps
+*/
+TACSESDIRKIntegrator::TACSESDIRKIntegrator(TACSAssembler *_tacs, double _tinit,
+                                           double _tfinal, double _num_steps,
+                                           int _num_stages)
+    : TACSIntegrator(_tacs, _tinit, _tfinal, _num_steps) {
+  if (mpiRank == 0) {
+    fprintf(logfp, "[%d] Creating TACSIntegrator of type %s with %d stages\n",
+            mpiRank, "ESDIRK", _num_stages);
+  }
+
+  // set the number of stages
+  num_stages = _num_stages;
+
+  // allocate space for the stage state variables
+  qS = new TACSBVec *[num_stages * num_time_steps];
+  qdotS = new TACSBVec *[num_stages * num_time_steps];
+  qddotS = new TACSBVec *[num_stages * num_time_steps];
+
+  // create the state vectors for TACS for each stage of each time step
+  for (int k = 0; k < num_stages * num_time_steps; k++) {
+    qS[k] = assembler->createVec();
+    qS[k]->incref();
+
+    qdotS[k] = assembler->createVec();
+    qdotS[k]->incref();
+
+    qddotS[k] = assembler->createVec();
+    qddotS[k]->incref();
+  }
+
+  // allocate sapce for the Butcher Tableau integration coefficents
+  a = new double[num_stages * (num_stages + 1) / 2];
+  b = new double[num_stages];
+  c = new double[num_stages];
+  A = new double[num_stages * (num_stages + 1) / 2];
+  B = new double[num_stages];
+
+  // set the Butcher Tableau integration coefficients to zero
+  memset(a, 0., num_stages * (num_stages + 1) / 2 * sizeof(double));
+  memset(b, 0., num_stages * sizeof(double));
+  memset(c, 0., num_stages * sizeof(double));
+  memset(A, 0., num_stages * (num_stages + 1) / 2 * sizeof(double));
+  memset(B, 0., num_stages * sizeof(double));
+
+  // assign the coefficients in the Butcher Tableau (first-order)
+  setupDefaultCoeffs();
+
+  // compute and assign the second-order integration coefficients
+  setupSecondCoeffs();
+}
+
+/*
+  destructor for TACSESDIRKIntegrator
+*/
+TACSESDIRKIntegrator::~TACSESDIRKIntegrator() {
+  // clean up the integration coefficients
+  delete[] a;
+  delete[] b;
+  delete[] c;
+  delete[] A;
+  delete[] B;
+
+  // clean up the stage states
+  for (int k = 0; k < num_stages * num_time_steps; k++) {
+    qS[k]->decref();
+    qdotS[k]->decref();
+    qddotS[k]->decref();
+  }
+
+  delete[] qS;
+  delete[] qdotS;
+  delete[] qddotS;
+}
+
+/*
+  Assign the (first-order) integration coefficients to the Butcher Tableau
+
+  Reference:
+  Christopher A. Kennedy, Mark H. Carpenter,
+  Additive Runge–Kutta schemes for convection–diffusion–reaction equations,
+  Applied Numerical Mathematics,
+  Volume 44, Issues 1–2,
+  2003,
+  Pages 139-181,
+  ISSN 0168-9274,
+  https://doi.org/10.1016/S0168-9274(02)00138-1.
+*/
+void TACSESDIRKIntegrator::setupDefaultCoeffs() {
+  if (num_stages == 4) {
+    // 4-stage, 3rd-order accurate
+    a[0] = 0.0;
+    a[1] = 1767732205903.0 / 4055673282236.0;
+    a[2] = 1767732205903.0 / 4055673282236.0;
+    a[3] = 2746238789719.0 / 10658868560708.0;
+    a[4] = -640167445237.0 / 6845629431997.0;
+    a[5] = 1767732205903.0 / 4055673282236.0;
+    a[6] = 1471266399579.0 / 7840856788654.0;
+    a[7] = -4482444167858.0 / 7529755066697.0;
+    a[8] = 11266239266428.0 / 11593286722821.0;
+    a[9] = 1767732205903.0 / 4055673282236.0;
+
+    b[0] = 1471266399579.0 / 7840856788654.0;
+    b[1] = -4482444167858.0 / 7529755066697.0;
+    b[2] = 11266239266428.0 / 11593286722821.0;
+    b[3] = 1767732205903.0 / 4055673282236.0;
+
+    c[0] = 0.0;
+    c[1] = 1767732205903.0 / 2027836641118.0;
+    c[2] = 3.0 / 5.0;
+    c[3] = 1.0;
+  }
+
+  else if (num_stages == 6) {
+    // 6-stage, 4th-order accurate
+    a[0] = 0.0;
+    a[1] = 0.25;
+    a[2] = 0.25;
+    a[3] = 8611.0 / 62500.0;
+    a[4] = -1743.0 / 31250.0;
+    a[5] = 0.25;
+    a[6] = 5012029.0 / 34652500.0;
+    a[7] = -654441.0 / 2922500.0;
+    a[8] = 174375.0 / 388108.0;
+    a[9] = 0.25;
+    a[10] = 15267082809.0 / 155376265600.0;
+    a[11] = -71443401.0 / 120774400.0;
+    a[12] = 730878875.0 / 902184768.0;
+    a[13] = 2285395.0 / 8070912.0;
+    a[14] = 0.25;
+    a[15] = 82889.0 / 524892.0;
+    a[16] = 0.0;
+    a[17] = 15625.0 / 83664.0;
+    a[18] = 69875.0 / 102672.0;
+    a[19] = -2260.0 / 8211.0;
+    a[20] = 0.25;
+
+    b[0] = 82889.0 / 524892.0;
+    b[1] = 0.0;
+    b[2] = 15625.0 / 83664.0;
+    b[3] = 69875.0 / 102672.0;
+    b[4] = -2260.0 / 8211.0;
+    b[5] = 0.25;
+
+    c[0] = 0.0;
+    c[1] = 0.5;
+    c[2] = 83.0 / 250.0;
+    c[3] = 31.0 / 50.0;
+    c[4] = 17.0 / 20.0;
+    c[5] = 1.0;
+  }
+
+  else if (num_stages == 8) {
+    // 8-stages, 5th-order accurate
+    a[0] = 0.0;
+    a[1] = 41.0 / 200.0;
+    a[2] = 41.0 / 200.0;
+    a[3] = 41.0 / 400.0;
+    a[4] = -567603406766.0 / 11931857280679.0;
+    a[5] = 41.0 / 200.0;
+    a[6] = 683785636431.0 / 9252920307686.0;
+    a[7] = 0.0;
+    a[8] = -110385047103.0 / 1367015193373.0;
+    a[9] = 41.0 / 200.0;
+    a[10] = 3016520224154.0 / 10081342136671.0;
+    a[11] = 0.0;
+    a[12] = 30586259806659.0 / 12414158314087.0;
+    a[13] = -22760509404356.0 / 11113319521817.0;
+    a[14] = 41.0 / 200.0;
+    a[15] = 218866479029.0 / 1489978393911.0;
+    a[16] = 0.0;
+    a[17] = 638256894668.0 / 5436446318841.0;
+    a[18] = -1179710474555.0 / 5321154724896.0;
+    a[19] = -60928119172.0 / 8023461067671.0;
+    a[20] = 41.0 / 200.0;
+    a[21] = 1020004230633.0 / 5715676835656.0;
+    a[22] = 0.0;
+    a[23] = 25762820946817.0 / 25263940353407.0;
+    a[24] = -2161375909145.0 / 9755907335909.0;
+    a[25] = -211217309593.0 / 5846859502534.0;
+    a[26] = -4269925059573.0 / 7827059040749.0;
+    a[27] = 41.0 / 200.0;
+    a[28] = -872700587467.0 / 9133579230613.0;
+    a[29] = 0.0;
+    a[30] = 0.0;
+    a[31] = 22348218063261.0 / 9555858737531.0;
+    a[32] = -1143369518992.0 / 8141816002931.0;
+    a[33] = -39379526789629.0 / 19018526304540.0;
+    a[34] = 32727382324388.0 / 42900044865799.0;
+    a[35] = 41.0 / 200.0;
+
+    b[0] = -872700587467.0 / 9133579230613.0;
+    b[1] = 0.0;
+    b[2] = 0.0;
+    b[3] = 22348218063261.0 / 9555858737531.0;
+    b[4] = -1143369518992.0 / 8141816002931.0;
+    b[5] = -39379526789629.0 / 19018526304540.0;
+    b[6] = 32727382324388.0 / 42900044865799.0;
+    b[7] = 41.0 / 200.0;
+
+    c[0] = 0.0;
+    c[1] = 41.0 / 100.0;
+    c[2] = 2935347310677.0 / 11292855782101.0;
+    c[3] = 1426016391358.0 / 7196633302097.0;
+    c[4] = 92.0 / 100.0;
+    c[5] = 24.0 / 100.0;
+    c[6] = 3.0 / 5.0;
+    c[7] = 1.0;
+  }
+
+  else {
+    // user didn't specify a supported ESDIRK scheme, make 4-stage scheme
+    fprintf(stderr, "ERROR: Invalid number of stages specified %d\n",
+            num_stages);
+    num_stages = 4;
+    fprintf(stderr, "Setting number of stages to %d\n", num_stages);
+    setupDefaultCoeffs();
+  }
+
+  // check the filled Butcher Tableau for consistency
+  checkButcherTableau();
+}
+
+/*
+  Compute and set the second-order integration coefficients
+*/
+void TACSESDIRKIntegrator::setupSecondCoeffs() {
+  // set the values of the B coefficients
+  for (int i = 0; i < num_stages; i++) {
+    B[i] = 0.0;
+    // loop over the rows in the tableau
+    for (int j = 0; j < num_stages; j++) {
+      B[i] += b[j] * getACoeff(j, i);
+    }
+  }
+
+  // set the values of the A coefficients
+  int rInd;
+  for (int i = 0; i < num_stages; i++) {
+    rInd = getRowIndex(i);
+    for (int j = 0; j < num_stages; j++) {
+      A[rInd + j] = 0.0;
+      for (int k = 0; k < num_stages; k++) {
+        A[rInd + j] += getACoeff(i, k) * getACoeff(k, j);
+      }
+    }
+  }
+}
+
+/*
+  Get the stage coefficient from the a matrix in the Butcher Tableau using
+  the full index
+*/
+double TACSESDIRKIntegrator::getACoeff(const int i, const int j) {
+  if (i < num_stages && j < num_stages) {
+    if (j > i) {
+      // coefficients in the upper triangular region are 0 for all ESDIRK
+      // methods
+      return 0.0;
+    }
+
+    else {
+      int rInd = getRowIndex(i);
+      return a[rInd + j];
+    }
+  }
+  return 0.0;
+}
+
+/*
+  Start index of the a/A matrix in the Butcher Tableau for the supplied stage
+*/
+int TACSESDIRKIntegrator::getRowIndex(int stageNum) {
+  return stageNum * (stageNum + 1) / 2;
+}
+
+/*
+  Function to check the consistency of the assigned Butcher Tableau coefficients
+*/
+void TACSESDIRKIntegrator::checkButcherTableau() {
+  double tmp;
+
+  // Check #1: sum(a(i,:)) == c(i)
+  int idx = -1;
+  for (int i = 0; i < num_stages; i++) {
+    tmp = 0.0;
+    // do the sum of the a-coefficients in the row
+    for (int j = 0; j <= i; j++) {
+      idx++;
+      tmp += a[idx];
+    }
+
+    // check the difference with c values for the stage
+    if (fabs(c[i] - tmp) >= 1.0e-6) {
+      fprintf(stderr, "WARNING: sum a[%d,:] != c[%d], (%f != %f) \n", i, i,
+              c[i], tmp);
+    }
+  }
+
+  // Check #2: sum(b) == 1.0
+  tmp = 0.0;
+  for (int i = 0; i < num_stages; i++) {
+    tmp += b[i];
+  }
+  if (fabs(1.0 - tmp) >= 1.0e-6) {
+    fprintf(stderr, "WARNING: sum b != 1.0 \n");
+  }
+}
+
+/*
+  Return the coefficients for linearizing the residual of governing equations
+*/
+void TACSESDIRKIntegrator::getLinearizationCoeffs(const int stage,
+                                                  const double h, double *alpha,
+                                                  double *beta, double *gamma) {
+  // get the starting index for this stage in the Butcher Tableau
+  int rInd = getRowIndex(stage);
+
+  // compute the coefficients
+  *gamma = 1.0;
+  *beta = h * a[rInd + stage];
+  *alpha = h * h * A[rInd + stage];
+}
+
+/*
+  Integration logic of ESDIRK. Use this function to march in time. The
+  solution over time is set into the class variables q, qdot, and qddot.
+  WARNING: This function will not retain the high-order accuracy of the
+  method when the loading varies in time since the force vector is not
+  updated between stages. Use iterateStage() when the loading changes in
+  time.
+*/
+int TACSESDIRKIntegrator::iterate(int k, TACSBVec *forces) {
+  if (k == 0) {
+    // Output the results at the initial condition if configured
+    printOptionSummary();
+
+    // Retrieve the initial conditions and set into TACS
+    assembler->getInitConditions(q[0], qdot[0], qddot[0]);
+    assembler->setBCs(q[0]);  // Set the Dirichlet BCs
+    assembler->setVariables(q[0], qdot[0], qddot[0]);
+
+    // perform logging, tecplot export, etc.
+    logTimeStep(k);
+
+    return 0;
+  }
+
+  // compute the time step size
+  double h = time[k] - time[k - 1];
+
+  // compute the stage states (qS, qdotS, qddotS) based on the ESDIRK method
+  for (int stage = 0; stage < num_stages; stage++) {
+    // compute the stage time
+    double tS = time[k - 1] + c[stage] * h;
+
+    // compute the offset index for this stage
+    int offset = (k - 1) * num_stages + stage;
+
+    // approximate the stage states using the ESDIRK formula
+    // Stage 0 of ESDIRK does not move forward in time,
+    // so the initialization for stage 0 is different than the rest.
+    if (k == 1 && stage == 0) {
+      // for stage 0 of the first time step, the stage states are initialized
+      // to the initial condition of the problem
+      qS[offset]->copyValues(q[k - 1]);
+      qdotS[offset]->copyValues(qdot[k - 1]);
+      qddotS[offset]->copyValues(qddot[k - 1]);
+    } else if (stage == 0) {
+      // for stage 0 of further time steps, the stage states are initialized
+      // differently. Stage accelerations use the last stage of the previous
+      // time step, whereas the stage displacements and velocities use the
+      // previous time step values
+      qS[offset]->copyValues(q[k - 1]);
+      qdotS[offset]->copyValues(qdot[k - 1]);
+      qddotS[offset]->copyValues(qddotS[offset - 1]);
+    } else {
+      // Solve for the stage states using Newton's method
+      qddotS[offset]->zeroEntries();
+
+      // compute approximation for stage displacement
+      qS[offset]->copyValues(q[k - 1]);
+      qS[offset]->axpy(h * c[stage], qdot[k - 1]);
+
+      // compute approximation for stage velocity
+      qdotS[offset]->copyValues(qdot[k - 1]);
+
+      // add the previous stage acceleration contributions
+      int rInd = getRowIndex(stage);
+      int prev;
+      for (int j = 0; j < stage; j++) {
+        prev = (k - 1) * num_stages + j;
+        qS[offset]->axpy(h * h * A[rInd + j], qddotS[prev]);
+        qdotS[offset]->axpy(h * a[rInd + j], qddotS[prev]);
+      }
+
+      // determine the coefficients for Jacobian assembly
+      double alpha, beta, gamma;
+      getLinearizationCoeffs(stage, h, &alpha, &beta, &gamma);
+
+      // solve the nonlinear system of stage equations
+      int newton_term = newtonSolve(alpha, beta, gamma, tS, qS[offset],
+                                    qdotS[offset], qddotS[offset], forces);
+
+      // check the flag from newton solver to see if there is an error
+      int fail = 0;
+      if (newton_term < 0) {
+        fail = 1;
+        return fail;
+      }
+    }
+  }
+
+  // compute the state updates for the time step based on the stage values
+  q[k]->copyValues(q[k - 1]);
+  q[k]->axpy(h, qdot[k - 1]);
+  qdot[k]->copyValues(qdot[k - 1]);
+  qddot[k]->zeroEntries();
+
+  for (int stage = 0; stage < num_stages; stage++) {
+    int offset = (k - 1) * num_stages + stage;
+    q[k]->axpy(h * h * B[stage], qddotS[offset]);
+    qdot[k]->axpy(h * b[stage], qddotS[offset]);
+    qddot[k]->axpy(b[stage], qddotS[offset]);
+  }
+
+  // perform logging, tecplot output, etc.
+  logTimeStep(k);
+
+  return 0;
+}
+
+/*
+  Integration logic of a single stage of ESDIRK. Use this function to march in
+  time a single stage, which is necessary to maintain the method's proper order
+  of accuracy when time-varying loads are present. The solution for time steps
+  are set into the class variables q, qdot, and qddot, while the states
+  evaluated at each stage are set to qS, qdotS, qddotS.
+*/
+int TACSESDIRKIntegrator::iterateStage(int k, int s, TACSBVec *forces) {
+  if (k == 0 && s == 0) {
+    // Output the results at the initial condition if configured
+    printOptionSummary();
+
+    // Retrieve the initial conditions and set into TACS
+    assembler->getInitConditions(q[0], qdot[0], qddot[0]);
+    assembler->setBCs(q[0]);  // Set the Dirichlet BCs
+    assembler->setVariables(q[0], qdot[0], qddot[0]);
+
+    // perform logging, tecplot export, etc.
+    logTimeStep(k);
+
+    return 0;
+  } else if (k == 0 && s > 0) {
+    return 0;
+  }
+
+  // compute the tmie step size
+  double h = time[k] - time[k - 1];
+
+  // compute the stage time
+  double tS = time[k - 1] + c[s] * h;
+
+  // compute the offset index to this stage
+  int offset = (k - 1) * num_stages + s;
+
+  // approximate the stage states using the ESDIRK formula
+  // Stage 0 of ESDIRK does not move forward in time,
+  // so the initialization for stage 0 is different than the rest.
+  if (k == 1 && s == 0) {
+    // for stage 0 of the first time step, the stage states are initialized
+    // to the initial condition of the problem
+    qS[offset]->copyValues(q[k - 1]);
+    qdotS[offset]->copyValues(qdot[k - 1]);
+    qddotS[offset]->copyValues(qddot[k - 1]);
+  } else if (s == 0) {
+    // for stage 0 of further time steps, the stage states are initialized
+    // differently. Stage accelerations use the last stage of the previous
+    // time step, whereas the stage displacements and velocities use the
+    // previous time step values
+    qS[offset]->copyValues(q[k - 1]);
+    qdotS[offset]->copyValues(qdot[k - 1]);
+    qddotS[offset]->copyValues(qddotS[offset - 1]);
+  } else {
+    // Solve for the stage states using Newton's method
+    qddotS[offset]->zeroEntries();
+
+    // compute approximation for stage displacement
+    qS[offset]->copyValues(q[k - 1]);
+    qS[offset]->axpy(h * c[s], qdot[k - 1]);
+
+    // compute approximation for stage velocity
+    qdotS[offset]->copyValues(qdot[k - 1]);
+
+    // add the previous stage acceleration contributions
+    int rInd = getRowIndex(s);
+    int prev;
+    for (int j = 0; j < s; j++) {
+      prev = (k - 1) * num_stages + j;
+      qS[offset]->axpy(h * h * A[rInd + j], qddotS[prev]);
+      qdotS[offset]->axpy(h * a[rInd + j], qddotS[prev]);
+    }
+
+    // determine the coefficients for Jacobian assembly
+    double alpha, beta, gamma;
+    getLinearizationCoeffs(s, h, &alpha, &beta, &gamma);
+
+    // solve the nonlinear system of stage equations
+    int newton_term = newtonSolve(alpha, beta, gamma, tS, qS[offset],
+                                  qdotS[offset], qddotS[offset], forces);
+
+    // check the flag from newton solver to see if there is an error
+    int fail = 0;
+    if (newton_term < 0) {
+      fail = 1;
+      return fail;
+    }
+  }
+
+  // if its the final stage, compute the state variables for the time step
+  // using the stage states for the update
+  if (s == num_stages - 1) {
+    // initialize the displacement and velocity states
+    q[k]->copyValues(q[k - 1]);
+    q[k]->axpy(h, qdot[k - 1]);
+
+    qdot[k]->copyValues(qdot[k - 1]);
+
+    // zero the acceleration states
+    qddot[k]->zeroEntries();
+
+    // update the states with each stage acceleration contribution
+    for (int stage = 0; stage < num_stages; stage++) {
+      int offset_f = (k - 1) * num_stages + stage;
+      q[k]->axpy(h * h * B[stage], qddotS[offset_f]);
+      qdot[k]->axpy(h * b[stage], qddotS[offset_f]);
+      qddot[k]->axpy(b[stage], qddotS[offset_f]);
+    }
+
+    // perform logging, tecplot export, etc.
+    logTimeStep(k);
+  }
+
+  return 0;
+}
+
+/*
+  Evaluate the function(s) of interest
+*/
+void TACSESDIRKIntegrator::evalFunctions(TacsScalar *fvals) {
+  // check whether these are two-stage or one-stage functions
+  int twoStage = 0;
+  for (int n = 0; n < num_funcs; n++) {
+    if (funcs[n] && funcs[n]->getStageType() == TACSFunction::TWO_STAGE) {
+      twoStage = 1;
+      break;
+    }
+  }
+
+  // initialize the function if hasn't yet been initialized
+  if (twoStage) {
+    // first stage
+    for (int n = 0; n < num_funcs; n++) {
+      if (funcs[n]) {
+        funcs[n]->initEvaluation(TACSFunction::INITIALIZE);
+      }
+    }
+
+    for (int k = start_plane; k < end_plane; k++) {
+      // compute the time step
+      double h = time[k + 1] - time[k];
+
+      for (int stage = 0; stage < num_stages; stage++) {
+        // get the stage time
+        double tS = time[k] + c[stage] * h;
+        assembler->setSimulationTime(tS);
+
+        // set the offset into the stage variable vectors
+        int offset = k * num_stages + stage;
+        assembler->setVariables(qS[offset], qdotS[offset], qddotS[offset]);
+
+        // set the time integration coeff
+        double tcoeff = h * b[stage];
+
+        // integrate the functions
+        assembler->integrateFunctions(tcoeff, TACSFunction::INITIALIZE,
+                                      num_funcs, funcs);
+      }
+    }
+
+    for (int n = 0; n < num_funcs; n++) {
+      if (funcs[n]) {
+        funcs[n]->finalEvaluation(TACSFunction::INITIALIZE);
+      }
+    }
+  }
+
+  // second stage
+  for (int n = 0; n < num_funcs; n++) {
+    if (funcs[n]) {
+      funcs[n]->initEvaluation(TACSFunction::INTEGRATE);
+    }
+  }
+
+  for (int k = start_plane; k < end_plane; k++) {
+    // compute the time step
+    double h = time[k + 1] - time[k];
+
+    for (int stage = 0; stage < num_stages; stage++) {
+      double tS = time[k] + c[stage] * h;
+      assembler->setSimulationTime(tS);
+
+      // set the time integration coeff
+      double tcoeff = h * b[stage];
+
+      // integrate the functions
+      assembler->integrateFunctions(tcoeff, TACSFunction::INTEGRATE, num_funcs,
+                                    funcs);
+    }
+  }
+
+  for (int n = 0; n < num_funcs; n++) {
+    if (funcs[n]) {
+      funcs[n]->finalEvaluation(TACSFunction::INTEGRATE);
+    }
+  }
+
+  // retireve the function values
+  for (int n = 0; n < num_funcs; n++) {
+    fvals[n] = 0.0;
+    if (funcs[n]) {
+      fvals[n] = funcs[n]->getFunctionValue();
+    }
+  }
+}
+
+/*
+  Get the adjoint value for the given function
+*/
+void TACSESDIRKIntegrator::getAdjoint(int step_num, int func_num,
+                                      TACSBVec **adjoint) {
+  // Dummy implementation
+}
+
+/*
+  Retrieve the internal states at the specified stage of the specified time step
+*/
+double TACSESDIRKIntegrator::getStageStates(int step_num, int stage_num,
+                                            TACSBVec **_qS, TACSBVec **_qdotS,
+                                            TACSBVec **_qddotS) {
+  if (step_num == 0) {
+    // stage states do not exist for the 0th time step since initial conditions
+    // are provided
+    if (_qS) {
+      *_qS = q[step_num];
+    }
+    if (_qdotS) {
+      *_qdotS = qdot[step_num];
+    }
+    if (_qddotS) {
+      *_qddotS = qddot[step_num];
+    }
+    return time[step_num];
+  } else {
+    int offset = (step_num - 1) * num_stages + stage_num;
+    double h = time[step_num] - time[step_num - 1];
+    double tS = time[step_num - 1] + c[stage_num] * h;
+
+    if (_qS) {
+      *_qS = qS[offset];
+    }
+    if (_qdotS) {
+      *_qdotS = qdotS[offset];
+    }
+    if (_qddotS) {
+      *_qddotS = qddotS[offset];
+    }
+
+    return tS;
+  }
+}
