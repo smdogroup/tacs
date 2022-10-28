@@ -86,7 +86,7 @@ FEAAssembler.initialize(elemCallBack)
 
 # Create a transient problem that will represent time-varying heat conduction
 transientProblem = FEAAssembler.createTransientProblem(
-    "Transient", tInit=0.0, tFinal=5.0, numSteps=50
+    "Transient", tInit=0.0, tFinal=5.0, numSteps=50, options={"printLevel": 1}
 )
 
 # Get the time steps and define the loads

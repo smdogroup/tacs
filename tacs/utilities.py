@@ -117,6 +117,15 @@ class BaseUI:
     def _info(self, message, maxLen=80, box=False):
         """Generic function for writing an info message."""
 
+        try:
+            printLevel = self.getOption("printLevel")
+            if printLevel <= 0:
+                # Don't print out info
+                return
+        except AttributeError:
+            # printLevel option doesn't exist
+            pass
+
         if self.comm.rank == 0:
             # Class name
             header = type(self).__name__
