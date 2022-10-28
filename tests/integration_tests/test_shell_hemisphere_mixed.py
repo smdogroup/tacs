@@ -19,48 +19,6 @@ tests StructuralMass, MomentOfInertia, KSFailure, KSDisplacement and Compliance 
 base_dir = os.path.dirname(os.path.abspath(__file__))
 bdf_file = os.path.join(base_dir, "./input_files/hemisphere.bdf")
 
-FUNC_REFS = {
-    "PLOAD4_cg_x": 0.0009653731820888509,
-    "PLOAD4_cg_y": -9.14227063766091e-05,
-    "PLOAD4_cg_z": 0.49758219135768283,
-    "PLOAD4_I_xx": 721.1210796251873,
-    "PLOAD4_I_xy": 0.02281438889615433,
-    "PLOAD4_I_xz": -0.13557311929923765,
-    "PLOAD4_I_yy": 718.9187282561999,
-    "PLOAD4_I_yz": 0.037711775302945186,
-    "PLOAD4_I_zz": 1152.580386827468,
-    "PLOAD4_compliance": 279300158.48951936,
-    "PLOAD4_ks_disp": 9.927842420503762,
-    "PLOAD4_ks_vmfailure": 29.307629374994303,
-    "PLOAD4_mass": 1737.357316694243,
-    "PLOAD2_cg_x": 0.0009653731820888509,
-    "PLOAD2_cg_y": -9.14227063766091e-05,
-    "PLOAD2_cg_z": 0.49758219135768283,
-    "PLOAD2_I_xx": 721.1210796251873,
-    "PLOAD2_I_xy": 0.02281438889615433,
-    "PLOAD2_I_xz": -0.13557311929923765,
-    "PLOAD2_I_yy": 718.9187282561999,
-    "PLOAD2_I_yz": 0.037711775302945186,
-    "PLOAD2_I_zz": 1152.580386827468,
-    "PLOAD2_compliance": 279300158.48951936,
-    "PLOAD2_ks_disp": 9.927842420503762,
-    "PLOAD2_ks_vmfailure": 29.307629374994303,
-    "PLOAD2_mass": 1737.357316694243,
-    "Centrifugal_cg_x": 0.0009653731820888509,
-    "Centrifugal_cg_y": -9.14227063766091e-05,
-    "Centrifugal_cg_z": 0.49758219135768283,
-    "Centrifugal_I_xx": 721.1210796251873,
-    "Centrifugal_I_xy": 0.022814388896140014,
-    "Centrifugal_I_xz": -0.13557311929923765,
-    "Centrifugal_I_yy": 718.9187282561999,
-    "Centrifugal_I_yz": 0.037711775302945186,
-    "Centrifugal_I_zz": 1152.580386827468,
-    "Centrifugal_compliance": 303.4866002859211,
-    "Centrifugal_ks_disp": 0.18580458183836876,
-    "Centrifugal_ks_vmfailure": 0.21309095365567654,
-    "Centrifugal_mass": 1737.357316694243,
-}
-
 omega = 2 * np.pi * np.array([0.0, 0.0, -10.0])
 rotCenter = np.zeros(3)
 
@@ -70,13 +28,55 @@ ksweight = 10.0
 class ProblemTest(PyTACSTestCase.PyTACSTest):
     N_PROCS = 2  # this is how many MPI processes to use for this TestCase.
 
-    def setup_pytacs(self, comm, dtype):
+    FUNC_REFS = {
+        "PLOAD4_cg_x": 0.0009653731820888509,
+        "PLOAD4_cg_y": -9.14227063766091e-05,
+        "PLOAD4_cg_z": 0.49758219135768283,
+        "PLOAD4_I_xx": 721.1210796251873,
+        "PLOAD4_I_xy": 0.02281438889615433,
+        "PLOAD4_I_xz": -0.13557311929923765,
+        "PLOAD4_I_yy": 718.9187282561999,
+        "PLOAD4_I_yz": 0.037711775302945186,
+        "PLOAD4_I_zz": 1152.580386827468,
+        "PLOAD4_compliance": 279300158.48951936,
+        "PLOAD4_ks_disp": 9.927842420503762,
+        "PLOAD4_ks_vmfailure": 29.307629374994303,
+        "PLOAD4_mass": 1737.357316694243,
+        "PLOAD2_cg_x": 0.0009653731820888509,
+        "PLOAD2_cg_y": -9.14227063766091e-05,
+        "PLOAD2_cg_z": 0.49758219135768283,
+        "PLOAD2_I_xx": 721.1210796251873,
+        "PLOAD2_I_xy": 0.02281438889615433,
+        "PLOAD2_I_xz": -0.13557311929923765,
+        "PLOAD2_I_yy": 718.9187282561999,
+        "PLOAD2_I_yz": 0.037711775302945186,
+        "PLOAD2_I_zz": 1152.580386827468,
+        "PLOAD2_compliance": 279300158.48951936,
+        "PLOAD2_ks_disp": 9.927842420503762,
+        "PLOAD2_ks_vmfailure": 29.307629374994303,
+        "PLOAD2_mass": 1737.357316694243,
+        "Centrifugal_cg_x": 0.0009653731820888509,
+        "Centrifugal_cg_y": -9.14227063766091e-05,
+        "Centrifugal_cg_z": 0.49758219135768283,
+        "Centrifugal_I_xx": 721.1210796251873,
+        "Centrifugal_I_xy": 0.022814388896140014,
+        "Centrifugal_I_xz": -0.13557311929923765,
+        "Centrifugal_I_yy": 718.9187282561999,
+        "Centrifugal_I_yz": 0.037711775302945186,
+        "Centrifugal_I_zz": 1152.580386827468,
+        "Centrifugal_compliance": 303.4866002859211,
+        "Centrifugal_ks_disp": 0.18580458183836876,
+        "Centrifugal_ks_vmfailure": 0.21309095365567654,
+        "Centrifugal_mass": 1737.357316694243,
+    }
+
+    def setup_tacs_problems(self, comm):
         """
-        Setup mesh and pytacs object for problem we will be testing.
+        Setup pytacs object for problems we will be testing.
         """
 
         # Overwrite default check values
-        if dtype == complex:
+        if self.dtype == complex:
             self.rtol = 1e-8
             self.atol = 1e-8
             self.dh = 1e-50
@@ -127,27 +127,16 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
         # Set up constitutive objects and elements
         fea_assembler.initialize(elem_call_back)
 
-        return fea_assembler
+        # Read in forces from BDF and create tacs struct problems
+        tacs_probs = fea_assembler.createTACSProbsFromBDF()
+        # Convert from dict to list
+        tacs_probs = list(tacs_probs.values())
+        static_prob = fea_assembler.createStaticProblem("Centrifugal")
+        static_prob.addCentrifugalLoad(omega, rotCenter)
+        tacs_probs.append(static_prob)
 
-    def setup_tacs_vecs(self, fea_assembler, dv_pert_vec, xpts_pert_vec):
-        """
-        Setup user-defined vectors for analysis and fd/cs sensitivity verification
-        """
-        # Create temporary dv vec for doing fd/cs
-        dv_pert_vec[:] = 1.0
-
-        # Define perturbation array that moves all nodes on shell
-        xpts = fea_assembler.getOrigNodes()
-        xpts_pert_vec[:] = xpts
-
-        return
-
-    def setup_funcs(self, fea_assembler, problems):
-        """
-        Create a list of functions to be tested and their reference values for the problem
-        """
         # Add Functions
-        for problem in problems:
+        for problem in tacs_probs:
             problem.addFunction("mass", functions.StructuralMass)
             problem.addFunction("compliance", functions.Compliance)
             problem.addFunction(
@@ -208,32 +197,5 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
                 direction2=[0.0, 0.0, 1.0],
                 aboutCM=True,
             )
-        func_list = [
-            "mass",
-            "compliance",
-            "ks_disp",
-            "ks_vmfailure",
-            "cg_x",
-            "cg_y",
-            "cg_z",
-            "I_xx",
-            "I_xy",
-            "I_xz",
-            "I_yy",
-            "I_yz",
-            "I_zz",
-        ]
-        return func_list, FUNC_REFS
 
-    def setup_tacs_problems(self, fea_assembler):
-        """
-        Setup pytacs object for problems we will be testing.
-        """
-        # Read in forces from BDF and create tacs struct problems
-        tacs_probs = fea_assembler.createTACSProbsFromBDF()
-        # Convert from dict to list
-        tacs_probs = list(tacs_probs.values())
-        static_prob = fea_assembler.createStaticProblem("Centrifugal")
-        static_prob.addCentrifugalLoad(omega, rotCenter)
-        tacs_probs.append(static_prob)
-        return tacs_probs
+        return tacs_probs, fea_assembler
