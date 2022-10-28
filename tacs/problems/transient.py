@@ -359,7 +359,7 @@ class TransientProblem(TACSProblem):
             The components with added loads. Use pyTACS.selectCompIDs method
             to determine this.
 
-        F : Numpy 1d or 2d array length (varsPerNodes) or (numNodeIDs, varsPerNodes)
+        F : Numpy 1d or 2d array length (varsPerNodes) or (numCompIDs, varsPerNodes)
             Vector(s) of 'force' to apply to each components.  If only one force vector is provided,
             force will be copied uniformly across all components.
 

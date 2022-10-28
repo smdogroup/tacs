@@ -18,17 +18,6 @@ Izz = 12.8 kg*m^2
 base_dir = os.path.dirname(os.path.abspath(__file__))
 bdf_file = os.path.join(base_dir, "./input_files/point_mass.bdf")
 
-FUNC_REFS = {
-    "constant_force_mass": 200.0,
-    "constant_force_x_disp": 2.343553337720806,
-    "constant_force_y_disp": 2.343553337720806,
-    "constant_force_z_disp": 2.343553337720806,
-    "gravity_mass": 200.0,
-    "gravity_x_disp": 0.23025850929940442,
-    "gravity_y_disp": 0.23025850929940442,
-    "gravity_z_disp": 490.27400177252474,
-}
-
 # Force to apply
 f = np.ones(6)
 
@@ -38,13 +27,24 @@ ksweight = 10.0
 class ProblemTest(PyTACSTestCase.PyTACSTest):
     N_PROCS = 1  # this is how many MPI processes to use for this TestCase.
 
-    def setup_pytacs(self, comm, dtype):
+    FUNC_REFS = {
+        "constant_force_mass": 200.0,
+        "constant_force_x_disp": 2.343553337720806,
+        "constant_force_y_disp": 2.343553337720806,
+        "constant_force_z_disp": 2.343553337720806,
+        "gravity_mass": 200.0,
+        "gravity_x_disp": 0.23025850929940442,
+        "gravity_y_disp": 0.23025850929940442,
+        "gravity_z_disp": 490.27400177252474,
+    }
+
+    def setup_tacs_problems(self, comm):
         """
-        Setup mesh and pytacs object for problem we will be testing.
+        Setup pytacs object for problems we will be testing.
         """
 
         # Overwrite default check values
-        if dtype == complex:
+        if self.dtype == complex:
             self.rtol = 1e-8
             self.atol = 1e-8
             self.dh = 1e-50
@@ -61,26 +61,25 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
         # Set up constitutive objects and elements
         fea_assembler.initialize()
 
-        return fea_assembler
+        # List to hold all problems
+        all_problems = []
 
-    def setup_tacs_vecs(self, fea_assembler, dv_pert_vec, xpts_pert_vec):
-        """
-        Setup user-defined vectors for analysis and fd/cs sensitivity verification
-        """
-        # This problem has no dvs
+        # Create case 1 transient problem
+        problem = fea_assembler.createTransientProblem("constant_force", 0.0, 10.0, 100)
+        timeSteps = problem.getTimeSteps()
+        for step_i, time in enumerate(timeSteps):
+            problem.addLoadToNodes(step_i, 0, f, nastranOrdering=False)
+        all_problems.append(problem)
 
-        # Define perturbation array that moves all nodes on shell
-        xpts = fea_assembler.getOrigNodes()
-        xpts_pert_vec[:] = xpts
+        # Create case 2 transient problem
+        problem = fea_assembler.createTransientProblem("gravity", 0.0, 10.0, 100)
+        g = np.array([0.0, 0.0, 9.81], dtype=TACS.dtype)
+        for step_i, time in enumerate(timeSteps):
+            problem.addInertialLoad(step_i, g)
+        all_problems.append(problem)
 
-        return
-
-    def setup_funcs(self, fea_assembler, problems):
-        """
-        Create a list of functions to be tested and their reference values for the problem
-        """
         # Add Functions
-        for problem in problems:
+        for problem in all_problems:
             problem.addFunction("mass", functions.StructuralMass)
             problem.addFunction(
                 "x_disp",
@@ -100,28 +99,5 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
                 ksWeight=ksweight,
                 direction=[0.0, 0.0, 1.0],
             )
-        func_list = ["mass", "x_disp", "y_disp", "z_disp"]
-        return func_list, FUNC_REFS
 
-    def setup_tacs_problems(self, fea_assembler):
-        """
-        Setup pytacs object for problems we will be testing.
-        """
-        # List to hold all problems
-        allProblems = []
-
-        # Create case 1 transient problem
-        problem = fea_assembler.createTransientProblem("constant_force", 0.0, 10.0, 100)
-        timeSteps = problem.getTimeSteps()
-        for step_i, time in enumerate(timeSteps):
-            problem.addLoadToNodes(step_i, 0, f, nastranOrdering=False)
-        allProblems.append(problem)
-
-        # Create case 2 transient problem
-        problem = fea_assembler.createTransientProblem("gravity", 0.0, 10.0, 100)
-        g = np.array([0.0, 0.0, 9.81], dtype=TACS.dtype)
-        for step_i, time in enumerate(timeSteps):
-            problem.addInertialLoad(step_i, g)
-        allProblems.append(problem)
-
-        return allProblems
+        return all_problems, fea_assembler
