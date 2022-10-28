@@ -57,7 +57,7 @@ The current available function in TACS:</p>
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>assembler</strong> (<a class="reference internal" href="TACS.html#TACS.Assembler" title="TACS.Assembler"><em>Assembler</em></a>) -- TACS Assembler object that will evaluating this function.</p></li>
-<li><p><strong>volume</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.10)"><em>float</em></a><em>, </em><em>optional</em>) -- Normalization factor used in averaging process. Defaults to 1.0.</p></li>
+<li><p><strong>volume</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.11)"><em>float</em></a><em>, </em><em>optional</em>) -- Normalization factor used in averaging process. Defaults to 1.0.</p></li>
 </ul>
 </dd>
 </dl>
@@ -118,10 +118,10 @@ maximum value.</p>
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>assembler</strong> (<a class="reference internal" href="TACS.html#TACS.Assembler" title="TACS.Assembler"><em>Assembler</em></a>) -- TACS Assembler object that will evaluating this function.</p></li>
-<li><p><strong>ksWeight</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.10)"><em>float</em></a><em>, </em><em>optional</em>) -- The ks weight used in the calculation (keyword argument). Defaults to 80.0.</p></li>
+<li><p><strong>ksWeight</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.11)"><em>float</em></a><em>, </em><em>optional</em>) -- The ks weight used in the calculation (keyword argument). Defaults to 80.0.</p></li>
 <li><p><strong>direction</strong> (<em>array-like</em><em>[</em><em>double</em><em>]</em><em>, </em><em>optional</em>) -- 3d vector specifying which direction to project displacements in for KS aggregation (keyword argument).
 Defaults to [0.0, 0.0, 0.0].</p></li>
-<li><p><strong>ftype</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.10)"><em>str</em></a><em>, </em><em>optional</em>) -- The type of KS aggregation to be used (keyword argument).
+<li><p><strong>ftype</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.11)"><em>str</em></a><em>, </em><em>optional</em>) -- The type of KS aggregation to be used (keyword argument).
 Accepted inputs are: 'discrete', 'continuous', 'pnorm-discrete', and 'pnorm-continuous'.
 Case-insensitive, defaults to 'continuous'.</p></li>
 </ul>
@@ -148,9 +148,9 @@ its strength criteria. While values &lt; 1.0 implies all elements are within the
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>assembler</strong> (<a class="reference internal" href="TACS.html#TACS.Assembler" title="TACS.Assembler"><em>Assembler</em></a>) -- TACS Assembler object that will evaluating this function.</p></li>
-<li><p><strong>ksWeight</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.10)"><em>float</em></a><em>, </em><em>optional</em>) -- The ks weight used in the calculation (keyword argument). Defaults to 80.0.</p></li>
-<li><p><strong>safetyFactor</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.10)"><em>float</em></a><em>, </em><em>optional</em>) -- The safety factor to apply to loads before computing the failure (keyword argument). Defaults to 1.0.</p></li>
-<li><p><strong>ftype</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.10)"><em>str</em></a><em>, </em><em>optional</em>) -- The type of KS aggregation to be used (keyword argument).
+<li><p><strong>ksWeight</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.11)"><em>float</em></a><em>, </em><em>optional</em>) -- The ks weight used in the calculation (keyword argument). Defaults to 80.0.</p></li>
+<li><p><strong>safetyFactor</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.11)"><em>float</em></a><em>, </em><em>optional</em>) -- The safety factor to apply to loads before computing the failure (keyword argument). Defaults to 1.0.</p></li>
+<li><p><strong>ftype</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.11)"><em>str</em></a><em>, </em><em>optional</em>) -- The type of KS aggregation to be used (keyword argument).
 Accepted inputs are: 'discrete', 'continuous', 'pnorm-discrete', and 'pnorm-continuous'.
 Case-insensitive, defaults to 'continuous'.</p></li>
 </ul>
@@ -171,8 +171,8 @@ maximum value.</p>
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>assembler</strong> (<a class="reference internal" href="TACS.html#TACS.Assembler" title="TACS.Assembler"><em>Assembler</em></a>) -- TACS Assembler object that will evaluating this function.</p></li>
-<li><p><strong>ksWeight</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.10)"><em>float</em></a><em>, </em><em>optional</em>) -- The ks weight used in the calculation (keyword argument). Defaults to 80.0.</p></li>
-<li><p><strong>ftype</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.10)"><em>str</em></a><em>, </em><em>optional</em>) -- The type of KS aggregation to be used (keyword argument).
+<li><p><strong>ksWeight</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.11)"><em>float</em></a><em>, </em><em>optional</em>) -- The ks weight used in the calculation (keyword argument). Defaults to 80.0.</p></li>
+<li><p><strong>ftype</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.11)"><em>str</em></a><em>, </em><em>optional</em>) -- The type of KS aggregation to be used (keyword argument).
 Accepted inputs are: 'discrete', 'continuous', 'pnorm-discrete', and 'pnorm-continuous'.
 Case-insensitive, defaults to 'continuous'.</p></li>
 </ul>
@@ -218,7 +218,7 @@ may give inconsistent results for transient problems.</p>
 Defaults to [0.0, 0.0, 0.0].</p></li>
 <li><p><strong>direction2</strong> (<em>array-like</em><em>[</em><em>double</em><em>]</em><em>, </em><em>optional</em>) -- 3d vector specifying second direction to project moment of inertia tensor onto (keyword argument).
 Defaults to [0.0, 0.0, 0.0].</p></li>
-<li><p><strong>aboutCM</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.10)"><em>bool</em></a>) -- Flag specifying whether moment of inertia should be taken
+<li><p><strong>aboutCM</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.11)"><em>bool</em></a>) -- Flag specifying whether moment of inertia should be taken
 about origin (False) or center of mass (True) (keyword argument). Defaults to False.</p></li>
 </ul>
 </dd>
