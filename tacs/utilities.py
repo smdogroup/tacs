@@ -122,7 +122,8 @@ class BaseUI:
             if printLevel <= 0:
                 # Don't print out info
                 return
-        except KeyError:
+        except AttributeError:
+            # printLevel option doesn't exist
             pass
 
         if self.comm.rank == 0:
