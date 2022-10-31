@@ -57,5 +57,7 @@ void TACSMassInertialForce::addJacobian(
     TacsScalar gamma, const TacsScalar *Xpts, const TacsScalar *vars,
     const TacsScalar *dvars, const TacsScalar *ddvars, TacsScalar *res,
     TacsScalar *mat) {
-  addResidual(elemIndex, time, Xpts, vars, dvars, ddvars, res);
+  if (res){
+    addResidual(elemIndex, time, Xpts, vars, dvars, ddvars, res);
+  }
 }

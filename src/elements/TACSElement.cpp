@@ -55,7 +55,9 @@ void TACSElement::addJacobian(int elemIndex, double time, TacsScalar alpha,
   int nvars = getNumVariables();
 
   // Call the residual implementation
-  addResidual(elemIndex, time, Xpts, vars, dvars, ddvars, res);
+  if (res) {
+    addResidual(elemIndex, time, Xpts, vars, dvars, ddvars, res);
+  }
 
   // Original and perturbed residual vectors
   TacsScalar *Rtmp1 = new TacsScalar[nvars];

@@ -203,6 +203,8 @@ void TACSCentrifugalForce3D::addJacobian(
     }
 
     // Add the weak form of the residual at this point
-    basis->addWeakResidual(n, pt, volume, J, varsPerNode, DUt, DUx, res);
+    if (res){
+      basis->addWeakResidual(n, pt, volume, J, varsPerNode, DUt, DUx, res);
+    }
   }
 }

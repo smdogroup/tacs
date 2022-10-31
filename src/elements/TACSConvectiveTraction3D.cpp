@@ -156,7 +156,9 @@ void TACSConvectiveTraction3D::addJacobian(
     DUt[3 * fieldIndex] = -alpha * (U[fieldIndex] - refValue);
 
     // Add the weak form of the residual at this point
-    basis->addWeakResidual(n, pt, area, J, varsPerNode, DUt, DUx, res);
+    if (res){
+      basis->addWeakResidual(n, pt, area, J, varsPerNode, DUt, DUx, res);
+    }
 
     // Add the weak form of the residual at this point
     int Jac_nnz = 1;
