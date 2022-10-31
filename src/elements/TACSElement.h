@@ -499,11 +499,7 @@ class TACSElement : public TACSObject {
   */
   virtual void getMatType(ElementMatrixType matType, int elemIndex, double time,
                           const TacsScalar Xpts[], const TacsScalar vars[],
-                          TacsScalar mat[]) {
-    int size = getNumNodes() * getVarsPerNode();
-    memset(mat, 0, size * size * sizeof(TacsScalar));
-  }
-
+                          TacsScalar mat[]);
   /**
     Get array sizes needed for a matrix-free matrix-vector product
 

@@ -331,6 +331,27 @@ void TACSElement::addAdjResXptProduct(
   delete[] tmp;
 }
 
+void TACSElement::getMatType(ElementMatrixType matType, int elemIndex,
+                             double time, const TacsScalar Xpts[],
+                             const TacsScalar vars[], TacsScalar mat[]) {
+  int size = getNumNodes() * getVarsPerNode();
+  memset(mat, 0, size * size * sizeof(TacsScalar));
+  TacsScalar alpha, beta, gamma;
+  alpha = beta = gamma = 0.0;
+  // Set alpha or gamma based on if this is a stiffness or mass matrix
+  if (matType == TACS_STIFFNESS_MATRIX) {
+    alpha = 1.0;
+  } else if (matType == TACS_MASS_MATRIX) {
+    gamma = 1.0;
+  } else {  // TACS_GEOMETRIC_STIFFNESS_MATRIX
+    // Not implemented
+    return;
+  }
+  // Add appropriate Jacobian to matrix
+  addJacobian(elemIndex, time, alpha, beta, gamma, Xpts, vars, vars, vars, NULL,
+              mat);
+}
+
 void TACSElement::addPointQuantityDVSens(
     int elemIndex, int quantityType, double time, TacsScalar scale, int n,
     double pt[], const TacsScalar Xpts[], const TacsScalar vars[],
