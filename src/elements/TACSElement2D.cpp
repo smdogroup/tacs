@@ -203,7 +203,7 @@ void TACSElement2D::addJacobian(int elemIndex, double time, TacsScalar alpha,
                           Ut, Ux, DUt, DUx, Jac);
 
     // Add the contributions to the residual
-    if (res){
+    if (res) {
       basis->addWeakResidual(n, pt, detXd, J, vars_per_node, DUt, DUx, res);
     }
 

@@ -173,7 +173,7 @@ void TACSInertialForce2D::addJacobian(int elemIndex, double time,
     }
 
     // Add the weak form of the residual at this point
-    if (res){
+    if (res) {
       basis->addWeakResidual(n, pt, volume, J, varsPerNode, DUt, DUx, res);
     }
   }

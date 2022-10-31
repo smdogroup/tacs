@@ -97,7 +97,7 @@ void TACSMassElement::addJacobian(int elemIndex, double time, TacsScalar alpha,
     con->evalInertia(elemIndex, pt, Xpts, N, f);
     for (int i = 0; i < NUM_DISPS; i++) {
       J[j + i * NUM_VARIABLES] += gamma * f[i];
-      if (res){
+      if (res) {
         res[i] += ddvars[j] * f[i];
       }
     }
