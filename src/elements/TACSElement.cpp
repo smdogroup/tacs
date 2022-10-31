@@ -352,6 +352,39 @@ void TACSElement::getMatType(ElementMatrixType matType, int elemIndex,
               mat);
 }
 
+void TACSElement::addMatDVSensInnerProduct(
+    ElementMatrixType matType, int elemIndex, double time, TacsScalar scale,
+    const TacsScalar psi[], const TacsScalar phi[], const TacsScalar Xpts[],
+    const TacsScalar vars0[], int dvLen, TacsScalar dfdx[]) {
+  // Short-hand virtual method for getting inner product sens for
+  // stiffness and mass matrix.
+  // Only works for linear elements (i.e. R = M*udd + C*ud + K*u - f)
+  int size = getNumNodes() * getVarsPerNode();
+  const TacsScalar *vars, *dvars, *ddvars;
+  TacsScalar *zeros = new TacsScalar[size];
+  memset(zeros, 0, size * sizeof(TacsScalar));
+  // Zero out residual terms depending on matrix type we need
+  dvars = zeros;
+  if (matType == TACS_STIFFNESS_MATRIX) {
+    vars = phi;
+    ddvars = zeros;
+  } else if (matType == TACS_MASS_MATRIX) {
+    ddvars = phi;
+    vars = zeros;
+  } else {  // TACS_GEOMETRIC_STIFFNESS_MATRIX
+    // Not implemented
+    return;
+  }
+  // Re-use addAdjResProduct code as necessary
+  addAdjResProduct(elemIndex, time, scale, psi, Xpts, vars, dvars, ddvars,
+                   dvLen, dfdx);
+  // This last call is subtracts of the constant portion of the residual (f)
+  addAdjResProduct(elemIndex, time, -scale, psi, Xpts, zeros, zeros, zeros,
+                   dvLen, dfdx);
+
+  delete[] zeros;
+}
+
 void TACSElement::addPointQuantityDVSens(
     int elemIndex, int quantityType, double time, TacsScalar scale, int n,
     double pt[], const TacsScalar Xpts[], const TacsScalar vars[],

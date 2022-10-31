@@ -576,7 +576,7 @@ class TACSElement : public TACSObject {
   virtual void addMatDVSensInnerProduct(
       ElementMatrixType matType, int elemIndex, double time, TacsScalar scale,
       const TacsScalar psi[], const TacsScalar phi[], const TacsScalar Xpts[],
-      const TacsScalar vars[], int dvLen, TacsScalar dfdx[]) {}
+      const TacsScalar vars[], int dvLen, TacsScalar dfdx[]);
 
   /**
     Compute the derivative of the product of a specific matrix w.r.t.
