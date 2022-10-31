@@ -113,9 +113,11 @@ class ModalProblem(TACSProblem):
         # Default setup for common problem class objects
         TACSProblem.__init__(self, assembler, comm, outputViewer, meshLoader)
 
-        # Set time interval parameters
+        # Set time eigenvalue parameters
         self.sigma = sigma
         self.numEigs = numEigs
+
+        self.valName = "eigsm"
 
         # Process the default options which are added to self.options
         # under the 'defaults' key. Make sure the key are lower case
@@ -197,6 +199,19 @@ class ModalProblem(TACSProblem):
         else:
             self._createVariables()
 
+    def setValName(self, valName):
+        """
+        Set a name for the eigenvalues. Only needs
+        to be changed if more than 1 pytacs object is used in an
+        optimization
+
+        Parameters
+        ----------
+        valName : str
+            Name of the eigenvalue output used in evalFunctions().
+        """
+        self.valName = valName
+
     def getNumEigs(self):
         """
         Get the number of eigenvalues requested from solver for this problem.
@@ -216,17 +231,99 @@ class ModalProblem(TACSProblem):
 
     def evalFunctions(self, funcs, evalFuncs=None, ignoreMissing=False):
         """
-        NOT SUPPORTED FOR THIS PROBLEM
+        Evaluate eigenvalues for problem. The functions corresponding to
+        the integers in EVAL_FUNCS are evaluated and updated into
+        the provided dictionary.
+
+        Parameters
+        ----------
+        funcs : dict
+            Dictionary into which the functions are saved.
+        evalFuncs : int or iterable object containing integers
+            corresponding to eigenvalues to return, defaults to None.
+            If None, returns all eigenvalues.
+        ignoreMissing : bool
+            Flag to supress checking for a valid eigenvalue index in evalFuncs.
+            Please use this option with caution.
+
+        Examples
+        --------
+        >>> funcs = {}
+        >>> modalProblem.solve()
+        >>> modalProblem.evalFunctions(funcs, 0)
+        >>> funcs
+        >>> # Result will look like (if ModalProblem has name of 'c1'):
+        >>> # {'c1_eigsm':12354.10}
         """
-        self._TACSWarning("evalFunctions method not supported for this class.")
+        # Check if user specified which eigvals to output
+        # Otherwise, output them all
+        if evalFuncs is None:
+            evalFuncs = np.arange(self.numEigs)
+        else:
+            evalFuncs = np.atleast_1d(evalFuncs)
+
+        if not ignoreMissing:
+            for mode_i in evalFuncs:
+                if mode_i >= self.numEigs:
+                    raise self._TACSError(
+                        f"Supplied modal index '{mode_i}' exceeds maximum number of eigenvalues for problem."
+                    )
+
+        eigVals = np.zeros_like(evalFuncs, dtype=self.dtype)
+        for j, mode_i in enumerate(evalFuncs):
+            if mode_i < self.numEigs:
+                eigVals[j], _ = self.getVariables(mode_i)
+
+        key = f"{self.name}_{self.valName}"
+
+        funcs[key] = eigVals
 
     def evalFunctionsSens(self, funcsSens, evalFuncs=None):
         """
-        NOT SUPPORTED FOR THIS PROBLEM
-        """
-        self._TACSWarning("evalFunctionsSens method not supported for this class.")
+        This is the main routine for returning useful (sensitivity)
+        information from problem. The derivatives of the functions
+        corresponding to the strings in EVAL_FUNCS are evaluated and
+        updated into the provided dictionary. The derivitives with
+        respect to all design variables and node locations are computed.
 
-    ####### Transient solver methods ########
+        Parameters
+        ----------
+        funcsSens : dict
+            Dictionary into which the derivatives are saved.
+        evalFuncs : iterable object containing strings
+            The functions the user wants returned
+
+        Examples
+        --------
+        >>> funcsSens = {}
+        >>> modalProblem.evalFunctionsSens(funcsSens, 0)
+        >>> funcsSens
+        >>> # Result will look like (if StaticProblem has name of 'c1'):
+        >>> # {'c1_eigsm':{'struct':[1.234, ..., 7.89], 'Xpts':[3.14, ..., 1.59]}}
+        """
+        self._updateAssemblerVars()
+
+        # Check if user specified which eigvals to output
+        # Otherwise, output them all
+        if evalFuncs is None:
+            evalFuncs = np.arange(self.numEigs)
+        else:
+            evalFuncs = np.atleast_1d(evalFuncs)
+
+        key = f"{self.name}_{self.valName}"
+        # Number of eigenvalues requested by user
+        nEigs = len(evalFuncs)
+        ndvs = self.getNumDesignVars()
+        funcsSens[key] = {}
+        funcsSens[key][self.varName] = np.zeros([nEigs, ndvs], dtype=self.dtype)
+
+        dvSens = self.assembler.createDesignVec()
+        for j, mode_i in enumerate(evalFuncs):
+            if mode_i < self.numEigs:
+                self.freqSolver.evalEigenDVSens(mode_i, dvSens)
+                funcsSens[key][self.varName][j][:] = dvSens.getArray()
+
+    ####### Modal solver methods ########
 
     def _updateAssemblerVars(self):
         """
