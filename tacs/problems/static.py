@@ -812,7 +812,7 @@ class StaticProblem(TACSProblem):
         --------
         >>> funcsSens = {}
         >>> staticProblem.evalFunctionsSens(funcsSens, ['mass'])
-        >>> funcs
+        >>> funcsSens
         >>> # Result will look like (if StaticProblem has name of 'c1'):
         >>> # {'c1_mass':{'struct':[1.234, ..., 7.89], 'Xpts':[3.14, ..., 1.59]}}
         """
