@@ -621,10 +621,7 @@ class TACSElement : public TACSObject {
   virtual void getMatSVSensInnerProduct(
       ElementMatrixType matType, int elemIndex, double time,
       const TacsScalar psi[], const TacsScalar phi[], const TacsScalar Xpts[],
-      const TacsScalar vars[], TacsScalar dfdu[]) {
-    int size = getNumNodes() * getVarsPerNode();
-    memset(dfdu, 0, size * sizeof(TacsScalar));
-  }
+      const TacsScalar vars[], TacsScalar dfdu[]);
 
   /**
     Evaluate a point-wise quantity of interest.
