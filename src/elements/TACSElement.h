@@ -578,25 +578,24 @@ class TACSElement : public TACSObject {
       const TacsScalar psi[], const TacsScalar phi[], const TacsScalar Xpts[],
       const TacsScalar vars[], int dvLen, TacsScalar dfdx[]);
 
+  /**
+   Add the derivative of the product of a specific matrix w.r.t.
+   the nodal coordinates
 
-   /**
-    Add the derivative of the product of a specific matrix w.r.t.
-    the nodal coordinates
+   dvSens += scale*d(psi^{T}*(mat)*phi)/d(X)
 
-    dvSens += scale*d(psi^{T}*(mat)*phi)/d(X)
+   where mat is computed via the getMatType().
 
-    where mat is computed via the getMatType().
-
-    @param matType The type of element matrix to compute
-    @param elemIndex The local element index
-    @param time The simulation time
-    @param scale The scalar value that multiplies the derivative
-    @param psi The left-hand vector
-    @param phi The right-hand vector
-    @param Xpts The element node locations
-    @param vars The values of element degrees of freedom
-    @param dfdXpts The element derivative
-  */
+   @param matType The type of element matrix to compute
+   @param elemIndex The local element index
+   @param time The simulation time
+   @param scale The scalar value that multiplies the derivative
+   @param psi The left-hand vector
+   @param phi The right-hand vector
+   @param Xpts The element node locations
+   @param vars The values of element degrees of freedom
+   @param dfdXpts The element derivative
+ */
   virtual void addMatXptSensInnerProduct(
       ElementMatrixType matType, int elemIndex, double time, TacsScalar scale,
       const TacsScalar psi[], const TacsScalar phi[], const TacsScalar Xpts[],

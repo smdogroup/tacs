@@ -5172,8 +5172,8 @@ void TACSAssembler::addMatXptSensInnerProduct(TacsScalar scale,
     memset(xptSens, 0, TACS_SPATIAL_DIM * len * sizeof(TacsScalar));
 
     // Add the contribution to the design variable vector
-    elements[i]->addMatXptSensInnerProduct(matType, i, time, scale, elemPsi,
-                                            elemPhi, elemXpts, elemVars, xptSens);
+    elements[i]->addMatXptSensInnerProduct(
+        matType, i, time, scale, elemPsi, elemPhi, elemXpts, elemVars, xptSens);
 
     dfdXpt->setValues(len, nodes, xptSens, TACS_ADD_VALUES);
   }

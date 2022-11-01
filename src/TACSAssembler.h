@@ -274,7 +274,8 @@ class TACSAssembler : public TACSObject {
   void addMatDVSensInnerProduct(TacsScalar scale, ElementMatrixType matType,
                                 TACSBVec *psi, TACSBVec *phi, TACSBVec *dfdx);
   void addMatXptSensInnerProduct(TacsScalar scale, ElementMatrixType matType,
-                                 TACSBVec *psi, TACSBVec *phi, TACSBVec *dfdXpts);
+                                 TACSBVec *psi, TACSBVec *phi,
+                                 TACSBVec *dfdXpts);
   void evalMatSVSensInnerProduct(ElementMatrixType matType, TACSBVec *psi,
                                  TACSBVec *phi, TACSBVec *res);
 

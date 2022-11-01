@@ -409,9 +409,11 @@ void TACSElement::addMatXptSensInnerProduct(
     return;
   }
   // Re-use addAdjResProduct code as necessary
-  addAdjResXptProduct(elemIndex, time, scale, psi, Xpts, vars, dvars, ddvars, dfdX);
+  addAdjResXptProduct(elemIndex, time, scale, psi, Xpts, vars, dvars, ddvars,
+                      dfdX);
   // This last call is subtracts of the constant portion of the residual (f)
-  addAdjResXptProduct(elemIndex, time, -scale, psi, Xpts, zeros, zeros, zeros, dfdX);
+  addAdjResXptProduct(elemIndex, time, -scale, psi, Xpts, zeros, zeros, zeros,
+                      dfdX);
 
   delete[] zeros;
 }
