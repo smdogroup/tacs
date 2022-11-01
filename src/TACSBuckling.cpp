@@ -737,7 +737,7 @@ TacsScalar TACSFrequencyAnalysis::checkOrthogonality() {
 }
 
 /*!
-  Compute the derivative of the eignevalues w.r.t. the design variables
+  Compute the derivative of the eigenvalues w.r.t. the design variables
 
   The original eigenvalue problem is,
 
@@ -781,6 +781,53 @@ void TACSFrequencyAnalysis::evalEigenDVSens(int n, TACSBVec *dfdx) {
   dfdx->beginSetValues(TACS_ADD_VALUES);
   dfdx->endSetValues(TACS_ADD_VALUES);
   dfdx->scale(scale);
+}
+
+/*!
+  Compute the derivative of the eigenvalues w.r.t. the nodal coordinates
+
+  The original eigenvalue problem is,
+
+  K*u = lambda*M*u
+
+  The derivative of the eigenvalue problem is given as follows,
+
+  dK/dx*u + K*du/dx =
+  d(lambda)/dx*M*u + lambda*dM/dx*u + lambda*M*du/dx
+
+  Since M = M^{T} and K = K^{T}, pre-multiplying by u^{T} gives,
+
+  u^{T}*dK/dx*u = d(lambda)/dx*(u^{T}*M*u) + lambda*u^{T}*dM/dx*u
+
+  Rearranging gives,
+
+  (u^{T}*M*u)*d(lambda)/dx = u^{T}*(dK/dx - lambda*dM/dx)*u
+*/
+void TACSFrequencyAnalysis::evalEigenXptSens(int n, TACSBVec *dfdXpt) {
+  // Zero the derivative
+  dfdXpt->zeroEntries();
+
+  // Extract the eigenvalue and eigenvector
+  TacsScalar error;
+  TacsScalar eig = extractEigenvector(n, eigvec, &error);
+
+  // Evaluate the partial derivative for the stiffness matrix
+  assembler->addMatXptSensInnerProduct(1.0, TACS_STIFFNESS_MATRIX, eigvec,
+                                       eigvec, dfdXpt);
+
+  // Evaluate the derivative of the geometric stiffness matrix
+  assembler->addMatXptSensInnerProduct(-TacsRealPart(eig), TACS_MASS_MATRIX,
+                                       eigvec, eigvec, dfdXpt);
+
+  // Finish computing the derivative
+  if (mmat) {
+    mmat->mult(eigvec, res);
+  }
+  TacsScalar scale = 1.0 / res->dot(eigvec);
+
+  dfdXpt->beginSetValues(TACS_ADD_VALUES);
+  dfdXpt->endSetValues(TACS_ADD_VALUES);
+  dfdXpt->scale(scale);
 }
 
 /*!

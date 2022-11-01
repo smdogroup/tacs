@@ -5121,6 +5121,65 @@ void TACSAssembler::addMatDVSensInnerProduct(TacsScalar scale,
 }
 
 /**
+  Evaluate the derivative of an inner product of two vectors with a
+  matrix of a given type. This code does not explicitly evaluate the
+  element matrices. Instead, the inner product contribution from each
+  element matrix is added to the final result. This implementation
+  saves considerable computational time and memory.
+
+  @param scale Scalar factor applied to the result
+  @param matType The type of matrix
+  @param psi The left-multiplying vector
+  @param phi The right-multiplying vector
+  @param dfdXpt The derivative vector
+*/
+void TACSAssembler::addMatXptSensInnerProduct(TacsScalar scale,
+                                              ElementMatrixType matType,
+                                              TACSBVec *psi, TACSBVec *phi,
+                                              TACSBVec *dfdXpt) {
+  psi->beginDistributeValues();
+  if (phi != psi) {
+    phi->beginDistributeValues();
+  }
+  psi->endDistributeValues();
+  if (phi != psi) {
+    phi->endDistributeValues();
+  }
+
+  // Retrieve pointers to temporary storage
+  TacsScalar *elemVars, *elemPsi, *elemPhi, *elemXpts, *xptSens;
+  getDataPointers(elementData, &elemVars, &elemPsi, &elemPhi, NULL, &elemXpts,
+                  &xptSens, NULL, NULL);
+
+  // Get the design variables from the elements on this process
+  const int maxDVs = maxElementDesignVars;
+  TacsScalar *fdvSens = elementSensData;
+  int *dvNums = elementSensIData;
+
+  // Go through each element in the domain and compute the derivative
+  // of the residuals with respect to each design variable and multiply by
+  // the adjoint variables
+  for (int i = 0; i < numElements; i++) {
+    // Find the variables and nodes
+    int ptr = elementNodeIndex[i];
+    int len = elementNodeIndex[i + 1] - ptr;
+    const int *nodes = &elementTacsNodes[ptr];
+    xptVec->getValues(len, nodes, elemXpts);
+    varsVec->getValues(len, nodes, elemVars);
+    psi->getValues(len, nodes, elemPsi);
+    phi->getValues(len, nodes, elemPhi);
+
+    memset(xptSens, 0, TACS_SPATIAL_DIM * len * sizeof(TacsScalar));
+
+    // Add the contribution to the design variable vector
+    elements[i]->addMatXptSensInnerProduct(matType, i, time, scale, elemPsi,
+                                            elemPhi, elemXpts, elemVars, xptSens);
+
+    dfdXpt->setValues(len, nodes, xptSens, TACS_ADD_VALUES);
+  }
+}
+
+/**
   Evaluate the derivative of the inner product of two vectors with a
   matrix with respect to the state variables. This is only defined for
   nonlinear matrices, like the geometric stiffness matrix.  Instead of
