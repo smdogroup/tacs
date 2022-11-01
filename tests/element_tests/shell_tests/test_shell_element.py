@@ -82,6 +82,7 @@ class ElementTest(unittest.TestCase):
 
         # The thermal elements will not pass the residual test since they are not derived
         # from Lagrange's equations due to the presence of the thermal coupling equations.
+        # They also fail the mat_sv_sens test, so we skip them there as well
         self.thermal_elements = [
             elements.Tri3ThermalShell,
             elements.Quad4ThermalShell,
@@ -93,18 +94,6 @@ class ElementTest(unittest.TestCase):
             elements.Tri3NonlinearThermalShell,
         ]
 
-        # The nonlinear elements will not pass the matsens tests since we don't have
-        # support for nonlinear elements in eigenvalue analysis yet.
-        self.nonlinear_elements = [
-            elements.Quad4NonlinearShell,
-            elements.Quad9NonlinearShell,
-            elements.Quad16NonlinearShell,
-            elements.Tri3NonlinearShell,
-            elements.Quad4NonlinearThermalShell,
-            elements.Quad9NonlinearThermalShell,
-            elements.Quad16NonlinearThermalShell,
-            elements.Tri3NonlinearThermalShell,
-        ]
         # Create stiffness (need class)
         self.con = constitutive.IsoShellConstitutive(self.props, t=1.0, tNum=0)
 
@@ -220,25 +209,24 @@ class ElementTest(unittest.TestCase):
             with self.subTest(transform=transform):
                 for element_handle in self.elements:
                     with self.subTest(element=element_handle):
-                        if not (element_handle in self.nonlinear_elements):
-                            element = element_handle(transform, self.con)
-                            dvs = element.getDesignVars(self.elem_index)
-                            for matrix_type in self.matrix_types:
-                                with self.subTest(matrix_type=matrix_type):
-                                    fail = elements.TestElementMatDVSens(
-                                        element,
-                                        matrix_type,
-                                        self.elem_index,
-                                        self.time,
-                                        self.xpts,
-                                        self.vars,
-                                        dvs,
-                                        self.dh,
-                                        self.print_level,
-                                        self.atol,
-                                        self.rtol,
-                                    )
-                                    self.assertFalse(fail)
+                        element = element_handle(transform, self.con)
+                        dvs = element.getDesignVars(self.elem_index)
+                        for matrix_type in self.matrix_types:
+                            with self.subTest(matrix_type=matrix_type):
+                                fail = elements.TestElementMatDVSens(
+                                    element,
+                                    matrix_type,
+                                    self.elem_index,
+                                    self.time,
+                                    self.xpts,
+                                    self.vars,
+                                    dvs,
+                                    self.dh,
+                                    self.print_level,
+                                    self.atol,
+                                    self.rtol,
+                                )
+                                self.assertFalse(fail)
 
     def test_element_mat_sv_sens(self):
         # Loop through every combination of model and basis class and test element matrix inner product sens
@@ -246,18 +234,20 @@ class ElementTest(unittest.TestCase):
             with self.subTest(transform=transform):
                 for element_handle in self.elements:
                     with self.subTest(element=element_handle):
-                        if not (element_handle in self.nonlinear_elements):
+                        if element_handle not in self.thermal_elements:
                             element = element_handle(transform, self.con)
-                            fail = elements.TestElementMatSVSens(
-                                element,
-                                TACS.GEOMETRIC_STIFFNESS_MATRIX,
-                                self.elem_index,
-                                self.time,
-                                self.xpts,
-                                self.vars,
-                                self.dh,
-                                self.print_level,
-                                self.atol,
-                                self.rtol,
-                            )
-                            self.assertFalse(fail)
+                            for matrix_type in self.matrix_types:
+                                with self.subTest(matrix_type=matrix_type):
+                                    fail = elements.TestElementMatSVSens(
+                                        element,
+                                        matrix_type,
+                                        self.elem_index,
+                                        self.time,
+                                        self.xpts,
+                                        self.vars,
+                                        self.dh,
+                                        self.print_level,
+                                        self.atol,
+                                        self.rtol,
+                                    )
+                                    self.assertFalse(fail)
