@@ -61,6 +61,8 @@ cdef extern from "TACSElementVerification.h":
                                 double)
     int TacsTestElementMatDVSens(TACSElement*, ElementMatrixType, int, double, const TacsScalar*, const TacsScalar*,
                                  int, const TacsScalar*, double, int, double, double)
+    int TacsTestElementMatXptSens(TACSElement*, ElementMatrixType, int, double, const TacsScalar*, const TacsScalar*,
+                                  double, int, double, double)
     int TacsTestElementMatSVSens(TACSElement*, ElementMatrixType, int, double, const TacsScalar*, const TacsScalar*,
                                  double, int, double, double)
     int TacsSeedRandomGenerator(int)

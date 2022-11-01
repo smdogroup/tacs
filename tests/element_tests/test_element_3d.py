@@ -197,6 +197,34 @@ class ElementTest(unittest.TestCase):
                                 )
                                 self.assertFalse(fail)
 
+    def test_element_mat_xpt_sens(self):
+        # Loop through every combination of model and basis class and element matrix inner product sens
+        for model in self.models:
+            with self.subTest(model=model):
+                for basis in self.bases:
+                    with self.subTest(basis=basis):
+                        element = elements.Element3D(model, basis)
+                        for matrix_type in self.matrix_types:
+                            with self.subTest(matrix_type=matrix_type):
+                                if self.print_level > 0:
+                                    print(
+                                        "Testing with model %s with basis functions %s and matrix type %s\n"
+                                        % (type(model), type(basis), type(matrix_type))
+                                    )
+                                fail = elements.TestElementMatXptSens(
+                                    element,
+                                    matrix_type,
+                                    self.elem_index,
+                                    self.time,
+                                    self.xpts,
+                                    self.vars,
+                                    self.dh,
+                                    self.print_level,
+                                    self.atol,
+                                    self.rtol,
+                                )
+                                self.assertFalse(fail)
+
     def test_element_mat_sv_sens(self):
         # Loop through every combination of model and basis class and test element matrix inner product sens
         for model in self.models:
@@ -204,21 +232,23 @@ class ElementTest(unittest.TestCase):
                 for basis in self.bases:
                     with self.subTest(basis=basis):
                         element = elements.Element3D(model, basis)
-                        if self.print_level > 0:
-                            print(
-                                "Testing with model %s with basis functions %s and matrix type GEOMETRIC_STIFFNESS\n"
-                                % (type(model), type(basis))
-                            )
-                        fail = elements.TestElementMatSVSens(
-                            element,
-                            TACS.GEOMETRIC_STIFFNESS_MATRIX,
-                            self.elem_index,
-                            self.time,
-                            self.xpts,
-                            self.vars,
-                            self.dh,
-                            self.print_level,
-                            self.atol,
-                            self.rtol,
-                        )
-                        self.assertFalse(fail)
+                        for matrix_type in self.matrix_types:
+                            with self.subTest(matrix_type=matrix_type):
+                                if self.print_level > 0:
+                                    print(
+                                        "Testing with model %s with basis functions %s and matrix type %s\n"
+                                        % (type(model), type(basis), type(matrix_type))
+                                    )
+                                fail = elements.TestElementMatSVSens(
+                                    element,
+                                    matrix_type,
+                                    self.elem_index,
+                                    self.time,
+                                    self.xpts,
+                                    self.vars,
+                                    self.dh,
+                                    self.print_level,
+                                    self.atol,
+                                    self.rtol,
+                                )
+                                self.assertFalse(fail)
