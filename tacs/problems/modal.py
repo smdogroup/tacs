@@ -118,6 +118,7 @@ class ModalProblem(TACSProblem):
         self.numEigs = numEigs
 
         self.valName = "eigsm"
+        self._initializeFunctionList()
 
         # Process the default options which are added to self.options
         # under the 'defaults' key. Make sure the key are lower case
@@ -172,6 +173,15 @@ class ModalProblem(TACSProblem):
             eig_tol=eigTol,
         )
 
+    def _initializeFunctionList(self):
+        """
+        Create FunctionList dict which maps eigenvalue strings
+        to mode indices used in evalFunctions method.
+        """
+        self.functionList = {}
+        for mode_i in range(self.numEigs):
+            self.functionList[f"{self.valName}.{mode_i}"] = mode_i
+
     def setOption(self, name, value):
         """
         Set a solver option value. The name is not case sensitive.
@@ -211,6 +221,7 @@ class ModalProblem(TACSProblem):
             Name of the eigenvalue output used in evalFunctions().
         """
         self.valName = valName
+        self._initializeFunctionList()
 
     def getNumEigs(self):
         """
@@ -258,25 +269,19 @@ class ModalProblem(TACSProblem):
         # Check if user specified which eigvals to output
         # Otherwise, output them all
         if evalFuncs is None:
-            evalFuncs = np.arange(self.numEigs)
+            evalFuncs = self.functionList
         else:
-            evalFuncs = np.atleast_1d(evalFuncs)
+            userFuncs = sorted(list(evalFuncs))
+            evalFuncs = {}
+            for func in userFuncs:
+                if func in self.functionList:
+                    evalFuncs[func] = self.functionList[func]
 
-        if not ignoreMissing:
-            for mode_i in evalFuncs:
-                if mode_i >= self.numEigs:
-                    raise self._TACSError(
-                        f"Supplied modal index '{mode_i}' exceeds maximum number of eigenvalues for problem."
-                    )
-
-        eigVals = np.zeros_like(evalFuncs, dtype=self.dtype)
         # Loop through each requested eigenvalue
-        for j, mode_i in enumerate(evalFuncs):
-            if mode_i < self.numEigs:
-                eigVals[j], _ = self.getVariables(mode_i)
-
-        key = f"{self.name}_{self.valName}"
-        funcs[key] = eigVals
+        for funcName in evalFuncs:
+            mode_i = evalFuncs[funcName]
+            key = f"{self.name}_{funcName}"
+            funcs[key], _ = self.getVariables(mode_i)
 
     def evalFunctionsSens(self, funcsSens, evalFuncs=None):
         """
@@ -306,32 +311,28 @@ class ModalProblem(TACSProblem):
         # Check if user specified which eigvals to output
         # Otherwise, output them all
         if evalFuncs is None:
-            evalFuncs = np.arange(self.numEigs)
+            evalFuncs = self.functionList
         else:
-            evalFuncs = np.atleast_1d(evalFuncs)
+            userFuncs = sorted(list(evalFuncs))
+            evalFuncs = {}
+            for func in userFuncs:
+                if func in self.functionList:
+                    evalFuncs[func] = self.functionList[func]
 
-        key = f"{self.name}_{self.valName}"
-        # Number of eigenvalues requested by user
-        nEigs = len(evalFuncs)
-        funcsSens[key] = {}
-
-        ndvs = self.getNumDesignVars()
-        funcsSens[key][self.varName] = np.zeros([nEigs, ndvs], dtype=self.dtype)
         dvSens = self.assembler.createDesignVec()
-
-        nnodes = self.getNumOwnedNodes()
-        funcsSens[key][self.coordName] = np.zeros([nEigs, 3 * nnodes], dtype=self.dtype)
         xptSens = self.assembler.createNodeVec()
 
         # Loop through each requested eigenvalue
-        for j, mode_i in enumerate(evalFuncs):
-            if mode_i < self.numEigs:
-                # Evaluate dv sens
-                self.freqSolver.evalEigenDVSens(mode_i, dvSens)
-                funcsSens[key][self.varName][j][:] = dvSens.getArray()
-                # Evaluate nodal sens
-                self.freqSolver.evalEigenXptSens(mode_i, xptSens)
-                funcsSens[key][self.coordName][j][:] = xptSens.getArray()
+        for funcName in evalFuncs:
+            mode_i = evalFuncs[funcName]
+            key = f"{self.name}_{funcName}"
+            funcsSens[key] = {}
+            # Evaluate dv sens
+            self.freqSolver.evalEigenDVSens(mode_i, dvSens)
+            funcsSens[key][self.varName] = dvSens.getArray().copy()
+            # Evaluate nodal sens
+            self.freqSolver.evalEigenXptSens(mode_i, xptSens)
+            funcsSens[key][self.coordName] = xptSens.getArray().copy()
 
     ####### Modal solver methods ########
 
