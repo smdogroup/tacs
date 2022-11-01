@@ -362,7 +362,10 @@ class ModalProblem(TACSProblem):
         initSolveTime = time.time()
 
         # Solve the frequency analysis problem
-        self.freqSolver.solve(print_level=self.getOption("printLevel"))
+        self.freqSolver.solve(
+            print_flag=self.getOption("printLevel"),
+            print_level=self.getOption("printLevel"),
+        )
 
         solveTime = time.time()
 
