@@ -1547,7 +1547,7 @@ class pyTACS(BaseUI):
 
             if numFoundElements != numElements:
                 raise self._TACSError(
-                    f"Inconsistent number of element objects \
+                    f"Unexpected number of element objects \
                     returned from user-supplied elemCallBack function. \
                     {numElements} element types ({repr(self.elemDescripts[i])}) are contained in Component {i}, \
                     but {numFoundElements} element objects were returned by elemCallback."
