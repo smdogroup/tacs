@@ -1540,19 +1540,17 @@ class pyTACS(BaseUI):
                     else:
                         self._TACSError(
                             f"Object of type {type(object)} returned in elemCallBack function "
-                            "is not a valid TACS element object. The \
+                            f"is not a valid TACS element object. The \
                                string representation of the offending object is: \
                                '{repr(object)}'"
                         )
 
             if numFoundElements != numElements:
                 raise self._TACSError(
-                    "Could not find all required element objects in the "
-                    "return arguments from user-supplied "
-                    "elemCallBack function. {} element types ({}) are contained in Component {}, "
-                    "but only {} were returned by elemCallback.".format(
-                        numElements, repr(self.elemDescripts[i]), i, numFoundElements
-                    )
+                    f"Inconsistent number of element objects \
+                    returned from user-supplied elemCallBack function. \
+                    {numElements} element types ({repr(self.elemDescripts[i])}) are contained in Component {i}, \
+                    but {numFoundElements} element objects were returned by elemCallback."
                 )
 
             # Now determine the number of design variables. This is
