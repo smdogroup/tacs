@@ -117,6 +117,7 @@ class ModalProblem(TACSProblem):
         self.sigma = sigma
         self.numEigs = numEigs
 
+        # String name used in evalFunctions
         self.valName = "eigsm"
         self._initializeFunctionList()
 
@@ -250,21 +251,20 @@ class ModalProblem(TACSProblem):
         ----------
         funcs : dict
             Dictionary into which the functions are saved.
-        evalFuncs : int or iterable object containing integers
-            corresponding to eigenvalues to return, defaults to None.
-            If None, returns all eigenvalues.
+        evalFuncs : iterable object containing strings.
+            If not none, use these functions to evaluate.
         ignoreMissing : bool
-            Flag to supress checking for a valid eigenvalue index in evalFuncs.
-            Please use this option with caution.
+            Flag to supress checking for a valid function. Please use
+            this option with caution.
 
         Examples
         --------
         >>> funcs = {}
         >>> modalProblem.solve()
-        >>> modalProblem.evalFunctions(funcs, 0)
+        >>> modalProblem.evalFunctions(funcs, 'eigsm.0')
         >>> funcs
         >>> # Result will look like (if ModalProblem has name of 'c1'):
-        >>> # {'c1_eigsm':12354.10}
+        >>> # {'c1_eigsm.0':12354.10}
         """
         # Check if user specified which eigvals to output
         # Otherwise, output them all
@@ -276,6 +276,14 @@ class ModalProblem(TACSProblem):
             for func in userFuncs:
                 if func in self.functionList:
                     evalFuncs[func] = self.functionList[func]
+
+        if not ignoreMissing:
+            for f in evalFuncs:
+                if f not in self.functionList:
+                    raise self._TACSError(
+                        f"Supplied function '{f}' has not been added "
+                        "using addFunction()."
+                    )
 
         # Loop through each requested eigenvalue
         for funcName in evalFuncs:
@@ -301,10 +309,10 @@ class ModalProblem(TACSProblem):
         Examples
         --------
         >>> funcsSens = {}
-        >>> modalProblem.evalFunctionsSens(funcsSens, 0)
+        >>> modalProblem.evalFunctionsSens(funcsSens, 'eigsm.0')
         >>> funcsSens
-        >>> # Result will look like (if StaticProblem has name of 'c1'):
-        >>> # {'c1_eigsm':{'struct':[1.234, ..., 7.89], 'Xpts':[3.14, ..., 1.59]}}
+        >>> # Result will look like (if ModalProblem has name of 'c1'):
+        >>> # {'c1_eigsm.0':{'struct':[1.234, ..., 7.89], 'Xpts':[3.14, ..., 1.59]}}
         """
         self._updateAssemblerVars()
 
