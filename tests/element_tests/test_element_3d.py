@@ -197,6 +197,10 @@ class ElementTest(unittest.TestCase):
                                 )
                                 self.assertFalse(fail)
 
+    @unittest.skipIf(
+        TACS.dtype == complex,
+        "Skipping complex test due to expense, will still verify in real mode.",
+    )
     def test_element_mat_xpt_sens(self):
         # Loop through every combination of model and basis class and element matrix inner product sens
         for model in self.models:
