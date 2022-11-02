@@ -1528,7 +1528,7 @@ class pyTACS(BaseUI):
             else:
                 elemObjects = result
 
-            if isinstance(elemObjects, tacs.TACS.Element) and numElements == 1:
+            if isinstance(elemObjects, tacs.TACS.Element):
                 # There was only one element, recast it as a list and continue
                 elemObjects = [elemObjects]
                 numFoundElements += 1
