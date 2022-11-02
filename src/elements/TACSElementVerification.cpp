@@ -918,7 +918,7 @@ int TacsTestElementMatXptSens(TACSElement *element, ElementMatrixType elemType,
   int nnodes = element->getNumNodes();
 
   TacsScalar *result = new TacsScalar[3 * nnodes];
-  TacsScalar *pert = new TacsScalar[3 * nnodes];  // perturbation for vars
+  TacsScalar *pert = new TacsScalar[3 * nnodes];  // perturbation for nodes
   TacsScalar *Xp = new TacsScalar[3 * nnodes];
   TacsScalar *mat = new TacsScalar[nvars * nvars];
 
@@ -931,8 +931,8 @@ int TacsTestElementMatXptSens(TACSElement *element, ElementMatrixType elemType,
   double scale = 1.0 * rand() / RAND_MAX;
 
   // Compute the element matrix
-  element->addMatXptSensInnerProduct(elemType, elemIndex, time, scale, psi, phi, Xpts,
-                                    vars, result);
+  element->addMatXptSensInnerProduct(elemType, elemIndex, time, scale, psi, phi,
+                                     Xpts, vars, result);
 
   // Perturb the nodes in the forward sense
   TacsForwardDiffPerturb(Xp, 3 * nnodes, Xpts, pert, dh);
