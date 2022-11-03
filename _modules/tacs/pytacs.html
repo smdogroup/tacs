@@ -1569,7 +1569,7 @@
             <span class="k">else</span><span class="p">:</span>
                 <span class="n">elemObjects</span> <span class="o">=</span> <span class="n">result</span>
 
-            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">elemObjects</span><span class="p">,</span> <span class="n">tacs</span><span class="o">.</span><span class="n">TACS</span><span class="o">.</span><span class="n">Element</span><span class="p">)</span> <span class="ow">and</span> <span class="n">numElements</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">elemObjects</span><span class="p">,</span> <span class="n">tacs</span><span class="o">.</span><span class="n">TACS</span><span class="o">.</span><span class="n">Element</span><span class="p">):</span>
                 <span class="c1"># There was only one element, recast it as a list and continue</span>
                 <span class="n">elemObjects</span> <span class="o">=</span> <span class="p">[</span><span class="n">elemObjects</span><span class="p">]</span>
                 <span class="n">numFoundElements</span> <span class="o">+=</span> <span class="mi">1</span>
@@ -1581,19 +1581,17 @@
                     <span class="k">else</span><span class="p">:</span>
                         <span class="bp">self</span><span class="o">.</span><span class="n">_TACSError</span><span class="p">(</span>
                             <span class="sa">f</span><span class="s2">&quot;Object of type </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="nb">object</span><span class="p">)</span><span class="si">}</span><span class="s2"> returned in elemCallBack function &quot;</span>
-                            <span class="s2">&quot;is not a valid TACS element object. The </span><span class="se">\</span>
+                            <span class="sa">f</span><span class="s2">&quot;is not a valid TACS element object. The </span><span class="se">\</span>
 <span class="s2">                               string representation of the offending object is: </span><span class="se">\</span>
-<span class="s2">                               &#39;{repr(object)}&#39;&quot;</span>
+<span class="s2">                               &#39;</span><span class="si">{</span><span class="nb">repr</span><span class="p">(</span><span class="nb">object</span><span class="p">)</span><span class="si">}</span><span class="s2">&#39;&quot;</span>
                         <span class="p">)</span>
 
             <span class="k">if</span> <span class="n">numFoundElements</span> <span class="o">!=</span> <span class="n">numElements</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TACSError</span><span class="p">(</span>
-                    <span class="s2">&quot;Could not find all required element objects in the &quot;</span>
-                    <span class="s2">&quot;return arguments from user-supplied &quot;</span>
-                    <span class="s2">&quot;elemCallBack function. </span><span class="si">{}</span><span class="s2"> element types (</span><span class="si">{}</span><span class="s2">) are contained in Component </span><span class="si">{}</span><span class="s2">, &quot;</span>
-                    <span class="s2">&quot;but only </span><span class="si">{}</span><span class="s2"> were returned by elemCallback.&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
-                        <span class="n">numElements</span><span class="p">,</span> <span class="nb">repr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">elemDescripts</span><span class="p">[</span><span class="n">i</span><span class="p">]),</span> <span class="n">i</span><span class="p">,</span> <span class="n">numFoundElements</span>
-                    <span class="p">)</span>
+                    <span class="sa">f</span><span class="s2">&quot;Unexpected number of element objects </span><span class="se">\</span>
+<span class="s2">                    returned from user-supplied elemCallBack function. </span><span class="se">\</span>
+<span class="s2">                    </span><span class="si">{</span><span class="n">numElements</span><span class="si">}</span><span class="s2"> element types (</span><span class="si">{</span><span class="nb">repr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">elemDescripts</span><span class="p">[</span><span class="n">i</span><span class="p">])</span><span class="si">}</span><span class="s2">) are contained in Component </span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">, </span><span class="se">\</span>
+<span class="s2">                    but </span><span class="si">{</span><span class="n">numFoundElements</span><span class="si">}</span><span class="s2"> element objects were returned by elemCallback.&quot;</span>
                 <span class="p">)</span>
 
             <span class="c1"># Now determine the number of design variables. This is</span>
@@ -1625,10 +1623,10 @@
                     <span class="k">raise</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TACSError</span><span class="p">(</span>
                         <span class="s2">&quot;Inconsistent design variables detected. &quot;</span>
                         <span class="s2">&quot;The added design variables are not continuous.&quot;</span>
-                        <span class="sa">f</span><span class="s2">&quot; The added design varibales are </span><span class="si">{</span><span class="nb">repr</span><span class="p">(</span><span class="n">newVars</span><span class="p">)</span><span class="si">}</span><span class="s2">.&quot;</span>
+                        <span class="sa">f</span><span class="s2">&quot; The added design variables are </span><span class="si">{</span><span class="nb">repr</span><span class="p">(</span><span class="n">newVars</span><span class="p">)</span><span class="si">}</span><span class="s2">.&quot;</span>
                     <span class="p">)</span>
 
-            <span class="c1"># Finally increment the dvcounter</span>
+            <span class="c1"># Finally increment the dv counter</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">dvNum</span> <span class="o">+=</span> <span class="nb">len</span><span class="p">(</span><span class="n">newVars</span><span class="p">)</span>
 
             <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">newVars</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
@@ -1660,9 +1658,9 @@
                     <span class="bp">self</span><span class="o">.</span><span class="n">varsPerNode</span> <span class="o">=</span> <span class="n">elemVarsPerNode</span>
                 <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">varsPerNode</span> <span class="o">!=</span> <span class="n">elemVarsPerNode</span><span class="p">:</span>
                     <span class="k">raise</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TACSError</span><span class="p">(</span>
-                        <span class="s2">&quot;Model references elements with differing numbers of variables per node (</span><span class="si">%d</span><span class="s2"> and </span><span class="si">%d</span><span class="s2">). &quot;</span>
+                        <span class="s2">&quot;Model references elements with differing numbers of variables per node &quot;</span>
+                        <span class="sa">f</span><span class="s2">&quot;(</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">varsPerNode</span><span class="si">}</span><span class="s2"> and </span><span class="si">{</span><span class="n">elemVarsPerNode</span><span class="si">}</span><span class="s2">). &quot;</span>
                         <span class="s2">&quot;All elements must use same number of variables to be compatible.&quot;</span>
-                        <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">varsPerNode</span><span class="p">,</span> <span class="n">elemVarsPerNode</span><span class="p">)</span>
                     <span class="p">)</span>
 
         <span class="c1"># If varsPerNode still hasn&#39;t been set (because there were no elements added in the callback)</span>
