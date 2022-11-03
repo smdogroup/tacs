@@ -1582,10 +1582,10 @@ class pyTACS(BaseUI):
                     raise self._TACSError(
                         "Inconsistent design variables detected. "
                         "The added design variables are not continuous."
-                        f" The added design varibales are {repr(newVars)}."
+                        f" The added design variables are {repr(newVars)}."
                     )
 
-            # Finally increment the dvcounter
+            # Finally increment the dv counter
             self.dvNum += len(newVars)
 
             if len(newVars) > 0:
@@ -1617,9 +1617,9 @@ class pyTACS(BaseUI):
                     self.varsPerNode = elemVarsPerNode
                 elif self.varsPerNode != elemVarsPerNode:
                     raise self._TACSError(
-                        "Model references elements with differing numbers of variables per node (%d and %d). "
+                        "Model references elements with differing numbers of variables per node "
+                        f"({self.varsPerNode} and {elemVarsPerNode}). "
                         "All elements must use same number of variables to be compatible."
-                        % (self.varsPerNode, elemVarsPerNode)
                     )
 
         # If varsPerNode still hasn't been set (because there were no elements added in the callback)
