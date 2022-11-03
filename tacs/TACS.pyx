@@ -1971,7 +1971,7 @@ cdef class Assembler:
         self.ptr.evalEnergies(&Te, &Pe)
         return Te, Pe
 
-    def assembleRes(self, Vec residual):
+    def assembleRes(self, Vec residual, TacsScalar loadScale=1.0):
         """
         Assemble the residual associated with the input load case.
 
@@ -1983,7 +1983,7 @@ cdef class Assembler:
 
         rhs:        the residual output
         """
-        self.ptr.assembleRes(residual.ptr)
+        self.ptr.assembleRes(residual.ptr, loadScale)
         return
 
     def assembleJacobian(self, double alpha, double beta, double gamma,
@@ -3574,9 +3574,9 @@ cdef class DIRKIntegrator(Integrator):
 
 cdef class ESDIRKIntegrator(Integrator):
     """
-    Explicit first-stage, Singly Diagonally-Implicit-Runge-Kutta integration 
+    Explicit first-stage, Singly Diagonally-Implicit-Runge-Kutta integration
     class. This supports up to fifth-order accuracy in time and domain. Four-
-    stage ESDIRK is third-order accurate, six-stage ESDIRK is fourth-order 
+    stage ESDIRK is third-order accurate, six-stage ESDIRK is fourth-order
     accurate, and eight-stage ESDIRK is fifth-order accurate.
     """
     def __cinit__(self, Assembler tacs,

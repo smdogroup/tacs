@@ -485,7 +485,7 @@ cdef extern from "TACSAssembler.h":
         void getInitConditions(TACSBVec*, TACSBVec*, TACSBVec*)
         void setInitConditions(TACSBVec*, TACSBVec*, TACSBVec*)
         void evalEnergies(TacsScalar*, TacsScalar*)
-        void assembleRes(TACSBVec *residual)
+        void assembleRes(TACSBVec *residual, TacsScalar loadScale)
         void assembleJacobian(double alpha, double beta, double gamma,
                               TACSBVec *residual, TACSMat *A,
                               MatrixOrientation matOr)
@@ -770,7 +770,7 @@ cdef extern from "TACSIntegrator.h":
                            int stages)
 
         int iterateStage(int k, int s, TACSBVec *forces)
-        double getStageStates( int step, int stage, 
+        double getStageStates( int step, int stage,
 		      TACSBVec **qS, TACSBVec **qdotS, TACSBVec **qddotS)
 
     # ESDIRK Implementation of the integrator
@@ -781,7 +781,7 @@ cdef extern from "TACSIntegrator.h":
                              int stages)
 
         int iterateStage(int k, int s, TACSBVec *forces)
-        double getStageStates( int step, int stage, 
+        double getStageStates( int step, int stage,
 		      TACSBVec **qS, TACSBVec **qdotS, TACSBVec **qddotS)
 
     # ABM Implementation of the integrator
