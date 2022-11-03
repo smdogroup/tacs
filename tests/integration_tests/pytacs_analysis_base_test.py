@@ -97,12 +97,13 @@ class PyTACSTestCase:
                     for func_name in func_list:
                         with self.subTest(function=func_name):
                             func_key = prob.name + "_" + func_name
-                            np.testing.assert_allclose(
-                                funcs[func_key],
-                                self.FUNC_REFS[func_key],
-                                rtol=self.rtol,
-                                atol=self.atol,
-                            )
+                            if func_key in self.FUNC_REFS:
+                                np.testing.assert_allclose(
+                                    funcs[func_key],
+                                    self.FUNC_REFS[func_key],
+                                    rtol=self.rtol,
+                                    atol=self.atol,
+                                )
 
         def test_total_dv_sensitivities(self):
             """
@@ -126,20 +127,23 @@ class PyTACSTestCase:
                     for func_name in func_list:
                         with self.subTest(function=func_name):
                             func_key = prob.name + "_" + func_name
-                            # project exact sens
-                            dfddv_proj = func_sens[func_key]["struct"].dot(self.dv_pert)
-                            # Get contribution across all procs
-                            dfddv_proj = self.comm.allreduce(dfddv_proj, op=MPI.SUM)
-                            # Compute approximate sens
-                            fdv_sens_approx = self.compute_fdcs_approx(
-                                funcs_pert[func_key], funcs[func_key]
-                            )
-                            np.testing.assert_allclose(
-                                dfddv_proj,
-                                fdv_sens_approx,
-                                rtol=self.rtol,
-                                atol=self.atol,
-                            )
+                            if func_key in self.FUNC_REFS:
+                                # project exact sens
+                                dfddv_proj = func_sens[func_key]["struct"].dot(
+                                    self.dv_pert
+                                )
+                                # Get contribution across all procs
+                                dfddv_proj = self.comm.allreduce(dfddv_proj, op=MPI.SUM)
+                                # Compute approximate sens
+                                fdv_sens_approx = self.compute_fdcs_approx(
+                                    funcs_pert[func_key], funcs[func_key]
+                                )
+                                np.testing.assert_allclose(
+                                    dfddv_proj,
+                                    fdv_sens_approx,
+                                    rtol=self.rtol,
+                                    atol=self.atol,
+                                )
 
         def test_total_xpt_sensitivities(self):
             """
@@ -163,20 +167,23 @@ class PyTACSTestCase:
                     for func_name in func_list:
                         with self.subTest(function=func_name):
                             func_key = prob.name + "_" + func_name
-                            # project exact sens
-                            dfdx_proj = func_sens[func_key]["Xpts"].dot(self.xpts_pert)
-                            # Get contribution across all procs
-                            dfdx_proj = self.comm.allreduce(dfdx_proj, op=MPI.SUM)
-                            # Compute approximate sens
-                            f_xpt_sens_approx = self.compute_fdcs_approx(
-                                funcs_pert[func_key], funcs[func_key]
-                            )
-                            np.testing.assert_allclose(
-                                dfdx_proj,
-                                f_xpt_sens_approx,
-                                rtol=self.rtol,
-                                atol=self.atol,
-                            )
+                            if func_key in self.FUNC_REFS:
+                                # project exact sens
+                                dfdx_proj = func_sens[func_key]["Xpts"].dot(
+                                    self.xpts_pert
+                                )
+                                # Get contribution across all procs
+                                dfdx_proj = self.comm.allreduce(dfdx_proj, op=MPI.SUM)
+                                # Compute approximate sens
+                                f_xpt_sens_approx = self.compute_fdcs_approx(
+                                    funcs_pert[func_key], funcs[func_key]
+                                )
+                                np.testing.assert_allclose(
+                                    dfdx_proj,
+                                    f_xpt_sens_approx,
+                                    rtol=self.rtol,
+                                    atol=self.atol,
+                                )
 
         def run_solve(self, dv=None, xpts=None):
             """

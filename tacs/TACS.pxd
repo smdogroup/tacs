@@ -613,6 +613,8 @@ cdef extern from "TACSBuckling.h":
         void solve(KSMPrint*, int)
         TacsScalar extractEigenvalue(int, TacsScalar*)
         TacsScalar extractEigenvector(int, TACSBVec*, TacsScalar*)
+        void evalEigenDVSens(int, TACSBVec*)
+        void evalEigenXptSens(int, TACSBVec *)
 
     cdef cppclass TACSLinearBuckling(TACSObject):
         TACSLinearBuckling( TACSAssembler *,
