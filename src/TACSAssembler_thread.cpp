@@ -52,6 +52,7 @@ void *TACSAssembler::assembleRes_thread(void *t) {
   // Un-pack information for this computation
   TACSAssembler *assembler = pinfo->assembler;
   TACSBVec *res = pinfo->res;
+  TacsScalar lambda = pinfo->lambda;
 
   // Allocate a temporary array large enough to store everything required
   int s = assembler->maxElementSize;
@@ -101,11 +102,27 @@ void *TACSAssembler::assembleRes_thread(void *t) {
         aux_count++;
       }
 
-      // Add the residual from the auxiliary elements
-      while (aux_count < naux && aux[aux_count].num == elemIndex) {
-        aux[aux_count].elem->addResidual(elemIndex, assembler->time, elemXpts,
-                                         vars, dvars, ddvars, elemRes);
-        aux_count++;
+      // Add the residual from any auxiliary elements, if the load factor is 1
+      // they can be added straight to the elemRes, otherwise they need to be
+      // scaled first
+      if (lambda == 1.0) {
+        while (aux_count < naux && aux[aux_count].num == elemIndex) {
+          aux[aux_count].elem->addResidual(elemIndex, assembler->time, elemXpts,
+                                           vars, dvars, ddvars, elemRes);
+          aux_count++;
+        }
+      } else {
+        TacsScalar *auxElemRes = new TacsScalar[s];
+        memset(auxElemRes, 0, s * sizeof(TacsScalar));
+        while (aux_count < naux && aux[aux_count].num == elemIndex) {
+          aux[aux_count].elem->addResidual(elemIndex, assembler->time, elemXpts,
+                                           vars, dvars, ddvars, auxElemRes);
+          aux_count++;
+        }
+        for (int jj = 0; jj < s; jj++) {
+          elemRes[jj] += lambda * auxElemRes[jj];
+        }
+        delete[] auxElemRes;
       }
 
       // Add the values to the residual when the memory unlocks

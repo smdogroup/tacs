@@ -216,6 +216,9 @@ class StaticProblem(TACSProblem):
         # Linear solver factor flag
         self._factorOnNext = True
 
+        # Load scaling factor
+        self.loadScale = 1.0
+
     def setOption(self, name, value):
         """
         Set a solver option value. The name is not case sensitive.
@@ -632,7 +635,7 @@ class StaticProblem(TACSProblem):
         initSolveTime = time.time()
 
         # Get current residual
-        self.getResidual(self.res, Fext)
+        self.getResidual(Fext=Fext)
 
         # Get rhs vector
         self.K.mult(self.u, self.rhs)
@@ -1156,32 +1159,27 @@ class StaticProblem(TACSProblem):
                 # Copy values to numpy array
                 xptSensArray[:] = xptSensBVec.getArray()
 
-    def getResidual(self, res, Fext=None):
+    def getResidual(self, res=None, Fext=None):
         """
         This routine is used to evaluate directly the structural
         residual. Only typically used with aerostructural analysis.
 
         Parameters
         ----------
-        res : TACS BVec or numpy array
-            If res is not None, place the residuals into this array.
+        res : TACS BVec or numpy array, optional
+            If res is not None, place the residuals into this array. by default None, in which case the residual is stored in ``self.res``
 
-        Fext : TACS BVec or numpy array
+        Fext : TACS BVec or numpy array, optional
             Distributed array containing additional loads (ex. aerodynamic forces for aerostructural coupling)
             to applied to RHS of the static problem.
 
         """
         # Make sure assembler variables are up to date
         self._updateAssemblerVars()
-        # Assemble residual
-        self.assembler.assembleRes(self.res)
-        # Add the -F
-        self.res.axpy(-1.0, self.F)
 
-        # Compute the RHS
-        self.assembler.assembleRes(self.res)
-        # Add force terms from rhs
+        # Sum the forces from the loads not handled by TACS
         self.rhs.copyValues(self.F)  # Fixed loads
+
         # Add external loads, if specified
         if Fext is not None:
             if isinstance(Fext, tacs.TACS.Vec):
@@ -1189,16 +1187,20 @@ class StaticProblem(TACSProblem):
             elif isinstance(Fext, np.ndarray):
                 rhsArray = self.rhs.getArray()
                 rhsArray[:] = rhsArray[:] + Fext[:]
-        # Zero out bc terms in rhs
-        self.assembler.applyBCs(self.rhs)
-        # Add the -F
-        self.res.axpy(-1.0, self.rhs)
 
-        # Output residual
-        if isinstance(res, tacs.TACS.Vec):
-            res.copyValues(self.res)
-        else:
-            res[:] = self.res.getArray()
+        # Zero out forces on DOF that are subject to BCs
+        self.assembler.applyBCs(self.rhs)
+
+        # Assemble the TACS residual and subtract the externally handled loads
+        self.assembler.assembleRes(self.res, self.loadScale)
+        self.res.axpy(-self.loadScale, self.rhs)
+
+        # If requested, copy the residual to the output array
+        if res is not None:
+            if isinstance(res, tacs.TACS.Vec):
+                res.copyValues(self.res)
+            else:
+                res[:] = self.res.getArray()
 
     def addTransposeJacVecProduct(self, phi, prod, scale=1.0):
         """

@@ -4126,7 +4126,7 @@ void TACSAssembler::evalEnergies(TacsScalar *Te, TacsScalar *Pe) {
 
   @param residual The residual vector
 */
-void TACSAssembler::assembleRes(TACSBVec *residual) {
+void TACSAssembler::assembleRes(TACSBVec *residual, const TacsScalar lambda) {
   // Sort the list of auxiliary elements - this only performs the
   // sort if it is required (if new elements are added)
   if (auxElements) {
@@ -4140,6 +4140,7 @@ void TACSAssembler::assembleRes(TACSBVec *residual) {
     // Set the number of completed elements to zero
     numCompletedElements = 0;
     tacsPInfo->assembler = this;
+    tacsPInfo->lambda = lambda;
 
     // Create the joinable attribute
     pthread_attr_t attr;
@@ -4186,11 +4187,27 @@ void TACSAssembler::assembleRes(TACSBVec *residual) {
       memset(elemRes, 0, nvars * sizeof(TacsScalar));
       elements[i]->addResidual(i, time, elemXpts, vars, dvars, ddvars, elemRes);
 
-      // Add the residual from any auxiliary elements
-      while (aux_count < naux && aux[aux_count].num == i) {
-        aux[aux_count].elem->addResidual(i, time, elemXpts, vars, dvars, ddvars,
-                                         elemRes);
-        aux_count++;
+      // Add the residual from any auxiliary elements, if the load factor is 1
+      // they can be added straight to the elemRes, otherwise they need to be
+      // scaled first
+      if (lambda == 1.0) {
+        while (aux_count < naux && aux[aux_count].num == i) {
+          aux[aux_count].elem->addResidual(i, time, elemXpts, vars, dvars,
+                                           ddvars, elemRes);
+          aux_count++;
+        }
+      } else {
+        TacsScalar *auxElemRes = new TacsScalar[nvars];
+        memset(auxElemRes, 0, nvars * sizeof(TacsScalar));
+        while (aux_count < naux && aux[aux_count].num == i) {
+          aux[aux_count].elem->addResidual(i, time, elemXpts, vars, dvars,
+                                           ddvars, auxElemRes);
+          aux_count++;
+        }
+        for (int jj = 0; jj < nvars; jj++) {
+          elemRes[jj] += lambda * auxElemRes[jj];
+        }
+        delete[] auxElemRes;
       }
 
       // Add the residual values

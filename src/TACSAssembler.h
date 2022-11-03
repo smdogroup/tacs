@@ -214,7 +214,7 @@ class TACSAssembler : public TACSObject {
 
   // Residual and Jacobian assembly
   // ------------------------------
-  void assembleRes(TACSBVec *residual);
+  void assembleRes(TACSBVec *residual, const TacsScalar lambda = 1.0);
   void assembleJacobian(TacsScalar alpha, TacsScalar beta, TacsScalar gamma,
                         TACSBVec *residual, TACSMat *A,
                         MatrixOrientation matOr = TACS_MAT_NORMAL);
@@ -446,6 +446,7 @@ class TACSAssembler : public TACSObject {
       res = NULL;
       mat = NULL;
       alpha = beta = gamma = 0.0;
+      lambda = 1.0;
       matType = TACS_STIFFNESS_MATRIX;
       matOr = TACS_MAT_NORMAL;
       coef = 0.0;
@@ -468,7 +469,7 @@ class TACSAssembler : public TACSObject {
 
     // Information for matrix assembly
     TACSMat *mat;
-    TacsScalar alpha, beta, gamma;
+    TacsScalar alpha, beta, gamma, lambda;
     ElementMatrixType matType;
     MatrixOrientation matOr;
 
@@ -485,7 +486,7 @@ class TACSAssembler : public TACSObject {
     // Information for adjoint-dR/dx products
     int numAdjoints;
     TACSBVec **adjoints;
-  } * tacsPInfo;
+  } *tacsPInfo;
 
   // The pthread data required to pthread tacs operations
   int numCompletedElements;     // Keep track of how much work has been done
