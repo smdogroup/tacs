@@ -481,7 +481,7 @@ respect to all design variables and node locations are computed.</p>
 <p class="rubric">Examples</p>
 <div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">funcsSens</span> <span class="o">=</span> <span class="p">{}</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">staticProblem</span><span class="o">.</span><span class="n">evalFunctionsSens</span><span class="p">(</span><span class="n">funcsSens</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;mass&#39;</span><span class="p">])</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">funcs</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">funcsSens</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="c1"># Result will look like (if StaticProblem has name of &#39;c1&#39;):</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="c1"># {&#39;c1_mass&#39;:{&#39;struct&#39;:[1.234, ..., 7.89], &#39;Xpts&#39;:[3.14, ..., 1.59]}}</span>
 </pre></div>

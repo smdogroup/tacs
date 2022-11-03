@@ -129,6 +129,19 @@ Use pyTACS.createModalProblem instead.</p>
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="tacs.problems.ModalProblem.setValName">
+<span class="sig-name descname"><span class="pre">setValName</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">valName</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/problems/modal.html#ModalProblem.setValName"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.problems.ModalProblem.setValName" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set a name for the eigenvalues. Only needs
+to be changed if more than 1 pytacs object is used in an
+optimization</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>valName</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.11)"><em>str</em></a>) -- Name of the eigenvalue output used in evalFunctions().</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="tacs.problems.ModalProblem.getNumEigs">
 <span class="sig-name descname"><span class="pre">getNumEigs</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/problems/modal.html#ModalProblem.getNumEigs"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.problems.ModalProblem.getNumEigs" title="Permalink to this definition">¶</a></dt>
 <dd><p>Get the number of eigenvalues requested from solver for this problem.</p>
@@ -151,13 +164,54 @@ Use pyTACS.createModalProblem instead.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="tacs.problems.ModalProblem.evalFunctions">
 <span class="sig-name descname"><span class="pre">evalFunctions</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">funcs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">evalFuncs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ignoreMissing</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/problems/modal.html#ModalProblem.evalFunctions"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.problems.ModalProblem.evalFunctions" title="Permalink to this definition">¶</a></dt>
-<dd><p>NOT SUPPORTED FOR THIS PROBLEM</p>
+<dd><p>Evaluate eigenvalues for problem. The functions corresponding to
+the integers in EVAL_FUNCS are evaluated and updated into
+the provided dictionary.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>funcs</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.11)"><em>dict</em></a>) -- Dictionary into which the functions are saved.</p></li>
+<li><p><strong>evalFuncs</strong> (<em>iterable object containing strings.</em>) -- If not none, use these functions to evaluate.</p></li>
+<li><p><strong>ignoreMissing</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.11)"><em>bool</em></a>) -- Flag to supress checking for a valid function. Please use
+this option with caution.</p></li>
+</ul>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">funcs</span> <span class="o">=</span> <span class="p">{}</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">modalProblem</span><span class="o">.</span><span class="n">solve</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">modalProblem</span><span class="o">.</span><span class="n">evalFunctions</span><span class="p">(</span><span class="n">funcs</span><span class="p">,</span> <span class="s1">&#39;eigsm.0&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">funcs</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># Result will look like (if ModalProblem has name of &#39;c1&#39;):</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># {&#39;c1_eigsm.0&#39;:12354.10}</span>
+</pre></div>
+</div>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tacs.problems.ModalProblem.evalFunctionsSens">
 <span class="sig-name descname"><span class="pre">evalFunctionsSens</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">funcsSens</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">evalFuncs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/problems/modal.html#ModalProblem.evalFunctionsSens"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.problems.ModalProblem.evalFunctionsSens" title="Permalink to this definition">¶</a></dt>
-<dd><p>NOT SUPPORTED FOR THIS PROBLEM</p>
+<dd><p>This is the main routine for returning useful (sensitivity)
+information from problem. The derivatives of the functions
+corresponding to the strings in EVAL_FUNCS are evaluated and
+updated into the provided dictionary. The derivitives with
+respect to all design variables and node locations are computed.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>funcsSens</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.11)"><em>dict</em></a>) -- Dictionary into which the derivatives are saved.</p></li>
+<li><p><strong>evalFuncs</strong> (<em>iterable object containing strings</em>) -- The functions the user wants returned</p></li>
+</ul>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">funcsSens</span> <span class="o">=</span> <span class="p">{}</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">modalProblem</span><span class="o">.</span><span class="n">evalFunctionsSens</span><span class="p">(</span><span class="n">funcsSens</span><span class="p">,</span> <span class="s1">&#39;eigsm.0&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">funcsSens</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># Result will look like (if ModalProblem has name of &#39;c1&#39;):</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># {&#39;c1_eigsm.0&#39;:{&#39;struct&#39;:[1.234, ..., 7.89], &#39;Xpts&#39;:[3.14, ..., 1.59]}}</span>
+</pre></div>
+</div>
 </dd></dl>
 
 <dl class="py method">
@@ -375,6 +429,7 @@ optimization</p>
 <li><a class="reference internal" href="#api-reference">API Reference</a><ul>
 <li><a class="reference internal" href="#tacs.problems.ModalProblem"><code class="docutils literal notranslate"><span class="pre">ModalProblem</span></code></a><ul>
 <li><a class="reference internal" href="#tacs.problems.ModalProblem.setOption"><code class="docutils literal notranslate"><span class="pre">ModalProblem.setOption()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.problems.ModalProblem.setValName"><code class="docutils literal notranslate"><span class="pre">ModalProblem.setValName()</span></code></a></li>
 <li><a class="reference internal" href="#tacs.problems.ModalProblem.getNumEigs"><code class="docutils literal notranslate"><span class="pre">ModalProblem.getNumEigs()</span></code></a></li>
 <li><a class="reference internal" href="#tacs.problems.ModalProblem.addFunction"><code class="docutils literal notranslate"><span class="pre">ModalProblem.addFunction()</span></code></a></li>
 <li><a class="reference internal" href="#tacs.problems.ModalProblem.evalFunctions"><code class="docutils literal notranslate"><span class="pre">ModalProblem.evalFunctions()</span></code></a></li>

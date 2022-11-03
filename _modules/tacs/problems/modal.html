@@ -154,9 +154,13 @@
         <span class="c1"># Default setup for common problem class objects</span>
         <span class="n">TACSProblem</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">assembler</span><span class="p">,</span> <span class="n">comm</span><span class="p">,</span> <span class="n">outputViewer</span><span class="p">,</span> <span class="n">meshLoader</span><span class="p">)</span>
 
-        <span class="c1"># Set time interval parameters</span>
+        <span class="c1"># Set time eigenvalue parameters</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">sigma</span> <span class="o">=</span> <span class="n">sigma</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">numEigs</span> <span class="o">=</span> <span class="n">numEigs</span>
+
+        <span class="c1"># String name used in evalFunctions</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">valName</span> <span class="o">=</span> <span class="s2">&quot;eigsm&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_initializeFunctionList</span><span class="p">()</span>
 
         <span class="c1"># Process the default options which are added to self.options</span>
         <span class="c1"># under the &#39;defaults&#39; key. Make sure the key are lower case</span>
@@ -211,6 +215,15 @@
             <span class="n">eig_tol</span><span class="o">=</span><span class="n">eigTol</span><span class="p">,</span>
         <span class="p">)</span>
 
+    <span class="k">def</span> <span class="nf">_initializeFunctionList</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Create FunctionList dict which maps eigenvalue strings</span>
+<span class="sd">        to mode indices used in evalFunctions method.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">functionList</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">mode_i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">numEigs</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">functionList</span><span class="p">[</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">valName</span><span class="si">}</span><span class="s2">.</span><span class="si">{</span><span class="n">mode_i</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">mode_i</span>
+
 <div class="viewcode-block" id="ModalProblem.setOption"><a class="viewcode-back" href="../../../pytacs/modal.html#tacs.problems.ModalProblem.setOption">[docs]</a>    <span class="k">def</span> <span class="nf">setOption</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Set a solver option value. The name is not case sensitive.</span>
@@ -238,6 +251,20 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_createVariables</span><span class="p">()</span></div>
 
+<div class="viewcode-block" id="ModalProblem.setValName"><a class="viewcode-back" href="../../../pytacs/modal.html#tacs.problems.ModalProblem.setValName">[docs]</a>    <span class="k">def</span> <span class="nf">setValName</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">valName</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Set a name for the eigenvalues. Only needs</span>
+<span class="sd">        to be changed if more than 1 pytacs object is used in an</span>
+<span class="sd">        optimization</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        valName : str</span>
+<span class="sd">            Name of the eigenvalue output used in evalFunctions().</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">valName</span> <span class="o">=</span> <span class="n">valName</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_initializeFunctionList</span><span class="p">()</span></div>
+
 <div class="viewcode-block" id="ModalProblem.getNumEigs"><a class="viewcode-back" href="../../../pytacs/modal.html#tacs.problems.ModalProblem.getNumEigs">[docs]</a>    <span class="k">def</span> <span class="nf">getNumEigs</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get the number of eigenvalues requested from solver for this problem.</span>
@@ -257,17 +284,106 @@
 
 <div class="viewcode-block" id="ModalProblem.evalFunctions"><a class="viewcode-back" href="../../../pytacs/modal.html#tacs.problems.ModalProblem.evalFunctions">[docs]</a>    <span class="k">def</span> <span class="nf">evalFunctions</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">funcs</span><span class="p">,</span> <span class="n">evalFuncs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ignoreMissing</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        NOT SUPPORTED FOR THIS PROBLEM</span>
+<span class="sd">        Evaluate eigenvalues for problem. The functions corresponding to</span>
+<span class="sd">        the integers in EVAL_FUNCS are evaluated and updated into</span>
+<span class="sd">        the provided dictionary.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        funcs : dict</span>
+<span class="sd">            Dictionary into which the functions are saved.</span>
+<span class="sd">        evalFuncs : iterable object containing strings.</span>
+<span class="sd">            If not none, use these functions to evaluate.</span>
+<span class="sd">        ignoreMissing : bool</span>
+<span class="sd">            Flag to supress checking for a valid function. Please use</span>
+<span class="sd">            this option with caution.</span>
+
+<span class="sd">        Examples</span>
+<span class="sd">        --------</span>
+<span class="sd">        &gt;&gt;&gt; funcs = {}</span>
+<span class="sd">        &gt;&gt;&gt; modalProblem.solve()</span>
+<span class="sd">        &gt;&gt;&gt; modalProblem.evalFunctions(funcs, &#39;eigsm.0&#39;)</span>
+<span class="sd">        &gt;&gt;&gt; funcs</span>
+<span class="sd">        &gt;&gt;&gt; # Result will look like (if ModalProblem has name of &#39;c1&#39;):</span>
+<span class="sd">        &gt;&gt;&gt; # {&#39;c1_eigsm.0&#39;:12354.10}</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_TACSWarning</span><span class="p">(</span><span class="s2">&quot;evalFunctions method not supported for this class.&quot;</span><span class="p">)</span></div>
+        <span class="c1"># Check if user specified which eigvals to output</span>
+        <span class="c1"># Otherwise, output them all</span>
+        <span class="k">if</span> <span class="n">evalFuncs</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">evalFuncs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">functionList</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">userFuncs</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">evalFuncs</span><span class="p">))</span>
+            <span class="n">evalFuncs</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="k">for</span> <span class="n">func</span> <span class="ow">in</span> <span class="n">userFuncs</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">func</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">functionList</span><span class="p">:</span>
+                    <span class="n">evalFuncs</span><span class="p">[</span><span class="n">func</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">functionList</span><span class="p">[</span><span class="n">func</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">ignoreMissing</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">evalFuncs</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">f</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">functionList</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TACSError</span><span class="p">(</span>
+                        <span class="sa">f</span><span class="s2">&quot;Supplied function &#39;</span><span class="si">{</span><span class="n">f</span><span class="si">}</span><span class="s2">&#39; has not been added &quot;</span>
+                        <span class="s2">&quot;using addFunction().&quot;</span>
+                    <span class="p">)</span>
+
+        <span class="c1"># Loop through each requested eigenvalue</span>
+        <span class="k">for</span> <span class="n">funcName</span> <span class="ow">in</span> <span class="n">evalFuncs</span><span class="p">:</span>
+            <span class="n">mode_i</span> <span class="o">=</span> <span class="n">evalFuncs</span><span class="p">[</span><span class="n">funcName</span><span class="p">]</span>
+            <span class="n">key</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">funcName</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="n">funcs</span><span class="p">[</span><span class="n">key</span><span class="p">],</span> <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getVariables</span><span class="p">(</span><span class="n">mode_i</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="ModalProblem.evalFunctionsSens"><a class="viewcode-back" href="../../../pytacs/modal.html#tacs.problems.ModalProblem.evalFunctionsSens">[docs]</a>    <span class="k">def</span> <span class="nf">evalFunctionsSens</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">funcsSens</span><span class="p">,</span> <span class="n">evalFuncs</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        NOT SUPPORTED FOR THIS PROBLEM</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_TACSWarning</span><span class="p">(</span><span class="s2">&quot;evalFunctionsSens method not supported for this class.&quot;</span><span class="p">)</span></div>
+<span class="sd">        This is the main routine for returning useful (sensitivity)</span>
+<span class="sd">        information from problem. The derivatives of the functions</span>
+<span class="sd">        corresponding to the strings in EVAL_FUNCS are evaluated and</span>
+<span class="sd">        updated into the provided dictionary. The derivitives with</span>
+<span class="sd">        respect to all design variables and node locations are computed.</span>
 
-    <span class="c1">####### Transient solver methods ########</span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        funcsSens : dict</span>
+<span class="sd">            Dictionary into which the derivatives are saved.</span>
+<span class="sd">        evalFuncs : iterable object containing strings</span>
+<span class="sd">            The functions the user wants returned</span>
+
+<span class="sd">        Examples</span>
+<span class="sd">        --------</span>
+<span class="sd">        &gt;&gt;&gt; funcsSens = {}</span>
+<span class="sd">        &gt;&gt;&gt; modalProblem.evalFunctionsSens(funcsSens, &#39;eigsm.0&#39;)</span>
+<span class="sd">        &gt;&gt;&gt; funcsSens</span>
+<span class="sd">        &gt;&gt;&gt; # Result will look like (if ModalProblem has name of &#39;c1&#39;):</span>
+<span class="sd">        &gt;&gt;&gt; # {&#39;c1_eigsm.0&#39;:{&#39;struct&#39;:[1.234, ..., 7.89], &#39;Xpts&#39;:[3.14, ..., 1.59]}}</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_updateAssemblerVars</span><span class="p">()</span>
+
+        <span class="c1"># Check if user specified which eigvals to output</span>
+        <span class="c1"># Otherwise, output them all</span>
+        <span class="k">if</span> <span class="n">evalFuncs</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">evalFuncs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">functionList</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">userFuncs</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">evalFuncs</span><span class="p">))</span>
+            <span class="n">evalFuncs</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="k">for</span> <span class="n">func</span> <span class="ow">in</span> <span class="n">userFuncs</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">func</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">functionList</span><span class="p">:</span>
+                    <span class="n">evalFuncs</span><span class="p">[</span><span class="n">func</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">functionList</span><span class="p">[</span><span class="n">func</span><span class="p">]</span>
+
+        <span class="n">dvSens</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">assembler</span><span class="o">.</span><span class="n">createDesignVec</span><span class="p">()</span>
+        <span class="n">xptSens</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">assembler</span><span class="o">.</span><span class="n">createNodeVec</span><span class="p">()</span>
+
+        <span class="c1"># Loop through each requested eigenvalue</span>
+        <span class="k">for</span> <span class="n">funcName</span> <span class="ow">in</span> <span class="n">evalFuncs</span><span class="p">:</span>
+            <span class="n">mode_i</span> <span class="o">=</span> <span class="n">evalFuncs</span><span class="p">[</span><span class="n">funcName</span><span class="p">]</span>
+            <span class="n">key</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">funcName</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="n">funcsSens</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="c1"># Evaluate dv sens</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">freqSolver</span><span class="o">.</span><span class="n">evalEigenDVSens</span><span class="p">(</span><span class="n">mode_i</span><span class="p">,</span> <span class="n">dvSens</span><span class="p">)</span>
+            <span class="n">funcsSens</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="bp">self</span><span class="o">.</span><span class="n">varName</span><span class="p">]</span> <span class="o">=</span> <span class="n">dvSens</span><span class="o">.</span><span class="n">getArray</span><span class="p">()</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+            <span class="c1"># Evaluate nodal sens</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">freqSolver</span><span class="o">.</span><span class="n">evalEigenXptSens</span><span class="p">(</span><span class="n">mode_i</span><span class="p">,</span> <span class="n">xptSens</span><span class="p">)</span>
+            <span class="n">funcsSens</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="bp">self</span><span class="o">.</span><span class="n">coordName</span><span class="p">]</span> <span class="o">=</span> <span class="n">xptSens</span><span class="o">.</span><span class="n">getArray</span><span class="p">()</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span></div>
+
+    <span class="c1">####### Modal solver methods ########</span>
 
     <span class="k">def</span> <span class="nf">_updateAssemblerVars</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
@@ -295,7 +411,10 @@
         <span class="n">initSolveTime</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
 
         <span class="c1"># Solve the frequency analysis problem</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">freqSolver</span><span class="o">.</span><span class="n">solve</span><span class="p">(</span><span class="n">print_level</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s2">&quot;printLevel&quot;</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">freqSolver</span><span class="o">.</span><span class="n">solve</span><span class="p">(</span>
+            <span class="n">print_flag</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s2">&quot;printLevel&quot;</span><span class="p">),</span>
+            <span class="n">print_level</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s2">&quot;printLevel&quot;</span><span class="p">),</span>
+        <span class="p">)</span>
 
         <span class="n">solveTime</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
 
