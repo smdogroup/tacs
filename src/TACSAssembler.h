@@ -486,7 +486,7 @@ class TACSAssembler : public TACSObject {
     // Information for adjoint-dR/dx products
     int numAdjoints;
     TACSBVec **adjoints;
-  } *tacsPInfo;
+  } * tacsPInfo;
 
   // The pthread data required to pthread tacs operations
   int numCompletedElements;     // Keep track of how much work has been done

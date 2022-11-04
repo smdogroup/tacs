@@ -635,7 +635,7 @@ class StaticProblem(TACSProblem):
         initSolveTime = time.time()
 
         # Get current residual
-        self.getResidual(Fext=Fext)
+        self.getResidual(self.res, Fext=Fext)
 
         # Get rhs vector
         self.K.mult(self.u, self.rhs)
@@ -1159,23 +1159,30 @@ class StaticProblem(TACSProblem):
                 # Copy values to numpy array
                 xptSensArray[:] = xptSensBVec.getArray()
 
-    def getResidual(self, res=None, Fext=None):
+    def getResidual(self, res, Fext=None):
         """
         This routine is used to evaluate directly the structural
         residual. Only typically used with aerostructural analysis.
 
         Parameters
         ----------
-        res : TACS BVec or numpy array, optional
-            If res is not None, place the residuals into this array. by default None, in which case the residual is stored in ``self.res``
+        res : TACS BVec or numpy array
+            If res is not None, place the residuals into this array.
 
         Fext : TACS BVec or numpy array, optional
             Distributed array containing additional loads (ex. aerodynamic forces for aerostructural coupling)
             to applied to RHS of the static problem.
 
         """
-        # Make sure assembler variables are up to date
+        # Make sure assembler variables are up-to-date
         self._updateAssemblerVars()
+
+        # Determine if the user vector is a BVec or numpy array
+        if isinstance(res, tacs.TACS.Vec):
+            resArray = None
+        else:  # Input is a numpy array
+            resArray = res
+            res = self.res
 
         # Sum the forces from the loads not handled by TACS
         self.rhs.copyValues(self.F)  # Fixed loads
@@ -1192,15 +1199,12 @@ class StaticProblem(TACSProblem):
         self.assembler.applyBCs(self.rhs)
 
         # Assemble the TACS residual and subtract the externally handled loads
-        self.assembler.assembleRes(self.res, self.loadScale)
-        self.res.axpy(-self.loadScale, self.rhs)
+        self.assembler.assembleRes(res, self.loadScale)
+        res.axpy(-self.loadScale, self.rhs)
 
         # If requested, copy the residual to the output array
-        if res is not None:
-            if isinstance(res, tacs.TACS.Vec):
-                res.copyValues(self.res)
-            else:
-                res[:] = self.res.getArray()
+        if resArray is not None:
+            resArray[:] = res.getArray()
 
     def addTransposeJacVecProduct(self, phi, prod, scale=1.0):
         """
