@@ -183,7 +183,7 @@ void TACSPhaseChangeMaterialConstitutive::addDensitySVSens( int elemIndex,
     TacsScalar dBdT = evalTransitionCoefSVSens(T);
     TacsScalar rhos = solid_properties->getDensity();
     TacsScalar rhol = liquid_properties->getDensity();
-    dfdu[0] = t*(rhol - rhos)*dBdT;
+    dfdu[0] += t*(rhol - rhos)*dBdT;
   }
 }
 
@@ -215,7 +215,7 @@ void TACSPhaseChangeMaterialConstitutive::addSpecificHeatSVSens( int elemIndex,
     TacsScalar f1 = -(T-Tm)*(T-Tm)/(dT*dT);
     TacsScalar f2 = pow(dT*dT, 0.5)/3.14159265359;
     TacsScalar dDdT = (-2.0/f2)*exp(f1/f2)*(T-Tm)/(dT*dT);
-    dfdu[0] = (cl - cs)*dBdT + lh*dDdT;
+    dfdu[0] += (cl - cs)*dBdT + lh*dDdT;
   }
 }
 

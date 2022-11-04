@@ -44,7 +44,7 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
             prop = constitutive.MaterialProperties(rho=rho, kappa=kappa, specific_heat=cp)
 
             # Set one thickness value for every component
-            con = constitutive.PhaseChangeMaterialConstitutive(prop, prop, lh=lh, Tm=Tm, t=tplate, tNum=-1)
+            con = constitutive.PhaseChangeMaterialConstitutive(prop, prop, lh=lh, Tm=Tm, t=tplate, tNum=1)
 
             # For each element type in this component,
             # pass back the appropriate tacs element object

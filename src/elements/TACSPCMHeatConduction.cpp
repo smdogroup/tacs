@@ -167,12 +167,15 @@ void TACSPCMHeatConduction2D::evalWeakMatrix( ElementMatrixType matType,
 
     // Add the terms from the material temperature dependance
     TacsScalar drho_du[1], dc_du[1];
+    drho_du[0] = 0.0;
+    dc_du[0] = 0.0;
     stiff->addDensitySVSens(elemIndex, pt, X, drho_du, Ut[0]);
     stiff->addSpecificHeatSVSens(elemIndex, pt, X, dc_du, Ut[0]);
 
     Jac[5] = (drho_du[0]*c + rho*dc_du[0])*Ut[1];
 
     TacsScalar dk_du[3];
+    dk_du[0] = 0.0; dk_du[1] = 0.0; dk_du[2] = 0.0;
     stiff->addKappaSVSens(elemIndex, pt, X, dk_du, Ut[0]);
 
     Jac[6] = dk_du[0]*grad[0] + dk_du[1]*grad[1];
@@ -211,20 +214,20 @@ void TACSPCMHeatConduction2D::addWeakAdjProduct( int elemIndex,
 }
 
 void TACSPCMHeatConduction2D::evalWeakAdjXptSensProduct( int elemIndex,
-                                                      const double time,
-                                                      int n,
-                                                      const double pt[],
-                                                      const TacsScalar X[],
-                                                      const TacsScalar Xd[],
-                                                      const TacsScalar Ut[],
-                                                      const TacsScalar Ux[],
-                                                      const TacsScalar Psi[],
-                                                      const TacsScalar Psix[],
-                                                      TacsScalar *product,
-                                                      TacsScalar dfdX[],
-                                                      TacsScalar dfdXd[],
-                                                      TacsScalar dfdUx[],
-                                                      TacsScalar dfdPsix[] ){
+                                                         const double time,
+                                                         int n,
+                                                         const double pt[],
+                                                         const TacsScalar X[],
+                                                         const TacsScalar Xd[],
+                                                         const TacsScalar Ut[],
+                                                         const TacsScalar Ux[],
+                                                         const TacsScalar Psi[],
+                                                         const TacsScalar Psix[],
+                                                         TacsScalar *product,
+                                                         TacsScalar dfdX[],
+                                                         TacsScalar dfdXd[],
+                                                         TacsScalar dfdUx[],
+                                                         TacsScalar dfdPsix[] ){
   dfdX[0] = dfdX[1] = dfdX[2] = 0.0;
 
   dfdXd[0] = dfdXd[1] = dfdXd[2] = 0.0;
@@ -339,18 +342,18 @@ void TACSPCMHeatConduction2D::addPointQuantityDVSens( int elemIndex,
   with respect to X, Ut and Ux.
 */
 void TACSPCMHeatConduction2D::evalPointQuantitySens( int elemIndex,
-                                                  const int quantityType,
-                                                  const double time,
-                                                  int n, const double pt[],
-                                                  const TacsScalar X[],
-                                                  const TacsScalar Xd[],
-                                                  const TacsScalar Ut[],
-                                                  const TacsScalar Ux[],
-                                                  const TacsScalar dfdq[],
-                                                  TacsScalar dfdX[],
-                                                  TacsScalar dfdXd[],
-                                                  TacsScalar dfdUt[],
-                                                  TacsScalar dfdUx[] ){
+                                                     const int quantityType,
+                                                     const double time,
+                                                     int n, const double pt[],
+                                                     const TacsScalar X[],
+                                                     const TacsScalar Xd[],
+                                                     const TacsScalar Ut[],
+                                                     const TacsScalar Ux[],
+                                                     const TacsScalar dfdq[],
+                                                     TacsScalar dfdX[],
+                                                     TacsScalar dfdXd[],
+                                                     TacsScalar dfdUt[],
+                                                     TacsScalar dfdUx[] ){
   dfdX[0] = dfdX[1] = dfdX[2] = 0.0;
 
   dfdXd[0] = dfdXd[1] = 0.0;
@@ -387,15 +390,15 @@ void TACSPCMHeatConduction2D::evalPointQuantitySens( int elemIndex,
   Get the data for visualization at a given point
 */
 void TACSPCMHeatConduction2D::getOutputData( int elemIndex,
-                                          const double time,
-                                          ElementType etype,
-                                          int write_flag,
-                                          const double pt[],
-                                          const TacsScalar X[],
-                                          const TacsScalar Ut[],
-                                          const TacsScalar Ux[],
-                                          int ld_data,
-                                          TacsScalar *data ){
+                                             const double time,
+                                             ElementType etype,
+                                             int write_flag,
+                                             const double pt[],
+                                             const TacsScalar X[],
+                                             const TacsScalar Ut[],
+                                             const TacsScalar Ux[],
+                                             int ld_data,
+                                             TacsScalar *data ){
   if (etype == TACS_PCM_ELEMENT){
     if (write_flag & TACS_OUTPUT_NODES){
       data[0] = X[0];
