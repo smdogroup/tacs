@@ -325,7 +325,7 @@ class StaticProblem(TACSProblem):
             The components with added loads. Use pyTACS selectCompIDs method
             to determine this.
 
-        F : numpy.ndarray 1d or 2d length (varsPerNodes) or (numNodeIDs, varsPerNodes)
+        F : numpy.ndarray 1d or 2d length (varsPerNodes) or (numCompIDs, varsPerNodes)
             Vector(s) of 'force' to apply to each components.  If only one force vector is provided,
             force will be copied uniformly across all components.
 
@@ -812,7 +812,7 @@ class StaticProblem(TACSProblem):
         --------
         >>> funcsSens = {}
         >>> staticProblem.evalFunctionsSens(funcsSens, ['mass'])
-        >>> funcs
+        >>> funcsSens
         >>> # Result will look like (if StaticProblem has name of 'c1'):
         >>> # {'c1_mass':{'struct':[1.234, ..., 7.89], 'Xpts':[3.14, ..., 1.59]}}
         """

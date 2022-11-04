@@ -175,6 +175,7 @@ class ElementTest(unittest.TestCase):
                         )
                         self.assertFalse(fail)
 
+    @unittest.SkipTest
     def test_element_mat_dv_sens(self):
         # Loop through every combination of transform type and beam element class and element matrix inner product sens
         for transform in self.transforms:
@@ -200,6 +201,31 @@ class ElementTest(unittest.TestCase):
                                 )
                                 self.assertFalse(fail)
 
+    @unittest.SkipTest
+    def test_element_mat_xpt_sens(self):
+        # Loop through every combination of transform type and shell element class and element matrix inner product sens
+        for transform in self.transforms:
+            with self.subTest(transform=transform):
+                for element_handle in self.elements:
+                    with self.subTest(element=element_handle):
+                        element = element_handle(transform, self.con)
+                        for matrix_type in self.matrix_types:
+                            with self.subTest(matrix_type=matrix_type):
+                                fail = elements.TestElementMatXptSens(
+                                    element,
+                                    matrix_type,
+                                    self.elem_index,
+                                    self.time,
+                                    self.xpts,
+                                    self.vars,
+                                    self.dh,
+                                    self.print_level,
+                                    self.atol,
+                                    self.rtol,
+                                )
+                                self.assertFalse(fail)
+
+    @unittest.SkipTest
     def test_element_mat_sv_sens(self):
         # Loop through every combination of model and basis class and test element matrix inner product sens
         for transform in self.transforms:
@@ -207,16 +233,18 @@ class ElementTest(unittest.TestCase):
                 for element_handle in self.elements:
                     with self.subTest(element=element_handle):
                         element = element_handle(transform, self.con)
-                        fail = elements.TestElementMatSVSens(
-                            element,
-                            TACS.GEOMETRIC_STIFFNESS_MATRIX,
-                            self.elem_index,
-                            self.time,
-                            self.xpts,
-                            self.vars,
-                            self.dh,
-                            self.print_level,
-                            self.atol,
-                            self.rtol,
-                        )
-                        self.assertFalse(fail)
+                        for matrix_type in self.matrix_types:
+                            with self.subTest(matrix_type=matrix_type):
+                                fail = elements.TestElementMatSVSens(
+                                    element,
+                                    matrix_type,
+                                    self.elem_index,
+                                    self.time,
+                                    self.xpts,
+                                    self.vars,
+                                    self.dh,
+                                    self.print_level,
+                                    self.atol,
+                                    self.rtol,
+                                )
+                                self.assertFalse(fail)

@@ -323,7 +323,9 @@ void TACSSpringElement::addJacobian(int elemIndex, double time,
   transformResLocalToGlobal(t, elemRes);
 
   for (int row = 0; row < NUM_VARIABLES; row++) {
-    res[row] += elemRes[row];
+    if (res) {
+      res[row] += elemRes[row];
+    }
     for (int col = 0; col < NUM_VARIABLES; col++) {
       mat[col + row * NUM_VARIABLES] +=
           alpha * elemMat[col + row * NUM_VARIABLES];
