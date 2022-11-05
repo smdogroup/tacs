@@ -52,7 +52,7 @@ void *TACSAssembler::assembleRes_thread(void *t) {
   // Un-pack information for this computation
   TACSAssembler *assembler = pinfo->assembler;
   TACSBVec *res = pinfo->res;
-  TacsScalar lambda = pinfo->lambda;
+  double lambda = pinfo->lambda;
 
   // Allocate a temporary array large enough to store everything required
   int s = assembler->maxElementSize;

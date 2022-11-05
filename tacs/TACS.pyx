@@ -1971,7 +1971,7 @@ cdef class Assembler:
         self.ptr.evalEnergies(&Te, &Pe)
         return Te, Pe
 
-    def assembleRes(self, Vec residual, TacsScalar loadScale=1.0):
+    def assembleRes(self, Vec residual, double loadScale=1.0):
         """
         Assemble the residual associated with the input load case.
 

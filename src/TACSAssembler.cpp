@@ -4125,8 +4125,9 @@ void TACSAssembler::evalEnergies(TacsScalar *Te, TacsScalar *Pe) {
   after the assembly of the residual is complete.
 
   @param residual The residual vector
+  @param lambda Scaling factor for the aux element contributions
 */
-void TACSAssembler::assembleRes(TACSBVec *residual, const TacsScalar lambda) {
+void TACSAssembler::assembleRes(TACSBVec *residual, const double lambda) {
   // Sort the list of auxiliary elements - this only performs the
   // sort if it is required (if new elements are added)
   if (auxElements) {

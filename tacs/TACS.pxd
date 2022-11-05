@@ -485,7 +485,7 @@ cdef extern from "TACSAssembler.h":
         void getInitConditions(TACSBVec*, TACSBVec*, TACSBVec*)
         void setInitConditions(TACSBVec*, TACSBVec*, TACSBVec*)
         void evalEnergies(TacsScalar*, TacsScalar*)
-        void assembleRes(TACSBVec *residual, TacsScalar loadScale)
+        void assembleRes(TACSBVec *residual, double loadScale)
         void assembleJacobian(double alpha, double beta, double gamma,
                               TACSBVec *residual, TACSMat *A,
                               MatrixOrientation matOr)
