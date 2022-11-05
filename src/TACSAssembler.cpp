@@ -4127,7 +4127,7 @@ void TACSAssembler::evalEnergies(TacsScalar *Te, TacsScalar *Pe) {
   @param residual The residual vector
   @param lambda Scaling factor for the aux element contributions
 */
-void TACSAssembler::assembleRes(TACSBVec *residual, const double lambda) {
+void TACSAssembler::assembleRes(TACSBVec *residual, const TacsScalar lambda) {
   // Sort the list of auxiliary elements - this only performs the
   // sort if it is required (if new elements are added)
   if (auxElements) {
@@ -4191,7 +4191,7 @@ void TACSAssembler::assembleRes(TACSBVec *residual, const double lambda) {
       // Add the residual from any auxiliary elements, if the load factor is 1
       // they can be added straight to the elemRes, otherwise they need to be
       // scaled first
-      if (lambda == 1.0) {
+      if (lambda == TacsScalar(1.0)) {
         while (aux_count < naux && aux[aux_count].num == i) {
           aux[aux_count].elem->addResidual(i, time, elemXpts, vars, dvars,
                                            ddvars, elemRes);
