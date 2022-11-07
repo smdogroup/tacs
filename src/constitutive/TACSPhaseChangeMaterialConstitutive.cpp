@@ -49,7 +49,7 @@ TACSPhaseChangeMaterialConstitutive::TACSPhaseChangeMaterialConstitutive( TACSMa
   tNum = _tNum;
   tlb = _tlb;
   tub = _tub;
-  dT = 1.0;
+  dT = 10.0;
   b = 2.0*tan(0.99*M_PI/2.0);
 }
 
