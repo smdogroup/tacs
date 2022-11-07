@@ -50,6 +50,7 @@ TACSPhaseChangeMaterialConstitutive::TACSPhaseChangeMaterialConstitutive( TACSMa
   tlb = _tlb;
   tub = _tub;
   dT = 1.0;
+  b = 2.0*tan(0.99*M_PI/2.0);
 }
 
 TACSPhaseChangeMaterialConstitutive::~TACSPhaseChangeMaterialConstitutive(){
@@ -122,8 +123,8 @@ TacsScalar TACSPhaseChangeMaterialConstitutive::evalTransitionCoef( const TacsSc
   // }
   // // else
   // return (T - Tm + dT)/(2.0*dT);
-  TacsScalar b = 2.0*tan(0.99*3.14159265359/2.0);
-  return atan(b/(dT*(TacsRealPart(T)-Tm)))/3.14159265359 + 0.5;
+  TacsScalar phi = atan(b/dT*(T-Tm))/M_PI + 0.5;
+  return phi;
 }
 
 // Compute the phase change coefficient
@@ -136,8 +137,7 @@ TacsScalar TACSPhaseChangeMaterialConstitutive::evalTransitionCoefSVSens( const 
   // }
   // // else
   // return 1.0/(2.0*dT);
-  TacsScalar b = 2.0*tan(0.99*3.14159265359/2.0);
-  return (b*dT/(dT*dT + pow(b*(TacsRealPart(T)-Tm),2)))/3.14159265359;
+  return (b/dT/(1.0 + pow(b/dT*(T-Tm),2)))/M_PI;
 }
 
 // Evaluate the material's phase (0=solid, 1=liquid)
