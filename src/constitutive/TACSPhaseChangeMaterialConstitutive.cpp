@@ -114,26 +114,30 @@ int TACSPhaseChangeMaterialConstitutive::getDesignVarRange( int elemIndex,
 
 // Compute the phase change coefficient
 TacsScalar TACSPhaseChangeMaterialConstitutive::evalTransitionCoef( const TacsScalar T ){
-  if (TacsRealPart(T) < TacsRealPart((Tm-dT))){
-    return 0.0;
-  }
-  if (TacsRealPart(T) > TacsRealPart((Tm+dT))){
-    return 1.0;
-  }
-  // else
-  return (T - Tm + dT)/(2.0*dT);
+  // if (TacsRealPart(T) < TacsRealPart((Tm-dT))){
+  //   return 0.0;
+  // }
+  // if (TacsRealPart(T) > TacsRealPart((Tm+dT))){
+  //   return 1.0;
+  // }
+  // // else
+  // return (T - Tm + dT)/(2.0*dT);
+  TacsScalar b = 2.0*tan(0.99*3.14159265359/2.0);
+  return atan(b/(dT*(TacsRealPart(T)-Tm)))/3.14159265359 + 0.5;
 }
 
 // Compute the phase change coefficient
 TacsScalar TACSPhaseChangeMaterialConstitutive::evalTransitionCoefSVSens( const TacsScalar T ){
-  if (TacsRealPart(T) < TacsRealPart((Tm-dT))){
-    return 0.0;
-  }
-  if (TacsRealPart(T) > TacsRealPart((Tm+dT))){
-    return 0.0;
-  }
-  // else
-  return 1.0/(2.0*dT);
+  // if (TacsRealPart(T) < TacsRealPart((Tm-dT))){
+  //   return 0.0;
+  // }
+  // if (TacsRealPart(T) > TacsRealPart((Tm+dT))){
+  //   return 0.0;
+  // }
+  // // else
+  // return 1.0/(2.0*dT);
+  TacsScalar b = 2.0*tan(0.99*3.14159265359/2.0);
+  return (b*dT/(dT*dT + pow(b*(TacsRealPart(T)-Tm),2)))/3.14159265359;
 }
 
 // Evaluate the material's phase (0=solid, 1=liquid)
