@@ -126,13 +126,13 @@ class TACSPhaseChangeMaterialConstitutive : public TACSConstitutive {
   const char *getObjectName();
 
  protected:
-  // Materiial properties class
+  // Material properties class
   TACSMaterialProperties *solid_properties;
   TACSMaterialProperties *liquid_properties;
 
  private:
   // Store information about the design variable
-  TacsScalar lh, Tm, t, tlb, tub, dT;
+  TacsScalar lh, Tm, t, tlb, tub, dT, b;
   int tNum;
 
   static const char *psName;
