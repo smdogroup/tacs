@@ -83,7 +83,8 @@ cdef extern from "TACSPhaseChangeMaterialConstitutive.h":
     cdef cppclass TACSPhaseChangeMaterialConstitutive(TACSConstitutive):
         TACSPhaseChangeMaterialConstitutive(TACSMaterialProperties*,
                                             TACSMaterialProperties*,
-                                            TacsScalar, TacsScalar, TacsScalar,
+                                            TacsScalar, TacsScalar,
+                                            TacsScalar, TacsScalar,
                                             int, TacsScalar, TacsScalar)
 
 cdef class PhaseChangeMaterialConstitutive(Constitutive):

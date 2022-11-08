@@ -31,6 +31,7 @@ TACSPhaseChangeMaterialConstitutive::TACSPhaseChangeMaterialConstitutive( TACSMa
                                                                           TACSMaterialProperties *liquid_props,
                                                                           TacsScalar _lh,
                                                                           TacsScalar _Tm,
+                                                                          TacsScalar _dT,
                                                                           TacsScalar _t,
                                                                           int _tNum,
                                                                           TacsScalar _tlb,
@@ -49,7 +50,7 @@ TACSPhaseChangeMaterialConstitutive::TACSPhaseChangeMaterialConstitutive( TACSMa
   tNum = _tNum;
   tlb = _tlb;
   tub = _tub;
-  dT = 10.0;
+  dT = _dT;
   b = 2.0*tan(0.99*M_PI/2.0);
 }
 

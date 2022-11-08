@@ -31,6 +31,7 @@ class TACSPhaseChangeMaterialConstitutive : public TACSConstitutive {
   TACSPhaseChangeMaterialConstitutive( TACSMaterialProperties *solid_properties,
                                        TACSMaterialProperties *liquid_properties,
                                        TacsScalar _lh, TacsScalar _Tm,
+                                       TacsScalar _dT=10.0,
                                        TacsScalar _t=1.0, int _tNum=-1,
                                        TacsScalar _tlb=0.0, TacsScalar _tub=1.0 );
   ~TACSPhaseChangeMaterialConstitutive();

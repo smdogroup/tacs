@@ -486,6 +486,7 @@ cdef class PhaseChangeMaterialConstitutive(Constitutive):
         cdef TACSMaterialProperties *liquid_props = NULL
         cdef TacsScalar lh = 0.0
         cdef TacsScalar Tm = 0.0
+        cdef TacsScalar dT = 10.0
         cdef TacsScalar t = 1.0
         cdef int tNum = -1
         cdef TacsScalar tlb = 0.0
@@ -498,6 +499,8 @@ cdef class PhaseChangeMaterialConstitutive(Constitutive):
             lh = kwargs['lh']
         if 'Tm' in kwargs:
             Tm = kwargs['Tm']
+        if 'dT' in kwargs:
+            dT = kwargs['dT']
         if 't' in kwargs:
             t = kwargs['t']
         if 'tNum' in kwargs:
@@ -510,7 +513,7 @@ cdef class PhaseChangeMaterialConstitutive(Constitutive):
         if solid_props is not NULL:
             self.cptr = new TACSPhaseChangeMaterialConstitutive(solid_props,
                                                                 liquid_props,
-                                                                lh, Tm, t,
+                                                                lh, Tm, dT, t,
                                                                 tNum, tlb, tub)
             self.ptr = self.cptr
             self.ptr.incref()
