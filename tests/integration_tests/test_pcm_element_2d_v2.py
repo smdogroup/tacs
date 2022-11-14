@@ -33,25 +33,34 @@ ksweight = 10.0
 class ProblemTest(PyTACSTestCase.PyTACSTest):
     N_PROCS = 2  # this is how many MPI processes to use for this TestCase.
 
-    def setup_pytacs(self, comm, dtype):
+    FUNC_REFS = {
+        "steady_state_avg_temp": 150.00000000000063,
+        "steady_state_ks_temp": 198.51811570667203,
+        "steady_state_mass": 0.9999999999999951,
+        "transient_avg_temp": 741.0557806913429,
+        "transient_ks_temp": 196.22817693313027,
+        "transient_mass": 4.999999999999405,
+    }
+
+    def setup_tacs_problems(self, comm):
         """
-        Setup mesh and pytacs object for problem we will be testing.
+        Setup pytacs object for problems we will be testing.
         """
 
-        if dtype == complex:
+        # Overwrite default check values
+        if self.dtype == complex:
             self.rtol = 1e-6
             self.atol = 1e-6
             self.dh = 1e-50
         else:
-            self.rtol = 2e-3
+            self.rtol = 2e-1
             self.atol = 1e-3
             self.dh = 1e-6
 
         # Instantiate FEA Assembler
-        # struct_options = {# Finer tol needed to pass complex sens test
-        #                   'L2Convergence': 1e-16}
+        struct_options = {}
 
-        fea_assembler = pytacs.pyTACS(bdf_file, comm)
+        fea_assembler = pytacs.pyTACS(bdf_file, comm, options=struct_options)
 
         # Specify the plate thickness
         tplate = 1.0
@@ -85,37 +94,6 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
         # Set up constitutive objects and elements
         fea_assembler.initialize(elem_call_back)
 
-        return fea_assembler
-
-    def setup_tacs_vecs(self, fea_assembler, dv_pert_vec, xpts_pert_vec):
-        """
-        Setup user-defined vectors for analysis and fd/cs sensitivity verification
-        """
-        # Create temporary dv vec for doing fd/cs
-        dv_pert_vec[:] = 1.0
-
-        # Define perturbation array that moves all nodes on plate
-        xpts = fea_assembler.getOrigNodes()
-        xpts_pert_vec[:] = xpts
-
-        return
-
-    def setup_funcs(self, fea_assembler, problems):
-        """
-        Create a list of functions to be tested and their reference values for the problem
-        """
-        # Add Functions
-        for problem in problems:
-            problem.addFunction("mass", functions.StructuralMass)
-            problem.addFunction("ks_temp", functions.KSTemperature, ksWeight=ksweight)
-            problem.addFunction("avg_temp", functions.AverageTemperature, volume=area)
-        func_list = ["mass", "ks_temp", "avg_temp"]
-        return func_list, FUNC_REFS
-
-    def setup_tacs_problems(self, fea_assembler):
-        """
-        Setup pytacs object for problems we will be testing.
-        """
         tacs_probs = []
 
         # Create static problem, loads are already applied through BCs
@@ -134,4 +112,10 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
             problem.setOption("L2Convergence", 1e-15)
             problem.setOption("L2ConvergenceRel", 1e-15)
 
-        return tacs_probs
+        # Add Functions
+        for problem in problems:
+            problem.addFunction("mass", functions.StructuralMass)
+            problem.addFunction("ks_temp", functions.KSTemperature, ksWeight=ksweight)
+            problem.addFunction("avg_temp", functions.AverageTemperature, volume=area)
+
+        return tacs_probs, fea_assembler
