@@ -2,7 +2,7 @@
 syntax: glob
 
 extern/
-!extern/Makefile
+!extern/Makefile*
 !extern/f5to*/
 *~
 *.in

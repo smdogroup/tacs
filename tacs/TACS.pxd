@@ -613,6 +613,8 @@ cdef extern from "TACSBuckling.h":
         void solve(KSMPrint*, int)
         TacsScalar extractEigenvalue(int, TacsScalar*)
         TacsScalar extractEigenvector(int, TACSBVec*, TacsScalar*)
+        void evalEigenDVSens(int, TACSBVec*)
+        void evalEigenXptSens(int, TACSBVec *)
 
     cdef cppclass TACSLinearBuckling(TACSObject):
         TACSLinearBuckling( TACSAssembler *,
@@ -768,6 +770,17 @@ cdef extern from "TACSIntegrator.h":
                            double tinit, double tfinal,
                            double num_steps,
                            int stages)
+
+        int iterateStage(int k, int s, TACSBVec *forces)
+        double getStageStates( int step, int stage, 
+		      TACSBVec **qS, TACSBVec **qdotS, TACSBVec **qddotS)
+
+    # ESDIRK Implementation of the integrator
+    cdef cppclass TACSESDIRKIntegrator(TACSIntegrator):
+        TACSESDIRKIntegrator(TACSAssembler *tacs,
+                             double tinit, double tfinal,
+                             double num_steps,
+                             int stages)
 
         int iterateStage(int k, int s, TACSBVec *forces)
         double getStageStates( int step, int stage, 

@@ -20,26 +20,6 @@ test KSTemperature, StructuralMass, CenterOfMass, MomentOfInertia, and AverageTe
 base_dir = os.path.dirname(os.path.abspath(__file__))
 bdf_file = os.path.join(base_dir, "./input_files/circ-plate-dirichlet-bcs.bdf")
 
-FUNC_REFS = {
-    "steady_state_avg_temp": 69.8801609399151,
-    "steady_state_ks_temp": 98.74014374789103,
-    "steady_state_mass": 39.20272476980967,
-    "steady_state_x_cg": 2.815920682086164e-10,
-    "steady_state_y_cg": 2.826318842831093e-10,
-    "steady_state_Ixx": 9.783919839192055,
-    "steady_state_Ixy": 2.640029789051368e-08,
-    "steady_state_Iyy": 9.783919795061697,
-    "transient_avg_temp": 79333.52527756922,
-    "transient_ks_temp": 97.89029199587861,
-    "transient_mass": 78405.4495396193,
-    "transient_x_cg": 2.8159209496185734e-10,
-    "transient_y_cg": 2.826321489895307e-10,
-    "transient_Ixx": 19567.83967838426,
-    "transient_Ixy": 5.280059696105566e-05,
-    "transient_Iyy": 19567.83959012328,
-}
-
-
 # Radius of plate
 R = 1.0
 # Area of plate
@@ -52,9 +32,28 @@ ksweight = 10.0
 class ProblemTest(PyTACSTestCase.PyTACSTest):
     N_PROCS = 2  # this is how many MPI processes to use for this TestCase.
 
-    def setup_pytacs(self, comm, dtype):
+    FUNC_REFS = {
+        "steady_state_avg_temp": 69.8801609399151,
+        "steady_state_ks_temp": 98.74014374789103,
+        "steady_state_mass": 39.20272476980967,
+        "steady_state_x_cg": 2.815920682086164e-10,
+        "steady_state_y_cg": 2.826318842831093e-10,
+        "steady_state_Ixx": 9.783919839192055,
+        "steady_state_Ixy": 2.640029789051368e-08,
+        "steady_state_Iyy": 9.783919795061697,
+        "transient_avg_temp": 79333.52527756922,
+        "transient_ks_temp": 97.89029199587861,
+        "transient_mass": 78405.4495396193,
+        "transient_x_cg": 2.8159209496185734e-10,
+        "transient_y_cg": 2.826321489895307e-10,
+        "transient_Ixx": 19567.83967838426,
+        "transient_Ixy": 5.280059696105566e-05,
+        "transient_Iyy": 19567.83959012328,
+    }
+
+    def setup_tacs_problems(self, comm):
         """
-        Setup mesh and pytacs object for problem we will be testing.
+        Setup pytacs object for problems we will be testing.
         """
 
         # Instantiate FEA Assembler
@@ -102,27 +101,20 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
         # Set up constitutive objects and elements
         fea_assembler.initialize(elem_call_back)
 
-        return fea_assembler
+        tacs_probs = []
 
-    def setup_tacs_vecs(self, fea_assembler, dv_pert_vec, xpts_pert_vec):
-        """
-        Setup user-defined vectors for analysis and fd/cs sensitivity verification
-        """
-        # Create temporary dv vec for doing fd/cs
-        dv_pert_vec[:] = 1.0
+        # Create static problem, loads are already applied through BCs
+        sp = fea_assembler.createStaticProblem(name="steady_state")
+        tacs_probs.append(sp)
 
-        # Define perturbation array that moves all nodes on plate
-        xpts = fea_assembler.getOrigNodes()
-        xpts_pert_vec[:] = xpts
+        # Create transient problem, loads are already applied through BCs
+        tp = fea_assembler.createTransientProblem(
+            name="transient", tInit=0.0, tFinal=2000.0, numSteps=25
+        )
+        tacs_probs.append(tp)
 
-        return
-
-    def setup_funcs(self, fea_assembler, problems):
-        """
-        Create a list of functions to be tested and their reference values for the problem
-        """
         # Add Functions
-        for problem in problems:
+        for problem in tacs_probs:
             problem.addFunction("mass", functions.StructuralMass)
             problem.addFunction("ks_temp", functions.KSTemperature, ksWeight=100.0)
             problem.addFunction("avg_temp", functions.AverageTemperature, volume=area)
@@ -153,23 +145,5 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
                 direction2=[0.0, 1.0],
                 aboutCG=True,
             )
-        func_list = ["mass", "ks_temp", "avg_temp", "x_cg", "y_cg", "Ixx", "Ixy", "Iyy"]
-        return func_list, FUNC_REFS
 
-    def setup_tacs_problems(self, fea_assembler):
-        """
-        Setup pytacs object for problems we will be testing.
-        """
-        tacs_probs = []
-
-        # Create static problem, loads are already applied through BCs
-        sp = fea_assembler.createStaticProblem(name="steady_state")
-        tacs_probs.append(sp)
-
-        # Create transient problem, loads are already applied through BCs
-        tp = fea_assembler.createTransientProblem(
-            name="transient", tInit=0.0, tFinal=2000.0, numSteps=25
-        )
-        tacs_probs.append(tp)
-
-        return tacs_probs
+        return tacs_probs, fea_assembler

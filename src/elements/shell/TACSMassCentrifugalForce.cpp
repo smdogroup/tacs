@@ -76,5 +76,7 @@ void TACSMassCentrifugalForce::addJacobian(
     TacsScalar gamma, const TacsScalar *X, const TacsScalar *vars,
     const TacsScalar *dvars, const TacsScalar *ddvars, TacsScalar *res,
     TacsScalar *mat) {
-  addResidual(elemIndex, time, X, vars, dvars, ddvars, res);
+  if (res) {
+    addResidual(elemIndex, time, X, vars, dvars, ddvars, res);
+  }
 }

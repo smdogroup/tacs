@@ -212,7 +212,9 @@ void TACSElement3D::addJacobian(int elemIndex, double time, TacsScalar alpha,
                           Ut, Ux, DUt, DUx, Jac);
 
     // Add the contributions to the residual
-    basis->addWeakResidual(n, pt, detXd, J, vars_per_node, DUt, DUx, res);
+    if (res) {
+      basis->addWeakResidual(n, pt, detXd, J, vars_per_node, DUt, DUx, res);
+    }
 
     // Add the weak form of the Jacobian
     basis->scaleWeakMatrix(detXd, alpha, beta, gamma, Jac_nnz, Jac_pairs, Jac);

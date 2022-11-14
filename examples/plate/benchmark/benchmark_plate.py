@@ -15,8 +15,18 @@ sys.path.append(example_path)
 FUNC_REF = {
     "point_force_ks_vmfailure": 1.4546105780086274,
     "point_force_mass": 12.500000000000535,
-    "pressure_ks_vmfailure": 0.3522022461334997,
+    "pressure_ks_vmfailure": 0.3522022998663366,
     "pressure_mass": 125.00000000026239,
+    "dynamic_modes_eigsm.0": 83438.69909368429,
+    "dynamic_modes_eigsm.1": 350167.23587045894,
+    "dynamic_modes_eigsm.2": 350167.23587048554,
+    "dynamic_modes_eigsm.3": 761399.6241369917,
+    "dynamic_modes_eigsm.4": 1143887.0923759702,
+    "dynamic_modes_eigsm.5": 1154770.166266263,
+    "dynamic_modes_eigsm.6": 1789335.257782903,
+    "dynamic_modes_eigsm.7": 1789335.2579364595,
+    "dynamic_modes_eigsm.8": 2993279.5542967343,
+    "dynamic_modes_eigsm.9": 3190753.194426289,
 }
 
 

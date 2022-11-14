@@ -1,23 +1,25 @@
+include ../Makefile.in
+
 EXTERN_DIR=${shell pwd}
 
-default: ufconfig amd metis tecio
+default: suitesparse tecio metis
 
-ufconfig: # Allowed to fail since UFConfig/AMD is optional
-	tar -xzf UFconfig*.tar.gz && cd UFconfig && make CFLAGS="-O3 -fPIC -fexceptions" || exit 0;
+.phony: suitesparse
+suitesparse: # Allowed to fail since SuiteSparse/AMD is optional
+	tar -xzf suitesparse*.tar.gz && cd ${SUITESPARSE_CONFIG_DIR} && make CFLAGS="-O3 -fPIC -fexceptions" && cd ${AMD_DIR} && make CFLAGS="-O3 -fPIC -fexceptions" || exit 0;
 
-amd: # Allowed to fail since UFConfig/AMD is optional
-	tar -xzf AMD*.tar.gz && cd AMD && make CFLAGS="-O3 -fPIC -fexceptions" || exit 0;
-
+.phony: metis
 metis:
 	tar -xzf metis*.tar.gz;
-	cd `ls -d metis-*/` && make config prefix=${EXTERN_DIR}/metis CFLAGS="-O3 -fPIC" && make install;
+	cd `ls -d metis-*/` && make config prefix=${METIS_DIR} CFLAGS="-O3 -fPIC" && make install;
 
-tecio:
-	tar -xzf tecio*.tar.gz;
-	cd tecio/teciosrc && make -f Makefile.linux;
+.phony: tecio
+tecio: # Allowed to fail since TECIO is optional
+	tar -xzf tecio*.tgz;
+	cd ${TECIO_DIR} && make -f Makefile.linux || exit 0;
 
+.phony: clean
 clean:
+	rm -rf SuiteSparse*/
 	rm -rf metis*/
-	rm -rf UFconfig*/
-	rm -rf AMD*/
-	rm -rf tecio/teciosrc/*.o
+	rm -rf tecio*/
