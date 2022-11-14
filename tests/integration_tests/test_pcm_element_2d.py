@@ -1,106 +1,121 @@
 import numpy as np
 import os
-from tacs import pyTACS, TACS, elements, constitutive, functions, problems
+from tacs import pytacs, TACS, elements, constitutive, functions, problems
 from pytacs_analysis_base_test import PyTACSTestCase
 
 """
-Test phase change material thermal model using a single-element mesh to verify phase transition
+Test heat conduction of a problem with non-uniform boundary conditions with initial conditions everywhere else.
+This is a unit-square domain with dT=100 on the left edge, dT=200 on the right edge, and initial condition of dT=150 in between.
+
+This example is a replication of the example here:
+https://kitchingroup.cheme.cmu.edu/blog/2013/03/07/Transient-heat-conduction-partial-differential-equations/
 """
 
 base_dir = os.path.dirname(os.path.abspath(__file__))
-bdf_file = os.path.join(base_dir, "./input_files/single_element.bdf")
+bdf_file = os.path.join(base_dir, "./input_files/unit_plate.bdf")
 
-#FUNC_REFS = {'Transient_ks_temp': 7.976969029014029}
-FUNC_REFS = {'Transient_ks_temp': 20.70202984802095}
+FUNC_REFS = {
+    "steady_state_avg_temp": 150.00000000000063,
+    "steady_state_ks_temp": 198.51811570667203,
+    "steady_state_mass": 0.9999999999999951,
+    "transient_avg_temp": 741.0557806913429,
+    "transient_ks_temp": 196.22817693313027,
+    "transient_mass": 4.999999999999405,
+}
+
+# Area of plate
+area = 1.0
+
+# KS function weight
+ksweight = 10.0
+
 
 class ProblemTest(PyTACSTestCase.PyTACSTest):
     N_PROCS = 2  # this is how many MPI processes to use for this TestCase.
 
-    def setup_pytacs(self, comm, dtype):
+    FUNC_REFS = {
+        "steady_state_avg_temp": 150.00000000000063,
+        "steady_state_ks_temp": 198.51811570667203,
+        "steady_state_mass": 0.9999999999999951,
+        "transient_avg_temp": 741.0557806913429,
+        "transient_ks_temp": 196.22817693313027,
+        "transient_mass": 4.999999999999405,
+    }
+
+    def setup_tacs_problems(self, comm):
         """
-        Setup mesh and pytacs object for problem we will be testing.
+        Setup pytacs object for problems we will be testing.
         """
+
+        # Overwrite default check values
+        if self.dtype == complex:
+            self.rtol = 1e-6
+            self.atol = 1e-6
+            self.dh = 1e-50
+        else:
+            self.rtol = 2e-1
+            self.atol = 1e-3
+            self.dh = 1e-6
 
         # Instantiate FEA Assembler
-        struct_options = {'outputElement': TACS.PCM_ELEMENT}
+        struct_options = {}
 
-        # Instantiate the pyTACS object
-        fea_assembler = pyTACS(bdf_file, comm, options=struct_options)
+        fea_assembler = pytacs.pyTACS(bdf_file, comm, options=struct_options)
 
         # Specify the plate thickness
         tplate = 1.0
 
-        # Define material properties
-        rho = 1.0  # Density kg/m^3
-        kappa = 1.0  # Thermal conductivity W/(m⋅K)
+        # Material properties
+        rho = 1.0  # density kg/m^3
+        kappa = 0.02  # Thermal conductivity W/(m⋅K)
         cp = 1.0  # Specific heat J/(kg⋅K)
-        lh = 10.0  # Latent heat J/kg
-        Tm = 10.0  # Melting temperature (relative) K
 
         # The callback function to define the element properties
-        def elemCallBack(dvNum, compID, compDescript, elemDescripts, globalDVs, **kwargs):
+        def elem_call_back(
+            dv_num, comp_id, comp_descript, elem_descripts, special_dvs, **kwargs
+        ):
 
             # Setup property and constitutive objects
-            prop = constitutive.MaterialProperties(rho=rho, kappa=kappa, specific_heat=cp)
+            prop = constitutive.MaterialProperties(
+                rho=rho, kappa=kappa, specific_heat=cp
+            )
 
             # Set one thickness value for every component
-            con = constitutive.PhaseChangeMaterialConstitutive(prop, prop, lh=lh, Tm=Tm, t=tplate, tNum=1)
+            con = constitutive.PhaseChangeMaterialConstitutive(
+                prop, prop, lh=10.0, Tm=160.0, t=tplate, tNum=1
+            )
 
-            # For each element type in this component,
-            # pass back the appropriate tacs element object
-            elemList = []
             model = elements.PCMHeatConduction2D(con)
-            for elemDescript in elemDescripts:
-                basis = elements.LinearQuadBasis()
-                elem = elements.Element2D(model, basis)
-                elemList.append(elem)
+            basis = elements.LinearQuadBasis()
+            elem = elements.Element2D(model, basis)
 
-            return elemList
+            return elem
 
         # Set up constitutive objects and elements
-        fea_assembler.initialize(elemCallBack)
+        fea_assembler.initialize(elem_call_back)
 
-        return fea_assembler
-
-    def setup_tacs_vecs(self, fea_assembler, dv_pert_vec, xpts_pert_vec):
-        """
-        Setup user-defined vectors for analysis and fd/cs sensitivity verification
-        """
-        # Create temporary dv vec for doing fd/cs
-        dv_pert_vec[:] = 1.0
-
-        # Define perturbation array that moves all nodes on plate
-        xpts = fea_assembler.getOrigNodes()
-        xpts_pert_vec[:] = xpts
-
-        return
-
-    def setup_funcs(self, fea_assembler, problems):
-        """
-        Create a list of functions to be tested and their reference values for the problem
-        """
-        # Add Functions
-        for problem in problems:
-            problem.addFunction('ks_temp', functions.KSTemperature,
-                                ksWeight=100.0)
-        func_list = ['ks_temp']
-        return func_list, FUNC_REFS
-
-    def setup_tacs_problems(self, fea_assembler):
-        """
-        Setup pytacs object for problems we will be testing.
-        """
         tacs_probs = []
 
+        # Create static problem, loads are already applied through BCs
+        sp = fea_assembler.createStaticProblem(name="steady_state")
+        tacs_probs.append(sp)
+
         # Create transient problem, loads are already applied through BCs
-        tp = fea_assembler.createTransientProblem('Transient', tInit=0.0, tFinal=30.0, numSteps=40, options={'L2Convergence':1e-16})
+        tp = fea_assembler.createTransientProblem(
+            name="transient", tInit=0.0, tFinal=5.0, numSteps=100
+        )
+        # Set the initial conditions
+        tp.setInitConditions(vars=150.0)
         tacs_probs.append(tp)
 
-        # Get the time steps and define the loads
-        timeSteps = tp.getTimeSteps()
-        for i, t in enumerate(timeSteps):
-            # select the component of the battery undergoing thermal runaway
-            compIDs = fea_assembler.selectCompIDs(include=["component"])
-            tp.addLoadToComponents(i, compIDs, [1.0])
+        for problem in tacs_probs:
+            problem.setOption("L2Convergence", 1e-15)
+            problem.setOption("L2ConvergenceRel", 1e-15)
 
-        return tacs_probs
+        # Add Functions
+        for problem in tacs_probs:
+            problem.addFunction("mass", functions.StructuralMass)
+            problem.addFunction("ks_temp", functions.KSTemperature, ksWeight=ksweight)
+            problem.addFunction("avg_temp", functions.AverageTemperature, volume=area)
+
+        return tacs_probs, fea_assembler
