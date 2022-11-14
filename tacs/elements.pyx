@@ -389,6 +389,20 @@ cdef class HeatConduction2D(ElementModel):
         self.ptr = new TACSHeatConduction2D(con.cptr)
         self.ptr.incref()
 
+cdef class PCMHeatConduction2D(ElementModel):
+    """
+    Model class for 2D phase change material heat conduction element.
+
+    .. note::
+        varsPerNode: 1
+
+    Args:
+        con (PhaseChangeMaterialConstitutive): Material constitutive properties.
+    """
+    def __cinit__(self, PhaseChangeMaterialConstitutive con):
+        self.ptr = new TACSPCMHeatConduction2D(con.cptr)
+        self.ptr.incref()
+
 cdef class LinearElasticity2D(ElementModel):
     """
     Model class for 2D linear elasticity element.
@@ -1054,7 +1068,7 @@ cdef class Tri3NonlinearThermalShell(Element):
         varsPerNode: 7
 
         outputElement: ``TACS.BEAM_OR_SHELL_ELEMENT``
-        
+
     Args:
         transform (ShellTransform or None): Shell transform object.
           ``None`` is equivalent to :class:`~ShellNaturalTransform`.
