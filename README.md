@@ -83,3 +83,4 @@ Testflo can be run by calling the following command from TACS' root directory:
    ```
    $ python -m black filename.py
    ```
+6. If the change is a new feature, make sure that its expected use is described through a docstring and that it is added in a relevant section of the docs
