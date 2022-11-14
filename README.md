@@ -65,16 +65,21 @@ We welcome users who wish to propose new bugfixes/feature additions for the TACS
 All propositions for feature additions should be made as a pull request (PR) through TACS' GitHub [page](https://github.com/smdogroup/tacs).
 PR's should be succinct in describing the fix/feature they intend to add, and the code changes should pertain to that specified goal (avoid feature creep).
 Before finalizing their PR, we ask that developers run the following checks on their end:
-1. Ensure that your modification works when TACS is compiled both in real (default) and complex. TACS can compiled in complex mode using the following command: 
+1. Ensure that your modification works when TACS is compiled both in real (default) and complex. TACS can be compiled in complex mode using the following command: 
    ```
    $ make complex; make complex_interface
    ```
-2. Add unit/integration tests that include coverage for any features that have been added to TACS' test [library](https://github.com/smdogroup/tacs/tree/master/tests).
-3. Run formatting checks on any C++ source/header code modified using [clang-format](https://clang.llvm.org/docs/ClangFormat.html).
+2. Ensure that none of TACS current capabilities have been broken by all [unit tests](https://github.com/smdogroup/tacs/tree/master/tests) (in real and complex mode) using [Testflo](https://pypi.org/project/testflo/). 
+Testflo can be run by calling the following command from TACS' root directory:
+   ```
+   $ testflo ./tests
+   ```
+3. Add unit/integration tests that include coverage for any features that have been added to TACS' test [library](https://github.com/smdogroup/tacs/tree/master/tests).
+4. Run formatting checks on any C++ source/header code modified using [clang-format](https://clang.llvm.org/docs/ClangFormat.html).
    ```
    $ clang-format --style=Google -i filename.cpp
    ```
-4. Run formatting checks on any Python code modified using [Black](https://black.readthedocs.io/en/stable/).
+5. Run formatting checks on any Python code modified using [Black](https://black.readthedocs.io/en/stable/).
    ```
    $ python -m black filename.py
    ```
