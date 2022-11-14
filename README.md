@@ -65,7 +65,7 @@ We welcome users who wish to propose new bugfixes/feature additions for the TACS
 All propositions for feature additions should be made as a pull request (PR) through TACS' GitHub [page](https://github.com/smdogroup/tacs).
 PR's should be succinct in describing the fix/feature they intend to add, and the code changes should pertain to that specified goal (avoid feature creep).
 Before finalizing their PR, we ask that developers run the following checks on their end:
-1. Ensure that your modification works when TACS is compiled both in real (default) and complex. TACS can be compiled in complex mode using the following command: 
+1. Ensure that your modification works when TACS is compiled both in real (default) and complex mode. TACS can be compiled in complex mode using the following command: 
    ```
    $ make complex; make complex_interface
    ```
