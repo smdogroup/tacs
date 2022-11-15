@@ -4125,7 +4125,7 @@ void TACSAssembler::evalEnergies(TacsScalar *Te, TacsScalar *Pe) {
   after the assembly of the residual is complete.
 
   @param residual The residual vector
-  @param lambda Scaling factor for the aux element contributions
+  @param lambda Scaling factor for the aux element contributions, by default 1
 */
 void TACSAssembler::assembleRes(TACSBVec *residual, const TacsScalar lambda) {
   // Sort the list of auxiliary elements - this only performs the
@@ -4241,10 +4241,12 @@ void TACSAssembler::assembleRes(TACSBVec *residual, const TacsScalar lambda) {
   @param residual The residual of the governing equations
   @param A The Jacobian matrix
   @param matOr the matrix orientation NORMAL or TRANSPOSE
+  @param lambda Scaling factor for the aux element contributions, by default 1
 */
 void TACSAssembler::assembleJacobian(TacsScalar alpha, TacsScalar beta,
                                      TacsScalar gamma, TACSBVec *residual,
-                                     TACSMat *A, MatrixOrientation matOr) {
+                                     TACSMat *A, MatrixOrientation matOr,
+                                     const TacsScalar lambda) {
   // Zero the residual and the matrix
   if (residual) {
     residual->zeroEntries();
@@ -4267,6 +4269,7 @@ void TACSAssembler::assembleJacobian(TacsScalar alpha, TacsScalar beta,
     tacsPInfo->alpha = alpha;
     tacsPInfo->beta = beta;
     tacsPInfo->gamma = gamma;
+    tacsPInfo->lambda = lambda;
     tacsPInfo->matOr = matOr;
 
     // Create the joinable attribute
@@ -4318,11 +4321,12 @@ void TACSAssembler::assembleJacobian(TacsScalar alpha, TacsScalar beta,
       elements[i]->addJacobian(i, time, alpha, beta, gamma, elemXpts, vars,
                                dvars, ddvars, elemRes, elemMat);
 
-      // Add the contribution to the residual and the Jacobian
-      // from the auxiliary elements - if any
+      // Add the contribution to the residual and the Jacobian from the
+      // auxiliary elements - if any, this is scaled by the loadFactor lambda
       while (aux_count < naux && aux[aux_count].num == i) {
-        aux[aux_count].elem->addJacobian(i, time, alpha, beta, gamma, elemXpts,
-                                         vars, dvars, ddvars, elemRes, elemMat);
+        aux[aux_count].elem->addJacobian(i, time, alpha * lambda, beta * lambda,
+                                         gamma * lambda, elemXpts, vars, dvars,
+                                         ddvars, elemRes, elemMat);
         aux_count++;
       }
 

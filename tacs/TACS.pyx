@@ -1982,13 +1982,15 @@ cdef class Assembler:
         residual is complete.
 
         rhs:        the residual output
+        loadScale:  Scaling factor for the aux element contributions, by default 1
         """
         self.ptr.assembleRes(residual.ptr, loadScale)
         return
 
     def assembleJacobian(self, double alpha, double beta, double gamma,
                          Vec residual, Mat A,
-                         MatrixOrientation matOr=TACS_MAT_NORMAL):
+                         MatrixOrientation matOr=TACS_MAT_NORMAL,
+                         TacsScalar loadScale=1.0):
         """
         Assemble the Jacobian matrix
 
@@ -2000,19 +2002,20 @@ cdef class Assembler:
         matrix assembly also performs any communication required so that
         the matrix can be used immediately after assembly.
 
-        alpha:      coefficient on the variables
-        beta:        coefficient on the time-derivative terms
-        gamma:      coefficient on the second time derivative term
+        alpha:     coefficient on the variables
+        beta:      coefficient on the time-derivative terms
+        gamma:     coefficient on the second time derivative term
         residual:  the residual of the governing equations
-        A:            the Jacobian matrix
-        matOr:      the matrix orientation NORMAL or TRANSPOSE
+        A:         the Jacobian matrix
+        matOr:     the matrix orientation NORMAL or TRANSPOSE
+        loadScale: Scaling factor for the aux element contributions, by default 1
         """
         cdef TACSBVec *res = NULL
         if residual is not None:
             res = residual.ptr
 
         self.ptr.assembleJacobian(alpha, beta, gamma,
-                                  res, A.ptr, matOr)
+                                  res, A.ptr, matOr, loadScale)
         return
 
     def assembleMatType(self, ElementMatrixType matType,

@@ -156,6 +156,7 @@ void *TACSAssembler::assembleJacobian_thread(void *t) {
   TacsScalar alpha = pinfo->alpha;
   TacsScalar beta = pinfo->beta;
   TacsScalar gamma = pinfo->gamma;
+  TacsScalar lambda = pinfo->lambda;
   MatrixOrientation matOr = pinfo->matOr;
 
   // Allocate a temporary array large enough to store everything
@@ -207,8 +208,9 @@ void *TACSAssembler::assembleJacobian_thread(void *t) {
       memset(elemMat, 0, nvars * nvars * sizeof(TacsScalar));
 
       // Generate the Jacobian of the element
-      element->addJacobian(elemIndex, assembler->time, alpha, beta, gamma,
-                           elemXpts, vars, dvars, ddvars, elemRes, elemMat);
+      element->addJacobian(elemIndex, assembler->time, alpha * lambda,
+                           beta * lambda, gamma * lambda, elemXpts, vars, dvars,
+                           ddvars, elemRes, elemMat);
 
       // Increment the aux counter until we possibly have
       // aux[aux_count].num == elemIndex

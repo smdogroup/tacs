@@ -45,7 +45,11 @@ class StaticProblem(TACSProblem):
         "PCFillRatio": [float, 20.0, "Preconditioner fill ratio."],
         "subSpaceSize": [int, 10, "Subspace size for Krylov solver."],
         "nRestarts": [int, 15, "Max number of restarts for Krylov solver."],
-        "flexible": [bool, True, "Flag for whether the preconditioner is flexible."],
+        "flexible": [
+            bool,
+            True,
+            "Flag for whether the preconditioner is flexible.",
+        ],
         "L2Convergence": [
             float,
             1e-12,
@@ -67,7 +71,11 @@ class StaticProblem(TACSProblem):
             "Print frequency for sub iterations of linear solver.",
         ],
         # Output Options
-        "writeSolution": [bool, True, "Flag for suppressing all f5 file writing."],
+        "writeSolution": [
+            bool,
+            True,
+            "Flag for suppressing all f5 file writing.",
+        ],
         "numberSolutions": [
             bool,
             True,
@@ -81,7 +89,13 @@ class StaticProblem(TACSProblem):
     }
 
     def __init__(
-        self, name, assembler, comm, outputViewer=None, meshLoader=None, options={}
+        self,
+        name,
+        assembler,
+        comm,
+        outputViewer=None,
+        meshLoader=None,
+        options={},
     ):
         """
         NOTE: This class should not be initialized directly by the user.
@@ -176,7 +190,7 @@ class StaticProblem(TACSProblem):
         self.beta = 0.0
         self.gamma = 0.0
         self.assembler.assembleJacobian(
-            self.alpha, self.beta, self.gamma, self.res, self.K
+            self.alpha, self.beta, self.gamma, self.res, self.K, self.loadScale
         )
 
         reorderSchur = 1
@@ -190,7 +204,11 @@ class StaticProblem(TACSProblem):
         # Operator, fill level, fill ratio, msub, rtol, ataol
         if opt("KSMSolver").upper() == "GMRES":
             self.KSM = tacs.TACS.KSM(
-                self.K, self.PC, opt("subSpaceSize"), opt("nRestarts"), opt("flexible")
+                self.K,
+                self.PC,
+                opt("subSpaceSize"),
+                opt("nRestarts"),
+                opt("flexible"),
             )
         # TODO: Fix this
         # elif opt('KSMSolver').upper() == 'GCROT':
@@ -237,7 +255,8 @@ class StaticProblem(TACSProblem):
         # Update tolerances
         if "l2convergence" in name.lower():
             self.KSM.setTolerances(
-                self.getOption("L2ConvergenceRel"), self.getOption("L2Convergence")
+                self.getOption("L2ConvergenceRel"),
+                self.getOption("L2Convergence"),
             )
         # No need to reset solver for output options
         elif name.lower() in [
@@ -601,7 +620,12 @@ class StaticProblem(TACSProblem):
 
         if self._factorOnNext:
             self.assembler.assembleJacobian(
-                self.alpha, self.beta, self.gamma, self.res, self.K
+                self.alpha,
+                self.beta,
+                self.gamma,
+                self.res,
+                self.K,
+                self.loadScale,
             )
             self.PC.factor()
             self._factorOnNext = False
@@ -783,7 +807,10 @@ class StaticProblem(TACSProblem):
             )
             self._pp(
                 "| %-30s: %10.3f sec"
-                % ("TACS Function Eval Time", functionEvalTime - setupProblemTime)
+                % (
+                    "TACS Function Eval Time",
+                    functionEvalTime - setupProblemTime,
+                )
             )
             self._pp(
                 "| %-30s: %10.3f sec"
@@ -915,12 +942,18 @@ class StaticProblem(TACSProblem):
                 )
             print(
                 "| %-30s: %10.3f sec"
-                % ("Total Sensitivity Time", totalSensitivityTime - adjointFinishedTime)
+                % (
+                    "Total Sensitivity Time",
+                    totalSensitivityTime - adjointFinishedTime,
+                )
             )
             print("|")
             print(
                 "| %-30s: %10.3f sec"
-                % ("Complete Sensitivity Time", totalSensitivityTime - startTime)
+                % (
+                    "Complete Sensitivity Time",
+                    totalSensitivityTime - startTime,
+                )
             )
             print("+--------------------------------------------------+")
 

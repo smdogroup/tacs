@@ -488,7 +488,8 @@ cdef extern from "TACSAssembler.h":
         void assembleRes(TACSBVec *residual, TacsScalar loadScale)
         void assembleJacobian(double alpha, double beta, double gamma,
                               TACSBVec *residual, TACSMat *A,
-                              MatrixOrientation matOr)
+                              MatrixOrientation matOr,
+                              TacsScalar loadScale)
         void assembleMatType(ElementMatrixType matType,
                              TACSMat *A, MatrixOrientation matOr)
         void assembleMatCombo(ElementMatrixType*, TacsScalar*, int,
