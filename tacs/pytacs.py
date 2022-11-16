@@ -513,6 +513,43 @@ class pyTACS(BaseUI):
 
         return compDescripts
 
+    def getNodesForCompIDs(self, compIDs=None):
+        """
+        Return a list of the unique nodeIDs belonging to a given list of compIDs
+
+        Parameters
+        ----------
+        compIDs : int or list[int] or None
+            List of integers of the compIDs numbers. If None, returns nodeIDs for all components.
+            Defaults to None.
+
+        Returns
+        -------
+        nodes : list
+            List of unique nodeIDs on this processor that belong to the given list of compIDs
+        """
+        # Return all component ids
+        if compIDs is None:
+            compIDs = list(range(self.nComp))
+        # Convert to list
+        elif isinstance(compIDs, int):
+            compIDs = [compIDs]
+        # Make sure list is flat
+        else:
+            compIDs = self._flatten(compIDs)
+
+        nodes = set()
+        elemIDs = self.meshLoader.getGlobalElementIDsForComps(
+            compIDs, nastranOrdering=False
+        )
+
+        nElems = self.assembler.getNumElements()
+        for eID in elemIDs:
+            if 0 <= eID < nElems:
+                nodes.update(self.assembler.getElementNodes(eID))
+
+        return list(nodes)
+
     def initialize(self, elemCallBack=None):
         """
         This is the 'last' method to be called during the setup. The
