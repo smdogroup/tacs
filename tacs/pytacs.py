@@ -513,7 +513,7 @@ class pyTACS(BaseUI):
 
         return compDescripts
 
-    def getNodesForCompIDs(self, compIDs=None):
+    def getNodesForCompIDs(self, compIDs=None, returnLocal=False):
         """
         Return a list of the unique nodeIDs belonging to a given list of compIDs
 
@@ -522,6 +522,10 @@ class pyTACS(BaseUI):
         compIDs : int or list[int] or None
             List of integers of the compIDs numbers. If None, returns nodeIDs for all components.
             Defaults to None.
+
+        returnLocal : bool
+            Flag to either return the global (non-partitioned) nodeIDs or determine the local nodeIDs on this processor.
+            Defaults to False.
 
         Returns
         -------
@@ -538,15 +542,23 @@ class pyTACS(BaseUI):
         else:
             compIDs = self._flatten(compIDs)
 
+        # Get local element IDs on this processor that are in the component(s)
         nodes = set()
-        elemIDs = self.meshLoader.getGlobalElementIDsForComps(
-            compIDs, nastranOrdering=False
-        )
+        elemIDs = self.meshLoader.getLocalElementIDsForComps(compIDs)
 
-        nElems = self.assembler.getNumElements()
+        # Add nodeIDs (global) from this processor's elements to the set
+        # Sets does not allow duplicate entries, so no nodeIDs are repeated
         for eID in elemIDs:
-            if 0 <= eID < nElems:
-                nodes.update(self.assembler.getElementNodes(eID))
+            nodes.update(self.assembler.getElementNodes(eID))
+
+        # convert global nodeIDs to local numbering on this processor if requested
+        if returnLocal:
+            # nodes = self.meshLoader.getLocalNodeIDsFromGlobal(list(nodes)) # does not work?
+            ownerRange = self.assembler.getOwnerRange()
+            allNodesOnProc = list(
+                range(ownerRange[self.rank], ownerRange[self.rank + 1])
+            )
+            nodes = [i for i, v in enumerate(allNodesOnProc) if v in nodes]
 
         return list(nodes)
 
