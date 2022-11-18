@@ -376,24 +376,23 @@ class pyMeshLoader(BaseUI):
         nodeIDs : list
             List of unique nodeIDs that belong to the given list of compIDs
         """
-        # Make sure list is flat
-        componentIDs = self._flatten(list(componentIDs))
+        # First determine the actual physical nodal location in the
+        # original BDF ordering of the nodes we want to add forces
+        # to. Only the root rank need do this:
+        uniqueNodes = None
+        if self.comm.rank == 0:
+            allNodes = []
+            componentIDs = set(componentIDs)
+            for cID in componentIDs:
+                tmp = self.getConnectivityForComp(cID, nastranOrdering=nastranOrdering)
+                allNodes.extend(self._flatten(tmp))
 
-        # Get local element IDs on this processor that are in the component(s)
-        nodes = set()
-        elemIDs = self.getLocalElementIDsForComps(componentIDs)
+            # Now just unique all the nodes:
+            uniqueNodes = np.unique(allNodes)
 
-        # Add nodeIDs (global) from this processor's elements to the set
-        # Sets does not allow duplicate entries, so no nodeIDs are repeated
-        for eID in elemIDs:
-            nodes.update(self.assembler.getElementNodes(eID))
+        uniqueNodes = self.comm.bcast(uniqueNodes, root=0)
 
-        tacsNodeIDs = list(nodes)
-
-        if nastranOrdering:
-            return self.bdfInfo.node_ids[tacsNodeIDs]
-        else:
-            return tacsNodeIDs
+        return uniqueNodes
 
     def getLocalNodeIDsForComps(self, componentIDs):
         """
