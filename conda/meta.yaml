@@ -12,7 +12,7 @@ package:
   version: "{{ version }}"
 
 source:
-  git_url: https://github.com/timryanb/tacs.git
+  git_url: https://github.com/smdogroup/tacs.git
 
 build:
   number: {{ build }}

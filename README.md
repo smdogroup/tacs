@@ -2,9 +2,9 @@
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 [![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 
-[![Anaconda-Server Badge](https://anaconda.org/timryanb/tacs/badges/version.svg)](https://anaconda.org/timryanb/tacs)
-[![Anaconda-Server Badge](https://anaconda.org/timryanb/tacs/badges/platforms.svg)](https://anaconda.org/timryanb/tacs)
-[![Anaconda-Server Badge](https://anaconda.org/timryanb/tacs/badges/downloads.svg)](https://anaconda.org/timryanb/tacs)
+[![Anaconda-Server Badge](https://anaconda.org/smdogroup/tacs/badges/version.svg)](https://anaconda.org/smdogroup/tacs)
+[![Anaconda-Server Badge](https://anaconda.org/smdogroup/tacs/badges/platforms.svg)](https://anaconda.org/smdogroup/tacs)
+[![Anaconda-Server Badge](https://anaconda.org/smdogroup/tacs/badges/downloads.svg)](https://anaconda.org/smdogroup/tacs)
 
 # TACS Overview #
 
@@ -33,12 +33,12 @@ Kennedy, G. J. and Hicken, J. E., "Improved Constraint-Aggregation Methods", Com
 Kennedy, G. J., "Strategies for adaptive optimization with aggregation constraints using interior-point methods", 2015, doi:http://dx.doi.org/10.1016/j.compstruc.2015.02.024
 
 # Setting up and installing TACS through anaconda #
-The easiest way to get started with TACS is through a conda install in an [Anaconda](https://www.anaconda.com/) environment. [Conda packages](https://anaconda.org/timryanb/tacs) are
+The easiest way to get started with TACS is through a conda install in an [Anaconda](https://www.anaconda.com/) environment. [Conda packages](https://anaconda.org/smdogroup/tacs) are
 available for Mac OS and Linux platforms. To get started, run the following in a conda terminal:
 
     conda create -n TACS python=3.8
     activate TACS
-    conda install -c conda-forge -c timryanb tacs
+    conda install -c conda-forge -c smdogroup tacs
     
 This will create an environment named "TACS" and install the `tacs` package and all
 necessary dependencies. Once installed, the user will have access to all TACS C++ and python libraries. 
