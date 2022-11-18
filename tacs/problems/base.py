@@ -393,28 +393,15 @@ class TACSProblem(BaseUI):
         else:
             F = np.atleast_1d(F)
 
-            # First determine the actual physical nodal location in the
-            # original BDF ordering of the nodes we want to add forces
-            # to. Only the root rank need do this:
-            uniqueNodes = None
-            if self.comm.rank == 0:
-                allNodes = []
-                compIDs = set(compIDs)
-                for cID in compIDs:
-                    tmp = self.meshLoader.getConnectivityForComp(
-                        cID, nastranOrdering=True
-                    )
-                    allNodes.extend(self._flatten(tmp))
-
-                # Now just unique all the nodes:
-                uniqueNodes = np.unique(allNodes)
-
-            uniqueNodes = self.comm.bcast(uniqueNodes, root=0)
+            # First determine the unique global node IDs corresponding to components:
+            uniqueNodes = self.meshLoader.getGlobalNodeIDsForComps(
+                compIDs, nastranOrdering=False
+            )
 
             # Now generate the final average force vector
             Favg = F / len(uniqueNodes)
 
-            self._addLoadToNodes(FVec, uniqueNodes, Favg, nastranOrdering=True)
+            self._addLoadToNodes(FVec, uniqueNodes, Favg, nastranOrdering=False)
 
             # Write out a message of what we did:
             self._info(
