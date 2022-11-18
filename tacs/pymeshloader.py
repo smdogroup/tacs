@@ -376,8 +376,8 @@ class pyMeshLoader(BaseUI):
         nodeIDs : list
             List of unique nodeIDs that belong to the given list of compIDs
         """
-        # First determine the actual physical nodal location in the
-        # original BDF ordering of the nodes we want to add forces
+        # First determine the actual physical locations
+        # of the nodes we want to add forces
         # to. Only the root rank need do this:
         uniqueNodes = None
         if self.comm.rank == 0:
@@ -392,7 +392,7 @@ class pyMeshLoader(BaseUI):
 
         uniqueNodes = self.comm.bcast(uniqueNodes, root=0)
 
-        return uniqueNodes
+        return list(uniqueNodes)
 
     def getLocalNodeIDsForComps(self, componentIDs):
         """
