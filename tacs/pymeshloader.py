@@ -345,10 +345,6 @@ class pyMeshLoader(BaseUI):
         # Ensure input is list-like
         globalIDs = np.atleast_1d(globalIDs)
 
-        # Get the node id offset for this processor
-        OwnerRange = self.assembler.getOwnerRange()
-        nodeOffset = OwnerRange[self.comm.rank]
-
         # Get the local ID numbers for this proc
         tacsLocalIDs = []
         for gID in globalIDs:
@@ -361,6 +357,70 @@ class pyMeshLoader(BaseUI):
             tacsLocalIDs.append(lID)
 
         return tacsLocalIDs
+
+    def getGlobalNodeIDsForComps(self, componentIDs, nastranOrdering=False):
+        """
+        Return the global (non-partitioned) node IDs belonging to a given list of component IDs
+
+        Parameters
+        ----------
+        componentIDs : int or list[int]
+            List of integers of the compIDs numbers.
+
+        nastranOrdering : False
+            Flag signaling whether nodeIDs are in TACS (default) or NASTRAN (grid IDs in bdf file) ordering
+            Defaults to False.
+
+        Returns
+        -------
+        nodeIDs : list
+            List of unique nodeIDs that belong to the given list of compIDs
+        """
+        # Make sure list is flat
+        componentIDs = self._flatten(list(componentIDs))
+
+        # Get local element IDs on this processor that are in the component(s)
+        nodes = set()
+        elemIDs = self.getLocalElementIDsForComps(componentIDs)
+
+        # Add nodeIDs (global) from this processor's elements to the set
+        # Sets does not allow duplicate entries, so no nodeIDs are repeated
+        for eID in elemIDs:
+            nodes.update(self.assembler.getElementNodes(eID))
+
+        tacsNodeIDs = list(nodes)
+
+        if nastranOrdering:
+            return self.bdfInfo.node_ids[tacsNodeIDs]
+        else:
+            return tacsNodeIDs
+
+    def getLocalNodeIDsForComps(self, componentIDs):
+        """
+        return the local (partitioned) node IDs belonging to a given list of component IDs
+
+        Parameters
+        ----------
+        componentIDs : int or list[int]
+            List of integers of the compIDs numbers.
+
+        Returns
+        -------
+        nodeIDs : list
+            List of unique nodeIDs that belong to the given list of compIDs
+        """
+        # Get the global nodes for this component (TACS ordering)
+        globalNodeIDs = self.getGlobalNodeIDsForComps(
+            componentIDs, nastranOrdering=False
+        )
+
+        # convert global nodeIDs to local numbering on this processor if requested
+        rank = self.comm.rank
+        ownerRange = self.assembler.getOwnerRange()
+        allNodesOnProc = list(range(ownerRange[rank], ownerRange[rank + 1]))
+        nodes = [i for i, v in enumerate(allNodesOnProc) if v in globalNodeIDs]
+
+        return nodes
 
     def getGlobalElementIDsForComps(self, componentIDs, nastranOrdering=False):
         """
