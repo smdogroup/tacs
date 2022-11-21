@@ -105,7 +105,7 @@ class pyMeshLoader(BaseUI):
                 self.compDescripts.append(propName)
             #  Default component name
             else:
-                self.compDescripts.append("untitled")
+                self.compDescripts.append(f"Property group {pID}")
 
         # Element connectivity information
         self.elemConnectivity = [None] * self.bdfInfo.nelements
