@@ -5,14 +5,14 @@ From Anaconda
 =============
 
 For users, TACS can be easily installed through `Anaconda <https://www.anaconda.com/>`_.
-`Conda packages <https://anaconda.org/timryanb/tacs>`_ are available for Mac OS and Linux platforms.
+`Conda packages <https://anaconda.org/smdogroup/tacs>`_ are available for MacOS and Linux platforms.
 To get started, run the following in a conda terminal:
 
 ::
 
     conda create -n TACS python=3.8
     activate TACS
-    conda install -c conda-forge -c timryanb tacs
+    conda install -c conda-forge -c smdogroup tacs
 
 This will create an environment named "TACS" and install the `tacs` package and all
 necessary dependencies. Once installed, the user will have access to all
