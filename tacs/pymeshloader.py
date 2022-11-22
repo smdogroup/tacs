@@ -69,6 +69,13 @@ class pyMeshLoader(BaseUI):
                         % (element_id, element.pid)
                     )
 
+        # We have to remove any empty property groups that may have been read in from the BDF
+        pIDToeIDMap = self.bdfInfo.get_property_id_to_element_ids_map()
+        for pid in pIDToeIDMap:
+            # If there are no elements referencing this property card, remove it
+            if len(pIDToeIDMap[pid]) == 0:
+                self.bdfInfo.properties.pop(pid)
+
         # Create dictionaries for mapping between tacs and nastran id numbering
         self._updateNastranToTACSDicts()
 
