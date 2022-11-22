@@ -12,7 +12,7 @@ The Toolkit for the Analysis of Composite Structures (TACS) is a parallel finite
 
 TACS has been under continuous development since 2010 by the [Structural and Multidisciplinary Design Optimization group at Georgia Tech](http://gkennedy.gatech.edu) and by the [Multidisciplinary Design Optimization Lab at the University of Michigan](http://mdolab.engin.umich.edu/).
 
-Online documentation and examples is located at [https://smdogroup.github.io/tacs/](https://smdogroup.github.io/tacs/)
+Online documentation and examples are located at [https://smdogroup.github.io/tacs/](https://smdogroup.github.io/tacs/)
 
 # How to cite TACS #
 
@@ -34,7 +34,7 @@ Kennedy, G. J., "Strategies for adaptive optimization with aggregation constrain
 
 # Setting up and installing TACS through anaconda #
 The easiest way to get started with TACS is through a conda install in an [Anaconda](https://www.anaconda.com/) environment. [Conda packages](https://anaconda.org/smdogroup/tacs) are
-available for Mac OS and Linux platforms. To get started, run the following in a conda terminal:
+available for MacOS and Linux platforms. To get started, run the following in a conda terminal:
 
     conda create -n TACS python=3.8
     activate TACS
