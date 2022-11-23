@@ -37,7 +37,7 @@ class pyMeshLoader(BaseUI):
         else:
             debugPrint = False
 
-        # Read in bdf file as pynsatran object
+        # Read in bdf file as pynastran object
         # By default we avoid cross-referencing unless we actually need it,
         # since its expensive for large models
         self.bdfInfo = read_bdf(fileName, validate=False, xref=False, debug=debugPrint)
@@ -83,7 +83,7 @@ class pyMeshLoader(BaseUI):
         try:
             self.bdfXpts = self.bdfInfo.get_xyz_in_coord()
         # If this fails, the file may reference multiple coordinate systems
-        # and will have to be cross-refernced to work
+        # and will have to be cross-referenced to work
         except:
             self.bdfInfo.cross_reference()
             self.bdfInfo.is_xrefed = True
@@ -113,8 +113,10 @@ class pyMeshLoader(BaseUI):
                 self.compDescripts.append(propName)
             # HyperMesh format
             elif "$HMNAME PROP" in propComment:
+                # Locate property name line
                 loc = propComment.find("HMNAME PROP")
                 compLine = propComment[loc:]
+                # The component name is between double quotes
                 propName = compLine.split('"')[1]
                 self.compDescripts.append(propName)
             # No format, default component name
