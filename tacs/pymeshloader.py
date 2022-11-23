@@ -104,13 +104,20 @@ class pyMeshLoader(BaseUI):
         for pID in self.bdfInfo.property_ids:
             self.elemDescripts.append([])
             self.elemObjectNumByComp.append([])
-            # Check if there is a Femap label for this component
+            # Check if there is a Femap/HyperMesh label for this component
             propComment = self.bdfInfo.properties[pID].comment
+            # Femap format
             if "$ Femap Property" in propComment:
                 # Pick off last word from comment, this is the name
                 propName = propComment.split()[-1]
                 self.compDescripts.append(propName)
-            #  Default component name
+            # HyperMesh format
+            elif "$HMNAME PROP" in propComment:
+                loc = propComment.find("HMNAME PROP")
+                compLine = propComment[loc:]
+                propName = compLine.split('"')[1]
+                self.compDescripts.append(propName)
+            # No format, default component name
             else:
                 self.compDescripts.append(f"Property group {pID}")
 
