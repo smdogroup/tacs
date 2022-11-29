@@ -89,6 +89,12 @@ for mod in ["TACS", "elements", "constitutive", "functions"]:
 for e in exts:
     e.cython_directives = {"embedsignature": True, "binding": True}
 
+if sys.platform == "darwin":
+    from distutils import sysconfig
+
+    vars = sysconfig.get_config_vars()
+    vars["LDSHARED"] = vars["LDSHARED"].replace("-bundle", "-dynamiclib")
+
 tacs_root = os.path.abspath(os.path.dirname(__file__))
 with open(os.path.join(tacs_root, "README.md"), encoding="utf-8") as f:
     long_description = f.read()
