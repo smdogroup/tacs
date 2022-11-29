@@ -85,8 +85,9 @@ class TACSShellCentrifugalForce : public TACSElement {
       double pt[3];
       double weight = quadrature::getQuadraturePoint(quad_index, pt);
 
-      TacsScalar Xxi[6], n[3], X[3];
+      TacsScalar Xxi[6], n[3], X[3], U[3];
       basis::template interpFields<3, 3>(pt, Xpts, X);
+      basis::template interpFields<vars_per_node, 3>(pt, vars, U);
       basis::template interpFields<3, 3>(pt, fn, n);
       basis::template interpFieldsGrad<3, 3>(pt, Xpts, Xxi);
 
@@ -103,9 +104,9 @@ class TACSShellCentrifugalForce : public TACSElement {
       TacsScalar r[3], wxr[3], ac[3];
 
       // Create vector pointing from rotation center to element gpt
-      r[0] = X[0] - rotCenter[0];
-      r[1] = X[1] - rotCenter[1];
-      r[2] = X[2] - rotCenter[2];
+      r[0] = X[0] - rotCenter[0] + U[0];
+      r[1] = X[1] - rotCenter[1] + U[1];
+      r[2] = X[2] - rotCenter[2] + U[2];
 
       // Compute omega x r
       crossProduct(omegaVec, r, wxr);
@@ -120,6 +121,91 @@ class TACSShellCentrifugalForce : public TACSElement {
       tr[2] = detXd * mass * ac[2];
 
       basis::template addInterpFieldsTranspose<vars_per_node, 3>(pt, tr, res);
+    }
+  }
+
+  void addJacobian(int elemIndex, double time, TacsScalar alpha,
+                   TacsScalar beta, TacsScalar gamma, const TacsScalar Xpts[],
+                   const TacsScalar vars[], const TacsScalar dvars[],
+                   const TacsScalar ddvars[], TacsScalar res[],
+                   TacsScalar mat[]) {
+    // Compute the number of quadrature points
+    const int nquad = quadrature::getNumQuadraturePoints();
+
+    // Compute the node normal directions
+    TacsScalar fn[3 * basis::NUM_NODES];
+    TacsShellComputeNodeNormals<basis>(Xpts, fn);
+
+    // Loop over each quadrature point and add the residual/jacobian
+    // contributions
+    for (int quad_index = 0; quad_index < nquad; quad_index++) {
+      // Get the quadrature weight
+      double pt[3];
+      double weight = quadrature::getQuadraturePoint(quad_index, pt);
+
+      TacsScalar Xxi[6], n[3], X[3], U[3];
+      basis::template interpFields<3, 3>(pt, Xpts, X);
+      basis::template interpFields<vars_per_node, 3>(pt, vars, U);
+      basis::template interpFields<3, 3>(pt, fn, n);
+      basis::template interpFieldsGrad<3, 3>(pt, Xpts, Xxi);
+
+      // Assemble the terms Xd = [Xxi; n] and Xdz
+      TacsScalar Xd[9];
+      TacsShellAssembleFrame(Xxi, n, Xd);
+
+      // Compute the determinant of the 3x3 Jacobian transformation
+      TacsScalar detXd = det3x3(Xd);
+      detXd *= weight;
+
+      TacsScalar mass = con->evalDensity(elemIndex, pt, X);
+
+      TacsScalar r[3], wxr[3], ac[3];
+
+      // Create vector pointing from rotation center to element gpt
+      r[0] = X[0] - rotCenter[0] + U[0];
+      r[1] = X[1] - rotCenter[1] + U[1];
+      r[2] = X[2] - rotCenter[2] + U[2];
+
+      // Compute omega x r
+      crossProduct(omegaVec, r, wxr);
+
+      // Compute centrifugal acceleration
+      crossProduct(omegaVec, wxr, ac);
+
+      // Compute the traction
+      TacsScalar tr[3];
+      tr[0] = detXd * mass * ac[0];
+      tr[1] = detXd * mass * ac[1];
+      tr[2] = detXd * mass * ac[2];
+
+      // Add the contribution to the residual
+      basis::template addInterpFieldsTranspose<vars_per_node, 3>(pt, tr, res);
+
+      // Compute the jacobian contribution
+      // The Jacobian of the centrifugal force w.r.t the
+      // location/displacement is: dtrdU = detXd * mass *
+      // [[-w_y^2 - w_z^2,  w_x*w_y, w_x*w_z             ],
+      //  [ w_x*w_y,       -w_x^2 - w_z^2,  w_y*w_z      ],
+      //  [ w_x*w_z,        w_y*w_z,       -w_x^2 - w_y^2]]
+      TacsScalar dtrdU[9];
+      dtrdU[0] = (-omegaVec[1] * omegaVec[1] - omegaVec[2] * omegaVec[2]) *
+                 detXd * mass;
+      dtrdU[1] = (omegaVec[0] * omegaVec[1]) * detXd * mass;
+      dtrdU[2] = (omegaVec[0] * omegaVec[2]) * detXd * mass;
+
+      dtrdU[3] = (omegaVec[0] * omegaVec[1]) * detXd * mass;
+      dtrdU[4] = (-omegaVec[0] * omegaVec[0] - omegaVec[2] * omegaVec[2]) *
+                 detXd * mass;
+      dtrdU[5] = (omegaVec[1] * omegaVec[2]) * detXd * mass;
+
+      dtrdU[6] = (omegaVec[0] * omegaVec[2]) * detXd * mass;
+      dtrdU[7] = (omegaVec[1] * omegaVec[2]) * detXd * mass;
+      dtrdU[8] = (-omegaVec[0] * omegaVec[0] - omegaVec[1] * omegaVec[1]) *
+                 detXd * mass;
+
+      // Add the contribution to the Jacobian
+      basis::template addInterpFieldsOuterProduct<vars_per_node, vars_per_node,
+                                                  3, 3>(pt, dtrdU, mat);
     }
   }
 
