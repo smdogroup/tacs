@@ -202,11 +202,13 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
                 fullRes = problem.assembler.createVec()
                 problem.loadScale = 1.0
                 problem.getResidual(fullRes)
+                print(f"{fullRes.norm()=}")
 
                 loadScale = np.random.rand()
                 problem.loadScale = loadScale
                 scaledRes = problem.assembler.createVec()
                 problem.getResidual(scaledRes)
+                print(f"{scaledRes.norm()=}")
 
                 # scaledRes -= loadScale*fullRes should = 0
                 scaledRes.axpy(-loadScale, fullRes)
