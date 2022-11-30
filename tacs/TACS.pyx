@@ -2280,12 +2280,13 @@ cdef class Assembler:
 
     def addJacobianVecProduct(self, TacsScalar scale,
                               double alpha, double beta, double gamma,
-                              Vec x, Vec y, MatrixOrientation matOr=TACS_MAT_NORMAL):
+                              Vec x, Vec y, MatrixOrientation matOr=TACS_MAT_NORMAL,
+                              TacsScalar loadScale=1.0):
         """
         Compute the Jacobian-vector product
         """
         self.ptr.addJacobianVecProduct(scale, alpha, beta, gamma,
-                                       x.ptr, y.ptr, matOr)
+                                       x.ptr, y.ptr, matOr, loadScale)
         return
 
     def testElement(self, int elemNum, int print_level,
