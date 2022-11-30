@@ -4906,9 +4906,11 @@ void TACSAssembler::addSVSens(TacsScalar alpha, TacsScalar beta,
   @param numAdjoints The number of adjoint vectors
   @param adjoint The array of adjoint vectors
   @param dfdx Product of the derivative of the residuals and the adjoint
+  @param lambda Scaling factor for the aux element contributions, by default 1
 */
 void TACSAssembler::addAdjointResProducts(TacsScalar scale, int numAdjoints,
-                                          TACSBVec **adjoint, TACSBVec **dfdx) {
+                                          TACSBVec **adjoint, TACSBVec **dfdx,
+                                          const TacsScalar lambda) {
   // Distribute the design variable values to all processors
   for (int k = 0; k < numAdjoints; k++) {
     adjoint[k]->beginDistributeValues();
@@ -4968,7 +4970,7 @@ void TACSAssembler::addAdjointResProducts(TacsScalar scale, int numAdjoints,
       dfdx[k]->setValues(numDVs, dvNums, fdvSens, TACS_ADD_VALUES);
     }
 
-    // Add the contribution from the auxiliary elements
+    // Add the contribution from the auxiliary elements, scaled by lambda
     if (aux_count < naux) {
       while (aux_count < naux && aux[aux_count].num == i) {
         // Get the design variables for this element
@@ -4981,9 +4983,9 @@ void TACSAssembler::addAdjointResProducts(TacsScalar scale, int numAdjoints,
           // Get the element adjoint vector
           adjoint[k]->getValues(len, nodes, elemAdjoint);
 
-          aux[aux_count].elem->addAdjResProduct(i, time, scale, elemAdjoint,
-                                                elemXpts, vars, dvars, ddvars,
-                                                numDVs, fdvSens);
+          aux[aux_count].elem->addAdjResProduct(i, time, lambda * scale,
+                                                elemAdjoint, elemXpts, vars,
+                                                dvars, ddvars, numDVs, fdvSens);
 
           dfdx[k]->setValues(numDVs, dvNums, fdvSens, TACS_ADD_VALUES);
         }
@@ -5007,11 +5009,13 @@ void TACSAssembler::addAdjointResProducts(TacsScalar scale, int numAdjoints,
   @param numAdjoints The number of adjoint vectors
   @param adjoint The array of adjoint vectors
   @param dfdXpt Product of the derivative of the residuals and the adjoint
+  @param lambda Scaling factor for the aux element contributions, by default 1
 */
 void TACSAssembler::addAdjointResXptSensProducts(TacsScalar scale,
                                                  int numAdjoints,
                                                  TACSBVec **adjoint,
-                                                 TACSBVec **dfdXpt) {
+                                                 TACSBVec **dfdXpt,
+                                                 const TacsScalar lambda) {
   for (int k = 0; k < numAdjoints; k++) {
     adjoint[k]->beginDistributeValues();
   }
@@ -5058,7 +5062,7 @@ void TACSAssembler::addAdjointResXptSensProducts(TacsScalar scale,
       dfdXpt[k]->setValues(len, nodes, xptSens, TACS_ADD_VALUES);
     }
 
-    // Add the contribution from the auxiliary elements
+    // Add the contribution from the auxiliary elements, scaled by lambda
     if (aux_count < naux) {
       while (aux_count < naux && aux[aux_count].num == i) {
         // Get the adjoint variables
@@ -5068,9 +5072,9 @@ void TACSAssembler::addAdjointResXptSensProducts(TacsScalar scale,
           // Get the element adjoint vector
           adjoint[k]->getValues(len, nodes, elemAdjoint);
 
-          aux[aux_count].elem->addAdjResXptProduct(i, time, scale, elemAdjoint,
-                                                   elemXpts, vars, dvars,
-                                                   ddvars, xptSens);
+          aux[aux_count].elem->addAdjResXptProduct(i, time, lambda * scale,
+                                                   elemAdjoint, elemXpts, vars,
+                                                   dvars, ddvars, xptSens);
 
           dfdXpt[k]->setValues(len, nodes, xptSens, TACS_ADD_VALUES);
         }
@@ -5223,11 +5227,13 @@ void TACSAssembler::evalMatSVSensInnerProduct(ElementMatrixType matType,
   @param x The input vector
   @param y the output vector y <- y + scale*J^{Op}*x
   @param matOr The matrix orientation
+  @param lambda Scaling factor for the aux element contributions, by default 1
 */
 void TACSAssembler::addJacobianVecProduct(TacsScalar scale, TacsScalar alpha,
                                           TacsScalar beta, TacsScalar gamma,
                                           TACSBVec *x, TACSBVec *y,
-                                          MatrixOrientation matOr) {
+                                          MatrixOrientation matOr,
+                                          const TacsScalar lambda) {
   x->beginDistributeValues();
   x->endDistributeValues();
 
@@ -5263,10 +5269,12 @@ void TACSAssembler::addJacobianVecProduct(TacsScalar scale, TacsScalar alpha,
                              ddvars, yvars, elemMat);
 
     // Add the contribution to the residual and the Jacobian
-    // from the auxiliary elements - if any
+    // from the auxiliary elements - if any, this is scaled by the loadFactor
+    // lambda
     while (aux_count < naux && aux[aux_count].num == i) {
-      aux[aux_count].elem->addJacobian(i, time, alpha, beta, gamma, elemXpts,
-                                       vars, dvars, ddvars, yvars, elemMat);
+      aux[aux_count].elem->addJacobian(i, time, lambda * alpha, lambda * beta,
+                                       lambda * gamma, elemXpts, vars, dvars,
+                                       ddvars, yvars, elemMat);
       aux_count++;
     }
 
@@ -5422,12 +5430,14 @@ void TACSAssembler::assembleMatrixFreeData(ElementMatrixType matType,
   @param x The input vector
   @param y The vector containing the matrix-vector product
   @param matOr The orientation of the matrix
+  @param lambda Scaling factor for the aux element contributions, by default 1
 */
 void TACSAssembler::addMatrixFreeVecProduct(ElementMatrixType matType,
                                             const TacsScalar data[],
                                             TacsScalar temp[], TACSBVec *x,
                                             TACSBVec *y,
-                                            MatrixOrientation matOr) {
+                                            MatrixOrientation matOr,
+                                            const TacsScalar lambda) {
   x->beginDistributeValues();
   x->endDistributeValues();
 
@@ -5466,13 +5476,30 @@ void TACSAssembler::addMatrixFreeVecProduct(ElementMatrixType matType,
     data += dsize;
 
     // Add the contribution to the residual and the Jacobian
-    // from the auxiliary elements - if any
-    while (aux_count < naux && aux[aux_count].num == i) {
-      aux[aux_count].elem->getMatVecDataSizes(matType, i, &dsize, &tsize);
-      aux[aux_count].elem->addMatVecProduct(matType, i, data, temp, xvars,
-                                            yvars);
-      data += dsize;
-      aux_count++;
+    // from the auxiliary elements - if any, scaled by lambda
+    if (lambda == TacsScalar(1.0)) {
+      while (aux_count < naux && aux[aux_count].num == i) {
+        aux[aux_count].elem->getMatVecDataSizes(matType, i, &dsize, &tsize);
+        aux[aux_count].elem->addMatVecProduct(matType, i, data, temp, xvars,
+                                              yvars);
+        data += dsize;
+        aux_count++;
+      }
+    } else {
+      TacsScalar aux_yvars[nvars];
+      for (int kk = 0; kk < nvars; kk++) {
+        aux_yvars[kk] = 0.0;
+      }
+      while (aux_count < naux && aux[aux_count].num == i) {
+        aux[aux_count].elem->getMatVecDataSizes(matType, i, &dsize, &tsize);
+        aux[aux_count].elem->addMatVecProduct(matType, i, data, temp, xvars,
+                                              yvars);
+        data += dsize;
+        aux_count++;
+      }
+      for (int kk = 0; kk < nvars; kk++) {
+        yvars[kk] += lambda * aux_yvars[kk];
+      }
     }
 
     // Add the residual values

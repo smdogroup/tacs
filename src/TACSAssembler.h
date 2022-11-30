@@ -227,7 +227,8 @@ class TACSAssembler : public TACSObject {
   void addJacobianVecProduct(TacsScalar scale, TacsScalar alpha,
                              TacsScalar beta, TacsScalar gamma, TACSBVec *x,
                              TACSBVec *y,
-                             MatrixOrientation matOr = TACS_MAT_NORMAL);
+                             MatrixOrientation matOr = TACS_MAT_NORMAL,
+                             const TacsScalar lambda = 1.0);
 
   // Assemble data for and compute matrix-free matrix-vector products
   // ----------------------------------------------------------------
@@ -239,7 +240,8 @@ class TACSAssembler : public TACSObject {
   void addMatrixFreeVecProduct(ElementMatrixType matType,
                                const TacsScalar data[], TacsScalar temp[],
                                TACSBVec *x, TACSBVec *y,
-                               MatrixOrientation matOr = TACS_MAT_NORMAL);
+                               MatrixOrientation matOr = TACS_MAT_NORMAL,
+                               const TacsScalar lambda = 1.0);
 
   // Design variable handling
   // ------------------------
@@ -259,11 +261,13 @@ class TACSAssembler : public TACSObject {
   void addSVSens(TacsScalar alpha, TacsScalar beta, TacsScalar gamma,
                  int numFuncs, TACSFunction **funcs, TACSBVec **dfdu);
   void addAdjointResProducts(TacsScalar scale, int numAdjoints,
-                             TACSBVec **adjoint, TACSBVec **dfdx);
+                             TACSBVec **adjoint, TACSBVec **dfdx,
+                             const TacsScalar lambda = 1.0);
   void addXptSens(TacsScalar coef, int numFuncs, TACSFunction **funcs,
                   TACSBVec **dfdXpts);
   void addAdjointResXptSensProducts(TacsScalar scale, int numAdjoints,
-                                    TACSBVec **adjoint, TACSBVec **dfdXpts);
+                                    TACSBVec **adjoint, TACSBVec **dfdXpts,
+                                    const TacsScalar lambda = 1.0);
 
   // Advanced function interface - for time integration
   // --------------------------------------------------
