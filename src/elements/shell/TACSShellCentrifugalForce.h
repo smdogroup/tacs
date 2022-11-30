@@ -179,7 +179,9 @@ class TACSShellCentrifugalForce : public TACSElement {
       tr[2] = detXd * mass * ac[2];
 
       // Add the contribution to the residual
-      basis::template addInterpFieldsTranspose<vars_per_node, 3>(pt, tr, res);
+      if (res) {
+        basis::template addInterpFieldsTranspose<vars_per_node, 3>(pt, tr, res);
+      }
 
       // Compute the jacobian contribution
       // The Jacobian of the centrifugal force w.r.t the
