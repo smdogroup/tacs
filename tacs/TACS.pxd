@@ -497,7 +497,8 @@ cdef extern from "TACSAssembler.h":
         void addJacobianVecProduct(TacsScalar scale,
                                    double alpha, double beta, double gamma,
                                    TACSBVec *x, TACSBVec *y,
-                                   MatrixOrientation matOr)
+                                   MatrixOrientation matOr,
+                                   TacsScalar loadScale)
         void evalFunctions(int numFuncs, TACSFunction **functions,
                            TacsScalar *funcVals)
         void addDVSens(double coef, int numFuncs, TACSFunction **funcs,
@@ -506,12 +507,14 @@ cdef extern from "TACSAssembler.h":
                        int numFuncs, TACSFunction **funcs,
                        TACSBVec **fuSens)
         void addAdjointResProducts(double scale, int numAdjoints,
-                                   TACSBVec **adjoint, TACSBVec **dfdx)
+                                   TACSBVec **adjoint, TACSBVec **dfdx,
+                                   TacsScalar loadScale)
         void addXptSens(double coef, int numFuncs, TACSFunction **funcs,
                         TACSBVec **fXptSens)
         void addAdjointResXptSensProducts(double scale, int numAdjoints,
                                           TACSBVec **adjoint,
-                                          TACSBVec **adjXptSens)
+                                          TACSBVec **adjXptSens,
+                                          TacsScalar loadScale)
         void addMatDVSensInnerProduct(double scale,
                                       ElementMatrixType matType,
                                       TACSBVec *psi, TACSBVec *phi,

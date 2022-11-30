@@ -2189,7 +2189,7 @@ cdef class Assembler:
 
         return
 
-    def addAdjointResProducts(self, adjlist, dfdxlist, double alpha=1.0):
+    def addAdjointResProducts(self, adjlist, dfdxlist, double alpha=1.0, TacsScalar loadScale=1.0):
         """
         This function is collective on all TACSAssembler processes. This
         computes the product of the derivative of the residual
@@ -2203,6 +2203,7 @@ cdef class Assembler:
         adjoint: the array of adjoint vectors
         dvSens: the product of the derivative of the residuals and the adjoint
         num_dvs: the number of design variables
+        loadScale: Scaling factor for the aux element contributions, by default 1
         """
         cdef int num_adjoints = 0
         cdef TACSBVec **adjoints = NULL
@@ -2221,14 +2222,14 @@ cdef class Assembler:
             dfdx[i] = (<Vec>dfdxlist[i]).ptr
 
         # Evaluate the derivative of the functions
-        self.ptr.addAdjointResProducts(alpha, num_adjoints, adjoints, dfdx)
+        self.ptr.addAdjointResProducts(alpha, num_adjoints, adjoints, dfdx, loadScale)
 
         free(adjoints)
         free(dfdx)
 
         return
 
-    def addAdjointResXptSensProducts(self, adjlist, dfdXlist, double alpha=1.0):
+    def addAdjointResXptSensProducts(self, adjlist, dfdXlist, double alpha=1.0, TacsScalar loadScale=1.0):
         """
         This function is collective on all TACSAssembler processes. This
         computes the product of the derivative of the residual
@@ -2252,7 +2253,7 @@ cdef class Assembler:
             dfdX[i] = (<Vec>dfdXlist[i]).ptr
 
         # Evaluate the derivative of the functions
-        self.ptr.addAdjointResXptSensProducts(alpha, num_adjoints, adjoints, dfdX)
+        self.ptr.addAdjointResXptSensProducts(alpha, num_adjoints, adjoints, dfdX, loadScale)
 
         free(adjoints)
         free(dfdX)
