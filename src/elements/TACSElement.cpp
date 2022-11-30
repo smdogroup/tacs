@@ -55,7 +55,9 @@ void TACSElement::addJacobian(int elemIndex, double time, TacsScalar alpha,
   int nvars = getNumVariables();
 
   // Call the residual implementation
-  addResidual(elemIndex, time, Xpts, vars, dvars, ddvars, res);
+  if (res) {
+    addResidual(elemIndex, time, Xpts, vars, dvars, ddvars, res);
+  }
 
   // Original and perturbed residual vectors
   TacsScalar *Rtmp1 = new TacsScalar[nvars];
@@ -327,6 +329,255 @@ void TACSElement::addAdjResXptProduct(
   delete[] X;
   delete[] res;
   delete[] tmp;
+}
+
+void TACSElement::getMatType(ElementMatrixType matType, int elemIndex,
+                             double time, const TacsScalar Xpts[],
+                             const TacsScalar vars[], TacsScalar mat[]) {
+  int size = getNumNodes() * getVarsPerNode();
+  memset(mat, 0, size * size * sizeof(TacsScalar));
+  TacsScalar alpha, beta, gamma;
+  alpha = beta = gamma = 0.0;
+  // Set alpha or gamma based on if this is a stiffness or mass matrix
+  if (matType == TACS_STIFFNESS_MATRIX) {
+    alpha = 1.0;
+  } else if (matType == TACS_MASS_MATRIX) {
+    gamma = 1.0;
+  } else {  // TACS_GEOMETRIC_STIFFNESS_MATRIX
+    // Not implemented
+    return;
+  }
+  // Add appropriate Jacobian to matrix
+  addJacobian(elemIndex, time, alpha, beta, gamma, Xpts, vars, vars, vars, NULL,
+              mat);
+}
+
+void TACSElement::addMatDVSensInnerProduct(
+    ElementMatrixType matType, int elemIndex, double time, TacsScalar scale,
+    const TacsScalar psi[], const TacsScalar phi[], const TacsScalar Xpts[],
+    const TacsScalar vars[], int dvLen, TacsScalar dfdx[]) {
+  // The step length
+#ifdef TACS_USE_COMPLEX
+  const double dh = 1e-30;
+#else
+  const double dh = 1e-7;
+#endif  // TACS_USE_COMPLEX
+
+  TacsScalar *x = new TacsScalar[dvLen];
+  getDesignVars(elemIndex, dvLen, x);
+
+  int nvars = getNumVariables();
+  TacsScalar *mat = new TacsScalar[nvars * nvars];
+
+  memset(mat, 0, nvars * nvars * sizeof(TacsScalar));
+  TacsScalar p1 = 0.0;
+  getMatType(matType, elemIndex, time, Xpts, vars, mat);
+  for (int i = 0; i < nvars; i++) {
+    for (int j = 0; j < nvars; j++) {
+      p1 += mat[i + j * nvars] * psi[i] * phi[j];
+    }
+  }
+
+  for (int k = 0; k < dvLen; k++) {
+    TacsScalar xt = x[k];
+
+#ifdef TACS_USE_COMPLEX
+    x[k] = xt + TacsScalar(0.0, dh);
+#else
+    x[k] = xt + dh;
+#endif  // TACS_USE_COMPLEX
+    setDesignVars(elemIndex, dvLen, x);
+
+    memset(mat, 0, nvars * nvars * sizeof(TacsScalar));
+    TacsScalar p2 = 0.0;
+    getMatType(matType, elemIndex, time, Xpts, vars, mat);
+    for (int i = 0; i < nvars; i++) {
+      for (int j = 0; j < nvars; j++) {
+        p2 += mat[i + j * nvars] * psi[i] * phi[j];
+      }
+    }
+
+    TacsScalar product = 0.0;
+#ifdef TACS_USE_COMPLEX
+    product = TacsImagPart(p2) / dh;
+#else
+    if (fdOrder < 2) {
+      // Use first-order forward differencing
+      product = (p2 - p1) / dh;
+    } else {
+      // Use second-order central differencing
+      x[k] = xt - dh;  //  backward step
+      setDesignVars(elemIndex, dvLen, x);
+      p1 = 0.0;
+      getMatType(matType, elemIndex, time, Xpts, vars, mat);
+      for (int i = 0; i < nvars; i++) {
+        for (int j = 0; j < nvars; j++) {
+          p1 += mat[i + j * nvars] * psi[i] * phi[j];
+        }
+      }
+      // Central difference
+      product = 0.5 * (p2 - p1) / dh;
+    }
+#endif  // TACS_USE_COMPLEX
+
+    dfdx[k] += scale * product;
+    x[k] = xt;
+  }
+
+  // Reset the design variable values
+  setDesignVars(elemIndex, dvLen, x);
+
+  delete[] x;
+  delete[] mat;
+}
+
+void TACSElement::addMatXptSensInnerProduct(
+    ElementMatrixType matType, int elemIndex, double time, TacsScalar scale,
+    const TacsScalar psi[], const TacsScalar phi[], const TacsScalar Xpts[],
+    const TacsScalar vars[], TacsScalar dfdX[]) {
+  // The step length
+#ifdef TACS_USE_COMPLEX
+  const double dh = 1e-30;
+#else
+  const double dh = 1e-7;
+#endif  // TACS_USE_COMPLEX
+
+  int nnodes = getNumNodes();
+  TacsScalar *X = new TacsScalar[3 * nnodes];
+  memcpy(X, Xpts, 3 * nnodes * sizeof(TacsScalar));
+
+  int nvars = getNumVariables();
+  TacsScalar *mat = new TacsScalar[nvars * nvars];
+
+  memset(mat, 0, nvars * nvars * sizeof(TacsScalar));
+  TacsScalar p1 = 0.0;
+  getMatType(matType, elemIndex, time, Xpts, vars, mat);
+  for (int i = 0; i < nvars; i++) {
+    for (int j = 0; j < nvars; j++) {
+      p1 += mat[i + j * nvars] * psi[i] * phi[j];
+    }
+  }
+
+  for (int k = 0; k < 3 * nnodes; k++) {
+    TacsScalar xt = X[k];
+
+#ifdef TACS_USE_COMPLEX
+    X[k] = xt + TacsScalar(0.0, dh);
+#else
+    X[k] = xt + dh;
+#endif  // TACS_USE_COMPLEX
+
+    memset(mat, 0, nvars * nvars * sizeof(TacsScalar));
+    TacsScalar p2 = 0.0;
+    getMatType(matType, elemIndex, time, X, vars, mat);
+    for (int i = 0; i < nvars; i++) {
+      for (int j = 0; j < nvars; j++) {
+        p2 += mat[i + j * nvars] * psi[i] * phi[j];
+      }
+    }
+
+    TacsScalar product = 0.0;
+#ifdef TACS_USE_COMPLEX
+    product = TacsImagPart(p2) / dh;
+#else
+    if (fdOrder < 2) {
+      // Use first-order forward differencing
+      product = (p2 - p1) / dh;
+    } else {
+      // Use second-order central differencing
+      X[k] = xt - dh;  //  backward step
+      p1 = 0.0;
+      getMatType(matType, elemIndex, time, X, vars, mat);
+      for (int i = 0; i < nvars; i++) {
+        for (int j = 0; j < nvars; j++) {
+          p1 += mat[i + j * nvars] * psi[i] * phi[j];
+        }
+      }
+      // Central difference
+      product = 0.5 * (p2 - p1) / dh;
+    }
+#endif  // TACS_USE_COMPLEX
+
+    dfdX[k] += scale * product;
+    X[k] = xt;
+  }
+
+  delete[] X;
+  delete[] mat;
+}
+
+void TACSElement::getMatSVSensInnerProduct(
+    ElementMatrixType matType, int elemIndex, double time,
+    const TacsScalar psi[], const TacsScalar phi[], const TacsScalar Xpts[],
+    const TacsScalar vars[], TacsScalar dfdu[]) {
+  // The step length
+#ifdef TACS_USE_COMPLEX
+  const double dh = 1e-30;
+#else
+  const double dh = 1e-7;
+#endif  // TACS_USE_COMPLEX
+
+  int nvars = getNumVariables();
+  memset(dfdu, 0, nvars * sizeof(TacsScalar));
+  TacsScalar *mat = new TacsScalar[nvars * nvars];
+  TacsScalar *vars1 = new TacsScalar[nvars];
+
+  memcpy(vars1, vars, nvars * sizeof(TacsScalar));
+  memset(mat, 0, nvars * nvars * sizeof(TacsScalar));
+  TacsScalar p1 = 0.0;
+  getMatType(matType, elemIndex, time, Xpts, vars, mat);
+  for (int i = 0; i < nvars; i++) {
+    for (int j = 0; j < nvars; j++) {
+      p1 += mat[i + j * nvars] * psi[i] * phi[j];
+    }
+  }
+
+  for (int k = 0; k < nvars; k++) {
+    TacsScalar vt = vars1[k];
+
+#ifdef TACS_USE_COMPLEX
+    vars1[k] = vt + TacsScalar(0.0, dh);
+#else
+    vars1[k] = vt + dh;
+#endif  // TACS_USE_COMPLEX
+
+    memset(mat, 0, nvars * nvars * sizeof(TacsScalar));
+    TacsScalar p2 = 0.0;
+    getMatType(matType, elemIndex, time, Xpts, vars1, mat);
+    for (int i = 0; i < nvars; i++) {
+      for (int j = 0; j < nvars; j++) {
+        p2 += mat[i + j * nvars] * psi[i] * phi[j];
+      }
+    }
+
+    TacsScalar product = 0.0;
+#ifdef TACS_USE_COMPLEX
+    product = TacsImagPart(p2) / dh;
+#else
+    if (fdOrder < 2) {
+      // Use first-order forward differencing
+      product = (p2 - p1) / dh;
+    } else {
+      // Use second-order central differencing
+      vars1[k] = vt - dh;  //  backward step
+      p1 = 0.0;
+      getMatType(matType, elemIndex, time, Xpts, vars1, mat);
+      for (int i = 0; i < nvars; i++) {
+        for (int j = 0; j < nvars; j++) {
+          p1 += mat[i + j * nvars] * psi[i] * phi[j];
+        }
+      }
+      // Central difference
+      product = 0.5 * (p2 - p1) / dh;
+    }
+#endif  // TACS_USE_COMPLEX
+
+    dfdu[k] += product;
+    vars1[k] = vt;
+  }
+
+  delete[] vars1;
+  delete[] mat;
 }
 
 void TACSElement::addPointQuantityDVSens(

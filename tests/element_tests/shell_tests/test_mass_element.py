@@ -146,21 +146,44 @@ class ElementTest(unittest.TestCase):
                         )
                         self.assertFalse(fail)
 
-    def test_element_mat_sv_sens(self):
-        # Loop through each combination of consstitutive object and test element matrix inner product sens
+    def test_element_mat_xpt_sens(self):
+        # Loop through each combination of constitutive object and test element matrix inner product sens
         for con in self.con_objects:
             with self.subTest(con=con.getObjectName()):
                 element = elements.MassElement(con)
-                fail = elements.TestElementMatSVSens(
-                    element,
-                    TACS.GEOMETRIC_STIFFNESS_MATRIX,
-                    self.elem_index,
-                    self.time,
-                    self.xpts,
-                    self.vars,
-                    self.dh,
-                    self.print_level,
-                    self.atol,
-                    self.rtol,
-                )
-                self.assertFalse(fail)
+                for matrix_type in self.matrix_types:
+                    with self.subTest(matrix_type=matrix_type):
+                        fail = elements.TestElementMatXptSens(
+                            element,
+                            matrix_type,
+                            self.elem_index,
+                            self.time,
+                            self.xpts,
+                            self.vars,
+                            self.dh,
+                            self.print_level,
+                            self.atol,
+                            self.rtol,
+                        )
+                        self.assertFalse(fail)
+
+    def test_element_mat_sv_sens(self):
+        # Loop through each combination of constitutive object and test element matrix inner product sens
+        for con in self.con_objects:
+            with self.subTest(con=con.getObjectName()):
+                for matrix_type in self.matrix_types:
+                    with self.subTest(matrix_type=matrix_type):
+                        element = elements.MassElement(con)
+                        fail = elements.TestElementMatSVSens(
+                            element,
+                            matrix_type,
+                            self.elem_index,
+                            self.time,
+                            self.xpts,
+                            self.vars,
+                            self.dh,
+                            self.print_level,
+                            self.atol,
+                            self.rtol,
+                        )
+                        self.assertFalse(fail)

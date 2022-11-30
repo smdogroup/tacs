@@ -3059,6 +3059,60 @@ cdef class FrequencyAnalysis:
         eigval = self.ptr.extractEigenvector(index, vec.ptr, &err)
         return eigval, err
 
+    def evalEigenDVSens(self, int index, Vec dvsens):
+        """
+        Compute the derivative of the eigenvalues w.r.t. the design variables
+
+        The original eigenvalue problem is,
+
+        K*u = lambda*M*u
+
+        The derivative of the eigenvalue problem is given as follows,
+
+         dK/dx*u + K*du/dx =
+        d(lambda)/dx*M*u + lambda*dM/dx*u + lambda*M*du/dx
+
+        Since M = M^{T} and K = K^{T}, pre-multiplying by u^{T} gives,
+
+         u^{T}*dK/dx*u = d(lambda)/dx*(u^{T}*M*u) + lambda*u^{T}*dM/dx*u
+
+        Rearranging gives,
+
+        (u^{T}*M*u)*d(lambda)/dx = u^{T}*(dK/dx - lambda*dM/dx)*u
+
+        Args:
+            index (int): The index of the desired eigenvalue
+            dvsens (Vec): The vector in which the design variable sensitivity will be stored
+        """
+        self.ptr.evalEigenDVSens(index, dvsens.ptr)
+
+    def evalEigenXptSens(self, int index, Vec xptsens):
+        """
+        Compute the derivative of the eigenvalues w.r.t. the nodal coordinates
+
+        The original eigenvalue problem is,
+
+        K*u = lambda*M*u
+
+        The derivative of the eigenvalue problem is given as follows,
+
+         dK/dx*u + K*du/dx =
+        d(lambda)/dx*M*u + lambda*dM/dx*u + lambda*M*du/dx
+
+        Since M = M^{T} and K = K^{T}, pre-multiplying by u^{T} gives,
+
+         u^{T}*dK/dx*u = d(lambda)/dx*(u^{T}*M*u) + lambda*u^{T}*dM/dx*u
+
+        Rearranging gives,
+
+        (u^{T}*M*u)*d(lambda)/dx = u^{T}*(dK/dx - lambda*dM/dx)*u
+
+        Args:
+            index (int): The index of the desired eigenvalue
+            xptsens (Vec): The vector in which the nodal sensitivity will be stored
+        """
+        self.ptr.evalEigenXptSens(index, xptsens.ptr)
+
 cdef class BucklingAnalysis:
     cdef TACSLinearBuckling *ptr
     def __cinit__(self, Assembler assembler, TacsScalar sigma,
