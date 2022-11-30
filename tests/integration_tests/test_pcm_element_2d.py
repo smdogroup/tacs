@@ -14,15 +14,6 @@ https://kitchingroup.cheme.cmu.edu/blog/2013/03/07/Transient-heat-conduction-par
 base_dir = os.path.dirname(os.path.abspath(__file__))
 bdf_file = os.path.join(base_dir, "./input_files/unit_plate.bdf")
 
-FUNC_REFS = {
-    "steady_state_avg_temp": 150.00000000000063,
-    "steady_state_ks_temp": 198.51811570667203,
-    "steady_state_mass": 0.9999999999999951,
-    "transient_avg_temp": 741.0557806913429,
-    "transient_ks_temp": 196.22817693313027,
-    "transient_mass": 4.999999999999405,
-}
-
 # Area of plate
 area = 1.0
 
@@ -37,9 +28,9 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
         "steady_state_avg_temp": 150.00000000000063,
         "steady_state_ks_temp": 198.51811570667203,
         "steady_state_mass": 0.9999999999999951,
-        "transient_avg_temp": 741.0557806913429,
-        "transient_ks_temp": 196.22817693313027,
-        "transient_mass": 4.999999999999405,
+        "transient_avg_temp": 749.9893090606348,
+        "transient_ks_temp": 195.31167261518775,
+        "transient_mass": 5.0000000000000675,
     }
 
     def setup_tacs_problems(self, comm):
@@ -82,7 +73,7 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
 
             # Set one thickness value for every component
             con = constitutive.PhaseChangeMaterialConstitutive(
-                prop, prop, lh=10.0, Tm=160.0, t=tplate, tNum=1
+                prop, prop, lh=10.0, Tm=160.0, dT=100.0, t=tplate, tNum=1
             )
 
             model = elements.PCMHeatConduction2D(con)
@@ -102,7 +93,7 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
 
         # Create transient problem, loads are already applied through BCs
         tp = fea_assembler.createTransientProblem(
-            name="transient", tInit=0.0, tFinal=5.0, numSteps=100
+            name="transient", tInit=0.0, tFinal=5.0, numSteps=10
         )
         # Set the initial conditions
         tp.setInitConditions(vars=150.0)
