@@ -2,6 +2,7 @@ from tacs import TACS, elements, constitutive
 import numpy as np
 import unittest
 
+
 class ModelTest(unittest.TestCase):
     def setUp(self):
         # fd/cs step size
@@ -28,11 +29,17 @@ class ModelTest(unittest.TestCase):
         lh = 10.0  # Latent heat J/kg
         Tm = 0.0  # Melting temperature (relative) K
 
-        solid_prop = constitutive.MaterialProperties(rho=rho, kappa=2.0*kappa, specific_heat=cp)
-        liquid_prop = constitutive.MaterialProperties(rho=0.95*rho, kappa=0.1*kappa, specific_heat=1.1*cp)
+        solid_prop = constitutive.MaterialProperties(
+            rho=rho, kappa=2.0 * kappa, specific_heat=cp
+        )
+        liquid_prop = constitutive.MaterialProperties(
+            rho=0.95 * rho, kappa=0.1 * kappa, specific_heat=1.1 * cp
+        )
 
         # Set one thickness value for every component
-        con = constitutive.PhaseChangeMaterialConstitutive(solid_prop, liquid_prop, lh=lh, Tm=Tm, t=0.1, tNum=-1)
+        con = constitutive.PhaseChangeMaterialConstitutive(
+            solid_prop, liquid_prop, lh=lh, Tm=Tm, t=0.1, tNum=-1
+        )
 
         # Create the model for 2D
         self.model = elements.PCMHeatConduction2D(con)
@@ -41,11 +48,25 @@ class ModelTest(unittest.TestCase):
         elements.SeedRandomGenerator(0)
 
     def test_element_model_jacobian(self):
-        fail = elements.TestElementModelJacobian(self.model, self.elem_index, self.time, self.dh,
-                                                 self.print_level, self.atol, self.rtol)
+        fail = elements.TestElementModelJacobian(
+            self.model,
+            self.elem_index,
+            self.time,
+            self.dh,
+            self.print_level,
+            self.atol,
+            self.rtol,
+        )
         self.assertFalse(fail)
 
     def test_element_model_adj_xpt_sens_product(self):
-        fail = elements.TestElementModelAdjXptSensProduct(self.model, self.elem_index, self.time, self.dh,
-                                                          self.print_level, self.atol, self.rtol)
+        fail = elements.TestElementModelAdjXptSensProduct(
+            self.model,
+            self.elem_index,
+            self.time,
+            self.dh,
+            self.print_level,
+            self.atol,
+            self.rtol,
+        )
         self.assertFalse(fail)

@@ -120,10 +120,8 @@ class TACSConstitutive : public TACSObject {
   virtual TacsScalar evalDensity(int elemIndex, const double pt[],
                                  const TacsScalar X[]) = 0;
 
-  virtual TacsScalar evalDensity( int elemIndex,
-                                  const double pt[],
-                                  const TacsScalar X[],
-                                  const TacsScalar u ){
+  virtual TacsScalar evalDensity(int elemIndex, const double pt[],
+                                 const TacsScalar X[], const TacsScalar u[]) {
     return evalDensity(elemIndex, pt, X);
   }
 
@@ -141,14 +139,28 @@ class TACSConstitutive : public TACSObject {
                                 const double pt[], const TacsScalar X[],
                                 int dvLen, TacsScalar dfdx[]) {}
 
-  virtual void addDensityDVSens( int elemIndex,
-                                 TacsScalar scale,
-                                 const double pt[],
-                                 const TacsScalar X[],
-                                 int dvLen, TacsScalar dfdx[],
-                                 const TacsScalar u ){
-    return addDensityDVSens(elemIndex, scale,
-                            pt, X, dvLen, dfdx);
+  virtual void addDensityDVSens(int elemIndex, TacsScalar scale,
+                                const double pt[], const TacsScalar X[],
+                                int dvLen, TacsScalar dfdx[],
+                                const TacsScalar u[]) {
+    return addDensityDVSens(elemIndex, scale, pt, X, dvLen, dfdx);
+  }
+
+  /**
+    Add the derivative of the pointwise mass with respect to state variables
+
+    @param elemIndex The local element index
+    @param pt The parametric location
+    @param X The point location
+    @param dfdu The state variable sensitivity array
+  */
+  virtual void addDensitySVSens(int elemIndex, const double pt[],
+                                const TacsScalar X[], TacsScalar dfdu[]) {}
+
+  virtual void addDensitySVSens(int elemIndex, const double pt[],
+                                const TacsScalar X[], TacsScalar dfdu[],
+                                const TacsScalar u[]) {
+    return addDensitySVSens(elemIndex, pt, X, dfdu);
   }
 
   /**
@@ -196,10 +208,9 @@ class TACSConstitutive : public TACSObject {
   virtual TacsScalar evalSpecificHeat(int elemIndex, const double pt[],
                                       const TacsScalar X[]) = 0;
 
-  virtual TacsScalar evalSpecificHeat( int elemIndex,
-                                       const double pt[],
-                                       const TacsScalar X[],
-                                       const TacsScalar u ){
+  virtual TacsScalar evalSpecificHeat(int elemIndex, const double pt[],
+                                      const TacsScalar X[],
+                                      const TacsScalar u[]) {
     return evalSpecificHeat(elemIndex, pt, X);
   }
 
@@ -217,14 +228,29 @@ class TACSConstitutive : public TACSObject {
                                      const double pt[], const TacsScalar X[],
                                      int dvLen, TacsScalar dfdx[]) {}
 
-  virtual void addSpecificHeatDVSens( int elemIndex,
-                                      TacsScalar scale,
-                                      const double pt[],
-                                      const TacsScalar X[],
-                                      int dvLen, TacsScalar dfdx[],
-                                      const TacsScalar u ){
-    return addSpecificHeatDVSens(elemIndex, scale,
-                                 pt, X, dvLen, dfdx);
+  virtual void addSpecificHeatDVSens(int elemIndex, TacsScalar scale,
+                                     const double pt[], const TacsScalar X[],
+                                     int dvLen, TacsScalar dfdx[],
+                                     const TacsScalar u[]) {
+    return addSpecificHeatDVSens(elemIndex, scale, pt, X, dvLen, dfdx);
+  }
+
+  /**
+    Add the specific heat derivative with respect to state variables
+
+    @param elemIndex The local element index
+    @param pt The parametric location
+    @param X The point location
+    @param dvLen the length of the sensitivity array
+    @param dfdu The state variable sensitivity array
+  */
+  virtual void addSpecificHeatSVSens(int elemIndex, const double pt[],
+                                     const TacsScalar X[], TacsScalar dfdu[]) {}
+
+  virtual void addSpecificHeatSVSens(int elemIndex, const double pt[],
+                                     const TacsScalar X[], TacsScalar dfdu[],
+                                     const TacsScalar u[]) {
+    return addSpecificHeatSVSens(elemIndex, pt, X, dfdu);
   }
 
   /**
@@ -359,14 +385,10 @@ class TACSConstitutive : public TACSObject {
     @param pt The parametric point within the element
     @param X The physical point location
   */
-  virtual void evalHeatFlux( int elemIndex,
-                             const double pt[],
-                             const TacsScalar X[],
-                             const TacsScalar grad[],
-                             TacsScalar flux[],
-                             const TacsScalar u ){
-    return evalHeatFlux(elemIndex, pt,
-                        X, grad, flux);
+  virtual void evalHeatFlux(int elemIndex, const double pt[],
+                            const TacsScalar X[], const TacsScalar grad[],
+                            TacsScalar flux[], const TacsScalar u[]) {
+    return evalHeatFlux(elemIndex, pt, X, grad, flux);
   }
 
   /**
@@ -388,11 +410,9 @@ class TACSConstitutive : public TACSObject {
     @param X The physical point location
     @param C The tangent heat flux matrix
   */
-  virtual void evalTangentHeatFlux( int elemIndex,
-                                    const double pt[],
-                                    const TacsScalar X[],
-                                    TacsScalar C[],
-                                    const TacsScalar u ){
+  virtual void evalTangentHeatFlux(int elemIndex, const double pt[],
+                                   const TacsScalar X[], TacsScalar C[],
+                                   const TacsScalar u[]) {
     return evalTangentHeatFlux(elemIndex, pt, X, C);
   }
 
@@ -424,17 +444,12 @@ class TACSConstitutive : public TACSObject {
     @param dvLen The length of the sensitivity array
     @param dfdx The sensitivity
   */
-  virtual void addHeatFluxDVSens( int elemIndex,
-                                  TacsScalar scale,
-                                  const double pt[],
-                                  const TacsScalar X[],
-                                  const TacsScalar grad[],
-                                  const TacsScalar psi[],
-                                  int dvLen, TacsScalar dfdx[],
-                                  const TacsScalar u ){
-    return addHeatFluxDVSens(elemIndex, scale,
-                             pt, X, grad, psi,
-                             dvLen, dfdx);
+  virtual void addHeatFluxDVSens(int elemIndex, TacsScalar scale,
+                                 const double pt[], const TacsScalar X[],
+                                 const TacsScalar grad[],
+                                 const TacsScalar psi[], int dvLen,
+                                 TacsScalar dfdx[], const TacsScalar u[]) {
+    return addHeatFluxDVSens(elemIndex, scale, pt, X, grad, psi, dvLen, dfdx);
   }
 
   /**

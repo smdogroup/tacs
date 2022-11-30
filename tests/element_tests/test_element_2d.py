@@ -64,7 +64,6 @@ class ElementTest(unittest.TestCase):
 
         # Create stiffness (need class)
         con = constitutive.PlaneStressConstitutive(self.props, t=1.0, tNum=0)
-        pcm_con = constitutive.PhaseChangeMaterialConstitutive(self.props, props2, Tm=0.0, lh=0.0, t=1.0, tNum=0)
 
         # Set the model type
         self.models = [
