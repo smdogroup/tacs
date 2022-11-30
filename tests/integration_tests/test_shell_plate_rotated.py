@@ -4,12 +4,12 @@ from tacs import pytacs, elements, constitutive, functions
 from pytacs_analysis_base_test import PyTACSTestCase
 
 """
-This is the same test cases as `test_shell_plate_quad.py`, but the plate is been rotated 
-about the y-axis by 45 degrees, so that it lies in a slant in the xz plane. This test ensures that the plate solution 
-is invariant under trivial transformation: 
+This is the same test cases as `test_shell_plate_quad.py`, but the plate is been rotated
+about the y-axis by 45 degrees, so that it lies in a slant in the xz plane. This test ensures that the plate solution
+is invariant under trivial transformation:
 a 10 kN point force at center, a 100kPa pressure applied to the surface, and a 100G gravity load. The
 perimeter of the plate is fixed in all 6 degrees of freedom. The plate comprises
-100 CQUAD4 elements and test KSFailure, StructuralMass, CenterOfMass, MomentOfInertia, 
+100 CQUAD4 elements and test KSFailure, StructuralMass, CenterOfMass, MomentOfInertia,
 and Compliance functions and sensitivities
 """
 
@@ -149,3 +149,32 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
             )
 
         return tacs_probs, fea_assembler
+
+    def test_residual_scaling(self):
+        """Test that the load scaling is working correctly for the point and pressure loads."""
+        for problem in self.tacs_probs:
+            with self.subTest(problem=problem.name):
+                np.random.seed(1)
+                # Check that the residual is zero if the states and load scale are both zero
+                problem.loadScale = 0.0
+                problem.u.zeroEntries()
+                problem.assembler.setVariables(problem.u)
+                problem.getResidual(problem.res)
+
+                self.assertEqual(np.real(problem.res.norm()), 0.0)
+
+                # Check that the loadScale does linearly scale the external loads
+                fullRes = problem.assembler.createVec()
+                problem.loadScale = 1.0
+                problem.getResidual(fullRes)
+                print(f"{fullRes.norm()=}")
+
+                loadScale = np.random.rand()
+                problem.loadScale = loadScale
+                scaledRes = problem.assembler.createVec()
+                problem.getResidual(scaledRes)
+                print(f"{scaledRes.norm()=}")
+
+                # scaledRes -= loadScale*fullRes should = 0
+                scaledRes.axpy(-loadScale, fullRes)
+                np.testing.assert_almost_equal(np.real(scaledRes.norm()), 0.0, 1e-12)
