@@ -175,6 +175,9 @@ class StaticProblem(TACSProblem):
         self.startNorm = 0.0
         self.finalNorm = 0.0
 
+        # Load scaling factor
+        self.loadScale = 1.0
+
         opt = self.getOption
 
         # Tangent Stiffness --- process the ordering option here:
@@ -217,7 +220,8 @@ class StaticProblem(TACSProblem):
         #        opt('nRestarts'), opt('flexible'))
         else:
             raise self._TACSError(
-                "Unknown KSMSolver option. Valid options are " "'GMRES' or 'GCROT'"
+                "Unknown KSMSolver option. Valid options are "
+                "'GMRES' or 'GCROT'"
             )
 
         self.KSM.setTolerances(
@@ -233,9 +237,6 @@ class StaticProblem(TACSProblem):
 
         # Linear solver factor flag
         self._factorOnNext = True
-
-        # Load scaling factor
-        self.loadScale = 1.0
 
     def setOption(self, name, value):
         """
@@ -293,7 +294,9 @@ class StaticProblem(TACSProblem):
         **kwargs:
             Any keyword arguments to be passed to the TACS function during setup.
         """
-        success = TACSProblem.addFunction(self, funcName, funcHandle, compIDs, **kwargs)
+        success = TACSProblem.addFunction(
+            self, funcName, funcHandle, compIDs, **kwargs
+        )
         if success:
             # Create additional tacs BVecs to hold adjoint and sens info
             self.adjointList[funcName] = self.assembler.createVec()
@@ -462,7 +465,9 @@ class StaticProblem(TACSProblem):
             Indicates which face (side) of element to apply traction to.
             Note: not required for certain elements (i.e. shells)
         """
-        self._addTractionToComponents(self.auxElems, compIDs, tractions, faceIndex)
+        self._addTractionToComponents(
+            self.auxElems, compIDs, tractions, faceIndex
+        )
 
     def addTractionToElements(
         self, elemIDs, tractions, faceIndex=0, nastranOrdering=False
@@ -516,7 +521,9 @@ class StaticProblem(TACSProblem):
             Indicates which face (side) of element to apply pressure to.
             Note: not required for certain elements (i.e. shells)
         """
-        self._addPressureToComponents(self.auxElems, compIDs, pressures, faceIndex)
+        self._addPressureToComponents(
+            self.auxElems, compIDs, pressures, faceIndex
+        )
 
     def addPressureToElements(
         self, elemIDs, pressures, faceIndex=0, nastranOrdering=False
@@ -713,7 +720,8 @@ class StaticProblem(TACSProblem):
                 % ("TACS Init Norm Time", initNormTime - initSolveTime)
             )
             self._pp(
-                "| %-30s: %10.3f sec" % ("TACS Solve Time", solveTime - initNormTime)
+                "| %-30s: %10.3f sec"
+                % ("TACS Solve Time", solveTime - initNormTime)
             )
             self._pp(
                 "| %-30s: %10.3f sec"
@@ -781,7 +789,9 @@ class StaticProblem(TACSProblem):
         setupProblemTime = time.time()
 
         # Fast parallel function evaluation of structural funcs:
-        handles = [self.functionList[f] for f in evalFuncs if f in self.functionList]
+        handles = [
+            self.functionList[f] for f in evalFuncs if f in self.functionList
+        ]
         funcVals = self.assembler.evalFunctions(handles)
 
         functionEvalTime = time.time()
@@ -865,7 +875,8 @@ class StaticProblem(TACSProblem):
         for f in evalFuncs:
             if f not in self.functionList:
                 raise self._TACSError(
-                    "Supplied function has not been added " "using addFunction()"
+                    "Supplied function has not been added "
+                    "using addFunction()"
                 )
             else:
                 # Populate the lists with the tacs bvecs
@@ -1021,7 +1032,8 @@ class StaticProblem(TACSProblem):
         # Create a tacs BVec copy for the operation if the output is a numpy array
         if isinstance(dvSensList[0], np.ndarray):
             dvSensBVecList = [
-                self._arrayToDesignVec(dvSensArray) for dvSensArray in dvSensList
+                self._arrayToDesignVec(dvSensArray)
+                for dvSensArray in dvSensList
             ]
         # Otherwise the input is already a BVec and we can do the operation in place
         else:
@@ -1074,13 +1086,16 @@ class StaticProblem(TACSProblem):
         # Create a tacs BVec copy for the operation if the output is a numpy array
         if isinstance(dvSensList[0], np.ndarray):
             dvSensBVecList = [
-                self._arrayToDesignVec(dvSensArray) for dvSensArray in dvSensList
+                self._arrayToDesignVec(dvSensArray)
+                for dvSensArray in dvSensList
             ]
         # Otherwise the input is already a BVec and we can do the operation in place
         else:
             dvSensBVecList = dvSensList
 
-        self.assembler.addAdjointResProducts(adjointBVeclist, dvSensBVecList, scale)
+        self.assembler.addAdjointResProducts(
+            adjointBVeclist, dvSensBVecList, scale
+        )
 
         # Finalize sensitivity arrays across all procs
         for dvSensBVec in dvSensBVecList:
@@ -1119,7 +1134,8 @@ class StaticProblem(TACSProblem):
         # Create a tacs BVec copy for the operation if the output is a numpy array
         if isinstance(xptSensList[0], np.ndarray):
             xptSensBVecList = [
-                self._arrayToNodeVec(xptSensArray) for xptSensArray in xptSensList
+                self._arrayToNodeVec(xptSensArray)
+                for xptSensArray in xptSensList
             ]
         # Otherwise the input is already a BVec and we can do the operation in place
         else:
@@ -1138,7 +1154,9 @@ class StaticProblem(TACSProblem):
                 # Copy values to numpy array
                 xptSensArray[:] = xptSensBVec.getArray()
 
-    def addAdjointResXptSensProducts(self, adjointlist, xptSensList, scale=-1.0):
+    def addAdjointResXptSensProducts(
+        self, adjointlist, xptSensList, scale=-1.0
+    ):
         """
         Add the adjoint product contribution to the nodal coordinates sensitivity arrays
 
@@ -1172,7 +1190,8 @@ class StaticProblem(TACSProblem):
         # Create a tacs BVec copy for the operation if the output is a numpy array
         if isinstance(xptSensList[0], np.ndarray):
             xptSensBVecList = [
-                self._arrayToNodeVec(xptSensArray) for xptSensArray in xptSensList
+                self._arrayToNodeVec(xptSensArray)
+                for xptSensArray in xptSensList
             ]
         # Otherwise the input is already a BVec and we can do the operation in place
         else:
