@@ -130,7 +130,8 @@ class TACSConstitutive : public TACSObject {
     @return The density
   */
   virtual TacsScalar evalDensity(int elemIndex, const double pt[],
-                                 const TacsScalar X[], const TacsScalar vars[]) {
+                                 const TacsScalar X[],
+                                 const TacsScalar vars[]) {
     return evalDensity(elemIndex, pt, X);
   }
 
