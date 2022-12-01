@@ -17,14 +17,16 @@
 */
 
 /*
-The phase change material (PCM) is defined to be solid below the melting temperature (Tm)
-and liquid above it. Phase transition (from solid to liquid or liquid to solid) requires energy,
-defined by the material's specific latent heat (lh). This implementation  approximates this by
-defining a transition region between [Tm-dT, Tm+dT], where dT is a small temperature with a default
-value of 1.0. In this transition region, the latent heat is added to the material's specific heat.
-In the transition region, density and conductivity are linearly interpolated between the solid and
-liquid values. The piecewise-linear transition boundaries are smoothly-approximated using an
-arctangent function to make these values differentiable.
+The phase change material (PCM) is defined to be solid below the melting
+temperature (Tm) and liquid above it. Phase transition (from solid to liquid or
+liquid to solid) requires energy, defined by the material's specific latent heat
+(lh). This implementation  approximates this by defining a transition region
+between [Tm-dT, Tm+dT], where dT is a small temperature with a default value
+of 1.0. In this transition region, the latent heat is added to the material's
+specific heat. In the transition region, density and conductivity are linearly
+interpolated between the solid and liquid values. The piecewise-linear
+transition boundaries are smoothly-approximated using an arctangent function to
+make these values differentiable.
 */
 
 #include "TACSPhaseChangeMaterialConstitutive.h"
@@ -57,8 +59,10 @@ TACSPhaseChangeMaterialConstitutive::TACSPhaseChangeMaterialConstitutive(
   tNum = _tNum;
   tlb = _tlb;
   tub = _tub;
-  dT = _dT;  // small temperature value defining the transition region: [Tm-dT, Tm+dT]
-  b = 2.0 * tan(0.99 * M_PI / 2.0);  // constant used to evaluate transition boundaries
+  dT = _dT;  // small temperature value defining the transition region: [Tm-dT,
+             // Tm+dT]
+  b = 2.0 * tan(0.99 * M_PI /
+                2.0);  // constant used to evaluate transition boundaries
 }
 
 TACSPhaseChangeMaterialConstitutive::~TACSPhaseChangeMaterialConstitutive() {
