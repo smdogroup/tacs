@@ -30,7 +30,7 @@ default:
 	   echo "Building Real TACS"; \
 	   for subdir in $(TACS_SUBDIRS) ; do \
 	      echo "making $@ in $$subdir"; \
-	      echo; (cd $$subdir && $(MAKE) TACS_DIR=${TACS_DIR}) || exit 1; \
+	      echo; (cd $$subdir && $(MAKE) TACS_DIR=${TACS_DIR} TACS_DEF=${TACS_DEF}) || exit 1; \
             done \
 	fi
 	${CXX} ${SO_LINK_FLAGS} ${TACS_OBJS} ${TACS_EXTERN_LIBS} -o ${TACS_DIR}/lib/libtacs.${SO_EXT}
