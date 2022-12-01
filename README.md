@@ -75,9 +75,15 @@ Once the external dependencies are installed, copy Makefile.in.info to Makefile.
 
 Note that the default values can often be used without modification. Of all these options, it is most important for performance reasons to link to an optimized version of LAPACK, if possible.
 
+The C++ interface can then be compiled by running the `make` command from the tacs root directory:
+
+   ```
+   make
+   ```
+
 ### Setting up the Python interface ###
 
-The python interface (and all dependencies) can be created with a call to setup.py. The setup.cfg.info contains the recommended defaults for the configuration script. For development, create a local development installation by executing
+The python interface can be installed after the C++ interface has been compiled. The python interface (and all dependencies) can be created with a call to setup.py. The setup.cfg.info contains the recommended defaults for the configuration script. For development, create a local development installation by executing
 
     pip install -e .\[all\]
 
