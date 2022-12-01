@@ -467,8 +467,7 @@ cdef class PlaneStressConstitutive(Constitutive):
 
 cdef class PhaseChangeMaterialConstitutive(Constitutive):
     """
-    This is the base class for the plane stress constitutive objects.
-    All objects performing plane stress analysis should utilize this class.
+    This is the base class for the phase change material constitutive objects.
 
     Args:
         solid_props (MaterialProperties): The material property of the solid phase.

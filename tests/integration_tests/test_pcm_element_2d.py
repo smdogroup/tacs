@@ -4,7 +4,7 @@ from tacs import pytacs, TACS, elements, constitutive, functions, problems
 from pytacs_analysis_base_test import PyTACSTestCase
 
 """
-Test heat conduction of a problem with non-uniform boundary conditions with initial conditions everywhere else.
+Test phase change material (PCM) constitutive class and associated heat conduction model.
 This is a unit-square domain with dT=100 on the left edge, dT=200 on the right edge, and initial condition of dT=150 in between.
 
 This example is a replication of the example here:
