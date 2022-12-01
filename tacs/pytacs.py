@@ -65,7 +65,8 @@ class pyTACS(BaseUI):
             f"\t\t tacs.TACS.SOLID_ELEMENT = {tacs.TACS.SOLID_ELEMENT}\n"
             f"\t\t tacs.TACS.RIGID_ELEMENT = {tacs.TACS.RIGID_ELEMENT}\n"
             f"\t\t tacs.TACS.MASS_ELEMENT = {tacs.TACS.MASS_ELEMENT}\n"
-            f"\t\t tacs.TACS.SPRING_ELEMENT = {tacs.TACS.SPRING_ELEMENT}",
+            f"\t\t tacs.TACS.SPRING_ELEMENT = {tacs.TACS.SPRING_ELEMENT}\n"
+            f"\t\t tacs.TACS.PCM_ELEMENT = {tacs.TACS.PCM_ELEMENT}",
         ],
         "writeConnectivity": [
             bool,

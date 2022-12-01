@@ -22,6 +22,7 @@ The following :class:`~TACS.ElementModel` classes are available in TACS:
 
 .. automodule:: tacs.elements
   :members: HeatConduction2D, HeatConduction3D,
+    PCMHeatConduction2D,
     LinearElasticity2D, LinearElasticity3D,
     LinearThermoelasticity2D, LinearThermoelasticity3D
   :show-inheritance:
