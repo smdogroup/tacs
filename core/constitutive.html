@@ -434,6 +434,28 @@ isotropic first-order shear deformation theory shell type element.</p>
 </dd></dl>
 
 <dl class="py class">
+<dt class="sig sig-object py" id="tacs.constitutive.PhaseChangeMaterialConstitutive">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tacs.constitutive.</span></span><span class="sig-name descname"><span class="pre">PhaseChangeMaterialConstitutive</span></span><a class="headerlink" href="#tacs.constitutive.PhaseChangeMaterialConstitutive" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Constitutive</span></code></p>
+<p>This is the base class for the phase change material constitutive objects.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>solid_props</strong> (<a class="reference internal" href="#tacs.constitutive.MaterialProperties" title="tacs.constitutive.MaterialProperties"><em>MaterialProperties</em></a>) -- The material property of the solid phase.</p></li>
+<li><p><strong>liquid_props</strong> (<a class="reference internal" href="#tacs.constitutive.MaterialProperties" title="tacs.constitutive.MaterialProperties"><em>MaterialProperties</em></a>) -- The material property of the liquid phase.</p></li>
+<li><p><strong>lh</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.11)"><em>float</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#complex" title="(in Python v3.11)"><em>complex</em></a>) -- The specific latent heat of the material.</p></li>
+<li><p><strong>mt</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.11)"><em>float</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#complex" title="(in Python v3.11)"><em>complex</em></a>) -- The melting temperature of the material.</p></li>
+<li><p><strong>t</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.11)"><em>float</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#complex" title="(in Python v3.11)"><em>complex</em></a><em>, </em><em>optional</em>) -- The material thickness (keyword argument). Defaults to 1.0.</p></li>
+<li><p><strong>tNum</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)"><em>int</em></a><em>, </em><em>optional</em>) -- Design variable number to assign to thickness (keyword argument). Defaults to -1
+(i.e. no design variable).</p></li>
+<li><p><strong>tlb</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.11)"><em>float</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#complex" title="(in Python v3.11)"><em>complex</em></a><em>, </em><em>optional</em>) -- Thickness varaible lower bound (keyword argument). Defaults to 0.0.</p></li>
+<li><p><strong>tub</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.11)"><em>float</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#complex" title="(in Python v3.11)"><em>complex</em></a><em>, </em><em>optional</em>) -- Thickness varaible upper bound (keyword argument). Defaults to 10.0.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py class">
 <dt class="sig sig-object py" id="tacs.constitutive.PlaneStressConstitutive">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tacs.constitutive.</span></span><span class="sig-name descname"><span class="pre">PlaneStressConstitutive</span></span><a class="headerlink" href="#tacs.constitutive.PlaneStressConstitutive" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Constitutive</span></code></p>
@@ -560,6 +582,7 @@ Weighting factor used for topology optimization. 0.0 corresponds to void,
 <li><a class="reference internal" href="#tacs.constitutive.IsoShellConstitutive"><code class="docutils literal notranslate"><span class="pre">IsoShellConstitutive</span></code></a></li>
 <li><a class="reference internal" href="#tacs.constitutive.IsoTubeBeamConstitutive"><code class="docutils literal notranslate"><span class="pre">IsoTubeBeamConstitutive</span></code></a></li>
 <li><a class="reference internal" href="#tacs.constitutive.LamParamShellConstitutive"><code class="docutils literal notranslate"><span class="pre">LamParamShellConstitutive</span></code></a></li>
+<li><a class="reference internal" href="#tacs.constitutive.PhaseChangeMaterialConstitutive"><code class="docutils literal notranslate"><span class="pre">PhaseChangeMaterialConstitutive</span></code></a></li>
 <li><a class="reference internal" href="#tacs.constitutive.PlaneStressConstitutive"><code class="docutils literal notranslate"><span class="pre">PlaneStressConstitutive</span></code></a></li>
 <li><a class="reference internal" href="#tacs.constitutive.PointMassConstitutive"><code class="docutils literal notranslate"><span class="pre">PointMassConstitutive</span></code></a></li>
 <li><a class="reference internal" href="#tacs.constitutive.ShellConstitutive"><code class="docutils literal notranslate"><span class="pre">ShellConstitutive</span></code></a><ul>

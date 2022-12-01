@@ -191,6 +191,22 @@ The following <code class="xref py py-class docutils literal notranslate"><span 
 </dd></dl>
 
 <dl class="py class">
+<dt class="sig sig-object py" id="tacs.elements.PCMHeatConduction2D">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tacs.elements.</span></span><span class="sig-name descname"><span class="pre">PCMHeatConduction2D</span></span><a class="headerlink" href="#tacs.elements.PCMHeatConduction2D" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">ElementModel</span></code></p>
+<p>Model class for 2D phase change material heat conduction element.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>varsPerNode: 1</p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>con</strong> (<a class="reference internal" href="constitutive.html#tacs.constitutive.PhaseChangeMaterialConstitutive" title="tacs.constitutive.PhaseChangeMaterialConstitutive"><em>PhaseChangeMaterialConstitutive</em></a>) -- Material constitutive properties.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py class">
 <dt class="sig sig-object py" id="tacs.elements.LinearElasticity2D">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tacs.elements.</span></span><span class="sig-name descname"><span class="pre">LinearElasticity2D</span></span><a class="headerlink" href="#tacs.elements.LinearElasticity2D" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">ElementModel</span></code></p>
@@ -1047,6 +1063,7 @@ independent node dof's are attached to the eleemnt.</p></li>
 <li><a class="reference internal" href="#model-classes">Model classes</a><ul>
 <li><a class="reference internal" href="#tacs.elements.HeatConduction2D"><code class="docutils literal notranslate"><span class="pre">HeatConduction2D</span></code></a></li>
 <li><a class="reference internal" href="#tacs.elements.HeatConduction3D"><code class="docutils literal notranslate"><span class="pre">HeatConduction3D</span></code></a></li>
+<li><a class="reference internal" href="#tacs.elements.PCMHeatConduction2D"><code class="docutils literal notranslate"><span class="pre">PCMHeatConduction2D</span></code></a></li>
 <li><a class="reference internal" href="#tacs.elements.LinearElasticity2D"><code class="docutils literal notranslate"><span class="pre">LinearElasticity2D</span></code></a></li>
 <li><a class="reference internal" href="#tacs.elements.LinearElasticity3D"><code class="docutils literal notranslate"><span class="pre">LinearElasticity3D</span></code></a></li>
 <li><a class="reference internal" href="#tacs.elements.LinearThermoelasticity2D"><code class="docutils literal notranslate"><span class="pre">LinearThermoelasticity2D</span></code></a></li>

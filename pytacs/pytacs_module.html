@@ -100,6 +100,7 @@ The following options, their default values and descriptions are listed below:</
 		 tacs.TACS.RIGID_ELEMENT = 7
 		 tacs.TACS.MASS_ELEMENT = 8
 		 tacs.TACS.SPRING_ELEMENT = 9
+		 tacs.TACS.PCM_ELEMENT = 10
 &#39;writeConnectivity&#39;: True
 	 Flag for whether to include element connectivity in f5 file.
 &#39;writeNodes&#39;: True
@@ -231,7 +232,7 @@ the user is recommended to setup that element through an
 <h2>Tagging component groups in BDF<a class="headerlink" href="#tagging-component-groups-in-bdf" title="Permalink to this heading">¶</a></h2>
 <p>Several pyTACS methods (<a class="reference internal" href="#tacs.pytacs.pyTACS.selectCompIDs" title="tacs.pytacs.pyTACS.selectCompIDs"><code class="xref py py-meth docutils literal notranslate"><span class="pre">pyTACS.selectCompIDs</span></code></a>, <a class="reference internal" href="#tacs.pytacs.elemCallBack" title="tacs.pytacs.elemCallBack"><code class="xref py py-func docutils literal notranslate"><span class="pre">elemCallBack()</span></code></a>, etc.)
 allow for the use of user-defined component labels. These labels are read in through formatted comment in the BDF file.</p>
-<p>There are currently two supported formats for labels: ICEM-format and FEMAP-format. These are described below.</p>
+<p>There are currently several supported formats for labels: ICEM-format, FEMAP-format, Patran-format, and HyperMesh-format. These are described below.</p>
 <section id="icem-component-label-format">
 <h3>ICEM component label format<a class="headerlink" href="#icem-component-label-format" title="Permalink to this heading">¶</a></h3>
 <p>In the ICEM format, the elements are organized by property groups and
@@ -264,6 +265,38 @@ followed by the component name. No spaces are allowed within the component name.
 PSHELL         1       1      .1       1               1              0.
 $ Femap Property 2 : Stiffener
 PSHELL         2       1      .1       1               1              0.
+</pre></div>
+</div>
+</section>
+<section id="patran-component-label-format">
+<h3>Patran component label format<a class="headerlink" href="#patran-component-label-format" title="Permalink to this heading">¶</a></h3>
+<p>In the Patran format, the component label is appended as a string comment above each property card.
+The string comment should start with <code class="docutils literal notranslate"><span class="pre">$</span> <span class="pre">Elements</span> <span class="pre">and</span> <span class="pre">Element</span> <span class="pre">Properties</span> <span class="pre">for</span> <span class="pre">region</span> <span class="pre">:</span></code>
+followed by the component name. An example of this format is provided below:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>$ Elements and Element Properties for region : rod_1
+PROD           1       1      .1
+CROD           1       1    3600    3310
+CROD           2       1    3310    3320
+$ Elements and Element Properties for region : rod_2
+PROD           2       1      .2
+CROD           3       2    6600    6310
+CROD           4       2    6310    6320
+</pre></div>
+</div>
+</section>
+<section id="hypermesh-component-label-format">
+<h3>HyperMesh component label format<a class="headerlink" href="#hypermesh-component-label-format" title="Permalink to this heading">¶</a></h3>
+<p>In the HyperMesh format, the component label is appended as a string comment above each property card.
+The string comment should start with <code class="docutils literal notranslate"><span class="pre">$HMNAME</span> <span class="pre">PROP</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">i</span></code> (where <code class="docutils literal notranslate"><span class="pre">i</span></code> is replaced with the property number the label is referencing)
+followed by the component name in double quotes. Any other comment lines above the property card (ex. <code class="docutils literal notranslate"><span class="pre">$HWCOLOR</span> <span class="pre">PROP...</span></code>) will be ignored by the mesh loader.
+An example of this format is provided below:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>$HMNAME PROP                   1&quot;Rib1&quot; 4
+$HWCOLOR PROP                  1      28
+PSHELL         1       0               0               0
+$
+$HMNAME PROP                   2&quot;Rib2&quot; 4
+$HWCOLOR PROP                  2      29
+PSHELL         2       0               0               0
 </pre></div>
 </div>
 </section>
@@ -797,6 +830,8 @@ options to the stdout on the root processor</p>
 <li><a class="reference internal" href="#tagging-component-groups-in-bdf">Tagging component groups in BDF</a><ul>
 <li><a class="reference internal" href="#icem-component-label-format">ICEM component label format</a></li>
 <li><a class="reference internal" href="#femap-component-label-format">FEMAP component label format</a></li>
+<li><a class="reference internal" href="#patran-component-label-format">Patran component label format</a></li>
+<li><a class="reference internal" href="#hypermesh-component-label-format">HyperMesh component label format</a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#api-reference">API Reference</a><ul>
