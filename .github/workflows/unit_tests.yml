@@ -19,10 +19,6 @@ on:
 jobs:
   # This job is called test_docs.
   unit_test_and_docs:
-    # Recommended if you intend to make multiple deployments in quick succession.
-    concurrency:
-      group: ci-${{ github.ref }}
-      cancel-in-progress: true
     # Run on Ubuntu
     runs-on: ubuntu-latest
     timeout-minutes: 30
@@ -52,6 +48,12 @@ jobs:
             PUBLISH_DOCS: false
 
     name: TACS ${{ matrix.NAME }} Build/Test/Docs
+
+    # Recommended if you intend to make multiple deployments in quick succession.
+    # This will kill any currently running CI from previous commits to the same branch
+    concurrency:
+      group: ci-${{ github.ref }}-${{ matrix.NAME }}
+      cancel-in-progress: true
 
     steps:
       - name: Display run details
