@@ -20,7 +20,9 @@ jobs:
   # This job is called test_docs.
   unit_test_and_docs:
     # Recommended if you intend to make multiple deployments in quick succession.
-    concurrency: ci-${{ github.ref }}
+    concurrency:
+      group: ci-${{ github.ref }}
+      cancel-in-progress: true
     # Run on Ubuntu
     runs-on: ubuntu-latest
     timeout-minutes: 30
