@@ -64,7 +64,8 @@ TACSElement *TACSElement3D::createElementInertialForce(
 }
 
 TACSElement *TACSElement3D::createElementCentrifugalForce(
-    const TacsScalar omegaVec[], const TacsScalar rotCenter[]) {
+    const TacsScalar omegaVec[], const TacsScalar rotCenter[],
+    const bool first_order) {
   int varsPerNode = getVarsPerNode();
   TACSConstitutive *con = model->getConstitutive();
   return new TACSCentrifugalForce3D(varsPerNode, con, basis, omegaVec,

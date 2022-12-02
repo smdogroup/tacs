@@ -26,6 +26,8 @@ np.import_array()
 # Import the definition required for const strings
 from libc.string cimport const_char
 from libc.stdlib cimport malloc, free
+from libcpp cimport bool
+
 
 # Import C methods for python
 from cpython cimport PyObject, Py_INCREF
@@ -339,11 +341,13 @@ cdef class Element:
         return None
 
     def createElementCentrifugalForce(self, np.ndarray[TacsScalar, ndim=1] omegaVec,
-                                      np.ndarray[TacsScalar, ndim=1] rotCenter):
+                                      np.ndarray[TacsScalar, ndim=1] rotCenter,
+                                      bool first_order=False):
         cdef TACSElement *centrifugalElem = NULL
         if self.ptr:
             centrifugalElem = self.ptr.createElementCentrifugalForce(<TacsScalar*>omegaVec.data,
-                                                                     <TacsScalar*>rotCenter.data)
+                                                                     <TacsScalar*>rotCenter.data,
+                                                                     first_order)
             if centrifugalElem != NULL:
                 return _init_Element(centrifugalElem)
         return None

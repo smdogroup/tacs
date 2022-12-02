@@ -18,6 +18,8 @@ cimport mpi4py.MPI as MPI
 
 # Import numpy
 from libc.string cimport const_char
+from libcpp cimport bool
+
 
 # Import the major python version
 from cpython.version cimport PY_MAJOR_VERSION
@@ -375,7 +377,7 @@ cdef extern from "TACSElement.h":
         TACSElement* createElementTraction(int, const TacsScalar*)
         TACSElement* createElementPressure(int, TacsScalar)
         TACSElement* createElementInertialForce(const TacsScalar*)
-        TACSElement* createElementCentrifugalForce(const TacsScalar*, const TacsScalar*)
+        TACSElement* createElementCentrifugalForce(const TacsScalar*, const TacsScalar*, const bool first_order)
 
 cdef class Element:
     cdef TACSElement *ptr
