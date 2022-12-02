@@ -191,22 +191,23 @@ class TACSShellCentrifugalForce : public TACSElement {
       //  [ w_x*w_z,        w_y*w_z,       -w_x^2 - w_y^2]]
 
       TacsScalar dtrdU[9];
-      dtrdU[0] = (-omegaVec[1] * omegaVec[1] - omegaVec[2] * omegaVec[2]) *
-                 detXd * mass;
-      dtrdU[1] = (omegaVec[0] * omegaVec[1]) * detXd * mass;
-      dtrdU[2] = (omegaVec[0] * omegaVec[2]) * detXd * mass;
+      TacsScalar scale = detXd * mass * alpha;
+      dtrdU[0] =
+          (-omegaVec[1] * omegaVec[1] - omegaVec[2] * omegaVec[2]) * scale;
+      dtrdU[1] = (omegaVec[0] * omegaVec[1]) * scale;
+      dtrdU[2] = (omegaVec[0] * omegaVec[2]) * scale;
 
-      dtrdU[3] = (omegaVec[0] * omegaVec[1]) * detXd * mass;
-      dtrdU[4] = (-omegaVec[0] * omegaVec[0] - omegaVec[2] * omegaVec[2]) *
-                 detXd * mass;
-      dtrdU[5] = (omegaVec[1] * omegaVec[2]) * detXd * mass;
+      dtrdU[3] = (omegaVec[0] * omegaVec[1]) * scale;
+      dtrdU[4] =
+          (-omegaVec[0] * omegaVec[0] - omegaVec[2] * omegaVec[2]) * scale;
+      dtrdU[5] = (omegaVec[1] * omegaVec[2]) * scale;
 
-      dtrdU[6] = (omegaVec[0] * omegaVec[2]) * detXd * mass;
-      dtrdU[7] = (omegaVec[1] * omegaVec[2]) * detXd * mass;
-      dtrdU[8] = (-omegaVec[0] * omegaVec[0] - omegaVec[1] * omegaVec[1]) *
-                 detXd * mass;
+      dtrdU[6] = (omegaVec[0] * omegaVec[2]) * scale;
+      dtrdU[7] = (omegaVec[1] * omegaVec[2]) * scale;
+      dtrdU[8] =
+          (-omegaVec[0] * omegaVec[0] - omegaVec[1] * omegaVec[1]) * scale;
 
-      // Add the contribution to the Jacobian, N^t * dtrdU * N
+      // Add the contribution to the Jacobian, N^T * dtrdU * N
       basis::template addInterpFieldsOuterProduct<vars_per_node, vars_per_node,
                                                   3, 3>(pt, dtrdU, mat);
     }
