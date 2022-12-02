@@ -11,7 +11,7 @@ To get started, run the following in a conda terminal:
 ::
 
     conda create -n TACS python=3.8
-    activate TACS
+    conda activate TACS
     conda install -c conda-forge -c smdogroup tacs
 
 This will create an environment named "TACS" and install the `tacs` package and all

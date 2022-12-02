@@ -58,6 +58,7 @@ cdef extern from "TACSElementTypes.h":
         TACS_RIGID_ELEMENT
         TACS_MASS_ELEMENT
         TACS_SPRING_ELEMENT
+        TACS_PCM_ELEMENT
 
     enum ElementLayout:
         TACS_LAYOUT_NONE

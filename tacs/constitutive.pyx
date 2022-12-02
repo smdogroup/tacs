@@ -465,6 +465,61 @@ cdef class PlaneStressConstitutive(Constitutive):
             self.ptr = NULL
             self.cptr = NULL
 
+cdef class PhaseChangeMaterialConstitutive(Constitutive):
+    """
+    This is the base class for the phase change material constitutive objects.
+
+    Args:
+        solid_props (MaterialProperties): The material property of the solid phase.
+        liquid_props (MaterialProperties): The material property of the liquid phase.
+        lh (float or complex): The specific latent heat of the material.
+        mt (float or complex): The melting temperature of the material.
+        t (float or complex, optional): The material thickness (keyword argument). Defaults to 1.0.
+        tNum (int, optional): Design variable number to assign to thickness (keyword argument). Defaults to -1
+            (i.e. no design variable).
+        tlb (float or complex, optional): Thickness varaible lower bound (keyword argument). Defaults to 0.0.
+        tub (float or complex, optional): Thickness varaible upper bound (keyword argument). Defaults to 10.0.
+    """
+    def __cinit__(self, *args, **kwargs):
+        cdef TACSMaterialProperties *solid_props = NULL
+        cdef TACSMaterialProperties *liquid_props = NULL
+        cdef TacsScalar lh = 0.0
+        cdef TacsScalar Tm = 0.0
+        cdef TacsScalar dT = 10.0
+        cdef TacsScalar t = 1.0
+        cdef int tNum = -1
+        cdef TacsScalar tlb = 0.0
+        cdef TacsScalar tub = 10.0
+
+        if len(args) >= 2:
+            solid_props = (<MaterialProperties>args[0]).ptr
+            liquid_props = (<MaterialProperties>args[1]).ptr
+        if 'lh' in kwargs:
+            lh = kwargs['lh']
+        if 'Tm' in kwargs:
+            Tm = kwargs['Tm']
+        if 'dT' in kwargs:
+            dT = kwargs['dT']
+        if 't' in kwargs:
+            t = kwargs['t']
+        if 'tNum' in kwargs:
+            tNum = kwargs['tNum']
+        if 'tlb' in kwargs:
+            tlb = kwargs['tlb']
+        if 'tub' in kwargs:
+            tub = kwargs['tub']
+
+        if solid_props is not NULL:
+            self.cptr = new TACSPhaseChangeMaterialConstitutive(solid_props,
+                                                                liquid_props,
+                                                                lh, Tm, dT, t,
+                                                                tNum, tlb, tub)
+            self.ptr = self.cptr
+            self.ptr.incref()
+        else:
+            self.ptr = NULL
+            self.cptr = NULL
+
 cdef class SolidConstitutive(Constitutive):
     """
     This is the base class for the solid constitutive objects.

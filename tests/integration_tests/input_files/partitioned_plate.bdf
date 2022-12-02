@@ -72,13 +72,16 @@ SPC1           1  123456     207
 SPC1           1  123456     208
 SPC1           1  123456     209
 SPC1           1  123456     210
+$ Use a mix of FEMAP, Patran, and HyperMesh format property labels
+$ Usually it will be one or the other in a real mesh, but this is a convenient way for testing both
 $ Femap Property 1 : PLATE.00
 PSHELL         1       1      .1       1               1              0.
 $ Femap Property 2 : PLATE.01
 PSHELL         2       1      .1       1               1              0.
-$ Femap Property 3 : PLATE.02
+$HMNAME PROP                   3"PLATE.02" 4
+$HWCOLOR PROP                  3      28
 PSHELL         3       1      .1       1               1              0.
-$ Femap Property 4 : PLATE.03
+$ Elements and Element Properties for region : PLATE.03
 PSHELL         4       1      .1       1               1              0.
 $ Femap Material 1 : Aluminum
 MAT1           1   7.+10              .3      0.      0.      0.        +       

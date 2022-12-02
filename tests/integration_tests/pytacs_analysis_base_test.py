@@ -109,6 +109,11 @@ class PyTACSTestCase:
             """
             Test total dv sensitivity through adjoint against fd/cs
             """
+            # Skip this check if no dvs were added to model
+            num_dvs = self.fea_assembler.getTotalNumDesignVars()
+            if num_dvs == 0:
+                return
+
             # Initial solve
             funcs = self.run_solve()
 

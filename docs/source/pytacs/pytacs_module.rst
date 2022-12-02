@@ -108,7 +108,7 @@ Tagging component groups in BDF
 Several pyTACS methods (:meth:`pyTACS.selectCompIDs <tacs.pytacs.pyTACS.selectCompIDs>`, :func:`~elemCallBack`, etc.)
 allow for the use of user-defined component labels. These labels are read in through formatted comment in the BDF file.
 
-There are currently two supported formats for labels: ICEM-format and FEMAP-format. These are described below.
+There are currently several supported formats for labels: ICEM-format, FEMAP-format, Patran-format, and HyperMesh-format. These are described below.
 
 ICEM component label format
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -146,6 +146,40 @@ followed by the component name. No spaces are allowed within the component name.
   PSHELL         1       1      .1       1               1              0.
   $ Femap Property 2 : Stiffener
   PSHELL         2       1      .1       1               1              0.
+
+Patran component label format
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In the Patran format, the component label is appended as a string comment above each property card.
+The string comment should start with ``$ Elements and Element Properties for region :``
+followed by the component name. An example of this format is provided below:
+
+.. code-block:: none
+
+  $ Elements and Element Properties for region : rod_1
+  PROD           1       1      .1
+  CROD           1       1    3600    3310
+  CROD           2       1    3310    3320
+  $ Elements and Element Properties for region : rod_2
+  PROD           2       1      .2
+  CROD           3       2    6600    6310
+  CROD           4       2    6310    6320
+
+HyperMesh component label format
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In the HyperMesh format, the component label is appended as a string comment above each property card.
+The string comment should start with ``$HMNAME PROP                   i`` (where ``i`` is replaced with the property number the label is referencing)
+followed by the component name in double quotes. Any other comment lines above the property card (ex. ``$HWCOLOR PROP...``) will be ignored by the mesh loader.
+An example of this format is provided below:
+
+.. code-block:: none
+
+  $HMNAME PROP                   1"Rib1" 4
+  $HWCOLOR PROP                  1      28
+  PSHELL         1       0               0               0
+  $
+  $HMNAME PROP                   2"Rib2" 4
+  $HWCOLOR PROP                  2      29
+  PSHELL         2       0               0               0
 
 API Reference
 -------------
