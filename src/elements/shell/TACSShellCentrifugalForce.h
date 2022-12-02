@@ -104,9 +104,9 @@ class TACSShellCentrifugalForce : public TACSElement {
       TacsScalar r[3], wxr[3], ac[3];
 
       // Create vector pointing from rotation center to element gpt
-      r[0] = X[0] - rotCenter[0];  // + U[0];
-      r[1] = X[1] - rotCenter[1];  // + U[1];
-      r[2] = X[2] - rotCenter[2];  // + U[2];
+      r[0] = X[0] - rotCenter[0] + U[0];
+      r[1] = X[1] - rotCenter[1] + U[1];
+      r[2] = X[2] - rotCenter[2] + U[2];
 
       // Compute omega x r
       crossProduct(omegaVec, r, wxr);
@@ -162,9 +162,9 @@ class TACSShellCentrifugalForce : public TACSElement {
       TacsScalar r[3], wxr[3], ac[3];
 
       // Create vector pointing from rotation center to element gpt
-      r[0] = X[0] - rotCenter[0];  // + U[0];
-      r[1] = X[1] - rotCenter[1];  // + U[1];
-      r[2] = X[2] - rotCenter[2];  // + U[2];
+      r[0] = X[0] - rotCenter[0] + U[0];
+      r[1] = X[1] - rotCenter[1] + U[1];
+      r[2] = X[2] - rotCenter[2] + U[2];
 
       // Compute omega x r
       crossProduct(omegaVec, r, wxr);
@@ -189,7 +189,7 @@ class TACSShellCentrifugalForce : public TACSElement {
       // [[-w_y^2 - w_z^2,  w_x*w_y, w_x*w_z             ],
       //  [ w_x*w_y,       -w_x^2 - w_z^2,  w_y*w_z      ],
       //  [ w_x*w_z,        w_y*w_z,       -w_x^2 - w_y^2]]
-      /*
+
       TacsScalar dtrdU[9];
       dtrdU[0] = (-omegaVec[1] * omegaVec[1] - omegaVec[2] * omegaVec[2]) *
                  detXd * mass;
@@ -206,10 +206,9 @@ class TACSShellCentrifugalForce : public TACSElement {
       dtrdU[8] = (-omegaVec[0] * omegaVec[0] - omegaVec[1] * omegaVec[1]) *
                  detXd * mass;
 
-      // Add the contribution to the Jacobian
+      // Add the contribution to the Jacobian, N^t * dtrdU * N
       basis::template addInterpFieldsOuterProduct<vars_per_node, vars_per_node,
                                                   3, 3>(pt, dtrdU, mat);
-      */
     }
   }
 
