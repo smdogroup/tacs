@@ -32,7 +32,8 @@ requirements:
     - numpy   1.18   # [py==37]
     - numpy   1.18   # [py==38]
     - numpy   1.19   # [py==39]
-    - numpy   1.23   # [py==310]
+    - numpy   1.22   # [py==310]
+    - numpy   1.23   # [py==311]
     - {{ mpi }}
     - openmpi-mpicxx  # [mpi == "openmpi"]
     - mpich-mpicxx  # [mpi == "mpich"]
