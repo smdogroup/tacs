@@ -220,8 +220,8 @@ void *TACSAssembler::assembleJacobian_thread(void *t) {
 
       // Add the residual from the auxiliary elements
       while (aux_count < naux && aux[aux_count].num == elemIndex) {
-        aux[aux_count].elem->addJacobian(elemIndex, assembler->time, alpha* lambda,
-                                         beta* lambda, gamma* lambda, elemXpts, vars, dvars,
+        aux[aux_count].elem->addJacobian(elemIndex, assembler->time, alpha * lambda,
+                                         beta * lambda, gamma * lambda, elemXpts, vars, dvars,
                                          ddvars, elemRes, elemMat);
         aux_count++;
       }
