@@ -193,7 +193,12 @@ class StaticProblem(TACSProblem):
         self.beta = 0.0
         self.gamma = 0.0
         self.assembler.assembleJacobian(
-            self.alpha, self.beta, self.gamma, self.res, self.K, self.loadScale
+            self.alpha,
+            self.beta,
+            self.gamma,
+            self.res,
+            self.K,
+            loadScale=self.loadScale,
         )
 
         reorderSchur = 1
@@ -562,7 +567,7 @@ class StaticProblem(TACSProblem):
         """
         self._addInertialLoad(self.auxElems, inertiaVector)
 
-    def addCentrifugalLoad(self, omegaVector, rotCenter):
+    def addCentrifugalLoad(self, omegaVector, rotCenter, firstOrder=False):
         """
         This method is used to add a fixed centrifugal load due to a
         uniform rotational velocity over the entire model.
@@ -576,8 +581,12 @@ class StaticProblem(TACSProblem):
 
         rotCenter : numpy.ndarray
             Location of center of rotation used to define centrifugal load.
+
+        firstOrder : bool, optional
+            Whether to use first order approximation for centrifugal load,
+            which computes the force in the displaced position. By default False
         """
-        self._addCentrifugalLoad(self.auxElems, omegaVector, rotCenter)
+        self._addCentrifugalLoad(self.auxElems, omegaVector, rotCenter, firstOrder)
 
     def addLoadFromBDF(self, loadID, scale=1.0):
         """
@@ -619,13 +628,14 @@ class StaticProblem(TACSProblem):
         """
 
         if self._factorOnNext:
+            print("Assembling Jacobian")
             self.assembler.assembleJacobian(
                 self.alpha,
                 self.beta,
                 self.gamma,
                 self.res,
                 self.K,
-                self.loadScale,
+                loadScale=self.loadScale,
             )
             self.PC.factor()
             self._factorOnNext = False
