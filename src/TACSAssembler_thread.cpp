@@ -208,8 +208,8 @@ void *TACSAssembler::assembleJacobian_thread(void *t) {
       memset(elemMat, 0, nvars * nvars * sizeof(TacsScalar));
 
       // Generate the Jacobian of the element
-      element->addJacobian(elemIndex, assembler->time, alpha * lambda,
-                           beta * lambda, gamma * lambda, elemXpts, vars, dvars,
+      element->addJacobian(elemIndex, assembler->time, alpha ,
+                           beta , gamma , elemXpts, vars, dvars,
                            ddvars, elemRes, elemMat);
 
       // Increment the aux counter until we possibly have
@@ -220,8 +220,8 @@ void *TACSAssembler::assembleJacobian_thread(void *t) {
 
       // Add the residual from the auxiliary elements
       while (aux_count < naux && aux[aux_count].num == elemIndex) {
-        aux[aux_count].elem->addJacobian(elemIndex, assembler->time, alpha,
-                                         beta, gamma, elemXpts, vars, dvars,
+        aux[aux_count].elem->addJacobian(elemIndex, assembler->time, alpha* lambda,
+                                         beta* lambda, gamma* lambda, elemXpts, vars, dvars,
                                          ddvars, elemRes, elemMat);
         aux_count++;
       }
