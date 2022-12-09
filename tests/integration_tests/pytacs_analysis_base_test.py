@@ -5,14 +5,14 @@ from mpi4py import MPI
 
 """
 This is a base class for running pytacs unit test cases.
-This base class will test function evaluations and total 
+This base class will test function evaluations and total
 sensitivities for the user-specified problems implimented by
-the child test case. When the user creates a new test based 
-on this class only one method, setup_tacs_problems, is required 
-to be defined in the child class. See the virtual method 
+the child test case. When the user creates a new test based
+on this class only one method, setup_tacs_problems, is required
+to be defined in the child class. See the virtual method
 implementation for this method below for more details.
 
-NOTE: The child class must NOT implement its own setUp method 
+NOTE: The child class must NOT implement its own setUp method
 for the unittest class. This is handled in the base class.
 """
 
