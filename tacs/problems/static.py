@@ -628,7 +628,6 @@ class StaticProblem(TACSProblem):
         """
 
         if self._factorOnNext:
-            print("Assembling Jacobian")
             self.assembler.assembleJacobian(
                 self.alpha,
                 self.beta,
