@@ -63,6 +63,12 @@ class TACSMassElement : public TACSElement {
 
   // Functions required to determine the derivatives w.r.t. the design variables
   // ---------------------------------------------------------------------------
+  void addAdjResProduct(int elemIndex, double time, TacsScalar scale,
+                        const TacsScalar psi[], const TacsScalar Xpts[],
+                        const TacsScalar vars[], const TacsScalar dvars[],
+                        const TacsScalar ddvars[], int dvLen,
+                        TacsScalar dfdx[]);
+
   void addAdjResXptProduct(int elemIndex, double time, TacsScalar scale,
                            const TacsScalar psi[], const TacsScalar Xpts[],
                            const TacsScalar vars[], const TacsScalar dvars[],

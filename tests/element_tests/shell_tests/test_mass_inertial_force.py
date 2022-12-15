@@ -49,7 +49,20 @@ class ElementTest(unittest.TestCase):
         self.con_objects = [
             constitutive.GeneralMassConstitutive(M=M),
             constitutive.PointMassConstitutive(
-                m=m, I11=I11, I22=I22, I33=I33, I12=I12, I13=I13, I23=I23
+                m=m,
+                I11=I11,
+                I22=I22,
+                I33=I33,
+                I12=I12,
+                I13=I13,
+                I23=I23,
+                mNum=0,
+                I11Num=1,
+                I22Num=2,
+                I33Num=3,
+                I12Num=4,
+                I13Num=5,
+                I23Num=6,
             ),
         ]
 

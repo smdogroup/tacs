@@ -61,3 +61,13 @@ void TACSMassInertialForce::addJacobian(
     addResidual(elemIndex, time, Xpts, vars, dvars, ddvars, res);
   }
 }
+
+void TACSMassInertialForce::addAdjResProduct(
+    int elemIndex, double time, TacsScalar scale, const TacsScalar psi[],
+    const TacsScalar Xpts[], const TacsScalar vars[], const TacsScalar dvars[],
+    const TacsScalar ddvars[], int dvLen, TacsScalar dfdx[]) {
+  double pt[3] = {0.0, 0.0, 0.0};
+  // Add the product of the derivative of the inertial force
+  con->addInertiaDVSens(elemIndex, -scale, pt, Xpts, inertiaVec, psi, dvLen,
+                        dfdx);
+}

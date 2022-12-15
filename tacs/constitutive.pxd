@@ -154,7 +154,10 @@ cdef class GeneralMassConstitutive(Constitutive):
 
 cdef extern from "TACSPointMassConstitutive.h":
     cdef cppclass TACSPointMassConstitutive(TACSGeneralMassConstitutive):
-        TACSPointMassConstitutive(TacsScalar, TacsScalar, TacsScalar, TacsScalar, TacsScalar, TacsScalar, TacsScalar)
+        TACSPointMassConstitutive(TacsScalar, TacsScalar, TacsScalar, TacsScalar, TacsScalar, TacsScalar, TacsScalar,
+                                  int, TacsScalar, TacsScalar, int, TacsScalar, TacsScalar, int, TacsScalar, TacsScalar,
+                                  int, TacsScalar, TacsScalar, int, TacsScalar, TacsScalar, int, TacsScalar, TacsScalar,
+                                  int, TacsScalar, TacsScalar)
 
 cdef extern from "TACSGeneralSpringConstitutive.h":
     cdef cppclass TACSGeneralSpringConstitutive(TACSConstitutive):

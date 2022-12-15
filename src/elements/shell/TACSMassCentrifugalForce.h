@@ -40,6 +40,12 @@ class TACSMassCentrifugalForce : public TACSElement {
                    const TacsScalar ddvars[], TacsScalar res[],
                    TacsScalar mat[]);
 
+  void addAdjResProduct(int elemIndex, double time, TacsScalar scale,
+                        const TacsScalar psi[], const TacsScalar Xpts[],
+                        const TacsScalar vars[], const TacsScalar dvars[],
+                        const TacsScalar ddvars[], int dvLen,
+                        TacsScalar dfdx[]);
+
  private:
   static const int NUM_DISPS = 6;
   static const int NUM_NODES = 1;
