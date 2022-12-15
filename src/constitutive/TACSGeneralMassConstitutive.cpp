@@ -78,7 +78,7 @@ TacsScalar TACSGeneralMassConstitutive::evalDensity(int elemIndex,
   TacsScalar M[21];
   evalMassMatrix(elemIndex, pt, X, M);
   TacsScalar mass =
-      (M[0] + M[6] + M[11] + 2 * M[1] + 2 * M[2] + 2 * M[7]) / 3.0;
+      (M[0] + M[6] + M[11] + 2.0 * M[1] + 2.0 * M[2] + 2.0 * M[7]) / 3.0;
   return mass;
 }
 
