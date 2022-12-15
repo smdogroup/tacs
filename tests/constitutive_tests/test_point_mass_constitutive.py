@@ -39,7 +39,7 @@ class ConstitutiveTest(unittest.TestCase):
         I12 = I13 = I23 = 0.5
 
         # This constitutive class has 7 dvs
-        self.dvs = np.array([m, I11, I22, I33, I12, I13, I23])
+        self.dvs = np.array([m, I11, I22, I33, I12, I13, I23], dtype=self.dtype)
 
         # Create stiffness (need class)
         self.con = constitutive.PointMassConstitutive(
