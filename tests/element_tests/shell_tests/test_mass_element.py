@@ -137,7 +137,7 @@ class ElementTest(unittest.TestCase):
                 self.assertFalse(fail)
 
     def test_element_mat_dv_sens(self):
-        # Loop through each combination of consstitutive object and test element matrix inner product sens
+        # Loop through each combination of constitutive object and test element matrix inner product sens
         for con in self.con_objects:
             with self.subTest(con=con.getObjectName()):
                 element = elements.MassElement(con)
