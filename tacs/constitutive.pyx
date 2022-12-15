@@ -958,13 +958,13 @@ cdef class PointMassConstitutive(GeneralMassConstitutive):
         mlb (float or complex, optional): Lower bound on m (keyword argument). Defaults to 0.0.
         mub (float or complex, optional): Upper bound on wall thickness (keyword argument). Defaults to 1e20.
         I11Num (int, optional): Design variable number to assign to I11 (keyword argument). Defaults to -1.
-        I11lb (float or complex, optional): Lower bound on I11 (keyword argument). Defaults to -1e20.
+        I11lb (float or complex, optional): Lower bound on I11 (keyword argument). Defaults to 0.0.
         I11ub (float or complex, optional): Upper bound on I11 (keyword argument). Defaults to 1e20.
         I22Num (int, optional): Design variable number to assign to I22 (keyword argument). Defaults to -1.
-        I22lb (float or complex, optional): Lower bound on I22 (keyword argument). Defaults to -1e20.
+        I22lb (float or complex, optional): Lower bound on I22 (keyword argument). Defaults to 0.0.
         I22ub (float or complex, optional): Upper bound on I22 (keyword argument). Defaults to 1e20.
         I33Num (int, optional): Design variable number to assign to I33 (keyword argument). Defaults to -1.
-        I33lb (float or complex, optional): Lower bound on I33 (keyword argument). Defaults to -1e20.
+        I33lb (float or complex, optional): Lower bound on I33 (keyword argument). Defaults to 0.0.
         I33ub (float or complex, optional): Upper bound on I33 (keyword argument). Defaults to 1e20.
         I12Num (int, optional): Design variable number to assign to I12 (keyword argument). Defaults to -1.
         I12lb (float or complex, optional): Lower bound on I12 (keyword argument). Defaults to -1e20.
@@ -992,9 +992,9 @@ cdef class PointMassConstitutive(GeneralMassConstitutive):
         cdef int I13Num = -1
         cdef int I23Num = -1
         cdef TacsScalar mlb = 0.0
-        cdef TacsScalar I11lb = -1e20
-        cdef TacsScalar I22lb = -1e20
-        cdef TacsScalar I33lb = -1e20
+        cdef TacsScalar I11lb = 0.0
+        cdef TacsScalar I22lb = 0.0
+        cdef TacsScalar I33lb = 0.0
         cdef TacsScalar I12lb = -1e20
         cdef TacsScalar I13lb = -1e20
         cdef TacsScalar I23lb = -1e20

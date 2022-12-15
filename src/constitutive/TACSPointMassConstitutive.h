@@ -35,9 +35,9 @@ class TACSPointMassConstitutive : public TACSGeneralMassConstitutive {
       TacsScalar _mub = 1e20, int _I11Num = -1, TacsScalar _I11lb = 0.0,
       TacsScalar _I11ub = 1e20, int _I22Num = -1, TacsScalar _I22lb = 0.0,
       TacsScalar _I22ub = 1e20, int _I33Num = -1, TacsScalar _I33lb = 0.0,
-      TacsScalar _I33ub = 1e20, int _I12Num = -1, TacsScalar _I12lb = 0.0,
-      TacsScalar _I12ub = 1e20, int _I13Num = -1, TacsScalar _I13lb = 0.0,
-      TacsScalar _I13ub = 1e20, int _I23Num = -1, TacsScalar _I23lb = 0.0,
+      TacsScalar _I33ub = 1e20, int _I12Num = -1, TacsScalar _I12lb = -1e20,
+      TacsScalar _I12ub = 1e20, int _I13Num = -1, TacsScalar _I13lb = -1e20,
+      TacsScalar _I13ub = 1e20, int _I23Num = -1, TacsScalar _I23lb = -1e20,
       TacsScalar _I23ub = 1e20);
 
   // Extra info about the constitutive class

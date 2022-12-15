@@ -109,7 +109,7 @@ jobs:
           conda install -c conda-forge petsc=3.12 petsc4py -q -y;
       - name: Run unit tests
         run: |
-          testflo --timeout 120 .;
+          testflo --pre_announce --timeout 120 .;
       - name: Build docs
         run: |
           cd $TACS_DIR/docs;
