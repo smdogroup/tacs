@@ -311,7 +311,7 @@ class pyTACS(BaseUI):
         """
         return len(self.globalDVs)
 
-    def assignMassDV(self, descript, eIDs, dvName):
+    def assignMassDV(self, descript, eIDs, dvName="m"):
         """
         Assign a global DV to a point mass element.
 
@@ -327,6 +327,7 @@ class pyTACS(BaseUI):
         dvName : str
             Name of mass property to apply DV to.
             May be `m` for mass, `I11`, `I22`, `I12`, etc. for moment of inertia components.
+            Defaults to `m` (mass).
 
         Notes
         -----

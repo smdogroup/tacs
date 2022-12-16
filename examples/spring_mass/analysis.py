@@ -64,8 +64,8 @@ def elemCallBack(dvNum, compID, compDescript, elemDescripts, globalDVs, **kwargs
     return elem
 
 
-# Add DV to mass property of point mass element
-FEAAssembler.assignMassDV("point_mass", 2, "m")
+# Add DV to mass property of point mass element (eID = 2)
+FEAAssembler.assignMassDV("point_mass", 2)
 # Set up TACS Assembler
 FEAAssembler.initialize(elemCallBack)
 
