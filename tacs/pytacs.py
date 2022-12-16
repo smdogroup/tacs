@@ -513,7 +513,7 @@ class pyTACS(BaseUI):
 
         return compDescripts
 
-    def getGlobalNodeIDsForComps(self, compIDs):
+    def getGlobalNodeIDsForComps(self, compIDs, nastranOrdering=False):
         """
         return the global (non-partitioned) node IDs belonging to a given list of component IDs
 
@@ -522,6 +522,10 @@ class pyTACS(BaseUI):
         compIDs : int or list[int] or None
             List of integers of the compIDs numbers. If None, returns nodeIDs for all components.
             Defaults to None.
+
+        nastranOrdering : False
+            Flag signaling whether nodeIDs are in TACS (default) or NASTRAN (grid IDs in bdf file) ordering
+            Defaults to False.
 
         Returns
         -------
@@ -535,7 +539,7 @@ class pyTACS(BaseUI):
         if compIDs is None:
             compIDs = list(range(self.nComp))
 
-        return self.meshLoader.getGlobalNodeIDsForComps(compIDs)
+        return self.meshLoader.getGlobalNodeIDsForComps(compIDs, nastranOrdering)
 
     def getLocalNodeIDsForComps(self, compIDs):
         """
