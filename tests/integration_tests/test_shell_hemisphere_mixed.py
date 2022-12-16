@@ -224,49 +224,34 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
         loadScale parameter.
 
         We test that J(loadscale=1) - J(loadscale=0) = 2*(J(loadscale=0.5) - J(loadscale=0))
-
-        However, there seems to be some memory issue with retreiving the full jacobian matrix from the tacs problem
-        within tests (there are segfaults whenever the variable that was used to create the matrix is deleted). So, for
-        now I am testing matrix vector products instead.
         """
         for prob in self.tacs_probs:
             if prob.name != "Centrifugal_firstOrder":
                 continue
             prob._updateAssemblerVars()
-            randVec = prob.assembler.createVec()
-            randVec.setRand()
-            result1 = prob.assembler.createVec()
-            result2 = prob.assembler.createVec()
-            result3 = prob.assembler.createVec()
 
             prob.loadScale = 0.0
             prob._factorOnNext = True
             prob._initializeSolve()
-            prob.K.mult(randVec, result1)
-            res1 = result1.getArray()
-            # mat = prob.K.getMat()
-            # kFull = np.copy(mat[0].toarray())
+            mat = prob.K.getMat()
+            kFull = np.copy(mat[0].toarray())
 
             prob.loadScale = 1.0
             prob._factorOnNext = True
             prob._initializeSolve()
-            prob.K.mult(randVec, result2)
-            res2 = result2.getArray()
-            # mat2 = prob.K.getMat()
-            # kZero = np.copy(mat2[0].toarray())
+            mat = prob.K.getMat()
+            kZero = np.copy(mat[0].toarray())
 
             prob.loadScale = 0.5
             prob._factorOnNext = True
             prob._initializeSolve()
-            prob.K.mult(randVec, result3)
-            res3 = result3.getArray()
-            # mat3 = prob.K.getMat()
-            # kHalf = np.copy(mat3[0].toarray())
+            mat = prob.K.getMat()
+            kHalf = np.copy(mat[0].toarray())
 
-            diff1 = res2 - res1
-            diff2 = 2 * (res3 - res1)
+            diff1 = kFull - kZero
+            diff2 = kHalf - kZero
 
             self.assertNotEqual(np.real(np.linalg.norm(diff1)), 0.0)
             self.assertNotEqual(np.real(np.linalg.norm(diff2)), 0.0)
 
-            np.testing.assert_allclose(diff1, diff2, atol=1e-3, rtol=1e-6)
+            np.testing.assert_allclose(diff1, 2 * diff2, atol=1e-3, rtol=1e-6)
