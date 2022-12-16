@@ -895,17 +895,32 @@ cdef class Mat:
         mat = _dynamicParallelMat(self.ptr)
         sc = _dynamicSchurMat(self.ptr)
 
+        data = None
+
         if mat != NULL:
             mat.getBCSRMat(&A, &B)
-            return (_convertBCSRMat(A, <PyObject*>self), _convertBCSRMat(B, <PyObject*>self))
+            data = (_convertBCSRMat(A, <PyObject*>self), _convertBCSRMat(B, <PyObject*>self))
+            if A != NULL:
+                Py_INCREF(self)
+            if B != NULL:
+                Py_INCREF(self)
+
         elif sc != NULL:
             sc.getBCSRMat(&A, &B, &C, &D)
-            return (_convertBCSRMat(A, <PyObject*>self),
+            data = (_convertBCSRMat(A, <PyObject*>self),
                     _convertBCSRMat(B, <PyObject*>self),
                     _convertBCSRMat(C, <PyObject*>self),
                     _convertBCSRMat(D, <PyObject*>self))
+            if A != NULL:
+                Py_INCREF(self)
+            if B != NULL:
+                Py_INCREF(self)
+            if C != NULL:
+                Py_INCREF(self)
+            if D != NULL:
+                Py_INCREF(self)
 
-        return None
+        return data
 
     def getDenseMatrix(self):
         """
