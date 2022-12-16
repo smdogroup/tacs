@@ -1,13 +1,18 @@
 [![Build, unit tests, and docs](https://github.com/smdogroup/tacs/actions/workflows/unit_tests.yml/badge.svg)](https://github.com/smdogroup/tacs/actions/workflows/unit_tests.yml)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 [![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
+
+[![Anaconda-Server Badge](https://anaconda.org/smdogroup/tacs/badges/version.svg)](https://anaconda.org/smdogroup/tacs)
+[![Anaconda-Server Badge](https://anaconda.org/smdogroup/tacs/badges/platforms.svg)](https://anaconda.org/smdogroup/tacs)
+[![Anaconda-Server Badge](https://anaconda.org/smdogroup/tacs/badges/downloads.svg)](https://anaconda.org/smdogroup/tacs)
+
 # TACS Overview #
 
 The Toolkit for the Analysis of Composite Structures (TACS) is a parallel finite-element code for analysis and gradient-based design of advanced structures. Originally, TACS was primarily designed as a tool for the analysis of shell structures, such as wing-boxes. More recently it has been extended to perform topology optimization of large three-dimensional structures using gradient-based methods.
 
 TACS has been under continuous development since 2010 by the [Structural and Multidisciplinary Design Optimization group at Georgia Tech](http://gkennedy.gatech.edu) and by the [Multidisciplinary Design Optimization Lab at the University of Michigan](http://mdolab.engin.umich.edu/).
 
-Online documentation and examples is located at [https://smdogroup.github.io/tacs/](https://smdogroup.github.io/tacs/)
+Online documentation and examples are located at [https://smdogroup.github.io/tacs/](https://smdogroup.github.io/tacs/)
 
 # How to cite TACS #
 
@@ -27,11 +32,38 @@ Kennedy, G. J. and Hicken, J. E., "Improved Constraint-Aggregation Methods", Com
 
 Kennedy, G. J., "Strategies for adaptive optimization with aggregation constraints using interior-point methods", 2015, doi:http://dx.doi.org/10.1016/j.compstruc.2015.02.024
 
-# Setting up and installing TACS #
+# Setting up and installing TACS through anaconda #
+The easiest way to get started with TACS is through a conda install in an [Anaconda](https://www.anaconda.com/) environment. [Conda packages](https://anaconda.org/smdogroup/tacs) are
+available for MacOS and Linux platforms. To get started, run the following in a conda terminal:
+
+    conda create -n TACS python=3.8
+    conda activate TACS
+    conda install -c conda-forge -c smdogroup tacs
+    
+This will create an environment named "TACS" and install the `tacs` package and all
+necessary dependencies. Once installed, the user will have access to all TACS C++ and python libraries. 
+
+The best way to get started is to check out and run the files in the `examples/`
+folder. For instance, running the script under the `examples/crm` directory:
+
+    mpirun python analysis.py
+    
+The conda install also sets up the `f5totec` and `f5tovtk` executables in the user's conda environment.
+So TACS-generated .f5 solution files can be converted into a format for viewing in Tecplot or Paraview using the following respective commands:
+    
+    f5totec cruise_000.f5
+
+or 
+
+    f5tovtk cruise_000.f5
+
+This will generate a .plt or .vtk file respectively.
+
+# Setting up and installing TACS from source #
 
 In addition to a working implementation of MPI, BLAS and LAPACK, TACS requires Metis 5.1 for mesh partitioning. The latest version of Metis can be obtained [here](http://glaros.dtc.umn.edu/gkhome/metis/metis/download). TACS can optionally use the approximate minimum degree ordering routines from AMD/UFConfig. These were distributed separately, but can now be obtained from SuiteSparse package. If you use AMD, be sure to define the TACS_HAS_AMD_LIBRARY flag within the Makefile.in configuration file.
 
-To convert TACS FH5 output files to tecplot-compatible files, you must install TecIO. This can be placed in the tacs/extern directory. There is also a FH5 to VTK converter as well that produces (large) ASCII files.
+To convert TACS FH5 output files to tecplot-compatible files, you must install [TecIO](https://tecplot.azureedge.net/products/tecio/2021r2/tecio.tgz). This can be placed in the tacs/extern directory. There is also a FH5 to VTK converter as well that produces (large) ASCII files.
 
 Once the external dependencies are installed, copy Makefile.in.info to Makefile.in. Open Makefile.in and follow the directions within to set the variables. In particular, set the following:
 
@@ -43,9 +75,15 @@ Once the external dependencies are installed, copy Makefile.in.info to Makefile.
 
 Note that the default values can often be used without modification. Of all these options, it is most important for performance reasons to link to an optimized version of LAPACK, if possible.
 
+The C++ interface can then be compiled by running the `make` command from the tacs root directory:
+
+   ```
+   make
+   ```
+
 ### Setting up the Python interface ###
 
-The python interface (and all dependencies) can be created with a call to setup.py. The setup.cfg.info contains the recommended defaults for the configuration script. For development, create a local development installation by executing
+The python interface can be installed after the C++ interface has been compiled. The python interface (and all dependencies) can be created with a call to setup.py. The setup.cfg.info contains the recommended defaults for the configuration script. For development, create a local development installation by executing
 
     pip install -e .\[all\]
 

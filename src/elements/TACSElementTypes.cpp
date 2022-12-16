@@ -100,6 +100,16 @@ int TacsGetOutputComponentCount(ElementType etype, int comp) {
     } else if (comp == TACS_OUTPUT_EXTRAS) {
       return 4;
     }
+  } else if (etype == TACS_PCM_ELEMENT) {
+    if (comp == TACS_OUTPUT_DISPLACEMENTS) {
+      return 1;
+    } else if (comp == TACS_OUTPUT_STRAINS) {
+      return 2;
+    } else if (comp == TACS_OUTPUT_STRESSES) {
+      return 2;
+    } else if (comp == TACS_OUTPUT_EXTRAS) {
+      return 5;
+    }
   }
 
   return 0;
@@ -382,6 +392,48 @@ const char *TacsGetOutputComponentName(ElementType etype, int comp, int index) {
           return "dv2";
         case 3:
           return "dv3";
+        default:
+          return NULL;
+      }
+    }
+  } else if (etype == TACS_PCM_ELEMENT) {
+    if (comp == TACS_OUTPUT_DISPLACEMENTS) {
+      switch (index) {
+        case 0:
+          return "dT";
+        default:
+          return NULL;
+      }
+    } else if (comp == TACS_OUTPUT_STRAINS) {
+      switch (index) {
+        case 0:
+          return "gradx";
+        case 1:
+          return "grady";
+        default:
+          return NULL;
+      }
+    } else if (comp == TACS_OUTPUT_STRESSES) {
+      switch (index) {
+        case 0:
+          return "fluxx";
+        case 1:
+          return "fluxy";
+        default:
+          return NULL;
+      }
+    } else if (comp == TACS_OUTPUT_EXTRAS) {
+      switch (index) {
+        case 0:
+          return "rho";
+        case 1:
+          return "dv1";
+        case 2:
+          return "dv2";
+        case 3:
+          return "dv3";
+        case 4:
+          return "phase";
         default:
           return NULL;
       }

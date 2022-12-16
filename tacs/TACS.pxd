@@ -58,6 +58,7 @@ cdef extern from "TACSElementTypes.h":
         TACS_RIGID_ELEMENT
         TACS_MASS_ELEMENT
         TACS_SPRING_ELEMENT
+        TACS_PCM_ELEMENT
 
     enum ElementLayout:
         TACS_LAYOUT_NONE
@@ -772,7 +773,7 @@ cdef extern from "TACSIntegrator.h":
                            int stages)
 
         int iterateStage(int k, int s, TACSBVec *forces)
-        double getStageStates( int step, int stage, 
+        double getStageStates( int step, int stage,
 		      TACSBVec **qS, TACSBVec **qdotS, TACSBVec **qddotS)
 
     # ESDIRK Implementation of the integrator
