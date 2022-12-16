@@ -43,7 +43,7 @@ def preinitialize_method(method):
         if self.assembler is not None:
             raise self._TACSError(
                 f"`{method.__name__}` is a pre-initialize method. "
-                "It may only be called before the 'initalize' method has been called."
+                "It may only be called before the 'initialize' method has been called."
             )
         else:
             return method(self, *args, **kwargs)
@@ -57,7 +57,7 @@ def postinitialize_method(method):
         if self.assembler is None:
             raise self._TACSError(
                 f"`{method.__name__}` is a post-initialize method. "
-                "It may only be called after the 'initalize' method has been called."
+                "It may only be called after the 'initialize' method has been called."
             )
         else:
             return method(self, *args, **kwargs)
