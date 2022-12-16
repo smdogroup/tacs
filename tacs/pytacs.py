@@ -1014,7 +1014,6 @@ class pyTACS(BaseUI):
             The current design variable vector set in tacs.
 
         """
-
         return self.x0.getArray().copy()
 
     @postinitialize_method
@@ -1150,9 +1149,6 @@ class pyTACS(BaseUI):
         """
         Applies zeros to boundary condition dofs in input vector.
         """
-        varVec = self.assembler.createVec()
-        varArray = varVec.getArray()
-
         # Check if input is a BVec or numpy array
         if isinstance(vec, tacs.TACS.Vec):
             self.assembler.applyBCs(vec)
