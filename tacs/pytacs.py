@@ -537,6 +537,30 @@ class pyTACS(BaseUI):
 
         return self.meshLoader.getGlobalNodeIDsForComps(compIDs)
 
+    def getLocalNodeIDsForComps(self, compIDs):
+        """
+        return the local (partitioned) node IDs belonging to a given list of component IDs
+
+        Parameters
+        ----------
+         compIDs : int or list[int] or None
+            List of integers of the compIDs numbers. If None, returns nodeIDs for all components.
+            Defaults to None.
+
+        Returns
+        -------
+        nodeIDs : list
+            List of unique nodeIDs that belong to the given list of compIDs
+        """
+        if self.assembler is None:
+            raise self._initializeError()
+
+        # Return all component ids
+        if compIDs is None:
+            compIDs = list(range(self.nComp))
+
+        return self.meshLoader.getLocalNodeIDsForComps(compIDs)
+
     def initialize(self, elemCallBack=None):
         """
         This is the 'last' method to be called during the setup. The
