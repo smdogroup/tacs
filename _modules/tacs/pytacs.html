@@ -555,6 +555,58 @@
 
         <span class="k">return</span> <span class="n">compDescripts</span></div>
 
+<div class="viewcode-block" id="pyTACS.getGlobalNodeIDsForComps"><a class="viewcode-back" href="../../pytacs/pytacs_module.html#tacs.pytacs.pyTACS.getGlobalNodeIDsForComps">[docs]</a>    <span class="k">def</span> <span class="nf">getGlobalNodeIDsForComps</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">compIDs</span><span class="p">,</span> <span class="n">nastranOrdering</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        return the global (non-partitioned) node IDs belonging to a given list of component IDs</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        compIDs : int or list[int] or None</span>
+<span class="sd">            List of integers of the compIDs numbers. If None, returns nodeIDs for all components.</span>
+<span class="sd">            Defaults to None.</span>
+
+<span class="sd">        nastranOrdering : False</span>
+<span class="sd">            Flag signaling whether nodeIDs are in TACS (default) or NASTRAN (grid IDs in bdf file) ordering</span>
+<span class="sd">            Defaults to False.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        nodeIDs : list</span>
+<span class="sd">            List of unique nodeIDs that belong to the given list of compIDs</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">assembler</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="bp">self</span><span class="o">.</span><span class="n">_initializeError</span><span class="p">()</span>
+
+        <span class="c1"># Return all component ids</span>
+        <span class="k">if</span> <span class="n">compIDs</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">compIDs</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nComp</span><span class="p">))</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">meshLoader</span><span class="o">.</span><span class="n">getGlobalNodeIDsForComps</span><span class="p">(</span><span class="n">compIDs</span><span class="p">,</span> <span class="n">nastranOrdering</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="pyTACS.getLocalNodeIDsForComps"><a class="viewcode-back" href="../../pytacs/pytacs_module.html#tacs.pytacs.pyTACS.getLocalNodeIDsForComps">[docs]</a>    <span class="k">def</span> <span class="nf">getLocalNodeIDsForComps</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">compIDs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        return the local (partitioned) node IDs belonging to a given list of component IDs</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">         compIDs : int or list[int] or None</span>
+<span class="sd">            List of integers of the compIDs numbers. If None, returns nodeIDs for all components.</span>
+<span class="sd">            Defaults to None.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        nodeIDs : list</span>
+<span class="sd">            List of unique nodeIDs that belong to the given list of compIDs</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">assembler</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="bp">self</span><span class="o">.</span><span class="n">_initializeError</span><span class="p">()</span>
+
+        <span class="c1"># Return all component ids</span>
+        <span class="k">if</span> <span class="n">compIDs</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">compIDs</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nComp</span><span class="p">))</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">meshLoader</span><span class="o">.</span><span class="n">getLocalNodeIDsForComps</span><span class="p">(</span><span class="n">compIDs</span><span class="p">)</span></div>
+
 <div class="viewcode-block" id="pyTACS.initialize"><a class="viewcode-back" href="../../pytacs/pytacs_module.html#tacs.pytacs.pyTACS.initialize">[docs]</a>    <span class="k">def</span> <span class="nf">initialize</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">elemCallBack</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        This is the &#39;last&#39; method to be called during the setup. The</span>
