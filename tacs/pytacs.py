@@ -318,7 +318,7 @@ class pyTACS(BaseUI):
         Parameters
         ----------
         descript : str
-            Global DV key to assign mass design variable to. If the key is not found,
+            Global DV key to assign mass design variable to. If the key is does not exist,
             it will automatically be created and added to global DVs.
 
         eIDs : int or list
