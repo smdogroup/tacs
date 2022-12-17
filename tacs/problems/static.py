@@ -1251,6 +1251,13 @@ class StaticProblem(TACSProblem):
         self.assembler.setVariables(self.u)
         self.update.zeroEntries()
 
+    def zeroLoads(self):
+        """
+        Zero all applied loads
+        """
+        self.F.zeroEntries()
+        self.auxElems = tacs.TACS.AuxElements()
+
     def solveAdjoint(self, rhs, phi):
         """
         Solve the structural adjoint.

@@ -1295,6 +1295,15 @@ class TransientProblem(TACSProblem):
         # Return arrays
         return time, qArray, qdotArray, qddotArray
 
+    def zeroLoads(self):
+        """
+        Zero all applied loads
+        """
+        for Fvec in self.F:
+            Fvec.zeroEntries()
+        for i in range(len(self.auxElems)):
+            self.auxElems[i] = tacs.TACS.AuxElements()
+
     def writeSolution(self, outputDir=None, baseName=None, number=None, timeSteps=None):
         """
         This is a generic shell function that writes the output
