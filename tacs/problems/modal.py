@@ -32,6 +32,17 @@ class ModalProblem(TACSProblem):
             1e-12,
             "Relative convergence tolerance for Eigenvalue solver based on l2 norm of residual.",
         ],
+        "RBEStiffnessScaleFactor": [
+            float,
+            1e3,
+            "Constraint matrix scaling factor used in RBE Lagrange multiplier stiffness matrix.",
+        ],
+        "RBEArtificialStiffness": [
+            float,
+            1e-3,
+            "Artificial constant added to diagonals of RBE Lagrange multiplier stiffness matrix "
+            "to stabilize preconditioner.",
+        ],
         "subSpaceSize": [
             int,
             10,
@@ -149,13 +160,18 @@ class ModalProblem(TACSProblem):
 
         self.pc = tacs.TACS.Pc(self.K)
 
+        # Set artificial stiffness factors in rbe class
+        c1 = self.getOption("RBEStiffnessScaleFactor")
+        c2 = self.getOption("RBEArtificialStiffness")
+        tacs.elements.RBE2.setScalingParameters(c1, c2)
+        tacs.elements.RBE3.setScalingParameters(c1, c2)
+
         # Assemble and factor the stiffness/Jacobian matrix. Factor the
         # Jacobian and solve the linear system for the displacements
         alpha = 1.0
         beta = 0.0
         gamma = 0.0
         self.assembler.assembleJacobian(alpha, beta, gamma, None, self.K)
-        self.pc.factor()  # LU factorization of stiffness matrix
 
         subspace = self.getOption("subSpaceSize")
         restarts = self.getOption("nRestarts")
@@ -266,6 +282,9 @@ class ModalProblem(TACSProblem):
         >>> # Result will look like (if ModalProblem has name of 'c1'):
         >>> # {'c1_eigsm.0':12354.10}
         """
+        # Make sure assembler variables are up to date
+        self._updateAssemblerVars()
+
         # Check if user specified which eigvals to output
         # Otherwise, output them all
         if evalFuncs is None:
@@ -314,6 +333,7 @@ class ModalProblem(TACSProblem):
         >>> # Result will look like (if ModalProblem has name of 'c1'):
         >>> # {'c1_eigsm.0':{'struct':[1.234, ..., 7.89], 'Xpts':[3.14, ..., 1.59]}}
         """
+        # Make sure assembler variables are up to date
         self._updateAssemblerVars()
 
         # Check if user specified which eigvals to output
@@ -352,6 +372,11 @@ class ModalProblem(TACSProblem):
 
         self.assembler.setDesignVars(self.x)
         self.assembler.setNodes(self.Xpts)
+        # Set artificial stiffness factors in rbe class
+        c1 = self.getOption("RBEStiffnessScaleFactor")
+        c2 = self.getOption("RBEArtificialStiffness")
+        tacs.elements.RBE2.setScalingParameters(c1, c2)
+        tacs.elements.RBE3.setScalingParameters(c1, c2)
 
     def solve(self):
         """

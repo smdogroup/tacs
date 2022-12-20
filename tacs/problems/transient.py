@@ -41,6 +41,17 @@ class TransientProblem(TACSProblem):
             1e-12,
             "Relative convergence tolerance for integrator based on l2 norm of residual.",
         ],
+        "RBEStiffnessScaleFactor": [
+            float,
+            1e3,
+            "Constraint matrix scaling factor used in RBE Lagrange multiplier stiffness matrix.",
+        ],
+        "RBEArtificialStiffness": [
+            float,
+            1e-3,
+            "Artificial constant added to diagonals of RBE Lagrange multiplier stiffness matrix "
+            "to stabilize preconditioner.",
+        ],
         "jacAssemblyFreq": [
             int,
             1,
@@ -864,6 +875,11 @@ class TransientProblem(TACSProblem):
         self.assembler.setInitConditions(
             vec=self.vars0, dvec=self.dvars0, ddvec=self.ddvars0
         )
+        # Set artificial stiffness factors in rbe class
+        c1 = self.getOption("RBEStiffnessScaleFactor")
+        c2 = self.getOption("RBEArtificialStiffness")
+        tacs.elements.RBE2.setScalingParameters(c1, c2)
+        tacs.elements.RBE3.setScalingParameters(c1, c2)
 
     def solve(self):
         """
