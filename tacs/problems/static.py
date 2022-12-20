@@ -180,7 +180,7 @@ class StaticProblem(TACSProblem):
         # True stiffness matrix
         self.K = self.assembler.createSchurMat(ordering)
         # Artificial stiffness for RBE numerical stabilization to stabilize PC
-        self.artificial_stiffness = self.assembler.createSchurMat(ordering)
+        self.rbeArtificialStiffness = self.assembler.createSchurMat(ordering)
 
         # Additional Vecs for updates
         self.update = self.assembler.createVec()
@@ -207,11 +207,11 @@ class StaticProblem(TACSProblem):
             opt("RBEStiffnessScaleFactor"), opt("RBEArtificialStiffness")
         )
         self.assembler.assembleJacobian(
-            self.alpha, self.beta, self.gamma, None, self.artificial_stiffness
+            self.alpha, self.beta, self.gamma, None, self.rbeArtificialStiffness
         )
         # Subtract full stiffness w/o artificial terms from full stiffness w/ terms
         # to isolate  artificial stiffness terms
-        self.artificial_stiffness.axpy(-1.0, self.K)
+        self.rbeArtificialStiffness.axpy(-1.0, self.K)
 
         reorderSchur = 1
         self.PC = tacs.TACS.Pc(
@@ -644,10 +644,10 @@ class StaticProblem(TACSProblem):
             )
             # Stiffness matrix must include artificial terms before pc factor
             # to prevent factorization issues w/ zero-diagonals
-            self.K.axpy(1.0, self.artificial_stiffness)
+            self.K.axpy(1.0, self.rbeArtificialStiffness)
             self.PC.factor()
             # Remove artificial stiffness terms to get true stiffness mat
-            self.K.axpy(-1.0, self.artificial_stiffness)
+            self.K.axpy(-1.0, self.rbeArtificialStiffness)
             self._factorOnNext = False
 
     def solve(self, Fext=None):
