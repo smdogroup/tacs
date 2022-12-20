@@ -1,5 +1,5 @@
 import os
-from tacs import pytacs, functions
+from tacs import pytacs, constitutive, elements, functions
 from pytacs_analysis_base_test import PyTACSTestCase
 
 r"""
@@ -27,10 +27,10 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
     N_PROCS = 2  # this is how many MPI processes to use for this TestCase.
 
     FUNC_REFS = {
-        "load_set_001_compliance": 424230.1227524751,
-        "load_set_001_ks_disp": 0.5735091934240975,
-        "load_set_001_ks_vmfailure": 0.6843335686556009,
-        "load_set_001_mass": 108000.0,
+        "load_set_001_compliance": 1308894.9194463675,
+        "load_set_001_ks_disp": 0.9935838935725351,
+        "load_set_001_ks_vmfailure": 0.895419273597867,
+        "load_set_001_mass": 51400.0,
     }
 
     def setup_tacs_problems(self, comm):
@@ -53,8 +53,30 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
 
         fea_assembler = pytacs.pyTACS(bdf_file, comm, options=struct_options)
 
+        def elem_call_back(
+            dv_num, comp_id, comp_descript, elem_descripts, global_dvs, **kwargs
+        ):
+            # Material properties
+            rho = 2570.0  # density kg/m^3
+            E = 70e9  # Young's modulus (Pa)
+            nu = 0.3  # Poisson's ratio
+            ys = 350.0e6  # yield stress
+
+            # Plate geometry
+            tplate = 0.1  # 5 mm
+
+            # Set up property model
+            prop = constitutive.MaterialProperties(rho=rho, E=E, nu=nu, ys=ys)
+            # Set up constitutive model
+            con = constitutive.IsoShellConstitutive(prop, t=tplate, tNum=dv_num)
+            transform = None
+            # Set up element
+            elem = elements.Quad4Shell(transform, con)
+            scale = [100.0]
+            return elem, scale
+
         # Set up constitutive objects and elements
-        fea_assembler.initialize()
+        fea_assembler.initialize(elem_call_back)
 
         # Create case 1 static problem from bdf file
         problems = fea_assembler.createTACSProbsFromBDF()
