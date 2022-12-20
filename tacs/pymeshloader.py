@@ -287,6 +287,7 @@ class pyMeshLoader(BaseUI):
         # Find all of the element IDs belonging to this property group
         propertyID = list(self.bdfInfo.property_ids)[componentID]
         elementIDs = self.bdfInfo.get_element_ids_dict_with_pids()[propertyID]
+        nid_map = self.bdfInfo.get_nid_map()
         compConn = []
         for elementID in elementIDs:
             # We've now got the connectivity for this element, but it is in nastrans node numbering
@@ -295,7 +296,7 @@ class pyMeshLoader(BaseUI):
                 compConn.append(nastranConn)
             else:
                 # Convert Nastran node numbering back to tacs numbering
-                tacsConn = [self.bdfInfo.nid_map[nID] for nID in nastranConn]
+                tacsConn = [nid_map[nID] for nID in nastranConn]
                 # Append element connectivity to list for component
                 compConn.append(tacsConn)
         return compConn
