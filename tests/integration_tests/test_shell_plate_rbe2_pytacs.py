@@ -42,7 +42,7 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
         if self.dtype == complex:
             self.rtol = 5e-6
             self.atol = 1e-8
-            self.dh = 1e-9
+            self.dh = 1e-10
         else:
             self.rtol = 2e-1
             self.atol = 1e-3
