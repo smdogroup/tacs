@@ -166,7 +166,8 @@ class ProblemTest(StaticTestCase.StaticTest):
         dep_dofs = np.array([1, 1, 1, 1, 1, 1], np.intc)
         # Set the artificial stiffness to be low to pass the sensitivity tests
         # This will affect the accuracy of the element behavior
-        rbe = elements.RBE2(num_rbe_nodes, dep_dofs, C1=1e2, C2=1e-1)
+        elements.RBE2.setScalingParameters(1e2, 1e-1)
+        rbe = elements.RBE2(num_rbe_nodes, dep_dofs)
         # Set the elements for each (only two) component
         element_list = [shell, rbe]
         creator.setElements(element_list)
