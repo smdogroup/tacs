@@ -282,7 +282,7 @@ class TransientProblem(TACSProblem):
 
     def getNumTimeSteps(self):
         """
-        Get the number of timesteps used in time integration for this problem.
+        Get the number of time steps used in time integration for this problem.
 
         Returns
         ----------
@@ -449,7 +449,7 @@ class TransientProblem(TACSProblem):
         -----
 
         The units of the entries of the 'force' vector F are not
-        necesarily physical forces and their interpretation depends
+        necessarily physical forces and their interpretation depends
         on the physics problem being solved and the dofs included
         in the model.
 

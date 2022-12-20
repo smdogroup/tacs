@@ -163,7 +163,7 @@ class StaticProblem(TACSProblem):
         # State variable vector
         self.u = self.assembler.createVec()
         self.u_array = self.u.getArray()
-        # Auxillary element object for applying tractions/pressure
+        # Auxiliary element object for applying tractions/pressure
         self.auxElems = tacs.TACS.AuxElements()
         self.callCounter = -1
 
@@ -371,7 +371,7 @@ class StaticProblem(TACSProblem):
         ----------
 
         The units of the entries of the 'force' vector F are not
-        necesarily physical forces and their interpretation depends
+        necessarily physical forces and their interpretation depends
         on the physics problem being solved and the dofs included
         in the model.
 
@@ -413,7 +413,7 @@ class StaticProblem(TACSProblem):
         ----------
 
         The units of the entries of the 'force' vector F are not
-        necesarily physical forces and their interpretation depends
+        necessarily physical forces and their interpretation depends
         on the physics problem being solved and the dofs included
         in the model.
 
@@ -688,7 +688,7 @@ class StaticProblem(TACSProblem):
         # Set initnorm as the norm of rhs
         self.initNorm = np.real(self.rhs.norm())
 
-        # Starting Norm for this compuation
+        # Starting Norm for this computation
         self.startNorm = np.real(self.res.norm())
 
         initNormTime = time.time()
