@@ -130,7 +130,9 @@ class TacsDVComp(om.ExplicitComponent):
                 d_outputs["dv_struct"] += d_inputs["dv_struct_serial"][self.src_indices]
         else:  # mode == 'rev'
             if "dv_struct" in d_outputs and "dv_struct_serial" in d_inputs:
-                d_inputs["dv_struct_serial"][self.src_indices] += d_outputs["dv_struct"]
+                tmp = np.zeros_like(d_inputs["dv_struct_serial"])
+                tmp[self.src_indices] = d_outputs["dv_struct"]
+                d_inputs["dv_struct_serial"] += self.comm.allreduce(tmp)
 
     def get_dv_src_indices(self):
         """
@@ -503,12 +505,7 @@ class TacsFunctions(om.ExplicitComponent):
             self._update_internal(inputs)
 
             for func_name in d_outputs:
-                if MPI and self.comm.size > 1:
-                    full = np.zeros(d_outputs[func_name].size)
-                    self.comm.Allreduce(d_outputs[func_name], full, op=MPI.SUM)
-                    d_func = full
-                else:
-                    d_func = d_outputs[func_name]
+                d_func = d_outputs[func_name]
 
                 if "dv_struct" in d_inputs:
                     self.sp.addDVSens(
@@ -599,12 +596,7 @@ class MassFunctions(om.ExplicitComponent):
             self._update_internal(inputs)
 
             for func_name in d_outputs:
-                if MPI and self.comm.size > 1:
-                    full = np.zeros(d_outputs[func_name].size)
-                    self.comm.Allreduce(d_outputs[func_name], full, op=MPI.SUM)
-                    d_func = full
-                else:
-                    d_func = d_outputs[func_name]
+                d_func = d_outputs[func_name]
 
                 if "dv_struct" in d_inputs:
                     self.sp.addDVSens(
