@@ -295,7 +295,7 @@ class pyMeshLoader(BaseUI):
                 compConn.append(nastranConn)
             else:
                 # Convert Nastran node numbering back to tacs numbering
-                tacsConn = [self.bdfInfo.nid_map[nID] for nID in nastranConn]
+                tacsConn = self.idMap(nastranConn, self.nastranToTACSNodeIDDict)
                 # Append element connectivity to list for component
                 compConn.append(tacsConn)
         return compConn
