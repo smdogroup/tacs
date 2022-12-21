@@ -64,8 +64,8 @@ class StaticProblem(TACSProblem):
         "RBEArtificialStiffness": [
             float,
             1e-3,
-            "Artificial constant added to diagonals of RBE Lagrange multiplier stiffness matrix "
-            "to stabilize preconditioner.",
+            "Artificial constant added to diagonals of RBE Lagrange multiplier stiffness matrix \n"
+            "\t to stabilize preconditioner.",
         ],
         "useMonitor": [
             bool,
@@ -344,7 +344,7 @@ class StaticProblem(TACSProblem):
     ####### Load adding methods ########
 
     def addLoadToComponents(self, compIDs, F, averageLoad=False):
-        """ "
+        """
         This method is used to add a *FIXED TOTAL LOAD* on one or more
         components, defined by COMPIDs. The purpose of this routine is to add loads that
         remain fixed throughout an optimization. An example would be an engine load.
@@ -434,7 +434,7 @@ class StaticProblem(TACSProblem):
         self._addLoadToNodes(self.F, nodeIDs, F, nastranOrdering)
 
     def addLoadToRHS(self, Fapplied):
-        """ "
+        """
         This method is used to add a *FIXED TOTAL LOAD* directly to the
         right hand side vector given the equation below:
 

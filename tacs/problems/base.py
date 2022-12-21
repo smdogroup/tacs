@@ -316,7 +316,7 @@ class TACSProblem(BaseUI):
     ####### Load adding methods ########
 
     def _addLoadToComponents(self, FVec, compIDs, F, averageLoad=False):
-        """ "
+        """
         This is an internal helper function for doing the addLoadToComponents method for
         inherited TACSProblem classes. The function should NOT be called by the user should
         use the addLoadToComponents method for the respective problem class. The function is
@@ -521,7 +521,7 @@ class TACSProblem(BaseUI):
                 )
 
     def _addLoadToRHS(self, Frhs, Fapplied):
-        """ "
+        """
         This is an internal helper function for doing the addLoadToRHS method for
         inherited TACSProblem classes. The function should NOT be called by the user should
         use the addLoadToRHS method for the respective problem class.

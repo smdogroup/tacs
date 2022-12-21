@@ -49,8 +49,8 @@ class TransientProblem(TACSProblem):
         "RBEArtificialStiffness": [
             float,
             1e-3,
-            "Artificial constant added to diagonals of RBE Lagrange multiplier stiffness matrix "
-            "to stabilize preconditioner.",
+            "Artificial constant added to diagonals of RBE Lagrange multiplier stiffness matrix \n"
+            "\t to stabilize preconditioner.",
         ],
         "jacAssemblyFreq": [
             int,
@@ -351,7 +351,7 @@ class TransientProblem(TACSProblem):
     def addLoadToComponents(
         self, timeStep, compIDs, F, timeStage=None, averageLoad=False
     ):
-        """ "
+        """
         This method is used to add a *FIXED TOTAL LOAD* on one or more
         components, defined by COMPIDs, at a specific time instance.
         The purpose of this routine is to add loads that remain fixed throughout
@@ -479,7 +479,7 @@ class TransientProblem(TACSProblem):
         self._addLoadToNodes(self.F[timeIndex], nodeIDs, F, nastranOrdering)
 
     def addLoadToRHS(self, timeStep, Fapplied, timeStage=None):
-        """ "
+        """
         This method is used to add a *FIXED TOTAL LOAD* directly to the
         right hand side vector given the equation below:
 

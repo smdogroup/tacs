@@ -40,8 +40,8 @@ class ModalProblem(TACSProblem):
         "RBEArtificialStiffness": [
             float,
             1e-3,
-            "Artificial constant added to diagonals of RBE Lagrange multiplier stiffness matrix "
-            "to stabilize preconditioner.",
+            "Artificial constant added to diagonals of RBE Lagrange multiplier stiffness matrix \n"
+            "\t to stabilize preconditioner.",
         ],
         "subSpaceSize": [
             int,
