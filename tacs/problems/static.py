@@ -647,7 +647,14 @@ class StaticProblem(TACSProblem):
         initNormTime = time.time()
 
         # Solve Linear System for the update
-        self.KSM.solve(self.res, self.update)
+        success = self.KSM.solve(self.res, self.update)
+
+        if not success:
+            self._TACSWarning(
+                "Linear solver failed to converge. "
+                "This is likely a sign that the problem is ill-conditioned. "
+                "Check that the model is properly restrained."
+            )
 
         self.update.scale(-1.0)
 

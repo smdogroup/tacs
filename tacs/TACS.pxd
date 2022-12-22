@@ -149,7 +149,7 @@ cdef extern from "KSM.h":
         TACSVec *createVec()
         void setOperators(TACSMat *_mat, TACSPc *_pc)
         void getOperators(TACSMat **_mat, TACSPc **_pc)
-        void solve(TACSVec *b, TACSVec *x, int zero_guess)
+        int solve(TACSVec *b, TACSVec *x, int zero_guess)
         void setTolerances(double _rtol, double _atol)
         void setMonitor(KSMPrint *_monitor)
 
