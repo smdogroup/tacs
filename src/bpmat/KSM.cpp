@@ -819,6 +819,7 @@ int GMRES::solve(TACSVec *b, TACSVec *x, int zero_guess) {
     int niters = 0;  // Keep track of the size of the Hessenberg matrix
 
     if (TacsRealPart(res[0]) < atol) {
+      solve_flag = 1;
       break;
     }
 
