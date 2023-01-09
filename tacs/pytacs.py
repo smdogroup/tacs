@@ -340,6 +340,7 @@ class pyTACS(BaseUI):
         """
         return len(self.globalDVs)
 
+    @preinitialize_method
     def assignMassDV(self, descript, eIDs, dvName="m"):
         """
         Assign a global DV to a point mass element.
