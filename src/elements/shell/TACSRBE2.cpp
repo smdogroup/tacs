@@ -36,8 +36,7 @@
 /*
   Create the RBE2.
 */
-TACSRBE2::TACSRBE2(int _numNodes, int _dof_constrained[], double _C1,
-                   double _C2) {
+TACSRBE2::TACSRBE2(int _numNodes, int _dof_constrained[]) {
   NUM_NODES = _numNodes;  // Number of nodes (1 indep node + N dep nodes + N
                           // dummy nodes)
   NUM_DEP_NODES = (NUM_NODES - 1) / 2;
@@ -51,10 +50,6 @@ TACSRBE2::TACSRBE2(int _numNodes, int _dof_constrained[], double _C1,
       dof_constrained[j][i] = _dof_constrained[NUM_DISPS * j + i];
     }
   }
-
-  // Default scaling and artificial stiffness parameters
-  C1 = _C1;
-  C2 = _C2;
 }
 
 TACSRBE2::~TACSRBE2() {
@@ -64,6 +59,15 @@ TACSRBE2::~TACSRBE2() {
     }
     delete[] dof_constrained;
   }
+}
+
+// Default scaling and artificial stiffness parameters
+double TACSRBE2::C1 = 1e3;
+double TACSRBE2::C2 = 1e-3;
+
+void TACSRBE2::setScalingParameters(double _C1, double _C2) {
+  C1 = _C1;
+  C2 = _C2;
 }
 
 /*

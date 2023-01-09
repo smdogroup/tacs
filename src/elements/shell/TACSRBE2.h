@@ -16,9 +16,10 @@
 
 class TACSRBE2 : public TACSElement {
  public:
-  TACSRBE2(int _numNodes, int _dof_constrained[], double _C1 = 1e3,
-           double _C2 = 1e-3);
+  TACSRBE2(int _numNodes, int _dof_constrained[]);
   ~TACSRBE2();
+
+  static void setScalingParameters(double _C1, double _C2);
 
   // Info for BDF writer
   // -------------------
@@ -94,9 +95,9 @@ class TACSRBE2 : public TACSElement {
   int** dof_constrained;
 
   // constraint matrix scaling factor, see ref [2]
-  double C1;
+  static double C1;
   // artificial stiffness scaling factor, see ref [2]
-  double C2;
+  static double C2;
 };
 
 #endif

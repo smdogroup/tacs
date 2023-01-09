@@ -371,11 +371,15 @@ cdef extern from "TACSKinematicConstraints.h":
 
 cdef extern from "TACSRBE2.h":
     cdef cppclass TACSRBE2(TACSElement):
-        TACSRBE2(int, int*, double, double)
+        TACSRBE2(int, int*)
+        @staticmethod
+        void setScalingParameters(double, double)
 
 cdef extern from "TACSRBE3.h":
     cdef cppclass TACSRBE3(TACSElement):
-        TACSRBE3(int, int*, double*, int*, double, double)
+        TACSRBE3(int, int*, double*, int*)
+        @staticmethod
+        void setScalingParameters(double, double)
 
 cdef extern from "TACSMassElement.h":
     cdef cppclass TACSMassElement(TACSElement):
