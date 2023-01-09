@@ -262,6 +262,7 @@ void *TACSAssembler::assembleMatType_thread(void *t) {
   TACSMat *A = pinfo->mat;
   ElementMatrixType matType = pinfo->matType;
   MatrixOrientation matOr = pinfo->matOr;
+  TacsScalar lambda = pinfo->lambda;
 
   // Allocate a temporary array large enough to store everything required
   int s = assembler->maxElementSize;
@@ -275,6 +276,13 @@ void *TACSAssembler::assembleMatType_thread(void *t) {
   TacsScalar *elemXpts = &data[s];
   TacsScalar *elemWeights = &data[s + sx];
   TacsScalar *elemMat = &data[s + sx + sw];
+
+  // Set the data for the auxiliary elements - if there are any
+  int naux = 0, aux_count = 0;
+  TACSAuxElem *aux = NULL;
+  if (assembler->auxElements) {
+    naux = assembler->auxElements->getAuxElements(&aux);
+  }
 
   while (assembler->numCompletedElements < assembler->numElements) {
     int elemIndex = -1;
@@ -296,6 +304,33 @@ void *TACSAssembler::assembleMatType_thread(void *t) {
       // Retrieve the type of the matrix
       element->getMatType(matType, elemIndex, assembler->time, elemXpts, vars,
                           elemMat);
+
+      // Increment the aux counter until we possibly have
+      // aux[aux_count].num == elemIndex
+      while (aux_count < naux && aux[aux_count].num < elemIndex) {
+        aux_count++;
+      }
+
+      // Add the contribution from any auxiliary elements, if the load factor is 1
+      // they can be added straight to the elemRes, otherwise they need to be
+      // scaled first
+      if (lambda == TacsScalar(1.0)) {
+        while (aux_count < naux && aux[aux_count].num == elemIndex) {
+          aux[aux_count].elem->getMatType(matType, elemIndex, assembler->time, elemXpts, vars, elemMat);
+          aux_count++;
+        }
+      } else {
+        TacsScalar *auxElemMat = new TacsScalar[s*s];
+        memset(auxElemMat, 0, s * sizeof(TacsScalar));
+        while (aux_count < naux && aux[aux_count].num == elemIndex) {
+          aux[aux_count].elem->getMatType(matType, elemIndex, assembler->time, elemXpts, vars, auxElemMat);
+          aux_count++;
+        }
+        for (int ii=0; ii< s*s; ii++){
+          elemMat[ii] += lambda*auxElemMat[ii];
+        }
+        delete[] auxElemMat;
+      }
 
       pthread_mutex_lock(&assembler->tacs_mutex);
       // Add values to the matrix

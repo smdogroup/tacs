@@ -4365,9 +4365,11 @@ void TACSAssembler::assembleJacobian(TacsScalar alpha, TacsScalar beta,
   @param matType The matrix type
   @param A The matrix to assemble (output)
   @param matOr The matrix orientation: NORMAL or TRANSPOSE
+  @param lambda Scaling factor for the aux element contributions, by default 1
 */
 void TACSAssembler::assembleMatType(ElementMatrixType matType, TACSMat *A,
-                                    MatrixOrientation matOr) {
+                                    MatrixOrientation matOr,
+                                    const TacsScalar lambda) {
   // Zero the matrix
   A->zeroEntries();
 
@@ -4378,6 +4380,7 @@ void TACSAssembler::assembleMatType(ElementMatrixType matType, TACSMat *A,
     tacsPInfo->mat = A;
     tacsPInfo->matType = matType;
     tacsPInfo->matOr = matOr;
+    tacsPInfo->lambda = lambda;
 
     // Create the joinable attribute
     pthread_attr_t attr;
@@ -4402,16 +4405,45 @@ void TACSAssembler::assembleMatType(ElementMatrixType matType, TACSMat *A,
     getDataPointers(elementData, &vars, NULL, NULL, NULL, &elemXpts, NULL,
                     &elemWeights, &elemMat);
 
+    // Get the auxiliary elements
+    int naux = 0, aux_count = 0;
+    TACSAuxElem *aux = NULL;
+    if (auxElements) {
+      naux = auxElements->getAuxElements(&aux);
+    }
+
     for (int i = 0; i < numElements; i++) {
       // Retrieve the element variables and node locations
       int ptr = elementNodeIndex[i];
       int len = elementNodeIndex[i + 1] - ptr;
+      int nvars = elements[i]->getNumVariables();
       const int *nodes = &elementTacsNodes[ptr];
       xptVec->getValues(len, nodes, elemXpts);
       varsVec->getValues(len, nodes, vars);
 
       // Get the element matrix
       elements[i]->getMatType(matType, i, time, elemXpts, vars, elemMat);
+
+      // Add the contribution from any auxiliary elements, if the load factor is 1
+      // they can be added straight to the elemRes, otherwise they need to be
+      // scaled first
+      if (lambda == TacsScalar(1.0)) {
+        while (aux_count < naux && aux[aux_count].num == i) {
+          aux[aux_count].elem->getMatType(matType, i, time, elemXpts, vars, elemMat);
+          aux_count++;
+        }
+      } else {
+        TacsScalar *auxElemMat = new TacsScalar[nvars*nvars];
+        memset(auxElemMat, 0, nvars * sizeof(TacsScalar));
+        while (aux_count < naux && aux[aux_count].num == i) {
+          aux[aux_count].elem->getMatType(matType, i, time, elemXpts, vars, auxElemMat);
+          aux_count++;
+        }
+        for (int ii=0; ii< nvars*nvars; ii++){
+          elemMat[ii] += lambda*auxElemMat[ii];
+        }
+        delete[] auxElemMat;
+      }
 
       // Add the values into the element
       addMatValues(A, i, elemMat, elementIData, elemWeights, matOr);
