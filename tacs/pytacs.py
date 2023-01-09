@@ -37,6 +37,34 @@ from tacs.pymeshloader import pyMeshLoader
 warnings.simplefilter("default")
 
 
+# Define decorator functions for methods that must be called before initialize
+def preinitialize_method(method):
+    def wrapped_method(self, *args, **kwargs):
+        if self.assembler is not None:
+            raise self._TACSError(
+                f"`{method.__name__}` is a pre-initialize method. "
+                "It may only be called before the 'initialize' method has been called."
+            )
+        else:
+            return method(self, *args, **kwargs)
+
+    return wrapped_method
+
+
+# Define decorator functions for methods that must be called after initialize
+def postinitialize_method(method):
+    def wrapped_method(self, *args, **kwargs):
+        if self.assembler is None:
+            raise self._TACSError(
+                f"`{method.__name__}` is a post-initialize method. "
+                "It may only be called after the 'initialize' method has been called."
+            )
+        else:
+            return method(self, *args, **kwargs)
+
+    return wrapped_method
+
+
 class pyTACS(BaseUI):
     """
     The class for working with a TACS structure
@@ -233,6 +261,7 @@ class pyTACS(BaseUI):
             )
             self._pp("+--------------------------------------------------+")
 
+    @preinitialize_method
     def addGlobalDV(self, descript, value, lower=None, upper=None, scale=1.0):
         """
         This function allows adding design variables that are not
@@ -636,6 +665,53 @@ class pyTACS(BaseUI):
             compDescripts.append(self.compDescripts[compIDs[i]])
 
         return compDescripts
+
+    def getGlobalNodeIDsForComps(self, compIDs, nastranOrdering=False):
+        """
+        return the global (non-partitioned) node IDs belonging to a given list of component IDs
+
+        Parameters
+        ----------
+        compIDs : int or list[int] or None
+            List of integers of the compIDs numbers. If None, returns nodeIDs for all components.
+            Defaults to None.
+
+        nastranOrdering : False
+            Flag signaling whether nodeIDs are in TACS (default) or NASTRAN (grid IDs in bdf file) ordering
+            Defaults to False.
+
+        Returns
+        -------
+        nodeIDs : list
+            List of unique nodeIDs that belong to the given list of compIDs
+        """
+        # Return all component ids
+        if compIDs is None:
+            compIDs = list(range(self.nComp))
+
+        return self.meshLoader.getGlobalNodeIDsForComps(compIDs, nastranOrdering)
+
+    @postinitialize_method
+    def getLocalNodeIDsForComps(self, compIDs):
+        """
+        return the local (partitioned) node IDs belonging to a given list of component IDs
+
+        Parameters
+        ----------
+         compIDs : int or list[int] or None
+            List of integers of the compIDs numbers. If None, returns nodeIDs for all components.
+            Defaults to None.
+
+        Returns
+        -------
+        nodeIDs : list
+            List of unique nodeIDs that belong to the given list of compIDs
+        """
+        # Return all component ids
+        if compIDs is None:
+            compIDs = list(range(self.nComp))
+
+        return self.meshLoader.getLocalNodeIDsForComps(compIDs)
 
     def initialize(self, elemCallBack=None):
         """
@@ -1051,6 +1127,7 @@ class pyTACS(BaseUI):
 
         return elemCallBack
 
+    @postinitialize_method
     def getOrigDesignVars(self):
         """
         get the original design variables that were specified with
@@ -1062,11 +1139,9 @@ class pyTACS(BaseUI):
             The current design variable vector set in tacs.
 
         """
-        if self.assembler is None:
-            raise self._initializeError()
-
         return self.x0.getArray().copy()
 
+    @postinitialize_method
     def createDesignVec(self, asBVec=False):
         """
         Create a new tacs distributed design vector.
@@ -1084,33 +1159,27 @@ class pyTACS(BaseUI):
         x : numpy.ndarray or TACS.Vec
             Distributed design variable vector
         """
-        if self.assembler is None:
-            raise self._initializeError()
-
         xVec = self.assembler.createDesignVec()
         if asBVec:
             return xVec
         else:
             return xVec.getArray()
 
+    @postinitialize_method
     def getNumDesignVars(self):
         """
         Return the number of design variables on this processor.
         """
-        if self.assembler is None:
-            raise self._initializeError()
-
         return self.x0.getSize()
 
+    @postinitialize_method
     def getTotalNumDesignVars(self):
         """
         Return the number of design variables across all processors.
         """
-        if self.assembler is None:
-            raise self._initializeError()
-
         return self.dvNum
 
+    @postinitialize_method
     def getOrigNodes(self):
         """
         Return the original mesh coordiantes read in from the meshLoader.
@@ -1121,11 +1190,9 @@ class pyTACS(BaseUI):
             Structural coordinate in array of size (N * 3) where N is
             the number of structural nodes on this processor.
         """
-        if self.assembler is None:
-            raise self._initializeError()
-
         return self.Xpts0.getArray().copy()
 
+    @postinitialize_method
     def createNodeVec(self, asBVec=False):
         """
         Create a new tacs distributed node vector.
@@ -1143,8 +1210,6 @@ class pyTACS(BaseUI):
         xpts : numpy.ndarray or TACS.Vec
             Distributed node coordinate vector
         """
-        if self.assembler is None:
-            raise self._initializeError()
 
         xptVec = self.assembler.createNodeVec()
         if asBVec:
@@ -1152,31 +1217,28 @@ class pyTACS(BaseUI):
         else:
             return xptVec.getArray()
 
+    @postinitialize_method
     def getNumOwnedNodes(self):
         """
         Get the number of nodes owned by this processor.
         """
-        if self.assembler is None:
-            raise self._initializeError()
-
         return self.assembler.getNumOwnedNodes()
 
+    @postinitialize_method
     def getNumOwnedMultiplierNodes(self):
         """
         Get number of multiplier nodes owned by this processor.
         """
-        if self.assembler is None:
-            raise self._initializeError()
         return len(self.meshLoader.getLocalMultiplierNodeIDs())
 
+    @postinitialize_method
     def getLocalMultiplierNodeIDs(self):
         """
         Get the tacs indices of multiplier nodes used to hold lagrange multipliers on this processor.
         """
-        if self.assembler is None:
-            raise self._initializeError()
         return self.meshLoader.getLocalMultiplierNodeIDs()
 
+    @postinitialize_method
     def createVec(self, asBVec=False):
         """
         Create a new tacs distributed state variable vector.
@@ -1194,34 +1256,24 @@ class pyTACS(BaseUI):
         vars : numpy.ndarray or TACS.Vec
             Distributed state variable vector
         """
-        if self.assembler is None:
-            raise self._initializeError()
-
         vars = self.assembler.createVec()
         if asBVec:
             return vars
         else:
             return vars.getArray()
 
+    @postinitialize_method
     def getVarsPerNode(self):
         """
         Get the number of variables per node for the model.
         """
-        if self.assembler is None:
-            raise self._initializeError()
-
         return self.assembler.getVarsPerNode()
 
+    @postinitialize_method
     def applyBCsToVec(self, vec):
         """
         Applies zeros to boundary condition dofs in input vector.
         """
-        if self.assembler is None:
-            raise self._initializeError()
-
-        varVec = self.assembler.createVec()
-        varArray = varVec.getArray()
-
         # Check if input is a BVec or numpy array
         if isinstance(vec, tacs.TACS.Vec):
             self.assembler.applyBCs(vec)
@@ -1236,6 +1288,7 @@ class pyTACS(BaseUI):
             # Copy values back to array
             array[:] = vec.getArray()
 
+    @postinitialize_method
     def createStaticProblem(self, name, options={}):
         """
         Create a new staticProblem for modeling a static load cases.
@@ -1254,9 +1307,6 @@ class pyTACS(BaseUI):
         problem : StaticProblem
             StaticProblem object used for modeling and solving static cases.
         """
-        if self.assembler is None:
-            raise self._initializeError()
-
         problem = tacs.problems.static.StaticProblem(
             name, self.assembler, self.comm, self.outputViewer, self.meshLoader, options
         )
@@ -1265,6 +1315,7 @@ class pyTACS(BaseUI):
         problem.setNodes(self.Xpts0)
         return problem
 
+    @postinitialize_method
     def createTransientProblem(self, name, tInit, tFinal, numSteps, options={}):
         """
         Create a new TransientProblem for modeling a transient load cases.
@@ -1289,9 +1340,6 @@ class pyTACS(BaseUI):
         problem : TransientProblem
             TransientProblem object used for modeling and solving transient cases.
         """
-        if self.assembler is None:
-            raise self._initializeError()
-
         problem = tacs.problems.transient.TransientProblem(
             name,
             tInit,
@@ -1308,6 +1356,7 @@ class pyTACS(BaseUI):
         problem.setNodes(self.Xpts0)
         return problem
 
+    @postinitialize_method
     def createModalProblem(self, name, sigma, numEigs, options={}):
         """
         Create a new ModalProblem for performing modal analysis.
@@ -1331,9 +1380,6 @@ class pyTACS(BaseUI):
         problem : ModalProblem
             ModalProblem object used for performing modal eigenvalue analysis.
         """
-        if self.assembler is None:
-            raise self._initializeError()
-
         problem = tacs.problems.modal.ModalProblem(
             name,
             sigma,
@@ -1349,6 +1395,7 @@ class pyTACS(BaseUI):
         problem.setNodes(self.Xpts0)
         return problem
 
+    @postinitialize_method
     def createTACSProbsFromBDF(self):
         """
         Automatically define tacs problem classes with loads using information contained in BDF file.
@@ -1366,10 +1413,6 @@ class pyTACS(BaseUI):
         Currently only supports LOAD, FORCE, MOMENT, GRAV, RFORCE, PLOAD2, PLOAD4, TLOAD1, TLOAD2, and DLOAD cards.
         Currently only supports staticProblem (SOL 101), transientProblem (SOL 109), and modalProblems (SOL 103)
         """
-
-        if self.assembler is None:
-            raise self._initializeError()
-
         # Make sure cross-referencing is turned on in pynastran
         if self.bdfInfo.is_xrefed is False:
             self.bdfInfo.cross_reference()
@@ -1752,16 +1795,6 @@ class pyTACS(BaseUI):
         # Default to 6
         if self.varsPerNode is None:
             self.varsPerNode = 6
-
-    def _initializeError(self):
-        """
-        Standard error print out if the user tries to call certain pytacs methods before intializing.
-        """
-        error = self._TACSError(
-            "TACS assembler has not been created. "
-            "Assembler must created first by running 'initalize' method."
-        )
-        return error
 
 
 def _tload2_get_load_at_time(tload2, time, scale=1.0):
