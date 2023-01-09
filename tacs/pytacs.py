@@ -1060,7 +1060,7 @@ class pyTACS(BaseUI):
     @postinitialize_method
     def getOrigNodes(self):
         """
-        Return the original mesh coordiantes read in from the meshLoader.
+        Return the original mesh coordinates read in from the meshLoader.
 
         Returns
         -------
