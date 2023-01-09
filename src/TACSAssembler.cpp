@@ -4424,23 +4424,25 @@ void TACSAssembler::assembleMatType(ElementMatrixType matType, TACSMat *A,
       // Get the element matrix
       elements[i]->getMatType(matType, i, time, elemXpts, vars, elemMat);
 
-      // Add the contribution from any auxiliary elements, if the load factor is 1
-      // they can be added straight to the elemRes, otherwise they need to be
+      // Add the contribution from any auxiliary elements, if the load factor is
+      // 1 they can be added straight to the elemRes, otherwise they need to be
       // scaled first
       if (lambda == TacsScalar(1.0)) {
         while (aux_count < naux && aux[aux_count].num == i) {
-          aux[aux_count].elem->getMatType(matType, i, time, elemXpts, vars, elemMat);
+          aux[aux_count].elem->getMatType(matType, i, time, elemXpts, vars,
+                                          elemMat);
           aux_count++;
         }
       } else {
-        TacsScalar *auxElemMat = new TacsScalar[nvars*nvars];
+        TacsScalar *auxElemMat = new TacsScalar[nvars * nvars];
         memset(auxElemMat, 0, nvars * sizeof(TacsScalar));
         while (aux_count < naux && aux[aux_count].num == i) {
-          aux[aux_count].elem->getMatType(matType, i, time, elemXpts, vars, auxElemMat);
+          aux[aux_count].elem->getMatType(matType, i, time, elemXpts, vars,
+                                          auxElemMat);
           aux_count++;
         }
-        for (int ii=0; ii< nvars*nvars; ii++){
-          elemMat[ii] += lambda*auxElemMat[ii];
+        for (int ii = 0; ii < nvars * nvars; ii++) {
+          elemMat[ii] += lambda * auxElemMat[ii];
         }
         delete[] auxElemMat;
       }
