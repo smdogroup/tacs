@@ -1137,7 +1137,7 @@ class pyTACS(BaseUI):
         Returns
         ----------
         x : array
-            The current design variable vector set in tacs.
+            The original design variable vector set in tacs.
 
         """
         return self.x0.getArray().copy()
