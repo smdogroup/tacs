@@ -215,11 +215,11 @@ over all time steps and all elements in the specified domains.</p>
 The first index after the problem name indicates the optimization step (000 in this case for a single solve), and the second
 index indicates the time-step of the analysis (000 through 050). These files can be converted into a <code class="docutils literal notranslate"><span class="pre">.vtk</span></code> file
 (using <code class="docutils literal notranslate"><span class="pre">f5tovtk</span></code>) for visualization in Paraview or a <code class="docutils literal notranslate"><span class="pre">.plt</span></code> (using <code class="docutils literal notranslate"><span class="pre">f5totec</span></code>) for visualization in TecPlot using:</p>
-<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$ </span>f5tovtk Transient_000_0xx.f5
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$ </span>f5tovtk<span class="w"> </span>Transient_000_0xx.f5
 </pre></div>
 </div>
 <p>or</p>
-<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$ </span>f5totec Transient_000_0xx.f5
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$ </span>f5totec<span class="w"> </span>Transient_000_0xx.f5
 </pre></div>
 </div>
 <p>The animation below shows what the transient heat transfer temperature solution looks like when visualized in Paraview.</p>

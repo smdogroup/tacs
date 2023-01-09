@@ -82,6 +82,17 @@
             <span class="mf">1e-12</span><span class="p">,</span>
             <span class="s2">&quot;Relative convergence tolerance for integrator based on l2 norm of residual.&quot;</span><span class="p">,</span>
         <span class="p">],</span>
+        <span class="s2">&quot;RBEStiffnessScaleFactor&quot;</span><span class="p">:</span> <span class="p">[</span>
+            <span class="nb">float</span><span class="p">,</span>
+            <span class="mf">1e3</span><span class="p">,</span>
+            <span class="s2">&quot;Constraint matrix scaling factor used in RBE Lagrange multiplier stiffness matrix.&quot;</span><span class="p">,</span>
+        <span class="p">],</span>
+        <span class="s2">&quot;RBEArtificialStiffness&quot;</span><span class="p">:</span> <span class="p">[</span>
+            <span class="nb">float</span><span class="p">,</span>
+            <span class="mf">1e-3</span><span class="p">,</span>
+            <span class="s2">&quot;Artificial constant added to diagonals of RBE Lagrange multiplier stiffness matrix </span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="s2">&quot;</span><span class="se">\t</span><span class="s2"> to stabilize preconditioner.&quot;</span><span class="p">,</span>
+        <span class="p">],</span>
         <span class="s2">&quot;jacAssemblyFreq&quot;</span><span class="p">:</span> <span class="p">[</span>
             <span class="nb">int</span><span class="p">,</span>
             <span class="mi">1</span><span class="p">,</span>
@@ -122,7 +133,7 @@
         <span class="n">meshLoader</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
         <span class="n">options</span><span class="o">=</span><span class="p">{},</span>
     <span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        NOTE: This class should not be initialized directly by the user.</span>
 <span class="sd">        Use pyTACS.createTransientProblem instead.</span>
 
@@ -184,7 +195,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_createVariables</span><span class="p">()</span>
 
     <span class="k">def</span> <span class="nf">_createVariables</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Internal to create the objects required by TACS Integrator</span>
 <span class="sd">        &quot;&quot;&quot;</span>
 
@@ -270,7 +281,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">integrator</span><span class="o">.</span><span class="n">setOutputPrefix</span><span class="p">(</span><span class="n">outputDir</span><span class="p">)</span>
 
 <div class="viewcode-block" id="TransientProblem.setOption"><a class="viewcode-back" href="../../../pytacs/transient.html#tacs.problems.TransientProblem.setOption">[docs]</a>    <span class="k">def</span> <span class="nf">setOption</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Set a solver option value. The name is not case sensitive.</span>
 
 <span class="sd">        Parameters</span>
@@ -311,8 +322,8 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">_createVariables</span><span class="p">()</span></div>
 
 <div class="viewcode-block" id="TransientProblem.getNumTimeSteps"><a class="viewcode-back" href="../../../pytacs/transient.html#tacs.problems.TransientProblem.getNumTimeSteps">[docs]</a>    <span class="k">def</span> <span class="nf">getNumTimeSteps</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Get the number of timesteps used in time integration for this problem.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the number of time steps used in time integration for this problem.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        ----------</span>
@@ -323,7 +334,7 @@
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">numSteps</span></div>
 
 <div class="viewcode-block" id="TransientProblem.getTimeSteps"><a class="viewcode-back" href="../../../pytacs/transient.html#tacs.problems.TransientProblem.getTimeSteps">[docs]</a>    <span class="k">def</span> <span class="nf">getTimeSteps</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get the discrete time step slices used in time integration.</span>
 
 <span class="sd">        Returns</span>
@@ -335,7 +346,7 @@
         <span class="k">return</span> <span class="n">timeSteps</span></div>
 
 <div class="viewcode-block" id="TransientProblem.getNumTimeStages"><a class="viewcode-back" href="../../../pytacs/transient.html#tacs.problems.TransientProblem.getNumTimeStages">[docs]</a>    <span class="k">def</span> <span class="nf">getNumTimeStages</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get the number of time stages used for multi-stage time integration for this problem.</span>
 
 <span class="sd">        Returns</span>
@@ -350,7 +361,7 @@
         <span class="k">return</span> <span class="mi">0</span></div>
 
 <div class="viewcode-block" id="TransientProblem.getTimeStages"><a class="viewcode-back" href="../../../pytacs/transient.html#tacs.problems.TransientProblem.getTimeStages">[docs]</a>    <span class="k">def</span> <span class="nf">getTimeStages</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">timeStep</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get the discrete time stage sub-intervals used in a multi-stage integration scheme.</span>
 
 <span class="sd">        Parameters</span>
@@ -381,7 +392,7 @@
 <div class="viewcode-block" id="TransientProblem.addLoadToComponents"><a class="viewcode-back" href="../../../pytacs/transient.html#tacs.problems.TransientProblem.addLoadToComponents">[docs]</a>    <span class="k">def</span> <span class="nf">addLoadToComponents</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span> <span class="n">timeStep</span><span class="p">,</span> <span class="n">compIDs</span><span class="p">,</span> <span class="n">F</span><span class="p">,</span> <span class="n">timeStage</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">averageLoad</span><span class="o">=</span><span class="kc">False</span>
     <span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot; &quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        This method is used to add a *FIXED TOTAL LOAD* on one or more</span>
 <span class="sd">        components, defined by COMPIDs, at a specific time instance.</span>
 <span class="sd">        The purpose of this routine is to add loads that remain fixed throughout</span>
@@ -449,7 +460,7 @@
 <div class="viewcode-block" id="TransientProblem.addLoadToNodes"><a class="viewcode-back" href="../../../pytacs/transient.html#tacs.problems.TransientProblem.addLoadToNodes">[docs]</a>    <span class="k">def</span> <span class="nf">addLoadToNodes</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span> <span class="n">timeStep</span><span class="p">,</span> <span class="n">nodeIDs</span><span class="p">,</span> <span class="n">F</span><span class="p">,</span> <span class="n">timeStage</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">nastranOrdering</span><span class="o">=</span><span class="kc">False</span>
     <span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        This method is used to add a fixed point load of F to the</span>
 <span class="sd">        selected node IDs at a specified time instance.</span>
 
@@ -479,7 +490,7 @@
 <span class="sd">        -----</span>
 
 <span class="sd">        The units of the entries of the &#39;force&#39; vector F are not</span>
-<span class="sd">        necesarily physical forces and their interpretation depends</span>
+<span class="sd">        necessarily physical forces and their interpretation depends</span>
 <span class="sd">        on the physics problem being solved and the dofs included</span>
 <span class="sd">        in the model.</span>
 
@@ -509,7 +520,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_addLoadToNodes</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">F</span><span class="p">[</span><span class="n">timeIndex</span><span class="p">],</span> <span class="n">nodeIDs</span><span class="p">,</span> <span class="n">F</span><span class="p">,</span> <span class="n">nastranOrdering</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="TransientProblem.addLoadToRHS"><a class="viewcode-back" href="../../../pytacs/transient.html#tacs.problems.TransientProblem.addLoadToRHS">[docs]</a>    <span class="k">def</span> <span class="nf">addLoadToRHS</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">timeStep</span><span class="p">,</span> <span class="n">Fapplied</span><span class="p">,</span> <span class="n">timeStage</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot; &quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        This method is used to add a *FIXED TOTAL LOAD* directly to the</span>
 <span class="sd">        right hand side vector given the equation below:</span>
 
@@ -552,7 +563,7 @@
 <div class="viewcode-block" id="TransientProblem.addTractionToComponents"><a class="viewcode-back" href="../../../pytacs/transient.html#tacs.problems.TransientProblem.addTractionToComponents">[docs]</a>    <span class="k">def</span> <span class="nf">addTractionToComponents</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span> <span class="n">timeStep</span><span class="p">,</span> <span class="n">compIDs</span><span class="p">,</span> <span class="n">tractions</span><span class="p">,</span> <span class="n">timeStage</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">faceIndex</span><span class="o">=</span><span class="mi">0</span>
     <span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        This method is used to add a *FIXED TOTAL TRACTION* on one or more</span>
 <span class="sd">        components, defined by COMPIDs, at specified time instance. The purpose of</span>
 <span class="sd">        this routine is to add loads that remain fixed throughout an optimization.</span>
@@ -602,7 +613,7 @@
         <span class="n">faceIndex</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
         <span class="n">nastranOrdering</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
     <span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        This method is used to add a fixed traction to the</span>
 <span class="sd">        selected element IDs at specified time instance.</span>
 <span class="sd">        Tractions can be specified on an element by element basis</span>
@@ -650,7 +661,7 @@
 <div class="viewcode-block" id="TransientProblem.addPressureToComponents"><a class="viewcode-back" href="../../../pytacs/transient.html#tacs.problems.TransientProblem.addPressureToComponents">[docs]</a>    <span class="k">def</span> <span class="nf">addPressureToComponents</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span> <span class="n">timeStep</span><span class="p">,</span> <span class="n">compIDs</span><span class="p">,</span> <span class="n">pressures</span><span class="p">,</span> <span class="n">timeStage</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">faceIndex</span><span class="o">=</span><span class="mi">0</span>
     <span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        This method is used to add a *FIXED TOTAL PRESSURE* on one or more</span>
 <span class="sd">        components, defined by COMPIDs, at specified time instance. The purpose of this routine is</span>
 <span class="sd">        to add loads that remain fixed throughout an optimization. An example</span>
@@ -701,7 +712,7 @@
         <span class="n">faceIndex</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
         <span class="n">nastranOrdering</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
     <span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        This method is used to add a fixed presure to the</span>
 <span class="sd">        selected element IDs at specified time instance.</span>
 <span class="sd">        Pressures can be specified on an element by element</span>
@@ -747,7 +758,7 @@
         <span class="p">)</span></div>
 
 <div class="viewcode-block" id="TransientProblem.addInertialLoad"><a class="viewcode-back" href="../../../pytacs/transient.html#tacs.problems.TransientProblem.addInertialLoad">[docs]</a>    <span class="k">def</span> <span class="nf">addInertialLoad</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">timeStep</span><span class="p">,</span> <span class="n">inertiaVector</span><span class="p">,</span> <span class="n">timeStage</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        This method is used to add a fixed inertial load at a specified time step</span>
 <span class="sd">        due to a uniform acceleration over the entire model.</span>
 <span class="sd">        This is most commonly used to model gravity loads on a model.</span>
@@ -779,7 +790,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_addInertialLoad</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">auxElems</span><span class="p">[</span><span class="n">timeIndex</span><span class="p">],</span> <span class="n">inertiaVector</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="TransientProblem.addCentrifugalLoad"><a class="viewcode-back" href="../../../pytacs/transient.html#tacs.problems.TransientProblem.addCentrifugalLoad">[docs]</a>    <span class="k">def</span> <span class="nf">addCentrifugalLoad</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">timeStep</span><span class="p">,</span> <span class="n">omegaVector</span><span class="p">,</span> <span class="n">rotCenter</span><span class="p">,</span> <span class="n">timeStage</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        This method is used to add a fixed centrifugal load at at specified time step</span>
 <span class="sd">        due to a uniform rotational velocity over the entire model.</span>
 <span class="sd">        This is most commonly used to model rotors, rolling aircraft, etc.</span>
@@ -814,7 +825,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_addCentrifugalLoad</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">auxElems</span><span class="p">[</span><span class="n">timeIndex</span><span class="p">],</span> <span class="n">omegaVector</span><span class="p">,</span> <span class="n">rotCenter</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="TransientProblem.addLoadFromBDF"><a class="viewcode-back" href="../../../pytacs/transient.html#tacs.problems.TransientProblem.addLoadFromBDF">[docs]</a>    <span class="k">def</span> <span class="nf">addLoadFromBDF</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">timeStep</span><span class="p">,</span> <span class="n">loadID</span><span class="p">,</span> <span class="n">timeStage</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="mf">1.0</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        This method is used to add a fixed load set defined in the BDF file to the problem</span>
 <span class="sd">        at a specified time instance. Currently, only supports LOAD, FORCE, MOMENT, GRAV,</span>
 <span class="sd">        RFORCE, PLOAD2, and PLOAD4.</span>
@@ -851,7 +862,7 @@
     <span class="c1">####### Transient solver methods ########</span>
 
 <div class="viewcode-block" id="TransientProblem.setInitConditions"><a class="viewcode-back" href="../../../pytacs/transient.html#tacs.problems.TransientProblem.setInitConditions">[docs]</a>    <span class="k">def</span> <span class="nf">setInitConditions</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">vars</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">dvars</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ddvars</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Set the initial conditions associated with this problem</span>
 
 <span class="sd">        Parameters</span>
@@ -895,7 +906,7 @@
                 <span class="n">ddvars0Array</span><span class="p">[:]</span> <span class="o">=</span> <span class="n">ddvars</span></div>
 
     <span class="k">def</span> <span class="nf">_updateAssemblerVars</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Make sure that the assembler is using</span>
 <span class="sd">        the input variables associated with this problem</span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -905,9 +916,14 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">assembler</span><span class="o">.</span><span class="n">setInitConditions</span><span class="p">(</span>
             <span class="n">vec</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">vars0</span><span class="p">,</span> <span class="n">dvec</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">dvars0</span><span class="p">,</span> <span class="n">ddvec</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">ddvars0</span>
         <span class="p">)</span>
+        <span class="c1"># Set artificial stiffness factors in rbe class</span>
+        <span class="n">c1</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s2">&quot;RBEStiffnessScaleFactor&quot;</span><span class="p">)</span>
+        <span class="n">c2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s2">&quot;RBEArtificialStiffness&quot;</span><span class="p">)</span>
+        <span class="n">tacs</span><span class="o">.</span><span class="n">elements</span><span class="o">.</span><span class="n">RBE2</span><span class="o">.</span><span class="n">setScalingParameters</span><span class="p">(</span><span class="n">c1</span><span class="p">,</span> <span class="n">c2</span><span class="p">)</span>
+        <span class="n">tacs</span><span class="o">.</span><span class="n">elements</span><span class="o">.</span><span class="n">RBE3</span><span class="o">.</span><span class="n">setScalingParameters</span><span class="p">(</span><span class="n">c1</span><span class="p">,</span> <span class="n">c2</span><span class="p">)</span>
 
 <div class="viewcode-block" id="TransientProblem.solve"><a class="viewcode-back" href="../../../pytacs/transient.html#tacs.problems.TransientProblem.solve">[docs]</a>    <span class="k">def</span> <span class="nf">solve</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Solve the time integrated transient problem. The</span>
 <span class="sd">        forces must already be set.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -966,7 +982,7 @@
         <span class="k">return</span></div>
 
 <div class="viewcode-block" id="TransientProblem.prepIterativeSolve"><a class="viewcode-back" href="../../../pytacs/transient.html#tacs.problems.TransientProblem.prepIterativeSolve">[docs]</a>    <span class="k">def</span> <span class="nf">prepIterativeSolve</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Prepare to solve the time integrated transient problem.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">callCounter</span> <span class="o">+=</span> <span class="mi">1</span>
@@ -977,7 +993,7 @@
         <span class="k">return</span></div>
 
 <div class="viewcode-block" id="TransientProblem.iterate"><a class="viewcode-back" href="../../../pytacs/transient.html#tacs.problems.TransientProblem.iterate">[docs]</a>    <span class="k">def</span> <span class="nf">iterate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">timeStep</span><span class="p">,</span> <span class="n">timeStage</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">Fext</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Iterate a single time instance in the time integrated transient problem.</span>
 <span class="sd">        Useful for iterating an aeroelastic problem that is tightly coupled,</span>
 <span class="sd">        where intermediate structural states need to be passed to an external</span>
@@ -1051,7 +1067,7 @@
     <span class="c1">####### Function eval/sensitivity methods ########</span>
 
 <div class="viewcode-block" id="TransientProblem.addFunction"><a class="viewcode-back" href="../../../pytacs/transient.html#tacs.problems.TransientProblem.addFunction">[docs]</a>    <span class="k">def</span> <span class="nf">addFunction</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">funcName</span><span class="p">,</span> <span class="n">funcHandle</span><span class="p">,</span> <span class="n">compIDs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Generic method to add a function for TACS. It is intended to</span>
 <span class="sd">        be reasonably generic since the user supplies the actual</span>
 <span class="sd">        function handle to use. See the :py:mod:`~tacs.functions` module</span>
@@ -1084,7 +1100,7 @@
         <span class="k">return</span> <span class="n">TACSProblem</span><span class="o">.</span><span class="n">addFunction</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">funcName</span><span class="p">,</span> <span class="n">funcHandle</span><span class="p">,</span> <span class="n">compIDs</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="TransientProblem.evalFunctions"><a class="viewcode-back" href="../../../pytacs/transient.html#tacs.problems.TransientProblem.evalFunctions">[docs]</a>    <span class="k">def</span> <span class="nf">evalFunctions</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">funcs</span><span class="p">,</span> <span class="n">evalFuncs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ignoreMissing</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        This is the main routine for returning useful information from</span>
 <span class="sd">        pytacs. The functions corresponding to the strings in</span>
 <span class="sd">        EVAL_FUNCS are evaluated and updated into the provided</span>
@@ -1173,7 +1189,7 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">_pp</span><span class="p">(</span><span class="s2">&quot;+--------------------------------------------------+&quot;</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="TransientProblem.evalFunctionsSens"><a class="viewcode-back" href="../../../pytacs/transient.html#tacs.problems.TransientProblem.evalFunctionsSens">[docs]</a>    <span class="k">def</span> <span class="nf">evalFunctionsSens</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">funcsSens</span><span class="p">,</span> <span class="n">evalFuncs</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        This is the main routine for returning useful (sensitivity)</span>
 <span class="sd">        information from problem. The derivatives of the functions</span>
 <span class="sd">        corresponding to the strings in EVAL_FUNCS are evaluated and</span>
@@ -1266,7 +1282,7 @@
 <div class="viewcode-block" id="TransientProblem.getVariables"><a class="viewcode-back" href="../../../pytacs/transient.html#tacs.problems.TransientProblem.getVariables">[docs]</a>    <span class="k">def</span> <span class="nf">getVariables</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span> <span class="n">timeStep</span><span class="p">,</span> <span class="n">timeStage</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">states</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">dstates</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ddstates</span><span class="o">=</span><span class="kc">None</span>
     <span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Return the current state values for the current problem</span>
 
 <span class="sd">        Parameters</span>
@@ -1336,8 +1352,17 @@
         <span class="c1"># Return arrays</span>
         <span class="k">return</span> <span class="n">time</span><span class="p">,</span> <span class="n">qArray</span><span class="p">,</span> <span class="n">qdotArray</span><span class="p">,</span> <span class="n">qddotArray</span></div>
 
+<div class="viewcode-block" id="TransientProblem.zeroLoads"><a class="viewcode-back" href="../../../pytacs/transient.html#tacs.problems.TransientProblem.zeroLoads">[docs]</a>    <span class="k">def</span> <span class="nf">zeroLoads</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Zero all applied loads</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">Fvec</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">F</span><span class="p">:</span>
+            <span class="n">Fvec</span><span class="o">.</span><span class="n">zeroEntries</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">auxElems</span><span class="p">)):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">auxElems</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">tacs</span><span class="o">.</span><span class="n">TACS</span><span class="o">.</span><span class="n">AuxElements</span><span class="p">()</span></div>
+
 <div class="viewcode-block" id="TransientProblem.writeSolution"><a class="viewcode-back" href="../../../pytacs/transient.html#tacs.problems.TransientProblem.writeSolution">[docs]</a>    <span class="k">def</span> <span class="nf">writeSolution</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">outputDir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">baseName</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">number</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">timeSteps</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        This is a generic shell function that writes the output</span>
 <span class="sd">        file(s).  The intent is that the user or calling program can</span>
 <span class="sd">        call this function and pyTACS writes all the files that the</span>

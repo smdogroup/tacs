@@ -100,8 +100,6 @@
       </ul></li>
       <li><a href="core/TACS.html#TACS.MeshLoader.addFunctionDomain">addFunctionDomain() (TACS.MeshLoader method)</a>
 </li>
-      <li><a href="pytacs/pytacs_module.html#tacs.pytacs.pyTACS.addGlobalDV">addGlobalDV() (tacs.pytacs.pyTACS method)</a>
-</li>
       <li><a href="pytacs/static.html#tacs.problems.StaticProblem.addInertialLoad">addInertialLoad() (tacs.problems.StaticProblem method)</a>
 
       <ul>
@@ -178,8 +176,6 @@
       </ul></li>
       <li><a href="core/TACS.html#TACS.Assembler.applyBCs">applyBCs() (TACS.Assembler method)</a>
 </li>
-      <li><a href="pytacs/pytacs_module.html#tacs.pytacs.pyTACS.applyBCsToVec">applyBCsToVec() (tacs.pytacs.pyTACS method)</a>
-</li>
       <li><a href="core/TACS.html#TACS.Assembler.applyMatBCs">applyMatBCs() (TACS.Assembler method)</a>
 </li>
       <li><a href="core/TACS.html#TACS.Assembler.assembleJacobian">assembleJacobian() (TACS.Assembler method)</a>
@@ -235,39 +231,19 @@
       <li><a href="core/TACS.html#TACS.Assembler.create">create() (TACS.Assembler static method)</a>
 </li>
       <li><a href="core/TACS.html#TACS.Assembler.createDesignVec">createDesignVec() (TACS.Assembler method)</a>
-
-      <ul>
-        <li><a href="pytacs/pytacs_module.html#tacs.pytacs.pyTACS.createDesignVec">(tacs.pytacs.pyTACS method)</a>
 </li>
-      </ul></li>
       <li><a href="core/TACS.html#TACS.Assembler.createMat">createMat() (TACS.Assembler method)</a>
 </li>
-      <li><a href="pytacs/pytacs_module.html#tacs.pytacs.pyTACS.createModalProblem">createModalProblem() (tacs.pytacs.pyTACS method)</a>
-</li>
-      <li><a href="core/TACS.html#TACS.Assembler.createNodeVec">createNodeVec() (TACS.Assembler method)</a>
-
-      <ul>
-        <li><a href="pytacs/pytacs_module.html#tacs.pytacs.pyTACS.createNodeVec">(tacs.pytacs.pyTACS method)</a>
-</li>
-      </ul></li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="core/TACS.html#TACS.Assembler.createSchurMat">createSchurMat() (TACS.Assembler method)</a>
+      <li><a href="core/TACS.html#TACS.Assembler.createNodeVec">createNodeVec() (TACS.Assembler method)</a>
 </li>
-      <li><a href="pytacs/pytacs_module.html#tacs.pytacs.pyTACS.createStaticProblem">createStaticProblem() (tacs.pytacs.pyTACS method)</a>
+      <li><a href="core/TACS.html#TACS.Assembler.createSchurMat">createSchurMat() (TACS.Assembler method)</a>
 </li>
       <li><a href="core/TACS.html#TACS.MeshLoader.createTACS">createTACS() (TACS.MeshLoader method)</a>
 </li>
-      <li><a href="pytacs/pytacs_module.html#tacs.pytacs.pyTACS.createTACSProbsFromBDF">createTACSProbsFromBDF() (tacs.pytacs.pyTACS method)</a>
-</li>
-      <li><a href="pytacs/pytacs_module.html#tacs.pytacs.pyTACS.createTransientProblem">createTransientProblem() (tacs.pytacs.pyTACS method)</a>
-</li>
       <li><a href="core/TACS.html#TACS.Assembler.createVec">createVec() (TACS.Assembler method)</a>
-
-      <ul>
-        <li><a href="pytacs/pytacs_module.html#tacs.pytacs.pyTACS.createVec">(tacs.pytacs.pyTACS method)</a>
 </li>
-      </ul></li>
       <li><a href="core/TACS.html#TACS.Creator">Creator (class in TACS)</a>
 </li>
       <li><a href="core/elements.html#tacs.elements.CubicHexaBasis">CubicHexaBasis (class in tacs.elements)</a>
@@ -392,10 +368,6 @@
 </li>
       <li><a href="core/TACS.html#TACS.Assembler.getInitConditions">getInitConditions() (TACS.Assembler method)</a>
 </li>
-      <li><a href="pytacs/pytacs_module.html#tacs.pytacs.pyTACS.getLocalMultiplierNodeIDs">getLocalMultiplierNodeIDs() (tacs.pytacs.pyTACS method)</a>
-</li>
-      <li><a href="pytacs/pytacs_module.html#tacs.pytacs.pyTACS.getLocalNodeIDsForComps">getLocalNodeIDsForComps() (tacs.pytacs.pyTACS method)</a>
-</li>
       <li><a href="core/constitutive.html#tacs.constitutive.MaterialProperties.getMaterialProperties">getMaterialProperties() (tacs.constitutive.MaterialProperties method)</a>
 </li>
       <li><a href="core/TACS.html#TACS.Assembler.getMPIComm">getMPIComm() (TACS.Assembler method)</a>
@@ -424,6 +396,8 @@
         <li><a href="pytacs/transient.html#tacs.problems.TransientProblem.getNumCoordinates">(tacs.problems.TransientProblem method)</a>
 </li>
       </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="core/TACS.html#TACS.Assembler.getNumDependentNodes">getNumDependentNodes() (TACS.Assembler method)</a>
 </li>
       <li><a href="pytacs/modal.html#tacs.problems.ModalProblem.getNumDesignVars">getNumDesignVars() (tacs.problems.ModalProblem method)</a>
@@ -433,18 +407,12 @@
 </li>
         <li><a href="pytacs/transient.html#tacs.problems.TransientProblem.getNumDesignVars">(tacs.problems.TransientProblem method)</a>
 </li>
-        <li><a href="pytacs/pytacs_module.html#tacs.pytacs.pyTACS.getNumDesignVars">(tacs.pytacs.pyTACS method)</a>
-</li>
       </ul></li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="pytacs/modal.html#tacs.problems.ModalProblem.getNumEigs">getNumEigs() (tacs.problems.ModalProblem method)</a>
 </li>
       <li><a href="core/TACS.html#TACS.Assembler.getNumElements">getNumElements() (TACS.Assembler method)</a>
 </li>
       <li><a href="core/TACS.html#TACS.Assembler.getNumNodes">getNumNodes() (TACS.Assembler method)</a>
-</li>
-      <li><a href="pytacs/pytacs_module.html#tacs.pytacs.pyTACS.getNumOwnedMultiplierNodes">getNumOwnedMultiplierNodes() (tacs.pytacs.pyTACS method)</a>
 </li>
       <li><a href="core/TACS.html#TACS.Assembler.getNumOwnedNodes">getNumOwnedNodes() (TACS.Assembler method)</a>
 
@@ -454,8 +422,6 @@
         <li><a href="pytacs/static.html#tacs.problems.StaticProblem.getNumOwnedNodes">(tacs.problems.StaticProblem method)</a>
 </li>
         <li><a href="pytacs/transient.html#tacs.problems.TransientProblem.getNumOwnedNodes">(tacs.problems.TransientProblem method)</a>
-</li>
-        <li><a href="pytacs/pytacs_module.html#tacs.pytacs.pyTACS.getNumOwnedNodes">(tacs.pytacs.pyTACS method)</a>
 </li>
       </ul></li>
       <li><a href="pytacs/transient.html#tacs.problems.TransientProblem.getNumTimeStages">getNumTimeStages() (tacs.problems.TransientProblem method)</a>
@@ -484,10 +450,6 @@
         <li><a href="pytacs/pytacs_module.html#tacs.pytacs.pyTACS.getOption">(tacs.pytacs.pyTACS method)</a>
 </li>
       </ul></li>
-      <li><a href="pytacs/pytacs_module.html#tacs.pytacs.pyTACS.getOrigDesignVars">getOrigDesignVars() (tacs.pytacs.pyTACS method)</a>
-</li>
-      <li><a href="pytacs/pytacs_module.html#tacs.pytacs.pyTACS.getOrigNodes">getOrigNodes() (tacs.pytacs.pyTACS method)</a>
-</li>
       <li><a href="core/TACS.html#TACS.Assembler.getOwnerRange">getOwnerRange() (TACS.Assembler method)</a>
 </li>
       <li><a href="core/TACS.html#TACS.Assembler.getReordering">getReordering() (TACS.Assembler method)</a>
@@ -501,8 +463,6 @@
       <li><a href="pytacs/transient.html#tacs.problems.TransientProblem.getTimeStages">getTimeStages() (tacs.problems.TransientProblem method)</a>
 </li>
       <li><a href="pytacs/transient.html#tacs.problems.TransientProblem.getTimeSteps">getTimeSteps() (tacs.problems.TransientProblem method)</a>
-</li>
-      <li><a href="pytacs/pytacs_module.html#tacs.pytacs.pyTACS.getTotalNumDesignVars">getTotalNumDesignVars() (tacs.pytacs.pyTACS method)</a>
 </li>
       <li><a href="core/TACS.html#TACS.Assembler.getVariables">getVariables() (TACS.Assembler method)</a>
 
@@ -522,8 +482,6 @@
         <li><a href="pytacs/static.html#tacs.problems.StaticProblem.getVarsPerNode">(tacs.problems.StaticProblem method)</a>
 </li>
         <li><a href="pytacs/transient.html#tacs.problems.TransientProblem.getVarsPerNode">(tacs.problems.TransientProblem method)</a>
-</li>
-        <li><a href="pytacs/pytacs_module.html#tacs.pytacs.pyTACS.getVarsPerNode">(tacs.pytacs.pyTACS method)</a>
 </li>
       </ul></li>
       <li><a href="core/TACS.html#TACS.Integrator.getXptGradient">getXptGradient() (TACS.Integrator method)</a>
@@ -845,8 +803,6 @@
       </ul></li>
       <li><a href="core/TACS.html#TACS.Assembler.setNumThreads">setNumThreads() (TACS.Assembler method)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="pytacs/modal.html#tacs.problems.ModalProblem.setOption">setOption() (tacs.problems.ModalProblem method)</a>
 
       <ul>
@@ -857,6 +813,8 @@
         <li><a href="pytacs/pytacs_module.html#tacs.pytacs.pyTACS.setOption">(tacs.pytacs.pyTACS method)</a>
 </li>
       </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="core/TACS.html#TACS.Integrator.setOutputFrequency">setOutputFrequency() (TACS.Integrator method)</a>
 </li>
       <li><a href="core/TACS.html#TACS.Integrator.setOutputPrefix">setOutputPrefix() (TACS.Integrator method)</a>
@@ -865,6 +823,12 @@
 </li>
       <li><a href="core/TACS.html#TACS.Integrator.setRelTol">setRelTol() (TACS.Integrator method)</a>
 </li>
+      <li><a href="core/elements.html#tacs.elements.RBE2.setScalingParameters">setScalingParameters() (tacs.elements.RBE2 method)</a>
+
+      <ul>
+        <li><a href="core/elements.html#tacs.elements.RBE3.setScalingParameters">(tacs.elements.RBE3 method)</a>
+</li>
+      </ul></li>
       <li><a href="core/TACS.html#TACS.Assembler.setSimulationTime">setSimulationTime() (TACS.Assembler method)</a>
 </li>
       <li><a href="core/constitutive.html#tacs.constitutive.MaterialProperties.setSpecificHeat">setSpecificHeat() (tacs.constitutive.MaterialProperties method)</a>
@@ -1016,6 +980,12 @@
 </li>
       <li><a href="core/TACS.html#TACS.Assembler.zeroDotVariables">zeroDotVariables() (TACS.Assembler method)</a>
 </li>
+      <li><a href="pytacs/static.html#tacs.problems.StaticProblem.zeroLoads">zeroLoads() (tacs.problems.StaticProblem method)</a>
+
+      <ul>
+        <li><a href="pytacs/transient.html#tacs.problems.TransientProblem.zeroLoads">(tacs.problems.TransientProblem method)</a>
+</li>
+      </ul></li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="core/TACS.html#TACS.Assembler.zeroVariables">zeroVariables() (TACS.Assembler method)</a>

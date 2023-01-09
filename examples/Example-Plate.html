@@ -122,7 +122,7 @@ in the BDF are <cite>CQUAD4</cite>, so we'll always pass back an <code class="do
 TACS <a class="reference internal" href="../pytacs/problems.html#problem-classes"><span class="std std-ref">problem</span></a> classes are generally responsible for setting loads, solving analyses, evaluating
 functions of interests, and computing gradients.
 To create our <a class="reference internal" href="../pytacs/static.html#tacs.problems.StaticProblem" title="tacs.problems.StaticProblem"><code class="xref py py-class docutils literal notranslate"><span class="pre">StaticProblem</span></code></a> we can use the
-<a class="reference internal" href="../pytacs/pytacs_module.html#tacs.pytacs.pyTACS.createStaticProblem" title="tacs.pytacs.pyTACS.createStaticProblem"><code class="xref py py-meth docutils literal notranslate"><span class="pre">pyTACS.createStaticProblem</span></code></a> method.
+<code class="xref py py-meth docutils literal notranslate"><span class="pre">pyTACS.createStaticProblem</span></code> method.
 This method requires at minimum a name for our problem.</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">staticProb</span> <span class="o">=</span> <span class="n">FEAAssembler</span><span class="o">.</span><span class="n">createStaticProblem</span><span class="p">(</span><span class="s1">&#39;point_force&#39;</span><span class="p">)</span>
 </pre></div>
@@ -165,11 +165,11 @@ selecting node ID 481 (the node at the center of the plate).</p>
 </div>
 <p>This produces a file called <code class="docutils literal notranslate"><span class="pre">point_force_000.f5</span></code> in our runscript directory. This file can be converted into a <code class="docutils literal notranslate"><span class="pre">.vtk</span></code> file
 (using <code class="docutils literal notranslate"><span class="pre">f5tovtk</span></code>) for visualization in Paraview or a <code class="docutils literal notranslate"><span class="pre">.plt</span></code> (using <code class="docutils literal notranslate"><span class="pre">f5totec</span></code>) for visualization in TecPlot using:</p>
-<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$ </span>f5tovtk point_force_000.f5
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$ </span>f5tovtk<span class="w"> </span>point_force_000.f5
 </pre></div>
 </div>
 <p>or</p>
-<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$ </span>f5totec point_force_000.f5
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$ </span>f5totec<span class="w"> </span>point_force_000.f5
 </pre></div>
 </div>
 </section>

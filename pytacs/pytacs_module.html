@@ -324,30 +324,6 @@ len(scaleList) = dvNum</p></li>
 </dd>
 </dl>
 <dl class="py method">
-<dt class="sig sig-object py" id="tacs.pytacs.pyTACS.addGlobalDV">
-<span class="sig-name descname"><span class="pre">addGlobalDV</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">descript</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">value</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lower</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">upper</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scale</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/pytacs.html#pyTACS.addGlobalDV"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.pytacs.pyTACS.addGlobalDV" title="Permalink to this definition">¶</a></dt>
-<dd><p>This function allows adding design variables that are not
-cleanly associated with a particular constitutive object. One
-example is the pitch of the stiffeners for blade stiffened
-panels; It often is the same for many different constitutive
-objects. By calling this function, the internal dvNum counter
-is incremented and the user doesn't have to worry about
-it.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>descript</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.11)"><em>str</em></a>) -- A user supplied string that can be used to retrieve the
-variable number and value elemCallBackFunction.</p></li>
-<li><p><strong>value</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.11)"><em>float</em></a>) -- Initial value for variable.</p></li>
-<li><p><strong>lower</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.11)"><em>float</em></a>) -- Lower bound. May be None for unbounded</p></li>
-<li><p><strong>upper</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.11)"><em>float</em></a>) -- Upper bound. May be None for unbounded</p></li>
-<li><p><strong>scale</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.11)"><em>float</em></a>) -- Scale factor for variable</p></li>
-</ul>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
 <dt class="sig sig-object py" id="tacs.pytacs.pyTACS.selectCompIDs">
 <span class="sig-name descname"><span class="pre">selectCompIDs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">include</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">exclude</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">includeBounds</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nGroup</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">includeOp</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'or'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">excludeOp</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'or'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">projectVector</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/pytacs.html#pyTACS.selectCompIDs"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.pytacs.pyTACS.selectCompIDs" title="Permalink to this definition">¶</a></dt>
 <dd><p>This is the most important function of the entire setup
@@ -511,24 +487,6 @@ Defaults to False.</p></li>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="tacs.pytacs.pyTACS.getLocalNodeIDsForComps">
-<span class="sig-name descname"><span class="pre">getLocalNodeIDsForComps</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">compIDs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/pytacs.html#pyTACS.getLocalNodeIDsForComps"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.pytacs.pyTACS.getLocalNodeIDsForComps" title="Permalink to this definition">¶</a></dt>
-<dd><p>return the local (partitioned) node IDs belonging to a given list of component IDs</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>compIDs</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)"><em>int</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.11)"><em>list</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)"><em>int</em></a><em>] or </em><em>None</em>) -- List of integers of the compIDs numbers. If None, returns nodeIDs for all components.
-Defaults to None.</p>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p><strong>nodeIDs</strong> -- List of unique nodeIDs that belong to the given list of compIDs</p>
-</dd>
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.11)">list</a></p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
 <dt class="sig sig-object py" id="tacs.pytacs.pyTACS.initialize">
 <span class="sig-name descname"><span class="pre">initialize</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">elemCallBack</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/pytacs.html#pyTACS.initialize"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.pytacs.pyTACS.initialize" title="Permalink to this definition">¶</a></dt>
 <dd><p>This is the 'last' method to be called during the setup. The
@@ -565,230 +523,6 @@ objects as there are element types in elemDescripts (one for each).</p>
 </p>
 </dd>
 </dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="tacs.pytacs.pyTACS.getOrigDesignVars">
-<span class="sig-name descname"><span class="pre">getOrigDesignVars</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/pytacs.html#pyTACS.getOrigDesignVars"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.pytacs.pyTACS.getOrigDesignVars" title="Permalink to this definition">¶</a></dt>
-<dd><p>get the original design variables that were specified with
-during assembler creation.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Returns<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>x</strong> -- The current design variable vector set in tacs.</p>
-</dd>
-<dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p>array</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="tacs.pytacs.pyTACS.createDesignVec">
-<span class="sig-name descname"><span class="pre">createDesignVec</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">asBVec</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/pytacs.html#pyTACS.createDesignVec"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.pytacs.pyTACS.createDesignVec" title="Permalink to this definition">¶</a></dt>
-<dd><p>Create a new tacs distributed design vector.
-Values are initialized to zero.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>asBVec</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.11)"><em>bool</em></a>) -- Flag that determines whether to return
-design vector as tacs <code class="xref py py-class docutils literal notranslate"><span class="pre">Vec</span></code> (True) or numpy array (False).
-Defaults to False.</p>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p><strong>x</strong> -- Distributed design variable vector</p>
-</dd>
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.24)">numpy.ndarray</a> or TACS.Vec</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="tacs.pytacs.pyTACS.getNumDesignVars">
-<span class="sig-name descname"><span class="pre">getNumDesignVars</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/pytacs.html#pyTACS.getNumDesignVars"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.pytacs.pyTACS.getNumDesignVars" title="Permalink to this definition">¶</a></dt>
-<dd><p>Return the number of design variables on this processor.</p>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="tacs.pytacs.pyTACS.getTotalNumDesignVars">
-<span class="sig-name descname"><span class="pre">getTotalNumDesignVars</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/pytacs.html#pyTACS.getTotalNumDesignVars"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.pytacs.pyTACS.getTotalNumDesignVars" title="Permalink to this definition">¶</a></dt>
-<dd><p>Return the number of design variables across all processors.</p>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="tacs.pytacs.pyTACS.getOrigNodes">
-<span class="sig-name descname"><span class="pre">getOrigNodes</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/pytacs.html#pyTACS.getOrigNodes"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.pytacs.pyTACS.getOrigNodes" title="Permalink to this definition">¶</a></dt>
-<dd><p>Return the original mesh coordiantes read in from the meshLoader.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Returns<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>coords</strong> -- Structural coordinate in array of size (N * 3) where N is
-the number of structural nodes on this processor.</p>
-</dd>
-<dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p>array</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="tacs.pytacs.pyTACS.createNodeVec">
-<span class="sig-name descname"><span class="pre">createNodeVec</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">asBVec</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/pytacs.html#pyTACS.createNodeVec"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.pytacs.pyTACS.createNodeVec" title="Permalink to this definition">¶</a></dt>
-<dd><p>Create a new tacs distributed node vector.
-Values are initialized to zero.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>asBVec</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.11)"><em>bool</em></a>) -- Flag that determines whether to return
-node vector as tacs <code class="xref py py-class docutils literal notranslate"><span class="pre">Vec</span></code> (True) or numpy array (False).
-Defaults to False.</p>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p><strong>xpts</strong> -- Distributed node coordinate vector</p>
-</dd>
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.24)">numpy.ndarray</a> or TACS.Vec</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="tacs.pytacs.pyTACS.getNumOwnedNodes">
-<span class="sig-name descname"><span class="pre">getNumOwnedNodes</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/pytacs.html#pyTACS.getNumOwnedNodes"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.pytacs.pyTACS.getNumOwnedNodes" title="Permalink to this definition">¶</a></dt>
-<dd><p>Get the number of nodes owned by this processor.</p>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="tacs.pytacs.pyTACS.getNumOwnedMultiplierNodes">
-<span class="sig-name descname"><span class="pre">getNumOwnedMultiplierNodes</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/pytacs.html#pyTACS.getNumOwnedMultiplierNodes"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.pytacs.pyTACS.getNumOwnedMultiplierNodes" title="Permalink to this definition">¶</a></dt>
-<dd><p>Get number of multiplier nodes owned by this processor.</p>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="tacs.pytacs.pyTACS.getLocalMultiplierNodeIDs">
-<span class="sig-name descname"><span class="pre">getLocalMultiplierNodeIDs</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/pytacs.html#pyTACS.getLocalMultiplierNodeIDs"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.pytacs.pyTACS.getLocalMultiplierNodeIDs" title="Permalink to this definition">¶</a></dt>
-<dd><p>Get the tacs indices of multiplier nodes used to hold lagrange multipliers on this processor.</p>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="tacs.pytacs.pyTACS.createVec">
-<span class="sig-name descname"><span class="pre">createVec</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">asBVec</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/pytacs.html#pyTACS.createVec"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.pytacs.pyTACS.createVec" title="Permalink to this definition">¶</a></dt>
-<dd><p>Create a new tacs distributed state variable vector.
-Values are initialized to zero.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>asBVec</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.11)"><em>bool</em></a>) -- Flag that determines whether to return
-state vector as tacs <code class="xref py py-class docutils literal notranslate"><span class="pre">Vec</span></code> (True) or numpy array (False).
-Defaults to False.</p>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p><strong>vars</strong> -- Distributed state variable vector</p>
-</dd>
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.24)">numpy.ndarray</a> or TACS.Vec</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="tacs.pytacs.pyTACS.getVarsPerNode">
-<span class="sig-name descname"><span class="pre">getVarsPerNode</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/pytacs.html#pyTACS.getVarsPerNode"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.pytacs.pyTACS.getVarsPerNode" title="Permalink to this definition">¶</a></dt>
-<dd><p>Get the number of variables per node for the model.</p>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="tacs.pytacs.pyTACS.applyBCsToVec">
-<span class="sig-name descname"><span class="pre">applyBCsToVec</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">vec</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/pytacs.html#pyTACS.applyBCsToVec"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.pytacs.pyTACS.applyBCsToVec" title="Permalink to this definition">¶</a></dt>
-<dd><p>Applies zeros to boundary condition dofs in input vector.</p>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="tacs.pytacs.pyTACS.createStaticProblem">
-<span class="sig-name descname"><span class="pre">createStaticProblem</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">options</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">{}</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/pytacs.html#pyTACS.createStaticProblem"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.pytacs.pyTACS.createStaticProblem" title="Permalink to this definition">¶</a></dt>
-<dd><p>Create a new staticProblem for modeling a static load cases.
-This object can be used to set loads, evalFunctions as well as perform
-solutions and sensitivities related to static problems</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>name</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.11)"><em>str</em></a>) -- Name to assign problem.</p></li>
-<li><p><strong>options</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.11)"><em>dict</em></a>) -- Problem-specific options to pass to StaticProblem instance (case-insensitive).</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p><strong>problem</strong> -- StaticProblem object used for modeling and solving static cases.</p>
-</dd>
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><a class="reference internal" href="static.html#tacs.problems.StaticProblem" title="tacs.problems.StaticProblem">StaticProblem</a></p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="tacs.pytacs.pyTACS.createTransientProblem">
-<span class="sig-name descname"><span class="pre">createTransientProblem</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tInit</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tFinal</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">numSteps</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">options</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">{}</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/pytacs.html#pyTACS.createTransientProblem"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.pytacs.pyTACS.createTransientProblem" title="Permalink to this definition">¶</a></dt>
-<dd><p>Create a new TransientProblem for modeling a transient load cases.
-This object can be used to set loads, evalFunctions as well as perform
-solutions and sensitivities related to transient problems</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>name</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.11)"><em>str</em></a>) -- Name to assign problem.</p></li>
-<li><p><strong>tInit</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.11)"><em>float</em></a>) -- Starting time for transient time integration</p></li>
-<li><p><strong>tFinal</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.11)"><em>float</em></a>) -- Ending time for transient time integration</p></li>
-<li><p><strong>numSteps</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)"><em>int</em></a>) -- Number of time steps for transient time integration</p></li>
-<li><p><strong>options</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.11)"><em>dict</em></a>) -- Problem-specific options to pass to TransientProblem instance (case-insensitive).</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p><strong>problem</strong> -- TransientProblem object used for modeling and solving transient cases.</p>
-</dd>
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><a class="reference internal" href="transient.html#tacs.problems.TransientProblem" title="tacs.problems.TransientProblem">TransientProblem</a></p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="tacs.pytacs.pyTACS.createModalProblem">
-<span class="sig-name descname"><span class="pre">createModalProblem</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sigma</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">numEigs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">options</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">{}</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/pytacs.html#pyTACS.createModalProblem"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.pytacs.pyTACS.createModalProblem" title="Permalink to this definition">¶</a></dt>
-<dd><p>Create a new ModalProblem for performing modal analysis.
-This problem can be used to identify the natural frequencies and mode
-shapes of the model through eigenvalue analysis.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>name</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.11)"><em>str</em></a>) -- Name to assign problem.</p></li>
-<li><p><strong>sigma</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.11)"><em>float</em></a>) -- Guess for the lowest eigenvalue.
-This corresponds to the lowest expected frequency squared. (rad^2/s^2)</p></li>
-<li><p><strong>numEigs</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)"><em>int</em></a>) -- Number of eigenvalues to solve for.</p></li>
-<li><p><strong>options</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.11)"><em>dict</em></a>) -- Problem-specific options to pass to ModalProblem instance (case-insensitive).</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p><strong>problem</strong> -- ModalProblem object used for performing modal eigenvalue analysis.</p>
-</dd>
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><a class="reference internal" href="modal.html#tacs.problems.ModalProblem" title="tacs.problems.ModalProblem">ModalProblem</a></p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="tacs.pytacs.pyTACS.createTACSProbsFromBDF">
-<span class="sig-name descname"><span class="pre">createTACSProbsFromBDF</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/pytacs.html#pyTACS.createTACSProbsFromBDF"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.pytacs.pyTACS.createTACSProbsFromBDF" title="Permalink to this definition">¶</a></dt>
-<dd><p>Automatically define tacs problem classes with loads using information contained in BDF file.
-This function assumes all loads are specified in the BDF and allows users to
-skip setting loads in Python.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Returns<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>structProblems</strong> -- Dictionary containing a predfined TACSProblem for every loadcase found int the BDF.
-The dictionary keys are the loadcase IDs from the BDF.</p>
-</dd>
-<dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.11)">dict</a>[TACSProblem]</p>
-</dd>
-</dl>
-<p class="rubric">Notes</p>
-<p>Currently only supports LOAD, FORCE, MOMENT, GRAV, RFORCE, PLOAD2, PLOAD4, TLOAD1, TLOAD2, and DLOAD cards.
-Currently only supports staticProblem (SOL 101), transientProblem (SOL 109), and modalProblems (SOL 103)</p>
 </dd></dl>
 
 <dl class="py method">
@@ -876,29 +610,11 @@ options to the stdout on the root processor</p>
 </li>
 <li><a class="reference internal" href="#api-reference">API Reference</a><ul>
 <li><a class="reference internal" href="#tacs.pytacs.pyTACS"><code class="docutils literal notranslate"><span class="pre">pyTACS</span></code></a><ul>
-<li><a class="reference internal" href="#tacs.pytacs.pyTACS.addGlobalDV"><code class="docutils literal notranslate"><span class="pre">pyTACS.addGlobalDV()</span></code></a></li>
 <li><a class="reference internal" href="#tacs.pytacs.pyTACS.selectCompIDs"><code class="docutils literal notranslate"><span class="pre">pyTACS.selectCompIDs()</span></code></a></li>
 <li><a class="reference internal" href="#tacs.pytacs.pyTACS.getBDFInfo"><code class="docutils literal notranslate"><span class="pre">pyTACS.getBDFInfo()</span></code></a></li>
 <li><a class="reference internal" href="#tacs.pytacs.pyTACS.getCompNames"><code class="docutils literal notranslate"><span class="pre">pyTACS.getCompNames()</span></code></a></li>
 <li><a class="reference internal" href="#tacs.pytacs.pyTACS.getGlobalNodeIDsForComps"><code class="docutils literal notranslate"><span class="pre">pyTACS.getGlobalNodeIDsForComps()</span></code></a></li>
-<li><a class="reference internal" href="#tacs.pytacs.pyTACS.getLocalNodeIDsForComps"><code class="docutils literal notranslate"><span class="pre">pyTACS.getLocalNodeIDsForComps()</span></code></a></li>
 <li><a class="reference internal" href="#tacs.pytacs.pyTACS.initialize"><code class="docutils literal notranslate"><span class="pre">pyTACS.initialize()</span></code></a></li>
-<li><a class="reference internal" href="#tacs.pytacs.pyTACS.getOrigDesignVars"><code class="docutils literal notranslate"><span class="pre">pyTACS.getOrigDesignVars()</span></code></a></li>
-<li><a class="reference internal" href="#tacs.pytacs.pyTACS.createDesignVec"><code class="docutils literal notranslate"><span class="pre">pyTACS.createDesignVec()</span></code></a></li>
-<li><a class="reference internal" href="#tacs.pytacs.pyTACS.getNumDesignVars"><code class="docutils literal notranslate"><span class="pre">pyTACS.getNumDesignVars()</span></code></a></li>
-<li><a class="reference internal" href="#tacs.pytacs.pyTACS.getTotalNumDesignVars"><code class="docutils literal notranslate"><span class="pre">pyTACS.getTotalNumDesignVars()</span></code></a></li>
-<li><a class="reference internal" href="#tacs.pytacs.pyTACS.getOrigNodes"><code class="docutils literal notranslate"><span class="pre">pyTACS.getOrigNodes()</span></code></a></li>
-<li><a class="reference internal" href="#tacs.pytacs.pyTACS.createNodeVec"><code class="docutils literal notranslate"><span class="pre">pyTACS.createNodeVec()</span></code></a></li>
-<li><a class="reference internal" href="#tacs.pytacs.pyTACS.getNumOwnedNodes"><code class="docutils literal notranslate"><span class="pre">pyTACS.getNumOwnedNodes()</span></code></a></li>
-<li><a class="reference internal" href="#tacs.pytacs.pyTACS.getNumOwnedMultiplierNodes"><code class="docutils literal notranslate"><span class="pre">pyTACS.getNumOwnedMultiplierNodes()</span></code></a></li>
-<li><a class="reference internal" href="#tacs.pytacs.pyTACS.getLocalMultiplierNodeIDs"><code class="docutils literal notranslate"><span class="pre">pyTACS.getLocalMultiplierNodeIDs()</span></code></a></li>
-<li><a class="reference internal" href="#tacs.pytacs.pyTACS.createVec"><code class="docutils literal notranslate"><span class="pre">pyTACS.createVec()</span></code></a></li>
-<li><a class="reference internal" href="#tacs.pytacs.pyTACS.getVarsPerNode"><code class="docutils literal notranslate"><span class="pre">pyTACS.getVarsPerNode()</span></code></a></li>
-<li><a class="reference internal" href="#tacs.pytacs.pyTACS.applyBCsToVec"><code class="docutils literal notranslate"><span class="pre">pyTACS.applyBCsToVec()</span></code></a></li>
-<li><a class="reference internal" href="#tacs.pytacs.pyTACS.createStaticProblem"><code class="docutils literal notranslate"><span class="pre">pyTACS.createStaticProblem()</span></code></a></li>
-<li><a class="reference internal" href="#tacs.pytacs.pyTACS.createTransientProblem"><code class="docutils literal notranslate"><span class="pre">pyTACS.createTransientProblem()</span></code></a></li>
-<li><a class="reference internal" href="#tacs.pytacs.pyTACS.createModalProblem"><code class="docutils literal notranslate"><span class="pre">pyTACS.createModalProblem()</span></code></a></li>
-<li><a class="reference internal" href="#tacs.pytacs.pyTACS.createTACSProbsFromBDF"><code class="docutils literal notranslate"><span class="pre">pyTACS.createTACSProbsFromBDF()</span></code></a></li>
 <li><a class="reference internal" href="#tacs.pytacs.pyTACS.getNumComponents"><code class="docutils literal notranslate"><span class="pre">pyTACS.getNumComponents()</span></code></a></li>
 <li><a class="reference internal" href="#tacs.pytacs.pyTACS.dtype"><code class="docutils literal notranslate"><span class="pre">pyTACS.dtype</span></code></a></li>
 <li><a class="reference internal" href="#tacs.pytacs.pyTACS.getOption"><code class="docutils literal notranslate"><span class="pre">pyTACS.getOption()</span></code></a></li>

@@ -58,12 +58,12 @@ other pieces of information.</p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
 <p>This class should be created using the
-<a class="reference internal" href="pytacs_module.html#tacs.pytacs.pyTACS.createTransientProblem" title="tacs.pytacs.pyTACS.createTransientProblem"><code class="xref py py-meth docutils literal notranslate"><span class="pre">pyTACS.createTransientProblem</span></code></a> method.</p>
+<code class="xref py py-meth docutils literal notranslate"><span class="pre">pyTACS.createTransientProblem</span></code> method.</p>
 </div>
 <section id="options">
 <h2>Options<a class="headerlink" href="#options" title="Permalink to this heading">¶</a></h2>
 <p>Options can be set for <a class="reference internal" href="#tacs.problems.TransientProblem" title="tacs.problems.TransientProblem"><code class="xref py py-class docutils literal notranslate"><span class="pre">TransientProblem</span></code></a> at time of creation for the class in the
-<a class="reference internal" href="pytacs_module.html#tacs.pytacs.pyTACS.createTransientProblem" title="tacs.pytacs.pyTACS.createTransientProblem"><code class="xref py py-meth docutils literal notranslate"><span class="pre">pyTACS.createTransientProblem</span></code></a> method or using the
+<code class="xref py py-meth docutils literal notranslate"><span class="pre">pyTACS.createTransientProblem</span></code> method or using the
 <a class="reference internal" href="#tacs.problems.TransientProblem.setOption" title="tacs.problems.TransientProblem.setOption"><code class="xref py py-meth docutils literal notranslate"><span class="pre">TransientProblem.setOption</span></code></a> method. Current option values for a class
 instance can be printed out using the <a class="reference internal" href="#tacs.problems.TransientProblem.printOptions" title="tacs.problems.TransientProblem.printOptions"><code class="xref py py-meth docutils literal notranslate"><span class="pre">TransientProblem.printOption</span></code></a> method.
 The following options their default values and descriptions are listed below:</p>
@@ -80,6 +80,11 @@ The following options their default values and descriptions are listed below:</p
 	 Absolute convergence tolerance for integrator based on l2 norm of residual.
 &#39;L2ConvergenceRel&#39;: 1e-12
 	 Relative convergence tolerance for integrator based on l2 norm of residual.
+&#39;RBEStiffnessScaleFactor&#39;: 1000.0
+	 Constraint matrix scaling factor used in RBE Lagrange multiplier stiffness matrix.
+&#39;RBEArtificialStiffness&#39;: 0.001
+	 Artificial constant added to diagonals of RBE Lagrange multiplier stiffness matrix 
+	 to stabilize preconditioner.
 &#39;jacAssemblyFreq&#39;: 1
 	 How frequently to reassemble Jacobian during time integration process.
 &#39;writeSolution&#39;: True
@@ -136,7 +141,7 @@ Use pyTACS.createTransientProblem instead.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="tacs.problems.TransientProblem.getNumTimeSteps">
 <span class="sig-name descname"><span class="pre">getNumTimeSteps</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/problems/transient.html#TransientProblem.getNumTimeSteps"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.problems.TransientProblem.getNumTimeSteps" title="Permalink to this definition">¶</a></dt>
-<dd><p>Get the number of timesteps used in time integration for this problem.</p>
+<dd><p>Get the number of time steps used in time integration for this problem.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>numSteps</strong> -- Number of time steps.</p>
@@ -195,8 +200,7 @@ Use pyTACS.createTransientProblem instead.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="tacs.problems.TransientProblem.addLoadToComponents">
 <span class="sig-name descname"><span class="pre">addLoadToComponents</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">timeStep</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">compIDs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">F</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeStage</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">averageLoad</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/problems/transient.html#TransientProblem.addLoadToComponents"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.problems.TransientProblem.addLoadToComponents" title="Permalink to this definition">¶</a></dt>
-<dd><p>&quot;
-This method is used to add a <em>FIXED TOTAL LOAD</em> on one or more
+<dd><p>This method is used to add a <em>FIXED TOTAL LOAD</em> on one or more
 components, defined by COMPIDs, at a specific time instance.
 The purpose of this routine is to add loads that remain fixed throughout
 an optimization. An example would be an engine load. This routine determines
@@ -263,7 +267,7 @@ or NASTRAN (grid IDs in bdf file) ordering</p></li>
 </dl>
 <p class="rubric">Notes</p>
 <p>The units of the entries of the 'force' vector F are not
-necesarily physical forces and their interpretation depends
+necessarily physical forces and their interpretation depends
 on the physics problem being solved and the dofs included
 in the model.</p>
 <p>A couple of examples of force vector components for common problem are listed below:</p>
@@ -286,8 +290,7 @@ in the model.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="tacs.problems.TransientProblem.addLoadToRHS">
 <span class="sig-name descname"><span class="pre">addLoadToRHS</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">timeStep</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Fapplied</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeStage</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/problems/transient.html#TransientProblem.addLoadToRHS"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.problems.TransientProblem.addLoadToRHS" title="Permalink to this definition">¶</a></dt>
-<dd><p>&quot;
-This method is used to add a <em>FIXED TOTAL LOAD</em> directly to the
+<dd><p>This method is used to add a <em>FIXED TOTAL LOAD</em> directly to the
 right hand side vector given the equation below:</p>
 <blockquote>
 <div><p>M*udotdot + K*u = f</p>
@@ -637,6 +640,12 @@ respect to all design variables and node locations are computed.</p>
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="tacs.problems.TransientProblem.zeroLoads">
+<span class="sig-name descname"><span class="pre">zeroLoads</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/problems/transient.html#TransientProblem.zeroLoads"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.problems.TransientProblem.zeroLoads" title="Permalink to this definition">¶</a></dt>
+<dd><p>Zero all applied loads</p>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="tacs.problems.TransientProblem.writeSolution">
 <span class="sig-name descname"><span class="pre">writeSolution</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">outputDir</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">baseName</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">number</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeSteps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/problems/transient.html#TransientProblem.writeSolution"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.problems.TransientProblem.writeSolution" title="Permalink to this definition">¶</a></dt>
 <dd><p>This is a generic shell function that writes the output
@@ -845,6 +854,7 @@ optimization</p>
 <li><a class="reference internal" href="#tacs.problems.TransientProblem.evalFunctions"><code class="docutils literal notranslate"><span class="pre">TransientProblem.evalFunctions()</span></code></a></li>
 <li><a class="reference internal" href="#tacs.problems.TransientProblem.evalFunctionsSens"><code class="docutils literal notranslate"><span class="pre">TransientProblem.evalFunctionsSens()</span></code></a></li>
 <li><a class="reference internal" href="#tacs.problems.TransientProblem.getVariables"><code class="docutils literal notranslate"><span class="pre">TransientProblem.getVariables()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.problems.TransientProblem.zeroLoads"><code class="docutils literal notranslate"><span class="pre">TransientProblem.zeroLoads()</span></code></a></li>
 <li><a class="reference internal" href="#tacs.problems.TransientProblem.writeSolution"><code class="docutils literal notranslate"><span class="pre">TransientProblem.writeSolution()</span></code></a></li>
 <li><a class="reference internal" href="#tacs.problems.TransientProblem.dtype"><code class="docutils literal notranslate"><span class="pre">TransientProblem.dtype</span></code></a></li>
 <li><a class="reference internal" href="#tacs.problems.TransientProblem.getDesignVars"><code class="docutils literal notranslate"><span class="pre">TransientProblem.getDesignVars()</span></code></a></li>

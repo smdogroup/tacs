@@ -956,10 +956,25 @@ points.</p>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>num_nodes</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)"><em>int</em></a>) -- Total number of nodes associated with the element.</p></li>
 <li><p><strong>constrained_dofs</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.24)"><em>numpy.ndarray</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)"><em>int</em></a><em>]</em>) -- Flags to determine which
-dependent node dof's are attached to the eleemnt.</p></li>
+dependent node dof's are attached to the element.</p></li>
 </ul>
 </dd>
 </dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.elements.RBE2.setScalingParameters">
+<span class="sig-name descname"><span class="pre">setScalingParameters</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.elements.RBE2.setScalingParameters" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set scaling parameters used in Lagrange multiplier formulation of the element.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>C1</strong> (<em>double</em>) -- Constraint matrix scaling factor used in RBE Lagrange multiplier stiffness matrix.</p></li>
+<li><p><strong>C2</strong> (<em>double</em>) -- Artificial constant added to diagonals of RBE Lagrange multiplier stiffness matrix</p></li>
+<li><p><strong>preconditioner.</strong> (<em>to stabilize</em>) -- </p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
 </dd></dl>
 
 <dl class="py class">
@@ -985,10 +1000,25 @@ geometry and local weight factors.</p>
 dependent node dof's are attached to the eleemnt.</p></li>
 <li><p><strong>weights</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.24)"><em>numpy.ndarray</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.11)"><em>float</em></a><em>]</em>) -- RBE weighting factor for each independent node.</p></li>
 <li><p><strong>indep_constrained_dofs</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.24)"><em>numpy.ndarray</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)"><em>int</em></a><em>]</em>) -- Flags to determine which
-independent node dof's are attached to the eleemnt.</p></li>
+independent node dof's are attached to the element.</p></li>
 </ul>
 </dd>
 </dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.elements.RBE3.setScalingParameters">
+<span class="sig-name descname"><span class="pre">setScalingParameters</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.elements.RBE3.setScalingParameters" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set scaling parameters used in Lagrange multiplier formulation of the element.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>C1</strong> (<em>double</em>) -- Constraint matrix scaling factor used in RBE Lagrange multiplier stiffness matrix.</p></li>
+<li><p><strong>C2</strong> (<em>double</em>) -- Artificial constant added to diagonals of RBE Lagrange multiplier stiffness matrix</p></li>
+<li><p><strong>preconditioner.</strong> (<em>to stabilize</em>) -- </p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
 </dd></dl>
 
 <dl class="py class">
@@ -1102,8 +1132,14 @@ independent node dof's are attached to the eleemnt.</p></li>
 <li><a class="reference internal" href="#tacs.elements.Beam3"><code class="docutils literal notranslate"><span class="pre">Beam3</span></code></a></li>
 <li><a class="reference internal" href="#tacs.elements.Beam2ModRot"><code class="docutils literal notranslate"><span class="pre">Beam2ModRot</span></code></a></li>
 <li><a class="reference internal" href="#tacs.elements.Beam3ModRot"><code class="docutils literal notranslate"><span class="pre">Beam3ModRot</span></code></a></li>
-<li><a class="reference internal" href="#tacs.elements.RBE2"><code class="docutils literal notranslate"><span class="pre">RBE2</span></code></a></li>
-<li><a class="reference internal" href="#tacs.elements.RBE3"><code class="docutils literal notranslate"><span class="pre">RBE3</span></code></a></li>
+<li><a class="reference internal" href="#tacs.elements.RBE2"><code class="docutils literal notranslate"><span class="pre">RBE2</span></code></a><ul>
+<li><a class="reference internal" href="#tacs.elements.RBE2.setScalingParameters"><code class="docutils literal notranslate"><span class="pre">RBE2.setScalingParameters()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#tacs.elements.RBE3"><code class="docutils literal notranslate"><span class="pre">RBE3</span></code></a><ul>
+<li><a class="reference internal" href="#tacs.elements.RBE3.setScalingParameters"><code class="docutils literal notranslate"><span class="pre">RBE3.setScalingParameters()</span></code></a></li>
+</ul>
+</li>
 <li><a class="reference internal" href="#tacs.elements.MassElement"><code class="docutils literal notranslate"><span class="pre">MassElement</span></code></a></li>
 <li><a class="reference internal" href="#tacs.elements.SpringElement"><code class="docutils literal notranslate"><span class="pre">SpringElement</span></code></a></li>
 </ul>

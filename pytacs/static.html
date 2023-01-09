@@ -58,12 +58,12 @@ other pieces of information.</p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
 <p>This class should be created using the
-<a class="reference internal" href="pytacs_module.html#tacs.pytacs.pyTACS.createStaticProblem" title="tacs.pytacs.pyTACS.createStaticProblem"><code class="xref py py-meth docutils literal notranslate"><span class="pre">pyTACS.createStaticProblem</span></code></a> method.</p>
+<code class="xref py py-meth docutils literal notranslate"><span class="pre">pyTACS.createStaticProblem</span></code> method.</p>
 </div>
 <section id="options">
 <h2>Options<a class="headerlink" href="#options" title="Permalink to this heading">¶</a></h2>
 <p>Options can be set for <a class="reference internal" href="#tacs.problems.StaticProblem" title="tacs.problems.StaticProblem"><code class="xref py py-class docutils literal notranslate"><span class="pre">StaticProblem</span></code></a> at time of creation for the class in the
-<a class="reference internal" href="pytacs_module.html#tacs.pytacs.pyTACS.createStaticProblem" title="tacs.pytacs.pyTACS.createStaticProblem"><code class="xref py py-meth docutils literal notranslate"><span class="pre">pyTACS.createStaticProblem</span></code></a> method or using the
+<code class="xref py py-meth docutils literal notranslate"><span class="pre">pyTACS.createStaticProblem</span></code> method or using the
 <a class="reference internal" href="#tacs.problems.StaticProblem.setOption" title="tacs.problems.StaticProblem.setOption"><code class="xref py py-meth docutils literal notranslate"><span class="pre">StaticProblem.setOption</span></code></a> method. Current option values for a class
 instance can be printed out using the <a class="reference internal" href="#tacs.problems.StaticProblem.printOptions" title="tacs.problems.StaticProblem.printOptions"><code class="xref py py-meth docutils literal notranslate"><span class="pre">StaticProblem.printOption</span></code></a> method.
 The following options, their default values and descriptions are listed below:</p>
@@ -96,6 +96,11 @@ The following options, their default values and descriptions are listed below:</
 	 Absolute convergence tolerance for linear solver based on l2 norm of residual.
 &#39;L2ConvergenceRel&#39;: 1e-12
 	 Relative convergence tolerance for linear solver based on l2 norm of residual.
+&#39;RBEStiffnessScaleFactor&#39;: 1000.0
+	 Constraint matrix scaling factor used in RBE Lagrange multiplier stiffness matrix.
+&#39;RBEArtificialStiffness&#39;: 0.001
+	 Artificial constant added to diagonals of RBE Lagrange multiplier stiffness matrix 
+	 to stabilize preconditioner.
 &#39;useMonitor&#39;: False
 	 Flag for whether to attach a debug monitor to the linear solver.
 &#39;monitorFrequency&#39;: 10
@@ -190,8 +195,7 @@ the number of structural nodes on this processor.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="tacs.problems.StaticProblem.addLoadToComponents">
 <span class="sig-name descname"><span class="pre">addLoadToComponents</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">compIDs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">F</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">averageLoad</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/problems/static.html#StaticProblem.addLoadToComponents"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.problems.StaticProblem.addLoadToComponents" title="Permalink to this definition">¶</a></dt>
-<dd><p>&quot;
-This method is used to add a <em>FIXED TOTAL LOAD</em> on one or more
+<dd><p>This method is used to add a <em>FIXED TOTAL LOAD</em> on one or more
 components, defined by COMPIDs. The purpose of this routine is to add loads that
 remain fixed throughout an optimization. An example would be an engine load.
 This routine determines all the unique nodes in the FE model that are part of the
@@ -211,7 +215,7 @@ or copied and applied individually to each component (False). Defaults to False.
 </dl>
 <p class="rubric">Notes</p>
 <p>The units of the entries of the 'force' vector F are not
-necesarily physical forces and their interpretation depends
+necessarily physical forces and their interpretation depends
 on the physics problem being solved and the dofs included
 in the model.</p>
 <p>A couple of examples of force vector components for common problem are listed below:</p>
@@ -249,7 +253,7 @@ or NASTRAN (grid IDs in bdf file) ordering</p></li>
 </dl>
 <p class="rubric">Notes</p>
 <p>The units of the entries of the 'force' vector F are not
-necesarily physical forces and their interpretation depends
+necessarily physical forces and their interpretation depends
 on the physics problem being solved and the dofs included
 in the model.</p>
 <p>A couple of examples of force vector components for common problem are listed below:</p>
@@ -272,8 +276,7 @@ in the model.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="tacs.problems.StaticProblem.addLoadToRHS">
 <span class="sig-name descname"><span class="pre">addLoadToRHS</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">Fapplied</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/problems/static.html#StaticProblem.addLoadToRHS"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.problems.StaticProblem.addLoadToRHS" title="Permalink to this definition">¶</a></dt>
-<dd><p>&quot;
-This method is used to add a <em>FIXED TOTAL LOAD</em> directly to the
+<dd><p>This method is used to add a <em>FIXED TOTAL LOAD</em> directly to the
 right hand side vector given the equation below:</p>
 <blockquote>
 <div><p>K*u = f</p>
@@ -601,6 +604,12 @@ prod += scale * J^T . phi</p>
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="tacs.problems.StaticProblem.zeroLoads">
+<span class="sig-name descname"><span class="pre">zeroLoads</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/problems/static.html#StaticProblem.zeroLoads"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.problems.StaticProblem.zeroLoads" title="Permalink to this definition">¶</a></dt>
+<dd><p>Zero all applied loads</p>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="tacs.problems.StaticProblem.solveAdjoint">
 <span class="sig-name descname"><span class="pre">solveAdjoint</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">rhs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">phi</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/problems/static.html#StaticProblem.solveAdjoint"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.problems.StaticProblem.solveAdjoint" title="Permalink to this definition">¶</a></dt>
 <dd><p>Solve the structural adjoint.</p>
@@ -827,6 +836,7 @@ optimization</p>
 <li><a class="reference internal" href="#tacs.problems.StaticProblem.getResidual"><code class="docutils literal notranslate"><span class="pre">StaticProblem.getResidual()</span></code></a></li>
 <li><a class="reference internal" href="#tacs.problems.StaticProblem.addTransposeJacVecProduct"><code class="docutils literal notranslate"><span class="pre">StaticProblem.addTransposeJacVecProduct()</span></code></a></li>
 <li><a class="reference internal" href="#tacs.problems.StaticProblem.zeroVariables"><code class="docutils literal notranslate"><span class="pre">StaticProblem.zeroVariables()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.problems.StaticProblem.zeroLoads"><code class="docutils literal notranslate"><span class="pre">StaticProblem.zeroLoads()</span></code></a></li>
 <li><a class="reference internal" href="#tacs.problems.StaticProblem.solveAdjoint"><code class="docutils literal notranslate"><span class="pre">StaticProblem.solveAdjoint()</span></code></a></li>
 <li><a class="reference internal" href="#tacs.problems.StaticProblem.getVariables"><code class="docutils literal notranslate"><span class="pre">StaticProblem.getVariables()</span></code></a></li>
 <li><a class="reference internal" href="#tacs.problems.StaticProblem.setVariables"><code class="docutils literal notranslate"><span class="pre">StaticProblem.setVariables()</span></code></a></li>
