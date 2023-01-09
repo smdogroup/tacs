@@ -260,7 +260,7 @@ class TACSKsm : public TACSObject {
   virtual TACSVec *createVec() = 0;
   virtual void setOperators(TACSMat *_mat, TACSPc *_pc) = 0;
   virtual void getOperators(TACSMat **_mat, TACSPc **_pc) = 0;
-  virtual void solve(TACSVec *b, TACSVec *x, int zero_guess = 1) = 0;
+  virtual int solve(TACSVec *b, TACSVec *x, int zero_guess = 1) = 0;
   virtual void setTolerances(double _rtol, double _atol) = 0;
   virtual void setMonitor(KSMPrint *_monitor) = 0;
   const char *getObjectName();
@@ -315,7 +315,7 @@ class PCG : public TACSKsm {
   ~PCG();
 
   TACSVec *createVec() { return mat->createVec(); }
-  void solve(TACSVec *b, TACSVec *x, int zero_guess = 1);
+  int solve(TACSVec *b, TACSVec *x, int zero_guess = 1);
   void setOperators(TACSMat *_mat, TACSPc *_pc);
   void getOperators(TACSMat **_mat, TACSPc **_pc);
   void setTolerances(double _rtol, double _atol);
@@ -380,7 +380,7 @@ class GMRES : public TACSKsm {
   ~GMRES();
 
   TACSVec *createVec() { return mat->createVec(); }
-  void solve(TACSVec *b, TACSVec *x, int zero_guess = 1);
+  int solve(TACSVec *b, TACSVec *x, int zero_guess = 1);
   void setOperators(TACSMat *_mat, TACSPc *_pc);
   void getOperators(TACSMat **_mat, TACSPc **_pc);
   void setTolerances(double _rtol, double _atol);
@@ -445,7 +445,7 @@ class GCROT : public TACSKsm {
   ~GCROT();
 
   TACSVec *createVec() { return mat->createVec(); }
-  void solve(TACSVec *b, TACSVec *x, int zero_guess = 1);
+  int solve(TACSVec *b, TACSVec *x, int zero_guess = 1);
   void setOperators(TACSMat *_mat, TACSPc *_pc);
   void getOperators(TACSMat **_mat, TACSPc **_pc);
   void setTolerances(double _rtol, double _atol);
@@ -499,7 +499,7 @@ class KsmPreconditioner : public TACSKsm {
   TACSVec *createVec();
   void setOperators(TACSMat *_mat, TACSPc *_pc);
   void getOperators(TACSMat **_mat, TACSPc **_pc);
-  void solve(TACSVec *b, TACSVec *x, int zero_guess = 1);
+  int solve(TACSVec *b, TACSVec *x, int zero_guess = 1);
   void setTolerances(double _rtol, double _atol);
   void setMonitor(KSMPrint *_monitor);
 

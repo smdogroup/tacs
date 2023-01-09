@@ -1152,8 +1152,11 @@ cdef class KSM:
         b:          the right-hand-side
         x:          the solution vector (with possibly significant entries)
         zero_guess:  indicate whether to zero entries of x before solution
+
+        output:
+        solve_flag: flag for whether the solve terminated successfully
         """
-        self.ptr.solve(b.ptr, x.ptr, zero_guess)
+        return self.ptr.solve(b.ptr, x.ptr, zero_guess)
 
     def setTolerances(self, double rtol, double atol):
         """
