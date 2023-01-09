@@ -1,6 +1,8 @@
 name: Deploy conda package
 
 on:
+  release:
+    types: [published]
 
   # Allows you to run this workflow manually from the Actions tab.
   workflow_dispatch:
@@ -8,8 +10,6 @@ on:
 jobs:
   # This job is called deploy_conda_package.
   deploy_conda_package:
-    # Recommended if you intend to make multiple deployments in quick succession.
-    concurrency: ci-${{ github.ref }}
     # Run on Ubuntu/MacOS
     runs-on: ${{ matrix.OS }}
     # Ensures conda environment is initialized for all steps
@@ -30,6 +30,12 @@ jobs:
             BUILD_DIR: osx-64
 
     name: TACS Conda Package Deployment (${{ matrix.OS }})
+
+    # Recommended if you intend to make multiple deployments in quick succession.
+    # This will kill any currently running CI from previous commits to the same branch
+    concurrency:
+      group: ci-${{ github.ref }}-${{ matrix.OS }}
+      cancel-in-progress: true
 
     steps:
 

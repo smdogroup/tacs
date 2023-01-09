@@ -899,17 +899,32 @@ cdef class Mat:
         mat = _dynamicParallelMat(self.ptr)
         sc = _dynamicSchurMat(self.ptr)
 
+        data = None
+
         if mat != NULL:
             mat.getBCSRMat(&A, &B)
-            return (_convertBCSRMat(A, <PyObject*>self), _convertBCSRMat(B, <PyObject*>self))
+            data = (_convertBCSRMat(A, <PyObject*>self), _convertBCSRMat(B, <PyObject*>self))
+            if A != NULL:
+                Py_INCREF(self)
+            if B != NULL:
+                Py_INCREF(self)
+
         elif sc != NULL:
             sc.getBCSRMat(&A, &B, &C, &D)
-            return (_convertBCSRMat(A, <PyObject*>self),
+            data = (_convertBCSRMat(A, <PyObject*>self),
                     _convertBCSRMat(B, <PyObject*>self),
                     _convertBCSRMat(C, <PyObject*>self),
                     _convertBCSRMat(D, <PyObject*>self))
+            if A != NULL:
+                Py_INCREF(self)
+            if B != NULL:
+                Py_INCREF(self)
+            if C != NULL:
+                Py_INCREF(self)
+            if D != NULL:
+                Py_INCREF(self)
 
-        return None
+        return data
 
     def getDenseMatrix(self):
         """
@@ -1141,8 +1156,11 @@ cdef class KSM:
         b:          the right-hand-side
         x:          the solution vector (with possibly significant entries)
         zero_guess:  indicate whether to zero entries of x before solution
+
+        output:
+        solve_flag: flag for whether the solve terminated successfully
         """
-        self.ptr.solve(b.ptr, x.ptr, zero_guess)
+        return self.ptr.solve(b.ptr, x.ptr, zero_guess)
 
     def setTolerances(self, double rtol, double atol):
         """

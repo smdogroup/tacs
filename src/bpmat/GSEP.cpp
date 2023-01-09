@@ -93,7 +93,10 @@ EPShiftInvert::~EPShiftInvert() { ksm->decref(); }
 
 TACSVec *EPShiftInvert::createVec() { return ksm->createVec(); }
 
-void EPShiftInvert::mult(TACSVec *x, TACSVec *y) { return ksm->solve(x, y); }
+void EPShiftInvert::mult(TACSVec *x, TACSVec *y) {
+  ksm->solve(x, y);
+  return;
+}
 
 // The eigenvalues are computed as mu = 1.0/( eig - sigma )
 // eig = 1.0/mu + sigma
@@ -153,7 +156,8 @@ TACSVec *EPGeneralizedShiftInvert::createVec() { return ksm->createVec(); }
 */
 void EPGeneralizedShiftInvert::mult(TACSVec *x, TACSVec *y) {
   inner->mult(x, temp);
-  return ksm->solve(temp, y);
+  ksm->solve(temp, y);
+  return;
 }
 
 /*
@@ -219,7 +223,8 @@ TACSVec *EPBucklingShiftInvert::createVec() { return ksm->createVec(); }
 // Compute y = ( A - sigma B )^{-1} *  x
 void EPBucklingShiftInvert::mult(TACSVec *x, TACSVec *y) {
   inner->mult(x, temp);
-  return ksm->solve(temp, y);
+  ksm->solve(temp, y);
+  return;
 }
 
 // Compute <x,y> = x^{T} inner y

@@ -1,5 +1,10 @@
 {% set name = "tacs" %}
-{% set version = "3.1.0" %}
+
+{% set version = environ.get('GIT_DESCRIBE_TAG', '') %}
+{% if version.startswith('v') %}
+{% set version = version[1:] %}
+{% endif %}
+
 {% set build = 0 %}
 
 {% set mpi = mpi or 'openmpi' %}
@@ -28,6 +33,7 @@ requirements:
     - numpy   1.18   # [py==38]
     - numpy   1.19   # [py==39]
     - numpy   1.22   # [py==310]
+    - numpy   1.23   # [py==311]
     - {{ mpi }}
     - openmpi-mpicxx  # [mpi == "openmpi"]
     - mpich-mpicxx  # [mpi == "mpich"]
@@ -44,6 +50,7 @@ requirements:
     - numpy   1.18   # [py==38]
     - numpy   1.19   # [py==39]
     - numpy   1.22   # [py==310]
+    - numpy   1.23   # [py==311]
     - {{ mpi }}
     - openmpi-mpicxx  # [mpi == "openmpi"]
     - mpich-mpicxx  # [mpi == "mpich"]
@@ -61,6 +68,7 @@ requirements:
     - numpy >=1.18.5,<2.0.a0   # [py==38]
     - numpy >=1.19.5,<2.0.a0   # [py==39]
     - numpy >=1.22.0,<2.0.a0   # [py==310]
+    - numpy >=1.23.0,<2.0.a0   # [py==311]
     - scipy
     - {{ mpi }}
     - openmpi-mpicxx  # [mpi == "openmpi"]

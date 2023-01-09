@@ -16,7 +16,7 @@ import numpy as np
 from collections import OrderedDict
 import time
 from .base import TACSProblem
-import tacs.TACS
+import tacs.TACS, tacs.elements
 
 
 class StaticProblem(TACSProblem):
@@ -59,6 +59,17 @@ class StaticProblem(TACSProblem):
             float,
             1e-12,
             "Relative convergence tolerance for linear solver based on l2 norm of residual.",
+        ],
+        "RBEStiffnessScaleFactor": [
+            float,
+            1e3,
+            "Constraint matrix scaling factor used in RBE Lagrange multiplier stiffness matrix.",
+        ],
+        "RBEArtificialStiffness": [
+            float,
+            1e-3,
+            "Artificial constant added to diagonals of RBE Lagrange multiplier stiffness matrix \n"
+            "\t to stabilize preconditioner.",
         ],
         "useMonitor": [
             bool,
@@ -166,7 +177,7 @@ class StaticProblem(TACSProblem):
         # State variable vector
         self.u = self.assembler.createVec()
         self.u_array = self.u.getArray()
-        # Auxillary element object for applying tractions/pressure
+        # Auxiliary element object for applying tractions/pressure
         self.auxElems = tacs.TACS.AuxElements()
         self.callCounter = -1
 
@@ -183,7 +194,10 @@ class StaticProblem(TACSProblem):
         # Tangent Stiffness --- process the ordering option here:
         ordering = opt("orderingType")
 
+        # True stiffness matrix
         self.K = self.assembler.createSchurMat(ordering)
+        # Artificial stiffness for RBE numerical stabilization to stabilize PC
+        self.rbeArtificialStiffness = self.assembler.createSchurMat(ordering)
 
         # Additional Vecs for updates
         self.update = self.assembler.createVec()
@@ -192,6 +206,11 @@ class StaticProblem(TACSProblem):
         self.alpha = 1.0
         self.beta = 0.0
         self.gamma = 0.0
+
+        # Computes stiffness matrix w/o art. terms
+        # Set artificial stiffness factors in rbe class to zero
+        tacs.elements.RBE2.setScalingParameters(opt("RBEStiffnessScaleFactor"), 0.0)
+        tacs.elements.RBE3.setScalingParameters(opt("RBEStiffnessScaleFactor"), 0.0)
         self.assembler.assembleJacobian(
             self.alpha,
             self.beta,
@@ -200,6 +219,21 @@ class StaticProblem(TACSProblem):
             self.K,
             loadScale=self.loadScale,
         )
+
+        # Now isolate art. terms
+        # Recompute stiffness with artificial terms included
+        tacs.elements.RBE2.setScalingParameters(
+            opt("RBEStiffnessScaleFactor"), opt("RBEArtificialStiffness")
+        )
+        tacs.elements.RBE3.setScalingParameters(
+            opt("RBEStiffnessScaleFactor"), opt("RBEArtificialStiffness")
+        )
+        self.assembler.assembleJacobian(
+            self.alpha, self.beta, self.gamma, None, self.rbeArtificialStiffness
+        )
+        # Subtract full stiffness w/o artificial terms from full stiffness w/ terms
+        # to isolate  artificial stiffness terms
+        self.rbeArtificialStiffness.axpy(-1.0, self.K)
 
         reorderSchur = 1
         self.PC = tacs.TACS.Pc(
@@ -337,7 +371,7 @@ class StaticProblem(TACSProblem):
     ####### Load adding methods ########
 
     def addLoadToComponents(self, compIDs, F, averageLoad=False):
-        """ "
+        """
         This method is used to add a *FIXED TOTAL LOAD* on one or more
         components, defined by COMPIDs. The purpose of this routine is to add loads that
         remain fixed throughout an optimization. An example would be an engine load.
@@ -364,7 +398,7 @@ class StaticProblem(TACSProblem):
         ----------
 
         The units of the entries of the 'force' vector F are not
-        necesarily physical forces and their interpretation depends
+        necessarily physical forces and their interpretation depends
         on the physics problem being solved and the dofs included
         in the model.
 
@@ -406,7 +440,7 @@ class StaticProblem(TACSProblem):
         ----------
 
         The units of the entries of the 'force' vector F are not
-        necesarily physical forces and their interpretation depends
+        necessarily physical forces and their interpretation depends
         on the physics problem being solved and the dofs included
         in the model.
 
@@ -427,7 +461,7 @@ class StaticProblem(TACSProblem):
         self._addLoadToNodes(self.F, nodeIDs, F, nastranOrdering)
 
     def addLoadToRHS(self, Fapplied):
-        """ "
+        """
         This method is used to add a *FIXED TOTAL LOAD* directly to the
         right hand side vector given the equation below:
 
@@ -617,17 +651,25 @@ class StaticProblem(TACSProblem):
         self.assembler.setAuxElements(self.auxElems)
         # Set state variables
         self.assembler.setVariables(self.u)
-        # Zero any time derivitive terms
+        # Zero any time derivative terms
         self.assembler.zeroDotVariables()
         self.assembler.zeroDDotVariables()
+        # Set artificial stiffness factors in rbe class to zero
+        tacs.elements.RBE2.setScalingParameters(
+            self.getOption("RBEStiffnessScaleFactor"), 0.0
+        )
+        tacs.elements.RBE3.setScalingParameters(
+            self.getOption("RBEStiffnessScaleFactor"), 0.0
+        )
 
     def _initializeSolve(self):
         """
-        Initialze the solution of the structural system for the
+        Initialize the solution of the structural system for the
         loadCase. The stiffness matrix is assembled and factored.
         """
 
         if self._factorOnNext:
+            # Assemble residual and stiffness matrix (w/o artificial terms)
             self.assembler.assembleJacobian(
                 self.alpha,
                 self.beta,
@@ -636,7 +678,12 @@ class StaticProblem(TACSProblem):
                 self.K,
                 loadScale=self.loadScale,
             )
+            # Stiffness matrix must include artificial terms before pc factor
+            # to prevent factorization issues w/ zero-diagonals
+            self.K.axpy(1.0, self.rbeArtificialStiffness)
             self.PC.factor()
+            # Remove artificial stiffness terms to get true stiffness mat
+            self.K.axpy(-1.0, self.rbeArtificialStiffness)
             self._factorOnNext = False
 
     def solve(self, Fext=None):
@@ -677,13 +724,20 @@ class StaticProblem(TACSProblem):
         # Set initnorm as the norm of rhs
         self.initNorm = np.real(self.rhs.norm())
 
-        # Starting Norm for this compuation
+        # Starting Norm for this computation
         self.startNorm = np.real(self.res.norm())
 
         initNormTime = time.time()
 
         # Solve Linear System for the update
-        self.KSM.solve(self.res, self.update)
+        success = self.KSM.solve(self.res, self.update)
+
+        if not success:
+            self._TACSWarning(
+                "Linear solver failed to converge. "
+                "This is likely a sign that the problem is ill-conditioned. "
+                "Check that the model is properly restrained."
+            )
 
         self.update.scale(-1.0)
 
@@ -1298,6 +1352,13 @@ class StaticProblem(TACSProblem):
         self.u.zeroEntries()
         self.assembler.setVariables(self.u)
         self.update.zeroEntries()
+
+    def zeroLoads(self):
+        """
+        Zero all applied loads
+        """
+        self.F.zeroEntries()
+        self.auxElems = tacs.TACS.AuxElements()
 
     def solveAdjoint(self, rhs, phi):
         """
