@@ -41,6 +41,17 @@ class TransientProblem(TACSProblem):
             1e-12,
             "Relative convergence tolerance for integrator based on l2 norm of residual.",
         ],
+        "RBEStiffnessScaleFactor": [
+            float,
+            1e3,
+            "Constraint matrix scaling factor used in RBE Lagrange multiplier stiffness matrix.",
+        ],
+        "RBEArtificialStiffness": [
+            float,
+            1e-3,
+            "Artificial constant added to diagonals of RBE Lagrange multiplier stiffness matrix \n"
+            "\t to stabilize preconditioner.",
+        ],
         "jacAssemblyFreq": [
             int,
             1,
@@ -271,7 +282,7 @@ class TransientProblem(TACSProblem):
 
     def getNumTimeSteps(self):
         """
-        Get the number of timesteps used in time integration for this problem.
+        Get the number of time steps used in time integration for this problem.
 
         Returns
         ----------
@@ -340,7 +351,7 @@ class TransientProblem(TACSProblem):
     def addLoadToComponents(
         self, timeStep, compIDs, F, timeStage=None, averageLoad=False
     ):
-        """ "
+        """
         This method is used to add a *FIXED TOTAL LOAD* on one or more
         components, defined by COMPIDs, at a specific time instance.
         The purpose of this routine is to add loads that remain fixed throughout
@@ -438,7 +449,7 @@ class TransientProblem(TACSProblem):
         -----
 
         The units of the entries of the 'force' vector F are not
-        necesarily physical forces and their interpretation depends
+        necessarily physical forces and their interpretation depends
         on the physics problem being solved and the dofs included
         in the model.
 
@@ -468,7 +479,7 @@ class TransientProblem(TACSProblem):
         self._addLoadToNodes(self.F[timeIndex], nodeIDs, F, nastranOrdering)
 
     def addLoadToRHS(self, timeStep, Fapplied, timeStage=None):
-        """ "
+        """
         This method is used to add a *FIXED TOTAL LOAD* directly to the
         right hand side vector given the equation below:
 
@@ -864,6 +875,11 @@ class TransientProblem(TACSProblem):
         self.assembler.setInitConditions(
             vec=self.vars0, dvec=self.dvars0, ddvec=self.ddvars0
         )
+        # Set artificial stiffness factors in rbe class
+        c1 = self.getOption("RBEStiffnessScaleFactor")
+        c2 = self.getOption("RBEArtificialStiffness")
+        tacs.elements.RBE2.setScalingParameters(c1, c2)
+        tacs.elements.RBE3.setScalingParameters(c1, c2)
 
     def solve(self):
         """
