@@ -4435,7 +4435,7 @@ void TACSAssembler::assembleMatType(ElementMatrixType matType, TACSMat *A,
         }
       } else {
         TacsScalar *auxElemMat = new TacsScalar[nvars * nvars];
-        memset(auxElemMat, 0, nvars * sizeof(TacsScalar));
+        memset(auxElemMat, 0, nvars * nvars * sizeof(TacsScalar));
         while (aux_count < naux && aux[aux_count].num == i) {
           aux[aux_count].elem->getMatType(matType, i, time, elemXpts, vars,
                                           auxElemMat);
@@ -4469,10 +4469,12 @@ void TACSAssembler::assembleMatType(ElementMatrixType matType, TACSMat *A,
   @param nmats The number of matrices in the linear combination
   @param A The matrix to assemble (output)
   @param matOr the matrix orientation: NORMAL or TRANSPOSE
+  @param lambda Scaling factor for the aux element contributions, by default 1
 */
 void TACSAssembler::assembleMatCombo(ElementMatrixType matTypes[],
                                      TacsScalar scale[], int nmats, TACSMat *A,
-                                     MatrixOrientation matOr) {
+                                     MatrixOrientation matOr,
+                                     TacsScalar lambda) {
   // Zero the matrix
   A->zeroEntries();
 
@@ -4480,6 +4482,21 @@ void TACSAssembler::assembleMatCombo(ElementMatrixType matTypes[],
   TacsScalar *vars, *elemXpts, *elemMat, *elemWeights;
   getDataPointers(elementData, &vars, NULL, NULL, NULL, &elemXpts, NULL,
                   &elemWeights, &elemMat);
+
+  // Get the auxiliary elements
+  int naux = 0, aux_count = 0;
+  TACSAuxElem *aux = NULL;
+  if (auxElements) {
+    naux = auxElements->getAuxElements(&aux);
+  }
+
+  // To avoid allocating memory inside the memory loop, make the aux element
+  // contribution mat big enough for the largest element
+  int maxNVar = this->maxElementSize;
+  TacsScalar *auxElemMat;
+  if (lambda == TacsScalar(1.0) && naux > 0) {
+    auxElemMat = new TacsScalar[maxNVar * maxNVar];
+  }
 
   for (int i = 0; i < numElements; i++) {
     // Retrieve the element variables and node locations
@@ -4493,9 +4510,32 @@ void TACSAssembler::assembleMatCombo(ElementMatrixType matTypes[],
       // Get the element matrix
       elements[i]->getMatType(matTypes[j], i, time, elemXpts, vars, elemMat);
 
+      // Add the contribution from any auxiliary elements, if the load factor is
+      // 1 they can be added straight to the elemRes, otherwise they need to be
+      // scaled first
+      int nvars = elements[i]->getNumVariables();
+      if (naux > 0) {
+        if (lambda == TacsScalar(1.0)) {
+          while (aux_count < naux && aux[aux_count].num == i) {
+            aux[aux_count].elem->getMatType(matTypes[j], i, time, elemXpts,
+                                            vars, elemMat);
+            aux_count++;
+          }
+        } else {
+          memset(auxElemMat, 0, maxNVar * maxNVar * sizeof(TacsScalar));
+          while (aux_count < naux && aux[aux_count].num == i) {
+            aux[aux_count].elem->getMatType(matTypes[j], i, time, elemXpts,
+                                            vars, auxElemMat);
+            aux_count++;
+          }
+          for (int ii = 0; ii < nvars * nvars; ii++) {
+            elemMat[ii] += lambda * auxElemMat[ii];
+          }
+        }
+      }
+
       // Scale the matrix
       if (scale[j] != 1.0) {
-        int nvars = elements[i]->getNumVariables();
         int n = nvars * nvars, one = 1;
         BLASscal(&n, &scale[j], elemMat, &one);
       }
@@ -4504,6 +4544,7 @@ void TACSAssembler::assembleMatCombo(ElementMatrixType matTypes[],
       addMatValues(A, i, elemMat, elementIData, elemWeights, matOr);
     }
   }
+  delete[] auxElemMat;
 
   A->beginAssembly();
   A->endAssembly();
