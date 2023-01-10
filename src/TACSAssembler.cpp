@@ -4173,6 +4173,15 @@ void TACSAssembler::assembleRes(TACSBVec *residual, const TacsScalar lambda) {
       naux = auxElements->getAuxElements(&aux);
     }
 
+    // To avoid allocating memory inside the element loop, make the aux element
+    // contribution array big enough for the largest element
+    int maxNVar = this->maxElementSize;
+    TacsScalar *auxElemRes;
+    bool scaleAux = lambda != TacsScalar(1.0) && naux > 0;
+    if (scaleAux) {
+      auxElemRes = new TacsScalar[maxNVar];
+    }
+
     // Go through and add the residuals from all the elements
     for (int i = 0; i < numElements; i++) {
       int ptr = elementNodeIndex[i];
@@ -4191,15 +4200,14 @@ void TACSAssembler::assembleRes(TACSBVec *residual, const TacsScalar lambda) {
       // Add the residual from any auxiliary elements, if the load factor is 1
       // they can be added straight to the elemRes, otherwise they need to be
       // scaled first
-      if (lambda == TacsScalar(1.0)) {
+      if (!scaleAux) {
         while (aux_count < naux && aux[aux_count].num == i) {
           aux[aux_count].elem->addResidual(i, time, elemXpts, vars, dvars,
                                            ddvars, elemRes);
           aux_count++;
         }
       } else {
-        TacsScalar *auxElemRes = new TacsScalar[nvars];
-        memset(auxElemRes, 0, nvars * sizeof(TacsScalar));
+        memset(auxElemRes, 0, maxNVar * sizeof(TacsScalar));
         while (aux_count < naux && aux[aux_count].num == i) {
           aux[aux_count].elem->addResidual(i, time, elemXpts, vars, dvars,
                                            ddvars, auxElemRes);
@@ -4208,11 +4216,14 @@ void TACSAssembler::assembleRes(TACSBVec *residual, const TacsScalar lambda) {
         for (int jj = 0; jj < nvars; jj++) {
           elemRes[jj] += lambda * auxElemRes[jj];
         }
-        delete[] auxElemRes;
       }
 
       // Add the residual values
       residual->setValues(len, nodes, elemRes, TACS_ADD_VALUES);
+    }
+
+    if (scaleAux) {
+      delete[] auxElemRes;
     }
   }
 
@@ -4412,6 +4423,15 @@ void TACSAssembler::assembleMatType(ElementMatrixType matType, TACSMat *A,
       naux = auxElements->getAuxElements(&aux);
     }
 
+    // To avoid allocating memory inside the element loop, make the aux element
+    // contribution mat big enough for the largest element
+    int maxNVar = this->maxElementSize;
+    TacsScalar *auxElemMat;
+    bool scaleAux = lambda != TacsScalar(1.0) && naux > 0;
+    if (scaleAux) {
+      auxElemMat = new TacsScalar[maxNVar * maxNVar];
+    }
+
     for (int i = 0; i < numElements; i++) {
       // Retrieve the element variables and node locations
       int ptr = elementNodeIndex[i];
@@ -4427,15 +4447,14 @@ void TACSAssembler::assembleMatType(ElementMatrixType matType, TACSMat *A,
       // Add the contribution from any auxiliary elements, if the load factor is
       // 1 they can be added straight to the elemRes, otherwise they need to be
       // scaled first
-      if (lambda == TacsScalar(1.0)) {
+      if (!scaleAux) {
         while (aux_count < naux && aux[aux_count].num == i) {
           aux[aux_count].elem->getMatType(matType, i, time, elemXpts, vars,
                                           elemMat);
           aux_count++;
         }
       } else {
-        TacsScalar *auxElemMat = new TacsScalar[nvars * nvars];
-        memset(auxElemMat, 0, nvars * nvars * sizeof(TacsScalar));
+        memset(auxElemMat, 0, maxNVar * maxNVar * sizeof(TacsScalar));
         while (aux_count < naux && aux[aux_count].num == i) {
           aux[aux_count].elem->getMatType(matType, i, time, elemXpts, vars,
                                           auxElemMat);
@@ -4444,11 +4463,13 @@ void TACSAssembler::assembleMatType(ElementMatrixType matType, TACSMat *A,
         for (int ii = 0; ii < nvars * nvars; ii++) {
           elemMat[ii] += lambda * auxElemMat[ii];
         }
-        delete[] auxElemMat;
       }
 
       // Add the values into the element
       addMatValues(A, i, elemMat, elementIData, elemWeights, matOr);
+    }
+    if (scaleAux) {
+      delete[] auxElemMat;
     }
   }
 
@@ -4490,11 +4511,12 @@ void TACSAssembler::assembleMatCombo(ElementMatrixType matTypes[],
     naux = auxElements->getAuxElements(&aux);
   }
 
-  // To avoid allocating memory inside the memory loop, make the aux element
+  // To avoid allocating memory inside the element loop, make the aux element
   // contribution mat big enough for the largest element
   int maxNVar = this->maxElementSize;
   TacsScalar *auxElemMat;
-  if (lambda == TacsScalar(1.0) && naux > 0) {
+  bool scaleAux = lambda != TacsScalar(1.0) && naux > 0;
+  if (scaleAux) {
     auxElemMat = new TacsScalar[maxNVar * maxNVar];
   }
 
@@ -4514,23 +4536,21 @@ void TACSAssembler::assembleMatCombo(ElementMatrixType matTypes[],
       // 1 they can be added straight to the elemRes, otherwise they need to be
       // scaled first
       int nvars = elements[i]->getNumVariables();
-      if (naux > 0) {
-        if (lambda == TacsScalar(1.0)) {
-          while (aux_count < naux && aux[aux_count].num == i) {
-            aux[aux_count].elem->getMatType(matTypes[j], i, time, elemXpts,
-                                            vars, elemMat);
-            aux_count++;
-          }
-        } else {
-          memset(auxElemMat, 0, maxNVar * maxNVar * sizeof(TacsScalar));
-          while (aux_count < naux && aux[aux_count].num == i) {
-            aux[aux_count].elem->getMatType(matTypes[j], i, time, elemXpts,
-                                            vars, auxElemMat);
-            aux_count++;
-          }
-          for (int ii = 0; ii < nvars * nvars; ii++) {
-            elemMat[ii] += lambda * auxElemMat[ii];
-          }
+      if (!scaleAux) {
+        while (aux_count < naux && aux[aux_count].num == i) {
+          aux[aux_count].elem->getMatType(matTypes[j], i, time, elemXpts, vars,
+                                          elemMat);
+          aux_count++;
+        }
+      } else {
+        memset(auxElemMat, 0, maxNVar * maxNVar * sizeof(TacsScalar));
+        while (aux_count < naux && aux[aux_count].num == i) {
+          aux[aux_count].elem->getMatType(matTypes[j], i, time, elemXpts, vars,
+                                          auxElemMat);
+          aux_count++;
+        }
+        for (int ii = 0; ii < nvars * nvars; ii++) {
+          elemMat[ii] += lambda * auxElemMat[ii];
         }
       }
 
@@ -4544,7 +4564,9 @@ void TACSAssembler::assembleMatCombo(ElementMatrixType matTypes[],
       addMatValues(A, i, elemMat, elementIData, elemWeights, matOr);
     }
   }
-  delete[] auxElemMat;
+  if (scaleAux) {
+    delete[] auxElemMat;
+  }
 
   A->beginAssembly();
   A->endAssembly();
