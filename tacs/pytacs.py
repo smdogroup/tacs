@@ -292,6 +292,7 @@ class pyTACS(BaseUI):
             "value": value,
             "lowerBound": lower,
             "upperBound": upper,
+            "isMassDV": False,
         }
         self.dvNum += 1
         self.scaleList.append(scale)
@@ -384,6 +385,9 @@ class pyTACS(BaseUI):
             self.addGlobalDV(descript, None)
 
         dv_dict = self.globalDVs[descript]
+
+        # Flag this global dv as being a mass dv
+        dv_dict["isMassDV"] = True
 
         massDV = dv_dict["num"]
         value = dv_dict["value"]
@@ -494,7 +498,7 @@ class pyTACS(BaseUI):
            of which 'include' components will be selected. This
            functionality uses a geometric approach to select the compIDs.
            All components within the project 2D convex hull are included.
-           Therefore it is essential to split up concave include regions
+           Therefore, it is essential to split up concave include regions
            into smaller convex regions. Use multiple calls to selectCompIDs to
            accumulate multiple regions.
 
@@ -1136,7 +1140,7 @@ class pyTACS(BaseUI):
 
         Returns
         ----------
-        x : array
+        x : numpy.array
             The original design variable vector set in tacs.
 
         """
