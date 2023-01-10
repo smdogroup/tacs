@@ -494,9 +494,11 @@ cdef extern from "TACSAssembler.h":
                               MatrixOrientation matOr,
                               TacsScalar loadScale)
         void assembleMatType(ElementMatrixType matType,
-                             TACSMat *A, MatrixOrientation matOr)
+                             TACSMat *A, MatrixOrientation matOr,
+                             TacsScalar loadScale)
         void assembleMatCombo(ElementMatrixType*, TacsScalar*, int,
-                              TACSMat*, MatrixOrientation)
+                              TACSMat*, MatrixOrientation matOr,
+                              TacsScalar loadScale)
         void addJacobianVecProduct(TacsScalar scale,
                                    double alpha, double beta, double gamma,
                                    TACSBVec *x, TACSBVec *y,
