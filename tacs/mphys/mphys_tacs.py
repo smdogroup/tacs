@@ -348,14 +348,17 @@ class TacsSolver(om.ImplicitComponent):
         )
 
     def _need_update(self, inputs):
-        update = True
+        update = False
+
+        dvs = inputs["tacs_dvs"]
+        xs = inputs["x_struct0"]
 
         if self.old_dvs is None:
             self.old_dvs = inputs["tacs_dvs"].copy()
             update = True
 
-        for dv, dv_old in zip(inputs["tacs_dvs"], self.old_dvs):
-            if np.abs(dv - dv_old) > 0.0:  # 1e-7:
+        elif len(dvs) > 0:
+            if max(np.abs(dvs - self.old_dvs)) > 0.0:  # 1e-7:
                 self.old_dvs = inputs["tacs_dvs"].copy()
                 update = True
 
@@ -363,13 +366,14 @@ class TacsSolver(om.ImplicitComponent):
             self.old_xs = inputs["x_struct0"].copy()
             update = True
 
-        for xs, xs_old in zip(inputs["x_struct0"], self.old_xs):
-            if np.abs(xs - xs_old) > 0.0:  # 1e-7:
+        elif len(xs) > 0:
+            if max(np.abs(xs - self.old_xs)) > 0.0:  # 1e-7:
                 self.old_xs = inputs["x_struct0"].copy()
                 update = True
-        tmp = [update]
+
+        tmp = update
         # Perform all reduce to check if any other procs came back True
-        update = self.comm.allreduce(tmp)[0]
+        update = self.comm.allreduce(tmp)
         return update
 
     def _update_internal(self, inputs, outputs=None):
