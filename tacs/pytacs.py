@@ -26,6 +26,7 @@ import copy
 import numbers
 import numpy
 import time
+from functools import wraps
 
 import numpy as np
 from mpi4py import MPI
@@ -39,6 +40,7 @@ warnings.simplefilter("default")
 
 # Define decorator functions for methods that must be called before initialize
 def preinitialize_method(method):
+    @wraps(method)
     def wrapped_method(self, *args, **kwargs):
         if self.assembler is not None:
             raise self._TACSError(
@@ -53,6 +55,7 @@ def preinitialize_method(method):
 
 # Define decorator functions for methods that must be called after initialize
 def postinitialize_method(method):
+    @wraps(method)
     def wrapped_method(self, *args, **kwargs):
         if self.assembler is None:
             raise self._TACSError(
@@ -1187,7 +1190,7 @@ class pyTACS(BaseUI):
     @postinitialize_method
     def getOrigNodes(self):
         """
-        Return the original mesh coordiantes read in from the meshLoader.
+        Return the original mesh coordinates read in from the meshLoader.
 
         Returns
         -------
