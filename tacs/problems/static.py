@@ -187,7 +187,7 @@ class StaticProblem(TACSProblem):
         self.finalNorm = 0.0
 
         # Load scaling factor
-        self.loadScale = 1.0
+        self._loadScale = 1.0
 
         opt = self.getOption
 
@@ -308,6 +308,47 @@ class StaticProblem(TACSProblem):
         # Reset solver for all other option changes
         else:
             self._createVariables()
+
+    @property
+    def loadScale(self):
+        """This is a scaling factor applied to all forcing terms
+
+        Forcing terms includes both the user supplied force vector and the forcing terms coming from aux elements in
+        the TACS assembler (e.g inertial, centrifugal forces)
+
+        Returns
+        -------
+        float or complex
+            The current load scale
+        """
+        return self.loadScale
+
+    @loadScale.setter
+    def loadScale(self, value):
+        """Set the scaling applied to external loads
+
+        This function exists so that calling `problem.loadScale = value` has the same effect as calling::
+
+            `problem.setLoadScale(value)`
+
+        This is important in case we want to update other things when the load scale is changed in future
+
+        Parameters
+        ----------
+        value : float or complex
+            Value to set the load scale to
+        """
+        self.setLoadScale(value)
+
+    def setLoadScale(self, value):
+        """Set the scaling applied to external loads
+
+        Parameters
+        ----------
+        value : float or complex
+            Value to set the load scale to
+        """
+        self._loadScale = value
 
     def addFunction(self, funcName, funcHandle, compIDs=None, **kwargs):
         """
@@ -676,7 +717,7 @@ class StaticProblem(TACSProblem):
                 self.gamma,
                 self.res,
                 self.K,
-                loadScale=self.loadScale,
+                loadScale=self._loadScale,
             )
             # Stiffness matrix must include artificial terms before pc factor
             # to prevent factorization issues w/ zero-diagonals
@@ -1295,8 +1336,8 @@ class StaticProblem(TACSProblem):
         self.assembler.applyBCs(self.rhs)
 
         # Assemble the TACS residual and subtract the externally handled loads
-        self.assembler.assembleRes(res, self.loadScale)
-        res.axpy(-self.loadScale, self.rhs)
+        self.assembler.assembleRes(res, self._loadScale)
+        res.axpy(-self._loadScale, self.rhs)
 
         # If requested, copy the residual to the output array
         if resArray is not None:
