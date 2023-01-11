@@ -228,7 +228,6 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
         for prob in self.tacs_probs:
             if prob.name != "Centrifugal_firstOrder":
                 continue
-            prob._updateAssemblerVars()
 
             prob.loadScale = 0.0
             mat = prob.getJacobian()
@@ -249,9 +248,3 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
             self.assertNotEqual(np.real(np.linalg.norm(diff2)), 0.0)
 
             np.testing.assert_allclose(diff1, 2 * diff2, atol=1e-3, rtol=1e-6)
-
-
-if __name__ == "__main__":
-    import unittest
-
-    unittest.main()
