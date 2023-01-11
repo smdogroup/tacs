@@ -317,8 +317,8 @@ class pyTACS(BaseUI):
 
         Returns
         -------
-        globalDVs : dict
-            Dictionary holding global dv information.
+        globalDVKeys : list
+            List holding global dv names.
         """
         return list(self.globalDVs.keys())
 
