@@ -73,6 +73,13 @@ void *TACSAssembler::assembleRes_thread(void *t) {
   if (assembler->auxElements) {
     naux = assembler->auxElements->getAuxElements(&aux);
   }
+  // To avoid allocating memory inside the element loop, make the aux element
+  // contribution array big enough for the largest element
+  TacsScalar *auxElemRes;
+  bool scaleAux = lambda != TacsScalar(1.0) && naux > 0;
+  if (scaleAux) {
+    auxElemRes = new TacsScalar[s];
+  }
 
   while (assembler->numCompletedElements < assembler->numElements) {
     int elemIndex = -1;
@@ -105,14 +112,13 @@ void *TACSAssembler::assembleRes_thread(void *t) {
       // Add the residual from any auxiliary elements, if the load factor is 1
       // they can be added straight to the elemRes, otherwise they need to be
       // scaled first
-      if (lambda == TacsScalar(1.0)) {
+      if (!scaleAux) {
         while (aux_count < naux && aux[aux_count].num == elemIndex) {
           aux[aux_count].elem->addResidual(elemIndex, assembler->time, elemXpts,
                                            vars, dvars, ddvars, elemRes);
           aux_count++;
         }
       } else {
-        TacsScalar *auxElemRes = new TacsScalar[s];
         memset(auxElemRes, 0, s * sizeof(TacsScalar));
         while (aux_count < naux && aux[aux_count].num == elemIndex) {
           aux[aux_count].elem->addResidual(elemIndex, assembler->time, elemXpts,
@@ -122,7 +128,6 @@ void *TACSAssembler::assembleRes_thread(void *t) {
         for (int jj = 0; jj < s; jj++) {
           elemRes[jj] += lambda * auxElemRes[jj];
         }
-        delete[] auxElemRes;
       }
 
       // Add the values to the residual when the memory unlocks
@@ -131,7 +136,9 @@ void *TACSAssembler::assembleRes_thread(void *t) {
       pthread_mutex_unlock(&assembler->tacs_mutex);
     }
   }
-
+  if (scaleAux) {
+    delete[] auxElemRes;
+  }
   delete[] data;
 
   pthread_exit(NULL);
@@ -283,6 +290,11 @@ void *TACSAssembler::assembleMatType_thread(void *t) {
   if (assembler->auxElements) {
     naux = assembler->auxElements->getAuxElements(&aux);
   }
+  TacsScalar *auxElemMat;
+  bool scaleAux = lambda != TacsScalar(1.0) && naux > 0;
+  if (scaleAux) {
+    auxElemMat = new TacsScalar[s * s];
+  }
 
   while (assembler->numCompletedElements < assembler->numElements) {
     int elemIndex = -1;
@@ -314,15 +326,14 @@ void *TACSAssembler::assembleMatType_thread(void *t) {
       // Add the contribution from any auxiliary elements, if the load factor is
       // 1 they can be added straight to the elemRes, otherwise they need to be
       // scaled first
-      if (lambda == TacsScalar(1.0)) {
+      if (!scaleAux) {
         while (aux_count < naux && aux[aux_count].num == elemIndex) {
           aux[aux_count].elem->getMatType(matType, elemIndex, assembler->time,
                                           elemXpts, vars, elemMat);
           aux_count++;
         }
       } else {
-        TacsScalar *auxElemMat = new TacsScalar[s * s];
-        memset(auxElemMat, 0, s * sizeof(TacsScalar));
+        memset(auxElemMat, 0, s * s * sizeof(TacsScalar));
         while (aux_count < naux && aux[aux_count].num == elemIndex) {
           aux[aux_count].elem->getMatType(matType, elemIndex, assembler->time,
                                           elemXpts, vars, auxElemMat);
@@ -331,7 +342,6 @@ void *TACSAssembler::assembleMatType_thread(void *t) {
         for (int ii = 0; ii < s * s; ii++) {
           elemMat[ii] += lambda * auxElemMat[ii];
         }
-        delete[] auxElemMat;
       }
 
       pthread_mutex_lock(&assembler->tacs_mutex);
@@ -340,7 +350,9 @@ void *TACSAssembler::assembleMatType_thread(void *t) {
       pthread_mutex_unlock(&assembler->tacs_mutex);
     }
   }
-
+  if (scaleAux) {
+    delete[] auxElemMat;
+  }
   delete[] data;
 
   pthread_exit(NULL);
