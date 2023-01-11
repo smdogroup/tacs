@@ -231,20 +231,14 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
             prob._updateAssemblerVars()
 
             prob.loadScale = 0.0
-            prob._factorOnNext = True
-            prob._initializeSolve()
             mat = prob.getJacobian()
             kFull = np.copy(mat[0].toarray())
 
             prob.setLoadScale(1.0)
-            prob._factorOnNext = True
-            prob._initializeSolve()
             mat = prob.getJacobian()
             kZero = np.copy(mat[0].toarray())
 
             prob.setLoadScale(0.5)
-            prob._factorOnNext = True
-            prob._initializeSolve()
             mat = prob.getJacobian()
             kHalf = np.copy(mat[0].toarray())
 
