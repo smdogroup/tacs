@@ -12,6 +12,7 @@ other pieces of information.
 # Imports
 # =============================================================================
 import os
+import copy
 import numpy as np
 from collections import OrderedDict
 import time
@@ -1352,7 +1353,11 @@ class StaticProblem(TACSProblem):
             A tuple of 2 scipy.sparse.bsr_matrices (A, B) if Jacobian is a TACSParallelMat, or 4
             scipy.sparse.bsr_matrices (A, B, C, D) if Jacobian is a TACSSchurMat
         """
-        return self.K.getMat()
+        # Make sure stiffness mat is up-to-date
+        self._updateAssemblerVars()
+        self._initializeSolve()
+        # Return copy of scipy mat
+        return copy.deepcopy(self.K.getMat())
 
     def addTransposeJacVecProduct(self, phi, prod, scale=1.0):
         """
