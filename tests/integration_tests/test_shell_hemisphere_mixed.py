@@ -233,19 +233,19 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
             prob.loadScale = 0.0
             prob._factorOnNext = True
             prob._initializeSolve()
-            mat = prob.K.getMat()
+            mat = prob.getJacobian()
             kFull = np.copy(mat[0].toarray())
 
-            prob.loadScale = 1.0
+            prob.setLoadScale(1.0)
             prob._factorOnNext = True
             prob._initializeSolve()
-            mat = prob.K.getMat()
+            mat = prob.getJacobian()
             kZero = np.copy(mat[0].toarray())
 
-            prob.loadScale = 0.5
+            prob.setLoadScale(0.5)
             prob._factorOnNext = True
             prob._initializeSolve()
-            mat = prob.K.getMat()
+            mat = prob.getJacobian()
             kHalf = np.copy(mat[0].toarray())
 
             diff1 = kFull - kZero
@@ -255,3 +255,9 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
             self.assertNotEqual(np.real(np.linalg.norm(diff2)), 0.0)
 
             np.testing.assert_allclose(diff1, 2 * diff2, atol=1e-3, rtol=1e-6)
+
+
+if __name__ == "__main__":
+    import unittest
+
+    unittest.main()

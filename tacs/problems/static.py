@@ -321,7 +321,7 @@ class StaticProblem(TACSProblem):
         float or complex
             The current load scale
         """
-        return self.loadScale
+        return self._loadScale
 
     @loadScale.setter
     def loadScale(self, value):

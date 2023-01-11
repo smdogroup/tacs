@@ -152,28 +152,26 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
 
     def test_residual_scaling(self):
         """Test that the load scaling is working correctly for the point and pressure loads."""
+        res = self.fea_assembler.createVec(asBVec=True)
+        scaledRes = self.fea_assembler.createVec(asBVec=True)
         for problem in self.tacs_probs:
             with self.subTest(problem=problem.name):
                 np.random.seed(1)
                 # Check that the residual is zero if the states and load scale are both zero
                 problem.loadScale = 0.0
-                problem.u.zeroEntries()
-                problem.assembler.setVariables(problem.u)
-                problem.getResidual(problem.res)
+                problem.zeroVariables()
+                problem.getResidual(res)
 
-                self.assertEqual(np.real(problem.res.norm()), 0.0)
+                self.assertEqual(np.real(res.norm()), 0.0)
 
                 # Check that the loadScale does linearly scale the external loads
                 fullRes = problem.assembler.createVec()
-                problem.loadScale = 1.0
+                problem.setLoadScale(1.0)
                 problem.getResidual(fullRes)
-                print(f"{fullRes.norm()=}")
 
                 loadScale = np.random.rand()
-                problem.loadScale = loadScale
-                scaledRes = problem.assembler.createVec()
+                problem.setLoadScale(loadScale)
                 problem.getResidual(scaledRes)
-                print(f"{scaledRes.norm()=}")
 
                 # scaledRes -= loadScale*fullRes should = 0
                 scaledRes.axpy(-loadScale, fullRes)
