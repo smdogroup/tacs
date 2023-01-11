@@ -349,7 +349,9 @@ class StaticProblem(TACSProblem):
         value : float or complex
             Value to set the load scale to
         """
-        self._loadScale = value
+        if value != self._loadScale:
+            self._factorOnNext = True
+            self._loadScale = value
 
     def addFunction(self, funcName, funcHandle, compIDs=None, **kwargs):
         """
