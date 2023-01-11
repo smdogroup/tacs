@@ -1343,6 +1343,17 @@ class StaticProblem(TACSProblem):
         if resArray is not None:
             resArray[:] = res.getArray()
 
+    def getJacobian(self):
+        """Get the problem's Jacobian in sciPy sparse matrix format
+
+        Returns
+        -------
+        tuple of 2 or 4 scipy.sparse.bsr_matrices
+            A tuple of 2 scipy.sparse.bsr_matrices (A, B) if Jacobian is a TACSParallelMat, or 4
+            scipy.sparse.bsr_matrices (A, B, C, D) if Jacobian is a TACSSchurMat
+        """
+        return self.K.getMat()
+
     def addTransposeJacVecProduct(self, phi, prod, scale=1.0):
         """
         Adds product of transpose Jacobian and input vector into output vector as shown below:
