@@ -96,7 +96,7 @@ allProblems.append(staticProb)
 
 # Setup transient problem
 # turn on print for solver in options
-transientOptions = {"printlevel": 1}
+transientOptions = {"printlevel": 1, "jacAssemblyFreq": 1}
 transientProb = FEAAssembler.createTransientProblem(
     name="pressure", tInit=0.0, tFinal=10.0, numSteps=50, options=transientOptions
 )
