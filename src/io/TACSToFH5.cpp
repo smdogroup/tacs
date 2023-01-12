@@ -241,7 +241,7 @@ int TACSToFH5::writeToFile(const char *filename) {
       F->incref();
       // Save a copy of auxiliary elements (pressures, tractions, etc.)
       TACSAuxElements *aux = assembler->getAuxElements();
-      if (aux){
+      if (aux) {
         aux->incref();
       }
       // Remove tractions/pressures so we're only left w/ internal forces
@@ -249,7 +249,7 @@ int TACSToFH5::writeToFile(const char *filename) {
       assembler->assembleRes(F);
       // Set auxiliary elements back
       assembler->setAuxElements(aux);
-      if (aux){
+      if (aux) {
         aux->decref();
       }
       F->getArray(&F_array);
