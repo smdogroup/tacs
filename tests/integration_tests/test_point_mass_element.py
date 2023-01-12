@@ -58,6 +58,11 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
 
         fea_assembler = pytacs.pyTACS(bdf_file, comm, options=struct_options)
 
+        # Add global DV
+        fea_assembler.addGlobalDV("point_mass", 20.0)
+        # Assign mass to global dv
+        fea_assembler.assignMassDV("point_mass", 1, "m")
+
         # Set up constitutive objects and elements
         fea_assembler.initialize()
 

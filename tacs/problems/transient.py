@@ -1256,10 +1256,10 @@ class TransientProblem(TACSProblem):
             If states is not None, place the state variables into this array (optional).
 
         dstates : TACS.Vec or numpy.ndarray or None
-            If dstates is not None, place the time derivitive of the state variables into this array (optional).
+            If dstates is not None, place the time derivative of the state variables into this array (optional).
 
         ddstates : TACS.Vec or numpy.ndarray or None
-            If ddstates is not None, place the second time derivitive of the state variables into this array (optional).
+            If ddstates is not None, place the second time derivative of the state variables into this array (optional).
 
         Returns
         --------
@@ -1270,10 +1270,10 @@ class TransientProblem(TACSProblem):
             The state variables.
 
         dstates : TACS.Vec or numpy.ndarray or None
-            The time derivitive of the state variables.
+            The time derivative of the state variables.
 
         ddstates : TACS.Vec or numpy.ndarray or None
-            The second time derivitive of the state variables.
+            The second time derivative of the state variables.
 
         """
 
@@ -1337,14 +1337,14 @@ class TransientProblem(TACSProblem):
             Use this supplied string for the base filename. Typically
             only used from an external solver.
         number : int or None
-            Use the user spplied number to index solution. Again, only
+            Use the user supplied number to index solution. Again, only
             typically used from an external solver
         timeSteps : int or list[int] or None
             Time step index or indices to get state variables for.
             If None, returns a solution for all time steps.
             Defaults to None.
         """
-        # Make sure assembler variables are up to date
+        # Make sure assembler variables are up-to-date
         self._updateAssemblerVars()
 
         # Check input
@@ -1368,19 +1368,21 @@ class TransientProblem(TACSProblem):
         # Unless the writeSolution option is off write actual file:
         if self.getOption("writeSolution"):
 
-            # If timeSteps is None, output all modes
+            # If timeSteps is None, output all timesteps
             if timeSteps is None:
                 timeSteps = np.arange(self.numSteps + 1)
 
             # Write out each specified timestep
             timeSteps = np.atleast_1d(timeSteps)
             vec = self.assembler.createVec()
+            dvec = self.assembler.createVec()
+            ddvec = self.assembler.createVec()
             for timeStep in timeSteps:
-                # Extract eigenvector
-                self.getVariables(timeStep, states=vec)
-                # Set eigen mode in assembler
-                self.assembler.setVariables(vec)
-                # Write out mode shape as f5 file
-                modeName = baseName + "_%3.3d" % timeStep
-                fileName = os.path.join(outputDir, modeName) + ".f5"
+                # Extract solution for timestep
+                self.getVariables(timeStep, states=vec, dstates=dvec, ddstates=ddvec)
+                # Set timestep solution in assembler
+                self.assembler.setVariables(vec, dvec, ddvec)
+                # Write out timestep as f5 file
+                stepName = baseName + "_%3.3d" % timeStep
+                fileName = os.path.join(outputDir, stepName) + ".f5"
                 self.outputViewer.writeToFile(fileName)
