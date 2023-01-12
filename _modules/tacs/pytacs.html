@@ -166,6 +166,11 @@
             <span class="kc">True</span><span class="p">,</span>
             <span class="s2">&quot;Flag for whether to include element extra variables in f5 file.&quot;</span><span class="p">,</span>
         <span class="p">],</span>
+        <span class="s2">&quot;writeLoads&quot;</span><span class="p">:</span> <span class="p">[</span>
+            <span class="nb">bool</span><span class="p">,</span>
+            <span class="kc">True</span><span class="p">,</span>
+            <span class="s2">&quot;Flag for whether to include external nodal loads in f5 file.&quot;</span><span class="p">,</span>
+        <span class="p">],</span>
         <span class="s2">&quot;writeCoordinateFrame&quot;</span><span class="p">:</span> <span class="p">[</span>
             <span class="nb">bool</span><span class="p">,</span>
             <span class="kc">False</span><span class="p">,</span>
@@ -262,6 +267,7 @@
 
         <span class="c1"># List of DV groups</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">globalDVs</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">massDVs</span> <span class="o">=</span> <span class="p">{}</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">compIDBounds</span> <span class="o">=</span> <span class="p">{}</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">addedCompIDs</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
 
@@ -335,9 +341,136 @@
             <span class="s2">&quot;value&quot;</span><span class="p">:</span> <span class="n">value</span><span class="p">,</span>
             <span class="s2">&quot;lowerBound&quot;</span><span class="p">:</span> <span class="n">lower</span><span class="p">,</span>
             <span class="s2">&quot;upperBound&quot;</span><span class="p">:</span> <span class="n">upper</span><span class="p">,</span>
+            <span class="s2">&quot;isMassDV&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
         <span class="p">}</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">dvNum</span> <span class="o">+=</span> <span class="mi">1</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">scaleList</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">scale</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="pyTACS.getGlobalDVs"><a class="viewcode-back" href="../../pytacs/pytacs_module.html#tacs.pytacs.pyTACS.getGlobalDVs">[docs]</a>    <span class="k">def</span> <span class="nf">getGlobalDVs</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Return a dict holding info about all current global DVs.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        globalDVs : dict</span>
+<span class="sd">            Dictionary holding global dv information.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">globalDVs</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="pyTACS.getGlobalDVKeys"><a class="viewcode-back" href="../../pytacs/pytacs_module.html#tacs.pytacs.pyTACS.getGlobalDVKeys">[docs]</a>    <span class="k">def</span> <span class="nf">getGlobalDVKeys</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get key names for all current global DVs.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        globalDVKeys : list</span>
+<span class="sd">            List holding global dv names.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">globalDVs</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span></div>
+
+<div class="viewcode-block" id="pyTACS.getGlobalDVNums"><a class="viewcode-back" href="../../pytacs/pytacs_module.html#tacs.pytacs.pyTACS.getGlobalDVNums">[docs]</a>    <span class="k">def</span> <span class="nf">getGlobalDVNums</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the dv nums corresponding to global DVs.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        globalDVNums : list</span>
+<span class="sd">            List holding dv nums corresponding to global DVs.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">globalDVs</span><span class="p">[</span><span class="n">descript</span><span class="p">][</span><span class="s2">&quot;num&quot;</span><span class="p">]</span> <span class="k">for</span> <span class="n">descript</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">globalDVs</span><span class="p">]</span></div>
+
+<div class="viewcode-block" id="pyTACS.getTotalNumGlobalDVs"><a class="viewcode-back" href="../../pytacs/pytacs_module.html#tacs.pytacs.pyTACS.getTotalNumGlobalDVs">[docs]</a>    <span class="k">def</span> <span class="nf">getTotalNumGlobalDVs</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get total number of global DVs across all processors.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        globalDVs : dict</span>
+<span class="sd">            Dictionary holding global dv information.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">globalDVs</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="pyTACS.assignMassDV"><a class="viewcode-back" href="../../pytacs/pytacs_module.html#tacs.pytacs.pyTACS.assignMassDV">[docs]</a>    <span class="nd">@preinitialize_method</span>
+    <span class="k">def</span> <span class="nf">assignMassDV</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">descript</span><span class="p">,</span> <span class="n">eIDs</span><span class="p">,</span> <span class="n">dvName</span><span class="o">=</span><span class="s2">&quot;m&quot;</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Assign a global DV to a point mass element.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        descript : str</span>
+<span class="sd">            Global DV key to assign mass design variable to. If the key is does not exist,</span>
+<span class="sd">            it will automatically be created and added to global DVs.</span>
+
+<span class="sd">        eIDs : int or list</span>
+<span class="sd">            Element IDs of concentrated mass to assign DV to (NASTRAN ordering)</span>
+
+<span class="sd">        dvName : str</span>
+<span class="sd">            Name of mass property to apply DV to.</span>
+<span class="sd">            May be `m` for mass, `I11`, `I22`, `I12`, etc. for moment of inertia components.</span>
+<span class="sd">            Defaults to `m` (mass).</span>
+
+<span class="sd">        Notes</span>
+<span class="sd">        -----</span>
+<span class="sd">        Currently only CONM2 cards are supported.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Make sure eID is an array</span>
+        <span class="n">eIDs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">atleast_1d</span><span class="p">(</span><span class="n">eIDs</span><span class="p">)</span>
+
+        <span class="c1"># Check if referenced element ID is a CONM2 element</span>
+        <span class="k">for</span> <span class="n">eID</span> <span class="ow">in</span> <span class="n">eIDs</span><span class="p">:</span>
+            <span class="n">is_mass_element</span> <span class="o">=</span> <span class="kc">False</span>
+            <span class="k">if</span> <span class="n">eID</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">bdfInfo</span><span class="o">.</span><span class="n">masses</span><span class="p">:</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">bdfInfo</span><span class="o">.</span><span class="n">masses</span><span class="p">[</span><span class="n">eID</span><span class="p">]</span><span class="o">.</span><span class="n">type</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;CONM2&quot;</span><span class="p">]:</span>
+                    <span class="n">is_mass_element</span> <span class="o">=</span> <span class="kc">True</span>
+
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">is_mass_element</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TACSError</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;Element ID &#39;</span><span class="si">{</span><span class="n">eID</span><span class="si">}</span><span class="s2">&#39; does not correspond to a `CONM2` element. &quot;</span>
+                    <span class="s2">&quot;Only `CONM2` elements are supported for this method.&quot;</span>
+                <span class="p">)</span>
+
+        <span class="c1"># Check if descript already exists in global dvs, if not add it</span>
+        <span class="k">if</span> <span class="n">descript</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">globalDVs</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">addGlobalDV</span><span class="p">(</span><span class="n">descript</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+
+        <span class="n">dv_dict</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">globalDVs</span><span class="p">[</span><span class="n">descript</span><span class="p">]</span>
+
+        <span class="c1"># Flag this global dv as being a mass dv</span>
+        <span class="n">dv_dict</span><span class="p">[</span><span class="s2">&quot;isMassDV&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+
+        <span class="n">massDV</span> <span class="o">=</span> <span class="n">dv_dict</span><span class="p">[</span><span class="s2">&quot;num&quot;</span><span class="p">]</span>
+        <span class="n">value</span> <span class="o">=</span> <span class="n">dv_dict</span><span class="p">[</span><span class="s2">&quot;value&quot;</span><span class="p">]</span>
+        <span class="n">ub</span> <span class="o">=</span> <span class="n">dv_dict</span><span class="p">[</span><span class="s2">&quot;upperBound&quot;</span><span class="p">]</span>
+        <span class="n">lb</span> <span class="o">=</span> <span class="n">dv_dict</span><span class="p">[</span><span class="s2">&quot;lowerBound&quot;</span><span class="p">]</span>
+
+        <span class="k">for</span> <span class="n">eID</span> <span class="ow">in</span> <span class="n">eIDs</span><span class="p">:</span>
+            <span class="c1"># If the element ID hasn&#39;t already been added to massDVs, add it</span>
+            <span class="k">if</span> <span class="n">eID</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">massDVs</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">massDVs</span><span class="p">[</span><span class="n">eID</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+
+            <span class="c1"># Update the element entry with the dv num</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">massDVs</span><span class="p">[</span><span class="n">eID</span><span class="p">][</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">dvName</span><span class="si">}</span><span class="s2">Num&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">massDV</span>
+
+            <span class="c1"># Update the element entry with the dv name</span>
+            <span class="k">if</span> <span class="n">value</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">massDVs</span><span class="p">[</span><span class="n">eID</span><span class="p">][</span><span class="n">dvName</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
+            <span class="c1"># If value was defined from previous call, remove it</span>
+            <span class="k">elif</span> <span class="n">dvName</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">massDVs</span><span class="p">[</span><span class="n">eID</span><span class="p">]:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">massDVs</span><span class="p">[</span><span class="n">eID</span><span class="p">]</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">dvName</span><span class="p">)</span>
+
+            <span class="c1"># Update the element entry with the dv upper bound</span>
+            <span class="k">if</span> <span class="n">ub</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">massDVs</span><span class="p">[</span><span class="n">eID</span><span class="p">][</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">dvName</span><span class="si">}</span><span class="s2">ub&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">ub</span>
+            <span class="c1"># If upper bound was defined from previous call, remove it</span>
+            <span class="k">elif</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">dvName</span><span class="si">}</span><span class="s2">ub&quot;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">massDVs</span><span class="p">[</span><span class="n">eID</span><span class="p">]:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">massDVs</span><span class="p">[</span><span class="n">eID</span><span class="p">]</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">dvName</span><span class="si">}</span><span class="s2">ub&quot;</span><span class="p">)</span>
+
+            <span class="c1"># Update the element entry with the dv lower bound</span>
+            <span class="k">if</span> <span class="n">lb</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">massDVs</span><span class="p">[</span><span class="n">eID</span><span class="p">][</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">dvName</span><span class="si">}</span><span class="s2">lb&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">lb</span>
+            <span class="c1"># If lower bound was defined from previous call, remove it</span>
+            <span class="k">elif</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">dvName</span><span class="si">}</span><span class="s2">lb&quot;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">massDVs</span><span class="p">[</span><span class="n">eID</span><span class="p">]:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">massDVs</span><span class="p">[</span><span class="n">eID</span><span class="p">]</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">dvName</span><span class="si">}</span><span class="s2">lb&quot;</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="pyTACS.selectCompIDs"><a class="viewcode-back" href="../../pytacs/pytacs_module.html#tacs.pytacs.pyTACS.selectCompIDs">[docs]</a>    <span class="k">def</span> <span class="nf">selectCompIDs</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
@@ -414,7 +547,7 @@
 <span class="sd">           of which &#39;include&#39; components will be selected. This</span>
 <span class="sd">           functionality uses a geometric approach to select the compIDs.</span>
 <span class="sd">           All components within the project 2D convex hull are included.</span>
-<span class="sd">           Therefore it is essential to split up concave include regions</span>
+<span class="sd">           Therefore, it is essential to split up concave include regions</span>
 <span class="sd">           into smaller convex regions. Use multiple calls to selectCompIDs to</span>
 <span class="sd">           accumulate multiple regions.</span>
 
@@ -683,7 +816,9 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_createOutputGroups</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_createElements</span><span class="p">(</span><span class="n">elemCallBack</span><span class="p">)</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">assembler</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">meshLoader</span><span class="o">.</span><span class="n">createTACSAssembler</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">varsPerNode</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assembler</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">meshLoader</span><span class="o">.</span><span class="n">createTACSAssembler</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">varsPerNode</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">massDVs</span>
+        <span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_createOutputViewer</span><span class="p">()</span>
 
@@ -1054,8 +1189,8 @@
 
 <span class="sd">        Returns</span>
 <span class="sd">        ----------</span>
-<span class="sd">        x : array</span>
-<span class="sd">            The current design variable vector set in tacs.</span>
+<span class="sd">        x : numpy.array</span>
+<span class="sd">            The original design variable vector set in tacs.</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">x0</span><span class="o">.</span><span class="n">getArray</span><span class="p">()</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span></div>
@@ -1479,6 +1614,8 @@
             <span class="n">write_flag</span> <span class="o">|=</span> <span class="n">tacs</span><span class="o">.</span><span class="n">TACS</span><span class="o">.</span><span class="n">OUTPUT_STRESSES</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s2">&quot;writeExtras&quot;</span><span class="p">):</span>
             <span class="n">write_flag</span> <span class="o">|=</span> <span class="n">tacs</span><span class="o">.</span><span class="n">TACS</span><span class="o">.</span><span class="n">OUTPUT_EXTRAS</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s2">&quot;writeLoads&quot;</span><span class="p">):</span>
+            <span class="n">write_flag</span> <span class="o">|=</span> <span class="n">tacs</span><span class="o">.</span><span class="n">TACS</span><span class="o">.</span><span class="n">OUTPUT_LOADS</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s2">&quot;writeCoordinateFrame&quot;</span><span class="p">):</span>
             <span class="n">write_flag</span> <span class="o">|=</span> <span class="n">tacs</span><span class="o">.</span><span class="n">TACS</span><span class="o">.</span><span class="n">OUTPUT_COORDINATES</span>
 

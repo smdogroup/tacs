@@ -623,16 +623,16 @@ respect to all design variables and node locations are computed.</p>
 <li><p><strong>timeStep</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)"><em>int</em></a>) -- Time step index to get state variables for.</p></li>
 <li><p><strong>timeStage</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)"><em>int</em></a><em> or </em><em>None</em>) -- Time stage index to get state variables for.</p></li>
 <li><p><strong>states</strong> (<em>TACS.Vec</em><em> or </em><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.24)"><em>numpy.ndarray</em></a><em> or </em><em>None</em>) -- If states is not None, place the state variables into this array (optional).</p></li>
-<li><p><strong>dstates</strong> (<em>TACS.Vec</em><em> or </em><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.24)"><em>numpy.ndarray</em></a><em> or </em><em>None</em>) -- If dstates is not None, place the time derivitive of the state variables into this array (optional).</p></li>
-<li><p><strong>ddstates</strong> (<em>TACS.Vec</em><em> or </em><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.24)"><em>numpy.ndarray</em></a><em> or </em><em>None</em>) -- If ddstates is not None, place the second time derivitive of the state variables into this array (optional).</p></li>
+<li><p><strong>dstates</strong> (<em>TACS.Vec</em><em> or </em><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.24)"><em>numpy.ndarray</em></a><em> or </em><em>None</em>) -- If dstates is not None, place the time derivative of the state variables into this array (optional).</p></li>
+<li><p><strong>ddstates</strong> (<em>TACS.Vec</em><em> or </em><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.24)"><em>numpy.ndarray</em></a><em> or </em><em>None</em>) -- If ddstates is not None, place the second time derivative of the state variables into this array (optional).</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p><ul class="simple">
 <li><p><strong>time</strong> (<em>float</em>) -- The time at specified time instance</p></li>
 <li><p><strong>states</strong> (<em>TACS.Vec or numpy.ndarray</em>) -- The state variables.</p></li>
-<li><p><strong>dstates</strong> (<em>TACS.Vec or numpy.ndarray or None</em>) -- The time derivitive of the state variables.</p></li>
-<li><p><strong>ddstates</strong> (<em>TACS.Vec or numpy.ndarray or None</em>) -- The second time derivitive of the state variables.</p></li>
+<li><p><strong>dstates</strong> (<em>TACS.Vec or numpy.ndarray or None</em>) -- The time derivative of the state variables.</p></li>
+<li><p><strong>ddstates</strong> (<em>TACS.Vec or numpy.ndarray or None</em>) -- The second time derivative of the state variables.</p></li>
 </ul>
 </p>
 </dd>
@@ -660,7 +660,7 @@ determine the desired writing procedure</p>
 <li><p><strong>outputDir</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.11)"><em>str</em></a><em> or </em><em>None</em>) -- Use the supplied output directory</p></li>
 <li><p><strong>baseName</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.11)"><em>str</em></a><em> or </em><em>None</em>) -- Use this supplied string for the base filename. Typically
 only used from an external solver.</p></li>
-<li><p><strong>number</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)"><em>int</em></a><em> or </em><em>None</em>) -- Use the user spplied number to index solution. Again, only
+<li><p><strong>number</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)"><em>int</em></a><em> or </em><em>None</em>) -- Use the user supplied number to index solution. Again, only
 typically used from an external solver</p></li>
 <li><p><strong>timeSteps</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)"><em>int</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.11)"><em>list</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)"><em>int</em></a><em>] or </em><em>None</em>) -- Time step index or indices to get state variables for.
 If None, returns a solution for all time steps.

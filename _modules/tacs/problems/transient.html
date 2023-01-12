@@ -1297,10 +1297,10 @@
 <span class="sd">            If states is not None, place the state variables into this array (optional).</span>
 
 <span class="sd">        dstates : TACS.Vec or numpy.ndarray or None</span>
-<span class="sd">            If dstates is not None, place the time derivitive of the state variables into this array (optional).</span>
+<span class="sd">            If dstates is not None, place the time derivative of the state variables into this array (optional).</span>
 
 <span class="sd">        ddstates : TACS.Vec or numpy.ndarray or None</span>
-<span class="sd">            If ddstates is not None, place the second time derivitive of the state variables into this array (optional).</span>
+<span class="sd">            If ddstates is not None, place the second time derivative of the state variables into this array (optional).</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        --------</span>
@@ -1311,10 +1311,10 @@
 <span class="sd">            The state variables.</span>
 
 <span class="sd">        dstates : TACS.Vec or numpy.ndarray or None</span>
-<span class="sd">            The time derivitive of the state variables.</span>
+<span class="sd">            The time derivative of the state variables.</span>
 
 <span class="sd">        ddstates : TACS.Vec or numpy.ndarray or None</span>
-<span class="sd">            The second time derivitive of the state variables.</span>
+<span class="sd">            The second time derivative of the state variables.</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
 
@@ -1378,14 +1378,14 @@
 <span class="sd">            Use this supplied string for the base filename. Typically</span>
 <span class="sd">            only used from an external solver.</span>
 <span class="sd">        number : int or None</span>
-<span class="sd">            Use the user spplied number to index solution. Again, only</span>
+<span class="sd">            Use the user supplied number to index solution. Again, only</span>
 <span class="sd">            typically used from an external solver</span>
 <span class="sd">        timeSteps : int or list[int] or None</span>
 <span class="sd">            Time step index or indices to get state variables for.</span>
 <span class="sd">            If None, returns a solution for all time steps.</span>
 <span class="sd">            Defaults to None.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="c1"># Make sure assembler variables are up to date</span>
+        <span class="c1"># Make sure assembler variables are up-to-date</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_updateAssemblerVars</span><span class="p">()</span>
 
         <span class="c1"># Check input</span>
@@ -1409,21 +1409,23 @@
         <span class="c1"># Unless the writeSolution option is off write actual file:</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s2">&quot;writeSolution&quot;</span><span class="p">):</span>
 
-            <span class="c1"># If timeSteps is None, output all modes</span>
+            <span class="c1"># If timeSteps is None, output all timesteps</span>
             <span class="k">if</span> <span class="n">timeSteps</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
                 <span class="n">timeSteps</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">numSteps</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
 
             <span class="c1"># Write out each specified timestep</span>
             <span class="n">timeSteps</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">atleast_1d</span><span class="p">(</span><span class="n">timeSteps</span><span class="p">)</span>
             <span class="n">vec</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">assembler</span><span class="o">.</span><span class="n">createVec</span><span class="p">()</span>
+            <span class="n">dvec</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">assembler</span><span class="o">.</span><span class="n">createVec</span><span class="p">()</span>
+            <span class="n">ddvec</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">assembler</span><span class="o">.</span><span class="n">createVec</span><span class="p">()</span>
             <span class="k">for</span> <span class="n">timeStep</span> <span class="ow">in</span> <span class="n">timeSteps</span><span class="p">:</span>
-                <span class="c1"># Extract eigenvector</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">getVariables</span><span class="p">(</span><span class="n">timeStep</span><span class="p">,</span> <span class="n">states</span><span class="o">=</span><span class="n">vec</span><span class="p">)</span>
-                <span class="c1"># Set eigen mode in assembler</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">assembler</span><span class="o">.</span><span class="n">setVariables</span><span class="p">(</span><span class="n">vec</span><span class="p">)</span>
-                <span class="c1"># Write out mode shape as f5 file</span>
-                <span class="n">modeName</span> <span class="o">=</span> <span class="n">baseName</span> <span class="o">+</span> <span class="s2">&quot;_</span><span class="si">%3.3d</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">timeStep</span>
-                <span class="n">fileName</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">outputDir</span><span class="p">,</span> <span class="n">modeName</span><span class="p">)</span> <span class="o">+</span> <span class="s2">&quot;.f5&quot;</span>
+                <span class="c1"># Extract solution for timestep</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">getVariables</span><span class="p">(</span><span class="n">timeStep</span><span class="p">,</span> <span class="n">states</span><span class="o">=</span><span class="n">vec</span><span class="p">,</span> <span class="n">dstates</span><span class="o">=</span><span class="n">dvec</span><span class="p">,</span> <span class="n">ddstates</span><span class="o">=</span><span class="n">ddvec</span><span class="p">)</span>
+                <span class="c1"># Set timestep solution in assembler</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">assembler</span><span class="o">.</span><span class="n">setVariables</span><span class="p">(</span><span class="n">vec</span><span class="p">,</span> <span class="n">dvec</span><span class="p">,</span> <span class="n">ddvec</span><span class="p">)</span>
+                <span class="c1"># Write out timestep as f5 file</span>
+                <span class="n">stepName</span> <span class="o">=</span> <span class="n">baseName</span> <span class="o">+</span> <span class="s2">&quot;_</span><span class="si">%3.3d</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">timeStep</span>
+                <span class="n">fileName</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">outputDir</span><span class="p">,</span> <span class="n">stepName</span><span class="p">)</span> <span class="o">+</span> <span class="s2">&quot;.f5&quot;</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">outputViewer</span><span class="o">.</span><span class="n">writeToFile</span><span class="p">(</span><span class="n">fileName</span><span class="p">)</span></div></div>
 </pre></div>
 

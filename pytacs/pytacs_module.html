@@ -113,6 +113,8 @@ The following options, their default values and descriptions are listed below:</
 	 Flag for whether to include element stresses in f5 file.
 &#39;writeExtras&#39;: True
 	 Flag for whether to include element extra variables in f5 file.
+&#39;writeLoads&#39;: True
+	 Flag for whether to include external nodal loads in f5 file.
 &#39;writeCoordinateFrame&#39;: False
 	 Flag for whether to include element coordinate frames in f5 file.
 &#39;familySeparator&#39;: &#39;/&#39;
@@ -348,6 +350,82 @@ variable number and value elemCallBackFunction.</p></li>
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="tacs.pytacs.pyTACS.getGlobalDVs">
+<span class="sig-name descname"><span class="pre">getGlobalDVs</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/pytacs.html#pyTACS.getGlobalDVs"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.pytacs.pyTACS.getGlobalDVs" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a dict holding info about all current global DVs.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>globalDVs</strong> -- Dictionary holding global dv information.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.11)">dict</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.pytacs.pyTACS.getGlobalDVKeys">
+<span class="sig-name descname"><span class="pre">getGlobalDVKeys</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/pytacs.html#pyTACS.getGlobalDVKeys"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.pytacs.pyTACS.getGlobalDVKeys" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get key names for all current global DVs.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>globalDVKeys</strong> -- List holding global dv names.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.11)">list</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.pytacs.pyTACS.getGlobalDVNums">
+<span class="sig-name descname"><span class="pre">getGlobalDVNums</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/pytacs.html#pyTACS.getGlobalDVNums"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.pytacs.pyTACS.getGlobalDVNums" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get the dv nums corresponding to global DVs.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>globalDVNums</strong> -- List holding dv nums corresponding to global DVs.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.11)">list</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.pytacs.pyTACS.getTotalNumGlobalDVs">
+<span class="sig-name descname"><span class="pre">getTotalNumGlobalDVs</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/pytacs.html#pyTACS.getTotalNumGlobalDVs"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.pytacs.pyTACS.getTotalNumGlobalDVs" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get total number of global DVs across all processors.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>globalDVs</strong> -- Dictionary holding global dv information.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.11)">dict</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.pytacs.pyTACS.assignMassDV">
+<span class="sig-name descname"><span class="pre">assignMassDV</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">descript</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">eIDs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dvName</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'m'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/pytacs.html#pyTACS.assignMassDV"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.pytacs.pyTACS.assignMassDV" title="Permalink to this definition">¶</a></dt>
+<dd><p>Assign a global DV to a point mass element.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>descript</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.11)"><em>str</em></a>) -- Global DV key to assign mass design variable to. If the key is does not exist,
+it will automatically be created and added to global DVs.</p></li>
+<li><p><strong>eIDs</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)"><em>int</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.11)"><em>list</em></a>) -- Element IDs of concentrated mass to assign DV to (NASTRAN ordering)</p></li>
+<li><p><strong>dvName</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.11)"><em>str</em></a>) -- Name of mass property to apply DV to.
+May be <cite>m</cite> for mass, <cite>I11</cite>, <cite>I22</cite>, <cite>I12</cite>, etc. for moment of inertia components.
+Defaults to <cite>m</cite> (mass).</p></li>
+</ul>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<p>Currently only CONM2 cards are supported.</p>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="tacs.pytacs.pyTACS.selectCompIDs">
 <span class="sig-name descname"><span class="pre">selectCompIDs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">include</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">exclude</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">includeBounds</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nGroup</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">includeOp</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'or'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">excludeOp</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'or'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">projectVector</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/pytacs.html#pyTACS.selectCompIDs"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.pytacs.pyTACS.selectCompIDs" title="Permalink to this definition">¶</a></dt>
 <dd><p>This is the most important function of the entire setup
@@ -411,7 +489,7 @@ compID's EXCEPT the those in exclude.</p>
 of which 'include' components will be selected. This
 functionality uses a geometric approach to select the compIDs.
 All components within the project 2D convex hull are included.
-Therefore it is essential to split up concave include regions
+Therefore, it is essential to split up concave include regions
 into smaller convex regions. Use multiple calls to selectCompIDs to
 accumulate multiple regions.</p>
 <p>For example:</p>
@@ -574,10 +652,10 @@ objects as there are element types in elemDescripts (one for each).</p>
 during assembler creation.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>x</strong> -- The current design variable vector set in tacs.</p>
+<dd class="field-odd"><p><strong>x</strong> -- The original design variable vector set in tacs.</p>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p>array</p>
+<dd class="field-even"><p>numpy.array</p>
 </dd>
 </dl>
 </dd></dl>
@@ -877,6 +955,11 @@ options to the stdout on the root processor</p>
 <li><a class="reference internal" href="#api-reference">API Reference</a><ul>
 <li><a class="reference internal" href="#tacs.pytacs.pyTACS"><code class="docutils literal notranslate"><span class="pre">pyTACS</span></code></a><ul>
 <li><a class="reference internal" href="#tacs.pytacs.pyTACS.addGlobalDV"><code class="docutils literal notranslate"><span class="pre">pyTACS.addGlobalDV()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.pytacs.pyTACS.getGlobalDVs"><code class="docutils literal notranslate"><span class="pre">pyTACS.getGlobalDVs()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.pytacs.pyTACS.getGlobalDVKeys"><code class="docutils literal notranslate"><span class="pre">pyTACS.getGlobalDVKeys()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.pytacs.pyTACS.getGlobalDVNums"><code class="docutils literal notranslate"><span class="pre">pyTACS.getGlobalDVNums()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.pytacs.pyTACS.getTotalNumGlobalDVs"><code class="docutils literal notranslate"><span class="pre">pyTACS.getTotalNumGlobalDVs()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.pytacs.pyTACS.assignMassDV"><code class="docutils literal notranslate"><span class="pre">pyTACS.assignMassDV()</span></code></a></li>
 <li><a class="reference internal" href="#tacs.pytacs.pyTACS.selectCompIDs"><code class="docutils literal notranslate"><span class="pre">pyTACS.selectCompIDs()</span></code></a></li>
 <li><a class="reference internal" href="#tacs.pytacs.pyTACS.getBDFInfo"><code class="docutils literal notranslate"><span class="pre">pyTACS.getBDFInfo()</span></code></a></li>
 <li><a class="reference internal" href="#tacs.pytacs.pyTACS.getCompNames"><code class="docutils literal notranslate"><span class="pre">pyTACS.getCompNames()</span></code></a></li>
