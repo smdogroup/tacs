@@ -179,10 +179,14 @@ class TacsDVComp(om.ExplicitComponent):
             if "tacs_dvs" in d_outputs:
                 dfull_dv_array[self.src_indices] += d_outputs["tacs_dvs"]
                 if "dv_struct" in d_inputs:
-                    d_inputs["dv_struct"] += self.comm.allreduce(dfull_dv_array[self.struct_dvs])
+                    d_inputs["dv_struct"] += self.comm.allreduce(
+                        dfull_dv_array[self.struct_dvs]
+                    )
                 for dv_name in self.mass_dvs:
                     if dv_name in d_inputs:
-                        d_inputs[dv_name] += self.comm.allreduce(dfull_dv_array[self.mass_dvs[dv_name]])
+                        d_inputs[dv_name] += self.comm.allreduce(
+                            dfull_dv_array[self.mass_dvs[dv_name]]
+                        )
 
     def get_dv_src_indices(self):
         """
