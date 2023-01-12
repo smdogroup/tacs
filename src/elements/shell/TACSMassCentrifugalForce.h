@@ -16,7 +16,6 @@ class TACSMassCentrifugalForce : public TACSElement {
   const char* getObjectName();
   int getVarsPerNode();
   int getNumNodes();
-  int getDesignVarsPerNode() { return 0; }
   int getNumQuadraturePoints() { return 1; }
   double getQuadratureWeight(int n) { return 1.0; }
   double getQuadraturePoint(int n, double pt[]) { return 1.0; }
@@ -25,6 +24,23 @@ class TACSMassCentrifugalForce : public TACSElement {
   double getFaceQuadraturePoint(int face, int n, double pt[],
                                 double tangent[]) {
     return 0.0;
+  }
+
+  int getDesignVarNums(int elemIndex, int dvLen, int dvNums[]) {
+    return con->getDesignVarNums(elemIndex, dvLen, dvNums);
+  }
+
+  int setDesignVars(int elemIndex, int dvLen, const TacsScalar dvs[]) {
+    return con->setDesignVars(elemIndex, dvLen, dvs);
+  }
+
+  int getDesignVars(int elemIndex, int dvLen, TacsScalar dvs[]) {
+    return con->getDesignVars(elemIndex, dvLen, dvs);
+  }
+
+  int getDesignVarRange(int elemIndex, int dvLen, TacsScalar lb[],
+                        TacsScalar ub[]) {
+    return con->getDesignVarRange(elemIndex, dvLen, lb, ub);
   }
 
   // Functions for analysis
@@ -39,6 +55,12 @@ class TACSMassCentrifugalForce : public TACSElement {
                    const TacsScalar vars[], const TacsScalar dvars[],
                    const TacsScalar ddvars[], TacsScalar res[],
                    TacsScalar mat[]);
+
+  void addAdjResProduct(int elemIndex, double time, TacsScalar scale,
+                        const TacsScalar psi[], const TacsScalar Xpts[],
+                        const TacsScalar vars[], const TacsScalar dvars[],
+                        const TacsScalar ddvars[], int dvLen,
+                        TacsScalar dfdx[]);
 
  private:
   static const int NUM_DISPS = 6;

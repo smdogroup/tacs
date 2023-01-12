@@ -221,6 +221,7 @@ class pyTACS(BaseUI):
 
         # List of DV groups
         self.globalDVs = {}
+        self.massDVs = {}
         self.compIDBounds = {}
         self.addedCompIDs = set()
 
@@ -294,9 +295,136 @@ class pyTACS(BaseUI):
             "value": value,
             "lowerBound": lower,
             "upperBound": upper,
+            "isMassDV": False,
         }
         self.dvNum += 1
         self.scaleList.append(scale)
+
+    def getGlobalDVs(self):
+        """
+        Return a dict holding info about all current global DVs.
+
+        Returns
+        -------
+        globalDVs : dict
+            Dictionary holding global dv information.
+        """
+        return self.globalDVs.copy()
+
+    def getGlobalDVKeys(self):
+        """
+        Get key names for all current global DVs.
+
+        Returns
+        -------
+        globalDVKeys : list
+            List holding global dv names.
+        """
+        return list(self.globalDVs.keys())
+
+    def getGlobalDVNums(self):
+        """
+        Get the dv nums corresponding to global DVs.
+
+        Returns
+        -------
+        globalDVNums : list
+            List holding dv nums corresponding to global DVs.
+        """
+        return [self.globalDVs[descript]["num"] for descript in self.globalDVs]
+
+    def getTotalNumGlobalDVs(self):
+        """
+        Get total number of global DVs across all processors.
+
+        Returns
+        -------
+        globalDVs : dict
+            Dictionary holding global dv information.
+        """
+        return len(self.globalDVs)
+
+    @preinitialize_method
+    def assignMassDV(self, descript, eIDs, dvName="m"):
+        """
+        Assign a global DV to a point mass element.
+
+        Parameters
+        ----------
+        descript : str
+            Global DV key to assign mass design variable to. If the key is does not exist,
+            it will automatically be created and added to global DVs.
+
+        eIDs : int or list
+            Element IDs of concentrated mass to assign DV to (NASTRAN ordering)
+
+        dvName : str
+            Name of mass property to apply DV to.
+            May be `m` for mass, `I11`, `I22`, `I12`, etc. for moment of inertia components.
+            Defaults to `m` (mass).
+
+        Notes
+        -----
+        Currently only CONM2 cards are supported.
+        """
+        # Make sure eID is an array
+        eIDs = np.atleast_1d(eIDs)
+
+        # Check if referenced element ID is a CONM2 element
+        for eID in eIDs:
+            is_mass_element = False
+            if eID in self.bdfInfo.masses:
+                if self.bdfInfo.masses[eID].type in ["CONM2"]:
+                    is_mass_element = True
+
+            if not is_mass_element:
+                raise self._TACSError(
+                    f"Element ID '{eID}' does not correspond to a `CONM2` element. "
+                    "Only `CONM2` elements are supported for this method."
+                )
+
+        # Check if descript already exists in global dvs, if not add it
+        if descript not in self.globalDVs:
+            self.addGlobalDV(descript, None)
+
+        dv_dict = self.globalDVs[descript]
+
+        # Flag this global dv as being a mass dv
+        dv_dict["isMassDV"] = True
+
+        massDV = dv_dict["num"]
+        value = dv_dict["value"]
+        ub = dv_dict["upperBound"]
+        lb = dv_dict["lowerBound"]
+
+        for eID in eIDs:
+            # If the element ID hasn't already been added to massDVs, add it
+            if eID not in self.massDVs:
+                self.massDVs[eID] = {}
+
+            # Update the element entry with the dv num
+            self.massDVs[eID][f"{dvName}Num"] = massDV
+
+            # Update the element entry with the dv name
+            if value is not None:
+                self.massDVs[eID][dvName] = value
+            # If value was defined from previous call, remove it
+            elif dvName in self.massDVs[eID]:
+                self.massDVs[eID].pop(dvName)
+
+            # Update the element entry with the dv upper bound
+            if ub is not None:
+                self.massDVs[eID][f"{dvName}ub"] = ub
+            # If upper bound was defined from previous call, remove it
+            elif f"{dvName}ub" in self.massDVs[eID]:
+                self.massDVs[eID].pop(f"{dvName}ub")
+
+            # Update the element entry with the dv lower bound
+            if lb is not None:
+                self.massDVs[eID][f"{dvName}lb"] = lb
+            # If lower bound was defined from previous call, remove it
+            elif f"{dvName}lb" in self.massDVs[eID]:
+                self.massDVs[eID].pop(f"{dvName}lb")
 
     def selectCompIDs(
         self,
@@ -373,7 +501,7 @@ class pyTACS(BaseUI):
            of which 'include' components will be selected. This
            functionality uses a geometric approach to select the compIDs.
            All components within the project 2D convex hull are included.
-           Therefore it is essential to split up concave include regions
+           Therefore, it is essential to split up concave include regions
            into smaller convex regions. Use multiple calls to selectCompIDs to
            accumulate multiple regions.
 
@@ -642,7 +770,9 @@ class pyTACS(BaseUI):
         self._createOutputGroups()
         self._createElements(elemCallBack)
 
-        self.assembler = self.meshLoader.createTACSAssembler(self.varsPerNode)
+        self.assembler = self.meshLoader.createTACSAssembler(
+            self.varsPerNode, self.massDVs
+        )
 
         self._createOutputViewer()
 
@@ -1013,8 +1143,8 @@ class pyTACS(BaseUI):
 
         Returns
         ----------
-        x : array
-            The current design variable vector set in tacs.
+        x : numpy.array
+            The original design variable vector set in tacs.
 
         """
         return self.x0.getArray().copy()

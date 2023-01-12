@@ -535,7 +535,7 @@ class pyMeshLoader(BaseUI):
         elemObj = self.elemObjects[elemObjNum]
         return elemObj
 
-    def createTACSAssembler(self, varsPerNode):
+    def createTACSAssembler(self, varsPerNode, massDVs):
         """
         Setup TACSCreator object responsible for creating TACSAssembler
         """
@@ -554,7 +554,9 @@ class pyMeshLoader(BaseUI):
 
         # Append point mass elements to element list, these are not setup by the user
         for massInfo in self.bdfInfo.masses.values():
-            self._addTACSMassElement(massInfo, varsPerNode)
+            # Find the dv dict for this mass element, if not found return empty
+            dvDict = massDVs.get(massInfo.eid, {})
+            self._addTACSMassElement(massInfo, varsPerNode, dvDict)
 
         # Check for any nodes that aren't attached to at least one element
         self._unattachedNodeCheck()
@@ -772,17 +774,27 @@ class pyMeshLoader(BaseUI):
         self.elemObjects.append(rbeObj)
         return
 
-    def _addTACSMassElement(self, massInfo, varsPerNode):
+    def _addTACSMassElement(self, massInfo, varsPerNode, dvDict):
         """
         Method to automatically set up TACS mass elements from bdf file for user.
         User should *NOT* set these up in their elemCallBack function.
         """
         if massInfo.type == "CONM2":
             m = massInfo.mass
-            [I11, I12, I22, I13, I23, I33] = massInfo.I
-            con = tacs.constitutive.PointMassConstitutive(
-                m=m, I11=I11, I22=I22, I33=I33, I12=I12, I13=I13, I23=I23
-            )
+            I11, I12, I22, I13, I23, I33 = massInfo.I
+            # Create dict with input args for PointMassConstitutive
+            massArgs = {
+                "m": m,
+                "I11": I11,
+                "I22": I22,
+                "I33": I33,
+                "I12": I12,
+                "I13": I13,
+                "I23": I23,
+            }
+            # Update mass arguments with user-defined dv info
+            massArgs.update(dvDict)
+            con = tacs.constitutive.PointMassConstitutive(**massArgs)
         elif massInfo.type == "CONM1":
             M = np.zeros(21)
             M[0:6] = massInfo.mass_matrix[0:, 0]

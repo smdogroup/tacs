@@ -75,6 +75,29 @@ void TACSGeneralMassConstitutive::evalMassMatrix(int elemIndex,
 TacsScalar TACSGeneralMassConstitutive::evalDensity(int elemIndex,
                                                     const double pt[],
                                                     const TacsScalar X[]) {
-  TacsScalar mass = (M[0] + M[6] + M[11]) / 3.0;
+  TacsScalar M[21];
+  evalMassMatrix(elemIndex, pt, X, M);
+  TacsScalar mass =
+      (M[0] + M[6] + M[11] + 2.0 * M[1] + 2.0 * M[2] + 2.0 * M[7]) / 3.0;
   return mass;
+}
+
+// Add the derivative of the density
+void TACSGeneralMassConstitutive::addDensityDVSens(
+    int elemIndex, TacsScalar scale, const double pt[], const TacsScalar X[],
+    int dvLen, TacsScalar dfdx[]) {
+  TacsScalar psi[6] = {0.0};
+  psi[0] = psi[1] = psi[2] = 1.0;
+  scale /= 3.0;
+  addMassMatrixDVSensInnerProduct(elemIndex, scale, pt, X, psi, psi, dvLen,
+                                  dfdx);
+}
+
+// Add the contribution
+void TACSGeneralMassConstitutive::addInertiaDVSens(
+    int elemIndex, TacsScalar scale, const double pt[], const TacsScalar X[],
+    const TacsScalar ddu[], const TacsScalar psi[], int dvLen,
+    TacsScalar dfdx[]) {
+  addMassMatrixDVSensInnerProduct(elemIndex, scale, pt, X, psi, ddu, dvLen,
+                                  dfdx);
 }
