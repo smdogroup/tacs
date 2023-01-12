@@ -1378,9 +1378,9 @@ class TransientProblem(TACSProblem):
             dvec = self.assembler.createVec()
             ddvec = self.assembler.createVec()
             for timeStep in timeSteps:
-                # Extract eigenvector
+                # Extract solution for timestep
                 self.getVariables(timeStep, states=vec, dstates=dvec, ddstates=ddvec)
-                # Set eigen mode in assembler
+                # Set timestep solution in assembler
                 self.assembler.setVariables(vec, dvec, ddvec)
                 # Write out mode shape as f5 file
                 modeName = baseName + "_%3.3d" % timeStep
