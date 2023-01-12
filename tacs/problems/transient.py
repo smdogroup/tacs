@@ -1368,7 +1368,7 @@ class TransientProblem(TACSProblem):
         # Unless the writeSolution option is off write actual file:
         if self.getOption("writeSolution"):
 
-            # If timeSteps is None, output all modes
+            # If timeSteps is None, output all timesteps
             if timeSteps is None:
                 timeSteps = np.arange(self.numSteps + 1)
 
@@ -1382,7 +1382,7 @@ class TransientProblem(TACSProblem):
                 self.getVariables(timeStep, states=vec, dstates=dvec, ddstates=ddvec)
                 # Set timestep solution in assembler
                 self.assembler.setVariables(vec, dvec, ddvec)
-                # Write out mode shape as f5 file
-                modeName = baseName + "_%3.3d" % timeStep
-                fileName = os.path.join(outputDir, modeName) + ".f5"
+                # Write out timestep as f5 file
+                stepName = baseName + "_%3.3d" % timeStep
+                fileName = os.path.join(outputDir, stepName) + ".f5"
                 self.outputViewer.writeToFile(fileName)
