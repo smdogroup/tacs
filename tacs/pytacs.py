@@ -128,7 +128,7 @@ class pyTACS(BaseUI):
         "writeLoads": [
             bool,
             True,
-            "Flag for whether to include external nodal forces in f5 file.",
+            "Flag for whether to include external nodal loads in f5 file.",
         ],
         "writeCoordinateFrame": [
             bool,
