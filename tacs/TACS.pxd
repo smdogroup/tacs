@@ -47,6 +47,7 @@ cdef extern from "TACSElementTypes.h":
         TACS_OUTPUT_STRAINS
         TACS_OUTPUT_STRESSES
         TACS_OUTPUT_EXTRAS
+        TACS_OUTPUT_LOADS
 
     enum ElementType:
         TACS_ELEMENT_NONE
