@@ -125,6 +125,11 @@ class pyTACS(BaseUI):
             True,
             "Flag for whether to include element extra variables in f5 file.",
         ],
+        "writeLoads": [
+            bool,
+            True,
+            "Flag for whether to include external nodal forces in f5 file.",
+        ],
         "writeCoordinateFrame": [
             bool,
             False,
@@ -1438,6 +1443,8 @@ class pyTACS(BaseUI):
             write_flag |= tacs.TACS.OUTPUT_STRESSES
         if self.getOption("writeExtras"):
             write_flag |= tacs.TACS.OUTPUT_EXTRAS
+        if self.getOption("writeLoads"):
+            write_flag |= tacs.TACS.OUTPUT_LOADS
         if self.getOption("writeCoordinateFrame"):
             write_flag |= tacs.TACS.OUTPUT_COORDINATES
 
