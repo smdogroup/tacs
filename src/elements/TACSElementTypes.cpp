@@ -36,6 +36,9 @@ int TacsGetTotalOutputCount(ElementType etype, int flag) {
   if (flag & TACS_OUTPUT_EXTRAS) {
     nvals += TacsGetOutputComponentCount(etype, TACS_OUTPUT_EXTRAS);
   }
+  if (flag & TACS_OUTPUT_LOADS) {
+    nvals += TacsGetOutputComponentCount(etype, TACS_OUTPUT_LOADS);
+  }
 
   return nvals;
 }
@@ -59,6 +62,8 @@ int TacsGetOutputComponentCount(ElementType etype, int comp) {
       return 2;
     } else if (comp == TACS_OUTPUT_EXTRAS) {
       return 4;
+    } else if (comp == TACS_OUTPUT_LOADS) {
+      return 1;
     }
   } else if (etype == TACS_SCALAR_3D_ELEMENT) {
     if (comp == TACS_OUTPUT_DISPLACEMENTS) {
@@ -69,6 +74,8 @@ int TacsGetOutputComponentCount(ElementType etype, int comp) {
       return 3;
     } else if (comp == TACS_OUTPUT_EXTRAS) {
       return 4;
+    } else if (comp == TACS_OUTPUT_LOADS) {
+      return 1;
     }
   } else if (etype == TACS_BEAM_OR_SHELL_ELEMENT) {
     if (comp == TACS_OUTPUT_DISPLACEMENTS) {
@@ -79,6 +86,8 @@ int TacsGetOutputComponentCount(ElementType etype, int comp) {
       return 9;
     } else if (comp == TACS_OUTPUT_EXTRAS) {
       return 4;
+    } else if (comp == TACS_OUTPUT_LOADS) {
+      return 6;
     }
   } else if (etype == TACS_PLANE_STRESS_ELEMENT) {
     if (comp == TACS_OUTPUT_DISPLACEMENTS) {
@@ -89,6 +98,8 @@ int TacsGetOutputComponentCount(ElementType etype, int comp) {
       return 3;
     } else if (comp == TACS_OUTPUT_EXTRAS) {
       return 4;
+    } else if (comp == TACS_OUTPUT_LOADS) {
+      return 2;
     }
   } else if (etype == TACS_SOLID_ELEMENT) {
     if (comp == TACS_OUTPUT_DISPLACEMENTS) {
@@ -99,6 +110,8 @@ int TacsGetOutputComponentCount(ElementType etype, int comp) {
       return 6;
     } else if (comp == TACS_OUTPUT_EXTRAS) {
       return 4;
+    } else if (comp == TACS_OUTPUT_LOADS) {
+      return 3;
     }
   } else if (etype == TACS_PCM_ELEMENT) {
     if (comp == TACS_OUTPUT_DISPLACEMENTS) {
@@ -109,6 +122,8 @@ int TacsGetOutputComponentCount(ElementType etype, int comp) {
       return 2;
     } else if (comp == TACS_OUTPUT_EXTRAS) {
       return 5;
+    } else if (comp == TACS_OUTPUT_LOADS) {
+      return 1;
     }
   }
 
@@ -172,6 +187,8 @@ const char *TacsGetOutputComponentName(ElementType etype, int comp, int index) {
         default:
           return NULL;
       }
+    } else if (comp == TACS_OUTPUT_LOADS) {
+      return "f";
     }
   } else if (etype == TACS_SCALAR_3D_ELEMENT) {
     if (comp == TACS_OUTPUT_DISPLACEMENTS) {
@@ -211,6 +228,8 @@ const char *TacsGetOutputComponentName(ElementType etype, int comp, int index) {
         default:
           return NULL;
       }
+    } else if (comp == TACS_OUTPUT_LOADS) {
+      return "f";
     }
   } else if (etype == TACS_BEAM_OR_SHELL_ELEMENT) {
     if (comp == TACS_OUTPUT_DISPLACEMENTS) {
@@ -289,6 +308,23 @@ const char *TacsGetOutputComponentName(ElementType etype, int comp, int index) {
         default:
           return NULL;
       }
+    } else if (comp == TACS_OUTPUT_LOADS) {
+      switch (index) {
+        case 0:
+          return "fx";
+        case 1:
+          return "fy";
+        case 2:
+          return "fz";
+        case 3:
+          return "mx";
+        case 4:
+          return "my";
+        case 5:
+          return "mz";
+        default:
+          return NULL;
+      }
     }
   } else if (etype == TACS_PLANE_STRESS_ELEMENT) {
     if (comp == TACS_OUTPUT_DISPLACEMENTS) {
@@ -332,6 +368,15 @@ const char *TacsGetOutputComponentName(ElementType etype, int comp, int index) {
           return "dv2";
         case 3:
           return "dv3";
+        default:
+          return NULL;
+      }
+    } else if (comp == TACS_OUTPUT_LOADS) {
+      switch (index) {
+        case 0:
+          return "fx";
+        case 1:
+          return "fy";
         default:
           return NULL;
       }
@@ -395,6 +440,17 @@ const char *TacsGetOutputComponentName(ElementType etype, int comp, int index) {
         default:
           return NULL;
       }
+    } else if (comp == TACS_OUTPUT_LOADS) {
+      switch (index) {
+        case 0:
+          return "fx";
+        case 1:
+          return "fy";
+        case 2:
+          return "fz";
+        default:
+          return NULL;
+      }
     }
   } else if (etype == TACS_PCM_ELEMENT) {
     if (comp == TACS_OUTPUT_DISPLACEMENTS) {
@@ -434,6 +490,13 @@ const char *TacsGetOutputComponentName(ElementType etype, int comp, int index) {
           return "dv3";
         case 4:
           return "phase";
+        default:
+          return NULL;
+      }
+    } else if (comp == TACS_OUTPUT_LOADS) {
+      switch (index) {
+        case 0:
+          return "Q";
         default:
           return NULL;
       }

@@ -83,10 +83,7 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
             elem = elements.Beam2(transform, con)
             return elem
 
-        # Instantiate FEA Assembler
-        struct_options = {}
-
-        fea_assembler = pytacs.pyTACS(bdf_file, comm, options=struct_options)
+        fea_assembler.assignMassDV("tip_mass", 6)
 
         # Set up constitutive objects and elements
         fea_assembler.initialize(elem_call_back)

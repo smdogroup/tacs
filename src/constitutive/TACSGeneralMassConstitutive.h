@@ -41,13 +41,32 @@ class TACSGeneralMassConstitutive : public TACSConstitutive {
   void evalInertia(int elemIndex, const double pt[], const TacsScalar X[],
                    const TacsScalar ddu[], TacsScalar f[]);
 
+  // Evaluate dv sensitivity contribution to inertia force
+  void addInertiaDVSens(int elemIndex, TacsScalar scale, const double pt[],
+                        const TacsScalar X[], const TacsScalar ddu[],
+                        const TacsScalar psi[], int dvLen, TacsScalar dfdx[]);
+
   // Evaluate the mass matrix
-  void evalMassMatrix(int elemIndex, const double pt[], const TacsScalar X[],
-                      TacsScalar C[]);
+  virtual void evalMassMatrix(int elemIndex, const double pt[],
+                              const TacsScalar X[], TacsScalar C[]);
+
+  // Evaluate the mass matrix inner product sens
+  virtual void addMassMatrixDVSensInnerProduct(int elemIndex, TacsScalar scale,
+                                               const double pt[],
+                                               const TacsScalar X[],
+                                               const TacsScalar psi[],
+                                               const TacsScalar phi[],
+                                               int dvLen, TacsScalar dfdx[]) {
+    return;
+  }
 
   // Evaluate the material density
   TacsScalar evalDensity(int elemIndex, const double pt[],
                          const TacsScalar X[]);
+
+  // Add contribution to material density sens
+  void addDensityDVSens(int elemIndex, TacsScalar scale, const double pt[],
+                        const TacsScalar X[], int dvLen, TacsScalar dfdx[]);
 
   // Evaluate the specific heat
   TacsScalar evalSpecificHeat(int elemIndex, const double pt[],

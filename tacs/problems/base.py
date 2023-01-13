@@ -137,7 +137,7 @@ class TACSProblem(BaseUI):
 
     def getNodes(self):
         """
-        Return the mesh coordiantes of this problem.
+        Return the mesh coordinates of this problem.
 
         Returns
         -------
