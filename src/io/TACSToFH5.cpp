@@ -239,19 +239,7 @@ int TACSToFH5::writeToFile(const char *filename) {
       // Compute the residual w/o external forces to infer the applied load
       F = assembler->createVec();
       F->incref();
-      // Save a copy of auxiliary elements (pressures, tractions, etc.)
-      TACSAuxElements *aux = assembler->getAuxElements();
-      if (aux) {
-        aux->incref();
-      }
-      // Remove tractions/pressures so we're only left w/ internal forces
-      assembler->setAuxElements(NULL);
-      assembler->assembleRes(F);
-      // Set auxiliary elements back
-      assembler->setAuxElements(aux);
-      if (aux) {
-        aux->decref();
-      }
+      assembler->assembleRes(F, 0.0);
       F->getArray(&F_array);
     }
 
