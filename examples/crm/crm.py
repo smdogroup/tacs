@@ -205,6 +205,7 @@ flag = (
     | TACS.OUTPUT_STRAINS
     | TACS.OUTPUT_STRESSES
     | TACS.OUTPUT_EXTRAS
+    | TACS.OUTPUT_LOADS
 )
 f5 = TACS.ToFH5(tacs, TACS.BEAM_OR_SHELL_ELEMENT, flag)
 f5.writeToFile("ucrm.f5")
