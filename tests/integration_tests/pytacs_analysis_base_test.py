@@ -190,6 +190,50 @@ class PyTACSTestCase:
                                     atol=self.atol,
                                 )
 
+        def test_write_solution(self):
+            """
+            Test f5 solution writing procedure
+            """
+            # Create temporary directory to write f5 file to (only on root)
+            tmp_dir = None
+            tmp_dir_name = None
+            if self.comm.rank == 0:
+                tmp_dir = tempfile.TemporaryDirectory()
+                tmp_dir_name = tmp_dir.name
+            # Broadcast temp directory name to other procs
+            tmp_dir_name = self.comm.bcast(tmp_dir_name, root=0)
+
+            # Loop through each problem
+            for prob in self.tacs_probs:
+                # Solve problem
+                prob.solve()
+                # Write solution
+                prob.writeSolution(outputDir=tmp_dir_name)
+
+            if self.comm.rank == 0:
+                # Loop through each problem and make sure solution file exists
+                for prob in self.tacs_probs:
+                    with self.subTest(problem=prob.name):
+                        base_name = os.path.join(tmp_dir_name, f"{prob.name}_000")
+                        if isinstance(prob, problems.StaticProblem):
+                            f5_file = f"{base_name}.f5"
+                            self.assertTrue(
+                                os.path.exists(f5_file), msg=f"{f5_file} exists"
+                            )
+                        else:
+                            if isinstance(prob, problems.TransientProblem):
+                                num_steps = prob.getNumTimeSteps() + 1
+                            else:  # ModalProblem or BucklingProblem
+                                num_steps = prob.getNumEigs()
+                            for i in range(num_steps):
+                                f5_file = f"{base_name}_%3.3d.f5" % (i)
+                                self.assertTrue(
+                                    os.path.exists(f5_file), msg=f"{f5_file} exists"
+                                )
+
+                # delete all files in temp dir
+                tmp_dir.cleanup()
+
         def run_solve(self, dv=None, xpts=None):
             """
             Run a linear solve at specified design point and return functions of interest
