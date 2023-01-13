@@ -1,5 +1,8 @@
 import numpy as np
+import tempfile
+import os
 from tacs import TACS
+from tacs import problems
 import unittest
 from mpi4py import MPI
 
