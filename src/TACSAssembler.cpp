@@ -4176,7 +4176,7 @@ void TACSAssembler::assembleRes(TACSBVec *residual, const TacsScalar lambda) {
     // To avoid allocating memory inside the element loop, make the aux element
     // contribution array big enough for the largest element
     int maxNVar = this->maxElementSize;
-    TacsScalar *auxElemRes;
+    TacsScalar *auxElemRes = NULL;
     bool scaleAux = lambda != TacsScalar(1.0) && naux > 0;
     if (scaleAux) {
       auxElemRes = new TacsScalar[maxNVar];
@@ -4426,7 +4426,7 @@ void TACSAssembler::assembleMatType(ElementMatrixType matType, TACSMat *A,
     // To avoid allocating memory inside the element loop, make the aux element
     // contribution mat big enough for the largest element
     int maxNVar = this->maxElementSize;
-    TacsScalar *auxElemMat;
+    TacsScalar *auxElemMat = NULL;
     bool scaleAux = lambda != TacsScalar(1.0) && naux > 0;
     if (scaleAux) {
       auxElemMat = new TacsScalar[maxNVar * maxNVar];
@@ -4514,7 +4514,7 @@ void TACSAssembler::assembleMatCombo(ElementMatrixType matTypes[],
   // To avoid allocating memory inside the element loop, make the aux element
   // contribution mat big enough for the largest element
   int maxNVar = this->maxElementSize;
-  TacsScalar *auxElemMat;
+  TacsScalar *auxElemMat = NULL;
   bool scaleAux = lambda != TacsScalar(1.0) && naux > 0;
   if (scaleAux) {
     auxElemMat = new TacsScalar[maxNVar * maxNVar];
