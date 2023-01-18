@@ -55,7 +55,8 @@ class TACSMassElement : public TACSElement {
     element. Possibly NULL.
   */
   TACSElement *createElementCentrifugalForce(const TacsScalar omegaVec[],
-                                             const TacsScalar rotCenter[]);
+                                             const TacsScalar rotCenter[],
+                                             const bool first_order = false);
 
   // Functions for analysis
   // ----------------------

@@ -115,9 +115,10 @@ class TACSShellElement : public TACSElement {
   }
 
   TACSElement *createElementCentrifugalForce(const TacsScalar omega[],
-                                             const TacsScalar rotCenter[]) {
+                                             const TacsScalar rotCenter[],
+                                             const bool first_order = false) {
     return new TACSShellCentrifugalForce<vars_per_node, quadrature, basis>(
-        con, omega, rotCenter);
+        con, omega, rotCenter, first_order);
   }
 
   void computeEnergies(int elemIndex, double time, const TacsScalar Xpts[],

@@ -210,11 +210,17 @@ class TACSElement : public TACSObject {
   /**
     Create element centrifugal force class
 
+    @param omega The angular velocity vector
+    @param rotCenter The rotation center
+    @param first_order Whether to include the effect of displacements on the
+    centrifugal force, by default false
+
     @return The TACSElement centrifugal force class associated with this
     element. Possibly NULL.
   */
   virtual TACSElement *createElementCentrifugalForce(
-      const TacsScalar omega[], const TacsScalar rotCenter[]) {
+      const TacsScalar omega[], const TacsScalar rotCenter[],
+      const bool first_order = false) {
     return NULL;
   }
 
