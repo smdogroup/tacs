@@ -147,6 +147,33 @@ Use pyTACS.createStaticProblem instead.</p>
 </dl>
 </dd></dl>
 
+<dl class="py property">
+<dt class="sig sig-object py" id="tacs.problems.StaticProblem.loadScale">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">loadScale</span></span><a class="headerlink" href="#tacs.problems.StaticProblem.loadScale" title="Permalink to this definition">¶</a></dt>
+<dd><p>This is a scaling factor applied to all forcing terms</p>
+<p>Forcing terms includes both the user supplied force vector and the forcing terms coming from aux elements in
+the TACS assembler (e.g inertial, centrifugal forces)</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The current load scale</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.11)">float</a> or <a class="reference external" href="https://docs.python.org/3/library/functions.html#complex" title="(in Python v3.11)">complex</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.problems.StaticProblem.setLoadScale">
+<span class="sig-name descname"><span class="pre">setLoadScale</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/problems/static.html#StaticProblem.setLoadScale"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.problems.StaticProblem.setLoadScale" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set the scaling applied to external loads</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>value</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.11)"><em>float</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#complex" title="(in Python v3.11)"><em>complex</em></a>) -- Value to set the load scale to</p>
+</dd>
+</dl>
+</dd></dl>
+
 <dl class="py method">
 <dt class="sig sig-object py" id="tacs.problems.StaticProblem.addFunction">
 <span class="sig-name descname"><span class="pre">addFunction</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">funcName</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">funcHandle</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">compIDs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/problems/static.html#StaticProblem.addFunction"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.problems.StaticProblem.addFunction" title="Permalink to this definition">¶</a></dt>
@@ -392,7 +419,7 @@ This is most commonly used to model gravity loads on a model.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tacs.problems.StaticProblem.addCentrifugalLoad">
-<span class="sig-name descname"><span class="pre">addCentrifugalLoad</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">omegaVector</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rotCenter</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/problems/static.html#StaticProblem.addCentrifugalLoad"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.problems.StaticProblem.addCentrifugalLoad" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">addCentrifugalLoad</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">omegaVector</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rotCenter</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">firstOrder</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/problems/static.html#StaticProblem.addCentrifugalLoad"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.problems.StaticProblem.addCentrifugalLoad" title="Permalink to this definition">¶</a></dt>
 <dd><p>This method is used to add a fixed centrifugal load due to a
 uniform rotational velocity over the entire model.
 This is most commonly used to model rotors, rolling aircraft, etc.</p>
@@ -401,6 +428,8 @@ This is most commonly used to model rotors, rolling aircraft, etc.</p>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>omegaVector</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.24)"><em>numpy.ndarray</em></a>) -- Rotational velocity vector (rad/s) used to define centrifugal load.</p></li>
 <li><p><strong>rotCenter</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.24)"><em>numpy.ndarray</em></a>) -- Location of center of rotation used to define centrifugal load.</p></li>
+<li><p><strong>firstOrder</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.11)"><em>bool</em></a><em>, </em><em>optional</em>) -- Whether to use first order approximation for centrifugal load,
+which computes the force in the displaced position. By default False</p></li>
 </ul>
 </dd>
 </dl>
@@ -574,9 +603,24 @@ residual. Only typically used with aerostructural analysis.</p>
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>res</strong> (<em>TACS BVec</em><em> or </em><em>numpy array</em>) -- If res is not None, place the residuals into this array.</p></li>
-<li><p><strong>Fext</strong> (<em>TACS BVec</em><em> or </em><em>numpy array</em>) -- Distributed array containing additional loads (ex. aerodynamic forces for aerostructural coupling)
+<li><p><strong>Fext</strong> (<em>TACS BVec</em><em> or </em><em>numpy array</em><em>, </em><em>optional</em>) -- Distributed array containing additional loads (ex. aerodynamic forces for aerostructural coupling)
 to applied to RHS of the static problem.</p></li>
 </ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.problems.StaticProblem.getJacobian">
+<span class="sig-name descname"><span class="pre">getJacobian</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/problems/static.html#StaticProblem.getJacobian"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.problems.StaticProblem.getJacobian" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get the problem's Jacobian in sciPy sparse matrix format</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>A tuple of 2 scipy.sparse.bsr_matrices (A, B) if Jacobian is a TACSParallelMat, or 4
+scipy.sparse.bsr_matrices (A, B, C, D) if Jacobian is a TACSSchurMat</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.11)">tuple</a> of 2 or 4 scipy.sparse.bsr_matrices</p>
 </dd>
 </dl>
 </dd></dl>
@@ -648,28 +692,6 @@ problem</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>states</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.24)"><em>numpy.ndarray</em></a>) -- Values to set. Must be the size of getNumVariables()</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="tacs.problems.StaticProblem.writeSolution">
-<span class="sig-name descname"><span class="pre">writeSolution</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">outputDir</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">baseName</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">number</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/problems/static.html#StaticProblem.writeSolution"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.problems.StaticProblem.writeSolution" title="Permalink to this definition">¶</a></dt>
-<dd><p>This is a generic shell function that writes the output
-file(s).  The intent is that the user or calling program can
-call this function and pyTACS writes all the files that the
-user has defined. It is recommended that this function is used
-along with the associated logical flags in the options to
-determine the desired writing procedure</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>outputDir</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.11)"><em>str</em></a><em> or </em><em>None</em>) -- Use the supplied output directory</p></li>
-<li><p><strong>baseName</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.11)"><em>str</em></a><em> or </em><em>None</em>) -- Use this supplied string for the base filename. Typically
-only used from an external solver.</p></li>
-<li><p><strong>number</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)"><em>int</em></a><em> or </em><em>None</em>) -- Use the user supplied number to index solution. Again, only
-typically used from an external solver</p></li>
-</ul>
 </dd>
 </dl>
 </dd></dl>
@@ -792,6 +814,28 @@ optimization</p>
 </dl>
 </dd></dl>
 
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.problems.StaticProblem.writeSolution">
+<span class="sig-name descname"><span class="pre">writeSolution</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">outputDir</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">baseName</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">number</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/problems/static.html#StaticProblem.writeSolution"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.problems.StaticProblem.writeSolution" title="Permalink to this definition">¶</a></dt>
+<dd><p>This is a generic shell function that writes the output
+file(s).  The intent is that the user or calling program can
+call this function and pyTACS writes all the files that the
+user has defined. It is recommended that this function is used
+along with the associated logical flags in the options to
+determine the desired writing procedure</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>outputDir</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.11)"><em>str</em></a><em> or </em><em>None</em>) -- Use the supplied output directory</p></li>
+<li><p><strong>baseName</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.11)"><em>str</em></a><em> or </em><em>None</em>) -- Use this supplied string for the base filename. Typically
+only used from an external solver.</p></li>
+<li><p><strong>number</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)"><em>int</em></a><em> or </em><em>None</em>) -- Use the user supplied number to index solution. Again, only
+typically used from an external solver</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
 </dd></dl>
 
 </section>
@@ -812,6 +856,8 @@ optimization</p>
 <li><a class="reference internal" href="#api-reference">API Reference</a><ul>
 <li><a class="reference internal" href="#tacs.problems.StaticProblem"><code class="docutils literal notranslate"><span class="pre">StaticProblem</span></code></a><ul>
 <li><a class="reference internal" href="#tacs.problems.StaticProblem.setOption"><code class="docutils literal notranslate"><span class="pre">StaticProblem.setOption()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.problems.StaticProblem.loadScale"><code class="docutils literal notranslate"><span class="pre">StaticProblem.loadScale</span></code></a></li>
+<li><a class="reference internal" href="#tacs.problems.StaticProblem.setLoadScale"><code class="docutils literal notranslate"><span class="pre">StaticProblem.setLoadScale()</span></code></a></li>
 <li><a class="reference internal" href="#tacs.problems.StaticProblem.addFunction"><code class="docutils literal notranslate"><span class="pre">StaticProblem.addFunction()</span></code></a></li>
 <li><a class="reference internal" href="#tacs.problems.StaticProblem.setDesignVars"><code class="docutils literal notranslate"><span class="pre">StaticProblem.setDesignVars()</span></code></a></li>
 <li><a class="reference internal" href="#tacs.problems.StaticProblem.setNodes"><code class="docutils literal notranslate"><span class="pre">StaticProblem.setNodes()</span></code></a></li>
@@ -834,13 +880,13 @@ optimization</p>
 <li><a class="reference internal" href="#tacs.problems.StaticProblem.addXptSens"><code class="docutils literal notranslate"><span class="pre">StaticProblem.addXptSens()</span></code></a></li>
 <li><a class="reference internal" href="#tacs.problems.StaticProblem.addAdjointResXptSensProducts"><code class="docutils literal notranslate"><span class="pre">StaticProblem.addAdjointResXptSensProducts()</span></code></a></li>
 <li><a class="reference internal" href="#tacs.problems.StaticProblem.getResidual"><code class="docutils literal notranslate"><span class="pre">StaticProblem.getResidual()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.problems.StaticProblem.getJacobian"><code class="docutils literal notranslate"><span class="pre">StaticProblem.getJacobian()</span></code></a></li>
 <li><a class="reference internal" href="#tacs.problems.StaticProblem.addTransposeJacVecProduct"><code class="docutils literal notranslate"><span class="pre">StaticProblem.addTransposeJacVecProduct()</span></code></a></li>
 <li><a class="reference internal" href="#tacs.problems.StaticProblem.zeroVariables"><code class="docutils literal notranslate"><span class="pre">StaticProblem.zeroVariables()</span></code></a></li>
 <li><a class="reference internal" href="#tacs.problems.StaticProblem.zeroLoads"><code class="docutils literal notranslate"><span class="pre">StaticProblem.zeroLoads()</span></code></a></li>
 <li><a class="reference internal" href="#tacs.problems.StaticProblem.solveAdjoint"><code class="docutils literal notranslate"><span class="pre">StaticProblem.solveAdjoint()</span></code></a></li>
 <li><a class="reference internal" href="#tacs.problems.StaticProblem.getVariables"><code class="docutils literal notranslate"><span class="pre">StaticProblem.getVariables()</span></code></a></li>
 <li><a class="reference internal" href="#tacs.problems.StaticProblem.setVariables"><code class="docutils literal notranslate"><span class="pre">StaticProblem.setVariables()</span></code></a></li>
-<li><a class="reference internal" href="#tacs.problems.StaticProblem.writeSolution"><code class="docutils literal notranslate"><span class="pre">StaticProblem.writeSolution()</span></code></a></li>
 <li><a class="reference internal" href="#tacs.problems.StaticProblem.dtype"><code class="docutils literal notranslate"><span class="pre">StaticProblem.dtype</span></code></a></li>
 <li><a class="reference internal" href="#tacs.problems.StaticProblem.getDesignVars"><code class="docutils literal notranslate"><span class="pre">StaticProblem.getDesignVars()</span></code></a></li>
 <li><a class="reference internal" href="#tacs.problems.StaticProblem.getFunctionKeys"><code class="docutils literal notranslate"><span class="pre">StaticProblem.getFunctionKeys()</span></code></a></li>
@@ -854,6 +900,7 @@ optimization</p>
 <li><a class="reference internal" href="#tacs.problems.StaticProblem.printDefaultOptions"><code class="docutils literal notranslate"><span class="pre">StaticProblem.printDefaultOptions()</span></code></a></li>
 <li><a class="reference internal" href="#tacs.problems.StaticProblem.printOptions"><code class="docutils literal notranslate"><span class="pre">StaticProblem.printOptions()</span></code></a></li>
 <li><a class="reference internal" href="#tacs.problems.StaticProblem.setVarName"><code class="docutils literal notranslate"><span class="pre">StaticProblem.setVarName()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.problems.StaticProblem.writeSolution"><code class="docutils literal notranslate"><span class="pre">StaticProblem.writeSolution()</span></code></a></li>
 </ul>
 </li>
 </ul>

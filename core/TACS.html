@@ -104,7 +104,8 @@ evalAdjointResProduct, but uses more memory than calling it for
 each adjoint vector.</p>
 <p>adjoint: the array of adjoint vectors
 dvSens: the product of the derivative of the residuals and the adjoint
-num_dvs: the number of design variables</p>
+num_dvs: the number of design variables
+loadScale: Scaling factor for the aux element contributions, by default 1</p>
 </dd></dl>
 
 <dl class="py method">
@@ -176,12 +177,13 @@ matrix by zeroing the rows of the matrix associated with a
 boundary condition, and setting the diagonal to unity. The
 matrix assembly also performs any communication required so that
 the matrix can be used immediately after assembly.</p>
-<p>alpha:      coefficient on the variables
-beta:        coefficient on the time-derivative terms
-gamma:      coefficient on the second time derivative term
+<p>alpha:     coefficient on the variables
+beta:      coefficient on the time-derivative terms
+gamma:     coefficient on the second time derivative term
 residual:  the residual of the governing equations
-A:            the Jacobian matrix
-matOr:      the matrix orientation NORMAL or TRANSPOSE</p>
+A:         the Jacobian matrix
+matOr:     the matrix orientation NORMAL or TRANSPOSE
+loadScale: Scaling factor for the aux element contributions, by default 1</p>
 </dd></dl>
 
 <dl class="py method">
@@ -207,7 +209,8 @@ alpha:      coefficient on the variables
 beta:        coefficient on the time-derivative terms
 gamma:      coefficient on the second time derivative
 term
-matOr:      the matrix orientation NORMAL or TRANSPOSE</p>
+matOr:      the matrix orientation NORMAL or TRANSPOSE
+loadScale: Scaling factor for the aux element contributions, by default 1</p>
 </dd></dl>
 
 <dl class="py method">
@@ -219,7 +222,8 @@ set in the TACSSurfaceTraction class and any point loads. Note
 that the vector entries are zeroed first, and that the Dirichlet
 boundary conditions are applied after the assembly of the
 residual is complete.</p>
-<p>rhs:        the residual output</p>
+<p>rhs:        the residual output
+loadScale:  Scaling factor for the aux element contributions, by default 1</p>
 </dd></dl>
 
 <dl class="py method">

@@ -53,6 +53,7 @@
 <span class="c1"># Imports</span>
 <span class="c1"># =============================================================================</span>
 <span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">copy</span>
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 <span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">OrderedDict</span>
 <span class="kn">import</span> <span class="nn">time</span>
@@ -86,7 +87,11 @@
         <span class="s2">&quot;PCFillRatio&quot;</span><span class="p">:</span> <span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="mf">20.0</span><span class="p">,</span> <span class="s2">&quot;Preconditioner fill ratio.&quot;</span><span class="p">],</span>
         <span class="s2">&quot;subSpaceSize&quot;</span><span class="p">:</span> <span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="s2">&quot;Subspace size for Krylov solver.&quot;</span><span class="p">],</span>
         <span class="s2">&quot;nRestarts&quot;</span><span class="p">:</span> <span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="mi">15</span><span class="p">,</span> <span class="s2">&quot;Max number of restarts for Krylov solver.&quot;</span><span class="p">],</span>
-        <span class="s2">&quot;flexible&quot;</span><span class="p">:</span> <span class="p">[</span><span class="nb">bool</span><span class="p">,</span> <span class="kc">True</span><span class="p">,</span> <span class="s2">&quot;Flag for whether the preconditioner is flexible.&quot;</span><span class="p">],</span>
+        <span class="s2">&quot;flexible&quot;</span><span class="p">:</span> <span class="p">[</span>
+            <span class="nb">bool</span><span class="p">,</span>
+            <span class="kc">True</span><span class="p">,</span>
+            <span class="s2">&quot;Flag for whether the preconditioner is flexible.&quot;</span><span class="p">,</span>
+        <span class="p">],</span>
         <span class="s2">&quot;L2Convergence&quot;</span><span class="p">:</span> <span class="p">[</span>
             <span class="nb">float</span><span class="p">,</span>
             <span class="mf">1e-12</span><span class="p">,</span>
@@ -119,7 +124,11 @@
             <span class="s2">&quot;Print frequency for sub iterations of linear solver.&quot;</span><span class="p">,</span>
         <span class="p">],</span>
         <span class="c1"># Output Options</span>
-        <span class="s2">&quot;writeSolution&quot;</span><span class="p">:</span> <span class="p">[</span><span class="nb">bool</span><span class="p">,</span> <span class="kc">True</span><span class="p">,</span> <span class="s2">&quot;Flag for suppressing all f5 file writing.&quot;</span><span class="p">],</span>
+        <span class="s2">&quot;writeSolution&quot;</span><span class="p">:</span> <span class="p">[</span>
+            <span class="nb">bool</span><span class="p">,</span>
+            <span class="kc">True</span><span class="p">,</span>
+            <span class="s2">&quot;Flag for suppressing all f5 file writing.&quot;</span><span class="p">,</span>
+        <span class="p">],</span>
         <span class="s2">&quot;numberSolutions&quot;</span><span class="p">:</span> <span class="p">[</span>
             <span class="nb">bool</span><span class="p">,</span>
             <span class="kc">True</span><span class="p">,</span>
@@ -133,7 +142,13 @@
     <span class="p">}</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
-        <span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">assembler</span><span class="p">,</span> <span class="n">comm</span><span class="p">,</span> <span class="n">outputViewer</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">meshLoader</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">options</span><span class="o">=</span><span class="p">{}</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">name</span><span class="p">,</span>
+        <span class="n">assembler</span><span class="p">,</span>
+        <span class="n">comm</span><span class="p">,</span>
+        <span class="n">outputViewer</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">meshLoader</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">options</span><span class="o">=</span><span class="p">{},</span>
     <span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        NOTE: This class should not be initialized directly by the user.</span>
@@ -213,6 +228,9 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">startNorm</span> <span class="o">=</span> <span class="mf">0.0</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">finalNorm</span> <span class="o">=</span> <span class="mf">0.0</span>
 
+        <span class="c1"># Load scaling factor</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_loadScale</span> <span class="o">=</span> <span class="mf">1.0</span>
+
         <span class="n">opt</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span>
 
         <span class="c1"># Tangent Stiffness --- process the ordering option here:</span>
@@ -236,7 +254,12 @@
         <span class="n">tacs</span><span class="o">.</span><span class="n">elements</span><span class="o">.</span><span class="n">RBE2</span><span class="o">.</span><span class="n">setScalingParameters</span><span class="p">(</span><span class="n">opt</span><span class="p">(</span><span class="s2">&quot;RBEStiffnessScaleFactor&quot;</span><span class="p">),</span> <span class="mf">0.0</span><span class="p">)</span>
         <span class="n">tacs</span><span class="o">.</span><span class="n">elements</span><span class="o">.</span><span class="n">RBE3</span><span class="o">.</span><span class="n">setScalingParameters</span><span class="p">(</span><span class="n">opt</span><span class="p">(</span><span class="s2">&quot;RBEStiffnessScaleFactor&quot;</span><span class="p">),</span> <span class="mf">0.0</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">assembler</span><span class="o">.</span><span class="n">assembleJacobian</span><span class="p">(</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">alpha</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">beta</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">gamma</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">res</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">K</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">alpha</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">beta</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">gamma</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">res</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">K</span><span class="p">,</span>
+            <span class="n">loadScale</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">loadScale</span><span class="p">,</span>
         <span class="p">)</span>
 
         <span class="c1"># Now isolate art. terms</span>
@@ -265,7 +288,11 @@
         <span class="c1"># Operator, fill level, fill ratio, msub, rtol, ataol</span>
         <span class="k">if</span> <span class="n">opt</span><span class="p">(</span><span class="s2">&quot;KSMSolver&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span> <span class="o">==</span> <span class="s2">&quot;GMRES&quot;</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">KSM</span> <span class="o">=</span> <span class="n">tacs</span><span class="o">.</span><span class="n">TACS</span><span class="o">.</span><span class="n">KSM</span><span class="p">(</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">K</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">PC</span><span class="p">,</span> <span class="n">opt</span><span class="p">(</span><span class="s2">&quot;subSpaceSize&quot;</span><span class="p">),</span> <span class="n">opt</span><span class="p">(</span><span class="s2">&quot;nRestarts&quot;</span><span class="p">),</span> <span class="n">opt</span><span class="p">(</span><span class="s2">&quot;flexible&quot;</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">K</span><span class="p">,</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">PC</span><span class="p">,</span>
+                <span class="n">opt</span><span class="p">(</span><span class="s2">&quot;subSpaceSize&quot;</span><span class="p">),</span>
+                <span class="n">opt</span><span class="p">(</span><span class="s2">&quot;nRestarts&quot;</span><span class="p">),</span>
+                <span class="n">opt</span><span class="p">(</span><span class="s2">&quot;flexible&quot;</span><span class="p">),</span>
             <span class="p">)</span>
         <span class="c1"># TODO: Fix this</span>
         <span class="c1"># elif opt(&#39;KSMSolver&#39;).upper() == &#39;GCROT&#39;:</span>
@@ -309,7 +336,8 @@
         <span class="c1"># Update tolerances</span>
         <span class="k">if</span> <span class="s2">&quot;l2convergence&quot;</span> <span class="ow">in</span> <span class="n">name</span><span class="o">.</span><span class="n">lower</span><span class="p">():</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">KSM</span><span class="o">.</span><span class="n">setTolerances</span><span class="p">(</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s2">&quot;L2ConvergenceRel&quot;</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s2">&quot;L2Convergence&quot;</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s2">&quot;L2ConvergenceRel&quot;</span><span class="p">),</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s2">&quot;L2Convergence&quot;</span><span class="p">),</span>
             <span class="p">)</span>
         <span class="c1"># No need to reset solver for output options</span>
         <span class="k">elif</span> <span class="n">name</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">in</span> <span class="p">[</span>
@@ -322,6 +350,49 @@
         <span class="c1"># Reset solver for all other option changes</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_createVariables</span><span class="p">()</span></div>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">loadScale</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;This is a scaling factor applied to all forcing terms</span>
+
+<span class="sd">        Forcing terms includes both the user supplied force vector and the forcing terms coming from aux elements in</span>
+<span class="sd">        the TACS assembler (e.g inertial, centrifugal forces)</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        float or complex</span>
+<span class="sd">            The current load scale</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_loadScale</span>
+
+    <span class="nd">@loadScale</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">loadScale</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Set the scaling applied to external loads</span>
+
+<span class="sd">        This function exists so that calling `problem.loadScale = value` has the same effect as calling::</span>
+
+<span class="sd">            `problem.setLoadScale(value)`</span>
+
+<span class="sd">        This is important in case we want to update other things when the load scale is changed in future</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        value : float or complex</span>
+<span class="sd">            Value to set the load scale to</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">setLoadScale</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+
+<div class="viewcode-block" id="StaticProblem.setLoadScale"><a class="viewcode-back" href="../../../pytacs/static.html#tacs.problems.StaticProblem.setLoadScale">[docs]</a>    <span class="k">def</span> <span class="nf">setLoadScale</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Set the scaling applied to external loads</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        value : float or complex</span>
+<span class="sd">            Value to set the load scale to</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">value</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_loadScale</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_factorOnNext</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_loadScale</span> <span class="o">=</span> <span class="n">value</span></div>
 
 <div class="viewcode-block" id="StaticProblem.addFunction"><a class="viewcode-back" href="../../../pytacs/static.html#tacs.problems.StaticProblem.addFunction">[docs]</a>    <span class="k">def</span> <span class="nf">addFunction</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">funcName</span><span class="p">,</span> <span class="n">funcHandle</span><span class="p">,</span> <span class="n">compIDs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
@@ -615,7 +686,7 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_addInertialLoad</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">auxElems</span><span class="p">,</span> <span class="n">inertiaVector</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="StaticProblem.addCentrifugalLoad"><a class="viewcode-back" href="../../../pytacs/static.html#tacs.problems.StaticProblem.addCentrifugalLoad">[docs]</a>    <span class="k">def</span> <span class="nf">addCentrifugalLoad</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">omegaVector</span><span class="p">,</span> <span class="n">rotCenter</span><span class="p">):</span>
+<div class="viewcode-block" id="StaticProblem.addCentrifugalLoad"><a class="viewcode-back" href="../../../pytacs/static.html#tacs.problems.StaticProblem.addCentrifugalLoad">[docs]</a>    <span class="k">def</span> <span class="nf">addCentrifugalLoad</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">omegaVector</span><span class="p">,</span> <span class="n">rotCenter</span><span class="p">,</span> <span class="n">firstOrder</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        This method is used to add a fixed centrifugal load due to a</span>
 <span class="sd">        uniform rotational velocity over the entire model.</span>
@@ -629,8 +700,12 @@
 
 <span class="sd">        rotCenter : numpy.ndarray</span>
 <span class="sd">            Location of center of rotation used to define centrifugal load.</span>
+
+<span class="sd">        firstOrder : bool, optional</span>
+<span class="sd">            Whether to use first order approximation for centrifugal load,</span>
+<span class="sd">            which computes the force in the displaced position. By default False</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_addCentrifugalLoad</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">auxElems</span><span class="p">,</span> <span class="n">omegaVector</span><span class="p">,</span> <span class="n">rotCenter</span><span class="p">)</span></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_addCentrifugalLoad</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">auxElems</span><span class="p">,</span> <span class="n">omegaVector</span><span class="p">,</span> <span class="n">rotCenter</span><span class="p">,</span> <span class="n">firstOrder</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="StaticProblem.addLoadFromBDF"><a class="viewcode-back" href="../../../pytacs/static.html#tacs.problems.StaticProblem.addLoadFromBDF">[docs]</a>    <span class="k">def</span> <span class="nf">addLoadFromBDF</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">loadID</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="mf">1.0</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
@@ -681,7 +756,12 @@
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_factorOnNext</span><span class="p">:</span>
             <span class="c1"># Assemble residual and stiffness matrix (w/o artificial terms)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">assembler</span><span class="o">.</span><span class="n">assembleJacobian</span><span class="p">(</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">alpha</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">beta</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">gamma</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">res</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">K</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">alpha</span><span class="p">,</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">beta</span><span class="p">,</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">gamma</span><span class="p">,</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">res</span><span class="p">,</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">K</span><span class="p">,</span>
+                <span class="n">loadScale</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_loadScale</span><span class="p">,</span>
             <span class="p">)</span>
             <span class="c1"># Stiffness matrix must include artificial terms before pc factor</span>
             <span class="c1"># to prevent factorization issues w/ zero-diagonals</span>
@@ -720,7 +800,7 @@
         <span class="n">initSolveTime</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
 
         <span class="c1"># Get current residual</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">getResidual</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">res</span><span class="p">,</span> <span class="n">Fext</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">getResidual</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">res</span><span class="p">,</span> <span class="n">Fext</span><span class="o">=</span><span class="n">Fext</span><span class="p">)</span>
 
         <span class="c1"># Get rhs vector</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">K</span><span class="o">.</span><span class="n">mult</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">u</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">rhs</span><span class="p">)</span>
@@ -875,7 +955,10 @@
             <span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_pp</span><span class="p">(</span>
                 <span class="s2">&quot;| </span><span class="si">%-30s</span><span class="s2">: </span><span class="si">%10.3f</span><span class="s2"> sec&quot;</span>
-                <span class="o">%</span> <span class="p">(</span><span class="s2">&quot;TACS Function Eval Time&quot;</span><span class="p">,</span> <span class="n">functionEvalTime</span> <span class="o">-</span> <span class="n">setupProblemTime</span><span class="p">)</span>
+                <span class="o">%</span> <span class="p">(</span>
+                    <span class="s2">&quot;TACS Function Eval Time&quot;</span><span class="p">,</span>
+                    <span class="n">functionEvalTime</span> <span class="o">-</span> <span class="n">setupProblemTime</span><span class="p">,</span>
+                <span class="p">)</span>
             <span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_pp</span><span class="p">(</span>
                 <span class="s2">&quot;| </span><span class="si">%-30s</span><span class="s2">: </span><span class="si">%10.3f</span><span class="s2"> sec&quot;</span>
@@ -1007,12 +1090,18 @@
                 <span class="p">)</span>
             <span class="nb">print</span><span class="p">(</span>
                 <span class="s2">&quot;| </span><span class="si">%-30s</span><span class="s2">: </span><span class="si">%10.3f</span><span class="s2"> sec&quot;</span>
-                <span class="o">%</span> <span class="p">(</span><span class="s2">&quot;Total Sensitivity Time&quot;</span><span class="p">,</span> <span class="n">totalSensitivityTime</span> <span class="o">-</span> <span class="n">adjointFinishedTime</span><span class="p">)</span>
+                <span class="o">%</span> <span class="p">(</span>
+                    <span class="s2">&quot;Total Sensitivity Time&quot;</span><span class="p">,</span>
+                    <span class="n">totalSensitivityTime</span> <span class="o">-</span> <span class="n">adjointFinishedTime</span><span class="p">,</span>
+                <span class="p">)</span>
             <span class="p">)</span>
             <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;|&quot;</span><span class="p">)</span>
             <span class="nb">print</span><span class="p">(</span>
                 <span class="s2">&quot;| </span><span class="si">%-30s</span><span class="s2">: </span><span class="si">%10.3f</span><span class="s2"> sec&quot;</span>
-                <span class="o">%</span> <span class="p">(</span><span class="s2">&quot;Complete Sensitivity Time&quot;</span><span class="p">,</span> <span class="n">totalSensitivityTime</span> <span class="o">-</span> <span class="n">startTime</span><span class="p">)</span>
+                <span class="o">%</span> <span class="p">(</span>
+                    <span class="s2">&quot;Complete Sensitivity Time&quot;</span><span class="p">,</span>
+                    <span class="n">totalSensitivityTime</span> <span class="o">-</span> <span class="n">startTime</span><span class="p">,</span>
+                <span class="p">)</span>
             <span class="p">)</span>
             <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;+--------------------------------------------------+&quot;</span><span class="p">)</span></div>
 
@@ -1261,22 +1350,24 @@
 <span class="sd">        res : TACS BVec or numpy array</span>
 <span class="sd">            If res is not None, place the residuals into this array.</span>
 
-<span class="sd">        Fext : TACS BVec or numpy array</span>
+<span class="sd">        Fext : TACS BVec or numpy array, optional</span>
 <span class="sd">            Distributed array containing additional loads (ex. aerodynamic forces for aerostructural coupling)</span>
 <span class="sd">            to applied to RHS of the static problem.</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="c1"># Make sure assembler variables are up to date</span>
+        <span class="c1"># Make sure assembler variables are up-to-date</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_updateAssemblerVars</span><span class="p">()</span>
-        <span class="c1"># Assemble residual</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">assembler</span><span class="o">.</span><span class="n">assembleRes</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">res</span><span class="p">)</span>
-        <span class="c1"># Add the -F</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">res</span><span class="o">.</span><span class="n">axpy</span><span class="p">(</span><span class="o">-</span><span class="mf">1.0</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">F</span><span class="p">)</span>
 
-        <span class="c1"># Compute the RHS</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">assembler</span><span class="o">.</span><span class="n">assembleRes</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">res</span><span class="p">)</span>
-        <span class="c1"># Add force terms from rhs</span>
+        <span class="c1"># Determine if the user vector is a BVec or numpy array</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">res</span><span class="p">,</span> <span class="n">tacs</span><span class="o">.</span><span class="n">TACS</span><span class="o">.</span><span class="n">Vec</span><span class="p">):</span>
+            <span class="n">resArray</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">else</span><span class="p">:</span>  <span class="c1"># Input is a numpy array</span>
+            <span class="n">resArray</span> <span class="o">=</span> <span class="n">res</span>
+            <span class="n">res</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">res</span>
+
+        <span class="c1"># Sum the forces from the loads not handled by TACS</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">rhs</span><span class="o">.</span><span class="n">copyValues</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">F</span><span class="p">)</span>  <span class="c1"># Fixed loads</span>
+
         <span class="c1"># Add external loads, if specified</span>
         <span class="k">if</span> <span class="n">Fext</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">Fext</span><span class="p">,</span> <span class="n">tacs</span><span class="o">.</span><span class="n">TACS</span><span class="o">.</span><span class="n">Vec</span><span class="p">):</span>
@@ -1284,16 +1375,32 @@
             <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">Fext</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
                 <span class="n">rhsArray</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rhs</span><span class="o">.</span><span class="n">getArray</span><span class="p">()</span>
                 <span class="n">rhsArray</span><span class="p">[:]</span> <span class="o">=</span> <span class="n">rhsArray</span><span class="p">[:]</span> <span class="o">+</span> <span class="n">Fext</span><span class="p">[:]</span>
-        <span class="c1"># Zero out bc terms in rhs</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">assembler</span><span class="o">.</span><span class="n">applyBCs</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rhs</span><span class="p">)</span>
-        <span class="c1"># Add the -F</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">res</span><span class="o">.</span><span class="n">axpy</span><span class="p">(</span><span class="o">-</span><span class="mf">1.0</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">rhs</span><span class="p">)</span>
 
-        <span class="c1"># Output residual</span>
-        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">res</span><span class="p">,</span> <span class="n">tacs</span><span class="o">.</span><span class="n">TACS</span><span class="o">.</span><span class="n">Vec</span><span class="p">):</span>
-            <span class="n">res</span><span class="o">.</span><span class="n">copyValues</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">res</span><span class="p">)</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">res</span><span class="p">[:]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">res</span><span class="o">.</span><span class="n">getArray</span><span class="p">()</span></div>
+        <span class="c1"># Zero out forces on DOF that are subject to BCs</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assembler</span><span class="o">.</span><span class="n">applyBCs</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rhs</span><span class="p">)</span>
+
+        <span class="c1"># Assemble the TACS residual and subtract the externally handled loads</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assembler</span><span class="o">.</span><span class="n">assembleRes</span><span class="p">(</span><span class="n">res</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_loadScale</span><span class="p">)</span>
+        <span class="n">res</span><span class="o">.</span><span class="n">axpy</span><span class="p">(</span><span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">_loadScale</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">rhs</span><span class="p">)</span>
+
+        <span class="c1"># If requested, copy the residual to the output array</span>
+        <span class="k">if</span> <span class="n">resArray</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">resArray</span><span class="p">[:]</span> <span class="o">=</span> <span class="n">res</span><span class="o">.</span><span class="n">getArray</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="StaticProblem.getJacobian"><a class="viewcode-back" href="../../../pytacs/static.html#tacs.problems.StaticProblem.getJacobian">[docs]</a>    <span class="k">def</span> <span class="nf">getJacobian</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the problem&#39;s Jacobian in sciPy sparse matrix format</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        tuple of 2 or 4 scipy.sparse.bsr_matrices</span>
+<span class="sd">            A tuple of 2 scipy.sparse.bsr_matrices (A, B) if Jacobian is a TACSParallelMat, or 4</span>
+<span class="sd">            scipy.sparse.bsr_matrices (A, B, C, D) if Jacobian is a TACSSchurMat</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Make sure stiffness mat is up-to-date</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_updateAssemblerVars</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_initializeSolve</span><span class="p">()</span>
+        <span class="c1"># Return copy of scipy mat</span>
+        <span class="k">return</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">K</span><span class="o">.</span><span class="n">getMat</span><span class="p">())</span></div>
 
 <div class="viewcode-block" id="StaticProblem.addTransposeJacVecProduct"><a class="viewcode-back" href="../../../pytacs/static.html#tacs.problems.StaticProblem.addTransposeJacVecProduct">[docs]</a>    <span class="k">def</span> <span class="nf">addTransposeJacVecProduct</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">phi</span><span class="p">,</span> <span class="n">prod</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="mf">1.0</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
