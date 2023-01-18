@@ -4,10 +4,10 @@ from tacs import pytacs, elements, constitutive, functions, problems
 from pytacs_analysis_base_test import PyTACSTestCase
 
 """
-The nominal case is a 1m x 1m flat plate under three load cases: 
+The nominal case is a 1m x 1m flat plate under three load cases:
 a 10 kN point force at center, a 100kPa pressure applied to the surface, and a 100G gravity load. The
 perimeter of the plate is fixed in all 6 degrees of freedom. The plate comprises
-100 CQUAD4 elements and test KSFailure, StructuralMass, CenterOfMass, MomentOfInertia, 
+100 CQUAD4 elements and test KSFailure, StructuralMass, CenterOfMass, MomentOfInertia,
 and Compliance functions and sensitivities
 """
 

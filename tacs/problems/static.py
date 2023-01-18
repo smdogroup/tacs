@@ -12,6 +12,7 @@ other pieces of information.
 # Imports
 # =============================================================================
 import os
+import copy
 import numpy as np
 from collections import OrderedDict
 import time
@@ -45,7 +46,11 @@ class StaticProblem(TACSProblem):
         "PCFillRatio": [float, 20.0, "Preconditioner fill ratio."],
         "subSpaceSize": [int, 10, "Subspace size for Krylov solver."],
         "nRestarts": [int, 15, "Max number of restarts for Krylov solver."],
-        "flexible": [bool, True, "Flag for whether the preconditioner is flexible."],
+        "flexible": [
+            bool,
+            True,
+            "Flag for whether the preconditioner is flexible.",
+        ],
         "L2Convergence": [
             float,
             1e-12,
@@ -78,7 +83,11 @@ class StaticProblem(TACSProblem):
             "Print frequency for sub iterations of linear solver.",
         ],
         # Output Options
-        "writeSolution": [bool, True, "Flag for suppressing all f5 file writing."],
+        "writeSolution": [
+            bool,
+            True,
+            "Flag for suppressing all f5 file writing.",
+        ],
         "numberSolutions": [
             bool,
             True,
@@ -92,7 +101,13 @@ class StaticProblem(TACSProblem):
     }
 
     def __init__(
-        self, name, assembler, comm, outputViewer=None, meshLoader=None, options={}
+        self,
+        name,
+        assembler,
+        comm,
+        outputViewer=None,
+        meshLoader=None,
+        options={},
     ):
         """
         NOTE: This class should not be initialized directly by the user.
@@ -172,6 +187,9 @@ class StaticProblem(TACSProblem):
         self.startNorm = 0.0
         self.finalNorm = 0.0
 
+        # Load scaling factor
+        self._loadScale = 1.0
+
         opt = self.getOption
 
         # Tangent Stiffness --- process the ordering option here:
@@ -195,7 +213,12 @@ class StaticProblem(TACSProblem):
         tacs.elements.RBE2.setScalingParameters(opt("RBEStiffnessScaleFactor"), 0.0)
         tacs.elements.RBE3.setScalingParameters(opt("RBEStiffnessScaleFactor"), 0.0)
         self.assembler.assembleJacobian(
-            self.alpha, self.beta, self.gamma, self.res, self.K
+            self.alpha,
+            self.beta,
+            self.gamma,
+            self.res,
+            self.K,
+            loadScale=self.loadScale,
         )
 
         # Now isolate art. terms
@@ -224,7 +247,11 @@ class StaticProblem(TACSProblem):
         # Operator, fill level, fill ratio, msub, rtol, ataol
         if opt("KSMSolver").upper() == "GMRES":
             self.KSM = tacs.TACS.KSM(
-                self.K, self.PC, opt("subSpaceSize"), opt("nRestarts"), opt("flexible")
+                self.K,
+                self.PC,
+                opt("subSpaceSize"),
+                opt("nRestarts"),
+                opt("flexible"),
             )
         # TODO: Fix this
         # elif opt('KSMSolver').upper() == 'GCROT':
@@ -268,7 +295,8 @@ class StaticProblem(TACSProblem):
         # Update tolerances
         if "l2convergence" in name.lower():
             self.KSM.setTolerances(
-                self.getOption("L2ConvergenceRel"), self.getOption("L2Convergence")
+                self.getOption("L2ConvergenceRel"),
+                self.getOption("L2Convergence"),
             )
         # No need to reset solver for output options
         elif name.lower() in [
@@ -281,6 +309,49 @@ class StaticProblem(TACSProblem):
         # Reset solver for all other option changes
         else:
             self._createVariables()
+
+    @property
+    def loadScale(self):
+        """This is a scaling factor applied to all forcing terms
+
+        Forcing terms includes both the user supplied force vector and the forcing terms coming from aux elements in
+        the TACS assembler (e.g inertial, centrifugal forces)
+
+        Returns
+        -------
+        float or complex
+            The current load scale
+        """
+        return self._loadScale
+
+    @loadScale.setter
+    def loadScale(self, value):
+        """Set the scaling applied to external loads
+
+        This function exists so that calling `problem.loadScale = value` has the same effect as calling::
+
+            `problem.setLoadScale(value)`
+
+        This is important in case we want to update other things when the load scale is changed in future
+
+        Parameters
+        ----------
+        value : float or complex
+            Value to set the load scale to
+        """
+        self.setLoadScale(value)
+
+    def setLoadScale(self, value):
+        """Set the scaling applied to external loads
+
+        Parameters
+        ----------
+        value : float or complex
+            Value to set the load scale to
+        """
+        if value != self._loadScale:
+            self._factorOnNext = True
+            self._loadScale = value
 
     def addFunction(self, funcName, funcHandle, compIDs=None, **kwargs):
         """
@@ -574,7 +645,7 @@ class StaticProblem(TACSProblem):
         """
         self._addInertialLoad(self.auxElems, inertiaVector)
 
-    def addCentrifugalLoad(self, omegaVector, rotCenter):
+    def addCentrifugalLoad(self, omegaVector, rotCenter, firstOrder=False):
         """
         This method is used to add a fixed centrifugal load due to a
         uniform rotational velocity over the entire model.
@@ -588,8 +659,12 @@ class StaticProblem(TACSProblem):
 
         rotCenter : numpy.ndarray
             Location of center of rotation used to define centrifugal load.
+
+        firstOrder : bool, optional
+            Whether to use first order approximation for centrifugal load,
+            which computes the force in the displaced position. By default False
         """
-        self._addCentrifugalLoad(self.auxElems, omegaVector, rotCenter)
+        self._addCentrifugalLoad(self.auxElems, omegaVector, rotCenter, firstOrder)
 
     def addLoadFromBDF(self, loadID, scale=1.0):
         """
@@ -640,7 +715,12 @@ class StaticProblem(TACSProblem):
         if self._factorOnNext:
             # Assemble residual and stiffness matrix (w/o artificial terms)
             self.assembler.assembleJacobian(
-                self.alpha, self.beta, self.gamma, self.res, self.K
+                self.alpha,
+                self.beta,
+                self.gamma,
+                self.res,
+                self.K,
+                loadScale=self._loadScale,
             )
             # Stiffness matrix must include artificial terms before pc factor
             # to prevent factorization issues w/ zero-diagonals
@@ -679,7 +759,7 @@ class StaticProblem(TACSProblem):
         initSolveTime = time.time()
 
         # Get current residual
-        self.getResidual(self.res, Fext)
+        self.getResidual(self.res, Fext=Fext)
 
         # Get rhs vector
         self.K.mult(self.u, self.rhs)
@@ -834,7 +914,10 @@ class StaticProblem(TACSProblem):
             )
             self._pp(
                 "| %-30s: %10.3f sec"
-                % ("TACS Function Eval Time", functionEvalTime - setupProblemTime)
+                % (
+                    "TACS Function Eval Time",
+                    functionEvalTime - setupProblemTime,
+                )
             )
             self._pp(
                 "| %-30s: %10.3f sec"
@@ -966,12 +1049,18 @@ class StaticProblem(TACSProblem):
                 )
             print(
                 "| %-30s: %10.3f sec"
-                % ("Total Sensitivity Time", totalSensitivityTime - adjointFinishedTime)
+                % (
+                    "Total Sensitivity Time",
+                    totalSensitivityTime - adjointFinishedTime,
+                )
             )
             print("|")
             print(
                 "| %-30s: %10.3f sec"
-                % ("Complete Sensitivity Time", totalSensitivityTime - startTime)
+                % (
+                    "Complete Sensitivity Time",
+                    totalSensitivityTime - startTime,
+                )
             )
             print("+--------------------------------------------------+")
 
@@ -1220,22 +1309,24 @@ class StaticProblem(TACSProblem):
         res : TACS BVec or numpy array
             If res is not None, place the residuals into this array.
 
-        Fext : TACS BVec or numpy array
+        Fext : TACS BVec or numpy array, optional
             Distributed array containing additional loads (ex. aerodynamic forces for aerostructural coupling)
             to applied to RHS of the static problem.
 
         """
-        # Make sure assembler variables are up to date
+        # Make sure assembler variables are up-to-date
         self._updateAssemblerVars()
-        # Assemble residual
-        self.assembler.assembleRes(self.res)
-        # Add the -F
-        self.res.axpy(-1.0, self.F)
 
-        # Compute the RHS
-        self.assembler.assembleRes(self.res)
-        # Add force terms from rhs
+        # Determine if the user vector is a BVec or numpy array
+        if isinstance(res, tacs.TACS.Vec):
+            resArray = None
+        else:  # Input is a numpy array
+            resArray = res
+            res = self.res
+
+        # Sum the forces from the loads not handled by TACS
         self.rhs.copyValues(self.F)  # Fixed loads
+
         # Add external loads, if specified
         if Fext is not None:
             if isinstance(Fext, tacs.TACS.Vec):
@@ -1243,16 +1334,32 @@ class StaticProblem(TACSProblem):
             elif isinstance(Fext, np.ndarray):
                 rhsArray = self.rhs.getArray()
                 rhsArray[:] = rhsArray[:] + Fext[:]
-        # Zero out bc terms in rhs
-        self.assembler.applyBCs(self.rhs)
-        # Add the -F
-        self.res.axpy(-1.0, self.rhs)
 
-        # Output residual
-        if isinstance(res, tacs.TACS.Vec):
-            res.copyValues(self.res)
-        else:
-            res[:] = self.res.getArray()
+        # Zero out forces on DOF that are subject to BCs
+        self.assembler.applyBCs(self.rhs)
+
+        # Assemble the TACS residual and subtract the externally handled loads
+        self.assembler.assembleRes(res, self._loadScale)
+        res.axpy(-self._loadScale, self.rhs)
+
+        # If requested, copy the residual to the output array
+        if resArray is not None:
+            resArray[:] = res.getArray()
+
+    def getJacobian(self):
+        """Get the problem's Jacobian in sciPy sparse matrix format
+
+        Returns
+        -------
+        tuple of 2 or 4 scipy.sparse.bsr_matrices
+            A tuple of 2 scipy.sparse.bsr_matrices (A, B) if Jacobian is a TACSParallelMat, or 4
+            scipy.sparse.bsr_matrices (A, B, C, D) if Jacobian is a TACSSchurMat
+        """
+        # Make sure stiffness mat is up-to-date
+        self._updateAssemblerVars()
+        self._initializeSolve()
+        # Return copy of scipy mat
+        return copy.deepcopy(self.K.getMat())
 
     def addTransposeJacVecProduct(self, phi, prod, scale=1.0):
         """

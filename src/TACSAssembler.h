@@ -214,19 +214,23 @@ class TACSAssembler : public TACSObject {
 
   // Residual and Jacobian assembly
   // ------------------------------
-  void assembleRes(TACSBVec *residual);
+  void assembleRes(TACSBVec *residual, const TacsScalar lambda = 1.0);
   void assembleJacobian(TacsScalar alpha, TacsScalar beta, TacsScalar gamma,
                         TACSBVec *residual, TACSMat *A,
-                        MatrixOrientation matOr = TACS_MAT_NORMAL);
+                        MatrixOrientation matOr = TACS_MAT_NORMAL,
+                        const TacsScalar lambda = 1.0);
   void assembleMatType(ElementMatrixType matType, TACSMat *A,
-                       MatrixOrientation matOr = TACS_MAT_NORMAL);
+                       MatrixOrientation matOr = TACS_MAT_NORMAL,
+                       const TacsScalar lambda = 1.0);
   void assembleMatCombo(ElementMatrixType matTypes[], TacsScalar scale[],
                         int nmats, TACSMat *A,
-                        MatrixOrientation matOr = TACS_MAT_NORMAL);
+                        MatrixOrientation matOr = TACS_MAT_NORMAL,
+                        const TacsScalar lambda = 1.0);
   void addJacobianVecProduct(TacsScalar scale, TacsScalar alpha,
                              TacsScalar beta, TacsScalar gamma, TACSBVec *x,
                              TACSBVec *y,
-                             MatrixOrientation matOr = TACS_MAT_NORMAL);
+                             MatrixOrientation matOr = TACS_MAT_NORMAL,
+                             const TacsScalar lambda = 1.0);
 
   // Assemble data for and compute matrix-free matrix-vector products
   // ----------------------------------------------------------------
@@ -238,7 +242,8 @@ class TACSAssembler : public TACSObject {
   void addMatrixFreeVecProduct(ElementMatrixType matType,
                                const TacsScalar data[], TacsScalar temp[],
                                TACSBVec *x, TACSBVec *y,
-                               MatrixOrientation matOr = TACS_MAT_NORMAL);
+                               MatrixOrientation matOr = TACS_MAT_NORMAL,
+                               const TacsScalar lambda = 1.0);
 
   // Design variable handling
   // ------------------------
@@ -258,11 +263,13 @@ class TACSAssembler : public TACSObject {
   void addSVSens(TacsScalar alpha, TacsScalar beta, TacsScalar gamma,
                  int numFuncs, TACSFunction **funcs, TACSBVec **dfdu);
   void addAdjointResProducts(TacsScalar scale, int numAdjoints,
-                             TACSBVec **adjoint, TACSBVec **dfdx);
+                             TACSBVec **adjoint, TACSBVec **dfdx,
+                             const TacsScalar lambda = 1.0);
   void addXptSens(TacsScalar coef, int numFuncs, TACSFunction **funcs,
                   TACSBVec **dfdXpts);
   void addAdjointResXptSensProducts(TacsScalar scale, int numAdjoints,
-                                    TACSBVec **adjoint, TACSBVec **dfdXpts);
+                                    TACSBVec **adjoint, TACSBVec **dfdXpts,
+                                    const TacsScalar lambda = 1.0);
 
   // Advanced function interface - for time integration
   // --------------------------------------------------
@@ -449,6 +456,7 @@ class TACSAssembler : public TACSObject {
       res = NULL;
       mat = NULL;
       alpha = beta = gamma = 0.0;
+      lambda = 1.0;
       matType = TACS_STIFFNESS_MATRIX;
       matOr = TACS_MAT_NORMAL;
       coef = 0.0;
@@ -471,7 +479,7 @@ class TACSAssembler : public TACSObject {
 
     // Information for matrix assembly
     TACSMat *mat;
-    TacsScalar alpha, beta, gamma;
+    TacsScalar alpha, beta, gamma, lambda;
     ElementMatrixType matType;
     MatrixOrientation matOr;
 
