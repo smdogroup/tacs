@@ -168,10 +168,8 @@ class ModalProblem(TACSProblem):
 
         # Assemble and factor the stiffness/Jacobian matrix. Factor the
         # Jacobian and solve the linear system for the displacements
-        alpha = 1.0
-        beta = 0.0
-        gamma = 0.0
-        self.assembler.assembleJacobian(alpha, beta, gamma, None, self.K)
+        self.assembler.assembleMatType(tacs.TACS.STIFFNESS_MATRIX, self.K)
+        self.assembler.assembleMatType(tacs.TACS.MASS_MATRIX, self.M)
 
         subspace = self.getOption("subSpaceSize")
         restarts = self.getOption("nRestarts")
