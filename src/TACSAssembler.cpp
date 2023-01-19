@@ -4200,23 +4200,21 @@ void TACSAssembler::assembleRes(TACSBVec *residual, const TacsScalar lambda) {
       // Add the residual from any auxiliary elements, if the load factor is 1
       // they can be added straight to the elemRes, otherwise they need to be
       // scaled first
-      if (aux_count < naux) {
-        if (!scaleAux) {
-          while (aux_count < naux && aux[aux_count].num == i) {
-            aux[aux_count].elem->addResidual(i, time, elemXpts, vars, dvars,
-                                             ddvars, elemRes);
-            aux_count++;
-          }
-        } else {
-          memset(auxElemRes, 0, maxNVar * sizeof(TacsScalar));
-          while (aux_count < naux && aux[aux_count].num == i) {
-            aux[aux_count].elem->addResidual(i, time, elemXpts, vars, dvars,
-                                             ddvars, auxElemRes);
-            aux_count++;
-          }
-          for (int jj = 0; jj < nvars; jj++) {
-            elemRes[jj] += lambda * auxElemRes[jj];
-          }
+      if (!scaleAux) {
+        while (aux_count < naux && aux[aux_count].num == i) {
+          aux[aux_count].elem->addResidual(i, time, elemXpts, vars, dvars,
+                                           ddvars, elemRes);
+          aux_count++;
+        }
+      } else {
+        memset(auxElemRes, 0, maxNVar * sizeof(TacsScalar));
+        while (aux_count < naux && aux[aux_count].num == i) {
+          aux[aux_count].elem->addResidual(i, time, elemXpts, vars, dvars,
+                                           ddvars, auxElemRes);
+          aux_count++;
+        }
+        for (int jj = 0; jj < nvars; jj++) {
+          elemRes[jj] += lambda * auxElemRes[jj];
         }
       }
 
@@ -4336,13 +4334,11 @@ void TACSAssembler::assembleJacobian(TacsScalar alpha, TacsScalar beta,
 
       // Add the contribution to the residual and the Jacobian from the
       // auxiliary elements - if any, this is scaled by the loadFactor lambda
-      if (aux_count < naux) {
-        while (aux_count < naux && aux[aux_count].num == i) {
-          aux[aux_count].elem->addJacobian(
-              i, time, alpha * lambda, beta * lambda, gamma * lambda, elemXpts,
-              vars, dvars, ddvars, elemRes, elemMat);
-          aux_count++;
-        }
+      while (aux_count < naux && aux[aux_count].num == i) {
+        aux[aux_count].elem->addJacobian(i, time, alpha * lambda, beta * lambda,
+                                         gamma * lambda, elemXpts, vars, dvars,
+                                         ddvars, elemRes, elemMat);
+        aux_count++;
       }
 
       if (residual) {
@@ -4446,15 +4442,14 @@ void TACSAssembler::assembleMatType(ElementMatrixType matType, TACSMat *A,
 
       // Add the contribution from any auxiliary elements,  they need to be
       // scaled first
-      if (aux_count < naux) {
-        while (aux_count < naux && aux[aux_count].num == i) {
-          aux[aux_count].elem->getMatType(matType, i, time, elemXpts, vars,
-                                          auxElemMat);
-          for (int ii = 0; ii < nvars * nvars; ii++) {
-            elemMat[ii] += lambda * auxElemMat[ii];
-          }
-          aux_count++;
+      memset(auxElemMat, 0, maxNVar * maxNVar * sizeof(TacsScalar));
+      while (aux_count < naux && aux[aux_count].num == i) {
+        aux[aux_count].elem->getMatType(matType, i, time, elemXpts, vars,
+                                        auxElemMat);
+        for (int ii = 0; ii < nvars * nvars; ii++) {
+          elemMat[ii] += lambda * auxElemMat[ii];
         }
+        aux_count++;
       }
 
       // Add the values into the element
@@ -4526,23 +4521,21 @@ void TACSAssembler::assembleMatCombo(ElementMatrixType matTypes[],
       // 1 they can be added straight to the elemRes, otherwise they need to be
       // scaled first
       int nvars = elements[i]->getNumVariables();
-      if (aux_count < naux) {
-        if (!scaleAux) {
-          while (aux_count < naux && aux[aux_count].num == i) {
-            aux[aux_count].elem->getMatType(matTypes[j], i, time, elemXpts,
-                                            vars, elemMat);
-            aux_count++;
-          }
-        } else {
-          memset(auxElemMat, 0, maxNVar * maxNVar * sizeof(TacsScalar));
-          while (aux_count < naux && aux[aux_count].num == i) {
-            aux[aux_count].elem->getMatType(matTypes[j], i, time, elemXpts,
-                                            vars, auxElemMat);
-            aux_count++;
-          }
-          for (int ii = 0; ii < nvars * nvars; ii++) {
-            elemMat[ii] += lambda * auxElemMat[ii];
-          }
+      if (!scaleAux) {
+        while (aux_count < naux && aux[aux_count].num == i) {
+          aux[aux_count].elem->getMatType(matTypes[j], i, time, elemXpts, vars,
+                                          elemMat);
+          aux_count++;
+        }
+      } else {
+        memset(auxElemMat, 0, maxNVar * maxNVar * sizeof(TacsScalar));
+        while (aux_count < naux && aux[aux_count].num == i) {
+          aux[aux_count].elem->getMatType(matTypes[j], i, time, elemXpts, vars,
+                                          auxElemMat);
+          aux_count++;
+        }
+        for (int ii = 0; ii < nvars * nvars; ii++) {
+          elemMat[ii] += lambda * auxElemMat[ii];
         }
       }
 
@@ -5419,13 +5412,11 @@ void TACSAssembler::addJacobianVecProduct(TacsScalar scale, TacsScalar alpha,
     // Add the contribution to the residual and the Jacobian
     // from the auxiliary elements - if any, this is scaled by the loadFactor
     // lambda
-    if (aux_count < naux) {
-      while (aux_count < naux && aux[aux_count].num == i) {
-        aux[aux_count].elem->addJacobian(i, time, lambda * alpha, lambda * beta,
-                                         lambda * gamma, elemXpts, vars, dvars,
-                                         ddvars, yvars, elemMat);
-        aux_count++;
-      }
+    while (aux_count < naux && aux[aux_count].num == i) {
+      aux[aux_count].elem->addJacobian(i, time, lambda * alpha, lambda * beta,
+                                       lambda * gamma, elemXpts, vars, dvars,
+                                       ddvars, yvars, elemMat);
+      aux_count++;
     }
 
     // Temporarily set the variable array as the element input array
@@ -5485,15 +5476,13 @@ void TACSAssembler::getMatrixFreeDataSize(ElementMatrixType matType,
 
     // Add the contribution to the residual and the Jacobian
     // from the auxiliary elements - if any
-    if (aux_count < naux) {
-      while (aux_count < naux && aux[aux_count].num == i) {
-        aux[aux_count].elem->getMatVecDataSizes(matType, i, &dsize, &tsize);
-        data_size += dsize;
-        if (tsize > temp_size) {
-          temp_size = tsize;
-        }
-        aux_count++;
+    while (aux_count < naux && aux[aux_count].num == i) {
+      aux[aux_count].elem->getMatVecDataSizes(matType, i, &dsize, &tsize);
+      data_size += dsize;
+      if (tsize > temp_size) {
+        temp_size = tsize;
       }
+      aux_count++;
     }
   }
 
@@ -5560,15 +5549,13 @@ void TACSAssembler::assembleMatrixFreeData(ElementMatrixType matType,
 
     // Add the contribution to the residual and the Jacobian
     // from the auxiliary elements - if any
-    if (aux_count < naux) {
-      while (aux_count < naux && aux[aux_count].num == i) {
-        aux[aux_count].elem->getMatVecDataSizes(matType, i, &dsize, &tsize);
-        aux[aux_count].elem->getMatVecProductData(matType, i, time, alpha, beta,
-                                                  gamma, elemXpts, vars, dvars,
-                                                  ddvars, data);
-        data += dsize;
-        aux_count++;
-      }
+    while (aux_count < naux && aux[aux_count].num == i) {
+      aux[aux_count].elem->getMatVecDataSizes(matType, i, &dsize, &tsize);
+      aux[aux_count].elem->getMatVecProductData(matType, i, time, alpha, beta,
+                                                gamma, elemXpts, vars, dvars,
+                                                ddvars, data);
+      data += dsize;
+      aux_count++;
     }
   }
 }
@@ -5631,30 +5618,28 @@ void TACSAssembler::addMatrixFreeVecProduct(ElementMatrixType matType,
 
     // Add the contribution to the residual and the Jacobian
     // from the auxiliary elements - if any, scaled by lambda
-    if (aux_count < naux) {
-      if (lambda == TacsScalar(1.0)) {
-        while (aux_count < naux && aux[aux_count].num == i) {
-          aux[aux_count].elem->getMatVecDataSizes(matType, i, &dsize, &tsize);
-          aux[aux_count].elem->addMatVecProduct(matType, i, data, temp, xvars,
-                                                yvars);
-          data += dsize;
-          aux_count++;
-        }
-      } else {
-        TacsScalar aux_yvars[nvars];
-        for (int kk = 0; kk < nvars; kk++) {
-          aux_yvars[kk] = 0.0;
-        }
-        while (aux_count < naux && aux[aux_count].num == i) {
-          aux[aux_count].elem->getMatVecDataSizes(matType, i, &dsize, &tsize);
-          aux[aux_count].elem->addMatVecProduct(matType, i, data, temp, xvars,
-                                                yvars);
-          data += dsize;
-          aux_count++;
-        }
-        for (int kk = 0; kk < nvars; kk++) {
-          yvars[kk] += lambda * aux_yvars[kk];
-        }
+    if (lambda == TacsScalar(1.0)) {
+      while (aux_count < naux && aux[aux_count].num == i) {
+        aux[aux_count].elem->getMatVecDataSizes(matType, i, &dsize, &tsize);
+        aux[aux_count].elem->addMatVecProduct(matType, i, data, temp, xvars,
+                                              yvars);
+        data += dsize;
+        aux_count++;
+      }
+    } else {
+      TacsScalar aux_yvars[nvars];
+      for (int kk = 0; kk < nvars; kk++) {
+        aux_yvars[kk] = 0.0;
+      }
+      while (aux_count < naux && aux[aux_count].num == i) {
+        aux[aux_count].elem->getMatVecDataSizes(matType, i, &dsize, &tsize);
+        aux[aux_count].elem->addMatVecProduct(matType, i, data, temp, xvars,
+                                              yvars);
+        data += dsize;
+        aux_count++;
+      }
+      for (int kk = 0; kk < nvars; kk++) {
+        yvars[kk] += lambda * aux_yvars[kk];
       }
     }
 
