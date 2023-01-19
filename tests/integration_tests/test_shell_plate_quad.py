@@ -189,7 +189,7 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
             )
 
         # Add modal problem
-        mp = fea_assembler.createModalProblem("modal", 1e3, 10)
+        mp = fea_assembler.createModalProblem("modal", 7e4, 10)
         mp.setOption("printLevel", 2)
         tacs_probs.append(mp)
 
