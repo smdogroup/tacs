@@ -4426,11 +4426,7 @@ void TACSAssembler::assembleMatType(ElementMatrixType matType, TACSMat *A,
     // To avoid allocating memory inside the element loop, make the aux element
     // contribution mat big enough for the largest element
     int maxNVar = this->maxElementSize;
-    TacsScalar *auxElemMat = NULL;
-    bool scaleAux = lambda != TacsScalar(1.0) && naux > 0;
-    if (scaleAux) {
-      auxElemMat = new TacsScalar[maxNVar * maxNVar];
-    }
+    TacsScalar *auxElemMat = new TacsScalar[maxNVar * maxNVar];
 
     for (int i = 0; i < numElements; i++) {
       // Retrieve the element variables and node locations
@@ -4444,33 +4440,21 @@ void TACSAssembler::assembleMatType(ElementMatrixType matType, TACSMat *A,
       // Get the element matrix
       elements[i]->getMatType(matType, i, time, elemXpts, vars, elemMat);
 
-      // Add the contribution from any auxiliary elements, if the load factor is
-      // 1 they can be added straight to the elemRes, otherwise they need to be
+      // Add the contribution from any auxiliary elements,  they need to be
       // scaled first
-      if (!scaleAux) {
-        while (aux_count < naux && aux[aux_count].num == i) {
-          aux[aux_count].elem->getMatType(matType, i, time, elemXpts, vars,
-                                          elemMat);
-          aux_count++;
-        }
-      } else {
-        memset(auxElemMat, 0, maxNVar * maxNVar * sizeof(TacsScalar));
-        while (aux_count < naux && aux[aux_count].num == i) {
-          aux[aux_count].elem->getMatType(matType, i, time, elemXpts, vars,
-                                          auxElemMat);
-          aux_count++;
-        }
+      while (aux_count < naux && aux[aux_count].num == i) {
+        aux[aux_count].elem->getMatType(matType, i, time, elemXpts, vars,
+                                        auxElemMat);
         for (int ii = 0; ii < nvars * nvars; ii++) {
           elemMat[ii] += lambda * auxElemMat[ii];
         }
+        aux_count++;
       }
 
       // Add the values into the element
       addMatValues(A, i, elemMat, elementIData, elemWeights, matOr);
     }
-    if (scaleAux) {
-      delete[] auxElemMat;
-    }
+    delete[] auxElemMat;
   }
 
   A->beginAssembly();
