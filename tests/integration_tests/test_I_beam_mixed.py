@@ -1,7 +1,7 @@
-import numpy as np
 import os
-from tacs import pytacs, elements, constitutive, functions
+
 from pytacs_analysis_base_test import PyTACSTestCase
+from tacs import pytacs, functions
 
 """
 This model tests an I-beam made up of two different element types:

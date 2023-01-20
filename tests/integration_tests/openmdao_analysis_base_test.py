@@ -1,12 +1,14 @@
-from copy import deepcopy
-from tacs import TACS
 import unittest
 from collections import namedtuple
+from copy import deepcopy
+
 from openmdao.utils.assert_utils import (
     assert_near_equal,
     assert_check_partials,
     assert_check_totals,
 )
+
+from tacs import TACS
 
 ErrorTuple = namedtuple("ErrorTuple", ["forward", "reverse", "forward_reverse"])
 

@@ -22,18 +22,24 @@ History:
 # Imports
 # =============================================================================
 from __future__ import print_function
+
 import copy
 import numbers
-import numpy
 import time
+import warnings
 from functools import wraps
 
+import numpy
 import numpy as np
 from mpi4py import MPI
-import warnings
-import tacs.TACS, tacs.constitutive, tacs.elements, tacs.functions, tacs.problems.static
-from .utilities import BaseUI
+
+import tacs.TACS
+import tacs.constitutive
+import tacs.elements
+import tacs.functions
+import tacs.problems.static
 from tacs.pymeshloader import pyMeshLoader
+from .utilities import BaseUI
 
 warnings.simplefilter("default")
 

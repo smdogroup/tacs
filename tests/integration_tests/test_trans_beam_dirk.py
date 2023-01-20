@@ -1,7 +1,9 @@
-import numpy as np
 import os
-from tacs import pytacs, functions
+
+import numpy as np
+
 from pytacs_analysis_base_test import PyTACSTestCase
+from tacs import pytacs, functions
 
 """
 The test case features a cantilevered beam with a time-varying out-of-plane tip load. 

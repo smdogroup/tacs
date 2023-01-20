@@ -5,11 +5,13 @@ pyBase_problem
 # =============================================================================
 # Imports
 # =============================================================================
+from collections import OrderedDict
+
 import numpy as np
 from mpi4py import MPI
-from ..utilities import BaseUI
-from collections import OrderedDict
+
 import tacs.TACS
+from ..utilities import BaseUI
 
 
 class TACSProblem(BaseUI):

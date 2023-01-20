@@ -1,7 +1,9 @@
-import numpy as np
 import os
-from tacs import pytacs, elements, constitutive, functions
+
+import numpy as np
+
 from pytacs_analysis_base_test import PyTACSTestCase
+from tacs import pytacs, elements, constitutive, functions
 
 """
 This is the same test cases as `test_shell_plate_quad.py`, but the plate is been rotated
