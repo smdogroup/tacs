@@ -128,7 +128,7 @@ for step_i, time in enumerate(timeSteps):
 allProblems.append(transientProb)
 
 # Setup modal problem (Note: eigenvalues are in (rad/s)**2
-modalProb = FEAAssembler.createModalProblem("dynamic_modes", sigma=1e4, numEigs=10)
+modalProb = FEAAssembler.createModalProblem("dynamic_modes", sigma=7e4, numEigs=10)
 # Add modal problem to list
 allProblems.append(modalProb)
 
