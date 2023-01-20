@@ -370,7 +370,7 @@ class ModalProblem(TACSProblem):
 
         self.assembler.setDesignVars(self.x)
         self.assembler.setNodes(self.Xpts)
-        # Make previous auxiliary loads are removed
+        # Make sure previous auxiliary loads are removed
         self.assembler.setAuxElements(None)
         # Set artificial stiffness factors in rbe class
         c1 = self.getOption("RBEStiffnessScaleFactor")
