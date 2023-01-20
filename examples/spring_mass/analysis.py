@@ -24,14 +24,13 @@ mx = my = mz = 1.0 N * m
 # ==============================================================================
 from __future__ import print_function
 import os
-import matplotlib.pyplot as plt
 
 # ==============================================================================
 # External Python modules
 # ==============================================================================
-from pprint import pprint
 from mpi4py import MPI
 import numpy as np
+import matplotlib.pyplot as plt
 
 # ==============================================================================
 # Extension modules

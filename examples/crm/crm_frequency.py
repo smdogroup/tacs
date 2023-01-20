@@ -5,7 +5,8 @@ from __future__ import print_function
 # Import necessary libraries
 import numpy as np
 from mpi4py import MPI
-from tacs import TACS, elements, constitutive, functions
+
+from tacs import TACS, elements, constitutive
 
 # Load structural mesh from BDF file
 tacs_comm = MPI.COMM_WORLD
