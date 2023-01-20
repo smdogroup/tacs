@@ -4442,7 +4442,6 @@ void TACSAssembler::assembleMatType(ElementMatrixType matType, TACSMat *A,
 
       // Add the contribution from any auxiliary elements,  they need to be
       // scaled first
-      memset(auxElemMat, 0, maxNVar * maxNVar * sizeof(TacsScalar));
       while (aux_count < naux && aux[aux_count].num == i) {
         aux[aux_count].elem->getMatType(matType, i, time, elemXpts, vars,
                                         auxElemMat);
