@@ -52,13 +52,16 @@
 <span class="c1"># =============================================================================</span>
 <span class="c1"># Imports</span>
 <span class="c1"># =============================================================================</span>
-<span class="kn">import</span> <span class="nn">os</span>
 <span class="kn">import</span> <span class="nn">copy</span>
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-<span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">OrderedDict</span>
+<span class="kn">import</span> <span class="nn">os</span>
 <span class="kn">import</span> <span class="nn">time</span>
+<span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">OrderedDict</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="kn">import</span> <span class="nn">tacs.TACS</span>
+<span class="kn">import</span> <span class="nn">tacs.elements</span>
 <span class="kn">from</span> <span class="nn">.base</span> <span class="kn">import</span> <span class="n">TACSProblem</span>
-<span class="kn">import</span> <span class="nn">tacs.TACS</span><span class="o">,</span> <span class="nn">tacs.elements</span>
 
 
 <div class="viewcode-block" id="StaticProblem"><a class="viewcode-back" href="../../../pytacs/static.html#tacs.problems.StaticProblem">[docs]</a><span class="k">class</span> <span class="nc">StaticProblem</span><span class="p">(</span><span class="n">TACSProblem</span><span class="p">):</span>

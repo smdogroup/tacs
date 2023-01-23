@@ -63,18 +63,23 @@
 <span class="c1"># Imports</span>
 <span class="c1"># =============================================================================</span>
 <span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">print_function</span>
+
 <span class="kn">import</span> <span class="nn">copy</span>
 <span class="kn">import</span> <span class="nn">numbers</span>
-<span class="kn">import</span> <span class="nn">numpy</span>
 <span class="kn">import</span> <span class="nn">time</span>
+<span class="kn">import</span> <span class="nn">warnings</span>
 <span class="kn">from</span> <span class="nn">functools</span> <span class="kn">import</span> <span class="n">wraps</span>
 
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 <span class="kn">from</span> <span class="nn">mpi4py</span> <span class="kn">import</span> <span class="n">MPI</span>
-<span class="kn">import</span> <span class="nn">warnings</span>
-<span class="kn">import</span> <span class="nn">tacs.TACS</span><span class="o">,</span> <span class="nn">tacs.constitutive</span><span class="o">,</span> <span class="nn">tacs.elements</span><span class="o">,</span> <span class="nn">tacs.functions</span><span class="o">,</span> <span class="nn">tacs.problems.static</span>
-<span class="kn">from</span> <span class="nn">.utilities</span> <span class="kn">import</span> <span class="n">BaseUI</span>
+
+<span class="kn">import</span> <span class="nn">tacs.TACS</span>
+<span class="kn">import</span> <span class="nn">tacs.constitutive</span>
+<span class="kn">import</span> <span class="nn">tacs.elements</span>
+<span class="kn">import</span> <span class="nn">tacs.functions</span>
+<span class="kn">import</span> <span class="nn">tacs.problems.static</span>
 <span class="kn">from</span> <span class="nn">tacs.pymeshloader</span> <span class="kn">import</span> <span class="n">pyMeshLoader</span>
+<span class="kn">from</span> <span class="nn">.utilities</span> <span class="kn">import</span> <span class="n">BaseUI</span>
 
 <span class="n">warnings</span><span class="o">.</span><span class="n">simplefilter</span><span class="p">(</span><span class="s2">&quot;default&quot;</span><span class="p">)</span>
 
@@ -593,7 +598,7 @@
 <span class="sd">        &quot;&quot;&quot;</span>
 
         <span class="c1"># Defaults</span>
-        <span class="n">includeIDs</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nComp</span><span class="p">)</span>
+        <span class="n">includeIDs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nComp</span><span class="p">)</span>
         <span class="n">excludeIDs</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="n">includeBoundIDs</span> <span class="o">=</span> <span class="kc">None</span>
 
@@ -1056,7 +1061,7 @@
                 <span class="p">)</span>
 
             <span class="k">elif</span> <span class="n">propInfo</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="s2">&quot;PBUSH&quot;</span><span class="p">:</span>  <span class="c1"># Nastran spring</span>
-                <span class="n">k</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="mi">6</span><span class="p">)</span>
+                <span class="n">k</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="mi">6</span><span class="p">)</span>
                 <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">k</span><span class="p">)):</span>
                     <span class="k">if</span> <span class="n">propInfo</span><span class="o">.</span><span class="n">Ki</span><span class="p">[</span><span class="n">j</span><span class="p">]:</span>
                         <span class="n">k</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="n">propInfo</span><span class="o">.</span><span class="n">Ki</span><span class="p">[</span><span class="n">j</span><span class="p">]</span>
@@ -1112,7 +1117,7 @@
                 <span class="n">refAxis</span> <span class="o">=</span> <span class="n">elemDict</span><span class="p">[</span><span class="n">propertyID</span><span class="p">][</span><span class="s2">&quot;elements&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">g0_vector</span>
                 <span class="n">transform</span> <span class="o">=</span> <span class="n">tacs</span><span class="o">.</span><span class="n">elements</span><span class="o">.</span><span class="n">BeamRefAxisTransform</span><span class="p">(</span><span class="n">refAxis</span><span class="p">)</span>
             <span class="k">elif</span> <span class="n">propInfo</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="s2">&quot;PROD&quot;</span><span class="p">:</span>
-                <span class="n">refAxis</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">(</span>
+                <span class="n">refAxis</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span>
                     <span class="p">[</span><span class="mf">1.0</span><span class="p">,</span> <span class="o">-</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">]</span>
                 <span class="p">)</span>  <span class="c1"># dummy ref_axis, not really needed for rods</span>
                 <span class="n">transform</span> <span class="o">=</span> <span class="n">tacs</span><span class="o">.</span><span class="n">elements</span><span class="o">.</span><span class="n">BeamRefAxisTransform</span><span class="p">(</span><span class="n">refAxis</span><span class="p">)</span>
@@ -1125,7 +1130,7 @@
                     <span class="p">)</span>
                 <span class="k">elif</span> <span class="n">elemDict</span><span class="p">[</span><span class="n">propertyID</span><span class="p">][</span><span class="s2">&quot;elements&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">x</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span>
                     <span class="n">refAxis</span> <span class="o">=</span> <span class="p">(</span>
-                        <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">elemDict</span><span class="p">[</span><span class="n">propertyID</span><span class="p">][</span><span class="s2">&quot;elements&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">x</span><span class="p">)</span>
+                        <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">elemDict</span><span class="p">[</span><span class="n">propertyID</span><span class="p">][</span><span class="s2">&quot;elements&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">x</span><span class="p">)</span>
                         <span class="o">-</span> <span class="n">elemDict</span><span class="p">[</span><span class="n">propertyID</span><span class="p">][</span><span class="s2">&quot;elements&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
                         <span class="o">.</span><span class="n">nodes_ref</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
                         <span class="o">.</span><span class="n">get_position</span><span class="p">()</span>
@@ -1189,7 +1194,7 @@
 
 <span class="sd">        Returns</span>
 <span class="sd">        ----------</span>
-<span class="sd">        x : numpy.array</span>
+<span class="sd">        x : numpy.ndarray</span>
 <span class="sd">            The original design variable vector set in tacs.</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -1240,7 +1245,7 @@
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
-<span class="sd">        coords : array</span>
+<span class="sd">        coords : numpy.ndarray</span>
 <span class="sd">            Structural coordinate in array of size (N * 3) where N is</span>
 <span class="sd">            the number of structural nodes on this processor.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -1586,9 +1591,9 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">fam</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">aux</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
 
         <span class="c1"># Uniqify them and sort</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">fam</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">numpy</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fam</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fam</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fam</span><span class="p">))</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">compFam</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nComp</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="s2">&quot;intc&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">compFam</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nComp</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="s2">&quot;intc&quot;</span><span class="p">)</span>
         <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nComp</span><span class="p">):</span>
             <span class="n">aux</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">compDescripts</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s2">&quot;familySeparator&quot;</span><span class="p">))</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">compFam</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fam</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">aux</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
@@ -1797,7 +1802,7 @@
                             <span class="n">newVars</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">var</span><span class="p">)</span>
 
             <span class="c1"># Remove repeated dv nums from list</span>
-            <span class="n">newVars</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">newVars</span><span class="p">)</span>
+            <span class="n">newVars</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">newVars</span><span class="p">)</span>
             <span class="n">newVars</span><span class="o">.</span><span class="n">sort</span><span class="p">()</span>
 
             <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">newVars</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
@@ -1815,7 +1820,7 @@
 
             <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">newVars</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
                 <span class="k">if</span> <span class="n">scaleList</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">scaleList</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">numpy</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">newVars</span><span class="p">)))</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">scaleList</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">newVars</span><span class="p">)))</span>
                 <span class="k">else</span><span class="p">:</span>
                     <span class="c1"># Make sure that the scaleList is the correct length.</span>
                     <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">scaleList</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">newVars</span><span class="p">):</span>
@@ -1825,7 +1830,7 @@
 <span class="s2">                        </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">scaleList</span><span class="p">)</span><span class="si">}</span><span class="s2"> scale variables returned. The scale for these </span><span class="se">\</span>
 <span class="s2">                        variables will be set to 1.0. The scale variables are </span><span class="si">{</span><span class="nb">repr</span><span class="p">(</span><span class="n">scaleList</span><span class="p">)</span><span class="si">}</span><span class="s2">.&quot;</span>
                         <span class="p">)</span>
-                        <span class="bp">self</span><span class="o">.</span><span class="n">scaleList</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">numpy</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">newVars</span><span class="p">)))</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">scaleList</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">newVars</span><span class="p">)))</span>
                     <span class="k">else</span><span class="p">:</span>
                         <span class="bp">self</span><span class="o">.</span><span class="n">scaleList</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">scaleList</span><span class="p">)</span>
 
