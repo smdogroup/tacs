@@ -1,7 +1,7 @@
-import numpy as np
 import os
-from tacs import pytacs, TACS, elements, constitutive, functions, problems
+
 from pytacs_analysis_base_test import PyTACSTestCase
+from tacs import pytacs, elements, constitutive, functions
 
 """
 Test heat conduction of a problem with non-uniform boundary conditions with initial conditions everywhere else.

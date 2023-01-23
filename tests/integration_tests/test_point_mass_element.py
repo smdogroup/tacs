@@ -1,7 +1,9 @@
-import numpy as np
 import os
-from tacs import pytacs, TACS, elements, constitutive, functions, problems
+
+import numpy as np
+
 from pytacs_analysis_base_test import PyTACSTestCase
+from tacs import pytacs, TACS, functions
 
 """
 A point mass element free in space. 

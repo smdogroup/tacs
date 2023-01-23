@@ -1,6 +1,8 @@
-from tacs import TACS, elements, constitutive
-import numpy as np
 import unittest
+
+import numpy as np
+
+from tacs import TACS, elements, constitutive
 
 
 class ElementTest(unittest.TestCase):

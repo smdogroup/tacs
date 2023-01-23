@@ -1,7 +1,9 @@
 import os
+
 import numpy as np
-from tacs import pytacs, constitutive, elements, functions
+
 from pytacs_analysis_base_test import PyTACSTestCase
+from tacs import pytacs, constitutive, elements, functions
 
 """
 6 noded beam model 1 meter long in x direction with a two transient tip load cases:

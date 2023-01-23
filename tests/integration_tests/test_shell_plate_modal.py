@@ -1,7 +1,7 @@
-import numpy as np
 import os
-from tacs import pytacs, elements, constitutive, functions, problems
+
 from pytacs_analysis_base_test import PyTACSTestCase
+from tacs import pytacs, elements, constitutive
 
 """"
 The nominal case is a 1m x 1m flat plate under a modal analysis. The
