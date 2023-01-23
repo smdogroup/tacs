@@ -1,6 +1,7 @@
 import os
-from tacs import pytacs, constitutive, elements, functions
+
 from pytacs_analysis_base_test import PyTACSTestCase
+from tacs import pytacs, constitutive, elements, functions
 
 r"""
 Load a  structural model featuring two separate cantilevered plates connected by an RBE2 element.

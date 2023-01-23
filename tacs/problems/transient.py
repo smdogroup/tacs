@@ -12,11 +12,13 @@ other pieces of information.
 # Imports
 # =============================================================================
 import os
-import numpy as np
 import time
-from .base import TACSProblem
+
+import numpy as np
+
 import tacs.TACS
 import tacs.functions
+from .base import TACSProblem
 
 
 class TransientProblem(TACSProblem):

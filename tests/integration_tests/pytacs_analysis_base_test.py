@@ -1,10 +1,12 @@
-import numpy as np
-import tempfile
 import os
+import tempfile
+import unittest
+
+import numpy as np
+from mpi4py import MPI
+
 from tacs import TACS
 from tacs import problems
-import unittest
-from mpi4py import MPI
 
 """
 This is a base class for running pytacs unit test cases.

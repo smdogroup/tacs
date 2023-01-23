@@ -1,4 +1,5 @@
 import numpy as np
+
 from tacs import constitutive, elements
 
 # Material properties

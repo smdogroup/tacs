@@ -10,10 +10,12 @@ information for a modal analysis.
 # Imports
 # =============================================================================
 import os
-import numpy as np
 import time
-from .base import TACSProblem
+
+import numpy as np
+
 import tacs.TACS
+from .base import TACSProblem
 
 
 class ModalProblem(TACSProblem):

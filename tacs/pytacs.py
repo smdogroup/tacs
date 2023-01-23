@@ -22,18 +22,23 @@ History:
 # Imports
 # =============================================================================
 from __future__ import print_function
+
 import copy
 import numbers
-import numpy
 import time
+import warnings
 from functools import wraps
 
 import numpy as np
 from mpi4py import MPI
-import warnings
-import tacs.TACS, tacs.constitutive, tacs.elements, tacs.functions, tacs.problems.static
-from .utilities import BaseUI
+
+import tacs.TACS
+import tacs.constitutive
+import tacs.elements
+import tacs.functions
+import tacs.problems.static
 from tacs.pymeshloader import pyMeshLoader
+from .utilities import BaseUI
 
 warnings.simplefilter("default")
 
@@ -552,7 +557,7 @@ class pyTACS(BaseUI):
         """
 
         # Defaults
-        includeIDs = numpy.arange(self.nComp)
+        includeIDs = np.arange(self.nComp)
         excludeIDs = []
         includeBoundIDs = None
 
@@ -1015,7 +1020,7 @@ class pyTACS(BaseUI):
                 )
 
             elif propInfo.type == "PBUSH":  # Nastran spring
-                k = numpy.zeros(6)
+                k = np.zeros(6)
                 for j in range(len(k)):
                     if propInfo.Ki[j]:
                         k[j] = propInfo.Ki[j]
@@ -1071,7 +1076,7 @@ class pyTACS(BaseUI):
                 refAxis = elemDict[propertyID]["elements"][0].g0_vector
                 transform = tacs.elements.BeamRefAxisTransform(refAxis)
             elif propInfo.type == "PROD":
-                refAxis = numpy.array(
+                refAxis = np.array(
                     [1.0, -1.0, 1.0]
                 )  # dummy ref_axis, not really needed for rods
                 transform = tacs.elements.BeamRefAxisTransform(refAxis)
@@ -1084,7 +1089,7 @@ class pyTACS(BaseUI):
                     )
                 elif elemDict[propertyID]["elements"][0].x[0]:
                     refAxis = (
-                        numpy.array(elemDict[propertyID]["elements"][0].x)
+                        np.array(elemDict[propertyID]["elements"][0].x)
                         - elemDict[propertyID]["elements"][0]
                         .nodes_ref[0]
                         .get_position()
@@ -1148,7 +1153,7 @@ class pyTACS(BaseUI):
 
         Returns
         ----------
-        x : numpy.array
+        x : numpy.ndarray
             The original design variable vector set in tacs.
 
         """
@@ -1199,7 +1204,7 @@ class pyTACS(BaseUI):
 
         Returns
         -------
-        coords : array
+        coords : numpy.ndarray
             Structural coordinate in array of size (N * 3) where N is
             the number of structural nodes on this processor.
         """
@@ -1545,9 +1550,9 @@ class pyTACS(BaseUI):
             self.fam.append(aux[0])
 
         # Uniqify them and sort
-        self.fam = sorted(numpy.unique(self.fam))
+        self.fam = sorted(np.unique(self.fam))
 
-        self.compFam = numpy.zeros(self.nComp, dtype="intc")
+        self.compFam = np.zeros(self.nComp, dtype="intc")
         for i in range(self.nComp):
             aux = self.compDescripts[i].split(self.getOption("familySeparator"))
             self.compFam[i] = self.fam.index(aux[0])
@@ -1756,7 +1761,7 @@ class pyTACS(BaseUI):
                             newVars.append(var)
 
             # Remove repeated dv nums from list
-            newVars = numpy.unique(newVars)
+            newVars = np.unique(newVars)
             newVars.sort()
 
             if len(newVars) > 0:
@@ -1774,7 +1779,7 @@ class pyTACS(BaseUI):
 
             if len(newVars) > 0:
                 if scaleList is None:
-                    self.scaleList.extend(numpy.ones(len(newVars)))
+                    self.scaleList.extend(np.ones(len(newVars)))
                 else:
                     # Make sure that the scaleList is the correct length.
                     if len(scaleList) != len(newVars):
@@ -1784,7 +1789,7 @@ class pyTACS(BaseUI):
                         {len(scaleList)} scale variables returned. The scale for these \
                         variables will be set to 1.0. The scale variables are {repr(scaleList)}."
                         )
-                        self.scaleList.extend(numpy.ones(len(newVars)))
+                        self.scaleList.extend(np.ones(len(newVars)))
                     else:
                         self.scaleList.extend(scaleList)
 

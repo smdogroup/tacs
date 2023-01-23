@@ -23,14 +23,13 @@ import os
 # External Python modules
 # ==============================================================================
 from pprint import pprint
-
 import numpy as np
 from mpi4py import MPI
 
 # ==============================================================================
 # Extension modules
 # ==============================================================================
-from tacs import functions, constitutive, elements, TACS, pyTACS, problems
+from tacs import functions, constitutive, elements, pyTACS
 
 # Radius of plate
 R = 1.0

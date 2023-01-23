@@ -1,7 +1,7 @@
 import numpy as np
-from mpi4py import MPI
-from tacs import TACS, elements, constitutive, functions
+
 from static_analysis_base_test import StaticTestCase
+from tacs import TACS, elements, constitutive, functions
 
 """
 Create a cantilevered composite beam of linear quad shells with an 

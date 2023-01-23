@@ -11,13 +11,16 @@ other pieces of information.
 # =============================================================================
 # Imports
 # =============================================================================
-import os
 import copy
-import numpy as np
-from collections import OrderedDict
+import os
 import time
+from collections import OrderedDict
+
+import numpy as np
+
+import tacs.TACS
+import tacs.elements
 from .base import TACSProblem
-import tacs.TACS, tacs.elements
 
 
 class StaticProblem(TACSProblem):

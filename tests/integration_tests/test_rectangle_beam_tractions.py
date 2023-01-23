@@ -1,7 +1,9 @@
-import numpy as np
 import os
-from tacs import pytacs, elements, constitutive, functions
+
+import numpy as np
+
 from pytacs_analysis_base_test import PyTACSTestCase
+from tacs import pytacs, elements, constitutive, functions
 
 """
 6 noded beam model 1 meter long in x direction.

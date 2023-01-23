@@ -10,10 +10,14 @@ functionality.
 # =============================================================================
 # Imports
 # =============================================================================
-import numpy as np
 import itertools as it
-import tacs.TACS, tacs.elements, tacs.constitutive
+
+import numpy as np
 from pyNastran.bdf.bdf import read_bdf
+
+import tacs.TACS
+import tacs.constitutive
+import tacs.elements
 from .utilities import BaseUI
 
 

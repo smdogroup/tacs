@@ -1,6 +1,7 @@
 import os
-from tacs import pytacs, functions
+
 from pytacs_analysis_base_test import PyTACSTestCase
+from tacs import pytacs, functions
 
 """
 3 point masses are rigidly connected to one another using a RBE2 element.

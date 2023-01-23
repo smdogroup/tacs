@@ -13,19 +13,18 @@ the baseline and resonating transient problem.
 # ==============================================================================
 from __future__ import print_function
 import os
-import matplotlib.pyplot as plt
 
 # ==============================================================================
 # External Python modules
 # ==============================================================================
-from pprint import pprint
 from mpi4py import MPI
 import numpy as np
+import matplotlib.pyplot as plt
 
 # ==============================================================================
 # Extension modules
 # ==============================================================================
-from tacs import pyTACS, functions, constitutive, elements
+from tacs import pyTACS, constitutive, elements
 
 # Beginning and end time of transient problem
 tStart = 0.0  # s

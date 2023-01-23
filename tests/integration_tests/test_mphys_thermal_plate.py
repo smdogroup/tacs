@@ -1,11 +1,13 @@
-import numpy as np
 import os
-from tacs import elements, constitutive, functions
-import tacs.mphys
-from openmdao_analysis_base_test import OpenMDAOTestCase
+
+import numpy as np
+import openmdao.api as om
 from mphys.multipoint import Multipoint
 from mphys.scenario_structural import ScenarioStructural
-import openmdao.api as om
+
+import tacs.mphys
+from openmdao_analysis_base_test import OpenMDAOTestCase
+from tacs import elements, constitutive, functions
 
 """
 This is a simple 1m by 2m plate made up of four quad thermal elements.

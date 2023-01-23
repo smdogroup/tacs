@@ -1,5 +1,6 @@
-from tacs import TACS, elements
 import unittest
+
+from tacs import TACS, elements
 
 
 class BasisTest(unittest.TestCase):
