@@ -268,12 +268,68 @@ cdef extern from "TACSShellElementDefs.h":
         TACSTri3NonlinearThermalShell(TACSShellTransform*,
                              TACSShellConstitutive*)
 
+    cdef cppclass TACSQuad4ShellModRot(TACSElement):
+        TACSQuad4ShellModRot(TACSShellTransform*,
+                             TACSShellConstitutive*)
+
+    cdef cppclass TACSQuad9ShellModRot(TACSElement):
+        TACSQuad9ShellModRot(TACSShellTransform*,
+                             TACSShellConstitutive*)
+
+    cdef cppclass TACSQuad16ShellModRot(TACSElement):
+        TACSQuad16ShellModRot(TACSShellTransform*,
+                             TACSShellConstitutive*)
+
+    cdef cppclass TACSTri3ShellModRot(TACSElement):
+        TACSTri3ShellModRot(TACSShellTransform*,
+                             TACSShellConstitutive*)
+
     cdef cppclass TACSQuad4ShellQuaternion(TACSElement):
         TACSQuad4ShellQuaternion(TACSShellTransform*,
                              TACSShellConstitutive*)
 
-    cdef cppclass TACSQuad4ShellModRot(TACSElement):
-        TACSQuad4ShellModRot(TACSShellTransform*,
+    cdef cppclass TACSQuad9ShellQuaternion(TACSElement):
+        TACSQuad9ShellQuaternion(TACSShellTransform*,
+                             TACSShellConstitutive*)
+
+    cdef cppclass TACSQuad16ShellQuaternion(TACSElement):
+        TACSQuad16ShellQuaternion(TACSShellTransform*,
+                             TACSShellConstitutive*)
+
+    cdef cppclass TACSTri3ShellQuaternion(TACSElement):
+        TACSTri3ShellQuaternion(TACSShellTransform*,
+                             TACSShellConstitutive*)
+
+    cdef cppclass TACSQuad4NonlinearShellModRot(TACSElement):
+        TACSQuad4NonlinearShellModRot(TACSShellTransform*,
+                             TACSShellConstitutive*)
+
+    cdef cppclass TACSQuad9NonlinearShellModRot(TACSElement):
+        TACSQuad9NonlinearShellModRot(TACSShellTransform*,
+                             TACSShellConstitutive*)
+
+    cdef cppclass TACSQuad16NonlinearShellModRot(TACSElement):
+        TACSQuad16NonlinearShellModRot(TACSShellTransform*,
+                             TACSShellConstitutive*)
+
+    cdef cppclass TACSTri3NonlinearShellModRot(TACSElement):
+        TACSTri3NonlinearShellModRot(TACSShellTransform*,
+                             TACSShellConstitutive*)
+
+    cdef cppclass TACSQuad4NonlinearShellQuaternion(TACSElement):
+        TACSQuad4NonlinearShellQuaternion(TACSShellTransform*,
+                             TACSShellConstitutive*)
+
+    cdef cppclass TACSQuad9NonlinearShellQuaternion(TACSElement):
+        TACSQuad9NonlinearShellQuaternion(TACSShellTransform*,
+                             TACSShellConstitutive*)
+
+    cdef cppclass TACSQuad16NonlinearShellQuaternion(TACSElement):
+        TACSQuad16NonlinearShellQuaternion(TACSShellTransform*,
+                             TACSShellConstitutive*)
+
+    cdef cppclass TACSTri3NonlinearShellQuaternion(TACSElement):
+        TACSTri3NonlinearShellQuaternion(TACSShellTransform*,
                              TACSShellConstitutive*)
 
     cdef cppclass TACSBeam2(TACSElement):
