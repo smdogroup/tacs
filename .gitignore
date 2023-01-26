@@ -28,6 +28,7 @@ extern/
 *.tar.gz
 *.png
 *.plt
+*.szplt
 *_cs.*
 *.phy
 *.bin

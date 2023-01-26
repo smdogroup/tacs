@@ -13,12 +13,9 @@ sys.path.append(example_path)
 
 # Reference values for eval functions
 FUNC_REF = {
-    "TipForce_Compliance": 3.330278124467099,
-    "TipForce_KSFailure": 0.05892862309836616,
-    "TipForce_MaxZDisp": 3.264365445199943,
-    "TipMoment_Compliance": 3.947841759347387,
-    "TipMoment_KSFailure": 0.05893147298160939,
-    "TipMoment_MaxZDisp": 3.0611989186632727,
+    "TipForce_Compliance": 77.24115682981399,
+    "TipForce_KSFailure": 0.14455448256999026,
+    "TipForce_MaxZDisp": 0.30895165325451046,
 }
 
 

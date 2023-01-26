@@ -1,11 +1,16 @@
 """
 ==============================================================================
-Nonlinear cantilever beam analysis
+Box beam with skin buckling
 ==============================================================================
 @File    :   analysis.py
-@Date    :   2023/01/24
+@Date    :   2023/01/25
 @Author  :   Alasdair Christison Gray
-@Description :
+@Description : This code runs a nonlinear rectangular thin wall wingbox model
+with a single rib made from plate elements. The model is clamped at one end,
+with a smallout-of-plane force applied at the tip. Since the model only has one
+rib in the middle, the ribs and spars buckle almost immediatly for a small
+amount of load.
+This case was originally created by Tim Brooks.
 """
 
 # ==============================================================================
@@ -30,14 +35,12 @@ from tacs import pyTACS, constitutive, elements, functions
 # Constants
 # ==============================================================================
 COMM = MPI.COMM_WORLD
-BDF_FILE = os.path.join(os.path.dirname(__file__), "Beam.bdf")
-E = 1.2e6  # Young's modulus
+BDF_FILE = os.path.join(os.path.dirname(__file__), "Box.bdf")
+E = 1.2e8  # Young's modulus
 NU = 0.0  # Poisson's ratio
 RHO = 1.0  # density
 YIELD_STRESS = 1.0  # yield stress
-THICKNESS = 0.1  # Shell thickness
-FORCE_MULTIPLIER = 1.0  # Multiplier applied to the baseline force of EI/L^2
-MOMENT_MULTIPLIER = 0.1  # Multiplier applied to the baseline moment of 2pi * EI/L (which results in a full rotation)
+THICKNESS = 0.02  # Shell thickness
 STRAIN_TYPE = "linear"
 ROTATION_TYPE = "linear"
 
@@ -76,81 +79,70 @@ def elemCallBack(dvNum, compID, compDescript, elemDescripts, specialDVs, **kwarg
     )
     transform = None
     element = elementType(transform, con)
-    tScale = [10.0]
+    tScale = [50.0]
     return element, tScale
 
 
 FEAAssembler.initialize(elemCallBack)
 
 probOptions = {"printTiming": True}
-forceProblem = FEAAssembler.createStaticProblem("TipForce")
-momentProblem = FEAAssembler.createStaticProblem("TipMoment")
-problems = [forceProblem, momentProblem]
+problem = FEAAssembler.createStaticProblem("TipForce")
 
 
 # ==============================================================================
-# Determine beam dimensions and other properties
+# Find tip force points
 # ==============================================================================
 bdfInfo = FEAAssembler.getBDFInfo()
-# cross-reference bdf object to use some of pynastrans advanced features
+# cross-reference bdf object to use some of pynastran's advanced features
 bdfInfo.cross_reference()
 nodeCoords = bdfInfo.get_xyz_in_coord()
-beamLength = np.max(nodeCoords[:, 0]) - np.min(nodeCoords[:, 0])
-beamWidth = np.max(nodeCoords[:, 1]) - np.min(nodeCoords[:, 1])
-I = beamWidth * THICKNESS**3 / 12.0
-
-# ==============================================================================
-# Add tip loads for each case
-# ==============================================================================
-tipForce = FORCE_MULTIPLIER * E * I / beamLength**2
-tipMoment = MOMENT_MULTIPLIER * -2 * np.pi * E * I / beamLength
-
-# In order to work for different mesh sizes, we need to find the tip node IDs
-# ourselves, we do this by finding the indices of the nodes whose x coordinate
-# is within a tolerance of the max X coordinate in the mesh
-tipNodeInds = np.nonzero(np.abs(np.max(nodeCoords[:, 0]) - nodeCoords[:, 0]) <= 1e-6)[0]
 nastranNodeNums = list(bdfInfo.node_ids)
-tipNodeIDs = [nastranNodeNums[ii] for ii in tipNodeInds]
-numTipNodes = len(tipNodeIDs)
-
-forceProblem.addLoadToNodes(
-    tipNodeIDs, [0, 0, tipForce / numTipNodes, 0, 0, 0], nastranOrdering=True
+loadPoints = np.array(
+    [[3.0, 40.0, 0.75], [3.0, 40.0, -0.75], [-3.0, 40.0, 0.75], [-3.0, 40.0, -0.75]]
 )
-momentProblem.addLoadToNodes(
-    tipNodeIDs, [0, 0, 0, 0, tipMoment / numTipNodes, 0], nastranOrdering=True
+loadPointNodeIDs = []
+for ii in range(loadPoints.shape[0]):
+    # find the closest node to the load point
+    dists = np.linalg.norm(nodeCoords - loadPoints[ii, :], axis=1)
+    closestNode = np.argmin(dists)
+    loadPointNodeIDs.append(nastranNodeNums[closestNode])
+
+# ==============================================================================
+# Add tip loads
+# ==============================================================================
+tipForceTotal = 250.0
+problem.addLoadToNodes(
+    loadPointNodeIDs, [0.0, 0.0, tipForceTotal / 4, 0.0, 0.0, 0.0], nastranOrdering=True
 )
 
 # ==============================================================================
-# Add functions for each problem
+# Add functions
 # ==============================================================================
 
-for problem in problems:
-    # KS approximation of the maximum failure value
-    problem.addFunction(
-        "KSFailure", functions.KSFailure, ksWeight=80.0, ftype="discrete"
-    )
+# KS approximation of the maximum failure value
+problem.addFunction("KSFailure", functions.KSFailure, ksWeight=80.0, ftype="discrete")
 
-    # Maximum displacement in the z-direction (KS with a very large weight to get a true max)
-    problem.addFunction(
-        "MaxZDisp",
-        functions.KSDisplacement,
-        direction=np.array([0.0, 0.0, 1.0]),
-        ksWeight=1e20,
-        ftype="discrete",
-    )
-    # Compliance
-    problem.addFunction("Compliance", functions.Compliance)
+# Maximum displacement in the z-direction (KS with a very large weight to get a true max)
+problem.addFunction(
+    "MaxZDisp",
+    functions.KSDisplacement,
+    direction=np.array([0.0, 0.0, 1.0]),
+    ksWeight=1e20,
+    ftype="discrete",
+)
+
+# Compliance
+problem.addFunction("Compliance", functions.Compliance)
 
 # ==============================================================================
 # Solve all problems and evaluate functions
 # ==============================================================================
 funcs = {}
 funcsSens = {}
-for problem in problems:
-    problem.solve()
-    problem.evalFunctions(funcs)
-    problem.evalFunctionsSens(funcsSens)
-    problem.writeSolution(outputDir=os.path.dirname(__file__))
+problem.solve()
+problem.evalFunctions(funcs)
+problem.evalFunctionsSens(funcsSens)
+problem.writeSolution(outputDir=os.path.dirname(__file__))
 
 if COMM.rank == 0:
     pprint(funcs)
