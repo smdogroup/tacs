@@ -11,8 +11,9 @@ import os, numpy as np
 # run a steady elastic structural analysis in TACS using the tacsAIM wrapper caps2tacs submodule
 # -------------------------------------------------------------------------------------------------
 # 1: build the tacs aim, egads aim wrapper classes
+
 comm = MPI.COMM_WORLD
-caps_struct = caps2tacs.CapsStruct.build(csm_file="simple_naca_wing.csm")
+caps_struct = caps2tacs.CapsStruct.build(csm_file="simple_naca_wing.csm", comm=comm)
 tacs_aim = caps_struct.tacs_aim
 egads_aim = caps_struct.egads_aim.set_mesh(
     edge_pt_min=15,
@@ -40,13 +41,10 @@ caps2tacs.GridForce("OML", direction=[0, 0, 1.0], magnitude=100).register_to(tac
 # run the pre analysis to build tacs input files
 tacs_aim.pre_analysis()
 
-##################################################################
-### 5. Run the TACS steady structural analysis ###
+# ----------------------------------------------------------------------------------
+# 2. Run the TACS steady elastic structural analysis, forward + adjoint
 
-dat_file = os.path.join(tacs_aim.analysisDir, "nastran_CAPS.dat")
-fea_solver = pyTACS(dat_file)
-fea_solver.initialize()
-SPs = fea_solver.createTACSProbsFromBDF()
+SPs = tacs_aim.fea_solver.initialize().createTACSProbsFromBDF()
 
 # add mass and aggregated stress constraint functions
 for caseID in SPs:

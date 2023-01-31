@@ -9,6 +9,7 @@ from .property import ShellProperty
 from .loads import Load
 from .variables import ShapeVariable, ThicknessVariable
 from .egads_aim import EgadsAim
+from ..pytacs import pyTACS
 
 
 class TacsAimMetadata:
@@ -232,6 +233,13 @@ class TacsAim:
         """
         thick_vars = [dv for dv in self.variables if isinstance(dv, ThicknessVariable)]
         return list(np.sort(np.array(thick_vars)))
+
+    @property
+    def fea_solver(self) -> pyTACS:
+        """
+        build pyTACS from nastran dat file and comm
+        """
+        return pyTACS(self.dat_file, self.comm)
 
     @root_proc
     def pre_analysis(self):
