@@ -33,7 +33,12 @@ class CapsStruct:
         problem = pyCAPS.Problem(
             problemName=problem_name, capsFile=csm_file, outLevel=1
         )
-        return cls(problem, comm)
+        return cls(problem, comm
+        )
+
+    @property
+    def caps_problem(self):
+        return self._problem
 
     @property
     def geometry(self):

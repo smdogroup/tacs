@@ -242,8 +242,15 @@ class TacsAim:
         """
         return sorted thickness vars so that the TACS derivatives can be appropriately obtained
         """
-        thick_vars = [dv for dv in self.variables if isinstance(dv, ThicknessVariable)]
-        return list(np.sort(np.array(thick_vars)))
+        thick_var_names = [dv.name for dv in self.variables if isinstance(dv, ThicknessVariable)]
+        thick_sorted_names = np.sort(np.array(thick_var_names))
+        sorted_dvs = []
+        for sort_name in thick_sorted_names:
+            for var in self.variables:
+                if isinstance(var, ThicknessVariable) and var.name == sort_name:
+                    sorted_dvs.append(var)
+                    break
+        return sorted_dvs
 
     @property
     def fea_solver(self) -> pyTACS:
@@ -259,6 +266,7 @@ class TacsAim:
         """
         assert self._setup
         self.aim.preAnalysis()
+        return self
 
     @property
     def analysis_dir(self) -> str:
@@ -287,6 +295,7 @@ class TacsAim:
     @root_proc
     def post_analysis(self):
         self.aim.postAnalysis()
+        return self
 
     @property
     def is_setup(self) -> bool:
@@ -298,3 +307,23 @@ class TacsAim:
         returns the auto-built tacsAim object
         """
         return self._aim
+
+    def get_functions(self, evalFuncs):
+        """
+        get the function values out of the ESP/CAPS tacsAIM dynout or dynamic output
+        """
+        functions = {}
+        for func_name in evalFuncs:
+            functions[func_name] = self.aim.dynout[func_name].value
+        return functions
+
+    def get_gradients(self, evalFuncs, variables):
+        """
+        get the function values out of the ESP/CAPS tacsAIM dynout or dynamic output
+        """
+        gradients = {}
+        for func_name in evalFuncs:
+            gradients[func_name] = {}
+            for var in variables:
+                gradients[func_name][var.name] = self.aim.dynout[func_name].deriv(var.name)
+        return gradients
