@@ -3,13 +3,18 @@ __all__ = ["TacsAim"]
 from typing import TYPE_CHECKING, List
 import pyCAPS
 import os
-from .proc_decorator import root_proc, root_broadcast
+from .proc_decorator import root_proc
 from .materials import Material
 from .constraints import Constraint
 from .property import ShellProperty
 from .loads import Load
-from .variables import CapsShapeVariable, CapsThicknessVariable
+from .variables import ShapeVariable, ThicknessVariable
 
+
+class TacsAimMetadata:
+    def __init__(self, analysis_dir, project_name):
+        self.analysis_dir = analysis_dir
+        self.project_name = project_name
 
 class TacsAim:
     """
@@ -37,6 +42,21 @@ class TacsAim:
         self._first_setup = True
         self._first_analysis = True
 
+        # broadcast TacsAimMetadata from root proc to other processors
+        self._metadata = None
+        self._broadcast_metadata()
+
+    def _broadcast_metadata(self):
+        """
+        broadcast any tacs aim metadata needed for this class from root proc to other processors
+        """
+        if self.comm is None:
+            self._metadata = TacsAimMetadata(analysis_dir=self._aim.analysisDir, project_name=self._aim.ProjName)
+        else:
+            if self.comm.rank == 0:
+                self._metadata = TacsAimMetadata(analysis_dir=self._aim.analysisDir, project_name=self._aim.ProjName)
+            self._metadata = self.comm.bcast(self._metadata, root=0)
+
     @root_proc
     def update_design(self, design_dict: dict):
         """
@@ -44,59 +64,36 @@ class TacsAim:
         input x is a dictionary of values for each variable {"name" : value}
         """
 
+        # track any design change to monitor capsDirty
         changed_design: bool = False
 
-        # change setup to False since we have a new design we have to set up the aim again
+        # change all shape variables in TacsAim
+        for shape_var in self.shape_variables:
+            if shape_var.name in design_dict:
+                new_value = float(design_dict[shape_var.name])
 
-        for idx, design_variable in enumerate(self._design_variables):
-            dv_name = design_variable.name
-            if dv_name in design_dict:
+                # only modify the aim if the value has changed
+                if self._geometry.despmtr[shape_var.name].value != new_value:
+                    shape_var.value = new_value
+                    self._geometry.despmtr[shape_var.name].value = new_value
+                    changed_design = True
 
-                new_value = float(design_dict[dv_name])
+        # change all thickness variables in TacsAim
+        for thick_var in self.thickness_variables:
+            if thick_var.name in design_dict:
+                new_value = float(design_dict[thick_var.name])
 
-                if isinstance(design_variable, CapsShapeVariable):
-                    same_value: bool = (
-                        self._geometry.despmtr[dv_name].value == new_value
-                    )
-                    if not same_value:
-                        print(f"changing dv '{dv_name}' to {new_value}")
-                        design_variable.value = new_value
-                        self._geometry.despmtr[dv_name].value = new_value
-                        changed_design = True
-                        # self.aim.geometry.despmtr[dv_name].value = new_value
+                # only modify the aim if the value has changed
+                if thick_var.value != new_value:
+                    thick_var.value = new_value
 
-                elif isinstance(design_variable, CapsThicknessVariable):
+                    for property in self._properties:
+                        if property.caps_group == thick_var.caps_group:
+                            property.membrane_thickness = new_value
+                            changed_design = True
+                            break # after found matching property
 
-                    # change the thickness design variable
-                    same_value = design_variable.value == new_value
-                    if not same_value:
-                        self._design_variables[idx].value = new_value
-
-                    # change that property
-                    matching_property = False
-
-                    for idx, property in enumerate(self._properties):
-
-                        if isinstance(property, ShellProperty):
-                            matching_property = (
-                                property.caps_group == design_variable.caps_group
-                            )
-
-                            if matching_property:
-                                same_value: bool = (
-                                    property.membrane_thickness == new_value
-                                )
-
-                                if not same_value:
-                                    self._properties[idx].membrane_thickness = new_value
-                                    changed_design = True
-                                break
-
-                    if not matching_property:
-                        raise AssertionError(
-                            f"Couldn't find matching property '{dv_name}'..."
-                        )
-
+        # record whether the design has changed & first analysis flag as well
         self._setup = not (changed_design)
         if self._first_analysis:
             self._first_analysis = False
@@ -110,11 +107,11 @@ class TacsAim:
         """
         if isinstance(obj, Material):
             self._materials.append(obj)
-        elif isinstance(obj, CapsThicknessVariable):
+        elif isinstance(obj, ThicknessVariable):
             self._design_variables.append(obj)
             if obj.can_make_shell:
                 self._properties.append(obj.shell_property)
-        elif isinstance(obj, CapsShapeVariable):
+        elif isinstance(obj, ShapeVariable):
             self._design_variables.append(obj)
         elif isinstance(obj, ShellProperty):
             self._properties.append(obj)
@@ -178,7 +175,7 @@ class TacsAim:
                 if isinstance(
                     new_value, float
                 ):  # make sure not a list despmtr, not supported yet
-                    shape_var = CapsShapeVariable(name=despmtr, value=new_value)
+                    shape_var = ShapeVariable(name=despmtr, value=new_value)
                     self.add_variable(variable=shape_var)
             self._first_setup = False
 
@@ -186,7 +183,7 @@ class TacsAim:
         self._aim.input.Design_Variable_Relation = {
             dv.name: dv.DVR_dictionary
             for dv in self._design_variables
-            if isinstance(dv, CapsThicknessVariable)
+            if isinstance(dv, ThicknessVariable)
         }
         self._aim.input.Design_Variable = {
             dv.name: dv.DV_dictionary for dv in self._design_variables
@@ -196,16 +193,16 @@ class TacsAim:
         self._setup = True
 
     @property
-    def variables(self) -> List[CapsShapeVariable or CapsThicknessVariable]:
+    def variables(self) -> List[ShapeVariable or ThicknessVariable]:
         return self._design_variables
 
     @property
-    def shape_variables(self) -> List[CapsShapeVariable]:
-        return [dv for dv in self.variables if isinstance(dv, CapsShapeVariable)]
+    def shape_variables(self) -> List[ShapeVariable]:
+        return [dv for dv in self.variables if isinstance(dv, ShapeVariable)]
 
     @property
-    def thickness_variables(self) -> List[CapsThicknessVariable]:
-        return [dv for dv in self.variables if isinstance(dv, CapsThicknessVariable)]
+    def thickness_variables(self) -> List[ThicknessVariable]:
+        return [dv for dv in self.variables if isinstance(dv, ThicknessVariable)]
 
     @root_proc
     def pre_analysis(self):
@@ -214,10 +211,9 @@ class TacsAim:
         """
         self.aim.preAnalysis()
 
-    @root_broadcast
     @property
     def analysis_dir(self) -> str:
-        return self.aim.analysisDir
+        return self._metadata.analysis_dir
 
     @property
     def dat_file(self) -> str:
@@ -235,10 +231,9 @@ class TacsAim:
     def sens_file_path(self) -> str:
         return os.path.join(self.analysis_dir, self.sens_file)
 
-    @root_broadcast
     @property
     def project_name(self) -> str:
-        return self.aim.input.Proj_Name
+        return self._metadata.project_name
 
     @root_proc
     def post_analysis(self):

@@ -29,3 +29,10 @@ class EgadsAim:
     @property
     def aim(self):
         return self._aim
+
+    def register_to(self, tacs_aim):
+        """
+        cascade method to register the egads aim to the tacs aim wrapper class
+        """
+        tacs_aim.register(self)
+        return self

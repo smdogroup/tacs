@@ -1,10 +1,10 @@
-__all__ = ["CapsShapeVariable", "CapsThicknessVariable"]
+__all__ = ["ShapeVariable", "ThicknessVariable"]
 
 from .materials import Material
 from .property import ShellProperty
 
 
-class CapsShapeVariable:
+class ShapeVariable:
     """
     shape variables in ESP/CAPS are design parameters that affect the structural geometry
     """
@@ -30,7 +30,7 @@ class CapsShapeVariable:
         return self
 
 
-class CapsThicknessVariable:
+class ThicknessVariable:
     """
     Caps Thickness Variables control membrane thickness of shell elements
     """
