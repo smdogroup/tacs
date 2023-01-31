@@ -3,10 +3,11 @@ __all__ = ["TacsAim"]
 from typing import TYPE_CHECKING, List
 import pyCAPS
 import os
+from .proc_decorator import root_proc, root_broadcast
 from .materials import Material
 from .constraints import Constraint
 from .property import ShellProperty
-from .loads import *
+from .loads import Load
 from .variables import CapsShapeVariable, CapsThicknessVariable
 
 
@@ -17,8 +18,9 @@ class TacsAim:
     only supports shell properties at the moment
     """
 
-    def __init__(self, caps_problem: pyCAPS.Problem):
+    def __init__(self, caps_problem: pyCAPS.Problem, comm=None):
         self._aim = caps_problem.analysis.create(aim="tacsAIM", name="tacs")
+        self.comm = comm
 
         # geometry and design parameters to change the design of the CSM file during an optimization
         self._design_parameters = caps_problem.geometry.despmtr.keys()
@@ -35,6 +37,7 @@ class TacsAim:
         self._first_setup = True
         self._first_analysis = True
 
+    @root_proc
     def update_design(self, design_dict: dict):
         """
         method to change the values of each design variable in tacs, caps
@@ -124,6 +127,7 @@ class TacsAim:
                 "Object could not be registered to TacsAim as it is not an appropriate type."
             )
 
+    @root_proc
     def setup_aim(
         self,
         large_format: bool = True,
@@ -182,7 +186,7 @@ class TacsAim:
         self._aim.input.Design_Variable_Relation = {
             dv.name: dv.DVR_dictionary
             for dv in self._design_variables
-            if isinstance(dv, ThicknessVariable)
+            if isinstance(dv, CapsThicknessVariable)
         }
         self._aim.input.Design_Variable = {
             dv.name: dv.DV_dictionary for dv in self._design_variables
@@ -203,12 +207,14 @@ class TacsAim:
     def thickness_variables(self) -> List[CapsThicknessVariable]:
         return [dv for dv in self.variables if isinstance(dv, CapsThicknessVariable)]
 
+    @root_proc
     def pre_analysis(self):
         """
         provide access to the tacs aim preAnalysis for running
         """
         self.aim.preAnalysis()
 
+    @root_broadcast
     @property
     def analysis_dir(self) -> str:
         return self.aim.analysisDir
@@ -229,10 +235,12 @@ class TacsAim:
     def sens_file_path(self) -> str:
         return os.path.join(self.analysis_dir, self.sens_file)
 
+    @root_broadcast
     @property
     def project_name(self) -> str:
         return self.aim.input.Proj_Name
 
+    @root_proc
     def post_analysis(self):
         self.aim.postAnalysis()
 
