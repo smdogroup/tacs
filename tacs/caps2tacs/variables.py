@@ -43,6 +43,7 @@ class ThicknessVariable:
         lower_bound: float = None,
         upper_bound: float = None,
         max_delta: float = None,
+        material: Material = None,
     ):
         """
         ESP/CAPS Thickness variable sets the thickness over a portion of the geometry in the CSM file
@@ -64,7 +65,7 @@ class ThicknessVariable:
         self.max_delta = max_delta if max_delta is not None else value * 0.1
 
         # private variables used to create shell property
-        self._material = None
+        self._material = material
 
     def material(self, material: Material):
         """

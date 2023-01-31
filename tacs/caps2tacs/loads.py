@@ -45,7 +45,7 @@ class Pressure(Load):
     Apply pressure loads to the FEA structure
     """
 
-    def __init__(self, caps_load: str, name: str=None, force: float = 2.0e6):
+    def __init__(self, caps_load: str, name: str = None, force: float = 2.0e6):
         if name is None:
             name = f"Pressure_{caps_load}"
         super(Pressure, self).__init__(
@@ -70,7 +70,7 @@ class GridForce(Load):
     def __init__(
         self,
         caps_load: str,
-        name: str=None,
+        name: str = None,
         direction: List[float] = [0.0, 0.0, 1.0],
         magnitude: float = 1.0e3,
     ):

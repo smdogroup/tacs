@@ -25,7 +25,7 @@ class CapsStruct:
         self._problem = problem
 
     @classmethod
-    def build(cls, csm_file: str, problem_name: str = "capsStruct"):
+    def build(cls, csm_file: str, comm=None, problem_name: str = "capsStruct"):
         """
         auto build a caps struct problem
         syntax: CapsStruct.build(csm)
@@ -33,7 +33,7 @@ class CapsStruct:
         problem = pyCAPS.Problem(
             problemName=problem_name, capsFile=csm_file, outLevel=1
         )
-        return cls(problem)
+        return cls(problem, comm)
 
     @property
     def geometry(self):

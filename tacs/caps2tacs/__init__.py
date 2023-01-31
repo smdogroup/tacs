@@ -10,7 +10,7 @@ import importlib
 caps_loader = importlib.util.find_spec("pyCAPS")
 
 # main caps_struct module requires pyCAPS
-if caps_loader is not None: 
+if caps_loader is not None:
     from .caps_struct import *
 
 from .constraints import *

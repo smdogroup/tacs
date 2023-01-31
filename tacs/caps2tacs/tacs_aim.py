@@ -18,6 +18,7 @@ class TacsAimMetadata:
         self.project_name = project_name
         self.design_parameters = design_parameters
 
+
 class TacsAim:
     """
     Wrapper class for TacsAim with default build setting in different scenarios
@@ -62,10 +63,18 @@ class TacsAim:
         broadcast any tacs aim metadata needed for this class from root proc to other processors
         """
         if self.comm is None:
-            self._metadata = TacsAimMetadata(analysis_dir=self._aim.analysisDir, project_name=self._aim.ProjName, design_parameters=self._aim.geometry.despmtr.keys())
+            self._metadata = TacsAimMetadata(
+                analysis_dir=self._aim.analysisDir,
+                project_name=self._aim.input.Proj_Name,
+                design_parameters=self._aim.geometry.despmtr.keys(),
+            )
         else:
             if self.comm.rank == 0:
-                self._metadata = TacsAimMetadata(analysis_dir=self._aim.analysisDir, project_name=self._aim.ProjName, design_parameters=self._aim.geometry.despmtr.keys())
+                self._metadata = TacsAimMetadata(
+                    analysis_dir=self._aim.analysisDir,
+                    project_name=self._aim.input.Proj_Name,
+                    design_parameters=self._aim.geometry.despmtr.keys(),
+                )
             self._metadata = self.comm.bcast(self._metadata, root=0)
 
     @root_proc
@@ -102,7 +111,7 @@ class TacsAim:
                         if property.caps_group == thick_var.caps_group:
                             property.membrane_thickness = new_value
                             changed_design = True
-                            break # after found matching property
+                            break  # after found matching property
 
         # record whether the design has changed & first analysis flag as well
         self._setup = not (changed_design)
@@ -149,7 +158,7 @@ class TacsAim:
         assert len(self._materials) > 0
         assert len(self._properties) > 0
         assert len(self._constraints) > 0
-        assert(self._egads_aim is not None)
+        assert self._egads_aim is not None
 
         # increase the precision in the BDF file
         self._aim.input.File_Format = "Large" if large_format else "Small"
@@ -208,14 +217,15 @@ class TacsAim:
 
         # note that setup is finished now
         self._setup = True
+        return self  # return object for method cascading
 
     @root_proc
-    def set_config_parameter(self, param_name:str, value:float):
+    def set_config_parameter(self, param_name: str, value: float):
         self._geometry.cfgpmtr[param_name].value = value
         return
 
     @root_broadcast
-    def get_config_parameter(self, param_name:str):
+    def get_config_parameter(self, param_name: str):
         return self._geometry.cfgpmtr[param_name].value
 
     @property
@@ -239,13 +249,14 @@ class TacsAim:
         """
         build pyTACS from nastran dat file and comm
         """
-        return pyTACS(self.dat_file, self.comm)
+        return pyTACS(self.dat_file_path, self.comm)
 
     @root_proc
     def pre_analysis(self):
         """
         provide access to the tacs aim preAnalysis for running
         """
+        assert self._setup
         self.aim.preAnalysis()
 
     @property

@@ -27,11 +27,17 @@ aluminum = caps2tacs.Isotropic.aluminum().register_to(tacs_aim)
 # setup the thickness design variables + automatic shell properties
 nribs = int(tacs_aim.get_config_parameter("nribs"))
 nspars = int(tacs_aim.get_config_parameter("nspars"))
-for irib in range(1, nribs+1):
-    caps2tacs.ThicknessVariable(caps_group=f"rib{irib}", value=0.05, material=aluminum).register_to(tacs_aim)
-for ispar in range(1, nspars+1):
-    caps2tacs.ThicknessVariable(caps_group=f"spar{ispar}", value=0.05, material=aluminum).register_to(tacs_aim)
-caps2tacs.ThicknessVariable(caps_group="OML", value=0.03, material=aluminum).register_to(tacs_aim)
+for irib in range(1, nribs + 1):
+    caps2tacs.ThicknessVariable(
+        caps_group=f"rib{irib}", value=0.05, material=aluminum
+    ).register_to(tacs_aim)
+for ispar in range(1, nspars + 1):
+    caps2tacs.ThicknessVariable(
+        caps_group=f"spar{ispar}", value=0.05, material=aluminum
+    ).register_to(tacs_aim)
+caps2tacs.ThicknessVariable(
+    caps_group="OML", value=0.03, material=aluminum
+).register_to(tacs_aim)
 
 # add constraints and loads
 caps2tacs.PinConstraint("root").register_to(tacs_aim)
@@ -47,8 +53,10 @@ SPs = tacs_aim.fea_solver.initialize().createTACSProbsFromBDF()
 
 # add mass and aggregated stress constraint functions
 for caseID in SPs:
-    SPs[caseID].addFunction('mass', functions.StructuralMass)
-    SPs[caseID].addFunction('ks_vmfailure', functions.KSFailure, safetyFactor=1.5, ksWeight=1000.0)
+    SPs[caseID].addFunction("mass", functions.StructuralMass)
+    SPs[caseID].addFunction(
+        "ks_vmfailure", functions.KSFailure, safetyFactor=1.5, ksWeight=1000.0
+    )
 
 # solve each structural analysis problem (in this case 1)
 tacs_funcs = {}
@@ -57,8 +65,8 @@ base_name = "tacs_output"
 function_names = ["mass", "ks_vmfailure"]
 for caseID in SPs:
     SPs[caseID].solve()
-    SPs[caseID].evalFunctions(tacs_funcs,evalFuncs=function_names)
-    SPs[caseID].evalFunctionsSens(tacs_sens,evalFuncs=function_names)
+    SPs[caseID].evalFunctions(tacs_funcs, evalFuncs=function_names)
+    SPs[caseID].evalFunctionsSens(tacs_sens, evalFuncs=function_names)
     SPs[caseID].writeSolution(baseName=base_name, outputDir=tacs_aim.analysis_dir)
 
 # print the output analysis functions and sensitivities
@@ -77,4 +85,3 @@ for func_name in function_names:
 
     xpts_sens = tacs_sens[tacs_key]["Xpts"]
     print(f"\t{func_name} coordinate derivatives = {xpts_sens}")
-        
