@@ -1,5 +1,8 @@
 __all__ = ["CapsShapeVariable", "CapsThicknessVariable"]
 
+from .materials import Material
+from .property import ShellProperty
+
 
 class CapsShapeVariable:
     """
@@ -18,6 +21,13 @@ class CapsShapeVariable:
     @property
     def DV_dictionary(self) -> dict:
         return {}
+
+    def register_to(self, tacs_aim):
+        """
+        cascaded method to register this ShapeVariable to TacsAim
+        """
+        tacs_aim.register(self)
+        return self
 
 
 class CapsThicknessVariable:
@@ -70,6 +80,10 @@ class CapsThicknessVariable:
         return self
 
     @property
+    def can_make_shell(self):
+        return self._material is not None and self.value is not None
+
+    @property
     def DV_dictionary(self) -> dict:
         """
         ESP/CAPS design variable dictionary
@@ -102,3 +116,10 @@ class CapsThicknessVariable:
             material=self._material,
             membrane_thickness=self.value,
         )
+
+    def register_to(self, tacs_aim):
+        """
+        cascaded method to register this ThicknessVariable to TacsAim
+        """
+        tacs_aim.register(self)
+        return self
