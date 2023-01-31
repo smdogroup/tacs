@@ -62,4 +62,4 @@ from . import pytacs
 from .pytacs import pyTACS
 from . import problems
 
-__all__.extend(["pytacs", "pyTACS", "problems"])
+__all__.extend(["caps2tacs", "pytacs", "pyTACS", "problems"])
