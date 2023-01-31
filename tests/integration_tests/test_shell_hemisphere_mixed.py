@@ -1,16 +1,18 @@
-import numpy as np
 import os
-from tacs import pytacs, TACS, elements, constitutive, functions, problems
+
+import numpy as np
+
 from pytacs_analysis_base_test import PyTACSTestCase
+from tacs import pytacs, elements, constitutive, functions
 
 """
-Hemispherical shell constructed from mixed quad/tri shell elements. 
+Hemispherical shell constructed from mixed quad/tri shell elements.
 The shell is subjected to an inward pressure and is supported at the rim.
 The loads are applied in two equivilent load cases through the bdf:
     1. Using a PLOAD2 card
     2. Using a PLOAD4 card
-    
-A third load case, not specified in the bdf, is also added where the sturcture 
+
+A third load case, not specified in the bdf, is also added where the sturcture
 is spun around its center at a constant angular velocity causing a centrifugal load.
 
 tests StructuralMass, MomentOfInertia, KSFailure, KSDisplacement and Compliance functions and sensitivities
@@ -68,6 +70,19 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
         "Centrifugal_ks_disp": 0.18580458183836876,
         "Centrifugal_ks_vmfailure": 0.21309095365567654,
         "Centrifugal_mass": 1737.357316694243,
+        "Centrifugal_firstOrder_cg_x": 0.0009653731820888509,
+        "Centrifugal_firstOrder_cg_y": -9.14227063766091e-05,
+        "Centrifugal_firstOrder_cg_z": 0.49758219135768283,
+        "Centrifugal_firstOrder_I_xx": 721.1210796251873,
+        "Centrifugal_firstOrder_I_xy": 0.022814388896140014,
+        "Centrifugal_firstOrder_I_xz": -0.13557311929923765,
+        "Centrifugal_firstOrder_I_yy": 718.9187282561999,
+        "Centrifugal_firstOrder_I_yz": 0.037711775302945186,
+        "Centrifugal_firstOrder_I_zz": 1152.580386827468,
+        "Centrifugal_firstOrder_compliance": 303.5376244541102,
+        "Centrifugal_firstOrder_ks_disp": 0.18580480619325873,
+        "Centrifugal_firstOrder_ks_vmfailure": 0.21309293775305466,
+        "Centrifugal_firstOrder_mass": 1737.357316694243,
     }
 
     def setup_tacs_problems(self, comm):
@@ -131,8 +146,14 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
         tacs_probs = fea_assembler.createTACSProbsFromBDF()
         # Convert from dict to list
         tacs_probs = list(tacs_probs.values())
+
+        # Create problem with centrifugal loads, both zeroth and first_order
         static_prob = fea_assembler.createStaticProblem("Centrifugal")
-        static_prob.addCentrifugalLoad(omega, rotCenter)
+        static_prob.addCentrifugalLoad(omega, rotCenter, firstOrder=False)
+        tacs_probs.append(static_prob)
+
+        static_prob = fea_assembler.createStaticProblem("Centrifugal_firstOrder")
+        static_prob.addCentrifugalLoad(omega, rotCenter, firstOrder=True)
         tacs_probs.append(static_prob)
 
         # Add Functions
@@ -199,3 +220,33 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
             )
 
         return tacs_probs, fea_assembler
+
+    def test_jacobian_scaling(self):
+        """Test that the Jacobian contribution from the first order centrifugal load elements is scaled correctly by the
+        loadScale parameter.
+
+        We test that J(loadscale=1) - J(loadscale=0) = 2*(J(loadscale=0.5) - J(loadscale=0))
+        """
+        for prob in self.tacs_probs:
+            if prob.name != "Centrifugal_firstOrder":
+                continue
+
+            prob.loadScale = 0.0
+            mat = prob.getJacobian()
+            kFull = np.copy(mat[0].toarray())
+
+            prob.setLoadScale(1.0)
+            mat = prob.getJacobian()
+            kZero = np.copy(mat[0].toarray())
+
+            prob.setLoadScale(0.5)
+            mat = prob.getJacobian()
+            kHalf = np.copy(mat[0].toarray())
+
+            diff1 = kFull - kZero
+            diff2 = kHalf - kZero
+
+            self.assertNotEqual(np.real(np.linalg.norm(diff1)), 0.0)
+            self.assertNotEqual(np.real(np.linalg.norm(diff2)), 0.0)
+
+            np.testing.assert_allclose(diff1, 2 * diff2, atol=1e-3, rtol=1e-6)

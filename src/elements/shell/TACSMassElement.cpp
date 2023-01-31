@@ -42,7 +42,8 @@ TACSElement *TACSMassElement::createElementInertialForce(
 }
 
 TACSElement *TACSMassElement::createElementCentrifugalForce(
-    const TacsScalar omegaVec[], const TacsScalar rotCenter[]) {
+    const TacsScalar omegaVec[], const TacsScalar rotCenter[],
+    const bool first_order) {
   return new TACSMassCentrifugalForce(con, omegaVec, rotCenter);
 }
 

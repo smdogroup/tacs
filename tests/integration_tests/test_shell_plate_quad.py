@@ -1,14 +1,17 @@
-import numpy as np
 import os
-from tacs import pytacs, elements, constitutive, functions, problems
+
+import numpy as np
+
 from pytacs_analysis_base_test import PyTACSTestCase
+from tacs import pytacs, elements, constitutive, functions
 
 """
-The nominal case is a 1m x 1m flat plate under three load cases: 
+The nominal case is a 1m x 1m flat plate under three load cases:
 a 10 kN point force at center, a 100kPa pressure applied to the surface, and a 100G gravity load. The
 perimeter of the plate is fixed in all 6 degrees of freedom. The plate comprises
-100 CQUAD4 elements and test KSFailure, StructuralMass, CenterOfMass, MomentOfInertia, 
-and Compliance functions and sensitivities
+100 CQUAD4 elements and test KSFailure, StructuralMass, CenterOfMass, MomentOfInertia,
+and Compliance functions and sensitivities. Finally, a modal analysis is performed 
+and the eigenvalues tested.
 """
 
 base_dir = os.path.dirname(os.path.abspath(__file__))
@@ -22,42 +25,46 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
     N_PROCS = 2  # this is how many MPI processes to use for this TestCase.
 
     FUNC_REFS = {
-        "point_load_compliance": 683.8571611640772,
-        "point_load_ks_vmfailure": 0.5757488025913641,
-        "point_load_mass": 12.5,
-        "point_load_cgx": 0.5,
-        "point_load_cgy": 0.5,
-        "point_load_cgz": 0.0,
-        "point_load_Ixx": 1.0416927083333238,
-        "point_load_Ixy": 0.0,
+        "point_load_Ixx": 1.041692708333326,
+        "point_load_Ixy": 4.884981308350689e-15,
         "point_load_Ixz": 0.0,
-        "point_load_Iyy": 1.0416927083333243,
+        "point_load_Iyy": 1.0416927083333283,
         "point_load_Iyz": 0.0,
-        "point_load_Izz": 2.08333333333333,
-        "pressure_compliance": 4679.345460326432,
-        "pressure_ks_vmfailure": 1.2938623156872926,
-        "pressure_mass": 12.5,
-        "pressure_cgx": 0.5,
-        "pressure_cgy": 0.5,
-        "pressure_cgz": 0.0,
-        "pressure_Ixx": 1.0416927083333238,
-        "pressure_Ixy": 0.0,
+        "point_load_Izz": 2.0833333333333233,
+        "point_load_cgx": 0.5000000000000002,
+        "point_load_cgy": 0.5000000000000006,
+        "point_load_cgz": 0.0,
+        "point_load_compliance": 683.857161165581,
+        "point_load_ks_vmfailure": 0.5757488025917175,
+        "point_load_mass": 12.5,
+        "pressure_Ixx": 1.041692708333326,
+        "pressure_Ixy": 4.884981308350689e-15,
         "pressure_Ixz": 0.0,
-        "pressure_Iyy": 1.0416927083333243,
+        "pressure_Iyy": 1.0416927083333283,
         "pressure_Iyz": 0.0,
-        "pressure_Izz": 2.08333333333333,
-        "gravity_compliance": 70.36280588344383,
-        "gravity_ks_vmfailure": 0.11707320009742483,
-        "gravity_mass": 12.5,
-        "gravity_cgx": 0.5,
-        "gravity_cgy": 0.5,
-        "gravity_cgz": 0.0,
-        "gravity_Ixx": 1.0416927083333238,
-        "gravity_Ixy": 0.0,
+        "pressure_Izz": 2.0833333333333233,
+        "pressure_cgx": 0.5000000000000002,
+        "pressure_cgy": 0.5000000000000006,
+        "pressure_cgz": 0.0,
+        "pressure_compliance": 4679.345460326935,
+        "pressure_ks_vmfailure": 1.293862315687351,
+        "pressure_mass": 12.5,
+        "gravity_Ixx": 1.041692708333326,
+        "gravity_Ixy": 4.884981308350689e-15,
         "gravity_Ixz": 0.0,
-        "gravity_Iyy": 1.0416927083333243,
+        "gravity_Iyy": 1.0416927083333283,
         "gravity_Iyz": 0.0,
-        "gravity_Izz": 2.08333333333333,
+        "gravity_Izz": 2.0833333333333233,
+        "gravity_cgx": 0.5000000000000002,
+        "gravity_cgy": 0.5000000000000006,
+        "gravity_cgz": 0.0,
+        "gravity_compliance": 70.36280588359826,
+        "gravity_ks_vmfailure": 0.1170732000975571,
+        "gravity_mass": 12.5,
+        "modal_eigsm.0": 87437.50645902398,
+        "modal_eigsm.1": 396969.8881660927,
+        "modal_eigsm.2": 396969.8881662339,
+        "modal_eigsm.3": 866727.6714828992,
     }
 
     def setup_tacs_problems(self, comm):
@@ -182,5 +189,10 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
                 direction2=[0.0, 0.0, 1.0],
                 aboutCM=True,
             )
+
+        # Add modal problem
+        mp = fea_assembler.createModalProblem("modal", 7e4, 10)
+        mp.setOption("printLevel", 2)
+        tacs_probs.append(mp)
 
         return tacs_probs, fea_assembler

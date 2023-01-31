@@ -113,8 +113,9 @@ void TACSCentrifugalForce3D::addResidual(
     double weight = basis->getQuadraturePoint(n, pt);
 
     // Get the face normal
-    TacsScalar X[3], Xd[9], J[9];
+    TacsScalar X[3], Xd[9], J[9], U[3];
     basis->interpFields(n, pt, 3, Xpts, 1, X);
+    basis->interpFields(n, pt, 3, vars, 1, U);
     TacsScalar detXd = basis->getJacobianTransform(n, pt, Xpts, Xd, J);
 
     // Multiply the quadrature weight by the quadrature point
@@ -131,10 +132,11 @@ void TACSCentrifugalForce3D::addResidual(
 
     TacsScalar r[3], wxr[3], ac[3];
 
-    // Create vector pointing from rotation center to element gpt
-    r[0] = X[0] - rotCenter[0];
-    r[1] = X[1] - rotCenter[1];
-    r[2] = X[2] - rotCenter[2];
+    // Create vector pointing from rotation center to element gpt, including
+    // deformations
+    r[0] = X[0] - rotCenter[0];  // + U[0];
+    r[1] = X[1] - rotCenter[1];  // + U[1];
+    r[2] = X[2] - rotCenter[2];  // + U[2];
 
     // Compute omega x r
     crossProduct(omegaVec, r, wxr);
@@ -169,8 +171,9 @@ void TACSCentrifugalForce3D::addJacobian(
     double weight = basis->getQuadraturePoint(n, pt);
 
     // Get the face normal
-    TacsScalar X[3], Xd[9], J[9];
+    TacsScalar X[3], Xd[9], J[9], U[3];
     basis->interpFields(n, pt, 3, Xpts, 1, X);
+    basis->interpFields(n, pt, 3, vars, 1, U);
     TacsScalar detXd = basis->getJacobianTransform(n, pt, Xpts, Xd, J);
 
     // Multiply the weight by the quadrature point
@@ -187,10 +190,11 @@ void TACSCentrifugalForce3D::addJacobian(
 
     TacsScalar r[3], wxr[3], ac[3];
 
-    // Create vector pointing from rotation center to element gpt
-    r[0] = X[0] - rotCenter[0];
-    r[1] = X[1] - rotCenter[1];
-    r[2] = X[2] - rotCenter[2];
+    // Create vector pointing from rotation center to element gpt, including
+    // deformations
+    r[0] = X[0] - rotCenter[0];  // + U[0];
+    r[1] = X[1] - rotCenter[1];  // + U[1];
+    r[2] = X[2] - rotCenter[2];  // + U[2];
 
     // Compute omega x r
     crossProduct(omegaVec, r, wxr);

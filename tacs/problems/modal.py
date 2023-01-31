@@ -10,10 +10,12 @@ information for a modal analysis.
 # Imports
 # =============================================================================
 import os
-import numpy as np
 import time
-from .base import TACSProblem
+
+import numpy as np
+
 import tacs.TACS
+from .base import TACSProblem
 
 
 class ModalProblem(TACSProblem):
@@ -168,10 +170,8 @@ class ModalProblem(TACSProblem):
 
         # Assemble and factor the stiffness/Jacobian matrix. Factor the
         # Jacobian and solve the linear system for the displacements
-        alpha = 1.0
-        beta = 0.0
-        gamma = 0.0
-        self.assembler.assembleJacobian(alpha, beta, gamma, None, self.K)
+        self.assembler.assembleMatType(tacs.TACS.STIFFNESS_MATRIX, self.K)
+        self.assembler.assembleMatType(tacs.TACS.MASS_MATRIX, self.M)
 
         subspace = self.getOption("subSpaceSize")
         restarts = self.getOption("nRestarts")
@@ -372,6 +372,8 @@ class ModalProblem(TACSProblem):
 
         self.assembler.setDesignVars(self.x)
         self.assembler.setNodes(self.Xpts)
+        # Make sure previous auxiliary loads are removed
+        self.assembler.setAuxElements(None)
         # Set artificial stiffness factors in rbe class
         c1 = self.getOption("RBEStiffnessScaleFactor")
         c2 = self.getOption("RBEArtificialStiffness")

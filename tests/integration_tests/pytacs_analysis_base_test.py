@@ -1,18 +1,23 @@
-import numpy as np
-from tacs import TACS
+import os
+import tempfile
 import unittest
+
+import numpy as np
 from mpi4py import MPI
+
+from tacs import TACS
+from tacs import problems
 
 """
 This is a base class for running pytacs unit test cases.
-This base class will test function evaluations and total 
-sensitivities for the user-specified problems implimented by
-the child test case. When the user creates a new test based 
-on this class only one method, setup_tacs_problems, is required 
-to be defined in the child class. See the virtual method 
+This base class will test function evaluations, total
+sensitivities, and f5 file writing for the user-specified problems
+implemented by the child test case. When the user creates a new test
+based on this class only one method, setup_tacs_problems, is required
+to be defined in the child class. See the virtual method
 implementation for this method below for more details.
 
-NOTE: The child class must NOT implement its own setUp method 
+NOTE: The child class must NOT implement its own setUp method
 for the unittest class. This is handled in the base class.
 """
 
@@ -189,6 +194,50 @@ class PyTACSTestCase:
                                     rtol=self.rtol,
                                     atol=self.atol,
                                 )
+
+        def test_write_solution(self):
+            """
+            Test f5 solution writing procedure
+            """
+            # Create temporary directory to write f5 file to (only on root)
+            tmp_dir = None
+            tmp_dir_name = None
+            if self.comm.rank == 0:
+                tmp_dir = tempfile.TemporaryDirectory()
+                tmp_dir_name = tmp_dir.name
+            # Broadcast temp directory name to other procs
+            tmp_dir_name = self.comm.bcast(tmp_dir_name, root=0)
+
+            # Loop through each problem
+            for prob in self.tacs_probs:
+                # Solve problem
+                prob.solve()
+                # Write solution
+                prob.writeSolution(outputDir=tmp_dir_name)
+
+            if self.comm.rank == 0:
+                # Loop through each problem and make sure solution file exists
+                for prob in self.tacs_probs:
+                    with self.subTest(problem=prob.name):
+                        base_name = os.path.join(tmp_dir_name, f"{prob.name}_000")
+                        if isinstance(prob, problems.StaticProblem):
+                            f5_file = f"{base_name}.f5"
+                            self.assertTrue(
+                                os.path.exists(f5_file), msg=f"{f5_file} exists"
+                            )
+                        else:
+                            if isinstance(prob, problems.TransientProblem):
+                                num_steps = prob.getNumTimeSteps() + 1
+                            else:  # ModalProblem or BucklingProblem
+                                num_steps = prob.getNumEigs()
+                            for i in range(num_steps):
+                                f5_file = f"{base_name}_%3.3d.f5" % (i)
+                                self.assertTrue(
+                                    os.path.exists(f5_file), msg=f"{f5_file} exists"
+                                )
+
+                # delete all files in temp dir
+                tmp_dir.cleanup()
 
         def run_solve(self, dv=None, xpts=None):
             """

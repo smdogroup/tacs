@@ -1,7 +1,9 @@
-import numpy as np
 import os
-from tacs import pytacs, TACS, elements, constitutive, functions, problems
+
+import numpy as np
+
 from pytacs_analysis_base_test import PyTACSTestCase
+from tacs import pytacs, elements, constitutive, functions
 
 """
 10m x 1m x 1m Square beam constructed from tetrahedral elements. The beam is cantilevered at

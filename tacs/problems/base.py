@@ -5,11 +5,13 @@ pyBase_problem
 # =============================================================================
 # Imports
 # =============================================================================
+from collections import OrderedDict
+
 import numpy as np
 from mpi4py import MPI
-from ..utilities import BaseUI
-from collections import OrderedDict
+
 import tacs.TACS
+from ..utilities import BaseUI
 
 
 class TACSProblem(BaseUI):
@@ -877,7 +879,7 @@ class TACSProblem(BaseUI):
                 # Add new inertial force to auxiliary element object
                 auxElems.addElement(elemID, inertiaObj)
 
-    def _addCentrifugalLoad(self, auxElems, omegaVector, rotCenter):
+    def _addCentrifugalLoad(self, auxElems, omegaVector, rotCenter, firstOrder=False):
         """
         This is an internal helper function for doing the addCentrifugalLoad method for
         inherited TACSProblem classes. The function should NOT be called by the user should
@@ -896,6 +898,10 @@ class TACSProblem(BaseUI):
 
         rotCenter : numpy.ndarray
             Location of center of rotation used to define centrifugal load.
+
+        firstOrder : bool, optional
+            Whether to use first order approximation for centrifugal load,
+            which computes the force in the displaced position. By default False
         """
         # Make sure vector is right type
         omegaVector = np.atleast_1d(omegaVector).astype(self.dtype)
@@ -906,7 +912,7 @@ class TACSProblem(BaseUI):
         for elemID, elemObj in enumerate(localElements):
             # Create appropriate centrifugal force object for this element type
             centrifugalObj = elemObj.createElementCentrifugalForce(
-                omegaVector, rotCenter
+                omegaVector, rotCenter, firstOrder=firstOrder
             )
             # Centrifugal force is implemented for element
             if centrifugalObj is not None:

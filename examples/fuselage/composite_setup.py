@@ -1,4 +1,5 @@
 import numpy as np
+
 from tacs import constitutive, elements
 
 # Create the quasi-isotropic layup with 48 plies

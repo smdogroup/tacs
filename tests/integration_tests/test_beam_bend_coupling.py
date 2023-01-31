@@ -1,6 +1,7 @@
 import os
-from tacs import pytacs, functions
+
 from pytacs_analysis_base_test import PyTACSTestCase
+from tacs import pytacs, functions
 
 """
 6 noded beam model 1 meter long in x direction.
