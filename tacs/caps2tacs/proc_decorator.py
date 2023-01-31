@@ -1,4 +1,3 @@
-
 __all__ = ["root_proc"]
 
 from functools import wraps
@@ -11,11 +10,14 @@ def root_proc(method):
         if self.comm is None or self.comm.rank == 0:
             return method(self, *args, **kwargs)
         else:
+
             def empty_function(self):
                 return
+
             return empty_function
 
     return wrapped_method
+
 
 # define a decorator to broadcast certain outputs to other processors
 def root_broadcast(method):

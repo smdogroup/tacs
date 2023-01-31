@@ -1,4 +1,4 @@
-__all__ = ["Constraint", "ZeroConstraint", "TemperatureConstraint"]
+__all__ = ["Constraint", "PinConstraint", "TemperatureConstraint"]
 
 
 class Constraint:
@@ -43,13 +43,15 @@ class Constraint:
         return self
 
 
-class ZeroConstraint(Constraint):
-    def __init__(self, name: str, caps_constraint: str, dof_constraint: int = 123):
+class PinConstraint(Constraint):
+    def __init__(self, caps_constraint: str, name:str=None, dof_constraint: int = 123):
         """
         Elastic pin ESP/CAPS Constraint by default
         Can change the dof to other than u=v=w=0 aka 123
         """
-        super(ZeroConstraint, self).__init__(
+        if name is None:
+            name = f"elastic_{caps_constraint}"
+        super(PinConstraint, self).__init__(
             name=name,
             caps_constraint=caps_constraint,
             constraint_type="Displacement",
@@ -66,10 +68,12 @@ class ZeroConstraint(Constraint):
 
 
 class TemperatureConstraint(Constraint):
-    def __init__(self, name: str, caps_constraint: str, temperature: float = 0.0):
+    def __init__(self, caps_constraint: str, name: str=None, temperature: float = 0.0):
         """
         Isothermal constraints in ESP/CAPS for the TacsAim
         """
+        if name is None:
+            name = f"thermal_{caps_constraint}"
         super(TemperatureConstraint, self).__init__(
             name=name,
             caps_constraint=caps_constraint,

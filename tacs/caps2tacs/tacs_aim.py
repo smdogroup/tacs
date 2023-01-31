@@ -1,20 +1,21 @@
 __all__ = ["TacsAim"]
 
 from typing import TYPE_CHECKING, List
-import pyCAPS
-import os
-from .proc_decorator import root_proc
+import pyCAPS, os, numpy as np
+from .proc_decorator import root_proc, root_broadcast
 from .materials import Material
 from .constraints import Constraint
 from .property import ShellProperty
 from .loads import Load
 from .variables import ShapeVariable, ThicknessVariable
+from .egads_aim import EgadsAim
 
 
 class TacsAimMetadata:
-    def __init__(self, analysis_dir, project_name):
+    def __init__(self, analysis_dir, project_name, design_parameters):
         self.analysis_dir = analysis_dir
         self.project_name = project_name
+        self.design_parameters = design_parameters
 
 class TacsAim:
     """
@@ -24,18 +25,19 @@ class TacsAim:
     """
 
     def __init__(self, caps_problem: pyCAPS.Problem, comm=None):
-        self._aim = caps_problem.analysis.create(aim="tacsAIM", name="tacs")
         self.comm = comm
 
         # geometry and design parameters to change the design of the CSM file during an optimization
-        self._design_parameters = caps_problem.geometry.despmtr.keys()
-        self._geometry = caps_problem.geometry
+        self._aim = None
+        self._geometry = None
+        self._build_aim(caps_problem)
 
         self._materials = []
         self._loads = []
         self._properties = []
         self._constraints = []
         self._design_variables = []
+        self._egads_aim = None
 
         # build flags
         self._setup = False
@@ -46,15 +48,23 @@ class TacsAim:
         self._metadata = None
         self._broadcast_metadata()
 
+    @root_proc
+    def _build_aim(self, caps_problem):
+        """
+        build the TacsAim pyCAPS object inside our wrapper class on root proc
+        """
+        self._aim = caps_problem.analysis.create(aim="tacsAIM", name="tacs")
+        self._geometry = caps_problem.geometry
+
     def _broadcast_metadata(self):
         """
         broadcast any tacs aim metadata needed for this class from root proc to other processors
         """
         if self.comm is None:
-            self._metadata = TacsAimMetadata(analysis_dir=self._aim.analysisDir, project_name=self._aim.ProjName)
+            self._metadata = TacsAimMetadata(analysis_dir=self._aim.analysisDir, project_name=self._aim.ProjName, design_parameters=self._aim.geometry.despmtr.keys())
         else:
             if self.comm.rank == 0:
-                self._metadata = TacsAimMetadata(analysis_dir=self._aim.analysisDir, project_name=self._aim.ProjName)
+                self._metadata = TacsAimMetadata(analysis_dir=self._aim.analysisDir, project_name=self._aim.ProjName, design_parameters=self._aim.geometry.despmtr.keys())
             self._metadata = self.comm.bcast(self._metadata, root=0)
 
     @root_proc
@@ -119,6 +129,8 @@ class TacsAim:
             self._constraints.append(obj)
         elif isinstance(obj, Load):
             self._loads.append(obj)
+        elif isinstance(obj, EgadsAim):
+            self._egads_aim = obj
         else:
             raise AssertionError(
                 "Object could not be registered to TacsAim as it is not an appropriate type."
@@ -136,6 +148,7 @@ class TacsAim:
         assert len(self._materials) > 0
         assert len(self._properties) > 0
         assert len(self._constraints) > 0
+        assert(self._egads_aim is not None)
 
         # increase the precision in the BDF file
         self._aim.input.File_Format = "Large" if large_format else "Small"
@@ -169,7 +182,7 @@ class TacsAim:
             self._aim.input.Load = {load.name: load.dictionary for load in self._loads}
 
         if auto_shape_variables and self._first_setup:
-            for despmtr in self._design_parameters:
+            for despmtr in self._metadata.design_parameters:
                 # TODO : setup for dv arrays too but not yet
                 new_value = self._geometry.despmtr[despmtr].value
                 if isinstance(
@@ -178,6 +191,9 @@ class TacsAim:
                     shape_var = ShapeVariable(name=despmtr, value=new_value)
                     self.add_variable(variable=shape_var)
             self._first_setup = False
+
+        # link the egads aim to the tacs aim
+        self._aim.input["Mesh"].link(self._egads_aim.aim.output["Surface_Mesh"])
 
         # add the design variables to the DesignVariable and DesignVariableRelation properties
         self._aim.input.Design_Variable_Relation = {
@@ -192,6 +208,15 @@ class TacsAim:
         # note that setup is finished now
         self._setup = True
 
+    @root_proc
+    def set_config_parameter(self, param_name:str, value:float):
+        self._geometry.cfgpmtr[param_name].value = value
+        return
+
+    @root_broadcast
+    def get_config_parameter(self, param_name:str):
+        return self._geometry.cfgpmtr[param_name].value
+
     @property
     def variables(self) -> List[ShapeVariable or ThicknessVariable]:
         return self._design_variables
@@ -202,7 +227,11 @@ class TacsAim:
 
     @property
     def thickness_variables(self) -> List[ThicknessVariable]:
-        return [dv for dv in self.variables if isinstance(dv, ThicknessVariable)]
+        """
+        return sorted thickness vars so that the TACS derivatives can be appropriately obtained
+        """
+        thick_vars = [dv for dv in self.variables if isinstance(dv, ThicknessVariable)]
+        return list(np.sort(np.array(thick_vars)))
 
     @root_proc
     def pre_analysis(self):
