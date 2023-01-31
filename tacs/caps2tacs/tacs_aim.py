@@ -94,7 +94,6 @@ class TacsAim:
 
                 # only modify the aim if the value has changed
                 if self._geometry.despmtr[shape_var.name].value != new_value:
-                    shape_var.value = new_value
                     self._geometry.despmtr[shape_var.name].value = new_value
                     changed_design = True
 
