@@ -1,7 +1,7 @@
 __all__ = ["TacsAim"]
 
 from typing import TYPE_CHECKING, List
-import pyCAPS, os, numpy as np
+import os, numpy as np
 from .proc_decorator import root_proc, root_broadcast
 from .materials import Material
 from .constraints import Constraint
@@ -25,7 +25,7 @@ class TacsAim:
     only supports shell properties at the moment
     """
 
-    def __init__(self, caps_problem: pyCAPS.Problem, comm=None):
+    def __init__(self, caps_problem, comm=None):
         self.comm = comm
 
         # geometry and design parameters to change the design of the CSM file during an optimization

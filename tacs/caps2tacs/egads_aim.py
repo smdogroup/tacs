@@ -1,6 +1,5 @@
 __all__ = ["EgadsAim"]
 
-import pyCAPS
 from typing import TYPE_CHECKING, List
 
 
@@ -14,7 +13,7 @@ class EgadsAim:
     egadsAim.input.Tess_Params = [.25,.01,15]
     """
 
-    def __init__(self, caps_problem: pyCAPS.Problem):
+    def __init__(self, caps_problem):
         self._aim = caps_problem.analysis.create(aim="egadsTessAIM")
         self._is_setup = False
 
