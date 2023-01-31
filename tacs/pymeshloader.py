@@ -894,3 +894,59 @@ class pyMeshLoader(BaseUI):
                 return tacsIDDict[fromIDs]
             else:
                 return -1
+
+    @property
+    def struct_ids(self):
+        """
+        get list of tacs_ids for each nastran node owned by this processor
+        nastran_node = array_idx + 1
+        tacs_idx = output id
+        nastran_node - 1 => tacs_idx owned by this proc
+        """
+
+        if self.comm is None:
+            struct_ids = self._get_local_struct_ids()
+        else:
+            struct_ids = self._get_all_struct_ids()
+        return struct_ids
+
+    def _get_local_struct_ids(self):
+        """
+        get the local struct ids owned by this processor, full list when comm is None
+        -1 for each idx not owned by this processor
+        """
+        num_nodes = self.bdfInfo.nnodes
+        bdf_nodes = [_ for _ in range(num_nodes)]
+        return self.getLocalNodeIDsFromGlobal(bdf_nodes, nastranOrdering=False)
+
+    def _struct_id_map(self):
+        """
+        write the map nastran_node - 1 => tacs_idx on each processor
+        """
+        local_struct_ids = self._get_local_struct_ids()
+        id_map = []
+        for arr_idx, struct_id in enumerate(local_struct_ids):
+            if struct_id != -1:
+                id_map.append({arr_idx: struct_id})
+        self._local_map = id_map
+        return id_map
+
+    def _get_all_struct_ids(self):
+        """
+        get struct ids on all processors broadcast to root
+        """
+        self._struct_id_map()
+        local_maps = self.comm.gather(self._local_map, root=0)
+        full_map_list = []
+        for local_map in local_maps:
+            full_map_list += local_map
+        all_struct_ids = None
+        if self.comm.rank == 0:
+            all_struct_ids = np.zeros((self.bdfInfo.nnodes), dtype=int)
+            for map in full_map_list:
+                for key in map:
+                    all_struct_ids[int(key)] = map[int(key)]
+            all_struct_ids = list(all_struct_ids)
+        # broadcast to other procs
+        all_struct_ids = self.comm.bcast(all_struct_ids, root=0)
+        return all_struct_ids

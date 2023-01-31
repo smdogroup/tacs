@@ -206,14 +206,16 @@ class TacsAim:
         self._aim.input["Mesh"].link(self._egads_aim.aim.output["Surface_Mesh"])
 
         # add the design variables to the DesignVariable and DesignVariableRelation properties
-        self._aim.input.Design_Variable_Relation = {
-            dv.name: dv.DVR_dictionary
-            for dv in self._design_variables
-            if isinstance(dv, ThicknessVariable)
-        }
-        self._aim.input.Design_Variable = {
-            dv.name: dv.DV_dictionary for dv in self._design_variables
-        }
+        if len(self.thickness_variables) > 0:
+            self._aim.input.Design_Variable_Relation = {
+                dv.name: dv.DVR_dictionary
+                for dv in self._design_variables
+                if isinstance(dv, ThicknessVariable)
+            }
+        if len(self.variables) > 0:
+            self._aim.input.Design_Variable = {
+                dv.name: dv.DV_dictionary for dv in self._design_variables
+            }
 
         # note that setup is finished now
         self._setup = True

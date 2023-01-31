@@ -1070,3 +1070,69 @@ class TACSProblem(BaseUI):
                 self._addTractionToElements(
                     auxElems, elemID, trac, faceIndex, nastranOrdering=True
                 )
+
+    def write_sensitivity_file(self, evalFuncs, sens_file, tacs_aim=None):
+        """
+        write an ESP/CAPS .sens file from the tacs aim
+        Optional tacs_aim arg for TacsAim wrapper class object in root/tacs/caps2tacs/
+        """
+
+        # obtain the functions and sensitivities from TACS assembler
+        tacs_funcs = {}
+        tacs_sens = {}
+        self.evalFunctions(tacs_funcs, evalFuncs=evalFuncs)
+        self.evalFunctionsSens(tacs_sens, evalFuncs=evalFuncs)
+
+        num_funcs = len(evalFuncs)
+        if "struct" in tacs_sens:
+            assert tacs_aim is not None
+            num_struct_dvs = len(tacs_sens["struct"][evalFuncs[0]])
+        else:
+            num_struct_dvs = 0
+        num_nodes = self.meshLoader.bdfInfo.nnodes
+        struct_ids = self.meshLoader.struct_ids
+
+        if self.comm is None or self.comm.rank == 0:
+
+            # open the sens file nastran_CAPS.sens and write coordinate derivatives
+            # and any other struct derivatives to it
+            with open(sens_file, "w") as hdl:
+                for func_name in evalFuncs:
+                    hdl.write(f"{num_funcs} {num_struct_dvs}\n")
+
+                    # for each function write the values and coordinate derivatives
+                    for func_name in evalFuncs:
+                        # get the tacs key
+                        for tacs_key in tacs_funcs:
+                            if func_name in tacs_key:
+                                break
+
+                        # get the tacs coordinate derivatives
+                        xpts_sens = tacs_sens[tacs_key]["Xpts"]
+
+                        # write the func name, value and nnodes
+                        hdl.write(f"{func_name}\n")
+                        hdl.write(f"{tacs_funcs[tacs_key].real}\n")
+                        hdl.write(f"{num_nodes}\n")
+
+                        # write the coordinate derivatives for the given function
+                        for bdf_ind in range(num_nodes):
+                            tacs_ind = struct_ids[bdf_ind]
+                            nastran_node = bdf_ind + 1
+                            hdl.write(
+                                f"{nastran_node} {xpts_sens[3*tacs_ind].real} {xpts_sens[3*tacs_ind+1].real} {xpts_sens[3*tacs_ind+2].real}\n"
+                            )
+
+                        # write any struct derivatives if there are struct derivatives
+                        if num_struct_dvs > 0:
+                            struct_sens = tacs_sens[tacs_key]["struct"]
+                            for (
+                                idx,
+                                thick_var,
+                            ) in (
+                                tacs_aim.thickness_variables
+                            ):  # assumes these are sorted in tacs aim wrapper
+                                hdl.write(f"{thick_var.name}\n")
+                                hdl.write("1\n")
+                                hdl.write(f"{struct_sens[idx]}\n")
+            return
