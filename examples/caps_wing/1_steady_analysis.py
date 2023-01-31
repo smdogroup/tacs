@@ -4,9 +4,8 @@ GT SMDO Lab, Dr. Graeme Kennedy
 Caps to TACS example
 """
 
-from tacs import caps2tacs, functions, pyTACS
+from tacs import caps2tacs, functions
 from mpi4py import MPI
-import os, numpy as np
 
 # run a steady elastic structural analysis in TACS using the tacsAIM wrapper caps2tacs submodule
 # -------------------------------------------------------------------------------------------------
@@ -23,7 +22,7 @@ egads_aim = caps_struct.egads_aim.set_mesh(
     max_dihedral_angle=15,
 ).register_to(tacs_aim)
 
-aluminum = caps2tacs.Isotropic.aluminum.register_to(tacs_aim)
+aluminum = caps2tacs.Isotropic.aluminum().register_to(tacs_aim)
 
 # setup the thickness design variables + automatic shell properties
 nribs = int(tacs_aim.get_config_parameter("nribs"))
@@ -39,7 +38,7 @@ caps2tacs.PinConstraint("root").register_to(tacs_aim)
 caps2tacs.GridForce("OML", direction=[0, 0, 1.0], magnitude=100).register_to(tacs_aim)
 
 # run the pre analysis to build tacs input files
-tacs_aim.pre_analysis()
+tacs_aim.setup_aim().pre_analysis()
 
 # ----------------------------------------------------------------------------------
 # 2. Run the TACS steady elastic structural analysis, forward + adjoint
