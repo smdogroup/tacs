@@ -22,12 +22,18 @@ class TacsMesh(om.IndepVarComp):
             desc="the pytacs object itself",
             recordable=False,
         )
+        self.options.declare(
+            "discipline",
+            default="struct",
+            desc="physics problem assigned to the tacs object either struct or thermal",
+        )
 
     def setup(self):
         fea_assembler = self.options["fea_assembler"]
+        discipline = self.options["discipline"]
         xpts = fea_assembler.getOrigNodes()
         self.add_output(
-            "x_struct0",
+            f"x_{discipline}0",
             distributed=True,
             val=xpts,
             shape=xpts.size,
@@ -44,41 +50,87 @@ class TacsMeshGroup(om.Group):
             desc="the pytacs object itself",
             recordable=False,
         )
+        self.options.declare(
+            "discipline",
+            default="struct",
+            desc="physics problem assigned to the tacs object either struct or thermal",
+        )
+        self.options.declare(
+            "surface_mapper",
+            default=None,
+            recordable=False,
+            desc="a function that takes the volume coordinates and returns a masking vecotor for the surface coordinates",
+        )
 
     def setup(self):
         fea_assembler = self.options["fea_assembler"]
-        self.add_subsystem("fea_mesh", TacsMesh(fea_assembler=fea_assembler))
+        discipline = self.options["discipline"]
+        self.add_subsystem("fea_mesh", TacsMesh(fea_assembler=fea_assembler, discipline=discipline))
 
-        # Identify tacs nodes corresponding to lagrange multipliers. These are nodes that are typically added in tacs
-        # whenever an element using a lagrange multiplier formulation is used (such as an RBE). It is important that
-        # these nodes not be included included in the aerostructural coupling procedure, as they a purely mathematical constructs.
-        # We'll use this information later to create a mask for filtering out these nodes in the coupling procedure.
         nnodes = fea_assembler.getNumOwnedNodes()
-        nmult = fea_assembler.getNumOwnedMultiplierNodes()
-        mask_input = MaskedVariableDescription(
-            "x_struct0", shape=nnodes * 3, tags=["mphys_coordinates"]
-        )
-        mask_output = MaskedVariableDescription(
-            "x_struct0_masked", shape=(nnodes - nmult) * 3, tags=["mphys_coordinates"]
-        )
-        mult_ids = fea_assembler.getLocalMultiplierNodeIDs()
-        mask = np.zeros([nnodes, 3], dtype=bool)
-        mask[:, :] = True
-        mask[mult_ids, :] = False
         x_orig = fea_assembler.getOrigNodes()
-        x_masked = x_orig[mask.flatten()]
-        masker = MaskedConverter(
-            input=mask_input,
-            output=mask_output,
-            mask=mask.flatten(),
-            init_output=x_masked,
-            distributed=True,
-        )
-        self.add_subsystem(
-            "masker", masker, promotes_outputs=[("x_struct0_masked", "x_struct0")]
-        )
 
-        self.connect("fea_mesh.x_struct0", "masker.x_struct0")
+        if discipline == "struct":
+            # Identify tacs nodes corresponding to lagrange multipliers. These are nodes that are typically added in tacs
+            # whenever an element using a lagrange multiplier formulation is used (such as an RBE). It is important that
+            # these nodes not be included included in the aerostructural coupling procedure, as they a purely mathematical constructs.
+            # We'll use this information later to create a mask for filtering out these nodes in the coupling procedure.
+
+            nmult = fea_assembler.getNumOwnedMultiplierNodes()
+            mask_input = MaskedVariableDescription(f"x_{discipline}0", shape=nnodes * 3, tags=["mphys_coordinates"])
+            mask_output = MaskedVariableDescription(
+                f"x_{discipline}0_masked", shape=(nnodes - nmult) * 3, tags=["mphys_coordinates"]
+            )
+            mult_ids = fea_assembler.getLocalMultiplierNodeIDs()
+            mask = np.zeros([nnodes, 3], dtype=bool)
+            mask[:, :] = True
+            mask[mult_ids, :] = False
+
+            x_masked = x_orig[mask.flatten()]
+            masker = MaskedConverter(
+                input=mask_input,
+                output=mask_output,
+                mask=mask.flatten(),
+                init_output=x_masked,
+                distributed=True,
+            )
+            self.add_subsystem("masker", masker, promotes_outputs=[(f"x_{discipline}0_masked", f"x_{discipline}0")])
+            self.connect(f"fea_mesh.x_{discipline}0", f"masker.x_{discipline}0")
+            
+        elif discipline == "thermal":
+            surface_mapper = self.options["surface_mapper"]
+            if surface_mapper is None:
+                raise ValueError("surface_mapper must be provided for thermal discipline")
+
+            node_mask = surface_mapper(x_orig)
+
+            idx_flat = np.arange(x_orig.size)
+            idx_flat = idx_flat.reshape(len(idx_flat) // 3, 3)
+            pts_mask = idx_flat[node_mask, :].flatten()
+
+            mask_input = MaskedVariableDescription(f"x_{discipline}0", shape=x_orig.size, tags=["mphys_coordinates"])
+            mask_output = MaskedVariableDescription(
+                f"x_{discipline}_surface0", shape=pts_mask.size, tags=["mphys_coordinates"]
+            )
+
+            self.add_subsystem(
+                "masker_surface",
+                MaskedConverter(
+                    input=mask_input,
+                    output=mask_output,
+                    mask=pts_mask.flatten(),
+                    init_output=x_orig[pts_mask.flatten()],
+                    distributed=True,
+                ),
+            )
+
+            # promote BOTH the volume ans surface coordinates to the top level
+            # this also implicitly connects the volume coordinates to the masker
+            self.promotes("masker_surface", inputs=[mask_input.name], outputs=[mask_output.name])
+            self.promotes("fea_mesh", outputs=[f"x_{discipline}0"])
+
+    def mphys_get_surface_mesh(self):
+        return self.x_a0
 
 
 class TacsDVComp(om.ExplicitComponent):
@@ -169,43 +221,51 @@ class TacsPrecouplingGroup(om.Group):
             default=None,
             desc="initial values for global design variable vector",
         )
+        self.options.declare(
+            "discipline",
+            default="struct",
+            desc="physics problem assigned to the tacs object either struct or thermal",
+        )
 
     def setup(self):
         # Promote state variables/rhs with physics-specific tag that MPhys expects
-        promotes_inputs = [("dv_struct_serial", "dv_struct")]
+        discipline = self.options["discipline"]
+
+        promotes_inputs = [(f"dv_struct_serial", "dv_struct")]
 
         fea_assembler = self.options["fea_assembler"]
         initial_dv_vals = self.options["initial_dv_vals"]
 
+        # add  system to distribute the dvstruct varaibles arcoss the processors
         self.add_subsystem(
             "distributor",
             TacsDVComp(fea_assembler=fea_assembler, initial_dv_vals=initial_dv_vals),
             promotes_inputs=promotes_inputs,
         )
 
-        nnodes = fea_assembler.getNumOwnedNodes()
-        nmult = fea_assembler.getNumOwnedMultiplierNodes()
-        unmask_output = MaskedVariableDescription(
-            "x_struct0", shape=nnodes * 3, tags=["mphys_coordinates"]
-        )
-        unmask_input = MaskedVariableDescription(
-            "x_struct0_masked", shape=(nnodes - nmult) * 3, tags=["mphys_coordinates"]
-        )
-        mult_ids = fea_assembler.getLocalMultiplierNodeIDs()
-        mask = np.zeros([nnodes, 3], dtype=bool)
-        mask[:, :] = True
-        mask[mult_ids, :] = False
-        vals = fea_assembler.getOrigNodes()
-        unmasker = UnmaskedConverter(
-            input=unmask_input,
-            output=unmask_output,
-            mask=mask.flatten(),
-            default_values=vals,
-            distributed=True,
-        )
-        self.add_subsystem(
-            "unmasker", unmasker, promotes_inputs=[("x_struct0_masked", "x_struct0")]
-        )
+        if discipline == "struct":
+            nnodes = fea_assembler.getNumOwnedNodes()
+            nmult = fea_assembler.getNumOwnedMultiplierNodes()
+            unmask_output = MaskedVariableDescription(f"x_{discipline}0", shape=nnodes * 3, tags=["mphys_coordinates"])
+            unmask_input = MaskedVariableDescription(
+                f"x_{discipline}0_masked", shape=(nnodes - nmult) * 3, tags=["mphys_coordinates"]
+            )
+            mult_ids = fea_assembler.getLocalMultiplierNodeIDs()
+            mask = np.zeros([nnodes, 3], dtype=bool)
+            mask[:, :] = True
+            mask[mult_ids, :] = False
+            vals = fea_assembler.getOrigNodes()
+
+            unmasker = UnmaskedConverter(
+                input=unmask_input,
+                output=unmask_output,
+                mask=mask.flatten(),
+                default_values=vals,
+                distributed=True,
+            )
+            self.add_subsystem("unmasker", unmasker, promotes_inputs=[(f"x_{discipline}0_masked", f"x_{discipline}0")])
+        elif discipline == "thermal":
+            pass
 
 
 class TacsSolver(om.ImplicitComponent):
@@ -219,7 +279,7 @@ class TacsSolver(om.ImplicitComponent):
 
     def initialize(self):
         self.options.declare("fea_assembler", recordable=False)
-        self.options.declare("conduction", default=False)
+        self.options.declare("discipline", default="struct")
         self.options.declare("check_partials")
         self.options.declare("coupled", default=False)
 
@@ -234,15 +294,17 @@ class TacsSolver(om.ImplicitComponent):
     def setup(self):
         self.check_partials = self.options["check_partials"]
         self.fea_assembler = self.options["fea_assembler"]
-        self.conduction = self.options["conduction"]
+        self.discipline = self.options["discipline"]
         self.coupled = self.options["coupled"]
 
-        if self.conduction:
+        if self.discipline == "thermal":
             self.states_name = "T_conduct"
             self.rhs_name = "q_conduct"
-        else:
+        elif self.discipline == "struct":
             self.states_name = "u_struct"
             self.rhs_name = "f_struct"
+        else:
+            raise ValueError(f"Unknown discipline {self.discipline}. options are 'struct' or 'thermal'")
 
         # OpenMDAO setup
         local_ndvs = self.fea_assembler.getNumDesignVars()
@@ -258,7 +320,7 @@ class TacsSolver(om.ImplicitComponent):
             tags=["mphys_coupling"],
         )
         self.add_input(
-            "x_struct0",
+            f"x_{self.discipline}0",
             distributed=True,
             shape_by_conn=True,
             desc="distributed structural node coordinates",
@@ -298,12 +360,12 @@ class TacsSolver(om.ImplicitComponent):
                 update = True
 
         if self.old_xs is None:
-            self.old_xs = inputs["x_struct0"].copy()
+            self.old_xs = inputs[f"x_{self.discipline}0"].copy()
             update = True
 
-        for xs, xs_old in zip(inputs["x_struct0"], self.old_xs):
+        for xs, xs_old in zip(inputs[f"x_{self.discipline}0"], self.old_xs):
             if np.abs(xs - xs_old) > 0.0:  # 1e-7:
-                self.old_xs = inputs["x_struct0"].copy()
+                self.old_xs = inputs[f"x_{self.discipline}0"].copy()
                 update = True
         tmp = [update]
         # Perform all reduce to check if any other procs came back True
@@ -313,9 +375,21 @@ class TacsSolver(om.ImplicitComponent):
     def _update_internal(self, inputs, outputs=None):
         if self._need_update(inputs):
             self.sp.setDesignVars(inputs["dv_struct"])
-            self.sp.setNodes(inputs["x_struct0"])
+            self.sp.setNodes(inputs[f"x_{self.discipline}0"])
         if outputs is not None:
-            self.sp.setVariables(outputs[self.states_name])
+            if self.discipline == "thermal":
+                # the statics problem zeros the entries at eh boundary conditions by default. 
+                # So we need to update the values in the assembler our selves
+                # Here we use `setBCs` instead of `applyBCs` to place the temperature values at 
+                # the boundary into the array instead of zeroing them.
+                self.sp.u_array[:] = outputs[self.states_name][:]
+                # Apply boundary conditions
+                self.sp.assembler.setBCs(self.sp.u)
+                # Set states to assembler
+                self.sp.assembler.setVariables(self.sp.u)
+                
+            elif self.discipline == "struct":
+                self.sp.setVariables(outputs[self.states_name])
         self.sp._updateAssemblerVars()
 
     def apply_nonlinear(self, inputs, outputs, residuals):
@@ -337,6 +411,10 @@ class TacsSolver(om.ImplicitComponent):
             Fext = None
 
         self.sp.solve(Fext=Fext)
+        
+        if self.discipline == "thermal":
+            self.sp.assembler.setBCs(self.sp.u)
+        
         self.sp.getVariables(states=outputs[self.states_name])
 
     def solve_linear(self, d_outputs, d_residuals, mode):
@@ -347,9 +425,7 @@ class TacsSolver(om.ImplicitComponent):
                 raise ValueError("forward mode requested but not implemented")
 
         if mode == "rev":
-            self.sp.solveAdjoint(
-                d_outputs[self.states_name], d_residuals[self.states_name]
-            )
+            self.sp.solveAdjoint(d_outputs[self.states_name], d_residuals[self.states_name])
 
     def apply_linear(self, inputs, outputs, d_inputs, d_outputs, d_residuals, mode):
         self._update_internal(inputs, outputs)
@@ -361,19 +437,18 @@ class TacsSolver(om.ImplicitComponent):
             if self.states_name in d_residuals:
 
                 if self.states_name in d_outputs:
-                    self.sp.addTransposeJacVecProduct(
-                        d_residuals[self.states_name], d_outputs[self.states_name]
-                    )
+                    self.sp.addTransposeJacVecProduct(d_residuals[self.states_name], d_outputs[self.states_name])
 
                 if self.rhs_name in d_inputs:
                     array_w_bcs = d_residuals[self.states_name].copy()
                     self.fea_assembler.applyBCsToVec(array_w_bcs)
                     d_inputs[self.rhs_name] -= array_w_bcs
 
-                if "x_struct0" in d_inputs:
+                if f"x_{self.discipline}0" in d_inputs:
+                    
                     self.sp.addAdjointResXptSensProducts(
                         [d_residuals[self.states_name]],
-                        [d_inputs["x_struct0"]],
+                        [d_inputs[f"x_{self.discipline}0"]],
                         scale=1.0,
                     )
 
@@ -413,7 +488,7 @@ class TacsFunctions(om.ExplicitComponent):
 
     def initialize(self):
         self.options.declare("fea_assembler", recordable=False)
-        self.options.declare("conduction", default=False)
+        self.options.declare("discipline", default="struct")
         self.options.declare("check_partials")
         self.options.declare("write_solution")
 
@@ -425,10 +500,10 @@ class TacsFunctions(om.ExplicitComponent):
         self.fea_assembler = self.options["fea_assembler"]
         self.check_partials = self.options["check_partials"]
         self.write_solution = self.options["write_solution"]
-        self.conduction = self.options["conduction"]
+        self.discipline = self.options["discipline"]
         self.solution_counter = 0
 
-        if self.conduction:
+        if self.discipline == "thermal":
             self.states_name = "T_conduct"
         else:
             self.states_name = "u_struct"
@@ -445,7 +520,7 @@ class TacsFunctions(om.ExplicitComponent):
             tags=["mphys_coupling"],
         )
         self.add_input(
-            "x_struct0",
+            f"x_{self.discipline}0",
             distributed=True,
             shape_by_conn=True,
             desc="structural node coordinates",
@@ -468,14 +543,23 @@ class TacsFunctions(om.ExplicitComponent):
             func_handle = self.sp.functionList[func_name]
             # Skip any mass functions
             if type(func_handle) not in MASS_FUNCS_CLASSES:
-                self.add_output(
-                    func_name, distributed=False, shape=1, tags=["mphys_result"]
-                )
+                self.add_output(func_name, distributed=False, shape=1, tags=["mphys_result"])
 
     def _update_internal(self, inputs):
         self.sp.setDesignVars(inputs["dv_struct"])
-        self.sp.setNodes(inputs["x_struct0"])
-        self.sp.setVariables(inputs[self.states_name])
+        self.sp.setNodes(inputs[f"x_{self.discipline}0"])
+        if self.discipline == "thermal":
+            # the statics problem zeros the entries at the boundary conditions by default. 
+            # So we need to update the values in the assembler our selves
+            # Here we use `setBCs` instead of `applyBCs` to place the temperature values at 
+            # the boundary into the array instead of zeroing them.
+            self.sp.u_array[:] = inputs[self.states_name]
+            # Apply boundary conditions
+            self.sp.assembler.setBCs(self.sp.u)
+            # Set states to assembler
+            self.sp.assembler.setVariables(self.sp.u)
+        else: 
+            self.sp.setVariables(inputs[self.states_name])
 
     def compute(self, inputs, outputs):
         self._update_internal(inputs)
@@ -511,14 +595,10 @@ class TacsFunctions(om.ExplicitComponent):
                     d_func = d_outputs[func_name]
 
                 if "dv_struct" in d_inputs:
-                    self.sp.addDVSens(
-                        [func_name], [d_inputs["dv_struct"]], scale=d_func
-                    )
+                    self.sp.addDVSens([func_name], [d_inputs["dv_struct"]], scale=d_func)
 
-                if "x_struct0" in d_inputs:
-                    self.sp.addXptSens(
-                        [func_name], [d_inputs["x_struct0"]], scale=d_func
-                    )
+                if f"x_{self.discipline}0" in d_inputs:
+                    self.sp.addXptSens([func_name], [d_inputs[f"x_{self.discipline}0"]], scale=d_func)
 
                 if self.states_name in d_inputs:
                     sv_sens = np.zeros_like(d_inputs[self.states_name])
@@ -554,7 +634,7 @@ class MassFunctions(om.ExplicitComponent):
             tags=["mphys_coupling"],
         )
         self.add_input(
-            "x_struct0",
+            f"x_{self.discipline}0",
             distributed=True,
             shape_by_conn=True,
             desc="structural node coordinates",
@@ -570,13 +650,11 @@ class MassFunctions(om.ExplicitComponent):
             func_handle = self.sp.functionList[func_name]
             # Only include mass functions
             if type(func_handle) in MASS_FUNCS_CLASSES:
-                self.add_output(
-                    func_name, distributed=False, shape=1, tags=["mphys_result"]
-                )
+                self.add_output(func_name, distributed=False, shape=1, tags=["mphys_result"])
 
     def _update_internal(self, inputs):
         self.sp.setDesignVars(inputs["dv_struct"])
-        self.sp.setNodes(inputs["x_struct0"])
+        self.sp.setNodes(inputs[f"x_{self.discipline}0"])
 
     def compute(self, inputs, outputs):
         self._update_internal(inputs)
@@ -607,79 +685,111 @@ class MassFunctions(om.ExplicitComponent):
                     d_func = d_outputs[func_name]
 
                 if "dv_struct" in d_inputs:
-                    self.sp.addDVSens(
-                        [func_name], [d_inputs["dv_struct"]], scale=d_func
-                    )
+                    self.sp.addDVSens([func_name], [d_inputs["dv_struct"]], scale=d_func)
 
-                if "x_struct0" in d_inputs:
-                    self.sp.addXptSens(
-                        [func_name], [d_inputs["x_struct0"]], scale=d_func
-                    )
+                if f"x_{self.discipline}0" in d_inputs:
+                    self.sp.addXptSens([func_name], [d_inputs[f"x_{self.discipline}0"]], scale=d_func)
 
 
 class TacsCouplingGroup(om.Group):
     def initialize(self):
         self.options.declare("fea_assembler", recordable=False)
         self.options.declare("check_partials")
-        self.options.declare("conduction", default=False)
+        self.options.declare("discipline", default="struct")
         self.options.declare("coupled", default=False)
         self.options.declare("scenario_name", default=None)
         self.options.declare("problem_setup", default=None)
+        self.options.declare(
+            "surface_mapper",
+            default=None,
+            recordable=False,
+            desc="a function that takes the volume coordinates and returns a masking vecotor for the surface coordinates",
+        )
 
     def setup(self):
         self.fea_assembler = self.options["fea_assembler"]
         self.check_partials = self.options["check_partials"]
         self.coupled = self.options["coupled"]
-        self.conduction = self.options["conduction"]
+        self.discipline = self.options["discipline"]
 
-        # Promote state variables/rhs with physics-specific tag that MPhys expects
-        promotes_inputs = [
-            ("x_struct0", "unmasker.x_struct0"),
-            ("dv_struct", "distributor.dv_struct"),
-        ]
-        if self.conduction:
+        if self.discipline == "thermal":
             self.states_name = "T_conduct"
             self.rhs_name = "q_conduct"
-        else:
+        elif self.discipline == "structural":
             self.states_name = "u_struct"
             self.rhs_name = "f_struct"
+        else:
+            raise NotImplementedError("Only thermal and structural disciplines are supported")
 
-        # Identify tacs nodes corresponding to lagrange multipliers. These are nodes that are typically added in tacs
-        # whenever an element using a lagrange multiplier formulation is used (such as an RBE). It is important that
-        # these nodes not be included included in the aerostructural coupling procedure, as they a purely mathematical constructs.
-        # We'll use this information later to create a mask for filtering out these nodes in the coupling procedure.
-        nnodes = self.fea_assembler.getNumOwnedNodes()
-        nmult = self.fea_assembler.getNumOwnedMultiplierNodes()
-        vpn = self.fea_assembler.getVarsPerNode()
-        mult_ids = self.fea_assembler.getLocalMultiplierNodeIDs()
-        mask = np.zeros([nnodes, vpn], dtype=bool)
-        mask[:, :] = True
-        mask[mult_ids, :] = False
+        if self.discipline == "struct":
+            # Identify tacs nodes corresponding to lagrange multipliers. These are nodes that are typically added in tacs
+            # whenever an element using a lagrange multiplier formulation is used (such as an RBE). It is important that
+            # these nodes not be included included in the aerostructural coupling procedure, as they a purely mathematical constructs.
+            # We'll use this information later to create a mask for filtering out these nodes in the coupling procedure.
+            nnodes = self.fea_assembler.getNumOwnedNodes()
+            nmult = self.fea_assembler.getNumOwnedMultiplierNodes()
+            vpn = self.fea_assembler.getVarsPerNode()
+            mult_ids = self.fea_assembler.getLocalMultiplierNodeIDs()
+            mask = np.zeros([nnodes, vpn], dtype=bool)
+            mask[:, :] = True
+            mask[mult_ids, :] = False
 
-        # Create an unmasking component to process the coupled force vector from the aerostructural
-        # load transfer component. This component takes the masked load vector (length = vpn * (nnodes - nmult))
-        # and creates an unmasked load vector (length = vpn * nnodes), by inserting 0.0 for the forces on
-        # the multiplier nodes
-        if self.coupled:
-            unmask_output = MaskedVariableDescription(
-                self.rhs_name, shape=nnodes * vpn, tags=["mphys_coupling"]
-            )
-            unmask_input = MaskedVariableDescription(
-                self.rhs_name + "_masked",
-                shape=(nnodes - nmult) * vpn,
-                tags=["mphys_coupling"],
-            )
-            unmasker = UnmaskedConverter(
-                input=unmask_input,
-                output=unmask_output,
-                mask=mask.flatten(),
-                distributed=True,
-            )
-            self.add_subsystem(
-                "unmasker",
-                unmasker,
-                promotes_inputs=[(self.rhs_name + "_masked", self.rhs_name)],
-            )
+            # Create an unmasking component to process the coupled force vector from the aerostructural
+            # load transfer component. This component takes the masked load vector (length = vpn * (nnodes - nmult))
+            # and creates an unmasked load vector (length = vpn * nnodes), by inserting 0.0 for the forces on
+            # the multiplier nodes
+            if self.coupled:
+                unmask_output = MaskedVariableDescription(self.rhs_name, shape=nnodes * vpn, tags=["mphys_coupling"])
+                unmask_input = MaskedVariableDescription(
+                    self.rhs_name + "_masked",
+                    shape=(nnodes - nmult) * vpn,
+                    tags=["mphys_coupling"],
+                )
+                unmasker = UnmaskedConverter(
+                    input=unmask_input,
+                    output=unmask_output,
+                    mask=mask.flatten(),
+                    distributed=True,
+                )
+                self.add_subsystem(
+                    "unmasker",
+                    unmasker,
+                    promotes_inputs=[(self.rhs_name + "_masked", self.rhs_name)],
+                )
+                # Promote state variables/rhs with physics-specific tag that MPhys expects
+                promotes_inputs = [
+                    (f"x_{self.discipline}0", f"unmasker.x_{self.discipline}0"),
+                    ("dv_struct", "distributor.dv_struct"),
+                ]
+        elif self.discipline == "thermal":
+            # map the surface heat flux vector to a volume heat flux vector
+            if self.coupled:
+                # get the mapping vecotor such that xpts_surf = xpts_vol[mapper]
+                xpts_vol = self.fea_assembler.getOrigNodes()
+                surf2vol_mapper = self.options["surface_mapper"](xpts_vol)
+
+                num_pts_vol = xpts_vol.size // 3
+                num_pts_surf = surf2vol_mapper.size
+
+                masked_in_desc = MaskedVariableDescription(
+                    f"{self.rhs_name}_surface", shape=num_pts_surf, tags=["mphys_coupling"]
+                )
+                unmasked_out_desc = MaskedVariableDescription(self.rhs_name, shape=num_pts_vol, tags=["mphys_coupling"])
+
+                self.add_subsystem(
+                    "q_conduct_surf2vol",
+                    UnmaskedConverter(
+                        input=masked_in_desc, output=unmasked_out_desc, mask=surf2vol_mapper.flatten(), distributed=True
+                    ),
+                )
+
+                # connect the output of the unmasker to the solver's RHS
+                self.connect(f"q_conduct_surf2vol.{self.rhs_name}", f"solver.{self.rhs_name}")
+
+                # promote the surface heat fluxes to the top level
+                self.promotes("q_conduct_surf2vol", inputs=[(masked_in_desc.name, self.rhs_name)])
+
+                promotes_inputs = [f"x_{self.discipline}0", ("dv_struct", "distributor.dv_struct")]
 
         self.add_subsystem(
             "solver",
@@ -687,38 +797,59 @@ class TacsCouplingGroup(om.Group):
                 fea_assembler=self.fea_assembler,
                 check_partials=self.check_partials,
                 coupled=self.coupled,
-                conduction=self.conduction,
+                discipline=self.discipline,
             ),
             promotes_inputs=promotes_inputs,
         )
 
-        # Create a masking component to process the full structural displacement vector (length = vpn * nnodes)
-        # and remove indices corresponding to multiplier nodes (length = vpn*(nnodes - nmult)).
-        mask_input = MaskedVariableDescription(
-            self.states_name, shape=nnodes * vpn, tags=["mphys_coupling"]
-        )
-        mask_output = MaskedVariableDescription(
-            self.states_name + "_masked",
-            shape=(nnodes - nmult) * vpn,
-            tags=["mphys_coupling"],
-        )
-        masker = MaskedConverter(
-            input=mask_input,
-            output=mask_output,
-            mask=mask.flatten(),
-            distributed=True,
-            init_output=0.0,
-        )
-        self.add_subsystem(
-            "masker",
-            masker,
-            promotes_outputs=[(self.states_name + "_masked", self.states_name)],
-        )
+        if self.discipline == "struct":
+            # Create a masking component to process the full structural displacement vector (length = vpn * nnodes)
+            # and remove indices corresponding to multiplier nodes (length = vpn*(nnodes - nmult)).
+            mask_input = MaskedVariableDescription(self.states_name, shape=nnodes * vpn, tags=["mphys_coupling"])
+            mask_output = MaskedVariableDescription(
+                self.states_name + "_masked",
+                shape=(nnodes - nmult) * vpn,
+                tags=["mphys_coupling"],
+            )
+            masker = MaskedConverter(
+                input=mask_input,
+                output=mask_output,
+                mask=mask.flatten(),
+                distributed=True,
+                init_output=0.0,
+            )
+            self.add_subsystem(
+                "masker",
+                masker,
+                promotes_outputs=[(self.states_name + "_masked", self.states_name)],
+            )
 
-        self.connect("solver." + self.states_name, "masker." + self.states_name)
+            self.connect("solver." + self.states_name, "masker." + self.states_name)
 
-        if self.coupled:
-            self.connect("unmasker." + self.rhs_name, "solver." + self.rhs_name)
+        elif self.discipline == "thermal":
+
+            unmasked_in_desc = MaskedVariableDescription(self.states_name, shape=num_pts_vol, tags=["mphys_coupling"])
+            masked_out_desc = MaskedVariableDescription(
+                self.states_name + "_surface",
+                shape=num_pts_surf,
+                tags=["mphys_coupling"],
+            )
+            self.add_subsystem(
+                "T_conduct_vol2surf",
+                MaskedConverter(
+                    input=unmasked_in_desc,
+                    output=masked_out_desc,
+                    mask=surf2vol_mapper.flatten(),
+                    distributed=True,
+                    init_output=0.0,
+                ),
+            )
+
+            # connect the volume temperatures to the solver
+            self.connect(f"solver.{self.states_name}", f"T_conduct_vol2surf.{unmasked_in_desc.name}")
+
+            # promote the surface temperatures to the top level
+            self.promotes("T_conduct_vol2surf", outputs=[(f"{masked_out_desc.name}", self.states_name)])
 
         # Name problem based on scenario that's calling builder
         scenario_name = self.options["scenario_name"]
@@ -745,7 +876,7 @@ class TacsFuncsGroup(om.Group):
     def initialize(self):
         self.options.declare("fea_assembler", recordable=False)
         self.options.declare("check_partials")
-        self.options.declare("conduction", default=False)
+        self.options.declare("discipline", default="struct")
         self.options.declare("scenario_name", default=None)
         self.options.declare("problem_setup", default=None)
         self.options.declare("write_solution")
@@ -753,7 +884,7 @@ class TacsFuncsGroup(om.Group):
     def setup(self):
         self.fea_assembler = self.options["fea_assembler"]
         self.check_partials = self.options["check_partials"]
-        self.conduction = self.options["conduction"]
+        self.discipline = self.options["discipline"]
         self.write_solution = self.options["write_solution"]
 
         # Setup problem based on scenario that's calling builder
@@ -763,7 +894,7 @@ class TacsFuncsGroup(om.Group):
             name = "default"
         else:
             name = scenario_name
-        sp = self.fea_assembler.createStaticProblem(name=name)
+        sp = self.fea_assembler.createStaticProblem(name=name, options={"outputDir": "./output"})
 
         # Setup TACS problem with user-defined output functions
         problem_setup = self.options["problem_setup"]
@@ -775,10 +906,10 @@ class TacsFuncsGroup(om.Group):
 
         # Promote state variables with physics-specific tag that MPhys expects
         promotes_inputs = [
-            ("x_struct0", "unmasker.x_struct0"),
+            f"x_{self.discipline}0",
             ("dv_struct", "distributor.dv_struct"),
         ]
-        if self.conduction:
+        if self.discipline == "thermal":
             promotes_states = [("T_conduct", "solver.T_conduct")]
         else:
             promotes_states = [("u_struct", "solver.u_struct")]
@@ -789,7 +920,7 @@ class TacsFuncsGroup(om.Group):
             TacsFunctions(
                 fea_assembler=self.fea_assembler,
                 check_partials=self.check_partials,
-                conduction=self.conduction,
+                discipline=self.discipline,
                 write_solution=self.write_solution,
             ),
             promotes_inputs=promotes_inputs + promotes_states,
@@ -808,9 +939,7 @@ class TacsFuncsGroup(om.Group):
             # Note: these functions do not depend on the states
             self.add_subsystem(
                 "mass_funcs",
-                MassFunctions(
-                    fea_assembler=self.fea_assembler, check_partials=self.check_partials
-                ),
+                MassFunctions(fea_assembler=self.fea_assembler, check_partials=self.check_partials),
                 promotes_inputs=promotes_inputs,
                 promotes_outputs=["*"],
             )
@@ -822,18 +951,20 @@ class TacsBuilder(Builder):
         self,
         options,
         check_partials=False,
-        conduction=False,
         coupled=True,
         write_solution=True,
+        discipline="struct",
+        surface_mapper=None,
     ):
         self.options = copy.deepcopy(options)
         self.check_partials = check_partials
-        # Flag to switch to tacs conduction solver (False->structural)
-        self.conduction = conduction
+        # Flag to switch to tacs discipline solver
+        self.discipline = discipline
         # Flag to turn on f5 file writer
         self.write_solution = write_solution
         # Flag to turn on coupling variables
         self.coupled = coupled
+        self.surface_mapper = surface_mapper
 
     def initialize(self, comm):
         pytacs_options = copy.deepcopy(self.options)
@@ -861,27 +992,30 @@ class TacsBuilder(Builder):
     def get_coupling_group_subsystem(self, scenario_name=None):
         return TacsCouplingGroup(
             fea_assembler=self.fea_assembler,
-            conduction=self.conduction,
+            discipline=self.discipline,
             check_partials=self.check_partials,
             coupled=self.coupled,
             scenario_name=scenario_name,
             problem_setup=self.problem_setup,
+            surface_mapper=self.surface_mapper,
         )
 
     def get_mesh_coordinate_subsystem(self, scenario_name=None):
-        return TacsMeshGroup(fea_assembler=self.fea_assembler)
+        return TacsMeshGroup(
+            fea_assembler=self.fea_assembler, discipline=self.discipline, surface_mapper=self.surface_mapper
+        )
 
     def get_pre_coupling_subsystem(self, scenario_name=None):
         initial_dvs = self.get_initial_dvs()
         return TacsPrecouplingGroup(
-            fea_assembler=self.fea_assembler, initial_dv_vals=initial_dvs
+            fea_assembler=self.fea_assembler, initial_dv_vals=initial_dvs, discipline=self.discipline
         )
 
     def get_post_coupling_subsystem(self, scenario_name=None):
         return TacsFuncsGroup(
             fea_assembler=self.fea_assembler,
             check_partials=self.check_partials,
-            conduction=self.conduction,
+            discipline=self.discipline,
             write_solution=self.write_solution,
             scenario_name=scenario_name,
             problem_setup=self.problem_setup,
