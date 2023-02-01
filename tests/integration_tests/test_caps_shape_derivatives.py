@@ -43,7 +43,7 @@ class TestCaps2Tacs(unittest.TestCase):
         ).register_to(tacs_aim)
 
         # register one shape variable rib_a1
-        caps2tacs.ShapeVariable("rib_a1", value=1.0).register_to(tacs_aim)
+        caps2tacs.ShapeVariable("rib_a1").register_to(tacs_aim)
 
         # add constraints and loads
         caps2tacs.PinConstraint("root").register_to(tacs_aim)

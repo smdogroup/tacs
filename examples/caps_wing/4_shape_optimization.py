@@ -10,6 +10,7 @@ from tacs import functions, caps2tacs
 from mpi4py import MPI
 import openmdao, openmdao.api as om
 
+
 class Caps2TacsComponent(om.ExplicitComponent):
     def initialize(self):
         """
@@ -27,7 +28,9 @@ class Caps2TacsComponent(om.ExplicitComponent):
 
         # attach parameters to the openMdao object
         for shape_var in tacs_aim_wrapper.shape_variables:
-            self.add_input(shape_var.name, val=tacs_aim.geometry.despmtr[shape_var.name].value)
+            self.add_input(
+                shape_var.name, val=tacs_aim.geometry.despmtr[shape_var.name].value
+            )
 
         # add output variables
         self._func_names = ["mass"]
@@ -53,7 +56,10 @@ class Caps2TacsComponent(om.ExplicitComponent):
         # Update input values
         design_change = False
         for shape_var in tacs_aim_wrapper.shape_variables:
-            if tacs_aim.geometry.despmtr[shape_var.name].value != inputs[shape_var.name]:
+            if (
+                tacs_aim.geometry.despmtr[shape_var.name].value
+                != inputs[shape_var.name]
+            ):
                 design_change = True
                 tacs_aim.geometry.despmtr[shape_var.name].value = inputs[shape_var.name]
 
@@ -64,15 +70,15 @@ class Caps2TacsComponent(om.ExplicitComponent):
         if design_change:
             self._design_hdl.write("New Design...\n")
             for shape_var in tacs_aim_wrapper.shape_variables:
-                self._design_hdl.write(f"\tDV {shape_var.name} = {inputs[shape_var.name][0]}\n")
+                self._design_hdl.write(
+                    f"\tDV {shape_var.name} = {inputs[shape_var.name][0]}\n"
+                )
             self._design_hdl.flush()
 
         # forward analysis here
         if design_change:
             self._run_analysis(tacs_aim_wrapper)
-            self._plot_history(
-                tacs_aim, filename="opt_history.png"
-            )
+            self._plot_history(tacs_aim, filename="opt_history.png")
             self._write_history()
 
         # Grab objectives and attach as openmdao outputs
@@ -131,7 +137,10 @@ class Caps2TacsComponent(om.ExplicitComponent):
         # Update input values
         design_change = False
         for shape_var in tacs_aim_wrapper.shape_variables:
-            if tacs_aim.geometry.despmtr[shape_var.name].value != inputs[shape_var.name]:
+            if (
+                tacs_aim.geometry.despmtr[shape_var.name].value
+                != inputs[shape_var.name]
+            ):
                 design_change = True
                 tacs_aim.geometry.despmtr[shape_var.name].value = inputs[shape_var.name]
 
@@ -142,7 +151,9 @@ class Caps2TacsComponent(om.ExplicitComponent):
         if design_change:
             self._design_hdl.write("New Design...\n")
             for shape_var in tacs_aim_wrapper.shape_variables:
-                self._design_hdl.write(f"\tDV {shape_var.name} = {inputs[shape_var.name][0]}\n")
+                self._design_hdl.write(
+                    f"\tDV {shape_var.name} = {inputs[shape_var.name][0]}\n"
+                )
             self._design_hdl.flush()
 
         if design_change:
@@ -151,7 +162,9 @@ class Caps2TacsComponent(om.ExplicitComponent):
         # Get derivatives and partials
         for func_name in self._func_names:
             for shape_var in tacs_aim_wrapper.shape_variables:
-                partials[func_name, shape_var.name] = self._gradients[func_name][shape_var.name]
+                partials[func_name, shape_var.name] = self._gradients[func_name][
+                    shape_var.name
+                ]
 
     def _run_analysis(self, tacs_aim_wrapper):
         """
@@ -181,7 +194,9 @@ class Caps2TacsComponent(om.ExplicitComponent):
 
         # functions and gradients are stored in the tacs AIM dynout methods
         self._functions = tacs_aim_wrapper.get_functions(self._func_names)
-        self._gradients = tacs_aim_wrapper.get_gradients(self._func_names, tacs_aim_wrapper.shape_variables)
+        self._gradients = tacs_aim_wrapper.get_gradients(
+            self._func_names, tacs_aim_wrapper.shape_variables
+        )
         return
 
 
@@ -224,9 +239,7 @@ caps2tacs.ShapeVariable("rib_a2").register_to(tacs_aim)
 
 # add constraints and loads
 caps2tacs.PinConstraint("root").register_to(tacs_aim)
-caps2tacs.GridForce("OML", direction=[0, 0, 1.0], magnitude=100).register_to(
-    tacs_aim
-)
+caps2tacs.GridForce("OML", direction=[0, 0, 1.0], magnitude=100).register_to(tacs_aim)
 
 # run the pre analysis to build tacs input files
 tacs_aim.setup_aim()
@@ -269,4 +282,3 @@ tacs_system._design_hdl.write(f"\trib_a2 = {rib_a2_value}\n")
 # close the design hdl file and cleanup
 tacs_system._design_hdl.close()
 om_problem.cleanup()
-

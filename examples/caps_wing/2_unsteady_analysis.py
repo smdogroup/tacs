@@ -13,7 +13,7 @@ from mpi4py import MPI
 comm = MPI.COMM_WORLD
 caps_struct = caps2tacs.CapsStruct.build(csm_file="simple_naca_wing.csm", comm=comm)
 tacs_aim = caps_struct.tacs_aim
-egads_aim = caps_struct.egads_aim.set_mesh(
+caps_struct.egads_aim.set_mesh(
     edge_pt_min=15,
     edge_pt_max=20,
     global_mesh_size=0.25,
