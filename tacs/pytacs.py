@@ -22,19 +22,55 @@ History:
 # Imports
 # =============================================================================
 from __future__ import print_function
+
 import copy
 import numbers
-import numpy
 import time
+import warnings
+from functools import wraps
 
 import numpy as np
 from mpi4py import MPI
-import warnings
-import tacs.TACS, tacs.constitutive, tacs.elements, tacs.functions, tacs.problems.static
-from .utilities import BaseUI
+
+import tacs.TACS
+import tacs.constitutive
+import tacs.elements
+import tacs.functions
+import tacs.problems.static
 from tacs.pymeshloader import pyMeshLoader
+from .utilities import BaseUI
 
 warnings.simplefilter("default")
+
+
+# Define decorator functions for methods that must be called before initialize
+def preinitialize_method(method):
+    @wraps(method)
+    def wrapped_method(self, *args, **kwargs):
+        if self.assembler is not None:
+            raise self._TACSError(
+                f"`{method.__name__}` is a pre-initialize method. "
+                "It may only be called before the 'initialize' method has been called."
+            )
+        else:
+            return method(self, *args, **kwargs)
+
+    return wrapped_method
+
+
+# Define decorator functions for methods that must be called after initialize
+def postinitialize_method(method):
+    @wraps(method)
+    def wrapped_method(self, *args, **kwargs):
+        if self.assembler is None:
+            raise self._TACSError(
+                f"`{method.__name__}` is a post-initialize method. "
+                "It may only be called after the 'initialize' method has been called."
+            )
+        else:
+            return method(self, *args, **kwargs)
+
+    return wrapped_method
 
 
 class pyTACS(BaseUI):
@@ -65,7 +101,8 @@ class pyTACS(BaseUI):
             f"\t\t tacs.TACS.SOLID_ELEMENT = {tacs.TACS.SOLID_ELEMENT}\n"
             f"\t\t tacs.TACS.RIGID_ELEMENT = {tacs.TACS.RIGID_ELEMENT}\n"
             f"\t\t tacs.TACS.MASS_ELEMENT = {tacs.TACS.MASS_ELEMENT}\n"
-            f"\t\t tacs.TACS.SPRING_ELEMENT = {tacs.TACS.SPRING_ELEMENT}",
+            f"\t\t tacs.TACS.SPRING_ELEMENT = {tacs.TACS.SPRING_ELEMENT}\n"
+            f"\t\t tacs.TACS.PCM_ELEMENT = {tacs.TACS.PCM_ELEMENT}",
         ],
         "writeConnectivity": [
             bool,
@@ -92,6 +129,11 @@ class pyTACS(BaseUI):
             bool,
             True,
             "Flag for whether to include element extra variables in f5 file.",
+        ],
+        "writeLoads": [
+            bool,
+            True,
+            "Flag for whether to include external nodal loads in f5 file.",
         ],
         "writeCoordinateFrame": [
             bool,
@@ -189,6 +231,7 @@ class pyTACS(BaseUI):
 
         # List of DV groups
         self.globalDVs = {}
+        self.massDVs = {}
         self.compIDBounds = {}
         self.addedCompIDs = set()
 
@@ -231,6 +274,7 @@ class pyTACS(BaseUI):
             )
             self._pp("+--------------------------------------------------+")
 
+    @preinitialize_method
     def addGlobalDV(self, descript, value, lower=None, upper=None, scale=1.0):
         """
         This function allows adding design variables that are not
@@ -261,9 +305,136 @@ class pyTACS(BaseUI):
             "value": value,
             "lowerBound": lower,
             "upperBound": upper,
+            "isMassDV": False,
         }
         self.dvNum += 1
         self.scaleList.append(scale)
+
+    def getGlobalDVs(self):
+        """
+        Return a dict holding info about all current global DVs.
+
+        Returns
+        -------
+        globalDVs : dict
+            Dictionary holding global dv information.
+        """
+        return self.globalDVs.copy()
+
+    def getGlobalDVKeys(self):
+        """
+        Get key names for all current global DVs.
+
+        Returns
+        -------
+        globalDVKeys : list
+            List holding global dv names.
+        """
+        return list(self.globalDVs.keys())
+
+    def getGlobalDVNums(self):
+        """
+        Get the dv nums corresponding to global DVs.
+
+        Returns
+        -------
+        globalDVNums : list
+            List holding dv nums corresponding to global DVs.
+        """
+        return [self.globalDVs[descript]["num"] for descript in self.globalDVs]
+
+    def getTotalNumGlobalDVs(self):
+        """
+        Get total number of global DVs across all processors.
+
+        Returns
+        -------
+        globalDVs : dict
+            Dictionary holding global dv information.
+        """
+        return len(self.globalDVs)
+
+    @preinitialize_method
+    def assignMassDV(self, descript, eIDs, dvName="m"):
+        """
+        Assign a global DV to a point mass element.
+
+        Parameters
+        ----------
+        descript : str
+            Global DV key to assign mass design variable to. If the key is does not exist,
+            it will automatically be created and added to global DVs.
+
+        eIDs : int or list
+            Element IDs of concentrated mass to assign DV to (NASTRAN ordering)
+
+        dvName : str
+            Name of mass property to apply DV to.
+            May be `m` for mass, `I11`, `I22`, `I12`, etc. for moment of inertia components.
+            Defaults to `m` (mass).
+
+        Notes
+        -----
+        Currently only CONM2 cards are supported.
+        """
+        # Make sure eID is an array
+        eIDs = np.atleast_1d(eIDs)
+
+        # Check if referenced element ID is a CONM2 element
+        for eID in eIDs:
+            is_mass_element = False
+            if eID in self.bdfInfo.masses:
+                if self.bdfInfo.masses[eID].type in ["CONM2"]:
+                    is_mass_element = True
+
+            if not is_mass_element:
+                raise self._TACSError(
+                    f"Element ID '{eID}' does not correspond to a `CONM2` element. "
+                    "Only `CONM2` elements are supported for this method."
+                )
+
+        # Check if descript already exists in global dvs, if not add it
+        if descript not in self.globalDVs:
+            self.addGlobalDV(descript, None)
+
+        dv_dict = self.globalDVs[descript]
+
+        # Flag this global dv as being a mass dv
+        dv_dict["isMassDV"] = True
+
+        massDV = dv_dict["num"]
+        value = dv_dict["value"]
+        ub = dv_dict["upperBound"]
+        lb = dv_dict["lowerBound"]
+
+        for eID in eIDs:
+            # If the element ID hasn't already been added to massDVs, add it
+            if eID not in self.massDVs:
+                self.massDVs[eID] = {}
+
+            # Update the element entry with the dv num
+            self.massDVs[eID][f"{dvName}Num"] = massDV
+
+            # Update the element entry with the dv name
+            if value is not None:
+                self.massDVs[eID][dvName] = value
+            # If value was defined from previous call, remove it
+            elif dvName in self.massDVs[eID]:
+                self.massDVs[eID].pop(dvName)
+
+            # Update the element entry with the dv upper bound
+            if ub is not None:
+                self.massDVs[eID][f"{dvName}ub"] = ub
+            # If upper bound was defined from previous call, remove it
+            elif f"{dvName}ub" in self.massDVs[eID]:
+                self.massDVs[eID].pop(f"{dvName}ub")
+
+            # Update the element entry with the dv lower bound
+            if lb is not None:
+                self.massDVs[eID][f"{dvName}lb"] = lb
+            # If lower bound was defined from previous call, remove it
+            elif f"{dvName}lb" in self.massDVs[eID]:
+                self.massDVs[eID].pop(f"{dvName}lb")
 
     def selectCompIDs(
         self,
@@ -340,7 +511,7 @@ class pyTACS(BaseUI):
            of which 'include' components will be selected. This
            functionality uses a geometric approach to select the compIDs.
            All components within the project 2D convex hull are included.
-           Therefore it is essential to split up concave include regions
+           Therefore, it is essential to split up concave include regions
            into smaller convex regions. Use multiple calls to selectCompIDs to
            accumulate multiple regions.
 
@@ -386,7 +557,7 @@ class pyTACS(BaseUI):
         """
 
         # Defaults
-        includeIDs = numpy.arange(self.nComp)
+        includeIDs = np.arange(self.nComp)
         excludeIDs = []
         includeBoundIDs = None
 
@@ -513,6 +684,53 @@ class pyTACS(BaseUI):
 
         return compDescripts
 
+    def getGlobalNodeIDsForComps(self, compIDs, nastranOrdering=False):
+        """
+        return the global (non-partitioned) node IDs belonging to a given list of component IDs
+
+        Parameters
+        ----------
+        compIDs : int or list[int] or None
+            List of integers of the compIDs numbers. If None, returns nodeIDs for all components.
+            Defaults to None.
+
+        nastranOrdering : False
+            Flag signaling whether nodeIDs are in TACS (default) or NASTRAN (grid IDs in bdf file) ordering
+            Defaults to False.
+
+        Returns
+        -------
+        nodeIDs : list
+            List of unique nodeIDs that belong to the given list of compIDs
+        """
+        # Return all component ids
+        if compIDs is None:
+            compIDs = list(range(self.nComp))
+
+        return self.meshLoader.getGlobalNodeIDsForComps(compIDs, nastranOrdering)
+
+    @postinitialize_method
+    def getLocalNodeIDsForComps(self, compIDs):
+        """
+        return the local (partitioned) node IDs belonging to a given list of component IDs
+
+        Parameters
+        ----------
+         compIDs : int or list[int] or None
+            List of integers of the compIDs numbers. If None, returns nodeIDs for all components.
+            Defaults to None.
+
+        Returns
+        -------
+        nodeIDs : list
+            List of unique nodeIDs that belong to the given list of compIDs
+        """
+        # Return all component ids
+        if compIDs is None:
+            compIDs = list(range(self.nComp))
+
+        return self.meshLoader.getLocalNodeIDsForComps(compIDs)
+
     def initialize(self, elemCallBack=None):
         """
         This is the 'last' method to be called during the setup. The
@@ -562,7 +780,9 @@ class pyTACS(BaseUI):
         self._createOutputGroups()
         self._createElements(elemCallBack)
 
-        self.assembler = self.meshLoader.createTACSAssembler(self.varsPerNode)
+        self.assembler = self.meshLoader.createTACSAssembler(
+            self.varsPerNode, self.massDVs
+        )
 
         self._createOutputViewer()
 
@@ -800,7 +1020,7 @@ class pyTACS(BaseUI):
                 )
 
             elif propInfo.type == "PBUSH":  # Nastran spring
-                k = numpy.zeros(6)
+                k = np.zeros(6)
                 for j in range(len(k)):
                     if propInfo.Ki[j]:
                         k[j] = propInfo.Ki[j]
@@ -856,7 +1076,7 @@ class pyTACS(BaseUI):
                 refAxis = elemDict[propertyID]["elements"][0].g0_vector
                 transform = tacs.elements.BeamRefAxisTransform(refAxis)
             elif propInfo.type == "PROD":
-                refAxis = numpy.array(
+                refAxis = np.array(
                     [1.0, -1.0, 1.0]
                 )  # dummy ref_axis, not really needed for rods
                 transform = tacs.elements.BeamRefAxisTransform(refAxis)
@@ -869,7 +1089,7 @@ class pyTACS(BaseUI):
                     )
                 elif elemDict[propertyID]["elements"][0].x[0]:
                     refAxis = (
-                        numpy.array(elemDict[propertyID]["elements"][0].x)
+                        np.array(elemDict[propertyID]["elements"][0].x)
                         - elemDict[propertyID]["elements"][0]
                         .nodes_ref[0]
                         .get_position()
@@ -925,6 +1145,7 @@ class pyTACS(BaseUI):
 
         return elemCallBack
 
+    @postinitialize_method
     def getOrigDesignVars(self):
         """
         get the original design variables that were specified with
@@ -932,15 +1153,13 @@ class pyTACS(BaseUI):
 
         Returns
         ----------
-        x : array
-            The current design variable vector set in tacs.
+        x : numpy.ndarray
+            The original design variable vector set in tacs.
 
         """
-        if self.assembler is None:
-            raise self._initializeError()
-
         return self.x0.getArray().copy()
 
+    @postinitialize_method
     def createDesignVec(self, asBVec=False):
         """
         Create a new tacs distributed design vector.
@@ -958,48 +1177,40 @@ class pyTACS(BaseUI):
         x : numpy.ndarray or TACS.Vec
             Distributed design variable vector
         """
-        if self.assembler is None:
-            raise self._initializeError()
-
         xVec = self.assembler.createDesignVec()
         if asBVec:
             return xVec
         else:
             return xVec.getArray()
 
+    @postinitialize_method
     def getNumDesignVars(self):
         """
         Return the number of design variables on this processor.
         """
-        if self.assembler is None:
-            raise self._initializeError()
-
         return self.x0.getSize()
 
+    @postinitialize_method
     def getTotalNumDesignVars(self):
         """
         Return the number of design variables across all processors.
         """
-        if self.assembler is None:
-            raise self._initializeError()
-
         return self.dvNum
 
+    @postinitialize_method
     def getOrigNodes(self):
         """
-        Return the original mesh coordiantes read in from the meshLoader.
+        Return the original mesh coordinates read in from the meshLoader.
 
         Returns
         -------
-        coords : array
+        coords : numpy.ndarray
             Structural coordinate in array of size (N * 3) where N is
             the number of structural nodes on this processor.
         """
-        if self.assembler is None:
-            raise self._initializeError()
-
         return self.Xpts0.getArray().copy()
 
+    @postinitialize_method
     def createNodeVec(self, asBVec=False):
         """
         Create a new tacs distributed node vector.
@@ -1017,8 +1228,6 @@ class pyTACS(BaseUI):
         xpts : numpy.ndarray or TACS.Vec
             Distributed node coordinate vector
         """
-        if self.assembler is None:
-            raise self._initializeError()
 
         xptVec = self.assembler.createNodeVec()
         if asBVec:
@@ -1026,31 +1235,28 @@ class pyTACS(BaseUI):
         else:
             return xptVec.getArray()
 
+    @postinitialize_method
     def getNumOwnedNodes(self):
         """
         Get the number of nodes owned by this processor.
         """
-        if self.assembler is None:
-            raise self._initializeError()
-
         return self.assembler.getNumOwnedNodes()
 
+    @postinitialize_method
     def getNumOwnedMultiplierNodes(self):
         """
         Get number of multiplier nodes owned by this processor.
         """
-        if self.assembler is None:
-            raise self._initializeError()
         return len(self.meshLoader.getLocalMultiplierNodeIDs())
 
+    @postinitialize_method
     def getLocalMultiplierNodeIDs(self):
         """
         Get the tacs indices of multiplier nodes used to hold lagrange multipliers on this processor.
         """
-        if self.assembler is None:
-            raise self._initializeError()
         return self.meshLoader.getLocalMultiplierNodeIDs()
 
+    @postinitialize_method
     def createVec(self, asBVec=False):
         """
         Create a new tacs distributed state variable vector.
@@ -1068,34 +1274,24 @@ class pyTACS(BaseUI):
         vars : numpy.ndarray or TACS.Vec
             Distributed state variable vector
         """
-        if self.assembler is None:
-            raise self._initializeError()
-
         vars = self.assembler.createVec()
         if asBVec:
             return vars
         else:
             return vars.getArray()
 
+    @postinitialize_method
     def getVarsPerNode(self):
         """
         Get the number of variables per node for the model.
         """
-        if self.assembler is None:
-            raise self._initializeError()
-
         return self.assembler.getVarsPerNode()
 
+    @postinitialize_method
     def applyBCsToVec(self, vec):
         """
         Applies zeros to boundary condition dofs in input vector.
         """
-        if self.assembler is None:
-            raise self._initializeError()
-
-        varVec = self.assembler.createVec()
-        varArray = varVec.getArray()
-
         # Check if input is a BVec or numpy array
         if isinstance(vec, tacs.TACS.Vec):
             self.assembler.applyBCs(vec)
@@ -1110,6 +1306,7 @@ class pyTACS(BaseUI):
             # Copy values back to array
             array[:] = vec.getArray()
 
+    @postinitialize_method
     def createStaticProblem(self, name, options={}):
         """
         Create a new staticProblem for modeling a static load cases.
@@ -1128,9 +1325,6 @@ class pyTACS(BaseUI):
         problem : StaticProblem
             StaticProblem object used for modeling and solving static cases.
         """
-        if self.assembler is None:
-            raise self._initializeError()
-
         problem = tacs.problems.static.StaticProblem(
             name, self.assembler, self.comm, self.outputViewer, self.meshLoader, options
         )
@@ -1139,6 +1333,7 @@ class pyTACS(BaseUI):
         problem.setNodes(self.Xpts0)
         return problem
 
+    @postinitialize_method
     def createTransientProblem(self, name, tInit, tFinal, numSteps, options={}):
         """
         Create a new TransientProblem for modeling a transient load cases.
@@ -1163,9 +1358,6 @@ class pyTACS(BaseUI):
         problem : TransientProblem
             TransientProblem object used for modeling and solving transient cases.
         """
-        if self.assembler is None:
-            raise self._initializeError()
-
         problem = tacs.problems.transient.TransientProblem(
             name,
             tInit,
@@ -1182,6 +1374,7 @@ class pyTACS(BaseUI):
         problem.setNodes(self.Xpts0)
         return problem
 
+    @postinitialize_method
     def createModalProblem(self, name, sigma, numEigs, options={}):
         """
         Create a new ModalProblem for performing modal analysis.
@@ -1205,9 +1398,6 @@ class pyTACS(BaseUI):
         problem : ModalProblem
             ModalProblem object used for performing modal eigenvalue analysis.
         """
-        if self.assembler is None:
-            raise self._initializeError()
-
         problem = tacs.problems.modal.ModalProblem(
             name,
             sigma,
@@ -1223,6 +1413,7 @@ class pyTACS(BaseUI):
         problem.setNodes(self.Xpts0)
         return problem
 
+    @postinitialize_method
     def createTACSProbsFromBDF(self):
         """
         Automatically define tacs problem classes with loads using information contained in BDF file.
@@ -1240,10 +1431,6 @@ class pyTACS(BaseUI):
         Currently only supports LOAD, FORCE, MOMENT, GRAV, RFORCE, PLOAD2, PLOAD4, TLOAD1, TLOAD2, and DLOAD cards.
         Currently only supports staticProblem (SOL 101), transientProblem (SOL 109), and modalProblems (SOL 103)
         """
-
-        if self.assembler is None:
-            raise self._initializeError()
-
         # Make sure cross-referencing is turned on in pynastran
         if self.bdfInfo.is_xrefed is False:
             self.bdfInfo.cross_reference()
@@ -1363,9 +1550,9 @@ class pyTACS(BaseUI):
             self.fam.append(aux[0])
 
         # Uniqify them and sort
-        self.fam = sorted(numpy.unique(self.fam))
+        self.fam = sorted(np.unique(self.fam))
 
-        self.compFam = numpy.zeros(self.nComp, dtype="intc")
+        self.compFam = np.zeros(self.nComp, dtype="intc")
         for i in range(self.nComp):
             aux = self.compDescripts[i].split(self.getOption("familySeparator"))
             self.compFam[i] = self.fam.index(aux[0])
@@ -1391,6 +1578,8 @@ class pyTACS(BaseUI):
             write_flag |= tacs.TACS.OUTPUT_STRESSES
         if self.getOption("writeExtras"):
             write_flag |= tacs.TACS.OUTPUT_EXTRAS
+        if self.getOption("writeLoads"):
+            write_flag |= tacs.TACS.OUTPUT_LOADS
         if self.getOption("writeCoordinateFrame"):
             write_flag |= tacs.TACS.OUTPUT_COORDINATES
 
@@ -1528,7 +1717,7 @@ class pyTACS(BaseUI):
             else:
                 elemObjects = result
 
-            if isinstance(elemObjects, tacs.TACS.Element) and numElements == 1:
+            if isinstance(elemObjects, tacs.TACS.Element):
                 # There was only one element, recast it as a list and continue
                 elemObjects = [elemObjects]
                 numFoundElements += 1
@@ -1540,19 +1729,17 @@ class pyTACS(BaseUI):
                     else:
                         self._TACSError(
                             f"Object of type {type(object)} returned in elemCallBack function "
-                            "is not a valid TACS element object. The \
+                            f"is not a valid TACS element object. The \
                                string representation of the offending object is: \
                                '{repr(object)}'"
                         )
 
             if numFoundElements != numElements:
                 raise self._TACSError(
-                    "Could not find all required element objects in the "
-                    "return arguments from user-supplied "
-                    "elemCallBack function. {} element types ({}) are contained in Component {}, "
-                    "but only {} were returned by elemCallback.".format(
-                        numElements, repr(self.elemDescripts[i]), i, numFoundElements
-                    )
+                    f"Unexpected number of element objects \
+                    returned from user-supplied elemCallBack function. \
+                    {numElements} element types ({repr(self.elemDescripts[i])}) are contained in Component {i}, \
+                    but {numFoundElements} element objects were returned by elemCallback."
                 )
 
             # Now determine the number of design variables. This is
@@ -1574,7 +1761,7 @@ class pyTACS(BaseUI):
                             newVars.append(var)
 
             # Remove repeated dv nums from list
-            newVars = numpy.unique(newVars)
+            newVars = np.unique(newVars)
             newVars.sort()
 
             if len(newVars) > 0:
@@ -1584,15 +1771,15 @@ class pyTACS(BaseUI):
                     raise self._TACSError(
                         "Inconsistent design variables detected. "
                         "The added design variables are not continuous."
-                        f" The added design varibales are {repr(newVars)}."
+                        f" The added design variables are {repr(newVars)}."
                     )
 
-            # Finally increment the dvcounter
+            # Finally increment the dv counter
             self.dvNum += len(newVars)
 
             if len(newVars) > 0:
                 if scaleList is None:
-                    self.scaleList.extend(numpy.ones(len(newVars)))
+                    self.scaleList.extend(np.ones(len(newVars)))
                 else:
                     # Make sure that the scaleList is the correct length.
                     if len(scaleList) != len(newVars):
@@ -1602,7 +1789,7 @@ class pyTACS(BaseUI):
                         {len(scaleList)} scale variables returned. The scale for these \
                         variables will be set to 1.0. The scale variables are {repr(scaleList)}."
                         )
-                        self.scaleList.extend(numpy.ones(len(newVars)))
+                        self.scaleList.extend(np.ones(len(newVars)))
                     else:
                         self.scaleList.extend(scaleList)
 
@@ -1619,25 +1806,15 @@ class pyTACS(BaseUI):
                     self.varsPerNode = elemVarsPerNode
                 elif self.varsPerNode != elemVarsPerNode:
                     raise self._TACSError(
-                        "Model references elements with differing numbers of variables per node (%d and %d). "
+                        "Model references elements with differing numbers of variables per node "
+                        f"({self.varsPerNode} and {elemVarsPerNode}). "
                         "All elements must use same number of variables to be compatible."
-                        % (self.varsPerNode, elemVarsPerNode)
                     )
 
         # If varsPerNode still hasn't been set (because there were no elements added in the callback)
         # Default to 6
         if self.varsPerNode is None:
             self.varsPerNode = 6
-
-    def _initializeError(self):
-        """
-        Standard error print out if the user tries to call certain pytacs methods before intializing.
-        """
-        error = self._TACSError(
-            "TACS assembler has not been created. "
-            "Assembler must created first by running 'initalize' method."
-        )
-        return error
 
 
 def _tload2_get_load_at_time(tload2, time, scale=1.0):

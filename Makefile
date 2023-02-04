@@ -30,7 +30,7 @@ default:
 	   echo "Building Real TACS"; \
 	   for subdir in $(TACS_SUBDIRS) ; do \
 	      echo "making $@ in $$subdir"; \
-	      echo; (cd $$subdir && $(MAKE) TACS_DIR=${TACS_DIR}) || exit 1; \
+	      echo; (cd $$subdir && $(MAKE) TACS_DIR=${TACS_DIR} TACS_DEF=${TACS_DEF}) || exit 1; \
             done \
 	fi
 	${CXX} ${SO_LINK_FLAGS} ${TACS_OBJS} ${TACS_EXTERN_LIBS} -o ${TACS_DIR}/lib/libtacs.${SO_EXT}
@@ -55,7 +55,7 @@ debug:
 	   echo "Building Real TACS"; \
 	   for subdir in $(TACS_SUBDIRS) ; do \
 	      echo "making $@ in $$subdir"; \
-	      echo; (cd $$subdir && $(MAKE) debug TACS_DIR=${TACS_DIR}) || exit 1; \
+	      echo; (cd $$subdir && $(MAKE) debug TACS_DIR=${TACS_DIR} TACS_DEF=${TACS_DEF}) || exit 1; \
             done \
 	fi
 	${CXX} ${SO_LINK_FLAGS} ${TACS_OBJS} ${TACS_EXTERN_LIBS} -o ${TACS_DIR}/lib/libtacs.${SO_EXT}
@@ -92,8 +92,8 @@ complex_debug: TACS_IS_COMPLEX=true
 complex_debug: debug
 
 clean:
-	${RM} lib/libtacs.a lib/libtacs.so
-	${RM} tacs/*.so tacs/*.cpp
+	${RM} lib/libtacs.a lib/libtacs.s${SO_EXT}
+	${RM} tacs/*.${SO_EXT} tacs/*.cpp
 	@for subdir in $(TACS_SUBDIRS) ; do \
 	  echo "making $@ in $$subdir"; \
 	  echo; \

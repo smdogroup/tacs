@@ -63,6 +63,7 @@ METIS_LIB = ${TACS_DIR}/extern/metis/lib/libmetis.a
 # AMD_DIR = ${SUITESPARSE_DIR}/AMD
 # AMD_INCLUDE = -I${AMD_DIR}/Include -I${SUITESPARSE_CONFIG_DIR}
 # AMD_LIBS = ${AMD_DIR}/Lib/libamd.a ${SUITESPARSE_CONFIG_DIR}/libsuitesparseconfig.a
+# TACS_DEF += -DTACS_HAS_AMD_LIBRARY
 
 # TECIO is a library for reading and writing tecplot data files, only required for building f5totec, can use either teciosrc or teciompisrc
 # TECIO_DIR = ${TACS_DIR}/extern/tecio/teciompisrc

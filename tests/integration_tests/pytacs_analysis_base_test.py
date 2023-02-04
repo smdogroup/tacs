@@ -1,33 +1,37 @@
-import numpy as np
-from tacs import TACS
+import os
+import tempfile
 import unittest
+
+import numpy as np
 from mpi4py import MPI
+
+from tacs import TACS
+from tacs import problems
 
 """
 This is a base class for running pytacs unit test cases.
-This base class will test function evaluations and total 
-sensitivities for the user-specified problems implimented by
-the child test case. When the user creates a new test based 
-on this class four methods are required to be defined in the child class. 
+This base class will test function evaluations, total
+sensitivities, and f5 file writing for the user-specified problems
+implemented by the child test case. When the user creates a new test
+based on this class only one method, setup_tacs_problems, is required
+to be defined in the child class. See the virtual method
+implementation for this method below for more details.
 
-    1. setup_pytacs
-    2. setup_tacs_problems
-    3. setup_tacs_vecs
-    4. setup_funcs
-    
-See the virtual method implementations for each method 
-below for more details.
-
-NOTE: The child class must NOT implement its own setUp method 
+NOTE: The child class must NOT implement its own setUp method
 for the unittest class. This is handled in the base class.
 """
 
 
 class PyTACSTestCase:
     class PyTACSTest(unittest.TestCase):
-        def setUp(self):
-            self.dtype = TACS.dtype
 
+        dtype = TACS.dtype
+
+        N_PROCS = 1  # this is how many MPI processes to use for this TestCase.
+
+        FUNC_REFS = {}
+
+        def setUp(self):
             # Default fd/cs step size and tolerances
             # Can be overridden in child class
             if self.dtype == complex:
@@ -43,8 +47,8 @@ class PyTACSTestCase:
             if not hasattr(self, "comm"):
                 self.comm = MPI.COMM_WORLD
 
-            # Setup user-specified assembler for this test
-            self.fea_assembler = self.setup_pytacs(self.comm, self.dtype)
+            # Setup tacs problems to be tested
+            self.tacs_probs, self.fea_assembler = self.setup_tacs_problems(self.comm)
 
             # Get the design variable values
             self.dv0 = self.fea_assembler.getOrigDesignVars()
@@ -56,29 +60,15 @@ class PyTACSTestCase:
             self.xpts1 = np.zeros_like(self.xpts0, dtype=self.dtype)
             self.xpts_pert = np.zeros_like(self.xpts0, dtype=self.dtype)
 
-            # Setup tacs problems to be tested
-            self.tacs_probs = self.setup_tacs_problems(self.fea_assembler)
             # Populate fd/cs perturbation vectors based on user-defined method
             self.setup_tacs_vecs(self.fea_assembler, self.dv_pert, self.xpts_pert)
-            # Create the function list
-            self.func_list, self.func_ref = self.setup_funcs(
-                self.fea_assembler, self.tacs_probs
-            )
 
-        def setup_pytacs(self, comm, dtype):
+        def setup_tacs_problems(self, comm):
             """
-            Setup pytacs object for problems we will be testing.
+            Setup pytacs object and problems we will be testing.
             Must be defined in child class that inherits from this class.
-            """
-            raise NotImplementedError(
-                "Child class must implement a 'setup_pytacs' method"
-            )
-            return
-
-        def setup_tacs_problems(self, fea_assembler):
-            """
-            Setup tacs problems objects that describe different problem types we will be testing.
-            Must be defined in child class that inherits from this class.
+            This method should return a list of problems to be tested,
+            and the corresponding pytacs assembler used to create these problems.
             """
             raise NotImplementedError(
                 "Child class must implement a 'setup_tacs_problems' method"
@@ -87,22 +77,15 @@ class PyTACSTestCase:
 
         def setup_tacs_vecs(self, fea_assembler, dv_pert_vec, xpts_pert_vec):
             """
-            Setup user-defined vectors for analysis and fd/cs sensitivity verification.
-            Must be defined in child class that inherits from this class.
+            Setup user-defined vectors for analysis and fd/cs sensitivity verification
             """
-            raise NotImplementedError(
-                "Child class must implement a 'setup_tacs_vecs' method"
-            )
-            return
+            # Create temporary dv vec for doing fd/cs
+            dv_pert_vec[:] = 1.0
 
-        def setup_funcs(self, fea_assembler, problems):
-            """
-            Create a list of functions to be tested and their reference values for the problem.
-            Must be defined in child class that inherits from this class.
-            """
-            raise NotImplementedError(
-                "Child class must implement a 'setup_funcs' method"
-            )
+            # Define perturbation array that moves all nodes on shell
+            xpts = fea_assembler.getOrigNodes()
+            xpts_pert_vec[:] = xpts
+
             return
 
         def test_solve(self):
@@ -115,20 +98,27 @@ class PyTACSTestCase:
             # Test functions values against historical values
             for prob in self.tacs_probs:
                 with self.subTest(problem=prob.name):
-                    for func_name in self.func_list:
+                    func_list = prob.getFunctionKeys()
+                    for func_name in func_list:
                         with self.subTest(function=func_name):
                             func_key = prob.name + "_" + func_name
-                            np.testing.assert_allclose(
-                                funcs[func_key],
-                                self.func_ref[func_key],
-                                rtol=self.rtol,
-                                atol=self.atol,
-                            )
+                            if func_key in self.FUNC_REFS:
+                                np.testing.assert_allclose(
+                                    funcs[func_key],
+                                    self.FUNC_REFS[func_key],
+                                    rtol=self.rtol,
+                                    atol=self.atol,
+                                )
 
         def test_total_dv_sensitivities(self):
             """
             Test total dv sensitivity through adjoint against fd/cs
             """
+            # Skip this check if no dvs were added to model
+            num_dvs = self.fea_assembler.getTotalNumDesignVars()
+            if num_dvs == 0:
+                return
+
             # Initial solve
             funcs = self.run_solve()
 
@@ -143,23 +133,27 @@ class PyTACSTestCase:
             # Tests cs/fd against sensitivity from adjoint
             for prob in self.tacs_probs:
                 with self.subTest(problem=prob.name):
-                    for func_name in self.func_list:
+                    func_list = prob.getFunctionKeys()
+                    for func_name in func_list:
                         with self.subTest(function=func_name):
                             func_key = prob.name + "_" + func_name
-                            # project exact sens
-                            dfddv_proj = func_sens[func_key]["struct"].dot(self.dv_pert)
-                            # Get contribution across all procs
-                            dfddv_proj = self.comm.allreduce(dfddv_proj, op=MPI.SUM)
-                            # Compute approximate sens
-                            fdv_sens_approx = self.compute_fdcs_approx(
-                                funcs_pert[func_key], funcs[func_key]
-                            )
-                            np.testing.assert_allclose(
-                                dfddv_proj,
-                                fdv_sens_approx,
-                                rtol=self.rtol,
-                                atol=self.atol,
-                            )
+                            if func_key in self.FUNC_REFS:
+                                # project exact sens
+                                dfddv_proj = func_sens[func_key]["struct"].dot(
+                                    self.dv_pert
+                                )
+                                # Get contribution across all procs
+                                dfddv_proj = self.comm.allreduce(dfddv_proj, op=MPI.SUM)
+                                # Compute approximate sens
+                                fdv_sens_approx = self.compute_fdcs_approx(
+                                    funcs_pert[func_key], funcs[func_key]
+                                )
+                                np.testing.assert_allclose(
+                                    dfddv_proj,
+                                    fdv_sens_approx,
+                                    rtol=self.rtol,
+                                    atol=self.atol,
+                                )
 
         def test_total_xpt_sensitivities(self):
             """
@@ -179,23 +173,71 @@ class PyTACSTestCase:
             # Tests cs/fd against sensitivity from adjoint
             for prob in self.tacs_probs:
                 with self.subTest(problem=prob.name):
-                    for func_name in self.func_list:
+                    func_list = prob.getFunctionKeys()
+                    for func_name in func_list:
                         with self.subTest(function=func_name):
                             func_key = prob.name + "_" + func_name
-                            # project exact sens
-                            dfdx_proj = func_sens[func_key]["Xpts"].dot(self.xpts_pert)
-                            # Get contribution across all procs
-                            dfdx_proj = self.comm.allreduce(dfdx_proj, op=MPI.SUM)
-                            # Compute approximate sens
-                            f_xpt_sens_approx = self.compute_fdcs_approx(
-                                funcs_pert[func_key], funcs[func_key]
+                            if func_key in self.FUNC_REFS:
+                                # project exact sens
+                                dfdx_proj = func_sens[func_key]["Xpts"].dot(
+                                    self.xpts_pert
+                                )
+                                # Get contribution across all procs
+                                dfdx_proj = self.comm.allreduce(dfdx_proj, op=MPI.SUM)
+                                # Compute approximate sens
+                                f_xpt_sens_approx = self.compute_fdcs_approx(
+                                    funcs_pert[func_key], funcs[func_key]
+                                )
+                                np.testing.assert_allclose(
+                                    dfdx_proj,
+                                    f_xpt_sens_approx,
+                                    rtol=self.rtol,
+                                    atol=self.atol,
+                                )
+
+        def test_write_solution(self):
+            """
+            Test f5 solution writing procedure
+            """
+            # Create temporary directory to write f5 file to (only on root)
+            tmp_dir = None
+            tmp_dir_name = None
+            if self.comm.rank == 0:
+                tmp_dir = tempfile.TemporaryDirectory()
+                tmp_dir_name = tmp_dir.name
+            # Broadcast temp directory name to other procs
+            tmp_dir_name = self.comm.bcast(tmp_dir_name, root=0)
+
+            # Loop through each problem
+            for prob in self.tacs_probs:
+                # Solve problem
+                prob.solve()
+                # Write solution
+                prob.writeSolution(outputDir=tmp_dir_name)
+
+            if self.comm.rank == 0:
+                # Loop through each problem and make sure solution file exists
+                for prob in self.tacs_probs:
+                    with self.subTest(problem=prob.name):
+                        base_name = os.path.join(tmp_dir_name, f"{prob.name}_000")
+                        if isinstance(prob, problems.StaticProblem):
+                            f5_file = f"{base_name}.f5"
+                            self.assertTrue(
+                                os.path.exists(f5_file), msg=f"{f5_file} exists"
                             )
-                            np.testing.assert_allclose(
-                                dfdx_proj,
-                                f_xpt_sens_approx,
-                                rtol=self.rtol,
-                                atol=self.atol,
-                            )
+                        else:
+                            if isinstance(prob, problems.TransientProblem):
+                                num_steps = prob.getNumTimeSteps() + 1
+                            else:  # ModalProblem or BucklingProblem
+                                num_steps = prob.getNumEigs()
+                            for i in range(num_steps):
+                                f5_file = f"{base_name}_%3.3d.f5" % (i)
+                                self.assertTrue(
+                                    os.path.exists(f5_file), msg=f"{f5_file} exists"
+                                )
+
+                # delete all files in temp dir
+                tmp_dir.cleanup()
 
         def run_solve(self, dv=None, xpts=None):
             """

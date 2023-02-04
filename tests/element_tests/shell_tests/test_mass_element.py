@@ -1,6 +1,8 @@
-from tacs import TACS, elements, constitutive
-import numpy as np
 import unittest
+
+import numpy as np
+
+from tacs import TACS, elements, constitutive
 
 
 class ElementTest(unittest.TestCase):
@@ -46,7 +48,20 @@ class ElementTest(unittest.TestCase):
         self.con_objects = [
             constitutive.GeneralMassConstitutive(M=M),
             constitutive.PointMassConstitutive(
-                m=m, I11=I11, I22=I22, I33=I33, I12=I12, I13=I13, I23=I23
+                m=m,
+                I11=I11,
+                I22=I22,
+                I33=I33,
+                I12=I12,
+                I13=I13,
+                I23=I23,
+                mNum=0,
+                I11Num=1,
+                I22Num=2,
+                I33Num=3,
+                I12Num=4,
+                I13Num=5,
+                I23Num=6,
             ),
         ]
 
@@ -61,7 +76,7 @@ class ElementTest(unittest.TestCase):
         elements.SeedRandomGenerator(0)
 
     def test_element_jacobian(self):
-        # Loop through each combination of consstitutive object and test Jacobian
+        # Loop through each combination of constitutive object and test Jacobian
         for con in self.con_objects:
             with self.subTest(con=con.getObjectName()):
                 element = elements.MassElement(con)
@@ -82,7 +97,7 @@ class ElementTest(unittest.TestCase):
                 self.assertFalse(fail)
 
     def test_adj_res_product(self):
-        # Loop through each combination of consstitutive object and test adjoint residual-dvsens product
+        # Loop through each combination of constitutive object and test adjoint residual-dvsens product
         for con in self.con_objects:
             with self.subTest(con=con.getObjectName()):
                 element = elements.MassElement(con)
@@ -104,7 +119,7 @@ class ElementTest(unittest.TestCase):
                 self.assertFalse(fail)
 
     def test_adj_res_xpt_product(self):
-        # Loop through each combination of consstitutive object and test adjoint residual-xptsens product
+        # Loop through each combination of constitutive object and test adjoint residual-xptsens product
         for con in self.con_objects:
             with self.subTest(con=con.getObjectName()):
                 element = elements.MassElement(con)
@@ -124,7 +139,7 @@ class ElementTest(unittest.TestCase):
                 self.assertFalse(fail)
 
     def test_element_mat_dv_sens(self):
-        # Loop through each combination of consstitutive object and test element matrix inner product sens
+        # Loop through each combination of constitutive object and test element matrix inner product sens
         for con in self.con_objects:
             with self.subTest(con=con.getObjectName()):
                 element = elements.MassElement(con)
@@ -146,21 +161,44 @@ class ElementTest(unittest.TestCase):
                         )
                         self.assertFalse(fail)
 
-    def test_element_mat_sv_sens(self):
-        # Loop through each combination of consstitutive object and test element matrix inner product sens
+    def test_element_mat_xpt_sens(self):
+        # Loop through each combination of constitutive object and test element matrix inner product sens
         for con in self.con_objects:
             with self.subTest(con=con.getObjectName()):
                 element = elements.MassElement(con)
-                fail = elements.TestElementMatSVSens(
-                    element,
-                    TACS.GEOMETRIC_STIFFNESS_MATRIX,
-                    self.elem_index,
-                    self.time,
-                    self.xpts,
-                    self.vars,
-                    self.dh,
-                    self.print_level,
-                    self.atol,
-                    self.rtol,
-                )
-                self.assertFalse(fail)
+                for matrix_type in self.matrix_types:
+                    with self.subTest(matrix_type=matrix_type):
+                        fail = elements.TestElementMatXptSens(
+                            element,
+                            matrix_type,
+                            self.elem_index,
+                            self.time,
+                            self.xpts,
+                            self.vars,
+                            self.dh,
+                            self.print_level,
+                            self.atol,
+                            self.rtol,
+                        )
+                        self.assertFalse(fail)
+
+    def test_element_mat_sv_sens(self):
+        # Loop through each combination of constitutive object and test element matrix inner product sens
+        for con in self.con_objects:
+            with self.subTest(con=con.getObjectName()):
+                for matrix_type in self.matrix_types:
+                    with self.subTest(matrix_type=matrix_type):
+                        element = elements.MassElement(con)
+                        fail = elements.TestElementMatSVSens(
+                            element,
+                            matrix_type,
+                            self.elem_index,
+                            self.time,
+                            self.xpts,
+                            self.vars,
+                            self.dh,
+                            self.print_level,
+                            self.atol,
+                            self.rtol,
+                        )
+                        self.assertFalse(fail)

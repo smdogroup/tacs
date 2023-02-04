@@ -1,6 +1,8 @@
-from tacs import TACS, elements
-import numpy as np
 import unittest
+
+import numpy as np
+
+from tacs import TACS, elements
 
 
 class ElementTest(unittest.TestCase):
@@ -15,8 +17,9 @@ class ElementTest(unittest.TestCase):
 
         # Set artificial stiffness term to zero,
         # since we know it adds error to the sensitivities
-        self.C1 = 1e6
-        self.C2 = 0.0
+        C1 = 1e6
+        C2 = 0.0
+        elements.RBE2.setScalingParameters(C1, C2)
 
         # fd/cs step size
         if TACS.dtype is complex:
@@ -75,7 +78,7 @@ class ElementTest(unittest.TestCase):
         # Loop through each combination of dof constraints and test Jacobian
         for dep_dofs in self.dep_dofs_constrained:
             with self.subTest(dep_dofs=dep_dofs):
-                element = elements.RBE2(self.num_nodes, dep_dofs, self.C1, self.C2)
+                element = elements.RBE2(self.num_nodes, dep_dofs)
                 fail = elements.TestElementJacobian(
                     element,
                     self.elem_index,
@@ -96,7 +99,7 @@ class ElementTest(unittest.TestCase):
         # Loop through each combination of dof constraints and test adjoint residual-dvsens product
         for dep_dofs in self.dep_dofs_constrained:
             with self.subTest(dep_dofs=dep_dofs):
-                element = elements.RBE2(self.num_nodes, dep_dofs, self.C1, self.C2)
+                element = elements.RBE2(self.num_nodes, dep_dofs)
                 dvs = element.getDesignVars(self.elem_index)
                 fail = elements.TestAdjResProduct(
                     element,
@@ -118,7 +121,7 @@ class ElementTest(unittest.TestCase):
         # Loop through each combination of dof constraints and test adjoint residual-xptsens product
         for dep_dofs in self.dep_dofs_constrained:
             with self.subTest(dep_dofs=dep_dofs):
-                element = elements.RBE2(self.num_nodes, dep_dofs, self.C1, self.C2)
+                element = elements.RBE2(self.num_nodes, dep_dofs)
                 fail = elements.TestAdjResXptProduct(
                     element,
                     self.elem_index,
@@ -138,7 +141,7 @@ class ElementTest(unittest.TestCase):
         # Loop through each combination of dof constraints and element matrix inner product sens
         for dep_dofs in self.dep_dofs_constrained:
             with self.subTest(dep_dofs=dep_dofs):
-                element = elements.RBE2(self.num_nodes, dep_dofs, self.C1, self.C2)
+                element = elements.RBE2(self.num_nodes, dep_dofs)
                 dvs = element.getDesignVars(self.elem_index)
                 for matrix_type in self.matrix_types:
                     with self.subTest(matrix_type=matrix_type):
@@ -157,21 +160,44 @@ class ElementTest(unittest.TestCase):
                         )
                         self.assertFalse(fail)
 
+    def test_element_mat_xpt_sens(self):
+        # Loop through each combination of dof constraints and element matrix inner product sens
+        for dep_dofs in self.dep_dofs_constrained:
+            with self.subTest(dep_dofs=dep_dofs):
+                element = elements.RBE2(self.num_nodes, dep_dofs)
+                for matrix_type in self.matrix_types:
+                    with self.subTest(matrix_type=matrix_type):
+                        fail = elements.TestElementMatXptSens(
+                            element,
+                            matrix_type,
+                            self.elem_index,
+                            self.time,
+                            self.xpts,
+                            self.vars,
+                            self.dh,
+                            self.print_level,
+                            self.atol,
+                            self.rtol,
+                        )
+                        self.assertFalse(fail)
+
     def test_element_mat_sv_sens(self):
         # Loop through each combination of dof constraints and test element matrix inner product sens
         for dep_dofs in self.dep_dofs_constrained:
             with self.subTest(dep_dofs=dep_dofs):
-                element = elements.RBE2(self.num_nodes, dep_dofs, self.C1, self.C2)
-                fail = elements.TestElementMatSVSens(
-                    element,
-                    TACS.GEOMETRIC_STIFFNESS_MATRIX,
-                    self.elem_index,
-                    self.time,
-                    self.xpts,
-                    self.vars,
-                    self.dh,
-                    self.print_level,
-                    self.atol,
-                    self.rtol,
-                )
-                self.assertFalse(fail)
+                element = elements.RBE2(self.num_nodes, dep_dofs)
+                for matrix_type in self.matrix_types:
+                    with self.subTest(matrix_type=matrix_type):
+                        fail = elements.TestElementMatSVSens(
+                            element,
+                            matrix_type,
+                            self.elem_index,
+                            self.time,
+                            self.xpts,
+                            self.vars,
+                            self.dh,
+                            self.print_level,
+                            self.atol,
+                            self.rtol,
+                        )
+                        self.assertFalse(fail)

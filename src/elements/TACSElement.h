@@ -210,11 +210,17 @@ class TACSElement : public TACSObject {
   /**
     Create element centrifugal force class
 
+    @param omega The angular velocity vector
+    @param rotCenter The rotation center
+    @param first_order Whether to include the effect of displacements on the
+    centrifugal force, by default false
+
     @return The TACSElement centrifugal force class associated with this
     element. Possibly NULL.
   */
   virtual TACSElement *createElementCentrifugalForce(
-      const TacsScalar omega[], const TacsScalar rotCenter[]) {
+      const TacsScalar omega[], const TacsScalar rotCenter[],
+      const bool first_order = false) {
     return NULL;
   }
 
@@ -499,11 +505,7 @@ class TACSElement : public TACSObject {
   */
   virtual void getMatType(ElementMatrixType matType, int elemIndex, double time,
                           const TacsScalar Xpts[], const TacsScalar vars[],
-                          TacsScalar mat[]) {
-    int size = getNumNodes() * getVarsPerNode();
-    memset(mat, 0, size * size * sizeof(TacsScalar));
-  }
-
+                          TacsScalar mat[]);
   /**
     Get array sizes needed for a matrix-free matrix-vector product
 
@@ -580,7 +582,30 @@ class TACSElement : public TACSObject {
   virtual void addMatDVSensInnerProduct(
       ElementMatrixType matType, int elemIndex, double time, TacsScalar scale,
       const TacsScalar psi[], const TacsScalar phi[], const TacsScalar Xpts[],
-      const TacsScalar vars[], int dvLen, TacsScalar dfdx[]) {}
+      const TacsScalar vars[], int dvLen, TacsScalar dfdx[]);
+
+  /**
+   Add the derivative of the product of a specific matrix w.r.t.
+   the nodal coordinates
+
+   dvSens += scale*d(psi^{T}*(mat)*phi)/d(X)
+
+   where mat is computed via the getMatType().
+
+   @param matType The type of element matrix to compute
+   @param elemIndex The local element index
+   @param time The simulation time
+   @param scale The scalar value that multiplies the derivative
+   @param psi The left-hand vector
+   @param phi The right-hand vector
+   @param Xpts The element node locations
+   @param vars The values of element degrees of freedom
+   @param dfdXpts The element derivative
+ */
+  virtual void addMatXptSensInnerProduct(
+      ElementMatrixType matType, int elemIndex, double time, TacsScalar scale,
+      const TacsScalar psi[], const TacsScalar phi[], const TacsScalar Xpts[],
+      const TacsScalar vars[], TacsScalar dfdXpts[]);
 
   /**
     Compute the derivative of the product of a specific matrix w.r.t.
@@ -602,10 +627,7 @@ class TACSElement : public TACSObject {
   virtual void getMatSVSensInnerProduct(
       ElementMatrixType matType, int elemIndex, double time,
       const TacsScalar psi[], const TacsScalar phi[], const TacsScalar Xpts[],
-      const TacsScalar vars[], TacsScalar dfdu[]) {
-    int size = getNumNodes() * getVarsPerNode();
-    memset(dfdu, 0, size * sizeof(TacsScalar));
-  }
+      const TacsScalar vars[], TacsScalar dfdu[]);
 
   /**
     Evaluate a point-wise quantity of interest.

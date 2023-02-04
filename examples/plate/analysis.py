@@ -1,16 +1,17 @@
 """
-This problem will show how to use some of pytacs more advanced load setting proceedures.
+This problem will show how to use some of pytacs more advanced load setting procedures.
 The nominal case is a 1m x 1m flat plate. The perimeter of the plate is fixed in
 all 6 degrees of freedom. The plate comprises 900 CQUAD4 elements.
-We consider two structural problems:
-    1. A static case where a 10 kN point forceis applied at the plate center
-    2. A transent probelm with a pressure load that varries in time and space
+We consider three structural problems:
+    1. A static case where a 10 kN point force is applied at the plate center
+    2. A transient problem with a pressure load that varies in time and space
     given by:
         P(x,y,t) = Pmax * sin(2*pi*x/L) * sin(2*pi*y/L) * sin(2*pi*fhz*t)
         where:
             Pmax = 100 kPa
             fhz = 1.0 hz
             L = 1.0 m
+    3. A modal problem where the dynamic eigenmodes are solved for the plate structure
 """
 # ==============================================================================
 # Standard Python modules
@@ -125,6 +126,11 @@ for step_i, time in enumerate(timeSteps):
     transientProb.addPressureToElements(step_i, eIDs, Pxyt, nastranOrdering=True)
 # Add transient problem to list
 allProblems.append(transientProb)
+
+# Setup modal problem (Note: eigenvalues are in (rad/s)**2
+modalProb = FEAAssembler.createModalProblem("dynamic_modes", sigma=7e4, numEigs=10)
+# Add modal problem to list
+allProblems.append(modalProb)
 
 # Solve all problems and evaluate functions
 funcs = {}

@@ -298,7 +298,8 @@ class TACSBeamElement : public TACSElement {
   }
 
   TACSElement *createElementCentrifugalForce(const TacsScalar omegaVec[],
-                                             const TacsScalar rotCenter[]) {
+                                             const TacsScalar rotCenter[],
+                                             const bool first_order = false) {
     return new TACSBeamCentrifugalForce<vars_per_node, quadrature, basis>(
         con, omegaVec, rotCenter);
   }

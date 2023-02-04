@@ -1,7 +1,9 @@
-import numpy as np
-from tacs import TACS
 import unittest
+
+import numpy as np
 from mpi4py import MPI
+
+from tacs import TACS
 
 """
 This is a base class for transient problem unit test cases.

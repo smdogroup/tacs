@@ -1,10 +1,10 @@
 import numpy as np
-from mpi4py import MPI
-from tacs import TACS, elements, constitutive, functions
-from static_analysis_base_test import StaticTestCase
 
-"""
-Create a two separate cantilevered plates connected by an RBE3 element.
+from static_analysis_base_test import StaticTestCase
+from tacs import TACS, elements, constitutive, functions
+
+r"""
+Create a two separate cantilevered plates connected by an RBE2 element.
 Apply a load at the RBE2 center node and test KSFailure, StructuralMass, 
 and Compliance functions and sensitivities
 -----------        ----------- 
@@ -166,7 +166,8 @@ class ProblemTest(StaticTestCase.StaticTest):
         dep_dofs = np.array([1, 1, 1, 1, 1, 1], np.intc)
         # Set the artificial stiffness to be low to pass the sensitivity tests
         # This will affect the accuracy of the element behavior
-        rbe = elements.RBE2(num_rbe_nodes, dep_dofs, C1=1e2, C2=1e-1)
+        elements.RBE2.setScalingParameters(1e2, 1e-1)
+        rbe = elements.RBE2(num_rbe_nodes, dep_dofs)
         # Set the elements for each (only two) component
         element_list = [shell, rbe]
         creator.setElements(element_list)

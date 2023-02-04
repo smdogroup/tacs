@@ -1,6 +1,8 @@
-from tacs import TACS, constitutive, elements
-import numpy as np
 import unittest
+
+import numpy as np
+
+from tacs import TACS, constitutive, elements
 
 
 class ElementTest(unittest.TestCase):
@@ -82,6 +84,7 @@ class ElementTest(unittest.TestCase):
 
         # The thermal elements will not pass the residual test since they are not derived
         # from Lagrange's equations due to the presence of the thermal coupling equations.
+        # They also fail the mat_sv_sens test, so we skip them there as well
         self.thermal_elements = [
             elements.Tri3ThermalShell,
             elements.Quad4ThermalShell,
@@ -227,23 +230,50 @@ class ElementTest(unittest.TestCase):
                                 )
                                 self.assertFalse(fail)
 
+    def test_element_mat_xpt_sens(self):
+        # Loop through every combination of transform type and shell element class and element matrix inner product sens
+        for transform in self.transforms:
+            with self.subTest(transform=transform):
+                for element_handle in self.elements:
+                    with self.subTest(element=element_handle):
+                        if element_handle not in self.thermal_elements:
+                            element = element_handle(transform, self.con)
+                            for matrix_type in self.matrix_types:
+                                with self.subTest(matrix_type=matrix_type):
+                                    fail = elements.TestElementMatXptSens(
+                                        element,
+                                        matrix_type,
+                                        self.elem_index,
+                                        self.time,
+                                        self.xpts,
+                                        self.vars,
+                                        self.dh,
+                                        self.print_level,
+                                        self.atol,
+                                        self.rtol,
+                                    )
+                                    self.assertFalse(fail)
+
     def test_element_mat_sv_sens(self):
         # Loop through every combination of model and basis class and test element matrix inner product sens
         for transform in self.transforms:
             with self.subTest(transform=transform):
                 for element_handle in self.elements:
                     with self.subTest(element=element_handle):
-                        element = element_handle(transform, self.con)
-                        fail = elements.TestElementMatSVSens(
-                            element,
-                            TACS.GEOMETRIC_STIFFNESS_MATRIX,
-                            self.elem_index,
-                            self.time,
-                            self.xpts,
-                            self.vars,
-                            self.dh,
-                            self.print_level,
-                            self.atol,
-                            self.rtol,
-                        )
-                        self.assertFalse(fail)
+                        if element_handle not in self.thermal_elements:
+                            element = element_handle(transform, self.con)
+                            for matrix_type in self.matrix_types:
+                                with self.subTest(matrix_type=matrix_type):
+                                    fail = elements.TestElementMatSVSens(
+                                        element,
+                                        matrix_type,
+                                        self.elem_index,
+                                        self.time,
+                                        self.xpts,
+                                        self.vars,
+                                        self.dh,
+                                        self.print_level,
+                                        self.atol,
+                                        self.rtol,
+                                    )
+                                    self.assertFalse(fail)

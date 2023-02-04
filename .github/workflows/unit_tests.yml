@@ -19,10 +19,9 @@ on:
 jobs:
   # This job is called test_docs.
   unit_test_and_docs:
-    # Recommended if you intend to make multiple deployments in quick succession.
-    concurrency: ci-${{ github.ref }}
     # Run on Ubuntu
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     # Necessary to prevent mpi tests failing due to lack of slots
     env:
       OMPI_MCA_btl: self,tcp
@@ -49,6 +48,12 @@ jobs:
             PUBLISH_DOCS: false
 
     name: TACS ${{ matrix.NAME }} Build/Test/Docs
+
+    # Recommended if you intend to make multiple deployments in quick succession.
+    # This will kill any currently running CI from previous commits to the same branch
+    concurrency:
+      group: ci-${{ github.ref }}-${{ matrix.NAME }}
+      cancel-in-progress: true
 
     steps:
       - name: Display run details
@@ -91,7 +96,7 @@ jobs:
       - name: Install f5totec/f5tovtk
         run: |
           # Compile f5totec/f5tovtk
-          conda install -c timryanb tecio -q -y;
+          conda install -c smdogroup tecio -q -y;
           cd $TACS_DIR/extern/f5totec;
           make TACS_DIR=$TACS_DIR TECIO_INCLUDE=-I${CONDA_PREFIX}/include/ TECIO_LIB=${CONDA_PREFIX}/lib/libtecio.a\
             METIS_INCLUDE=-I${CONDA_PREFIX}/include/ METIS_LIB="-L${CONDA_PREFIX}/lib/ -lmetis";

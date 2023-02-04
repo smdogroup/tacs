@@ -1,5 +1,5 @@
 import numpy as np
-from mpi4py import MPI
+
 from tacs import TACS, elements, constitutive, functions
 from transient_analysis_base_test import TransientTestCase
 

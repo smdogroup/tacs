@@ -61,6 +61,8 @@ cdef extern from "TACSElementVerification.h":
                                 double)
     int TacsTestElementMatDVSens(TACSElement*, ElementMatrixType, int, double, const TacsScalar*, const TacsScalar*,
                                  int, const TacsScalar*, double, int, double, double)
+    int TacsTestElementMatXptSens(TACSElement*, ElementMatrixType, int, double, const TacsScalar*, const TacsScalar*,
+                                  double, int, double, double)
     int TacsTestElementMatSVSens(TACSElement*, ElementMatrixType, int, double, const TacsScalar*, const TacsScalar*,
                                  double, int, double, double)
     int TacsSeedRandomGenerator(int)
@@ -117,6 +119,10 @@ cdef extern from "TACSHeatConduction.h":
 
     cdef cppclass TACSHeatConduction3D(TACSElementModel):
         TACSHeatConduction3D(TACSSolidConstitutive*)
+
+cdef extern from "TACSPCMHeatConduction.h":
+    cdef cppclass TACSPCMHeatConduction2D(TACSElementModel):
+        TACSPCMHeatConduction2D(TACSPhaseChangeMaterialConstitutive*)
 
 cdef extern from "TACSLinearElasticity.h":
     enum ElementStrainType:
@@ -233,23 +239,23 @@ cdef extern from "TACSShellElementDefs.h":
     cdef cppclass TACSQuad4NonlinearShell(TACSElement):
         TACSQuad4NonlinearShell(TACSShellTransform*,
                              TACSShellConstitutive*)
-    
+
     cdef cppclass TACSQuad9NonlinearShell(TACSElement):
         TACSQuad9NonlinearShell(TACSShellTransform*,
                              TACSShellConstitutive*)
 
     cdef cppclass TACSQuad16NonlinearShell(TACSElement):
         TACSQuad16NonlinearShell(TACSShellTransform*,
-                             TACSShellConstitutive*)                             
-    
+                             TACSShellConstitutive*)
+
     cdef cppclass TACSTri3NonlinearShell(TACSElement):
         TACSTri3NonlinearShell(TACSShellTransform*,
                       TACSShellConstitutive*)
-    
+
     cdef cppclass TACSQuad4NonlinearThermalShell(TACSElement):
         TACSQuad4NonlinearThermalShell(TACSShellTransform*,
                              TACSShellConstitutive*)
-    
+
     cdef cppclass TACSQuad9NonlinearThermalShell(TACSElement):
         TACSQuad9NonlinearThermalShell(TACSShellTransform*,
                               TACSShellConstitutive*)
@@ -261,7 +267,7 @@ cdef extern from "TACSShellElementDefs.h":
     cdef cppclass TACSTri3NonlinearThermalShell(TACSElement):
         TACSTri3NonlinearThermalShell(TACSShellTransform*,
                              TACSShellConstitutive*)
-    
+
     cdef cppclass TACSQuad4ShellQuaternion(TACSElement):
         TACSQuad4ShellQuaternion(TACSShellTransform*,
                              TACSShellConstitutive*)
@@ -269,7 +275,7 @@ cdef extern from "TACSShellElementDefs.h":
     cdef cppclass TACSQuad4ShellModRot(TACSElement):
         TACSQuad4ShellModRot(TACSShellTransform*,
                              TACSShellConstitutive*)
- 
+
     cdef cppclass TACSBeam2(TACSElement):
         TACSBeam2(TACSBeamTransform*,
                   TACSBeamConstitutive*)
@@ -365,11 +371,15 @@ cdef extern from "TACSKinematicConstraints.h":
 
 cdef extern from "TACSRBE2.h":
     cdef cppclass TACSRBE2(TACSElement):
-        TACSRBE2(int, int*, double, double)
+        TACSRBE2(int, int*)
+        @staticmethod
+        void setScalingParameters(double, double)
 
 cdef extern from "TACSRBE3.h":
     cdef cppclass TACSRBE3(TACSElement):
-        TACSRBE3(int, int*, double*, int*, double, double)
+        TACSRBE3(int, int*, double*, int*)
+        @staticmethod
+        void setScalingParameters(double, double)
 
 cdef extern from "TACSMassElement.h":
     cdef cppclass TACSMassElement(TACSElement):

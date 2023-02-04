@@ -39,6 +39,7 @@ const int TACS_OUTPUT_DISPLACEMENTS = 4;
 const int TACS_OUTPUT_STRAINS = 8;
 const int TACS_OUTPUT_STRESSES = 16;
 const int TACS_OUTPUT_EXTRAS = 32;
+const int TACS_OUTPUT_LOADS = 64;
 
 /**
   The Element type defines how many displacement, stress, and strain
@@ -53,7 +54,8 @@ enum ElementType {
   TACS_SOLID_ELEMENT = 6,
   TACS_RIGID_ELEMENT = 7,
   TACS_MASS_ELEMENT = 8,
-  TACS_SPRING_ELEMENT = 9
+  TACS_SPRING_ELEMENT = 9,
+  TACS_PCM_ELEMENT = 10
 };
 
 /**

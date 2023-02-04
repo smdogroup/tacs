@@ -1,9 +1,9 @@
 import numpy as np
-from mpi4py import MPI
-from tacs import TACS, elements, constitutive, functions
-from static_analysis_base_test import StaticTestCase
 
-"""
+from static_analysis_base_test import StaticTestCase
+from tacs import TACS, elements, constitutive, functions
+
+r"""
 Create a two separate cantilevered plates connected by an RBE3 element.
 Apply a load at the RBE3 center node and test KSFailure, StructuralMass, 
 and Compliance functions and sensitivities

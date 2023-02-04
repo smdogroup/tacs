@@ -1,6 +1,6 @@
-from tacs import TACS, elements, constitutive
-import numpy as np
 import unittest
+
+from tacs import TACS, elements, constitutive
 
 
 class ModelTest(unittest.TestCase):

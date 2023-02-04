@@ -24,14 +24,13 @@ mx = my = mz = 1.0 N * m
 # ==============================================================================
 from __future__ import print_function
 import os
-import matplotlib.pyplot as plt
 
 # ==============================================================================
 # External Python modules
 # ==============================================================================
-from pprint import pprint
 from mpi4py import MPI
 import numpy as np
+import matplotlib.pyplot as plt
 
 # ==============================================================================
 # Extension modules
@@ -64,6 +63,8 @@ def elemCallBack(dvNum, compID, compDescript, elemDescripts, globalDVs, **kwargs
     return elem
 
 
+# Add DV to mass property of point mass element (eID = 2)
+FEAAssembler.assignMassDV("point_mass", 2)
 # Set up TACS Assembler
 FEAAssembler.initialize(elemCallBack)
 
@@ -85,8 +86,11 @@ for step_i, time in enumerate(timeSteps):
 # Solve problems
 problem.solve()
 funcs = {}
+funcsSens = {}
 problem.evalFunctions(funcs)
+problem.evalFunctionsSens(funcsSens)
 print(funcs)
+print(funcsSens)
 
 # Pick off state variable values at each time step
 nnodes = FEAAssembler.getNumOwnedNodes()

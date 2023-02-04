@@ -1,0 +1,114 @@
+{% set name = "tacs" %}
+
+{% set version = environ.get('GIT_DESCRIBE_TAG', '') %}
+{% if version.startswith('v') %}
+{% set version = version[1:] %}
+{% endif %}
+
+{% set build = 0 %}
+
+{% set mpi = mpi or 'openmpi' %}
+{% if scalar == "real" %}
+{% set build = build + 100 %}
+{% endif %}
+
+package:
+  name: "tacs"
+  version: "{{ version }}"
+
+source:
+  git_url: https://github.com/smdogroup/tacs.git
+
+build:
+  number: {{ build }}
+  skip: true  # [py<=36]
+  string: py{{ CONDA_PY }}_{{ scalar }}_h{{ PKG_HASH }}_{{ build }}
+  track_features:
+    - tacs_complex  # [scalar == "complex"]
+
+requirements:
+  build:
+    - python {{ python }}
+    - numpy   1.18   # [py==37]
+    - numpy   1.18   # [py==38]
+    - numpy   1.19   # [py==39]
+    - numpy   1.22   # [py==310]
+    - numpy   1.23   # [py==311]
+    - {{ mpi }}
+    - openmpi-mpicxx  # [mpi == "openmpi"]
+    - mpich-mpicxx  # [mpi == "mpich"]
+    - {{ compiler('cxx') }}
+    - make
+    - mpi4py
+    - cython
+    - setuptools
+
+  host:
+    - python {{ python }}
+    - pip
+    - numpy   1.18   # [py==37]
+    - numpy   1.18   # [py==38]
+    - numpy   1.19   # [py==39]
+    - numpy   1.22   # [py==310]
+    - numpy   1.23   # [py==311]
+    - {{ mpi }}
+    - openmpi-mpicxx  # [mpi == "openmpi"]
+    - mpich-mpicxx  # [mpi == "mpich"]
+    - libopenblas
+    - lapack
+    - metis >=5.1
+    - tecio
+    - mpi4py
+    - cython
+    - setuptools
+
+  run:
+    - python
+    - numpy >=1.18.5,<2.0.a0   # [py==37]
+    - numpy >=1.18.5,<2.0.a0   # [py==38]
+    - numpy >=1.19.5,<2.0.a0   # [py==39]
+    - numpy >=1.22.0,<2.0.a0   # [py==310]
+    - numpy >=1.23.0,<2.0.a0   # [py==311]
+    - scipy
+    - {{ mpi }}
+    - openmpi-mpicxx  # [mpi == "openmpi"]
+    - mpich-mpicxx  # [mpi == "mpich"]
+    - libopenblas
+    - lapack
+    - metis >=5.1
+    - mpi4py
+    - pynastran
+
+test:
+  requires:
+    - testflo
+
+  source_files:
+    - tests
+
+  imports:
+    - tacs
+    - tacs.pytacs
+    - tacs.problems
+    - tacs.TACS
+    - tacs.elements
+    - tacs.functions
+    - tacs.constitutive
+    #- tacs.mphys # Needs OpenMDAO/MPHYS conda packages
+
+  commands:
+    - |
+
+    - test -f $PREFIX/bin/f5tovtk
+    - test -f $PREFIX/bin/f5totec
+    - export OMPI_MCA_btl=self,tcp
+    - export OMPI_MCA_rmaps_base_oversubscribe=1
+    - rm tests/integration_tests/test_mphys*
+    - testflo --pre_announce --timeout 120 tests/ # [linux64]
+
+about:
+  home: https://github.com/smdogroup/tacs
+  license: Apache
+  license_family: APACHE
+  summary: Parallel finite-element analysis package
+  doc_url: https://smdogroup.github.io/tacs/

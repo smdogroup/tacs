@@ -217,6 +217,25 @@ def TestElementMatDVSens(Element element, ElementMatrixType mat_type,
                                    num_dvs, <TacsScalar*>design_vars.data, dh,
                                    test_print_level, atol, rtol)
 
+def TestElementMatXptSens(Element element, ElementMatrixType mat_type,
+                          int elem_index, double time,
+                          np.ndarray[TacsScalar, ndim=1, mode='c'] xpts,
+                          np.ndarray[TacsScalar, ndim=1, mode='c'] vars,
+                          double dh=1e-6,
+                          int test_print_level=2,
+                          double atol=1e-5, double rtol=1e-5):
+    num_nodes = element.getNumNodes()
+    num_vars = element.getNumVariables()
+
+    # Make sure input arrays are large enough for element to avoid segfault
+    assert len(xpts) >= 3 * num_nodes
+    assert len(vars) >= num_vars
+
+    return TacsTestElementMatXptSens(element.ptr, mat_type, elem_index, time,
+                                    <TacsScalar*>xpts.data,
+                                    <TacsScalar*>vars.data, dh,
+                                    test_print_level, atol, rtol)
+
 def TestElementMatSVSens(Element element, ElementMatrixType mat_type,
                          int elem_index, double time,
                          np.ndarray[TacsScalar, ndim=1, mode='c'] xpts,
@@ -368,6 +387,20 @@ cdef class HeatConduction2D(ElementModel):
     """
     def __cinit__(self, PlaneStressConstitutive con):
         self.ptr = new TACSHeatConduction2D(con.cptr)
+        self.ptr.incref()
+
+cdef class PCMHeatConduction2D(ElementModel):
+    """
+    Model class for 2D phase change material heat conduction element.
+
+    .. note::
+        varsPerNode: 1
+
+    Args:
+        con (PhaseChangeMaterialConstitutive): Material constitutive properties.
+    """
+    def __cinit__(self, PhaseChangeMaterialConstitutive con):
+        self.ptr = new TACSPCMHeatConduction2D(con.cptr)
         self.ptr.incref()
 
 cdef class LinearElasticity2D(ElementModel):
@@ -1035,7 +1068,7 @@ cdef class Tri3NonlinearThermalShell(Element):
         varsPerNode: 7
 
         outputElement: ``TACS.BEAM_OR_SHELL_ELEMENT``
-        
+
     Args:
         transform (ShellTransform or None): Shell transform object.
           ``None`` is equivalent to :class:`~ShellNaturalTransform`.
@@ -1289,12 +1322,11 @@ cdef class RBE2(Element):
     Args:
         num_nodes (int): Total number of nodes associated with the element.
         constrained_dofs (numpy.ndarray[int]): Flags to determine which
-          dependent node dof's are attached to the eleemnt.
+          dependent node dof's are attached to the element.
     """
     cdef TACSRBE2 *cptr
     def __cinit__(self, int num_nodes,
-                  np.ndarray[int, ndim=1, mode='c'] constrained_dofs,
-                  double C1=1e3, double C2=1e-3):
+                  np.ndarray[int, ndim=1, mode='c'] constrained_dofs):
         num_dep = (num_nodes - 1) / 2
 
         assert len(constrained_dofs) == 6 or len(constrained_dofs) == 6 * num_dep
@@ -1303,10 +1335,23 @@ cdef class RBE2(Element):
         if len(constrained_dofs) == 6:
             constrained_dofs = np.tile(constrained_dofs, num_dep)
 
-        self.cptr = new TACSRBE2(num_nodes, <int*>constrained_dofs.data, C1, C2)
+        self.cptr = new TACSRBE2(num_nodes, <int*>constrained_dofs.data)
         # Increase the reference count to the underlying object
         self.ptr = self.cptr
         self.ptr.incref()
+        return
+
+    @classmethod
+    def setScalingParameters(cls, double C1=1e3, double C2=0.0):
+        """
+        Set scaling parameters used in Lagrange multiplier formulation of the element.
+
+        Args:
+            C1 (double): Constraint matrix scaling factor used in RBE Lagrange multiplier stiffness matrix.
+            C2 (double): Artificial constant added to diagonals of RBE Lagrange multiplier stiffness matrix
+            to stabilize preconditioner.
+        """
+        TACSRBE2.setScalingParameters(C1, C2)
         return
 
 cdef class RBE3(Element):
@@ -1329,14 +1374,13 @@ cdef class RBE3(Element):
           dependent node dof's are attached to the eleemnt.
         weights (numpy.ndarray[float]): RBE weighting factor for each independent node.
         indep_constrained_dofs (numpy.ndarray[int]): Flags to determine which
-          independent node dof's are attached to the eleemnt.
+          independent node dof's are attached to the element.
     """
     cdef TACSRBE3 *cptr
     def __cinit__(self, int num_nodes,
                   np.ndarray[int, ndim=1, mode='c'] dep_constrained_dofs,
                   np.ndarray[double, ndim=1, mode='c'] weights,
-                  np.ndarray[int, ndim=1, mode='c'] indep_constrained_dofs,
-                  double C1=1e3, double C2=1e-3):
+                  np.ndarray[int, ndim=1, mode='c'] indep_constrained_dofs):
         num_indep = num_nodes - 2
 
         assert len(dep_constrained_dofs) == 6
@@ -1350,10 +1394,23 @@ cdef class RBE3(Element):
             indep_constrained_dofs = np.tile(indep_constrained_dofs, num_indep)
 
         self.cptr = new TACSRBE3(num_nodes, <int*>dep_constrained_dofs.data,
-                                 <double*>weights.data, <int*>indep_constrained_dofs.data, C1, C2)
+                                 <double*>weights.data, <int*>indep_constrained_dofs.data)
         # Increase the reference count to the underlying object
         self.ptr = self.cptr
         self.ptr.incref()
+        return
+
+    @classmethod
+    def setScalingParameters(cls, double C1=1e3, double C2=0.0):
+        """
+        Set scaling parameters used in Lagrange multiplier formulation of the element.
+
+        Args:
+            C1 (double): Constraint matrix scaling factor used in RBE Lagrange multiplier stiffness matrix.
+            C2 (double): Artificial constant added to diagonals of RBE Lagrange multiplier stiffness matrix
+            to stabilize preconditioner.
+        """
+        TACSRBE3.setScalingParameters(C1, C2)
         return
 
 cdef class MassElement(Element):

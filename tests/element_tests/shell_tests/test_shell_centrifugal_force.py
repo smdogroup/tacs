@@ -1,6 +1,8 @@
-from tacs import TACS, constitutive, elements
-import numpy as np
 import unittest
+
+import numpy as np
+
+from tacs import TACS, constitutive, elements
 
 
 class ElementTest(unittest.TestCase):
@@ -74,6 +76,8 @@ class ElementTest(unittest.TestCase):
             elements.Quad16Shell,
         ]
 
+        self.first_order_choices = [True, False]
+
         # Create stiffness (need class)
         self.con = constitutive.IsoShellConstitutive(self.props, t=1.0, tNum=0)
 
@@ -94,24 +98,26 @@ class ElementTest(unittest.TestCase):
                 for element_handle in self.elements:
                     with self.subTest(element=element_handle):
                         element = element_handle(transform, self.con)
-                        force = element.createElementCentrifugalForce(
-                            self.omega, self.rotCenter
-                        )
-                        fail = elements.TestElementJacobian(
-                            force,
-                            self.elem_index,
-                            self.time,
-                            self.xpts,
-                            self.vars,
-                            self.dvars,
-                            self.ddvars,
-                            -1,
-                            self.dh,
-                            self.print_level,
-                            self.atol,
-                            self.rtol,
-                        )
-                        self.assertFalse(fail)
+                        for first_order in self.first_order_choices:
+                            with self.subTest(first_order=first_order):
+                                force = element.createElementCentrifugalForce(
+                                    self.omega, self.rotCenter, first_order
+                                )
+                                fail = elements.TestElementJacobian(
+                                    force,
+                                    self.elem_index,
+                                    self.time,
+                                    self.xpts,
+                                    self.vars,
+                                    self.dvars,
+                                    self.ddvars,
+                                    -1,
+                                    self.dh,
+                                    self.print_level,
+                                    self.atol,
+                                    self.rtol,
+                                )
+                                self.assertFalse(fail)
 
     def test_adj_res_product(self):
         # Loop through every combination of transform type and shell element class and test adjoint residual-dvsens product
@@ -120,71 +126,20 @@ class ElementTest(unittest.TestCase):
                 for element_handle in self.elements:
                     with self.subTest(element=element_handle):
                         element = element_handle(transform, self.con)
-                        force = element.createElementCentrifugalForce(
-                            self.omega, self.rotCenter
-                        )
-                        dvs = element.getDesignVars(self.elem_index)
-                        fail = elements.TestAdjResProduct(
-                            force,
-                            self.elem_index,
-                            self.time,
-                            self.xpts,
-                            self.vars,
-                            self.dvars,
-                            self.ddvars,
-                            dvs,
-                            self.dh,
-                            self.print_level,
-                            self.atol,
-                            self.rtol,
-                        )
-                        self.assertFalse(fail)
-
-    def test_adj_res_xpt_product(self):
-        # Loop through every combination of transform type and shell element class and test adjoint residual-xptsens product
-        for transform in self.transforms:
-            with self.subTest(transform=transform):
-                for element_handle in self.elements:
-                    with self.subTest(element=element_handle):
-                        element = element_handle(transform, self.con)
-                        force = element.createElementCentrifugalForce(
-                            self.omega, self.rotCenter
-                        )
-                        fail = elements.TestAdjResXptProduct(
-                            force,
-                            self.elem_index,
-                            self.time,
-                            self.xpts,
-                            self.vars,
-                            self.dvars,
-                            self.ddvars,
-                            self.dh,
-                            self.print_level,
-                            self.atol,
-                            self.rtol,
-                        )
-                        self.assertFalse(fail)
-
-    def test_element_mat_dv_sens(self):
-        # Loop through every combination of transform type and shell element class and element matrix inner product sens
-        for transform in self.transforms:
-            with self.subTest(transform=transform):
-                for element_handle in self.elements:
-                    with self.subTest(element=element_handle):
-                        element = element_handle(transform, self.con)
-                        force = element.createElementCentrifugalForce(
-                            self.omega, self.rotCenter
-                        )
-                        dvs = element.getDesignVars(self.elem_index)
-                        for matrix_type in self.matrix_types:
-                            with self.subTest(matrix_type=matrix_type):
-                                fail = elements.TestElementMatDVSens(
+                        for first_order in self.first_order_choices:
+                            with self.subTest(first_order=first_order):
+                                force = element.createElementCentrifugalForce(
+                                    self.omega, self.rotCenter, first_order
+                                )
+                                dvs = element.getDesignVars(self.elem_index)
+                                fail = elements.TestAdjResProduct(
                                     force,
-                                    matrix_type,
                                     self.elem_index,
                                     self.time,
                                     self.xpts,
                                     self.vars,
+                                    self.dvars,
+                                    self.ddvars,
                                     dvs,
                                     self.dh,
                                     self.print_level,
@@ -193,6 +148,63 @@ class ElementTest(unittest.TestCase):
                                 )
                                 self.assertFalse(fail)
 
+    def test_adj_res_xpt_product(self):
+        # Loop through every combination of transform type and shell element class and test adjoint residual-xptsens product
+        for transform in self.transforms:
+            with self.subTest(transform=transform):
+                for element_handle in self.elements:
+                    with self.subTest(element=element_handle):
+                        element = element_handle(transform, self.con)
+                        for first_order in self.first_order_choices:
+                            with self.subTest(first_order=first_order):
+                                force = element.createElementCentrifugalForce(
+                                    self.omega, self.rotCenter, first_order
+                                )
+                                fail = elements.TestAdjResXptProduct(
+                                    force,
+                                    self.elem_index,
+                                    self.time,
+                                    self.xpts,
+                                    self.vars,
+                                    self.dvars,
+                                    self.ddvars,
+                                    self.dh,
+                                    self.print_level,
+                                    self.atol,
+                                    self.rtol,
+                                )
+                                self.assertFalse(fail)
+
+    def test_element_mat_dv_sens(self):
+        # Loop through every combination of transform type and shell element class and element matrix inner product sens
+        for transform in self.transforms:
+            with self.subTest(transform=transform):
+                for element_handle in self.elements:
+                    with self.subTest(element=element_handle):
+                        element = element_handle(transform, self.con)
+                        for first_order in self.first_order_choices:
+                            with self.subTest(first_order=first_order):
+                                force = element.createElementCentrifugalForce(
+                                    self.omega, self.rotCenter, first_order
+                                )
+                                dvs = element.getDesignVars(self.elem_index)
+                                for matrix_type in self.matrix_types:
+                                    with self.subTest(matrix_type=matrix_type):
+                                        fail = elements.TestElementMatDVSens(
+                                            force,
+                                            matrix_type,
+                                            self.elem_index,
+                                            self.time,
+                                            self.xpts,
+                                            self.vars,
+                                            dvs,
+                                            self.dh,
+                                            self.print_level,
+                                            self.atol,
+                                            self.rtol,
+                                        )
+                                        self.assertFalse(fail)
+
     def test_element_mat_sv_sens(self):
         # Loop through every combination of model and basis class and test element matrix inner product sens
         for transform in self.transforms:
@@ -200,19 +212,21 @@ class ElementTest(unittest.TestCase):
                 for element_handle in self.elements:
                     with self.subTest(element=element_handle):
                         element = element_handle(transform, self.con)
-                        force = element.createElementCentrifugalForce(
-                            self.omega, self.rotCenter
-                        )
-                        fail = elements.TestElementMatSVSens(
-                            force,
-                            TACS.GEOMETRIC_STIFFNESS_MATRIX,
-                            self.elem_index,
-                            self.time,
-                            self.xpts,
-                            self.vars,
-                            self.dh,
-                            self.print_level,
-                            self.atol,
-                            self.rtol,
-                        )
-                        self.assertFalse(fail)
+                        for first_order in self.first_order_choices:
+                            with self.subTest(first_order=first_order):
+                                force = element.createElementCentrifugalForce(
+                                    self.omega, self.rotCenter, first_order
+                                )
+                                fail = elements.TestElementMatSVSens(
+                                    force,
+                                    TACS.GEOMETRIC_STIFFNESS_MATRIX,
+                                    self.elem_index,
+                                    self.time,
+                                    self.xpts,
+                                    self.vars,
+                                    self.dh,
+                                    self.print_level,
+                                    self.atol,
+                                    self.rtol,
+                                )
+                                self.assertFalse(fail)

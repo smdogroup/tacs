@@ -5,11 +5,13 @@ pyBase_problem
 # =============================================================================
 # Imports
 # =============================================================================
+from collections import OrderedDict
+
 import numpy as np
 from mpi4py import MPI
-from ..utilities import BaseUI
-from collections import OrderedDict
+
 import tacs.TACS
+from ..utilities import BaseUI
 
 
 class TACSProblem(BaseUI):
@@ -137,7 +139,7 @@ class TACSProblem(BaseUI):
 
     def getNodes(self):
         """
-        Return the mesh coordiantes of this problem.
+        Return the mesh coordinates of this problem.
 
         Returns
         -------
@@ -316,7 +318,7 @@ class TACSProblem(BaseUI):
     ####### Load adding methods ########
 
     def _addLoadToComponents(self, FVec, compIDs, F, averageLoad=False):
-        """ "
+        """
         This is an internal helper function for doing the addLoadToComponents method for
         inherited TACSProblem classes. The function should NOT be called by the user should
         use the addLoadToComponents method for the respective problem class. The function is
@@ -336,7 +338,7 @@ class TACSProblem(BaseUI):
             The components with added loads. Use pyTACS.selectCompIDs method
             to determine this.
 
-        F : numpy.ndarray 1d or 2d length (varsPerNodes) or (numNodeIDs, varsPerNodes)
+        F : numpy.ndarray 1d or 2d length (varsPerNodes) or (numCompIDs, varsPerNodes)
             Vector(s) of 'force' to apply to each components.  If only one force vector is provided,
             force will be copied uniformly across all components.
 
@@ -348,7 +350,7 @@ class TACSProblem(BaseUI):
         -----
 
         The units of the entries of the 'force' vector F are not
-        necesarily physical forces and their interpretation depends
+        necessarily physical forces and their interpretation depends
         on the physics problem being solved and the dofs included
         in the model.
 
@@ -393,28 +395,15 @@ class TACSProblem(BaseUI):
         else:
             F = np.atleast_1d(F)
 
-            # First determine the actual physical nodal location in the
-            # original BDF ordering of the nodes we want to add forces
-            # to. Only the root rank need do this:
-            uniqueNodes = None
-            if self.comm.rank == 0:
-                allNodes = []
-                compIDs = set(compIDs)
-                for cID in compIDs:
-                    tmp = self.meshLoader.getConnectivityForComp(
-                        cID, nastranOrdering=True
-                    )
-                    allNodes.extend(self._flatten(tmp))
-
-                # Now just unique all the nodes:
-                uniqueNodes = np.unique(allNodes)
-
-            uniqueNodes = self.comm.bcast(uniqueNodes, root=0)
+            # First determine the unique global node IDs corresponding to components:
+            uniqueNodes = self.meshLoader.getGlobalNodeIDsForComps(
+                compIDs, nastranOrdering=False
+            )
 
             # Now generate the final average force vector
             Favg = F / len(uniqueNodes)
 
-            self._addLoadToNodes(FVec, uniqueNodes, Favg, nastranOrdering=True)
+            self._addLoadToNodes(FVec, uniqueNodes, Favg, nastranOrdering=False)
 
             # Write out a message of what we did:
             self._info(
@@ -453,7 +442,7 @@ class TACSProblem(BaseUI):
         ----------
 
         The units of the entries of the 'force' vector F are not
-        necesarily physical forces and their interpretation depends
+        necessarily physical forces and their interpretation depends
         on the physics problem being solved and the dofs included
         in the model.
 
@@ -534,7 +523,7 @@ class TACSProblem(BaseUI):
                 )
 
     def _addLoadToRHS(self, Frhs, Fapplied):
-        """ "
+        """
         This is an internal helper function for doing the addLoadToRHS method for
         inherited TACSProblem classes. The function should NOT be called by the user should
         use the addLoadToRHS method for the respective problem class.
@@ -890,7 +879,7 @@ class TACSProblem(BaseUI):
                 # Add new inertial force to auxiliary element object
                 auxElems.addElement(elemID, inertiaObj)
 
-    def _addCentrifugalLoad(self, auxElems, omegaVector, rotCenter):
+    def _addCentrifugalLoad(self, auxElems, omegaVector, rotCenter, firstOrder=False):
         """
         This is an internal helper function for doing the addCentrifugalLoad method for
         inherited TACSProblem classes. The function should NOT be called by the user should
@@ -909,6 +898,10 @@ class TACSProblem(BaseUI):
 
         rotCenter : numpy.ndarray
             Location of center of rotation used to define centrifugal load.
+
+        firstOrder : bool, optional
+            Whether to use first order approximation for centrifugal load,
+            which computes the force in the displaced position. By default False
         """
         # Make sure vector is right type
         omegaVector = np.atleast_1d(omegaVector).astype(self.dtype)
@@ -919,7 +912,7 @@ class TACSProblem(BaseUI):
         for elemID, elemObj in enumerate(localElements):
             # Create appropriate centrifugal force object for this element type
             centrifugalObj = elemObj.createElementCentrifugalForce(
-                omegaVector, rotCenter
+                omegaVector, rotCenter, firstOrder=firstOrder
             )
             # Centrifugal force is implemented for element
             if centrifugalObj is not None:

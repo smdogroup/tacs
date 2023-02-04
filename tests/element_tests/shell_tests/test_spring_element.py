@@ -1,6 +1,8 @@
-from tacs import TACS, constitutive, elements
-import numpy as np
 import unittest
+
+import numpy as np
+
+from tacs import TACS, constitutive, elements
 
 
 class ElementTest(unittest.TestCase):
@@ -181,6 +183,29 @@ class ElementTest(unittest.TestCase):
                                 )
                                 self.assertFalse(fail)
 
+    def test_element_mat_xpt_sens(self):
+        # Loop through every combination of transform type and spring constitutive class and element matrix inner product sens
+        for transform in self.transforms:
+            with self.subTest(transform=transform):
+                for con in self.con_objects:
+                    with self.subTest(con=con):
+                        element = elements.SpringElement(transform, con)
+                        for matrix_type in self.matrix_types:
+                            with self.subTest(matrix_type=matrix_type):
+                                fail = elements.TestElementMatXptSens(
+                                    element,
+                                    matrix_type,
+                                    self.elem_index,
+                                    self.time,
+                                    self.xpts,
+                                    self.vars,
+                                    self.dh,
+                                    self.print_level,
+                                    self.atol,
+                                    self.rtol,
+                                )
+                                self.assertFalse(fail)
+
     def test_element_mat_sv_sens(self):
         # Loop through every combination of transform type and spring constitutive class
         # and test element matrix inner product sens
@@ -188,17 +213,19 @@ class ElementTest(unittest.TestCase):
             with self.subTest(transform=transform):
                 for con in self.con_objects:
                     with self.subTest(con=con):
-                        element = elements.SpringElement(transform, con)
-                        fail = elements.TestElementMatSVSens(
-                            element,
-                            TACS.GEOMETRIC_STIFFNESS_MATRIX,
-                            self.elem_index,
-                            self.time,
-                            self.xpts,
-                            self.vars,
-                            self.dh,
-                            self.print_level,
-                            self.atol,
-                            self.rtol,
-                        )
-                        self.assertFalse(fail)
+                        for matrix_type in self.matrix_types:
+                            with self.subTest(matrix_type=matrix_type):
+                                element = elements.SpringElement(transform, con)
+                                fail = elements.TestElementMatSVSens(
+                                    element,
+                                    matrix_type,
+                                    self.elem_index,
+                                    self.time,
+                                    self.xpts,
+                                    self.vars,
+                                    self.dh,
+                                    self.print_level,
+                                    self.atol,
+                                    self.rtol,
+                                )
+                                self.assertFalse(fail)

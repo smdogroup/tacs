@@ -12,11 +12,13 @@ other pieces of information.
 # Imports
 # =============================================================================
 import os
-import numpy as np
 import time
-from .base import TACSProblem
+
+import numpy as np
+
 import tacs.TACS
 import tacs.functions
+from .base import TACSProblem
 
 
 class TransientProblem(TACSProblem):
@@ -40,6 +42,17 @@ class TransientProblem(TACSProblem):
             float,
             1e-12,
             "Relative convergence tolerance for integrator based on l2 norm of residual.",
+        ],
+        "RBEStiffnessScaleFactor": [
+            float,
+            1e3,
+            "Constraint matrix scaling factor used in RBE Lagrange multiplier stiffness matrix.",
+        ],
+        "RBEArtificialStiffness": [
+            float,
+            1e-3,
+            "Artificial constant added to diagonals of RBE Lagrange multiplier stiffness matrix \n"
+            "\t to stabilize preconditioner.",
         ],
         "jacAssemblyFreq": [
             int,
@@ -271,7 +284,7 @@ class TransientProblem(TACSProblem):
 
     def getNumTimeSteps(self):
         """
-        Get the number of timesteps used in time integration for this problem.
+        Get the number of time steps used in time integration for this problem.
 
         Returns
         ----------
@@ -340,7 +353,7 @@ class TransientProblem(TACSProblem):
     def addLoadToComponents(
         self, timeStep, compIDs, F, timeStage=None, averageLoad=False
     ):
-        """ "
+        """
         This method is used to add a *FIXED TOTAL LOAD* on one or more
         components, defined by COMPIDs, at a specific time instance.
         The purpose of this routine is to add loads that remain fixed throughout
@@ -359,7 +372,7 @@ class TransientProblem(TACSProblem):
             The components with added loads. Use pyTACS.selectCompIDs method
             to determine this.
 
-        F : Numpy 1d or 2d array length (varsPerNodes) or (numNodeIDs, varsPerNodes)
+        F : Numpy 1d or 2d array length (varsPerNodes) or (numCompIDs, varsPerNodes)
             Vector(s) of 'force' to apply to each components.  If only one force vector is provided,
             force will be copied uniformly across all components.
 
@@ -438,7 +451,7 @@ class TransientProblem(TACSProblem):
         -----
 
         The units of the entries of the 'force' vector F are not
-        necesarily physical forces and their interpretation depends
+        necessarily physical forces and their interpretation depends
         on the physics problem being solved and the dofs included
         in the model.
 
@@ -468,7 +481,7 @@ class TransientProblem(TACSProblem):
         self._addLoadToNodes(self.F[timeIndex], nodeIDs, F, nastranOrdering)
 
     def addLoadToRHS(self, timeStep, Fapplied, timeStage=None):
-        """ "
+        """
         This method is used to add a *FIXED TOTAL LOAD* directly to the
         right hand side vector given the equation below:
 
@@ -864,6 +877,11 @@ class TransientProblem(TACSProblem):
         self.assembler.setInitConditions(
             vec=self.vars0, dvec=self.dvars0, ddvec=self.ddvars0
         )
+        # Set artificial stiffness factors in rbe class
+        c1 = self.getOption("RBEStiffnessScaleFactor")
+        c2 = self.getOption("RBEArtificialStiffness")
+        tacs.elements.RBE2.setScalingParameters(c1, c2)
+        tacs.elements.RBE3.setScalingParameters(c1, c2)
 
     def solve(self):
         """
@@ -1150,7 +1168,7 @@ class TransientProblem(TACSProblem):
         --------
         >>> funcsSens = {}
         >>> transientProblem.evalFunctionsSens(funcsSens, ['mass'])
-        >>> funcs
+        >>> funcsSens
         >>> # Result will look like (if TransientProblem has name of 'c1'):
         >>> # {'c1_mass':{'struct':[1.234, ..., 7.89], 'Xpts':[3.14, ..., 1.59]}}
         """
@@ -1240,10 +1258,10 @@ class TransientProblem(TACSProblem):
             If states is not None, place the state variables into this array (optional).
 
         dstates : TACS.Vec or numpy.ndarray or None
-            If dstates is not None, place the time derivitive of the state variables into this array (optional).
+            If dstates is not None, place the time derivative of the state variables into this array (optional).
 
         ddstates : TACS.Vec or numpy.ndarray or None
-            If ddstates is not None, place the second time derivitive of the state variables into this array (optional).
+            If ddstates is not None, place the second time derivative of the state variables into this array (optional).
 
         Returns
         --------
@@ -1254,10 +1272,10 @@ class TransientProblem(TACSProblem):
             The state variables.
 
         dstates : TACS.Vec or numpy.ndarray or None
-            The time derivitive of the state variables.
+            The time derivative of the state variables.
 
         ddstates : TACS.Vec or numpy.ndarray or None
-            The second time derivitive of the state variables.
+            The second time derivative of the state variables.
 
         """
 
@@ -1295,6 +1313,15 @@ class TransientProblem(TACSProblem):
         # Return arrays
         return time, qArray, qdotArray, qddotArray
 
+    def zeroLoads(self):
+        """
+        Zero all applied loads
+        """
+        for Fvec in self.F:
+            Fvec.zeroEntries()
+        for i in range(len(self.auxElems)):
+            self.auxElems[i] = tacs.TACS.AuxElements()
+
     def writeSolution(self, outputDir=None, baseName=None, number=None, timeSteps=None):
         """
         This is a generic shell function that writes the output
@@ -1312,14 +1339,14 @@ class TransientProblem(TACSProblem):
             Use this supplied string for the base filename. Typically
             only used from an external solver.
         number : int or None
-            Use the user spplied number to index solution. Again, only
+            Use the user supplied number to index solution. Again, only
             typically used from an external solver
         timeSteps : int or list[int] or None
             Time step index or indices to get state variables for.
             If None, returns a solution for all time steps.
             Defaults to None.
         """
-        # Make sure assembler variables are up to date
+        # Make sure assembler variables are up-to-date
         self._updateAssemblerVars()
 
         # Check input
@@ -1343,19 +1370,21 @@ class TransientProblem(TACSProblem):
         # Unless the writeSolution option is off write actual file:
         if self.getOption("writeSolution"):
 
-            # If timeSteps is None, output all modes
+            # If timeSteps is None, output all timesteps
             if timeSteps is None:
                 timeSteps = np.arange(self.numSteps + 1)
 
             # Write out each specified timestep
             timeSteps = np.atleast_1d(timeSteps)
             vec = self.assembler.createVec()
+            dvec = self.assembler.createVec()
+            ddvec = self.assembler.createVec()
             for timeStep in timeSteps:
-                # Extract eigenvector
-                self.getVariables(timeStep, states=vec)
-                # Set eigen mode in assembler
-                self.assembler.setVariables(vec)
-                # Write out mode shape as f5 file
-                modeName = baseName + "_%3.3d" % timeStep
-                fileName = os.path.join(outputDir, modeName) + ".f5"
+                # Extract solution for timestep
+                self.getVariables(timeStep, states=vec, dstates=dvec, ddstates=ddvec)
+                # Set timestep solution in assembler
+                self.assembler.setVariables(vec, dvec, ddvec)
+                # Write out timestep as f5 file
+                stepName = baseName + "_%3.3d" % timeStep
+                fileName = os.path.join(outputDir, stepName) + ".f5"
                 self.outputViewer.writeToFile(fileName)

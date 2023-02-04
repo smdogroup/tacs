@@ -79,6 +79,17 @@ cdef extern from "TACSPlaneStressConstitutive.h":
 cdef class PlaneStressConstitutive(Constitutive):
     cdef TACSPlaneStressConstitutive *cptr
 
+cdef extern from "TACSPhaseChangeMaterialConstitutive.h":
+    cdef cppclass TACSPhaseChangeMaterialConstitutive(TACSConstitutive):
+        TACSPhaseChangeMaterialConstitutive(TACSMaterialProperties*,
+                                            TACSMaterialProperties*,
+                                            TacsScalar, TacsScalar,
+                                            TacsScalar, TacsScalar,
+                                            int, TacsScalar, TacsScalar)
+
+cdef class PhaseChangeMaterialConstitutive(Constitutive):
+    cdef TACSPhaseChangeMaterialConstitutive *cptr
+
 cdef extern from "TACSSolidConstitutive.h":
     cdef cppclass TACSSolidConstitutive(TACSConstitutive):
         TACSSolidConstitutive(TACSMaterialProperties*,
@@ -143,7 +154,10 @@ cdef class GeneralMassConstitutive(Constitutive):
 
 cdef extern from "TACSPointMassConstitutive.h":
     cdef cppclass TACSPointMassConstitutive(TACSGeneralMassConstitutive):
-        TACSPointMassConstitutive(TacsScalar, TacsScalar, TacsScalar, TacsScalar, TacsScalar, TacsScalar, TacsScalar)
+        TACSPointMassConstitutive(TacsScalar, TacsScalar, TacsScalar, TacsScalar, TacsScalar, TacsScalar, TacsScalar,
+                                  int, TacsScalar, TacsScalar, int, TacsScalar, TacsScalar, int, TacsScalar, TacsScalar,
+                                  int, TacsScalar, TacsScalar, int, TacsScalar, TacsScalar, int, TacsScalar, TacsScalar,
+                                  int, TacsScalar, TacsScalar)
 
 cdef extern from "TACSGeneralSpringConstitutive.h":
     cdef cppclass TACSGeneralSpringConstitutive(TACSConstitutive):

@@ -89,6 +89,12 @@ for mod in ["TACS", "elements", "constitutive", "functions"]:
 for e in exts:
     e.cython_directives = {"embedsignature": True, "binding": True}
 
+if sys.platform == "darwin":
+    from distutils import sysconfig
+
+    vars = sysconfig.get_config_vars()
+    vars["LDSHARED"] = vars["LDSHARED"].replace("-bundle", "-dynamiclib")
+
 tacs_root = os.path.abspath(os.path.dirname(__file__))
 with open(os.path.join(tacs_root, "README.md"), encoding="utf-8") as f:
     long_description = f.read()
@@ -96,7 +102,7 @@ with open(os.path.join(tacs_root, "README.md"), encoding="utf-8") as f:
 optional_dependencies = {
     "testing": ["testflo>=1.4.7"],
     "docs": ["sphinx", "breathe", "sphinxcontrib-programoutput"],
-    "mphys": ["mphys>=0.4.0", "openmdao"],
+    "mphys": ["mphys>=0.4.0", "openmdao<3.25"],
 }
 
 # Add an optional dependency that concatenates all others
@@ -110,13 +116,13 @@ optional_dependencies["all"] = sorted(
 
 setup(
     name="tacs",
-    version="3.0.0",
+    version="3.2.0",
     description="Parallel finite-element analysis package",
     long_description=long_description,
     long_description_content_type="text/markdown",
     author="Graeme J. Kennedy",
     author_email="graeme.kennedy@ae.gatech.edu",
-    install_requires=["numpy", "mpi4py>=3.1.0", "scipy>=1.2.1", "pynastran>=1.3.3"],
+    install_requires=["numpy", "mpi4py>=3.1.1", "scipy>=1.2.1", "pynastran>=1.3.3"],
     extras_require=optional_dependencies,
     packages=find_packages(include=["tacs*"]),
     ext_modules=cythonize(exts, include_path=inc_dirs),

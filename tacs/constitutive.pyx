@@ -465,6 +465,61 @@ cdef class PlaneStressConstitutive(Constitutive):
             self.ptr = NULL
             self.cptr = NULL
 
+cdef class PhaseChangeMaterialConstitutive(Constitutive):
+    """
+    This is the base class for the phase change material constitutive objects.
+
+    Args:
+        solid_props (MaterialProperties): The material property of the solid phase.
+        liquid_props (MaterialProperties): The material property of the liquid phase.
+        lh (float or complex): The specific latent heat of the material.
+        mt (float or complex): The melting temperature of the material.
+        t (float or complex, optional): The material thickness (keyword argument). Defaults to 1.0.
+        tNum (int, optional): Design variable number to assign to thickness (keyword argument). Defaults to -1
+            (i.e. no design variable).
+        tlb (float or complex, optional): Thickness varaible lower bound (keyword argument). Defaults to 0.0.
+        tub (float or complex, optional): Thickness varaible upper bound (keyword argument). Defaults to 10.0.
+    """
+    def __cinit__(self, *args, **kwargs):
+        cdef TACSMaterialProperties *solid_props = NULL
+        cdef TACSMaterialProperties *liquid_props = NULL
+        cdef TacsScalar lh = 0.0
+        cdef TacsScalar Tm = 0.0
+        cdef TacsScalar dT = 10.0
+        cdef TacsScalar t = 1.0
+        cdef int tNum = -1
+        cdef TacsScalar tlb = 0.0
+        cdef TacsScalar tub = 10.0
+
+        if len(args) >= 2:
+            solid_props = (<MaterialProperties>args[0]).ptr
+            liquid_props = (<MaterialProperties>args[1]).ptr
+        if 'lh' in kwargs:
+            lh = kwargs['lh']
+        if 'Tm' in kwargs:
+            Tm = kwargs['Tm']
+        if 'dT' in kwargs:
+            dT = kwargs['dT']
+        if 't' in kwargs:
+            t = kwargs['t']
+        if 'tNum' in kwargs:
+            tNum = kwargs['tNum']
+        if 'tlb' in kwargs:
+            tlb = kwargs['tlb']
+        if 'tub' in kwargs:
+            tub = kwargs['tub']
+
+        if solid_props is not NULL:
+            self.cptr = new TACSPhaseChangeMaterialConstitutive(solid_props,
+                                                                liquid_props,
+                                                                lh, Tm, dT, t,
+                                                                tNum, tlb, tub)
+            self.ptr = self.cptr
+            self.ptr.incref()
+        else:
+            self.ptr = NULL
+            self.cptr = NULL
+
 cdef class SolidConstitutive(Constitutive):
     """
     This is the base class for the solid constitutive objects.
@@ -899,6 +954,27 @@ cdef class PointMassConstitutive(GeneralMassConstitutive):
         I12 (float or complex, optional): Moment of inertia in '1-2' plane (keyword argument). Defaults to 0.0.
         I13 (float or complex, optional): Moment of inertia in '1-3' plane (keyword argument). Defaults to 0.0.
         I23 (float or complex, optional): Moment of inertia in '2-3' plane (keyword argument). Defaults to 0.0.
+        mNum (int, optional): Design variable number to assign to m (keyword argument). Defaults to -1.
+        mlb (float or complex, optional): Lower bound on m (keyword argument). Defaults to 0.0.
+        mub (float or complex, optional): Upper bound on wall thickness (keyword argument). Defaults to 1e20.
+        I11Num (int, optional): Design variable number to assign to I11 (keyword argument). Defaults to -1.
+        I11lb (float or complex, optional): Lower bound on I11 (keyword argument). Defaults to 0.0.
+        I11ub (float or complex, optional): Upper bound on I11 (keyword argument). Defaults to 1e20.
+        I22Num (int, optional): Design variable number to assign to I22 (keyword argument). Defaults to -1.
+        I22lb (float or complex, optional): Lower bound on I22 (keyword argument). Defaults to 0.0.
+        I22ub (float or complex, optional): Upper bound on I22 (keyword argument). Defaults to 1e20.
+        I33Num (int, optional): Design variable number to assign to I33 (keyword argument). Defaults to -1.
+        I33lb (float or complex, optional): Lower bound on I33 (keyword argument). Defaults to 0.0.
+        I33ub (float or complex, optional): Upper bound on I33 (keyword argument). Defaults to 1e20.
+        I12Num (int, optional): Design variable number to assign to I12 (keyword argument). Defaults to -1.
+        I12lb (float or complex, optional): Lower bound on I12 (keyword argument). Defaults to -1e20.
+        I12ub (float or complex, optional): Upper bound on I12 (keyword argument). Defaults to 1e20.
+        I13Num (int, optional): Design variable number to assign to I13 (keyword argument). Defaults to -1.
+        I13lb (float or complex, optional): Lower bound on I13 (keyword argument). Defaults to -1e20.
+        I13ub (float or complex, optional): Upper bound on I13 (keyword argument). Defaults to 1e20.
+        I23Num (int, optional): Design variable number to assign to I23 (keyword argument). Defaults to -1.
+        I23lb (float or complex, optional): Lower bound on I23 (keyword argument). Defaults to -1e20.
+        I23ub (float or complex, optional): Upper bound on I23 (keyword argument). Defaults to 1e20.
     """
     def __cinit__(self, **kwargs):
         cdef TacsScalar m = 0.0
@@ -908,6 +984,27 @@ cdef class PointMassConstitutive(GeneralMassConstitutive):
         cdef TacsScalar I12 = 0.0
         cdef TacsScalar I13 = 0.0
         cdef TacsScalar I23 = 0.0
+        cdef int mNum = -1
+        cdef int I11Num = -1
+        cdef int I22Num = -1
+        cdef int I33Num = -1
+        cdef int I12Num = -1
+        cdef int I13Num = -1
+        cdef int I23Num = -1
+        cdef TacsScalar mlb = 0.0
+        cdef TacsScalar I11lb = 0.0
+        cdef TacsScalar I22lb = 0.0
+        cdef TacsScalar I33lb = 0.0
+        cdef TacsScalar I12lb = -1e20
+        cdef TacsScalar I13lb = -1e20
+        cdef TacsScalar I23lb = -1e20
+        cdef TacsScalar mub = 1e20
+        cdef TacsScalar I11ub = 1e20
+        cdef TacsScalar I22ub = 1e20
+        cdef TacsScalar I33ub = 1e20
+        cdef TacsScalar I12ub = 1e20
+        cdef TacsScalar I13ub = 1e20
+        cdef TacsScalar I23ub = 1e20
 
         if 'm' in kwargs:
             m = kwargs['m']
@@ -923,8 +1020,52 @@ cdef class PointMassConstitutive(GeneralMassConstitutive):
             I13 = kwargs['I13']
         if 'I23' in kwargs:
             I23 = kwargs['I23']
+        if 'mNum' in kwargs:
+            mNum = kwargs['mNum']
+        if 'I11Num' in kwargs:
+            I11Num = kwargs['I11Num']
+        if 'I22Num' in kwargs:
+            I22Num = kwargs['I22Num']
+        if 'I33Num' in kwargs:
+            I33Num = kwargs['I33Num']
+        if 'I12Num' in kwargs:
+            I12Num = kwargs['I12Num']
+        if 'I13Num' in kwargs:
+            I13Num = kwargs['I13Num']
+        if 'I23Num' in kwargs:
+            I23Num = kwargs['I23Num']
+        if 'mlb' in kwargs:
+            mlb = kwargs['mlb']
+        if 'I11lb' in kwargs:
+            I11lb = kwargs['I11lb']
+        if 'I22lb' in kwargs:
+            I22lb = kwargs['I22lb']
+        if 'I33lb' in kwargs:
+            I33lb = kwargs['I33lb']
+        if 'I12lb' in kwargs:
+            I12lb = kwargs['I12lb']
+        if 'I13lb' in kwargs:
+            I13lb = kwargs['I13lb']
+        if 'I23lb' in kwargs:
+            I23lb = kwargs['I23lb']
+        if 'mub' in kwargs:
+            mub = kwargs['mub']
+        if 'I11ub' in kwargs:
+            I11ub = kwargs['I11ub']
+        if 'I22ub' in kwargs:
+            I22ub = kwargs['I22ub']
+        if 'I33ub' in kwargs:
+            I33ub = kwargs['I33ub']
+        if 'I12ub' in kwargs:
+            I12ub = kwargs['I12ub']
+        if 'I13ub' in kwargs:
+            I13ub = kwargs['I13ub']
+        if 'I23ub' in kwargs:
+            I23ub = kwargs['I23ub']
 
-        self.cptr = new TACSPointMassConstitutive(m, I11, I22, I33, I12, I13, I23)
+        self.cptr = new TACSPointMassConstitutive(m, I11, I22, I33, I12, I13, I23, mNum, mlb, mub, I11Num, I11lb, I11ub,
+                                                  I22Num, I22lb, I22ub, I33Num, I33lb, I33ub, I12Num, I12lb, I12ub,
+                                                  I13Num, I13lb, I13ub, I23Num, I23lb, I23ub)
 
         self.ptr = self.cptr
         self.ptr.incref()

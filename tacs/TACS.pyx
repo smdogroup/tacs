@@ -26,6 +26,8 @@ np.import_array()
 # Import the definition required for const strings
 from libc.string cimport const_char
 from libc.stdlib cimport malloc, free
+from libcpp cimport bool
+
 
 # Import C methods for python
 from cpython cimport PyObject, Py_INCREF
@@ -50,6 +52,7 @@ SOLID_ELEMENT = TACS_SOLID_ELEMENT
 RIGID_ELEMENT = TACS_RIGID_ELEMENT
 MASS_ELEMENT = TACS_MASS_ELEMENT
 SPRING_ELEMENT = TACS_SPRING_ELEMENT
+PCM_ELEMENT = TACS_PCM_ELEMENT
 
 # Import the element matrix types
 STIFFNESS_MATRIX = TACS_STIFFNESS_MATRIX
@@ -90,6 +93,7 @@ OUTPUT_DISPLACEMENTS = TACS_OUTPUT_DISPLACEMENTS
 OUTPUT_STRAINS = TACS_OUTPUT_STRAINS
 OUTPUT_STRESSES = TACS_OUTPUT_STRESSES
 OUTPUT_EXTRAS = TACS_OUTPUT_EXTRAS
+OUTPUT_LOADS = TACS_OUTPUT_LOADS
 
 LAYOUT_NONE = TACS_LAYOUT_NONE
 POINT_ELEMENT = TACS_POINT_ELEMENT
@@ -338,11 +342,13 @@ cdef class Element:
         return None
 
     def createElementCentrifugalForce(self, np.ndarray[TacsScalar, ndim=1] omegaVec,
-                                      np.ndarray[TacsScalar, ndim=1] rotCenter):
+                                      np.ndarray[TacsScalar, ndim=1] rotCenter,
+                                      bool firstOrder=False):
         cdef TACSElement *centrifugalElem = NULL
         if self.ptr:
             centrifugalElem = self.ptr.createElementCentrifugalForce(<TacsScalar*>omegaVec.data,
-                                                                     <TacsScalar*>rotCenter.data)
+                                                                     <TacsScalar*>rotCenter.data,
+                                                                     firstOrder)
             if centrifugalElem != NULL:
                 return _init_Element(centrifugalElem)
         return None
@@ -894,17 +900,32 @@ cdef class Mat:
         mat = _dynamicParallelMat(self.ptr)
         sc = _dynamicSchurMat(self.ptr)
 
+        data = None
+
         if mat != NULL:
             mat.getBCSRMat(&A, &B)
-            return (_convertBCSRMat(A, <PyObject*>self), _convertBCSRMat(B, <PyObject*>self))
+            data = (_convertBCSRMat(A, <PyObject*>self), _convertBCSRMat(B, <PyObject*>self))
+            if A != NULL:
+                Py_INCREF(self)
+            if B != NULL:
+                Py_INCREF(self)
+
         elif sc != NULL:
             sc.getBCSRMat(&A, &B, &C, &D)
-            return (_convertBCSRMat(A, <PyObject*>self),
+            data = (_convertBCSRMat(A, <PyObject*>self),
                     _convertBCSRMat(B, <PyObject*>self),
                     _convertBCSRMat(C, <PyObject*>self),
                     _convertBCSRMat(D, <PyObject*>self))
+            if A != NULL:
+                Py_INCREF(self)
+            if B != NULL:
+                Py_INCREF(self)
+            if C != NULL:
+                Py_INCREF(self)
+            if D != NULL:
+                Py_INCREF(self)
 
-        return None
+        return data
 
     def getDenseMatrix(self):
         """
@@ -1136,8 +1157,11 @@ cdef class KSM:
         b:          the right-hand-side
         x:          the solution vector (with possibly significant entries)
         zero_guess:  indicate whether to zero entries of x before solution
+
+        output:
+        solve_flag: flag for whether the solve terminated successfully
         """
-        self.ptr.solve(b.ptr, x.ptr, zero_guess)
+        return self.ptr.solve(b.ptr, x.ptr, zero_guess)
 
     def setTolerances(self, double rtol, double atol):
         """
@@ -1971,7 +1995,7 @@ cdef class Assembler:
         self.ptr.evalEnergies(&Te, &Pe)
         return Te, Pe
 
-    def assembleRes(self, Vec residual):
+    def assembleRes(self, Vec residual, TacsScalar loadScale=1.0):
         """
         Assemble the residual associated with the input load case.
 
@@ -1982,13 +2006,15 @@ cdef class Assembler:
         residual is complete.
 
         rhs:        the residual output
+        loadScale:  Scaling factor for the aux element contributions, by default 1
         """
-        self.ptr.assembleRes(residual.ptr)
+        self.ptr.assembleRes(residual.ptr, loadScale)
         return
 
     def assembleJacobian(self, double alpha, double beta, double gamma,
                          Vec residual, Mat A,
-                         MatrixOrientation matOr=TACS_MAT_NORMAL):
+                         MatrixOrientation matOr=TACS_MAT_NORMAL,
+                         TacsScalar loadScale=1.0):
         """
         Assemble the Jacobian matrix
 
@@ -2000,23 +2026,25 @@ cdef class Assembler:
         matrix assembly also performs any communication required so that
         the matrix can be used immediately after assembly.
 
-        alpha:      coefficient on the variables
-        beta:        coefficient on the time-derivative terms
-        gamma:      coefficient on the second time derivative term
+        alpha:     coefficient on the variables
+        beta:      coefficient on the time-derivative terms
+        gamma:     coefficient on the second time derivative term
         residual:  the residual of the governing equations
-        A:            the Jacobian matrix
-        matOr:      the matrix orientation NORMAL or TRANSPOSE
+        A:         the Jacobian matrix
+        matOr:     the matrix orientation NORMAL or TRANSPOSE
+        loadScale: Scaling factor for the aux element contributions, by default 1
         """
         cdef TACSBVec *res = NULL
         if residual is not None:
             res = residual.ptr
 
         self.ptr.assembleJacobian(alpha, beta, gamma,
-                                  res, A.ptr, matOr)
+                                  res, A.ptr, matOr, loadScale)
         return
 
     def assembleMatType(self, ElementMatrixType matType,
-                        Mat A, MatrixOrientation matOr=TACS_MAT_NORMAL):
+                        Mat A, MatrixOrientation matOr=TACS_MAT_NORMAL,
+                        TacsScalar loadScale=1.0):
 
         """
         Assemble the Jacobian matrix
@@ -2036,13 +2064,15 @@ cdef class Assembler:
         gamma:      coefficient on the second time derivative
         term
         matOr:      the matrix orientation NORMAL or TRANSPOSE
+        loadScale: Scaling factor for the aux element contributions, by default 1
         """
-        self.ptr.assembleMatType(matType, A.ptr, matOr)
+        self.ptr.assembleMatType(matType, A.ptr, matOr, loadScale)
         return
 
     def assembleMatCombo(self, ElementMatrixType matType1, double scale1,
                          ElementMatrixType matType2, double scale2, Mat A,
-                         MatrixOrientation matOr=NORMAL):
+                         MatrixOrientation matOr=NORMAL,
+                         TacsScalar loadScale=1.0):
         """
         Assemble a combination of two matrices
         """
@@ -2054,7 +2084,7 @@ cdef class Assembler:
         matTypes[1] = matType2
         scale[0] = scale1
         scale[1] = scale2
-        self.ptr.assembleMatCombo(matTypes, scale, 2, A.ptr, matOr)
+        self.ptr.assembleMatCombo(matTypes, scale, 2, A.ptr, matOr, loadScale)
         return
 
     def evalFunctions(self, funclist):
@@ -2186,7 +2216,7 @@ cdef class Assembler:
 
         return
 
-    def addAdjointResProducts(self, adjlist, dfdxlist, double alpha=1.0):
+    def addAdjointResProducts(self, adjlist, dfdxlist, double alpha=1.0, TacsScalar loadScale=1.0):
         """
         This function is collective on all TACSAssembler processes. This
         computes the product of the derivative of the residual
@@ -2200,6 +2230,7 @@ cdef class Assembler:
         adjoint: the array of adjoint vectors
         dvSens: the product of the derivative of the residuals and the adjoint
         num_dvs: the number of design variables
+        loadScale: Scaling factor for the aux element contributions, by default 1
         """
         cdef int num_adjoints = 0
         cdef TACSBVec **adjoints = NULL
@@ -2218,14 +2249,14 @@ cdef class Assembler:
             dfdx[i] = (<Vec>dfdxlist[i]).ptr
 
         # Evaluate the derivative of the functions
-        self.ptr.addAdjointResProducts(alpha, num_adjoints, adjoints, dfdx)
+        self.ptr.addAdjointResProducts(alpha, num_adjoints, adjoints, dfdx, loadScale)
 
         free(adjoints)
         free(dfdx)
 
         return
 
-    def addAdjointResXptSensProducts(self, adjlist, dfdXlist, double alpha=1.0):
+    def addAdjointResXptSensProducts(self, adjlist, dfdXlist, double alpha=1.0, TacsScalar loadScale=1.0):
         """
         This function is collective on all TACSAssembler processes. This
         computes the product of the derivative of the residual
@@ -2249,7 +2280,7 @@ cdef class Assembler:
             dfdX[i] = (<Vec>dfdXlist[i]).ptr
 
         # Evaluate the derivative of the functions
-        self.ptr.addAdjointResXptSensProducts(alpha, num_adjoints, adjoints, dfdX)
+        self.ptr.addAdjointResXptSensProducts(alpha, num_adjoints, adjoints, dfdX, loadScale)
 
         free(adjoints)
         free(dfdX)
@@ -2276,12 +2307,13 @@ cdef class Assembler:
 
     def addJacobianVecProduct(self, TacsScalar scale,
                               double alpha, double beta, double gamma,
-                              Vec x, Vec y, MatrixOrientation matOr=TACS_MAT_NORMAL):
+                              Vec x, Vec y, MatrixOrientation matOr=TACS_MAT_NORMAL,
+                              TacsScalar loadScale=1.0):
         """
         Compute the Jacobian-vector product
         """
         self.ptr.addJacobianVecProduct(scale, alpha, beta, gamma,
-                                       x.ptr, y.ptr, matOr)
+                                       x.ptr, y.ptr, matOr, loadScale)
         return
 
     def testElement(self, int elemNum, int print_level,
@@ -3056,6 +3088,60 @@ cdef class FrequencyAnalysis:
         eigval = self.ptr.extractEigenvector(index, vec.ptr, &err)
         return eigval, err
 
+    def evalEigenDVSens(self, int index, Vec dvsens):
+        """
+        Compute the derivative of the eigenvalues w.r.t. the design variables
+
+        The original eigenvalue problem is,
+
+        K*u = lambda*M*u
+
+        The derivative of the eigenvalue problem is given as follows,
+
+         dK/dx*u + K*du/dx =
+        d(lambda)/dx*M*u + lambda*dM/dx*u + lambda*M*du/dx
+
+        Since M = M^{T} and K = K^{T}, pre-multiplying by u^{T} gives,
+
+         u^{T}*dK/dx*u = d(lambda)/dx*(u^{T}*M*u) + lambda*u^{T}*dM/dx*u
+
+        Rearranging gives,
+
+        (u^{T}*M*u)*d(lambda)/dx = u^{T}*(dK/dx - lambda*dM/dx)*u
+
+        Args:
+            index (int): The index of the desired eigenvalue
+            dvsens (Vec): The vector in which the design variable sensitivity will be stored
+        """
+        self.ptr.evalEigenDVSens(index, dvsens.ptr)
+
+    def evalEigenXptSens(self, int index, Vec xptsens):
+        """
+        Compute the derivative of the eigenvalues w.r.t. the nodal coordinates
+
+        The original eigenvalue problem is,
+
+        K*u = lambda*M*u
+
+        The derivative of the eigenvalue problem is given as follows,
+
+         dK/dx*u + K*du/dx =
+        d(lambda)/dx*M*u + lambda*dM/dx*u + lambda*M*du/dx
+
+        Since M = M^{T} and K = K^{T}, pre-multiplying by u^{T} gives,
+
+         u^{T}*dK/dx*u = d(lambda)/dx*(u^{T}*M*u) + lambda*u^{T}*dM/dx*u
+
+        Rearranging gives,
+
+        (u^{T}*M*u)*d(lambda)/dx = u^{T}*(dK/dx - lambda*dM/dx)*u
+
+        Args:
+            index (int): The index of the desired eigenvalue
+            xptsens (Vec): The vector in which the nodal sensitivity will be stored
+        """
+        self.ptr.evalEigenXptSens(index, xptsens.ptr)
+
 cdef class BucklingAnalysis:
     cdef TACSLinearBuckling *ptr
     def __cinit__(self, Assembler assembler, TacsScalar sigma,
@@ -3574,9 +3660,9 @@ cdef class DIRKIntegrator(Integrator):
 
 cdef class ESDIRKIntegrator(Integrator):
     """
-    Explicit first-stage, Singly Diagonally-Implicit-Runge-Kutta integration 
+    Explicit first-stage, Singly Diagonally-Implicit-Runge-Kutta integration
     class. This supports up to fifth-order accuracy in time and domain. Four-
-    stage ESDIRK is third-order accurate, six-stage ESDIRK is fourth-order 
+    stage ESDIRK is third-order accurate, six-stage ESDIRK is fourth-order
     accurate, and eight-stage ESDIRK is fifth-order accurate.
     """
     def __cinit__(self, Assembler tacs,

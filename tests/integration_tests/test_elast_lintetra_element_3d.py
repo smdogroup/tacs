@@ -1,7 +1,9 @@
-import numpy as np
-from tacs import TACS, elements, constitutive, functions
-from static_analysis_base_test import StaticTestCase
 import os
+
+import numpy as np
+
+from static_analysis_base_test import StaticTestCase
+from tacs import TACS, elements, constitutive, functions
 
 """
 Load in a bdf file with tetrahedral elements, apply a load,

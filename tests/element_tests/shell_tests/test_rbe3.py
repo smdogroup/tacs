@@ -1,6 +1,8 @@
-from tacs import TACS, elements
-import numpy as np
 import unittest
+
+import numpy as np
+
+from tacs import TACS, elements
 
 
 class ElementTest(unittest.TestCase):
@@ -15,8 +17,9 @@ class ElementTest(unittest.TestCase):
 
         # Set artificial stiffness term to zero,
         # since we know it adds error to the sensitivities
-        self.C1 = 1e6
-        self.C2 = 0.0
+        C1 = 1e6
+        C2 = 0.0
+        elements.RBE3.setScalingParameters(C1, C2)
 
         # fd/cs step size
         if TACS.dtype is complex:
@@ -83,12 +86,7 @@ class ElementTest(unittest.TestCase):
                 for indep_dofs in self.indep_dofs_constrained:
                     with self.subTest(indep_dofs=indep_dofs):
                         element = elements.RBE3(
-                            self.num_nodes,
-                            dep_dofs,
-                            self.indep_weights,
-                            indep_dofs,
-                            self.C1,
-                            self.C2,
+                            self.num_nodes, dep_dofs, self.indep_weights, indep_dofs
                         )
                         fail = elements.TestElementJacobian(
                             element,
@@ -113,12 +111,7 @@ class ElementTest(unittest.TestCase):
                 for indep_dofs in self.indep_dofs_constrained:
                     with self.subTest(indep_dofs=indep_dofs):
                         element = elements.RBE3(
-                            self.num_nodes,
-                            dep_dofs,
-                            self.indep_weights,
-                            indep_dofs,
-                            self.C1,
-                            self.C2,
+                            self.num_nodes, dep_dofs, self.indep_weights, indep_dofs
                         )
                         dvs = element.getDesignVars(self.elem_index)
                         fail = elements.TestAdjResProduct(
@@ -144,12 +137,7 @@ class ElementTest(unittest.TestCase):
                 for indep_dofs in self.indep_dofs_constrained:
                     with self.subTest(indep_dofs=indep_dofs):
                         element = elements.RBE3(
-                            self.num_nodes,
-                            dep_dofs,
-                            self.indep_weights,
-                            indep_dofs,
-                            self.C1,
-                            self.C2,
+                            self.num_nodes, dep_dofs, self.indep_weights, indep_dofs
                         )
                         fail = elements.TestAdjResXptProduct(
                             element,
@@ -173,12 +161,7 @@ class ElementTest(unittest.TestCase):
                 for indep_dofs in self.indep_dofs_constrained:
                     with self.subTest(indep_dofs=indep_dofs):
                         element = elements.RBE3(
-                            self.num_nodes,
-                            dep_dofs,
-                            self.indep_weights,
-                            indep_dofs,
-                            self.C1,
-                            self.C2,
+                            self.num_nodes, dep_dofs, self.indep_weights, indep_dofs
                         )
                         dvs = element.getDesignVars(self.elem_index)
                         for matrix_type in self.matrix_types:
@@ -198,30 +181,56 @@ class ElementTest(unittest.TestCase):
                                 )
                                 self.assertFalse(fail)
 
+    def test_element_mat_xpt_sens(self):
+        # Loop through each combination of dof constraints and element matrix inner product sens
+        for dep_dofs in self.dep_dofs_constrained:
+            with self.subTest(dep_dofs=dep_dofs):
+                for indep_dofs in self.indep_dofs_constrained:
+                    with self.subTest(indep_dofs=indep_dofs):
+                        element = elements.RBE3(
+                            self.num_nodes, dep_dofs, self.indep_weights, indep_dofs
+                        )
+
+                        for matrix_type in self.matrix_types:
+                            with self.subTest(matrix_type=matrix_type):
+                                fail = elements.TestElementMatXptSens(
+                                    element,
+                                    matrix_type,
+                                    self.elem_index,
+                                    self.time,
+                                    self.xpts,
+                                    self.vars,
+                                    self.dh,
+                                    self.print_level,
+                                    self.atol,
+                                    self.rtol,
+                                )
+                                self.assertFalse(fail)
+
     def test_element_mat_sv_sens(self):
         # Loop through each combination of dof constraints and test element matrix inner product sens
         for dep_dofs in self.dep_dofs_constrained:
             with self.subTest(dep_dofs=dep_dofs):
                 for indep_dofs in self.indep_dofs_constrained:
                     with self.subTest(indep_dofs=indep_dofs):
-                        element = elements.RBE3(
-                            self.num_nodes,
-                            dep_dofs,
-                            self.indep_weights,
-                            indep_dofs,
-                            self.C1,
-                            self.C2,
-                        )
-                        fail = elements.TestElementMatSVSens(
-                            element,
-                            TACS.GEOMETRIC_STIFFNESS_MATRIX,
-                            self.elem_index,
-                            self.time,
-                            self.xpts,
-                            self.vars,
-                            self.dh,
-                            self.print_level,
-                            self.atol,
-                            self.rtol,
-                        )
-                        self.assertFalse(fail)
+                        for matrix_type in self.matrix_types:
+                            with self.subTest(matrix_type=matrix_type):
+                                element = elements.RBE3(
+                                    self.num_nodes,
+                                    dep_dofs,
+                                    self.indep_weights,
+                                    indep_dofs,
+                                )
+                                fail = elements.TestElementMatSVSens(
+                                    element,
+                                    matrix_type,
+                                    self.elem_index,
+                                    self.time,
+                                    self.xpts,
+                                    self.vars,
+                                    self.dh,
+                                    self.print_level,
+                                    self.atol,
+                                    self.rtol,
+                                )
+                                self.assertFalse(fail)

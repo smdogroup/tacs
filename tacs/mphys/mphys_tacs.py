@@ -151,22 +151,53 @@ class TacsDVComp(om.ExplicitComponent):
             default=None,
             desc="initial values for global design variable vector",
         )
+        self.options.declare(
+            "separate_mass_dvs",
+            default=False,
+            desc="Flag for whether or not to separate out point mass dvs using user-defined names",
+        )
 
     def setup(self):
         self.fea_assembler = self.options["fea_assembler"]
         self.src_indices = self.get_dv_src_indices()
         vals = self.options["initial_dv_vals"]
         ndv = self.fea_assembler.getNumDesignVars()
+        # Keep a list of dvs corresponding to regular struct dvs and mass dvs
+        self.struct_dvs = list(range(len(vals)))
+        self.mass_dvs = {}
+        # Check if user wants to separate out point mass dvs by user-defined names
+        if self.options["separate_mass_dvs"]:
+            g_dvs = self.fea_assembler.getGlobalDVs()
+            for dv_name in g_dvs:
+                dv_dict = g_dvs[dv_name]
+                if dv_dict["isMassDV"]:
+                    dv_num = dv_dict["num"]
+                    mass_val = vals[dv_num]
+                    # Store mass dv num with user-defined dv name
+                    self.mass_dvs[f"dv_mass_{dv_name}"] = dv_num
+                    # Remove mass dv from struct list
+                    self.struct_dvs.remove(dv_num)
+                    # Add user-defined dv name as input
+                    self.add_input(
+                        f"dv_mass_{dv_name}",
+                        desc="serial mass design variable holding one mass design variable instance for tacs",
+                        val=mass_val,
+                        distributed=False,
+                        tags=["mphys_input"],
+                    )
+            # Remove all mass dvs from vals
+            vals = vals[self.struct_dvs]
+
         self.add_input(
-            "dv_struct_serial",
-            desc="serial design vector holding all tacs design variable values",
+            "dv_struct",
+            desc="serial vector holding all structural tacs design variable values",
             val=vals,
             distributed=False,
             tags=["mphys_input"],
         )
         self.add_output(
-            "dv_struct",
-            desc="distributed design vector holding tacs design variable values\
+            "tacs_dvs",
+            desc="distributed vector holding tacs design variable values\
                         for this proc",
             shape=ndv,
             distributed=True,
@@ -174,15 +205,36 @@ class TacsDVComp(om.ExplicitComponent):
         )
 
     def compute(self, inputs, outputs):
-        outputs["dv_struct"] = inputs["dv_struct_serial"][self.src_indices]
+        # Create serial array to holding all dv vals
+        tot_ndv = len(self.struct_dvs) + len(self.mass_dvs)
+        full_dv_array = np.zeros(tot_ndv, dtype=inputs["dv_struct"].dtype)
+        # Place struct dvs in full array
+        full_dv_array[self.struct_dvs] = inputs["dv_struct"]
+        # Place mass dvs (if they were defined) in full array
+        for dv_name in self.mass_dvs:
+            full_dv_array[self.mass_dvs[dv_name]] = inputs[dv_name]
+        # Slice full array with src_indices to get distributed dv array
+        outputs["tacs_dvs"] = full_dv_array[self.src_indices]
 
     def compute_jacvec_product(self, inputs, d_inputs, d_outputs, mode):
+        tot_ndv = len(self.struct_dvs) + len(self.mass_dvs)
+        dfull_dv_array = np.zeros(tot_ndv, dtype=inputs["dv_struct"].dtype)
         if mode == "fwd":
-            if "dv_struct" in d_outputs and "dv_struct_serial" in d_inputs:
-                d_outputs["dv_struct"] += d_inputs["dv_struct_serial"][self.src_indices]
+            if "tacs_dvs" in d_outputs:
+                if "dv_struct" in d_inputs:
+                    dfull_dv_array[self.struct_dvs] += d_inputs["dv_struct"]
+                for dv_name in self.mass_dvs:
+                    if dv_name in d_inputs:
+                        dfull_dv_array[self.mass_dvs[dv_name]] += d_inputs[dv_name]
+                d_outputs["tacs_dvs"] += dfull_dv_array[self.src_indices]
         else:  # mode == 'rev'
-            if "dv_struct" in d_outputs and "dv_struct_serial" in d_inputs:
-                d_inputs["dv_struct_serial"][self.src_indices] += d_outputs["dv_struct"]
+            if "tacs_dvs" in d_outputs:
+                dfull_dv_array[self.src_indices] += d_outputs["tacs_dvs"]
+                if "dv_struct" in d_inputs:
+                    d_inputs["dv_struct"] += dfull_dv_array[self.struct_dvs]
+                for dv_name in self.mass_dvs:
+                    if dv_name in d_inputs:
+                        d_inputs[dv_name] += dfull_dv_array[self.mass_dvs[dv_name]]
 
     def get_dv_src_indices(self):
         """
@@ -226,20 +278,31 @@ class TacsPrecouplingGroup(om.Group):
             default="struct",
             desc="physics problem assigned to the tacs object either struct or thermal",
         )
+        self.options.declare(
+            "separate_mass_dvs",
+            default=False,
+            desc="Flag for whether or not to separate out point mass dvs using user-defined names",
+        )
 
     def setup(self):
         # Promote state variables/rhs with physics-specific tag that MPhys expects
-        discipline = self.options["discipline"]
 
-        promotes_inputs = [(f"dv_struct_serial", "dv_struct")]
+        discipline = self.options["discipline"]
+        promotes_inputs = ["*"]
+
 
         fea_assembler = self.options["fea_assembler"]
         initial_dv_vals = self.options["initial_dv_vals"]
+        separate_mass_dvs = self.options["separate_mass_dvs"]
 
         # add  system to distribute the dvstruct varaibles arcoss the processors
         self.add_subsystem(
             "distributor",
-            TacsDVComp(fea_assembler=fea_assembler, initial_dv_vals=initial_dv_vals),
+            TacsDVComp(
+                fea_assembler=fea_assembler,
+                initial_dv_vals=initial_dv_vals,
+                separate_mass_dvs=separate_mass_dvs,
+            ),
             promotes_inputs=promotes_inputs,
         )
 
@@ -313,7 +376,7 @@ class TacsSolver(om.ImplicitComponent):
 
         # inputs
         self.add_input(
-            "dv_struct",
+            "tacs_dvs",
             distributed=True,
             shape=local_ndvs,
             desc="tacs distributed design variables",
@@ -348,34 +411,39 @@ class TacsSolver(om.ImplicitComponent):
         )
 
     def _need_update(self, inputs):
-        update = True
+        update = False
+
+        dvs = inputs["tacs_dvs"]
+        xs = inputs["x_struct0"]
 
         if self.old_dvs is None:
-            self.old_dvs = inputs["dv_struct"].copy()
+            self.old_dvs = inputs["tacs_dvs"].copy()
             update = True
 
-        for dv, dv_old in zip(inputs["dv_struct"], self.old_dvs):
-            if np.abs(dv - dv_old) > 0.0:  # 1e-7:
-                self.old_dvs = inputs["dv_struct"].copy()
+        elif len(dvs) > 0:
+            if max(np.abs(dvs - self.old_dvs)) > 0.0:  # 1e-7:
+                self.old_dvs = inputs["tacs_dvs"].copy()
                 update = True
 
         if self.old_xs is None:
             self.old_xs = inputs[f"x_{self.discipline}0"].copy()
             update = True
 
-        for xs, xs_old in zip(inputs[f"x_{self.discipline}0"], self.old_xs):
-            if np.abs(xs - xs_old) > 0.0:  # 1e-7:
+        elif len(xs) > 0:
+            if max(np.abs(xs - self.old_xs)) > 0.0:  # 1e-7:
                 self.old_xs = inputs[f"x_{self.discipline}0"].copy()
                 update = True
-        tmp = [update]
+
+        tmp = update
         # Perform all reduce to check if any other procs came back True
-        update = self.comm.allreduce(tmp)[0]
+        update = self.comm.allreduce(tmp)
         return update
 
     def _update_internal(self, inputs, outputs=None):
         if self._need_update(inputs):
-            self.sp.setDesignVars(inputs["dv_struct"])
+            self.sp.setDesignVars(inputs["tacs_dvs"])
             self.sp.setNodes(inputs[f"x_{self.discipline}0"])
+
         if outputs is not None:
             if self.discipline == "thermal":
                 # the statics problem zeros the entries at eh boundary conditions by default.
@@ -452,10 +520,10 @@ class TacsSolver(om.ImplicitComponent):
                         scale=1.0,
                     )
 
-                if "dv_struct" in d_inputs:
+                if "tacs_dvs" in d_inputs:
                     self.sp.addAdjointResProducts(
                         [d_residuals[self.states_name]],
-                        [d_inputs["dv_struct"]],
+                        [d_inputs["tacs_dvs"]],
                         scale=1.0,
                     )
 
@@ -513,7 +581,7 @@ class TacsFunctions(om.ExplicitComponent):
 
         # OpenMDAO part of setup
         self.add_input(
-            "dv_struct",
+            "tacs_dvs",
             distributed=True,
             shape=local_ndvs,
             desc="tacs design variables",
@@ -546,7 +614,7 @@ class TacsFunctions(om.ExplicitComponent):
                 self.add_output(func_name, distributed=False, shape=1, tags=["mphys_result"])
 
     def _update_internal(self, inputs):
-        self.sp.setDesignVars(inputs["dv_struct"])
+        self.sp.setDesignVars(inputs["tacs_dvs"])
         self.sp.setNodes(inputs[f"x_{self.discipline}0"])
         if self.discipline == "thermal":
             # the statics problem zeros the entries at the boundary conditions by default.
@@ -594,8 +662,8 @@ class TacsFunctions(om.ExplicitComponent):
                 else:
                     d_func = d_outputs[func_name]
 
-                if "dv_struct" in d_inputs:
-                    self.sp.addDVSens([func_name], [d_inputs["dv_struct"]], scale=d_func)
+                if "tacs_dvs" in d_inputs:
+                    self.sp.addDVSens([func_name], [d_inputs["tacs_dvs"]], scale=d_func)
 
                 if f"x_{self.discipline}0" in d_inputs:
                     self.sp.addXptSens([func_name], [d_inputs[f"x_{self.discipline}0"]], scale=d_func)
@@ -627,7 +695,7 @@ class MassFunctions(om.ExplicitComponent):
 
         # OpenMDAO part of setup
         self.add_input(
-            "dv_struct",
+            "tacs_dvs",
             distributed=True,
             shape=local_ndvs,
             desc="tacs design variables",
@@ -653,7 +721,7 @@ class MassFunctions(om.ExplicitComponent):
                 self.add_output(func_name, distributed=False, shape=1, tags=["mphys_result"])
 
     def _update_internal(self, inputs):
-        self.sp.setDesignVars(inputs["dv_struct"])
+        self.sp.setDesignVars(inputs["tacs_dvs"])
         self.sp.setNodes(inputs[f"x_{self.discipline}0"])
 
     def compute(self, inputs, outputs):
@@ -684,8 +752,8 @@ class MassFunctions(om.ExplicitComponent):
                 else:
                     d_func = d_outputs[func_name]
 
-                if "dv_struct" in d_inputs:
-                    self.sp.addDVSens([func_name], [d_inputs["dv_struct"]], scale=d_func)
+                if "tacs_dvs" in d_inputs:
+                    self.sp.addDVSens([func_name], [d_inputs["tacs_dvs"]], scale=d_func)
 
                 if f"x_{self.discipline}0" in d_inputs:
                     self.sp.addXptSens([func_name], [d_inputs[f"x_{self.discipline}0"]], scale=d_func)
@@ -711,7 +779,13 @@ class TacsCouplingGroup(om.Group):
         self.check_partials = self.options["check_partials"]
         self.coupled = self.options["coupled"]
         self.discipline = self.options["discipline"]
-
+       
+        # Promote state variables/rhs with physics-specific tag that MPhys expects
+        promotes_inputs = [
+            (f"x_{self.discipline}0", f"unmasker.x_{self.discipline}0"),
+            ("tacs_dvs", "distributor.tacs_dvs"),
+        ]
+    
         if self.discipline == "thermal":
             self.states_name = "T_conduct"
             self.rhs_name = "q_conduct"
@@ -907,7 +981,7 @@ class TacsFuncsGroup(om.Group):
         # Promote state variables with physics-specific tag that MPhys expects
         promotes_inputs = [
             f"x_{self.discipline}0",
-            ("dv_struct", "distributor.dv_struct"),
+            ("tacs_dvs", "distributor.tacs_dvs"),
         ]
         if self.discipline == "thermal":
             promotes_states = [("T_conduct", "solver.T_conduct")]
@@ -955,6 +1029,7 @@ class TacsBuilder(Builder):
         write_solution=True,
         discipline="struct",
         surface_mapper=None,
+        separate_mass_dvs=False,
     ):
         self.options = copy.deepcopy(options)
         self.check_partials = check_partials
@@ -965,10 +1040,19 @@ class TacsBuilder(Builder):
         # Flag to turn on coupling variables
         self.coupled = coupled
         self.surface_mapper = surface_mapper
+        # Flag to separate point mass dvs from struct dvs in openmdao input array
+        self.separate_mass_dvs = separate_mass_dvs
+
 
     def initialize(self, comm):
         pytacs_options = copy.deepcopy(self.options)
         bdf_file = pytacs_options.pop("mesh_file")
+
+        # Load optional user-defined callback function for setting up tacs elements
+        if "assembler_setup" in pytacs_options:
+            assembler_setup = pytacs_options.pop("assembler_setup")
+        else:
+            assembler_setup = None
 
         # Load optional user-defined callback function for setting up tacs elements
         if "element_callback" in pytacs_options:
@@ -985,6 +1069,10 @@ class TacsBuilder(Builder):
         # Create pytacs instance
         self.fea_assembler = pyTACS(bdf_file, options=pytacs_options, comm=comm)
         self.comm = comm
+
+        # Do any pre-initialize setup requested by user
+        if assembler_setup is not None:
+            assembler_setup(self.fea_assembler)
 
         # Set up elements and TACS assembler
         self.fea_assembler.initialize(element_callback)
@@ -1008,7 +1096,11 @@ class TacsBuilder(Builder):
     def get_pre_coupling_subsystem(self, scenario_name=None):
         initial_dvs = self.get_initial_dvs()
         return TacsPrecouplingGroup(
-            fea_assembler=self.fea_assembler, initial_dv_vals=initial_dvs, discipline=self.discipline
+            fea_assembler=self.fea_assembler,
+            discipline=self.discipline
+            fea_assembler=self.fea_assembler,
+            initial_dv_vals=initial_dvs,
+            separate_mass_dvs=self.separate_mass_dvs,
         )
 
     def get_post_coupling_subsystem(self, scenario_name=None):

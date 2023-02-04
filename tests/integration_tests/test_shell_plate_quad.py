@@ -1,57 +1,21 @@
-import numpy as np
 import os
-from tacs import pytacs, elements, constitutive, functions, problems
+
+import numpy as np
+
 from pytacs_analysis_base_test import PyTACSTestCase
+from tacs import pytacs, elements, constitutive, functions
 
 """
-The nominal case is a 1m x 1m flat plate under three load cases: 
+The nominal case is a 1m x 1m flat plate under three load cases:
 a 10 kN point force at center, a 100kPa pressure applied to the surface, and a 100G gravity load. The
 perimeter of the plate is fixed in all 6 degrees of freedom. The plate comprises
-100 CQUAD4 elements and test KSFailure, StructuralMass, CenterOfMass, MomentOfInertia, 
-and Compliance functions and sensitivities
+100 CQUAD4 elements and test KSFailure, StructuralMass, CenterOfMass, MomentOfInertia,
+and Compliance functions and sensitivities. Finally, a modal analysis is performed 
+and the eigenvalues tested.
 """
 
 base_dir = os.path.dirname(os.path.abspath(__file__))
 bdf_file = os.path.join(base_dir, "./input_files/plate.bdf")
-
-FUNC_REFS = {
-    "point_load_compliance": 683.8571611640772,
-    "point_load_ks_vmfailure": 0.5757488025913641,
-    "point_load_mass": 12.5,
-    "point_load_cgx": 0.5,
-    "point_load_cgy": 0.5,
-    "point_load_cgz": 0.0,
-    "point_load_Ixx": 1.0416927083333238,
-    "point_load_Ixy": 0.0,
-    "point_load_Ixz": 0.0,
-    "point_load_Iyy": 1.0416927083333243,
-    "point_load_Iyz": 0.0,
-    "point_load_Izz": 2.08333333333333,
-    "pressure_compliance": 4679.345460326432,
-    "pressure_ks_vmfailure": 1.2938623156872926,
-    "pressure_mass": 12.5,
-    "pressure_cgx": 0.5,
-    "pressure_cgy": 0.5,
-    "pressure_cgz": 0.0,
-    "pressure_Ixx": 1.0416927083333238,
-    "pressure_Ixy": 0.0,
-    "pressure_Ixz": 0.0,
-    "pressure_Iyy": 1.0416927083333243,
-    "pressure_Iyz": 0.0,
-    "pressure_Izz": 2.08333333333333,
-    "gravity_compliance": 70.36280588344383,
-    "gravity_ks_vmfailure": 0.11707320009742483,
-    "gravity_mass": 12.5,
-    "gravity_cgx": 0.5,
-    "gravity_cgy": 0.5,
-    "gravity_cgz": 0.0,
-    "gravity_Ixx": 1.0416927083333238,
-    "gravity_Ixy": 0.0,
-    "gravity_Ixz": 0.0,
-    "gravity_Iyy": 1.0416927083333243,
-    "gravity_Iyz": 0.0,
-    "gravity_Izz": 2.08333333333333,
-}
 
 # KS function weight
 ksweight = 10.0
@@ -60,13 +24,56 @@ ksweight = 10.0
 class ProblemTest(PyTACSTestCase.PyTACSTest):
     N_PROCS = 2  # this is how many MPI processes to use for this TestCase.
 
-    def setup_pytacs(self, comm, dtype):
+    FUNC_REFS = {
+        "point_load_Ixx": 1.041692708333326,
+        "point_load_Ixy": 4.884981308350689e-15,
+        "point_load_Ixz": 0.0,
+        "point_load_Iyy": 1.0416927083333283,
+        "point_load_Iyz": 0.0,
+        "point_load_Izz": 2.0833333333333233,
+        "point_load_cgx": 0.5000000000000002,
+        "point_load_cgy": 0.5000000000000006,
+        "point_load_cgz": 0.0,
+        "point_load_compliance": 683.857161165581,
+        "point_load_ks_vmfailure": 0.5757488025917175,
+        "point_load_mass": 12.5,
+        "pressure_Ixx": 1.041692708333326,
+        "pressure_Ixy": 4.884981308350689e-15,
+        "pressure_Ixz": 0.0,
+        "pressure_Iyy": 1.0416927083333283,
+        "pressure_Iyz": 0.0,
+        "pressure_Izz": 2.0833333333333233,
+        "pressure_cgx": 0.5000000000000002,
+        "pressure_cgy": 0.5000000000000006,
+        "pressure_cgz": 0.0,
+        "pressure_compliance": 4679.345460326935,
+        "pressure_ks_vmfailure": 1.293862315687351,
+        "pressure_mass": 12.5,
+        "gravity_Ixx": 1.041692708333326,
+        "gravity_Ixy": 4.884981308350689e-15,
+        "gravity_Ixz": 0.0,
+        "gravity_Iyy": 1.0416927083333283,
+        "gravity_Iyz": 0.0,
+        "gravity_Izz": 2.0833333333333233,
+        "gravity_cgx": 0.5000000000000002,
+        "gravity_cgy": 0.5000000000000006,
+        "gravity_cgz": 0.0,
+        "gravity_compliance": 70.36280588359826,
+        "gravity_ks_vmfailure": 0.1170732000975571,
+        "gravity_mass": 12.5,
+        "modal_eigsm.0": 87437.50645902398,
+        "modal_eigsm.1": 396969.8881660927,
+        "modal_eigsm.2": 396969.8881662339,
+        "modal_eigsm.3": 866727.6714828992,
+    }
+
+    def setup_tacs_problems(self, comm):
         """
-        Setup mesh and pytacs object for problem we will be testing.
+        Setup pytacs object for problems we will be testing.
         """
 
         # Overwrite default check values
-        if dtype == complex:
+        if self.dtype == complex:
             self.rtol = 1e-8
             self.atol = 1e-8
             self.dh = 1e-50
@@ -105,27 +112,29 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
         # Set up constitutive objects and elements
         fea_assembler.initialize(elem_call_back)
 
-        return fea_assembler
+        tacs_probs = []
 
-    def setup_tacs_vecs(self, fea_assembler, dv_pert_vec, xpts_pert_vec):
-        """
-        Setup user-defined vectors for analysis and fd/cs sensitivity verification
-        """
-        # Create temporary dv vec for doing fd/cs
-        dv_pert_vec[:] = 1.0
+        # Add point force to node 81 (center of plate)
+        sp = fea_assembler.createStaticProblem(name="point_load")
+        F = np.array([0.0, 0.0, 1e4, 0.0, 0.0, 0.0])
+        sp.addLoadToNodes(81, F, nastranOrdering=True)
+        tacs_probs.append(sp)
 
-        # Define perturbation array that moves all nodes on plate
-        xpts = fea_assembler.getOrigNodes()
-        xpts_pert_vec[:] = xpts
+        # Add pressure to entire plate
+        sp = fea_assembler.createStaticProblem(name="pressure")
+        P = 100e3  # Pa
+        compIDs = fea_assembler.selectCompIDs(include="PLATE")
+        sp.addPressureToComponents(compIDs, P)
+        tacs_probs.append(sp)
 
-        return
+        # Add pressure to entire plate
+        sp = fea_assembler.createStaticProblem(name="gravity")
+        g = np.array([0.0, 0.0, -981.0], dtype=self.dtype)
+        sp.addInertialLoad(g)
+        tacs_probs.append(sp)
 
-    def setup_funcs(self, fea_assembler, problems):
-        """
-        Create a list of functions to be tested and their reference values for the problem
-        """
         # Add Functions
-        for problem in problems:
+        for problem in tacs_probs:
             problem.addFunction("mass", functions.StructuralMass)
             problem.addFunction("ks_vmfailure", functions.KSFailure, ksWeight=ksweight)
             problem.addFunction("compliance", functions.Compliance)
@@ -180,45 +189,10 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
                 direction2=[0.0, 0.0, 1.0],
                 aboutCM=True,
             )
-        func_list = [
-            "mass",
-            "ks_vmfailure",
-            "compliance",
-            "cgx",
-            "cgy",
-            "cgz",
-            "Ixx",
-            "Ixy",
-            "Ixz",
-            "Iyy",
-            "Iyz",
-            "Izz",
-        ]
-        return func_list, FUNC_REFS
 
-    def setup_tacs_problems(self, fea_assembler):
-        """
-        Setup pytacs object for problems we will be testing.
-        """
-        tacs_probs = []
+        # Add modal problem
+        mp = fea_assembler.createModalProblem("modal", 7e4, 10)
+        mp.setOption("printLevel", 2)
+        tacs_probs.append(mp)
 
-        # Add point force to node 81 (center of plate)
-        sp = fea_assembler.createStaticProblem(name="point_load")
-        F = np.array([0.0, 0.0, 1e4, 0.0, 0.0, 0.0])
-        sp.addLoadToNodes(81, F, nastranOrdering=True)
-        tacs_probs.append(sp)
-
-        # Add pressure to entire plate
-        sp = fea_assembler.createStaticProblem(name="pressure")
-        P = 100e3  # Pa
-        compIDs = fea_assembler.selectCompIDs(include="PLATE")
-        sp.addPressureToComponents(compIDs, P)
-        tacs_probs.append(sp)
-
-        # Add pressure to entire plate
-        sp = fea_assembler.createStaticProblem(name="gravity")
-        g = np.array([0.0, 0.0, -981.0], dtype=self.dtype)
-        sp.addInertialLoad(g)
-        tacs_probs.append(sp)
-
-        return tacs_probs
+        return tacs_probs, fea_assembler

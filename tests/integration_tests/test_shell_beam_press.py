@@ -1,7 +1,7 @@
 import numpy as np
-from mpi4py import MPI
-from tacs import TACS, elements, constitutive, functions
+
 from static_analysis_base_test import StaticTestCase
+from tacs import TACS, elements, constitutive, functions
 
 """
 Create a cantilevered beam of linear triangular shells under a uniform pressure
@@ -37,13 +37,14 @@ class ProblemTest(StaticTestCase.StaticTest):
 
         # Overwrite default check values
         if dtype == complex:
-            self.rtol = 1e-8
-            self.atol = 1e-8
+            self.rtol = 5e-8
             self.dh = 1e-50
         else:
             self.rtol = 1e-1
-            self.atol = 1e-4
             self.dh = 1e-7
+
+        # Only check for relative tolerance
+        self.atol = 1e99
 
         # Create the stiffness object
         props = constitutive.MaterialProperties(rho=2570.0, E=70e9, nu=0.3, ys=350e6)

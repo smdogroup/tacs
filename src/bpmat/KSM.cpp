@@ -432,8 +432,11 @@ void PCG::setMonitor(KSMPrint *_monitor) {
   b:          the right-hand-side
   x:          the solution vector
   zero_guess: flag to indicate whether to start with x = 0
+
+  output:
+  solve_flag: flag for the whether the solve terminated successfully
 */
-void PCG::solve(TACSVec *b, TACSVec *x, int zero_guess) {
+int PCG::solve(TACSVec *b, TACSVec *x, int zero_guess) {
   int solve_flag = 0;
   TacsScalar rhs_norm = 0.0;
   // R, Z and P are work-vectors
@@ -493,6 +496,7 @@ void PCG::solve(TACSVec *b, TACSVec *x, int zero_guess) {
       break;
     }
   }
+  return solve_flag;
 }
 
 /*
@@ -771,8 +775,11 @@ const char *GMRES::gmresName = "GMRES";
   b:          the right-hand-side
   x:          the solution vector (with possibly significant entries)
   zero_guess: flag to indicate whether to zero entries of x before solution
+
+  output:
+  solve_flag: flag for the whether the solve terminated successfully
 */
-void GMRES::solve(TACSVec *b, TACSVec *x, int zero_guess) {
+int GMRES::solve(TACSVec *b, TACSVec *x, int zero_guess) {
   TacsScalar rhs_norm = 0.0;
   int solve_flag = 0;
 
@@ -812,6 +819,7 @@ void GMRES::solve(TACSVec *b, TACSVec *x, int zero_guess) {
     int niters = 0;  // Keep track of the size of the Hessenberg matrix
 
     if (TacsRealPart(res[0]) < atol) {
+      solve_flag = 1;
       break;
     }
 
@@ -935,6 +943,8 @@ void GMRES::solve(TACSVec *b, TACSVec *x, int zero_guess) {
     monitor->print(str_ort);
     monitor->print(str_tot);
   }
+
+  return solve_flag;
 }
 
 /*
@@ -1171,8 +1181,11 @@ const char *GCROT::gcrotName = "GCROT";
   b:          the input right-hand-side
   x:          the solution vector
   zero_guess: flag to treat x as an initial guess or zero
+
+  output:
+  solve_flag: flag for the whether the solve terminated successfully
 */
-void GCROT::solve(TACSVec *b, TACSVec *x, int zero_guess) {
+int GCROT::solve(TACSVec *b, TACSVec *x, int zero_guess) {
   TacsScalar rhs_norm = 0.0;
   int solve_flag = 0;
   int mat_iters = 0;
@@ -1193,7 +1206,8 @@ void GCROT::solve(TACSVec *b, TACSVec *x, int zero_guess) {
   rhs_norm = R->norm();  // The initial residual
 
   if (TacsRealPart(rhs_norm) < atol) {
-    return;
+    solve_flag = 1;
+    return solve_flag;
   }
 
   for (int count = 0; count < max_outer; count++) {
@@ -1410,6 +1424,8 @@ void GCROT::solve(TACSVec *b, TACSVec *x, int zero_guess) {
     u_hat = u;
     c_hat = c;
   }
+
+  return solve_flag;
 }
 
 /*
@@ -1463,8 +1479,10 @@ void KsmPreconditioner::getOperators(TACSMat **_mat, TACSPc **_pc) {
   'Solve' the problem - this is only really a solution if a direct
   solver is used. This is often the case within TACS.
 */
-void KsmPreconditioner::solve(TACSVec *b, TACSVec *x, int zero_guess) {
+int KsmPreconditioner::solve(TACSVec *b, TACSVec *x, int zero_guess) {
   pc->applyFactor(b, x);
+  // Return successful solve flag
+  return 1;
 }
 
 /*

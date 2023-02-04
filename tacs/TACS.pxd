@@ -18,6 +18,8 @@ cimport mpi4py.MPI as MPI
 
 # Import numpy
 from libc.string cimport const_char
+from libcpp cimport bool
+
 
 # Import the major python version
 from cpython.version cimport PY_MAJOR_VERSION
@@ -47,6 +49,7 @@ cdef extern from "TACSElementTypes.h":
         TACS_OUTPUT_STRAINS
         TACS_OUTPUT_STRESSES
         TACS_OUTPUT_EXTRAS
+        TACS_OUTPUT_LOADS
 
     enum ElementType:
         TACS_ELEMENT_NONE
@@ -58,6 +61,7 @@ cdef extern from "TACSElementTypes.h":
         TACS_RIGID_ELEMENT
         TACS_MASS_ELEMENT
         TACS_SPRING_ELEMENT
+        TACS_PCM_ELEMENT
 
     enum ElementLayout:
         TACS_LAYOUT_NONE
@@ -148,7 +152,7 @@ cdef extern from "KSM.h":
         TACSVec *createVec()
         void setOperators(TACSMat *_mat, TACSPc *_pc)
         void getOperators(TACSMat **_mat, TACSPc **_pc)
-        void solve(TACSVec *b, TACSVec *x, int zero_guess)
+        int solve(TACSVec *b, TACSVec *x, int zero_guess)
         void setTolerances(double _rtol, double _atol)
         void setMonitor(KSMPrint *_monitor)
 
@@ -374,7 +378,7 @@ cdef extern from "TACSElement.h":
         TACSElement* createElementTraction(int, const TacsScalar*)
         TACSElement* createElementPressure(int, TacsScalar)
         TACSElement* createElementInertialForce(const TacsScalar*)
-        TACSElement* createElementCentrifugalForce(const TacsScalar*, const TacsScalar*)
+        TACSElement* createElementCentrifugalForce(const TacsScalar*, const TacsScalar*, const bool)
 
 cdef class Element:
     cdef TACSElement *ptr
@@ -485,18 +489,22 @@ cdef extern from "TACSAssembler.h":
         void getInitConditions(TACSBVec*, TACSBVec*, TACSBVec*)
         void setInitConditions(TACSBVec*, TACSBVec*, TACSBVec*)
         void evalEnergies(TacsScalar*, TacsScalar*)
-        void assembleRes(TACSBVec *residual)
+        void assembleRes(TACSBVec *residual, TacsScalar loadScale)
         void assembleJacobian(double alpha, double beta, double gamma,
                               TACSBVec *residual, TACSMat *A,
-                              MatrixOrientation matOr)
+                              MatrixOrientation matOr,
+                              TacsScalar loadScale)
         void assembleMatType(ElementMatrixType matType,
-                             TACSMat *A, MatrixOrientation matOr)
+                             TACSMat *A, MatrixOrientation matOr,
+                             TacsScalar loadScale)
         void assembleMatCombo(ElementMatrixType*, TacsScalar*, int,
-                              TACSMat*, MatrixOrientation)
+                              TACSMat*, MatrixOrientation matOr,
+                              TacsScalar loadScale)
         void addJacobianVecProduct(TacsScalar scale,
                                    double alpha, double beta, double gamma,
                                    TACSBVec *x, TACSBVec *y,
-                                   MatrixOrientation matOr)
+                                   MatrixOrientation matOr,
+                                   TacsScalar loadScale)
         void evalFunctions(int numFuncs, TACSFunction **functions,
                            TacsScalar *funcVals)
         void addDVSens(double coef, int numFuncs, TACSFunction **funcs,
@@ -505,12 +513,14 @@ cdef extern from "TACSAssembler.h":
                        int numFuncs, TACSFunction **funcs,
                        TACSBVec **fuSens)
         void addAdjointResProducts(double scale, int numAdjoints,
-                                   TACSBVec **adjoint, TACSBVec **dfdx)
+                                   TACSBVec **adjoint, TACSBVec **dfdx,
+                                   TacsScalar loadScale)
         void addXptSens(double coef, int numFuncs, TACSFunction **funcs,
                         TACSBVec **fXptSens)
         void addAdjointResXptSensProducts(double scale, int numAdjoints,
                                           TACSBVec **adjoint,
-                                          TACSBVec **adjXptSens)
+                                          TACSBVec **adjXptSens,
+                                          TacsScalar loadScale)
         void addMatDVSensInnerProduct(double scale,
                                       ElementMatrixType matType,
                                       TACSBVec *psi, TACSBVec *phi,
@@ -613,6 +623,8 @@ cdef extern from "TACSBuckling.h":
         void solve(KSMPrint*, int)
         TacsScalar extractEigenvalue(int, TacsScalar*)
         TacsScalar extractEigenvector(int, TACSBVec*, TacsScalar*)
+        void evalEigenDVSens(int, TACSBVec*)
+        void evalEigenXptSens(int, TACSBVec *)
 
     cdef cppclass TACSLinearBuckling(TACSObject):
         TACSLinearBuckling( TACSAssembler *,
@@ -770,7 +782,7 @@ cdef extern from "TACSIntegrator.h":
                            int stages)
 
         int iterateStage(int k, int s, TACSBVec *forces)
-        double getStageStates( int step, int stage, 
+        double getStageStates( int step, int stage,
 		      TACSBVec **qS, TACSBVec **qdotS, TACSBVec **qddotS)
 
     # ESDIRK Implementation of the integrator
@@ -781,7 +793,7 @@ cdef extern from "TACSIntegrator.h":
                              int stages)
 
         int iterateStage(int k, int s, TACSBVec *forces)
-        double getStageStates( int step, int stage, 
+        double getStageStates( int step, int stage,
 		      TACSBVec **qS, TACSBVec **qdotS, TACSBVec **qddotS)
 
     # ABM Implementation of the integrator
