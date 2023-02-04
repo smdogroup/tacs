@@ -96,7 +96,7 @@ class TacsMeshGroup(om.Group):
             )
             self.add_subsystem("masker", masker, promotes_outputs=[(f"x_{discipline}0_masked", f"x_{discipline}0")])
             self.connect(f"fea_mesh.x_{discipline}0", f"masker.x_{discipline}0")
-            
+
         elif discipline == "thermal":
             surface_mapper = self.options["surface_mapper"]
             if surface_mapper is None:
@@ -378,16 +378,16 @@ class TacsSolver(om.ImplicitComponent):
             self.sp.setNodes(inputs[f"x_{self.discipline}0"])
         if outputs is not None:
             if self.discipline == "thermal":
-                # the statics problem zeros the entries at eh boundary conditions by default. 
+                # the statics problem zeros the entries at eh boundary conditions by default.
                 # So we need to update the values in the assembler our selves
-                # Here we use `setBCs` instead of `applyBCs` to place the temperature values at 
+                # Here we use `setBCs` instead of `applyBCs` to place the temperature values at
                 # the boundary into the array instead of zeroing them.
                 self.sp.u_array[:] = outputs[self.states_name][:]
                 # Apply boundary conditions
                 self.sp.assembler.setBCs(self.sp.u)
                 # Set states to assembler
                 self.sp.assembler.setVariables(self.sp.u)
-                
+
             elif self.discipline == "struct":
                 self.sp.setVariables(outputs[self.states_name])
         self.sp._updateAssemblerVars()
@@ -411,10 +411,10 @@ class TacsSolver(om.ImplicitComponent):
             Fext = None
 
         self.sp.solve(Fext=Fext)
-        
+
         if self.discipline == "thermal":
             self.sp.assembler.setBCs(self.sp.u)
-        
+
         self.sp.getVariables(states=outputs[self.states_name])
 
     def solve_linear(self, d_outputs, d_residuals, mode):
@@ -445,7 +445,7 @@ class TacsSolver(om.ImplicitComponent):
                     d_inputs[self.rhs_name] -= array_w_bcs
 
                 if f"x_{self.discipline}0" in d_inputs:
-                    
+
                     self.sp.addAdjointResXptSensProducts(
                         [d_residuals[self.states_name]],
                         [d_inputs[f"x_{self.discipline}0"]],
@@ -549,16 +549,16 @@ class TacsFunctions(om.ExplicitComponent):
         self.sp.setDesignVars(inputs["dv_struct"])
         self.sp.setNodes(inputs[f"x_{self.discipline}0"])
         if self.discipline == "thermal":
-            # the statics problem zeros the entries at the boundary conditions by default. 
+            # the statics problem zeros the entries at the boundary conditions by default.
             # So we need to update the values in the assembler our selves
-            # Here we use `setBCs` instead of `applyBCs` to place the temperature values at 
+            # Here we use `setBCs` instead of `applyBCs` to place the temperature values at
             # the boundary into the array instead of zeroing them.
             self.sp.u_array[:] = inputs[self.states_name]
             # Apply boundary conditions
             self.sp.assembler.setBCs(self.sp.u)
             # Set states to assembler
             self.sp.assembler.setVariables(self.sp.u)
-        else: 
+        else:
             self.sp.setVariables(inputs[self.states_name])
 
     def compute(self, inputs, outputs):
