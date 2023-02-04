@@ -290,7 +290,6 @@ class TacsPrecouplingGroup(om.Group):
         discipline = self.options["discipline"]
         promotes_inputs = ["*"]
 
-
         fea_assembler = self.options["fea_assembler"]
         initial_dv_vals = self.options["initial_dv_vals"]
         separate_mass_dvs = self.options["separate_mass_dvs"]
@@ -414,7 +413,7 @@ class TacsSolver(om.ImplicitComponent):
         update = False
 
         dvs = inputs["tacs_dvs"]
-        xs = inputs["x_struct0"]
+        xs = inputs[f"x_{self.discipline}0"]
 
         if self.old_dvs is None:
             self.old_dvs = inputs["tacs_dvs"].copy()
@@ -779,13 +778,13 @@ class TacsCouplingGroup(om.Group):
         self.check_partials = self.options["check_partials"]
         self.coupled = self.options["coupled"]
         self.discipline = self.options["discipline"]
-       
+
         # Promote state variables/rhs with physics-specific tag that MPhys expects
         promotes_inputs = [
             (f"x_{self.discipline}0", f"unmasker.x_{self.discipline}0"),
             ("tacs_dvs", "distributor.tacs_dvs"),
         ]
-    
+
         if self.discipline == "thermal":
             self.states_name = "T_conduct"
             self.rhs_name = "q_conduct"
@@ -833,7 +832,7 @@ class TacsCouplingGroup(om.Group):
                 # Promote state variables/rhs with physics-specific tag that MPhys expects
                 promotes_inputs = [
                     (f"x_{self.discipline}0", f"unmasker.x_{self.discipline}0"),
-                    ("dv_struct", "distributor.dv_struct"),
+                    ("tacs_dvs", "distributor.tacs_dvs"),
                 ]
         elif self.discipline == "thermal":
             # map the surface heat flux vector to a volume heat flux vector
@@ -863,7 +862,7 @@ class TacsCouplingGroup(om.Group):
                 # promote the surface heat fluxes to the top level
                 self.promotes("q_conduct_surf2vol", inputs=[(masked_in_desc.name, self.rhs_name)])
 
-                promotes_inputs = [f"x_{self.discipline}0", ("dv_struct", "distributor.dv_struct")]
+                promotes_inputs = [f"x_{self.discipline}0", ("tacs_dvs", "distributor.tacs_dvs")]
 
         self.add_subsystem(
             "solver",
@@ -1043,7 +1042,6 @@ class TacsBuilder(Builder):
         # Flag to separate point mass dvs from struct dvs in openmdao input array
         self.separate_mass_dvs = separate_mass_dvs
 
-
     def initialize(self, comm):
         pytacs_options = copy.deepcopy(self.options)
         bdf_file = pytacs_options.pop("mesh_file")
@@ -1097,8 +1095,7 @@ class TacsBuilder(Builder):
         initial_dvs = self.get_initial_dvs()
         return TacsPrecouplingGroup(
             fea_assembler=self.fea_assembler,
-            discipline=self.discipline
-            fea_assembler=self.fea_assembler,
+            discipline=self.discipline,
             initial_dv_vals=initial_dvs,
             separate_mass_dvs=self.separate_mass_dvs,
         )
