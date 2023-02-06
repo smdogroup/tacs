@@ -54,6 +54,7 @@ A = 0.005  # m^2
 # Tip shear
 V = 1000000.0
 
+
 # Callback function used to setup TACS element objects and DVs
 def elemCallBack(dvNum, compID, compDescript, elemDescripts, globalDVs, **kwargs):
     # Setup (isotropic) property and constitutive objects
