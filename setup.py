@@ -14,6 +14,7 @@ from Cython.Compiler import Options
 
 Options.docstrings = True
 
+
 # Convert from local to absolute directories
 def get_global_dir(files):
     tacs_root = os.path.abspath(os.path.dirname(__file__))

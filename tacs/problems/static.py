@@ -24,7 +24,6 @@ from .base import TACSProblem
 
 
 class StaticProblem(TACSProblem):
-
     # Default options for class
     defaultOptions = {
         "outputDir": [str, "./", "Output directory for F5 file writer."],

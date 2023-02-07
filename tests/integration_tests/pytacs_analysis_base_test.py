@@ -24,7 +24,6 @@ for the unittest class. This is handled in the base class.
 
 class PyTACSTestCase:
     class PyTACSTest(unittest.TestCase):
-
         dtype = TACS.dtype
 
         N_PROCS = 1  # this is how many MPI processes to use for this TestCase.
