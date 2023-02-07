@@ -1350,6 +1350,56 @@ class StaticProblem(TACSProblem):
         if resArray is not None:
             resArray[:] = res.getArray()
 
+    def getForces(self, externalForceVec, internalForceVec, Fext=None):
+        """Compute the internal and external forces acting on the structure
+
+        The computations here are based on the residual equation:
+            r(u, loadScale) = -(Fint(u) + loadScale * Fext(u))
+        Thus, the internal forces are given by:
+            Fint(u) = -r(u, 0)
+        And the external forces are given by:
+            Fext(u) = -r(u, 1) - Fi(u)
+
+        Parameters
+        ----------
+        externalForceVec : TACS BVec or numpy array
+            Vector/array to store external forces in
+        internalForceVec : TACS BVec or numpy array
+            Vector/array to store internal forces in
+        Fext : TACS BVec or numpy array, optional
+            Distributed array containing additional loads (ex. aerodynamic forces for aerostructural coupling)
+            to applied to RHS of the static problem.
+        """
+        loadScale = self._loadScale
+        self.setLoadScale(0.0)
+        self.getResidual(internalForceVec, Fext)
+        self.setLoadScale(1.0)
+        self.getResidual(externalForceVec, Fext)
+
+        # Compute internal forces
+        if isinstance(internalForceVec, tacs.TACS.Vec):
+            internalForceVec.scale(-1.0)
+        elif isinstance(internalForceVec, np.ndarray):
+            internalForceVec[:] = -internalForceVec[:]
+
+        # Compute external forces
+        if isinstance(externalForceVec, tacs.TACS.Vec):
+            externalForceVec.scale(-1.0)
+        elif isinstance(externalForceVec, np.ndarray):
+            externalForceVec[:] = -externalForceVec[:]
+
+        if isinstance(internalForceVec, tacs.TACS.Vec):
+            if isinstance(externalForceVec, tacs.TACS.Vec):
+                externalForceVec.axpy(-1.0, internalForceVec)
+            elif isinstance(externalForceVec, np.ndarray):
+                externalForceVec[:] = externalForceVec[:] - internalForceVec.getArray()
+        elif isinstance(internalForceVec, np.ndarray):
+            if isinstance(externalForceVec, np.ndarray):
+                externalForceVec[:] = externalForceVec[:] - internalForceVec[:]
+            elif isinstance(externalForceVec, tacs.TACS.Vec):
+                externalForceVec.axpy(-1.0, self._arrayToVec(internalForceVec))
+
+
     def getJacobian(self):
         """Get the problem's Jacobian in sciPy sparse matrix format
 
