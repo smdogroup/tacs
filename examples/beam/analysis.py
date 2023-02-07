@@ -41,6 +41,7 @@ Iz = 0.2  # m
 Iy = 0.3  # m
 J = 0.4
 
+
 # Callback function used to setup TACS element objects and DVs
 def elemCallBack(dvNum, compID, compDescript, elemDescripts, globalDVs, **kwargs):
     # Setup (isotropic) property and constitutive objects

@@ -46,9 +46,9 @@ alum_rho = 2700.0  # density kg/m^3
 alum_kappa = 204.0  # Thermal conductivity W/(m⋅K)
 alum_cp = 883.0  # Specific heat J/(kg⋅K)
 
+
 # The callback function to define the element properties
 def elemCallBack(dvNum, compID, compDescript, elemDescripts, globalDVs, **kwargs):
-
     # Setup property and constitutive objects
     if (
         compDescript == "Block"

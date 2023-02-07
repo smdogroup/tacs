@@ -47,6 +47,7 @@ ys = 350e6  # yield stress
 # Shear force applied at tip
 V = 1e3
 
+
 # Callback function used to setup TACS element objects and DVs
 def element_callback(dvNum, compID, compDescript, elemDescripts, specialDVs, **kwargs):
     # Setup (isotropic) property and constitutive objects

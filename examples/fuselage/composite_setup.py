@@ -26,6 +26,7 @@ nplies = 48
 qi_angles = np.deg2rad(np.array([0.0, -45.0, 90.0, 45.0]))
 nrepeats = nplies // len(qi_angles)
 
+
 # Callback function used to setup TACS element objects and DVs
 def elemCallBack(dvNum, compID, compDescript, elemDescripts, globalDVs, **kwargs):
     # Setup (orthotropic) property and constitutive objects

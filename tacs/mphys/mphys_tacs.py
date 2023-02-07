@@ -429,7 +429,6 @@ class TacsSolver(om.ImplicitComponent):
 
         if mode == "rev":
             if self.states_name in d_residuals:
-
                 if self.states_name in d_outputs:
                     self.sp.addTransposeJacVecProduct(
                         d_residuals[self.states_name], d_outputs[self.states_name]

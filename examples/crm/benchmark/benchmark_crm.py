@@ -16,7 +16,6 @@ FUNC_REF = [1.070354064387641]
 
 
 class ExampleBenchmark(unittest.TestCase):
-
     N_PROCS = 8  # this is how many MPI processes to use for this TestCase.
 
     def setUp(self):

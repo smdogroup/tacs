@@ -13,7 +13,6 @@ import re
 
 class JDHistoryPlotter:
     def __init__(self, filename):
-
         # Name string for stdout printout file
         self.filename = filename
 
@@ -39,7 +38,6 @@ class JDHistoryPlotter:
         Get JD residual, Ritz value and tolerance
         """
         with open(self.filename, "r") as fp:
-
             entry = None
 
             for line in fp:
@@ -183,7 +181,6 @@ def plot_JD_history(
 
 
 if __name__ == "__main__":
-
     p = argparse.ArgumentParser()
     p.add_argument("filename", type=str)
     p.add_argument("--plot-type", type=str, default="all", choices=["all", "last"])

@@ -13,6 +13,7 @@ t = 0.005  # m
 tMin = 0.002  # m
 tMax = 0.05  # m
 
+
 # Callback function used to setup TACS element objects and DVs
 def elemCallBack(dvNum, compID, compDescript, elemDescripts, globalDVs, **kwargs):
     # Setup (isotropic) property and constitutive objects

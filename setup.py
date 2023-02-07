@@ -14,6 +14,7 @@ from Cython.Compiler import Options
 
 Options.docstrings = True
 
+
 # Convert from local to absolute directories
 def get_global_dir(files):
     tacs_root = os.path.abspath(os.path.dirname(__file__))
@@ -116,7 +117,7 @@ optional_dependencies["all"] = sorted(
 
 setup(
     name="tacs",
-    version="3.1.0",
+    version="3.2.0",
     description="Parallel finite-element analysis package",
     long_description=long_description,
     long_description_content_type="text/markdown",

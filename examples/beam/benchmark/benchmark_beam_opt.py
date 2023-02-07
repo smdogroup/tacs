@@ -19,7 +19,6 @@ OBJ_REF = 1.5536810027727979
 
 
 class ExampleBenchmark(unittest.TestCase):
-
     N_PROCS = 3  # this is how many MPI processes to use for this TestCase.
 
     def setUp(self):
