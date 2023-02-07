@@ -63,7 +63,6 @@
 
 
 <div class="viewcode-block" id="TransientProblem"><a class="viewcode-back" href="../../../pytacs/transient.html#tacs.problems.TransientProblem">[docs]</a><span class="k">class</span> <span class="nc">TransientProblem</span><span class="p">(</span><span class="n">TACSProblem</span><span class="p">):</span>
-
     <span class="c1"># Default Option List</span>
     <span class="n">defaultOptions</span> <span class="o">=</span> <span class="p">{</span>
         <span class="s2">&quot;outputDir&quot;</span><span class="p">:</span> <span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="s2">&quot;./&quot;</span><span class="p">,</span> <span class="s2">&quot;Output directory for F5 file writer.&quot;</span><span class="p">],</span>
@@ -1410,7 +1409,6 @@
 
         <span class="c1"># Unless the writeSolution option is off write actual file:</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s2">&quot;writeSolution&quot;</span><span class="p">):</span>
-
             <span class="c1"># If timeSteps is None, output all timesteps</span>
             <span class="k">if</span> <span class="n">timeSteps</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
                 <span class="n">timeSteps</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">numSteps</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>

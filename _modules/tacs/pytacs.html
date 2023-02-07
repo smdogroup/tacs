@@ -1701,7 +1701,6 @@
 <span class="sd">        &quot;&quot;&quot;</span>
 
         <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nComp</span><span class="p">):</span>
-
             <span class="c1"># Get a list of compDescripts to help the user</span>
             <span class="n">compDescript</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">compDescripts</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
             <span class="n">numElements</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">elemDescripts</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
@@ -1793,7 +1792,6 @@
                 <span class="n">dvs</span> <span class="o">=</span> <span class="n">elemObject</span><span class="o">.</span><span class="n">getDesignVarNums</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
 
                 <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">dvs</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
-
                     <span class="c1"># We will also check if the user screwed up. That is</span>
                     <span class="c1"># make sure that for added variables, the are</span>
                     <span class="c1"># continuous starting at self.dvNum</span>
