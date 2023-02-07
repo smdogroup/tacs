@@ -92,6 +92,7 @@ class TransientProblem(TACSProblem):
         comm,
         outputViewer=None,
         meshLoader=None,
+        isNonlinear=False,
         options={},
     ):
         """
@@ -132,7 +133,7 @@ class TransientProblem(TACSProblem):
         self.name = name
 
         # Default setup for common problem class objects
-        TACSProblem.__init__(self, assembler, comm, outputViewer, meshLoader)
+        TACSProblem.__init__(self, assembler, comm, outputViewer, meshLoader,isNonlinear=isNonlinear)
 
         # Set time interval parameters
         self.tInit = tInit

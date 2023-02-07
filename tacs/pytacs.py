@@ -80,6 +80,8 @@ class pyTACS(BaseUI):
 
     # Default class options
     defaultOptions = {
+        # TODO: Figure out a way to automatically figure out if model is nonlinear so we can remove this option
+        "isNonlinear": [bool, False, "Flag for whether the model is nonlinear."],
         # Meshloader options
         "printDebug": [
             bool,
@@ -245,6 +247,9 @@ class pyTACS(BaseUI):
 
         # TACS assembler object
         self.assembler = None
+
+        # Nonlinear flag
+        self.isNonlinear = self.getOption("isNonlinear")
 
         initFinishTime = time.time()
         if self.getOption("printTiming"):

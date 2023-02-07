@@ -110,6 +110,7 @@ class StaticProblem(TACSProblem):
         comm,
         outputViewer=None,
         meshLoader=None,
+        isNonlinear=False,
         options={},
     ):
         """
@@ -142,7 +143,7 @@ class StaticProblem(TACSProblem):
         self.name = name
 
         # Default setup for common problem class objects
-        TACSProblem.__init__(self, assembler, comm, outputViewer, meshLoader)
+        TACSProblem.__init__(self, assembler, comm, outputViewer, meshLoader, isNonlinear=isNonlinear)
 
         # Process the default options which are added to self.options
         # under the 'defaults' key. Make sure the key are lower case
