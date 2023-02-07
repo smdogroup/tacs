@@ -25,7 +25,7 @@ bdf_file = os.path.join(base_dir, "./input_files/circ-plate-dirichlet-bcs.bdf")
 # Radius of plate
 R = 1.0
 # Area of plate
-area = np.pi * R**2
+area = np.pi * R ** 2
 
 # KS function weight
 ksweight = 10.0

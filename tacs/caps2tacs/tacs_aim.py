@@ -9,7 +9,7 @@ from .property import ShellProperty
 from .loads import Load
 from .variables import ShapeVariable, ThicknessVariable
 from .egads_aim import EgadsAim
-from ..pytacs import pyTACS
+from tacs.pytacs import pyTACS
 
 
 class TacsAimMetadata:
@@ -242,7 +242,9 @@ class TacsAim:
         """
         return sorted thickness vars so that the TACS derivatives can be appropriately obtained
         """
-        thick_var_names = [dv.name for dv in self.variables if isinstance(dv, ThicknessVariable)]
+        thick_var_names = [
+            dv.name for dv in self.variables if isinstance(dv, ThicknessVariable)
+        ]
         thick_sorted_names = np.sort(np.array(thick_var_names))
         sorted_dvs = []
         for sort_name in thick_sorted_names:
@@ -325,5 +327,7 @@ class TacsAim:
         for func_name in evalFuncs:
             gradients[func_name] = {}
             for var in variables:
-                gradients[func_name][var.name] = self.aim.dynout[func_name].deriv(var.name)
+                gradients[func_name][var.name] = self.aim.dynout[func_name].deriv(
+                    var.name
+                )
         return gradients

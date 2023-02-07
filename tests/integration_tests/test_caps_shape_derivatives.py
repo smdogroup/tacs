@@ -4,11 +4,14 @@ GT SMDO Lab, Dr. Graeme Kennedy
 Caps to TACS example
 """
 
-import unittest, os, numpy as np
+import unittest, os, numpy as np, importlib
 from tacs import functions, caps2tacs
 from mpi4py import MPI
 
+caps_loader = importlib.util.find_spec("pyCAPS")
 
+# only run the test if pyCAPS can be imported
+@unittest.skipIf(caps_loader is None, "skipping ESP/CAPS test without pyCAPS module")
 class TestCaps2Tacs(unittest.TestCase):
     def _build_tacs_aim(self):
         comm = MPI.COMM_WORLD

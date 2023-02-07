@@ -42,7 +42,7 @@ class ThicknessVariable:
         lower_bound: float = None,
         upper_bound: float = None,
         max_delta: float = None,
-        material:Material=None,
+        material: Material = None,
     ):
         """
         ESP/CAPS Thickness variable sets the thickness over a portion of the geometry in the CSM file

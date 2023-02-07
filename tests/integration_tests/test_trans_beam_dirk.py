@@ -85,7 +85,7 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
             for k in range(ns + 1):
                 t_array = prob.getTimeStages(k)
                 for s, t in enumerate(t_array):
-                    f = f_mag * t**5
+                    f = f_mag * t ** 5
                     forces[2] = f  # applied to z-direction
                     prob.addLoadToNodes(
                         timeStep=k,

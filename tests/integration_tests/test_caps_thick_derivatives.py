@@ -4,11 +4,14 @@ GT SMDO Lab, Dr. Graeme Kennedy
 Caps to TACS example
 """
 
-import unittest, os, numpy as np
+import unittest, os, numpy as np, importlib
 from tacs import functions, caps2tacs
 from mpi4py import MPI
 
+caps_loader = importlib.util.find_spec("pyCAPS")
 
+# only run the test if pyCAPS can be imported
+@unittest.skipIf(caps_loader is None, "skipping ESP/CAPS test without pyCAPS module")
 class TestCaps2Tacs(unittest.TestCase):
     def _build_tacs_aim(self):
         comm = MPI.COMM_WORLD
@@ -58,7 +61,7 @@ class TestCaps2Tacs(unittest.TestCase):
         """
         run a complete forward and adjoint analysis
         """
-        
+
         # solve the forward and adjoint analysis for each struct problem
         self._func_names = ["mass"]
         tacs_funcs = {}
@@ -67,7 +70,9 @@ class TestCaps2Tacs(unittest.TestCase):
             self.SPs[caseID].solve()
             self.SPs[caseID].evalFunctions(tacs_funcs, evalFuncs=self._func_names)
             self.SPs[caseID].evalFunctionsSens(tacs_sens, evalFuncs=self._func_names)
-            self.SPs[caseID].writeSolution(baseName="tacs_output", outputDir=self.tacs_aim.analysis_dir)
+            self.SPs[caseID].writeSolution(
+                baseName="tacs_output", outputDir=self.tacs_aim.analysis_dir
+            )
 
         # functions and gradients are stored in the tacs AIM dynout method
         self._functions = {}
@@ -76,7 +81,7 @@ class TestCaps2Tacs(unittest.TestCase):
         self._functions["mass"] = tacs_funcs[tacs_key]
         self._gradients["mass"] = {}
         struct_sens = tacs_sens[tacs_key]["struct"]
-        for ithick,thick_var in enumerate(self.tacs_aim.thickness_variables):
+        for ithick, thick_var in enumerate(self.tacs_aim.thickness_variables):
             self._gradients["mass"][thick_var.name] = struct_sens[ithick]
 
     def test_mass_thickness_derivatives(self):
@@ -84,35 +89,43 @@ class TestCaps2Tacs(unittest.TestCase):
         test the shape derivatives from ESP/CAPS into TACS forward & adjoint analysis
         """
 
-
         # total derivative using adjoint & coordinate derivatives
         self._build_tacs_aim()
         self._run_analysis()
 
         # random dvar/ds contravariant tensor for the complex step perturbation
-        dvar_ds = {thick_var.name : np.random.rand() for thick_var in self.tacs_aim.thickness_variables}
+        dvar_ds = {
+            thick_var.name: np.random.rand()
+            for thick_var in self.tacs_aim.thickness_variables
+        }
         adjoint_TD = 0.0
         for thick_var in self.tacs_aim.thickness_variables:
-            adjoint_TD += self._gradients["mass"][thick_var.name] * dvar_ds[thick_var.name]
+            adjoint_TD += (
+                self._gradients["mass"][thick_var.name] * dvar_ds[thick_var.name]
+            )
 
         # total derivative with finite difference
         h = 1.0e-5
         for caseID in self.SPs:
-            xarray = self.SPs[caseID].x.getArray() # gets the xarray of last Struct Problem
-            for ithick,thick_var in enumerate(self.tacs_aim.thickness_variables):
+            xarray = self.SPs[
+                caseID
+            ].x.getArray()  # gets the xarray of last Struct Problem
+            for ithick, thick_var in enumerate(self.tacs_aim.thickness_variables):
                 xarray[ithick] += 1j * dvar_ds[thick_var.name] * h
 
         self._run_analysis()
-        complex_step_TD = self._functions["mass"].imag/h
+        complex_step_TD = self._functions["mass"].imag / h
 
         # relative error of total derivatives
         rel_error = (adjoint_TD - complex_step_TD) / complex_step_TD
-        print("\Complex Step thickness derivative test with d(mass,ksfailure)/drib_a1...")
+        print(
+            "\Complex Step thickness derivative test with d(mass,ksfailure)/drib_a1..."
+        )
         print(f"\tAdjoint TD = {adjoint_TD}")
         print(f"\tComplex Step TD = {complex_step_TD}")
         print(f"\trelative error = {rel_error}")
 
-        tol = 1.0e-7 # tolerance not as strict since we only have FD not complex step available
+        tol = 1.0e-7  # tolerance not as strict since we only have FD not complex step available
         acceptable_error = abs(rel_error) < tol
         print(f"\ttest passed = {acceptable_error}")
         self.assertTrue(acceptable_error)
