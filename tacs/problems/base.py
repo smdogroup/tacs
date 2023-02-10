@@ -19,7 +19,9 @@ class TACSProblem(BaseUI):
     Base class for TACS problem types. Contains methods common to all TACS problems.
     """
 
-    def __init__(self, assembler, comm, outputViewer=None, meshLoader=None, isNonlinear=False):
+    def __init__(
+        self, assembler, comm, outputViewer=None, meshLoader=None, isNonlinear=False
+    ):
 
         # TACS assembler object
         self.assembler = assembler
@@ -32,6 +34,7 @@ class TACSProblem(BaseUI):
             self.bdfInfo = self.meshLoader.getBDFInfo()
         # MPI communicator object
         self.comm = comm
+        self.rank = comm.rank
 
         # Create Design variable vector
         self.x = self.assembler.createDesignVec()
@@ -52,9 +55,8 @@ class TACSProblem(BaseUI):
         return
 
     @property
-    def isnonlinear(self):
-        """The public interface for the isNonlinear attribute. Implemented as a property so that it is read-only.
-        """
+    def isNonlinear(self):
+        """The public interface for the isNonlinear attribute. Implemented as a property so that it is read-only."""
         return self._isNonlinear
 
     ####### Design variable methods ########
