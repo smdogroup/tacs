@@ -19,6 +19,7 @@ from .base import TACSProblem
 
 
 class ModalProblem(TACSProblem):
+
     # Default Option List
     defaultOptions = {
         "outputDir": [str, "./", "Output directory for F5 file writer."],
@@ -510,6 +511,7 @@ class ModalProblem(TACSProblem):
 
         # Unless the writeSolution option is off write actual file:
         if self.getOption("writeSolution"):
+
             # If indices is None, output all modes
             if indices is None:
                 indices = np.arange(self.numEigs)

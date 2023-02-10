@@ -24,6 +24,7 @@ from .base import TACSProblem
 
 
 class StaticProblem(TACSProblem):
+
     # Default options for class
     defaultOptions = {
         "outputDir": [str, "./", "Output directory for F5 file writer."],
@@ -100,112 +101,6 @@ class StaticProblem(TACSProblem):
             False,
             "Flag for printing out timing information for class procedures.",
         ],
-        # Nonlinear continuation options
-        "continuationTargetIter": [
-            int,
-            8,
-            "Target number of Newton iterations for each continuation increment.",
-        ],
-        "continuationMaxIter": [int, 100, "Maximum number of continuation steps."],
-        "continuationInitialStep": [float, 0.2, "Initial continuation step size."],
-        "continuationMinStep": [float, 1e-4, "Minimum continuation step size."],
-        "continuationMaxStep": [float, np.inf, "Maximum continuation step size."],
-        "continuationMinStepFactor": [
-            float,
-            0.5,
-            "The minimum factor by which the continuation step size can decrease in a single step.",
-        ],
-        "continuationMaxStepFactor": [
-            float,
-            2.0,
-            "The maximum factor by which the continuation step size can increase in a single step.",
-        ],
-        "continuationRetractionFactor": [
-            float,
-            0.5,
-            "The factor by which the continuation step size is reduced when the Newton solver fails to converge.",
-        ],
-        # Predictor step options
-        "usePredictor": [bool, True, "Flag for using predictor step in continuation."],
-        "predictorNumStates": [
-            int,
-            2,
-            "Number of previous equilibrium states to use in computing the predictor step.",
-        ],
-        "predictorUseDerivative": [
-            bool,
-            False,
-            "Whether to use the equilibrium path slope in the computation of the predictor step. This requires a linear solve and thus greatly increases the cost of the predictor step computation.",
-        ],
-        # Newton solver options
-        "newtonSolverMaxIter": [int, 40, "Maximum number of Newton iterations."],
-        "newtonSolverAbsTol": [
-            float,
-            1e-8,
-            "Convergence criteria for the nonlinear residual norm.",
-        ],
-        "newtonSolverRelTol": [
-            float,
-            1e-8,
-            "Relative convergence criteria for the nonlinear residual norm, norm is measured relative to that of the external load vector.",
-        ],
-        "newtonSolverCoarseAbsTol": [
-            float,
-            1e-4,
-            "Residual norm criteria for intermediate continuation steps, making this larger may speed up the nonlinear solver by allowing it to only partially converge intermediate steps.",
-        ],
-        "newtonSolverCoarseRelTol": [
-            float,
-            1e-4,
-            "Relative residual norm criteria for intermediate load increments.",
-        ],
-        "newtonSolverDivergenceTol": [
-            float,
-            1e10,
-            "Residual norm at which the nonlinear solver is jugded to have diverged",
-        ],
-        # Line search options
-        "useLineSearch": [
-            bool,
-            True,
-            "Flag for using line search in the nonlinear solver.",
-        ],
-        "lineSearchMonitor": [
-            bool,
-            True,
-            "Flag for printing out line search information.",
-        ],
-        "skipFirstNLineSearch": [
-            int,
-            0,
-            "Skip the first N line searches. Setting this to 1 can improve the convergence speed of Newton solver, but also decreases robustness",
-        ],
-        "lineSearchMaxIter": [int, 25, "Maximum number of linesearch iterations."],
-        "lineSearchExpectedDecrease": [
-            float,
-            1e-4,
-            "Minimum fraction of the expected decrease in the energy gradient during the linesearch. Should be between 0 and 1. Higher values should improve robustness at the expense of solution time.",
-        ],
-        "lineSearchMaxStep": [
-            float,
-            2.0,
-            "Maximum step size for the linesearch, as a fraction of the Newton step",
-        ],
-        "lineSearchMinStep": [
-            float,
-            1e-2,
-            "Minimum step size for the linesearch, as a fraction of the Newton step",
-        ],
-        "lineSearchMaxStepChange": [
-            float,
-            0.5,
-            "Maximum change in the step size from one linesearch iteration to the next, can be useful in cases where secant method bounces between upper and lower step bounds.",
-        ],
-        "lineSearchFallbackStepLimit": [
-            float,
-            0.9,
-            "Often, the value of the merit function at the Newton step (alpha = 1.0), is orders of magnitude greater than at the start point. In these situations, the linesearch then tries to evaluate a point with a very small step size, which usually meets the expected decrease criteria but results in very slow progress of the Newton solver. To combat this, this value limits how far the linesearch can backtrack on the first iteration after evaluating alpha = 1. This has the effect of encouraging the linesearch to find larger steps that meet the expected decrease criterion, which results in faster convergence of the Newton solver.",
-        ],
     }
 
     def __init__(
@@ -248,9 +143,7 @@ class StaticProblem(TACSProblem):
         self.name = name
 
         # Default setup for common problem class objects
-        TACSProblem.__init__(
-            self, assembler, comm, outputViewer, meshLoader, isNonlinear=isNonlinear
-        )
+        TACSProblem.__init__(self, assembler, comm, outputViewer, meshLoader, isNonlinear=isNonlinear)
 
         # Process the default options which are added to self.options
         # under the 'defaults' key. Make sure the key are lower case
@@ -270,8 +163,6 @@ class StaticProblem(TACSProblem):
     def _createVariables(self):
         """Internal to create the variable required by TACS"""
 
-        opt = self.getOption
-
         # Generic residual vector
         self.res = self.assembler.createVec()
         self.rhs = self.assembler.createVec()
@@ -281,7 +172,6 @@ class StaticProblem(TACSProblem):
         self.dIduList = OrderedDict()
         self.dvSensList = OrderedDict()
         self.xptSensList = OrderedDict()
-
         # Temporary vector for adjoint solve
         self.phi = self.assembler.createVec()
         self.adjRHS = self.assembler.createVec()
@@ -289,26 +179,9 @@ class StaticProblem(TACSProblem):
         # Load vector
         self.F = self.assembler.createVec()
         self.F_array = self.F.getArray()
-
         # State variable vector
         self.u = self.assembler.createVec()
         self.u_array = self.u.getArray()
-
-        # Vectors used to decompose residual into external and internal forces
-        self.externalForce = self.assembler.createVec()
-        self.internalForce = self.assembler.createVec()
-
-        # Vectors used to compute extrapolate the equilibrium path during nonlinear solutions
-        self.equilibriumPathStates = []
-        self.equilibriumPathLoadScales = []
-        if self.isNonlinear and opt("usePredictor"):
-            for _ in range(opt("predictorNumStates")):
-                self.equilibriumPathStates.append(self.assembler.createVec())
-                self.equilibriumPathLoadScales.append(None)
-
-        if self.isNonlinear:
-            self.u_inc_start = self.assembler.createVec()
-
         # Auxiliary element object for applying tractions/pressure
         self.auxElems = tacs.TACS.AuxElements()
         self.callCounter = -1
@@ -320,6 +193,8 @@ class StaticProblem(TACSProblem):
 
         # Load scaling factor
         self._loadScale = 1.0
+
+        opt = self.getOption
 
         # Tangent Stiffness --- process the ordering option here:
         ordering = opt("orderingType")
@@ -404,7 +279,6 @@ class StaticProblem(TACSProblem):
             )
 
         # Linear solver factor flag
-        self._stiffnessUpdateRequired = True
         self._factorOnNext = True
 
     def setOption(self, name, value):
@@ -429,20 +303,12 @@ class StaticProblem(TACSProblem):
                 self.getOption("L2Convergence"),
             )
         # No need to reset solver for output options
-        elif (
-            name.lower()
-            in [
-                "writesolution",
-                "printtiming",
-                "numbersolutions",
-                "outputdir",
-                "skipFirstNLineSearch",
-                "usePredictor",
-                "predictorUseDerivative",
-            ]
-            or "linesearch" in name.lower()
-            or "newtonsolver" in name.lower()
-        ):
+        elif name.lower() in [
+            "writesolution",
+            "printtiming",
+            "numbersolutions",
+            "outputdir",
+        ]:
             pass
         # Reset solver for all other option changes
         else:
@@ -488,7 +354,7 @@ class StaticProblem(TACSProblem):
             Value to set the load scale to
         """
         if value != self._loadScale:
-            self._stiffnessUpdateRequired = True
+            self._factorOnNext = True
             self._loadScale = value
 
     def addFunction(self, funcName, funcHandle, compIDs=None, **kwargs):
@@ -535,7 +401,7 @@ class StaticProblem(TACSProblem):
 
         """
         TACSProblem.setDesignVars(self, x)
-        self._stiffnessUpdateRequired = True
+        self._factorOnNext = True
 
     def setNodes(self, coords):
         """
@@ -548,7 +414,7 @@ class StaticProblem(TACSProblem):
             the number of structural nodes on this processor.
         """
         TACSProblem.setNodes(self, coords)
-        self._stiffnessUpdateRequired = True
+        self._factorOnNext = True
 
     ####### Load adding methods ########
 
@@ -850,8 +716,23 @@ class StaticProblem(TACSProblem):
         loadCase. The stiffness matrix is assembled and factored.
         """
 
-        self.updateJacobian()
-        self.updatePreconditioner()
+        if self._factorOnNext:
+            # Assemble residual and stiffness matrix (w/o artificial terms)
+            self.assembler.assembleJacobian(
+                self.alpha,
+                self.beta,
+                self.gamma,
+                self.res,
+                self.K,
+                loadScale=self._loadScale,
+            )
+            # Stiffness matrix must include artificial terms before pc factor
+            # to prevent factorization issues w/ zero-diagonals
+            self.K.axpy(1.0, self.rbeArtificialStiffness)
+            self.PC.factor()
+            # Remove artificial stiffness terms to get true stiffness mat
+            self.K.axpy(-1.0, self.rbeArtificialStiffness)
+            self._factorOnNext = False
 
     def solve(self, Fext=None):
         """
@@ -881,308 +762,23 @@ class StaticProblem(TACSProblem):
 
         initSolveTime = time.time()
 
-        if self.isNonlinear:
-            self.solveNonlinear(Fext)
-        else:
-            # Get current residual
-            self.getResidual(self.res, Fext=Fext)
-
-            # Get rhs vector
-            self.K.mult(self.u, self.rhs)
-            self.rhs.axpy(-1.0, self.res)
-
-            # Set initnorm as the norm of rhs
-            self.initNorm = np.real(self.rhs.norm())
-
-            # Starting Norm for this computation
-            self.startNorm = np.real(self.res.norm())
-
-            initNormTime = time.time()
-
-            # Solve Linear System for the update
-            self.solveJacLinear(self.res, self.update)
-
-            self.update.scale(-1.0)
-
-            solveTime = time.time()
-
-            # Update State Variables
-            self.assembler.getVariables(self.u)
-            self.u.axpy(1.0, self.update)
-            self.assembler.setVariables(self.u)
-
-            stateUpdateTime = time.time()
-
-            # Get updated residual
-            self.getResidual(self.res, Fext)
-            self.finalNorm = np.real(self.res.norm())
-
-            finalNormTime = time.time()
-
-            # If timing was was requested print it, if the solution is nonlinear
-            # print this information automatically if prinititerations was requested.
-            if self.getOption("printTiming"):
-                self._pp("+--------------------------------------------------+")
-                self._pp("|")
-                self._pp("| TACS Solve Times:")
-                self._pp("|")
-                self._pp(
-                    "| %-30s: %10.3f sec"
-                    % ("TACS Setup Time", setupProblemTime - startTime)
-                )
-                self._pp(
-                    "| %-30s: %10.3f sec"
-                    % ("TACS Solve Init Time", initSolveTime - setupProblemTime)
-                )
-                self._pp(
-                    "| %-30s: %10.3f sec"
-                    % ("TACS Init Norm Time", initNormTime - initSolveTime)
-                )
-                self._pp(
-                    "| %-30s: %10.3f sec"
-                    % ("TACS Solve Time", solveTime - initNormTime)
-                )
-                self._pp(
-                    "| %-30s: %10.3f sec"
-                    % ("TACS State Update Time", stateUpdateTime - solveTime)
-                )
-                self._pp(
-                    "| %-30s: %10.3f sec"
-                    % ("TACS Final Norm Time", finalNormTime - stateUpdateTime)
-                )
-                self._pp("|")
-                self._pp(
-                    "| %-30s: %10.3f sec"
-                    % ("TACS Total Solution Time", finalNormTime - startTime)
-                )
-                self._pp("+--------------------------------------------------+")
-
-        return
-
-    def solveNonlinear(self, Fext=None, maxLoadScale=1.0):
-        TARGET_ITERS = self.getOption("continuationTargetIter")
-        INIT_STEP = self.getOption("continuationInitialStep")
-        MIN_STEP = self.getOption("continuationMinStep")
-        MAX_STEP = self.getOption("continuationMaxStep")
-        MAX_INCREMENTS = self.getOption("continuationMaxIter")
-        MIN_STEP_FACTOR = self.getOption("continuationMinStepFactor")
-        MAX_STEP_FACTOR = self.getOption("continuationMaxStepFactor")
-        STEP_RETRACT_FACTOR = self.getOption("continuationRetractionFactor")
-
-        USE_PREDICTOR = self.getOption("usePredictor")
-        NUM_PREDICTOR_STATES = self.getOption("predictorNumStates")
-        PREDICTOR_USE_DERIVATIVE = self.getOption("predictorUseDerivative")
-
-        # Compute the internal and external force components of the residual at the current point
-        self.getForces(
-            externalForceVec=self.externalForce,
-            internalForceVec=self.internalForce,
-            Fext=Fext,
-        )
-        self.initNorm = np.real(self.externalForce.norm())
-
-        # ==============================================================================
-        # Compute the initial load scale
-        # ==============================================================================
-        self.setLoadScale(min(maxLoadScale, INIT_STEP))
-        loadStepDirection = 1
-
-        # If we're restarting from a previous solution we should compute the optimum load scale
-        # to restart from. This is done by computing the load scale that minimizes the work
-        # done by the resulting Newton step:
-        # optLoadScale = (Fe^T dUi + Fi^T dUe) / (-2 Fe^T dUe)
-        # Where: Fe = external force, Fi = internal force, dUi = inv(K) * Fi, dUe = inv(K) * Fe
-        if np.real(self.u.norm()) > 0:
-            if self._stiffnessUpdateRequired:
-                self.updateJacobian()
-            if self._factorOnNext:
-                self.updatePreconditioner()
-            du_i = self.u
-            du_e = self.update
-            self.solveJacLinear(self.externalForce, du_e)
-            self.solveJacLinear(self.internalForce, du_i)
-            FeUe = self.externalForce.dot(du_e)
-            FeUi = self.externalForce.dot(du_i)
-            FiUe = self.internalForce.dot(du_e)
-            optLoadScale = (FeUi + FiUe) / (-2 * FeUe)
-
-            if optLoadScale > 2 * maxLoadScale or optLoadScale < 0.0:
-                # If the optimum load scale is more than double the max load scale we're aiming for, or if it's
-                # negative then the loading/structure has changed so much that we'll be closer to the final
-                # solution if we just reset the displacements to zero and start the solver from there
-                self.zeroVariables()
-                optLoadScale = self.loadScale
-            elif np.abs(optLoadScale - self.loadScale) < 1e-2:
-                # If the optimum load scale is close to the max load scale then we'll just use the max load scale
-                optLoadScale = maxLoadScale
-            else:
-                # Otherwise choose the maximum of the ideal load scale and the default initial load scale
-                optLoadScale = max(optLoadScale, self.loadScale)
-                # If the optimum load scale is greater than the max we want to get to then we need to reverse the
-                # direction of load incrementation
-                if optLoadScale > maxLoadScale:
-                    loadStepDirection = -1
-
-            self.setLoadScale(optLoadScale)
-
-        stepSize = INIT_STEP
-
-        for increment in range(MAX_INCREMENTS):
-            if self.rank == 0:
-                print("===============================================================")
-                print(
-                    f"Starting increment {increment:3d} with load scale: {self.loadScale}"
-                )
-                print("===============================================================")
-
-            # Save displacement at start of this increment, this is what
-            # we'll reset to if the increment diverges
-            self.u_inc_start.copyValues(self.u)
-
-            # --- Compute predictor step ---
-            # TODO: Add predictor computation here
-
-            success, numIters = self.newtonSolve(Fext=Fext)
-
-            # --- Check convergence ---
-            if not success:
-                # If the Newton solve failed then we'll reduce the step size and try again
-                self.setVariables(self.u_inc_start)
-                self.setLoadScale(self.loadScale - stepSize * loadStepDirection)
-                stepSize *= STEP_RETRACT_FACTOR
-            else:
-                if self.loadScale == maxLoadScale:
-                    break
-                else:
-                    stepChangeFactor = np.sqrt(TARGET_ITERS / numIters)
-                    stepSize *= np.clip(
-                        stepChangeFactor, MIN_STEP_FACTOR, MAX_STEP_FACTOR
-                    )
-                    if USE_PREDICTOR:
-                        stateToOverwrite = self.equilibriumPathStates.pop(0)
-                        stateToOverwrite.copyValues(self.u)
-                        self.equilibriumPathStates.append(stateToOverwrite)
-
-                        self.equilibriumPathLoadScales.pop(0)
-                        self.equilibriumPathLoadScales.append(self.loadScale)
-
-            maxStep = min(np.abs(maxLoadScale - self.loadScale), MAX_STEP)
-            stepSize = np.clip(stepSize, MIN_STEP, maxStep)
-            self.setLoadScale(self.loadScale + loadStepDirection * stepSize)
-
-        # ==============================================================================
-        # End of nonlinear solution
-        # ==============================================================================
-
-    def newtonSolve(self, Fext=None):
-        LINESEARCH_SKIP_ITERS = self.getOption("skipFirstNLineSearch")
-        MAX_ITERS = self.getOption("newtonSolverMaxIter")
-
-        for iteration in range(MAX_ITERS):
-            self.writeSolution(baseName=f"{self.name}-NLIter", number=iteration)
-
-            # Compute residual
-            self.getResidual(self.res, Fext=Fext)
-
-            # Test convergence (exit if converged/diverged)
-            resNorm = np.real(self.res.norm())
-            if self.rank == 0:
-                print(f"Iteration {iteration:3d}: Residual Norm = {resNorm:e}")
-            hasConverged = self.checkConvergence(resNorm)
-            hasDiverged = self.checkDivergence(resNorm)
-            if hasConverged or hasDiverged:
-                break
-
-            # Update Jacobian
-            self.updateJacobian()
-            self.updatePreconditioner()
-
-            # Compute Newton step
-            self.solveJacLinear(self.res, self.update)
-            self.update.scale(-1.0)
-
-            if iteration >= LINESEARCH_SKIP_ITERS:
-                # Do linesearch
-                alpha = self.energyLineSearch(self.u, self.update, Fext=Fext)
-            else:
-                alpha = 1.0
-            self.u.axpy(alpha, self.update)
-            self.assembler.setVariables(self.u)
-            self._stiffnessUpdateRequired = True
-
-        return hasConverged, iteration
-
-    def energyLineSearch(self, u, stepDir, Fext=None):
-        MAX_LINESEARCH_ITERS = self.getOption("lineSearchMaxIter")
-        LINESEARCH_MU = self.getOption("lineSearchExpectedDecrease")
-        LINESEARCH_ALPHA_MIN = self.getOption("lineSearchMinStep")
-        LINESEARCH_ALPHA_MAX = self.getOption("lineSearchMaxStep")
-        LINESEARCH_MAX_STEP_CHANGE = self.getOption("lineSearchMaxStepChange")
-        PRINT_LINESEARCH_ITERS = self.getOption("lineSearchMonitor")
-
-        # Compute residual and merit function at u0
-        self.assembler.setVariables(u)
+        # Get current residual
         self.getResidual(self.res, Fext=Fext)
-        f0 = np.real(self.res.dot(stepDir))
-        fOld = f0
-        alphaOld = 0.0
-        uNorm = u.norm()
-        if self.rank == 0 and PRINT_LINESEARCH_ITERS:
-            print(
-                f"Line search iter  0: alpha = {0: 11e},   f0 = {(f0): 11e}, uNorm = {uNorm: 11e}"
-            )
 
-        # 3. Set $\alpha = 1$
-        alpha = 1.0
-        alphaNew = alpha
-        for ii in range(MAX_LINESEARCH_ITERS):
-            # 4. Increment state, $u = u + \alpha \Delta u$
-            u.axpy(alpha, stepDir)
-            self.assembler.setVariables(u)
+        # Get rhs vector
+        self.K.mult(self.u, self.rhs)
+        self.rhs.axpy(-1.0, self.res)
 
-            # 5. Compute residual, $r = r(u)$
-            self.getResidual(self.res, Fext=Fext)
+        # Set initnorm as the norm of rhs
+        self.initNorm = np.real(self.rhs.norm())
 
-            # 6. Compute merit function,  $f(\alpha)=f(u, r, \Delta u)$
-            fNew = np.real(self.res.dot(stepDir))
+        # Starting Norm for this computation
+        self.startNorm = np.real(self.res.norm())
 
-            # 7. if $abs(f(\alpha)) \leq \mu f_0 + \alpha f'_0$:
-            #     1. exit
-            uNorm = u.norm()
-            if self.rank == 0 and PRINT_LINESEARCH_ITERS:
-                print(
-                    f"Line search iter {(ii+1):2d}: alpha = {alpha: 11e}, f/f0 = {(fNew/f0): 11e}, uNorm = {uNorm: 11e}"
-                )
-            u.axpy(-alpha, stepDir)
-            fReduction = np.abs(fNew / f0)
-            if fReduction <= 1 - LINESEARCH_MU * min(alpha, 1.0):
-                break
-            else:
-                # 8. Update $\alpha$ (based on search method)
-                if ii == 0:
-                    alphaMin = 0.9
-                else:
-                    alphaMin = LINESEARCH_ALPHA_MIN
-                if fNew == fOld:
-                    alphaNew = alpha + LINESEARCH_ALPHA_MIN
-                else:
-                    alphaNew = np.clip(
-                        alpha - fNew * (alpha - alphaOld) / (fNew - fOld),
-                        alphaMin,
-                        LINESEARCH_ALPHA_MAX,
-                    )
-                if ii > 0 and abs(alphaNew - alpha) > LINESEARCH_MAX_STEP_CHANGE:
-                    alphaNew = (
-                        alpha + np.sign(alphaNew - alpha) * LINESEARCH_MAX_STEP_CHANGE
-                    )
-                alphaOld = alpha
-                alpha = alphaNew
-                fOld = fNew
-            # 9. return to step 4
-        return alpha
+        initNormTime = time.time()
 
-    def solveJacLinear(self, res, sol):
-        success = self.KSM.solve(res, sol)
+        # Solve Linear System for the update
+        success = self.KSM.solve(self.res, self.update)
 
         if not success:
             self._TACSWarning(
@@ -1190,50 +786,62 @@ class StaticProblem(TACSProblem):
                 "This is likely a sign that the problem is ill-conditioned. "
                 "Check that the model is properly restrained."
             )
-        return success
 
-    def updateJacobian(self, res=None):
-        if self._stiffnessUpdateRequired:
-            # Assemble residual and stiffness matrix (w/o artificial terms)
-            self.assembler.assembleJacobian(
-                self.alpha,
-                self.beta,
-                self.gamma,
-                res,
-                self.K,
-                loadScale=self._loadScale,
+        self.update.scale(-1.0)
+
+        solveTime = time.time()
+
+        # Update State Variables
+        self.assembler.getVariables(self.u)
+        self.u.axpy(1.0, self.update)
+        self.assembler.setVariables(self.u)
+
+        stateUpdateTime = time.time()
+
+        # Get updated residual
+        self.getResidual(self.res, Fext)
+        self.finalNorm = np.real(self.res.norm())
+
+        finalNormTime = time.time()
+
+        # If timing was was requested print it, if the solution is nonlinear
+        # print this information automatically if prinititerations was requested.
+        if self.getOption("printTiming"):
+            self._pp("+--------------------------------------------------+")
+            self._pp("|")
+            self._pp("| TACS Solve Times:")
+            self._pp("|")
+            self._pp(
+                "| %-30s: %10.3f sec"
+                % ("TACS Setup Time", setupProblemTime - startTime)
             )
-            self._factorOnNext = True
+            self._pp(
+                "| %-30s: %10.3f sec"
+                % ("TACS Solve Init Time", initSolveTime - setupProblemTime)
+            )
+            self._pp(
+                "| %-30s: %10.3f sec"
+                % ("TACS Init Norm Time", initNormTime - initSolveTime)
+            )
+            self._pp(
+                "| %-30s: %10.3f sec" % ("TACS Solve Time", solveTime - initNormTime)
+            )
+            self._pp(
+                "| %-30s: %10.3f sec"
+                % ("TACS State Update Time", stateUpdateTime - solveTime)
+            )
+            self._pp(
+                "| %-30s: %10.3f sec"
+                % ("TACS Final Norm Time", finalNormTime - stateUpdateTime)
+            )
+            self._pp("|")
+            self._pp(
+                "| %-30s: %10.3f sec"
+                % ("TACS Total Solution Time", finalNormTime - startTime)
+            )
+            self._pp("+--------------------------------------------------+")
 
-    def updatePreconditioner(self):
-        if self._factorOnNext:
-            # Stiffness matrix must include artificial terms before pc factor
-            # to prevent factorization issues w/ zero-diagonals
-            self.K.axpy(1.0, self.rbeArtificialStiffness)
-            self.PC.factor()
-            # Remove artificial stiffness terms to get true stiffness mat
-            self.K.axpy(-1.0, self.rbeArtificialStiffness)
-            self._factorOnNext = False
-
-    def checkConvergence(self, resNorm):
-        """Check whether the residual is sufficiently converged
-
-        Returns
-        -------
-        _type_
-            _description_
-        """
-        return resNorm / self.initNorm < 1e-8
-
-    def checkDivergence(self, resNorm):
-        """Check whether the residual has diverged
-
-        Returns
-        -------
-        _type_
-            _description_
-        """
-        return resNorm > 1e10 or np.isnan(resNorm)
+        return
 
     ####### Function eval/sensitivity methods ########
 
@@ -1422,7 +1030,7 @@ class StaticProblem(TACSProblem):
 
         totalSensitivityTime = time.time()
 
-        if self.getOption("printTiming") and self.rank == 0:
+        if self.getOption("printTiming"):
             self._pp("+--------------------------------------------------+")
             self._pp("|")
             self._pp("| TACS Adjoint Times:")
@@ -1790,6 +1398,7 @@ class StaticProblem(TACSProblem):
                 externalForceVec[:] = externalForceVec[:] - internalForceVec[:]
             elif isinstance(externalForceVec, tacs.TACS.Vec):
                 externalForceVec.axpy(-1.0, self._arrayToVec(internalForceVec))
+
 
     def getJacobian(self):
         """Get the problem's Jacobian in sciPy sparse matrix format
