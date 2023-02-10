@@ -1166,9 +1166,9 @@ class TACSQuadraticRotation {
     const TacsScalar *Di = D;
     for (int i = 0; i < num_nodes; i++, Di += 9) {
       if (res) {
-        r[0] += D[0] * dd[0] + D[1] * dd[1] + D[2] * dd[2];
-        r[1] += D[3] * dd[0] + D[4] * dd[1] + D[5] * dd[2];
-        r[2] += D[6] * dd[0] + D[7] * dd[1] + D[8] * dd[2];
+        r[0] += Di[0] * dd[0] + Di[1] * dd[1] + Di[2] * dd[2];
+        r[1] += Di[3] * dd[0] + Di[4] * dd[1] + Di[5] * dd[2];
+        r[2] += Di[6] * dd[0] + Di[7] * dd[1] + Di[8] * dd[2];
 
         r += vars_per_node;
       }
