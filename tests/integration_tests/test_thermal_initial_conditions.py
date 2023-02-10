@@ -34,7 +34,6 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
     }
 
     def setup_tacs_problems(self, comm):
-
         # Instantiate FEA Assembler
         struct_options = {  # Finer tol needed to pass complex sens test
             "L2Convergence": 1e-16
@@ -54,7 +53,6 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
         def elem_call_back(
             dv_num, comp_id, comp_descript, elem_descripts, special_dvs, **kwargs
         ):
-
             # Setup property and constitutive objects
             prop = constitutive.MaterialProperties(
                 rho=rho, kappa=kappa, specific_heat=cp

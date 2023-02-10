@@ -41,7 +41,6 @@ ksweight = 10.0
 
 
 class ProblemTest(StaticTestCase.StaticTest):
-
     N_PROCS = 2  # this is how many MPI processes to use for this TestCase.
 
     def setup_assembler(self, comm, dtype):
