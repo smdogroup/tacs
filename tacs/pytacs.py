@@ -249,7 +249,7 @@ class pyTACS(BaseUI):
         self.assembler = None
 
         # Nonlinear flag
-        self.isNonlinear = self.getOption("isNonlinear")
+        self._isNonlinear = self.getOption("isNonlinear")
 
         initFinishTime = time.time()
         if self.getOption("printTiming"):
@@ -278,6 +278,11 @@ class pyTACS(BaseUI):
                 % ("TACS Total Initialization Time", initFinishTime - startTime)
             )
             self._pp("+--------------------------------------------------+")
+
+    @property
+    def isNonlinear(self):
+        """The public interface for the isNonlinear attribute. Implemented as a property so that it is read-only."""
+        return self._isNonlinear
 
     @preinitialize_method
     def addGlobalDV(self, descript, value, lower=None, upper=None, scale=1.0):
@@ -1331,7 +1336,13 @@ class pyTACS(BaseUI):
             StaticProblem object used for modeling and solving static cases.
         """
         problem = tacs.problems.static.StaticProblem(
-            name, self.assembler, self.comm, self.outputViewer, self.meshLoader, options
+            name,
+            self.assembler,
+            self.comm,
+            self.outputViewer,
+            self.meshLoader,
+            self.isNonlinear,
+            options,
         )
         # Set with original design vars and coordinates, in case they have changed
         problem.setDesignVars(self.x0)
@@ -1372,6 +1383,7 @@ class pyTACS(BaseUI):
             self.comm,
             self.outputViewer,
             self.meshLoader,
+            self.isNonlinear,
             options,
         )
         # Set with original design vars and coordinates, in case they have changed
@@ -1411,6 +1423,7 @@ class pyTACS(BaseUI):
             self.comm,
             self.outputViewer,
             self.meshLoader,
+            self.isNonlinear,
             options,
         )
         # Set with original design vars and coordinates, in case they have changed
@@ -1665,7 +1678,6 @@ class pyTACS(BaseUI):
         """
 
         for i in range(self.nComp):
-
             # Get a list of compDescripts to help the user
             compDescript = self.compDescripts[i]
             numElements = len(self.elemDescripts[i])
@@ -1757,7 +1769,6 @@ class pyTACS(BaseUI):
                 dvs = elemObject.getDesignVarNums(0)
 
                 if len(dvs) > 0:
-
                     # We will also check if the user screwed up. That is
                     # make sure that for added variables, the are
                     # continuous starting at self.dvNum
