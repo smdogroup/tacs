@@ -4,7 +4,7 @@ GT SMDO Lab, Dr. Graeme Kennedy
 Caps to TACS example
 """
 
-
+# also requires pySNOPT
 import os, numpy as np, matplotlib.pyplot as plt
 import openmdao, openmdao.api as om
 from tacs import functions, caps2tacs
@@ -115,6 +115,8 @@ class AnalysisManager(om.ExplicitComponent):
             self._design_hdl.write(
                 f"\tfunc {func_name} = {self._func_history[func_name][-1]}\n"
             )
+        self._design_hdl.write("\n")
+        self._design_hdl.flush()
 
     def _plot_history(self, directory, filename):
         num_iterations = len(self._func_history[self._func_names[0]])
@@ -129,6 +131,7 @@ class AnalysisManager(om.ExplicitComponent):
         plt.legend()
         plt.xlabel("iterations")
         plt.ylabel("func values")
+        plt.yscale("log")
         plot_filepath = os.path.join(directory, filename)
         plt.savefig(plot_filepath)
         plt.close("all")
@@ -232,6 +235,7 @@ aluminum = caps2tacs.Isotropic.aluminum().register_to(tacs_aim)
 # setup the thickness design variables + automatic shell properties
 nribs = int(tacs_aim.get_config_parameter("nribs"))
 nspars = int(tacs_aim.get_config_parameter("nspars"))
+nOML = nribs - 1
 for irib in range(1, nribs + 1):
     caps2tacs.ThicknessVariable(
         caps_group=f"rib{irib}", value=0.05, material=aluminum
@@ -240,9 +244,10 @@ for ispar in range(1, nspars + 1):
     caps2tacs.ThicknessVariable(
         caps_group=f"spar{ispar}", value=0.05, material=aluminum
     ).register_to(tacs_aim)
-caps2tacs.ThicknessVariable(
-    caps_group="OML", value=0.03, material=aluminum
-).register_to(tacs_aim)
+for iOML in range(1, nOML+1):
+    caps2tacs.ThicknessVariable(
+        caps_group=f"OML{iOML}", value=0.03, material=aluminum
+    ).register_to(tacs_aim)
 
 # add constraints and loads
 caps2tacs.PinConstraint("root").register_to(tacs_aim)
@@ -257,40 +262,36 @@ SPs = tacs_aim.createTACSProbs()
 # --------------------------------------------------------------------------#
 
 # setup the OpenMDAO Problem object
-om_problem = om.Problem()
+prob = om.Problem()
 
 # Create the OpenMDAO component
 tacs_system = AnalysisManager(tacs_aim=tacs_aim, struct_problems=SPs)
-om_problem.model.add_subsystem("tacsSystem", tacs_system)
+prob.model.add_subsystem("tacsSystem", tacs_system)
 
 # setup the optimizer settings
-om_problem.driver = om.ScipyOptimizeDriver()
-om_problem.driver.options["optimizer"] = "SLSQP"
-om_problem.driver.options["tol"] = 1.0e-9
-om_problem.driver.options["disp"] = True
+prob.driver = om.pyOptSparseDriver(optimizer="PAROPT")
 
 # add design variables to the model
 for thick_var in tacs_aim.thickness_variables:
-    om_problem.model.add_design_var(
-        f"tacsSystem.{thick_var.name}", lower=0.001, upper=0.1
+    prob.model.add_design_var(
+        f"tacsSystem.{thick_var.name}", lower=0.001, upper=0.1, scaler=100.0
     )
 
 # add objectives & constraints to the model
-om_problem.model.add_objective("tacsSystem.mass")
-om_problem.model.add_constraint("tacsSystem.ks_vmfailure", upper=0.267)
+prob.model.add_objective("tacsSystem.mass", scaler=1.0e-2)
+prob.model.add_constraint("tacsSystem.ks_vmfailure", upper=0.267)
 
 # Start the optimization
 print("\n==> Starting optimization...")
-om_problem.setup()
-om_problem.run_driver()
+prob.setup()
+prob.run_driver()
 
 # report the final optimal design
 design_hdl = tacs_system._design_hdl
 for thick_var in tacs_aim.thickness_variables:
-    opt_value = om_problem.get_val(f"tacsSystem.{thick_var.name}")
+    opt_value = prob.get_val(f"tacsSystem.{thick_var.name}")
     design_hdl.write(f"\t{thick_var.name} = {opt_value}")
 
-
-om_problem.cleanup()
+prob.cleanup()
 # close the design hdl file
 design_hdl.close()

@@ -6,7 +6,7 @@
 ### Design parameters ###
 
 # number of ribs and spars
-cfgpmtr nribs 10
+cfgpmtr nribs 4
 cfgpmtr nspars 2
 
 # root and tip chord
@@ -62,7 +62,8 @@ loft 0
 
 # attribute the solid wing
 select face
-attribute capsGroup $OML
+attribute has_group $no
+attribute capsLoad $OML
 attribute _color $blue
 
 # make root and tip caps the ribs
@@ -100,6 +101,7 @@ patbeg ispar nspars
    # add caps attributes
    select face
    attribute capsGroup !$spar+ispar
+   attribute has_group $yes
    attribute _color $green
 patend
 
@@ -119,6 +121,7 @@ patbeg index ninnerRibs
    # add caps attributes
    select face
    attribute capsGroup !$rib+irib
+   attribute has_group $yes
    attribute _color $green
 
    # union with previous ribs/spars
@@ -160,11 +163,16 @@ udprim editAttr filename <<
 
  NODE ADJ2FACE capsConstraint=root
  SET capsConstraint=root
+
+ patbeg iOML (nribs-1)
+    FACE HAS has_group=no
+    AND ADJ2FACE capsGroup=!$rib+iOML
+    AND ADJ2FACE capsGroup=!$rib+(iOML+1)
+    SET capsGroup=!$OML+iOML
+    SET has_group=yes
+ patend
 >>
 
-# add load attribute to OML
-select face $capsGroup $OML
-attribute capsLoad $OML
 
 # add AIM attribute to specify the analyses to use
 select body
@@ -172,3 +180,4 @@ attribute capsAIM $egadsTessAIM;tacsAIM
 
 end
 |||||
+|||
