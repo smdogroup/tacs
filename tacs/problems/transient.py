@@ -22,7 +22,6 @@ from .base import TACSProblem
 
 
 class TransientProblem(TACSProblem):
-
     # Default Option List
     defaultOptions = {
         "outputDir": [str, "./", "Output directory for F5 file writer."],
@@ -1372,7 +1371,6 @@ class TransientProblem(TACSProblem):
 
         # Unless the writeSolution option is off write actual file:
         if self.getOption("writeSolution"):
-
             # If timeSteps is None, output all timesteps
             if timeSteps is None:
                 timeSteps = np.arange(self.numSteps + 1)

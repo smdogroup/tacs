@@ -22,7 +22,6 @@ class TACSProblem(BaseUI):
     def __init__(
         self, assembler, comm, outputViewer=None, meshLoader=None, isNonlinear=False
     ):
-
         # TACS assembler object
         self.assembler = assembler
         # TACS F5 output writer
