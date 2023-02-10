@@ -5,13 +5,14 @@ Caps to TACS example
 """
 
 import unittest, os, numpy as np, importlib
-from tacs import functions, caps2tacs
+from tacs import functions, caps2tacs, TACS
 from mpi4py import MPI
 
 caps_loader = importlib.util.find_spec("pyCAPS")
+complex_mode = TACS.dtype == complex
 
 # only run the test if pyCAPS can be imported
-@unittest.skipIf(caps_loader is None, "skipping ESP/CAPS test without pyCAPS module")
+@unittest.skipIf(caps_loader is None or complex_mode, "skipping ESP/CAPS test without pyCAPS module or in real mode")
 class TestCaps2Tacs(unittest.TestCase):
     def _build_tacs_aim(self):
         comm = MPI.COMM_WORLD
@@ -63,8 +64,7 @@ class TestCaps2Tacs(unittest.TestCase):
         run a complete forward and adjoint analysis
         """
         self.tacs_aim.preAnalysis()
-        fea_solver = self.tacs_aim_wrapper.fea_solver.initialize()
-        SPs = fea_solver.createTACSProbsFromBDF()
+        SPs = self.tacs_aim_wrapper.createTACSProbs()
         for caseID in SPs:
             SPs[caseID].addFunction("mass", functions.StructuralMass)
             SPs[caseID].addFunction(
@@ -75,9 +75,9 @@ class TestCaps2Tacs(unittest.TestCase):
         self._func_names = ["mass", "ks_vmfailure"]
         for caseID in SPs:
             SPs[caseID].solve()
-            SPs[caseID].write_sensitivity_file(
+            SPs[caseID].writeSensFile(
                 evalFuncs=self._func_names,
-                sens_file=self.tacs_aim_wrapper.sens_file_path,
+                tacsAim=self.tacs_aim_wrapper,
             )
 
         # compute the shape derivatives in ESP/CAPS which reads the sens file
@@ -118,10 +118,7 @@ class TestCaps2Tacs(unittest.TestCase):
         print(f"\tFinite Diff TD = {finite_diff_TD}")
         print(f"\trelative error = {rel_error}")
 
-        tol = 1.0e-4  # tolerance not as strict since we only have FD not complex step available
-        acceptable_error = abs(rel_error) < tol
-        print(f"\ttest passed = {acceptable_error}")
-        self.assertTrue(acceptable_error)
+        self.assertTrue(abs(rel_error) < 1.0e-4)
 
 
 if __name__ == "__main__":

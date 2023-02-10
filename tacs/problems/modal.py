@@ -523,6 +523,3 @@ class ModalProblem(TACSProblem):
                 modeName = baseName + "_%3.3d" % index
                 fileName = os.path.join(outputDir, modeName) + ".f5"
                 self.outputViewer.writeToFile(fileName)
-
-    def write_sensitivity_file(self, evalFuncs, sens_file):
-        return super().write_sensitivity_file(evalFuncs, sens_file)

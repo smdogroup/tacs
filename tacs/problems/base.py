@@ -1070,10 +1070,20 @@ class TACSProblem(BaseUI):
                     auxElems, elemID, trac, faceIndex, nastranOrdering=True
                 )
 
-    def write_sensitivity_file(self, evalFuncs, sens_file, tacs_aim=None):
+    def writeSensFile(self, evalFuncs, tacsAim):
         """
         write an ESP/CAPS .sens file from the tacs aim
         Optional tacs_aim arg for TacsAim wrapper class object in root/tacs/caps2tacs/
+
+        Parameters
+        ----------
+
+        evalFuncs : list of strings
+            names of TACS functions to be evaluated
+
+        tacsAim : pyCAPS tacsAIM wrapper class
+            class which handles the sensitivity file writing for ESP/CAPS shape derivatives
+
         """
 
         # obtain the functions and sensitivities from TACS assembler
@@ -1084,18 +1094,18 @@ class TACSProblem(BaseUI):
 
         num_funcs = len(evalFuncs)
         if "struct" in tacs_sens:
-            assert tacs_aim is not None
+            assert tacsAim is not None
             num_struct_dvs = len(tacs_sens["struct"][evalFuncs[0]])
         else:
             num_struct_dvs = 0
         num_nodes = self.meshLoader.bdfInfo.nnodes
-        struct_ids = self.meshLoader.struct_ids
+        node_ids = self.meshLoader.nodeIDs
 
         if self.comm is None or self.comm.rank == 0:
 
             # open the sens file nastran_CAPS.sens and write coordinate derivatives
             # and any other struct derivatives to it
-            with open(sens_file, "w") as hdl:
+            with open(tacsAim.sens_file_path, "w") as hdl:
                 for func_name in evalFuncs:
                     hdl.write(f"{num_funcs} {num_struct_dvs}\n")
 
@@ -1116,7 +1126,7 @@ class TACSProblem(BaseUI):
 
                         # write the coordinate derivatives for the given function
                         for bdf_ind in range(num_nodes):
-                            tacs_ind = struct_ids[bdf_ind]
+                            tacs_ind = node_ids[bdf_ind]
                             nastran_node = bdf_ind + 1
                             hdl.write(
                                 f"{nastran_node} {xpts_sens[3*tacs_ind].real} {xpts_sens[3*tacs_ind+1].real} {xpts_sens[3*tacs_ind+2].real}\n"
@@ -1129,7 +1139,7 @@ class TACSProblem(BaseUI):
                                 idx,
                                 thick_var,
                             ) in (
-                                tacs_aim.thickness_variables
+                                tacsAim.thickness_variables
                             ):  # assumes these are sorted in tacs aim wrapper
                                 hdl.write(f"{thick_var.name}\n")
                                 hdl.write("1\n")

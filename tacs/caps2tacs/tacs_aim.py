@@ -302,6 +302,18 @@ class TacsAim:
     @property
     def is_setup(self) -> bool:
         return self._setup
+    
+    def get_shape_var_value(self, shape_var) -> float:
+        """
+        get the value of a shape var from the serial / under the hood tacs aim
+        """
+        if self.comm is None:
+            return self.aim.despmtr[shape_var.name].value
+        else:
+            value = None
+            if self.comm.rank == 0:
+                value = self.aim.despmtr[shape_var.name].value
+            return self.comm.bcast(value, root=0)
 
     @property
     def aim(self):

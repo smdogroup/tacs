@@ -896,21 +896,20 @@ class pyMeshLoader(BaseUI):
                 return -1
 
     @property
-    def struct_ids(self):
+    def nodeIDs(self):
         """
-        get list of tacs_ids for each nastran node owned by this processor
+        get list of tacs_ids for each nastran node owned across all processors
         nastran_node = array_idx + 1
         tacs_idx = output id
         nastran_node - 1 => tacs_idx owned by this proc
         """
 
         if self.comm is None:
-            struct_ids = self._get_local_struct_ids()
+            return self._getLocalNodeIDs()
         else:
-            struct_ids = self._get_all_struct_ids()
-        return struct_ids
+            return self._getAllLocalNodeIDs()
 
-    def _get_local_struct_ids(self):
+    def _getLocalNodeIDs(self):
         """
         get the local struct ids owned by this processor, full list when comm is None
         -1 for each idx not owned by this processor
@@ -919,11 +918,11 @@ class pyMeshLoader(BaseUI):
         bdf_nodes = [_ for _ in range(num_nodes)]
         return self.getLocalNodeIDsFromGlobal(bdf_nodes, nastranOrdering=False)
 
-    def _struct_id_map(self):
+    def _nastranToLocalNodeIDMap(self):
         """
         write the map nastran_node - 1 => tacs_idx on each processor
         """
-        local_struct_ids = self._get_local_struct_ids()
+        local_struct_ids = self._getLocalNodeIDs()
         id_map = []
         for arr_idx, struct_id in enumerate(local_struct_ids):
             if struct_id != -1:
@@ -931,11 +930,11 @@ class pyMeshLoader(BaseUI):
         self._local_map = id_map
         return id_map
 
-    def _get_all_struct_ids(self):
+    def _getAllLocalNodeIDs(self):
         """
         get struct ids on all processors broadcast to root
         """
-        self._struct_id_map()
+        self._nastranToLocalNodeIDMap()
         local_maps = self.comm.gather(self._local_map, root=0)
         full_map_list = []
         for local_map in local_maps:

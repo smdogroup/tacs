@@ -5,10 +5,11 @@ Caps to TACS example
 """
 
 import unittest, os, numpy as np, importlib
-from tacs import functions, caps2tacs
+from tacs import functions, caps2tacs, TACS
 from mpi4py import MPI
 
 caps_loader = importlib.util.find_spec("pyCAPS")
+complex_mode = TACS.dtype == complex
 
 # only run the test if pyCAPS can be imported
 @unittest.skipIf(caps_loader is None, "skipping ESP/CAPS test without pyCAPS module")
@@ -52,8 +53,7 @@ class TestCaps2Tacs(unittest.TestCase):
         )
         # run the pre analysis to build tacs input files
         self.tacs_aim = tacs_aim.setup_aim().pre_analysis()
-        self.fea_solver = self.tacs_aim.fea_solver.initialize()
-        self.SPs = self.fea_solver.createTACSProbsFromBDF()
+        self.SPs = self.tacs_aim.createTACSProbs()
         for caseID in self.SPs:
             self.SPs[caseID].addFunction("mass", functions.StructuralMass)
 
@@ -103,6 +103,7 @@ class TestCaps2Tacs(unittest.TestCase):
             adjoint_TD += (
                 self._gradients["mass"][thick_var.name] * dvar_ds[thick_var.name]
             )
+        adjoint_TD = adjoint_TD.real
 
         # total derivative with finite difference
         h = 1.0e-5
@@ -119,16 +120,14 @@ class TestCaps2Tacs(unittest.TestCase):
         # relative error of total derivatives
         rel_error = (adjoint_TD - complex_step_TD) / complex_step_TD
         print(
-            "\Complex Step thickness derivative test with d(mass,ksfailure)/drib_a1..."
+            "Complex Step thickness derivative test with d(mass,ksfailure)/drib_a1..."
         )
         print(f"\tAdjoint TD = {adjoint_TD}")
         print(f"\tComplex Step TD = {complex_step_TD}")
         print(f"\trelative error = {rel_error}")
 
-        tol = 1.0e-7  # tolerance not as strict since we only have FD not complex step available
-        acceptable_error = abs(rel_error) < tol
-        print(f"\ttest passed = {acceptable_error}")
-        self.assertTrue(acceptable_error)
+        rtol = 1.0e-7 if complex_mode else 1e-4
+        self.assertTrue(abs(rel_error) < rtol)
 
 
 if __name__ == "__main__":
