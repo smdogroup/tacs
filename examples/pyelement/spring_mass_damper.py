@@ -4,6 +4,7 @@ import numpy as np
 import sys
 import matplotlib.pylab as plt
 
+
 # Define an element in TACS using the pyElement feature
 class SpringMassDamper(elements.pyElement):
     def __init__(self, num_disps, num_nodes, m, c, k):

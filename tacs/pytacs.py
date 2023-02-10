@@ -1662,7 +1662,6 @@ class pyTACS(BaseUI):
         """
 
         for i in range(self.nComp):
-
             # Get a list of compDescripts to help the user
             compDescript = self.compDescripts[i]
             numElements = len(self.elemDescripts[i])
@@ -1754,7 +1753,6 @@ class pyTACS(BaseUI):
                 dvs = elemObject.getDesignVarNums(0)
 
                 if len(dvs) > 0:
-
                     # We will also check if the user screwed up. That is
                     # make sure that for added variables, the are
                     # continuous starting at self.dvNum
