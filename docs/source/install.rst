@@ -8,9 +8,9 @@ Windows users are recommended to try the following alternatives for accessing TA
 
 2. Install `Windows Subsystem for Linux <https://learn.microsoft.com/en-us/windows/wsl/install>`_
 
-3. Install `Docker <https://www.docker.com/>`_ and then use one of the `MDO Lab's public docker images <https://hub.docker.com/r/mdolab/public>`_, which include TACS.
+3. Install `Docker <https://www.docker.com/>`_ and then use one of the `MDOLab's public docker images <https://hub.docker.com/r/mdolab/public>`_, which include TACS.
 
-For either 1 or 2 any of the installation methods described below should get you setup with TACS
+For either 1 or 2 any of the installation methods described below should get you setup with TACS.
 
 From Anaconda
 =============
