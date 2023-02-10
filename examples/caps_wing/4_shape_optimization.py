@@ -86,7 +86,6 @@ class Caps2TacsComponent(om.ExplicitComponent):
             outputs[func_name] = self._functions[func_name]
 
     def _plot_history(self, tacs_aim, filename):
-
         directory = tacs_aim.analysisDir
         for func_name in self._func_names:
             self._func_history[func_name].append(tacs_aim.dynout[func_name].value)
@@ -172,10 +171,9 @@ class Caps2TacsComponent(om.ExplicitComponent):
         """
 
         tacs_aim_wrapper.pre_analysis()
-        fea_solver = tacs_aim_wrapper.fea_solver.initialize()
 
         # create the SPs from the BDF file (Struct Problem)
-        SPs = fea_solver.createTACSProbsFromBDF()
+        SPs = tacs_aim_wrapper.createTACSProbs()
         for caseID in SPs:
             SPs[caseID].addFunction("mass", functions.StructuralMass)
             # SPs[caseID].addFunction('ks_vmfailure', functions.KSFailure, safetyFactor=1.5, ksWeight=50)

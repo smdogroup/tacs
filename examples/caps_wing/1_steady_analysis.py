@@ -49,7 +49,7 @@ tacs_aim.setup_aim().pre_analysis()
 # ----------------------------------------------------------------------------------
 # 2. Run the TACS steady elastic structural analysis, forward + adjoint
 
-SPs = tacs_aim.fea_solver.initialize().createTACSProbsFromBDF()
+SPs = tacs_aim.createTACSProbs()
 
 # add mass and aggregated stress constraint functions
 for caseID in SPs:

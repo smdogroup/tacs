@@ -18,14 +18,14 @@ class AnalysisManager(om.ExplicitComponent):
         """
         # CAPS problem input
         self.options.declare("tacs_aim", types=object)
-        self.options.declare("fea_solver", types=object)
+        self.options.declare("struct_problems", types=object)
 
     def setup(self):
         """
         Declare the inputs and outputs of the capsProblem to openmdao
         """
         tacs_aim = self.options["tacs_aim"]
-        fea_solver = self.options["fea_solver"]
+        self.SPs = self.options["struct_problems"]
 
         # add the thickness variables as openmdao inputs, with starting uniform thickness
         for thick_var in tacs_aim.thickness_variables:
@@ -49,7 +49,6 @@ class AnalysisManager(om.ExplicitComponent):
 
         # create the list of steady structural analysis problems in TACS
         # this one is to check the design variables at the start, recreated multiple times
-        self.SPs = fea_solver.createTACSProbsFromBDF()
         for caseID in self.SPs:
             self.SPs[caseID].addFunction("mass", functions.StructuralMass)
             self.SPs[caseID].addFunction(
@@ -216,12 +215,12 @@ class AnalysisManager(om.ExplicitComponent):
 # --------------------------------------------------------------#
 comm = MPI.COMM_WORLD
 # can also switch to large_naca_wing.csm file here if you want and it will automatically update the DVs
-caps_struct = caps2tacs.CapsStruct.build(csm_file="simple_naca_wing.csm", comm=comm)
+caps_struct = caps2tacs.CapsStruct.build(csm_file="large_naca_wing.csm", comm=comm)
 tacs_aim = caps_struct.tacs_aim
 caps_struct.egads_aim.set_mesh(  # need a refined-enough mesh for the derivative test to pass
     edge_pt_min=15,
     edge_pt_max=20,
-    global_mesh_size=0.1,
+    global_mesh_size=0.01,
     max_surf_offset=0.01,
     max_dihedral_angle=5,
 ).register_to(
@@ -251,7 +250,7 @@ caps2tacs.GridForce("OML", direction=[0, 0, 1.0], magnitude=10).register_to(tacs
 
 # run the pre analysis to build tacs input files
 tacs_aim.setup_aim().pre_analysis()
-fea_solver = tacs_aim.fea_solver.initialize()
+SPs = tacs_aim.createTACSProbs()
 
 # --------------------------------------------------------------------------#
 # Setup OpenMDAO Problem
@@ -261,7 +260,7 @@ fea_solver = tacs_aim.fea_solver.initialize()
 om_problem = om.Problem()
 
 # Create the OpenMDAO component
-tacs_system = AnalysisManager(tacs_aim=tacs_aim, fea_solver=fea_solver)
+tacs_system = AnalysisManager(tacs_aim=tacs_aim, struct_problems=SPs)
 om_problem.model.add_subsystem("tacsSystem", tacs_system)
 
 # setup the optimizer settings

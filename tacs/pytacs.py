@@ -794,8 +794,6 @@ class pyTACS(BaseUI):
         self.x0 = self.assembler.createDesignVec()
         self.assembler.getDesignVars(self.x0)
 
-        return self
-
     def _elemCallBackFromBDF(self):
         """
         Automatically setup elemCallBack using information contained in BDF file.

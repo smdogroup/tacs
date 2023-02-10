@@ -49,7 +49,8 @@ tacs_aim.setup_aim().pre_analysis()
 # 2. Run the TACS unsteady elastic structural analysis, forward + adjoint
 
 # create a transient problem in pyTACS
-fea_solver = tacs_aim.fea_solver.initialize()
+fea_solver = tacs_aim.fea_solver
+fea_solver.initialize()
 TP = fea_solver.createTransientProblem(
     "sinusoidalWing", tInit=0.0, tFinal=10.0, numSteps=100
 )

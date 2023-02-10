@@ -331,3 +331,13 @@ class TacsAim:
                     var.name
                 )
         return gradients
+    
+    def createTACSProbs(self):
+        """
+        creates TACS list of static, transient, or modal analysis TACS problems from the TacsAim class
+        most important call method from the tacsAim class: SPs = tacs_aim.createTACSProbs
+        """
+        fea_solver = self.fea_solver
+        fea_solver.initialize()
+        SPs = fea_solver.createTACSProbsFromBDF()
+        return SPs
