@@ -80,6 +80,10 @@ class ElementTest(unittest.TestCase):
             elements.Quad9NonlinearThermalShell,
             elements.Quad16NonlinearThermalShell,
             elements.Tri3NonlinearThermalShell,
+            elements.Quad4NonlinearShellModRot,
+            elements.Quad9NonlinearShellModRot,
+            elements.Quad16NonlinearShellModRot,
+            elements.Tri3NonlinearShellModRot,
         ]
 
         # The thermal elements will not pass the residual test since they are not derived
