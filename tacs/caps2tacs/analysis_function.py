@@ -1,4 +1,4 @@
-__all__ = ["AnalysisFunction"]
+__all__ = ["AnalysisFunction", "Derivative"]
 
 from tacs.functions import (
     KSFailure,
@@ -7,6 +7,16 @@ from tacs.functions import (
     AverageTemperature,
     Compliance,
 )
+from typing import List
+
+
+class Derivative:
+    def __init__(self, name: str, value: float = None):
+        """
+        used to track derivatives for d(function)/d(var) of each analysis function and variable in the tacs aim
+        """
+        self.name = name
+        self.value = value
 
 
 class AnalysisFunction:
@@ -36,6 +46,9 @@ class AnalysisFunction:
         self.compIDs = compIDs
         self.scale = scale
         self.kwargs = kwargs
+
+        self.value = None
+        self._derivatives = []
 
     def register_to(self, tacs_aim):
         # register the analysis function to the TacsAim wrapper class
@@ -94,3 +107,25 @@ class AnalysisFunction:
     @classmethod
     def compliance(cls, compIDs=None, scale: float = 1.0):
         return cls(name="compliance", handle=Compliance, compIDs=compIDs, scale=scale)
+
+    def set_derivative(self, var, value: float):
+        for deriv in self.derivatives:
+            if deriv.name == var.name:
+                deriv.value = value
+                return
+
+    def get_derivative(self, var):
+        value = None
+        for deriv in self.derivatives:
+            if deriv.name == var.name:
+                value = deriv.value
+
+        return value
+
+    @property
+    def derivatives(self) -> List[Derivative]:
+        return self._derivatives
+
+    @property
+    def gradient_dict(self) -> dict:
+        return {deriv.name: deriv.value for deriv in self.derivatives}

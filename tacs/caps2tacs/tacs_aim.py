@@ -3,7 +3,7 @@ __all__ = ["TacsAim"]
 from typing import TYPE_CHECKING, List
 import os, numpy as np
 from .proc_decorator import root_proc, root_broadcast
-from .analysis_function import AnalysisFunction
+from .analysis_function import AnalysisFunction, Derivative
 from .materials import Material
 from .constraints import Constraint
 from .property import ShellProperty
@@ -52,6 +52,8 @@ class TacsAim:
         self._metadata = None
         self._broadcast_metadata()
 
+        self.SPs = None
+
     @root_proc
     def _build_aim(self, caps_problem):
         """
@@ -79,11 +81,9 @@ class TacsAim:
                 )
             self._metadata = self.comm.bcast(self._metadata, root=0)
 
-    @root_proc
-    def update_design(self, design_dict: dict):
+    def update_design(self, input_dict: dict):
         """
-        method to change the values of each design variable in tacs, caps
-        input x is a dictionary of values for each variable {"name" : value}
+        method to change the values of each design variable in tacsAim wrapper and ESP/CAPS
         """
 
         # track any design change to monitor capsDirty
@@ -91,8 +91,8 @@ class TacsAim:
 
         # change all shape variables in TacsAim
         for shape_var in self.shape_variables:
-            if shape_var.name in design_dict:
-                new_value = float(design_dict[shape_var.name])
+            if shape_var.name in input_dict:
+                new_value = float(input_dict[shape_var.name])
 
                 # only modify the aim if the value has changed
                 if self._geometry.despmtr[shape_var.name].value != new_value:
@@ -101,8 +101,8 @@ class TacsAim:
 
         # change all thickness variables in TacsAim
         for thick_var in self.thickness_variables:
-            if thick_var.name in design_dict:
-                new_value = float(design_dict[thick_var.name])
+            if thick_var.name in input_dict:
+                new_value = float(input_dict[thick_var.name])
 
                 # only modify the aim if the value has changed
                 if thick_var.value != new_value:
@@ -118,9 +118,9 @@ class TacsAim:
         self._setup = not (changed_design)
         if self._first_analysis:
             self._first_analysis = False
-            return True
-        else:
-            return changed_design
+            changed_design = True
+
+        return changed_design
 
     def register(self, obj):
         """
@@ -149,7 +149,6 @@ class TacsAim:
                 "Object could not be registered to TacsAim as it is not an appropriate type."
             )
 
-    @root_proc
     def setup_aim(
         self,
         large_format: bool = True,
@@ -162,62 +161,73 @@ class TacsAim:
         assert len(self._constraints) > 0
         assert self._egads_aim is not None
 
-        # increase the precision in the BDF file
-        self._aim.input.File_Format = "Large" if large_format else "Small"
-        self._aim.input.Mesh_File_Format = "Large" if large_format else "Small"
+        # this part runs on serial
+        if self.comm is None or self.comm.rank == 0:
+            # increase the precision in the BDF file
+            self.aim.input.File_Format = "Large" if large_format else "Small"
+            self.aim.input.Mesh_File_Format = "Large" if large_format else "Small"
 
-        # set the analysis type
-        if static:
-            self._aim.input.Analysis_Type = "Static"
-        else:
-            raise AssertionError(
-                "Analysis types other than static analyses for tacsAim are not supported yet."
-            )
+            # set the analysis type
+            if static:
+                self.aim.input.Analysis_Type = "Static"
+            else:
+                raise AssertionError(
+                    "Analysis types other than static analyses for tacsAim are not supported yet."
+                )
 
-        # add materials to tacsAim
-        self._aim.input.Material = {
-            material.name: material.dictionary for material in self._materials
-        }
-
-        # add properties to tacsAim
-        self._aim.input.Property = {
-            prop.caps_group: prop.dictionary for prop in self._properties
-        }
-
-        # add constraints to tacsAim
-        self._aim.input.Constraint = {
-            con.name: con.dictionary for con in self._constraints
-        }
-
-        # add loads to tacsAim
-        if len(self._loads) > 0:
-            self._aim.input.Load = {load.name: load.dictionary for load in self._loads}
-
-        if auto_shape_variables and self._first_setup:
-            for despmtr in self._metadata.design_parameters:
-                # TODO : setup for dv arrays too but not yet
-                new_value = self._geometry.despmtr[despmtr].value
-                if isinstance(
-                    new_value, float
-                ):  # make sure not a list despmtr, not supported yet
-                    shape_var = ShapeVariable(name=despmtr, value=new_value)
-                    self.add_variable(variable=shape_var)
-            self._first_setup = False
-
-        # link the egads aim to the tacs aim
-        self._aim.input["Mesh"].link(self._egads_aim.aim.output["Surface_Mesh"])
-
-        # add the design variables to the DesignVariable and DesignVariableRelation properties
-        if len(self.thickness_variables) > 0:
-            self._aim.input.Design_Variable_Relation = {
-                dv.name: dv.DVR_dictionary
-                for dv in self._design_variables
-                if isinstance(dv, ThicknessVariable)
+            # add materials to tacsAim
+            self.aim.input.Material = {
+                material.name: material.dictionary for material in self._materials
             }
-        if len(self.variables) > 0:
-            self._aim.input.Design_Variable = {
-                dv.name: dv.DV_dictionary for dv in self._design_variables
+
+            # add properties to tacsAim
+            self.aim.input.Property = {
+                prop.caps_group: prop.dictionary for prop in self._properties
             }
+
+            # add constraints to tacsAim
+            self.aim.input.Constraint = {
+                con.name: con.dictionary for con in self._constraints
+            }
+
+            # add loads to tacsAim
+            if len(self._loads) > 0:
+                self.aim.input.Load = {
+                    load.name: load.dictionary for load in self._loads
+                }
+
+            if auto_shape_variables and self._first_setup:
+                for despmtr in self._metadata.design_parameters:
+                    # TODO : setup for dv arrays too but not yet
+                    new_value = self._geometry.despmtr[despmtr].value
+                    if isinstance(
+                        new_value, float
+                    ):  # make sure not a list despmtr, not supported yet
+                        shape_var = ShapeVariable(name=despmtr, value=new_value)
+                        self.add_variable(variable=shape_var)
+                self._first_setup = False
+
+            # link the egads aim to the tacs aim
+            self.aim.input["Mesh"].link(self._egads_aim.aim.output["Surface_Mesh"])
+
+            # add the design variables to the DesignVariable and DesignVariableRelation properties
+            if len(self.thickness_variables) > 0:
+                self.aim.input.Design_Variable_Relation = {
+                    dv.name: dv.DVR_dictionary
+                    for dv in self._design_variables
+                    if isinstance(dv, ThicknessVariable)
+                }
+            if len(self.variables) > 0:
+                self.aim.input.Design_Variable = {
+                    dv.name: dv.DV_dictionary for dv in self._design_variables
+                }
+
+        # end of serial or root proc section
+
+        # add each variable as a derivative object for each analysis function
+        for func in self.analysis_functions:
+            for var in self.variables:
+                func._derivatives.append(Derivative(name=var.name, value=0.0))
 
         # note that setup is finished now
         self._setup = True
@@ -279,15 +289,6 @@ class TacsAim:
         """
         return pyTACS(self.dat_file_path, self.comm)
 
-    @root_proc
-    def pre_analysis(self):
-        """
-        provide access to the tacs aim preAnalysis for running
-        """
-        assert self._setup
-        self.aim.preAnalysis()
-        return self
-
     @property
     def analysis_dir(self) -> str:
         return self._metadata.analysis_dir
@@ -312,26 +313,124 @@ class TacsAim:
     def project_name(self) -> str:
         return self._metadata.project_name
 
-    @root_proc
+    def pre_analysis(self, initial: bool = False):
+        """
+        provide access to the tacs aim preAnalysis for running
+        """
+        assert self._setup
+
+        # case with some shape variables
+        if self.change_shape or initial:
+            if self.comm is None or self.comm.rank == 0:
+                self.aim.preAnalysis()
+
+        # return this object for method cascading
+        return self
+
+    def run_analysis(self, write_f5: bool = True):
+        """
+        run the static problem analysis
+        """
+
+        # create a new set of static problems for w/ or w/o shape change
+        self.SPs = self.createTACSProbs()
+
+        # add each analysis function into the static problems
+        for caseID in self.SPs:
+            for analysis_function in self.analysis_functions:
+                self.SPs[caseID].addFunction(
+                    name=analysis_function.name,
+                    handle=analysis_function.handle,
+                    compIDs=analysis_function.compIDs,
+                    **(analysis_function.kwargs),
+                )
+
+        # solve the forward and adjoint analysis for each struct problem
+        self._tacs_funcs = {}
+        self._tacs_sens = {}
+        for caseID in self.SPs:
+            # write in the new thickness variables
+            xarray = self.SPs[caseID].x.getArray()
+            for ithick, thick_var in enumerate(self.thickness_variables):
+                xarray[ithick] = float(thick_var.value)
+
+            self.SPs[caseID].solve()
+            self.SPs[caseID].evalFunctions(
+                self._tacs_funcs, evalFuncs=self.function_names
+            )
+            self.SPs[caseID].evalFunctionsSens(
+                self._tacs_sens, evalFuncs=self.function_names
+            )
+
+            if (
+                self.change_shape
+            ):  # if the shape changes write a sensitivity file to the tacsAim directory
+                self.SPs[caseID].writeSensFile(
+                    evalFuncs=self.function_names, tacsAim=self
+                )
+
+            if write_f5:
+                self.SPs[caseID].writeSolution(
+                    baseName="tacs_output", outputDir=self.analysis_dir
+                )
+
+        # return this object for method cascading
+        return self
+
     def post_analysis(self):
-        self.aim.postAnalysis()
+        """
+        call serial tacs aim postAnalysis and update TacsAim wrapper functions and gradients
+        """
+
+        if self.change_shape:
+            # call serial tacsAim postAnalysis if shape changes
+            functions_dict = None
+            gradients_dict = None
+            if self.comm is None or self.comm.rank == 0:
+                self.aim.postAnalysis()
+
+                functions_dict = {}
+                gradients_dict = {}
+                # update functions and gradients on root proc from tacsAim dynout of ESP/CAPS serial
+                for func in self.analysis_functions:
+                    functions_dict[func.name] = self.aim.dynout[func.name].value
+                    gradients_dict[func.name] = {}
+                    for var in self.variables:
+                        gradients_dict[func.name][var.name] = self.aim.dynout[
+                            func.name
+                        ].deriv(var.name)
+
+            # broadcast functions and gradients dict to all other processors from root proc
+            if self.comm is not None:
+                functions_dict = self.comm.bcast(functions_dict, root=0)
+                gradients_dict = self.comm.bcast(gradients_dict, root=0)
+
+            # update functions and gradients into the tacsAim analysis_functions
+            for func in self.analysis_functions:
+                func.value = functions_dict[func.name]
+                for var in self.variables:
+                    func.set_derivative(var, gradients_dict[func.name][var.name])
+
+        # otherwise use struct problems to read in function values and gradients
+        else:  # just thickness variable case
+            for func in self.analysis_functions:
+                # corresponding tacs key for single loadset (key="loadset#" + "func_name")
+                for tacs_key in self._tacs_funcs:
+                    if func.name in tacs_key:
+                        break
+
+                # add the function and gradients to each analysis function
+                func.value = self._tacs_funcs[tacs_key].real
+
+                struct_derivs = self._tacs_sens[tacs_key]["struct"]
+                for ithick, thick_var in enumerate(self.thickness_variables):
+                    func.set_derivative(thick_var, struct_derivs[ithick].real)
+
         return self
 
     @property
     def is_setup(self) -> bool:
         return self._setup
-
-    def get_shape_var_value(self, shape_var) -> float:
-        """
-        get the value of a shape var from the serial / under the hood tacs aim
-        """
-        if self.comm is None:
-            return self.aim.despmtr[shape_var.name].value
-        else:
-            value = None
-            if self.comm.rank == 0:
-                value = self.aim.despmtr[shape_var.name].value
-            return self.comm.bcast(value, root=0)
 
     @property
     def aim(self):
@@ -340,27 +439,12 @@ class TacsAim:
         """
         return self._aim
 
-    def get_functions(self, evalFuncs):
+    @property
+    def change_shape(self) -> bool:
         """
-        get the function values out of the ESP/CAPS tacsAIM dynout or dynamic output
+        whether the aim will change shape (only if shape variables provided)
         """
-        functions = {}
-        for func_name in evalFuncs:
-            functions[func_name] = self.aim.dynout[func_name].value
-        return functions
-
-    def get_gradients(self, evalFuncs, variables):
-        """
-        get the function values out of the ESP/CAPS tacsAIM dynout or dynamic output
-        """
-        gradients = {}
-        for func_name in evalFuncs:
-            gradients[func_name] = {}
-            for var in variables:
-                gradients[func_name][var.name] = self.aim.dynout[func_name].deriv(
-                    var.name
-                )
-        return gradients
+        return len(self.shape_variables) > 0
 
     def createTACSProbs(self):
         """
@@ -370,4 +454,5 @@ class TacsAim:
         fea_solver = self.fea_solver
         fea_solver.initialize()
         SPs = fea_solver.createTACSProbsFromBDF()
+        self.SPs = SPs  # store the static problems as well
         return SPs

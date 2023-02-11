@@ -16,6 +16,7 @@ class ShapeVariable:
             value: can be used to modify the design parameter
         """
         self.name = name
+        self._value = None
 
     @property
     def DV_dictionary(self) -> dict:
@@ -27,6 +28,14 @@ class ShapeVariable:
         """
         tacs_aim.register(self)
         return self
+
+    @property
+    def value(self) -> float:
+        return self._value
+
+    @value.setter
+    def value(self, new_value: float):
+        self._value = new_value
 
 
 class ThicknessVariable:
