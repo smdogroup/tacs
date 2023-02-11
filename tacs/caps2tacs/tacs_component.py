@@ -1,29 +1,30 @@
-
-__all__ = ["TacsComponent"]
+__all__ = ["TacsStaticComponent"]
 
 import os, numpy as np, matplotlib.pyplot as plt
+from matplotlib.cm import get_cmap
 import openmdao, openmdao.api as om
+from .tacs_aim import TacsAim
 from tacs import functions
 from mpi4py import MPI
 
-class TacsComponent(om.ExplicitComponent):
+
+class TacsStaticComponent(om.ExplicitComponent):
+    """
+    OpenMDAO component for sizing and/or shape optimization of TACS static analysis problems
+    TODO : future work could equivalent unsteady / modal analysis component
+    """
+
     def initialize(self):
         """
         Declare the capsProblem to the openMdao component
         """
-        self.options.declare("tacs_aim", types=object)
-        self.options.declare("struct_problems", types=object)
-        self.options.declare("func_names", types=list)
-        self.options.declare("func_handles", types=list)
+        self.options.declare(
+            "tacs_aim", types=object
+        )  # takes in the TacsAim wrapper class
 
     def setup(self):
-        """
-        Declare the inputs and outputs of the capsProblem to openmdao
-        """
         tacs_aim = self.options["tacs_aim"]
-        self.SPs = self.options["struct_problems"]
-        func_names = self.options["func_names"]
-        func_handles = self.options["func_handles"]
+        assert isinstance(tacs_aim, TacsAim)
 
         # add the thickness variables as openmdao inputs, with starting uniform thickness
         for thick_var in tacs_aim.thickness_variables:
@@ -33,28 +34,29 @@ class TacsComponent(om.ExplicitComponent):
         for shape_var in tacs_aim.shape_variables:
             self.add_input(shape_var.name, val=tacs_aim.get_shape_var_value(shape_var))
 
-        # add output variables and functions
-        for func_name in func_names:
-            self.add_output(func_name)
+        # add output analysis functions
+        assert (
+            len(tacs_aim.analysis_functions) > 0
+        )  # makes sure we have some analysis functions before running an analysis)
+        for func in tacs_aim.analysis_functions:
+            self.add_output(func.name)
 
         # first design boolean
         self._first_design = True
 
         # function histories
-        self._func_history = {func_name: [] for func_name in self._func_names}
+        self._func_history = {func_name: [] for func_name in tacs_aim.function_names}
 
         # design history file
         self._design_hdl = open(
             os.path.join(tacs_aim.analysis_dir, "design_hist.txt"), "w"
         )
 
-        # create the list of steady structural analysis problems in TACS
-        # this one is to check the design variables at the start, recreated multiple times
-        for caseID in self.SPs:
-            self.SPs[caseID].addFunction("mass", functions.StructuralMass)
-            self.SPs[caseID].addFunction(
-                "ks_vmfailure", functions.KSFailure, safetyFactor=1.5, ksWeight=50
-            )
+    def setup_partials(self):
+        tacs_aim = self.options["tacs_aim"]
+
+        for func in tacs_aim.analysis_functions:
+            self.declare_partials(func.name, tacs_aim.variables)
 
     def compute(self, inputs, outputs):
         """
@@ -137,16 +139,6 @@ class TacsComponent(om.ExplicitComponent):
         plt.savefig(plot_filepath)
         plt.close("all")
 
-    def setup_partials(self):
-        """
-        declare partial derivatives
-        """
-        tacs_aim = self.options["tacs_aim"]
-
-        for func_name in self._func_names:
-            for thick_var in tacs_aim.thickness_variables:
-                self.declare_partials(func_name, thick_var.name)
-
     def compute_partials(self, inputs, partials):
         """
         the actual value of partial derivatives assigned here
@@ -180,6 +172,15 @@ class TacsComponent(om.ExplicitComponent):
         run forward and adjoint TACS analysis on fixed structural mesh geometry from tacsAIM
         """
         tacs_aim = self.options["tacs_aim"]
+
+        # create the list of steady structural analysis problems in TACS
+        # this one is to check the design variables at the start, recreated multiple times
+        self.SPs = tacs_aim.createTACSProbs()
+        for caseID in self.SPs:
+            self.SPs[caseID].addFunction("mass", functions.StructuralMass)
+            self.SPs[caseID].addFunction(
+                "ks_vmfailure", functions.KSFailure, safetyFactor=1.5, ksWeight=50
+            )
 
         # solve the forward and adjoint analysis for each struct problem
         tacs_funcs = {}

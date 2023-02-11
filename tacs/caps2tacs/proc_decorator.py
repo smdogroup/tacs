@@ -2,6 +2,7 @@ __all__ = ["root_proc"]
 
 from functools import wraps
 
+
 # Define a root proc decorator so that certain ESP/CAPS method like pre and post analysis
 # are only ran on the root processor
 def root_proc(method):

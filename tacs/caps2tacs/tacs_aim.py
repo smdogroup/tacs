@@ -3,6 +3,7 @@ __all__ = ["TacsAim"]
 from typing import TYPE_CHECKING, List
 import os, numpy as np
 from .proc_decorator import root_proc, root_broadcast
+from .analysis_function import AnalysisFunction
 from .materials import Material
 from .constraints import Constraint
 from .property import ShellProperty
@@ -34,6 +35,7 @@ class TacsAim:
         self._geometry = None
         self._build_aim(caps_problem)
 
+        self._analysis_functions = []
         self._materials = []
         self._loads = []
         self._properties = []
@@ -124,7 +126,9 @@ class TacsAim:
         """
         register any one of the available objects: Materials, Properties, Variables, etc.
         """
-        if isinstance(obj, Material):
+        if isinstance(obj, AnalysisFunction):
+            self._analysis_functions.append(obj)
+        elif isinstance(obj, Material):
             self._materials.append(obj)
         elif isinstance(obj, ThicknessVariable):
             self._design_variables.append(obj)
@@ -152,7 +156,6 @@ class TacsAim:
         static: bool = True,
         auto_shape_variables: bool = False,
     ):
-
         # make sure there is at least one material, property, constraint, etc.
         assert len(self._materials) > 0
         assert len(self._properties) > 0
@@ -255,6 +258,21 @@ class TacsAim:
         return sorted_dvs
 
     @property
+    def analysis_functions(self) -> List[AnalysisFunction]:
+        """
+        return the list of analysis function objects registered to the tacs aim wrapper class
+        to add more functions use Function.(...).register_to(tacs_aim) or tacs_aim.register(my_analysis_function)
+        """
+        return self._analysis_functions
+
+    @property
+    def function_names(self) -> List[str]:
+        """
+        list of names of each analysis function
+        """
+        return [func.name for func in self.analysis_functions]
+
+    @property
     def fea_solver(self) -> pyTACS:
         """
         build pyTACS from nastran dat file and comm
@@ -302,7 +320,7 @@ class TacsAim:
     @property
     def is_setup(self) -> bool:
         return self._setup
-    
+
     def get_shape_var_value(self, shape_var) -> float:
         """
         get the value of a shape var from the serial / under the hood tacs aim
@@ -343,7 +361,7 @@ class TacsAim:
                     var.name
                 )
         return gradients
-    
+
     def createTACSProbs(self):
         """
         creates TACS list of static, transient, or modal analysis TACS problems from the TacsAim class

@@ -74,7 +74,6 @@ class ThicknessVariable:
         return self
 
     def set_bounds(self, lower_bound: float, value: float, upper_bound: float):
-
         self.lower_bound = lower_bound
         self.upper_bound = upper_bound
         return self
