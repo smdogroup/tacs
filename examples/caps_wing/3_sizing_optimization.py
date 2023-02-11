@@ -19,13 +19,13 @@ class AnalysisManager(om.ExplicitComponent):
         # CAPS problem input
         self.options.declare("tacs_aim", types=object)
         self.options.declare("struct_problems", types=object)
+        self.options.declare("write_f5", types=bool)
 
     def setup(self):
         """
         Declare the inputs and outputs of the capsProblem to openmdao
         """
         tacs_aim = self.options["tacs_aim"]
-        self.SPs = self.options["struct_problems"]
 
         # add the thickness variables as openmdao inputs, with starting uniform thickness
         for thick_var in tacs_aim.thickness_variables:
@@ -47,12 +47,16 @@ class AnalysisManager(om.ExplicitComponent):
             os.path.join(tacs_aim.analysis_dir, "design_hist.txt"), "w"
         )
 
-        # create the list of steady structural analysis problems in TACS
-        # this one is to check the design variables at the start, recreated multiple times
-        for caseID in self.SPs:
-            self.SPs[caseID].addFunction("mass", functions.StructuralMass)
-            self.SPs[caseID].addFunction(
-                "ks_vmfailure", functions.KSFailure, safetyFactor=1.5, ksWeight=50
+    def setup_partials(self):
+        """
+        declare partial derivatives
+        """
+        tacs_aim = self.options["tacs_aim"]
+
+        for func_name in self._func_names:
+            self.declare_partials(
+                func_name,
+                [thick_var.name for thick_var in tacs_aim.thickness_variables],
             )
 
     def compute(self, inputs, outputs):
@@ -64,13 +68,15 @@ class AnalysisManager(om.ExplicitComponent):
 
         # update the input values
         design_change = False
-        for caseID in self.SPs:
-            xarray = self.SPs[
-                caseID
-            ].x.getArray()  # gets the xarray of last Struct Problem
-        for ithick, thick_var in enumerate(tacs_aim.thickness_variables):
-            if xarray[ithick].real != inputs[thick_var.name]:
-                design_change = True
+        if not self._first_design:
+            for caseID in self.SPs:
+                xarray = self.SPs[
+                    caseID
+                ].x.getArray()  # gets the xarray of last Struct Problem
+                for ithick, thick_var in enumerate(tacs_aim.thickness_variables):
+                    if xarray[ithick].real != inputs[thick_var.name]:
+                        design_change = True
+
         # count a first design as a design change
         if not (design_change) and self._first_design:
             design_change = True
@@ -136,16 +142,6 @@ class AnalysisManager(om.ExplicitComponent):
         plt.savefig(plot_filepath)
         plt.close("all")
 
-    def setup_partials(self):
-        """
-        declare partial derivatives
-        """
-        tacs_aim = self.options["tacs_aim"]
-
-        for func_name in self._func_names:
-            for thick_var in tacs_aim.thickness_variables:
-                self.declare_partials(func_name, thick_var.name)
-
     def compute_partials(self, inputs, partials):
         """
         the actual value of partial derivatives assigned here
@@ -154,11 +150,12 @@ class AnalysisManager(om.ExplicitComponent):
 
         # Update input values
         design_change = False
-        for caseID in self.SPs:  # get tacs DVs for last caseID Struct Problem
-            xarray = self.SPs[caseID].x.getArray()
-        for ithick, thick_var in enumerate(tacs_aim.thickness_variables):
-            if xarray[ithick].real != inputs[thick_var.name]:
-                design_change = True
+        if not self._first_design:
+            for caseID in self.SPs:  # get tacs DVs for last caseID Struct Problem
+                xarray = self.SPs[caseID].x.getArray()
+            for ithick, thick_var in enumerate(tacs_aim.thickness_variables):
+                if xarray[ithick].real != inputs[thick_var.name]:
+                    design_change = True
 
         if not (design_change) and self._first_design:
             design_change = True
@@ -179,6 +176,16 @@ class AnalysisManager(om.ExplicitComponent):
         run forward and adjoint TACS analysis on fixed structural mesh geometry from tacsAIM
         """
         tacs_aim = self.options["tacs_aim"]
+        write_f5 = self.options["write_f5"]
+
+        print("running analysis...")
+
+        self.SPs = tacs_aim.createTACSProbs()
+        for caseID in self.SPs:
+            self.SPs[caseID].addFunction("mass", functions.StructuralMass)
+            self.SPs[caseID].addFunction(
+                "ks_vmfailure", functions.KSFailure, safetyFactor=1.5, ksWeight=50
+            )
 
         # solve the forward and adjoint analysis for each struct problem
         tacs_funcs = {}
@@ -191,9 +198,10 @@ class AnalysisManager(om.ExplicitComponent):
             self.SPs[caseID].solve()
             self.SPs[caseID].evalFunctions(tacs_funcs, evalFuncs=self._func_names)
             self.SPs[caseID].evalFunctionsSens(tacs_sens, evalFuncs=self._func_names)
-            self.SPs[caseID].writeSolution(
-                baseName="tacs_output", outputDir=tacs_aim.analysis_dir
-            )
+            if write_f5:
+                self.SPs[caseID].writeSolution(
+                    baseName="tacs_output", outputDir=tacs_aim.analysis_dir
+                )
 
         self._functions = {}
         self._gradients = {}
@@ -210,6 +218,8 @@ class AnalysisManager(om.ExplicitComponent):
             struct_derivs = tacs_sens[tacs_key]["struct"]
             for ithick, thick_var in enumerate(tacs_aim.thickness_variables):
                 self._gradients[func_name][thick_var.name] = struct_derivs[ithick].real
+
+        print("done running analysis...")
         return
 
 
@@ -238,15 +248,15 @@ nspars = int(tacs_aim.get_config_parameter("nspars"))
 nOML = nribs - 1
 for irib in range(1, nribs + 1):
     caps2tacs.ThicknessVariable(
-        caps_group=f"rib{irib}", value=0.05, material=aluminum
+        caps_group=f"rib{irib}", value=0.03, material=aluminum
     ).register_to(tacs_aim)
 for ispar in range(1, nspars + 1):
     caps2tacs.ThicknessVariable(
-        caps_group=f"spar{ispar}", value=0.05, material=aluminum
+        caps_group=f"spar{ispar}", value=0.03, material=aluminum
     ).register_to(tacs_aim)
-for iOML in range(1, nOML+1):
+for iOML in range(1, nOML + 1):
     caps2tacs.ThicknessVariable(
-        caps_group=f"OML{iOML}", value=0.03, material=aluminum
+        caps_group=f"OML{iOML}", value=0.1, material=aluminum
     ).register_to(tacs_aim)
 
 # add constraints and loads
@@ -255,7 +265,6 @@ caps2tacs.GridForce("OML", direction=[0, 0, 1.0], magnitude=10).register_to(tacs
 
 # run the pre analysis to build tacs input files
 tacs_aim.setup_aim().pre_analysis()
-SPs = tacs_aim.createTACSProbs()
 
 # --------------------------------------------------------------------------#
 # Setup OpenMDAO Problem
@@ -265,16 +274,17 @@ SPs = tacs_aim.createTACSProbs()
 prob = om.Problem()
 
 # Create the OpenMDAO component
-tacs_system = AnalysisManager(tacs_aim=tacs_aim, struct_problems=SPs)
+tacs_system = AnalysisManager(tacs_aim=tacs_aim, write_f5=False)
 prob.model.add_subsystem("tacsSystem", tacs_system)
 
-# setup the optimizer settings
-prob.driver = om.pyOptSparseDriver(optimizer="PAROPT")
+
+# setup the optimizer settings # COBYLA for auto-FDing
+prob.driver = om.ScipyOptimizeDriver(optimizer="SLSQP", tol=1.0e-9, disp=True)
 
 # add design variables to the model
 for thick_var in tacs_aim.thickness_variables:
     prob.model.add_design_var(
-        f"tacsSystem.{thick_var.name}", lower=0.001, upper=0.1, scaler=100.0
+        f"tacsSystem.{thick_var.name}", lower=0.001, upper=0.5, scaler=100.0
     )
 
 # add objectives & constraints to the model
@@ -284,14 +294,21 @@ prob.model.add_constraint("tacsSystem.ks_vmfailure", upper=0.267)
 # Start the optimization
 print("\n==> Starting optimization...")
 prob.setup()
-prob.run_driver()
 
-# report the final optimal design
-design_hdl = tacs_system._design_hdl
-for thick_var in tacs_aim.thickness_variables:
-    opt_value = prob.get_val(f"tacsSystem.{thick_var.name}")
-    design_hdl.write(f"\t{thick_var.name} = {opt_value}")
+debug = False
+if debug:
+    print("Checking partials...", flush=True)
+    prob.check_partials(compact_print=True)
 
-prob.cleanup()
-# close the design hdl file
-design_hdl.close()
+else:
+    prob.run_driver()
+
+    # report the final optimal design
+    design_hdl = tacs_system._design_hdl
+    for thick_var in tacs_aim.thickness_variables:
+        opt_value = prob.get_val(f"tacsSystem.{thick_var.name}")
+        design_hdl.write(f"\t{thick_var.name} = {opt_value}")
+
+    prob.cleanup()
+    # close the design hdl file
+    design_hdl.close()
