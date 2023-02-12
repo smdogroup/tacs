@@ -55,6 +55,28 @@ class AnalysisFunction:
         tacs_aim.register(self)
         return
 
+    def set_derivative(self, var, value: float):
+        for deriv in self.derivatives:
+            if deriv.name == var.name:
+                deriv.value = value
+                return
+
+    def get_derivative(self, var):
+        value = None
+        for deriv in self.derivatives:
+            if deriv.name == var.name:
+                value = deriv.value
+
+        return value
+
+    @property
+    def derivatives(self) -> List[Derivative]:
+        return self._derivatives
+
+    @property
+    def gradient_dict(self) -> dict:
+        return {deriv.name: deriv.value for deriv in self.derivatives}
+
     # class methods to add certain functions
     @classmethod
     def mass(cls, compIDs=None, scale: float = 1.0):
@@ -107,25 +129,3 @@ class AnalysisFunction:
     @classmethod
     def compliance(cls, compIDs=None, scale: float = 1.0):
         return cls(name="compliance", handle=Compliance, compIDs=compIDs, scale=scale)
-
-    def set_derivative(self, var, value: float):
-        for deriv in self.derivatives:
-            if deriv.name == var.name:
-                deriv.value = value
-                return
-
-    def get_derivative(self, var):
-        value = None
-        for deriv in self.derivatives:
-            if deriv.name == var.name:
-                value = deriv.value
-
-        return value
-
-    @property
-    def derivatives(self) -> List[Derivative]:
-        return self._derivatives
-
-    @property
-    def gradient_dict(self) -> dict:
-        return {deriv.name: deriv.value for deriv in self.derivatives}

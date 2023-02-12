@@ -62,7 +62,8 @@ class TacsStaticComponent(om.ExplicitComponent):
         tacs_model = self.options["tacs_model"]
 
         for func in tacs_model.analysis_functions:
-            self.declare_partials(func.name, tacs_model.variables)
+            for var in tacs_model.variables:
+                self.declare_partials(func.name, var.name)
 
     def compute(self, inputs, outputs):
         """
@@ -169,7 +170,7 @@ class TacsStaticComponent(om.ExplicitComponent):
         tacs_model = self.options["tacs_model"]
         self._design_hdl.write("New Design...\n")
         self._design_hdl.write(
-            f"\tthick dvs = {[_.name for _ in tacs_model.thickness_variables]}\n"
+            f"\tthick dvs = {[_.name for _ in tacs_model.variables]}\n"
         )
         real_xarray = [float(inputs[key]) for key in inputs]
         self._design_hdl.write(f"\tvalues = {real_xarray}\n")

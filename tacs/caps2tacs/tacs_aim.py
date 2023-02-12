@@ -12,10 +12,9 @@ from .egads_aim import EgadsAim
 
 
 class TacsAimMetadata:
-    def __init__(self, analysis_dir, project_name, design_parameters):
+    def __init__(self, analysis_dir, project_name):
         self.analysis_dir = analysis_dir
         self.project_name = project_name
-        self.design_parameters = design_parameters
 
 
 class TacsAim:
@@ -44,7 +43,6 @@ class TacsAim:
         # build flags
         self._setup = False
         self._first_setup = True
-        self._first_analysis = True
 
         # broadcast TacsAimMetadata from root proc to other processors
         self._metadata = None
@@ -66,14 +64,12 @@ class TacsAim:
             self._metadata = TacsAimMetadata(
                 analysis_dir=self._aim.analysisDir,
                 project_name=self._aim.input.Proj_Name,
-                design_parameters=self._aim.geometry.despmtr.keys(),
             )
         else:
             if self.comm.rank == 0:
                 self._metadata = TacsAimMetadata(
                     analysis_dir=self._aim.analysisDir,
                     project_name=self._aim.input.Proj_Name,
-                    design_parameters=self._aim.geometry.despmtr.keys(),
                 )
             self._metadata = self.comm.bcast(self._metadata, root=0)
 

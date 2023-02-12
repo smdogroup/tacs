@@ -6,7 +6,7 @@
 ### Design parameters ###
 
 # number of ribs and spars
-cfgpmtr nribs 4
+cfgpmtr nribs 10
 cfgpmtr nspars 2
 
 # root and tip chord

@@ -23,6 +23,7 @@ class TacsModel:
         self._analysis_functions = []
         self.SPs = None
         self._setup = False
+        self._first_analysis = True
 
     @property
     def tacs_aim(self) -> TacsAim:
@@ -101,6 +102,8 @@ class TacsModel:
             # go ahead and generate the first input files and mesh for TACS
             if not self.tacs_aim.change_shape:
                 self.tacs_aim.pre_analysis()
+
+        self._setup = True
 
         return self
 
@@ -184,7 +187,7 @@ class TacsModel:
         """
         return pyTACS(self.tacs_aim.dat_file_path, self.comm)
 
-    def createTACSProbs(self, add_functions: bool = True):
+    def createTACSProbs(self, addFunctions: bool = True):
         """
         creates TACS list of static, transient, or modal analysis TACS problems from the TacsAim class
         most important call method from the tacsAim class: SPs = tacs_aim.createTACSProbs
@@ -196,12 +199,12 @@ class TacsModel:
 
         # add the analysis functions of the model into the static problems
         # add each analysis function into the static problems
-        if add_functions:
+        if addFunctions:
             for caseID in self.SPs:
                 for analysis_function in self.analysis_functions:
                     self.SPs[caseID].addFunction(
-                        name=analysis_function.name,
-                        handle=analysis_function.handle,
+                        funcName=analysis_function.name,
+                        funcHandle=analysis_function.handle,
                         compIDs=analysis_function.compIDs,
                         **(analysis_function.kwargs),
                     )
@@ -220,8 +223,10 @@ class TacsModel:
         run the static problem analysis
         """
 
+        assert self._setup
+
         # create a new set of static problems for w/ or w/o shape change
-        self.SPs = self.tacs_aim.createTACSProbs(add_functions=True)
+        self.SPs = self.createTACSProbs(addFunctions=True)
 
         # solve the forward and adjoint analysis for each struct problem
         self._tacs_funcs = {}
