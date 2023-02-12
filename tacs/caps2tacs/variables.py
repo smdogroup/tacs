@@ -9,14 +9,14 @@ class ShapeVariable:
     shape variables in ESP/CAPS are design parameters that affect the structural geometry
     """
 
-    def __init__(self, name: str):
+    def __init__(self, name: str, value=None):
         """
         ESP/CAPS shape variable controls a design parameter in the CSM file
             name: corresponds to the design parameter in the CSM file
             value: can be used to modify the design parameter
         """
         self.name = name
-        self._value = None
+        self._value = value
 
     @property
     def DV_dictionary(self) -> dict:
