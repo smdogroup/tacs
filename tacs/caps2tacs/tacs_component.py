@@ -25,6 +25,8 @@ class TacsStaticComponent(om.ExplicitComponent):
         # whether to write history files and plot history
         self.options.declare("track_history", types=bool, default=True)
 
+        self._iteration = 0  # track iteration number
+
     def setup(self):
         tacs_model = self.options["tacs_model"]
         track_history = self.options["track_history"]
@@ -84,8 +86,10 @@ class TacsStaticComponent(om.ExplicitComponent):
 
             # run a forward + adjoint analysis and apply any shape changes if necessary
             tacs_model.pre_analysis()
-            tacs_model.run_analysis(write_f5=write_f5)
+            tacs_model.run_analysis(write_f5=write_f5, iteration=self._iteration)
             tacs_model.post_analysis()
+
+            self._iteration += 1
 
             # update func history and report to design file
             if track_history:
@@ -116,8 +120,10 @@ class TacsStaticComponent(om.ExplicitComponent):
 
             # run a forward + adjoint analysis and apply any shape changes if necessary
             tacs_model.pre_analysis()
-            tacs_model.run_analysis(write_f5=write_f5)
+            tacs_model.run_analysis(write_f5=write_f5, iteration=self._iteration)
             tacs_model.post_analysis()
+
+            self._iteration += 1
 
             # update func history and report to design file
             if track_history:

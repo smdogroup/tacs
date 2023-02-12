@@ -50,7 +50,9 @@ caps2tacs.GridForce("OML", direction=[0, 0, 1.0], magnitude=10).register_to(tacs
 
 # add in analysis functions into the tacs aim
 caps2tacs.AnalysisFunction.mass().register_to(tacs_model)
-caps2tacs.AnalysisFunction.ksfailure(safetyFactor=1.5, ksWeight=50.0).register_to(tacs_model)
+caps2tacs.AnalysisFunction.ksfailure(safetyFactor=1.5, ksWeight=50.0).register_to(
+    tacs_model
+)
 
 # run the tacs model setup
 tacs_model.setup(include_aim=True)
@@ -63,7 +65,9 @@ tacs_model.setup(include_aim=True)
 prob = om.Problem()
 
 # Create the OpenMDAO component using the built-in Tacs Static Component
-tacs_system = caps2tacs.TacsStaticComponent(tacs_model=tacs_model, write_f5=True, track_history=True)
+tacs_system = caps2tacs.TacsStaticComponent(
+    tacs_model=tacs_model, write_f5=True, track_history=True
+)
 prob.model.add_subsystem("tacsSystem", tacs_system)
 
 # setup the optimizer settings # COBYLA for auto-FDing
@@ -83,7 +87,7 @@ prob.model.add_constraint("tacsSystem.ksfailure", upper=0.267)
 print("\n==> Starting optimization...")
 prob.setup()
 
-debug = True
+debug = False
 if debug:
     print("Checking partials...", flush=True)
     prob.check_partials(compact_print=True)

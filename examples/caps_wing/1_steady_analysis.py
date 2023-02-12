@@ -43,7 +43,9 @@ caps2tacs.PinConstraint("root").register_to(tacs_model)
 caps2tacs.GridForce("OML", direction=[0, 0, 1.0], magnitude=100).register_to(tacs_model)
 
 # add analysis functions to the model
-caps2tacs.AnalysisFunction.ksfailure(ksWeight=50.0, safetyFactor=1.5).register_to(tacs_model)
+caps2tacs.AnalysisFunction.ksfailure(ksWeight=50.0, safetyFactor=1.5).register_to(
+    tacs_model
+)
 caps2tacs.AnalysisFunction.mass().register_to(tacs_model)
 
 # run the pre analysis to build tacs input files
@@ -57,8 +59,7 @@ tacs_model.setup(include_aim=True)
 method = 2
 
 # show both ways of performing the structural analysis in more or less detail
-if method == 1: # less detail version
-
+if method == 1:  # less detail version
     tacs_model.pre_analysis()
     tacs_model.run_analysis()
     tacs_model.post_analysis()
@@ -71,9 +72,8 @@ if method == 1: # less detail version
             derivative = func.get_derivative(var)
             print(f"\td{func.name}/d{var.name} = {derivative}")
         print("\n")
-            
-elif method == 2: # longer way that directly uses pyTACS & static problem routines
 
+elif method == 2:  # longer way that directly uses pyTACS & static problem routines
     SPs = tacs_model.createTACSProbs(addFunctions=True)
 
     # solve each structural analysis problem (in this case 1)
@@ -84,7 +84,9 @@ elif method == 2: # longer way that directly uses pyTACS & static problem routin
         SPs[caseID].solve()
         SPs[caseID].evalFunctions(tacs_funcs, evalFuncs=function_names)
         SPs[caseID].evalFunctionsSens(tacs_sens, evalFuncs=function_names)
-        SPs[caseID].writeSolution(baseName="tacs_output", outputDir=tacs_model.analysis_dir)
+        SPs[caseID].writeSolution(
+            baseName="tacs_output", outputDir=tacs_model.analysis_dir
+        )
 
     # print the output analysis functions and sensitivities
     print("\nTacs Analysis Outputs...")
@@ -104,5 +106,3 @@ elif method == 2: # longer way that directly uses pyTACS & static problem routin
         print(f"\t{func_name} coordinate derivatives = {xpts_sens}")
 
         print("\n")
-
-    

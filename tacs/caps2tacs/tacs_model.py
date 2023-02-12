@@ -138,6 +138,10 @@ class TacsModel:
         return self.tacs_aim.variables
 
     @property
+    def variable_dict(self) -> dict:
+        return {var.name: var.value for var in self.variables}
+
+    @property
     def shape_variables(self) -> List[ShapeVariable]:
         return self.tacs_aim.shape_variables
 
@@ -149,10 +153,12 @@ class TacsModel:
     def root_proc(self) -> bool:
         return self.comm is None or self.comm.rank == 0
 
-    def update_design(self, input_dict: dict):
+    def update_design(self, input_dict: dict = None):
         """
         method to change the values of each design variable in tacsAim wrapper and ESP/CAPS
         """
+
+        input_dict = input_dict if input_dict is not None else self.variable_dict
 
         # track any design change to monitor capsDirty
         changed_design = False
@@ -165,8 +171,15 @@ class TacsModel:
                 # update the CAD geometry on root proc / serial since ESP/CAPS doesn't handle MPI directly
                 if self.root_proc:
                     if self.geometry.despmtr[shape_var.name].value != shape_var.value:
-                        self.geometry.despmtr[shape_var.name].value = shape_var.value
-                        changed_design = True
+                        if shape_var.value is not None:
+                            self.geometry.despmtr[
+                                shape_var.name
+                            ].value = shape_var.value
+                            changed_design = True
+                        else:
+                            shape_var.value = self.geometry.despmtr[
+                                shape_var.name
+                            ].value
 
         # change all thickness variables in TacsAim
         for thick_var in self.thickness_variables:
@@ -220,7 +233,7 @@ class TacsModel:
         if self.tacs_aim.change_shape:
             self.tacs_aim.pre_analysis()
 
-    def run_analysis(self, write_f5: bool = True):
+    def run_analysis(self, write_f5: bool = True, iteration: float = 0):
         """
         run the static problem analysis
         """
@@ -257,7 +270,9 @@ class TacsModel:
 
             if write_f5:
                 self.SPs[caseID].writeSolution(
-                    baseName="tacs_output", outputDir=self.tacs_aim.analysis_dir
+                    baseName="tacs_output",
+                    outputDir=self.tacs_aim.analysis_dir,
+                    number=iteration,
                 )
 
         # return this object for method cascading
