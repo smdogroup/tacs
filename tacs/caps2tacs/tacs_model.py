@@ -171,7 +171,9 @@ class TacsModel:
         # change all thickness variables in TacsAim
         for thick_var in self.thickness_variables:
             if thick_var.name in input_dict:
-                thick_var.value = float(input_dict[thick_var.name])
+                if thick_var.value != float(input_dict[thick_var.name]):
+                    thick_var.value = float(input_dict[thick_var.name])
+                    changed_design = True
 
         # record whether the design has changed & first analysis flag as well
         if self._first_analysis:

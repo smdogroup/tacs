@@ -54,9 +54,10 @@ class TacsStaticComponent(om.ExplicitComponent):
             }
 
             # design history file
-            self._design_hdl = open(
-                os.path.join(tacs_model.analysis_dir, "design_hist.txt"), "w"
-            )
+            if tacs_model.root_proc:
+                self._design_hdl = open(
+                    os.path.join(tacs_model.analysis_dir, "design_hist.txt"), "w"
+                )
 
     def setup_partials(self):
         tacs_model = self.options["tacs_model"]
@@ -135,43 +136,51 @@ class TacsStaticComponent(om.ExplicitComponent):
         tacs_model = self.options["tacs_model"]
         for func in tacs_model.analysis_functions:
             self._func_history[func.name].append(func.value)
-        self._plot_history(
-            directory=tacs_model.analysis_dir, filename="opt_history.png"
-        )
+
+        if tacs_model.root_proc:
+            self._plot_history(
+                directory=tacs_model.analysis_dir, filename="opt_history.png"
+            )
 
     def _function_report(self):
         tacs_model = self.options["tacs_model"]
-        self._design_hdl.write("Analysis result:\n")
-        for func_name in tacs_model.function_names:
-            self._design_hdl.write(
-                f"\tfunc {func_name} = {self._func_history[func_name][-1]}\n"
-            )
-        self._design_hdl.write("\n")
-        self._design_hdl.flush()
+
+        if tacs_model.root_proc:
+            self._design_hdl.write("Analysis result:\n")
+            for func_name in tacs_model.function_names:
+                self._design_hdl.write(
+                    f"\tfunc {func_name} = {self._func_history[func_name][-1]}\n"
+                )
+            self._design_hdl.write("\n")
+            self._design_hdl.flush()
 
     def _plot_history(self, directory, filename):
         tacs_model = self.options["tacs_model"]
-        num_iterations = len(self._func_history[tacs_model.function_names[0]])
-        iterations = [_ for _ in range(num_iterations)]
-        plt.figure()
-        for func_name in tacs_model.function_names:
-            yvec = self._func_history[func_name]
-            yvec /= max(np.array(yvec))
-            plt.plot(iterations, yvec, linewidth=2, label=func_name)
-        plt.legend()
-        plt.xlabel("iterations")
-        plt.ylabel("func values")
-        plt.yscale("log")
-        plot_filepath = os.path.join(directory, filename)
-        plt.savefig(plot_filepath)
-        plt.close("all")
+
+        if tacs_model.root_proc:
+            num_iterations = len(self._func_history[tacs_model.function_names[0]])
+            iterations = [_ for _ in range(num_iterations)]
+            plt.figure()
+            for func_name in tacs_model.function_names:
+                yvec = self._func_history[func_name]
+                yvec /= max(np.array(yvec))
+                plt.plot(iterations, yvec, linewidth=2, label=func_name)
+            plt.legend()
+            plt.xlabel("iterations")
+            plt.ylabel("func values")
+            plt.yscale("log")
+            plot_filepath = os.path.join(directory, filename)
+            plt.savefig(plot_filepath)
+            plt.close("all")
 
     def _print_design(self, inputs):
         tacs_model = self.options["tacs_model"]
-        self._design_hdl.write("New Design...\n")
-        self._design_hdl.write(
-            f"\tthick dvs = {[_.name for _ in tacs_model.variables]}\n"
-        )
-        real_xarray = [float(inputs[key]) for key in inputs]
-        self._design_hdl.write(f"\tvalues = {real_xarray}\n")
-        self._design_hdl.flush()
+
+        if tacs_model.root_proc:
+            self._design_hdl.write("New Design...\n")
+            self._design_hdl.write(
+                f"\tthick dvs = {[_.name for _ in tacs_model.variables]}\n"
+            )
+            real_xarray = [float(inputs[key]) for key in inputs]
+            self._design_hdl.write(f"\tvalues = {real_xarray}\n")
+            self._design_hdl.flush()

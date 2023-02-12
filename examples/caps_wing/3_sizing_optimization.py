@@ -83,7 +83,7 @@ prob.model.add_constraint("tacsSystem.ksfailure", upper=0.267)
 print("\n==> Starting optimization...")
 prob.setup()
 
-debug = False
+debug = True
 if debug:
     print("Checking partials...", flush=True)
     prob.check_partials(compact_print=True)
