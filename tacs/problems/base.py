@@ -1093,16 +1093,12 @@ class TACSProblem(BaseUI):
         self.evalFunctionsSens(tacs_sens, evalFuncs=evalFuncs)
 
         num_funcs = len(evalFuncs)
-        if "struct" in tacs_sens:
-            assert tacsAim is not None
-            num_struct_dvs = len(tacs_sens["struct"][evalFuncs[0]])
-        else:
-            num_struct_dvs = 0
+        assert tacsAim is not None
+        num_struct_dvs = len(tacsAim.thickness_variables)
         num_nodes = self.meshLoader.bdfInfo.nnodes
         node_ids = self.meshLoader.nodeIDs
 
         if self.comm is None or self.comm.rank == 0:
-
             # open the sens file nastran_CAPS.sens and write coordinate derivatives
             # and any other struct derivatives to it
             with open(tacsAim.sens_file_path, "w") as hdl:
@@ -1135,13 +1131,11 @@ class TACSProblem(BaseUI):
                         # write any struct derivatives if there are struct derivatives
                         if num_struct_dvs > 0:
                             struct_sens = tacs_sens[tacs_key]["struct"]
-                            for (
-                                idx,
-                                thick_var,
-                            ) in (
+                            for idx, thick_var in enumerate(
                                 tacsAim.thickness_variables
-                            ):  # assumes these are sorted in tacs aim wrapper
+                            ):
+                                # assumes these are sorted in tacs aim wrapper
                                 hdl.write(f"{thick_var.name}\n")
                                 hdl.write("1\n")
-                                hdl.write(f"{struct_sens[idx]}\n")
+                                hdl.write(f"{struct_sens[idx].real}\n")
             return

@@ -166,7 +166,8 @@ class TacsModel:
         # change all shape variables in TacsAim and update CAD geometry
         for shape_var in self.shape_variables:
             if shape_var.name in input_dict:
-                shape_var.value = float(input_dict[shape_var.name])
+                if input_dict[shape_var.name] is not None:
+                    shape_var.value = float(input_dict[shape_var.name])
 
                 # update the CAD geometry on root proc / serial since ESP/CAPS doesn't handle MPI directly
                 if self.root_proc:
