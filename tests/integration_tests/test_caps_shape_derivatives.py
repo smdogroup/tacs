@@ -10,7 +10,7 @@ from mpi4py import MPI
 
 caps_loader = importlib.util.find_spec("pyCAPS")
 complex_mode = TACS.dtype == complex
-complex_mode = False
+# complex_mode = False
 
 
 # only run the test if pyCAPS can be imported

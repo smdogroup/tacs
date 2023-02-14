@@ -5,7 +5,7 @@ Caps to TACS example
 """
 
 import unittest, os, numpy as np, importlib
-from tacs import functions, caps2tacs, TACS
+from tacs import caps2tacs, TACS
 from mpi4py import MPI
 
 caps_loader = importlib.util.find_spec("pyCAPS")

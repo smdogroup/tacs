@@ -254,12 +254,6 @@ class TacsModel:
                 xarray[ithick] = float(thick_var.value)
 
             self.SPs[caseID].solve()
-            self.SPs[caseID].evalFunctions(
-                self._tacs_funcs, evalFuncs=self.function_names
-            )
-            self.SPs[caseID].evalFunctionsSens(
-                self._tacs_sens, evalFuncs=self.function_names
-            )
 
             if (
                 self.tacs_aim.change_shape
@@ -268,6 +262,13 @@ class TacsModel:
                     evalFuncs=self.function_names,
                     tacsAim=self.tacs_aim,
                 )
+            else:  # only call evalFunctions and evalFunctionSens if not shape change else redundant
+                self.SPs[caseID].evalFunctions(
+                    self._tacs_funcs, evalFuncs=self.function_names
+                )
+            self.SPs[caseID].evalFunctionsSens(
+                self._tacs_sens, evalFuncs=self.function_names
+            )
 
             if write_f5:
                 self.SPs[caseID].writeSolution(
