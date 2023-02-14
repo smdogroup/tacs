@@ -179,10 +179,14 @@ class TacsDVComp(om.ExplicitComponent):
             if "tacs_dvs" in d_outputs:
                 dfull_dv_array[self.src_indices] += d_outputs["tacs_dvs"]
                 if "dv_struct" in d_inputs:
-                    d_inputs["dv_struct"] += dfull_dv_array[self.struct_dvs]
+                    d_inputs["dv_struct"] += self.comm.allreduce(
+                        dfull_dv_array[self.struct_dvs]
+                    )
                 for dv_name in self.mass_dvs:
                     if dv_name in d_inputs:
-                        d_inputs[dv_name] += dfull_dv_array[self.mass_dvs[dv_name]]
+                        d_inputs[dv_name] += self.comm.allreduce(
+                            dfull_dv_array[self.mass_dvs[dv_name]]
+                        )
 
     def get_dv_src_indices(self):
         """
@@ -568,12 +572,7 @@ class TacsFunctions(om.ExplicitComponent):
             self._update_internal(inputs)
 
             for func_name in d_outputs:
-                if MPI and self.comm.size > 1:
-                    full = np.zeros(d_outputs[func_name].size)
-                    self.comm.Allreduce(d_outputs[func_name], full, op=MPI.SUM)
-                    d_func = full
-                else:
-                    d_func = d_outputs[func_name]
+                d_func = d_outputs[func_name]
 
                 if "tacs_dvs" in d_inputs:
                     self.sp.addDVSens([func_name], [d_inputs["tacs_dvs"]], scale=d_func)
@@ -662,12 +661,7 @@ class MassFunctions(om.ExplicitComponent):
             self._update_internal(inputs)
 
             for func_name in d_outputs:
-                if MPI and self.comm.size > 1:
-                    full = np.zeros(d_outputs[func_name].size)
-                    self.comm.Allreduce(d_outputs[func_name], full, op=MPI.SUM)
-                    d_func = full
-                else:
-                    d_func = d_outputs[func_name]
+                d_func = d_outputs[func_name]
 
                 if "tacs_dvs" in d_inputs:
                     self.sp.addDVSens([func_name], [d_inputs["tacs_dvs"]], scale=d_func)

@@ -103,7 +103,7 @@ with open(os.path.join(tacs_root, "README.md"), encoding="utf-8") as f:
 optional_dependencies = {
     "testing": ["testflo>=1.4.7"],
     "docs": ["sphinx", "breathe", "sphinxcontrib-programoutput"],
-    "mphys": ["mphys>=0.4.0", "openmdao<3.25"],
+    "mphys": ["mphys>=1.1.0", "openmdao>=3.25.0"],
 }
 
 # Add an optional dependency that concatenates all others
