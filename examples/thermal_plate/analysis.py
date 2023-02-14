@@ -34,7 +34,7 @@ from tacs import functions, constitutive, elements, pyTACS
 # Radius of plate
 R = 1.0
 # Area of plate
-area = np.pi * R ** 2
+area = np.pi * R**2
 
 comm = MPI.COMM_WORLD
 

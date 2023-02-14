@@ -67,8 +67,8 @@ if __name__ == "__main__":
     xi = c / (2 * m * wn)
     x0 = -0.5
     xdot0 = 1.0
-    wd = wn * np.sqrt(1.0 - xi ** 2)
-    A = np.sqrt(x0 ** 2 + ((xdot0 + xi * wn * x0) / wd) ** 2)
+    wd = wn * np.sqrt(1.0 - xi**2)
+    A = np.sqrt(x0**2 + ((xdot0 + xi * wn * x0) / wd) ** 2)
     phi_d = np.arctan(x0 * wd / (xdot0 + xi * wn * x0))
     x_exact = A * np.exp(-xi * wn * tf) * np.sin(wd * tf + phi_d)
 
