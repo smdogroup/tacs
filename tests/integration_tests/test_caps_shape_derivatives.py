@@ -10,7 +10,10 @@ from mpi4py import MPI
 
 caps_loader = importlib.util.find_spec("pyCAPS")
 complex_mode = TACS.dtype == complex
-# complex_mode = False
+complex_mode = False
+
+base_dir = os.path.dirname(os.path.abspath(__file__))
+csm_path = os.path.join(base_dir, "input_files", "simple_naca_wing.csm")
 
 
 # only run the test if pyCAPS can be imported
@@ -26,7 +29,6 @@ class TestCaps2TacsShape(unittest.TestCase):
 
         # build the tacs model with constraints, loads, properties, analysis functions, mesh, etc.
         comm = MPI.COMM_WORLD
-        csm_path = os.path.join("input_files", "simple_naca_wing.csm")
         tacs_model = caps2tacs.TacsModel.build(csm_file=csm_path, comm=comm)
         tacs_model.egads_aim.set_mesh(  # need a refined-enough mesh for the derivative test to pass
             edge_pt_min=15,
@@ -66,7 +68,7 @@ class TestCaps2TacsShape(unittest.TestCase):
 
         # add analysis functions
         caps2tacs.AnalysisFunction.mass().register_to(tacs_model)
-        # caps2tacs.AnalysisFunction.ksfailure().register_to(tacs_model)
+        caps2tacs.AnalysisFunction.ksfailure().register_to(tacs_model)
 
         # setup the tacs model
         tacs_model.setup()
@@ -122,7 +124,6 @@ class TestCaps2TacsShape(unittest.TestCase):
 
         # build the tacs model with constraints, loads, properties, analysis functions, mesh, etc.
         comm = MPI.COMM_WORLD
-        csm_path = os.path.join("input_files", "simple_naca_wing.csm")
         tacs_model = caps2tacs.TacsModel.build(csm_file=csm_path, comm=comm)
         tacs_model.egads_aim.set_mesh(  # need a refined-enough mesh for the derivative test to pass
             edge_pt_min=15,
