@@ -11,9 +11,15 @@ from mpi4py import MPI
 caps_loader = importlib.util.find_spec("pyCAPS")
 complex_mode = TACS.dtype == complex
 
+base_dir = os.path.dirname(os.path.abspath(__file__))
+csm_path = os.path.join(base_dir, "input_files", "simple_naca_wing.csm")
+
 
 # only run the test if pyCAPS can be imported
-@unittest.skipIf(caps_loader is None, "skipping ESP/CAPS test without pyCAPS module")
+@unittest.skipIf(
+    caps_loader is None or complex_mode,
+    "skipping ESP/CAPS test without pyCAPS module or in complex mode",
+)
 class TestCaps2Tacs(unittest.TestCase):
     def test_thickness_derivatives(self):
         """
@@ -22,7 +28,6 @@ class TestCaps2Tacs(unittest.TestCase):
 
         # build the tacs model with constraints, loads, properties, analysis functions, mesh, etc.
         comm = MPI.COMM_WORLD
-        csm_path = os.path.join("input_files", "simple_naca_wing.csm")
         tacs_model = caps2tacs.TacsModel.build(csm_file=csm_path, comm=comm)
         tacs_model.egads_aim.set_mesh(  # need a refined-enough mesh for the derivative test to pass
             edge_pt_min=15,
