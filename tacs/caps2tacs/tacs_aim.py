@@ -265,6 +265,36 @@ class TacsAim:
         """
         return len(self.shape_variables) > 0
 
+    def update_properties(self):
+        """
+        update thickness properties and design variables in ESP/CAPS inputs
+        if shape change w/ thickness variables
+        """
+        # exit if no thickness variables
+        if len(self.thickness_variables) == 0:
+            return
+
+        # update property thicknesses by the modified thickness variables
+        for property in self._properties:
+            for dv in self._design_variables:
+                if isinstance(property, ShellProperty) and isinstance(
+                    dv, ThicknessVariable
+                ):
+                    if property.caps_group == dv.caps_group:
+                        property.membrane_thickness == dv.value
+                        break
+
+        if self.comm is None or self.comm.rank == 0:
+            # input new design var and property cards
+            self.aim.input.Design_Variable = {
+                dv.name: dv.DV_dictionary for dv in self._design_variables
+            }
+            self.aim.input.Property = {
+                prop.caps_group: prop.dictionary for prop in self._properties
+            }
+
+        return
+
     @root_proc
     def pre_analysis(self):
         """
