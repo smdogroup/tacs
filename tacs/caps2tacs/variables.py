@@ -63,7 +63,7 @@ class ThicknessVariable:
             lower_bound, upper_bound, and max_delta are bounds for optimization
         """
         self.caps_group = caps_group
-        self.value = value
+        self._value = value
         if name is not None:  # copy caps_group to name if not specified
             self.name = name
         else:
@@ -86,6 +86,17 @@ class ThicknessVariable:
         self.lower_bound = lower_bound
         self.upper_bound = upper_bound
         return self
+
+    @property
+    def value(self) -> float:
+        return self._value
+
+    @value.setter
+    def value(self, new_value: float):
+        self.lower_bound = 0.5 * new_value
+        self._value = new_value
+        self.upper_bound = 2.0 * new_value
+        return
 
     @property
     def can_make_shell(self):

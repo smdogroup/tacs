@@ -172,11 +172,11 @@ class TacsModel:
                 # update the CAD geometry on root proc / serial since ESP/CAPS doesn't handle MPI directly
                 if self.root_proc:
                     if self.geometry.despmtr[shape_var.name].value != shape_var.value:
+                        changed_design = True
                         if shape_var.value is not None:
                             self.geometry.despmtr[
                                 shape_var.name
                             ].value = shape_var.value
-                            changed_design = True
                         else:
                             shape_var.value = self.geometry.despmtr[
                                 shape_var.name
