@@ -124,7 +124,9 @@ class ModalProblem(TACSProblem):
         self.name = name
 
         # Default setup for common problem class objects
-        TACSProblem.__init__(self, assembler, comm, outputViewer, meshLoader, isNonlinear=isNonlinear)
+        TACSProblem.__init__(
+            self, assembler, comm, outputViewer, meshLoader, isNonlinear=isNonlinear
+        )
 
         # Set time eigenvalue parameters
         self.sigma = sigma
