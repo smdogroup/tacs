@@ -438,6 +438,7 @@ void PCG::setMonitor(KSMPrint *_monitor) {
 */
 int PCG::solve(TACSVec *b, TACSVec *x, int zero_guess) {
   int solve_flag = 0;
+  iterCount = 0;
   TacsScalar rhs_norm = 0.0;
   // R, Z and P are work-vectors
   // R == the residual
@@ -477,6 +478,7 @@ int PCG::solve(TACSVec *b, TACSVec *x, int zero_guess) {
         pc->applyFactor(R, Z);                     // Z' = M^{-1} R
         TacsScalar beta = R->dot(Z) / temp;        // beta = (R',Z')/(R,Z)
         P->axpby(1.0, beta, Z);                    // P' = Z' + beta*P
+        iterCount++;
 
         TacsScalar norm = R->norm();
 
@@ -491,6 +493,7 @@ int PCG::solve(TACSVec *b, TACSVec *x, int zero_guess) {
         }
       }
     }
+    resNorm = norm
 
     if (solve_flag) {
       break;
@@ -782,6 +785,7 @@ const char *GMRES::gmresName = "GMRES";
 int GMRES::solve(TACSVec *b, TACSVec *x, int zero_guess) {
   TacsScalar rhs_norm = 0.0;
   int solve_flag = 0;
+  iterCount = 0;
 
   double t_pc = 0.0, t_ortho = 0.0;
   double t_total = 0.0;
@@ -927,6 +931,10 @@ int GMRES::solve(TACSVec *b, TACSVec *x, int zero_guess) {
       pc->applyFactor(work, W[0]);
       x->axpy(1.0, W[0]);
     }
+
+
+    iterCount += niters;
+    resNorm = res[niters];
 
     if (solve_flag) {
       break;
@@ -1189,6 +1197,7 @@ int GCROT::solve(TACSVec *b, TACSVec *x, int zero_guess) {
   TacsScalar rhs_norm = 0.0;
   int solve_flag = 0;
   int mat_iters = 0;
+  iterCount = 0;
 
   // Compute the residual
   if (zero_guess) {
@@ -1207,6 +1216,7 @@ int GCROT::solve(TACSVec *b, TACSVec *x, int zero_guess) {
 
   if (TacsRealPart(rhs_norm) < atol) {
     solve_flag = 1;
+    resNorm = rhs_norm;
     return solve_flag;
   }
 
@@ -1395,6 +1405,8 @@ int GCROT::solve(TACSVec *b, TACSVec *x, int zero_guess) {
     // mat->mult( x, R );      // R = A*x
     // R->axpy( -1.0, b );     // R = A*x - b
     // R->scale( -1.0 );
+    iterCount += niters;
+    resNorm = R->norm();
 
     if (solve_flag) {
       break;

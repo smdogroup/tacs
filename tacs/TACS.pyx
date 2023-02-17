@@ -1141,6 +1141,14 @@ cdef class KSM:
         self.ptr.incref()
         return
 
+    def getIterCount(self):
+        """Get the number of iterations performed in the last solve"""
+        return self.ptr.getIterCount()
+
+    def getResidualNorm(self):
+        """Get the residual norm of the last solve"""
+        return self.ptr.getResidualNorm()
+
     def __dealloc__(self):
         if self.ptr:
             self.ptr.decref()
