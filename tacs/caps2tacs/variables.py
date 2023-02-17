@@ -68,9 +68,9 @@ class ThicknessVariable:
             self.name = name
         else:
             self.name = caps_group
-        self.lower_bound = lower_bound if lower_bound is not None else value * 0.5
-        self.upper_bound = upper_bound if upper_bound is not None else value * 1.5
-        self.max_delta = max_delta if max_delta is not None else value * 0.1
+        self.lower_bound = lower_bound
+        self.upper_bound = upper_bound
+        self.max_delta = max_delta
 
         # private variables used to create shell property
         self._material = material
@@ -84,6 +84,7 @@ class ThicknessVariable:
 
     def set_bounds(self, lower_bound: float, value: float, upper_bound: float):
         self.lower_bound = lower_bound
+        self.value = value
         self.upper_bound = upper_bound
         return self
 
@@ -110,9 +111,15 @@ class ThicknessVariable:
         return {
             "groupName": self.caps_group,
             "initialValue": self.value,
-            "lowerBound": self.lower_bound,
-            "upperBound": self.upper_bound,
-            "maxDelta": self.max_delta,
+            "lowerBound": self.lower_bound
+            if self.lower_bound is not None
+            else self.value * 0.5,
+            "upperBound": self.upper_bound
+            if self.upper_bound is not None
+            else self.value * 2.0,
+            "maxDelta": self.max_delta
+            if self.max_delta is not None
+            else self.value * 0.1,
         }
 
     @property

@@ -189,6 +189,10 @@ class TacsModel:
                     thick_var.value = float(input_dict[thick_var.name])
                     changed_design = True
 
+        # update thickness prop cards in t
+        if self.tacs_aim.change_shape:
+            self.tacs_aim.update_properties()
+
         # record whether the design has changed & first analysis flag as well
         if self._first_analysis:
             self._first_analysis = False
@@ -248,10 +252,11 @@ class TacsModel:
         self._tacs_funcs = {}
         self._tacs_sens = {}
         for caseID in self.SPs:
-            # write in the new thickness variables
-            xarray = self.SPs[caseID].x.getArray()
-            for ithick, thick_var in enumerate(self.thickness_variables):
-                xarray[ithick] = float(thick_var.value)
+            # write in the new thickness variables for sizing only case
+            if not self.tacs_aim.change_shape:
+                xarray = self.SPs[caseID].x.getArray()
+                for ithick, thick_var in enumerate(self.thickness_variables):
+                    xarray[ithick] = float(thick_var.value)
 
             self.SPs[caseID].solve()
 
@@ -266,9 +271,9 @@ class TacsModel:
                 self.SPs[caseID].evalFunctions(
                     self._tacs_funcs, evalFuncs=self.function_names
                 )
-            self.SPs[caseID].evalFunctionsSens(
-                self._tacs_sens, evalFuncs=self.function_names
-            )
+                self.SPs[caseID].evalFunctionsSens(
+                    self._tacs_sens, evalFuncs=self.function_names
+                )
 
             if write_f5:
                 self.SPs[caseID].writeSolution(
