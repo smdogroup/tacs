@@ -21,6 +21,7 @@ import numpy as np
 import tacs.TACS
 import tacs.elements
 from .base import TACSProblem
+from tacs.utilities import SolverHistory
 
 
 class StaticProblem(TACSProblem):
@@ -138,6 +139,17 @@ class StaticProblem(TACSProblem):
             "Whether to use the equilibrium path slope in the computation of the predictor step. This requires a linear solve and thus greatly increases the cost of the predictor step computation.",
         ],
         # Newton solver options
+        "newtonSolverMonitorVars": [
+            list,
+            [
+                "linSolverIters",
+                "linSolverRes",
+                "loadScale",
+                "lineSearchStep",
+                "lineSearchIters",
+            ],
+            "List of variables to include in nonlinear solver monitor output. Choose from 'linSolverIters', 'linSolverRes', 'loadScale', 'lineSearchStep' and 'lineSearchIters'.",
+        ],
         "newtonSolverMaxIter": [int, 40, "Maximum number of Newton iterations."],
         "newtonSolverAbsTol": [
             float,
@@ -172,7 +184,7 @@ class StaticProblem(TACSProblem):
         ],
         "lineSearchMonitor": [
             bool,
-            True,
+            False,
             "Flag for printing out line search information.",
         ],
         "skipFirstNLineSearch": [
@@ -264,8 +276,62 @@ class StaticProblem(TACSProblem):
         for key in options:
             TACSProblem.setOption(self, key, options[key])
 
+        # Setup solver history object for nonlinear problems
+        self.history = None
+        if self.isNonlinear:
+            self._createSolverHistory()
+
         # Create problem-specific variables
         self._createVariables()
+
+    def _createSolverHistory(self):
+        """Setup the solver history object based on the current options
+
+        The solver history is only created on the root processor.
+        """
+        monitorVars = [s.lower() for s in self.getOption("newtonSolverMonitorVars")]
+        numType = float if self.dtype == np.float64 else complex
+        if self.comm.rank == 0:
+            history = SolverHistory()
+
+            # Define the variables to be stored in the history
+            # Continuation increment number
+            history.addVariable("Increment", int, printVar=True)
+            # Load scale
+            history.addVariable(
+                "Load scale", float, printVar="loadscale" in monitorVars
+            )
+            # Newton solve iteration number
+            history.addVariable("SubIter", int, printVar=True)
+            # Number of linear solver iterations
+            history.addVariable(
+                "Lin iters", int, printVar="linsolveriters" in monitorVars
+            )
+            # Linear solver residual norm
+            history.addVariable(
+                "Lin res", numType, printVar="linsolverres" in monitorVars
+            )
+            # Residual norm (absolute and relative)
+            history.addVariable("Res norm", numType, printVar=True)
+            history.addVariable("Rel res norm", numType, printVar=True)
+            # state norm
+            history.addVariable("U norm", numType, printVar=True)
+            # Line search step size
+            history.addVariable(
+                "LS step",
+                float,
+                printVar="linesearchstep" in monitorVars
+                and self.getOption("useLineSearch"),
+            )
+            # Num line search iterations
+            history.addVariable(
+                "LS iters",
+                int,
+                printVar="linesearchiters" in monitorVars
+                and self.getOption("useLineSearch"),
+            )
+
+            self.history = history
 
     def _createVariables(self):
         """Internal to create the variable required by TACS"""
@@ -436,7 +502,6 @@ class StaticProblem(TACSProblem):
                 "printtiming",
                 "numbersolutions",
                 "outputdir",
-                "skipFirstNLineSearch",
                 "usePredictor",
                 "predictorUseDerivative",
             ]
@@ -447,6 +512,10 @@ class StaticProblem(TACSProblem):
         # Reset solver for all other option changes
         else:
             self._createVariables()
+
+        # We need to create a new solver history object if the monitor variables have updated
+        if name.lower() == "newtonsolvermonitorvars":
+            self._createSolverHistory()
 
     @property
     def loadScale(self):
@@ -1027,13 +1096,13 @@ class StaticProblem(TACSProblem):
 
         stepSize = INIT_STEP
 
+        # Reset the solver history
+        if self.rank == 0:
+            self.history.reset(clearMetadata=True)
+            self.history.addMetadata("Options", self.options)
+            self.history.addMetadata("Name", self.name)
+
         for increment in range(MAX_INCREMENTS):
-            if self.rank == 0:
-                print("===============================================================")
-                print(
-                    f"Starting increment {increment:3d} with load scale: {self.loadScale}"
-                )
-                print("===============================================================")
 
             # Save displacement at start of this increment, this is what
             # we'll reset to if the increment diverges
@@ -1075,19 +1144,42 @@ class StaticProblem(TACSProblem):
         # ==============================================================================
 
     def newtonSolve(self, Fext=None):
+        USE_LINESEARCH = self.getOption("useLineSearch")
         LINESEARCH_SKIP_ITERS = self.getOption("skipFirstNLineSearch")
         MAX_ITERS = self.getOption("newtonSolverMaxIter")
 
+
         for iteration in range(MAX_ITERS):
-            self.writeSolution(baseName=f"{self.name}-NLIter", number=iteration)
+            # TODO: Write output file here based on option
+            # self.writeSolution(baseName=f"{self.name}-NLIter", number=iteration)
 
             # Compute residual
             self.getResidual(self.res, Fext=Fext)
+            resNorm = self.res.norm()
+            uNorm = self.u.norm()
+
+            # Write data to history
+            histData = {
+                "Increment":0,
+                "SubIter": iteration,
+                "Load scale": self.loadScale,
+                "Res norm": resNorm,
+                "Rel res norm":resNorm/self.initNorm,
+                "U norm":uNorm,
+            }
+            if iteration > 0:
+                histData["Lin iters"] = linearSolveIterations
+                histData["Lin res"] = linearSolveResNorm
+                histData["LS step"] = alpha
+                histData["LS iters"] = lineSearchIters
+            if self.rank == 0:
+                self.history.write(histData)
+                if iteration % 50 == 0:
+                    self.history.printHeader()
+                self.history.printData()
+
 
             # Test convergence (exit if converged/diverged)
-            resNorm = np.real(self.res.norm())
-            if self.rank == 0:
-                print(f"Iteration {iteration:3d}: Residual Norm = {resNorm:e}")
             hasConverged = self.checkConvergence(resNorm)
             hasDiverged = self.checkDivergence(resNorm)
             if hasConverged or hasDiverged:
@@ -1101,11 +1193,16 @@ class StaticProblem(TACSProblem):
             self.solveJacLinear(self.res, self.update)
             self.update.scale(-1.0)
 
-            if iteration >= LINESEARCH_SKIP_ITERS:
+            # Check data from linear solve
+            linearSolveIterations = self.KSM.getIterCount()
+            linearSolveResNorm = self.KSM.getResidualNorm()
+
+            if USE_LINESEARCH and iteration >= LINESEARCH_SKIP_ITERS:
                 # Do linesearch
-                alpha = self.energyLineSearch(self.u, self.update, Fext=Fext)
+                alpha, lineSearchIters = self.energyLineSearch(self.u, self.update, Fext=Fext)
             else:
                 alpha = 1.0
+                lineSearchIters = 1
             self.u.axpy(alpha, self.update)
             self.assembler.setVariables(self.u)
             self._stiffnessUpdateRequired = True
@@ -1135,7 +1232,7 @@ class StaticProblem(TACSProblem):
         # 3. Set $\alpha = 1$
         alpha = 1.0
         alphaNew = alpha
-        for ii in range(MAX_LINESEARCH_ITERS):
+        for iteration in range(MAX_LINESEARCH_ITERS):
             # 4. Increment state, $u = u + \alpha \Delta u$
             u.axpy(alpha, stepDir)
             self.assembler.setVariables(u)
@@ -1151,7 +1248,7 @@ class StaticProblem(TACSProblem):
             uNorm = u.norm()
             if self.rank == 0 and PRINT_LINESEARCH_ITERS:
                 print(
-                    f"Line search iter {(ii+1):2d}: alpha = {alpha: 11e}, f/f0 = {(fNew/f0): 11e}, uNorm = {uNorm: 11e}"
+                    f"Line search iter {(iteration+1):2d}: alpha = {alpha: 11e}, f/f0 = {(fNew/f0): 11e}, uNorm = {uNorm: 11e}"
                 )
             u.axpy(-alpha, stepDir)
             fReduction = np.abs(fNew / f0)
@@ -1159,7 +1256,7 @@ class StaticProblem(TACSProblem):
                 break
             else:
                 # 8. Update $\alpha$ (based on search method)
-                if ii == 0:
+                if iteration == 0:
                     alphaMin = 0.9
                 else:
                     alphaMin = LINESEARCH_ALPHA_MIN
@@ -1171,7 +1268,7 @@ class StaticProblem(TACSProblem):
                         alphaMin,
                         LINESEARCH_ALPHA_MAX,
                     )
-                if ii > 0 and abs(alphaNew - alpha) > LINESEARCH_MAX_STEP_CHANGE:
+                if iteration > 0 and abs(alphaNew - alpha) > LINESEARCH_MAX_STEP_CHANGE:
                     alphaNew = (
                         alpha + np.sign(alphaNew - alpha) * LINESEARCH_MAX_STEP_CHANGE
                     )
@@ -1179,7 +1276,7 @@ class StaticProblem(TACSProblem):
                 alpha = alphaNew
                 fOld = fNew
             # 9. return to step 4
-        return alpha
+        return alpha, iteration
 
     def solveJacLinear(self, res, sol):
         success = self.KSM.solve(res, sol)
@@ -1954,6 +2051,26 @@ class StaticProblem(TACSProblem):
         # Set states to assembler
         self.assembler.setVariables(self.u)
 
+    def getOutputFileName(self, outputDir=None, baseName=None, number=None):
+        # Check input
+        if outputDir is None:
+            outputDir = self.getOption("outputDir")
+
+        if baseName is None:
+            baseName = self.name
+
+        # If we are numbering solution, it saving the sequence of
+        # calls, add the call number
+        if number is not None:
+            # We need number based on the provided number:
+            baseName = baseName + "_%3.3d" % number
+        else:
+            # if number is none, i.e. standalone, but we need to
+            # number solutions, use internal counter
+            if self.getOption("numberSolutions"):
+                baseName = baseName + "_%3.3d" % self.callCounter
+        return baseName
+
     def writeSolution(self, outputDir=None, baseName=None, number=None):
         """
         This is a generic shell function that writes the output
@@ -1977,25 +2094,16 @@ class StaticProblem(TACSProblem):
         # Make sure assembler variables are up to date
         self._updateAssemblerVars()
 
-        # Check input
-        if outputDir is None:
-            outputDir = self.getOption("outputDir")
-
-        if baseName is None:
-            baseName = self.name
-
-        # If we are numbering solution, it saving the sequence of
-        # calls, add the call number
-        if number is not None:
-            # We need number based on the provided number:
-            baseName = baseName + "_%3.3d" % number
-        else:
-            # if number is none, i.e. standalone, but we need to
-            # number solutions, use internal counter
-            if self.getOption("numberSolutions"):
-                baseName = baseName + "_%3.3d" % self.callCounter
+        # Figure out the output file base name
+        baseName = self.getOutputFileName(outputDir, baseName, number)
 
         # Unless the writeSolution option is off write actual file:
         if self.getOption("writeSolution"):
             base = os.path.join(outputDir, baseName) + ".f5"
             self.outputViewer.writeToFile(base)
+
+    def writeSolverHistory(self, outputDir=None, baseName=None, number=None):
+        # Figure out the output file base name
+        baseName = self.getOutputFileName(outputDir, baseName, number)
+        if self.history is not None:
+            self.history.save(baseName)

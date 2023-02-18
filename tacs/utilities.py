@@ -454,7 +454,7 @@ class SolverHistory(object):
         # --- Define default print formatting for some common types ---
         self._defaultFormat: Dict[Type, str] = {}
         # float
-        self._defaultFormat[float] = "{: 17.11e}"
+        self._defaultFormat[float] = "{: 12.6e}"
         # complex
         self._defaultFormat[complex] = "{: 9.3e}"
         # int
