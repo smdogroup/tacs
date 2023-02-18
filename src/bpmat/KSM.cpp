@@ -494,7 +494,6 @@ int PCG::solve(TACSVec *b, TACSVec *x, int zero_guess) {
         }
       }
     }
-    resNorm = norm
 
     if (solve_flag) {
       break;
