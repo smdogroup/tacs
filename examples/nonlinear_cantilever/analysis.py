@@ -38,8 +38,8 @@ YIELD_STRESS = 1.0  # yield stress
 THICKNESS = 0.1  # Shell thickness
 FORCE_MULTIPLIER = 1.0  # Multiplier applied to the baseline force of EI/L^2
 MOMENT_MULTIPLIER = 0.1  # Multiplier applied to the baseline moment of 2pi * EI/L (which results in a full rotation)
-STRAIN_TYPE = "linear"
-ROTATION_TYPE = "linear"
+STRAIN_TYPE = "nonlinear"
+ROTATION_TYPE = "quadratic"
 
 elementType = None
 if STRAIN_TYPE == "linear":
@@ -65,6 +65,7 @@ if elementType is None:
 # ==============================================================================
 structOptions = {
     "printtiming": True,
+    "isNonlinear": True,
 }
 FEAAssembler = pyTACS(BDF_FILE, options=structOptions, comm=COMM)
 
@@ -82,9 +83,10 @@ def elemCallBack(dvNum, compID, compDescript, elemDescripts, specialDVs, **kwarg
 
 FEAAssembler.initialize(elemCallBack)
 
-probOptions = {"printTiming": True}
-forceProblem = FEAAssembler.createStaticProblem("TipForce")
-momentProblem = FEAAssembler.createStaticProblem("TipMoment")
+probOptions = {"printTiming": True,
+               "skipFirstNLineSearch":1}
+forceProblem = FEAAssembler.createStaticProblem("TipForce", options=probOptions)
+momentProblem = FEAAssembler.createStaticProblem("TipMoment", options=probOptions)
 problems = [forceProblem, momentProblem]
 
 

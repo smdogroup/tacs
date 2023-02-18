@@ -40,8 +40,8 @@ NU = 0.3  # Poisson's ratio
 RHO = 1.0  # density
 YIELD_STRESS = 1.0  # yield stress
 THICKNESS = 0.04  # Shell thickness
-STRAIN_TYPE = "linear"
-ROTATION_TYPE = "linear"
+STRAIN_TYPE = "nonlinear"
+ROTATION_TYPE = "quadratic"
 
 elementType = None
 if STRAIN_TYPE == "linear":
@@ -67,6 +67,7 @@ if elementType is None:
 # ==============================================================================
 structOptions = {
     "printtiming": True,
+    "isNonlinear": STRAIN_TYPE != "linear" or ROTATION_TYPE != "linear",
 }
 FEAAssembler = pyTACS(BDF_FILE, options=structOptions, comm=COMM)
 
@@ -84,8 +85,11 @@ def elemCallBack(dvNum, compID, compDescript, elemDescripts, specialDVs, **kwarg
 
 FEAAssembler.initialize(elemCallBack)
 
-probOptions = {"printTiming": True}
-problem = FEAAssembler.createStaticProblem("RadialForces")
+probOptions = {"printTiming": True,
+               "skipFirstNLineSearch":0,
+               "continuationInitialStep":1.0,
+               "newtonSolverMaxIter":100}
+problem = FEAAssembler.createStaticProblem("RadialForces", options=probOptions)
 
 
 # ==============================================================================
