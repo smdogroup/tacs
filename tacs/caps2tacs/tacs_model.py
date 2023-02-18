@@ -51,7 +51,7 @@ class TacsModel:
                 problemName=problem_name, capsFile=csm_file, outLevel=1
             )
         tacs_aim = TacsAim(caps_problem, comm)
-        egads_aim = EgadsAim(caps_problem)
+        egads_aim = EgadsAim(caps_problem, comm)
         return cls(tacs_aim, egads_aim, comm)
 
     def get_config_parameter(self, param_name: str):

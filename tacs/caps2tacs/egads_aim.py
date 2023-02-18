@@ -13,8 +13,10 @@ class EgadsAim:
     egadsAim.input.Tess_Params = [.25,.01,15]
     """
 
-    def __init__(self, caps_problem):
-        self._aim = caps_problem.analysis.create(aim="egadsTessAIM")
+    def __init__(self, caps_problem, comm):
+        self.comm = comm
+        if comm is None or comm.rank == 0:
+            self._aim = caps_problem.analysis.create(aim="egadsTessAIM")
         self._is_setup = False
 
     def set_mesh(
@@ -29,14 +31,15 @@ class EgadsAim:
         """
         cascaded method to set the mesh input settings to the egadsAim
         """
-        self._aim.input.Edge_Point_Min = edge_pt_min
-        self._aim.input.Edge_Point_Max = edge_pt_max
-        self._aim.input.Mesh_Elements = mesh_elements
-        self._aim.input.Tess_Params = [
-            global_mesh_size,
-            max_surf_offset,
-            max_dihedral_angle,
-        ]
+        if self.comm.rank == 0:
+            self._aim.input.Edge_Point_Min = edge_pt_min
+            self._aim.input.Edge_Point_Max = edge_pt_max
+            self._aim.input.Mesh_Elements = mesh_elements
+            self._aim.input.Tess_Params = [
+                global_mesh_size,
+                max_surf_offset,
+                max_dihedral_angle,
+            ]
         self._is_setup = True
         return self
 

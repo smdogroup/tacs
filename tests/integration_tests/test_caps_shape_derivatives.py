@@ -10,7 +10,7 @@ from mpi4py import MPI
 
 caps_loader = importlib.util.find_spec("pyCAPS")
 complex_mode = TACS.dtype == complex
-complex_mode = False
+additional = False  # to run additional tests offline
 
 base_dir = os.path.dirname(os.path.abspath(__file__))
 csm_path = os.path.join(base_dir, "input_files", "simple_naca_wing.csm")
@@ -68,7 +68,7 @@ class TestCaps2TacsShape(unittest.TestCase):
 
         # add analysis functions
         caps2tacs.AnalysisFunction.mass().register_to(tacs_model)
-        caps2tacs.AnalysisFunction.ksfailure().register_to(tacs_model)
+        caps2tacs.AnalysisFunction.ksfailure(ksWeight=10.0).register_to(tacs_model)
 
         # setup the tacs model
         tacs_model.setup()
@@ -117,6 +117,9 @@ class TestCaps2TacsShape(unittest.TestCase):
 
         self.assertTrue(abs(rel_error) < 1.0e-4)
 
+    @unittest.skipIf(
+        not additional, "test is almost exactly the same so don't run on workflow"
+    )
     def test_wing_shape_and_thick_derivatives(self):
         """
         test the shape derivatives from ESP/CAPS into TACS forward & adjoint analysis

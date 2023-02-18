@@ -10,6 +10,7 @@ from mpi4py import MPI
 
 caps_loader = importlib.util.find_spec("pyCAPS")
 complex_mode = TACS.dtype == complex
+complex_mode = False
 
 base_dir = os.path.dirname(os.path.abspath(__file__))
 csm_path = os.path.join(base_dir, "input_files", "simple_naca_wing.csm")
