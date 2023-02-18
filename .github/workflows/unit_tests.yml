@@ -108,7 +108,7 @@ jobs:
           # Install petsc for openmdao tests
           conda install -c conda-forge petsc=3.12 petsc4py -q -y;
       - name: Install ESP/CAPS prebuilt
-        if: ${{ scalar == 'real' }}
+        #if: ${{ github.scalar == 'real' }} (not working here)
         run:
           wget https://acdl.mit.edu/ESP/PreBuilts/ESP122Lin.tgz
           export CASROOT=${SRC_DIR}/OpenCASCADE-7.6.0
