@@ -456,6 +456,7 @@ int PCG::solve(TACSVec *b, TACSVec *x, int zero_guess) {
 
     if (count == 0) {
       rhs_norm = R->norm();
+      resNorm = rhs_norm;
     }
 
     if (monitor && count == 0) {
@@ -480,20 +481,19 @@ int PCG::solve(TACSVec *b, TACSVec *x, int zero_guess) {
         P->axpby(1.0, beta, Z);                    // P' = Z' + beta*P
         iterCount++;
 
-        TacsScalar norm = R->norm();
+        resNorm = R->norm();
 
         if (monitor) {
-          monitor->printResidual(i + 1, norm);
+          monitor->printResidual(i + 1, resNorm);
         }
 
-        if (TacsRealPart(norm) < atol ||
-            TacsRealPart(norm) < rtol * TacsRealPart(rhs_norm)) {
+        if (TacsRealPart(resNorm) < atol ||
+            TacsRealPart(resNorm) < rtol * TacsRealPart(rhs_norm)) {
           solve_flag = 1;
           break;
         }
       }
     }
-    resNorm = norm
 
     if (solve_flag) {
       break;
@@ -931,7 +931,6 @@ int GMRES::solve(TACSVec *b, TACSVec *x, int zero_guess) {
       pc->applyFactor(work, W[0]);
       x->axpy(1.0, W[0]);
     }
-
 
     iterCount += niters;
     resNorm = res[niters];
