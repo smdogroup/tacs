@@ -268,15 +268,16 @@ class TACSKsm : public TACSObject {
   virtual int solve(TACSVec *b, TACSVec *x, int zero_guess = 1) = 0;
   virtual void setTolerances(double _rtol, double _atol) = 0;
   virtual void setMonitor(KSMPrint *_monitor) = 0;
-  inline int getIterCount() {return iterCount;}
-  inline TacsScalar getResidualNorm() {return resNorm;}
+  inline int getIterCount() { return iterCount; }
+  inline TacsScalar getResidualNorm() { return resNorm; }
   const char *getObjectName();
 
  private:
   static const char *ksmName;
-protected:
-  int iterCount; ///< Number of iterations taken during the last solve
-  TacsScalar resNorm; ///< The residual norm at the end of the last solve
+
+ protected:
+  int iterCount;       ///< Number of iterations taken during the last solve
+  TacsScalar resNorm;  ///< The residual norm at the end of the last solve
 };
 
 /*
