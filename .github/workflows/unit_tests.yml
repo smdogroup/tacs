@@ -109,17 +109,22 @@ jobs:
           conda install -c conda-forge petsc=3.12 petsc4py -q -y;
       - name: Install ESP/CAPS prebuilt
         #if: ${{ github.scalar == 'real' }} (not working here)
-        run:
+        run: |
+          cd $TACS_DIR/extern/
           wget https://acdl.mit.edu/ESP/PreBuilts/ESP122Lin.tgz
-          export CASROOT=${SRC_DIR}/OpenCASCADE-7.6.0
+          tar -xvf ESP122Lin.tgz
+          export ESP_ROOT=${TACS_DIR}/extern/ESP122/EngSketchPad
+          export CASROOT=${TACS_DIR}/extern/ESP122/OpenCASCADE-7.6.0
           export CASARCH=
           export ESPARCH=
           export AFLR=
           export PATH=$PATH:$CASROOT/bin
           export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$CASROOT/lib
+          cd $ESP_ROOT
           ./config/makeEnv ${CASROOT}
           source $ESP_ROOT/ESPenv.sh
           export PYTHONPATH=${PYTHONPATH}:$ESP_ROOT/pyESP
+          cd $TACS_DIR
       - name: Run unit tests
         run: |
           testflo --timeout 120 .;
