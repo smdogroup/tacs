@@ -9,19 +9,18 @@ from tacs import caps2tacs, TACS
 from mpi4py import MPI
 
 caps_loader = importlib.util.find_spec("pyCAPS")
-complex_mode = TACS.dtype == complex
-complex_mode = False
 
 base_dir = os.path.dirname(os.path.abspath(__file__))
 csm_path = os.path.join(base_dir, "input_files", "simple_naca_wing.csm")
 
 
 # only run the test if pyCAPS can be imported
+# runs on github workflow in real mode or offline in any mode
 @unittest.skipIf(
-    caps_loader is None or complex_mode,
-    "skipping ESP/CAPS test without pyCAPS module or in complex mode",
+    caps_loader is None,
+    "skipping ESP/CAPS test without pyCAPS module",
 )
-class TestCaps2Tacs(unittest.TestCase):
+class TestCaps2TacsSizing(unittest.TestCase):
     def test_thickness_derivatives(self):
         """
         test the thickness derivatives in TACS setup from ESP/CAPS
