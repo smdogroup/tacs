@@ -2052,6 +2052,22 @@ class StaticProblem(TACSProblem):
         self.assembler.setVariables(self.u)
 
     def getOutputFileName(self, outputDir=None, baseName=None, number=None):
+        """Figure out a base path/name for output files
+
+        Parameters
+        ----------
+        outputDir : str, optional
+            Directory to write file to, by default uses the 'outputDir' option
+        baseName : str, optional
+            Case name, by default uses self.name
+        number : int, optional
+            A number to append to the filename, by default uses the call-count of the problem
+
+        Returns
+        -------
+        str
+            Full path to output file (excluding any extension)
+        """
         # Check input
         if outputDir is None:
             outputDir = self.getOption("outputDir")
@@ -2069,7 +2085,7 @@ class StaticProblem(TACSProblem):
             # number solutions, use internal counter
             if self.getOption("numberSolutions"):
                 baseName = baseName + "_%3.3d" % self.callCounter
-        return baseName
+        return os.path.join(outputDir, baseName)
 
     def writeSolution(self, outputDir=None, baseName=None, number=None):
         """
@@ -2099,10 +2115,9 @@ class StaticProblem(TACSProblem):
 
         # Unless the writeSolution option is off write actual file:
         if self.getOption("writeSolution"):
-            base = os.path.join(outputDir, baseName) + ".f5"
-            self.outputViewer.writeToFile(base)
+            self.outputViewer.writeToFile(baseName + ".f5")
 
-    def writeSolverHistory(self, outputDir=None, baseName=None, number=None):
+    def writeSolutionHistory(self, outputDir=None, baseName=None, number=None):
         # Figure out the output file base name
         baseName = self.getOutputFileName(outputDir, baseName, number)
         if self.history is not None:
