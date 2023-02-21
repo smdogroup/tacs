@@ -144,11 +144,10 @@ class StaticProblem(TACSProblem):
             [
                 "linSolverIters",
                 "linSolverRes",
-                "loadScale",
                 "lineSearchStep",
                 "lineSearchIters",
             ],
-            "List of variables to include in nonlinear solver monitor output. Choose from 'linSolverIters', 'linSolverRes', 'loadScale', 'lineSearchStep' and 'lineSearchIters'.",
+            "List of variables to include in nonlinear solver monitor output. Choose from 'linSolverIters', 'linSolverRes', 'loadScale', 'lineSearchStep', 'EWTol', and 'lineSearchIters'.",
         ],
         "newtonSolverMaxIter": [int, 40, "Maximum number of Newton iterations."],
         "newtonSolverAbsTol": [
@@ -175,6 +174,27 @@ class StaticProblem(TACSProblem):
             float,
             1e10,
             "Residual norm at which the nonlinear solver is jugded to have diverged",
+        ],
+        "newtonSolverMaxLinIters": [
+            int,
+            0,
+            "If the linear solver takes more than this number of iterations to converge, the preconditioner is updated.",
+        ],
+        "newtonSolverUseEW": [
+            bool,
+            False,
+            "Flag for enabling use of variable linear solver convergence using the Eisenstat-Walker method.",
+        ],
+        "newtonSolverEWMaxTol": [
+            float,
+            0.01,
+            "Eisenstat-Walker max allowable linear solver tolerance.",
+        ],
+        "newtonSolverEWGamma": [float, 1.0, "Eisenstat-Walker gamma parameter."],
+        "newtonSolverEWAlpha": [
+            float,
+            0.5 * (1.0 + np.sqrt(5)),
+            "Eisenstat-Walker alpha parameter.",
         ],
         # Line search options
         "useLineSearch": [
@@ -295,14 +315,15 @@ class StaticProblem(TACSProblem):
             history = SolverHistory()
 
             # Define the variables to be stored in the history
-            # Continuation increment number
-            history.addVariable("Increment", int, printVar=True)
             # Load scale
             history.addVariable(
                 "Load scale", float, printVar="loadscale" in monitorVars
             )
             # Newton solve iteration number
             history.addVariable("SubIter", int, printVar=True)
+            # Einstat walker linear solver tolerance
+            if self.getOption("newtonSolverUseEW"):
+                history.addVariable("EW Tol", float, printVar="ewtol" in monitorVars)
             # Number of linear solver iterations
             history.addVariable(
                 "Lin iters", int, printVar="linsolveriters" in monitorVars
@@ -330,6 +351,8 @@ class StaticProblem(TACSProblem):
                 printVar="linesearchiters" in monitorVars
                 and self.getOption("useLineSearch"),
             )
+            # Flags
+            history.addVariable("Flags", str, printVar=True)
 
             self.history = history
 
@@ -1038,6 +1061,11 @@ class StaticProblem(TACSProblem):
         MAX_STEP_FACTOR = self.getOption("continuationMaxStepFactor")
         STEP_RETRACT_FACTOR = self.getOption("continuationRetractionFactor")
 
+        ABS_TOL = self.getOption("newtonSolverAbsTol")
+        REL_TOL = self.getOption("newtonSolverRelTol")
+        COARSE_ABS_TOL = self.getOption("newtonSolverCoarseAbsTol")
+        COARSE_REL_TOL = self.getOption("newtonSolverCoarseRelTol")
+
         USE_PREDICTOR = self.getOption("usePredictor")
         NUM_PREDICTOR_STATES = self.getOption("predictorNumStates")
         PREDICTOR_USE_DERIVATIVE = self.getOption("predictorUseDerivative")
@@ -1103,15 +1131,24 @@ class StaticProblem(TACSProblem):
             self.history.addMetadata("Name", self.name)
 
         for increment in range(MAX_INCREMENTS):
-
+            self._info(
+                f"Continuation Increment {increment + 1}, Load Scale: {self.loadScale:.3f}",
+                box=True,
+                maxLen=100,
+            )
             # Save displacement at start of this increment, this is what
             # we'll reset to if the increment diverges
             self.u_inc_start.copyValues(self.u)
 
             # --- Compute predictor step ---
             # TODO: Add predictor computation here
-
-            success, numIters = self.newtonSolve(Fext=Fext)
+            if self.loadScale == maxLoadScale:
+                rtol = REL_TOL
+                atol = ABS_TOL
+            else:
+                rtol = COARSE_REL_TOL
+                atol = COARSE_ABS_TOL
+            success, numIters = self.newtonSolve(Fext=Fext, rtol=rtol, atol=atol)
 
             # --- Check convergence ---
             if not success:
@@ -1143,11 +1180,27 @@ class StaticProblem(TACSProblem):
         # End of nonlinear solution
         # ==============================================================================
 
-    def newtonSolve(self, Fext=None):
+    def newtonSolve(self, Fext=None, atol=None, rtol=None):
         USE_LINESEARCH = self.getOption("useLineSearch")
         LINESEARCH_SKIP_ITERS = self.getOption("skipFirstNLineSearch")
         MAX_ITERS = self.getOption("newtonSolverMaxIter")
+        MAX_RES = self.getOption("newtonSolverDivergenceTol")
+        MAX_LIN_ITERS = self.getOption("newtonSolverMaxLinIters")
 
+        # Linear solver convergence options
+        USE_EW = self.getOption("newtonSolverUseEW")
+        LIN_SOLVE_TOL_MAX = self.getOption("newtonSolverEWMaxTol")
+        LIN_SOLVE_TOL_MIN = self.getOption("L2ConvergenceRel")
+        EW_ALPHA = self.getOption("newtonSolverEWAlpha")
+        EW_GAMMA = self.getOption("newtonSolverEWGamma")
+        linCovergenceRel = LIN_SOLVE_TOL_MAX if USE_EW else LIN_SOLVE_TOL_MIN
+
+        if atol is None:
+            atol = self.getOption("newtonSolverAbsTol")
+        if rtol is None:
+            rtol = self.getOption("newtonSolverRelTol")
+
+        flags = ""
 
         for iteration in range(MAX_ITERS):
             # TODO: Write output file here based on option
@@ -1155,42 +1208,69 @@ class StaticProblem(TACSProblem):
 
             # Compute residual
             self.getResidual(self.res, Fext=Fext)
+            if iteration > 0:
+                prevResNorm = resNorm
             resNorm = self.res.norm()
             uNorm = self.u.norm()
 
+            prevLinCovergenceRel = linCovergenceRel
+            if USE_EW:
+                # Compute linear solver convergence tolerance using Einstat-Walker method b)
+                if iteration > 0:
+                    zeta = EW_GAMMA * np.real(resNorm / prevResNorm) ** EW_ALPHA
+                    threshold = EW_GAMMA * prevLinCovergenceRel**EW_ALPHA
+                    if threshold <= 0.1:
+                        linCovergenceRel = zeta
+                    else:
+                        linCovergenceRel = max(zeta, threshold)
+                linCovergenceRel = np.clip(
+                    linCovergenceRel, LIN_SOLVE_TOL_MIN, LIN_SOLVE_TOL_MAX
+                )
+
             # Write data to history
             histData = {
-                "Increment":0,
                 "SubIter": iteration,
                 "Load scale": self.loadScale,
                 "Res norm": resNorm,
-                "Rel res norm":resNorm/self.initNorm,
-                "U norm":uNorm,
+                "Rel res norm": resNorm / self.initNorm,
+                "U norm": uNorm,
+                "Flags": flags,
             }
             if iteration > 0:
                 histData["Lin iters"] = linearSolveIterations
-                histData["Lin res"] = linearSolveResNorm
+                histData["Lin res"] = np.abs(linearSolveResNorm)
                 histData["LS step"] = alpha
                 histData["LS iters"] = lineSearchIters
+                if USE_EW:
+                    histData["EW Tol"] = prevLinCovergenceRel
             if self.rank == 0:
                 self.history.write(histData)
                 if iteration % 50 == 0:
                     self.history.printHeader()
                 self.history.printData()
 
+            flags = ""
 
             # Test convergence (exit if converged/diverged)
-            hasConverged = self.checkConvergence(resNorm)
-            hasDiverged = self.checkDivergence(resNorm)
+            hasConverged = (
+                np.real(resNorm) / np.real(self.initNorm) < rtol
+                or np.real(resNorm) < atol
+            )
+            hasDiverged = np.real(resNorm) >= MAX_RES
             if hasConverged or hasDiverged:
                 break
 
             # Update Jacobian
             self.updateJacobian()
+            if iteration > 0 and linearSolveIterations <= MAX_LIN_ITERS:
+                self._factorOnNext = False
+            else:
+                flags += "P"
             self.updatePreconditioner()
 
             # Compute Newton step
-            self.solveJacLinear(self.res, self.update)
+            self.setOption("L2ConvergenceRel", float(linCovergenceRel))
+            linSolveConverged = self.solveJacLinear(self.res, self.update)
             self.update.scale(-1.0)
 
             # Check data from linear solve
@@ -1199,7 +1279,9 @@ class StaticProblem(TACSProblem):
 
             if USE_LINESEARCH and iteration >= LINESEARCH_SKIP_ITERS:
                 # Do linesearch
-                alpha, lineSearchIters = self.energyLineSearch(self.u, self.update, Fext=Fext)
+                alpha, lineSearchIters = self.energyLineSearch(
+                    self.u, self.update, Fext=Fext
+                )
             else:
                 alpha = 1.0
                 lineSearchIters = 1
@@ -1209,13 +1291,15 @@ class StaticProblem(TACSProblem):
 
         return hasConverged, iteration
 
-    def energyLineSearch(self, u, stepDir, Fext=None):
+    def energyLineSearch(self, u, stepDir, Fext=None, slope=None):
         MAX_LINESEARCH_ITERS = self.getOption("lineSearchMaxIter")
         LINESEARCH_MU = self.getOption("lineSearchExpectedDecrease")
         LINESEARCH_ALPHA_MIN = self.getOption("lineSearchMinStep")
         LINESEARCH_ALPHA_MAX = self.getOption("lineSearchMaxStep")
         LINESEARCH_MAX_STEP_CHANGE = self.getOption("lineSearchMaxStepChange")
         PRINT_LINESEARCH_ITERS = self.getOption("lineSearchMonitor")
+        if slope is None:
+            slope = 1.0
 
         # Compute residual and merit function at u0
         self.assembler.setVariables(u)
@@ -1252,7 +1336,7 @@ class StaticProblem(TACSProblem):
                 )
             u.axpy(-alpha, stepDir)
             fReduction = np.abs(fNew / f0)
-            if fReduction <= 1 - LINESEARCH_MU * min(alpha, 1.0):
+            if fReduction <= 1 - LINESEARCH_MU * min(alpha, 1.0) * slope:
                 break
             else:
                 # 8. Update $\alpha$ (based on search method)
@@ -1276,10 +1360,11 @@ class StaticProblem(TACSProblem):
                 alpha = alphaNew
                 fOld = fNew
             # 9. return to step 4
-        return alpha, iteration
+        return alpha, iteration + 1
 
     def solveJacLinear(self, res, sol):
         success = self.KSM.solve(res, sol)
+        success = success == 1
 
         if not success:
             self._TACSWarning(
@@ -1311,26 +1396,6 @@ class StaticProblem(TACSProblem):
             # Remove artificial stiffness terms to get true stiffness mat
             self.K.axpy(-1.0, self.rbeArtificialStiffness)
             self._factorOnNext = False
-
-    def checkConvergence(self, resNorm):
-        """Check whether the residual is sufficiently converged
-
-        Returns
-        -------
-        _type_
-            _description_
-        """
-        return resNorm / self.initNorm < 1e-8
-
-    def checkDivergence(self, resNorm):
-        """Check whether the residual has diverged
-
-        Returns
-        -------
-        _type_
-            _description_
-        """
-        return resNorm > 1e10 or np.isnan(resNorm)
 
     ####### Function eval/sensitivity methods ########
 
