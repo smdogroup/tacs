@@ -815,6 +815,21 @@ optimization</p>
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="tacs.problems.StaticProblem.writeSensFile">
+<span class="sig-name descname"><span class="pre">writeSensFile</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">evalFuncs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tacsAim</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tacs.problems.StaticProblem.writeSensFile" title="Permalink to this definition">¶</a></dt>
+<dd><p>write an ESP/CAPS .sens file from the tacs aim
+Optional tacs_aim arg for TacsAim wrapper class object in root/tacs/caps2tacs/</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>evalFuncs</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.11)"><em>list</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.11)"><em>str</em></a><em>]</em>) -- names of TACS functions to be evaluated</p></li>
+<li><p><strong>tacsAim</strong> (<em>tacs.caps2tacs.TacsAIM</em>) -- class which handles the sensitivity file writing for ESP/CAPS shape derivatives</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="tacs.problems.StaticProblem.writeSolution">
 <span class="sig-name descname"><span class="pre">writeSolution</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">outputDir</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">baseName</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">number</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/problems/static.html#StaticProblem.writeSolution"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.problems.StaticProblem.writeSolution" title="Permalink to this definition">¶</a></dt>
 <dd><p>This is a generic shell function that writes the output
@@ -900,6 +915,7 @@ typically used from an external solver</p></li>
 <li><a class="reference internal" href="#tacs.problems.StaticProblem.printDefaultOptions"><code class="docutils literal notranslate"><span class="pre">StaticProblem.printDefaultOptions()</span></code></a></li>
 <li><a class="reference internal" href="#tacs.problems.StaticProblem.printOptions"><code class="docutils literal notranslate"><span class="pre">StaticProblem.printOptions()</span></code></a></li>
 <li><a class="reference internal" href="#tacs.problems.StaticProblem.setVarName"><code class="docutils literal notranslate"><span class="pre">StaticProblem.setVarName()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.problems.StaticProblem.writeSensFile"><code class="docutils literal notranslate"><span class="pre">StaticProblem.writeSensFile()</span></code></a></li>
 <li><a class="reference internal" href="#tacs.problems.StaticProblem.writeSolution"><code class="docutils literal notranslate"><span class="pre">StaticProblem.writeSolution()</span></code></a></li>
 </ul>
 </li>
