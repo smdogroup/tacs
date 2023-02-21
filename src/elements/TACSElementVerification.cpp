@@ -38,6 +38,7 @@ inline auto TacsGetMatrixTypeName(ElementMatrixType matType){
     return "Stiffness Product Derivative";
     break;
   }
+  return "Unknown Matrix Type";
 }
 
 /*
