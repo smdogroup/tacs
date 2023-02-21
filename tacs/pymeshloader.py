@@ -896,7 +896,7 @@ class pyMeshLoader(BaseUI):
                 return -1
 
     @property
-    def nodeIDs(self):
+    def allLocalNodeIDs(self):
         """
         get list of tacs_ids for each nastran node owned across all processors
         nastran_node = array_idx + 1
@@ -904,10 +904,21 @@ class pyMeshLoader(BaseUI):
         nastran_node - 1 => tacs_idx owned by this proc
         """
 
-        if self.comm is None:
-            return self._getLocalNodeIDs()
-        else:
-            return self._getAllLocalNodeIDs()
+        self._nastranToLocalNodeIDMap()
+        local_maps = self.comm.gather(self._local_map, root=0)
+        full_map_list = []
+        for local_map in local_maps:
+            full_map_list += local_map
+        all_struct_ids = None
+        if self.comm.rank == 0:
+            all_struct_ids = np.zeros((self.bdfInfo.nnodes), dtype=int)
+            for map in full_map_list:
+                for key in map:
+                    all_struct_ids[int(key)] = map[int(key)]
+            all_struct_ids = list(all_struct_ids)
+        # broadcast to other procs
+        all_struct_ids = self.comm.bcast(all_struct_ids, root=0)
+        return all_struct_ids
 
     def _getLocalNodeIDs(self):
         """
@@ -929,23 +940,3 @@ class pyMeshLoader(BaseUI):
                 id_map.append({arr_idx: struct_id})
         self._local_map = id_map
         return id_map
-
-    def _getAllLocalNodeIDs(self):
-        """
-        get struct ids on all processors broadcast to root
-        """
-        self._nastranToLocalNodeIDMap()
-        local_maps = self.comm.gather(self._local_map, root=0)
-        full_map_list = []
-        for local_map in local_maps:
-            full_map_list += local_map
-        all_struct_ids = None
-        if self.comm.rank == 0:
-            all_struct_ids = np.zeros((self.bdfInfo.nnodes), dtype=int)
-            for map in full_map_list:
-                for key in map:
-                    all_struct_ids[int(key)] = map[int(key)]
-            all_struct_ids = list(all_struct_ids)
-        # broadcast to other procs
-        all_struct_ids = self.comm.bcast(all_struct_ids, root=0)
-        return all_struct_ids

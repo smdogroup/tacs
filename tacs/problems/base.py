@@ -1077,11 +1077,9 @@ class TACSProblem(BaseUI):
 
         Parameters
         ----------
-
-        evalFuncs : list of strings
+        evalFuncs : list[str]
             names of TACS functions to be evaluated
-
-        tacsAim : pyCAPS tacsAIM wrapper class
+        tacsAim : tacs.caps2tacs.TacsAIM
             class which handles the sensitivity file writing for ESP/CAPS shape derivatives
 
         """
@@ -1096,9 +1094,9 @@ class TACSProblem(BaseUI):
         assert tacsAim is not None
         num_struct_dvs = len(tacsAim.thickness_variables)
         num_nodes = self.meshLoader.bdfInfo.nnodes
-        node_ids = self.meshLoader.nodeIDs
+        node_ids = self.meshLoader.allLocalNodeIDs
 
-        if self.comm is None or self.comm.rank == 0:
+        if self.comm.rank == 0:
             # open the sens file nastran_CAPS.sens and write coordinate derivatives
             # and any other struct derivatives to it
             with open(tacsAim.sens_file_path, "w") as hdl:
