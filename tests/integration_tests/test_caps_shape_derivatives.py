@@ -16,6 +16,7 @@ csm_path = os.path.join(base_dir, "input_files", "simple_naca_wing.csm")
 # use random seed to avoid random outlier failures in shape derivatives
 np.random.seed(1234567)
 
+
 # only run the test if pyCAPS can be imported
 # runs on github workflow in real mode or offline in any mode
 @unittest.skipIf(
