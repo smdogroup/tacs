@@ -122,6 +122,9 @@ jobs:
             source $ESP_ROOT/../ESPenv.sh
             cd ./src/CAPS/aim
             make
+            cd $TACS_DIR/extern/ESP122/
+            # remove all ESP/CAPS unit test files with recursive delete
+            find . -name "test*" -type f -delete
             cd $TACS_DIR
           fi
       - name: Run unit tests
@@ -130,7 +133,7 @@ jobs:
           if [[ ${{ matrix.NAME }} == 'Real' ]]; then
             source ${TACS_DIR}/extern/ESP122/ESPenv.sh
           fi
-          testflo --timeout 120 tests/
+          testflo --timeout 120 .;
       - name: Build docs
         run: |
           cd $TACS_DIR/docs;
