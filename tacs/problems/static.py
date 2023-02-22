@@ -109,7 +109,7 @@ class StaticProblem(TACSProblem):
         comm,
         outputViewer=None,
         meshLoader=None,
-        options={},
+        options=None,
     ):
         """
         NOTE: This class should not be initialized directly by the user.
@@ -140,20 +140,11 @@ class StaticProblem(TACSProblem):
         # Problem name
         self.name = name
 
-        # Default setup for common problem class objects
-        TACSProblem.__init__(self, assembler, comm, outputViewer, meshLoader)
+        # Set linear solver to None, until we set it up later
+        self.KSM = None
 
-        # Process the default options which are added to self.options
-        # under the 'defaults' key. Make sure the key are lower case
-        def_keys = self.defaultOptions.keys()
-        self.options["defaults"] = {}
-        for key in def_keys:
-            self.options["defaults"][key.lower()] = self.defaultOptions[key]
-            self.options[key.lower()] = self.defaultOptions[key]
-
-        # Set user-defined options
-        for key in options:
-            TACSProblem.setOption(self, key, options[key])
+        # Default setup for common problem class objects, sets up comm and options
+        TACSProblem.__init__(self, assembler, comm, options, outputViewer, meshLoader)
 
         # Create problem-specific variables
         self._createVariables()
@@ -294,23 +285,24 @@ class StaticProblem(TACSProblem):
         # Default setOption for common problem class objects
         TACSProblem.setOption(self, name, value)
 
-        # Update tolerances
-        if "l2convergence" in name.lower():
-            self.KSM.setTolerances(
-                self.getOption("L2ConvergenceRel"),
-                self.getOption("L2Convergence"),
-            )
-        # No need to reset solver for output options
-        elif name.lower() in [
-            "writesolution",
-            "printtiming",
-            "numbersolutions",
-            "outputdir",
-        ]:
-            pass
-        # Reset solver for all other option changes
-        else:
-            self._createVariables()
+        if self.KSM is not None:
+            # Update tolerances
+            if "l2convergence" in name.lower():
+                self.KSM.setTolerances(
+                    self.getOption("L2ConvergenceRel"),
+                    self.getOption("L2Convergence"),
+                )
+            # No need to reset solver for output options
+            elif name.lower() in [
+                "writesolution",
+                "printtiming",
+                "numbersolutions",
+                "outputdir",
+            ]:
+                pass
+            # Reset solver for all other option changes
+            else:
+                self._createVariables()
 
     @property
     def loadScale(self):

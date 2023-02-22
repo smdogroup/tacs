@@ -23,8 +23,8 @@ from .utilities import BaseUI
 
 class pyMeshLoader(BaseUI):
     def __init__(self, comm, printDebug=False):
-        # MPI communicator
-        self.comm = comm
+        # Set MPI communicator
+        BaseUI.__init__(self, comm=comm)
         # Debug printing flag
         self.printDebug = printDebug
         self.bdfInfo = None

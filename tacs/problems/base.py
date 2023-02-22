@@ -19,7 +19,9 @@ class TACSProblem(BaseUI):
     Base class for TACS problem types. Contains methods common to all TACS problems.
     """
 
-    def __init__(self, assembler, comm, outputViewer=None, meshLoader=None):
+    def __init__(
+        self, assembler, comm=None, options=None, outputViewer=None, meshLoader=None
+    ):
         # TACS assembler object
         self.assembler = assembler
         # TACS F5 output writer
@@ -29,8 +31,6 @@ class TACSProblem(BaseUI):
         # pyNastran BDF object
         if self.meshLoader:
             self.bdfInfo = self.meshLoader.getBDFInfo()
-        # MPI communicator object
-        self.comm = comm
 
         # Create Design variable vector
         self.x = self.assembler.createDesignVec()
@@ -43,8 +43,8 @@ class TACSProblem(BaseUI):
         # List of functions
         self.functionList = OrderedDict()
 
-        # Empty options dict, should be filled out by child class
-        self.options = {}
+        # Setup comm and options
+        BaseUI.__init__(self, options=options, comm=comm)
 
         return
 
