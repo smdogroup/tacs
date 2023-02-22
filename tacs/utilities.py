@@ -1,13 +1,4 @@
-from collections import OrderedDict
-import copy
-import os
-import time
-from typing import Optional, Type, Dict, Any, List, Iterable, Union
-import pickle
-import warnings
-
 from mpi4py import MPI
-
 import tacs.TACS
 
 
@@ -29,7 +20,7 @@ class BaseUI:
         ----------
         options : dict, optional
             Object-specific option parameters (case-insensitive), by default None
-        comm : _type_, optional
+        comm : mpi4py.MPI.Intracomm, optional
             The comm object on which to create the pyTACS object., by default MPI.COMM_WORLD
         """
         # Set the communicator and rank

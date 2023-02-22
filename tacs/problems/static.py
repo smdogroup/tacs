@@ -280,7 +280,9 @@ class StaticProblem(TACSProblem):
         self.name = name
 
         # Default setup for common problem class objects, sets up comm and options
-        super().__init__(assembler, comm, options, outputViewer, meshLoader, isNonlinear)
+        TACSProblem.__init__(
+            self, assembler, comm, options, outputViewer, meshLoader, isNonlinear
+        )
 
         # Setup solver history object for nonlinear problems
         self.history = None
@@ -497,30 +499,31 @@ class StaticProblem(TACSProblem):
         # Default setOption for common problem class objects
         TACSProblem.setOption(self, name, value)
 
-        # Update tolerances
-        if "l2convergence" in name.lower():
-            self.KSM.setTolerances(
-                self.getOption("L2ConvergenceRel"),
-                self.getOption("L2Convergence"),
-            )
-        # No need to reset solver for output options
-        elif (
-            name.lower()
-            in [
-                "writesolution",
-                "printtiming",
-                "numbersolutions",
-                "outputdir",
-                "usePredictor",
-                "predictorUseDerivative",
-            ]
-            or "linesearch" in name.lower()
-            or "newtonsolver" in name.lower()
-        ):
-            pass
-        # Reset solver for all other option changes
-        else:
-            self._createVariables()
+        if self.KSM is not None:
+            # Update tolerances
+            if "l2convergence" in name.lower():
+                self.KSM.setTolerances(
+                    self.getOption("L2ConvergenceRel"),
+                    self.getOption("L2Convergence"),
+                )
+            # No need to reset solver for output options
+            elif (
+                name.lower()
+                in [
+                    "writesolution",
+                    "printtiming",
+                    "numbersolutions",
+                    "outputdir",
+                    "usePredictor",
+                    "predictorUseDerivative",
+                ]
+                or "linesearch" in name.lower()
+                or "newtonsolver" in name.lower()
+            ):
+                pass
+            # Reset solver for all other option changes
+            else:
+                self._createVariables()
 
         # We need to create a new solver history object if the monitor variables have updated
         if name.lower() == "newtonsolvermonitorvars":

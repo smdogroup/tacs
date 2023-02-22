@@ -60,7 +60,9 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
         fea_assembler.initialize()
 
         # Create case 1 static problem
-        problem = fea_assembler.createStaticProblem("rigid_body")
+        problem = fea_assembler.createStaticProblem(
+            "rigid_body", options={"printTiming": True}
+        )
 
         problem.addFunction("mass", functions.StructuralMass)
         problem.addFunction("cgx", functions.CenterOfMass, direction=[1.0, 0.0, 0.0])

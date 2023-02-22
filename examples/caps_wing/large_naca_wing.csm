@@ -1,0 +1,183 @@
+# Large naca wing example
+# 
+# Sean Engelstad October 2022
+# SMDO Lab Georgia Tech, professor Dr. Graeme Kennedy
+
+### Design parameters ###
+
+# number of ribs and spars
+cfgpmtr nribs 10
+cfgpmtr nspars 2
+
+# root and tip chord
+despmtr chord0 2.0
+despmtr chordf 1.0
+
+# spanwise parameters
+despmtr span 10.0
+despmtr dihedral 3.0
+despmtr lesweep 15.0
+
+# airfoil shape parameters
+despmtr tc0 0.12
+despmtr tcf 0.12
+despmtr camb0 0.05
+despmtr cambf 0.05
+
+# spar fraction despmtrs
+despmtr spar_a1 1.0
+despmtr spar_a2 0.0
+set spar_a3 1.0-spar_a1-spar_a2
+
+# rib fraction despmtrs
+despmtr rib_a1 1.0
+despmtr rib_a2 0.0
+set rib_a3 1.0-rib_a1-rib_a2
+
+# Depedendent parameters
+set sspan span/2.0
+set zf sspan*tand(dihedral)
+set xf sspan*tand(lesweep)
+set margin1 5.0
+set margin2 3.0
+set margin3 10.0
+
+
+### 1. Wing Solid Body ###
+
+# root airfoil
+mark
+udprim naca thickness tc0 camber camb0 maxloc 0.3
+scale chord0
+rotatex 90 0 0
+
+# tip airfoil
+udprim naca thickness tcf camber cambf maxloc 0.3
+scale chordf
+rotatex 90 0 0
+translate xf -sspan zf
+
+# loft the solid wing and store it
+loft 0
+
+# attribute the solid wing
+select face
+attribute has_group $no
+attribute capsLoad $OML
+attribute _color $blue
+
+# make root and tip caps the ribs
+select face 5
+attribute capsGroup $rib1
+attribute _color $green
+
+select face 4
+attribute capsGroup !$rib+nribs
+attribute _color $green
+
+store solidWing
+
+### 2. Internal Structure ###
+
+# make the spars
+patbeg ispar nspars
+   
+   # compute the positions of the spars at root and tip
+   set fr ispar/(nspars+1)
+   set sparFrac fr*(spar_a1+fr*(spar_a2+fr*spar_a3))
+   set xroot chord0*sparFrac
+   set xtip chordf*sparFrac+xf
+   set deltax xtip-xroot
+   set angle atand(deltax/sspan)
+   
+   # make the panel to intersect
+   box xroot margin2 -margin1 0.0 -sspan-2*margin2 2*margin1
+   
+   # rotate it to match the xtip location
+   translate -xroot 0 0
+   rotatez angle 0 0
+   translate xroot 0 0
+   
+   # add caps attributes
+   select face
+   attribute capsGroup !$spar+ispar
+   attribute has_group $yes
+   attribute _color $green
+patend
+
+# make the ribs except for end cap ribs
+set ninnerRibs nribs-2
+patbeg index ninnerRibs
+   
+   # compute the spanwise portion of the rib
+   set irib index+1
+   set fr (irib-1)/(nribs-1)
+   set ribFrac fr*(rib_a1+fr*(rib_a2+fr*rib_a3)) 
+   set ypos -ribFrac*sspan
+   
+   # make the panel of the rib
+   box -margin3 ypos -margin2 2*margin3 0 2*margin2
+   
+   # add caps attributes
+   select face
+   attribute capsGroup !$rib+irib
+   attribute has_group $yes
+   attribute _color $green
+
+   # union with previous ribs/spars
+   ifthen index eq 1
+      patbeg ispar nspars
+         union
+      patend
+   else
+      union
+   endif
+
+patend
+
+### 3. Complete the wing geometry ###
+
+# intersect the internal structure with the solid wing
+restore solidWing
+intersect
+
+# extract outer shell of solid wing to make OML
+restore solidWing
+# hollow 0 or extract 0, but in this case hollow 0 changes the normal for colors better
+hollow 0 
+
+# union OML and internal structure together
+union
+
+### 4. Final Caps Attributes ###
+
+# add constraint attributes to root airfoil
+select face $capsGroup $rib1
+attribute capsConstraint $root
+
+# add the constraint attribute to adjacent edges, nodes
+# otherwise they can pop out of the mesh in the structural analysis
+udprim editAttr filename <<
+ EDGE ADJ2FACE capsConstraint=root
+ SET capsConstraint=root
+
+ NODE ADJ2FACE capsConstraint=root
+ SET capsConstraint=root
+
+ patbeg iOML (nribs-1)
+    FACE HAS has_group=no
+    AND ADJ2FACE capsGroup=!$rib+iOML
+    AND ADJ2FACE capsGroup=!$rib+(iOML+1)
+    SET capsGroup=!$OML+iOML
+    SET has_group=yes
+ patend
+>>
+
+
+# add AIM attribute to specify the analyses to use
+select body
+attribute capsAIM $egadsTessAIM;tacsAIM
+
+end
+|||||
+|||

@@ -23,8 +23,8 @@ from .utilities import BaseUI
 
 class pyMeshLoader(BaseUI):
     def __init__(self, comm, printDebug=False):
-        # MPI communicator
-        self.comm = comm
+        # Set MPI communicator
+        BaseUI.__init__(self, comm=comm)
         # Debug printing flag
         self.printDebug = printDebug
         self.bdfInfo = None
@@ -894,3 +894,49 @@ class pyMeshLoader(BaseUI):
                 return tacsIDDict[fromIDs]
             else:
                 return -1
+
+    @property
+    def allLocalNodeIDs(self):
+        """
+        get list of tacs_ids for each nastran node owned across all processors
+        nastran_node = array_idx + 1
+        tacs_idx = output id
+        nastran_node - 1 => tacs_idx owned by this proc
+        """
+
+        self._nastranToLocalNodeIDMap()
+        local_maps = self.comm.gather(self._local_map, root=0)
+        full_map_list = []
+        for local_map in local_maps:
+            full_map_list += local_map
+        all_struct_ids = None
+        if self.comm.rank == 0:
+            all_struct_ids = np.zeros((self.bdfInfo.nnodes), dtype=int)
+            for map in full_map_list:
+                for key in map:
+                    all_struct_ids[int(key)] = map[int(key)]
+            all_struct_ids = list(all_struct_ids)
+        # broadcast to other procs
+        all_struct_ids = self.comm.bcast(all_struct_ids, root=0)
+        return all_struct_ids
+
+    def _getLocalNodeIDs(self):
+        """
+        get the local struct ids owned by this processor, full list when comm is None
+        -1 for each idx not owned by this processor
+        """
+        num_nodes = self.bdfInfo.nnodes
+        bdf_nodes = [_ for _ in range(num_nodes)]
+        return self.getLocalNodeIDsFromGlobal(bdf_nodes, nastranOrdering=False)
+
+    def _nastranToLocalNodeIDMap(self):
+        """
+        write the map nastran_node - 1 => tacs_idx on each processor
+        """
+        local_struct_ids = self._getLocalNodeIDs()
+        id_map = []
+        for arr_idx, struct_id in enumerate(local_struct_ids):
+            if struct_id != -1:
+                id_map.append({arr_idx: struct_id})
+        self._local_map = id_map
+        return id_map

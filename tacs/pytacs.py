@@ -154,7 +154,7 @@ class pyTACS(BaseUI):
         ],
     }
 
-    def __init__(self, fileName, comm=None, dvNum=0, scaleList=None, options={}):
+    def __init__(self, fileName, comm=None, dvNum=0, scaleList=None, options=None):
         """
 
         Parameters
@@ -182,26 +182,8 @@ class pyTACS(BaseUI):
 
         startTime = time.time()
 
-        # Set the communicator and rank -- defaults to MPI_COMM_WORLD
-        if comm is None:
-            comm = MPI.COMM_WORLD
-        self.comm = comm
-        self.rank = comm.rank
-
-        # Process the default options which are added to self.options
-        # under the 'defaults' key. Make sure the key are lower case
-        self.options = {}
-        def_keys = self.defaultOptions.keys()
-        self.options["defaults"] = {}
-        for key in def_keys:
-            self.options["defaults"][key.lower()] = self.defaultOptions[key]
-            self.options[key.lower()] = self.defaultOptions[key]
-
-        # Process the user-supplied options
-        userOptions = options
-        optKeys = userOptions.keys()
-        for key in optKeys:
-            self.setOption(key, userOptions[key])
+        # Setup comm and options
+        BaseUI.__init__(self, options=options, comm=comm)
 
         importTime = time.time()
 
