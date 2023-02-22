@@ -141,7 +141,7 @@ class StaticProblem(TACSProblem):
         self.name = name
 
         # Default setup for common problem class objects, sets up comm and options
-        super().__init__(assembler, comm, options, outputViewer, meshLoader)
+        TACSProblem.__init__(self, assembler, comm, options, outputViewer, meshLoader)
 
         # Create problem-specific variables
         self._createVariables()
