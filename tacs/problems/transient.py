@@ -91,6 +91,7 @@ class TransientProblem(TACSProblem):
         comm,
         outputViewer=None,
         meshLoader=None,
+        isNonlinear=False,
         options=None,
     ):
         """
@@ -137,7 +138,9 @@ class TransientProblem(TACSProblem):
         self.numStages = None
 
         # Default setup for common problem class objects, sets up comm and options
-        super().__init__(assembler, comm, options, outputViewer, meshLoader)
+        super().__init__(
+            assembler, comm, options, outputViewer, meshLoader, isNonlinear
+        )
 
         # Create problem-specific variables
         self._createVariables()
