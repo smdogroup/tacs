@@ -140,6 +140,9 @@ class StaticProblem(TACSProblem):
         # Problem name
         self.name = name
 
+        # Set linear solver to None, until we set it up later
+        self.KSM = None
+
         # Default setup for common problem class objects, sets up comm and options
         TACSProblem.__init__(self, assembler, comm, options, outputViewer, meshLoader)
 
@@ -282,23 +285,24 @@ class StaticProblem(TACSProblem):
         # Default setOption for common problem class objects
         TACSProblem.setOption(self, name, value)
 
-        # Update tolerances
-        if "l2convergence" in name.lower():
-            self.KSM.setTolerances(
-                self.getOption("L2ConvergenceRel"),
-                self.getOption("L2Convergence"),
-            )
-        # No need to reset solver for output options
-        elif name.lower() in [
-            "writesolution",
-            "printtiming",
-            "numbersolutions",
-            "outputdir",
-        ]:
-            pass
-        # Reset solver for all other option changes
-        else:
-            self._createVariables()
+        if self.KSM is not None:
+            # Update tolerances
+            if "l2convergence" in name.lower():
+                self.KSM.setTolerances(
+                    self.getOption("L2ConvergenceRel"),
+                    self.getOption("L2Convergence"),
+                )
+            # No need to reset solver for output options
+            elif name.lower() in [
+                "writesolution",
+                "printtiming",
+                "numbersolutions",
+                "outputdir",
+            ]:
+                pass
+            # Reset solver for all other option changes
+            else:
+                self._createVariables()
 
     @property
     def loadScale(self):
