@@ -86,7 +86,7 @@ class ModalProblem(TACSProblem):
         comm,
         outputViewer=None,
         meshLoader=None,
-        options={},
+        options=None,
     ):
         """
         NOTE: This class should not be initialized directly by the user.
