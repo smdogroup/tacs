@@ -109,7 +109,7 @@ class StaticProblem(TACSProblem):
         comm,
         outputViewer=None,
         meshLoader=None,
-        options={},
+        options=None,
     ):
         """
         NOTE: This class should not be initialized directly by the user.
@@ -140,20 +140,8 @@ class StaticProblem(TACSProblem):
         # Problem name
         self.name = name
 
-        # Default setup for common problem class objects
-        TACSProblem.__init__(self, assembler, comm, outputViewer, meshLoader)
-
-        # Process the default options which are added to self.options
-        # under the 'defaults' key. Make sure the key are lower case
-        def_keys = self.defaultOptions.keys()
-        self.options["defaults"] = {}
-        for key in def_keys:
-            self.options["defaults"][key.lower()] = self.defaultOptions[key]
-            self.options[key.lower()] = self.defaultOptions[key]
-
-        # Set user-defined options
-        for key in options:
-            TACSProblem.setOption(self, key, options[key])
+        # Default setup for common problem class objects, sets up comm and options
+        super().__init__(assembler, comm, options, outputViewer, meshLoader)
 
         # Create problem-specific variables
         self._createVariables()
