@@ -89,8 +89,10 @@ FEAAssembler.initialize(elemCallBack)
 probOptions = {
     "printTiming": True,
     "continuationInitialStep": 1.0,
-    "skipFirstNLineSearch": 0,
+    "skipFirstNLineSearch": 1,
     "newtonSolverMaxIter": 100,
+    "nRestarts": 3,
+    "subSpaceSize": 20,
 }
 problem = FEAAssembler.createStaticProblem("TipForce", options=probOptions)
 
