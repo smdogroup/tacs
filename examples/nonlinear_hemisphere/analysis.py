@@ -85,10 +85,23 @@ def elemCallBack(dvNum, compID, compDescript, elemDescripts, specialDVs, **kwarg
 
 FEAAssembler.initialize(elemCallBack)
 
-probOptions = {"printTiming": True,
-               "skipFirstNLineSearch":0,
-               "continuationInitialStep":1.0,
-               "newtonSolverMaxIter":100}
+probOptions = {
+    "printTiming": True,
+    "skipFirstNLineSearch": 0,
+    "continuationInitialStep": 1.0,
+    "newtonSolverMaxIter": 100,
+    "newtonSolverUseEW": True,
+    "nRestarts": 3,
+    "subSpaceSize": 20,
+    "newtonSolverMonitorVars": [
+        "linsolveriters",
+        "linsolverres",
+        "EWTol",
+        "linesearchstep",
+        "linesearchiters",
+    ],
+    "newtonSolverMaxLinIters": 10,
+}
 problem = FEAAssembler.createStaticProblem("RadialForces", options=probOptions)
 
 
@@ -145,6 +158,7 @@ problem.solve()
 problem.evalFunctions(funcs)
 problem.evalFunctionsSens(funcsSens)
 problem.writeSolution(outputDir=os.path.dirname(__file__))
+problem.writeSolutionHistory(outputDir=os.path.dirname(__file__))
 
 if COMM.rank == 0:
     pprint(funcs)

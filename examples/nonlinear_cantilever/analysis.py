@@ -83,8 +83,13 @@ def elemCallBack(dvNum, compID, compDescript, elemDescripts, specialDVs, **kwarg
 
 FEAAssembler.initialize(elemCallBack)
 
-probOptions = {"printTiming": True,
-               "skipFirstNLineSearch":1}
+probOptions = {
+    "printTiming": True,
+    "skipFirstNLineSearch": 0,
+    "newtonSolverCoarseRelTol": 1e-3,
+    "lineSearchMinStep": 0.1,
+    "continuationInitialStep": 1.0,
+}
 forceProblem = FEAAssembler.createStaticProblem("TipForce", options=probOptions)
 momentProblem = FEAAssembler.createStaticProblem("TipMoment", options=probOptions)
 problems = [forceProblem, momentProblem]
