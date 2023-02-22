@@ -20,7 +20,7 @@ class TACSProblem(BaseUI):
     """
 
     def __init__(
-        self, assembler, comm, outputViewer=None, meshLoader=None, isNonlinear=False
+        self, assembler, comm=None, options=None, outputViewer=None, meshLoader=None, isNonlinear=False
     ):
         # TACS assembler object
         self.assembler = assembler
@@ -31,9 +31,6 @@ class TACSProblem(BaseUI):
         # pyNastran BDF object
         if self.meshLoader:
             self.bdfInfo = self.meshLoader.getBDFInfo()
-        # MPI communicator object
-        self.comm = comm
-        self.rank = comm.rank
 
         # Create Design variable vector
         self.x = self.assembler.createDesignVec()
@@ -46,8 +43,8 @@ class TACSProblem(BaseUI):
         # List of functions
         self.functionList = OrderedDict()
 
-        # Empty options dict, should be filled out by child class
-        self.options = {}
+        # Setup comm and options
+        super().__init__(options=options, comm=comm)
 
         self._isNonlinear = isNonlinear
 
