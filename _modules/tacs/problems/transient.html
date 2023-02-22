@@ -132,7 +132,7 @@
         <span class="n">comm</span><span class="p">,</span>
         <span class="n">outputViewer</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
         <span class="n">meshLoader</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-        <span class="n">options</span><span class="o">=</span><span class="p">{},</span>
+        <span class="n">options</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
     <span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        NOTE: This class should not be initialized directly by the user.</span>
@@ -171,26 +171,17 @@
         <span class="c1"># Problem name</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">name</span>
 
-        <span class="c1"># Default setup for common problem class objects</span>
-        <span class="n">TACSProblem</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">assembler</span><span class="p">,</span> <span class="n">comm</span><span class="p">,</span> <span class="n">outputViewer</span><span class="p">,</span> <span class="n">meshLoader</span><span class="p">)</span>
-
         <span class="c1"># Set time interval parameters</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">tInit</span> <span class="o">=</span> <span class="n">tInit</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">tFinal</span> <span class="o">=</span> <span class="n">tFinal</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">numSteps</span> <span class="o">=</span> <span class="n">numSteps</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">numStages</span> <span class="o">=</span> <span class="kc">None</span>
 
-        <span class="c1"># Process the default options which are added to self.options</span>
-        <span class="c1"># under the &#39;defaults&#39; key. Make sure the key are lower case</span>
-        <span class="n">def_keys</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">defaultOptions</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">options</span><span class="p">[</span><span class="s2">&quot;defaults&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
-        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">def_keys</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">options</span><span class="p">[</span><span class="s2">&quot;defaults&quot;</span><span class="p">][</span><span class="n">key</span><span class="o">.</span><span class="n">lower</span><span class="p">()]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">defaultOptions</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">options</span><span class="p">[</span><span class="n">key</span><span class="o">.</span><span class="n">lower</span><span class="p">()]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">defaultOptions</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+        <span class="c1"># Set integrator to None, until we set it up later</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">integrator</span> <span class="o">=</span> <span class="kc">None</span>
 
-        <span class="c1"># Set user-defined options</span>
-        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">options</span><span class="p">:</span>
-            <span class="n">TACSProblem</span><span class="o">.</span><span class="n">setOption</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">options</span><span class="p">[</span><span class="n">key</span><span class="p">])</span>
+        <span class="c1"># Default setup for common problem class objects, sets up comm and options</span>
+        <span class="n">TACSProblem</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">assembler</span><span class="p">,</span> <span class="n">comm</span><span class="p">,</span> <span class="n">options</span><span class="p">,</span> <span class="n">outputViewer</span><span class="p">,</span> <span class="n">meshLoader</span><span class="p">)</span>
 
         <span class="c1"># Create problem-specific variables</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_createVariables</span><span class="p">()</span>
@@ -297,30 +288,31 @@
         <span class="n">TACSProblem</span><span class="o">.</span><span class="n">setOption</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
 
         <span class="c1"># Update tolerances</span>
-        <span class="k">if</span> <span class="s2">&quot;l2convergence&quot;</span> <span class="ow">in</span> <span class="n">name</span><span class="o">.</span><span class="n">lower</span><span class="p">():</span>
-            <span class="c1"># Set solver tolerances</span>
-            <span class="n">atol</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s2">&quot;L2Convergence&quot;</span><span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">integrator</span><span class="o">.</span><span class="n">setAbsTol</span><span class="p">(</span><span class="n">atol</span><span class="p">)</span>
-            <span class="n">rtol</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s2">&quot;L2ConvergenceRel&quot;</span><span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">integrator</span><span class="o">.</span><span class="n">setRelTol</span><span class="p">(</span><span class="n">rtol</span><span class="p">)</span>
-        <span class="k">elif</span> <span class="n">name</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s2">&quot;printlevel&quot;</span><span class="p">:</span>
-            <span class="n">printLevel</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s2">&quot;printLevel&quot;</span><span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">integrator</span><span class="o">.</span><span class="n">setPrintLevel</span><span class="p">(</span><span class="n">printLevel</span><span class="p">)</span>
-        <span class="k">elif</span> <span class="n">name</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s2">&quot;jacassemblyfreq&quot;</span><span class="p">:</span>
-            <span class="c1"># Jacobian assembly frequency</span>
-            <span class="n">jacFreq</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s2">&quot;jacAssemblyFreq&quot;</span><span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">integrator</span><span class="o">.</span><span class="n">setJacAssemblyFreq</span><span class="p">(</span><span class="n">jacFreq</span><span class="p">)</span>
-        <span class="c1"># No need to reset solver for output options</span>
-        <span class="k">elif</span> <span class="n">name</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">in</span> <span class="p">[</span>
-            <span class="s2">&quot;writesolution&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;printtiming&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;numbersolutions&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;outputdir&quot;</span><span class="p">,</span>
-        <span class="p">]:</span>
-            <span class="k">pass</span>
-        <span class="c1"># Reset solver for all other option changes</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_createVariables</span><span class="p">()</span></div>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">integrator</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="s2">&quot;l2convergence&quot;</span> <span class="ow">in</span> <span class="n">name</span><span class="o">.</span><span class="n">lower</span><span class="p">():</span>
+                <span class="c1"># Set solver tolerances</span>
+                <span class="n">atol</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s2">&quot;L2Convergence&quot;</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">integrator</span><span class="o">.</span><span class="n">setAbsTol</span><span class="p">(</span><span class="n">atol</span><span class="p">)</span>
+                <span class="n">rtol</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s2">&quot;L2ConvergenceRel&quot;</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">integrator</span><span class="o">.</span><span class="n">setRelTol</span><span class="p">(</span><span class="n">rtol</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="n">name</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s2">&quot;printlevel&quot;</span><span class="p">:</span>
+                <span class="n">printLevel</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s2">&quot;printLevel&quot;</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">integrator</span><span class="o">.</span><span class="n">setPrintLevel</span><span class="p">(</span><span class="n">printLevel</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="n">name</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s2">&quot;jacassemblyfreq&quot;</span><span class="p">:</span>
+                <span class="c1"># Jacobian assembly frequency</span>
+                <span class="n">jacFreq</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s2">&quot;jacAssemblyFreq&quot;</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">integrator</span><span class="o">.</span><span class="n">setJacAssemblyFreq</span><span class="p">(</span><span class="n">jacFreq</span><span class="p">)</span>
+            <span class="c1"># No need to reset solver for output options</span>
+            <span class="k">elif</span> <span class="n">name</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">in</span> <span class="p">[</span>
+                <span class="s2">&quot;writesolution&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;printtiming&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;numbersolutions&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;outputdir&quot;</span><span class="p">,</span>
+            <span class="p">]:</span>
+                <span class="k">pass</span>
+            <span class="c1"># Reset solver for all other option changes</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_createVariables</span><span class="p">()</span></div>
 
 <div class="viewcode-block" id="TransientProblem.getNumTimeSteps"><a class="viewcode-back" href="../../../pytacs/transient.html#tacs.problems.TransientProblem.getNumTimeSteps">[docs]</a>    <span class="k">def</span> <span class="nf">getNumTimeSteps</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>

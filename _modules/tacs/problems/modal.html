@@ -127,7 +127,7 @@
         <span class="n">comm</span><span class="p">,</span>
         <span class="n">outputViewer</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
         <span class="n">meshLoader</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-        <span class="n">options</span><span class="o">=</span><span class="p">{},</span>
+        <span class="n">options</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
     <span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        NOTE: This class should not be initialized directly by the user.</span>
@@ -163,8 +163,8 @@
         <span class="c1"># Problem name</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">name</span>
 
-        <span class="c1"># Default setup for common problem class objects</span>
-        <span class="n">TACSProblem</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">assembler</span><span class="p">,</span> <span class="n">comm</span><span class="p">,</span> <span class="n">outputViewer</span><span class="p">,</span> <span class="n">meshLoader</span><span class="p">)</span>
+        <span class="c1"># Default setup for common problem class objects, sets up comm and options</span>
+        <span class="n">TACSProblem</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">assembler</span><span class="p">,</span> <span class="n">comm</span><span class="p">,</span> <span class="n">options</span><span class="p">,</span> <span class="n">outputViewer</span><span class="p">,</span> <span class="n">meshLoader</span><span class="p">)</span>
 
         <span class="c1"># Set time eigenvalue parameters</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">sigma</span> <span class="o">=</span> <span class="n">sigma</span>
@@ -173,18 +173,6 @@
         <span class="c1"># String name used in evalFunctions</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">valName</span> <span class="o">=</span> <span class="s2">&quot;eigsm&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_initializeFunctionList</span><span class="p">()</span>
-
-        <span class="c1"># Process the default options which are added to self.options</span>
-        <span class="c1"># under the &#39;defaults&#39; key. Make sure the key are lower case</span>
-        <span class="n">def_keys</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">defaultOptions</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">options</span><span class="p">[</span><span class="s2">&quot;defaults&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
-        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">def_keys</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">options</span><span class="p">[</span><span class="s2">&quot;defaults&quot;</span><span class="p">][</span><span class="n">key</span><span class="o">.</span><span class="n">lower</span><span class="p">()]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">defaultOptions</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">options</span><span class="p">[</span><span class="n">key</span><span class="o">.</span><span class="n">lower</span><span class="p">()]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">defaultOptions</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
-
-        <span class="c1"># Set user-defined options</span>
-        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">options</span><span class="p">:</span>
-            <span class="n">TACSProblem</span><span class="o">.</span><span class="n">setOption</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">options</span><span class="p">[</span><span class="n">key</span><span class="p">])</span>
 
         <span class="c1"># Create problem-specific variables</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_createVariables</span><span class="p">()</span>
