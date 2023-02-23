@@ -59,7 +59,8 @@ def get_libraries():
 
 # Import pytacs modules
 from . import pytacs
+from . import caps2tacs
 from .pytacs import pyTACS
 from . import problems
 
-__all__.extend(["pytacs", "pyTACS", "problems"])
+__all__.extend(["caps2tacs", "pytacs", "pyTACS", "problems"])

@@ -1,3 +1,4 @@
+from mpi4py import MPI
 import tacs.TACS
 
 
@@ -7,8 +8,41 @@ class BaseUI:
     Contains common methods useful for many classes.
     """
 
+    defaultOptions = {}
+
     # Set common data type for all pyTACS classes to inherit (real or complex)
     dtype = tacs.TACS.dtype
+
+    def __init__(self, options=None, comm=None) -> None:
+        """Setup the communicator and options for a pyTACS object
+
+        Parameters
+        ----------
+        options : dict, optional
+            Object-specific option parameters (case-insensitive), by default None
+        comm : mpi4py.MPI.Intracomm, optional
+            The comm object on which to create the pyTACS object., by default MPI.COMM_WORLD
+        """
+        # Set the communicator and rank
+        if comm is None:
+            comm = MPI.COMM_WORLD
+        self.comm = comm
+        self.rank = comm.rank
+
+        # Process the default options which are added to self.options
+        # under the 'defaults' key. Make sure the key are lower case
+        self.options = {}
+        def_keys = self.defaultOptions.keys()
+        self.options["defaults"] = {}
+        for key in def_keys:
+            self.options["defaults"][key.lower()] = self.defaultOptions[key]
+            self.options[key.lower()] = self.defaultOptions[key]
+
+        # Process the user-supplied options
+        userOptions = options if options is not None else {}
+        optKeys = userOptions.keys()
+        for key in optKeys:
+            self.setOption(key, userOptions[key])
 
     def setOption(self, name, value):
         """

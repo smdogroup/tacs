@@ -107,8 +107,32 @@ jobs:
         run: |
           # Install petsc for openmdao tests
           conda install -c conda-forge petsc=3.12 petsc4py -q -y;
+          # Install ESP/CAPS prebuilt for shape derivatives, only in Real mode
+          if [[ ${{ matrix.NAME }} == 'Real' ]]; then
+            cd $TACS_DIR/extern/
+            wget https://acdl.mit.edu/ESP/PreBuilts/ESP122Lin.tgz
+            tar -xvf ESP122Lin.tgz
+            export ESP_ROOT=${TACS_DIR}/extern/ESP122/EngSketchPad
+            export CASROOT=${TACS_DIR}/extern/ESP122/OpenCASCADE-7.6.0
+            export CASARCH=
+            export PATH=$PATH:$CASROOT/bin
+            export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$CASROOT/lib
+            cd $ESP_ROOT
+            ./config/makeEnv ${CASROOT}
+            source $ESP_ROOT/../ESPenv.sh
+            cd ./src/CAPS/aim
+            make
+            cd $TACS_DIR/extern/ESP122/
+            # remove all ESP/CAPS unit test files with recursive delete
+            find . -name "test*" -type f -delete
+            cd $TACS_DIR
+          fi
       - name: Run unit tests
         run: |
+          # Reload ESP/CAPS environment variables if in real mode
+          if [[ ${{ matrix.NAME }} == 'Real' ]]; then
+            source ${TACS_DIR}/extern/ESP122/ESPenv.sh
+          fi
           testflo --timeout 120 .;
       - name: Build docs
         run: |
