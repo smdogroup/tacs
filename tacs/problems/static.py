@@ -20,6 +20,7 @@ import numpy as np
 
 import tacs.TACS
 import tacs.elements
+import tacs.solvers
 from .base import TACSProblem
 from tacs.utilities import SolverHistory
 
@@ -281,19 +282,38 @@ class StaticProblem(TACSProblem):
 
         # Set linear solver to None, until we set it up later
         self.KSM = None
+        self.history = None
+        self.nonlinearSolver = None
 
         # Default setup for common problem class objects, sets up comm and options
         TACSProblem.__init__(
             self, assembler, comm, options, outputViewer, meshLoader, isNonlinear
         )
 
+        # Create problem-specific variables
+        self._createVariables()
+
         # Setup solver history object for nonlinear problems
-        self.history = None
         if self.isNonlinear:
             self._createSolverHistory()
 
-        # Create problem-specific variables
-        self._createVariables()
+            solverOptions = {}
+            for key in self.options:
+                if key in tacs.solvers.NewtonSolver.defaultOptions:
+                    solverOptions[key] = self.getOption(key)
+            self.nonlinearSolver = tacs.solvers.NewtonSolver(
+                assembler=self.assembler,
+                stateVec=self.u,
+                resVec=self.res,
+                setStateFunc=self.setVariables,
+                resFunc=self.getResidual,
+                jacFunc=self.updateJacobian,
+                pcUpdateFunc=self.updatePreconditioner,
+                linearSolver=self.KSM,
+                options=solverOptions,
+                comm=self.comm,
+            )
+            self.nonlinearSolver.setCallback(self._nonlinearCallback)
 
     def _createSolverHistory(self):
         """Setup the solver history object based on the current options
@@ -510,23 +530,21 @@ class StaticProblem(TACSProblem):
                     self.getOption("L2Convergence"),
                 )
             # No need to reset solver for output options
-            elif (
-                name.lower()
-                in [
-                    "writesolution",
-                    "printtiming",
-                    "numbersolutions",
-                    "outputdir",
-                    "usePredictor",
-                    "predictorUseDerivative",
-                ]
-                or "linesearch" in name.lower()
-                or "newtonsolver" in name.lower()
-            ):
+            elif name.lower() in [
+                "writesolution",
+                "printtiming",
+                "numbersolutions",
+                "outputdir",
+            ]:
                 pass
             # Reset solver for all other option changes
             else:
                 self._createVariables()
+
+        # Pass option to nonlinear solver if it is a nonlinear solver option
+        if self.nonlinearSolver is not None:
+            if name.lower() in self.nonlinearSolver.defaultOptions:
+                self.nonlinearSolver.setOption(name, value)
 
         # We need to create a new solver history object if the monitor variables have updated
         if name.lower() == "newtonsolvermonitorvars":
@@ -1070,6 +1088,14 @@ class StaticProblem(TACSProblem):
         )
         self.initNorm = np.real(self.externalForce.norm())
 
+        # We need to update the residual function handle used by the nonlinear solver based on the current external force vector
+        def resFunc(res):
+            self.getResidual(res, Fext=Fext)
+
+        self.nonlinearSolver.resFunc = resFunc
+        self.nonlinearSolver.setRefNorm(self.initNorm)
+        self.nonlinearSolver.solve()
+
         # ==============================================================================
         # Compute the initial load scale
         # ==============================================================================
@@ -1168,9 +1194,27 @@ class StaticProblem(TACSProblem):
             stepSize = np.clip(stepSize, MIN_STEP, maxStep)
             self.setLoadScale(self.loadScale + loadStepDirection * stepSize)
 
-        # ==============================================================================
-        # End of nonlinear solution
-        # ==============================================================================
+    def _nonlinearCallback(self, solver, u, res, monitorVars):
+        """Callback function to be called by the nonlinear solver at each iteration
+
+        Parameters
+        ----------
+        solver : pyTACS solver object
+            The solver
+        u : tacs.TACS.Vec
+            Current state vector
+        res : tacs.TACS.Vec
+            Current residual vector
+        monitorVars : dict
+            Dictionary of variables to monitor, the values the solver should include can be
+            specified through the ``"newtonSolverMonitorVars"`` option.
+        """
+        iteration = solver.iterationCount
+        if self.rank == 0:
+            self.history.write(monitorVars)
+            if iteration % 50 == 0:
+                self.history.printHeader()
+            self.history.printData()
 
     def newtonSolve(self, Fext=None, atol=None, rtol=None):
         USE_LINESEARCH = self.getOption("useLineSearch")
