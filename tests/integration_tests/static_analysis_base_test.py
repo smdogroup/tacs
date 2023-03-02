@@ -151,7 +151,7 @@ class StaticTestCase:
             func_vals = self.run_solve()
 
             # Test that linear solver residual is sufficiently small
-            linSolveRes = np.abs(np.real(self.gmres.getResidualNorm()))
+            linSolveRes = np.real(self.gmres.getResidualNorm())
             converged = (
                 linSolveRes < self.linSolveAtol
                 or linSolveRes < self.linSolveRtol * np.real(self.res0.norm())
