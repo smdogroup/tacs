@@ -888,13 +888,14 @@ int GMRES::solve(TACSVec *b, TACSVec *x, int zero_guess) {
       res[i + 1] = -h1 * Qsin[i];
 
       niters++;
-      resNorm = fabs(TacsRealPart(res[i + 1]));
+      resNorm = fabs(res[i + 1]);
 
       if (monitor) {
         monitor->printResidual(i + 1, resNorm);
       }
 
-      if (resNorm < atol || resNorm < rtol * TacsRealPart(rhs_norm)) {
+      if (TacsRealPart(resNorm) < atol ||
+          TacsRealPart(resNorm) < rtol * TacsRealPart(rhs_norm)) {
         // Set the solve flag
         solve_flag = 1;
 
@@ -1212,10 +1213,10 @@ int GCROT::solve(TACSVec *b, TACSVec *x, int zero_guess) {
   }
 
   rhs_norm = R->norm();  // The initial residual
+  resNorm = rhs_norm;
 
   if (TacsRealPart(rhs_norm) < atol) {
     solve_flag = 1;
-    resNorm = rhs_norm;
     return solve_flag;
   }
 
@@ -1229,7 +1230,7 @@ int GCROT::solve(TACSVec *b, TACSVec *x, int zero_guess) {
     W[0]->scale(1.0 / res[0]);  // W[0] = b/|| b ||
 
     if (monitor) {
-      monitor->printResidual(mat_iters, fabs(TacsRealPart(res[0])));
+      monitor->printResidual(mat_iters, resNorm);
     }
 
     // The inner F/GMRES loop
@@ -1296,12 +1297,13 @@ int GCROT::solve(TACSVec *b, TACSVec *x, int zero_guess) {
 
       niters++;
 
-      resNorm = fabs(TacsRealPart(res[i + 1]));
+      resNorm = fabs(res[i + 1]);
 
       if (monitor) {
         monitor->printResidual(mat_iters, resNorm);
       }
-      if (resNorm < atol || resNorm < rtol * TacsRealPart(rhs_norm)) {
+      if (TacsRealPart(resNorm) < atol ||
+          TacsRealPart(resNorm) < rtol * TacsRealPart(rhs_norm)) {
         // Set the solve flag
         solve_flag = 1;
 
