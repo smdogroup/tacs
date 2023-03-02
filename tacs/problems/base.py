@@ -11,7 +11,7 @@ import numpy as np
 from mpi4py import MPI
 
 import tacs.TACS
-from ..utilities import BaseUI
+from tacs.utilities import BaseUI
 
 
 class TACSProblem(BaseUI):
@@ -20,7 +20,13 @@ class TACSProblem(BaseUI):
     """
 
     def __init__(
-        self, assembler, comm=None, options=None, outputViewer=None, meshLoader=None, isNonlinear=False
+        self,
+        assembler,
+        comm=None,
+        options=None,
+        outputViewer=None,
+        meshLoader=None,
+        isNonlinear=False,
     ):
         # TACS assembler object
         self.assembler = assembler

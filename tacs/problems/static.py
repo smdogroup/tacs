@@ -279,6 +279,9 @@ class StaticProblem(TACSProblem):
         # Problem name
         self.name = name
 
+        # Set linear solver to None, until we set it up later
+        self.KSM = None
+
         # Default setup for common problem class objects, sets up comm and options
         TACSProblem.__init__(
             self, assembler, comm, options, outputViewer, meshLoader, isNonlinear
