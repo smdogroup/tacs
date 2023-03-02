@@ -18,7 +18,7 @@ from pyNastran.bdf.bdf import read_bdf
 import tacs.TACS
 import tacs.constitutive
 import tacs.elements
-from .utilities import BaseUI
+from tacs.utilities import BaseUI
 
 
 class pyMeshLoader(BaseUI):
