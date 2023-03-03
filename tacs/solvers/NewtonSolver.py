@@ -61,15 +61,15 @@ class NewtonSolver(BaseSolver):
             1e10,
             "Residual norm at which the nonlinear solver is jugded to have diverged",
         ],
-        "newtonSolverAbsLinResTol": [float, 1e-12, "Linear solver residual tolerance."],
-        "newtonSolverRelLinResTol": [
+        "newtonSolverAbsLinTol": [float, 1e-12, "Linear solver residual tolerance."],
+        "newtonSolverRelLinTol": [
             float,
             1e-12,
             "Linear solver relative residual tolerance.",
         ],
         "newtonSolverMaxLinIters": [
             int,
-            0,
+            10,
             "If the linear solver takes more than this number of iterations to converge, the preconditioner is updated.",
         ],
         "newtonSolverUseEW": [
@@ -204,7 +204,7 @@ class NewtonSolver(BaseSolver):
         # Linear solver convergence options
         USE_EW = self.getOption("newtonSolverUseEW")
         LIN_SOLVE_TOL_MAX = self.getOption("newtonSolverEWMaxTol")
-        LIN_SOLVE_TOL_MIN = self.getOption("L2ConvergenceRel")
+        LIN_SOLVE_TOL_MIN = self.getOption("newtonSolverRelLinTol")
         EW_ALPHA = self.getOption("newtonSolverEWAlpha")
         EW_GAMMA = self.getOption("newtonSolverEWGamma")
         linCovergenceRel = LIN_SOLVE_TOL_MAX if USE_EW else LIN_SOLVE_TOL_MIN
@@ -221,7 +221,7 @@ class NewtonSolver(BaseSolver):
         for iteration in range(MAX_ITERS):
             self._iterationCount = iteration
 
-            # Compute residual
+            # Compute residual and norms
             self.resFunc(self.res)
             if iteration > 0:
                 prevResNorm = resNorm
@@ -241,10 +241,27 @@ class NewtonSolver(BaseSolver):
                 linCovergenceRel = np.clip(
                     linCovergenceRel, LIN_SOLVE_TOL_MIN, LIN_SOLVE_TOL_MAX
                 )
+                self.linearSolver.setTolerances(
+                    float(linCovergenceRel), self.getOption("newtonSolverAbsLinTol")
+                )
 
             # Write data to history
+            monitorVars = {
+                "SubIter": iteration,
+                "Res norm": resNorm,
+                "Rel res norm": resNorm / self.refNorm,
+                "U norm": uNorm,
+                "Flags": flags,
+            }
+            if iteration > 0:
+                monitorVars["Lin iters"] = linearSolveIterations
+                monitorVars["Lin res"] = np.abs(linearSolveResNorm)
+                monitorVars["LS step"] = alpha
+                monitorVars["LS iters"] = lineSearchIters
+                if USE_EW:
+                    monitorVars["EW Tol"] = prevLinCovergenceRel
             if self.callback is not None:
-                self.callback(self, self.u, self.res, flags)
+                self.callback(self, self.u, self.res, monitorVars)
 
             flags = ""
 
@@ -268,10 +285,6 @@ class NewtonSolver(BaseSolver):
                 self.pcUpdateFunc()
 
             # Compute Newton step
-            self.setOption("newtonSolverRelLinResTol", float(linCovergenceRel))
-            self.linearSolver.setTolerances(
-                self.getOption("newtonSolverAbsLinResTol"), float(linCovergenceRel)
-            )
             linSolveConverged = self.linearSolver.solve(self.res, self.update)
             linSolveConverged = linSolveConverged == 1
             self.update.scale(-1.0)
