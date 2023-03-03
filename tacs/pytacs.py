@@ -30,13 +30,12 @@ import warnings
 from functools import wraps
 
 import numpy as np
-from mpi4py import MPI
 
 import tacs.TACS
 import tacs.constitutive
 import tacs.elements
 import tacs.functions
-import tacs.problems.static
+import tacs.problems
 from tacs.pymeshloader import pyMeshLoader
 from .utilities import BaseUI
 
