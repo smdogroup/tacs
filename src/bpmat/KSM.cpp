@@ -818,6 +818,7 @@ int GMRES::solve(TACSVec *b, TACSVec *x, int zero_guess) {
 
     if (count == 0) {
       rhs_norm = res[0];  // The initial residual
+      resNorm = rhs_norm;
     }
 
     int niters = 0;  // Keep track of the size of the Hessenberg matrix
@@ -886,20 +887,23 @@ int GMRES::solve(TACSVec *b, TACSVec *x, int zero_guess) {
       res[i] = h1 * Qcos[i];
       res[i + 1] = -h1 * Qsin[i];
 
+      niters++;
+      resNorm = fabs(res[i + 1]);
+
       if (monitor) {
-        monitor->printResidual(i + 1, fabs(TacsRealPart(res[i + 1])));
+        monitor->printResidual(i + 1, resNorm);
       }
 
-      niters++;
-
-      if (fabs(TacsRealPart(res[i + 1])) < atol ||
-          fabs(TacsRealPart(res[i + 1])) < rtol * TacsRealPart(rhs_norm)) {
+      if (TacsRealPart(resNorm) < atol ||
+          TacsRealPart(resNorm) < rtol * TacsRealPart(rhs_norm)) {
         // Set the solve flag
         solve_flag = 1;
 
         break;
       }
     }
+
+    iterCount += niters;
 
     // Now, compute the solution - the linear combination of the
     // Arnoldi vectors. H is upper triangular
@@ -931,9 +935,6 @@ int GMRES::solve(TACSVec *b, TACSVec *x, int zero_guess) {
       pc->applyFactor(work, W[0]);
       x->axpy(1.0, W[0]);
     }
-
-    iterCount += niters;
-    resNorm = res[niters];
 
     if (solve_flag) {
       break;
@@ -1212,10 +1213,10 @@ int GCROT::solve(TACSVec *b, TACSVec *x, int zero_guess) {
   }
 
   rhs_norm = R->norm();  // The initial residual
+  resNorm = rhs_norm;
 
   if (TacsRealPart(rhs_norm) < atol) {
     solve_flag = 1;
-    resNorm = rhs_norm;
     return solve_flag;
   }
 
@@ -1229,7 +1230,7 @@ int GCROT::solve(TACSVec *b, TACSVec *x, int zero_guess) {
     W[0]->scale(1.0 / res[0]);  // W[0] = b/|| b ||
 
     if (monitor) {
-      monitor->printResidual(mat_iters, fabs(TacsRealPart(res[0])));
+      monitor->printResidual(mat_iters, resNorm);
     }
 
     // The inner F/GMRES loop
@@ -1294,20 +1295,22 @@ int GCROT::solve(TACSVec *b, TACSVec *x, int zero_guess) {
       res[i] = h1 * Qcos[i];
       res[i + 1] = -h1 * Qsin[i];
 
-      if (monitor) {
-        monitor->printResidual(mat_iters, fabs(TacsRealPart(res[i + 1])));
-      }
-
       niters++;
 
-      if (fabs(TacsRealPart(res[i + 1])) < atol ||
-          fabs(TacsRealPart(res[i + 1])) < rtol * TacsRealPart(rhs_norm)) {
+      resNorm = fabs(res[i + 1]);
+
+      if (monitor) {
+        monitor->printResidual(mat_iters, resNorm);
+      }
+      if (TacsRealPart(resNorm) < atol ||
+          TacsRealPart(resNorm) < rtol * TacsRealPart(rhs_norm)) {
         // Set the solve flag
         solve_flag = 1;
 
         break;
       }
     }
+    iterCount += niters;
 
     // Now, compute the solution - the linear combination of the
     // Arnoldi vectors
@@ -1404,8 +1407,6 @@ int GCROT::solve(TACSVec *b, TACSVec *x, int zero_guess) {
     // mat->mult( x, R );      // R = A*x
     // R->axpy( -1.0, b );     // R = A*x - b
     // R->scale( -1.0 );
-    iterCount += niters;
-    resNorm = R->norm();
 
     if (solve_flag) {
       break;

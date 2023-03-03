@@ -91,9 +91,9 @@ class StaticTestCase:
             restarts = 2
             self.linSolveIterLimit = subspace * restarts
             self.linSolveAtol = 1e-30
-            self.linSolveRrtol = 1e-12
+            self.linSolveRtol = 1e-12
             self.gmres = TACS.KSM(self.mat, self.pc, subspace, restarts)
-            self.gmres.setTolerances(self.linSolveRrtol, self.linSolveAtol)
+            self.gmres.setTolerances(self.linSolveRtol, self.linSolveAtol)
 
             # Create the function list
             self.func_list, self.func_ref = self.setup_funcs(self.assembler)
@@ -151,10 +151,10 @@ class StaticTestCase:
             func_vals = self.run_solve()
 
             # Test that linear solver residual is sufficiently small
-            linSolveRes = np.abs(np.real(self.gmres.getResidualNorm()))
+            linSolveRes = np.real(self.gmres.getResidualNorm())
             converged = (
                 linSolveRes < self.linSolveAtol
-                or linSolveRes < self.linSolveRrtol * np.real(self.res0.norm())
+                or linSolveRes < self.linSolveRtol * np.real(self.res0.norm())
             )
             self.assertTrue(converged, "Linear solver did not converge")
 
