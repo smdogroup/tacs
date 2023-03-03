@@ -298,8 +298,11 @@ class StaticProblem(TACSProblem):
             self._createSolverHistory()
 
             solverOptions = {}
+            solverOptionNames = [
+                name.lower() for name in tacs.solvers.NewtonSolver.defaultOptions
+            ]
             for key in self.options:
-                if key in tacs.solvers.NewtonSolver.defaultOptions:
+                if key.lower() in solverOptionNames:
                     solverOptions[key] = self.getOption(key)
             self.nonlinearSolver = tacs.solvers.NewtonSolver(
                 assembler=self.assembler,
@@ -545,6 +548,8 @@ class StaticProblem(TACSProblem):
         if self.nonlinearSolver is not None:
             if name.lower() in self.nonlinearSolver.defaultOptions:
                 self.nonlinearSolver.setOption(name, value)
+            elif name.lower() == "l2convergencerel":
+                self.nonlinearSolver.setOption("newtonSolverRelLinTol", value)
 
         # We need to create a new solver history object if the monitor variables have updated
         if name.lower() == "newtonsolvermonitorvars":
