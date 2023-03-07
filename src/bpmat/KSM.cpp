@@ -438,6 +438,7 @@ void PCG::setMonitor(KSMPrint *_monitor) {
 */
 int PCG::solve(TACSVec *b, TACSVec *x, int zero_guess) {
   int solve_flag = 0;
+  iterCount = 0;
   TacsScalar rhs_norm = 0.0;
   // R, Z and P are work-vectors
   // R == the residual
@@ -455,6 +456,7 @@ int PCG::solve(TACSVec *b, TACSVec *x, int zero_guess) {
 
     if (count == 0) {
       rhs_norm = R->norm();
+      resNorm = rhs_norm;
     }
 
     if (monitor && count == 0) {
@@ -477,15 +479,16 @@ int PCG::solve(TACSVec *b, TACSVec *x, int zero_guess) {
         pc->applyFactor(R, Z);                     // Z' = M^{-1} R
         TacsScalar beta = R->dot(Z) / temp;        // beta = (R',Z')/(R,Z)
         P->axpby(1.0, beta, Z);                    // P' = Z' + beta*P
+        iterCount++;
 
-        TacsScalar norm = R->norm();
+        resNorm = R->norm();
 
         if (monitor) {
-          monitor->printResidual(i + 1, norm);
+          monitor->printResidual(i + 1, resNorm);
         }
 
-        if (TacsRealPart(norm) < atol ||
-            TacsRealPart(norm) < rtol * TacsRealPart(rhs_norm)) {
+        if (TacsRealPart(resNorm) < atol ||
+            TacsRealPart(resNorm) < rtol * TacsRealPart(rhs_norm)) {
           solve_flag = 1;
           break;
         }
@@ -782,6 +785,7 @@ const char *GMRES::gmresName = "GMRES";
 int GMRES::solve(TACSVec *b, TACSVec *x, int zero_guess) {
   TacsScalar rhs_norm = 0.0;
   int solve_flag = 0;
+  iterCount = 0;
 
   double t_pc = 0.0, t_ortho = 0.0;
   double t_total = 0.0;
@@ -814,6 +818,7 @@ int GMRES::solve(TACSVec *b, TACSVec *x, int zero_guess) {
 
     if (count == 0) {
       rhs_norm = res[0];  // The initial residual
+      resNorm = rhs_norm;
     }
 
     int niters = 0;  // Keep track of the size of the Hessenberg matrix
@@ -882,20 +887,23 @@ int GMRES::solve(TACSVec *b, TACSVec *x, int zero_guess) {
       res[i] = h1 * Qcos[i];
       res[i + 1] = -h1 * Qsin[i];
 
+      niters++;
+      resNorm = fabs(res[i + 1]);
+
       if (monitor) {
-        monitor->printResidual(i + 1, fabs(TacsRealPart(res[i + 1])));
+        monitor->printResidual(i + 1, resNorm);
       }
 
-      niters++;
-
-      if (fabs(TacsRealPart(res[i + 1])) < atol ||
-          fabs(TacsRealPart(res[i + 1])) < rtol * TacsRealPart(rhs_norm)) {
+      if (TacsRealPart(resNorm) < atol ||
+          TacsRealPart(resNorm) < rtol * TacsRealPart(rhs_norm)) {
         // Set the solve flag
         solve_flag = 1;
 
         break;
       }
     }
+
+    iterCount += niters;
 
     // Now, compute the solution - the linear combination of the
     // Arnoldi vectors. H is upper triangular
@@ -1189,6 +1197,7 @@ int GCROT::solve(TACSVec *b, TACSVec *x, int zero_guess) {
   TacsScalar rhs_norm = 0.0;
   int solve_flag = 0;
   int mat_iters = 0;
+  iterCount = 0;
 
   // Compute the residual
   if (zero_guess) {
@@ -1204,6 +1213,7 @@ int GCROT::solve(TACSVec *b, TACSVec *x, int zero_guess) {
   }
 
   rhs_norm = R->norm();  // The initial residual
+  resNorm = rhs_norm;
 
   if (TacsRealPart(rhs_norm) < atol) {
     solve_flag = 1;
@@ -1220,7 +1230,7 @@ int GCROT::solve(TACSVec *b, TACSVec *x, int zero_guess) {
     W[0]->scale(1.0 / res[0]);  // W[0] = b/|| b ||
 
     if (monitor) {
-      monitor->printResidual(mat_iters, fabs(TacsRealPart(res[0])));
+      monitor->printResidual(mat_iters, resNorm);
     }
 
     // The inner F/GMRES loop
@@ -1285,20 +1295,22 @@ int GCROT::solve(TACSVec *b, TACSVec *x, int zero_guess) {
       res[i] = h1 * Qcos[i];
       res[i + 1] = -h1 * Qsin[i];
 
-      if (monitor) {
-        monitor->printResidual(mat_iters, fabs(TacsRealPart(res[i + 1])));
-      }
-
       niters++;
 
-      if (fabs(TacsRealPart(res[i + 1])) < atol ||
-          fabs(TacsRealPart(res[i + 1])) < rtol * TacsRealPart(rhs_norm)) {
+      resNorm = fabs(res[i + 1]);
+
+      if (monitor) {
+        monitor->printResidual(mat_iters, resNorm);
+      }
+      if (TacsRealPart(resNorm) < atol ||
+          TacsRealPart(resNorm) < rtol * TacsRealPart(rhs_norm)) {
         // Set the solve flag
         solve_flag = 1;
 
         break;
       }
     }
+    iterCount += niters;
 
     // Now, compute the solution - the linear combination of the
     // Arnoldi vectors
