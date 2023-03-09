@@ -53,6 +53,14 @@ class TACSBeamRefAxisTransform : public TACSBeamTransform {
     A2D::Vec3Dot dott1(axis, t1, dot);
     A2D::Vec3Axpy axpy(-1.0, dot, t1, axis, t2_dir);
 
+    // Check if ref axis is parallel to beam
+    if (abs(TacsRealPart(dot.value)) > 1.0 - SMALL_NUM) {
+      fprintf(stderr,
+              "TACSBeamRefAxisTransform: Error, user-provided reference axis "
+              "is parallel to beam axis. "
+              "Element behavior may be ill-conditioned.\n");
+    }
+
     // Compute the t2 direction
     A2D::Vec3 t2;
     A2D::Vec3Normalize normalizet2(t2_dir, t2);
@@ -61,7 +69,7 @@ class TACSBeamRefAxisTransform : public TACSBeamTransform {
     A2D::Vec3 t3;
     A2D::Vec3CrossProduct cross(t1, t2, t3);
 
-    // Assemble the referece frame
+    // Assemble the reference frame
     A2D::Mat3x3 T;
     A2D::Mat3x3FromThreeVec3 assembleT(t1, t2, t3, T);
 
@@ -111,6 +119,8 @@ class TACSBeamRefAxisTransform : public TACSBeamTransform {
 
  private:
   A2D::Vec3 axis;
+  /* Tolerance for colinearity test in between beam axis and ref axis */
+  const double SMALL_NUM = 1e-8;
 };
 
 /*
