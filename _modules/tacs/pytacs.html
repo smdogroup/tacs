@@ -68,13 +68,12 @@
 <span class="kn">from</span> <span class="nn">functools</span> <span class="kn">import</span> <span class="n">wraps</span>
 
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-<span class="kn">from</span> <span class="nn">mpi4py</span> <span class="kn">import</span> <span class="n">MPI</span>
 
 <span class="kn">import</span> <span class="nn">tacs.TACS</span>
 <span class="kn">import</span> <span class="nn">tacs.constitutive</span>
 <span class="kn">import</span> <span class="nn">tacs.elements</span>
 <span class="kn">import</span> <span class="nn">tacs.functions</span>
-<span class="kn">import</span> <span class="nn">tacs.problems.static</span>
+<span class="kn">import</span> <span class="nn">tacs.problems</span>
 <span class="kn">from</span> <span class="nn">tacs.pymeshloader</span> <span class="kn">import</span> <span class="n">pyMeshLoader</span>
 <span class="kn">from</span> <span class="nn">.utilities</span> <span class="kn">import</span> <span class="n">BaseUI</span>
 
@@ -1055,10 +1054,14 @@
                 <span class="n">k1</span> <span class="o">=</span> <span class="n">propInfo</span><span class="o">.</span><span class="n">k1</span>
                 <span class="n">k2</span> <span class="o">=</span> <span class="n">propInfo</span><span class="o">.</span><span class="n">k2</span>
 
-                <span class="k">if</span> <span class="n">k1</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-                    <span class="n">k1</span> <span class="o">=</span> <span class="mf">1e6</span>
-                <span class="k">if</span> <span class="n">k2</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-                    <span class="n">k2</span> <span class="o">=</span> <span class="mf">1e6</span>
+                <span class="c1"># pynastran defaults these values to 1e8,</span>
+                <span class="c1"># which can lead to scaling issues in the stiffness matrix</span>
+                <span class="c1"># We truncate this value to 1e3 to prevent this</span>
+                <span class="k">if</span> <span class="n">k1</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">k1</span> <span class="o">&gt;</span> <span class="mf">1e3</span><span class="p">:</span>
+                    <span class="n">k1</span> <span class="o">=</span> <span class="mf">1e3</span>
+
+                <span class="k">if</span> <span class="n">k2</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">k2</span> <span class="o">&gt;</span> <span class="mf">1e3</span><span class="p">:</span>
+                    <span class="n">k2</span> <span class="o">=</span> <span class="mf">1e3</span>
 
                 <span class="n">con</span> <span class="o">=</span> <span class="n">tacs</span><span class="o">.</span><span class="n">constitutive</span><span class="o">.</span><span class="n">BasicBeamConstitutive</span><span class="p">(</span>
                     <span class="n">mat</span><span class="p">,</span> <span class="n">A</span><span class="o">=</span><span class="n">area</span><span class="p">,</span> <span class="n">Iy</span><span class="o">=</span><span class="n">I2</span><span class="p">,</span> <span class="n">Iz</span><span class="o">=</span><span class="n">I1</span><span class="p">,</span> <span class="n">Iyz</span><span class="o">=</span><span class="n">I12</span><span class="p">,</span> <span class="n">J</span><span class="o">=</span><span class="n">J</span><span class="p">,</span> <span class="n">ky</span><span class="o">=</span><span class="n">k1</span><span class="p">,</span> <span class="n">kz</span><span class="o">=</span><span class="n">k2</span>
