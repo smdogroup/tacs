@@ -30,13 +30,12 @@ import warnings
 from functools import wraps
 
 import numpy as np
-from mpi4py import MPI
 
 import tacs.TACS
 import tacs.constitutive
 import tacs.elements
 import tacs.functions
-import tacs.problems.static
+import tacs.problems
 from tacs.pymeshloader import pyMeshLoader
 from .utilities import BaseUI
 
@@ -1017,10 +1016,14 @@ class pyTACS(BaseUI):
                 k1 = propInfo.k1
                 k2 = propInfo.k2
 
-                if k1 is None:
-                    k1 = 1e6
-                if k2 is None:
-                    k2 = 1e6
+                # pynastran defaults these values to 1e8,
+                # which can lead to scaling issues in the stiffness matrix
+                # We truncate this value to 1e3 to prevent this
+                if k1 is None or k1 > 1e3:
+                    k1 = 1e3
+
+                if k2 is None or k2 > 1e3:
+                    k2 = 1e3
 
                 con = tacs.constitutive.BasicBeamConstitutive(
                     mat, A=area, Iy=I2, Iz=I1, Iyz=I12, J=J, ky=k1, kz=k2

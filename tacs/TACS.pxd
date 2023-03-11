@@ -155,6 +155,8 @@ cdef extern from "KSM.h":
         int solve(TACSVec *b, TACSVec *x, int zero_guess)
         void setTolerances(double _rtol, double _atol)
         void setMonitor(KSMPrint *_monitor)
+        int getIterCount()
+        TacsScalar getResidualNorm()
 
     cdef cppclass GMRES(TACSKsm):
         GMRES(TACSMat *_mat, TACSPc *_pc, int _m,
