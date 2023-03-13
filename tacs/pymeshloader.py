@@ -225,19 +225,19 @@ class pyMeshLoader(BaseUI):
         not just those *owned* by this processor
         """
         # Create Node ID map
-        nastranIDs = self.bdfInfo.node_ids
+        nastranIDs = sorted(self.bdfInfo.node_ids)
         tacsIDs = range(self.bdfInfo.nnodes)
         nodeTuple = zip(nastranIDs, tacsIDs)
         self.nastranToTACSNodeIDDict = dict(nodeTuple)
 
         # Create Property/Component ID map
-        nastranIDs = self.bdfInfo.property_ids
+        nastranIDs = sorted(self.bdfInfo.property_ids)
         tacsIDs = range(self.bdfInfo.nproperties)
         propTuple = zip(nastranIDs, tacsIDs)
         self.nastranToTACSCompIDDict = dict(propTuple)
 
         # Create Element ID map
-        nastranIDs = self.bdfInfo.element_ids
+        nastranIDs = sorted(self.bdfInfo.element_ids)
         tacsIDs = range(self.bdfInfo.nelements)
         elemTuple = zip(nastranIDs, tacsIDs)
         self.nastranToTACSElemIDDict = dict(elemTuple)
@@ -702,7 +702,7 @@ class pyMeshLoader(BaseUI):
             depConstrainedDOFs.extend(dofsAsList)
             # add dummy nodes for all lagrange multiplier
             dummyNodeNum = (
-                list(self.bdfInfo.node_ids)[-1] + 1
+                sorted(self.bdfInfo.node_ids)[-1] + 1
             )  # Next available nastran node number
             # Add the dummy node coincident to the dependent node in x,y,z
             self.bdfInfo.add_grid(dummyNodeNum, self.bdfInfo.nodes[node].xyz)
@@ -737,7 +737,9 @@ class pyMeshLoader(BaseUI):
         depConstrainedDOFs = self.isDOFInString(rbeInfo.refc, varsPerNode)
 
         # add dummy node for lagrange multipliers
-        dummyNodeNum = list(self.bdfInfo.node_ids)[-1] + 1  # Next available node number
+        dummyNodeNum = (
+            sorted(self.bdfInfo.node_ids)[-1] + 1
+        )  # Next available node number
         # Add the dummy node coincident to the dependent node in x,y,z
         self.bdfInfo.add_grid(dummyNodeNum, self.bdfInfo.nodes[depNode[0]].xyz)
         dummyNodes = [dummyNodeNum]
