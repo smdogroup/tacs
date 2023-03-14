@@ -706,7 +706,7 @@ class pyMeshLoader(BaseUI):
             depConstrainedDOFs.extend(dofsAsList)
             # add dummy nodes for all lagrange multiplier
             dummyNodeNum = (
-                sorted(self.bdfInfo.node_ids)[-1] + 1
+                max(self.bdfInfo.node_ids) + 1
             )  # Next available nastran node number
             # Add the dummy node coincident to the dependent node in x,y,z
             self.bdfInfo.add_grid(dummyNodeNum, self.bdfInfo.nodes[node].xyz)
@@ -741,9 +741,7 @@ class pyMeshLoader(BaseUI):
         depConstrainedDOFs = self.isDOFInString(rbeInfo.refc, varsPerNode)
 
         # add dummy node for lagrange multipliers
-        dummyNodeNum = (
-            sorted(self.bdfInfo.node_ids)[-1] + 1
-        )  # Next available node number
+        dummyNodeNum = max(self.bdfInfo.node_ids) + 1  # Next available node number
         # Add the dummy node coincident to the dependent node in x,y,z
         self.bdfInfo.add_grid(dummyNodeNum, self.bdfInfo.nodes[depNode[0]].xyz)
         # Update Nastran to TACS ID mapping dicts, since we just added new nodes to model
