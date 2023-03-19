@@ -92,6 +92,11 @@ class StaticProblem(TACSProblem):
             True,
             "Flag for suppressing all f5 file writing.",
         ],
+        "writeNLIterSolutions": [
+            bool,
+            False,
+            "Flag to save a solution file at every nonlinear solver iterations.",
+        ],
         "numberSolutions": [
             bool,
             True,
@@ -103,143 +108,145 @@ class StaticProblem(TACSProblem):
             "Flag for printing out timing information for class procedures.",
         ],
         # Nonlinear continuation options
-        "continuationTargetIter": [
-            int,
-            8,
-            "Target number of Newton iterations for each continuation increment.",
-        ],
-        "continuationMaxIter": [int, 100, "Maximum number of continuation steps."],
-        "continuationInitialStep": [float, 0.2, "Initial continuation step size."],
-        "continuationMinStep": [float, 1e-4, "Minimum continuation step size."],
-        "continuationMaxStep": [float, np.inf, "Maximum continuation step size."],
-        "continuationMinStepFactor": [
-            float,
-            0.5,
-            "The minimum factor by which the continuation step size can decrease in a single step.",
-        ],
-        "continuationMaxStepFactor": [
-            float,
-            2.0,
-            "The maximum factor by which the continuation step size can increase in a single step.",
-        ],
-        "continuationRetractionFactor": [
-            float,
-            0.5,
-            "The factor by which the continuation step size is reduced when the Newton solver fails to converge.",
-        ],
-        # Predictor step options
-        "usePredictor": [bool, True, "Flag for using predictor step in continuation."],
-        "predictorNumStates": [
-            int,
-            2,
-            "Number of previous equilibrium states to use in computing the predictor step.",
-        ],
-        "predictorUseDerivative": [
-            bool,
-            False,
-            "Whether to use the equilibrium path slope in the computation of the predictor step. This requires a linear solve and thus greatly increases the cost of the predictor step computation.",
-        ],
-        # Newton solver options
-        "newtonSolverMonitorVars": [
-            list,
-            [
-                "linSolverIters",
-                "linSolverRes",
-                "lineSearchStep",
-                "lineSearchIters",
-            ],
-            "List of variables to include in nonlinear solver monitor output. Choose from 'linSolverIters', 'linSolverRes', 'loadScale', 'lineSearchStep', 'EWTol', and 'lineSearchIters'.",
-        ],
-        "newtonSolverMaxIter": [int, 40, "Maximum number of Newton iterations."],
-        "newtonSolverAbsTol": [
-            float,
-            1e-8,
-            "Convergence criteria for the nonlinear residual norm.",
-        ],
-        "newtonSolverRelTol": [
-            float,
-            1e-8,
-            "Relative convergence criteria for the nonlinear residual norm, norm is measured relative to that of the external load vector.",
-        ],
-        "newtonSolverCoarseAbsTol": [
-            float,
-            1e-4,
-            "Residual norm criteria for intermediate continuation steps, making this larger may speed up the nonlinear solver by allowing it to only partially converge intermediate steps.",
-        ],
-        "newtonSolverCoarseRelTol": [
-            float,
-            1e-4,
-            "Relative residual norm criteria for intermediate load increments.",
-        ],
-        "newtonSolverDivergenceTol": [
-            float,
-            1e10,
-            "Residual norm at which the nonlinear solver is jugded to have diverged",
-        ],
-        "newtonSolverMaxLinIters": [
-            int,
-            0,
-            "If the linear solver takes more than this number of iterations to converge, the preconditioner is updated.",
-        ],
-        "newtonSolverUseEW": [
-            bool,
-            False,
-            "Flag for enabling use of variable linear solver convergence using the Eisenstat-Walker method.",
-        ],
-        "newtonSolverEWMaxTol": [
-            float,
-            0.01,
-            "Eisenstat-Walker max allowable linear solver tolerance.",
-        ],
-        "newtonSolverEWGamma": [float, 1.0, "Eisenstat-Walker gamma parameter."],
-        "newtonSolverEWAlpha": [
-            float,
-            0.5 * (1.0 + np.sqrt(5)),
-            "Eisenstat-Walker alpha parameter.",
-        ],
-        # Line search options
-        "useLineSearch": [
-            bool,
-            True,
-            "Flag for using line search in the nonlinear solver.",
-        ],
-        "lineSearchMonitor": [
-            bool,
-            False,
-            "Flag for printing out line search information.",
-        ],
-        "skipFirstNLineSearch": [
-            int,
-            0,
-            "Skip the first N line searches. Setting this to 1 can improve the convergence speed of Newton solver, but also decreases robustness",
-        ],
-        "lineSearchMaxIter": [int, 25, "Maximum number of linesearch iterations."],
-        "lineSearchExpectedDecrease": [
-            float,
-            1e-4,
-            "Minimum fraction of the expected decrease in the energy gradient during the linesearch. Should be between 0 and 1. Higher values should improve robustness at the expense of solution time.",
-        ],
-        "lineSearchMaxStep": [
-            float,
-            2.0,
-            "Maximum step size for the linesearch, as a fraction of the Newton step",
-        ],
-        "lineSearchMinStep": [
-            float,
-            1e-2,
-            "Minimum step size for the linesearch, as a fraction of the Newton step",
-        ],
-        "lineSearchMaxStepChange": [
-            float,
-            0.5,
-            "Maximum change in the step size from one linesearch iteration to the next, can be useful in cases where secant method bounces between upper and lower step bounds.",
-        ],
-        "lineSearchFallbackStepLimit": [
-            float,
-            0.9,
-            "Often, the value of the merit function at the Newton step (alpha = 1.0), is orders of magnitude greater than at the start point. In these situations, the linesearch then tries to evaluate a point with a very small step size, which usually meets the expected decrease criteria but results in very slow progress of the Newton solver. To combat this, this value limits how far the linesearch can backtrack on the first iteration after evaluating alpha = 1. This has the effect of encouraging the linesearch to find larger steps that meet the expected decrease criterion, which results in faster convergence of the Newton solver.",
-        ],
+        # "continuationTargetIter": [
+        #     int,
+        #     8,
+        #     "Target number of Newton iterations for each continuation increment.",
+        # ],
+        # "continuationMaxIter": [int, 100, "Maximum number of continuation steps."],
+        # "continuationInitialStep": [float, 0.2, "Initial continuation step size."],
+        # "continuationMinStep": [float, 1e-4, "Minimum continuation step size."],
+        # "continuationMaxStep": [float, np.inf, "Maximum continuation step size."],
+        # "continuationMinStepFactor": [
+        #     float,
+        #     0.5,
+        #     "The minimum factor by which the continuation step size can decrease in a single step.",
+        # ],
+        # "continuationMaxStepFactor": [
+        #     float,
+        #     2.0,
+        #     "The maximum factor by which the continuation step size can increase in a single step.",
+        # ],
+        # "continuationRetractionFactor": [
+        #     float,
+        #     0.5,
+        #     "The factor by which the continuation step size is reduced when the Newton solver fails to converge.",
+        # ],
+        # # Predictor step options
+        # "usePredictor": [bool, True, "Flag for using predictor step in continuation."],
+        # "predictorNumStates": [
+        #     int,
+        #     2,
+        #     "Number of previous equilibrium states to use in computing the predictor step.",
+        # ],
+        # "predictorUseDerivative": [
+        #     bool,
+        #     False,
+        #     "Whether to use the equilibrium path slope in the computation of the predictor step. This requires a linear solve and thus greatly increases the cost of the predictor step computation.",
+        # ],
+        # # Newton solver options
+        # "newtonSolverMonitorVars": [
+        #     list,
+        #     [
+        #         "linSolverIters",
+        #         "linSolverRes",
+        #         "lineSearchStep",
+        #         "lineSearchIters",
+        #     ],
+        #     "List of variables to include in nonlinear solver monitor output. Choose from 'linSolverIters', 'linSolverRes', 'loadScale', 'lineSearchStep', 'EWTol', and 'lineSearchIters'.",
+        # ],
+        # "newtonSolverMaxIter": [int, 40, "Maximum number of Newton iterations."],
+        # "newtonSolverAbsTol": [
+        #     float,
+        #     1e-8,
+        #     "Convergence criteria for the nonlinear residual norm.",
+        # ],
+        # "newtonSolverRelTol": [
+        #     float,
+        #     1e-8,
+        #     "Relative convergence criteria for the nonlinear residual norm, norm is measured relative to that of the external load vector.",
+        # ],
+        # "newtonSolverCoarseAbsTol": [
+        #     float,
+        #     1e-4,
+        #     "Residual norm criteria for intermediate continuation steps, making this larger may speed up the nonlinear solver by allowing it to only partially converge intermediate steps.",
+        # ],
+        # "newtonSolverCoarseRelTol": [
+        #     float,
+        #     1e-4,
+        #     "Relative residual norm criteria for intermediate load increments.",
+        # ],
+        # "newtonSolverDivergenceTol": [
+        #     float,
+        #     1e10,
+        #     "Residual norm at which the nonlinear solver is jugded to have diverged",
+        # ],
+        # "newtonSolverMaxLinIters": [
+        #     int,
+        #     0,
+        #     "If the linear solver takes more than this number of iterations to converge, the preconditioner is updated.",
+        # ],
+        # "newtonSolverUseEW": [
+        #     bool,
+        #     False,
+        #     "Flag for enabling use of variable linear solver convergence using the Eisenstat-Walker method.",
+        # ],
+        # "newtonSolverEWMaxTol": [
+        #     float,
+        #     0.01,
+        #     "Eisenstat-Walker max allowable linear solver tolerance.",
+        # ],
+        # "newtonSolverEWGamma": [float, 1.0, "Eisenstat-Walker gamma parameter."],
+        # "newtonSolverEWAlpha": [
+        #     float,
+        #     0.5 * (1.0 + np.sqrt(5)),
+        #     "Eisenstat-Walker alpha parameter.",
+        # ],
+        # # Line search options
+        # "useLineSearch": [
+        #     bool,
+        #     True,
+        #     "Flag for using line search in the nonlinear solver.",
+        # ],
+        # "lineSearchMonitor": [
+        #     bool,
+        #     False,
+        #     "Flag for printing out line search information.",
+        # ],
+        # "skipFirstNLineSearch": [
+        #     int,
+        #     0,
+        #     "Skip the first N line searches. Setting this to 1 can improve the convergence speed of Newton solver, but also decreases robustness",
+        # ],
+        # "lineSearchMaxIter": [int, 25, "Maximum number of linesearch iterations."],
+        # "lineSearchExpectedDecrease": [
+        #     float,
+        #     1e-4,
+        #     "Minimum fraction of the expected decrease in the energy gradient during the linesearch. Should be between 0 and 1. Higher values should improve robustness at the expense of solution time.",
+        # ],
+        # "lineSearchMaxStep": [
+        #     float,
+        #     2.0,
+        #     "Maximum step size for the linesearch, as a fraction of the Newton step",
+        # ],
+        # "lineSearchMinStep": [
+        #     float,
+        #     1e-2,
+        #     "Minimum step size for the linesearch, as a fraction of the Newton step",
+        # ],
+        # "lineSearchMaxStepChange": [
+        #     float,
+        #     0.5,
+        #     "Maximum change in the step size from one linesearch iteration to the next, can be useful in cases where secant method bounces between upper and lower step bounds.",
+        # ],
+        # "lineSearchFallbackStepLimit": [
+        #     float,
+        #     0.9,
+        #     "Often, the value of the merit function at the Newton step (alpha = 1.0), is orders of magnitude greater than at the start point. In these situations, the linesearch then tries to evaluate a point with a very small step size, which usually meets the expected decrease criteria but results in very slow progress of the Newton solver. To combat this, this value limits how far the linesearch can backtrack on the first iteration after evaluating alpha = 1. This has the effect of encouraging the linesearch to find larger steps that meet the expected decrease criterion, which results in faster convergence of the Newton solver.",
+        # ],
     }
+    defaultOptions.update(tacs.solvers.NewtonSolver.defaultOptions)
+    defaultOptions.update(tacs.solvers.ContinuationSolver.defaultOptions)
 
     def __init__(
         self,
@@ -293,10 +300,11 @@ class StaticProblem(TACSProblem):
         # Create problem-specific variables
         self._createVariables()
 
-        # Setup solver history object for nonlinear problems
+        # Setup solver and solver history objects for nonlinear problems
         if self.isNonlinear:
             self._createSolverHistory()
 
+            # Create Newton solver, the inner solver for the continuation solver
             solverOptions = {}
             solverOptionNames = [
                 name.lower() for name in tacs.solvers.NewtonSolver.defaultOptions
@@ -304,15 +312,39 @@ class StaticProblem(TACSProblem):
             for key in self.options:
                 if key.lower() in solverOptionNames:
                     solverOptions[key] = self.getOption(key)
-            self.nonlinearSolver = tacs.solvers.NewtonSolver(
+
+            self.newtonSolver = tacs.solvers.NewtonSolver(
                 assembler=self.assembler,
-                stateVec=self.u,
-                resVec=self.res,
                 setStateFunc=self.setVariables,
                 resFunc=self.getResidual,
                 jacFunc=self.updateJacobian,
                 pcUpdateFunc=self.updatePreconditioner,
                 linearSolver=self.KSM,
+                stateVec=self.u,
+                resVec=self.res,
+                options=solverOptions,
+                comm=self.comm,
+            )
+
+            # And now create the continuation solver
+            solverOptions = {}
+            solverOptionNames = [
+                name.lower() for name in tacs.solvers.ContinuationSolver.defaultOptions
+            ]
+            for key in self.options:
+                if key.lower() in solverOptionNames:
+                    solverOptions[key] = self.getOption(key)
+
+            def getLoadScale():
+                return self.loadScale
+
+            self.nonlinearSolver = tacs.solvers.ContinuationSolver(
+                jacFunc=self.updateJacobian,
+                pcUpdateFunc=self.updatePreconditioner,
+                linearSolver=self.KSM,
+                setLambdaFunc=self.setLoadScale,
+                getLambdaFunc=getLoadScale,
+                innerSolver=self.newtonSolver,
                 options=solverOptions,
                 comm=self.comm,
             )
@@ -329,10 +361,10 @@ class StaticProblem(TACSProblem):
             history = SolverHistory()
 
             # Define the variables to be stored in the history
+            # Continuation increment
+            history.addVariable("Increment", int, printVar=True)
             # Load scale
-            history.addVariable(
-                "Load scale", float, printVar="loadscale" in monitorVars
-            )
+            history.addVariable("Lambda", float, printVar=True)
             # Newton solve iteration number
             history.addVariable("SubIter", int, printVar=True)
             # Einstat walker linear solver tolerance
@@ -400,14 +432,6 @@ class StaticProblem(TACSProblem):
         # Vectors used to decompose residual into external and internal forces
         self.externalForce = self.assembler.createVec()
         self.internalForce = self.assembler.createVec()
-
-        # Vectors used to compute extrapolate the equilibrium path during nonlinear solutions
-        self.equilibriumPathStates = []
-        self.equilibriumPathLoadScales = []
-        if self.isNonlinear and opt("usePredictor"):
-            for _ in range(opt("predictorNumStates")):
-                self.equilibriumPathStates.append(self.assembler.createVec())
-                self.equilibriumPathLoadScales.append(None)
 
         if self.isNonlinear:
             self.u_inc_start = self.assembler.createVec()
@@ -1067,24 +1091,6 @@ class StaticProblem(TACSProblem):
         return
 
     def solveNonlinear(self, Fext=None, maxLoadScale=1.0):
-        TARGET_ITERS = self.getOption("continuationTargetIter")
-        INIT_STEP = self.getOption("continuationInitialStep")
-        MIN_STEP = self.getOption("continuationMinStep")
-        MAX_STEP = self.getOption("continuationMaxStep")
-        MAX_INCREMENTS = self.getOption("continuationMaxIter")
-        MIN_STEP_FACTOR = self.getOption("continuationMinStepFactor")
-        MAX_STEP_FACTOR = self.getOption("continuationMaxStepFactor")
-        STEP_RETRACT_FACTOR = self.getOption("continuationRetractionFactor")
-
-        ABS_TOL = self.getOption("newtonSolverAbsTol")
-        REL_TOL = self.getOption("newtonSolverRelTol")
-        COARSE_ABS_TOL = self.getOption("newtonSolverCoarseAbsTol")
-        COARSE_REL_TOL = self.getOption("newtonSolverCoarseRelTol")
-
-        USE_PREDICTOR = self.getOption("usePredictor")
-        NUM_PREDICTOR_STATES = self.getOption("predictorNumStates")
-        PREDICTOR_USE_DERIVATIVE = self.getOption("predictorUseDerivative")
-
         # Compute the internal and external force components of the residual at the current point
         self.getForces(
             externalForceVec=self.externalForce,
@@ -1092,6 +1098,12 @@ class StaticProblem(TACSProblem):
             Fext=Fext,
         )
         self.initNorm = np.real(self.externalForce.norm())
+
+        # Reset the solver history
+        if self.rank == 0:
+            self.history.reset(clearMetadata=True)
+            self.history.addMetadata("Options", self.options)
+            self.history.addMetadata("Name", self.name)
 
         # We need to update the residual function handle used by the nonlinear solver based on the current external force vector
         def resFunc(res):
@@ -1101,103 +1113,51 @@ class StaticProblem(TACSProblem):
         self.nonlinearSolver.setRefNorm(self.initNorm)
         self.nonlinearSolver.solve()
 
-        # ==============================================================================
-        # Compute the initial load scale
-        # ==============================================================================
-        self.setLoadScale(min(maxLoadScale, INIT_STEP))
-        loadStepDirection = 1
+        # for increment in range(MAX_INCREMENTS):
+        #     self._info(
+        #         f"Continuation Increment {increment + 1}, Load Scale: {self.loadScale:.3f}",
+        #         box=True,
+        #         maxLen=100,
+        #     )
+        #     # Save displacement at start of this increment, this is what
+        #     # we'll reset to if the increment diverges
+        #     self.u_inc_start.copyValues(self.u)
 
-        # If we're restarting from a previous solution we should compute the optimum load scale
-        # to restart from. This is done by computing the load scale that minimizes the work
-        # done by the resulting Newton step:
-        # optLoadScale = (Fe^T dUi + Fi^T dUe) / (-2 Fe^T dUe)
-        # Where: Fe = external force, Fi = internal force, dUi = inv(K) * Fi, dUe = inv(K) * Fe
-        if np.real(self.u.norm()) > 0:
-            if self._stiffnessUpdateRequired:
-                self.updateJacobian()
-            if self._factorOnNext:
-                self.updatePreconditioner()
-            du_i = self.u
-            du_e = self.update
-            self.solveJacLinear(self.externalForce, du_e)
-            self.solveJacLinear(self.internalForce, du_i)
-            FeUe = self.externalForce.dot(du_e)
-            FeUi = self.externalForce.dot(du_i)
-            FiUe = self.internalForce.dot(du_e)
-            optLoadScale = (FeUi + FiUe) / (-2 * FeUe)
+        #     # --- Compute predictor step ---
+        #     # TODO: Add predictor computation here
+        #     if self.loadScale == maxLoadScale:
+        #         rtol = REL_TOL
+        #         atol = ABS_TOL
+        #     else:
+        #         rtol = COARSE_REL_TOL
+        #         atol = COARSE_ABS_TOL
+        #     success, numIters = self.newtonSolve(Fext=Fext, rtol=rtol, atol=atol)
 
-            if optLoadScale > 2 * maxLoadScale or optLoadScale < 0.0:
-                # If the optimum load scale is more than double the max load scale we're aiming for, or if it's
-                # negative then the loading/structure has changed so much that we'll be closer to the final
-                # solution if we just reset the displacements to zero and start the solver from there
-                self.zeroVariables()
-                optLoadScale = self.loadScale
-            elif np.abs(optLoadScale - self.loadScale) < 1e-2:
-                # If the optimum load scale is close to the max load scale then we'll just use the max load scale
-                optLoadScale = maxLoadScale
-            else:
-                # Otherwise choose the maximum of the ideal load scale and the default initial load scale
-                optLoadScale = max(optLoadScale, self.loadScale)
-                # If the optimum load scale is greater than the max we want to get to then we need to reverse the
-                # direction of load incrementation
-                if optLoadScale > maxLoadScale:
-                    loadStepDirection = -1
+        #     # --- Check convergence ---
+        #     if not success:
+        #         # If the Newton solve failed then we'll reduce the step size and try again
+        #         self.setVariables(self.u_inc_start)
+        #         self.setLoadScale(self.loadScale - stepSize * loadStepDirection)
+        #         stepSize *= STEP_RETRACT_FACTOR
+        #     else:
+        #         if self.loadScale == maxLoadScale:
+        #             break
+        #         else:
+        #             stepChangeFactor = np.sqrt(TARGET_ITERS / numIters)
+        #             stepSize *= np.clip(
+        #                 stepChangeFactor, MIN_STEP_FACTOR, MAX_STEP_FACTOR
+        #             )
+        #             if USE_PREDICTOR:
+        #                 stateToOverwrite = self.equilibriumPathStates.pop(0)
+        #                 stateToOverwrite.copyValues(self.u)
+        #                 self.equilibriumPathStates.append(stateToOverwrite)
 
-            self.setLoadScale(optLoadScale)
+        #                 self.equilibriumPathLoadScales.pop(0)
+        #                 self.equilibriumPathLoadScales.append(self.loadScale)
 
-        stepSize = INIT_STEP
-
-        # Reset the solver history
-        if self.rank == 0:
-            self.history.reset(clearMetadata=True)
-            self.history.addMetadata("Options", self.options)
-            self.history.addMetadata("Name", self.name)
-
-        for increment in range(MAX_INCREMENTS):
-            self._info(
-                f"Continuation Increment {increment + 1}, Load Scale: {self.loadScale:.3f}",
-                box=True,
-                maxLen=100,
-            )
-            # Save displacement at start of this increment, this is what
-            # we'll reset to if the increment diverges
-            self.u_inc_start.copyValues(self.u)
-
-            # --- Compute predictor step ---
-            # TODO: Add predictor computation here
-            if self.loadScale == maxLoadScale:
-                rtol = REL_TOL
-                atol = ABS_TOL
-            else:
-                rtol = COARSE_REL_TOL
-                atol = COARSE_ABS_TOL
-            success, numIters = self.newtonSolve(Fext=Fext, rtol=rtol, atol=atol)
-
-            # --- Check convergence ---
-            if not success:
-                # If the Newton solve failed then we'll reduce the step size and try again
-                self.setVariables(self.u_inc_start)
-                self.setLoadScale(self.loadScale - stepSize * loadStepDirection)
-                stepSize *= STEP_RETRACT_FACTOR
-            else:
-                if self.loadScale == maxLoadScale:
-                    break
-                else:
-                    stepChangeFactor = np.sqrt(TARGET_ITERS / numIters)
-                    stepSize *= np.clip(
-                        stepChangeFactor, MIN_STEP_FACTOR, MAX_STEP_FACTOR
-                    )
-                    if USE_PREDICTOR:
-                        stateToOverwrite = self.equilibriumPathStates.pop(0)
-                        stateToOverwrite.copyValues(self.u)
-                        self.equilibriumPathStates.append(stateToOverwrite)
-
-                        self.equilibriumPathLoadScales.pop(0)
-                        self.equilibriumPathLoadScales.append(self.loadScale)
-
-            maxStep = min(np.abs(maxLoadScale - self.loadScale), MAX_STEP)
-            stepSize = np.clip(stepSize, MIN_STEP, maxStep)
-            self.setLoadScale(self.loadScale + loadStepDirection * stepSize)
+        #     maxStep = min(np.abs(maxLoadScale - self.loadScale), MAX_STEP)
+        #     stepSize = np.clip(stepSize, MIN_STEP, maxStep)
+        #     self.setLoadScale(self.loadScale + loadStepDirection * stepSize)
 
     def _nonlinearCallback(self, solver, u, res, monitorVars):
         """Callback function to be called by the nonlinear solver at each iteration
@@ -1214,123 +1174,18 @@ class StaticProblem(TACSProblem):
             Dictionary of variables to monitor, the values the solver should include can be
             specified through the ``"newtonSolverMonitorVars"`` option.
         """
-        iteration = solver.iterationCount
+        iteration = 0
         if self.rank == 0:
-            self.history.write(monitorVars)
+            # Figure out the increment and subiteration number
+            iteration = self.history.getIter()
+            self.comm.bcast(iteration, root=self.rank)
             if iteration % 50 == 0:
                 self.history.printHeader()
+            self.history.write(monitorVars)
             self.history.printData()
 
-    def newtonSolve(self, Fext=None, atol=None, rtol=None):
-        USE_LINESEARCH = self.getOption("useLineSearch")
-        LINESEARCH_SKIP_ITERS = self.getOption("skipFirstNLineSearch")
-        MAX_ITERS = self.getOption("newtonSolverMaxIter")
-        MAX_RES = self.getOption("newtonSolverDivergenceTol")
-        MAX_LIN_ITERS = self.getOption("newtonSolverMaxLinIters")
-
-        # Linear solver convergence options
-        USE_EW = self.getOption("newtonSolverUseEW")
-        LIN_SOLVE_TOL_MAX = self.getOption("newtonSolverEWMaxTol")
-        LIN_SOLVE_TOL_MIN = self.getOption("L2ConvergenceRel")
-        EW_ALPHA = self.getOption("newtonSolverEWAlpha")
-        EW_GAMMA = self.getOption("newtonSolverEWGamma")
-        linCovergenceRel = LIN_SOLVE_TOL_MAX if USE_EW else LIN_SOLVE_TOL_MIN
-
-        if atol is None:
-            atol = self.getOption("newtonSolverAbsTol")
-        if rtol is None:
-            rtol = self.getOption("newtonSolverRelTol")
-
-        flags = ""
-
-        for iteration in range(MAX_ITERS):
-            # TODO: Write output file here based on option
-            # self.writeSolution(baseName=f"{self.name}-NLIter", number=iteration)
-
-            # Compute residual
-            self.getResidual(self.res, Fext=Fext)
-            if iteration > 0:
-                prevResNorm = resNorm
-            resNorm = self.res.norm()
-            uNorm = self.u.norm()
-
-            prevLinCovergenceRel = linCovergenceRel
-            if USE_EW:
-                # Compute linear solver convergence tolerance using Einstat-Walker method b)
-                if iteration > 0:
-                    zeta = EW_GAMMA * np.real(resNorm / prevResNorm) ** EW_ALPHA
-                    threshold = EW_GAMMA * prevLinCovergenceRel**EW_ALPHA
-                    if threshold <= 0.1:
-                        linCovergenceRel = zeta
-                    else:
-                        linCovergenceRel = max(zeta, threshold)
-                linCovergenceRel = np.clip(
-                    linCovergenceRel, LIN_SOLVE_TOL_MIN, LIN_SOLVE_TOL_MAX
-                )
-
-            # Write data to history
-            histData = {
-                "SubIter": iteration,
-                "Load scale": self.loadScale,
-                "Res norm": resNorm,
-                "Rel res norm": resNorm / self.initNorm,
-                "U norm": uNorm,
-                "Flags": flags,
-            }
-            if iteration > 0:
-                histData["Lin iters"] = linearSolveIterations
-                histData["Lin res"] = np.abs(linearSolveResNorm)
-                histData["LS step"] = alpha
-                histData["LS iters"] = lineSearchIters
-                if USE_EW:
-                    histData["EW Tol"] = prevLinCovergenceRel
-            if self.rank == 0:
-                self.history.write(histData)
-                if iteration % 50 == 0:
-                    self.history.printHeader()
-                self.history.printData()
-
-            flags = ""
-
-            # Test convergence (exit if converged/diverged)
-            hasConverged = (
-                np.real(resNorm) / np.real(self.initNorm) < rtol
-                or np.real(resNorm) < atol
-            )
-            hasDiverged = np.real(resNorm) >= MAX_RES
-            if hasConverged or hasDiverged:
-                break
-
-            # Update Jacobian
-            self.updateJacobian()
-            if iteration > 0 and linearSolveIterations <= MAX_LIN_ITERS:
-                self._factorOnNext = False
-            else:
-                flags += "P"
-            self.updatePreconditioner()
-
-            # Compute Newton step
-            self.setOption("L2ConvergenceRel", float(linCovergenceRel))
-            linSolveConverged = self.solveJacLinear(self.res, self.update)
-            self.update.scale(-1.0)
-
-            # Check data from linear solve
-            linearSolveIterations = self.KSM.getIterCount()
-            linearSolveResNorm = self.KSM.getResidualNorm()
-
-            if USE_LINESEARCH and iteration >= LINESEARCH_SKIP_ITERS:
-                # Do linesearch
-                alpha, lineSearchIters = self.energyLineSearch(
-                    self.u, self.update, Fext=Fext
-                )
-            else:
-                alpha = 1.0
-                lineSearchIters = 1
-            self.u.axpy(alpha, self.update)
-            self.assembler.setVariables(self.u)
-            self._stiffnessUpdateRequired = True
-
-        return hasConverged, iteration
+        if self.getOption("writeNLIterSolutions"):
+            self.writeSolution(baseName=f"{self.name}-nlIter", number=iteration)
 
     def energyLineSearch(self, u, stepDir, Fext=None, slope=None):
         MAX_LINESEARCH_ITERS = self.getOption("lineSearchMaxIter")
@@ -1970,6 +1825,7 @@ class StaticProblem(TACSProblem):
         self.getResidual(internalForceVec, Fext)
         self.setLoadScale(1.0)
         self.getResidual(externalForceVec, Fext)
+        self.setLoadScale(loadScale)
 
         # Compute internal forces
         if isinstance(internalForceVec, tacs.TACS.Vec):

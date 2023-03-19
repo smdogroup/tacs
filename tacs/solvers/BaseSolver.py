@@ -50,18 +50,19 @@ class BaseSolver(BaseUI):
             Vector to store the residual in, by default the solver will create it's own but these can be passed to save additional allocations
         options : dict, optional
             Dictionary holding solver-specific option parameters (case-insensitive)., by default None
-        comm : _type_, optional
+        comm : mpi4py.MPI.Intracomm, optional
             The comm object on which to create the pyTACS object., by default MPI.COMM_WORLD
         """
         BaseUI.__init__(self, options, comm)
         self.assembler = assembler
         self.setStateFunc = setStateFunc
         self.resFunc = resFunc
-        self.u = stateVec if stateVec is not None else self.assembler.createVec()
-        self.res = resVec if resVec is not None else self.assembler.createVec()
+        self.stateVec = stateVec if stateVec is not None else self.assembler.createVec()
+        self.resVec = resVec if resVec is not None else self.assembler.createVec()
         self.refNorm = 1.0
 
         self._hasConverged = False
+        self._fatalFailure = False
         self._iterationCount = 0
         self.callback = None
 
@@ -71,9 +72,12 @@ class BaseSolver(BaseUI):
         return self._hasConverged
 
     @property
-    def hasFailed(self) -> bool:
-        """Whether the solver has failed, set as a property rather than an attribute so that it is read-only"""
-        return not self._hasConverged
+    def fatalFailure(self) -> bool:
+        """Whether the solver has failed, set as a property rather than an attribute so that it is read-only
+
+        Note that a fatalFailure is not the same as not converging, this flag is meant to reflect that there has been a fatal failure in the solver which requires a full reset
+        """
+        return self._fatalFailure
 
     @property
     def iterationCount(self) -> int:
@@ -94,6 +98,37 @@ class BaseSolver(BaseUI):
             Vector in which to store the solution, by default None.
             The problem's state is updated with the solution whether or not this is provided.
         """
+
+    @abc.abstractmethod
+    def setConvergenceTolerance(
+        self, absTol: Optional[float] = None, relTol: Optional[float] = None
+    ) -> None:
+        """Set the convergence tolerance of the solver
+
+        Parameters
+        ----------
+        absTol : float, optional
+            Absolute tolerance, not changed if no value is provided
+        relTol : float, optional
+            Relative tolerance, not changed if no value is provided
+        """
+
+    def initializeSolve(self) -> None:
+        """Perform any initialization required before the solve
+
+        In the base solver class, this simply involves resetting the iteration counter and convergence flags
+        """
+        self._iterationCount = 0
+        self._hasConverged = False
+        self._fatalFailure = False
+
+    def reset(self) -> None:
+        """Reset the solver
+
+        Currently this just zeros out the state vector, but more functionality may be added in future
+        """
+        self.stateVec.zeroEntries()
+        self.setStateFunc(self.stateVec)
 
     def setRefNorm(self, norm: float) -> None:
         """Set the reference norm used to compute relative convergence measures

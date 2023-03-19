@@ -1,8 +1,9 @@
 """
 ==============================================================================
-TACS Newton Solver
+TACS Nonlinear Newton Solver
 ==============================================================================
-@Description : A Newton solver for pyTACS
+@Author : Alasdair Christison Gray
+@Description : A Newton solver for nonlinear TACS problems
 """
 
 # ==============================================================================
@@ -46,16 +47,6 @@ class NewtonSolver(BaseSolver):
             1e-8,
             "Relative convergence criteria for the nonlinear residual norm, norm is measured relative to that of the external load vector.",
         ],
-        "newtonSolverCoarseAbsTol": [
-            float,
-            1e-4,
-            "Residual norm criteria for intermediate continuation steps, making this larger may speed up the nonlinear solver by allowing it to only partially converge intermediate steps.",
-        ],
-        "newtonSolverCoarseRelTol": [
-            float,
-            1e-4,
-            "Relative residual norm criteria for intermediate load increments.",
-        ],
         "newtonSolverDivergenceTol": [
             float,
             1e10,
@@ -69,7 +60,7 @@ class NewtonSolver(BaseSolver):
         ],
         "newtonSolverMaxLinIters": [
             int,
-            10,
+            0,
             "If the linear solver takes more than this number of iterations to converge, the preconditioner is updated.",
         ],
         "newtonSolverUseEW": [
@@ -135,13 +126,13 @@ class NewtonSolver(BaseSolver):
     def __init__(
         self,
         assembler: tacs.TACS.Assembler,
-        stateVec: tacs.TACS.Vec,
-        resVec: tacs.TACS.Vec,
         setStateFunc: Callable,
         resFunc: Callable,
         jacFunc: Callable,
         pcUpdateFunc: Callable,
         linearSolver: tacs.TACS.KSM,
+        stateVec: Optional[tacs.TACS.Vec] = None,
+        resVec: Optional[tacs.TACS.Vec] = None,
         options: Optional[dict] = None,
         comm: Optional[mpi4py.MPI.Comm] = None,
     ) -> None:
@@ -151,27 +142,34 @@ class NewtonSolver(BaseSolver):
         ----------
         assembler : tacs.TACS.Assembler
             TACS assembler object related to the problem being solved, required in order for the solver to create it's own vectors
-        stateVec : tacs.TACS.Vec
-            Vector to store the state in
-        resVec : tacs.TACS.Vec
-            Vector to store the residual in
         setStateFunc : function
-            Function to set the state vector, with signature setStateFunc(stateVec: tacs.TACS.Vec)
+            Function to set the state vector, with signature setStateFunc(stateVec: tacs.TACS.Vec) -> None
         resFunc : function
-            Function to evaluate the residual at the current state, with signature resFunc(resVec: tacs.TACS.Vec)
+            Function to evaluate the residual at the current state, with signature resFunc(resVec: tacs.TACS.Vec) -> None
         jacFunc : function
-            Function to update the residual Jacobian at the current state, with signature jacFunc()
+            Function to update the residual Jacobian at the current state, with signature jacFunc() -> None
         pcUpdateFunc : function
-            Function to update the residual Jacobian preconditioner at the current state, with signature pcUpdateFunc()
+            Function to update the residual Jacobian preconditioner at the current state, with signature pcUpdateFunc() -> None
         linearSolver : tacs.TACS.KSM
             TACS linear solver object to use for the Newton solve, the linear solver owns the matrix and preconditioner
+        stateVec : tacs.TACS.Vec, optional
+            Vector to store the state in, by default the solver will create it's own but these can be passed to save additional allocations
+        resVec : tacs.TACS.Vec, optional
+            Vector to store the residual in, by default the solver will create it's own but these can be passed to save additional allocations
         options : dict, optional
             Dictionary holding solver-specific option parameters (case-insensitive)., by default None
-        comm : _type_, optional
+        comm : mpi4py.MPI.Intracomm, optional
             The comm object on which to create the pyTACS object., by default MPI.COMM_WORLD
         """
         BaseSolver.__init__(
-            self, assembler, setStateFunc, resFunc, stateVec, resVec, options, comm
+            self,
+            assembler=assembler,
+            setStateFunc=setStateFunc,
+            resFunc=resFunc,
+            stateVec=stateVec,
+            resVec=resVec,
+            options=options,
+            comm=comm,
         )
         self.jacFunc = jacFunc
         self.pcUpdateFunc = pcUpdateFunc
@@ -180,7 +178,23 @@ class NewtonSolver(BaseSolver):
         # Create additional vectors
         self.update = self.assembler.createVec()
 
-        # self.lineSe
+    def setConvergenceTolerance(
+        self, absTol: Optional[float] = None, relTol: Optional[float] = None
+    ) -> None:
+        """Set the convergence tolerance of the solver
+
+        Parameters
+        ----------
+        absTol : float, optional
+            Absolute tolerance, not changed if no value is provided
+        relTol : float, optional
+            Relative tolerance, not changed if no value is provided
+        """
+        if absTol is not None:
+            self.setOption("newtonSolverAbsTol", absTol)
+        if relTol is not None:
+            self.setOption("newtonSolverRelTol", relTol)
+        return
 
     def solve(
         self, u0: Optional[tacs.TACS.Vec] = None, result: Optional[tacs.TACS.Vec] = None
@@ -212,38 +226,34 @@ class NewtonSolver(BaseSolver):
         ABS_TOL = self.getOption("newtonSolverAbsTol")
         REL_TOL = self.getOption("newtonSolverRelTol")
 
+        self.initializeSolve()
+
         flags = ""
-        self._hasConverged = False
 
         if u0 is not None:
-            self.u.copyValues(u0)
+            self.stateVec.copyValues(u0)
 
         for iteration in range(MAX_ITERS):
             self._iterationCount = iteration
+            prevLinCovergenceRel = linCovergenceRel
 
             # Compute residual and norms
-            self.resFunc(self.res)
+            self.resFunc(self.resVec)
             if iteration > 0:
                 prevResNorm = resNorm
-            resNorm = self.res.norm()
-            uNorm = self.u.norm()
+            resNorm = self.resVec.norm()
+            uNorm = self.stateVec.norm()
 
-            prevLinCovergenceRel = linCovergenceRel
-            if USE_EW:
-                # Compute linear solver convergence tolerance using Einstat-Walker method b)
-                if iteration > 0:
-                    zeta = EW_GAMMA * np.real(resNorm / prevResNorm) ** EW_ALPHA
-                    threshold = EW_GAMMA * prevLinCovergenceRel**EW_ALPHA
-                    if threshold <= 0.1:
-                        linCovergenceRel = zeta
-                    else:
-                        linCovergenceRel = max(zeta, threshold)
-                linCovergenceRel = np.clip(
-                    linCovergenceRel, LIN_SOLVE_TOL_MIN, LIN_SOLVE_TOL_MAX
-                )
-                self.linearSolver.setTolerances(
-                    float(linCovergenceRel), self.getOption("newtonSolverAbsLinTol")
-                )
+            # Test convergence
+            self._hasConverged = (
+                np.real(resNorm) / np.real(self.refNorm) < REL_TOL
+                or np.real(resNorm) < ABS_TOL
+            )
+            self._hasFailed = np.real(resNorm) >= MAX_RES or np.isnan(resNorm)
+            if self._hasConverged:
+                flags += "C"
+            elif self.fatalFailure:
+                flags += "D"
 
             # Write data to history
             monitorVars = {
@@ -261,31 +271,42 @@ class NewtonSolver(BaseSolver):
                 if USE_EW:
                     monitorVars["EW Tol"] = prevLinCovergenceRel
             if self.callback is not None:
-                self.callback(self, self.u, self.res, monitorVars)
+                self.callback(self, self.stateVec, self.resVec, monitorVars)
 
             flags = ""
 
-            # Test convergence (exit if converged/diverged)
-            self._hasConverged = (
-                np.real(resNorm) / np.real(self.refNorm) < REL_TOL
-                or np.real(resNorm) < ABS_TOL
-            )
-            hasDiverged = np.real(resNorm) >= MAX_RES
-            if self._hasConverged or hasDiverged:
+            # exit if converged/diverged
+            if self.hasConverged or self.fatalFailure:
                 break
 
             # Update Jacobian
             self.jacFunc()
 
-            # Update preconditioner, or skip if linear solve converged in few enough iterations
+            # Update preconditioner, or skip if last linear solve converged in few enough iterations
             if iteration > 0 and linearSolveIterations <= MAX_LIN_ITERS:
                 pass
             else:
                 flags += "P"
                 self.pcUpdateFunc()
 
+            # Update linear solver convergence tolerance using Einstat-Walker method b)
+            if USE_EW:
+                if iteration > 0:
+                    zeta = EW_GAMMA * np.real(resNorm / prevResNorm) ** EW_ALPHA
+                    threshold = EW_GAMMA * prevLinCovergenceRel**EW_ALPHA
+                    if threshold <= 0.1:
+                        linCovergenceRel = zeta
+                    else:
+                        linCovergenceRel = max(zeta, threshold)
+                linCovergenceRel = np.clip(
+                    linCovergenceRel, LIN_SOLVE_TOL_MIN, LIN_SOLVE_TOL_MAX
+                )
+                self.linearSolver.setTolerances(
+                    float(linCovergenceRel), self.getOption("newtonSolverAbsLinTol")
+                )
+
             # Compute Newton step
-            linSolveConverged = self.linearSolver.solve(self.res, self.update)
+            linSolveConverged = self.linearSolver.solve(self.resVec, self.update)
             linSolveConverged = linSolveConverged == 1
             self.update.scale(-1.0)
 
@@ -295,15 +316,17 @@ class NewtonSolver(BaseSolver):
 
             if USE_LINESEARCH and iteration >= LINESEARCH_SKIP_ITERS:
                 # Do linesearch
-                alpha, lineSearchIters = self.energyLineSearch(self.u, self.update)
+                alpha, lineSearchIters = self.energyLineSearch(
+                    self.stateVec, self.update
+                )
             else:
                 alpha = 1.0
                 lineSearchIters = 1
-            self.u.axpy(alpha, self.update)
-            self.setStateFunc(self.u)
+            self.stateVec.axpy(alpha, self.update)
+            self.setStateFunc(self.stateVec)
 
         if result is not None:
-            result.copyValues(self.u)
+            result.copyValues(self.stateVec)
 
     def energyLineSearch(self, u, stepDir, Fext=None, slope=None):
         MAX_LINESEARCH_ITERS = self.getOption("lineSearchMaxIter")
@@ -317,8 +340,8 @@ class NewtonSolver(BaseSolver):
 
         # Compute residual and merit function at u0
         self.setStateFunc(u)
-        self.resFunc(self.res)
-        f0 = np.real(self.res.dot(stepDir))
+        self.resFunc(self.resVec)
+        f0 = np.real(self.resVec.dot(stepDir))
         fOld = f0
         alphaOld = 0.0
         uNorm = u.norm()
@@ -336,13 +359,13 @@ class NewtonSolver(BaseSolver):
             self.setStateFunc(u)
 
             # 5. Compute residual, $r = r(u)$
-            self.resFunc(self.res)
+            self.resFunc(self.resVec)
 
             # 6. Compute merit function,  $f(\alpha)=f(u, r, \Delta u)$
-            fNew = np.real(self.res.dot(stepDir))
+            fNew = np.real(self.resVec.dot(stepDir))
 
             # 7. if $abs(f(\alpha)) \leq \mu f_0 + \alpha f'_0$:
-            #     1. exit
+            #     exit
             uNorm = u.norm()
             if self.rank == 0 and PRINT_LINESEARCH_ITERS:
                 print(
