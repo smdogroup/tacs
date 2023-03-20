@@ -1001,7 +1001,6 @@ class StaticProblem(TACSProblem):
         startTime = time.time()
 
         self.callCounter += 1
-
         setupProblemTime = time.time()
 
         # Set problem vars to assembler
@@ -1110,6 +1109,7 @@ class StaticProblem(TACSProblem):
             self.getResidual(res, Fext=Fext)
 
         self.nonlinearSolver.resFunc = resFunc
+        self.newtonSolver.resFunc = resFunc
         self.nonlinearSolver.setRefNorm(self.initNorm)
         self.nonlinearSolver.solve()
 
@@ -1176,16 +1176,17 @@ class StaticProblem(TACSProblem):
         """
         iteration = 0
         if self.rank == 0:
-            # Figure out the increment and subiteration number
+            # Figure out the iteration number
             iteration = self.history.getIter()
-            self.comm.bcast(iteration, root=self.rank)
             if iteration % 50 == 0:
                 self.history.printHeader()
             self.history.write(monitorVars)
             self.history.printData()
 
+        self.comm.bcast(iteration, root=0)
+
         if self.getOption("writeNLIterSolutions"):
-            self.writeSolution(baseName=f"{self.name}-nlIter", number=iteration)
+            self.writeSolution(baseName=f"{self.name}-NLIter", number=iteration)
 
     def energyLineSearch(self, u, stepDir, Fext=None, slope=None):
         MAX_LINESEARCH_ITERS = self.getOption("lineSearchMaxIter")
