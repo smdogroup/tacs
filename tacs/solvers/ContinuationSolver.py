@@ -241,9 +241,9 @@ class ContinuationSolver(BaseSolver):
             du_e = self.predictorStep
             self.linearSolver.solve(self.fExt, du_e)
             self.linearSolver.solve(self.fInt, du_i)
-            FeUe = self.fExt.dot(du_e)
-            FeUi = self.fExt.dot(du_i)
-            FiUe = self.fInt.dot(du_e)
+            FeUe = np.real(self.fExt.dot(du_e))
+            FeUi = np.real(self.fExt.dot(du_i))
+            FiUe = np.real(self.fInt.dot(du_e))
             optLoadScale = (FeUi + FiUe) / (-2 * FeUe)
 
             if optLoadScale > 2 * MAX_LAMBDA or optLoadScale < 0.0:
