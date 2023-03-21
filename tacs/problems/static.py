@@ -1089,7 +1089,7 @@ class StaticProblem(TACSProblem):
 
         return
 
-    def solveNonlinear(self, Fext=None, maxLoadScale=1.0):
+    def solveNonlinear(self, Fext=None):
         # Compute the internal and external force components of the residual at the current point
         self.getForces(
             externalForceVec=self.externalForce,
@@ -1113,51 +1113,9 @@ class StaticProblem(TACSProblem):
         self.nonlinearSolver.setRefNorm(self.initNorm)
         self.nonlinearSolver.solve()
 
-        # for increment in range(MAX_INCREMENTS):
-        #     self._info(
-        #         f"Continuation Increment {increment + 1}, Load Scale: {self.loadScale:.3f}",
-        #         box=True,
-        #         maxLen=100,
-        #     )
-        #     # Save displacement at start of this increment, this is what
-        #     # we'll reset to if the increment diverges
-        #     self.u_inc_start.copyValues(self.u)
-
-        #     # --- Compute predictor step ---
-        #     # TODO: Add predictor computation here
-        #     if self.loadScale == maxLoadScale:
-        #         rtol = REL_TOL
-        #         atol = ABS_TOL
-        #     else:
-        #         rtol = COARSE_REL_TOL
-        #         atol = COARSE_ABS_TOL
-        #     success, numIters = self.newtonSolve(Fext=Fext, rtol=rtol, atol=atol)
-
-        #     # --- Check convergence ---
-        #     if not success:
-        #         # If the Newton solve failed then we'll reduce the step size and try again
-        #         self.setVariables(self.u_inc_start)
-        #         self.setLoadScale(self.loadScale - stepSize * loadStepDirection)
-        #         stepSize *= STEP_RETRACT_FACTOR
-        #     else:
-        #         if self.loadScale == maxLoadScale:
-        #             break
-        #         else:
-        #             stepChangeFactor = np.sqrt(TARGET_ITERS / numIters)
-        #             stepSize *= np.clip(
-        #                 stepChangeFactor, MIN_STEP_FACTOR, MAX_STEP_FACTOR
-        #             )
-        #             if USE_PREDICTOR:
-        #                 stateToOverwrite = self.equilibriumPathStates.pop(0)
-        #                 stateToOverwrite.copyValues(self.u)
-        #                 self.equilibriumPathStates.append(stateToOverwrite)
-
-        #                 self.equilibriumPathLoadScales.pop(0)
-        #                 self.equilibriumPathLoadScales.append(self.loadScale)
-
-        #     maxStep = min(np.abs(maxLoadScale - self.loadScale), MAX_STEP)
-        #     stepSize = np.clip(stepSize, MIN_STEP, maxStep)
-        #     self.setLoadScale(self.loadScale + loadStepDirection * stepSize)
+        # Since the state has changed, we need to flag that the jacobian and preconditioner should be before the next primal or adjoint solve
+        self._factorOnNext = True
+        self._stiffnessUpdateRequired = True
 
     def _nonlinearCallback(self, solver, u, res, monitorVars):
         """Callback function to be called by the nonlinear solver at each iteration
@@ -2081,6 +2039,19 @@ class StaticProblem(TACSProblem):
             self.outputViewer.writeToFile(baseName + ".f5")
 
     def writeSolutionHistory(self, outputDir=None, baseName=None, number=None):
+        """Write the nonlinear solver history to a file
+
+        Parameters
+        ----------
+        outputDir : str or None
+            Use the supplied output directory
+        baseName : str or None
+            Use this supplied string for the base filename. Typically
+            only used from an external solver.
+        number : int or None
+            Use the user supplied number to index solution. Again, only
+            typically used from an external solver
+        """
         # Figure out the output file base name
         baseName = self.getOutputFileName(outputDir, baseName, number)
         if self.history is not None:
