@@ -5,6 +5,19 @@ import numpy as np
 from tacs import TACS, constitutive, elements
 
 
+def generateTestFailMessage(element, transform, matType=None):
+    message = f"Failed test with element {element.__class__.__name__}, transform {transform.__class__.__name__}"
+    if matType is not None:
+        if matType == TACS.STIFFNESS_MATRIX:
+            matName = "stiffness"
+        if matType == TACS.MASS_MATRIX:
+            matName = "mass"
+        if matType == TACS.GEOMETRIC_STIFFNESS_MATRIX:
+            matName = "geometric stiffness"
+        message += f", {matName} matrix"
+    return message
+
+
 class ElementTest(unittest.TestCase):
     def setUp(self):
         max_nodes = 64
@@ -22,7 +35,7 @@ class ElementTest(unittest.TestCase):
 
         # Basically, only check relative tolerance
         self.atol = 1e99
-        self.print_level = 0
+        self.print_level = 2
 
         # Set element index
         self.elem_index = 0
@@ -138,7 +151,12 @@ class ElementTest(unittest.TestCase):
                                 self.atol,
                                 rtol,
                             )
-                            self.assertFalse(fail)
+                            self.assertFalse(
+                                fail,
+                                msg=generateTestFailMessage(
+                                    element=element, transform=transform
+                                ),
+                            )
 
     def test_element_jacobian(self):
         # Loop through every combination of transform type and shell element class and test Jacobian
@@ -161,7 +179,12 @@ class ElementTest(unittest.TestCase):
                             self.atol,
                             self.rtol,
                         )
-                        self.assertFalse(fail)
+                        self.assertFalse(
+                            fail,
+                            msg=generateTestFailMessage(
+                                element=element, transform=transform
+                            ),
+                        )
 
     def test_adj_res_product(self):
         # Loop through every combination of transform type and shell element class and test adjoint residual-dvsens product
@@ -185,7 +208,12 @@ class ElementTest(unittest.TestCase):
                             self.atol,
                             self.rtol,
                         )
-                        self.assertFalse(fail)
+                        self.assertFalse(
+                            fail,
+                            msg=generateTestFailMessage(
+                                element=element, transform=transform
+                            ),
+                        )
 
     def test_adj_res_xpt_product(self):
         # Loop through every combination of transform type and shell element class and test adjoint residual-xptsens product
@@ -207,7 +235,12 @@ class ElementTest(unittest.TestCase):
                             self.atol,
                             self.rtol,
                         )
-                        self.assertFalse(fail)
+                        self.assertFalse(
+                            fail,
+                            msg=generateTestFailMessage(
+                                element=element, transform=transform
+                            ),
+                        )
 
     def test_element_mat_dv_sens(self):
         # Loop through every combination of transform type and shell element class and element matrix inner product sens
@@ -232,7 +265,12 @@ class ElementTest(unittest.TestCase):
                                     self.atol,
                                     self.rtol,
                                 )
-                                self.assertFalse(fail)
+                                self.assertFalse(
+                                    fail,
+                                    msg=generateTestFailMessage(
+                                        element=element, transform=transform
+                                    ),
+                                )
 
     def test_element_mat_xpt_sens(self):
         # Loop through every combination of transform type and shell element class and element matrix inner product sens
@@ -256,7 +294,14 @@ class ElementTest(unittest.TestCase):
                                         self.atol,
                                         self.rtol,
                                     )
-                                    self.assertFalse(fail)
+                                    self.assertFalse(
+                                        fail,
+                                        msg=generateTestFailMessage(
+                                            element=element,
+                                            transform=transform,
+                                            matType=matrix_type,
+                                        ),
+                                    )
 
     def test_element_mat_sv_sens(self):
         # Loop through every combination of model and basis class and test element matrix inner product sens
@@ -280,4 +325,15 @@ class ElementTest(unittest.TestCase):
                                         self.atol,
                                         self.rtol,
                                     )
-                                    self.assertFalse(fail)
+                                    self.assertFalse(
+                                        fail,
+                                        msg=generateTestFailMessage(
+                                            element=element,
+                                            transform=transform,
+                                            matType=matrix_type,
+                                        ),
+                                    )
+
+
+if __name__ == "__main__":
+    unittest.main()
