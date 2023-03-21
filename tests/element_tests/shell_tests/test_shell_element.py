@@ -35,7 +35,7 @@ class ElementTest(unittest.TestCase):
 
         # Basically, only check relative tolerance
         self.atol = 1e99
-        self.print_level = 2
+        self.print_level = 0
 
         # Set element index
         self.elem_index = 0
