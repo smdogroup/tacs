@@ -24,6 +24,7 @@ extern/
 *.h5
 *.f5
 *.bdf
+!tests/integration_tests/input_files/*.bdf
 *.su2
 *.tar.gz
 *.png
