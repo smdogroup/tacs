@@ -86,7 +86,7 @@ class ModalProblem(TACSProblem):
         comm,
         outputViewer=None,
         meshLoader=None,
-        options={},
+        options=None,
     ):
         """
         NOTE: This class should not be initialized directly by the user.
@@ -122,6 +122,9 @@ class ModalProblem(TACSProblem):
         # Problem name
         self.name = name
 
+        # Default setup for common problem class objects, sets up comm and options
+        TACSProblem.__init__(self, assembler, comm, options, outputViewer, meshLoader)
+
         # Set time eigenvalue parameters
         self.sigma = sigma
         self.numEigs = numEigs
@@ -129,9 +132,6 @@ class ModalProblem(TACSProblem):
         # String name used in evalFunctions
         self.valName = "eigsm"
         self._initializeFunctionList()
-
-        # Default setup for common problem class objects, sets up comm and options
-        super().__init__(assembler, comm, options, outputViewer, meshLoader)
 
         # Create problem-specific variables
         self._createVariables()

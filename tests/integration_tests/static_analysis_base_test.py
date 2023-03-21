@@ -7,20 +7,20 @@ from tacs import TACS
 
 """
 This is a base class for static problem unit test cases.
-This base class will test function evaluations and total 
-and partial sensitivities for the user-specified problem 
+This base class will test function evaluations and total
+and partial sensitivities for the user-specified problem
 that inherits from it.
-When the user creates a new test based on this class three 
-methods are required to be defined in the child class. 
+When the user creates a new test based on this class three
+methods are required to be defined in the child class.
 
     1. setup_assembler
     2. setup_tacs_vecs
     3. setup_funcs
-    
-See the virtual method implementations for each method 
+
+See the virtual method implementations for each method
 below for more details.
 
-NOTE: The child class must NOT implement its own setUp method 
+NOTE: The child class must NOT implement its own setUp method
 for the unittest class. This is handled in the base class.
 """
 
@@ -89,10 +89,11 @@ class StaticTestCase:
             # Create GMRES solver object
             subspace = 100
             restarts = 2
-            atol = 1e-30
-            rtol = 1e-12
+            self.linSolveIterLimit = subspace * restarts
+            self.linSolveAtol = 1e-30
+            self.linSolveRtol = 1e-12
             self.gmres = TACS.KSM(self.mat, self.pc, subspace, restarts)
-            self.gmres.setTolerances(rtol, atol)
+            self.gmres.setTolerances(self.linSolveRtol, self.linSolveAtol)
 
             # Create the function list
             self.func_list, self.func_ref = self.setup_funcs(self.assembler)
@@ -148,6 +149,18 @@ class StaticTestCase:
 
             # solve
             func_vals = self.run_solve()
+
+            # Test that linear solver residual is sufficiently small
+            linSolveRes = np.real(self.gmres.getResidualNorm())
+            converged = (
+                linSolveRes < self.linSolveAtol
+                or linSolveRes < self.linSolveRtol * np.real(self.res0.norm())
+            )
+            self.assertTrue(converged, "Linear solver did not converge")
+
+            # Test that linear solver took between 1 and subspce * restarts iterations
+            numIters = self.gmres.getIterCount()
+            self.assertTrue(numIters > 0 and numIters <= self.linSolveIterLimit)
 
             # Test functions values against historical values
             np.testing.assert_allclose(

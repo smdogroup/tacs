@@ -78,7 +78,11 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
 
         # Create transient problem, loads are already applied through BCs
         tp = fea_assembler.createTransientProblem(
-            name="transient", tInit=0.0, tFinal=5.0, numSteps=100
+            name="transient",
+            tInit=0.0,
+            tFinal=5.0,
+            numSteps=100,
+            options={"printLevel": 2},
         )
         # Set the initial conditions
         tp.setInitConditions(vars=150.0)

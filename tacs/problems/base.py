@@ -44,7 +44,7 @@ class TACSProblem(BaseUI):
         self.functionList = OrderedDict()
 
         # Setup comm and options
-        super().__init__(options=options, comm=comm)
+        BaseUI.__init__(self, options=options, comm=comm)
 
         return
 
