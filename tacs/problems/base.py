@@ -28,6 +28,7 @@ class TACSProblem(BaseUI):
         meshLoader=None,
         isNonlinear=False,
     ):
+        self._isNonlinear = isNonlinear
         # TACS assembler object
         self.assembler = assembler
         # TACS F5 output writer
@@ -51,8 +52,6 @@ class TACSProblem(BaseUI):
 
         # Setup comm and options
         BaseUI.__init__(self, options=options, comm=comm)
-
-        self._isNonlinear = isNonlinear
 
         return
 
