@@ -12,10 +12,11 @@ example_path = os.path.join(os.path.dirname(__file__), "..")
 sys.path.append(example_path)
 
 # Reference values for eval functions
-FUNC_REF = {
-    "RadialForces_Compliance": 4801.185364445089,
-    "RadialForces_KSFailure": 0.09494317198332766,
-    "RadialForces_MaxYDisp": 14.372827555055666,
+FUNC_REFS = {
+    "RadialForces_Compliance": 121.37975434927841,
+    "RadialForces_KSFailure": 0.09375588756570011,
+    "RadialForces_MaxYDisp": 0.23012106687058378,
+    "RadialForces_MaxZDisp": 2.3202346529634763,
 }
 
 
