@@ -35,6 +35,7 @@ import tacs.TACS
 import tacs.constitutive
 import tacs.elements
 import tacs.functions
+import tacs.problems
 from tacs.pymeshloader import pyMeshLoader
 from tacs.utilities import BaseUI
 
@@ -1025,10 +1026,14 @@ class pyTACS(BaseUI):
                 k1 = propInfo.k1
                 k2 = propInfo.k2
 
-                if k1 is None:
-                    k1 = 1e6
-                if k2 is None:
-                    k2 = 1e6
+                # pynastran defaults these values to 1e8,
+                # which can lead to scaling issues in the stiffness matrix
+                # We truncate this value to 1e3 to prevent this
+                if k1 is None or k1 > 1e3:
+                    k1 = 1e3
+
+                if k2 is None or k2 > 1e3:
+                    k2 = 1e3
 
                 con = tacs.constitutive.BasicBeamConstitutive(
                     mat, A=area, Iy=I2, Iz=I1, Iyz=I12, J=J, ky=k1, kz=k2
@@ -1297,7 +1302,7 @@ class pyTACS(BaseUI):
             array[:] = vec.getArray()
 
     @postinitialize_method
-    def createStaticProblem(self, name, options={}):
+    def createStaticProblem(self, name, options=None):
         """
         Create a new staticProblem for modeling a static load cases.
         This object can be used to set loads, evalFunctions as well as perform
@@ -1330,7 +1335,7 @@ class pyTACS(BaseUI):
         return problem
 
     @postinitialize_method
-    def createTransientProblem(self, name, tInit, tFinal, numSteps, options={}):
+    def createTransientProblem(self, name, tInit, tFinal, numSteps, options=None):
         """
         Create a new TransientProblem for modeling a transient load cases.
         This object can be used to set loads, evalFunctions as well as perform
@@ -1372,7 +1377,7 @@ class pyTACS(BaseUI):
         return problem
 
     @postinitialize_method
-    def createModalProblem(self, name, sigma, numEigs, options={}):
+    def createModalProblem(self, name, sigma, numEigs, options=None):
         """
         Create a new ModalProblem for performing modal analysis.
         This problem can be used to identify the natural frequencies and mode
