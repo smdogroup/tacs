@@ -6,8 +6,10 @@ from pprint import pprint
 from scipy.spatial.transform import Rotation
 
 parser = argparse.ArgumentParser()
-parser.add_argument("--ne1", type=int, default=16, help="# elements along panel width")
-parser.add_argument("--ne2", type=int, default=16, help="# elements along panel depth")
+parser.add_argument("--ne1", type=int, default=16, help="# elements from top to bottom")
+parser.add_argument(
+    "--ne2", type=int, default=16, help="# elements around circumference"
+)
 args = parser.parse_args()
 
 # Overall dimensions
@@ -31,19 +33,19 @@ Y = np.zeros_like(Theta1)
 Z = np.zeros_like(Theta1)
 
 # Node numbering
-nid = np.zeros((n1, n2), dtype="intc")
+nid = np.zeros((n2, n1), dtype="intc")
 bcnodes = []
 count = 1
 for i in range(n2):
     Rz = Rotation.from_euler("z", theta2[i])
     for j in range(n1):
-        nid[j, i] = count
+        nid[i, j] = count
         # Compute node location on hemisphere
         r = R * np.array([np.cos(theta1[j]), 0.0, np.sin(theta1[j])])
         r = Rz.apply(r)
-        X[j, i] = r[0]
-        Y[j, i] = r[1]
-        Z[j, i] = r[2]
+        X[i, j] = r[0]
+        Y[i, j] = r[1]
+        Z[i, j] = r[2]
         if j == 0:
             if i == 0:
                 bcnodes.append({"nodenum": count, "fixedDOF": "2346"})
@@ -66,7 +68,7 @@ for i in range(ne2):
     for j in range(ne1):
         compID = i // ne2 * np1 + j // ne1 + 1
         conn[compID].append(
-            [ie, nid[j, i], nid[j + 1, i], nid[j + 1, i + 1], nid[j, i + 1]]
+            [ie, nid[i, j], nid[i + 1, j], nid[i + 1, j + 1], nid[i, j + 1]]
         )
         ie += 1
 
