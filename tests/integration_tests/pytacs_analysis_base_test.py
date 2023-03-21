@@ -213,6 +213,8 @@ class PyTACSTestCase:
                 prob.solve()
                 # Write solution
                 prob.writeSolution(outputDir=tmp_dir_name)
+                if prob.isNonlinear and isinstance(prob, problems.StaticProblem):
+                    prob.writeSolutionHistory(outputDir=tmp_dir_name)
 
             if self.comm.rank == 0:
                 # Loop through each problem and make sure solution file exists
@@ -223,6 +225,12 @@ class PyTACSTestCase:
                             f5_file = f"{base_name}.f5"
                             self.assertTrue(
                                 os.path.exists(f5_file), msg=f"{f5_file} exists"
+                            )
+                            if prob.isNonlinear:
+                                history_file = f"{base_name}.pkl"
+                            self.assertTrue(
+                                os.path.exists(history_file),
+                                msg=f"{history_file} exists",
                             )
                         else:
                             if isinstance(prob, problems.TransientProblem):
