@@ -46,6 +46,7 @@ reports/
 *.pxi
 *.vtk
 *.cfg
+*.pkl
 .vscode
 .DS_Store
 .pre-commit-config.yaml
