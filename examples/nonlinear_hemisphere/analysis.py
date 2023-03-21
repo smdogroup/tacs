@@ -86,14 +86,13 @@ def elemCallBack(dvNum, compID, compDescript, elemDescripts, specialDVs, **kwarg
 FEAAssembler.initialize(elemCallBack)
 
 probOptions = {
-    "printTiming": True,
-    "skipFirstNLineSearch": 0,
     "continuationInitialStep": 1.0,
-    "newtonSolverMaxIter": 100,
+    "newtonSolverMaxIter": 50,
     "newtonSolverUseEW": True,
     "nRestarts": 3,
     "subSpaceSize": 20,
     "newtonSolverMonitorVars": [
+        "lambda",
         "linsolveriters",
         "linsolverres",
         "EWTol",
@@ -101,6 +100,7 @@ probOptions = {
         "linesearchiters",
     ],
     "newtonSolverMaxLinIters": 10,
+    "printTiming": True,
 }
 problem = FEAAssembler.createStaticProblem("RadialForces", options=probOptions)
 
@@ -137,11 +137,19 @@ problem.addLoadToNodes(loadPointNodeIDs, nodalForces, nastranOrdering=True)
 # KS approximation of the maximum failure value
 problem.addFunction("KSFailure", functions.KSFailure, ksWeight=80.0, ftype="discrete")
 
-# Maximum displacement in the z-direction (KS with a very large weight to get a true max)
+# Maximum displacement in the y and z-directions (KS with a very large weight to get a true max)
 problem.addFunction(
     "MaxYDisp",
     functions.KSDisplacement,
     direction=np.array([0.0, 1.0, 0.0]),
+    ksWeight=1e20,
+    ftype="discrete",
+)
+
+problem.addFunction(
+    "MaxZDisp",
+    functions.KSDisplacement,
+    direction=np.array([0.0, 0.0, 1.0]),
     ksWeight=1e20,
     ftype="discrete",
 )
@@ -162,3 +170,4 @@ problem.writeSolutionHistory(outputDir=os.path.dirname(__file__))
 
 if COMM.rank == 0:
     pprint(funcs)
+    pprint(funcsSens)
