@@ -576,7 +576,7 @@ class StaticProblem(TACSProblem):
                 self.nonlinearSolver.setOption("newtonSolverRelLinTol", value)
 
         # We need to create a new solver history object if the monitor variables have updated
-        if name.lower() == "newtonsolvermonitorvars":
+        if self.isNonlinear and name.lower() == "newtonsolvermonitorvars":
             self._createSolverHistory()
 
     @property
