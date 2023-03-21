@@ -87,9 +87,9 @@ def elemCallBack(dvNum, compID, compDescript, elemDescripts, specialDVs, **kwarg
 FEAAssembler.initialize(elemCallBack)
 
 probOptions = {
-    "continuationInitialStep": 0.1,
+    "continuationInitialStep": 0.05,
     "newtonSolverMaxIter": 50,
-    "newtonSolverUseEW": True,
+    # "newtonSolverUseEW": True,
     "nRestarts": 3,
     "subSpaceSize": 20,
     "newtonSolverMonitorVars": [
@@ -100,10 +100,9 @@ probOptions = {
         "linesearchstep",
         "linesearchiters",
     ],
-    "newtonSolverMaxLinIters": 10,
-    "writeNLIterSolutions": True,
+    # "newtonSolverMaxLinIters": 10,
     "skipFirstNLineSearch": 1,
-    "continuationTargetIter": 20,
+    "continuationTargetIter": 25,
 }
 problem = FEAAssembler.createStaticProblem("Annulus", options=probOptions)
 
