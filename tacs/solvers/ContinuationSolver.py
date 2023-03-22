@@ -150,6 +150,8 @@ class ContinuationSolver(BaseSolver):
         # Create additional vectors
         self.fInt = self.assembler.createVec()
         self.fExt = self.assembler.createVec()
+        self.du_e = self.assembler.createVec()
+        self.du_i = self.assembler.createVec()
         self.predictorStep = self.assembler.createVec()
         self.incStartState = self.assembler.createVec()
 
@@ -237,13 +239,11 @@ class ContinuationSolver(BaseSolver):
         if np.real(self.stateVec.norm()) > 0:
             self.jacFunc()
             self.pcUpdateFunc()
-            du_i = self.stateVec
-            du_e = self.predictorStep
-            self.linearSolver.solve(self.fExt, du_e)
-            self.linearSolver.solve(self.fInt, du_i)
-            FeUe = np.real(self.fExt.dot(du_e))
-            FeUi = np.real(self.fExt.dot(du_i))
-            FiUe = np.real(self.fInt.dot(du_e))
+            self.linearSolver.solve(self.fExt, self.du_e)
+            self.linearSolver.solve(self.fInt, self.du_i)
+            FeUe = np.real(self.fExt.dot(self.du_e))
+            FeUi = np.real(self.fExt.dot(self.du_i))
+            FiUe = np.real(self.fInt.dot(self.du_e))
             optLoadScale = (FeUi + FiUe) / (-2 * FeUe)
 
             if optLoadScale > 2 * MAX_LAMBDA or optLoadScale < 0.0:
@@ -320,10 +320,11 @@ class ContinuationSolver(BaseSolver):
                     self._hasConverged = True
                     break
                 else:
-                    stepChangeFactor = np.sqrt(TARGET_ITERS / numIters)
-                    stepSize *= np.clip(
-                        stepChangeFactor, MIN_STEP_FACTOR, MAX_STEP_FACTOR
-                    )
+                    if numIters != 0:
+                        stepChangeFactor = np.sqrt(TARGET_ITERS / numIters)
+                        stepSize *= np.clip(
+                            stepChangeFactor, MIN_STEP_FACTOR, MAX_STEP_FACTOR
+                        )
                     if USE_PREDICTOR:
                         stateToOverwrite = self.equilibriumPathStates.pop(0)
                         stateToOverwrite.copyValues(self.stateVec)
