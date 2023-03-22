@@ -249,7 +249,7 @@ class NewtonSolver(BaseSolver):
                 np.real(resNorm) / np.real(self.refNorm) < REL_TOL
                 or np.real(resNorm) < ABS_TOL
             )
-            self._hasFailed = np.real(resNorm) >= MAX_RES or np.isnan(resNorm)
+            self._fatalFailure = np.real(resNorm) >= MAX_RES or np.isnan(resNorm)
             if self._hasConverged:
                 flags += "C"
             elif self.fatalFailure:
@@ -335,7 +335,7 @@ class NewtonSolver(BaseSolver):
         if result is not None:
             result.copyValues(self.stateVec)
 
-    def energyLineSearch(self, u, stepDir, Fext=None, slope=None):
+    def energyLineSearch(self, u, stepDir, slope=None):
         MAX_LINESEARCH_ITERS = self.getOption("lineSearchMaxIter")
         LINESEARCH_MU = self.getOption("lineSearchExpectedDecrease")
         LINESEARCH_ALPHA_MIN = self.getOption("lineSearchMinStep")
