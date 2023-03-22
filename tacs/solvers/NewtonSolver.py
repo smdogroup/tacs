@@ -308,6 +308,13 @@ class NewtonSolver(BaseSolver):
             # Compute Newton step
             linSolveConverged = self.linearSolver.solve(self.resVec, self.update)
             linSolveConverged = linSolveConverged == 1
+
+            # If we didn't converge because the preconditioner isn't up to date, update preconditioner and try again
+            if not linSolveConverged and "P" not in flags:
+                self.pcUpdateFunc()
+                flags += "P"
+                self.linearSolver.solve(self.resVec, self.update)
+
             self.update.scale(-1.0)
 
             # Check data from linear solve
