@@ -1232,43 +1232,43 @@ class StaticProblem(TACSProblem):
 
         totalSensitivityTime = time.time()
 
-        if self.getOption("printTiming") and self.rank == 0:
+        if self.getOption("printTiming"):
             self._pp("+--------------------------------------------------+")
             self._pp("|")
             self._pp("| TACS Adjoint Times:")
-            print("|")
-            print(
+            self._pp("|")
+            self._pp(
                 "| %-30s: %10.3f sec"
                 % ("TACS Sens Setup Problem Time", setupProblemTime - startTime)
             )
-            print(
+            self._pp(
                 "| %-30s: %10.3f sec"
                 % ("TACS Adjoint RHS Time", adjointRHSTime - setupProblemTime)
             )
             for f in evalFuncs:
-                print(
+                self._pp(
                     "| %-30s: %10.3f sec"
                     % (
                         "TACS Adjoint Solve Time - %s" % (f),
                         adjointEndTime[f] - adjointStartTime[f],
                     )
                 )
-            print(
+            self._pp(
                 "| %-30s: %10.3f sec"
                 % (
                     "Total Sensitivity Time",
                     totalSensitivityTime - adjointFinishedTime,
                 )
             )
-            print("|")
-            print(
+            self._pp("|")
+            self._pp(
                 "| %-30s: %10.3f sec"
                 % (
                     "Complete Sensitivity Time",
                     totalSensitivityTime - startTime,
                 )
             )
-            print("+--------------------------------------------------+")
+            self._pp("+--------------------------------------------------+")
 
     def addSVSens(self, evalFuncs, svSensList):
         """
