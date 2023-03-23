@@ -53,7 +53,6 @@ class BaseSolver(BaseUI):
         comm : mpi4py.MPI.Intracomm, optional
             The comm object on which to create the pyTACS object., by default MPI.COMM_WORLD
         """
-        BaseUI.__init__(self, options, comm)
         self.assembler = assembler
         self.setStateFunc = setStateFunc
         self.resFunc = resFunc
@@ -65,6 +64,7 @@ class BaseSolver(BaseUI):
         self._fatalFailure = False
         self._iterationCount = 0
         self.callback = None
+        BaseUI.__init__(self, options, comm)
 
     @property
     def hasConverged(self) -> bool:
