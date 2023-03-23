@@ -394,7 +394,7 @@ class StaticProblem(TACSProblem):
             )
 
         # Linear solver factor flag
-        self._stiffnessUpdateRequired = True
+        self._jacobianUpdateRequired = True
         self._factorOnNext = True
 
     def setOption(self, name, value):
@@ -482,7 +482,7 @@ class StaticProblem(TACSProblem):
             Value to set the load scale to
         """
         if value != self._loadScale:
-            self._stiffnessUpdateRequired = True
+            self._jacobianUpdateRequired = True
             self._loadScale = value
 
     def addFunction(self, funcName, funcHandle, compIDs=None, **kwargs):
@@ -529,7 +529,7 @@ class StaticProblem(TACSProblem):
 
         """
         TACSProblem.setDesignVars(self, x)
-        self._stiffnessUpdateRequired = True
+        self._jacobianUpdateRequired = True
 
     def setNodes(self, coords):
         """
@@ -542,7 +542,7 @@ class StaticProblem(TACSProblem):
             the number of structural nodes on this processor.
         """
         TACSProblem.setNodes(self, coords)
-        self._stiffnessUpdateRequired = True
+        self._jacobianUpdateRequired = True
 
     ####### Load adding methods ########
 
@@ -979,7 +979,7 @@ class StaticProblem(TACSProblem):
 
         # Since the state has changed, we need to flag that the jacobian and preconditioner should be before the next primal or adjoint solve
         self._factorOnNext = True
-        self._stiffnessUpdateRequired = True
+        self._jacobianUpdateRequired = True
 
     def _nonlinearCallback(self, solver, u, res, monitorVars):
         """Callback function to be called by the nonlinear solver at each iteration
@@ -1094,7 +1094,7 @@ class StaticProblem(TACSProblem):
         return success
 
     def updateJacobian(self, res=None):
-        if self._stiffnessUpdateRequired:
+        if self._jacobianUpdateRequired:
             # Assemble residual and stiffness matrix (w/o artificial terms)
             self.assembler.assembleJacobian(
                 self.alpha,
@@ -1836,9 +1836,9 @@ class StaticProblem(TACSProblem):
         # Set states to assembler
         self.assembler.setVariables(self.u)
 
-        # If this is a nonlinear problem then changing the state variables will change the jacobian
+        # If this is a nonlinear problem then changing the state will change the jacobian
         if self.isNonlinear:
-            self._stiffnessUpdateRequired = True
+            self._jacobianUpdateRequired = True
 
     def getOutputFileName(self, outputDir=None, baseName=None, number=None):
         """Figure out a base path/name for output files
