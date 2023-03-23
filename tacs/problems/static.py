@@ -847,6 +847,13 @@ class StaticProblem(TACSProblem):
         self.updateJacobian()
         self.updatePreconditioner()
 
+        if self.isNonlinear:
+            # Reset the solver history
+            if self.rank == 0:
+                self.history.reset(clearMetadata=True)
+                self.history.addMetadata("Options", self.options)
+                self.history.addMetadata("Name", self.name)
+
     def solve(self, Fext=None):
         """
         Solution of the static problem for current load set. The
@@ -960,12 +967,6 @@ class StaticProblem(TACSProblem):
             Fext=Fext,
         )
         self.initNorm = np.real(self.externalForce.norm())
-
-        # Reset the solver history
-        if self.rank == 0:
-            self.history.reset(clearMetadata=True)
-            self.history.addMetadata("Options", self.options)
-            self.history.addMetadata("Name", self.name)
 
         # We need to update the residual function handle used by the nonlinear solver based on the current external force vector
         def resFunc(res):
@@ -1834,6 +1835,10 @@ class StaticProblem(TACSProblem):
         self.assembler.applyBCs(self.u)
         # Set states to assembler
         self.assembler.setVariables(self.u)
+
+        # If this is a nonlinear problem then changing the state variables will change the jacobian
+        if self.isNonlinear:
+            self._stiffnessUpdateRequired = True
 
     def getOutputFileName(self, outputDir=None, baseName=None, number=None):
         """Figure out a base path/name for output files
