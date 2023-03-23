@@ -5,3 +5,4 @@ Solver classes
   :maxdepth: 1
 
   NewtonSolver
+  ContinuationSolver
