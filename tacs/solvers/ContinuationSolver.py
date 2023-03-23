@@ -24,6 +24,33 @@ import tacs.TACS
 from tacs.solvers import BaseSolver
 
 
+def lagrangeInterp(xKnown, yKnown, xQuery, yQuery):
+    """Interpolate an array using lagrange polynomials
+
+    _extended_summary_
+
+    Parameters
+    ----------
+    xKnown : iterable of length n
+        scalar x values of known points
+    yKnown : iterable of n np.ndarrays
+        arrays at known points
+    xQuery : float
+        x value to interpolate at
+    yQuery : np.ndarray
+        array to store interpolated result in
+    """
+    numPoints = len(xKnown)
+    yQuery[:] = 0.0
+    yTemp = np.zeros_like(yQuery)
+    for jj in range(numPoints):
+        yTemp[:] = 1.0
+        for mm in range(numPoints):
+            if mm != jj:
+                yTemp[:] = yTemp[:] * (xQuery - xKnown[mm]) / (xKnown[jj] - xKnown[mm])
+        yQuery[:] = yQuery[:] + yKnown[jj] * yTemp
+
+
 class ContinuationSolver(BaseSolver):
     defaultOptions = {
         "continuationMaxLambda": [
@@ -81,7 +108,7 @@ class ContinuationSolver(BaseSolver):
             False,
             "Flag for using predictor step in continuation.",
         ],
-        "continuationNumPredictorSates": [
+        "continuationNumPredictorStates": [
             int,
             2,
             "Number of previous equilibrium states to use in computing the predictor step.",
@@ -160,7 +187,7 @@ class ContinuationSolver(BaseSolver):
         self.equilibriumPathStates = []
         self.equilibriumPathLoadScales = []
         if self.getOption("continuationUsePredictor"):
-            for _ in range(self.getOption("continuationNumPredictorSates")):
+            for _ in range(self.getOption("continuationNumPredictorStates")):
                 self.equilibriumPathStates.append(self.assembler.createVec())
                 self.equilibriumPathLoadScales.append(None)
 
@@ -172,7 +199,10 @@ class ContinuationSolver(BaseSolver):
             self.innerSolver.setOption(name, value)
 
         # Update the predictor computation data structures if the relevant options are changed
-        if name in ["continuationUsePredictor", "continuationNumPredictorSates"]:
+        if name.lower() in [
+            "continuationusepredictor",
+            "continuationnumpredictorstates",
+        ]:
             self._setupPredictorVectors()
 
     def setConvergenceTolerance(
@@ -194,6 +224,14 @@ class ContinuationSolver(BaseSolver):
 
         return
 
+    def initializeSolve(self) -> None:
+        """Perform any initialization required before the solve"""
+        BaseSolver.initializeSolve(self)
+        if self.getOption("continuationUsePredictor"):
+            for ii in range(self.getOption("continuationNumPredictorStates")):
+                self.equilibriumPathLoadScales[ii] = None
+                self.equilibriumPathStates[ii].zeroEntries()
+
     def solve(
         self, u0: Optional[tacs.TACS.Vec] = None, result: Optional[tacs.TACS.Vec] = None
     ) -> None:
@@ -213,7 +251,6 @@ class ContinuationSolver(BaseSolver):
         COARSE_REL_TOL = self.getOption("continuationCoarseRelTol")
 
         USE_PREDICTOR = self.getOption("continuationUsePredictor")
-        # NUM_PREDICTOR_STATES = self.getOption("continuationNumPredictorSates")
         # PREDICTOR_USE_DERIVATIVE = self.getOption("predictorUseDerivative")
 
         self.initializeSolve()
@@ -266,6 +303,11 @@ class ContinuationSolver(BaseSolver):
 
             self.setLambdaFunc(optLoadScale)
 
+        # If starting from zero, we can assume that u=0, lambda=0 is an equilibrium state
+        if USE_PREDICTOR and self.stateVec.norm() == 0:
+            self.equilibriumPathLoadScales[-1] = 0.0
+            self.equilibriumPathStates[-1].copyValues(self.stateVec)
+
         stepSize = INIT_STEP
         currentLambda = self.getLambdaFunc()
 
@@ -275,7 +317,23 @@ class ContinuationSolver(BaseSolver):
             self.incStartState.copyValues(self.stateVec)
 
             # --- Compute predictor step ---
-            # TODO: Add predictor computation here
+            # TODO: Adapt this to enable use of equilibrium path slope
+            # We only compute a predictor step if we have at least 3 equilibrium states so that we can do a nonlinear extrapolation
+            numValidPredictorStates = sum(
+                [1 for x in self.equilibriumPathLoadScales if x is not None]
+            )
+            if numValidPredictorStates > 2:
+                stateArrays = [
+                    x.getArray()
+                    for x in self.equilibriumPathStates[-numValidPredictorStates:]
+                ]
+                lagrangeInterp(
+                    self.equilibriumPathLoadScales[-numValidPredictorStates:],
+                    stateArrays,
+                    currentLambda,
+                    self.stateVec.getArray(),
+                )
+                self.setStateFunc(self.stateVec)
 
             # --- Call inner solver for corrector step ---
             if currentLambda == MAX_LAMBDA:
