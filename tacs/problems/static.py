@@ -395,7 +395,7 @@ class StaticProblem(TACSProblem):
 
         # Linear solver factor flag
         self._jacobianUpdateRequired = True
-        self._factorOnNext = True
+        self._preconditionerUpdateRequired = True
 
     def setOption(self, name, value):
         """
@@ -978,7 +978,7 @@ class StaticProblem(TACSProblem):
         self.nonlinearSolver.solve()
 
         # Since the state has changed, we need to flag that the jacobian and preconditioner should be before the next primal or adjoint solve
-        self._factorOnNext = True
+        self._preconditionerUpdateRequired = True
         self._jacobianUpdateRequired = True
 
     def _nonlinearCallback(self, solver, u, res, monitorVars):
@@ -1010,77 +1010,6 @@ class StaticProblem(TACSProblem):
         if self.getOption("writeNLIterSolutions"):
             self.writeSolution(baseName=f"{self.name}-NLIter", number=iteration)
 
-    def energyLineSearch(self, u, stepDir, Fext=None, slope=None):
-        MAX_LINESEARCH_ITERS = self.getOption("lineSearchMaxIter")
-        LINESEARCH_MU = self.getOption("lineSearchExpectedDecrease")
-        LINESEARCH_ALPHA_MIN = self.getOption("lineSearchMinStep")
-        LINESEARCH_ALPHA_MAX = self.getOption("lineSearchMaxStep")
-        LINESEARCH_MAX_STEP_CHANGE = self.getOption("lineSearchMaxStepChange")
-        PRINT_LINESEARCH_ITERS = self.getOption("lineSearchMonitor")
-        if slope is None:
-            slope = 1.0
-
-        # Compute residual and merit function at u0
-        self.assembler.setVariables(u)
-        self.getResidual(self.res, Fext=Fext)
-        f0 = np.real(self.res.dot(stepDir))
-        fOld = f0
-        alphaOld = 0.0
-        uNorm = u.norm()
-        if self.rank == 0 and PRINT_LINESEARCH_ITERS:
-            print(
-                f"Line search iter  0: alpha = {0: 11e},   f0 = {(f0): 11e}, uNorm = {uNorm: 11e}"
-            )
-
-        # 3. Set $\alpha = 1$
-        alpha = 1.0
-        alphaNew = alpha
-        for iteration in range(MAX_LINESEARCH_ITERS):
-            # 4. Increment state, $u = u + \alpha \Delta u$
-            u.axpy(alpha, stepDir)
-            self.assembler.setVariables(u)
-
-            # 5. Compute residual, $r = r(u)$
-            self.getResidual(self.res, Fext=Fext)
-
-            # 6. Compute merit function,  $f(\alpha)=f(u, r, \Delta u)$
-            fNew = np.real(self.res.dot(stepDir))
-
-            # 7. if $abs(f(\alpha)) \leq \mu f_0 + \alpha f'_0$:
-            #     1. exit
-            uNorm = u.norm()
-            if self.rank == 0 and PRINT_LINESEARCH_ITERS:
-                print(
-                    f"Line search iter {(iteration+1):2d}: alpha = {alpha: 11e}, f/f0 = {(fNew/f0): 11e}, uNorm = {uNorm: 11e}"
-                )
-            u.axpy(-alpha, stepDir)
-            fReduction = np.abs(fNew / f0)
-            if fReduction <= 1 - LINESEARCH_MU * min(alpha, 1.0) * slope:
-                break
-            else:
-                # 8. Update $\alpha$ (based on search method)
-                if iteration == 0:
-                    alphaMin = 0.9
-                else:
-                    alphaMin = LINESEARCH_ALPHA_MIN
-                if fNew == fOld:
-                    alphaNew = alpha + LINESEARCH_ALPHA_MIN
-                else:
-                    alphaNew = np.clip(
-                        alpha - fNew * (alpha - alphaOld) / (fNew - fOld),
-                        alphaMin,
-                        LINESEARCH_ALPHA_MAX,
-                    )
-                if iteration > 0 and abs(alphaNew - alpha) > LINESEARCH_MAX_STEP_CHANGE:
-                    alphaNew = (
-                        alpha + np.sign(alphaNew - alpha) * LINESEARCH_MAX_STEP_CHANGE
-                    )
-                alphaOld = alpha
-                alpha = alphaNew
-                fOld = fNew
-            # 9. return to step 4
-        return alpha, iteration + 1
-
     def solveJacLinear(self, res, sol):
         success = self.KSM.solve(res, sol)
         success = success == 1
@@ -1104,17 +1033,17 @@ class StaticProblem(TACSProblem):
                 self.K,
                 loadScale=self._loadScale,
             )
-            self._factorOnNext = True
+            self._preconditionerUpdateRequired = True
 
     def updatePreconditioner(self):
-        if self._factorOnNext:
+        if self._preconditionerUpdateRequired:
             # Stiffness matrix must include artificial terms before pc factor
             # to prevent factorization issues w/ zero-diagonals
             self.K.axpy(1.0, self.rbeArtificialStiffness)
             self.PC.factor()
             # Remove artificial stiffness terms to get true stiffness mat
             self.K.axpy(-1.0, self.rbeArtificialStiffness)
-            self._factorOnNext = False
+            self._preconditionerUpdateRequired = False
 
     ####### Function eval/sensitivity methods ########
 
@@ -1783,7 +1712,7 @@ class StaticProblem(TACSProblem):
         bcTerms.axpy(-1.0, self.adjRHS)
 
         # Solve Linear System
-        self.KSM.solve(self.adjRHS, self.phi)
+        self.solveJacLinear(self.adjRHS, self.phi)
         self.assembler.applyBCs(self.phi)
         # Add bc terms back in
         self.phi.axpy(1.0, bcTerms)
