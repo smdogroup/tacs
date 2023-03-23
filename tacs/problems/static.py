@@ -21,7 +21,7 @@ import numpy as np
 import tacs.TACS
 import tacs.elements
 import tacs.solvers
-from .base import TACSProblem
+from tacs.problems.base import TACSProblem
 from tacs.utilities import SolverHistory
 
 

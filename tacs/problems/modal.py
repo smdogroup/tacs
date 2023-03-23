@@ -15,7 +15,7 @@ import time
 import numpy as np
 
 import tacs.TACS
-from .base import TACSProblem
+from tacs.problems.base import TACSProblem
 
 
 class ModalProblem(TACSProblem):
