@@ -159,6 +159,7 @@ class ContinuationSolver(BaseSolver):
         self.setLambdaFunc = setLambdaFunc
         self.getLambdaFunc = getLambdaFunc
         self.innerSolver = innerSolver
+        self.defaultOptions.update(innerSolver.defaultOptions)
 
         self.equilibriumPathStates = None
         self.equilibriumPathLoadScales = None
