@@ -112,7 +112,8 @@ typedef TACSShellElement<TACSTriLinearQuadrature, TACSShellTriLinearBasis,
     TACSTri3ShellModRot;
 
 /*
-  Moderate rotation shell elements with nonlinear strain and appropriate quadrature schemes
+  Moderate rotation shell elements with nonlinear strain and appropriate
+  quadrature schemes
 */
 typedef TACSShellElement<TACSQuadLinearQuadrature, TACSShellQuadBasis<2>,
                          TACSQuadraticRotation, TACSShellNonlinearModel>
@@ -169,7 +170,8 @@ typedef TACSShellElement<TACSTriLinearQuadrature, TACSShellTriLinearBasis,
     TACSTri3NonlinearShellQuaternion;
 
 /*
-  Beam elements with linear strain and linear, quadratic and exact rotation parameterizations
+  Beam elements with linear strain and linear, quadratic and exact rotation
+  parameterizations
 */
 typedef TACSBeamElement<TACSBeamLinearQuadrature, TACSBeamBasis<2>,
                         TACSLinearizedRotation, TACSBeamLinearModel>
@@ -196,7 +198,8 @@ typedef TACSBeamElement<TACSBeamQuadraticQuadrature, TACSBeamBasis<3>,
     TACSBeam3Quaternion;
 
 /*
-  Beam elements with nonlinear strain and linear, quadratic and exact rotation parameterizations.
+  Beam elements with nonlinear strain and linear, quadratic and exact rotation
+  parameterizations.
 
   Not implemented yet.
 */
