@@ -84,7 +84,7 @@ class TACSFH5File : public TACSObject {
     int dim1, dim2;
     size_t data_offset;
     FH5FileInfo *next;
-  } * root, *tip, *current;
+  } *root, *tip, *current;
 
   // Scan the file and record the header information
   int scanFH5File();
