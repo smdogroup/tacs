@@ -37,6 +37,11 @@ class NewtonSolver(BaseSolver):
             "List of variables to include in nonlinear solver monitor output. Choose from 'linSolverIters', 'linSolverRes', 'loadScale', 'lineSearchStep', 'EWTol', and 'lineSearchIters'.",
         ],
         "newtonSolverMaxIter": [int, 40, "Maximum number of Newton iterations."],
+        "newtonSolverForceFirstIter": [
+            bool,
+            False,
+            "Force the solver to perform the first Newton iteration, even if the convergence criteria are satisfied at the initial point.",
+        ],
         "newtonSolverAbsTol": [
             float,
             1e-8,
@@ -214,6 +219,7 @@ class NewtonSolver(BaseSolver):
         MAX_ITERS = self.getOption("newtonSolverMaxIter")
         MAX_RES = self.getOption("newtonSolverDivergenceTol")
         MAX_LIN_ITERS = self.getOption("newtonSolverMaxLinIters")
+        FORCE_FIRST_ITER = self.getOption("newtonSolverForceFirstIter")
 
         # Linear solver convergence options
         USE_EW = self.getOption("newtonSolverUseEW")
@@ -245,15 +251,16 @@ class NewtonSolver(BaseSolver):
             uNorm = self.stateVec.norm()
 
             # Test convergence
-            self._hasConverged = (
-                np.real(resNorm) / np.real(self.refNorm) < REL_TOL
-                or np.real(resNorm) < ABS_TOL
-            )
-            self._fatalFailure = np.real(resNorm) >= MAX_RES or np.isnan(resNorm)
-            if self._hasConverged:
-                flags += "C"
-            elif self.fatalFailure:
-                flags += "D"
+            if not FORCE_FIRST_ITER or iteration > 0:
+                self._hasConverged = (
+                    np.real(resNorm) / np.real(self.refNorm) < REL_TOL
+                    or np.real(resNorm) < ABS_TOL
+                )
+                self._fatalFailure = np.real(resNorm) >= MAX_RES or np.isnan(resNorm)
+                if self._hasConverged:
+                    flags += "C"
+                elif self.fatalFailure:
+                    flags += "D"
 
             # Write data to history
             monitorVars = {

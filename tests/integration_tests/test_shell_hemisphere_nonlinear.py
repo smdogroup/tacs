@@ -121,6 +121,7 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
             "continuationInitialStep": 1.0,
             "newtonSolverMaxIter": 50,
             "newtonSolverUseEW": True,
+            "newtonSolverForceFirstIter": True,
             "nRestarts": 3,
             "subSpaceSize": 20,
             "newtonSolverMonitorVars": [
