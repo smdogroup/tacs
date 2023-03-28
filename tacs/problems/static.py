@@ -163,6 +163,7 @@ class StaticProblem(TACSProblem):
         # Set linear solver to None, until we set it up later
         self.KSM = None
         self.history = None
+        self.newtonSolver = None
         self.nonlinearSolver = None
 
         # Default setup for common problem class objects, sets up comm and options
@@ -437,7 +438,9 @@ class StaticProblem(TACSProblem):
                     self.getOption("L2Convergence"),
                 )
                 if self.nonlinearSolver is not None:
-                    self.nonlinearSolver.setOption("newtonSolverRelLinTol", self.getOption("L2ConvergenceRel"))
+                    self.nonlinearSolver.setOption(
+                        "newtonSolverRelLinTol", self.getOption("L2ConvergenceRel")
+                    )
             # No need to reset solver for output options
             elif name.lower() in [
                 "writesolution",
@@ -452,7 +455,10 @@ class StaticProblem(TACSProblem):
                 if self.nonlinearSolver is not None:
                     self.nonlinearSolver.setOption(name, value)
             # We need to create a new solver history object if the monitor variables have updated
-            elif name.lower() == "nonlinearSolverMonitorVars" and self.history is not None:
+            elif (
+                name.lower() == "nonlinearSolverMonitorVars"
+                and self.history is not None
+            ):
                 self._createSolverHistory()
             # Reset solver for all other option changes
             else:
