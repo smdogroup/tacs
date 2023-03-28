@@ -152,6 +152,6 @@ class BaseSolver(BaseUI):
                 - ``solver`` is the solver object
                 - ``u`` is the current state vector
                 - ``res`` is the current residual vector
-                - ``monitorVars`` is a dictionary of variables to monitor, which can be specified through the ``"newtonSolverMonitorVars"`` option
+                - ``monitorVars`` is a dictionary of variables to monitor, which can be specified through the ``"nonlinearSolverMonitorVars"`` option
         """
         self.callback = callback

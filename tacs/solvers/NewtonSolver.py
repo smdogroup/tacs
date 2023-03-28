@@ -26,16 +26,6 @@ from tacs.solvers import BaseSolver
 
 class NewtonSolver(BaseSolver):
     defaultOptions = {
-        "newtonSolverMonitorVars": [
-            list,
-            [
-                "linSolverIters",
-                "linSolverRes",
-                "lineSearchStep",
-                "lineSearchIters",
-            ],
-            "List of variables to include in nonlinear solver monitor output. Choose from 'linSolverIters', 'linSolverRes', 'loadScale', 'lineSearchStep', 'EWTol', and 'lineSearchIters'.",
-        ],
         "newtonSolverMaxIter": [int, 40, "Maximum number of Newton iterations."],
         "newtonSolverForceFirstIter": [
             bool,

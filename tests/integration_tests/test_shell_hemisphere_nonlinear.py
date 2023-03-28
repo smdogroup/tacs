@@ -124,7 +124,7 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
             "newtonSolverForceFirstIter": True,
             "nRestarts": 3,
             "subSpaceSize": 20,
-            "newtonSolverMonitorVars": [
+            "nonlinearSolverMonitorVars": [
                 "lambda",
                 "linsolveriters",
                 "linsolverres",

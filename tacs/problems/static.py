@@ -86,6 +86,16 @@ class StaticProblem(TACSProblem):
             10,
             "Print frequency for sub iterations of linear solver.",
         ],
+        "nonlinearSolverMonitorVars": [
+            list,
+            [
+                "linSolverIters",
+                "linSolverRes",
+                "lineSearchStep",
+                "lineSearchIters",
+            ],
+            "List of variables to include in nonlinear solver monitor output. Choose from 'linSolverIters', 'linSolverRes', 'loadScale', 'lineSearchStep', 'EWTol', and 'lineSearchIters'.",
+        ],
         # Output Options
         "writeSolution": [
             bool,
@@ -218,7 +228,7 @@ class StaticProblem(TACSProblem):
 
         The solver history is only created on the root processor.
         """
-        monitorVars = [s.lower() for s in self.getOption("newtonSolverMonitorVars")]
+        monitorVars = [s.lower() for s in self.getOption("nonlinearSolverMonitorVars")]
         numType = float if self.dtype == np.float64 else complex
         if self.comm.rank == 0:
             history = SolverHistory()
@@ -439,8 +449,8 @@ class StaticProblem(TACSProblem):
                 self.nonlinearSolver.setOption("newtonSolverRelLinTol", value)
 
         # We need to create a new solver history object if the monitor variables have updated
-        if self.isNonlinear and name.lower() == "newtonsolvermonitorvars":
-            self._createSolverHistory()
+            elif name.lower() == "nonlinearSolverMonitorVars" and self.history is not None:
+                self._createSolverHistory()
 
     @property
     def loadScale(self):
@@ -994,7 +1004,7 @@ class StaticProblem(TACSProblem):
             Current residual vector
         monitorVars : dict
             Dictionary of variables to monitor, the values the solver should include can be
-            specified through the ``"newtonSolverMonitorVars"`` option.
+            specified through the ``"nonlinearSolverMonitorVars"`` option.
         """
         iteration = 0
         if self.rank == 0:
