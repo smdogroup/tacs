@@ -429,28 +429,27 @@ class StaticProblem(TACSProblem):
                     self.getOption("L2ConvergenceRel"),
                     self.getOption("L2Convergence"),
                 )
+                if self.nonlinearSolver is not None:
+                    self.nonlinearSolver.setOption("newtonSolverRelLinTol", self.getOption("L2ConvergenceRel"))
             # No need to reset solver for output options
             elif name.lower() in [
                 "writesolution",
+                "writenlitersolutions",
                 "printtiming",
                 "numbersolutions",
                 "outputdir",
             ]:
                 pass
+            # Pass option to nonlinear solver if it is a nonlinear solver option
+            elif name.lower() in self.nonlinearSolver.defaultOptions:
+                if self.nonlinearSolver is not None:
+                    self.nonlinearSolver.setOption(name, value)
+            # We need to create a new solver history object if the monitor variables have updated
+            elif name.lower() == "nonlinearSolverMonitorVars" and self.history is not None:
+                self._createSolverHistory()
             # Reset solver for all other option changes
             else:
                 self._createVariables()
-
-        # Pass option to nonlinear solver if it is a nonlinear solver option
-        if self.nonlinearSolver is not None:
-            if name.lower() in self.nonlinearSolver.defaultOptions:
-                self.nonlinearSolver.setOption(name, value)
-            elif name.lower() == "l2convergencerel":
-                self.nonlinearSolver.setOption("newtonSolverRelLinTol", value)
-
-        # We need to create a new solver history object if the monitor variables have updated
-            elif name.lower() == "nonlinearSolverMonitorVars" and self.history is not None:
-                self._createSolverHistory()
 
     @property
     def loadScale(self):
