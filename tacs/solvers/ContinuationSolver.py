@@ -366,7 +366,7 @@ class ContinuationSolver(BaseSolver):
             isLastIncrement = increment == MAX_INCREMENTS - 1
             if not success:
                 # If the inner solve failed then we'll reduce the step size and try again, unless we've hit the increment limit
-                if not isLastIncrement:
+                if not isLastIncrement and stepSize > MIN_STEP:
                     self.setStateFunc(self.incStartState)
                     currentLambda -= stepSize * loadStepDirection
                     self.setLambdaFunc(currentLambda)
