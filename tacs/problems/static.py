@@ -407,6 +407,13 @@ class StaticProblem(TACSProblem):
         self._jacobianUpdateRequired = True
         self._preconditionerUpdateRequired = True
 
+        # Give new vectors and linear solver to nonlinear solver
+        for solver in [self.newtonSolver, self.nonlinearSolver]:
+            if solver is not None:
+                solver.linearSolver = self.KSM
+                solver.stateVec = self.u
+                solver.resVec = self.res
+
     def setOption(self, name, value):
         """
         Set a solver option value. The name is not case sensitive.
