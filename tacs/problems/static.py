@@ -922,7 +922,7 @@ class StaticProblem(TACSProblem):
             initNormTime = time.time()
 
             # Solve Linear System for the update
-            self.solveJacLinear(self.res, self.update)
+            self.solveLinear(self.res, self.update)
 
             self.update.scale(-1.0)
 
@@ -1032,7 +1032,21 @@ class StaticProblem(TACSProblem):
         if self.getOption("writeNLIterSolutions"):
             self.writeSolution(baseName=f"{self.name}-NLIter", number=iteration)
 
-    def solveJacLinear(self, res, sol):
+    def solveLinear(self, res, sol):
+        """Solve the linear system J * sol = res using the current Jacobian matrix
+
+        Parameters
+        ----------
+        res : tacs.TACS.Vec
+            Right hand side of the linear system
+        sol : tacs.TACS.Vec
+            Vector to store the solution in
+
+        Returns
+        -------
+        bool
+            Whether the linear solve converged
+        """
         success = self.KSM.solve(res, sol)
         success = success == 1
 
@@ -1045,6 +1059,16 @@ class StaticProblem(TACSProblem):
         return success
 
     def updateJacobian(self, res=None):
+        """Update the Jacobian (a.k.a stiffness) matrix
+
+        The Jacobian will only actually be updated if the
+        ``_jacobianUpdateRequired`` flag is set to True.
+
+        Parameters
+        ----------
+        res : tacs.TACS.Vec, optional
+            If provided, the residual is also computed and stored in this vector
+        """
         if self._jacobianUpdateRequired:
             # Assemble residual and stiffness matrix (w/o artificial terms)
             self.assembler.assembleJacobian(
@@ -1058,6 +1082,16 @@ class StaticProblem(TACSProblem):
             self._preconditionerUpdateRequired = True
 
     def updatePreconditioner(self):
+        """Update the Jacobian (a.k.a stiffness) matrix preconditioner
+
+        By default, the static problem uses a full LU factorization of the
+        Jacobian matrix as a preconditioner, which means that this step is
+        typically the most expensive operation in the solution process.
+
+        The preconditioner will only actually be updated if the
+        ``_preconditionerUpdateRequired`` flag is set to True. This occurs
+        whenever the Jacobian is updated.
+        """
         if self._preconditionerUpdateRequired:
             # Stiffness matrix must include artificial terms before pc factor
             # to prevent factorization issues w/ zero-diagonals
@@ -1734,7 +1768,7 @@ class StaticProblem(TACSProblem):
         bcTerms.axpy(-1.0, self.adjRHS)
 
         # Solve Linear System
-        self.solveJacLinear(self.adjRHS, self.phi)
+        self.solveLinear(self.adjRHS, self.phi)
         self.assembler.applyBCs(self.phi)
         # Add bc terms back in
         self.phi.axpy(1.0, bcTerms)
