@@ -2,6 +2,7 @@
 #define TACS_SPECTRAL_INTEGRATOR_H
 
 #include "TACSAssembler.h"
+#include "TACSFunction.h"
 #include "TACSMg.h"
 
 /*
@@ -54,6 +55,33 @@ class TACSLinearSpectralMat : public TACSMat {
   MatrixOrientation orient;
 };
 
+class TACSSpectralMg : public TACSPc {
+ public:
+  TACSSpectralMg(MPI_Comm _comm, int _nlevels, double sor_omeg,
+                 double sor_iters, int sor_symmetric);
+  ~TACSSpectralMg();
+
+  void setLevel(int level, TACSAssembler *_assembler, TACSBVecInterp *_interp,
+                int _iters);
+  void factor();
+  void applyFactor(TACSVec *x, TACSVec *y);
+
+ private:
+  // Different levels
+  int nlevels;
+  TACSAssembler *assembler;
+
+  // The TACS matrices at each spatial level
+  TACSMat *H, *C;
+  TACSMat **Hmat, **Cmat;
+
+  // Interpolant between mesh levels (in space)
+  TACSBVecInterp *interp;
+
+  // Different smoothers for each time level
+  // How will this be set up for temporal computations as well
+};
+
 class TACSSpectralIntegrator : public TACSObject {
  public:
   TACSSpectralIntegrator(TACSAssembler *_assembler, double tfinal, int N);
@@ -66,6 +94,9 @@ class TACSSpectralIntegrator : public TACSObject {
   void assembleRes(TACSSpectralVec *res);
   void assembleMat(TACSLinearSpectralMat *mat,
                    MatrixOrientation matOr = TACS_MAT_NORMAL);
+
+  // Evaluate the functions of interest
+  void evalFunctions(int num_funcs, TACSFunction **funcs, TacsScalar *fvals);
 
  private:
   // Initialize the LGL points and weights

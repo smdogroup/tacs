@@ -173,8 +173,62 @@ void TACSLinearSpectralMat::setMatrixOrientation(MatrixOrientation matOr) {
   orient = matOr;
 }
 
+/*
+  Multigrid preconditioner for a spectral problem in TACS
+*/
+TACSSpectralMg::TACSSpectralMg(MPI_Comm _comm, int _nlevels, double sor_omeg,
+                               double sor_iters, int sor_symmetric) {
+  comm = _comm;
+  nlevels = _nlevels;
+  sor_omega = _sor_omega;
+  sor_iters = _sor_iters;
+  sor_symmetric = _sor_symmetric;
+
+  assembler = new TACSAssembler *[nlevels];
+  for (int i = 0; i < nlevels; i++) {
+    assembler[i] = NULL;
+  }
+}
+
+/*
+  Set the level
+*/
+void TACSSpectralMg::setLevel(int level, TACSAssembler *_assembler,
+                              TACSBVecInterp *_interp, int _iters) {
+  if (level < nlevels - 1) {
+    interp[level] = _interp;
+    interp[level]->incref();
+
+    if (level == 0) {
+      TACSParallelMat *pmat = assembler[level]->createMat();
+      mat[level] = pmat;
+      mat[level]->incref();
+
+      int zero_guess = 0;
+      pc[level] = new TACSGaussSeidel(pmat, zero_guess, sor_omega, sor_iters,
+                                      sor_symmetric);
+      pc[level]->incref();
+
+    } else {
+      TACSParallelMat *fine_mat =
+          dynamic_cast<TACSParallelMat *>(mat[level - 1]);
+      TACSParallelMat *coarse_mat = NULL;
+
+      if (fine_mat && interp[level - 1]) {
+        interp[level - 1]->computeGalerkinNonZeroPattern(fine_mat, &coarse_mat);
+        mat[level] = coarse_mat;
+        mat[level]->incref();
+      }
+    }
+  }
+}
+
+void TACSSpectralMg::factor() {}
+
+void TACSSpectralMg::applyFactor(TACSVec *x, TACSVec *y) {}
+
 TACSSpectralIntegrator::TACSSpectralIntegrator(TACSAssembler *_assembler,
-                                               double tfinal, int _N) {
+                                               double _tfinal, int _N) {
   N = _N;
   pts = NULL;
   wts = NULL;
@@ -187,7 +241,7 @@ TACSSpectralIntegrator::TACSSpectralIntegrator(TACSAssembler *_assembler,
 
   // Compute the time-spectral part
   tinit = 0.0;
-  tfinal = tfinal;
+  tfinal = _tfinal;
   tfactor = 2.0 / (tfinal - tinit);
 
   // Initialization of the integration points and weights
@@ -247,10 +301,11 @@ void TACSSpectralIntegrator::assembleRes(TACSSpectralVec *res) {
   dudt->incref();
 
   for (int i = 0; i < N; i++) {
-    const double *Dt = &D[(i + 1) * (N + 1)];
-
     // Extract the u variables
     TACSBVec *u = vars->getVec(i);
+
+    // Compute the derivative
+    const double *Dt = &D[(i + 1) * (N + 1)];
 
     // Set the values from the initial conditions
     dudt->copyValues(init);
@@ -277,6 +332,111 @@ void TACSSpectralIntegrator::assembleMat(TACSLinearSpectralMat *mat,
   assembler->assembleJacobian(1.0, 0.0, 0.0, NULL, H, matOr);
   assembler->assembleJacobian(0.0, 1.0, 0.0, NULL, C, matOr);
   mat->setMatrixOrientation(matOr);
+}
+
+void TACSSpectralIntegrator::evalFunctions(int num_funcs, TACSFunction **funcs,
+                                           TacsScalar *fvals) {
+  // TODO: integrate functions as the forward problem is integrated
+  // Check whether these are two-stage or single-stage functions
+  int twoStage = 0;
+  for (int n = 0; n < num_funcs; n++) {
+    if (funcs[n] && funcs[n]->getStageType() == TACSFunction::TWO_STAGE) {
+      twoStage = 1;
+      break;
+    }
+  }
+
+  TACSBVec *dudt = assembler->createVec();
+  dudt->incref();
+
+  // Initialize the function if had already not been initialized
+  if (twoStage) {
+    // First stage
+    for (int n = 0; n < num_funcs; n++) {
+      if (funcs[n]) {
+        funcs[n]->initEvaluation(TACSFunction::INITIALIZE);
+      }
+    }
+
+    for (int i = 0; i < N + 1; i++) {
+      // Extract the u variables
+      TACSBVec *u = vars->getVec(i);
+
+      // Time derivative values
+      const double *Dt = &D[i * (N + 1)];
+
+      // Set the values from the initial conditions
+      dudt->copyValues(init);
+      dudt->scale(Dt[0]);
+
+      // Compute the time derivative
+      for (int j = 0; j < N; j++) {
+        dudt->axpy(Dt[j + 1], vars->getVec(j));
+      }
+
+      // Set the simulation time and variables
+      assembler->setSimulationTime(tpts[i]);
+      assembler->setVariables(u, dudt);
+
+      // Integrate the function
+      TacsScalar tcoeff = tfactor * wts[i];
+      assembler->integrateFunctions(tcoeff, TACSFunction::INITIALIZE, num_funcs,
+                                    funcs);
+    }
+
+    for (int n = 0; n < num_funcs; n++) {
+      if (funcs[n]) {
+        funcs[n]->finalEvaluation(TACSFunction::INITIALIZE);
+      }
+    }
+  }
+
+  // Second stage
+  for (int n = 0; n < num_funcs; n++) {
+    if (funcs[n]) {
+      funcs[n]->initEvaluation(TACSFunction::INTEGRATE);
+    }
+  }
+
+  for (int i = 0; i < N + 1; i++) {
+    // Extract the u variables
+    TACSBVec *u = vars->getVec(i);
+
+    // Time derivative values
+    const double *Dt = &D[i * (N + 1)];
+
+    // Set the values from the initial conditions
+    dudt->copyValues(init);
+    dudt->scale(Dt[0]);
+
+    // Compute the time derivative
+    for (int j = 0; j < N; j++) {
+      dudt->axpy(Dt[j + 1], vars->getVec(j));
+    }
+
+    // Set the simulation time and variables
+    assembler->setSimulationTime(tpts[i]);
+    assembler->setVariables(u, dudt);
+
+    // Integrate the function
+    TacsScalar tcoeff = tfactor * wts[i];
+    assembler->integrateFunctions(tcoeff, TACSFunction::INTEGRATE, num_funcs,
+                                  funcs);
+  }
+
+  for (int n = 0; n < num_funcs; n++) {
+    if (funcs[n]) {
+      funcs[n]->finalEvaluation(TACSFunction::INTEGRATE);
+    }
+  }
+
+  // Retrieve the function values
+  for (int n = 0; n < num_funcs; n++) {
+    fvals[n] = 0.0;
+    if (funcs[n]) {
+      fvals[n] = funcs[n]->getFunctionValue();
+    }
+  }
 }
 
 void TACSSpectralIntegrator::initLGLPointsAndWeights(int max_newton_iters,
