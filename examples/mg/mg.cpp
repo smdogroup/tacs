@@ -218,10 +218,6 @@ int main(int argc, char *argv[]) {
 
   double tmg = MPI_Wtime();
 
-  // Create the matrix for the finest grid level
-  TACSParallelMat *mat = assembler[0]->createMat();
-  mat->incref();
-
   // Allocate the interpolation objects for all remaining levels
   TACSBVecInterp *interp[max_nlevels - 1];
 

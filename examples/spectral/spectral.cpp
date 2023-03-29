@@ -4,6 +4,7 @@
 #include "TACSHeatConduction.h"
 #include "TACSMg.h"
 #include "TACSQuadBasis.h"
+#include "TACSSpectralIntegrator.h"
 #include "TACSToFH5.h"
 
 /*
@@ -16,7 +17,7 @@ void createAssembler(MPI_Comm comm, int nx, int ny, TACSAssembler **_assembler,
   MPI_Comm_rank(comm, &rank);
 
   // Set the number of nodes/elements on this proc
-  int varsPerNode = 2;
+  int varsPerNode = 1;
 
   // Set up the creator object
   TACSCreator *creator = new TACSCreator(comm, varsPerNode);
@@ -197,10 +198,6 @@ int main(int argc, char *argv[]) {
     }
   }
 
-  // Create the multigrid object
-  TACSMg *mg = new TACSMg(comm, nlevels);
-  mg->incref();
-
   // Create the TACS/Creator objects for all levels
   for (int i = 0; i < nlevels; i++) {
     double t0 = MPI_Wtime();
@@ -213,12 +210,6 @@ int main(int argc, char *argv[]) {
       printf("Assembler creation time for level %d: %e\n", i, t0);
     }
   }
-
-  double tmg = MPI_Wtime();
-
-  // Create the matrix for the finest grid level
-  TACSParallelMat *mat = assembler[0]->createMat();
-  mat->incref();
 
   // Allocate the interpolation objects for all remaining levels
   TACSBVecInterp *interp[max_nlevels - 1];
@@ -284,84 +275,59 @@ int main(int argc, char *argv[]) {
     // Initialize the interpolation object. This is a collective
     // call that distributes the interpolation operator.
     interp[level]->initialize();
-
-    // Set the multigrid information at this level
-    double tlev = MPI_Wtime();
-    int use_galerkin = 1;
-    mg->setLevel(level, assembler[level], interp[level], 1, use_galerkin);
-    tlev = MPI_Wtime() - tlev;
-    if (rank == 0) {
-      printf("Initialization time for level %d: %e\n", level, tlev);
-    }
   }
 
-  // Set the model at the lowest grid level
-  int use_galerkin = 1;
-  mg->setLevel(nlevels - 1, assembler[nlevels - 1], NULL, 1, use_galerkin);
+  // Now create the spectral integrator class
+  double tfinal = 2.0;  // Final time for the simulation
+  int N = 16;
+  TACSSpectralIntegrator *spectral =
+      new TACSSpectralIntegrator(assembler[0], tfinal, N);
+  spectral->incref();
 
-  // We no longer require any of the creator objects
-  for (int i = 0; i < nlevels; i++) {
-    creator[i]->decref();
-  }
+  // Create the matrix
+  TACSLinearSpectralMat *mat = spectral->createLinearMat();
+  mat->incref();
 
-  tmg = MPI_Wtime() - tmg;
-  if (rank == 0) {
-    printf("TACSMg creation time: %e\n", tmg);
-  }
+  // Form the spectral problem
+  spectral->assembleMat(mat);
 
-  // Create the residual and solution vectors on the finest TACS mesh
-  TACSBVec *force = assembler[0]->createVec();
-  force->incref();
-  TACSBVec *res = assembler[0]->createVec();
+  // Create the multigrid preconditioner for the spectral problem
+  TACSLinearSpectralMg *mg =
+      new TACSLinearSpectralMg(mat, nlevels, assembler, interp);
+  mg->incref();
+
+  // Factor the matrix
+  mg->factor();
+
+  // Solve the problem
+  TACSSpectralVec *res = spectral->createVec();
   res->incref();
-  TACSBVec *ans = assembler[0]->createVec();
+  TACSSpectralVec *ans = spectral->createVec();
   ans->incref();
+
+  // Set the values of the right-hand-side
+  for (int i = N / 2; i < N; i++) {
+    res->getVec(i)->set(1.0);
+    assembler[0]->applyBCs(res->getVec(i));
+  }
 
   // Allocate the GMRES solution method
   int gmres_iters = 25;
   int nrestart = 8;
   int is_flexible = 0;
-  GMRES *ksm = new GMRES(mg->getMat(0), mg, gmres_iters, nrestart, is_flexible);
+  GMRES *ksm = new GMRES(mat, mg, gmres_iters, nrestart, is_flexible);
   ksm->incref();
 
   // Set a monitor to check on solution progress
   int freq = 1;
   ksm->setMonitor(new KSMPrintStdout("GMRES", rank, freq));
 
-  // The initial time
-  double t0 = MPI_Wtime();
-
-  // Assemble the Jacobian matrix for each level
-  mg->assembleJacobian(1.0, 0.0, 0.0, res);
-
-  force->zeroEntries();
-  TacsScalar *force_array;
-  int size = force->getArray(&force_array);
-  for (int i = 1; i < size; i += 2) {
-    force_array[i] = 1.0;
-  }
-  assembler[0]->applyBCs(force);
-
-  // Factor the preconditioner
-  mg->factor();
-
   // Compute the solution using GMRES
-  ksm->solve(force, ans);
-
-  t0 = MPI_Wtime() - t0;
+  ksm->solve(res, ans);
+  ans->scale(-1.0);
 
   // Set the variables into TACS
-  assembler[0]->setVariables(ans);
-
-  // Compute the residual
-  TACSMat *matrix = mg->getMat(0);
-  matrix->mult(ans, res);
-  res->axpy(-1.0, force);
-  TacsScalar res_norm = res->norm();
-  if (rank == 0) {
-    printf("||R||: %15.5e\n", TacsRealPart(res_norm));
-    printf("Solution time: %e\n", t0);
-  }
+  spectral->setVariables(ans);
 
   // Output for visualization
   ElementType etype = TACS_PLANE_STRESS_ELEMENT;
@@ -370,17 +336,32 @@ int main(int argc, char *argv[]) {
                     TACS_OUTPUT_STRESSES | TACS_OUTPUT_EXTRAS);
   TACSToFH5 *f5 = new TACSToFH5(assembler[0], etype, write_flag);
   f5->incref();
-  f5->writeToFile("plate.f5");
+
+  TACSBVec *u = assembler[0]->createVec();
+  u->incref();
+
+  int nviz = 100;
+  for (int i = 0; i < nviz; i++) {
+    char filename[256];
+    snprintf(filename, sizeof(filename), "plate%d.f5", i);
+
+    double time = i * tfinal / (nviz - 1);
+    spectral->computeSolutionAndDeriv(time, ans, u);
+    assembler[0]->setVariables(u);
+    f5->writeToFile(filename);
+  }
+
+  u->decref();
 
   // Free the memory
   f5->decref();
   ans->decref();
   res->decref();
-  force->decref();
   ksm->decref();
   for (int i = 0; i < nlevels; i++) {
     assembler[i]->decref();
   }
+  spectral->decref();
 
   MPI_Finalize();
   return (0);

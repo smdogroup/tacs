@@ -5,6 +5,9 @@
 #include "TACSFunction.h"
 #include "TACSMg.h"
 
+// Forward declaration of spectral integrator
+class TACSSpectralIntegrator;
+
 /*
   The spectral vector contains all the time instances used in the spectral
   expansion, except the initial condition
@@ -38,54 +41,107 @@ class TACSSpectralVec : public TACSVec {
 */
 class TACSLinearSpectralMat : public TACSMat {
  public:
-  TACSLinearSpectralMat(int N, const double *D, TACSMat *Hmat, TACSMat *Cmat);
+  TACSLinearSpectralMat(TACSSpectralIntegrator *spectral);
   ~TACSLinearSpectralMat();
 
   TACSVec *createVec();
   void mult(TACSVec *x, TACSVec *y);
 
-  void getMat(TACSMat **Hmat, TACSMat **Cmat);
+  void getMat(TACSParallelMat **Hmat, TACSParallelMat **Cmat);
   void setMatrixOrientation(MatrixOrientation matOr);
+  int getFirstOrderCoefficients(const double *d[]);
 
  private:
+  TACSSpectralIntegrator *spectral;
   int N;
-  const double *D;
-  TACSMat *H, *C;
+  TACSParallelMat *H, *C;
   TACSBVec *temp;
   MatrixOrientation orient;
 };
 
-class TACSSpectralMg : public TACSPc {
+class TACSLinearSpectralMg : public TACSPc {
  public:
-  TACSSpectralMg(MPI_Comm _comm, int _nlevels, double sor_omeg,
-                 double sor_iters, int sor_symmetric);
-  ~TACSSpectralMg();
+  TACSLinearSpectralMg(TACSLinearSpectralMat *_mat, int _nlevels,
+                       TACSAssembler **assembler, TACSBVecInterp **_interp);
+  ~TACSLinearSpectralMg();
 
-  void setLevel(int level, TACSAssembler *_assembler, TACSBVecInterp *_interp,
-                int _iters);
   void factor();
-  void applyFactor(TACSVec *x, TACSVec *y);
+  void applyFactor(TACSVec *in, TACSVec *out);
 
  private:
-  // Different levels
+  // Apply multigrid at the given level
+  void applyMg(int level);
+
+  // Class that stores a linear combo of matrices
+  class TACSComboMat : public TACSMat {
+   public:
+    TACSComboMat(TACSParallelMat *Hmat, TacsScalar _alpha,
+                 TACSParallelMat *Cmat, TACSBVec *tmp);
+    ~TACSComboMat();
+
+    TACSVec *createVec();
+    void mult(TACSVec *x, TACSVec *y);
+
+   private:
+    TacsScalar alpha;
+    TACSParallelMat *H, *C;
+    TACSBVec *temp;
+
+    friend class MgData;
+  };
+
+  // Class to store the multigrid data for each level
+  class MgData {
+   public:
+    MgData(MgData *_fine, int Nval, const double d0[],
+           TACSAssembler *_assembler, TACSBVecInterp *_interp,
+           TACSParallelMat *Hmat = NULL, TACSParallelMat *Cmat = NULL);
+    ~MgData();
+
+    // Pointer to the next finest level of data
+    MgData *fine;
+
+    // The size of the spectral space at this mesh level
+    int N;
+
+    // Full spectral vectors for multigrid
+    TACSSpectralVec *x, *b, *r;
+
+    void factor();  // Factor the matrix
+    void applyFactor(TACSSpectralVec *in, TACSSpectralVec *out);
+    void mult(TACSSpectralVec *in, TACSSpectralVec *out);
+    void restriction(TACSSpectralVec *in, TACSSpectralVec *out);
+    void interpolateAdd(TACSSpectralVec *in, TACSSpectralVec *out);
+
+   private:
+    // Coefficients for the first-order approx.
+    double *d0;
+
+    // Temporary vector for matrix-vector product operations
+    TACSBVec *temp;
+
+    // Smoother at each time step
+    TACSBVec *mats_temp;
+    TACSComboMat **mats;
+    TACSChebyshevSmoother **smoothers;
+
+    TACSBVecInterp *interp;  // Interpolation
+    TACSAssembler *assembler;
+    TACSParallelMat *H, *C;
+  };
+
   int nlevels;
-  TACSAssembler *assembler;
-
-  // The TACS matrices at each spatial level
-  TACSMat *H, *C;
-  TACSMat **Hmat, **Cmat;
-
-  // Interpolant between mesh levels (in space)
-  TACSBVecInterp *interp;
-
-  // Different smoothers for each time level
-  // How will this be set up for temporal computations as well
+  MgData **data;
+  TACSLinearSpectralMat *mat;
 };
 
 class TACSSpectralIntegrator : public TACSObject {
  public:
   TACSSpectralIntegrator(TACSAssembler *_assembler, double tfinal, int N);
   ~TACSSpectralIntegrator();
+
+  int getNumLGLNodes() { return N + 1; }
+  TACSAssembler *getAssembler() { return assembler; }
 
   TACSSpectralVec *createVec();
   TACSLinearSpectralMat *createLinearMat();
@@ -98,12 +154,30 @@ class TACSSpectralIntegrator : public TACSObject {
   // Evaluate the functions of interest
   void evalFunctions(int num_funcs, TACSFunction **funcs, TacsScalar *fvals);
 
+  // Compute the time derivative at a point
+  void computeDeriv(int index, TACSSpectralVec *sol, TACSBVec *dudt,
+                    int include_init_conditions = 1);
+
+  // Compute the solution at a point in the time interval
+  void computeSolutionAndDeriv(double time, TACSSpectralVec *sol, TACSBVec *u,
+                               TACSBVec *dudt = NULL);
+
+  int getFirstOrderCoefficients(const double *d[]) {
+    if (d) {
+      *d = d0;
+    }
+    return N;
+  }
+
  private:
   // Initialize the LGL points and weights
   void initLGLPointsAndWeights(int max_newton_iters = 100, double tol = 1e-15);
 
   // Initialize the full-order and first-order derivative operators
   void initOperator();
+
+  // Compute the interpolation at a point
+  void evalInterpolation(double pt, double P[], double Px[]);
 
   // The TACSAssembler model
   TACSAssembler *assembler;
