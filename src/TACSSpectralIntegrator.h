@@ -95,7 +95,8 @@ class TACSLinearSpectralMg : public TACSPc {
    public:
     MgData(MgData *_fine, int Nval, const double d0[],
            TACSAssembler *_assembler, TACSBVecInterp *_interp,
-           TACSParallelMat *Hmat = NULL, TACSParallelMat *Cmat = NULL);
+           TACSParallelMat *Hmat = NULL, TACSParallelMat *Cmat = NULL,
+           int _direct = 0);
     ~MgData();
 
     // Pointer to the next finest level of data
@@ -103,6 +104,9 @@ class TACSLinearSpectralMg : public TACSPc {
 
     // The size of the spectral space at this mesh level
     int N;
+
+    // Coefficients for the first-order approx.
+    double *d0;
 
     // Full spectral vectors for multigrid
     TACSSpectralVec *x, *b, *r;
@@ -114,9 +118,6 @@ class TACSLinearSpectralMg : public TACSPc {
     void interpolateAdd(TACSSpectralVec *in, TACSSpectralVec *out);
 
    private:
-    // Coefficients for the first-order approx.
-    double *d0;
-
     // Temporary vector for matrix-vector product operations
     TACSBVec *temp;
 
@@ -124,6 +125,11 @@ class TACSLinearSpectralMg : public TACSPc {
     TACSBVec *mats_temp;
     TACSComboMat **mats;
     TACSChebyshevSmoother **smoothers;
+
+    // Direct solution data on the coarsest mesh
+    int direct;  // Flag indicating if we're using a direct solution strategy
+    TACSParallelMat **direct_mats;
+    TACSBlockCyclicPc **direct_pcs;
 
     TACSBVecInterp *interp;  // Interpolation
     TACSAssembler *assembler;

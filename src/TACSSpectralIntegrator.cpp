@@ -207,9 +207,11 @@ TACSLinearSpectralMg::TACSLinearSpectralMg(TACSLinearSpectralMat *_mat,
     if (i == 0) {
       data[i] = new MgData(fine, N, d0, assembler[i], interp, H, C);
     } else {
+      int direct = (i == nlevels - 1);
       fine = data[i - 1];
       interp = _interp[i - 1];
-      data[i] = new MgData(fine, N, d0, assembler[i], interp);
+      data[i] =
+          new MgData(fine, N, d0, assembler[i], interp, NULL, NULL, direct);
     }
   }
 }
@@ -273,7 +275,7 @@ TACSLinearSpectralMg::MgData::MgData(MgData *_fine, int Nval, const double d[],
                                      TACSAssembler *_assembler,
                                      TACSBVecInterp *_interp,
                                      TACSParallelMat *Hmat,
-                                     TACSParallelMat *Cmat) {
+                                     TACSParallelMat *Cmat, int _direct) {
   fine = _fine;
   N = Nval;
   assembler = _assembler;
@@ -295,10 +297,25 @@ TACSLinearSpectralMg::MgData::MgData(MgData *_fine, int Nval, const double d[],
   H->incref();
   C->incref();
 
-  // Allocate the spectral vectors
-  d0 = new double[N];
-  for (int i = 0; i < N; i++) {
-    d0[i] = d[i];
+  if (fine) {
+    if (N == fine->N) {
+      // Allocate the spectral vectors
+      d0 = new double[N];
+      for (int i = 0; i < N; i++) {
+        d0[i] = fine->d0[i];
+      }
+    } else if (N == fine->N / 2) {
+      d0 = new double[N];
+      for (int i = 0; i < N; i++) {
+        d0[i] = (d0[2 * i] * d0[2 * i + 1]) / (d0[2 * i] + d0[2 * i + 1]);
+      }
+    }
+  } else {
+    // Allocate the spectral vectors
+    d0 = new double[N];
+    for (int i = 0; i < N; i++) {
+      d0[i] = d[i];
+    }
   }
 
   x = new TACSSpectralVec(N, assembler);
@@ -312,20 +329,37 @@ TACSLinearSpectralMg::MgData::MgData(MgData *_fine, int Nval, const double d[],
   temp = assembler->createVec();
   temp->incref();
 
-  // Allocate the smoothers
-  mats_temp = assembler->createVec();
-  mats_temp->incref();
+  direct = _direct;
+  mats = NULL;
+  smoothers = NULL;
+  direct_mats = NULL;
+  direct_pcs = NULL;
 
-  mats = new TACSComboMat *[N];
-  smoothers = new TACSChebyshevSmoother *[N];
+  if (direct) {
+    direct_mats = new TACSParallelMat *[N];
+    direct_pcs = new TACSBlockCyclicPc *[N];
 
-  int chebyshev_degree = 3;
-  for (int i = 0; i < N; i++) {
-    mats[i] = new TACSComboMat(H, d0[i], C, mats_temp);
-    mats[i]->incref();
+    for (int i = 0; i < N; i++) {
+      direct_mats[i] = assembler->createMat();
+      direct_mats[i]->incref();
+      direct_pcs[i] = new TACSBlockCyclicPc(direct_mats[i]);
+      direct_pcs[i]->incref();
+    }
+  } else {  // Allocate the smoothers
+    mats_temp = assembler->createVec();
+    mats_temp->incref();
 
-    smoothers[i] = new TACSChebyshevSmoother(mats[i], chebyshev_degree);
-    smoothers[i]->incref();
+    mats = new TACSComboMat *[N];
+    smoothers = new TACSChebyshevSmoother *[N];
+
+    int chebyshev_degree = 3;
+    for (int i = 0; i < N; i++) {
+      mats[i] = new TACSComboMat(H, d0[i], C, mats_temp);
+      mats[i]->incref();
+
+      smoothers[i] = new TACSChebyshevSmoother(mats[i], chebyshev_degree);
+      smoothers[i]->incref();
+    }
   }
 }
 
@@ -338,17 +372,25 @@ TACSLinearSpectralMg::MgData::~MgData() {
   b->decref();
   r->decref();
   temp->decref();
-  mats_temp->decref();
   H->decref();
   C->decref();
 
-  for (int i = 0; i < N; i++) {
-    mats[i]->decref();
-    smoothers[i]->decref();
+  if (direct) {
+    for (int i = 0; i < N; i++) {
+      direct_mats[i]->decref();
+      direct_pcs[i]->decref();
+    }
+    delete[] direct_mats;
+    delete[] direct_pcs;
+  } else {
+    mats_temp->decref();
+    for (int i = 0; i < N; i++) {
+      mats[i]->decref();
+      smoothers[i]->decref();
+    }
+    delete[] mats;
+    delete[] smoothers;
   }
-
-  delete[] mats;
-  delete[] smoothers;
 }
 
 /*
@@ -360,8 +402,16 @@ void TACSLinearSpectralMg::MgData::factor() {
     interp->computeGalerkin(fine->C, C);
   }
 
-  for (int i = 0; i < N; i++) {
-    smoothers[i]->factor();
+  if (direct) {
+    for (int i = 0; i < N; i++) {
+      direct_mats[i]->copyValues(H);
+      direct_mats[i]->axpy(d0[i], C);
+      direct_pcs[i]->factor();
+    }
+  } else {
+    for (int i = 0; i < N; i++) {
+      smoothers[i]->factor();
+    }
   }
 }
 
@@ -369,18 +419,29 @@ void TACSLinearSpectralMg::MgData::factor() {
   Apply the smoother on the current mesh level
 
   [ (H + d0[0] * C) |                                 ][out[0]] = [in[0]]
-  [       - d[1]* C | (H + d[1] * C) |                ][out[1]] = [in[1]]
-  [                        -d[2] * C | (H + d[2] * C) ][out[2]] = [in[2]]
+  [      - d[1] * C | (H + d[1] * C) |                ][out[1]] = [in[1]]
+  [                       - d[2] * C | (H + d[2] * C) ][out[2]] = [in[2]]
 */
 void TACSLinearSpectralMg::MgData::applyFactor(TACSSpectralVec *in,
                                                TACSSpectralVec *out) {
-  smoothers[0]->applyFactor(in->getVec(0), out->getVec(0));
+  if (direct) {
+    direct_pcs[0]->applyFactor(in->getVec(0), out->getVec(0));
 
-  for (int i = 1; i < N; i++) {
-    // Form the right-hand-side = in[i] + d[i] * C * out[i - 1]
-    C->mult(out->getVec(i - 1), temp);
-    temp->axpby(1.0, d0[i], in->getVec(i));
-    smoothers[i]->applyFactor(temp, out->getVec(i));
+    for (int i = 1; i < N; i++) {
+      // Form the right-hand-side = in[i] + d[i] * C * out[i - 1]
+      C->mult(out->getVec(i - 1), temp);
+      temp->axpby(1.0, d0[i], in->getVec(i));
+      direct_pcs[i]->applyFactor(temp, out->getVec(i));
+    }
+  } else {
+    smoothers[0]->applyFactor(in->getVec(0), out->getVec(0));
+
+    for (int i = 1; i < N; i++) {
+      // Form the right-hand-side = in[i] + d[i] * C * out[i - 1]
+      C->mult(out->getVec(i - 1), temp);
+      temp->axpby(1.0, d0[i], in->getVec(i));
+      smoothers[i]->applyFactor(temp, out->getVec(i));
+    }
   }
 }
 
@@ -388,8 +449,8 @@ void TACSLinearSpectralMg::MgData::applyFactor(TACSSpectralVec *in,
   Perform a matrix-vector multiplication
 
   [ (H + d0[0] * C) |                                 ][in[0]] = [out[0]]
-  [       - d[1]* C | (H + d[1] * C) |                ][in[1]] = [out[1]]
-  [                        -d[2] * C | (H + d[2] * C) ][in[2]] = [out[2]]
+  [      - d[1] * C | (H + d[1] * C) |                ][in[1]] = [out[1]]
+  [                       - d[2] * C | (H + d[2] * C) ][in[2]] = [out[2]]
 */
 void TACSLinearSpectralMg::MgData::mult(TACSSpectralVec *in,
                                         TACSSpectralVec *out) {
@@ -399,7 +460,7 @@ void TACSLinearSpectralMg::MgData::mult(TACSSpectralVec *in,
 
     H->mult(invec, outvec);
     if (i > 0) {
-      outvec->axpy(-d0[i - 1], temp);
+      outvec->axpy(-d0[i], temp);
     }
 
     C->mult(invec, temp);
@@ -413,14 +474,25 @@ void TACSLinearSpectralMg::MgData::mult(TACSSpectralVec *in,
 void TACSLinearSpectralMg::MgData::restriction(TACSSpectralVec *in,
                                                TACSSpectralVec *out) {
   if (interp) {
-    // For now, use a straight injection in time
-    for (int i = 0; i < N; i++) {
-      TACSBVec *invec = in->getVec(i);
-      TACSBVec *outvec = out->getVec(i);
-      interp->multTranspose(invec, outvec);
+    if (N == fine->N) {
+      // Use a straight injection in time
+      for (int i = 0; i < N; i++) {
+        TACSBVec *invec = in->getVec(i);
+        TACSBVec *outvec = out->getVec(i);
+        interp->multTranspose(invec, outvec);
 
-      // Apply boundary conditions at this new level
-      outvec->applyBCs(assembler->getBcMap());
+        // Apply boundary conditions at this new level
+        outvec->applyBCs(assembler->getBcMap());
+      }
+    } else if (N == fine->N / 2) {
+      for (int i = 0; i < N; i++) {
+        TACSBVec *invec = in->getVec(i);
+        TACSBVec *outvec = out->getVec(i);
+        interp->multTranspose(invec, outvec);
+
+        // Apply boundary conditions at this new level
+        outvec->applyBCs(assembler->getBcMap());
+      }
     }
   }
 }
@@ -428,15 +500,33 @@ void TACSLinearSpectralMg::MgData::restriction(TACSSpectralVec *in,
 void TACSLinearSpectralMg::MgData::interpolateAdd(TACSSpectralVec *in,
                                                   TACSSpectralVec *out) {
   if (interp) {
-    // For now, use a straight injection in time
-    for (int i = 0; i < N; i++) {
-      TACSBVec *invec = in->getVec(i);
-      TACSBVec *outvec = out->getVec(i);
-      interp->multAdd(invec, outvec, outvec);
+    if (N == fine->N) {
+      // For now, use a straight injection in time
+      for (int i = 0; i < N; i++) {
+        TACSBVec *invec = in->getVec(i);
+        TACSBVec *outvec = out->getVec(i);
+        interp->multAdd(invec, outvec, outvec);
 
-      // Apply boundary conditions on the fine mesh
-      if (fine) {
-        outvec->applyBCs(fine->assembler->getBcMap());
+        // Apply boundary conditions on the fine mesh
+        if (fine) {
+          outvec->applyBCs(fine->assembler->getBcMap());
+        }
+      }
+    } else if (N == fine->N / 2) {
+      for (int i = 0; i < N; i++) {
+        TACSBVec *invec = in->getVec(i);
+        TACSBVec *outvec = out->getVec(2 * i);
+        temp->copyValues(invec);
+        temp->scale(0.5);
+        temp->axpy(0.5, in->getVec(i + 1));
+        interp->multAdd(temp, outvec, outvec);
+
+        interp->multAdd(invec, outvec, outvec);
+
+        // Apply boundary conditions on the fine mesh
+        if (fine) {
+          outvec->applyBCs(fine->assembler->getBcMap());
+        }
       }
     }
   }

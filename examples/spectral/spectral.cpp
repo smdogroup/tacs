@@ -64,14 +64,11 @@ void createAssembler(MPI_Comm comm, int nx, int ny, TACSAssembler **_assembler,
     delete[] ids;
 
     // We're over-counting one of the nodes on each edge
-    int numBcs = 4 * (nx + 1);
+    int numBcs = (nx + 1);
     int *bcNodes = new int[numBcs];
 
     for (int i = 0; i < (nx + 1); i++) {
-      bcNodes[4 * i] = i;
-      bcNodes[4 * i + 1] = i + (nx + 1) * ny;
-      bcNodes[4 * i + 2] = i * (nx + 1);
-      bcNodes[4 * i + 3] = (i + 1) * (nx + 1) - 1;
+      bcNodes[i] = i;
     }
 
     // Set the boundary conditions
@@ -278,8 +275,8 @@ int main(int argc, char *argv[]) {
   }
 
   // Now create the spectral integrator class
-  double tfinal = 2.0;  // Final time for the simulation
-  int N = 16;
+  double tfinal = 300.0;  // Final time for the simulation
+  int N = 32;
   TACSSpectralIntegrator *spectral =
       new TACSSpectralIntegrator(assembler[0], tfinal, N);
   spectral->incref();
@@ -302,13 +299,15 @@ int main(int argc, char *argv[]) {
   // Solve the problem
   TACSSpectralVec *res = spectral->createVec();
   res->incref();
+  TACSSpectralVec *rhs = spectral->createVec();
+  rhs->incref();
   TACSSpectralVec *ans = spectral->createVec();
   ans->incref();
 
   // Set the values of the right-hand-side
   for (int i = N / 2; i < N; i++) {
-    res->getVec(i)->set(1.0);
-    assembler[0]->applyBCs(res->getVec(i));
+    rhs->getVec(i)->set(100.0);
+    assembler[0]->applyBCs(rhs->getVec(i));
   }
 
   // Allocate the GMRES solution method
@@ -323,11 +322,14 @@ int main(int argc, char *argv[]) {
   ksm->setMonitor(new KSMPrintStdout("GMRES", rank, freq));
 
   // Compute the solution using GMRES
-  ksm->solve(res, ans);
-  ans->scale(-1.0);
+  ksm->solve(rhs, ans);
 
   // Set the variables into TACS
   spectral->setVariables(ans);
+  spectral->assembleRes(res);
+  res->axpy(-1.0, rhs);
+
+  printf("||R||: %25.15e\n", res->norm());
 
   // Output for visualization
   ElementType etype = TACS_PLANE_STRESS_ELEMENT;
