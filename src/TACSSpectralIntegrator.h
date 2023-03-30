@@ -161,8 +161,12 @@ class TACSSpectralIntegrator : public TACSObject {
   void assembleMat(TACSLinearSpectralMat *mat,
                    MatrixOrientation matOr = TACS_MAT_NORMAL);
 
-  // Evaluate the functions of interest
+  // Evaluate the functions of interest and their derivatives
   void evalFunctions(int num_funcs, TACSFunction **funcs, TacsScalar *fvals);
+  void evalSVSens(TACSFunction *func, TACSSpectralVec *dfdu);
+  void addDVSens(TACSFunction *func, TACSBVec *dfdx);
+  void addAdjointResProduct(TacsScalar scale, TACSSpectralVec *adjoint,
+                            TACSBVec *dfdx);
 
   // Compute the time derivative at a point
   void computeDeriv(int index, TACSSpectralVec *sol, TACSBVec *dudt,

@@ -2,6 +2,7 @@
 #include "TACSCreator.h"
 #include "TACSElement2D.h"
 #include "TACSHeatConduction.h"
+#include "TACSKSTemperature.h"
 #include "TACSMg.h"
 #include "TACSQuadBasis.h"
 #include "TACSSpectralIntegrator.h"
@@ -137,22 +138,7 @@ void createAssembler(MPI_Comm comm, int nx, int ny, TACSAssembler **_assembler,
 
 /*
   The following code illustrates the use of the geometric multigrid
-  capabilities in TACS using a flat plate example.
-
-  The main work required is the assembly of the inter-grid operators
-  themselves. The TACSBVecInterp class is used to simplify the set up
-  of these operators which are stored explicitly.
-
-  The multigrid operations are performed using the TACSMg object which
-  inherits from the TACSPc interface. It can be used directly as a
-  preconditioner and needs to be "factored" in the same manner as
-  regular preconditioners.
-
-  TACSMg has a number of member functions which facilitate setting
-  state and design variables on all multigrid levels and matrix
-  assembly.  Matrix assembly on all levels can be performed by calling
-  the assembleJacobian() and the assembleMatType() functions directly
-  in the TACSMg interface.
+  capabilities in TACS combined with a spectral time integration technique.
 */
 int main(int argc, char *argv[]) {
   MPI_Init(&argc, &argv);
@@ -171,6 +157,9 @@ int main(int argc, char *argv[]) {
   // Set the dimension of the largest meshes
   int nx = 128;
   int ny = 128;
+
+  // Use GMRES (if not, use GCROT)
+  int use_gmres = 1;
 
   // Get the global size of the mesh from the input
   for (int k = 0; k < argc; k++) {
@@ -192,6 +181,9 @@ int main(int argc, char *argv[]) {
       if (nlevels > max_nlevels) {
         nlevels = max_nlevels;
       }
+    }
+    if (strcmp("use_gcrot", argv[k]) == 0) {
+      use_gmres = 0;
     }
   }
 
@@ -289,7 +281,7 @@ int main(int argc, char *argv[]) {
   spectral->assembleMat(mat);
 
   // Create the multigrid preconditioner for the spectral problem
-  int *coarsen_time = new int[nlevels - 1];
+  int coarsen_time[max_nlevels - 1];
 
   for (int i = 0; i < nlevels - 1; i++) {
     coarsen_time[i] = 0;
@@ -303,8 +295,6 @@ int main(int argc, char *argv[]) {
   TACSLinearSpectralMg *mg =
       new TACSLinearSpectralMg(mat, nlevels, assembler, interp, coarsen_time);
   mg->incref();
-
-  delete[] coarsen_time;
 
   // Factor the matrix
   mg->factor();
@@ -323,17 +313,21 @@ int main(int argc, char *argv[]) {
     assembler[0]->applyBCs(rhs->getVec(i));
   }
 
-  // Allocate the GMRES solution method
-  int gmres_iters = 50;
-  int nrestart = 8;
-  int is_flexible = 0;
-  GMRES *ksm = new GMRES(mat, mg, gmres_iters, nrestart, is_flexible);
+  TACSKsm *ksm = NULL;
 
-  // int outer = 10;
-  // int max_outer = 5 * outer;
-  // int is_flexible = 1;
-  // GCROT *ksm = new GCROT(mat, mg, outer, max_outer, gmres_iters,
-  // is_flexible);
+  if (use_gmres) {
+    // Allocate the GMRES solution method
+    int gmres_subspace = 50;
+    int nrestart = 8;
+    int is_flexible = 0;
+    ksm = new GMRES(mat, mg, gmres_subspace, nrestart, is_flexible);
+  } else {
+    int gmres_subspace = 25;
+    int outer = 10;
+    int max_outer = 5 * outer;
+    int is_flexible = 1;
+    ksm = new GCROT(mat, mg, outer, max_outer, gmres_subspace, is_flexible);
+  }
   ksm->incref();
 
   // Set a monitor to check on solution progress
@@ -347,6 +341,18 @@ int main(int argc, char *argv[]) {
   spectral->setVariables(ans);
   spectral->assembleRes(res);
   res->axpy(-1.0, rhs);
+
+  // Evaluate a function of interest
+  double ksweight = 100;
+  TACSFunction *func = new TACSKSTemperature(assembler[0], ksweight);
+  func->incref();
+
+  TacsScalar fval;
+  spectral->evalFunctions(1, &func, &fval);
+
+  if (rank == 0) {
+    printf("Maximum temperature: %25.15e\n", fval);
+  }
 
   TacsScalar res_norm = res->norm();
   if (rank == 0) {

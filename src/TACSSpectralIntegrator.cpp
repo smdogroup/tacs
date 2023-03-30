@@ -859,7 +859,7 @@ void TACSSpectralIntegrator::evalFunctions(int num_funcs, TACSFunction **funcs,
       assembler->setVariables(u, dudt);
 
       // Integrate the function
-      TacsScalar tcoeff = tfactor * wts[i];
+      TacsScalar tcoeff = 0.5 * wts[i] * (tfinal - tinit);
       assembler->integrateFunctions(tcoeff, TACSFunction::INITIALIZE, num_funcs,
                                     funcs);
     }
@@ -892,7 +892,7 @@ void TACSSpectralIntegrator::evalFunctions(int num_funcs, TACSFunction **funcs,
     assembler->setVariables(u, dudt);
 
     // Integrate the function
-    TacsScalar tcoeff = tfactor * wts[i];
+    TacsScalar tcoeff = 0.5 * wts[i] * (tfinal - tinit);
     assembler->integrateFunctions(tcoeff, TACSFunction::INTEGRATE, num_funcs,
                                   funcs);
   }
@@ -910,6 +910,87 @@ void TACSSpectralIntegrator::evalFunctions(int num_funcs, TACSFunction **funcs,
       fvals[n] = funcs[n]->getFunctionValue();
     }
   }
+
+  dudt->decref();
+}
+
+void TACSSpectralIntegrator::evalSVSens(TACSFunction *func,
+                                        TACSSpectralVec *dfdu) {
+  TACSBVec *dudt = assembler->createVec();
+  dudt->incref();
+
+  for (int i = 0; i < N + 1; i++) {
+    // Get the solution values at the i-th LGL node
+    TACSBVec *u = NULL;
+    if (i == 0) {
+      u = init;
+    } else {
+      u = vars->getVec(i - 1);
+    }
+    computeDeriv(i, vars, dudt);
+
+    // Set the simulation time and variables
+    assembler->setSimulationTime(tpts[i]);
+    assembler->setVariables(u, dudt);
+
+    TacsScalar tcoeff = 0.5 * wts[i] * (tfinal - tinit);
+    TACSBVec *vec = dfdu->getVec(i);
+    assembler->addSVSens(tcoeff, 0.0, 0.0, 1, &func, &vec);
+  }
+
+  dudt->decref();
+}
+
+void TACSSpectralIntegrator::addDVSens(TACSFunction *func, TACSBVec *dfdx) {
+  TACSBVec *dudt = assembler->createVec();
+  dudt->incref();
+
+  for (int i = 0; i < N + 1; i++) {
+    // Get the solution values at the i-th LGL node
+    TACSBVec *u = NULL;
+    if (i == 0) {
+      u = init;
+    } else {
+      u = vars->getVec(i - 1);
+    }
+    computeDeriv(i, vars, dudt);
+
+    // Set the simulation time and variables
+    assembler->setSimulationTime(tpts[i]);
+    assembler->setVariables(u, dudt);
+
+    TacsScalar tcoeff = 0.5 * wts[i] * (tfinal - tinit);
+    assembler->addDVSens(tcoeff, 1, &func, &dfdx);
+  }
+
+  dudt->decref();
+}
+
+void TACSSpectralIntegrator::addAdjointResProduct(TacsScalar scale,
+                                                  TACSSpectralVec *adjoint,
+                                                  TACSBVec *dfdx) {
+  TACSBVec *dudt = assembler->createVec();
+  dudt->incref();
+
+  for (int i = 0; i < N + 1; i++) {
+    // Get the solution values at the i-th LGL node
+    TACSBVec *u = NULL;
+    if (i == 0) {
+      u = init;
+    } else {
+      u = vars->getVec(i - 1);
+    }
+    computeDeriv(i, vars, dudt);
+
+    // Set the simulation time and variables
+    assembler->setSimulationTime(tpts[i]);
+    assembler->setVariables(u, dudt);
+
+    TACSBVec *adj = adjoint->getVec(i);
+    assembler->addAdjointResProducts(scale, 1, &adj, &dfdx);
+  }
+
+  dudt->decref();
 }
 
 void TACSSpectralIntegrator::initLGLPointsAndWeights(int max_newton_iters,
