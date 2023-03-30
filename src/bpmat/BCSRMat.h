@@ -56,6 +56,9 @@ class BCSRMat : public TACSObject {
   // Free the matrix
   ~BCSRMat();
 
+  // Create a duplicate of the matrix without copying values
+  BCSRMat *createDuplicate();
+
   // Access data
   // -----------
   MPI_Comm getMPIComm();

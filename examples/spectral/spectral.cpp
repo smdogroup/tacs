@@ -289,9 +289,22 @@ int main(int argc, char *argv[]) {
   spectral->assembleMat(mat);
 
   // Create the multigrid preconditioner for the spectral problem
+  int *coarsen_time = new int[nlevels - 1];
+
+  for (int i = 0; i < nlevels - 1; i++) {
+    coarsen_time[i] = 0;
+  }
+
+  // Only coarsen the time twice and not at the first level
+  for (int i = 3; i <= 4 && i < nlevels - 1; i++) {
+    coarsen_time[i] = 1;
+  }
+
   TACSLinearSpectralMg *mg =
-      new TACSLinearSpectralMg(mat, nlevels, assembler, interp);
+      new TACSLinearSpectralMg(mat, nlevels, assembler, interp, coarsen_time);
   mg->incref();
+
+  delete[] coarsen_time;
 
   // Factor the matrix
   mg->factor();
@@ -311,10 +324,16 @@ int main(int argc, char *argv[]) {
   }
 
   // Allocate the GMRES solution method
-  int gmres_iters = 25;
+  int gmres_iters = 50;
   int nrestart = 8;
   int is_flexible = 0;
   GMRES *ksm = new GMRES(mat, mg, gmres_iters, nrestart, is_flexible);
+
+  // int outer = 10;
+  // int max_outer = 5 * outer;
+  // int is_flexible = 1;
+  // GCROT *ksm = new GCROT(mat, mg, outer, max_outer, gmres_iters,
+  // is_flexible);
   ksm->incref();
 
   // Set a monitor to check on solution progress
@@ -329,7 +348,10 @@ int main(int argc, char *argv[]) {
   spectral->assembleRes(res);
   res->axpy(-1.0, rhs);
 
-  printf("||R||: %25.15e\n", res->norm());
+  TacsScalar res_norm = res->norm();
+  if (rank == 0) {
+    printf("||R||: %25.15e\n", res_norm);
+  }
 
   // Output for visualization
   ElementType etype = TACS_PLANE_STRESS_ELEMENT;

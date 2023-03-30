@@ -62,7 +62,8 @@ class TACSLinearSpectralMat : public TACSMat {
 class TACSLinearSpectralMg : public TACSPc {
  public:
   TACSLinearSpectralMg(TACSLinearSpectralMat *_mat, int _nlevels,
-                       TACSAssembler **assembler, TACSBVecInterp **_interp);
+                       TACSAssembler **assembler, TACSBVecInterp **_interp,
+                       int coarsen_time[] = NULL);
   ~TACSLinearSpectralMg();
 
   void factor();
@@ -131,9 +132,12 @@ class TACSLinearSpectralMg : public TACSPc {
     TACSParallelMat **direct_mats;
     TACSBlockCyclicPc **direct_pcs;
 
-    TACSBVecInterp *interp;  // Interpolation
-    TACSAssembler *assembler;
-    TACSParallelMat *H, *C;
+    // Not allocated if no multigrid in time
+    double *w0, *w1;  // Weights for the temporal interpolation
+
+    TACSBVecInterp *interp;    // Spatial interpolation
+    TACSAssembler *assembler;  // Assembler
+    TACSParallelMat *H, *C;    // Matrices at this grid level
   };
 
   int nlevels;

@@ -187,7 +187,8 @@ int TACSLinearSpectralMat::getFirstOrderCoefficients(const double *d[]) {
 TACSLinearSpectralMg::TACSLinearSpectralMg(TACSLinearSpectralMat *_mat,
                                            int _nlevels,
                                            TACSAssembler **assembler,
-                                           TACSBVecInterp **_interp) {
+                                           TACSBVecInterp **_interp,
+                                           int coarsen_time[]) {
   mat = _mat;
   mat->incref();
 
@@ -196,20 +197,33 @@ TACSLinearSpectralMg::TACSLinearSpectralMg(TACSLinearSpectralMat *_mat,
 
   nlevels = _nlevels;
 
-  // Get the first-order coefficients
-  const double *d0;
-  int N = mat->getFirstOrderCoefficients(&d0);
+  int N = 0;
 
   data = new MgData *[nlevels];
   for (int i = 0; i < nlevels; i++) {
     MgData *fine = NULL;
     TACSBVecInterp *interp = NULL;
     if (i == 0) {
+      // Get the first-order coefficients
+      const double *d0;
+      N = mat->getFirstOrderCoefficients(&d0);
+
       data[i] = new MgData(fine, N, d0, assembler[i], interp, H, C);
     } else {
-      int direct = (i == nlevels - 1);
+      // Check whether to coarsen the time
+      if (coarsen_time && coarsen_time[i - 1] && N % 2 == 0) {
+        N = N / 2;
+      }
+
+      // Pass in NULL for the time coefficients - these are computed internally
+      const double *d0 = NULL;
+
+      // Set the finer MgData object and the correct interpolation
       fine = data[i - 1];
       interp = _interp[i - 1];
+
+      // Use a direct method on the coarsest mesh
+      int direct = (i == nlevels - 1);
       data[i] =
           new MgData(fine, N, d0, assembler[i], interp, NULL, NULL, direct);
     }
@@ -288,7 +302,7 @@ TACSLinearSpectralMg::MgData::MgData(MgData *_fine, int Nval, const double d[],
   // Compute the non-zero pattern on this level
   if (fine) {
     interp->computeGalerkinNonZeroPattern(fine->H, &H);
-    interp->computeGalerkinNonZeroPattern(fine->C, &C);
+    C = dynamic_cast<TACSParallelMat *>(H->createDuplicate());
   } else {
     H = Hmat;
     C = Cmat;
@@ -298,24 +312,39 @@ TACSLinearSpectralMg::MgData::MgData(MgData *_fine, int Nval, const double d[],
   C->incref();
 
   if (fine) {
+    const double *d = fine->d0;  // Time coefficients on the finer mesh
+
     if (N == fine->N) {
-      // Allocate the spectral vectors
+      // Copy the coefficients from the finer mesh
       d0 = new double[N];
       for (int i = 0; i < N; i++) {
-        d0[i] = fine->d0[i];
+        d0[i] = d[i];
       }
+
+      w0 = w1 = NULL;
     } else if (N == fine->N / 2) {
       d0 = new double[N];
       for (int i = 0; i < N; i++) {
-        d0[i] = (d0[2 * i] * d0[2 * i + 1]) / (d0[2 * i] + d0[2 * i + 1]);
+        d0[i] = (d[2 * i] * d[2 * i + 1]) / (d[2 * i] + d[2 * i + 1]);
+      }
+
+      // Compute the interpolation weights between time levels
+      w0 = new double[N];
+      w1 = new double[N];
+      for (int i = 0; i < N; i++) {
+        w0[i] = d[2 * i] / (d[2 * i] + d[2 * i + 1]);
+        w1[i] = d[2 * i + 1] / (d[2 * i] + d[2 * i + 1]);
       }
     }
   } else {
-    // Allocate the spectral vectors
+    // Copy the input coefficients
     d0 = new double[N];
     for (int i = 0; i < N; i++) {
       d0[i] = d[i];
     }
+
+    // Set the interpolation weights to NULL
+    w0 = w1 = NULL;
   }
 
   x = new TACSSpectralVec(N, assembler);
@@ -340,7 +369,7 @@ TACSLinearSpectralMg::MgData::MgData(MgData *_fine, int Nval, const double d[],
     direct_pcs = new TACSBlockCyclicPc *[N];
 
     for (int i = 0; i < N; i++) {
-      direct_mats[i] = assembler->createMat();
+      direct_mats[i] = dynamic_cast<TACSParallelMat *>(H->createDuplicate());
       direct_mats[i]->incref();
       direct_pcs[i] = new TACSBlockCyclicPc(direct_mats[i]);
       direct_pcs[i]->incref();
@@ -352,7 +381,7 @@ TACSLinearSpectralMg::MgData::MgData(MgData *_fine, int Nval, const double d[],
     mats = new TACSComboMat *[N];
     smoothers = new TACSChebyshevSmoother *[N];
 
-    int chebyshev_degree = 3;
+    int chebyshev_degree = 4;
     for (int i = 0; i < N; i++) {
       mats[i] = new TACSComboMat(H, d0[i], C, mats_temp);
       mats[i]->incref();
@@ -374,6 +403,11 @@ TACSLinearSpectralMg::MgData::~MgData() {
   temp->decref();
   H->decref();
   C->decref();
+
+  if (w0 && w1) {
+    delete[] w0;
+    delete[] w1;
+  }
 
   if (direct) {
     for (int i = 0; i < N; i++) {
@@ -474,17 +508,45 @@ void TACSLinearSpectralMg::MgData::mult(TACSSpectralVec *in,
 void TACSLinearSpectralMg::MgData::restriction(TACSSpectralVec *in,
                                                TACSSpectralVec *out) {
   if (interp) {
-    if (N == fine->N) {
-      // Use a straight injection in time
+    if (w0 && w1) {
+      // Compute the restriction using the transpose of the weights
+      // [init = 0] = [ 1.0    w0[0]                     ][init = 0]
+      // [out[0]  ] = [        w1[0]  1.0    w0[1]       ][ in[0]  ]
+      // [out[1]  ] = [                      w1[1]   1.0 ][ in[1]  ]
+      //                                                  [ in[2]  ]
+      //                                                  [ in[3]  ]
+
       for (int i = 0; i < N; i++) {
-        TACSBVec *invec = in->getVec(i);
+        TACSBVec *t = fine->temp;
+
+        // Compute the scaling factor to normalize the weights
+        double scale = w1[i] + 1.0;
+        if (i < N - 1) {
+          scale += w0[i + 1];
+        }
+        scale = 1.0 / scale;
+
+        // Compute the weighted input vector
+        t->copyValues(in->getVec(2 * i));
+        t->scale(scale * w1[i]);
+
+        // Add the contribution from the middle time plane
+        t->axpy(scale, in->getVec(2 * i + 1));
+
+        // Add the contribution from the final time plane
+        if (i < N - 1) {
+          t->axpy(scale * w0[i + 1], in->getVec(2 * (i + 1)));
+        }
+
         TACSBVec *outvec = out->getVec(i);
-        interp->multTranspose(invec, outvec);
+        interp->multTranspose(t, outvec);
 
         // Apply boundary conditions at this new level
         outvec->applyBCs(assembler->getBcMap());
       }
-    } else if (N == fine->N / 2) {
+
+    } else {
+      // Use a straight injection in time
       for (int i = 0; i < N; i++) {
         TACSBVec *invec = in->getVec(i);
         TACSBVec *outvec = out->getVec(i);
@@ -500,27 +562,48 @@ void TACSLinearSpectralMg::MgData::restriction(TACSSpectralVec *in,
 void TACSLinearSpectralMg::MgData::interpolateAdd(TACSSpectralVec *in,
                                                   TACSSpectralVec *out) {
   if (interp) {
-    if (N == fine->N) {
-      // For now, use a straight injection in time
+    if (w0 && w1) {
+      // Interpolate from one mesh to the next
+      // [init = 0] = [ 1.0                  ][init = 0 ]
+      // [ out[0] ] = [ w0[0]  w1[0]         ][ in[0]   ]
+      // [ out[1] ] = [        1.0           ][ in[1]   ]
+      // [ out[2] ] = [        w0[1]  w1[1]  ]
+      // [ out[3] ] = [               1.0    ]
+
       for (int i = 0; i < N; i++) {
+        if (i > 0) {
+          // Do the direct interpolation
+          TACSBVec *invec = in->getVec(i);
+          TACSBVec *outvec = out->getVec(2 * i);
+          interp->multAdd(invec, outvec, outvec);
+
+          // Apply boundary conditions on the fine mesh
+          if (fine) {
+            outvec->applyBCs(fine->assembler->getBcMap());
+          }
+
+          // Copy the input to the temporary array and scale
+          temp->copyValues(in->getVec(i - 1));
+          temp->scale(w0[i]);
+        } else {
+          temp->zeroEntries();
+        }
+
+        TACSBVec *outvec = out->getVec(2 * i + 1);
         TACSBVec *invec = in->getVec(i);
-        TACSBVec *outvec = out->getVec(i);
-        interp->multAdd(invec, outvec, outvec);
+        temp->axpy(w1[i], invec);
+        interp->multAdd(temp, outvec, outvec);
 
         // Apply boundary conditions on the fine mesh
         if (fine) {
           outvec->applyBCs(fine->assembler->getBcMap());
         }
       }
-    } else if (N == fine->N / 2) {
+    } else {
+      // For now, use a straight injection in time
       for (int i = 0; i < N; i++) {
         TACSBVec *invec = in->getVec(i);
-        TACSBVec *outvec = out->getVec(2 * i);
-        temp->copyValues(invec);
-        temp->scale(0.5);
-        temp->axpy(0.5, in->getVec(i + 1));
-        interp->multAdd(temp, outvec, outvec);
-
+        TACSBVec *outvec = out->getVec(i);
         interp->multAdd(invec, outvec, outvec);
 
         // Apply boundary conditions on the fine mesh
