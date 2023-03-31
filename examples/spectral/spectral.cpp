@@ -333,7 +333,7 @@ int main(int argc, char *argv[]) {
   ksm->incref();
 
   // Set a monitor to check on solution progress
-  int freq = 1;
+  int freq = 5;
   ksm->setMonitor(new KSMPrintStdout("GMRES", rank, freq));
   double rtol = 1e-12, atol = 1e-30;
   ksm->setTolerances(rtol, atol);
@@ -356,8 +356,8 @@ int main(int argc, char *argv[]) {
 
   TacsScalar res_norm = res->norm();
   if (rank == 0) {
-    printf("Maximum temperature: %25.15e\n", fval);
-    printf("||R||: %25.15e\n", res_norm);
+    printf("Maximum temperature: %25.15e\n", TacsRealPart(fval));
+    printf("||R||: %25.15e\n", TacsRealPart(res_norm));
   }
 
   TACSSpectralVec *dfdu = spectral->createVec();
@@ -384,7 +384,7 @@ int main(int argc, char *argv[]) {
   TacsScalar *dfdx_array;
   int len = dfdx->getArray(&dfdx_array);
   for (int i = 0; i < len; i++) {
-    printf("dfdx[%d] = %25.15e\n", i, dfdx_array[i]);
+    printf("dfdx[%d] = %25.15e\n", i, TacsRealPart(dfdx_array[i]));
   }
 
   TACSBVec *x = assembler[0]->createDesignVec();

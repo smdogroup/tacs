@@ -3740,3 +3740,270 @@ cdef class NBGIntegrator(Integrator):
                                          num_steps, order)
         self.ptr.incref()
         return
+
+cdef class SpectralVec:
+    cdef TACSSpectralVec *ptr
+    def __init__(self):
+        self.ptr = NULL
+
+    def __dealloc__(self):
+        if self.ptr:
+            self.ptr.decref()
+
+    def norm(self):
+        """
+        norm(self)
+
+        Vector norm
+        """
+        return self.ptr.norm()
+
+    def dot(self, SpectralVec vec):
+        """
+        dot(self, SpectralVec vec)
+
+        Take the dot product with the other vector
+        """
+        return self.ptr.dot(vec.ptr)
+
+    def copyValues(self, SpectralVec vec):
+        """
+        copyValues(self, SpectralVec vec)
+
+        Copy the values from vec
+        """
+        self.ptr.copyValues(vec.ptr)
+        return
+
+    def scale(self, TacsScalar alpha):
+        """
+        scale(self, TacsScalar alpha)
+
+        Scale the entries in the matrix by alpha
+        """
+        self.ptr.scale(alpha)
+        return
+
+    def axpy(self, TacsScalar alpha, SpectralVec vec):
+        """
+        axpy(self, TacsScalar alpha, SpectralVec vec)
+
+        Compute y <- y + alpha * x
+        """
+        self.ptr.axpy(alpha, vec.ptr)
+        return
+
+    def getVec(self, index):
+        """
+        getVec(self, index)
+
+        Get the vector cofficients for the index mode
+        """
+        cdef TACSBVec *vec = self.ptr.getVec(index)
+        return _init_Vec(vec)
+
+cdef class LinearSpectralMat(Mat):
+    cdef TACSLinearSpectralMat *mat_ptr
+
+    def __init__(self):
+        self.mat_ptr = NULL
+
+cdef class LinearSpectralMg(Pc):
+    def __init__(self, LinearSpectralMat mat, assemblers, interps, coarsen=None):
+        """
+        Create a multigrid preconditioner object for linear spectral analysis
+
+        Args:
+            mat (LinearSpectralMat): The matrix for the linear spectral system
+            assemblers (list): List of nlevel Assembler objects
+            interp (list): List of nlevel-1 BVecInterp interpolation objects
+            coarsen (list): List of true or false whether or not to coarsen in time
+        """
+        assert(len(assemblers) >= 2)
+        assert(len(assemblers) == len(interps) - 1)
+
+        cdef int nlevels = len(assemblers)
+        cdef TACSAssembler **assemb = NULL
+        cdef TACSBVecInterp **interp = NULL
+        cdef int* coarse = NULL
+        cdef TACSLinearSpectralMg *multigrid
+
+        assemb = <TACSAssembler**>malloc(nlevels * sizeof(TACSAssembler*))
+        interp = <TACSBVecInterp**>malloc((nlevels - 1)* sizeof(TACSBVecInterp*))
+        if assemb is NULL or interp is NULL:
+            raise MemoryError()
+
+        for i in range(nlevels):
+            assemb[i] = (<Assembler>assemblers[i]).ptr
+        for i in range(nlevels-1):
+            interp[i] = (<VecInterp>interps[i]).ptr
+        if coarsen is not None:
+            coarse = <int*>malloc(nlevels * sizeof(int))
+            for i in range(nlevels - 1):
+                if coarsen[i]:
+                    coarse[i] = 1
+                else:
+                    coarse[i] = 0
+
+        self.ptr = new TACSLinearSpectralMg(mat.mat_ptr, nlevels, assemb, interp, coarse)
+        self.ptr.incref()
+
+        free(assemb)
+        free(interp)
+        if coarse:
+            free(coarse)
+        return
+
+    def factor(self):
+        """
+        factor(self)
+
+        Factor the preconditioner object
+        """
+        self.ptr.factor()
+
+cdef class SpectralIntegrator:
+    cdef TACSSpectralIntegrator *ptr
+
+    def __init__(self, Assembler assembler, tfinal, N):
+        """
+        Create the spectral integrator class
+
+        Args:
+            assembler (Assembler): The TACS Assembler object
+            tfinal (float): The final time
+            N (int): Number of time states = number of LGL points - 1
+        """
+
+        self.ptr = new TACSSpectralIntegrator(assembler.ptr, tfinal, N)
+        self.ptr.incref()
+
+    def __dealloc__(self):
+        if self.ptr:
+            self.ptr.decref()
+
+    def createVec(self):
+        """
+        createVec(self)
+
+        Create a vector for spectral analysis
+        """
+        cdef TACSSpectralVec *vec = self.ptr.createVec()
+        vec.incref()
+        obj = SpectralVec()
+        obj.ptr = vec
+        return obj
+
+    def createLinearMat(self):
+        """
+        createLinearMat(self)
+
+        Create a matrix for analysis
+        """
+        cdef TACSLinearSpectralMat *mat = self.ptr.createLinearMat()
+        mat.incref()
+        obj = LinearSpectralMat()
+        obj.mat_ptr = mat
+        obj.ptr = mat
+        return obj
+
+    def setInitialConditions(self, Vec vec):
+        """
+        setInitialConditions(self, Vec)
+
+        Set the initial conditions
+        """
+        self.ptr.setInitialConditions(vec.ptr)
+        return
+
+    def setVariables(self, SpectralVec vec):
+        """
+        setVariables(self, SpectralVec vec)
+
+        Set the variables at all time instances
+        """
+        self.ptr.setVariables(vec.ptr)
+        return
+
+    def assembleRes(self, SpectralVec vec):
+        """
+        assembleRes(self, SpectralVec vec)
+
+        Assemble the residual for the spectral system
+        """
+        self.ptr.assembleRes(vec.ptr)
+        return
+
+    def assembleMat(self, LinearSpectralMat mat, MatrixOrientation matOr=TACS_MAT_NORMAL):
+        """
+        assembleMat(self, LinearSpectralMat mat, MatrixOrientation matOr=TACS_MAT_NORMAL)
+
+        Assemble the spectral matrix with the specified orientation
+        """
+        self.ptr.assembleMat(mat.mat_ptr, matOr)
+        return
+
+    def evalFunctions(self, funclist):
+        """
+        evalFunctions(self, funclist)
+
+        Evaluate the given list of functions
+        """
+
+        # Allocate the array of TACSFunction pointers
+        cdef TACSFunction **funcs
+        funcs = <TACSFunction**>malloc(len(funclist)*sizeof(TACSFunction*))
+        if funcs is NULL:
+            raise MemoryError()
+
+        for i in range(len(funclist)):
+            if funclist[i] is not None:
+                funcs[i] = (<Function>funclist[i]).ptr
+            else:
+                funcs[i] = NULL
+
+        # Allocate the numpy array of function values
+        cdef np.ndarray fvals = np.zeros(len(funclist), dtype)
+
+        self.ptr.evalFunctions(len(funclist), funcs, <TacsScalar*>fvals.data)
+
+        # Free the allocated array
+        free(funcs)
+
+        return fvals
+
+    def evalSVSens(self, Function func, SpectralVec vec):
+        """
+        evalSVSens(self, Function func, SpectralVec vec)
+
+        Evaluate the derivative of the function w.r.t. state variables
+        """
+        self.ptr.evalSVSens(func.ptr, vec.ptr)
+        return
+
+    def addDVSens(self, Function func, Vec dfdx):
+        """
+        addDVSens(self, Function func, Vec dfdx)
+
+        Evaluate the derivative of the function w.r.t. design variables
+        """
+        self.ptr.addDVSens(func.ptr, dfdx.ptr)
+        return
+
+    def addAdjointResProduct(self, scale, SpectralVec vec, Vec dfdx):
+        """
+        addAdjointResProduct(self, scale, SpectralVec vec, Vec dfdx)
+
+        Add the derivative of the adjoint-vector product
+        """
+        self.ptr.addAdjointResProduct(scale, vec.ptr, dfdx.ptr)
+        return
+
+    def computeSolution(self, t, Vec u):
+        """
+        computeSolution(self, t, Vec u)
+
+        Compute the solution at the given time instance
+        """
+        self.ptr.computeSolutionAndDeriv(t, NULL, u.ptr, NULL)
+        return

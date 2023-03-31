@@ -877,6 +877,10 @@ void TACSSpectralIntegrator::computeSolutionAndDeriv(double time,
                                                      TACSSpectralVec *sol,
                                                      TACSBVec *u,
                                                      TACSBVec *dudt) {
+  if (!sol) {
+    sol = vars;
+  }
+
   if (time >= tinit && time <= tfinal) {
     double *P = new double[N + 1];
     double *Px = new double[N + 1];

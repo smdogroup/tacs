@@ -811,3 +811,41 @@ cdef extern from "TACSIntegrator.h":
                           double tinit, double tfinal,
                           double num_steps,
                           int order)
+
+cdef extern from "TACSSpectralIntegrator.h":
+    cdef cppclass TACSSpectralVec(TACSObject):
+        TacsScalar norm()
+        void scale(TacsScalar)
+        TacsScalar dot(TACSSpectralVec*)
+        void axpy(TacsScalar, TACSSpectralVec*)
+        void copyValues(TACSSpectralVec*)
+        void zeroEntries()
+        TACSBVec *getVec(int)
+
+    cdef cppclass TACSLinearSpectralMat(TACSMat):
+        TACSLinearSpectralMat(TACSSpectralIntegrator*)
+
+    cdef cppclass TACSLinearSpectralMg(TACSPc):
+        TACSLinearSpectralMg(TACSLinearSpectralMat*, int,
+                             TACSAssembler**, TACSBVecInterp**, int*)
+        void factor()
+
+    cdef cppclass TACSSpectralIntegrator(TACSObject):
+        TACSSpectralIntegrator(TACSAssembler*, double, int)
+
+        TACSSpectralVec *createVec()
+        TACSLinearSpectralMat *createLinearMat()
+        void setInitialConditions(TACSBVec*)
+        void setVariables(TACSSpectralVec*)
+        void assembleRes(TACSSpectralVec*res)
+        void assembleMat(TACSLinearSpectralMat*,
+                         MatrixOrientation matOr)
+
+        void evalFunctions(int, TACSFunction**, TacsScalar*)
+        void evalSVSens(TACSFunction*, TACSSpectralVec*)
+        void addDVSens(TACSFunction*, TACSBVec*)
+        void addAdjointResProduct(TacsScalar, TACSSpectralVec*,
+                                  TACSBVec*)
+
+        # Compute the solution at a point in the time interval
+        void computeSolutionAndDeriv(double, TACSSpectralVec*, TACSBVec *u, TACSBVec*)
