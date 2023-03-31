@@ -49,6 +49,7 @@ class TACSLinearSpectralMat : public TACSMat {
 
   void getMat(TACSParallelMat **Hmat, TACSParallelMat **Cmat);
   void setMatrixOrientation(MatrixOrientation matOr);
+  MatrixOrientation getMatrixOrientation();
   int getFirstOrderCoefficients(const double *d[]);
 
  private:
@@ -118,7 +119,13 @@ class TACSLinearSpectralMg : public TACSPc {
     void restriction(TACSSpectralVec *in, TACSSpectralVec *out);
     void interpolateAdd(TACSSpectralVec *in, TACSSpectralVec *out);
 
+    // Set the matrix orientation
+    void setMatrixOrientation(MatrixOrientation matOr);
+
    private:
+    // The matrix orientation
+    MatrixOrientation orient;
+
     // Temporary vector for matrix-vector product operations
     TACSBVec *temp;
 
@@ -171,6 +178,7 @@ class TACSSpectralIntegrator : public TACSObject {
   // Compute the time derivative at a point
   void computeDeriv(int index, TACSSpectralVec *sol, TACSBVec *dudt,
                     int include_init_conditions = 1);
+  void computeDerivTranspose(int index, TACSSpectralVec *sol, TACSBVec *dudt);
 
   // Compute the solution at a point in the time interval
   void computeSolutionAndDeriv(double time, TACSSpectralVec *sol, TACSBVec *u,

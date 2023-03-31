@@ -107,8 +107,12 @@ void createAssembler(MPI_Comm comm, int nx, int ny, TACSAssembler **_assembler,
       new TACSMaterialProperties(rho, specific_heat, E2, nu, ys, cte, kappa);
 
   // Create the stiffness object
-  TACSPlaneStressConstitutive *stiff1 = new TACSPlaneStressConstitutive(props1);
-  TACSPlaneStressConstitutive *stiff2 = new TACSPlaneStressConstitutive(props2);
+  TacsScalar t1 = 1.0, t2 = 1.0;
+  int t1Num = 0, t2Num = 1;
+  TACSPlaneStressConstitutive *stiff1 =
+      new TACSPlaneStressConstitutive(props1, t1, t1Num);
+  TACSPlaneStressConstitutive *stiff2 =
+      new TACSPlaneStressConstitutive(props2, t2, t2Num);
 
   // Create the model class
   TACSHeatConduction2D *model1 = new TACSHeatConduction2D(stiff1);
@@ -277,9 +281,6 @@ int main(int argc, char *argv[]) {
   TACSLinearSpectralMat *mat = spectral->createLinearMat();
   mat->incref();
 
-  // Form the spectral problem
-  spectral->assembleMat(mat);
-
   // Create the multigrid preconditioner for the spectral problem
   int coarsen_time[max_nlevels - 1];
 
@@ -296,7 +297,8 @@ int main(int argc, char *argv[]) {
       new TACSLinearSpectralMg(mat, nlevels, assembler, interp, coarsen_time);
   mg->incref();
 
-  // Factor the matrix
+  // Form the spectral problem and factor it
+  spectral->assembleMat(mat);
   mg->factor();
 
   // Solve the problem
@@ -333,6 +335,8 @@ int main(int argc, char *argv[]) {
   // Set a monitor to check on solution progress
   int freq = 1;
   ksm->setMonitor(new KSMPrintStdout("GMRES", rank, freq));
+  double rtol = 1e-12, atol = 1e-30;
+  ksm->setTolerances(rtol, atol);
 
   // Compute the solution using GMRES
   ksm->solve(rhs, ans);
@@ -350,14 +354,73 @@ int main(int argc, char *argv[]) {
   TacsScalar fval;
   spectral->evalFunctions(1, &func, &fval);
 
-  if (rank == 0) {
-    printf("Maximum temperature: %25.15e\n", fval);
-  }
-
   TacsScalar res_norm = res->norm();
   if (rank == 0) {
+    printf("Maximum temperature: %25.15e\n", fval);
     printf("||R||: %25.15e\n", res_norm);
   }
+
+  TACSSpectralVec *dfdu = spectral->createVec();
+  dfdu->incref();
+
+  // Assemble the system of equations
+  spectral->evalSVSens(func, dfdu);
+
+  // Assemble the transpose matrix and factor it
+  spectral->assembleMat(mat, TACS_MAT_TRANSPOSE);
+  mg->factor();
+
+  // Solve for the adjoint variables
+  ksm->solve(dfdu, ans);
+
+  TACSBVec *dfdx = assembler[0]->createDesignVec();
+  dfdx->incref();
+
+  spectral->addAdjointResProduct(-1.0, ans, dfdx);
+
+  dfdx->beginSetValues(TACS_ADD_VALUES);
+  dfdx->endSetValues(TACS_ADD_VALUES);
+
+  TacsScalar *dfdx_array;
+  int len = dfdx->getArray(&dfdx_array);
+  for (int i = 0; i < len; i++) {
+    printf("dfdx[%d] = %25.15e\n", i, dfdx_array[i]);
+  }
+
+  TACSBVec *x = assembler[0]->createDesignVec();
+  assembler[0]->getDesignVars(x);
+  TACSBVec *px = assembler[0]->createDesignVec();
+  px->setRand(-1.0, 1.0);
+  double dh = 1e-6;
+  x->axpy(dh, px);
+
+  // Reset the design variable values
+  assembler[0]->setDesignVars(x);
+
+  // Assemble the matrix and factor it
+  spectral->assembleMat(mat);
+  mg->factor();
+
+  // Compute the solution using GMRES
+  ksm->solve(rhs, ans);
+
+  // Set the variables into TACS
+  spectral->setVariables(ans);
+
+  TacsScalar fval1;
+  spectral->evalFunctions(1, &func, &fval1);
+
+  TacsScalar fd = (fval1 - fval) / dh;
+  TacsScalar dot = dfdx->dot(px);
+
+  if (rank == 0) {
+    printf("FD:   %25.15e\n", TacsRealPart(fd));
+    printf("An:   %25.15e\n", TacsRealPart(dot));
+    printf("Err:  %25.15e\n", TacsRealPart((fd - dot) / fd));
+  }
+
+  dfdx->decref();
+  dfdu->decref();
 
   // Output for visualization
   ElementType etype = TACS_PLANE_STRESS_ELEMENT;

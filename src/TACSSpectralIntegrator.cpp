@@ -104,6 +104,9 @@ TACSBVec *TACSSpectralVec::getVec(int index) {
   return NULL;
 }
 
+/*
+  Create a time spectral matrix with the given integrator class
+*/
 TACSLinearSpectralMat::TACSLinearSpectralMat(TACSSpectralIntegrator *spec) {
   spectral = spec;
   spectral->incref();
@@ -147,12 +150,17 @@ void TACSLinearSpectralMat::mult(TACSVec *xvec, TACSVec *yvec) {
 
   if (x && y) {
     // Compute the contributions to the derivative
-    for (int i = 0; i < N; i++) {
-      // Start the derivative index from the second column of the derivative
-      // operator
-      int include_ics = 0;  // Do not include the initial conditions
-      spectral->computeDeriv(i + 1, x, temp, include_ics);
-      C->mult(temp, y->getVec(i));
+    if (orient == TACS_MAT_NORMAL) {
+      for (int i = 0; i < N; i++) {
+        int include_ics = 0;  // Do not include the initial conditions
+        spectral->computeDeriv(i + 1, x, temp, include_ics);
+        C->mult(temp, y->getVec(i));
+      }
+    } else {
+      for (int i = 0; i < N; i++) {
+        spectral->computeDerivTranspose(i + 1, x, temp);
+        C->mult(temp, y->getVec(i));
+      }
     }
 
     // Add the diagonal contributions
@@ -175,6 +183,10 @@ void TACSLinearSpectralMat::getMat(TACSParallelMat **Hmat,
 
 void TACSLinearSpectralMat::setMatrixOrientation(MatrixOrientation matOr) {
   orient = matOr;
+}
+
+MatrixOrientation TACSLinearSpectralMat::getMatrixOrientation() {
+  return orient;
 }
 
 int TACSLinearSpectralMat::getFirstOrderCoefficients(const double *d[]) {
@@ -245,6 +257,7 @@ TACSLinearSpectralMg::~TACSLinearSpectralMg() {
 void TACSLinearSpectralMg::factor() {
   for (int i = 0; i < nlevels; i++) {
     data[i]->factor();
+    data[i]->setMatrixOrientation(mat->getMatrixOrientation());
   }
 }
 
@@ -298,6 +311,9 @@ TACSLinearSpectralMg::MgData::MgData(MgData *_fine, int Nval, const double d[],
   if (interp) {
     interp->incref();
   }
+
+  // Set the default matrix orientations
+  orient = TACS_MAT_NORMAL;
 
   // Compute the non-zero pattern on this level
   if (fine) {
@@ -427,6 +443,11 @@ TACSLinearSpectralMg::MgData::~MgData() {
   }
 }
 
+void TACSLinearSpectralMg::MgData::setMatrixOrientation(
+    MatrixOrientation matOr) {
+  orient = matOr;
+}
+
 /*
   Factor the matrix at the current level
 */
@@ -452,29 +473,57 @@ void TACSLinearSpectralMg::MgData::factor() {
 /*
   Apply the smoother on the current mesh level
 
-  [ (H + d0[0] * C) |                                 ][out[0]] = [in[0]]
-  [      - d[1] * C | (H + d[1] * C) |                ][out[1]] = [in[1]]
-  [                       - d[2] * C | (H + d[2] * C) ][out[2]] = [in[2]]
+  if orient == TACS_MAT_NORMAL:
+  [ (H + d0[0] * C) |                                   ][out[0]] = [in[0]]
+  [     - d0[1] * C | (H + d0[1] * C) |                 ][out[1]] = [in[1]]
+  [                       - d0[2] * C | (H + d0[2] * C) ][out[2]] = [in[2]]
+
+  else:
+  [ (H + d0[0] * C) |    - d0[1] * C                    ][out[0]] = [in[0]]
+  [                 | (H + d0[1] * C) |    - d0[2] * C  ][out[1]] = [in[1]]
+  [                                   | (H + d0[2] * C) ][out[2]] = [in[2]]
 */
 void TACSLinearSpectralMg::MgData::applyFactor(TACSSpectralVec *in,
                                                TACSSpectralVec *out) {
-  if (direct) {
-    direct_pcs[0]->applyFactor(in->getVec(0), out->getVec(0));
+  if (orient == TACS_MAT_NORMAL) {
+    if (direct) {
+      direct_pcs[0]->applyFactor(in->getVec(0), out->getVec(0));
 
-    for (int i = 1; i < N; i++) {
-      // Form the right-hand-side = in[i] + d[i] * C * out[i - 1]
-      C->mult(out->getVec(i - 1), temp);
-      temp->axpby(1.0, d0[i], in->getVec(i));
-      direct_pcs[i]->applyFactor(temp, out->getVec(i));
+      for (int i = 1; i < N; i++) {
+        // Form the right-hand-side = in[i] + d0[i] * C * out[i - 1]
+        C->mult(out->getVec(i - 1), temp);
+        temp->axpby(1.0, d0[i], in->getVec(i));
+        direct_pcs[i]->applyFactor(temp, out->getVec(i));
+      }
+    } else {
+      smoothers[0]->applyFactor(in->getVec(0), out->getVec(0));
+
+      for (int i = 1; i < N; i++) {
+        // Form the right-hand-side = in[i] + d0[i] * C * out[i - 1]
+        C->mult(out->getVec(i - 1), temp);
+        temp->axpby(1.0, d0[i], in->getVec(i));
+        smoothers[i]->applyFactor(temp, out->getVec(i));
+      }
     }
   } else {
-    smoothers[0]->applyFactor(in->getVec(0), out->getVec(0));
+    if (direct) {
+      direct_pcs[N - 1]->applyFactor(in->getVec(N - 1), out->getVec(N - 1));
 
-    for (int i = 1; i < N; i++) {
-      // Form the right-hand-side = in[i] + d[i] * C * out[i - 1]
-      C->mult(out->getVec(i - 1), temp);
-      temp->axpby(1.0, d0[i], in->getVec(i));
-      smoothers[i]->applyFactor(temp, out->getVec(i));
+      for (int i = N - 2; i >= 0; i--) {
+        // Form the right-hand-side = in[i] + d0[i + 1] * C * out[i + 1]
+        C->mult(out->getVec(i + 1), temp);
+        temp->axpby(1.0, d0[i + 1], in->getVec(i));
+        direct_pcs[i]->applyFactor(temp, out->getVec(i));
+      }
+    } else {
+      smoothers[N - 1]->applyFactor(in->getVec(N - 1), out->getVec(N - 1));
+
+      for (int i = N - 2; i >= 0; i--) {
+        // Form the right-hand-side = in[i] + d0[i + 1] * C * out[i + 1]
+        C->mult(out->getVec(i + 1), temp);
+        temp->axpby(1.0, d0[i + 1], in->getVec(i));
+        smoothers[i]->applyFactor(temp, out->getVec(i));
+      }
     }
   }
 }
@@ -482,23 +531,44 @@ void TACSLinearSpectralMg::MgData::applyFactor(TACSSpectralVec *in,
 /*
   Perform a matrix-vector multiplication
 
-  [ (H + d0[0] * C) |                                 ][in[0]] = [out[0]]
-  [      - d[1] * C | (H + d[1] * C) |                ][in[1]] = [out[1]]
-  [                       - d[2] * C | (H + d[2] * C) ][in[2]] = [out[2]]
+  if orient == TACS_MAT_NORMAL:
+  [ (H + d0[0] * C) |                                   ][in[0]] = [out[0]]
+  [     - d0[1] * C | (H + d0[1] * C) |                 ][in[1]] = [out[1]]
+  [                       - d0[2] * C | (H + d0[2] * C) ][in[2]] = [out[2]]
+
+  else:
+  [ (H + d0[0] * C) |    - d0[1] * C                    ][in[0]] = [out[0]]
+  [                 | (H + d0[1] * C) |    - d0[2] * C  ][in[1]] = [out[1]]
+  [                                   | (H + d0[2] * C) ][in[2]] = [out[2]]
 */
 void TACSLinearSpectralMg::MgData::mult(TACSSpectralVec *in,
                                         TACSSpectralVec *out) {
-  for (int i = 0; i < N; i++) {
-    TACSBVec *outvec = out->getVec(i);
-    TACSBVec *invec = in->getVec(i);
+  if (orient == TACS_MAT_NORMAL) {
+    for (int i = 0; i < N; i++) {
+      TACSBVec *outvec = out->getVec(i);
+      TACSBVec *invec = in->getVec(i);
 
-    H->mult(invec, outvec);
-    if (i > 0) {
-      outvec->axpy(-d0[i], temp);
+      H->mult(invec, outvec);
+      if (i > 0) {
+        outvec->axpy(-d0[i], temp);
+      }
+
+      C->mult(invec, temp);
+      outvec->axpy(d0[i], temp);
     }
+  } else {
+    for (int i = N - 1; i >= 0; i--) {
+      TACSBVec *outvec = out->getVec(i);
+      TACSBVec *invec = in->getVec(i);
 
-    C->mult(invec, temp);
-    outvec->axpy(d0[i], temp);
+      H->mult(invec, outvec);
+      if (i < N - 1) {
+        outvec->axpy(-d0[i + 1], temp);
+      }
+
+      C->mult(invec, temp);
+      outvec->axpy(d0[i], temp);
+    }
   }
 }
 
@@ -762,6 +832,9 @@ void TACSSpectralIntegrator::assembleMat(TACSLinearSpectralMat *mat,
   mat->setMatrixOrientation(matOr);
 }
 
+/*
+  Use the spectral operator, compute the derivative
+*/
 void TACSSpectralIntegrator::computeDeriv(int index, TACSSpectralVec *sol,
                                           TACSBVec *dudt,
                                           int include_init_conditions) {
@@ -779,6 +852,23 @@ void TACSSpectralIntegrator::computeDeriv(int index, TACSSpectralVec *sol,
     // Finish adding the contributions from the remainder of the time interval
     for (int j = 0; j < N; j++) {
       dudt->axpy(Dt[j + 1], sol->getVec(j));
+    }
+  }
+}
+
+/*
+  Compute the action of the transpose of the spectral derivative operator
+*/
+void TACSSpectralIntegrator::computeDerivTranspose(int index,
+                                                   TACSSpectralVec *sol,
+                                                   TACSBVec *dudt) {
+  if (index > 0 && index < N + 1) {
+    const double *Dt = &D[index + (N + 1)];
+
+    dudt->zeroEntries();
+    for (int j = 0; j < N; j++) {
+      dudt->axpy(Dt[0], sol->getVec(j));
+      Dt += (N + 1);
     }
   }
 }
@@ -919,7 +1009,7 @@ void TACSSpectralIntegrator::evalSVSens(TACSFunction *func,
   TACSBVec *dudt = assembler->createVec();
   dudt->incref();
 
-  for (int i = 0; i < N + 1; i++) {
+  for (int i = 1; i < N + 1; i++) {
     // Get the solution values at the i-th LGL node
     TACSBVec *u = NULL;
     if (i == 0) {
@@ -934,7 +1024,7 @@ void TACSSpectralIntegrator::evalSVSens(TACSFunction *func,
     assembler->setVariables(u, dudt);
 
     TacsScalar tcoeff = 0.5 * wts[i] * (tfinal - tinit);
-    TACSBVec *vec = dfdu->getVec(i);
+    TACSBVec *vec = dfdu->getVec(i - 1);
     assembler->addSVSens(tcoeff, 0.0, 0.0, 1, &func, &vec);
   }
 
@@ -972,7 +1062,7 @@ void TACSSpectralIntegrator::addAdjointResProduct(TacsScalar scale,
   TACSBVec *dudt = assembler->createVec();
   dudt->incref();
 
-  for (int i = 0; i < N + 1; i++) {
+  for (int i = 1; i < N + 1; i++) {
     // Get the solution values at the i-th LGL node
     TACSBVec *u = NULL;
     if (i == 0) {
@@ -986,7 +1076,7 @@ void TACSSpectralIntegrator::addAdjointResProduct(TacsScalar scale,
     assembler->setSimulationTime(tpts[i]);
     assembler->setVariables(u, dudt);
 
-    TACSBVec *adj = adjoint->getVec(i);
+    TACSBVec *adj = adjoint->getVec(i - 1);
     assembler->addAdjointResProducts(scale, 1, &adj, &dfdx);
   }
 
