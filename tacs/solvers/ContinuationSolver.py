@@ -196,7 +196,7 @@ class ContinuationSolver(BaseSolver):
         BaseSolver.setOption(self, name, value)
 
         # Pass option to inner solver if it is a inner solver option
-        if name.lower() in self.innerSolver.defaultOptions:
+        if name.lower() in [opt.lower() for opt in self.innerSolver.defaultOptions]:
             self.innerSolver.setOption(name, value)
 
         # Update the predictor computation data structures if the relevant options are changed
