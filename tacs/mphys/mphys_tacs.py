@@ -406,7 +406,11 @@ class TacsSolver(om.ImplicitComponent):
         else:
             Fext = None
 
-        self.sp.solve(Fext=Fext)
+        hasConverged = self.sp.solve(Fext=Fext)
+        if not hasConverged:
+            # TODO: In future we could add something here to distinguish between fatal failures and those that could be recovered from
+            self.sp.zeroVariables()
+            raise om.AnalysisError("TACS solver did not converge")
         self.sp.getVariables(states=outputs[self.states_name])
 
     def solve_linear(self, d_outputs, d_residuals, mode):
