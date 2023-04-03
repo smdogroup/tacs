@@ -430,9 +430,12 @@ class StaticProblem(TACSProblem):
         # Default setOption for common problem class objects
         TACSProblem.setOption(self, name, value)
 
+        createVariables = True
+
         if self.KSM is not None:
             # Update tolerances
             if "l2convergence" in name.lower():
+                createVariables = False
                 self.KSM.setTolerances(
                     self.getOption("L2ConvergenceRel"),
                     self.getOption("L2Convergence"),
@@ -441,27 +444,36 @@ class StaticProblem(TACSProblem):
                     self.nonlinearSolver.setOption(
                         "newtonSolverRelLinTol", self.getOption("L2ConvergenceRel")
                     )
+
             # No need to reset solver for output options
-            elif name.lower() in [
+            if name.lower() in [
                 "writesolution",
                 "writenlitersolutions",
                 "printtiming",
                 "numbersolutions",
                 "outputdir",
             ]:
-                pass
-            # Pass option to nonlinear solver if it is a nonlinear solver option
-            elif name.lower() in self.nonlinearSolver.defaultOptions:
-                if self.nonlinearSolver is not None:
-                    self.nonlinearSolver.setOption(name, value)
-            # We need to create a new solver history object if the monitor variables have updated
-            elif (
-                name.lower() == "nonlinearSolverMonitorVars"
-                and self.history is not None
-            ):
-                self._createSolverHistory()
+                createVariables = False
+
+            if self.isNonlinear:
+                # Pass option to nonlinear solver if it is a nonlinear solver option
+                if name.lower() in [
+                    opt.lower() for opt in self.nonlinearSolver.defaultOptions
+                ]:
+                    createVariables = False
+                    if self.nonlinearSolver is not None:
+                        self.nonlinearSolver.setOption(name, value)
+
+                # We need to create a new solver history object if the monitor variables have updated
+                if (
+                    name.lower() in ["nonlinearsolvermonitorvars", "newtonsolveruseew"]
+                    and self.history is not None
+                ):
+                    createVariables = False
+                    self._createSolverHistory()
+
             # Reset solver for all other option changes
-            else:
+            if createVariables:
                 self._createVariables()
 
     @property
@@ -904,7 +916,7 @@ class StaticProblem(TACSProblem):
         initSolveTime = time.time()
 
         if self.isNonlinear:
-            self.solveNonlinear(Fext)
+            hasConverged = self.solveNonlinear(Fext)
         else:
             # Get current residual
             self.getResidual(self.res, Fext=Fext)
@@ -922,7 +934,7 @@ class StaticProblem(TACSProblem):
             initNormTime = time.time()
 
             # Solve Linear System for the update
-            self.solveLinear(self.res, self.update)
+            hasConverged = self.solveLinear(self.res, self.update)
 
             self.update.scale(-1.0)
 
@@ -979,7 +991,7 @@ class StaticProblem(TACSProblem):
                 )
                 self._pp("+--------------------------------------------------+")
 
-        return
+        return hasConverged
 
     def solveNonlinear(self, Fext=None):
         # Compute the internal and external force components of the residual at the current point
@@ -1002,6 +1014,9 @@ class StaticProblem(TACSProblem):
         # Since the state has changed, we need to flag that the jacobian and preconditioner should be before the next primal or adjoint solve
         self._preconditionerUpdateRequired = True
         self._jacobianUpdateRequired = True
+
+        # Finally return a bool indicating whether the solve was successful
+        return self.nonlinearSolver.hasConverged
 
     def _nonlinearCallback(self, solver, u, res, monitorVars):
         """Callback function to be called by the nonlinear solver at each iteration
@@ -1030,7 +1045,12 @@ class StaticProblem(TACSProblem):
         self.comm.bcast(iteration, root=0)
 
         if self.getOption("writeNLIterSolutions"):
-            self.writeSolution(baseName=f"{self.name}-NLIter", number=iteration)
+            # import pdb
+
+            # pdb.set_trace()
+            self.writeSolution(
+                baseName=f"{self.name}-{self.callCounter:03d}-NLIter", number=iteration
+            )
 
     def solveLinear(self, res, sol):
         """Solve the linear system J * sol = res using the current Jacobian matrix
