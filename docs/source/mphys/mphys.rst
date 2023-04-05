@@ -1,10 +1,7 @@
-pyTACS
-******
-The pyTACS interface utilizes a number of Python classes that automate the setup and running of models and analyses in TACS.
-This interface offers the following benefits over the :ref:`core/TACS:Direct` approach:
-has a more robust NASTRAN BDF mesh parsing capability, improved interface for applying loads to structural problems,
-fewer Python objects to keep track of when running typical analyses.
-The interface consists of two main groups of classes: an assembler class called :class:`~tacs.pytacs.pyTACS` and
+MPhys
+*****
+`MPhys <https://pypi.org/project/mphys/>`_ is a package that standardizes high-fidelity multiphysics problems in OpenMDAO. Mphys eases the problem set up, provides straightforward extension to new disciplines, and has a library of OpenMDAO groups for multidisciplinary problems addressed by its standard.
+The interface consists of two main groups of classes: an builder class called :class:`~tacs.mphys.mphys_tacs.TacsBuilder` and
 a set of problem classes for analysis. The details of the interfaces will be discussed in the sections below.
 
 Workflow
@@ -30,5 +27,4 @@ repeated until the optimization criteria are satisfied.
 .. toctree::
   :maxdepth: 1
 
-  pytacs_module
-  problems
+  builder

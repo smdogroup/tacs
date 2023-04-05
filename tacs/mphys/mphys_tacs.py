@@ -882,6 +882,26 @@ class TacsBuilder(Builder):
         write_solution=True,
         separate_mass_dvs=False,
     ):
+        """
+        TACS MPHYS builder class.
+
+        Parameters
+        ----------
+        options : dict
+            Options to be passed to pyTACS assembler.
+            See :ref:`pytacs/pytacs_module:Options` for list of acceptable options.
+        check_partials : bool
+            Flag to be used for debugging with OpenMDAO's `check_partials`. Defaults to False.
+        conduction : bool
+            Flag to switch to tacs conduction solver. Defaults to False.
+        coupled : bool
+            Flag to turn on coupling variables. Defaults to True.
+        write_solution : bool
+            Flag to turn on f5 file writer. Defaults to True.
+        separate_mass_dvs : bool
+            Flag to separate point mass dvs from struct dvs in OpenMDAO input array. Defaults to False.
+
+        """
         self.options = copy.deepcopy(options)
         self.check_partials = check_partials
         # Flag to switch to tacs conduction solver (False->structural)
@@ -894,6 +914,16 @@ class TacsBuilder(Builder):
         self.separate_mass_dvs = separate_mass_dvs
 
     def initialize(self, comm):
+        """
+        Initialize the solver, transfer scheme, etc.
+        This method will be called when the MPI comm is available
+
+        Parameters
+        ----------
+        comm : :class:`~mpi4py.MPI.Comm`
+            The communicator object created for this xfer object instance.
+
+        """
         pytacs_options = copy.deepcopy(self.options)
         bdf_file = pytacs_options.pop("mesh_file")
 
@@ -927,6 +957,20 @@ class TacsBuilder(Builder):
         self.fea_assembler.initialize(element_callback)
 
     def get_coupling_group_subsystem(self, scenario_name=None):
+        """
+        The subsystem that this builder will add to the CouplingGroup
+
+        Parameters
+        ----------
+        scenario_name : str or None
+            The name of the scenario calling the builder.
+
+        Returns
+        -------
+        subsystem : :class:`~openmdao.api.Component` or :class:`~openmdao.api.Group` or None
+            The openmdao subsystem that handles all the computations for
+            this solver. Transfer schemes can return multiple subsystems
+        """
         return TacsCouplingGroup(
             fea_assembler=self.fea_assembler,
             conduction=self.conduction,
@@ -937,9 +981,35 @@ class TacsBuilder(Builder):
         )
 
     def get_mesh_coordinate_subsystem(self, scenario_name=None):
+        """
+        The subsystem that contains the subsystem that will return the mesh
+        coordinates
+
+        Parameters
+        ----------
+        scenario_name : str or None
+            The name of the scenario calling the builder.
+
+        Returns
+        -------
+        mesh : :class:`~openmdao.api.Component` or :class:`~openmdao.api.Group` or None
+            The openmdao subsystem that has an output of coordinates.
+        """
         return TacsMeshGroup(fea_assembler=self.fea_assembler)
 
     def get_pre_coupling_subsystem(self, scenario_name=None):
+        """
+        Method that returns the openmdao subsystem to be added to each scenario before the coupling group
+
+        Parameters
+        ----------
+        scenario_name : str or None
+            The name of the scenario calling the builder.
+
+        Returns
+        -------
+        subsystem : :class:`~openmdao.api.Component` or :class:`~openmdao.api.Group` or None
+        """
         initial_dvs = self.get_initial_dvs()
         return TacsPrecouplingGroup(
             fea_assembler=self.fea_assembler,
@@ -948,6 +1018,18 @@ class TacsBuilder(Builder):
         )
 
     def get_post_coupling_subsystem(self, scenario_name=None):
+        """
+        Method that returns the openmdao subsystem to be added to each scenario after the coupling group
+
+        Parameters
+        ----------
+        scenario_name : str or None
+            The name of the scenario calling the builder.
+
+        Returns
+        -------
+        subsystem : :class:`~openmdao.api.Component` or :class:`~openmdao.api.Group` or None
+        """
         return TacsFuncsGroup(
             fea_assembler=self.fea_assembler,
             check_partials=self.check_partials,
@@ -958,12 +1040,26 @@ class TacsBuilder(Builder):
         )
 
     def get_ndof(self):
+        """
+        Method that returns the number of degrees of freedom
+        per node associated with model.
+
+        Returns
+        -------
+        ndof : int
+            number of degrees of freedom per node
+        """
         return self.fea_assembler.getVarsPerNode()
 
     def get_number_of_nodes(self):
         """
-        Get the number of nodes on this processor,
-        not including lagrange multiplier nodes
+        Method that returns the number of nodes defining the interface
+        (input) mesh, not including lagrange multiplier nodes
+
+        Returns
+        -------
+        number_of_nodes : int
+            number of nodes in the computational domain
         """
         nnodes = self.fea_assembler.getNumOwnedNodes()
         nmult = self.fea_assembler.getNumOwnedMultiplierNodes()
@@ -972,6 +1068,11 @@ class TacsBuilder(Builder):
     def get_initial_dvs(self):
         """
         Get an array holding all dvs values that have been added to TACS
+
+        Returns
+        -------
+        dvs : numpy.ndarray
+            initial values for distributed tacs design variable vector
         """
         if MPI is not None and self.comm.size > 1:
             # Get DVs locally owned by this processor
@@ -996,15 +1097,33 @@ class TacsBuilder(Builder):
     def get_ndv(self):
         """
         Get total number of structural design variables across all procs
+
+        Returns
+        -------
+        ndvs : int
+            Total number of tacs design variables across all processors.
         """
         return self.fea_assembler.getTotalNumDesignVars()
 
     def get_solver(self):
+        """
+        Get TACS assembler object used to construct scenario's in this builder
+
+        Returns
+        -------
+        assembler : tacs.TACS.Assembler
+            TACS Assembler object.
+        """
         # this method is only used by the RLT transfer scheme
         return self.fea_assembler.assembler
 
     def get_fea_assembler(self):
         """
         Returns underlying pytacs object.
+
+        Returns
+        -------
+        assembler : tacs.pytacs.pyTACS
+            pyTACS Assembler object.
         """
         return self.fea_assembler
