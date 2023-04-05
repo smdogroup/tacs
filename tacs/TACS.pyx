@@ -3750,6 +3750,15 @@ cdef class SpectralVec:
         if self.ptr:
             self.ptr.decref()
 
+    def zeroEntries(self):
+        """
+        zeroEntries(self)
+
+        Zero the entries in the vector
+        """
+        self.ptr.zeroEntries()
+        return
+
     def norm(self):
         """
         norm(self)
@@ -3820,7 +3829,7 @@ cdef class LinearSpectralMg(Pc):
             coarsen (list): List of true or false whether or not to coarsen in time
         """
         assert(len(assemblers) >= 2)
-        assert(len(assemblers) == len(interps) - 1)
+        assert(len(assemblers) == len(interps) + 1)
 
         cdef int nlevels = len(assemblers)
         cdef TACSAssembler **assemb = NULL
