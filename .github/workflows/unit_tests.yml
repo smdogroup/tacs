@@ -127,13 +127,15 @@ jobs:
             find . -name "test*" -type f -delete
             cd $TACS_DIR
           fi
-      - name: Run unit tests
+      - name: Run TACS unit tests
         run: |
-          # Reload ESP/CAPS environment variables if in real mode
-          if [[ ${{ matrix.NAME }} == 'Real' ]]; then
-            source ${TACS_DIR}/extern/ESP122/ESPenv.sh
-          fi
-          testflo --timeout 120 --isolated .;
+          testflo --timeout 120 --exclude="*test_caps*" .;
+      - name: Run TACS-CAPS unit tests
+        if: ${{ matrix.NAME == 'Real' }}
+        run: |
+          # Reload ESP/CAPS environment variables
+          source ${TACS_DIR}/extern/ESP122/ESPenv.sh
+          testflo --timeout 120 -n 1 ./tests/integration_tests/test_caps*;
       - name: Build docs
         run: |
           cd $TACS_DIR/docs;
