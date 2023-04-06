@@ -636,6 +636,7 @@ cdef class IsoShellConstitutive(ShellConstitutive):
 
         if len(args) >= 1:
             props = (<MaterialProperties>args[0]).ptr
+            self.props = args[0]
         if 't' in kwargs:
             t = kwargs['t']
         if 'tNum' in kwargs:
@@ -653,6 +654,21 @@ cdef class IsoShellConstitutive(ShellConstitutive):
         else:
             self.ptr = NULL
             self.cptr = NULL
+            self.props = None
+
+    def getNastranCard(self):
+        cdef double pt[3]
+        cdef TacsScalar X[3]
+        cdef int elemIndex = 0
+        cdef int index = 0
+        for i in range(3):
+            pt[i] = 0.0
+            X[i] = 0.0
+        t = self.cptr.evalDesignFieldValue(elemIndex, pt, X, index)
+        mat_id = self.props.getNastranID()
+        con = nastran_cards.properties.shell.PSHELL(self.nastranID, mat_id, t)
+        return con
+
 
 cdef class CompositeShellConstitutive(ShellConstitutive):
     """

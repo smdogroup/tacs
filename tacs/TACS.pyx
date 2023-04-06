@@ -453,6 +453,8 @@ cdef class Element:
 cdef class Constitutive:
     def __cinit__(self, *args, **kwargs):
         self.ptr = NULL
+        self.nastranID = 0
+        self.props = None
         return
 
     def __dealloc__(self):
@@ -470,6 +472,15 @@ cdef class Constitutive:
         if self.ptr:
             return self.ptr.getNumStresses()
         return 0
+
+    def setNastranID(self, id):
+        self.nastranID = id
+
+    def getNastranID(self):
+        return self.nastranID
+
+    def getMaterialProperties(self):
+        return self.props
 
     def getFailureEnvelope(self, sx, sy,
                            int elemIndex=0, int npts=100,
