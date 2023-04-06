@@ -130,6 +130,10 @@ SEP_LARGEST = LARGEST
 SEP_SMALLEST_MAGNITUDE = SMALLEST_MAGNITUDE
 SEP_LARGEST_MAGNITUDE = LARGEST_MAGNITUDE
 
+# Import the material types
+ISOTROPIC_MATERIAL = TACS_ISOTROPIC_MATERIAL
+ANISOTROPIC_MATERIAL = TACS_ANISOTROPIC_MATERIAL
+
 # This wraps a C++ array with a numpy array for later useage
 cdef inplace_array_1d(int nptype, int dim1, void *data_ptr,
                       PyObject *ptr):

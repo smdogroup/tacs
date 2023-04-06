@@ -46,7 +46,9 @@ cdef extern from "TACSMaterialProperties.h":
                                TacsScalar, TacsScalar, TacsScalar,
                                TacsScalar, TacsScalar, TacsScalar)
         void setDensity(TacsScalar)
+        TacsScalar getDensity();
         void setSpecificHeat(TacsScalar)
+        void getIsotropicProperties(TacsScalar*, TacsScalar*)
         void getOrthotropicProperties(TacsScalar*, TacsScalar*, TacsScalar*,
                                       TacsScalar*, TacsScalar*, TacsScalar*,
                                       TacsScalar*, TacsScalar*, TacsScalar*)
@@ -56,6 +58,8 @@ cdef extern from "TACSMaterialProperties.h":
         void getCoefThermalExpansion(TacsScalar*, TacsScalar*, TacsScalar*)
         void getThermalConductivity(TacsScalar*, TacsScalar*, TacsScalar*)
 
+        MaterialType getMaterialType();
+
     cdef cppclass TACSOrthotropicPly(TACSObject):
         TACSOrthotropicPly(TacsScalar, TACSMaterialProperties*)
         void setKSWeight(TacsScalar)
@@ -64,6 +68,7 @@ cdef extern from "TACSMaterialProperties.h":
 
 cdef class MaterialProperties:
     cdef TACSMaterialProperties *ptr
+    cdef int nastranID
 
 cdef inline _init_MaterialProperties(TACSMaterialProperties *ptr):
     props = MaterialProperties()

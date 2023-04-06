@@ -100,6 +100,11 @@ cdef extern from "KSM.h":
         TACS_MAT_NORMAL
         TACS_MAT_TRANSPOSE
 
+cdef extern from "TACSMaterialProperties.h":
+    enum MaterialType:
+        TACS_ISOTROPIC_MATERIAL
+        TACS_ANISOTROPIC_MATERIAL
+
 # Special functions required for converting pointers
 cdef extern from "":
     TACSSchurMat* _dynamicSchurMat "dynamic_cast<TACSSchurMat*>"(TACSMat*)

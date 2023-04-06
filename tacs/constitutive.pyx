@@ -23,6 +23,9 @@ cimport numpy as np
 # Ensure that numpy is initialized
 np.import_array()
 
+# Import pynastran
+import pyNastran.bdf.cards as nastran_cards
+
 # Import the definition required for const strings
 from libc.string cimport const_char
 from libc.stdlib cimport malloc, free
@@ -321,10 +324,38 @@ cdef class MaterialProperties:
             self.ptr = new TACSMaterialProperties(rho, specific_heat,
                                                   E, nu, ys, alpha, kappa)
         self.ptr.incref()
+        self.nastranID = 0
 
     def __dealloc__(self):
         if self.ptr:
             self.ptr.decref()
+
+    def setNastranID(self, id):
+        self.nastranID = id
+
+    def getNastranID(self):
+        return self.nastranID
+
+    def getNastranCard(self):
+        cdef TacsScalar E1, E2, E3, nu12, nu13, nu23, G12, G13, G23
+        cdef TacsScalar T1, C1, T2, C2, T3, C3, S12, S13, S23
+        cdef TacsScalar alpha1, alpha2, alpha3
+        cdef TacsScalar kappa1, kappa2, kappa3
+        cdef TacsScalar rho;
+
+        rho = self.ptr.getDensity()
+        self.ptr.getStrengthProperties(&T1, &C1, &T2, &C2, &T3, &C3,
+                                       &S12, &S13, &S23)
+
+        if  self.ptr.getMaterialType() == TACS_ISOTROPIC_MATERIAL:
+            self.ptr.getIsotropicProperties(&E1, &nu12)
+            mat = nastran_cards.materials.MAT1(self.nastranID, E1, None, nu12, St=T1)
+        else:
+            self.ptr.getOrthotropicProperties(&E1, &E2, &E3, &nu12, &nu13, &nu23, &G12, &G13, &G23)
+            mat = nastran_cards.materials.MAT8(self.nastranID, E1, E2, nu12, G12, G13, G23, rho,
+                                               Xt=T1, Xc=C1, Yt=T2, Yc=C2, S=S12)
+
+        return mat
 
     def getMaterialProperties(self):
         """
