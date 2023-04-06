@@ -575,6 +575,7 @@ cdef class SolidConstitutive(Constitutive):
 
         if len(args) >= 1:
             props = (<MaterialProperties>args[0]).ptr
+            self.props = args[0]
         if 't' in kwargs:
             t = kwargs['t']
         if 'tNum' in kwargs:
@@ -592,10 +593,13 @@ cdef class SolidConstitutive(Constitutive):
         else:
             self.ptr = NULL
             self.cptr = NULL
+            self.props = None
 
-    def getMaterialProperties(self):
+    def getNastranCard(self):
         if self.cptr:
-            return _init_MaterialProperties(self.cptr.getMaterialProperties())
+            mat_id = self.props.getNastranID()
+            con = nastran_cards.properties.shell.PSOLID(self.nastranID, mat_id)
+            return con
         return None
 
 cdef class ShellConstitutive(Constitutive):
@@ -709,6 +713,8 @@ cdef class CompositeShellConstitutive(ShellConstitutive):
 
         # Free the allocated array
         free(plys)
+
+        self.props = ply_list
 
 cdef class LamParamShellConstitutive(ShellConstitutive):
     def __cinit__(self, OrthotropicPly ply, **kwargs):

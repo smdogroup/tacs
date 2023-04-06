@@ -482,6 +482,9 @@ cdef class Constitutive:
     def getMaterialProperties(self):
         return self.props
 
+    def getNastranCard(self):
+        return None
+
     def getFailureEnvelope(self, sx, sy,
                            int elemIndex=0, int npts=100,
                            pt=[0.0, 0.0, 0.0], X=[0.0, 0.0, 0.0]):
