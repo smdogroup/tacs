@@ -120,6 +120,8 @@ cdef extern from "TACSCompositeShellConstitutive.h":
     cdef cppclass TACSCompositeShellConstitutive(TACSShellConstitutive):
         TACSCompositeShellConstitutive(int, TACSOrthotropicPly**, const TacsScalar*,
                                        const TacsScalar*, TacsScalar)
+        void getPlyThicknesses(TacsScalar*);
+        void getPlyAngles(TacsScalar*);
 
 cdef extern from "TACSLamParamShellConstitutive.h":
     cdef cppclass TACSLamParamShellConstitutive(TACSShellConstitutive):

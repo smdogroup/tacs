@@ -444,6 +444,8 @@ cdef class OrthotropicPly:
             Defaults to False (i.e. use max strength).
     """
     cdef TACSOrthotropicPly *ptr
+    cdef MaterialProperties props
+    cdef int nastranID
     def __cinit__(self, TacsScalar ply_thickness, MaterialProperties props,
                   max_strain_criterion=False):
         self.ptr = new TACSOrthotropicPly(ply_thickness, props.ptr)
@@ -453,6 +455,7 @@ cdef class OrthotropicPly:
         else:
             self.ptr.setUseTsaiWuCriterion()
         self.props = props
+        self.nastranID = 0
 
     def __dealloc__(self):
         self.ptr.decref()
@@ -683,7 +686,7 @@ cdef class IsoShellConstitutive(ShellConstitutive):
             X[i] = 0.0
         t = self.cptr.evalDesignFieldValue(elemIndex, pt, X, index)
         mat_id = self.props.getNastranID()
-        con = nastran_cards.properties.shell.PSHELL(self.nastranID, mat_id, t)
+        con = nastran_cards.properties.shell.PSHELL(self.nastranID, mat_id, float(t))
         return con
 
 
@@ -728,6 +731,25 @@ cdef class CompositeShellConstitutive(ShellConstitutive):
         free(plys)
 
         self.props = ply_list
+
+    def getNastranCard(self):
+        num_plies = len(self.props)
+        cdef TACSCompositeShellConstitutive* comp_ptr = <TACSCompositeShellConstitutive*>self.cptr
+        cdef np.ndarray ply_thicknesses = np.zeros(num_plies, dtype)
+        cdef np.ndarray ply_angles = np.zeros(num_plies, dtype)
+
+        comp_ptr.getPlyThicknesses(<TacsScalar*>ply_thicknesses.data)
+        comp_ptr.getPlyAngles(<TacsScalar*>ply_angles.data)
+
+        mat_ids = []
+        for i in range(num_plies):
+            ply_id = self.props[i].getNastranID()
+            mat_ids.append(ply_id)
+
+        prop = nastran_cards.properties.shell.PCOMP(self.nastranID, mat_ids,
+                                                    ply_thicknesses.astype(float),
+                                                    ply_angles.astype(float))
+        return prop
 
 cdef class LamParamShellConstitutive(ShellConstitutive):
     def __cinit__(self, OrthotropicPly ply, **kwargs):
