@@ -452,9 +452,20 @@ cdef class OrthotropicPly:
             self.ptr.setUseMaxStrainCriterion()
         else:
             self.ptr.setUseTsaiWuCriterion()
+        self.props = props
 
     def __dealloc__(self):
         self.ptr.decref()
+
+    def setNastranID(self, id):
+        self.nastranID = id
+        self.props.setNastranID(id)
+
+    def getNastranID(self):
+        return self.props.getNastranID()
+
+    def getNastranCard(self):
+        return self.props.getNastranCard()
 
 cdef class PlaneStressConstitutive(Constitutive):
     """
@@ -525,6 +536,7 @@ cdef class PhaseChangeMaterialConstitutive(Constitutive):
         if len(args) >= 2:
             solid_props = (<MaterialProperties>args[0]).ptr
             liquid_props = (<MaterialProperties>args[1]).ptr
+            self.props = [args[0], args[1]]
         if 'lh' in kwargs:
             lh = kwargs['lh']
         if 'Tm' in kwargs:
@@ -550,6 +562,7 @@ cdef class PhaseChangeMaterialConstitutive(Constitutive):
         else:
             self.ptr = NULL
             self.cptr = NULL
+            self.props = None
 
 cdef class SolidConstitutive(Constitutive):
     """
