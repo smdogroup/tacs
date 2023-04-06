@@ -107,6 +107,8 @@ cdef extern from "":
     TACSParallelMat* _dynamicParallelMat "dynamic_cast<TACSParallelMat*>"(TACSMat*)
     TACSMg* _dynamicTACSMg "dynamic_cast<TACSMg*>"(TACSPc*)
     GMRES* _dynamicGMRES "dynamic_cast<GMRES*>"(TACSKsm*)
+    TACSBVec* _dynamicBVec "dynamic_cast<TACSBVec*>"(TACSVec*)
+    TACSSpectralVec* _dynamicSpectralVec "dynamic_cast<TACSSpectralVec*>"(TACSVec*)
     void deleteArray "delete []"(void*)
 
 cdef extern from "TACSObject.h":
@@ -293,9 +295,10 @@ cdef extern from "TACSMg.h":
         void setMonitor(KSMPrint*)
 
 cdef class Vec:
-    cdef TACSBVec *ptr
+    cdef TACSVec *ptr
+    cdef TACSBVec* getBVecPtr(self)
 
-cdef inline _init_Vec(TACSBVec *ptr):
+cdef inline _init_Vec(TACSVec *ptr):
     vec = Vec()
     vec.ptr = ptr
     vec.ptr.incref()
@@ -813,7 +816,7 @@ cdef extern from "TACSIntegrator.h":
                           int order)
 
 cdef extern from "TACSSpectralIntegrator.h":
-    cdef cppclass TACSSpectralVec(TACSObject):
+    cdef cppclass TACSSpectralVec(TACSVec):
         TacsScalar norm()
         void scale(TacsScalar)
         TacsScalar dot(TACSSpectralVec*)
@@ -832,6 +835,12 @@ cdef extern from "TACSSpectralIntegrator.h":
 
     cdef cppclass TACSSpectralIntegrator(TACSObject):
         TACSSpectralIntegrator(TACSAssembler*, double, int)
+
+        int getNumLGLNodes()
+        double getPointAtLGLNode(int)
+        double getTimeAtLGLNode(int);
+        double getWeightAtLGLNode(int)
+        TACSAssembler *getAssembler()
 
         TACSSpectralVec *createVec()
         TACSLinearSpectralMat *createLinearMat()

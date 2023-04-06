@@ -363,10 +363,15 @@ TACSLinearSpectralMg::MgData::MgData(MgData *_fine, int Nval, const double d[],
     w0 = w1 = NULL;
   }
 
-  x = new TACSSpectralVec(N, assembler);
-  x->incref();
-  b = new TACSSpectralVec(N, assembler);
-  b->incref();
+  // Only allocate the solution and right-hand-side vectors on the coarse meshes
+  if (fine) {
+    x = new TACSSpectralVec(N, assembler);
+    x->incref();
+    b = new TACSSpectralVec(N, assembler);
+    b->incref();
+  } else {
+    x = b = NULL;
+  }
   r = new TACSSpectralVec(N, assembler);
   r->incref();
 
@@ -413,8 +418,12 @@ TACSLinearSpectralMg::MgData::~MgData() {
   if (interp) {
     interp->decref();
   }
-  x->decref();
-  b->decref();
+  if (x) {
+    x->decref();
+  }
+  if (b) {
+    b->decref();
+  }
   r->decref();
   temp->decref();
   H->decref();
@@ -784,6 +793,38 @@ TACSSpectralIntegrator::~TACSSpectralIntegrator() {
   if (d0) {
     delete[] d0;
   }
+}
+
+int TACSSpectralIntegrator::getNumLGLNodes() { return N + 1; }
+
+double TACSSpectralIntegrator::getPointAtLGLNode(int index) {
+  if (index >= 0.0 && index <= N) {
+    return pts[index];
+  }
+  return 0.0;
+}
+
+double TACSSpectralIntegrator::getTimeAtLGLNode(int index) {
+  if (index >= 0.0 && index <= N) {
+    return tpts[index];
+  }
+  return 0.0;
+}
+
+double TACSSpectralIntegrator::getWeightAtLGLNode(int index) {
+  if (index >= 0.0 && index <= N) {
+    return wts[index];
+  }
+  return 0.0;
+}
+
+TACSAssembler *TACSSpectralIntegrator::getAssembler() { return assembler; }
+
+int TACSSpectralIntegrator::getFirstOrderCoefficients(const double *d[]) {
+  if (d) {
+    *d = d0;
+  }
+  return N;
 }
 
 TACSSpectralVec *TACSSpectralIntegrator::createVec() {
@@ -1176,7 +1217,7 @@ void TACSSpectralIntegrator::initLGLPointsAndWeights(int max_newton_iters,
   // Compute the points in time
   tpts = new double[N + 1];
   for (int j = 0; j < N + 1; j++) {
-    tpts[j] = tinit + 2.0 * (tfinal - tinit) * (pts[j] + 1.0);
+    tpts[j] = tinit + 0.5 * (tfinal - tinit) * (pts[j] + 1.0);
   }
 
   delete[] pts0;

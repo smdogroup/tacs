@@ -157,8 +157,12 @@ class TACSSpectralIntegrator : public TACSObject {
   TACSSpectralIntegrator(TACSAssembler *_assembler, double tfinal, int N);
   ~TACSSpectralIntegrator();
 
-  int getNumLGLNodes() { return N + 1; }
-  TACSAssembler *getAssembler() { return assembler; }
+  int getNumLGLNodes();
+  double getPointAtLGLNode(int index);
+  double getTimeAtLGLNode(int index);
+  double getWeightAtLGLNode(int index);
+  TACSAssembler *getAssembler();
+  int getFirstOrderCoefficients(const double *d[]);
 
   TACSSpectralVec *createVec();
   TACSLinearSpectralMat *createLinearMat();
@@ -183,13 +187,6 @@ class TACSSpectralIntegrator : public TACSObject {
   // Compute the solution at a point in the time interval
   void computeSolutionAndDeriv(double time, TACSSpectralVec *sol, TACSBVec *u,
                                TACSBVec *dudt = NULL);
-
-  int getFirstOrderCoefficients(const double *d[]) {
-    if (d) {
-      *d = d0;
-    }
-    return N;
-  }
 
  private:
   // Initialize the LGL points and weights
