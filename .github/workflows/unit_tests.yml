@@ -129,7 +129,7 @@ jobs:
           fi
       - name: Run TACS unit tests
         run: |
-          testflo --timeout 120 --exclude="*test_caps*" .;
+          testflo --timeout 120 .;
       - name: Run TACS-CAPS unit tests
         if: ${{ matrix.NAME == 'Real' }}
         run: |
