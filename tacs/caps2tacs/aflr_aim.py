@@ -37,12 +37,13 @@ class AflrAim:
             self._aim = self.caps_problem.analysis.create(aim="aflr4AIM", name="aflr4")
         return
 
-    def set_mesh(self, ff_growth=1.4, min_scale=0.05, max_scale=0.5):
+    def set_mesh(self, ff_growth=1.4, min_scale=0.05, max_scale=0.5, use_quad=False):
         # set surface mesh properties
         if self.root_proc:
             self.aim.input.ff_cdfr = ff_growth
             self.aim.input.min_scale = min_scale
             self.aim.input.max_scale = max_scale
+            self.aim.input.EGADS_Quad = use_quad
         return self
 
     def register_to(self, tacs_aim):

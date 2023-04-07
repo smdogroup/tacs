@@ -101,6 +101,7 @@ patbeg ispar nspars
    # add caps attributes
    select face
    attribute capsGroup !$spar+ispar
+   ATTRIBUTE AFLR_GBC $TRANSP_UG3_GBC
    attribute _color $green
 patend
 
@@ -120,6 +121,7 @@ patbeg index ninnerRibs
    # add caps attributes
    select face
    attribute capsGroup !$rib+irib
+   ATTRIBUTE AFLR_GBC $TRANSP_UG3_GBC
    attribute _color $green
 
    # union with previous ribs/spars
@@ -167,6 +169,7 @@ udprim editAttr filename <<
 
 # add load attribute to OML
 select face $capsGroup $OML
+ATTRIBUTE AFLR_GBC $TRANSP_UG3_GBC
 attribute capsLoad $OML
 
 # use this to refine certain edges
@@ -183,4 +186,4 @@ attribute capsMeshLength 1.0
 attribute capsAIM $aflr4AIM;tacsAIM
 
 end
-|||||
+||||||||
