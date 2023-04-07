@@ -165,27 +165,18 @@ udprim editAttr filename <<
 
  NODE ADJ2FACE capsConstraint=root
  SET capsConstraint=root
-
-   node adj2edge tagType=TrailingEdge
-   set           ignoreNode=true
-
-   edge adj2node ignoreNode=true
-   set           ignoreEdge=true
-
-   face adj2node ignoreNode=true
-   set           ignoreFace=true
 >>
 
 # add load attribute to OML
 select face $capsGroup $OML
-ATTRIBUTE AFLR_GBC $TRANSP_UG3_GBC
+#ATTRIBUTE AFLR_GBC $TRANSP_UG3_GBC
 attribute capsLoad $OML
 
 # use this to refine certain edges
 #ATTRIBUTE AFLR4_Edge_Refinement_Weight 1.0
 
 select face
-ATTRIBUTE AFLR_GBC $TRANSP_UG3_GBC
+#ATTRIBUTE AFLR_GBC $TRANSP_UG3_GBC
 attribute capsMesh $OML
 
 # add AIM attribute to specify the analyses to use
@@ -195,4 +186,4 @@ attribute capsMeshLength 1.0
 attribute capsAIM $aflr4AIM;tacsAIM;egadsTessAIM
 
 end
-||||||||
+||||||||||||
