@@ -595,6 +595,23 @@ BCSRMat::~BCSRMat() {
   }
 }
 
+/*
+  Create a duplicate of the BCSRMat non-zero data
+*/
+BCSRMat *BCSRMat::createDuplicate() {
+  int bsize = data->bsize;
+  int nrows = data->nrows;
+  int ncols = data->ncols;
+  int *rowp = new int[nrows + 1];
+  memcpy(rowp, data->rowp, (nrows + 1) * sizeof(int));
+
+  int size = rowp[nrows];
+  int *cols = new int[size];
+  memcpy(cols, data->cols, size * sizeof(int));
+
+  return new BCSRMat(comm, thread_info, bsize, nrows, ncols, &rowp, &cols);
+}
+
 MPI_Comm BCSRMat::getMPIComm() { return comm; }
 
 TACSThreadInfo *BCSRMat::getThreadInfo() { return thread_info; }

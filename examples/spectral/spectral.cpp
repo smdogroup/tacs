@@ -1,9 +1,11 @@
 #include "TACSAssembler.h"
 #include "TACSCreator.h"
 #include "TACSElement2D.h"
-#include "TACSLinearElasticity.h"
+#include "TACSHeatConduction.h"
+#include "TACSKSTemperature.h"
 #include "TACSMg.h"
 #include "TACSQuadBasis.h"
+#include "TACSSpectralIntegrator.h"
 #include "TACSToFH5.h"
 
 /*
@@ -16,7 +18,7 @@ void createAssembler(MPI_Comm comm, int nx, int ny, TACSAssembler **_assembler,
   MPI_Comm_rank(comm, &rank);
 
   // Set the number of nodes/elements on this proc
-  int varsPerNode = 2;
+  int varsPerNode = 1;
 
   // Set up the creator object
   TACSCreator *creator = new TACSCreator(comm, varsPerNode);
@@ -63,14 +65,11 @@ void createAssembler(MPI_Comm comm, int nx, int ny, TACSAssembler **_assembler,
     delete[] ids;
 
     // We're over-counting one of the nodes on each edge
-    int numBcs = 4 * (nx + 1);
+    int numBcs = (nx + 1);
     int *bcNodes = new int[numBcs];
 
     for (int i = 0; i < (nx + 1); i++) {
-      bcNodes[4 * i] = i;
-      bcNodes[4 * i + 1] = i + (nx + 1) * ny;
-      bcNodes[4 * i + 2] = i * (nx + 1);
-      bcNodes[4 * i + 3] = (i + 1) * (nx + 1) - 1;
+      bcNodes[i] = i;
     }
 
     // Set the boundary conditions
@@ -108,14 +107,16 @@ void createAssembler(MPI_Comm comm, int nx, int ny, TACSAssembler **_assembler,
       new TACSMaterialProperties(rho, specific_heat, E2, nu, ys, cte, kappa);
 
   // Create the stiffness object
-  TACSPlaneStressConstitutive *stiff1 = new TACSPlaneStressConstitutive(props1);
-  TACSPlaneStressConstitutive *stiff2 = new TACSPlaneStressConstitutive(props2);
+  TacsScalar t1 = 1.0, t2 = 1.0;
+  int t1Num = 0, t2Num = 1;
+  TACSPlaneStressConstitutive *stiff1 =
+      new TACSPlaneStressConstitutive(props1, t1, t1Num);
+  TACSPlaneStressConstitutive *stiff2 =
+      new TACSPlaneStressConstitutive(props2, t2, t2Num);
 
   // Create the model class
-  TACSLinearElasticity2D *model1 =
-      new TACSLinearElasticity2D(stiff1, TACS_LINEAR_STRAIN);
-  TACSLinearElasticity2D *model2 =
-      new TACSLinearElasticity2D(stiff2, TACS_LINEAR_STRAIN);
+  TACSHeatConduction2D *model1 = new TACSHeatConduction2D(stiff1);
+  TACSHeatConduction2D *model2 = new TACSHeatConduction2D(stiff2);
 
   // Create the element class
   TACSElementBasis *linear_basis = new TACSLinearQuadBasis();
@@ -141,22 +142,7 @@ void createAssembler(MPI_Comm comm, int nx, int ny, TACSAssembler **_assembler,
 
 /*
   The following code illustrates the use of the geometric multigrid
-  capabilities in TACS using a flat plate example.
-
-  The main work required is the assembly of the inter-grid operators
-  themselves. The TACSBVecInterp class is used to simplify the set up
-  of these operators which are stored explicitly.
-
-  The multigrid operations are performed using the TACSMg object which
-  inherits from the TACSPc interface. It can be used directly as a
-  preconditioner and needs to be "factored" in the same manner as
-  regular preconditioners.
-
-  TACSMg has a number of member functions which facilitate setting
-  state and design variables on all multigrid levels and matrix
-  assembly.  Matrix assembly on all levels can be performed by calling
-  the assembleJacobian() and the assembleMatType() functions directly
-  in the TACSMg interface.
+  capabilities in TACS combined with a spectral time integration technique.
 */
 int main(int argc, char *argv[]) {
   MPI_Init(&argc, &argv);
@@ -175,6 +161,9 @@ int main(int argc, char *argv[]) {
   // Set the dimension of the largest meshes
   int nx = 128;
   int ny = 128;
+
+  // Use GMRES (if not, use GCROT)
+  int use_gmres = 1;
 
   // Get the global size of the mesh from the input
   for (int k = 0; k < argc; k++) {
@@ -197,11 +186,10 @@ int main(int argc, char *argv[]) {
         nlevels = max_nlevels;
       }
     }
+    if (strcmp("use_gcrot", argv[k]) == 0) {
+      use_gmres = 0;
+    }
   }
-
-  // Create the multigrid object
-  TACSMg *mg = new TACSMg(comm, nlevels);
-  mg->incref();
 
   // Create the TACS/Creator objects for all levels
   for (int i = 0; i < nlevels; i++) {
@@ -215,8 +203,6 @@ int main(int argc, char *argv[]) {
       printf("Assembler creation time for level %d: %e\n", i, t0);
     }
   }
-
-  double tmg = MPI_Wtime();
 
   // Allocate the interpolation objects for all remaining levels
   TACSBVecInterp *interp[max_nlevels - 1];
@@ -282,84 +268,159 @@ int main(int argc, char *argv[]) {
     // Initialize the interpolation object. This is a collective
     // call that distributes the interpolation operator.
     interp[level]->initialize();
-
-    // Set the multigrid information at this level
-    double tlev = MPI_Wtime();
-    int use_galerkin = 1;
-    mg->setLevel(level, assembler[level], interp[level], 1, use_galerkin);
-    tlev = MPI_Wtime() - tlev;
-    if (rank == 0) {
-      printf("Initialization time for level %d: %e\n", level, tlev);
-    }
   }
 
-  // Set the model at the lowest grid level
-  int use_galerkin = 1;
-  mg->setLevel(nlevels - 1, assembler[nlevels - 1], NULL, 1, use_galerkin);
+  // Now create the spectral integrator class
+  double tfinal = 300.0;  // Final time for the simulation
+  int N = 32;
+  TACSSpectralIntegrator *spectral =
+      new TACSSpectralIntegrator(assembler[0], tfinal, N);
+  spectral->incref();
 
-  // We no longer require any of the creator objects
-  for (int i = 0; i < nlevels; i++) {
-    creator[i]->decref();
+  // Create the matrix
+  TACSLinearSpectralMat *mat = spectral->createLinearMat();
+  mat->incref();
+
+  // Create the multigrid preconditioner for the spectral problem
+  int coarsen_time[max_nlevels - 1];
+
+  for (int i = 0; i < nlevels - 1; i++) {
+    coarsen_time[i] = 0;
   }
 
-  tmg = MPI_Wtime() - tmg;
-  if (rank == 0) {
-    printf("TACSMg creation time: %e\n", tmg);
+  // Only coarsen the time twice and not at the first level
+  for (int i = 3; i <= 4 && i < nlevels - 1; i++) {
+    coarsen_time[i] = 1;
   }
 
-  // Create the residual and solution vectors on the finest TACS mesh
-  TACSBVec *force = assembler[0]->createVec();
-  force->incref();
-  TACSBVec *res = assembler[0]->createVec();
+  TACSLinearSpectralMg *mg =
+      new TACSLinearSpectralMg(mat, nlevels, assembler, interp, coarsen_time);
+  mg->incref();
+
+  // Form the spectral problem and factor it
+  spectral->assembleMat(mat);
+  mg->factor();
+
+  // Solve the problem
+  TACSSpectralVec *res = spectral->createVec();
   res->incref();
-  TACSBVec *ans = assembler[0]->createVec();
+  TACSSpectralVec *rhs = spectral->createVec();
+  rhs->incref();
+  TACSSpectralVec *ans = spectral->createVec();
   ans->incref();
 
-  // Allocate the GMRES solution method
-  int gmres_iters = 25;
-  int nrestart = 8;
-  int is_flexible = 0;
-  GMRES *ksm = new GMRES(mg->getMat(0), mg, gmres_iters, nrestart, is_flexible);
+  // Set the values of the right-hand-side
+  for (int i = N / 2; i < N; i++) {
+    rhs->getVec(i)->set(100.0);
+    assembler[0]->applyBCs(rhs->getVec(i));
+  }
+
+  TACSKsm *ksm = NULL;
+
+  if (use_gmres) {
+    // Allocate the GMRES solution method
+    int gmres_subspace = 50;
+    int nrestart = 8;
+    int is_flexible = 0;
+    ksm = new GMRES(mat, mg, gmres_subspace, nrestart, is_flexible);
+  } else {
+    int gmres_subspace = 25;
+    int outer = 10;
+    int max_outer = 5 * outer;
+    int is_flexible = 1;
+    ksm = new GCROT(mat, mg, outer, max_outer, gmres_subspace, is_flexible);
+  }
   ksm->incref();
 
   // Set a monitor to check on solution progress
-  int freq = 1;
+  int freq = 5;
   ksm->setMonitor(new KSMPrintStdout("GMRES", rank, freq));
+  double rtol = 1e-12, atol = 1e-30;
+  ksm->setTolerances(rtol, atol);
 
-  // The initial time
-  double t0 = MPI_Wtime();
+  // Compute the solution using GMRES
+  ksm->solve(rhs, ans);
 
-  // Assemble the Jacobian matrix for each level
-  mg->assembleJacobian(1.0, 0.0, 0.0, res);
+  // Set the variables into TACS
+  spectral->setVariables(ans);
+  spectral->assembleRes(res);
+  res->axpy(-1.0, rhs);
 
-  force->zeroEntries();
-  TacsScalar *force_array;
-  int size = force->getArray(&force_array);
-  for (int i = 1; i < size; i += 2) {
-    force_array[i] = 1.0;
+  // Evaluate a function of interest
+  double ksweight = 100;
+  TACSFunction *func = new TACSKSTemperature(assembler[0], ksweight);
+  func->incref();
+
+  TacsScalar fval;
+  spectral->evalFunctions(1, &func, &fval);
+
+  TacsScalar res_norm = res->norm();
+  if (rank == 0) {
+    printf("Maximum temperature: %25.15e\n", TacsRealPart(fval));
+    printf("||R||: %25.15e\n", TacsRealPart(res_norm));
   }
-  assembler[0]->applyBCs(force);
 
-  // Factor the preconditioner
+  TACSSpectralVec *dfdu = spectral->createVec();
+  dfdu->incref();
+
+  // Assemble the system of equations
+  spectral->evalSVSens(func, dfdu);
+
+  // Assemble the transpose matrix and factor it
+  spectral->assembleMat(mat, TACS_MAT_TRANSPOSE);
+  mg->factor();
+
+  // Solve for the adjoint variables
+  ksm->solve(dfdu, ans);
+
+  TACSBVec *dfdx = assembler[0]->createDesignVec();
+  dfdx->incref();
+
+  spectral->addAdjointResProduct(-1.0, ans, dfdx);
+
+  dfdx->beginSetValues(TACS_ADD_VALUES);
+  dfdx->endSetValues(TACS_ADD_VALUES);
+
+  TacsScalar *dfdx_array;
+  int len = dfdx->getArray(&dfdx_array);
+  for (int i = 0; i < len; i++) {
+    printf("dfdx[%d] = %25.15e\n", i, TacsRealPart(dfdx_array[i]));
+  }
+
+  TACSBVec *x = assembler[0]->createDesignVec();
+  assembler[0]->getDesignVars(x);
+  TACSBVec *px = assembler[0]->createDesignVec();
+  px->setRand(-1.0, 1.0);
+  double dh = 1e-6;
+  x->axpy(dh, px);
+
+  // Reset the design variable values
+  assembler[0]->setDesignVars(x);
+
+  // Assemble the matrix and factor it
+  spectral->assembleMat(mat);
   mg->factor();
 
   // Compute the solution using GMRES
-  ksm->solve(force, ans);
-
-  t0 = MPI_Wtime() - t0;
+  ksm->solve(rhs, ans);
 
   // Set the variables into TACS
-  assembler[0]->setVariables(ans);
+  spectral->setVariables(ans);
 
-  // Compute the residual
-  TACSMat *matrix = mg->getMat(0);
-  matrix->mult(ans, res);
-  res->axpy(-1.0, force);
-  TacsScalar res_norm = res->norm();
+  TacsScalar fval1;
+  spectral->evalFunctions(1, &func, &fval1);
+
+  TacsScalar fd = (fval1 - fval) / dh;
+  TacsScalar dot = dfdx->dot(px);
+
   if (rank == 0) {
-    printf("||R||: %15.5e\n", TacsRealPart(res_norm));
-    printf("Solution time: %e\n", t0);
+    printf("FD:   %25.15e\n", TacsRealPart(fd));
+    printf("An:   %25.15e\n", TacsRealPart(dot));
+    printf("Err:  %25.15e\n", TacsRealPart((fd - dot) / fd));
   }
+
+  dfdx->decref();
+  dfdu->decref();
 
   // Output for visualization
   ElementType etype = TACS_PLANE_STRESS_ELEMENT;
@@ -368,17 +429,32 @@ int main(int argc, char *argv[]) {
                     TACS_OUTPUT_STRESSES | TACS_OUTPUT_EXTRAS);
   TACSToFH5 *f5 = new TACSToFH5(assembler[0], etype, write_flag);
   f5->incref();
-  f5->writeToFile("plate.f5");
+
+  TACSBVec *u = assembler[0]->createVec();
+  u->incref();
+
+  int nviz = 100;
+  for (int i = 0; i < nviz; i++) {
+    char filename[256];
+    snprintf(filename, sizeof(filename), "plate%d.f5", i);
+
+    double time = i * tfinal / (nviz - 1);
+    spectral->computeSolutionAndDeriv(time, ans, u);
+    assembler[0]->setVariables(u);
+    f5->writeToFile(filename);
+  }
+
+  u->decref();
 
   // Free the memory
   f5->decref();
   ans->decref();
   res->decref();
-  force->decref();
   ksm->decref();
   for (int i = 0; i < nlevels; i++) {
     assembler[i]->decref();
   }
+  spectral->decref();
 
   MPI_Finalize();
   return (0);
