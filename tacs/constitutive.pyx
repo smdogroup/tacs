@@ -1016,6 +1016,7 @@ cdef class IsoRectangleBeamConstitutive(BeamConstitutive):
 
         if len(args) >= 1:
             props = (<MaterialProperties>args[0]).ptr
+            self.props = args[0]
         if 'w' in kwargs:
             w = kwargs['w']
         if 'wNum' in kwargs:
@@ -1041,6 +1042,7 @@ cdef class IsoRectangleBeamConstitutive(BeamConstitutive):
         else:
             self.ptr = NULL
             self.cptr = NULL
+            self.props = None
 
     def getNastranCard(self):
         cdef double pt[3]
@@ -1278,6 +1280,24 @@ cdef class DOFSpringConstitutive(GeneralSpringConstitutive):
 
         self.ptr = self.cptr
         self.ptr.incref()
+
+    def getNastranCard(self):
+        cdef double pt[3]
+        cdef TacsScalar X[3]
+        cdef int elemIndex = 0
+        cdef int num_stress = 0
+        for i in range(3):
+            pt[i] = 0.0
+            X[i] = 0.0
+        # Pluck out stiffness constants using evalStress method
+        num_stress = self.cptr.getNumStresses()
+        cdef np.ndarray e = np.ones(num_stress, dtype=dtype)
+        cdef np.ndarray s = np.zeros(num_stress, dtype=dtype)
+        self.cptr.evalStress(elemIndex, pt, X, <TacsScalar*>e.data, <TacsScalar*>s.data)
+        k = list(s.astype(float))
+        damping = list(np.zeros(6, dtype=float))
+        prop = nastran_cards.properties.bush.PBUSH(self.nastranID, k, damping, damping)
+        return prop
 
 def TestConstitutive(Constitutive con, int elemIndex=0, double dh=1e-6,
                      int test_print_level=2, double atol=1e-30,

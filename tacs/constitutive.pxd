@@ -169,6 +169,7 @@ cdef extern from "TACSPointMassConstitutive.h":
 cdef extern from "TACSGeneralSpringConstitutive.h":
     cdef cppclass TACSGeneralSpringConstitutive(TACSConstitutive):
         TACSGeneralSpringConstitutive(TacsScalar*)
+        void evalMassMatrix(int, const double *, const TacsScalar *, TacsScalar *)
 
 cdef class GeneralSpringConstitutive(Constitutive):
     cdef TACSGeneralSpringConstitutive *cptr
