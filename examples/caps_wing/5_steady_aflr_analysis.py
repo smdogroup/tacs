@@ -15,9 +15,9 @@ comm = MPI.COMM_WORLD
 tacs_model = caps2tacs.TacsModel.build(
     csm_file="simple_naca_aflr.csm", comm=comm, mesh="aflr"
 )
-tacs_model.mesh_aim.set_mesh(ff_growth=1.4, min_scale=0.05, max_scale=0.5).register_to(
-    tacs_model
-)
+tacs_model.mesh_aim.set_mesh(
+    ff_growth=1.4, min_scale=0.05, max_scale=0.5, use_quad=True
+).register_to(tacs_model)
 
 aluminum = caps2tacs.Isotropic.aluminum().register_to(tacs_model)
 

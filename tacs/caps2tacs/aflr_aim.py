@@ -3,7 +3,10 @@ __all__ = ["AflrAim"]
 
 class AflrAim:
     def __init__(self, caps_problem, comm, root=0):
-        """MPI wrapper class for AflrAIM from ESP/CAPS"""
+        """
+        MPI wrapper class for AflrAIM from ESP/CAPS
+        Requires use of ESPbeta at the moment
+        """
 
         self.caps_problem = caps_problem
         self.comm = comm
@@ -37,13 +40,19 @@ class AflrAim:
             self._aim = self.caps_problem.analysis.create(aim="aflr4AIM", name="aflr4")
         return
 
+    def _auto_set(self):
+        """add any automatic settings"""
+        if self.root_proc:
+            self._aim.input.no_prox = True
+        return
+
     def set_mesh(self, ff_growth=1.4, min_scale=0.05, max_scale=0.5, use_quad=False):
         # set surface mesh properties
         if self.root_proc:
             self.aim.input.ff_cdfr = ff_growth
             self.aim.input.min_scale = min_scale
             self.aim.input.max_scale = max_scale
-            self.aim.input.EGADS_Quad = use_quad
+            self.aim.input.AFLR4_Quad = use_quad
         return self
 
     def register_to(self, tacs_aim):
