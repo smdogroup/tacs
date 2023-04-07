@@ -406,6 +406,8 @@ cdef class Function:
 cdef extern from "TACSConstitutive.h":
     cdef cppclass TACSConstitutive(TACSObject):
         int getNumStresses()
+        void evalStress(int, const double*, const TacsScalar*,
+                        const TacsScalar*, TacsScalar*)
         TacsScalar evalDesignFieldValue(int, const double*,
                              const TacsScalar*, int)
         void getFailureEnvelope(int, int, const double*,

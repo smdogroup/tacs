@@ -52,7 +52,7 @@ cdef class MaterialProperties:
     The goal of this class is to store a set of material properties
     that can be queried by constitutive classes for beams, shells,
     plane stress and solid elements. The minimum set of properties
-    consists of isotroic mechanical properties, with zero thermal
+    consists of isotropic mechanical properties, with zero thermal
     expansion.
 
     There are several different ways of specifying material
@@ -480,8 +480,8 @@ cdef class PlaneStressConstitutive(Constitutive):
         t (float or complex, optional): The material thickness (keyword argument). Defaults to 1.0.
         tNum (int, optional): Design variable number to assign to thickness (keyword argument). Defaults to -1
             (i.e. no design variable).
-        tlb (float or complex, optional): Thickness varaible lower bound (keyword argument). Defaults to 0.0.
-        tub (float or complex, optional): Thickness varaible upper bound (keyword argument). Defaults to 10.0.
+        tlb (float or complex, optional): Thickness variable lower bound (keyword argument). Defaults to 0.0.
+        tub (float or complex, optional): Thickness variable upper bound (keyword argument). Defaults to 10.0.
     """
     def __cinit__(self, *args, **kwargs):
         cdef TACSMaterialProperties *props = NULL
@@ -522,8 +522,8 @@ cdef class PhaseChangeMaterialConstitutive(Constitutive):
         t (float or complex, optional): The material thickness (keyword argument). Defaults to 1.0.
         tNum (int, optional): Design variable number to assign to thickness (keyword argument). Defaults to -1
             (i.e. no design variable).
-        tlb (float or complex, optional): Thickness varaible lower bound (keyword argument). Defaults to 0.0.
-        tub (float or complex, optional): Thickness varaible upper bound (keyword argument). Defaults to 10.0.
+        tlb (float or complex, optional): Thickness variable lower bound (keyword argument). Defaults to 0.0.
+        tub (float or complex, optional): Thickness variable upper bound (keyword argument). Defaults to 10.0.
     """
     def __cinit__(self, *args, **kwargs):
         cdef TACSMaterialProperties *solid_props = NULL
@@ -579,8 +579,8 @@ cdef class SolidConstitutive(Constitutive):
             1.0 corresponds material fully present, values in between are intermediate. Defaults to 1.0.
         tNum (int, optional): Design variable number to assign to "thickness" (keyword argument). Defaults to -1
             (i.e. no design variable).
-        tlb (float or complex, optional): "Thickness" varaible lower bound (keyword argument). Defaults to 0.0.
-        tub (float or complex, optional): "Thickness" varaible upper bound (keyword argument). Defaults to 10.0.
+        tlb (float or complex, optional): "Thickness" variable lower bound (keyword argument). Defaults to 0.0.
+        tub (float or complex, optional): "Thickness" variable upper bound (keyword argument). Defaults to 10.0.
     """
     def __cinit__(self, *args, **kwargs):
         cdef TACSMaterialProperties *props = NULL
@@ -748,7 +748,7 @@ cdef class CompositeShellConstitutive(ShellConstitutive):
 
         prop = nastran_cards.properties.shell.PCOMP(self.nastranID, mat_ids,
                                                     ply_thicknesses.astype(float),
-                                                    ply_angles.astype(float))
+                                                    np.rad2deg(ply_angles, dtype=float))
         return prop
 
 cdef class LamParamShellConstitutive(ShellConstitutive):
@@ -856,6 +856,7 @@ cdef class BasicBeamConstitutive(BeamConstitutive):
 
         if len(args) >= 1:
             props = (<MaterialProperties>args[0]).ptr
+            self.props = args[0]
         if 'A' in kwargs:
             A = kwargs['A']
         if 'J' in kwargs:
@@ -874,6 +875,40 @@ cdef class BasicBeamConstitutive(BeamConstitutive):
         self.cptr = new TACSBasicBeamConstitutive(props, A, J, Iy, Iz, Iyz, ky, kz)
         self.ptr = self.cptr
         self.ptr.incref()
+
+    def getNastranCard(self):
+        cdef double pt[3]
+        cdef TacsScalar X[3]
+        cdef int elemIndex = 0
+        cdef int num_stress = 0
+        for i in range(3):
+            pt[i] = 0.0
+            X[i] = 0.0
+        mat_id = self.props.getNastranID()
+        mat_dict = self.props.getMaterialProperties()
+        E, nu, G = mat_dict["E1"], mat_dict["nu12"], mat_dict["G12"]
+        # Pluck out stiffness constants using evalStress method
+        num_stress = self.cptr.getNumStresses()
+        cdef np.ndarray e = np.zeros(num_stress, dtype=dtype)
+        cdef np.ndarray s = np.zeros(num_stress, dtype=dtype)
+        # Have to evaluate two separate times to isolate coupling (Iyz) term
+        e[0] = 1.0 / E
+        e[1] = 1.0 / G
+        e[2] = 1.0 / E
+        self.cptr.evalStress(elemIndex, pt, X, <TacsScalar*>e.data, <TacsScalar*>s.data)
+        A = s[0]
+        J = s[1]
+        Iz = s[2]
+        Iyz = s[3]
+        e[:] = 0.0
+        e[3] = 1.0 / E
+        e[4:5] = 1.0 / (G * A)
+        self.cptr.evalStress(elemIndex, pt, X, <TacsScalar*>e.data, <TacsScalar*>s.data)
+        Iy = s[3]
+        ky = s[4]
+        kz = s[5]
+        prop = nastran_cards.properties.bars.PBAR(self.nastranID, mat_id, A, Iz, Iy, Iyz, J, k1=ky, k2=kz)
+        return prop
 
 cdef class IsoTubeBeamConstitutive(BeamConstitutive):
     """
@@ -905,6 +940,7 @@ cdef class IsoTubeBeamConstitutive(BeamConstitutive):
 
         if len(args) >= 1:
             props = (<MaterialProperties>args[0]).ptr
+            self.props = args[0]
         if 'd' in kwargs:
             d = kwargs['d']
         if 'dNum' in kwargs:
@@ -930,6 +966,22 @@ cdef class IsoTubeBeamConstitutive(BeamConstitutive):
         else:
             self.ptr = NULL
             self.cptr = NULL
+            self.props = None
+
+    def getNastranCard(self):
+        cdef double pt[3]
+        cdef TacsScalar X[3]
+        cdef int elemIndex = 0
+        for i in range(3):
+            pt[i] = 0.0
+            X[i] = 0.0
+        d = self.cptr.evalDesignFieldValue(elemIndex, pt, X, 0)
+        t = self.cptr.evalDesignFieldValue(elemIndex, pt, X, 1)
+        ri = d/2
+        ro = ri + t
+        mat_id = self.props.getNastranID()
+        con = nastran_cards.properties.bars.PBARL(self.nastranID, mat_id, "TUBE", [ro, ri])
+        return con
 
 cdef class IsoRectangleBeamConstitutive(BeamConstitutive):
     """
@@ -989,6 +1041,19 @@ cdef class IsoRectangleBeamConstitutive(BeamConstitutive):
         else:
             self.ptr = NULL
             self.cptr = NULL
+
+    def getNastranCard(self):
+        cdef double pt[3]
+        cdef TacsScalar X[3]
+        cdef int elemIndex = 0
+        for i in range(3):
+            pt[i] = 0.0
+            X[i] = 0.0
+        w = self.cptr.evalDesignFieldValue(elemIndex, pt, X, 0)
+        t = self.cptr.evalDesignFieldValue(elemIndex, pt, X, 1)
+        mat_id = self.props.getNastranID()
+        con = nastran_cards.properties.bars.PBARL(self.nastranID, mat_id, "BAR", [t, w])
+        return con
 
 cdef class GeneralMassConstitutive(Constitutive):
     """
