@@ -160,6 +160,10 @@ class TACSMat : public TACSObject {
   virtual void beginAssembly() {}
   virtual void endAssembly() {}
 
+  // Create a duplicate with the same non-zero pattern. Values are not copied
+  // ------------------------------------------------------------------------
+  virtual TACSMat *createDuplicate() { return NULL; }
+
   // Create vectors/retrieve sizes
   // -----------------------------
   virtual void getSize(int *_nr, int *_nc) {}
