@@ -91,7 +91,7 @@ probOptions = {
     "newtonSolverUseEW": True,
     "nRestarts": 3,
     "subSpaceSize": 20,
-    "newtonSolverMonitorVars": [
+    "nonlinearSolverMonitorVars": [
         "lambda",
         "linsolveriters",
         "linsolverres",
@@ -103,7 +103,6 @@ probOptions = {
     "printTiming": True,
 }
 problem = FEAAssembler.createStaticProblem("RadialForces", options=probOptions)
-
 
 # ==============================================================================
 # Find tip force points

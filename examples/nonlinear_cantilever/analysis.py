@@ -87,7 +87,10 @@ probOptions = {
     "printTiming": True,
     "skipFirstNLineSearch": 0,
     "newtonSolverCoarseRelTol": 1e-3,
-    "continuationInitialStep": 0.1,
+    "continuationInitialStep": 0.05,
+    "continuationUsePredictor": True,
+    "continuationNumPredictorStates": 7,
+    "writeNLIterSolutions": True,
 }
 forceProblem = FEAAssembler.createStaticProblem("TipForce", options=probOptions)
 momentProblem = FEAAssembler.createStaticProblem("TipMoment", options=probOptions)
