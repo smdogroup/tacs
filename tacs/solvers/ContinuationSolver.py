@@ -83,7 +83,7 @@ class ContinuationSolver(BaseSolver):
             8,
             "Target number of Newton iterations for each continuation increment.",
         ],
-        "continuationMaxIter": [int, 100, "Maximum number of continuation steps."],
+        "continuationMaxIter": [int, 30, "Maximum number of continuation steps."],
         "continuationInitialStep": [float, 0.2, "Initial continuation step size."],
         "continuationMinStep": [float, 1e-4, "Minimum continuation step size."],
         "continuationMaxStep": [float, np.inf, "Maximum continuation step size."],
@@ -274,6 +274,7 @@ class ContinuationSolver(BaseSolver):
         # done by the resulting Newton step:
         # optLoadScale = (Fe^T dUi + Fi^T dUe) / (-2 Fe^T dUe)
         # Where: Fe = external force, Fi = internal force, dUi = inv(K) * Fi, dUe = inv(K) * Fe
+        isRestartIncrement = False
         if np.real(self.stateVec.norm()) > 0:
             self.jacFunc()
             self.pcUpdateFunc()
@@ -290,13 +291,15 @@ class ContinuationSolver(BaseSolver):
                 # solution if we just reset the displacements to zero and start the solver from there
                 self.stateVec.zeroEntries()
                 self.setStateFunc(self.stateVec)
-                optLoadScale = self.getLambdaFunc()
+                optLoadScale = INIT_STEP
             elif np.abs(optLoadScale - MAX_LAMBDA) < 1e-2:
                 # If the optimum load scale is close to the max load scale then we'll just use the max load scale
                 optLoadScale = MAX_LAMBDA
+                isRestartIncrement = True
             else:
                 # Otherwise choose the maximum of the ideal load scale and the default initial load scale
                 optLoadScale = max(optLoadScale, INIT_STEP)
+                isRestartIncrement = True
                 # If the optimum load scale is greater than the max we want to get to then we need to reverse the
                 # direction of load incrementation
                 if optLoadScale > MAX_LAMBDA:
@@ -365,14 +368,23 @@ class ContinuationSolver(BaseSolver):
             # --- Check convergence ---
             isLastIncrement = increment == MAX_INCREMENTS - 1
             if not success:
-                # If the inner solve failed then we'll reduce the step size and try again, unless we've hit the increment limit
-                if not isLastIncrement and stepSize > MIN_STEP:
+                # If this was the first increment restarting from a previous solution then we don't have a safe state to reset to, so we just have to do a full reset
+                if isRestartIncrement:
+                    self.stateVec.zeroEntries()
+                    self.incStartState.zeroEntries()
+                    self.setStateFunc(self.stateVec)
+                    stepSize = INIT_STEP
+                    currentLambda = 0.0
+                    loadStepDirection = 1
+                # If the inner solve failed then we'll reduce the step size and try again, unless we've hit the increment or step size limits
+                elif not isLastIncrement and stepSize > MIN_STEP:
                     self.setStateFunc(self.incStartState)
                     currentLambda -= stepSize * loadStepDirection
                     self.setLambdaFunc(currentLambda)
                     stepSize *= STEP_RETRACT_FACTOR
                 else:
                     self._fatalFailure = self.innerSolver.fatalFailure
+                    break
             else:
                 # If inner solver converged and we're at the max load scale then we're done
                 if currentLambda == MAX_LAMBDA:
@@ -396,6 +408,8 @@ class ContinuationSolver(BaseSolver):
             stepSize = np.clip(stepSize, MIN_STEP, maxStep)
             currentLambda += loadStepDirection * stepSize
             self.setLambdaFunc(currentLambda)
+
+            isRestartIncrement = False
 
         if result is not None:
             result.copyValues(self.stateVec)

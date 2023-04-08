@@ -1015,6 +1015,12 @@ class StaticProblem(TACSProblem):
         self._preconditionerUpdateRequired = True
         self._jacobianUpdateRequired = True
 
+        # We should also reset the linear solver convergence so that any loosening of the linear convergence criteria are undone before a possible adjoint solve
+        self.KSM.setTolerances(
+            self.getOption("L2ConvergenceRel"),
+            self.getOption("L2Convergence"),
+        )
+
         # Finally return a bool indicating whether the solve was successful
         return self.nonlinearSolver.hasConverged
 
