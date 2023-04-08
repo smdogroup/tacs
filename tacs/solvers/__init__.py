@@ -1,7 +1,7 @@
-from .BaseSolver import BaseSolver
+from .base import BaseSolver
 
-from .NewtonSolver import NewtonSolver
+from .newton import NewtonSolver
 
-from .ContinuationSolver import ContinuationSolver
+from .continuation import ContinuationSolver
 
-__all__ = ["NewtonSolver", "ContinuationSolver"]
+__all__ = ["newton", "continuation"]
