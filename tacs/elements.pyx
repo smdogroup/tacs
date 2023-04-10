@@ -388,6 +388,7 @@ cdef class HeatConduction2D(ElementModel):
     def __cinit__(self, PlaneStressConstitutive con):
         self.ptr = new TACSHeatConduction2D(con.cptr)
         self.ptr.incref()
+        self.con = con
 
 cdef class PCMHeatConduction2D(ElementModel):
     """
@@ -402,6 +403,7 @@ cdef class PCMHeatConduction2D(ElementModel):
     def __cinit__(self, PhaseChangeMaterialConstitutive con):
         self.ptr = new TACSPCMHeatConduction2D(con.cptr)
         self.ptr.incref()
+        self.con = con
 
 cdef class LinearElasticity2D(ElementModel):
     """
@@ -416,6 +418,7 @@ cdef class LinearElasticity2D(ElementModel):
     def __cinit__(self, PlaneStressConstitutive con):
         self.ptr = new TACSLinearElasticity2D(con.cptr, TACS_LINEAR_STRAIN)
         self.ptr.incref()
+        self.con = con
 
 cdef class LinearThermoelasticity2D(ElementModel):
     """
@@ -432,6 +435,7 @@ cdef class LinearThermoelasticity2D(ElementModel):
         self.ptr = new TACSLinearThermoelasticity2D(con.cptr, TACS_LINEAR_STRAIN,
                                                     steady_flag)
         self.ptr.incref()
+        self.con = con
 
 
 cdef class HeatConduction3D(ElementModel):
@@ -447,6 +451,7 @@ cdef class HeatConduction3D(ElementModel):
     def __cinit__(self, SolidConstitutive con):
         self.ptr = new TACSHeatConduction3D(con.cptr)
         self.ptr.incref()
+        self.con = con
 
 cdef class LinearElasticity3D(ElementModel):
     """
@@ -463,14 +468,7 @@ cdef class LinearElasticity3D(ElementModel):
         self.leptr = new TACSLinearElasticity3D(con.cptr, TACS_LINEAR_STRAIN)
         self.ptr = self.leptr
         self.ptr.incref()
-
-    def getConstitutive(self):
-        if self.leptr:
-            scon = SolidConstitutive()
-            scon.ptr = self.leptr.getConstitutive()
-            scon.ptr.incref()
-            return scon
-        return None
+        self.con = con
 
 cdef class LinearThermoelasticity3D(ElementModel):
     """
@@ -487,16 +485,19 @@ cdef class LinearThermoelasticity3D(ElementModel):
         self.ptr = new TACSLinearThermoelasticity3D(con.cptr, TACS_LINEAR_STRAIN,
                                                     steady_flag)
         self.ptr.incref()
+        self.con = con
 
 cdef class PlateModel(ElementModel):
     def __cinit__(self, ShellConstitutive con):
         self.ptr = new TACSPlateModel(con.cptr)
         self.ptr.incref()
+        self.con = con
 
 cdef class ThermoelasticPlateModel(ElementModel):
     def __cinit__(self, ShellConstitutive con):
         self.ptr = new TACSThermoelasticPlateModel(con.cptr)
         self.ptr.incref()
+        self.con = con
 
 cdef class Element2D(Element):
     """
@@ -514,6 +515,7 @@ cdef class Element2D(Element):
     def __cinit__(self, ElementModel model, ElementBasis basis):
         self.ptr = new TACSElement2D(model.ptr, basis.ptr)
         self.ptr.incref()
+        self.con = model.getConstitutive()
 
 cdef class Element3D(Element):
     """
@@ -531,6 +533,7 @@ cdef class Element3D(Element):
     def __cinit__(self, ElementModel model, ElementBasis basis):
         self.ptr = new TACSElement3D(model.ptr, basis.ptr)
         self.ptr.incref()
+        self.con = model.getConstitutive()
 
 cdef class Traction2D(Element):
     def __cinit__(self, int varsPerNode, int faceIndex,
@@ -654,6 +657,7 @@ cdef class Quad4Shell(Element):
             transform = ShellNaturalTransform()
         self.ptr = new TACSQuad4Shell(transform.ptr, con.cptr)
         self.ptr.incref()
+        self.con = con
 
 cdef class Quad4NonlinearShell(Element):
     """
@@ -679,6 +683,7 @@ cdef class Quad4NonlinearShell(Element):
             transform = ShellNaturalTransform()
         self.ptr = new TACSQuad4NonlinearShell(transform.ptr, con.cptr)
         self.ptr.incref()
+        self.con = con
 
 cdef class Quad9Shell(Element):
     """
@@ -704,6 +709,7 @@ cdef class Quad9Shell(Element):
             transform = ShellNaturalTransform()
         self.ptr = new TACSQuad9Shell(transform.ptr, con.cptr)
         self.ptr.incref()
+        self.con = con
 
 cdef class Quad9NonlinearShell(Element):
     """
@@ -729,6 +735,7 @@ cdef class Quad9NonlinearShell(Element):
             transform = ShellNaturalTransform()
         self.ptr = new TACSQuad9NonlinearShell(transform.ptr, con.cptr)
         self.ptr.incref()
+        self.con = con
 
 cdef class Quad16Shell(Element):
     """
@@ -754,6 +761,7 @@ cdef class Quad16Shell(Element):
             transform = ShellNaturalTransform()
         self.ptr = new TACSQuad16Shell(transform.ptr, con.cptr)
         self.ptr.incref()
+        self.con = con
 
 cdef class Quad16NonlinearShell(Element):
     """
@@ -779,6 +787,7 @@ cdef class Quad16NonlinearShell(Element):
             transform = ShellNaturalTransform()
         self.ptr = new TACSQuad16NonlinearShell(transform.ptr, con.cptr)
         self.ptr.incref()
+        self.con = con
 
 cdef class Tri3Shell(Element):
     """
@@ -804,6 +813,7 @@ cdef class Tri3Shell(Element):
             transform = ShellNaturalTransform()
         self.ptr = new TACSTri3Shell(transform.ptr, con.cptr)
         self.ptr.incref()
+        self.con = con
 
 cdef class Tri3NonlinearShell(Element):
     """
@@ -829,6 +839,7 @@ cdef class Tri3NonlinearShell(Element):
             transform = ShellNaturalTransform()
         self.ptr = new TACSTri3NonlinearShell(transform.ptr, con.cptr)
         self.ptr.incref()
+        self.con = con
 
 cdef class Quad4ThermalShell(Element):
     """
@@ -854,6 +865,7 @@ cdef class Quad4ThermalShell(Element):
             transform = ShellNaturalTransform()
         self.ptr = new TACSQuad4ThermalShell(transform.ptr, con.cptr)
         self.ptr.incref()
+        self.con = con
 
 cdef class Quad4NonlinearThermalShell(Element):
     """
@@ -879,6 +891,7 @@ cdef class Quad4NonlinearThermalShell(Element):
             transform = ShellNaturalTransform()
         self.ptr = new TACSQuad4NonlinearThermalShell(transform.ptr, con.cptr)
         self.ptr.incref()
+        self.con = con
 
 cdef class Quad4ShellQuaternion(Element):
     """
@@ -904,6 +917,7 @@ cdef class Quad4ShellQuaternion(Element):
             transform = ShellNaturalTransform()
         self.ptr = new TACSQuad4ShellQuaternion(transform.ptr, con.cptr)
         self.ptr.incref()
+        self.con = con
 
 cdef class Quad4ShellModRot(Element):
     """
@@ -929,6 +943,7 @@ cdef class Quad4ShellModRot(Element):
             transform = ShellNaturalTransform()
         self.ptr = new TACSQuad4ShellModRot(transform.ptr, con.cptr)
         self.ptr.incref()
+        self.con = con
 
 cdef class Quad9ThermalShell(Element):
     """
@@ -954,6 +969,7 @@ cdef class Quad9ThermalShell(Element):
             transform = ShellNaturalTransform()
         self.ptr = new TACSQuad9ThermalShell(transform.ptr, con.cptr)
         self.ptr.incref()
+        self.con = con
 
 cdef class Quad9NonlinearThermalShell(Element):
     """
@@ -979,6 +995,7 @@ cdef class Quad9NonlinearThermalShell(Element):
             transform = ShellNaturalTransform()
         self.ptr = new TACSQuad9NonlinearThermalShell(transform.ptr, con.cptr)
         self.ptr.incref()
+        self.con = con
 
 cdef class Quad16ThermalShell(Element):
     """
@@ -1004,6 +1021,7 @@ cdef class Quad16ThermalShell(Element):
             transform = ShellNaturalTransform()
         self.ptr = new TACSQuad16ThermalShell(transform.ptr, con.cptr)
         self.ptr.incref()
+        self.con = con
 
 cdef class Quad16NonlinearThermalShell(Element):
     """
@@ -1029,6 +1047,7 @@ cdef class Quad16NonlinearThermalShell(Element):
             transform = ShellNaturalTransform()
         self.ptr = new TACSQuad16NonlinearThermalShell(transform.ptr, con.cptr)
         self.ptr.incref()
+        self.con = con
 
 cdef class Tri3ThermalShell(Element):
     """
@@ -1054,6 +1073,7 @@ cdef class Tri3ThermalShell(Element):
             transform = ShellNaturalTransform()
         self.ptr = new TACSTri3ThermalShell(transform.ptr, con.cptr)
         self.ptr.incref()
+        self.con = con
 
 cdef class Tri3NonlinearThermalShell(Element):
     """
@@ -1079,6 +1099,7 @@ cdef class Tri3NonlinearThermalShell(Element):
             transform = ShellNaturalTransform()
         self.ptr = new TACSTri3NonlinearThermalShell(transform.ptr, con.cptr)
         self.ptr.incref()
+        self.con = con
 
 cdef class BeamTransform:
     cdef TACSBeamTransform *ptr
@@ -1126,6 +1147,7 @@ cdef class Beam2(Element):
     def __cinit__(self, BeamTransform transform, BeamConstitutive con):
         self.ptr = new TACSBeam2(transform.ptr, con.cptr)
         self.ptr.incref()
+        self.con = con
 
 cdef class Beam3(Element):
     """
@@ -1143,6 +1165,7 @@ cdef class Beam3(Element):
     def __cinit__(self, BeamTransform transform, BeamConstitutive con):
         self.ptr = new TACSBeam3(transform.ptr, con.cptr)
         self.ptr.incref()
+        self.con = con
 
 cdef class Beam2ModRot(Element):
     """
@@ -1161,6 +1184,7 @@ cdef class Beam2ModRot(Element):
     def __cinit__(self, BeamTransform transform, BeamConstitutive con):
         self.ptr = new TACSBeam2ModRot(transform.ptr, con.cptr)
         self.ptr.incref()
+        self.con = con
 
 cdef class Beam3ModRot(Element):
     """
@@ -1179,6 +1203,7 @@ cdef class Beam3ModRot(Element):
     def __cinit__(self, BeamTransform transform, BeamConstitutive con):
         self.ptr = new TACSBeam3ModRot(transform.ptr, con.cptr)
         self.ptr.incref()
+        self.con = con
 
 cdef class SpringTransform:
     cdef TACSSpringTransform *ptr
@@ -1261,6 +1286,7 @@ cdef class SpringElement(Element):
             transform = SpringIdentityTransform()
         self.ptr = new TACSSpringElement(transform.ptr, con.cptr)
         self.ptr.incref()
+        self.con = con
 
 cdef class GibbsVector:
     cdef TACSGibbsVector *ptr
@@ -1432,6 +1458,7 @@ cdef class MassElement(Element):
         # Increase the reference count to the underlying object
         self.ptr = self.cptr
         self.ptr.incref()
+        self.con = con
         return
 
 # cdef class RigidBody(Element):

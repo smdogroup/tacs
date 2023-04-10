@@ -359,6 +359,7 @@ cdef extern from "TACSElementModel.h":
 
 cdef class ElementModel:
     cdef TACSElementModel *ptr
+    cdef object con
 
 cdef inline _init_ElementModel(TACSElementModel *ptr):
     model = ElementModel()
@@ -389,6 +390,7 @@ cdef extern from "TACSElement.h":
 
 cdef class Element:
     cdef TACSElement *ptr
+    cdef object con
 
 cdef inline _init_Element(TACSElement *ptr):
     elem = Element()

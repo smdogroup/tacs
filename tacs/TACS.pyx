@@ -246,6 +246,7 @@ cdef class ElementBasis:
 cdef class ElementModel:
     def __cinit__(self, *args, **kwargs):
         self.ptr = NULL
+        self.con = None
         return
 
     def __dealloc__(self):
@@ -262,12 +263,18 @@ cdef class ElementModel:
             return self.ptr.getVarsPerNode()
         return 0
 
+    def getConstitutive(self):
+        if self.con:
+            return self.con
+        return None
+
 cdef class Element:
     """
     TACSElement base class
     """
     def __cinit__(self, *args, **kwargs):
         self.ptr = NULL
+        self.con = None
         return
 
     def __dealloc__(self):
@@ -314,6 +321,11 @@ cdef class Element:
     def getElementBasis(self):
         if self.ptr:
             return _init_ElementBasis(self.ptr.getElementBasis())
+        return None
+
+    def getConstitutive(self):
+        if self.con:
+            return self.con
         return None
 
     def getElementType(self):
@@ -482,7 +494,7 @@ cdef class Constitutive:
     def getMaterialProperties(self):
         return self.props
 
-    def getNastranCard(self):
+    def generateBDFCard(self):
         return None
 
     def getFailureEnvelope(self, sx, sy,

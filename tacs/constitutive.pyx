@@ -336,7 +336,7 @@ cdef class MaterialProperties:
     def getNastranID(self):
         return self.nastranID
 
-    def getNastranCard(self):
+    def generateBDFCard(self):
         cdef TacsScalar E1, E2, E3, nu12, nu13, nu23, G12, G13, G23
         cdef TacsScalar T1, C1, T2, C2, T3, C3, S12, S13, S23
         cdef TacsScalar alpha1, alpha2, alpha3
@@ -467,8 +467,8 @@ cdef class OrthotropicPly:
     def getNastranID(self):
         return self.props.getNastranID()
 
-    def getNastranCard(self):
-        return self.props.getNastranCard()
+    def generateBDFCard(self):
+        return self.props.generateBDFCard()
 
 cdef class PlaneStressConstitutive(Constitutive):
     """
@@ -611,7 +611,7 @@ cdef class SolidConstitutive(Constitutive):
             self.cptr = NULL
             self.props = None
 
-    def getNastranCard(self):
+    def generateBDFCard(self):
         if self.cptr:
             mat_id = self.props.getNastranID()
             con = nastran_cards.properties.shell.PSOLID(self.nastranID, mat_id)
@@ -676,7 +676,7 @@ cdef class IsoShellConstitutive(ShellConstitutive):
             self.cptr = NULL
             self.props = None
 
-    def getNastranCard(self):
+    def generateBDFCard(self):
         cdef double pt[3]
         cdef TacsScalar X[3]
         cdef int elemIndex = 0
@@ -732,7 +732,7 @@ cdef class CompositeShellConstitutive(ShellConstitutive):
 
         self.props = ply_list
 
-    def getNastranCard(self):
+    def generateBDFCard(self):
         num_plies = len(self.props)
         cdef TACSCompositeShellConstitutive* comp_ptr = <TACSCompositeShellConstitutive*>self.cptr
         cdef np.ndarray ply_thicknesses = np.zeros(num_plies, dtype)
@@ -876,7 +876,7 @@ cdef class BasicBeamConstitutive(BeamConstitutive):
         self.ptr = self.cptr
         self.ptr.incref()
 
-    def getNastranCard(self):
+    def generateBDFCard(self):
         cdef double pt[3]
         cdef TacsScalar X[3]
         cdef int elemIndex = 0
@@ -968,7 +968,7 @@ cdef class IsoTubeBeamConstitutive(BeamConstitutive):
             self.cptr = NULL
             self.props = None
 
-    def getNastranCard(self):
+    def generateBDFCard(self):
         cdef double pt[3]
         cdef TacsScalar X[3]
         cdef int elemIndex = 0
@@ -1044,7 +1044,7 @@ cdef class IsoRectangleBeamConstitutive(BeamConstitutive):
             self.cptr = NULL
             self.props = None
 
-    def getNastranCard(self):
+    def generateBDFCard(self):
         cdef double pt[3]
         cdef TacsScalar X[3]
         cdef int elemIndex = 0
@@ -1281,7 +1281,7 @@ cdef class DOFSpringConstitutive(GeneralSpringConstitutive):
         self.ptr = self.cptr
         self.ptr.incref()
 
-    def getNastranCard(self):
+    def generateBDFCard(self):
         cdef double pt[3]
         cdef TacsScalar X[3]
         cdef int elemIndex = 0
