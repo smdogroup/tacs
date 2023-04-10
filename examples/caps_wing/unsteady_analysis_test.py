@@ -12,7 +12,7 @@ from mpi4py import MPI
 # 1: build the tacs aim, egads aim wrapper classes
 comm = MPI.COMM_WORLD
 tacs_model = caps2tacs.TacsModel.build(csm_file="simple_naca_wing.csm", comm=comm)
-tacs_model.mesh_aim.set_mesh(
+tacs_model.egads_aim.set_mesh(
     edge_pt_min=15,
     edge_pt_max=20,
     global_mesh_size=0.25,
@@ -51,7 +51,7 @@ tacs_model.setup(include_aim=True)
 fea_solver = tacs_model.fea_solver
 fea_solver.initialize()
 TP = fea_solver.createTransientProblem(
-    "sinusoidalWing", tInit=0.0, tFinal=10.0, numSteps=100
+    "sinusoidalWing", tInit=0.0, tFinal=1.0, numSteps=10
 )
 timeSteps = TP.getTimeSteps()
 
@@ -82,24 +82,31 @@ TP.evalFunctions(tacs_funcs, evalFuncs=function_names)
 TP.evalFunctionsSens(tacs_sens, evalFuncs=function_names)
 TP.writeSolution(baseName="tacs_output", outputDir=tacs_model.analysis_dir)
 
-# print the function outputs
-print(f"\n\nOutputs of TACS unsteady structural analysis...")
-for tacs_key in tacs_funcs:
-    # find associated function name for tacs_key=loadset+func_name
-    for func_name in function_names:
-        if func_name in tacs_key:
-            break
-    print(f"\t{tacs_key} function = {tacs_funcs[tacs_key]}")
+struct_derivs = tacs_sens["ks_vmfailure"]["struct"]
+adjoint_TD = struct_derivs[0]
 
-    c_struct_sens = tacs_sens[tacs_key]["struct"]
-    xpts_sens = tacs_sens[tacs_key]["Xpts"]
-    print(f"\tTACS unsteady thickness derivatives = {c_struct_sens}")
-    print(f"\tTACS unsteady coordinate derivatives = {xpts_sens}")
+# complex step derivative test
+assembler = fea_solver.assembler
+xvec = assembler.createDesignVec()
+assembler.getDesignVars(xvec)
+xarray = xvec.getArray()
 
-# tell the user how to view the structural analysis results
-base_name = "tacs_output"
-print("\n\nPlease convert the f5 files to vtk by running the f5tovtk shell script...")
-print("bash f5tovtk.sh")
-print("Then view the results in paraview as follows")
-print(f"\t paraview {tacs_model.analysis_dir}/{base_name}_000_..vtk")
-print("cd ../../../")
+# This assumes that the TACS variables are not distributed and are set
+# only on the tacs_comm root processor.
+h = 1e-30
+if comm.rank == 0:
+    xarray[0] += 1j * h
+
+assembler.setDesignVars(xvec)
+
+
+tacs_funcs = {}
+TP.evalFunctions(tacs_funcs)
+ks_value = tacs_funcs["ks_vmfailure"]
+complex_step_TD = ks_value.imag / h
+
+relative_error = (adjoint_TD - complex_step_TD) / complex_step_TD
+
+print(f"approximate derivative = {adjoint_TD}")
+print(f"complex step derivative = {complex_step_TD}")
+print(f"relative error = {relative_error}")

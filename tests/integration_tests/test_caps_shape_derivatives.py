@@ -34,7 +34,7 @@ class TestCaps2TacsShape(unittest.TestCase):
         tacs_model = caps2tacs.TacsModel.build(
             csm_file=csm_path, comm=comm, problem_name="capsStruct1"
         )
-        tacs_model.egads_aim.set_mesh(  # need a refined-enough mesh for the derivative test to pass
+        tacs_model.mesh_aim.set_mesh(  # need a refined-enough mesh for the derivative test to pass
             edge_pt_min=15,
             edge_pt_max=20,
             global_mesh_size=0.1,
