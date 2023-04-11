@@ -928,7 +928,10 @@ cdef class BasicBeamConstitutive(BeamConstitutive):
         Iy = s[3]
         ky = s[4]
         kz = s[5]
-        prop = nastran_cards.properties.bars.PBAR(self.nastranID, mat_id, A, Iz, Iy, Iyz, J, k1=ky, k2=kz)
+        if Iy == Iz == Iyz == 0.0: # Bending terms are zero, write out as rod
+            prop = nastran_cards.properties.rods.PROD(self.nastranID, mat_id, A, J)
+        else: # bending terms nonzero, write out as bar
+            prop = nastran_cards.properties.bars.PBAR(self.nastranID, mat_id, A, Iz, Iy, Iyz, J, k1=ky, k2=kz)
         return prop
 
 cdef class IsoTubeBeamConstitutive(BeamConstitutive):
