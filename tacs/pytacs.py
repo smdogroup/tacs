@@ -30,6 +30,7 @@ import warnings
 from functools import wraps
 
 import numpy as np
+from pyNastran.bdf.bdf import BDF
 
 import tacs.TACS
 import tacs.constitutive
@@ -1518,6 +1519,131 @@ class pyTACS(BaseUI):
             structProblems[subCase.id] = problem
 
         return structProblems
+
+    def writeBDF(self, fileName, problems=None):
+        """
+        Write NASTRAN BDF file from problem class.
+        Assumes all supplied pProblems share the same nodal and design variable values.
+
+        Parameters
+        ----------
+        fileName: str
+            Name of file to write BDF file to.
+        problems: tacs.problems.BaseProblem or List[tacs.problems.BaseProblem]
+            List of pytacs Problem classes to write BDF file from.
+        """
+        if hasattr(problems, "__iter__") == False:
+            problems = [problems]
+
+        # Get local node info for each processor
+        multNodes = self.getLocalMultiplierNodeIDs()
+        globalToLocalNodeIDDict = self.meshLoader.getGlobalToLocalNodeIDDict()
+        Xpts_bvec = problems[0].getNodes()
+
+        # Gather local info to root processor
+        allMultNodes = self.comm.gather(multNodes, root=0)
+        allGlobalToLocalNodeIDDict = self.comm.gather(globalToLocalNodeIDDict, root=0)
+        allXpts = self.comm.gather(Xpts_bvec, root=0)
+
+        # Assemble new BDF file on root
+        if self.comm.rank == 0:
+            newBDFInfo = BDF()
+
+            # Write out updated node locations
+            nastranNodeIDs = list(self.bdfInfo.node_ids)
+            # Loop through each proc and pull out new node locations
+            for proc_i in range(self.comm.size):
+                xyz = allXpts[proc_i].reshape(-1, 3)
+                for tacsGNodeID in allGlobalToLocalNodeIDDict[proc_i]:
+                    # Get local node ID
+                    tacsLNodeID = allGlobalToLocalNodeIDDict[proc_i][tacsGNodeID]
+                    # Get Global nastran ID
+                    nastranGNodeID = nastranNodeIDs[tacsGNodeID]
+                    # Add node to bdf file (if its not a multiplier node)
+                    if tacsLNodeID not in allMultNodes[proc_i]:
+                        newBDFInfo.add_grid(nastranGNodeID, xyz[tacsLNodeID])
+
+            # Write updated properties and elements
+            transObjs = {}
+            matObjs = []
+            conObjs = []
+            for compID, propID in enumerate(self.bdfInfo.properties):
+                elemObj = self.meshLoader.getElementObject(compID, 0)
+                conObj = elemObj.getConstitutive()
+                if conObj is not None:
+                    conObj.setNastranID(propID)
+                    conObjs.append(conObj)
+                    matObj = conObj.getMaterialProperties()
+                    if isinstance(matObj, tacs.constitutive.MaterialProperties):
+                        if matObj not in matObjs:
+                            matObjs.append(matObj)
+                    elif isinstance(matObj, list):
+                        for mat_i in matObj:
+                            if mat_i not in matObjs:
+                                matObjs.append(mat_i)
+                transObj = elemObj.getTransform()
+                if transObj is not None:
+                    transObjs[compID] = transObj
+
+            # Write material cards
+            for i, matObj in enumerate(matObjs):
+                matID = i + 1
+                matObj.setNastranID(matID)
+                newBDFInfo.materials[matID] = matObj.generateBDFCard()
+
+            # Write element cards
+            curCoordID = 1
+            for compID, conObj in enumerate(conObjs):
+                propID = conObj.getNastranID()
+                newBDFInfo.properties[propID] = conObj.generateBDFCard()
+                # Copy property comment (may include component name info)
+                newBDFInfo.properties[propID].comment = self.bdfInfo.properties[
+                    propID
+                ].comment
+
+                elemIDs = self.meshLoader.getGlobalElementIDsForComps(
+                    [compID], nastranOrdering=True
+                )
+                transObj = transObjs.get(compID, None)
+                if isinstance(
+                    transObj, tacs.elements.ShellRefAxisTransform
+                ) or isinstance(transObj, tacs.elements.SpringRefFrameTransform):
+                    coordID = curCoordID
+                    origin = np.zeros(3)
+                    if isinstance(transObj, tacs.elements.SpringRefFrameTransform):
+                        vec1, vec2 = transObj.getRefAxes()
+                    else:
+                        vec1 = transObj.getRefAxis()
+                        vec2 = np.random.random(3)
+                    newBDFInfo.add_cord2r(coordID, origin, vec1, vec2)
+                    curCoordID += 1
+                elif isinstance(
+                    transObj, tacs.elements.BeamRefAxisTransform
+                ) or isinstance(transObj, tacs.elements.SpringRefAxisTransform):
+                    vec = transObj.getRefAxis()
+                else:
+                    coordID = 0
+                for elemID in elemIDs:
+                    newCard = copy.deepcopy(self.bdfInfo.elements[elemID])
+                    if "CQUAD" in newCard.type or "CTRI" in newCard.type:
+                        newCard.theta_mcid = coordID
+                    elif "CBAR" in newCard.type or "CBEAM" in newCard.type:
+                        newCard.x = vec.astype(float)
+                        newCard.g0 = None
+                    elif newCard.type == "CBUSH":
+                        if isinstance(transObj, tacs.elements.SpringRefAxisTransform):
+                            newCard.x = vec.astype(float)
+                            newCard.g0 = None
+                        else:
+                            newCard.cid = coordID
+                    newBDFInfo.elements[elemID] = newCard
+
+            # Copy over spcs
+            newBDFInfo.spcs.update(self.bdfInfo.spcs)
+            # Copy over rbes
+            newBDFInfo.rigid_elements.update(self.bdfInfo.rigid_elements)
+
+            newBDFInfo.write_bdf(fileName)
 
     def getNumComponents(self):
         """

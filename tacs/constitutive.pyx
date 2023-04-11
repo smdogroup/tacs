@@ -445,7 +445,6 @@ cdef class OrthotropicPly:
     """
     cdef TACSOrthotropicPly *ptr
     cdef MaterialProperties props
-    cdef int nastranID
     def __cinit__(self, TacsScalar ply_thickness, MaterialProperties props,
                   max_strain_criterion=False):
         self.ptr = new TACSOrthotropicPly(ply_thickness, props.ptr)
@@ -455,20 +454,12 @@ cdef class OrthotropicPly:
         else:
             self.ptr.setUseTsaiWuCriterion()
         self.props = props
-        self.nastranID = 0
 
     def __dealloc__(self):
         self.ptr.decref()
 
-    def setNastranID(self, id):
-        self.nastranID = id
-        self.props.setNastranID(id)
-
-    def getNastranID(self):
-        return self.props.getNastranID()
-
-    def generateBDFCard(self):
-        return self.props.generateBDFCard()
+    def getMaterialProperties(self):
+       return self.props
 
 cdef class PlaneStressConstitutive(Constitutive):
     """
@@ -730,7 +721,7 @@ cdef class CompositeShellConstitutive(ShellConstitutive):
         # Free the allocated array
         free(plys)
 
-        self.props = ply_list
+        self.props = [prop.getMaterialProperties() for prop in ply_list]
 
     def generateBDFCard(self):
         num_plies = len(self.props)

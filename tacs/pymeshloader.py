@@ -500,6 +500,30 @@ class pyMeshLoader(BaseUI):
         """
         return self.ownedMultiplierNodeIDs
 
+    def getGlobalToLocalNodeIDDict(self):
+        """
+        Creates a dictionary who's keys correspond to the global ID of each node (tacs ordering)
+        owned by this processor and whose values correspond to the local node index for this proc.
+        The dictionary can be used to convert from a global node ID to local using the assignment below*:
+        localNodeID = globalToLocalNodeIDDict[globalNodeID]
+
+        * assuming globalNodeID is owned on this processor
+
+        Returns
+        -------
+        globalToLocalNodeIDDict : dict
+            Dictionary holding mapping from global to local node IDs for this proc
+        """
+        globalToLocalNodeIDDict = {}
+        for tacsNodeID in range(self.bdfInfo.nnodes):
+            # Get the local ID corresponding to the global ID (if owned by this proc)
+            lID = self.getLocalNodeIDsFromGlobal(tacsNodeID, nastranOrdering=False)[0]
+            # Add the local node ID to the dict if its owned by this proc
+            if lID >= 0:
+                globalToLocalNodeIDDict[tacsNodeID] = lID
+
+        return globalToLocalNodeIDDict
+
     def getGlobalToLocalElementIDDict(self):
         """
         Creates a dictionary who's keys correspond to the global ID of each element (tacs ordering)
@@ -529,6 +553,10 @@ class pyMeshLoader(BaseUI):
         }
 
         return globalToLocalElementIDDict
+
+    def getElementObject(self, componentID, objectIndex):
+        pointer = self.elemObjectNumByComp[componentID][objectIndex]
+        return self.elemObjects[pointer]
 
     def setElementObject(self, componentID, objectIndex, elemObject):
         pointer = self.elemObjectNumByComp[componentID][objectIndex]

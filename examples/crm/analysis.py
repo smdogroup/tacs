@@ -122,6 +122,7 @@ problem.addInertialLoad(g)
 
 # Solve structural problem
 problem.solve()
+FEAAssembler.writeBDF("fine.bdf", problem)
 
 # Evaluate functions
 funcs = {}

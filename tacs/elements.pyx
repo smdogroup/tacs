@@ -625,13 +625,25 @@ cdef class ShellRefAxisTransform(ShellTransform):
     Args:
         axis (array-like): Reference axis.
     """
+    cdef TACSShellRefAxisTransform* cptr
     def __cinit__(self, axis):
         cdef TacsScalar a[3]
         a[0] = axis[0]
         a[1] = axis[1]
         a[2] = axis[2]
-        self.ptr = new TACSShellRefAxisTransform(a)
+        self.cptr = self.ptr = new TACSShellRefAxisTransform(a)
         self.ptr.incref()
+
+    def getRefAxis(self):
+        """
+        Get reference axis for transform.
+
+        Returns:
+            axis (numpy.ndarray): reference axis
+        """
+        cdef np.ndarray axis = np.zeros(3, dtype=dtype)
+        self.cptr.getRefAxis(<TacsScalar*>axis.data)
+        return axis
 
 cdef class Quad4Shell(Element):
     """
@@ -658,6 +670,7 @@ cdef class Quad4Shell(Element):
         self.ptr = new TACSQuad4Shell(transform.ptr, con.cptr)
         self.ptr.incref()
         self.con = con
+        self.transform = transform
 
 cdef class Quad4NonlinearShell(Element):
     """
@@ -684,6 +697,7 @@ cdef class Quad4NonlinearShell(Element):
         self.ptr = new TACSQuad4NonlinearShell(transform.ptr, con.cptr)
         self.ptr.incref()
         self.con = con
+        self.transform = transform
 
 cdef class Quad9Shell(Element):
     """
@@ -710,6 +724,7 @@ cdef class Quad9Shell(Element):
         self.ptr = new TACSQuad9Shell(transform.ptr, con.cptr)
         self.ptr.incref()
         self.con = con
+        self.transform = transform
 
 cdef class Quad9NonlinearShell(Element):
     """
@@ -736,6 +751,7 @@ cdef class Quad9NonlinearShell(Element):
         self.ptr = new TACSQuad9NonlinearShell(transform.ptr, con.cptr)
         self.ptr.incref()
         self.con = con
+        self.transform = transform
 
 cdef class Quad16Shell(Element):
     """
@@ -762,6 +778,7 @@ cdef class Quad16Shell(Element):
         self.ptr = new TACSQuad16Shell(transform.ptr, con.cptr)
         self.ptr.incref()
         self.con = con
+        self.transform = transform
 
 cdef class Quad16NonlinearShell(Element):
     """
@@ -788,6 +805,7 @@ cdef class Quad16NonlinearShell(Element):
         self.ptr = new TACSQuad16NonlinearShell(transform.ptr, con.cptr)
         self.ptr.incref()
         self.con = con
+        self.transform = transform
 
 cdef class Tri3Shell(Element):
     """
@@ -814,6 +832,7 @@ cdef class Tri3Shell(Element):
         self.ptr = new TACSTri3Shell(transform.ptr, con.cptr)
         self.ptr.incref()
         self.con = con
+        self.transform = transform
 
 cdef class Tri3NonlinearShell(Element):
     """
@@ -840,6 +859,7 @@ cdef class Tri3NonlinearShell(Element):
         self.ptr = new TACSTri3NonlinearShell(transform.ptr, con.cptr)
         self.ptr.incref()
         self.con = con
+        self.transform = transform
 
 cdef class Quad4ThermalShell(Element):
     """
@@ -866,6 +886,7 @@ cdef class Quad4ThermalShell(Element):
         self.ptr = new TACSQuad4ThermalShell(transform.ptr, con.cptr)
         self.ptr.incref()
         self.con = con
+        self.transform = transform
 
 cdef class Quad4NonlinearThermalShell(Element):
     """
@@ -892,6 +913,7 @@ cdef class Quad4NonlinearThermalShell(Element):
         self.ptr = new TACSQuad4NonlinearThermalShell(transform.ptr, con.cptr)
         self.ptr.incref()
         self.con = con
+        self.transform = transform
 
 cdef class Quad4ShellQuaternion(Element):
     """
@@ -918,6 +940,7 @@ cdef class Quad4ShellQuaternion(Element):
         self.ptr = new TACSQuad4ShellQuaternion(transform.ptr, con.cptr)
         self.ptr.incref()
         self.con = con
+        self.transform = transform
 
 cdef class Quad4ShellModRot(Element):
     """
@@ -944,6 +967,7 @@ cdef class Quad4ShellModRot(Element):
         self.ptr = new TACSQuad4ShellModRot(transform.ptr, con.cptr)
         self.ptr.incref()
         self.con = con
+        self.transform = transform
 
 cdef class Quad9ThermalShell(Element):
     """
@@ -970,6 +994,7 @@ cdef class Quad9ThermalShell(Element):
         self.ptr = new TACSQuad9ThermalShell(transform.ptr, con.cptr)
         self.ptr.incref()
         self.con = con
+        self.transform = transform
 
 cdef class Quad9NonlinearThermalShell(Element):
     """
@@ -996,6 +1021,7 @@ cdef class Quad9NonlinearThermalShell(Element):
         self.ptr = new TACSQuad9NonlinearThermalShell(transform.ptr, con.cptr)
         self.ptr.incref()
         self.con = con
+        self.transform = transform
 
 cdef class Quad16ThermalShell(Element):
     """
@@ -1022,6 +1048,7 @@ cdef class Quad16ThermalShell(Element):
         self.ptr = new TACSQuad16ThermalShell(transform.ptr, con.cptr)
         self.ptr.incref()
         self.con = con
+        self.transform = transform
 
 cdef class Quad16NonlinearThermalShell(Element):
     """
@@ -1048,6 +1075,7 @@ cdef class Quad16NonlinearThermalShell(Element):
         self.ptr = new TACSQuad16NonlinearThermalShell(transform.ptr, con.cptr)
         self.ptr.incref()
         self.con = con
+        self.transform = transform
 
 cdef class Tri3ThermalShell(Element):
     """
@@ -1074,6 +1102,7 @@ cdef class Tri3ThermalShell(Element):
         self.ptr = new TACSTri3ThermalShell(transform.ptr, con.cptr)
         self.ptr.incref()
         self.con = con
+        self.transform = transform
 
 cdef class Tri3NonlinearThermalShell(Element):
     """
@@ -1100,6 +1129,7 @@ cdef class Tri3NonlinearThermalShell(Element):
         self.ptr = new TACSTri3NonlinearThermalShell(transform.ptr, con.cptr)
         self.ptr.incref()
         self.con = con
+        self.transform = transform
 
 cdef class BeamTransform:
     cdef TACSBeamTransform *ptr
@@ -1123,13 +1153,25 @@ cdef class BeamRefAxisTransform(BeamTransform):
     Args:
         axis (array-like): Reference axis.
     """
+    cdef TACSBeamRefAxisTransform * cptr
     def __cinit__(self, axis):
         cdef TacsScalar a[3]
         a[0] = axis[0]
         a[1] = axis[1]
         a[2] = axis[2]
-        self.ptr = new TACSBeamRefAxisTransform(a)
+        self.cptr = self.ptr = new TACSBeamRefAxisTransform(a)
         self.ptr.incref()
+
+    def getRefAxis(self):
+        """
+        Get reference axis for transform.
+
+        Returns:
+            axis (numpy.ndarray): reference axis
+        """
+        cdef np.ndarray axis = np.zeros(3, dtype=dtype)
+        self.cptr.getRefAxis(<TacsScalar*>axis.data)
+        return axis
 
 cdef class Beam2(Element):
     """
@@ -1148,6 +1190,7 @@ cdef class Beam2(Element):
         self.ptr = new TACSBeam2(transform.ptr, con.cptr)
         self.ptr.incref()
         self.con = con
+        self.transform = transform
 
 cdef class Beam3(Element):
     """
@@ -1166,6 +1209,7 @@ cdef class Beam3(Element):
         self.ptr = new TACSBeam3(transform.ptr, con.cptr)
         self.ptr.incref()
         self.con = con
+        self.transform = transform
 
 cdef class Beam2ModRot(Element):
     """
@@ -1185,6 +1229,7 @@ cdef class Beam2ModRot(Element):
         self.ptr = new TACSBeam2ModRot(transform.ptr, con.cptr)
         self.ptr.incref()
         self.con = con
+        self.transform = transform
 
 cdef class Beam3ModRot(Element):
     """
@@ -1204,6 +1249,7 @@ cdef class Beam3ModRot(Element):
         self.ptr = new TACSBeam3ModRot(transform.ptr, con.cptr)
         self.ptr.incref()
         self.con = con
+        self.transform = transform
 
 cdef class SpringTransform:
     cdef TACSSpringTransform *ptr
@@ -1239,13 +1285,25 @@ cdef class SpringRefAxisTransform(SpringTransform):
     Args:
         axis (array-like): Reference axis.
     """
+    cdef TACSSpringRefAxisTransform* cptr
     def __cinit__(self, axis):
         cdef TacsScalar a[3]
         a[0] = axis[0]
         a[1] = axis[1]
         a[2] = axis[2]
-        self.ptr = new TACSSpringRefAxisTransform(a)
+        self.cptr = self.ptr = new TACSSpringRefAxisTransform(a)
         self.ptr.incref()
+
+    def getRefAxis(self):
+        """
+        Get reference axis for transform.
+
+        Returns:
+            axis (numpy.ndarray): reference axis
+        """
+        cdef np.ndarray axis = np.zeros(3, dtype=dtype)
+        self.cptr.getRefAxis(<TacsScalar*>axis.data)
+        return axis
 
 cdef class SpringRefFrameTransform(SpringTransform):
     """
@@ -1256,6 +1314,7 @@ cdef class SpringRefFrameTransform(SpringTransform):
     The local `z` is given by the cross product of `x` and `axis2`.
     The local `y` is given by the cross product of local `z` and `x`.
     """
+    cdef TACSSpringRefFrameTransform* cptr
     def __cinit__(self, axis1, axis2):
         cdef TacsScalar a1[3], a2[3]
         a1[0] = axis1[0]
@@ -1264,8 +1323,21 @@ cdef class SpringRefFrameTransform(SpringTransform):
         a2[0] = axis2[0]
         a2[1] = axis2[1]
         a2[2] = axis2[2]
-        self.ptr = new TACSSpringRefFrameTransform(a1, a2)
+        self.cptr = self.ptr = new TACSSpringRefFrameTransform(a1, a2)
         self.ptr.incref()
+
+    def getRefAxes(self):
+        """
+        Get reference axes for transform.
+
+        Returns:
+            axis_i (numpy.ndarray): first reference axis
+            axis_j (numpy.ndarray): second reference axis
+        """
+        cdef np.ndarray axis1 = np.zeros(3, dtype=dtype)
+        cdef np.ndarray axis2 = np.zeros(3, dtype=dtype)
+        self.cptr.getRefAxes(<TacsScalar*>axis1.data, <TacsScalar*>axis2.data)
+        return axis1, axis2
 
 cdef class SpringElement(Element):
     """
@@ -1287,6 +1359,7 @@ cdef class SpringElement(Element):
         self.ptr = new TACSSpringElement(transform.ptr, con.cptr)
         self.ptr.incref()
         self.con = con
+        self.transform = transform
 
 cdef class GibbsVector:
     cdef TACSGibbsVector *ptr

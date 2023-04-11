@@ -275,6 +275,7 @@ cdef class Element:
     def __cinit__(self, *args, **kwargs):
         self.ptr = NULL
         self.con = None
+        self.transform = None
         return
 
     def __dealloc__(self):
@@ -326,6 +327,11 @@ cdef class Element:
     def getConstitutive(self):
         if self.con:
             return self.con
+        return None
+
+    def getTransform(self):
+        if self.transform:
+            return self.transform
         return None
 
     def getElementType(self):

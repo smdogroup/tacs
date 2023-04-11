@@ -391,6 +391,7 @@ cdef extern from "TACSElement.h":
 cdef class Element:
     cdef TACSElement *ptr
     cdef object con
+    cdef object transform
 
 cdef inline _init_Element(TACSElement *ptr):
     elem = Element()
