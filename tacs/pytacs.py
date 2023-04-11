@@ -1613,12 +1613,13 @@ class pyTACS(BaseUI):
             curCoordID = 1
             for compID, conObj in enumerate(conObjs):
                 propID = conObj.getNastranID()
-                newBDFInfo.properties[propID] = conObj.generateBDFCard()
-                # Copy property comment (may include component name info)
-                newBDFInfo.properties[propID].comment = self.bdfInfo.properties[
-                    propID
-                ].comment
-
+                propCard = conObj.generateBDFCard()
+                if propCard is not None:
+                    # Copy property comment (may include component name info)
+                    # Make sure to remove comment `$` from string
+                    propCard.comment = self.bdfInfo.properties[propID].comment[1:]
+                    # Add property card to BDF
+                    newBDFInfo.properties[propID] = propCard
                 elemIDs = self.meshLoader.getGlobalElementIDsForComps(
                     [compID], nastranOrdering=True
                 )
@@ -1646,7 +1647,11 @@ class pyTACS(BaseUI):
                     coordID = 0
                 # Copy and update element cards
                 for elemID in elemIDs:
+                    # Create copy of card
                     newCard = copy.deepcopy(self.bdfInfo.elements[elemID])
+                    # Copy element comment (may include component name info)
+                    # Make sure to remove comment `$` from string
+                    newCard.comment = self.bdfInfo.elements[elemID].comment[1:]
                     # Update element coordinate frame info, if necessary
                     if "CQUAD" in newCard.type or "CTRI" in newCard.type:
                         newCard.theta_mcid = coordID
