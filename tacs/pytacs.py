@@ -1571,6 +1571,9 @@ class pyTACS(BaseUI):
                     if tacsLNodeID not in allMultNodes[proc_i]:
                         newBDFInfo.add_grid(nastranGNodeID, xyz[tacsLNodeID])
 
+            # Copy over boundary conditions
+            newBDFInfo.spcs.update(self.bdfInfo.spcs)
+
             # Write updated properties and elements
             transObjs = {}
             matObjs = []
@@ -1638,7 +1641,7 @@ class pyTACS(BaseUI):
                     transObj, tacs.elements.BeamRefAxisTransform
                 ) or isinstance(transObj, tacs.elements.SpringRefAxisTransform):
                     vec = transObj.getRefAxis()
-                # Otherwise there's no transform associated with this element, use default
+                # Otherwise, there's no transform associated with this element, use default
                 else:
                     coordID = 0
                 # Copy and update element cards
@@ -1659,13 +1662,7 @@ class pyTACS(BaseUI):
                     # Add element card to bdf
                     newBDFInfo.elements[elemID] = newCard
 
-            # Copy over spcs
-            newBDFInfo.spcs.update(self.bdfInfo.spcs)
-
-            # Copy over rbes
-            newBDFInfo.rigid_elements.update(self.bdfInfo.rigid_elements)
-
-            # Copy over masses
+            # Copy over masses elements
             for massCard in self.bdfInfo.masses.values():
                 elemID = massCard.eid
                 # We'll have to create a new CONM2 card in case the point mass is associated with tacs dvs
@@ -1690,6 +1687,9 @@ class pyTACS(BaseUI):
                 # CONM1's can't be updated by TACS, so we can just copy the original value
                 else:
                     newBDFInfo.masses[elemID] = copy.deepcopy(massCard)
+
+            # Copy over rigid elements
+            newBDFInfo.rigid_elements.update(self.bdfInfo.rigid_elements)
 
             # TODO: Export forces from problem classes
 
