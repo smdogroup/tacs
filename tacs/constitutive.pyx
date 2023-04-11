@@ -1080,6 +1080,17 @@ cdef class GeneralMassConstitutive(Constitutive):
         self.ptr = self.cptr
         self.ptr.incref()
 
+    def evalMassMatrix(self):
+        cdef double pt[3]
+        cdef TacsScalar X[3]
+        cdef int elemIndex = 0
+        cdef np.ndarray M = np.zeros(21, dtype=dtype)
+        for i in range(3):
+            pt[i] = 0.0
+            X[i] = 0.0
+        self.cptr.evalMassMatrix(elemIndex, pt, X, <TacsScalar*>M.data)
+        return M
+
 cdef class PointMassConstitutive(GeneralMassConstitutive):
     """
     This is the base class for the traditional point mass constitutive objects with no translation-rotation coupling.

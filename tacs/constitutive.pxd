@@ -155,6 +155,7 @@ cdef extern from "TACSIsoRectangleBeamConstitutive.h":
 cdef extern from "TACSGeneralMassConstitutive.h":
     cdef cppclass TACSGeneralMassConstitutive(TACSConstitutive):
         TACSGeneralMassConstitutive(const TacsScalar*)
+        void evalMassMatrix(int, const double*, const TacsScalar*, TacsScalar*)
 
 cdef class GeneralMassConstitutive(Constitutive):
     cdef TACSGeneralMassConstitutive *cptr

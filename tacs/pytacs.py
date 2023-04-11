@@ -1532,8 +1532,11 @@ class pyTACS(BaseUI):
         problems: tacs.problems.BaseProblem or List[tacs.problems.BaseProblem]
             List of pytacs Problem classes to write BDF file from.
         """
+        # Make sure problems is in a list
         if hasattr(problems, "__iter__") == False:
             problems = [problems]
+        else:
+            problems = list(problems)
 
         # Get local node info for each processor
         multNodes = self.getLocalMultiplierNodeIDs()
@@ -1547,7 +1550,7 @@ class pyTACS(BaseUI):
 
         # Assemble new BDF file on root
         if self.comm.rank == 0:
-            newBDFInfo = BDF()
+            newBDFInfo = BDF(debug=False)
 
             # Write out updated node locations
             nastranNodeIDs = list(self.bdfInfo.node_ids)
@@ -1649,10 +1652,34 @@ class pyTACS(BaseUI):
             newBDFInfo.spcs.update(self.bdfInfo.spcs)
             # Copy over rbes
             newBDFInfo.rigid_elements.update(self.bdfInfo.rigid_elements)
-            # TODO: Update point masses
+            # Copy over masses
+            for massCard in self.bdfInfo.masses.values():
+                elemID = massCard.eid
+                # We'll have to create a new CONM2 card in case the point mass is associated with tacs dvs
+                if massCard.type == "CONM2":
+                    nodeID = massCard.nid
+                    elemObj = self.meshLoader.getElementObjectForElemID(
+                        elemID, nastranOrdering=True
+                    )
+                    conObj = elemObj.getConstitutive()
+                    M = conObj.evalMassMatrix()
+                    mass = M[0]
+                    I11 = M[15]
+                    I22 = M[18]
+                    I33 = M[20]
+                    # Nastran uses negative convention for POI's
+                    I12 = -M[16]
+                    I13 = -M[17]
+                    I23 = -M[19]
+                    newBDFInfo.add_conm2(
+                        elemID, nodeID, mass, I=[I11, I12, I22, I13, I23, I33]
+                    )
+                # CONM1's can't be updated by TACS, so we can just copy the original value
+                else:
+                    newBDFInfo.masses[elemID] = copy.deepcopy(massCard)
             # TODO: Export forces from problem classes
             # Write out BDF file
-            newBDFInfo.write_bdf(fileName)
+            newBDFInfo.write_bdf(fileName, size=16, is_double=True, write_header=False)
 
     def getNumComponents(self):
         """
