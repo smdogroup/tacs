@@ -1520,7 +1520,7 @@ class pyTACS(BaseUI):
 
         return structProblems
 
-    def writeBDF(self, fileName, problems=None):
+    def writeBDF(self, fileName, problems):
         """
         Write NASTRAN BDF file from problem class.
         Assumes all supplied pProblems share the same nodal and design variable values.
@@ -1568,30 +1568,37 @@ class pyTACS(BaseUI):
             matObjs = []
             conObjs = []
             for compID, propID in enumerate(self.bdfInfo.properties):
+                # Get TACS element object
                 elemObj = self.meshLoader.getElementObject(compID, 0)
+                # Get TACS constitutive object for element (if applicable)
                 conObj = elemObj.getConstitutive()
                 if conObj is not None:
+                    # Set the property ID number for the class to be used in the Nastran card
                     conObj.setNastranID(propID)
                     conObjs.append(conObj)
+                    # Get TACS material properties object for constitutive (if applicable)
                     matObj = conObj.getMaterialProperties()
+                    # May be a single object...
                     if isinstance(matObj, tacs.constitutive.MaterialProperties):
                         if matObj not in matObjs:
                             matObjs.append(matObj)
+                    # or a list (plys for composite classes)
                     elif isinstance(matObj, list):
                         for mat_i in matObj:
                             if mat_i not in matObjs:
                                 matObjs.append(mat_i)
+                # Get TACS transform object for element (if applicable)
                 transObj = elemObj.getTransform()
                 if transObj is not None:
                     transObjs[compID] = transObj
 
-            # Write material cards
+            # Write material cards from TACS MaterialProperties class
             for i, matObj in enumerate(matObjs):
                 matID = i + 1
                 matObj.setNastranID(matID)
                 newBDFInfo.materials[matID] = matObj.generateBDFCard()
 
-            # Write element cards
+            # Write property/element cards from TACSConstitutive/TACSElement classes
             curCoordID = 1
             for compID, conObj in enumerate(conObjs):
                 propID = conObj.getNastranID()
@@ -1642,7 +1649,9 @@ class pyTACS(BaseUI):
             newBDFInfo.spcs.update(self.bdfInfo.spcs)
             # Copy over rbes
             newBDFInfo.rigid_elements.update(self.bdfInfo.rigid_elements)
-
+            # TODO: Update point masses
+            # TODO: Export forces from problem classes
+            # Write out BDF file
             newBDFInfo.write_bdf(fileName)
 
     def getNumComponents(self):
