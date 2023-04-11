@@ -1619,6 +1619,7 @@ class pyTACS(BaseUI):
                 elemIDs = self.meshLoader.getGlobalElementIDsForComps(
                     [compID], nastranOrdering=True
                 )
+                # Convert any transform objects to nastran COORD2R cards, if necessary
                 transObj = transObjs.get(compID, None)
                 if isinstance(
                     transObj, tacs.elements.ShellRefAxisTransform
@@ -1632,14 +1633,18 @@ class pyTACS(BaseUI):
                         vec2 = np.random.random(3)
                     newBDFInfo.add_cord2r(coordID, origin, vec1, vec2)
                     curCoordID += 1
+                # We just need the ref vector for these types
                 elif isinstance(
                     transObj, tacs.elements.BeamRefAxisTransform
                 ) or isinstance(transObj, tacs.elements.SpringRefAxisTransform):
                     vec = transObj.getRefAxis()
+                # Otherwise there's no transform associated with this element, use default
                 else:
                     coordID = 0
+                # Copy and update element cards
                 for elemID in elemIDs:
                     newCard = copy.deepcopy(self.bdfInfo.elements[elemID])
+                    # Update element coordinate frame info, if necessary
                     if "CQUAD" in newCard.type or "CTRI" in newCard.type:
                         newCard.theta_mcid = coordID
                     elif "CBAR" in newCard.type or "CBEAM" in newCard.type:
@@ -1651,12 +1656,15 @@ class pyTACS(BaseUI):
                             newCard.g0 = None
                         else:
                             newCard.cid = coordID
+                    # Add element card to bdf
                     newBDFInfo.elements[elemID] = newCard
 
             # Copy over spcs
             newBDFInfo.spcs.update(self.bdfInfo.spcs)
+
             # Copy over rbes
             newBDFInfo.rigid_elements.update(self.bdfInfo.rigid_elements)
+
             # Copy over masses
             for massCard in self.bdfInfo.masses.values():
                 elemID = massCard.eid
@@ -1682,7 +1690,9 @@ class pyTACS(BaseUI):
                 # CONM1's can't be updated by TACS, so we can just copy the original value
                 else:
                     newBDFInfo.masses[elemID] = copy.deepcopy(massCard)
+
             # TODO: Export forces from problem classes
+
             # Write out BDF file
             newBDFInfo.write_bdf(fileName, size=16, is_double=True, write_header=False)
 
