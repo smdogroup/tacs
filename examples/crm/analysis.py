@@ -137,6 +137,7 @@ if comm.rank == 0:
 
 # Write out solution
 problem.writeSolution(outputDir=os.path.dirname(__file__))
+FEAAssembler.writeBDF("fine.bdf", problem)
 
 # ==============================================================================
 # Perform sensitivity check

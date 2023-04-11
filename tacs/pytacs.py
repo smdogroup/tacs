@@ -1538,6 +1538,11 @@ class pyTACS(BaseUI):
         else:
             problems = list(problems)
 
+        # Make sure design variables are up-to-date
+        x_bvec = self.createDesignVec(asBVec=True)
+        x_bvec.getArray()[:] = problems[0].getDesignVars()
+        self.assembler.setDesignVars(x_bvec)
+
         # Get local node info for each processor
         multNodes = self.getLocalMultiplierNodeIDs()
         globalToLocalNodeIDDict = self.meshLoader.getGlobalToLocalNodeIDDict()
