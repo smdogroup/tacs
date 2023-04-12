@@ -30,7 +30,7 @@ import warnings
 from functools import wraps
 
 import numpy as np
-from pyNastran.bdf.bdf import BDF
+import pyNastran.bdf as pn
 
 import tacs.TACS
 import tacs.constitutive
@@ -1535,6 +1535,8 @@ class pyTACS(BaseUI):
         # Make sure problems is in a list
         if hasattr(problems, "__iter__") == False:
             problems = [problems]
+        elif isinstance(problems, dict):
+            problems = list(problems.values())
         else:
             problems = list(problems)
 
@@ -1553,9 +1555,9 @@ class pyTACS(BaseUI):
         allGlobalToLocalNodeIDDict = self.comm.gather(globalToLocalNodeIDDict, root=0)
         allXpts = self.comm.gather(Xpts_bvec, root=0)
 
-        # Assemble new BDF file on root
+        # Assemble new BDF file for mesh on root
         if self.comm.rank == 0:
-            newBDFInfo = BDF(debug=False)
+            newBDFInfo = pn.bdf.BDF(debug=False)
 
             # Write out updated node locations
             nastranNodeIDs = list(self.bdfInfo.node_ids)
@@ -1696,10 +1698,23 @@ class pyTACS(BaseUI):
             # Copy over rigid elements
             newBDFInfo.rigid_elements.update(self.bdfInfo.rigid_elements)
 
-            # TODO: Export forces from problem classes
+            # Add case control deck for loads
+            newBDFInfo.case_control_deck = pn.case_control_deck.CaseControlDeck([])
 
-            # Write out BDF file
-            newBDFInfo.write_bdf(fileName, size=16, is_double=True, write_header=False)
+        else:
+            newBDFInfo = None
+
+        # Append forces from problem classes
+        for i, problem in enumerate(problems):
+            if isinstance(problem, tacs.problems.StaticProblem):
+                loadCase = i + 1
+                problem.writeLoadToBDF(newBDFInfo, loadCase)
+
+        # Write out BDF file
+        if self.comm.rank == 0:
+            newBDFInfo.write_bdf(
+                fileName, size=16, is_double=True, write_header=False, enddata=True
+            )
 
     def getNumComponents(self):
         """

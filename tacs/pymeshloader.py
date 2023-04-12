@@ -294,7 +294,7 @@ class pyMeshLoader(BaseUI):
     def getConnectivityForComp(self, componentID, nastranOrdering=False):
         # Find all of the element IDs belonging to this property group
         propertyID = list(self.bdfInfo.property_ids)[componentID]
-        elementIDs = self.bdfInfo.get_element_ids_dict_with_pids()[propertyID]
+        elementIDs = self.bdfInfo.get_property_id_to_element_ids_map()[propertyID]
         compConn = []
         for elementID in elementIDs:
             # We've now got the connectivity for this element, but it is in nastrans node numbering

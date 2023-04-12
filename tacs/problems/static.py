@@ -17,6 +17,7 @@ import time
 from collections import OrderedDict
 
 import numpy as np
+import pyNastran.bdf as pn
 
 import tacs.TACS
 import tacs.elements
@@ -1548,3 +1549,100 @@ class StaticProblem(TACSProblem):
         if self.getOption("writeSolution"):
             base = os.path.join(outputDir, baseName) + ".f5"
             self.outputViewer.writeToFile(base)
+
+    def writeLoadToBDF(self, bdfFile, loadCaseID):
+        """
+        Write loads from problem to NASTRAN BDF file.
+
+        Parameters
+        ----------
+        bdfFile: str or pyNastran.bdf.bdf.BDF or None
+            Name of file to write BDF file to. Only required on root proc,
+            can be None otherwise.
+        loadCaseID: tacs.problems.BaseProblem or List[tacs.problems.BaseProblem]
+            List of pytacs Problem classes to write BDF file from.
+        """
+
+        # Compute the residual w/o external forces to infer the applied load
+        F = self.assembler.createVec()
+        # Save original value of loadscale
+        oldLS = self.loadScale
+        # Set load scale to zero
+        self.loadScale = 0.0
+        # Evaluate residual to get internal force
+        # (which equals ext force by equilibrium)
+        self.getResidual(F)
+        # Reset load scale
+        self.loadScale = oldLS
+
+        # Get local node info for each processor
+        multNodes = self.meshLoader.getLocalMultiplierNodeIDs()
+        globalToLocalNodeIDDict = self.meshLoader.getGlobalToLocalNodeIDDict()
+        F_array = F.getArray()
+
+        # Gather local info to root processor
+        allMultNodes = self.comm.gather(multNodes, root=0)
+        allGlobalToLocalNodeIDDict = self.comm.gather(globalToLocalNodeIDDict, root=0)
+        allF = self.comm.gather(F_array, root=0)
+
+        vpn = self.getVarsPerNode()
+
+        # Assemble new BDF file on root
+        if self.comm.rank == 0:
+            if isinstance(bdfFile, str):
+                newBDFInfo = pn.bdf.BDF(debug=False)
+            elif isinstance(bdfFile, pn.bdf.BDF):
+                newBDFInfo = bdfFile
+
+            # Save subcase info to bdf
+            if newBDFInfo.case_control_deck is not None:
+                newBDFInfo.case_control_deck.create_new_subcase(loadCaseID)
+                newBDFInfo.case_control_deck.add_parameter_to_local_subcase(
+                    loadCaseID, f"SUBTITLE={self.name}"
+                )
+                newBDFInfo.case_control_deck.add_parameter_to_local_subcase(
+                    loadCaseID, f"ANALYSIS=STATICS"
+                )
+                newBDFInfo.case_control_deck.add_parameter_to_local_subcase(
+                    loadCaseID, f"LOAD={loadCaseID}"
+                )
+
+            # Tolerance for writing out point loads
+            zero_tol = 1e-6
+            # Write out force values
+            nastranNodeIDs = list(self.bdfInfo.node_ids)
+            # Loop through each proc and pull out nodal forces
+            for proc_i in range(self.comm.size):
+                Fxyz = allF[proc_i].reshape(-1, vpn)
+                for tacsGNodeID in allGlobalToLocalNodeIDDict[proc_i]:
+                    # Get local node ID
+                    tacsLNodeID = allGlobalToLocalNodeIDDict[proc_i][tacsGNodeID]
+                    # Get Global nastran ID
+                    nastranGNodeID = nastranNodeIDs[tacsGNodeID]
+                    # Add force to bdf file (if its not a multiplier node)
+                    if tacsLNodeID not in allMultNodes[proc_i]:
+                        # Check if force is above tolerance before adding to bdf
+                        if (
+                            vpn >= 3
+                            and np.linalg.norm(Fxyz[tacsLNodeID][:3]) > zero_tol
+                        ):
+                            f = np.zeros(3)
+                            for i in range(3):
+                                if abs(Fxyz[tacsLNodeID][i]) > zero_tol:
+                                    f[i] = Fxyz[tacsLNodeID][i]
+                            newBDFInfo.add_force(loadCaseID, nastranGNodeID, 1.0, f)
+                        elif (
+                            vpn >= 6
+                            and np.linalg.norm(Fxyz[tacsLNodeID][3:6]) > zero_tol
+                        ):
+                            m = np.zeros(3)
+                            for i in range(3):
+                                if abs(Fxyz[tacsLNodeID][i + 3]) > zero_tol:
+                                    m[i] = Fxyz[tacsLNodeID][i + 3]
+                            newBDFInfo.add_moment(loadCaseID, nastranGNodeID, 1.0, m)
+
+            # If bdf file was provided as a file name save it directly
+            if isinstance(bdfFile, str):
+                newBDFInfo.write_bdf(
+                    bdfFile, size=16, is_double=True, write_header=False
+                )
