@@ -1681,7 +1681,9 @@ class pyTACS(BaseUI):
                         newCard.g0 = None
                         if propCard.type != "PBEAM":
                             # TACS wrote out a PBAR card that we must convert
-                            newPropCard = pn.properties.beam.PBEAM_init_from_empty()
+                            newPropCard = (
+                                pn.cards.properties.beam.PBEAM_init_from_empty()
+                            )
                             newPropCard.A[0] = propCard.Area()
                             newPropCard.i1[0] = propCard.I11()
                             newPropCard.i2[0] = propCard.I22()
@@ -1698,7 +1700,7 @@ class pyTACS(BaseUI):
                             J = propCard.J()
                         else:
                             J = propCard.j
-                        newPropCard = pn.properties.rods.PROD(
+                        newPropCard = pn.cards.properties.rods.PROD(
                             propCard.pid, propCard.mid, propCard.Area(), J
                         )
                         newBDFInfo.properties[propID] = newPropCard

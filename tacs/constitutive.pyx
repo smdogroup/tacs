@@ -1007,10 +1007,10 @@ cdef class IsoTubeBeamConstitutive(BeamConstitutive):
             X[i] = 0.0
         d = self.cptr.evalDesignFieldValue(elemIndex, pt, X, 0)
         t = self.cptr.evalDesignFieldValue(elemIndex, pt, X, 1)
-        ri = d/2
-        ro = ri + t
+        ri = np.real(d / 2.0)
+        ro = np.real(ri + t)
         mat_id = self.props.getNastranID()
-        con = nastran_cards.properties.bars.PBARL(self.nastranID, mat_id, "TUBE", np.real([ro, ri]))
+        con = nastran_cards.properties.bars.PBARL(self.nastranID, mat_id, "TUBE", [ro, ri])
         return con
 
 cdef class IsoRectangleBeamConstitutive(BeamConstitutive):
@@ -1090,7 +1090,7 @@ cdef class IsoRectangleBeamConstitutive(BeamConstitutive):
         w = self.cptr.evalDesignFieldValue(elemIndex, pt, X, 0)
         t = self.cptr.evalDesignFieldValue(elemIndex, pt, X, 1)
         mat_id = self.props.getNastranID()
-        con = nastran_cards.properties.bars.PBARL(self.nastranID, mat_id, "BAR", np.real([t, w]))
+        con = nastran_cards.properties.bars.PBARL(self.nastranID, mat_id, "BAR", [np.real(w), np.real(t)])
         return con
 
 cdef class GeneralMassConstitutive(Constitutive):

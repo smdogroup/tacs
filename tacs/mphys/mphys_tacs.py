@@ -869,7 +869,16 @@ class TacsFuncsGroup(om.Group):
                 promotes_inputs=promotes_inputs,
                 promotes_outputs=["*"],
             )
-            self.mass_funcs.mphys_set_sp(sp)
+
+        self.mass_funcs.mphys_set_sp(sp)
+
+        self.sp = sp
+
+    def write_bdf(self, file_name):
+        """
+        Write optimized structure and loads to BDF file.
+        """
+        self.fea_assembler.writeBDF(file_name, self.sp)
 
 
 class TacsBuilder(Builder):
