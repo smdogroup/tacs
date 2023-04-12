@@ -251,7 +251,14 @@ class TACSBladeStiffenedShellConstitutive : public TACSShellConstitutive {
                                   const TacsScalar X[], int index);
 
  protected:
+  /**
+   * @brief Compute the stiffness matrix of the stiffened shell
+   *
+   * @param C Array to store the stiffness matrix in (will be zeroed out within
+   * this function)
+   */
   void computeStiffness(TacsScalar C[]);
+
   /**
    * @brief Compute the Q and ABar Matrices for a laminate using a smeared
    * stiffness approach
@@ -337,10 +344,25 @@ class TACSBladeStiffenedShellConstitutive : public TACSShellConstitutive {
                                     TacsScalar panelStiffness[]);
 
   // ==============================================================================
-  // Helper functions for computing the panel's strain/stress/stiffness
+  // Helper functions for computing the panel stress/stiffness/failure
   // ==============================================================================
   // In future, these methods should be replaced by calls to another shell
   // constitutive model
+
+  /**
+   * @brief Compute the panel stress given the panel strains
+   *
+   * @param strain Shell strains [e11, e22, y12, k11, k22, k12, y23, y13]
+   * @param stress Shell stresses [N11, N22, N12, M11, M22, M12, Q23, Q13]
+   */
+  void computePanelStress(const TacsScalar strain[], TacsScalar stress[]);
+
+  /**
+   * @brief Compute the stiffness matrix of the panel (without stiffeners)
+   *
+   * @param C Array to store the stiffness matrix in (will be zeroed out within
+   * this function)
+   */
   void computePanelStiffness(TacsScalar C[]);
 
   // ==============================================================================
@@ -358,7 +380,6 @@ class TACSBladeStiffenedShellConstitutive : public TACSShellConstitutive {
    * V13]
    */
   inline void computeStiffenerStress(const TacsScalar stiffenerStrain[],
-                                     const TacsScalar C[],
                                      TacsScalar stiffenerStress[]);
 
   /**
