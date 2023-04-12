@@ -1542,6 +1542,13 @@ class pyTACS(BaseUI):
         else:
             problems = list(problems)
 
+        # Check that each problem was created by this pyTACS instance
+        for problem in problems:
+            if problem.assembler != self.assembler:
+                raise self._TACSError(
+                    f"This problem instance ({problem.name}) is not associated with this instance of pyTACS."
+                )
+
         # Make sure design variables are up-to-date
         x_bvec = self.createDesignVec(asBVec=True)
         x_bvec.getArray()[:] = problems[0].getDesignVars()
@@ -1666,9 +1673,37 @@ class pyTACS(BaseUI):
                     # Update element coordinate frame info, if necessary
                     if "CQUAD" in newCard.type or "CTRI" in newCard.type:
                         newCard.theta_mcid = coordID
-                    elif "CBAR" in newCard.type or "CBEAM" in newCard.type:
+                    elif "CBAR" in newCard.type:
                         newCard.x = vec
                         newCard.g0 = None
+                    elif "CBEAM" in newCard.type:
+                        newCard.x = vec
+                        newCard.g0 = None
+                        if propCard.type != "PBEAM":
+                            # TACS wrote out a PBAR card that we must convert
+                            newPropCard = pn.properties.beam.PBEAM_init_from_empty()
+                            newPropCard.A[0] = propCard.Area()
+                            newPropCard.i1[0] = propCard.I11()
+                            newPropCard.i2[0] = propCard.I22()
+                            newPropCard.i12[0] = propCard.I12()
+                            if hasattr(propCard, "J"):
+                                newPropCard.j[0] = propCard.J()
+                            else:
+                                newPropCard.j[0] = propCard.j
+                            newPropCard.comment = propCard.comment
+                            propCard = newPropCard
+                    elif "CROD" in newCard.type and propCard.type != "PROD":
+                        # TACS wrote out a PBAR card that we must convert
+                        if hasattr(propCard, "J"):
+                            J = propCard.J()
+                        else:
+                            J = propCard.j
+                        newPropCard = pn.properties.rods.PROD(
+                            propCard.pid, propCard.mid, propCard.Area(), J
+                        )
+                        newBDFInfo.properties[propID] = newPropCard
+                        newPropCard.comment = propCard.comment
+                        propCard = newPropCard
                     elif newCard.type == "CBUSH":
                         if isinstance(transObj, tacs.elements.SpringRefAxisTransform):
                             newCard.x = vec

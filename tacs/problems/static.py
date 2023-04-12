@@ -1560,8 +1560,8 @@ class StaticProblem(TACSProblem):
         bdfFile: str or pyNastran.bdf.bdf.BDF or None
             Name of file to write BDF file to. Only required on root proc,
             can be None otherwise.
-        loadCaseID: tacs.problems.BaseProblem or List[tacs.problems.BaseProblem]
-            List of pytacs Problem classes to write BDF file from.
+        loadCaseID: int
+            NASTARAN loadcase ID to assign loads to in BDF.
         """
 
         # Compute the residual w/o external forces to infer the applied load
