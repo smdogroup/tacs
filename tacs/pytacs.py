@@ -1727,6 +1727,9 @@ class pyTACS(BaseUI):
         else:
             newBDFInfo = None
 
+        # All procs should wait for root
+        self.comm.barrier()
+
         # Append forces from problem classes
         for i, problem in enumerate(problems):
             if isinstance(problem, tacs.problems.StaticProblem):
@@ -1738,6 +1741,9 @@ class pyTACS(BaseUI):
             newBDFInfo.write_bdf(
                 fileName, size=16, is_double=True, write_header=False, enddata=True
             )
+
+        # All procs should wait for root
+        self.comm.barrier()
 
     def getNumComponents(self):
         """

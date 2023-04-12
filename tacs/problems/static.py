@@ -1632,7 +1632,7 @@ class StaticProblem(TACSProblem):
                                 if abs(Fxyz[tacsLNodeID][i]) > zero_tol:
                                     f[i] = Fxyz[tacsLNodeID][i]
                             newBDFInfo.add_force(loadCaseID, nastranGNodeID, 1.0, f)
-                        elif (
+                        if (
                             vpn >= 6
                             and np.linalg.norm(Fxyz[tacsLNodeID][3:6]) > zero_tol
                         ):
@@ -1647,3 +1647,6 @@ class StaticProblem(TACSProblem):
                 newBDFInfo.write_bdf(
                     bdfFile, size=16, is_double=True, write_header=False
                 )
+
+        # All procs should wait for root
+        self.comm.barrier()

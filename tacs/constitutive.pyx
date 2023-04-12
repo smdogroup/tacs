@@ -355,7 +355,8 @@ cdef class MaterialProperties:
 
         if  self.ptr.getMaterialType() == TACS_ISOTROPIC_MATERIAL:
             self.ptr.getIsotropicProperties(&E1, &nu12)
-            mat = nastran_cards.materials.MAT1(self.nastranID, np.real(E1), None, np.real(nu12), St=np.real(T1))
+            mat = nastran_cards.materials.MAT1(self.nastranID, np.real(E1), None, np.real(nu12), np.real(rho),
+                                               St=np.real(T1))
         else:
             self.ptr.getOrthotropicProperties(&E1, &E2, &E3, &nu12, &nu13, &nu23, &G12, &G13, &G23)
             mat = nastran_cards.materials.MAT8(self.nastranID, np.real(E1), np.real(E2), np.real(nu12), np.real(G12),
