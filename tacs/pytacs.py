@@ -1523,7 +1523,9 @@ class pyTACS(BaseUI):
     def writeBDF(self, fileName, problems):
         """
         Write NASTRAN BDF file from problem class.
-        Assumes all supplied pProblems share the same nodal and design variable values.
+        Assumes all supplied Problems share the same nodal and design variable values.
+
+        NOTE: Only supports writing loads from StaticProblem types.
 
         Parameters
         ----------
@@ -1574,7 +1576,13 @@ class pyTACS(BaseUI):
                         newBDFInfo.add_grid(nastranGNodeID, xyz[tacsLNodeID])
 
             # Copy over boundary conditions
-            newBDFInfo.spcs.update(self.bdfInfo.spcs)
+            # Set all con IDs to one
+            newBDFInfo.spcs[1] = []
+            for spcID in self.bdfInfo.spcs:
+                for spcCard in self.bdfInfo.spcs[spcID]:
+                    newCard = copy.deepcopy(spcCard)
+                    newCard.conid = 1
+                    newBDFInfo.spcs[1].append(newCard)
 
             # Write updated properties and elements
             transObjs = {}
@@ -1681,14 +1689,14 @@ class pyTACS(BaseUI):
                     )
                     conObj = elemObj.getConstitutive()
                     M = conObj.evalMassMatrix()
-                    mass = M[0]
-                    I11 = M[15]
-                    I22 = M[18]
-                    I33 = M[20]
+                    mass = np.real(M[0])
+                    I11 = np.real(M[15])
+                    I22 = np.real(M[18])
+                    I33 = np.real(M[20])
                     # Nastran uses negative convention for POI's
-                    I12 = -M[16]
-                    I13 = -M[17]
-                    I23 = -M[19]
+                    I12 = -np.real(M[16])
+                    I13 = -np.real(M[17])
+                    I23 = -np.real(M[19])
                     newBDFInfo.add_conm2(
                         elemID, nodeID, mass, I=[I11, I12, I22, I13, I23, I33]
                     )
@@ -1700,7 +1708,21 @@ class pyTACS(BaseUI):
             newBDFInfo.rigid_elements.update(self.bdfInfo.rigid_elements)
 
             # Add case control deck for loads
-            newBDFInfo.case_control_deck = pn.case_control_deck.CaseControlDeck([])
+            caseConLines = [
+                "TITLE = TACS Analysis Set",
+                "ECHO = NONE",
+                "DISPLACEMENT(PLOT) = ALL",
+                "SPCFORCE(PLOT) = ALL",
+                "OLOAD(PLOT) = ALL",
+                "FORCE(PLOT,CORNER) = ALL",
+                "STRESS(PLOT,CORNER) = ALL",
+                "SPC = 1",
+            ]
+            newBDFInfo.case_control_deck = pn.case_control_deck.CaseControlDeck(
+                caseConLines
+            )
+            # Set solution type to static (101)
+            newBDFInfo.sol = 101
 
         else:
             newBDFInfo = None

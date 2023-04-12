@@ -1553,6 +1553,7 @@ class StaticProblem(TACSProblem):
     def writeLoadToBDF(self, bdfFile, loadCaseID):
         """
         Write loads from problem to NASTRAN BDF file.
+        NOTE: To get correct loads, `solve` method should be called before this method.
 
         Parameters
         ----------
@@ -1575,7 +1576,7 @@ class StaticProblem(TACSProblem):
         # Reset load scale
         self.loadScale = oldLS
 
-        # Get local node info for each processor
+        # Get local force info for each processor
         multNodes = self.meshLoader.getLocalMultiplierNodeIDs()
         globalToLocalNodeIDDict = self.meshLoader.getGlobalToLocalNodeIDDict()
         F_array = np.real(F.getArray())
