@@ -987,3 +987,49 @@ TacsScalar ksAggregation(const TacsScalar f[], const TacsScalar maxVal,
   }
   return maxVal + log(aggregatedValue) / ksWeight;
 }
+
+TacsScalar ksAggregationSens(const TacsScalar f[], const int numVals,
+                             const double ksWeight, TacsScalar dKSdf[]) {
+  TacsScalar maxVal = f[0];
+  for (int ii = 1; ii < numVals; ii++) {
+    if (TacsRealPart(f[ii]) > TacsRealPart(maxVal)) {
+      maxVal = f[ii];
+    }
+  }
+  TacsScalar sum = 0.0;
+  memset(dKSdf, 0, numVals * sizeof(TacsScalar));
+  for (int ii = 0; ii < numVals; ii++) {
+    TacsScalar val = exp(ksWeight * (f[ii] - maxVal));
+    sum += val;
+    dKSdf[ii] = val;
+  }
+  for (int ii = 0; ii < numVals; ii++) {
+    dKSdf[ii] /= sum;
+  }
+
+  return maxVal + log(sum) / ksWeight;
+}
+
+TacsScalar ksAggregationSensProduct(const TacsScalar f[], const int numVals,
+                                    const int numVars, const double ksWeight,
+                                    TacsScalar **dfdx, TacsScalar dKSdx[]) {
+  TacsScalar maxVal = f[0];
+  for (int ii = 1; ii < numVals; ii++) {
+    if (TacsRealPart(f[ii]) > TacsRealPart(maxVal)) {
+      maxVal = f[ii];
+    }
+  }
+  TacsScalar sum = 0.0;
+  memset(dKSdx, 0, numVars * sizeof(TacsScalar));
+  for (int ii = 0; ii < numVals; ii++) {
+    TacsScalar val = exp(ksWeight * (f[ii] - maxVal));
+    sum += val;
+    for (int jj = 0; jj < numVars; jj++) {
+      dKSdx[jj] += val * dfdx[ii][jj];
+    }
+  }
+  for (int jj = 0; jj < numVars; jj++) {
+    dKSdx[jj] /= sum;
+  }
+  return maxVal + log(sum) / ksWeight;
+}

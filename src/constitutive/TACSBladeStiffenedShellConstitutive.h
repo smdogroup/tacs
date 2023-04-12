@@ -297,15 +297,19 @@ class TACSBladeStiffenedShellConstitutive : public TACSShellConstitutive {
    * strains at the stiffener centroid
    *
    * The transformation can be written as [eb] = [Te] [es], or in full:
-   * [e11b]   [1, 0, 0,   zb, 0, 0,    0, 0]  [e11s]
+   * [e11b]   [1, 0, 0,   zc, 0, 0,    0, 0]  [e11s]
    * [xi1b]   [0, 0, 0,   0,  0, -1/2, 0, 0]  [e22s]
    * [xi2b] = [0, 0, 0,   1,  0, 0,    0, 0]  [y12s]
    * [xi3b]   [0, 0, 0,   0,  0, 0,    0, 0]  [k11s]
    * [y13b]   [0, 0, 0,   0,  0, 0,    0, 1]  [k22s]
-   * [y12b]   [0, 0, 1/2, 0,  0, zb/2, 0, 0]  [k12s]
+   * [y12b]   [0, 0, 1/2, 0,  0, zc/2, 0, 0]  [k12s]
    *                                          [y23s]
    *                                          [y13s]
    *
+   * Where:
+   * - eb is the beam strain vector
+   * - es is the shell strain vector
+   * - zc is the distance from the shell mid-plane to the stiffener centroid
    *
    * @param panelStrain The shell mid-plane strains [e11, e22, y12, k11, k22,
    * k12, y23, y13]
@@ -314,6 +318,34 @@ class TACSBladeStiffenedShellConstitutive : public TACSShellConstitutive {
    */
   inline void transformStrain(const TacsScalar panelStrain[],
                               TacsScalar stiffenerStrain[]);
+
+  /**
+   * @brief Transform a sensitivity w.r.t the stiffener centroid strains to a
+   * sensitivity w.r.t the shell mid-plane strains
+   *
+   * This transformation can be written as [df/des] = [df/deb] * [deb/des] =
+   * [df/deb] * [Te], or in full:
+   * [df/de11s]   [df/de11b]   [1, 0, 0,   zc, 0, 0,    0, 0]
+   * [df/de22s]   [df/dxi1b]   [0, 0, 0,   0,  0, -1/2, 0, 0]
+   * [df/dy12s] = [df/dxi2b] * [0, 0, 0,   1,  0, 0,    0, 0]
+   * [df/dk11s]   [df/dxi3b]   [0, 0, 0,   0,  0, 0,    0, 0]
+   * [df/dk22s]   [df/dy13b]   [0, 0, 0,   0,  0, 0,    0, 1]
+   * [df/dk12s]   [df/dy12b]   [0, 0, 1/2, 0,  0, zc/2, 0, 0]
+   * [df/dy23s]
+   * [df/dy13s]
+   *
+   * Where:
+   * - df/des is the sensitivity w.r.t the shell mid-plane strains
+   * - df/deb is the sensitivity w.r.t the stiffener centroid strains
+   * - deb/des = Te is the strain transformation matrix
+   *
+   * @param stiffenerStrainSens Array containing sensitivity of an output w.r.t
+   * beam strains
+   * @param panelStrainSens Array to store the sensitivity of the output w.r.t
+   * shell mid-plane strains
+   */
+  inline void transformStrainSens(const TacsScalar stiffenerStrainSens[],
+                                  TacsScalar panelStrainSens[]);
 
   /**
    * @brief Add the contribution of the stiffener stress to the panel stress
@@ -384,6 +416,16 @@ class TACSBladeStiffenedShellConstitutive : public TACSShellConstitutive {
    */
   TacsScalar computePanelFailure(const TacsScalar strain[]);
 
+  /**
+   * @brief Compute the sensitivity of the panel failure w.r.t the panel strains
+   *
+   * @param strain Shell strains [e11, e22, y12, k11, k22, k12, y23, y13]
+   * @param sens Array to store the sensitivity of the failure w.r.t the strains
+   * @return TacsScalar The aggregated failure value for the panel
+   */
+  TacsScalar evalPanelFailureStrainSens(const TacsScalar strain[],
+                                        TacsScalar sens[]);
+
   // ==============================================================================
   // Helper functions for computing the stiffner's strain/stress/stiffness
   // ==============================================================================
@@ -418,6 +460,17 @@ class TACSBladeStiffenedShellConstitutive : public TACSShellConstitutive {
    * @return TacsScalar The failure criterion for the stiffener
    */
   TacsScalar computeStiffenerFailure(const TacsScalar stiffenerStrain[]);
+
+  /**
+   * @brief Compute the sensitivity of the stiffener failure w.r.t the stiffener
+   * strains
+   *
+   * @param strain Beam strains [e11, xi1, xi2, xi3, y13, y12]
+   * @param sens Array to store the sensitivity of the failure w.r.t the strains
+   * @return TacsScalar The aggregated failure value for the stiffener
+   */
+  TacsScalar evalStiffenerFailureStrainSens(const TacsScalar strain[],
+                                            TacsScalar sens[]);
 
   // ==============================================================================
   // Helper functions for computing stiffener cross-section properties
@@ -582,9 +635,12 @@ class TACSBladeStiffenedShellConstitutive : public TACSShellConstitutive {
   int* panelPlyFracLocalNums;      ///< Panel ply fraction local DV numbers
   int* stiffenerPlyFracLocalNums;  ///< Stiffener ply fraction local DV numbers
 
-  // --- Arrays for storing failure values for each ply angle ---
+  // --- Arrays for storing failure values for each ply angle and their
+  // sensitivities ---
   TacsScalar* panelPlyFailValues;
   TacsScalar* stiffenerPlyFailValues;
+  TacsScalar** panelPlyFailStrainSens;
+  TacsScalar** stiffenerPlyFailStrainSens;
 
   static const char* constName;        ///< Constitutive model name
   static const int NUM_Q_ENTRIES = 6;  ///< Number of entries in the Q matrix
