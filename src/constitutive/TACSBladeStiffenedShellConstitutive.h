@@ -18,6 +18,7 @@ bladeFSDT model from previous versions of TACS developed by Graeme Kennedy.
 // =============================================================================
 // Extension Includes
 // =============================================================================
+#include "TACSBeamConstitutive.h"
 #include "TACSMaterialProperties.h"
 #include "TACSShellConstitutive.h"
 
@@ -206,7 +207,178 @@ class TACSBladeStiffenedShellConstitutive : public TACSShellConstitutive {
                             const TacsScalar X[], const TacsScalar scale[],
                             int dvLen, TacsScalar dfdx[]);
 
+  // ==============================================================================
+  // Compute stress/strain/stiffness
+  // ==============================================================================
+  // Evaluate the stress
+  void evalStress(int elemIndex, const double pt[], const TacsScalar X[],
+                  const TacsScalar e[], TacsScalar s[]);
+
+  // Add the derivative of the product of stress with a vector psi to dfdx
+  void addStressDVSens(int elemIndex, TacsScalar scale, const double pt[],
+                       const TacsScalar X[], const TacsScalar strain[],
+                       const TacsScalar psi[], int dvLen, TacsScalar dfdx[]);
+
+  // Evaluate the tangent stiffness
+  void evalTangentStiffness(int elemIndex, const double pt[],
+                            const TacsScalar X[], TacsScalar C[]);
+
+  // ==============================================================================
+  // Compute failure criteria
+  // ==============================================================================
+  // Calculate the point-wise failure criteria
+  TacsScalar evalFailure(int elemIndex, const double pt[], const TacsScalar X[],
+                         const TacsScalar e[]);
+
+  // Evaluate the derivative of the failure criteria w.r.t. the strain
+  TacsScalar evalFailureStrainSens(int elemIndex, const double pt[],
+                                   const TacsScalar X[], const TacsScalar e[],
+                                   TacsScalar sens[]);
+
+  // Add the derivative of the failure criteria w.r.t. the design variables
+  void addFailureDVSens(int elemIndex, TacsScalar scale, const double pt[],
+                        const TacsScalar X[], const TacsScalar strain[],
+                        int dvLen, TacsScalar dfdx[]);
+
+  // ==============================================================================
+  // Compute output quantities
+  // ==============================================================================
+  // Get the object name
+  const char* getObjectName() { return constName; }
+
+  // Retrieve the design variable for plotting purposes
+  TacsScalar evalDesignFieldValue(int elemIndex, const double pt[],
+                                  const TacsScalar X[], int index);
+
  protected:
+  void computeStiffness(TacsScalar C[]);
+  /**
+   * @brief Compute the Q and ABar Matrices for a laminate using a smeared
+   * stiffness approach
+   *
+   * @param ply Pointer to the orthotropic ply for the laminate
+   * @param numPlies Number of plies in the laminate
+   * @param plyAngles Ply angles for the laminate
+   * @param plyFractions Ply fractions for each ply angle
+   * @param Q The Q matrix for the laminate, stored as a flattened 6 entry array
+   * ([Q11, Q12, Q16, Q22, Q26, Q66])
+   * @param ABar The ABar matrix for the laminate, stored as a flattened 3 entry
+   * array ([Q44, Q45, Q55])
+   */
+  void computeSmearedStiffness(TACSOrthotropicPly* ply, const int numPlies,
+                               const TacsScalar plyAngles[],
+                               const TacsScalar plyFractions[], TacsScalar Q[],
+                               TacsScalar ABar[]);
+
+  // ==============================================================================
+  // Helper functions for transforming strains/stresses/stiffnesses between the
+  // panel and stiffener
+  // ==============================================================================
+  /**
+   * @brief Given the shell mid-plane strains, compute the equivalent beam
+   * strains at the stiffener centroid
+   *
+   * The transformation can be written as [eb] = [Te] [es], or in full:
+   * [e11b]   [1, 0, 0,   zb, 0, 0,    0, 0]  [e11s]
+   * [xi1b]   [0, 0, 0,   0,  0, -1/2, 0, 0]  [e22s]
+   * [xi2b] = [0, 0, 0,   1,  0, 0,    0, 0]  [y12s]
+   * [xi3b]   [0, 0, 0,   0,  0, 0,    0, 0]  [k11s]
+   * [y13b]   [0, 0, 0,   0,  0, 0,    0, 1]  [k22s]
+   * [y12b]   [0, 0, 1/2, 0,  0, zb/2, 0, 0]  [k12s]
+   *                                          [y23s]
+   *                                          [y13s]
+   *
+   *
+   * @param panelStrain The shell mid-plane strains [e11, e22, y12, k11, k22,
+   * k12, y23, y13]
+   * @param stiffenerStrain The stiffener centroid strains [e11, xi1, xi2, xi3,
+   * y13, y12]
+   */
+  inline void transformStrain(const TacsScalar panelStrain[],
+                              TacsScalar stiffenerStrain[]);
+
+  /**
+   * @brief Add the contribution of the stiffener stress to the panel stress
+   *
+   * The transformation of stiffener to panel stress consists of two steps:
+   * 1. Transform the stiffener forces to the panel mid-plane, this is the
+   * transpose of the strain transformation
+   * 2. Add the transformed stiffener forces to the panel mid-plane forces,
+   * divided by the stiffener pitch to account for the stiffener spacing
+   *
+   * This can be written as [ss] += 1/pitch * [Te]^{T} [sb]
+   * where:
+   * - [Te] is the strain transformation matrix
+   * - [ss] is the shell mid-plane stress vector
+   * - [sb] is the stiffener beam stress vector
+   *
+   * @param stiffenerStress Stiffener beam stresses [F1, M1, M2, M3, V13, V12]
+   * @param panelStress The shell mid-plane stresses to be added to [N11, N22,
+   * N12, M11, M22, M12, Q23, Q13]
+   */
+  inline void addStiffenerStress(const TacsScalar stiffenerStress[],
+                                 TacsScalar panelStress[]);
+
+  /**
+   * @brief Add the contribution of the stiffener stiffness to the panel
+   * stiffness
+   *
+   * This operation can be written as: [Cs] += 1 / pitch * [Te]^{T} * [Cb] *
+   * [Te] Where:
+   * - [Te] is the strain transformation matrix
+   * - [Cs] is the shell stiffness matrix
+   * - [Cb] is the stiffener beam stiffness matrix
+   *
+   * @param stiffenerStiffness The stiffener stiffness matrix, computed by
+   * `computeStiffenerStiffness`
+   * @param panelStiffness The panel stiffness matrix to be added to
+   */
+  inline void addStiffenerStiffness(const TacsScalar stiffenerStiffness[],
+                                    TacsScalar panelStiffness[]);
+
+  // ==============================================================================
+  // Helper functions for computing the panel's strain/stress/stiffness
+  // ==============================================================================
+  // In future, these methods should be replaced by calls to another shell
+  // constitutive model
+  void computePanelStiffness(TacsScalar C[]);
+
+  // ==============================================================================
+  // Helper functions for computing the stiffner's strain/stress/stiffness
+  // ==============================================================================
+  // In future, these methods should be replaced by calls to a beam constitutive
+  // model
+
+  /**
+   * @brief Compute the stiffener stress given the stiffener strains
+   *
+   * @param stiffenerStrain The stiffener centroid strains  [e11, xi1, xi2, xi3,
+   * y13, y12]
+   * @param stiffenerStress The stiffener stresses/forces [N11, M1, M2, M3, V12,
+   * V13]
+   */
+  inline void computeStiffenerStress(const TacsScalar stiffenerStrain[],
+                                     const TacsScalar C[],
+                                     TacsScalar stiffenerStress[]);
+
+  /**
+   * @brief Compute the stiffener's stiffness matrix
+   *
+   * @param C The stiffener local stiffness matrix (The derivative of the beam
+   * stresses w.r.t the beam strains)
+   */
+  inline void computeStiffenerStiffness(TacsScalar C[]);
+
+  /**
+   * @brief Compute the failure criterion for the stiffener in a given strain
+   * state
+   *
+   * @param stiffenerStrain The stiffener centroid strains  [e11, xi1, xi2, xi3,
+   * y13, y12]
+   * @return TacsScalar The failure criterion for the stiffener
+   */
+  TacsScalar computeStiffenerFailure(const TacsScalar stiffenerStrain[]);
+
   // ==============================================================================
   // Helper functions for computing stiffener cross-section properties
   // ==============================================================================
@@ -370,9 +542,8 @@ class TACSBladeStiffenedShellConstitutive : public TACSShellConstitutive {
   int* panelPlyFracLocalNums;      ///< Panel ply fraction local DV numbers
   int* stiffenerPlyFracLocalNums;  ///< Stiffener ply fraction local DV numbers
 
-  static const int PANEL_LENGTH_INDEX = 0;
-  static const int STIFFENER_PITCH_INDEX = 1;
-  static const int STIFFENER_HEIGHT_INDEX = 2;
-  static const int STIFFENER_THICKNESS_INDEX = 3;
-  static const int PANEL_THICKNESS_INDEX = 4;
+  static const char* constName;        ///< Constitutive model name
+  static const int NUM_Q_ENTRIES = 6;  ///< Number of entries in the Q matrix
+  static const int NUM_ABAR_ENTRIES =
+      3;  ///< Number of entries in the ABar matrix
 };
