@@ -5,7 +5,7 @@ from pytacs_analysis_base_test import PyTACSTestCase
 from tacs import pytacs, functions
 
 """
-This case tests pyTACS's `writeBDF` method.
+This case tests pyTACS's `writeBDF` method for shell elements.
 We first instantiate pyTACS and structural problems from a provided BDF, as usual.
 Using that instance of pyTACS we then export a BDF file using the `writeBDF` method,
 This should be identical to the original BDF file. We then instantiate a second 
