@@ -1578,7 +1578,7 @@ class StaticProblem(TACSProblem):
         # Get local node info for each processor
         multNodes = self.meshLoader.getLocalMultiplierNodeIDs()
         globalToLocalNodeIDDict = self.meshLoader.getGlobalToLocalNodeIDDict()
-        F_array = F.getArray()
+        F_array = np.real(F.getArray())
 
         # Gather local info to root processor
         allMultNodes = self.comm.gather(multNodes, root=0)

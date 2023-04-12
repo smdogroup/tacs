@@ -355,11 +355,13 @@ cdef class MaterialProperties:
 
         if  self.ptr.getMaterialType() == TACS_ISOTROPIC_MATERIAL:
             self.ptr.getIsotropicProperties(&E1, &nu12)
-            mat = nastran_cards.materials.MAT1(self.nastranID, E1, None, nu12, St=T1)
+            mat = nastran_cards.materials.MAT1(self.nastranID, np.real(E1), None, np.real(nu12), St=np.real(T1))
         else:
             self.ptr.getOrthotropicProperties(&E1, &E2, &E3, &nu12, &nu13, &nu23, &G12, &G13, &G23)
-            mat = nastran_cards.materials.MAT8(self.nastranID, E1, E2, nu12, G12, G13, G23, rho,
-                                               Xt=T1, Xc=C1, Yt=T2, Yc=C2, S=S12)
+            mat = nastran_cards.materials.MAT8(self.nastranID, np.real(E1), np.real(E2), np.real(nu12), np.real(G12),
+                                               np.real(G13), np.real(G23), np.real(rho),
+                                               Xt=np.real(T1), Xc=np.real(C1), Yt=np.real(T2), Yc=np.real(C2),
+                                               S=np.real(S12))
 
         return mat
 
@@ -695,7 +697,7 @@ cdef class IsoShellConstitutive(ShellConstitutive):
             X[i] = 0.0
         t = self.cptr.evalDesignFieldValue(elemIndex, pt, X, index)
         mat_id = self.props.getNastranID()
-        con = nastran_cards.properties.shell.PSHELL(self.nastranID, mat_id, float(t))
+        con = nastran_cards.properties.shell.PSHELL(self.nastranID, mat_id, np.real(t))
         return con
 
 
@@ -917,17 +919,17 @@ cdef class BasicBeamConstitutive(BeamConstitutive):
         e[1] = 1.0 / G
         e[2] = 1.0 / E
         self.cptr.evalStress(elemIndex, pt, X, <TacsScalar*>e.data, <TacsScalar*>s.data)
-        A = s[0]
-        J = s[1]
-        Iz = s[2]
-        Iyz = s[3]
+        A = np.real(s[0])
+        J = np.real(s[1])
+        Iz = np.real(s[2])
+        Iyz = np.real(s[3])
         e[:] = 0.0
         e[3] = 1.0 / E
         e[4:5] = 1.0 / (G * A)
         self.cptr.evalStress(elemIndex, pt, X, <TacsScalar*>e.data, <TacsScalar*>s.data)
-        Iy = s[3]
-        ky = s[4]
-        kz = s[5]
+        Iy = np.real(s[3])
+        ky = np.real(s[4])
+        kz = np.real(s[5])
         if Iy == Iz == Iyz == 0.0: # Bending terms are zero, write out as rod
             prop = nastran_cards.properties.rods.PROD(self.nastranID, mat_id, A, J)
         else: # bending terms nonzero, write out as bar
@@ -1010,7 +1012,7 @@ cdef class IsoTubeBeamConstitutive(BeamConstitutive):
         ri = d/2
         ro = ri + t
         mat_id = self.props.getNastranID()
-        con = nastran_cards.properties.bars.PBARL(self.nastranID, mat_id, "TUBE", [ro, ri])
+        con = nastran_cards.properties.bars.PBARL(self.nastranID, mat_id, "TUBE", np.real([ro, ri]))
         return con
 
 cdef class IsoRectangleBeamConstitutive(BeamConstitutive):
@@ -1090,7 +1092,7 @@ cdef class IsoRectangleBeamConstitutive(BeamConstitutive):
         w = self.cptr.evalDesignFieldValue(elemIndex, pt, X, 0)
         t = self.cptr.evalDesignFieldValue(elemIndex, pt, X, 1)
         mat_id = self.props.getNastranID()
-        con = nastran_cards.properties.bars.PBARL(self.nastranID, mat_id, "BAR", [t, w])
+        con = nastran_cards.properties.bars.PBARL(self.nastranID, mat_id, "BAR", np.real([t, w]))
         return con
 
 cdef class GeneralMassConstitutive(Constitutive):

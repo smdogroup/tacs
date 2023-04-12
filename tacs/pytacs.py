@@ -1548,7 +1548,7 @@ class pyTACS(BaseUI):
         # Get local node info for each processor
         multNodes = self.getLocalMultiplierNodeIDs()
         globalToLocalNodeIDDict = self.meshLoader.getGlobalToLocalNodeIDDict()
-        Xpts_bvec = problems[0].getNodes()
+        Xpts_bvec = np.real(problems[0].getNodes())
 
         # Gather local info to root processor
         allMultNodes = self.comm.gather(multNodes, root=0)
@@ -1637,13 +1637,14 @@ class pyTACS(BaseUI):
                     else:
                         vec1 = transObj.getRefAxis()
                         vec2 = np.random.random(3)
-                    newBDFInfo.add_cord2r(coordID, origin, vec1, vec2)
+                    newBDFInfo.add_cord2r(coordID, origin, np.real(vec1), np.real(vec2))
                     curCoordID += 1
                 # We just need the ref vector for these types
                 elif isinstance(
                     transObj, tacs.elements.BeamRefAxisTransform
                 ) or isinstance(transObj, tacs.elements.SpringRefAxisTransform):
                     vec = transObj.getRefAxis()
+                    vec = np.real(vec)
                 # Otherwise, there's no transform associated with this element, use default
                 else:
                     coordID = 0
@@ -1658,11 +1659,11 @@ class pyTACS(BaseUI):
                     if "CQUAD" in newCard.type or "CTRI" in newCard.type:
                         newCard.theta_mcid = coordID
                     elif "CBAR" in newCard.type or "CBEAM" in newCard.type:
-                        newCard.x = vec.astype(float)
+                        newCard.x = vec
                         newCard.g0 = None
                     elif newCard.type == "CBUSH":
                         if isinstance(transObj, tacs.elements.SpringRefAxisTransform):
-                            newCard.x = vec.astype(float)
+                            newCard.x = vec
                             newCard.g0 = None
                         else:
                             newCard.cid = coordID
