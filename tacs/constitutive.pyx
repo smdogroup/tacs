@@ -703,6 +703,13 @@ cdef class BladeStiffenedShellConstitutive(ShellConstitutive):
         if len(stiffenerPlyAngles) != numStiffenerPlies:
             raise ValueError('stiffenerPlyNums must have length numStiffenerPlies')
 
+        # Numpy's default int type is int64, but this is interpreted by Cython as a long.
+        if panelPlyFracNums.dtype != np.intc:
+            panelPlyFracNums = panelPlyFracNums.astype(np.intc)
+        if stiffenerPlyFracNums.dtype != np.intc:
+            stiffenerPlyFracNums = stiffenerPlyFracNums.astype(np.intc)
+        #     raise ValueError('panelPlyFracNums must be of type int32')
+
         self.cptr = new TACSBladeStiffenedShellConstitutive(
             panelPly.ptr,
             stiffenerPly.ptr,

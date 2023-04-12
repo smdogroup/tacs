@@ -706,6 +706,16 @@ void TACSBladeStiffenedShellConstitutive::addFailureDVSens(
 }
 
 // ==============================================================================
+// Compute output quantities
+// ==============================================================================
+// Retrieve the design variable for plotting purposes
+TacsScalar TACSBladeStiffenedShellConstitutive::evalDesignFieldValue(
+    int elemIndex, const double pt[], const TacsScalar X[], int index) {
+  // TODO: Implement this
+  return 0.0;
+}
+
+// ==============================================================================
 // Helper functions for computing the stiffness matrices
 // ==============================================================================
 
