@@ -220,4 +220,25 @@ class TACSMatrixHash : public TACSObject {
   MemNode *mem_root, *mem;
 };
 
+/**
+ * @brief Compute the KS aggregate of a set of values
+ *
+ * @param f The values to aggregate
+ * @param numVals The number of values to aggregate
+ * @param ksWeight The KS weight parameter (rho)
+ * @return TacsScalar The aggregated value
+ */
+TacsScalar ksAggregation(const TacsScalar f[], const int numVals, const double ksWeight);
+
+/**
+ * @brief Compute the KS aggregate of a set of values
+ *
+ * @param f The values to aggregate
+ * @param maxVal The maximum of the values
+ * @param numVals The number of values to aggregate
+ * @param ksWeight The KS weight parameter (rho)
+ * @return TacsScalar The aggregated value
+ */
+TacsScalar ksAggregation(const TacsScalar f[], const TacsScalar maxVal, const int numVals, const double ksWeight);
+
 #endif  // TACS_UTILITIES_H

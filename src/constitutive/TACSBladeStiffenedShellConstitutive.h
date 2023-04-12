@@ -21,6 +21,7 @@ bladeFSDT model from previous versions of TACS developed by Graeme Kennedy.
 #include "TACSBeamConstitutive.h"
 #include "TACSMaterialProperties.h"
 #include "TACSShellConstitutive.h"
+#include "TacsUtilities.h"
 
 // =============================================================================
 // Global constant definitions
@@ -562,6 +563,10 @@ class TACSBladeStiffenedShellConstitutive : public TACSShellConstitutive {
   int panelThickLocalNum;          ///< Panel thickness local DV number
   int* panelPlyFracLocalNums;      ///< Panel ply fraction local DV numbers
   int* stiffenerPlyFracLocalNums;  ///< Stiffener ply fraction local DV numbers
+
+  // --- Arrays for storing failure values for each ply angle ---
+  TacsScalar* panelPlyFailValues;
+  TacsScalar* stiffenerPlyFailValues;
 
   static const char* constName;        ///< Constitutive model name
   static const int NUM_Q_ENTRIES = 6;  ///< Number of entries in the Q matrix
