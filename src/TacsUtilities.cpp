@@ -968,20 +968,22 @@ void TACSMatrixHash::reset(int new_table_size) {
   table_size = new_table_size;
 }
 
-TacsScalar ksAggregation(const TacsScalar f[], const int numVals, const double ksWeight){
+TacsScalar ksAggregation(const TacsScalar f[], const int numVals,
+                         const double ksWeight) {
   TacsScalar maxVal = f[0];
   for (int ii = 1; ii < numVals; ii++) {
-    if (f[ii] > maxVal) {
+    if (TacsRealPart(f[ii]) > TacsRealPart(maxVal)) {
       maxVal = f[ii];
     }
   }
   return ksAggregation(f, maxVal, numVals, ksWeight);
 }
 
-TacsScalar ksAggregation(const TacsScalar f[], const TacsScalar maxVal, const int numVals, const double ksWeight){
+TacsScalar ksAggregation(const TacsScalar f[], const TacsScalar maxVal,
+                         const int numVals, const double ksWeight) {
   TacsScalar aggregatedValue = 0.0;
   for (int ii = 0; ii < numVals; ii++) {
     aggregatedValue += exp(ksWeight * (f[ii] - maxVal));
   }
-  return maxVal + log(aggregatedValue)/ksWeight;
+  return maxVal + log(aggregatedValue) / ksWeight;
 }

@@ -663,6 +663,74 @@ cdef class CompositeShellConstitutive(ShellConstitutive):
         # Free the allocated array
         free(plys)
 
+cdef class BladeStiffenedShellConstitutive(ShellConstitutive):
+    """This constitutive class models a shell stiffened with T-shaped stiffeners.
+    The stiffeners are not explicitly modelled.
+    Instead, their stiffness is "smeared" across the shell.
+    """
+    def __cinit__(
+        self,
+        OrthotropicPly panelPly,
+        OrthotropicPly stiffenerPly,
+        TacsScalar kcorr,
+        TacsScalar panelLength,
+        int panelLengthNum,
+        TacsScalar stiffenerPitch,
+        int stiffenerPitchNum,
+        TacsScalar stiffenerHeight,
+        int stiffenerHeightNum,
+        TacsScalar stiffenerThick,
+        int stiffenerThickNum,
+        TacsScalar panelThick,
+        int panelThickNum,
+        int numPanelPlies,
+        np.ndarray[TacsScalar, ndim=1, mode='c'] panelPlyAngles,
+        np.ndarray[TacsScalar, ndim=1, mode='c'] panelPlyFracs,
+        np.ndarray[int, ndim=1, mode='c'] panelPlyFracNums,
+        int numStiffenerPlies,
+        np.ndarray[TacsScalar, ndim=1, mode='c'] stiffenerPlyAngles,
+        np.ndarray[TacsScalar, ndim=1, mode='c'] stiffenerPlyFracs,
+        np.ndarray[int, ndim=1, mode='c'] stiffenerPlyFracNums,
+        TacsScalar flangeFraction = 1.0
+        ):
+
+        if len(panelPlyAngles) != numPanelPlies:
+            raise ValueError('panelPlyAngles must have length numPanelPlies')
+        if len(panelPlyAngles) != numPanelPlies:
+            raise ValueError('panelPlyNums must have length numPanelPlies')
+        if len(stiffenerPlyAngles) != numStiffenerPlies:
+            raise ValueError('stiffenerPlyAngles must have length numStiffenerPlies')
+        if len(stiffenerPlyAngles) != numStiffenerPlies:
+            raise ValueError('stiffenerPlyNums must have length numStiffenerPlies')
+
+        self.cptr = new TACSBladeStiffenedShellConstitutive(
+            panelPly.ptr,
+            stiffenerPly.ptr,
+            kcorr,
+            panelLength,
+            panelLengthNum,
+            stiffenerPitch,
+            stiffenerPitchNum,
+            stiffenerHeight,
+            stiffenerHeightNum,
+            stiffenerThick,
+            stiffenerThickNum,
+            panelThick,
+            panelThickNum,
+            numPanelPlies,
+            <TacsScalar*>panelPlyAngles.data,
+            <TacsScalar*>panelPlyFracs.data,
+            <int*>panelPlyFracNums.data,
+            numStiffenerPlies,
+            <TacsScalar*>stiffenerPlyAngles.data,
+            <TacsScalar*>stiffenerPlyFracs.data,
+            <int*>stiffenerPlyFracNums.data,
+            flangeFraction
+        )
+        self.ptr = self.cptr
+        self.ptr.incref()
+
+
 cdef class LamParamShellConstitutive(ShellConstitutive):
     def __cinit__(self, OrthotropicPly ply, **kwargs):
         cdef TacsScalar t = 1.0

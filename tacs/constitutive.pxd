@@ -123,6 +123,33 @@ cdef extern from "TACSLamParamShellConstitutive.h":
                                       TacsScalar, TacsScalar, TacsScalar,
                                       TacsScalar, TacsScalar, int, int, TacsScalar, TacsScalar)
 
+cdef extern from "TACSBladeStiffenedShellConstitutive.h":
+    cdef cppclass TACSBladeStiffenedShellConstitutive(TACSShellConstitutive):
+        TACSBladeStiffenedShellConstitutive(
+            TACSOrthotropicPly*, # panelPly
+            TACSOrthotropicPly*, # stiffenerPly
+            TacsScalar, # kcorr
+            TacsScalar, # panelLength
+            int, # panelLengthNum
+            TacsScalar, # stiffenerPitch
+            int, # stiffenerPitchNum
+            TacsScalar, # stiffenerHeight
+            int, # stiffenerHeightNum
+            TacsScalar, # stiffenerThick
+            int, # stiffenerThickNum
+            TacsScalar, # panelThick
+            int, # panelThickNum
+            int, # numPanelPlies
+            TacsScalar[], # panelPlyAngles
+            TacsScalar[], # panelPlyFracs
+            int[], # panelPlyFracNums
+            int, # numStiffenerPlies
+            TacsScalar[], # stiffenerPlyAngles
+            TacsScalar[], # stiffenerPlyFracs
+            int[], # stiffenerPlyFracNums
+            TacsScalar # flangeFraction
+        )
+
 cdef extern from "TACSBeamConstitutive.h":
     cdef cppclass TACSBeamConstitutive(TACSConstitutive):
         pass

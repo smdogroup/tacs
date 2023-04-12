@@ -32,8 +32,8 @@ bladeFSDT model from previous versions of TACS developed by Graeme Kennedy.
 // =============================================================================
 
 /*
-    This constitutive class models a shell stiffened with T-shaped stiffeners.
-    The stiffeners are not explicitly modelled. Instead, their stiffness is
+This constitutive class models a shell stiffened with T-shaped stiffeners.
+The stiffeners are not explicitly modelled. Instead, their stiffness is
 "smeared" across the shell.
 
                         |                                    |         ^
@@ -76,9 +76,11 @@ class TACSBladeStiffenedShellConstitutive : public TACSShellConstitutive {
    * @param _panelThickNum Panel thickness design variable number
    * @param _numPanelPlies Number of ply angles in the panel laminate
    * @param _panelPlyAngles Panel ply angles
+   * @param _panelPlyFracs Panel ply fractions
    * @param _panelPlyFracNums Panel ply fraction design variable numbers
    * @param _numStiffenerPlies Number of ply angles in the stiffener laminate
    * @param _stiffenerPlyAngles Stiffener ply angles
+   * @param _stiffenerPlyFracs Stiffener ply fractions
    * @param _stiffenerPlyFracNums Stiffener ply fraction design variable numbers
    * @param _flangeFraction Stiffener base width as a fraction of the stiffener
    * height
@@ -90,8 +92,9 @@ class TACSBladeStiffenedShellConstitutive : public TACSShellConstitutive {
       TacsScalar _stiffenerHeight, int _stiffenerHeightNum,
       TacsScalar _stiffenerThick, int _stiffenerThickNum,
       TacsScalar _panelThick, int _panelThickNum, int _numPanelPlies,
-      TacsScalar _panelPlyAngles[], int _panelPlyFracNums[],
-      int _numStiffenerPlies, TacsScalar _stiffenerPlyAngles[],
+      TacsScalar _panelPlyAngles[], TacsScalar _panelPlyFracs[],
+      int _panelPlyFracNums[], int _numStiffenerPlies,
+      TacsScalar _stiffenerPlyAngles[], TacsScalar _stiffenerPlyFracs[],
       int _stiffenerPlyFracNums[], TacsScalar _flangeFraction = 1.0);
 
   ~TACSBladeStiffenedShellConstitutive();
@@ -207,6 +210,13 @@ class TACSBladeStiffenedShellConstitutive : public TACSShellConstitutive {
   void addMassMomentsDVSens(int elemIndex, const double pt[],
                             const TacsScalar X[], const TacsScalar scale[],
                             int dvLen, TacsScalar dfdx[]);
+
+  // ==============================================================================
+  // Evaluate thermal properties
+  // ==============================================================================
+  // Evaluate the specific heat, Not implemented for this class
+  TacsScalar evalSpecificHeat(int elemIndex, const double pt[],
+                              const TacsScalar X[]);
 
   // ==============================================================================
   // Compute stress/strain/stiffness
@@ -365,6 +375,14 @@ class TACSBladeStiffenedShellConstitutive : public TACSShellConstitutive {
    * this function)
    */
   void computePanelStiffness(TacsScalar C[]);
+
+  /**
+   * @brief Compute the failure criteria in the panel
+   *
+   * @param strain Shell strains [e11, e22, y12, k11, k22, k12, y23, y13]
+   * @return TacsScalar The aggregated failure value for the panel
+   */
+  TacsScalar computePanelFailure(const TacsScalar strain[]);
 
   // ==============================================================================
   // Helper functions for computing the stiffner's strain/stress/stiffness
