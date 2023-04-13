@@ -396,6 +396,24 @@ class TACSBladeStiffenedShellConstitutive : public TACSShellConstitutive {
   inline void addStiffenerStiffness(const TacsScalar stiffenerStiffness[],
                                     TacsScalar panelStiffness[]);
 
+  /**
+   * @brief Convert a sensitivity w.r.t the stiffener centroid strains to a
+   * sensitivity w.r.t the design variables
+   *
+   * This operation can be written as [df/dx] += scale * [df/de] * [de/dx]
+   *
+   * @param panelStrain The shell mid-plane strains
+   * @param dfde The sensitivity of the output w.r.t the stiffener centroid
+   * strains
+   * @param scale The scaling factor
+   * @param dfdx The sensitivities of the output w.r.t the design variables to
+   * be added to
+   */
+  inline void addStiffenerStrainSensAsDVSens(const TacsScalar panelStrain[],
+                                             const TacsScalar dfde[],
+                                             const TacsScalar scale,
+                                             TacsScalar dfdx[]);
+
   // ==============================================================================
   // Helper functions for computing the panel stress/stiffness/failure
   // ==============================================================================
@@ -501,8 +519,7 @@ class TACSBladeStiffenedShellConstitutive : public TACSShellConstitutive {
    * @param dfdx The array to add the derivative to
    */
   void addStiffenerFailureDVSens(const TacsScalar strain[],
-                                 const TacsScalar scale, const int dvLen,
-                                 TacsScalar dfdx[]);
+                                 const TacsScalar scale, TacsScalar dfdx[]);
 
   // ==============================================================================
   // Helper functions for computing stiffener cross-section properties
@@ -678,8 +695,8 @@ class TACSBladeStiffenedShellConstitutive : public TACSShellConstitutive {
   TacsScalar* stiffenerPlyFailValues;
   TacsScalar** panelPlyFailStrainSens;
   TacsScalar** stiffenerPlyFailStrainSens;
-  TacsScalar* panelPlyFailDVSens;
-  // TacsScalar** stiffenerPlyFailDVSens;
+  TacsScalar* panelPlyFailSens;
+  TacsScalar* stiffenerPlyFailSens;
 
   static const char* constName;        ///< Constitutive model name
   static const int NUM_Q_ENTRIES = 6;  ///< Number of entries in the Q matrix

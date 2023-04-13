@@ -52,7 +52,7 @@ TACSBladeStiffenedShellConstitutive::TACSBladeStiffenedShellConstitutive(
   // --- Panel length values ---
   this->panelLength = _panelLength;
   this->panelLengthNum = _panelLengthNum;
-  this->panelLengthLocalNum = 0;
+  this->panelLengthLocalNum = -1;
   if (_panelLengthNum >= 0) {
     this->panelLengthLocalNum = this->numDesignVars;
     this->numDesignVars++;
@@ -63,7 +63,7 @@ TACSBladeStiffenedShellConstitutive::TACSBladeStiffenedShellConstitutive(
   // --- Stiffener pitch values ---
   this->stiffenerPitch = _stiffenerPitch;
   this->stiffenerPitchNum = _stiffenerPitchNum;
-  this->stiffenerPitchLocalNum = 0;
+  this->stiffenerPitchLocalNum = -1;
   if (_stiffenerPitchNum >= 0) {
     this->stiffenerPitchLocalNum = this->numDesignVars;
     this->numDesignVars++;
@@ -76,7 +76,7 @@ TACSBladeStiffenedShellConstitutive::TACSBladeStiffenedShellConstitutive(
   this->panelDVStartNum = this->numDesignVars;
   this->panelThick = _panelThick;
   this->panelThickNum = _panelThickNum;
-  this->panelThickLocalNum = 0;
+  this->panelThickLocalNum = -1;
   if (_panelThickNum >= 0) {
     this->panelThickLocalNum = this->numDesignVars;
     this->numDesignVars++;
@@ -96,7 +96,7 @@ TACSBladeStiffenedShellConstitutive::TACSBladeStiffenedShellConstitutive(
     this->panelPlyAngles[ii] = _panelPlyAngles[ii];
     this->panelPlyFracs[ii] = _panelPlyFracs[ii];
     this->panelPlyFracNums[ii] = _panelPlyFracNums[ii];
-    this->panelPlyFracLocalNums[ii] = 0;
+    this->panelPlyFracLocalNums[ii] = -1;
     if (_panelPlyFracNums[ii] >= 0) {
       this->panelPlyFracLocalNums[ii] = this->numDesignVars;
       this->numDesignVars++;
@@ -111,7 +111,7 @@ TACSBladeStiffenedShellConstitutive::TACSBladeStiffenedShellConstitutive(
   this->stiffenerDVStartNum = this->numDesignVars;
   this->stiffenerHeight = _stiffenerHeight;
   this->stiffenerHeightNum = _stiffenerHeightNum;
-  this->stiffenerHeightLocalNum = 0;
+  this->stiffenerHeightLocalNum = -1;
   if (_stiffenerHeightNum >= 0) {
     this->stiffenerHeightLocalNum = this->numDesignVars;
     this->numDesignVars++;
@@ -122,7 +122,7 @@ TACSBladeStiffenedShellConstitutive::TACSBladeStiffenedShellConstitutive(
   // --- Stiffener thickness values ---
   this->stiffenerThick = _stiffenerThick;
   this->stiffenerThickNum = _stiffenerThickNum;
-  this->stiffenerThickLocalNum = 0;
+  this->stiffenerThickLocalNum = -1;
   if (_stiffenerThickNum >= 0) {
     this->stiffenerThickLocalNum = this->numDesignVars;
     this->numDesignVars++;
@@ -142,7 +142,7 @@ TACSBladeStiffenedShellConstitutive::TACSBladeStiffenedShellConstitutive(
     this->stiffenerPlyAngles[ii] = _stiffenerPlyAngles[ii];
     this->stiffenerPlyFracs[ii] = _stiffenerPlyFracs[ii];
     this->stiffenerPlyFracNums[ii] = _stiffenerPlyFracNums[ii];
-    this->stiffenerPlyFracLocalNums[ii] = 0;
+    this->stiffenerPlyFracLocalNums[ii] = -1;
     if (_stiffenerPlyFracNums[ii] >= 0) {
       this->stiffenerPlyFracLocalNums[ii] = this->numDesignVars;
       this->numDesignVars++;
@@ -174,8 +174,9 @@ TACSBladeStiffenedShellConstitutive::TACSBladeStiffenedShellConstitutive(
         new TacsScalar[TACSBeamConstitutive::NUM_STRESSES];
   }
 
-  // Arrays for storing failure DV sensitivities
-  this->panelPlyFailDVSens = new TacsScalar[2 * this->numPanelPlies];
+  // Arrays for storing ply failure sensitivities
+  this->panelPlyFailSens = new TacsScalar[2 * this->numPanelPlies];
+  this->stiffenerPlyFailSens = new TacsScalar[this->numPanelPlies];
 }
 
 // ==============================================================================
@@ -241,8 +242,11 @@ TACSBladeStiffenedShellConstitutive::~TACSBladeStiffenedShellConstitutive() {
   delete[] this->stiffenerPlyFailStrainSens;
   this->stiffenerPlyFailStrainSens = nullptr;
 
-  delete[] this->panelPlyFailDVSens;
-  this->panelPlyFailDVSens = nullptr;
+  delete[] this->panelPlyFailSens;
+  this->panelPlyFailSens = nullptr;
+
+  delete[] this->stiffenerPlyFailSens;
+  this->stiffenerPlyFailSens = nullptr;
 }
 
 // ==============================================================================
@@ -749,18 +753,23 @@ void TACSBladeStiffenedShellConstitutive::addFailureDVSens(
   ksAggregationSens(fails, this->NUM_FAILURES, this->ksWeight, dKSdf);
 
   // Sensitivity of the panel failure value to it's DVs
-  this->addPanelFailureDVSens(strain, scale * dKSdf[0], dfdx);
+  this->addPanelFailureDVSens(strain, scale * dKSdf[0],
+                              &dfdx[this->panelDVStartNum]);
 
   // Next, add the direct sensitivity of the stiffener failure value w.r.t DVs
   // Sensitivity of the panel failure value to it's DVs
-  // TacsScalar stiffenerStrain[TACSBeamConstitutive::NUM_STRESSES];
-  // this->transformStrain(strain, stiffenerStrain);
-  // this->addStiffenerFailureDVSens(stiffenerStrain, dKSdf[1],
-  //                                 this->numStiffenerDV,
-  //                                 &dfdx[this->stiffenerDVStartNum]);
+  TacsScalar stiffenerStrain[TACSBeamConstitutive::NUM_STRESSES];
+  this->transformStrain(strain, stiffenerStrain);
+  this->addStiffenerFailureDVSens(stiffenerStrain, scale * dKSdf[1],
+                                  &dfdx[this->stiffenerDVStartNum]);
 
   // Finally, add the sensitivity of the stiffener failure value w.r.t. the DVs
   // due to the dependence of the stiffener strains on the DVs
+  TacsScalar stiffenerFailStrainSens[TACSBeamConstitutive::NUM_STRESSES];
+  this->evalStiffenerFailureStrainSens(stiffenerStrain,
+                                       stiffenerFailStrainSens);
+  this->addStiffenerStrainSensAsDVSens(strain, stiffenerFailStrainSens,
+                                       scale * dKSdf[1], dfdx);
 }
 
 // ==============================================================================
@@ -924,6 +933,40 @@ void TACSBladeStiffenedShellConstitutive::addStiffenerStiffness(
   As[2] = pInv * (Cs[4, 4]);
 }
 
+void TACSBladeStiffenedShellConstitutive::addStiffenerStrainSensAsDVSens(
+    const TacsScalar panelStrain[], const TacsScalar dfde[],
+    const TacsScalar scale, TacsScalar dfdx[]) {
+  // First compute the sensitivity of the stiffener centroid height w.r.t the
+  // design variables (panel thickness, stiffenerh ehgith and stiffener
+  // thickness) zc = panelThick/2 + computeStiffenerCentroidHeight()
+  TacsScalar dzdtp, dzdhs, dzdts;
+  dzdtp = -0.5;
+  this->computeStiffenerCentroidHeightSens(dzdhs, dzdts);
+
+  // The sensitivities of the beam strains w.r.t the offset are:
+  // de11b/dz = k11s = panelStrain[3]
+  // de12b/dz = k12s/2 = panelStrain[5]/2
+
+  // Therefore:
+  // df/dfx[i] = df/de11b * de11b/dz * dz/dx[i] + df/de12b * de12b/dz * dz/dx[i]
+
+  if (this->panelThickNum >= 0) {
+    dfdx[this->panelThickLocalNum] +=
+        scale * (dfde[0] * panelStrain[3] * dzdtp +
+                 dfde[5] * 0.5 * panelStrain[5] * dzdtp);
+  }
+  if (this->stiffenerHeightNum >= 0) {
+    dfdx[this->stiffenerHeightLocalNum] +=
+        scale * (dfde[0] * panelStrain[3] * dzdhs +
+                 dfde[5] * 0.5 * panelStrain[5] * dzdhs);
+  }
+  if (this->stiffenerThickNum >= 0) {
+    dfdx[this->stiffenerThickLocalNum] +=
+        scale * (dfde[0] * panelStrain[3] * dzdts +
+                 dfde[5] * 0.5 * panelStrain[5] * dzdts);
+  }
+}
+
 // ==============================================================================
 // Helper functions for computing the panel stress/stiffness/failure
 // ==============================================================================
@@ -1077,17 +1120,14 @@ void TACSBladeStiffenedShellConstitutive::addPanelFailureDVSens(
   // compute the sensitivity of each ply failure value with respect to the panel
   // thickness and add the weighted sensitivity to the dfdx array.
 
-  // TODO: This is currently giving the wrong results
-
   if (this->panelThickNum >= 0) {
     TACSOrthotropicPly* ply = this->panelPly;
     const int numPlies = this->numPanelPlies;
     const int numStrain = TACSBeamConstitutive::NUM_STRESSES;
-    TacsScalar* dKSdFail = this->panelPlyFailDVSens;
+    TacsScalar* dKSdFail = this->panelPlyFailSens;
     TacsScalar* fails = this->panelPlyFailValues;
     const TacsScalar* angles = this->panelPlyAngles;
     const TacsScalar t = this->panelThick;
-    const int dvInd = this->panelThickLocalNum;
 
     // Compute the strain state at the top of the panel
     TacsScalar plyStrain[3];
@@ -1121,7 +1161,7 @@ void TACSBladeStiffenedShellConstitutive::addPanelFailureDVSens(
       ply->failureStrainSens(angles[ii], plyStrain, plyFailStrainSens);
       // Convert the sensitivity w.r.t the strain to the sensitivity w.r.t
       // panel thickness
-      dfdx[dvInd] +=
+      dfdx[0] +=
           scale * dKSdFail[ii] * 0.5 *
           (strain[3] * plyFailStrainSens[0] + strain[4] * plyFailStrainSens[1] +
            strain[5] * plyFailStrainSens[2]);
@@ -1136,7 +1176,7 @@ void TACSBladeStiffenedShellConstitutive::addPanelFailureDVSens(
       TacsScalar plyFailStrainSens[3];
       ply->failureStrainSens(angles[ii], plyStrain, plyFailStrainSens);
 
-      dfdx[dvInd] -=
+      dfdx[0] -=
           scale * dKSdFail[numPlies + ii] * 0.5 *
           (strain[3] * plyFailStrainSens[0] + strain[4] * plyFailStrainSens[1] +
            strain[5] * plyFailStrainSens[2]);
@@ -1254,9 +1294,48 @@ TacsScalar TACSBladeStiffenedShellConstitutive::evalStiffenerFailureStrainSens(
 }
 
 void TACSBladeStiffenedShellConstitutive::addStiffenerFailureDVSens(
-    const TacsScalar strain[], const TacsScalar scale, const int dvLen,
-    TacsScalar dfdx[]) {
-  // TODO: Implement this
+    const TacsScalar strain[], const TacsScalar scale, TacsScalar dfdx[]) {
+  TACSOrthotropicPly* ply = this->stiffenerPly;
+  TacsScalar* fails = this->stiffenerPlyFailValues;
+  const TacsScalar* angles = this->stiffenerPlyAngles;
+  TacsScalar* dKSdFail = this->panelPlyFailSens;
+  const int hNum = this->stiffenerHeightLocalNum - this->stiffenerDVStartNum;
+  const int tNum = this->stiffenerThickLocalNum - this->stiffenerDVStartNum;
+
+  TacsScalar zTipOffset = -(this->stiffenerHeight + this->stiffenerThick) -
+                          this->computeStiffenerCentroidHeight();
+  TacsScalar dTipStraindh, dTipStraindt;
+  this->computeStiffenerCentroidHeightSens(dTipStraindh, dTipStraindt);
+  dTipStraindh = -dTipStraindh - 1.0;
+  dTipStraindt = -dTipStraindt - 1.0;
+
+  // Compute the strain state at the tip of the stiffener
+  TacsScalar tipStrain[3];
+  memset(tipStrain, 0, 3 * sizeof(TacsScalar));
+  tipStrain[0] = strain[0] + zTipOffset * strain[2];
+  dTipStraindh *= strain[2];
+  dTipStraindt *= strain[2];
+
+  // Compute the failure criteria at this strain state for each ply angle
+  for (int ii = 0; ii < this->numStiffenerPlies; ii++) {
+    fails[ii] = ply->failure(angles[ii], tipStrain);
+  }
+
+  // Compute the sensitivity of the KS aggregation w.r.t the failure values
+  ksAggregationSens(fails, this->numStiffenerPlies, this->ksWeight, dKSdFail);
+
+  // Now go back through each ply, compute the strain sensitivity of it's
+  // failure, then convert it to a DV sensitivity and add it to the dfdx array
+  for (int ii = 0; ii < this->numStiffenerPlies; ii++) {
+    TacsScalar plyFailStrainSens[3];
+    ply->failureStrainSens(angles[ii], tipStrain, plyFailStrainSens);
+    if (hNum >= 0) {
+      dfdx[hNum] += scale * dKSdFail[ii] * dTipStraindh * plyFailStrainSens[0];
+    }
+    if (tNum >= 0) {
+      dfdx[tNum] += scale * dKSdFail[ii] * dTipStraindt * plyFailStrainSens[0];
+    }
+  }
 }
 
 // ==============================================================================
