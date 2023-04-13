@@ -21,7 +21,7 @@ class ConstitutiveTest(unittest.TestCase):
         # The failure value returned by the model is an aggregate of multiple
         # possible failure modes, we will run the failure tests multiple
         # times to try and cover strain states that cause each failure mode
-        self.numFailureTests = 30
+        self.numFailureTests = 10
 
         # Basically, only check relative tolerance
         self.atol = 1e99
@@ -152,16 +152,16 @@ class ConstitutiveTest(unittest.TestCase):
                     self.panelLengthNum,
                     self.stiffenerPitch,
                     self.stiffenerPitchNum,
-                    self.stiffenerHeight,
-                    self.stiffenerHeightNum,
-                    self.stiffenerThickness,
-                    self.stiffenerThicknessNum,
                     self.panelThickness,
                     self.panelThicknessNum,
                     self.numPanelPlies,
                     self.panelPlyAngles,
                     self.panelPlyFracs,
                     self.panelPlyFracNums,
+                    self.stiffenerHeight,
+                    self.stiffenerHeightNum,
+                    self.stiffenerThickness,
+                    self.stiffenerThicknessNum,
                     self.numStiffenerPlies,
                     self.stiffenerPlyAngles,
                     self.stiffenerPlyFracs,

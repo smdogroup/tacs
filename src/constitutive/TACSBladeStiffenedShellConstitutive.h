@@ -68,16 +68,16 @@ class TACSBladeStiffenedShellConstitutive : public TACSShellConstitutive {
    * @param _panelLengthNum Panel length design variable number
    * @param _stiffenerPitch Stiffener pitch value
    * @param _stiffenerPitchNum Stiffener pitch design variable number
-   * @param _stiffenerHeight Stiffener height value
-   * @param _stiffenerHeightNum Stiffener height design variable number
-   * @param _stiffenerThick Stiffener thickness value
-   * @param _stiffenerThickNum Stiffener thickness design variable number
    * @param _panelThick Panel thickness value
    * @param _panelThickNum Panel thickness design variable number
    * @param _numPanelPlies Number of ply angles in the panel laminate
    * @param _panelPlyAngles Panel ply angles
    * @param _panelPlyFracs Panel ply fractions
    * @param _panelPlyFracNums Panel ply fraction design variable numbers
+   * @param _stiffenerHeight Stiffener height value
+   * @param _stiffenerHeightNum Stiffener height design variable number
+   * @param _stiffenerThick Stiffener thickness value
+   * @param _stiffenerThickNum Stiffener thickness design variable number
    * @param _numStiffenerPlies Number of ply angles in the stiffener laminate
    * @param _stiffenerPlyAngles Stiffener ply angles
    * @param _stiffenerPlyFracs Stiffener ply fractions
@@ -89,11 +89,11 @@ class TACSBladeStiffenedShellConstitutive : public TACSShellConstitutive {
       TACSOrthotropicPly* _panelPly, TACSOrthotropicPly* _stiffenerPly,
       TacsScalar _kcorr, TacsScalar _panelLength, int _panelLengthNum,
       TacsScalar _stiffenerPitch, int _stiffenerPitchNum,
-      TacsScalar _stiffenerHeight, int _stiffenerHeightNum,
-      TacsScalar _stiffenerThick, int _stiffenerThickNum,
       TacsScalar _panelThick, int _panelThickNum, int _numPanelPlies,
       TacsScalar _panelPlyAngles[], TacsScalar _panelPlyFracs[],
-      int _panelPlyFracNums[], int _numStiffenerPlies,
+      int _panelPlyFracNums[], TacsScalar _stiffenerHeight,
+      int _stiffenerHeightNum, TacsScalar _stiffenerThick,
+      int _stiffenerThickNum, int _numStiffenerPlies,
       TacsScalar _stiffenerPlyAngles[], TacsScalar _stiffenerPlyFracs[],
       int _stiffenerPlyFracNums[], TacsScalar _flangeFraction = 1.0);
 
@@ -288,6 +288,16 @@ class TACSBladeStiffenedShellConstitutive : public TACSShellConstitutive {
                                const TacsScalar plyFractions[], TacsScalar Q[],
                                TacsScalar ABar[]);
 
+  /**
+   * @brief Compute the failure values for each failure mode of the stiffened
+   * panel
+   *
+   * @param e Shell strains
+   * @param fail Array to store the failure values in
+   * @return TacsScalar The aggregated failure value
+   */
+  TacsScalar computeFailureValues(const TacsScalar e[], TacsScalar fail[]);
+
   // ==============================================================================
   // Helper functions for transforming strains/stresses/stiffnesses between the
   // panel and stiffener
@@ -426,6 +436,16 @@ class TACSBladeStiffenedShellConstitutive : public TACSShellConstitutive {
   TacsScalar evalPanelFailureStrainSens(const TacsScalar strain[],
                                         TacsScalar sens[]);
 
+  /**
+   * @brief Add the derivative of the panel's failure w.r.t it's DVs
+   *
+   * @param strain Shell strains [e11, e22, y12, k11, k22, k12, y23, y13]
+   * @param scale The scale factor to apply to the derivatives
+   * @param dfdx The array to add the derivative to
+   */
+  void addPanelFailureDVSens(const TacsScalar strain[], const TacsScalar scale,
+                             TacsScalar dfdx[]);
+
   // ==============================================================================
   // Helper functions for computing the stiffner's strain/stress/stiffness
   // ==============================================================================
@@ -471,6 +491,18 @@ class TACSBladeStiffenedShellConstitutive : public TACSShellConstitutive {
    */
   TacsScalar evalStiffenerFailureStrainSens(const TacsScalar strain[],
                                             TacsScalar sens[]);
+
+  /**
+   * @brief Add the derivative of the stiffener's failure w.r.t it's DVs
+   *
+   * @param strain Beam strains [e11, e22, y12, k11, k22, k12, y23, y13]
+   * @param scale The scale factor to apply to the derivatives
+   * @param dvLen The number of stiffener design variables
+   * @param dfdx The array to add the derivative to
+   */
+  void addStiffenerFailureDVSens(const TacsScalar strain[],
+                                 const TacsScalar scale, const int dvLen,
+                                 TacsScalar dfdx[]);
 
   // ==============================================================================
   // Helper functions for computing stiffener cross-section properties
@@ -579,6 +611,9 @@ class TACSBladeStiffenedShellConstitutive : public TACSShellConstitutive {
   int numStiffenerPlies;   ///< Number of plies in the stiffener laminate
   double ksWeight = 80.0;  ///< Failure criteria KS aggregation weight
   int numDesignVars;       ///< Number of design variables
+  int numGeneralDV;        ///< Number of general DVs
+  int numPanelDV;          ///< Number of panel DVs
+  int numStiffenerDV;      ///< Number of stiffener DVs
 
   // --- Material properties ---
   TACSOrthotropicPly* panelPly;      ///< Orthotropic ply for the panel
@@ -628,22 +663,27 @@ class TACSBladeStiffenedShellConstitutive : public TACSShellConstitutive {
   // --- Local design variable numbers, these are useful when returning
   // sensitivity values ---
   int panelLengthLocalNum;         ///< Panel length local DV number
+  int panelThickLocalNum;          ///< Panel thickness local DV number
+  int* panelPlyFracLocalNums;      ///< Panel ply fraction local DV numbers
   int stiffenerPitchLocalNum;      ///< Stiffener pitch local DV number
   int stiffenerHeightLocalNum;     ///< Stiffener height local DV number
   int stiffenerThickLocalNum;      ///< Stiffener thickness local DV number
-  int panelThickLocalNum;          ///< Panel thickness local DV number
-  int* panelPlyFracLocalNums;      ///< Panel ply fraction local DV numbers
   int* stiffenerPlyFracLocalNums;  ///< Stiffener ply fraction local DV numbers
+  int panelDVStartNum;             ///< Panel DV start number
+  int stiffenerDVStartNum;         ///< Stiffener DV start number
 
-  // --- Arrays for storing failure values for each ply angle and their
+  // --- Arrays for storing failure values and their
   // sensitivities ---
   TacsScalar* panelPlyFailValues;
   TacsScalar* stiffenerPlyFailValues;
   TacsScalar** panelPlyFailStrainSens;
   TacsScalar** stiffenerPlyFailStrainSens;
+  TacsScalar* panelPlyFailDVSens;
+  // TacsScalar** stiffenerPlyFailDVSens;
 
   static const char* constName;        ///< Constitutive model name
   static const int NUM_Q_ENTRIES = 6;  ///< Number of entries in the Q matrix
   static const int NUM_ABAR_ENTRIES =
-      3;  ///< Number of entries in the ABar matrix
+      3;                              ///< Number of entries in the ABar matrix
+  static const int NUM_FAILURES = 2;  ///< Number of failure modes
 };

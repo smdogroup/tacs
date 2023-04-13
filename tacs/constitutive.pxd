@@ -133,16 +133,16 @@ cdef extern from "TACSBladeStiffenedShellConstitutive.h":
             int, # panelLengthNum
             TacsScalar, # stiffenerPitch
             int, # stiffenerPitchNum
-            TacsScalar, # stiffenerHeight
-            int, # stiffenerHeightNum
-            TacsScalar, # stiffenerThick
-            int, # stiffenerThickNum
             TacsScalar, # panelThick
             int, # panelThickNum
             int, # numPanelPlies
             TacsScalar[], # panelPlyAngles
             TacsScalar[], # panelPlyFracs
             int[], # panelPlyFracNums
+            TacsScalar, # stiffenerHeight
+            int, # stiffenerHeightNum
+            TacsScalar, # stiffenerThick
+            int, # stiffenerThickNum
             int, # numStiffenerPlies
             TacsScalar[], # stiffenerPlyAngles
             TacsScalar[], # stiffenerPlyFracs

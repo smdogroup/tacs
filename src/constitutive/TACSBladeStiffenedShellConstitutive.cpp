@@ -31,14 +31,13 @@ const char* TACSBladeStiffenedShellConstitutive::constName =
 TACSBladeStiffenedShellConstitutive::TACSBladeStiffenedShellConstitutive(
     TACSOrthotropicPly* _panelPly, TACSOrthotropicPly* _stiffenerPly,
     TacsScalar _kcorr, TacsScalar _panelLength, int _panelLengthNum,
-    TacsScalar _stiffenerPitch, int _stiffenerPitchNum,
-    TacsScalar _stiffenerHeight, int _stiffenerHeightNum,
-    TacsScalar _stiffenerThick, int _stiffenerThickNum, TacsScalar _panelThick,
+    TacsScalar _stiffenerPitch, int _stiffenerPitchNum, TacsScalar _panelThick,
     int _panelThickNum, int _numPanelPlies, TacsScalar _panelPlyAngles[],
     TacsScalar _panelPlyFracs[], int _panelPlyFracNums[],
-    int _numStiffenerPlies, TacsScalar _stiffenerPlyAngles[],
-    TacsScalar _stiffenerPlyFracs[], int _stiffenerPlyFracNums[],
-    TacsScalar _flangeFraction) {
+    TacsScalar _stiffenerHeight, int _stiffenerHeightNum,
+    TacsScalar _stiffenerThick, int _stiffenerThickNum, int _numStiffenerPlies,
+    TacsScalar _stiffenerPlyAngles[], TacsScalar _stiffenerPlyFracs[],
+    int _stiffenerPlyFracNums[], TacsScalar _flangeFraction) {
   this->panelPly = _panelPly;
   this->panelPly->incref();
 
@@ -49,10 +48,11 @@ TACSBladeStiffenedShellConstitutive::TACSBladeStiffenedShellConstitutive(
 
   this->numDesignVars = 0;
 
+  // --- General DVs ---
   // --- Panel length values ---
   this->panelLength = _panelLength;
   this->panelLengthNum = _panelLengthNum;
-  this->panelLengthLocalNum = _panelLengthNum;
+  this->panelLengthLocalNum = 0;
   if (_panelLengthNum >= 0) {
     this->panelLengthLocalNum = this->numDesignVars;
     this->numDesignVars++;
@@ -63,7 +63,7 @@ TACSBladeStiffenedShellConstitutive::TACSBladeStiffenedShellConstitutive(
   // --- Stiffener pitch values ---
   this->stiffenerPitch = _stiffenerPitch;
   this->stiffenerPitchNum = _stiffenerPitchNum;
-  this->stiffenerPitchLocalNum = _stiffenerPitchNum;
+  this->stiffenerPitchLocalNum = 0;
   if (_stiffenerPitchNum >= 0) {
     this->stiffenerPitchLocalNum = this->numDesignVars;
     this->numDesignVars++;
@@ -71,32 +71,12 @@ TACSBladeStiffenedShellConstitutive::TACSBladeStiffenedShellConstitutive(
   this->stiffenerPitchLowerBound = 1e-3;
   this->stiffenerPitchUpperBound = 1e20;
 
-  // --- Stiffener height values ---
-  this->stiffenerHeight = _stiffenerHeight;
-  this->stiffenerHeightNum = _stiffenerHeightNum;
-  this->stiffenerHeightLocalNum = _stiffenerHeightNum;
-  if (_stiffenerHeightNum >= 0) {
-    this->stiffenerHeightLocalNum = this->numDesignVars;
-    this->numDesignVars++;
-  }
-  this->stiffenerHeightLowerBound = 1e-3;
-  this->stiffenerHeightUpperBound = 1e20;
-
-  // --- Stiffener thickness values ---
-  this->stiffenerThick = _stiffenerThick;
-  this->stiffenerThickNum = _stiffenerThickNum;
-  this->stiffenerThickLocalNum = _stiffenerThickNum;
-  if (_stiffenerThickNum >= 0) {
-    this->stiffenerThickLocalNum = this->numDesignVars;
-    this->numDesignVars++;
-  }
-  this->stiffenerThickLowerBound = 1e-4;
-  this->stiffenerThickUpperBound = 1e20;
-
+  // --- Panel DVs ---
   // --- Panel thickness values ---
+  this->panelDVStartNum = this->numDesignVars;
   this->panelThick = _panelThick;
   this->panelThickNum = _panelThickNum;
-  this->panelThickLocalNum = _panelThickNum;
+  this->panelThickLocalNum = 0;
   if (_panelThickNum >= 0) {
     this->panelThickLocalNum = this->numDesignVars;
     this->numDesignVars++;
@@ -116,7 +96,7 @@ TACSBladeStiffenedShellConstitutive::TACSBladeStiffenedShellConstitutive(
     this->panelPlyAngles[ii] = _panelPlyAngles[ii];
     this->panelPlyFracs[ii] = _panelPlyFracs[ii];
     this->panelPlyFracNums[ii] = _panelPlyFracNums[ii];
-    this->panelPlyFracLocalNums[ii] = _panelPlyFracNums[ii];
+    this->panelPlyFracLocalNums[ii] = 0;
     if (_panelPlyFracNums[ii] >= 0) {
       this->panelPlyFracLocalNums[ii] = this->numDesignVars;
       this->numDesignVars++;
@@ -125,6 +105,30 @@ TACSBladeStiffenedShellConstitutive::TACSBladeStiffenedShellConstitutive(
     this->panelPlyFracLowerBounds[ii] = 0.1;
     this->panelPlyFracUpperBounds[ii] = 0.9;
   }
+
+  // --- Stiffener DVs ---
+  // --- Stiffener height values ---
+  this->stiffenerDVStartNum = this->numDesignVars;
+  this->stiffenerHeight = _stiffenerHeight;
+  this->stiffenerHeightNum = _stiffenerHeightNum;
+  this->stiffenerHeightLocalNum = 0;
+  if (_stiffenerHeightNum >= 0) {
+    this->stiffenerHeightLocalNum = this->numDesignVars;
+    this->numDesignVars++;
+  }
+  this->stiffenerHeightLowerBound = 1e-3;
+  this->stiffenerHeightUpperBound = 1e20;
+
+  // --- Stiffener thickness values ---
+  this->stiffenerThick = _stiffenerThick;
+  this->stiffenerThickNum = _stiffenerThickNum;
+  this->stiffenerThickLocalNum = 0;
+  if (_stiffenerThickNum >= 0) {
+    this->stiffenerThickLocalNum = this->numDesignVars;
+    this->numDesignVars++;
+  }
+  this->stiffenerThickLowerBound = 1e-4;
+  this->stiffenerThickUpperBound = 1e20;
 
   // --- Stiffener ply values ---
   this->numStiffenerPlies = _numStiffenerPlies;
@@ -138,7 +142,7 @@ TACSBladeStiffenedShellConstitutive::TACSBladeStiffenedShellConstitutive(
     this->stiffenerPlyAngles[ii] = _stiffenerPlyAngles[ii];
     this->stiffenerPlyFracs[ii] = _stiffenerPlyFracs[ii];
     this->stiffenerPlyFracNums[ii] = _stiffenerPlyFracNums[ii];
-    this->stiffenerPlyFracLocalNums[ii] = _stiffenerPlyFracNums[ii];
+    this->stiffenerPlyFracLocalNums[ii] = 0;
     if (_stiffenerPlyFracNums[ii] >= 0) {
       this->stiffenerPlyFracLocalNums[ii] = this->numDesignVars;
       this->numDesignVars++;
@@ -153,6 +157,7 @@ TACSBladeStiffenedShellConstitutive::TACSBladeStiffenedShellConstitutive(
 
   // --- Work arrays, these are created to avoid needing to allocate memory
   // inside compute methods like evalFailure and evalFailureStrainSens ---
+
   // Arrays for storing failure values, need values for each ply angle at the
   // top and bottom of the panel and at the tip of the stiffener
   this->panelPlyFailValues = new TacsScalar[2 * _numPanelPlies];
@@ -168,6 +173,9 @@ TACSBladeStiffenedShellConstitutive::TACSBladeStiffenedShellConstitutive(
     this->stiffenerPlyFailStrainSens[ii] =
         new TacsScalar[TACSBeamConstitutive::NUM_STRESSES];
   }
+
+  // Arrays for storing failure DV sensitivities
+  this->panelPlyFailDVSens = new TacsScalar[2 * this->numPanelPlies];
 }
 
 // ==============================================================================
@@ -232,6 +240,9 @@ TACSBladeStiffenedShellConstitutive::~TACSBladeStiffenedShellConstitutive() {
   }
   delete[] this->stiffenerPlyFailStrainSens;
   this->stiffenerPlyFailStrainSens = nullptr;
+
+  delete[] this->panelPlyFailDVSens;
+  this->panelPlyFailDVSens = nullptr;
 }
 
 // ==============================================================================
@@ -300,37 +311,29 @@ int TACSBladeStiffenedShellConstitutive::getDesignVarNums(int elemIndex,
                                                           int dvLen,
                                                           int dvNums[]) {
   if (dvNums && dvLen >= this->numDesignVars) {
-    int localIndex = 0;
     if (this->panelLengthNum >= 0) {
-      dvNums[localIndex] = panelLengthNum;
-      localIndex++;
+      dvNums[this->panelLengthLocalNum] = panelLengthNum;
     }
     if (this->stiffenerPitchNum >= 0) {
-      dvNums[localIndex] = stiffenerPitchNum;
-      localIndex++;
-    }
-    if (this->stiffenerHeightNum >= 0) {
-      dvNums[localIndex] = stiffenerHeightNum;
-      localIndex++;
-    }
-    if (this->stiffenerThickNum >= 0) {
-      dvNums[localIndex] = stiffenerThickNum;
-      localIndex++;
+      dvNums[this->stiffenerPitchLocalNum] = stiffenerPitchNum;
     }
     if (this->panelThickNum >= 0) {
-      dvNums[localIndex] = panelThickNum;
-      localIndex++;
+      dvNums[this->panelThickLocalNum] = panelThickNum;
     }
     for (int ii = 0; ii < this->numPanelPlies; ii++) {
       if (this->panelPlyFracNums[ii] >= 0) {
-        dvNums[localIndex] = panelPlyFracNums[ii];
-        localIndex++;
+        dvNums[this->panelPlyFracLocalNums[ii]] = panelPlyFracNums[ii];
       }
+    }
+    if (this->stiffenerHeightNum >= 0) {
+      dvNums[this->stiffenerHeightLocalNum] = stiffenerHeightNum;
+    }
+    if (this->stiffenerThickNum >= 0) {
+      dvNums[this->stiffenerThickLocalNum] = stiffenerThickNum;
     }
     for (int ii = 0; ii < this->numStiffenerPlies; ii++) {
       if (this->stiffenerPlyFracNums[ii] >= 0) {
-        dvNums[localIndex] = stiffenerPlyFracNums[ii];
-        localIndex++;
+        dvNums[this->stiffenerPlyFracLocalNums[ii]] = stiffenerPlyFracNums[ii];
       }
     }
   }
@@ -341,37 +344,29 @@ int TACSBladeStiffenedShellConstitutive::getDesignVarNums(int elemIndex,
 int TACSBladeStiffenedShellConstitutive::setDesignVars(int elemIndex, int dvLen,
                                                        const TacsScalar dvs[]) {
   if (dvLen >= this->numDesignVars) {
-    int localIndex = 0;
     if (this->panelLengthNum >= 0) {
-      this->panelLength = dvs[localIndex];
-      localIndex++;
+      this->panelLength = dvs[this->panelLengthLocalNum];
     }
     if (this->stiffenerPitchNum >= 0) {
-      this->stiffenerPitch = dvs[localIndex];
-      localIndex++;
-    }
-    if (this->stiffenerHeightNum >= 0) {
-      this->stiffenerHeight = dvs[localIndex];
-      localIndex++;
-    }
-    if (this->stiffenerThickNum >= 0) {
-      this->stiffenerThick = dvs[localIndex];
-      localIndex++;
+      this->stiffenerPitch = dvs[this->stiffenerPitchLocalNum];
     }
     if (this->panelThickNum >= 0) {
-      this->panelThick = dvs[localIndex];
-      localIndex++;
+      this->panelThick = dvs[this->panelThickLocalNum];
     }
     for (int ii = 0; ii < this->numPanelPlies; ii++) {
       if (this->panelPlyFracNums[ii] >= 0) {
-        this->panelPlyFracs[ii] = dvs[localIndex];
-        localIndex++;
+        this->panelPlyFracs[ii] = dvs[this->panelPlyFracLocalNums[ii]];
       }
+    }
+    if (this->stiffenerHeightNum >= 0) {
+      this->stiffenerHeight = dvs[this->stiffenerHeightLocalNum];
+    }
+    if (this->stiffenerThickNum >= 0) {
+      this->stiffenerThick = dvs[this->stiffenerThickLocalNum];
     }
     for (int ii = 0; ii < this->numStiffenerPlies; ii++) {
       if (this->stiffenerPlyFracNums[ii] >= 0) {
-        this->stiffenerPlyFracs[ii] = dvs[localIndex];
-        localIndex++;
+        this->stiffenerPlyFracs[ii] = dvs[this->stiffenerPlyFracLocalNums[ii]];
       }
     }
   }
@@ -382,37 +377,29 @@ int TACSBladeStiffenedShellConstitutive::setDesignVars(int elemIndex, int dvLen,
 int TACSBladeStiffenedShellConstitutive::getDesignVars(int elemIndex, int dvLen,
                                                        TacsScalar dvs[]) {
   if (dvLen >= this->numDesignVars) {
-    int localIndex = 0;
     if (this->panelLengthNum >= 0) {
-      dvs[localIndex] = this->panelLength;
-      localIndex++;
+      dvs[this->panelLengthLocalNum] = this->panelLength;
     }
     if (this->stiffenerPitchNum >= 0) {
-      dvs[localIndex] = this->stiffenerPitch;
-      localIndex++;
-    }
-    if (this->stiffenerHeightNum >= 0) {
-      dvs[localIndex] = this->stiffenerHeight;
-      localIndex++;
-    }
-    if (this->stiffenerThickNum >= 0) {
-      dvs[localIndex] = this->stiffenerThick;
-      localIndex++;
+      dvs[this->stiffenerPitchLocalNum] = this->stiffenerPitch;
     }
     if (this->panelThickNum >= 0) {
-      dvs[localIndex] = this->panelThick;
-      localIndex++;
+      dvs[this->panelThickLocalNum] = this->panelThick;
     }
     for (int ii = 0; ii < this->numPanelPlies; ii++) {
       if (this->panelPlyFracNums[ii] >= 0) {
-        dvs[localIndex] = this->panelPlyFracs[ii];
-        localIndex++;
+        dvs[this->panelPlyFracLocalNums[ii]] = this->panelPlyFracs[ii];
       }
+    }
+    if (this->stiffenerHeightNum >= 0) {
+      dvs[this->stiffenerHeightLocalNum] = this->stiffenerHeight;
+    }
+    if (this->stiffenerThickNum >= 0) {
+      dvs[this->stiffenerThickLocalNum] = this->stiffenerThick;
     }
     for (int ii = 0; ii < this->numStiffenerPlies; ii++) {
       if (this->stiffenerPlyFracNums[ii] >= 0) {
-        dvs[localIndex] = this->stiffenerPlyFracs[ii];
-        localIndex++;
+        dvs[this->stiffenerPlyFracLocalNums[ii]] = this->stiffenerPlyFracs[ii];
       }
     }
   }
@@ -425,44 +412,38 @@ int TACSBladeStiffenedShellConstitutive::getDesignVarRange(int elemIndex,
                                                            TacsScalar lb[],
                                                            TacsScalar ub[]) {
   if (dvLen >= this->numDesignVars) {
-    int localIndex = 0;
     if (this->panelLengthNum >= 0) {
-      lb[localIndex] = this->panelLengthLowerBound;
-      ub[localIndex] = this->panelLengthUpperBound;
-      localIndex++;
+      lb[this->panelLengthLocalNum] = this->panelLengthLowerBound;
+      ub[this->panelLengthLocalNum] = this->panelLengthUpperBound;
     }
     if (this->stiffenerPitchNum >= 0) {
-      lb[localIndex] = this->stiffenerPitchLowerBound;
-      ub[localIndex] = this->stiffenerPitchUpperBound;
-      localIndex++;
-    }
-    if (this->stiffenerHeightNum >= 0) {
-      lb[localIndex] = this->stiffenerHeightLowerBound;
-      ub[localIndex] = this->stiffenerHeightUpperBound;
-      localIndex++;
-    }
-    if (this->stiffenerThickNum >= 0) {
-      lb[localIndex] = this->stiffenerThickLowerBound;
-      ub[localIndex] = this->stiffenerThickUpperBound;
-      localIndex++;
+      lb[this->stiffenerPitchLocalNum] = this->stiffenerPitchLowerBound;
+      ub[this->stiffenerPitchLocalNum] = this->stiffenerPitchUpperBound;
     }
     if (this->panelThickNum >= 0) {
-      lb[localIndex] = this->panelThickLowerBound;
-      ub[localIndex] = this->panelThickUpperBound;
-      localIndex++;
+      lb[this->panelThickLocalNum] = this->panelThickLowerBound;
+      ub[this->panelThickLocalNum] = this->panelThickUpperBound;
     }
     for (int ii = 0; ii < this->numPanelPlies; ii++) {
       if (this->panelPlyFracNums[ii] >= 0) {
-        lb[localIndex] = this->panelPlyFracLowerBounds[ii];
-        ub[localIndex] = this->panelPlyFracUpperBounds[ii];
-        localIndex++;
+        lb[this->panelPlyFracLocalNums[ii]] = this->panelPlyFracLowerBounds[ii];
+        ub[this->panelPlyFracLocalNums[ii]] = this->panelPlyFracUpperBounds[ii];
       }
+    }
+    if (this->stiffenerHeightNum >= 0) {
+      lb[this->stiffenerHeightLocalNum] = this->stiffenerHeightLowerBound;
+      ub[this->stiffenerHeightLocalNum] = this->stiffenerHeightUpperBound;
+    }
+    if (this->stiffenerThickNum >= 0) {
+      lb[this->stiffenerThickLocalNum] = this->stiffenerThickLowerBound;
+      ub[this->stiffenerThickLocalNum] = this->stiffenerThickUpperBound;
     }
     for (int ii = 0; ii < this->numStiffenerPlies; ii++) {
       if (this->stiffenerPlyFracNums[ii] >= 0) {
-        lb[localIndex] = this->stiffenerPlyFracLowerBounds[ii];
-        ub[localIndex] = this->stiffenerPlyFracUpperBounds[ii];
-        localIndex++;
+        lb[this->stiffenerPlyFracLocalNums[ii]] =
+            this->stiffenerPlyFracLowerBounds[ii];
+        ub[this->stiffenerPlyFracLocalNums[ii]] =
+            this->stiffenerPlyFracUpperBounds[ii];
       }
     }
   }
@@ -675,7 +656,7 @@ void TACSBladeStiffenedShellConstitutive::evalStress(int elemIndex,
   // Compute the panel stresses
   this->computePanelStress(e, s);
 
-  // Compute the stiffener beam stresses then  transform them back to shell
+  // Compute the stiffener beam stresses then transform them back to shell
   // stresses
   TacsScalar stiffenerStrain[TACSBeamConstitutive::NUM_STRESSES],
       stiffenerStress[TACSBeamConstitutive::NUM_STRESSES];
@@ -705,7 +686,13 @@ void TACSBladeStiffenedShellConstitutive::evalTangentStiffness(
 TacsScalar TACSBladeStiffenedShellConstitutive::evalFailure(
     int elemIndex, const double pt[], const TacsScalar X[],
     const TacsScalar e[]) {
-  TacsScalar fail[2];
+  TacsScalar fail[this->NUM_FAILURES];
+  return this->computeFailureValues(e, fail);
+}
+
+// Compute the failure values for each failure mode of the stiffened panel
+TacsScalar TACSBladeStiffenedShellConstitutive::computeFailureValues(
+    const TacsScalar e[], TacsScalar fail[]) {
   fail[0] = this->computePanelFailure(e);
 
   TacsScalar stiffenerStrain[TACSBeamConstitutive::NUM_STRESSES];
@@ -714,7 +701,7 @@ TacsScalar TACSBladeStiffenedShellConstitutive::evalFailure(
 
   // TODO: Add the buckling calculation here
 
-  return ksAggregation(fail, 2, this->ksWeight);
+  return ksAggregation(fail, this->NUM_FAILURES, this->ksWeight);
 }
 
 // Evaluate the derivative of the failure criteria w.r.t. the strain
@@ -753,6 +740,27 @@ void TACSBladeStiffenedShellConstitutive::addFailureDVSens(
     int elemIndex, TacsScalar scale, const double pt[], const TacsScalar X[],
     const TacsScalar strain[], int dvLen, TacsScalar dfdx[]) {
   // TODO: Implement this
+  const int numDV = this->numDesignVars;
+
+  // First, compute the panel and stiffener failure values and then compute the
+  // sensitivity of the aggregate failure value w.r.t. them
+  TacsScalar fails[this->NUM_FAILURES], dKSdf[this->NUM_FAILURES];
+  TacsScalar fail = this->computeFailureValues(strain, fails);
+  ksAggregationSens(fails, this->NUM_FAILURES, this->ksWeight, dKSdf);
+
+  // Sensitivity of the panel failure value to it's DVs
+  this->addPanelFailureDVSens(strain, scale * dKSdf[0], dfdx);
+
+  // Next, add the direct sensitivity of the stiffener failure value w.r.t DVs
+  // Sensitivity of the panel failure value to it's DVs
+  // TacsScalar stiffenerStrain[TACSBeamConstitutive::NUM_STRESSES];
+  // this->transformStrain(strain, stiffenerStrain);
+  // this->addStiffenerFailureDVSens(stiffenerStrain, dKSdf[1],
+  //                                 this->numStiffenerDV,
+  //                                 &dfdx[this->stiffenerDVStartNum]);
+
+  // Finally, add the sensitivity of the stiffener failure value w.r.t. the DVs
+  // due to the dependence of the stiffener strains on the DVs
 }
 
 // ==============================================================================
@@ -1001,6 +1009,7 @@ TacsScalar TACSBladeStiffenedShellConstitutive::computePanelFailure(
   return ksAggregation(fail, 2 * numPly, this->ksWeight);
 }
 
+// Compute the derivative of the failure criteria in the panel w.r.t the DVs
 TacsScalar TACSBladeStiffenedShellConstitutive::evalPanelFailureStrainSens(
     const TacsScalar strain[], TacsScalar sens[]) {
   TACSOrthotropicPly* ply = this->panelPly;
@@ -1059,11 +1068,87 @@ TacsScalar TACSBladeStiffenedShellConstitutive::evalPanelFailureStrainSens(
   return fail;
 }
 
+// Add the derivative of the panel's failure w.r.t it's DVs
+void TACSBladeStiffenedShellConstitutive::addPanelFailureDVSens(
+    const TacsScalar strain[], const TacsScalar scale, TacsScalar dfdx[]) {
+  // In order to add values directly to the dfdx array, we need to first compute
+  // the failure values for each ply, then compute the sensitivity of the
+  // aggregated failure value with respect to each ply's value. Then we can
+  // compute the sensitivity of each ply failure value with respect to the panel
+  // thickness and add the weighted sensitivity to the dfdx array.
+
+  // TODO: This is currently giving the wrong results
+
+  if (this->panelThickNum >= 0) {
+    TACSOrthotropicPly* ply = this->panelPly;
+    const int numPlies = this->numPanelPlies;
+    const int numStrain = TACSBeamConstitutive::NUM_STRESSES;
+    TacsScalar* dKSdFail = this->panelPlyFailDVSens;
+    TacsScalar* fails = this->panelPlyFailValues;
+    const TacsScalar* angles = this->panelPlyAngles;
+    const TacsScalar t = this->panelThick;
+    const int dvInd = this->panelThickLocalNum;
+
+    // Compute the strain state at the top of the panel
+    TacsScalar plyStrain[3];
+    plyStrain[0] = strain[0] + 0.5 * t * strain[3];
+    plyStrain[1] = strain[1] + 0.5 * t * strain[4];
+    plyStrain[2] = strain[2] + 0.5 * t * strain[5];
+
+    // Compute the failure criteria at this strain state for each ply angle
+    for (int ii = 0; ii < numPlies; ii++) {
+      fails[ii] = ply->failure(angles[ii], plyStrain);
+    }
+
+    // Now repeat for the bottom of the panel
+    plyStrain[0] = strain[0] - 0.5 * t * strain[3];
+    plyStrain[1] = strain[1] - 0.5 * t * strain[4];
+    plyStrain[2] = strain[2] - 0.5 * t * strain[5];
+
+    for (int ii = 0; ii < numPlies; ii++) {
+      fails[numPlies + ii] = ply->failure(angles[ii], plyStrain);
+    }
+
+    // Compute the sensitivity of the aggregated failure w.r.t each ply failure
+    ksAggregationSens(fails, 2 * numPlies, this->ksWeight, dKSdFail);
+
+    // Compute the the sensitivity of the failure criteria w.r.t the strains
+    plyStrain[0] = strain[0] + 0.5 * t * strain[3];
+    plyStrain[1] = strain[1] + 0.5 * t * strain[4];
+    plyStrain[2] = strain[2] + 0.5 * t * strain[5];
+    for (int ii = 0; ii < numPlies; ii++) {
+      TacsScalar plyFailStrainSens[3];
+      ply->failureStrainSens(angles[ii], plyStrain, plyFailStrainSens);
+      // Convert the sensitivity w.r.t the strain to the sensitivity w.r.t
+      // panel thickness
+      dfdx[dvInd] +=
+          scale * dKSdFail[ii] * 0.5 *
+          (strain[3] * plyFailStrainSens[0] + strain[4] * plyFailStrainSens[1] +
+           strain[5] * plyFailStrainSens[2]);
+    }
+
+    // Now repeat for the bottom of the panel
+    plyStrain[0] = strain[0] - 0.5 * t * strain[3];
+    plyStrain[1] = strain[1] - 0.5 * t * strain[4];
+    plyStrain[2] = strain[2] - 0.5 * t * strain[5];
+
+    for (int ii = 0; ii < numPlies; ii++) {
+      TacsScalar plyFailStrainSens[3];
+      ply->failureStrainSens(angles[ii], plyStrain, plyFailStrainSens);
+
+      dfdx[dvInd] -=
+          scale * dKSdFail[numPlies + ii] * 0.5 *
+          (strain[3] * plyFailStrainSens[0] + strain[4] * plyFailStrainSens[1] +
+           strain[5] * plyFailStrainSens[2]);
+    }
+  }
+}
+
 // ==============================================================================
 // Helper functions for computing the stiffner's strain/stress/stiffness
 // ==============================================================================
-// In future, these methods should be replaced by calls to a beam constitutive
-// model
+// In future, these methods should be replaced by calls to a beam
+// constitutive model
 
 // Compute the beam stresses in the stiffener
 void TACSBladeStiffenedShellConstitutive::computeStiffenerStress(
@@ -1166,6 +1251,12 @@ TacsScalar TACSBladeStiffenedShellConstitutive::evalStiffenerFailureStrainSens(
       fails, numPlies, numStrain, this->ksWeight, dFaildStrain, sens);
 
   return fail;
+}
+
+void TACSBladeStiffenedShellConstitutive::addStiffenerFailureDVSens(
+    const TacsScalar strain[], const TacsScalar scale, const int dvLen,
+    TacsScalar dfdx[]) {
+  // TODO: Implement this
 }
 
 // ==============================================================================
