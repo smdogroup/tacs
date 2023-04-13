@@ -174,6 +174,7 @@ class StaticProblem(TACSProblem):
         self.u_array = self.u.getArray()
         # Auxiliary element object for applying tractions/pressure
         self.auxElems = tacs.TACS.AuxElements()
+        # Counter for number of calls to `solve` method
         self.callCounter = -1
 
         # Norms
@@ -1564,22 +1565,13 @@ class StaticProblem(TACSProblem):
             NASTARAN loadcase ID to assign loads to in BDF.
         """
 
-        # Compute the residual w/o external forces to infer the applied load
-        F = self.assembler.createVec()
-        # Save original value of loadscale
-        oldLS = self.loadScale
-        # Set load scale to zero
-        self.loadScale = 0.0
-        # Evaluate residual to get internal force
-        # (which equals ext force by equilibrium)
-        self.getResidual(F)
-        # Reset load scale
-        self.loadScale = oldLS
+        # Grab RHS vector from previous solve
+        F = self.rhs
+        F_array = np.real(F.getArray())
 
         # Get local force info for each processor
         multNodes = self.meshLoader.getLocalMultiplierNodeIDs()
         globalToLocalNodeIDDict = self.meshLoader.getGlobalToLocalNodeIDDict()
-        F_array = np.real(F.getArray())
 
         # Gather local info to root processor
         allMultNodes = self.comm.gather(multNodes, root=0)

@@ -1662,7 +1662,7 @@ class pyTACS(BaseUI):
                     vec = np.real(vec)
                 # Otherwise, there's no transform associated with this element, use default
                 else:
-                    coordID = 0
+                    coordID = None
                 # Copy and update element cards
                 for elemID in elemIDs:
                     # Create copy of card
@@ -1741,7 +1741,7 @@ class pyTACS(BaseUI):
                 else:
                     newBDFInfo.masses[elemID] = copy.deepcopy(massCard)
                 # Copy over comments
-                newBDFInfo.masses[elemID].comments = massCard.comments
+                newBDFInfo.masses[elemID].comment = massCard.comment
 
             # Copy over rigid elements
             newBDFInfo.rigid_elements.update(self.bdfInfo.rigid_elements)

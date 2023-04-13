@@ -718,7 +718,7 @@ cdef class IsoShellConstitutive(ShellConstitutive):
             X[i] = 0.0
         t = self.cptr.evalDesignFieldValue(elemIndex, pt, X, index)
         mat_id = self.props.getNastranID()
-        con = nastran_cards.properties.shell.PSHELL(self.nastranID, mat_id, np.real(t))
+        con = nastran_cards.properties.shell.PSHELL(self.nastranID, mat_id, np.real(t), mid2=mat_id, mid3=mat_id)
         return con
 
 
