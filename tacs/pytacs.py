@@ -951,7 +951,7 @@ class pyTACS(BaseUI):
 
                 # if the laminate is symmetric, mirror the ply indices
                 if propInfo.lam == "SYM":
-                    plyIndices = list(range(numPlies / 2))
+                    plyIndices = list(range(numPlies // 2))
                     plyIndices.extend(plyIndices[::-1])
                 else:
                     plyIndices = range(numPlies)
