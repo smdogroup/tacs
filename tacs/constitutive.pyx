@@ -1099,7 +1099,7 @@ cdef class IsoRectangleBeamConstitutive(BeamConstitutive):
         Generate pyNASTRAN card class based on current design variable values.
 
         Returns:
-            card (pyNastran.bdf.cards..properties.bars.PBARL): pyNastran card holding property information
+            card (pyNastran.bdf.cards.properties.bars.PBARL): pyNastran card holding property information
         """
         cdef double pt[3]
         cdef TacsScalar X[3]
