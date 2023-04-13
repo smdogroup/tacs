@@ -636,11 +636,11 @@ cdef class SolidConstitutive(Constitutive):
         Generate pyNASTRAN card class based on current design variable values.
 
         Returns:
-            card (pyNastran.bdf.cards.properties.shell.PSOLID): pyNastran card holding property information
+            card (pyNastran.bdf.cards.properties.solid.PSOLID): pyNastran card holding property information
         """
         if self.cptr:
             mat_id = self.props.getNastranID()
-            con = nastran_cards.properties.shell.PSOLID(self.nastranID, mat_id)
+            con = nastran_cards.properties.solid.PSOLID(self.nastranID, mat_id)
             return con
         return None
 
