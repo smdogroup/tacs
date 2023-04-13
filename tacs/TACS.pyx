@@ -492,15 +492,40 @@ cdef class Constitutive:
         return 0
 
     def setNastranID(self, id):
+        """
+        Set property ID to be used in NASTRAN card for this object.
+        Should be set before `generateBDFCard` is called.
+
+        Args:
+            id (int): ID number to associate with this object's NASTRAN card
+        """
         self.nastranID = id
 
     def getNastranID(self):
+        """
+        Get property ID assigned in NASTRAN card for this object.
+
+        Returns:
+            id (int): ID number associated with this object's NASTRAN card
+        """
         return self.nastranID
 
     def getMaterialProperties(self):
+        """
+        Get the MaterialProperties class associated with this object
+
+        Returns:
+            prop (tacs.constitutive.MaterialProperties): TACS material property class associated with object.
+        """
         return self.props
 
     def generateBDFCard(self):
+        """
+        Generate pyNASTRAN card class based on current design variable values.
+
+        Returns:
+            card (pyNastran.bdf.cards.base_card.Property): pyNastran card holding property information
+        """
         return None
 
     def getFailureEnvelope(self, sx, sy,

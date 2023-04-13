@@ -331,9 +331,22 @@ cdef class MaterialProperties:
             self.ptr.decref()
 
     def setNastranID(self, id):
+        """
+        Set material ID to be used in NASTRAN card for this object.
+        Should be set before `generateBDFCard` is called.
+
+        Args:
+            id (int): ID number to associate with this object's NASTRAN card
+        """
         self.nastranID = id
 
     def getNastranID(self):
+        """
+        Get material ID assigned in NASTRAN card for this object.
+
+        Returns:
+            id (int): ID number associated with this object's NASTRAN card
+        """
         return self.nastranID
 
     def generateBDFCard(self):
@@ -341,7 +354,8 @@ cdef class MaterialProperties:
         Generate pyNASTRAN card class based on current design variable values.
 
         Returns:
-            card (pyNastran.bdf.cards.base_card.Property): Dictionary holding material property information
+            card (pyNastran.bdf.cards.materials.MAT1 or pyNastran.bdf.cards.materials.MAT8):
+                pyNastran card holding material information
         """
         cdef TacsScalar E1, E2, E3, nu12, nu13, nu23, G12, G13, G23
         cdef TacsScalar T1, C1, T2, C2, T3, C3, S12, S13, S23
@@ -468,7 +482,13 @@ cdef class OrthotropicPly:
         self.ptr.decref()
 
     def getMaterialProperties(self):
-       return self.props
+        """
+        Get the MaterialProperties class associated with this object
+
+        Returns:
+            prop (tacs.constitutive.MaterialProperties): TACS material property class associated with object.
+        """
+        return self.props
 
 cdef class PlaneStressConstitutive(Constitutive):
     """
@@ -616,7 +636,7 @@ cdef class SolidConstitutive(Constitutive):
         Generate pyNASTRAN card class based on current design variable values.
 
         Returns:
-            card (pyNastran.bdf.cards.base_card.Property): Dictionary holding material property information
+            card (pyNastran.bdf.cards.properties.shell.PSOLID): pyNastran card holding property information
         """
         if self.cptr:
             mat_id = self.props.getNastranID()
@@ -687,7 +707,7 @@ cdef class IsoShellConstitutive(ShellConstitutive):
         Generate pyNASTRAN card class based on current design variable values.
 
         Returns:
-            card (pyNastran.bdf.cards.base_card.Property): Dictionary holding material property information
+            card (pyNastran.bdf.cards.properties.shell.PSHELL): pyNastran card holding property information
         """
         cdef double pt[3]
         cdef TacsScalar X[3]
@@ -749,7 +769,7 @@ cdef class CompositeShellConstitutive(ShellConstitutive):
         Generate pyNASTRAN card class based on current design variable values.
 
         Returns:
-            card (pyNastran.bdf.cards.base_card.Property): Dictionary holding material property information
+            card (pyNastran.bdf.cards.properties.shell.PCOMP): pyNastran card holding property information
         """
         num_plies = len(self.props)
         cdef TACSCompositeShellConstitutive* comp_ptr = <TACSCompositeShellConstitutive*>self.cptr
@@ -899,7 +919,7 @@ cdef class BasicBeamConstitutive(BeamConstitutive):
         Generate pyNASTRAN card class based on current design variable values.
 
         Returns:
-            card (pyNastran.bdf.cards.base_card.Property): Dictionary holding material property information
+            card (pyNastran.bdf.cards.properties.bars.PBAR): pyNastran card holding property information
         """
         cdef double pt[3]
         cdef TacsScalar X[3]
@@ -997,7 +1017,7 @@ cdef class IsoTubeBeamConstitutive(BeamConstitutive):
         Generate pyNASTRAN card class based on current design variable values.
 
         Returns:
-            card (pyNastran.bdf.cards.base_card.Property): Dictionary holding material property information
+            card (pyNastran.bdf.cards.properties.bars.PBARL): pyNastran card holding property information
         """
         cdef double pt[3]
         cdef TacsScalar X[3]
@@ -1079,7 +1099,7 @@ cdef class IsoRectangleBeamConstitutive(BeamConstitutive):
         Generate pyNASTRAN card class based on current design variable values.
 
         Returns:
-            card (pyNastran.bdf.cards.base_card.Property): Dictionary holding material property information
+            card (pyNastran.bdf.cards..properties.bars.PBARL): pyNastran card holding property information
         """
         cdef double pt[3]
         cdef TacsScalar X[3]
@@ -1126,6 +1146,12 @@ cdef class GeneralMassConstitutive(Constitutive):
         self.ptr.incref()
 
     def evalMassMatrix(self):
+        """
+        Evaluate 6x6 symmetric mass matrix associated with this element.
+
+        Returns:
+            M (numpy.ndarray): Length 21 flattened array representing unique entries of mass matrix
+        """
         cdef double pt[3]
         cdef TacsScalar X[3]
         cdef int elemIndex = 0
@@ -1333,7 +1359,7 @@ cdef class DOFSpringConstitutive(GeneralSpringConstitutive):
         Generate pyNASTRAN card class based on current design variable values.
 
         Returns:
-            card (pyNastran.bdf.cards.base_card.Property): Dictionary holding material property information
+            card (pyNastran.bdf.cards.properties.bush.PBUSH): pyNastran card holding property information
         """
         cdef double pt[3]
         cdef TacsScalar X[3]
