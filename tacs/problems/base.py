@@ -1006,11 +1006,11 @@ class TACSProblem(BaseUI):
         Add pressure to tacs static/transient problem from pynastran PLOAD4 card.
         Should only be called by createTACSProbsFromBDF and not directly by user.
         """
-        # Dictionary mapping nastran element face indices to TACS equivilent numbering
+        # Dictionary mapping nastran element face indices to TACS equivalent numbering
         nastranToTACSFaceIDDict = {
             "CTETRA4": {1: 1, 2: 3, 3: 2, 4: 0},
             "CTETRA": {2: 1, 4: 3, 3: 2, 1: 0},
-            "CHEXA": {1: 4, 2: 2, 3: 0, 4: 3, 5: 0, 6: 5},
+            "CHEXA": {1: 4, 2: 2, 3: 1, 4: 3, 5: 0, 6: 5},
         }
 
         # We don't support pressure variation across elements, for now just average it
