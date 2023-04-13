@@ -1740,6 +1740,8 @@ class pyTACS(BaseUI):
                 # CONM1's can't be updated by TACS, so we can just copy the original value
                 else:
                     newBDFInfo.masses[elemID] = copy.deepcopy(massCard)
+                # Copy over comments
+                newBDFInfo.masses[elemID].comments = massCard.comments
 
             # Copy over rigid elements
             newBDFInfo.rigid_elements.update(self.bdfInfo.rigid_elements)
