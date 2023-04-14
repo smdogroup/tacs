@@ -1731,7 +1731,7 @@ cdef class Assembler:
         Retrieve the design variable range.
 
         This call is collective on all TACS processes. The ranges
-        provided by indivdual objects may not be consistent (if
+        provided by individual objects may not be consistent (if
         someone provided incorrect data they could be.) Make a
         best guess; take the minimum upper bound and the maximum
         lower bound.
