@@ -160,6 +160,10 @@ class uCRM_VonMisesMassMin(ParOpt.Problem):
 
         return fail
 
+    def writeSolutionBDF(self, file_name):
+        # Write loads and optimized panel properties to BDF
+        self.fea_assembler.writeBDF(file_name, self.static_problem)
+
 
 # Load structural mesh from BDF file
 tacs_comm = MPI.COMM_WORLD
@@ -195,3 +199,6 @@ opt.optimize()
 
 # Get the optimized point
 x, z, zw, zl, zu = opt.getOptimizedPoint()
+
+# Write final design to BDF
+crm_opt.writeSolutionBDF("opt_sol.bdf")
