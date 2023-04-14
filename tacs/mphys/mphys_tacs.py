@@ -795,6 +795,14 @@ class TacsCouplingGroup(om.Group):
         # Set problem
         self.solver.set_sp(sp)
 
+        self.sp = sp
+
+    def write_bdf(self, file_name):
+        """
+        Write optimized structure and loads to BDF file.
+        """
+        self.fea_assembler.writeBDF(file_name, self.sp)
+
 
 class TacsFuncsGroup(om.Group):
     def initialize(self):
@@ -871,14 +879,6 @@ class TacsFuncsGroup(om.Group):
             )
 
         self.mass_funcs.mphys_set_sp(sp)
-
-        self.sp = sp
-
-    def write_bdf(self, file_name):
-        """
-        Write optimized structure and loads to BDF file.
-        """
-        self.fea_assembler.writeBDF(file_name, self.sp)
 
 
 class TacsBuilder(Builder):
