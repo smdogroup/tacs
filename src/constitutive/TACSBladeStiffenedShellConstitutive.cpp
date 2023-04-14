@@ -758,10 +758,14 @@ void TACSBladeStiffenedShellConstitutive::addStressDVSens(
   // Add the direct dependence on the stiffener pitch
   if (this->stiffenerPitchLocalNum >= 0) {
     int index = this->stiffenerPitchLocalNum;
+    TacsScalar panelStress[this->NUM_STRESSES];
     TacsScalar stress[this->NUM_STRESSES];
+
+    this->computePanelStress(strain, panelStress);
     this->evalStress(elemIndex, pt, X, strain, stress);
+
     for (int jj = 0; jj < this->NUM_STRESSES; jj++) {
-      dfdx[index] -= scale * pInv * pInv * stress[jj] * psi[jj];
+      dfdx[index] -= scale * pInv * (stress[jj] - panelStress[jj]) * psi[jj];
     }
   }
 }
@@ -989,27 +993,31 @@ void TACSBladeStiffenedShellConstitutive::addStiffenerStiffness(
   TacsScalar* B = &(panelStiffness[6]);
   TacsScalar* D = &(panelStiffness[12]);
   TacsScalar* As = &(panelStiffness[18]);
-  const TacsScalar* Cs = stiffenerStiffness;
 
   // A:
-  A[0] += pInv * (Cs[0]);
-  A[2] += pInv * (Cs[5] / 2.0);
-  A[5] += pInv * (Cs[20] / 4.0);
+  A[0] += pInv * (stiffenerStiffness[0]);
+  A[2] += pInv * (stiffenerStiffness[5] / 2.0);
+  A[5] += pInv * (stiffenerStiffness[20] / 4.0);
 
   // B:
-  B[0] += pInv * (z * Cs[0] + Cs[2]);
-  B[2] += pInv * (z * Cs[5] / 2.0 - Cs[1] / 2.0);
-  B[5] += pInv * (z * Cs[20] / 4.0 - Cs[10] / 4.0);
+  B[0] += pInv * (z * stiffenerStiffness[0] + stiffenerStiffness[2]);
+  B[2] +=
+      pInv * (z * stiffenerStiffness[5] / 2.0 - stiffenerStiffness[1] / 2.0);
+  B[5] +=
+      pInv * (z * stiffenerStiffness[20] / 4.0 - stiffenerStiffness[10] / 4.0);
 
   // D:
-  D[0] += pInv * (z * (z * Cs[0] + Cs[2]) + z * Cs[2] + Cs[11]);
+  D[0] += pInv * (z * (z * stiffenerStiffness[0] + stiffenerStiffness[2]) +
+                  z * stiffenerStiffness[2] + stiffenerStiffness[11]);
   D[2] +=
-      pInv * (z * (z * Cs[5] + Cs[14]) / 2.0 - z * Cs[1] / 2.0 - Cs[7] / 2.0);
+      pInv * (z * (z * stiffenerStiffness[5] + stiffenerStiffness[14]) / 2.0 -
+              z * stiffenerStiffness[1] / 2.0 - stiffenerStiffness[7] / 2.0);
   D[5] +=
-      pInv * (z * (z * Cs[20] - Cs[10]) / 4.0 - z * Cs[10] / 4.0 + Cs[6] / 4.0);
+      pInv * (z * (z * stiffenerStiffness[20] - stiffenerStiffness[10]) / 4.0 -
+              z * stiffenerStiffness[10] / 4.0 + stiffenerStiffness[6] / 4.0);
 
   // As:
-  As[2] += pInv * (Cs[18]);
+  As[2] += pInv * (stiffenerStiffness[18]);
 }
 
 void TACSBladeStiffenedShellConstitutive::addStiffenerStrainSensAsDVSens(
@@ -1150,6 +1158,9 @@ void TACSBladeStiffenedShellConstitutive::computePanelStiffness(
   for (int ii = 0; ii < NUM_ABAR_ENTRIES; ii++) {
     As[ii] += t * ABarPanel[ii] * this->kcorr;
   }
+
+  // Add the drill stiffness
+  C[21] = DRILLING_REGULARIZATION * 0.5 * (As[0] + As[2]);
 }
 
 // Compute the failure criteria in the panel
