@@ -24,10 +24,6 @@ bladeFSDT model from previous versions of TACS developed by Graeme Kennedy.
 #include "TacsUtilities.h"
 
 // =============================================================================
-// Global constant definitions
-// =============================================================================
-
-// =============================================================================
 // Class Declaration
 // =============================================================================
 
@@ -271,22 +267,21 @@ class TACSBladeStiffenedShellConstitutive : public TACSShellConstitutive {
   void computeStiffness(TacsScalar C[]);
 
   /**
-   * @brief Compute the Q and ABar Matrices for a laminate using a smeared
-   * stiffness approach
+   * @brief Compute the Q and ABar Matrices for a laminate based on the Q and
+   * ABar matrices for each ply
    *
-   * @param ply Pointer to the orthotropic ply for the laminate
    * @param numPlies Number of plies in the laminate
-   * @param plyAngles Ply angles for the laminate
    * @param plyFractions Ply fractions for each ply angle
    * @param Q The Q matrix for the laminate, stored as a flattened 6 entry array
    * ([Q11, Q12, Q16, Q22, Q26, Q66])
    * @param ABar The ABar matrix for the laminate, stored as a flattened 3 entry
    * array ([Q44, Q45, Q55])
    */
-  void computeSmearedStiffness(TACSOrthotropicPly* ply, const int numPlies,
-                               const TacsScalar plyAngles[],
-                               const TacsScalar plyFractions[], TacsScalar Q[],
-                               TacsScalar ABar[]);
+  inline void computeSmearedStiffness(const int numPlies,
+                                      const TacsScalar* const QMats,
+                                      const TacsScalar* const AbarMats,
+                                      const TacsScalar plyFractions[],
+                                      TacsScalar Q[], TacsScalar ABar[]);
 
   /**
    * @brief Compute the failure values for each failure mode of the stiffened
@@ -429,6 +424,18 @@ class TACSBladeStiffenedShellConstitutive : public TACSShellConstitutive {
   void computePanelStress(const TacsScalar strain[], TacsScalar stress[]);
 
   /**
+   * @brief Add the derivative of the product of panel stresses with a vector
+   * psi to dfdx
+   *
+   * @param scale Scale factor to apply to the derivatives
+   * @param strain SHell mid-plane strains
+   * @param psi Array multiplying stresses
+   * @param dfdx Design variable sensitivity array to add to
+   */
+  void addPanelStressDVSens(const TacsScalar scale, const TacsScalar strain[],
+                            const TacsScalar psi[], TacsScalar dfdx[]);
+
+  /**
    * @brief Compute the stiffness matrix of the panel (without stiffeners)
    *
    * @param C Array to store the stiffness matrix in (will be zeroed out within
@@ -482,12 +489,27 @@ class TACSBladeStiffenedShellConstitutive : public TACSShellConstitutive {
                                      TacsScalar stiffenerStress[]);
 
   /**
+   * @brief Add the derivative of the product of stiffener stresses with a
+   * vector w.r.t the design variables
+   *
+   * @param scale Scale factor to apply to the derivatives
+   * @param strain Stiffener centroid beam strains
+   * @param psi Array multiplying stresses
+   * @param dfdx Design variable sensitivity array to add to
+   */
+  void addStiffenerStressDVSens(const TacsScalar scale,
+                                const TacsScalar strain[],
+                                const TacsScalar psi[], TacsScalar dfdx[]);
+
+  /**
    * @brief Compute the stiffener's stiffness matrix
    *
    * @param C The stiffener local stiffness matrix (The derivative of the beam
    * stresses w.r.t the beam strains)
    */
   inline void computeStiffenerStiffness(TacsScalar C[]);
+
+  inline void computeStiffenerModuli(TacsScalar& E, TacsScalar& G);
 
   /**
    * @brief Compute the failure criterion for the stiffener in a given strain
@@ -651,6 +673,12 @@ class TACSBladeStiffenedShellConstitutive : public TACSShellConstitutive {
   TacsScalar* stiffenerPlyAngles;  ///< Stiffener ply angles
   TacsScalar flangeFraction;  ///< Flange fraction (stiffener base width as a
                               ///< fraction of stiffener height)
+  TacsScalar* panelQMats;     ///< Panel Q-matrices (they are constant since the
+                              ///< ply angles are fixed)
+  TacsScalar* stiffenerQMats;  ///< Panel Q-matrices (they are constant since
+                               ///< the ply angles are fixed)
+  TacsScalar* panelAbarMats;
+  TacsScalar* stiffenerAbarMats;
 
   // --- Design variable bounds ---
   TacsScalar panelLengthLowerBound = 0.0;
