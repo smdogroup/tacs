@@ -21,6 +21,8 @@ bladeFSDT model from previous versions of TACS developed by Graeme Kennedy.
 #include "TACSMaterialProperties.h"
 #include "TACSShellConstitutive.h"
 
+void printStiffnessMatrix(const TacsScalar* const C);
+
 const char* TACSBladeStiffenedShellConstitutive::constName =
     "TACSBladeStiffenedShellConstitutive";
 
@@ -731,13 +733,12 @@ void TACSBladeStiffenedShellConstitutive::addStressDVSens(
   TacsScalar pInv = 1.0 / this->stiffenerPitch;
 
   // Sensitivity of the panel stress values to it's DVs
-  // this->addPanelStressDVSens(scale, strain, psi,
-  // &dfdx[this->panelDVStartNum]);
+  this->addPanelStressDVSens(scale, strain, psi, &dfdx[this->panelDVStartNum]);
 
-  // // Next, add the direct sensitivity of the stiffener stress value w.r.t DVs
-  // // Sensitivity of the panel failure value to it's DVs
+  // Next, add the direct sensitivity of the stiffener stress value w.r.t DVs
+  // Sensitivity of the panel failure value to it's DVs
 
-  // // We first need to transform the psi vector the same way we do for stains
+  // We first need to transform the psi vector the same way we do for stains
   // TacsScalar stiffenerPsi[TACSBeamConstitutive::NUM_STRESSES];
   // this->transformStrain(psi, stiffenerPsi);
 
@@ -1081,50 +1082,98 @@ void TACSBladeStiffenedShellConstitutive::addPanelStressDVSens(
     TacsScalar dfdx[]) {
   // TODO: Implement this
   // The stress calculation is:
-  // [ s[0:3] ] = [ A 0 0  ][ e[0:3] ]
-  // [ s[3:6] ] = [ 0 D 0  ][ e[3:6] ]
-  // [ s[6:8] ] = [ 0 0 As ][ e[6:8] ]
+  // s = C * e
+  // [ s[0:3] ] = [ A 0 0  0     ][ e[0:3] ]
+  // [ s[3:6] ] = [ 0 D 0  0     ][ e[3:6] ]
+  // [ s[6:8] ] = [ 0 0 As 0     ][ e[6:8] ]
+  // [ s[8]   ] = [ 0 0 0  drill ][ e[8]   ]
 
   // Where: A = t * sum_i (plyFrac[i] * Q(theta[i]))
   //        D = t^3/12 * sum_i (plyFrac[i] * Q(theta[i]))
-  //        As = t * sum_i (plyFrac[i] * Abar(theta[i]))
-  // TacsScalar C[this->NUM_TANGENT_STIFFNESS_ENTRIES];
-  // this->computePanelStiffness(C);
+  //        As = t * sum_i (plyFrac[i] * Abar(theta[i])) * kcorr
+  //        drill = DRILLING_REGULARIZATION * t/2 * (As[0,0] + As[1,1]))
 
-  // TacsScalar* A = &C[0];
-  // TacsScalar* B = &C[6];
-  // TacsScalar* D = &C[12];
-  // TacsScalar* As = &C[18];
-  // TacsScalar drill = C[21];
+  // Therefore, the derivative w.r.t the panel thickness is:
+  // d/dt (psi^T * s) = psi^T * (C * e) =
+  // psi[0:3]^T * [sum_i (plyFrac[i] * Q(theta[i]))] * e[0:3] +
+  // psi[3:6]^T * [sum_i (plyFrac[i] * Q(theta[i]))] * e[3:6] +
+  // psi[6:8]^T * [sum_i (plyFrac[i] * Abar(theta[i]))] * e[6:8] +
+  // psi[8] * DRILLING_REGULARIZATION * t/2 * (As[0,0] + As[1,1])) * e[8]
 
+  // And the derivative w.r.t the ply fractions is:
+  // d/dplyFrac[i] (psi^T * s) = psi^T * (C * e) =
+  // t * psi[0:3]^T * Q(theta[i]) * e[0:3] +
+  // t^3/12 * psi[3:6]^T * Q(theta[i]) * e[3:6] +
+  // t * psi[6:8]^T * Abar(theta[i]) * e[6:8] *kcorr +
+  // t * psi[8] * DRILLING_REGULARIZATION * 1/2 * (As[0,0] + As[1,1])) *
+  // e[8]*kcorr
+
+  // --- Panel thickness sensitivity ---
   if (this->panelThickNum >= 0) {
     int index = this->panelThickLocalNum - this->panelDVStartNum;
     TacsScalar t26 = this->panelThick * this->panelThick / 6.0;
+    TacsScalar tInv = 1.0 / this->panelThick;
     TacsScalar AMatProd, DMatProd, AsMatProd, drillProd;
-    AMatProd = DMatProd = AsMatProd = drillProd = 0.0;
 
-    for (int ii = 0; ii < this->numPanelPlies; ii++) {
-      TacsScalar* Q = &(this->panelQMats[ii * NUM_Q_ENTRIES]);
-      TacsScalar* Abar = &(this->panelAbarMats[ii * NUM_ABAR_ENTRIES]);
-      // psi^T[0:3] * sum_i (plyFrac[i] * Q(theta[i])) * e[0:3]
-      AMatProd +=
-          psi[0] * (Q[0] * strain[0] + Q[1] * strain[1] + Q[2] * strain[2]) +
-          psi[1] * (Q[1] * strain[0] + Q[3] * strain[1] + Q[4] * strain[2]) +
-          psi[2] * (Q[2] * strain[0] + Q[4] * strain[1] + Q[5] * strain[2]);
-      // psi^T[3:6] * sum_i (plyFrac[i] * Q(theta[i])) * e[3:6]
-      DMatProd +=
-          psi[3] * (Q[0] * strain[3] + Q[1] * strain[4] + Q[2] * strain[5]) +
-          psi[4] * (Q[1] * strain[3] + Q[3] * strain[4] + Q[4] * strain[5]) +
-          psi[5] * (Q[2] * strain[3] + Q[4] * strain[4] + Q[5] * strain[5]);
-      // psi^T[6:8] * sum_i (plyFrac[i] * Abar(theta[i])) * e[6:8]
-      AsMatProd += psi[6] * (Abar[0] * strain[6] + Abar[1] * strain[7] +
-                             Abar[2] * strain[8]) +
-                   psi[7] * (Abar[1] * strain[6] + Abar[3] * strain[7] +
-                             Abar[4] * strain[8]);
-      // psi^T[8] * sum_i (plyFrac[i] * (Abar11 + Abar22)/2 * e[8]
-      drillProd += psi[8] * 0.5 * (Abar[0] + Abar[2]) * strain[8];
+    TacsScalar QPanel[this->NUM_Q_ENTRIES];
+    TacsScalar AbarPanel[this->NUM_ABAR_ENTRIES];
+    this->computeSmearedStiffness(this->numPanelPlies, this->panelQMats,
+                                  this->panelAbarMats, this->panelPlyFracs,
+                                  QPanel, AbarPanel);
+
+    AMatProd = psi[0] * (QPanel[0] * strain[0] + QPanel[1] * strain[1] +
+                         QPanel[2] * strain[2]) +
+               psi[1] * (QPanel[1] * strain[0] + QPanel[3] * strain[1] +
+                         QPanel[4] * strain[2]) +
+               psi[2] * (QPanel[2] * strain[0] + QPanel[4] * strain[1] +
+                         QPanel[5] * strain[2]);
+
+    DMatProd = psi[3] * (QPanel[0] * strain[3] + QPanel[1] * strain[4] +
+                         QPanel[2] * strain[5]) +
+               psi[4] * (QPanel[1] * strain[3] + QPanel[3] * strain[4] +
+                         QPanel[4] * strain[5]) +
+               psi[5] * (QPanel[2] * strain[3] + QPanel[4] * strain[4] +
+                         QPanel[5] * strain[5]);
+
+    AsMatProd =
+        this->kcorr *
+        (psi[6] * (AbarPanel[0] * strain[6] + AbarPanel[1] * strain[7]) +
+         psi[7] * (AbarPanel[1] * strain[6] + AbarPanel[2] * strain[7]));
+
+    drillProd = this->kcorr * psi[8] * DRILLING_REGULARIZATION *
+                (0.5 * (AbarPanel[0] + AbarPanel[2])) * strain[8];
+    dfdx[index] = scale * (AMatProd + t26 * DMatProd + AsMatProd + drillProd);
+  }
+
+  // --- Ply fraction sensitivity ---
+  TacsScalar t = this->panelThick;
+  TacsScalar t3 = t * t * t / 12.0;
+  for (int ii = 0; ii < this->numPanelPlies; ii++) {
+    if (this->panelPlyFracNums[ii] >= 0) {
+      int index = this->panelPlyFracLocalNums[ii] - this->panelDVStartNum;
+      TacsScalar* Q = &(this->panelQMats[NUM_Q_ENTRIES * ii]);
+      TacsScalar* Abar = &(this->panelAbarMats[NUM_ABAR_ENTRIES * ii]);
+
+      dfdx[index] +=
+          scale * t *
+          (psi[0] * (Q[0] * strain[0] + Q[1] * strain[1] + Q[2] * strain[2]) +
+           psi[1] * (Q[1] * strain[0] + Q[3] * strain[1] + Q[4] * strain[2]) +
+           psi[2] * (Q[2] * strain[0] + Q[4] * strain[1] + Q[5] * strain[2]));
+
+      dfdx[index] +=
+          scale * t3 *
+          (psi[3] * (Q[0] * strain[3] + Q[1] * strain[4] + Q[2] * strain[5]) +
+           psi[4] * (Q[1] * strain[3] + Q[3] * strain[4] + Q[4] * strain[5]) +
+           psi[5] * (Q[2] * strain[3] + Q[4] * strain[4] + Q[5] * strain[5]));
+
+      dfdx[index] += scale * t * this->kcorr *
+                     (psi[6] * (Abar[0] * strain[6] + Abar[1] * strain[7]) +
+                      psi[7] * (Abar[1] * strain[6] + Abar[2] * strain[7]));
+
+      dfdx[index] += this->kcorr * scale * t * psi[8] *
+                     DRILLING_REGULARIZATION * (0.5 * (Abar[0] + Abar[2])) *
+                     strain[8];
     }
-    dfdx[index] += scale * (AMatProd + t26 * DMatProd + AsMatProd + drillProd);
   }
 }
 
@@ -1666,4 +1715,69 @@ void TACSBladeStiffenedShellConstitutive::computeStiffenerMOISens(
            (kf2 * st2 + 12.0 * kf * sh2 + 12.0 * kf * sh * st + 4.0 * kf * st2 +
             3.0 * sh2) /
            (12.0 * (kf + 1.0));
+}
+
+void printStiffnessMatrix(const TacsScalar* const C) {
+  const TacsScalar* A = &C[0];
+  const TacsScalar* B = &C[6];
+  const TacsScalar* D = &C[12];
+  const TacsScalar* As = &C[18];
+  TacsScalar drill = C[21];
+
+  printf("[\n");
+  printf(
+      "[% 03.5e, % 03.5e, % 03.5e | % 03.5e, % 03.5e, % 03.5e | % 03.5e, % "
+      "03.5e | % 03.5e]\n",
+      A[0], A[1], A[2], B[0], B[1], B[2], 0., 0., 0.);
+  printf(
+      "[% 03.5e, % 03.5e, % 03.5e | % 03.5e, % 03.5e, % 03.5e | % 03.5e, % "
+      "03.5e | % 03.5e]\n",
+      A[1], A[3], A[4], B[1], B[3], B[4], 0., 0., 0.);
+  printf(
+      "[% 03.5e, % 03.5e, % 03.5e | % 03.5e, % 03.5e, % 03.5e | % 03.5e, % "
+      "03.5e | % 03.5e]\n",
+      A[2], A[4], A[5], B[2], B[4], B[5], 0., 0., 0.);
+
+  printf(
+      "--------------------------------------------------------------------"
+      "----"
+      "--------------------------------------------------------\n");
+
+  printf(
+      "[% 03.5e, % 03.5e, % 03.5e | % 03.5e, % 03.5e, % 03.5e | % 03.5e, % "
+      "03.5e | % 03.5e]\n",
+      B[0], B[1], B[2], D[0], D[1], D[2], 0., 0., 0.);
+  printf(
+      "[% 03.5e, % 03.5e, % 03.5e | % 03.5e, % 03.5e, % 03.5e | % 03.5e, % "
+      "03.5e | % 03.5e]\n",
+      B[1], B[3], B[4], D[1], D[3], D[4], 0., 0., 0.);
+  printf(
+      "[% 03.5e, % 03.5e, % 03.5e | % 03.5e, % 03.5e, % 03.5e | % 03.5e, % "
+      "03.5e | % 03.5e]\n",
+      B[2], B[4], B[5], D[2], D[4], D[5], 0., 0., 0.);
+
+  printf(
+      "--------------------------------------------------------------------"
+      "----"
+      "--------------------------------------------------------\n");
+
+  printf(
+      "[% 03.5e, % 03.5e, % 03.5e | % 03.5e, % 03.5e, % 03.5e | % 03.5e, % "
+      "03.5e | % 03.5e]\n",
+      0., 0., 0., 0., 0., 0., As[0], As[1], 0.);
+  printf(
+      "[% 03.5e, % 03.5e, % 03.5e | % 03.5e, % 03.5e, % 03.5e | % 03.5e, % "
+      "03.5e | % 03.5e]\n",
+      0., 0., 0., 0., 0., 0., As[1], As[2], 0.);
+
+  printf(
+      "--------------------------------------------------------------------"
+      "----"
+      "--------------------------------------------------------\n");
+
+  printf(
+      "[% 03.5e, % 03.5e, % 03.5e | % 03.5e, % 03.5e, % 03.5e | % 03.5e, % "
+      "03.5e | % 03.5e]\n",
+      0., 0., 0., 0., 0., 0., 0., 0., drill);
+  printf("]\n");
 }
