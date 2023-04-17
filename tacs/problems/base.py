@@ -69,7 +69,7 @@ class TACSProblem(BaseUI):
 
         Returns
         ----------
-        x : array
+        x : numpy.ndarray
             The current design variable vector set in tacs.
 
         """
@@ -103,6 +103,23 @@ class TACSProblem(BaseUI):
 
         # Set the variables in tacs
         self.assembler.setDesignVars(self.x)
+
+    def getDesignVarRange(self):
+        """
+        get the lower/upper bounds for the design variables.
+
+        Returns
+        ----------
+        xlb : numpy.ndarray
+            The design variable lower bound.
+        xub : numpy.ndarray
+            The design variable upper bound.
+
+        """
+        xlb = self.assembler.createDesignVec()
+        xub = self.assembler.createDesignVec()
+        self.assembler.getDesignVarRange(xlb, xub)
+        return xlb.getArray(), xub.getArray()
 
     def _arrayToDesignVec(self, dvArray):
         """
@@ -1006,11 +1023,11 @@ class TACSProblem(BaseUI):
         Add pressure to tacs static/transient problem from pynastran PLOAD4 card.
         Should only be called by createTACSProbsFromBDF and not directly by user.
         """
-        # Dictionary mapping nastran element face indices to TACS equivilent numbering
+        # Dictionary mapping nastran element face indices to TACS equivalent numbering
         nastranToTACSFaceIDDict = {
             "CTETRA4": {1: 1, 2: 3, 3: 2, 4: 0},
             "CTETRA": {2: 1, 4: 3, 3: 2, 1: 0},
-            "CHEXA": {1: 4, 2: 2, 3: 0, 4: 3, 5: 0, 6: 5},
+            "CHEXA": {1: 4, 2: 2, 3: 1, 4: 3, 5: 0, 6: 5},
         }
 
         # We don't support pressure variation across elements, for now just average it

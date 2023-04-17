@@ -5,10 +5,11 @@ import os, numpy as np
 from .proc_decorator import root_proc, root_broadcast
 from .materials import Material
 from .constraints import Constraint
-from .property import ShellProperty
+from .property import ShellProperty, Property
 from .loads import Load
 from .variables import ShapeVariable, ThicknessVariable
 from .egads_aim import EgadsAim
+from .aflr_aim import AflrAim
 
 
 class TacsAimMetadata:
@@ -38,7 +39,7 @@ class TacsAim:
         self._properties = []
         self._constraints = []
         self._design_variables = []
-        self._egads_aim = None
+        self._mesh_aim = None
 
         # build flags
         self._setup = False
@@ -85,14 +86,16 @@ class TacsAim:
                 self._properties.append(obj.shell_property)
         elif isinstance(obj, ShapeVariable):
             self._design_variables.append(obj)
-        elif isinstance(obj, ShellProperty):
+        elif isinstance(obj, Property):
             self._properties.append(obj)
         elif isinstance(obj, Constraint):
             self._constraints.append(obj)
         elif isinstance(obj, Load):
             self._loads.append(obj)
         elif isinstance(obj, EgadsAim):
-            self._egads_aim = obj
+            self._mesh_aim = obj
+        elif isinstance(obj, AflrAim):
+            self._mesh_aim = obj
         else:
             raise AssertionError(
                 "Object could not be registered to TacsAim as it is not an appropriate type."
@@ -108,7 +111,7 @@ class TacsAim:
         assert len(self._materials) > 0
         assert len(self._properties) > 0
         assert len(self._constraints) > 0
-        assert self._egads_aim is not None
+        assert self._mesh_aim is not None
 
         # this part runs on serial
         if self.comm is None or self.comm.rank == 0:
@@ -162,7 +165,7 @@ class TacsAim:
                 self._first_setup = False
 
             # link the egads aim to the tacs aim
-            self.aim.input["Mesh"].link(self._egads_aim.aim.output["Surface_Mesh"])
+            self.aim.input["Mesh"].link(self._mesh_aim.aim.output["Surface_Mesh"])
 
             # add the design variables to the DesignVariable and DesignVariableRelation properties
             if len(self.thickness_variables) > 0:

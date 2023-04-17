@@ -130,6 +130,10 @@ prob.setup()
 # Run optimization
 prob.run_driver()
 
+# Write optimized structure to BDF
+bdf_out = os.path.join(os.path.dirname(__file__), "beam_sol.bdf")
+prob.model.tip_shear.coupling.write_bdf(bdf_out)
+
 # Get optimized solution variables
 x = prob.get_val("mesh.x_struct0", get_remote=True)[:-3:3]
 t_opt = prob["dv_struct"]

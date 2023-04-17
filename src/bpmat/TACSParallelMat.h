@@ -69,6 +69,10 @@ class TACSParallelMat : public TACSMat {
   void beginAssembly();
   void endAssembly();
 
+  // Create a duplicate without copying values
+  // -----------------------------------------
+  TACSMat *createDuplicate();
+
   // Set values into the matrix from the local BCSRMat
   // -------------------------------------------------
   void setValues(int nvars, const int *ext_vars, const int *rowp,
