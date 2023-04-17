@@ -314,6 +314,20 @@ This is appropriate for orthotropic and anisotropic shells, who's stiffness prop
 <dd class="field-odd"><p><strong>axis</strong> (<em>array-like</em>) -- Reference axis.</p>
 </dd>
 </dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.elements.ShellRefAxisTransform.getRefAxis">
+<span class="sig-name descname"><span class="pre">getRefAxis</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.elements.ShellRefAxisTransform.getRefAxis" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get reference axis for transform.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>reference axis</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>axis (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.24)">numpy.ndarray</a>)</p>
+</dd>
+</dl>
+</dd></dl>
+
 </dd></dl>
 
 <dl class="py class">
@@ -333,6 +347,20 @@ This class uses a projection of a user-supplied reference axis to define the bea
 <dd class="field-odd"><p><strong>axis</strong> (<em>array-like</em>) -- Reference axis.</p>
 </dd>
 </dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.elements.BeamRefAxisTransform.getRefAxis">
+<span class="sig-name descname"><span class="pre">getRefAxis</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.elements.BeamRefAxisTransform.getRefAxis" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get reference axis for transform.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>reference axis</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>axis (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.24)">numpy.ndarray</a>)</p>
+</dd>
+</dl>
+</dd></dl>
+
 </dd></dl>
 
 <dl class="py class">
@@ -363,6 +391,20 @@ The local <cite>y</cite> is given by the cross product of local <cite>z</cite> a
 <dd class="field-odd"><p><strong>axis</strong> (<em>array-like</em>) -- Reference axis.</p>
 </dd>
 </dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.elements.SpringRefAxisTransform.getRefAxis">
+<span class="sig-name descname"><span class="pre">getRefAxis</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.elements.SpringRefAxisTransform.getRefAxis" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get reference axis for transform.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>reference axis</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>axis (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.24)">numpy.ndarray</a>)</p>
+</dd>
+</dl>
+</dd></dl>
+
 </dd></dl>
 
 <dl class="py class">
@@ -375,6 +417,21 @@ This class uses an user-defined arbritrary reference frame for the transform (i.
 The reference is defined using two reference vectors. <cite>axis1</cite> defines the local <cite>x</cite> axes.
 The local <cite>z</cite> is given by the cross product of <cite>x</cite> and <cite>axis2</cite>.
 The local <cite>y</cite> is given by the cross product of local <cite>z</cite> and <cite>x</cite>.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.elements.SpringRefFrameTransform.getRefAxes">
+<span class="sig-name descname"><span class="pre">getRefAxes</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.elements.SpringRefFrameTransform.getRefAxes" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get reference axes for transform.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>first reference axis
+axis_j (numpy.ndarray): second reference axis</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>axis_i (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.24)">numpy.ndarray</a>)</p>
+</dd>
+</dl>
+</dd></dl>
+
 </dd></dl>
 
 </section>
@@ -1099,11 +1156,23 @@ independent node dof's are attached to the element.</p></li>
 </li>
 <li><a class="reference internal" href="#transform-classes">Transform classes</a><ul>
 <li><a class="reference internal" href="#tacs.elements.ShellNaturalTransform"><code class="docutils literal notranslate"><span class="pre">ShellNaturalTransform</span></code></a></li>
-<li><a class="reference internal" href="#tacs.elements.ShellRefAxisTransform"><code class="docutils literal notranslate"><span class="pre">ShellRefAxisTransform</span></code></a></li>
-<li><a class="reference internal" href="#tacs.elements.BeamRefAxisTransform"><code class="docutils literal notranslate"><span class="pre">BeamRefAxisTransform</span></code></a></li>
+<li><a class="reference internal" href="#tacs.elements.ShellRefAxisTransform"><code class="docutils literal notranslate"><span class="pre">ShellRefAxisTransform</span></code></a><ul>
+<li><a class="reference internal" href="#tacs.elements.ShellRefAxisTransform.getRefAxis"><code class="docutils literal notranslate"><span class="pre">ShellRefAxisTransform.getRefAxis()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#tacs.elements.BeamRefAxisTransform"><code class="docutils literal notranslate"><span class="pre">BeamRefAxisTransform</span></code></a><ul>
+<li><a class="reference internal" href="#tacs.elements.BeamRefAxisTransform.getRefAxis"><code class="docutils literal notranslate"><span class="pre">BeamRefAxisTransform.getRefAxis()</span></code></a></li>
+</ul>
+</li>
 <li><a class="reference internal" href="#tacs.elements.SpringIdentityTransform"><code class="docutils literal notranslate"><span class="pre">SpringIdentityTransform</span></code></a></li>
-<li><a class="reference internal" href="#tacs.elements.SpringRefAxisTransform"><code class="docutils literal notranslate"><span class="pre">SpringRefAxisTransform</span></code></a></li>
-<li><a class="reference internal" href="#tacs.elements.SpringRefFrameTransform"><code class="docutils literal notranslate"><span class="pre">SpringRefFrameTransform</span></code></a></li>
+<li><a class="reference internal" href="#tacs.elements.SpringRefAxisTransform"><code class="docutils literal notranslate"><span class="pre">SpringRefAxisTransform</span></code></a><ul>
+<li><a class="reference internal" href="#tacs.elements.SpringRefAxisTransform.getRefAxis"><code class="docutils literal notranslate"><span class="pre">SpringRefAxisTransform.getRefAxis()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#tacs.elements.SpringRefFrameTransform"><code class="docutils literal notranslate"><span class="pre">SpringRefFrameTransform</span></code></a><ul>
+<li><a class="reference internal" href="#tacs.elements.SpringRefFrameTransform.getRefAxes"><code class="docutils literal notranslate"><span class="pre">SpringRefFrameTransform.getRefAxes()</span></code></a></li>
+</ul>
+</li>
 </ul>
 </li>
 <li><a class="reference internal" href="#element-classes">Element classes</a><ul>

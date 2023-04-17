@@ -59,7 +59,7 @@ isotropic and anisotropic materials.</p>
 <p>The goal of this class is to store a set of material properties
 that can be queried by constitutive classes for beams, shells,
 plane stress and solid elements. The minimum set of properties
-consists of isotroic mechanical properties, with zero thermal
+consists of isotropic mechanical properties, with zero thermal
 expansion.</p>
 <p>There are several different ways of specifying material
 properties. The following describes several of the possible
@@ -176,6 +176,20 @@ in the '3' direction (keyword argument).</p></li>
 </dd>
 </dl>
 <dl class="py method">
+<dt class="sig sig-object py" id="tacs.constitutive.MaterialProperties.generateBDFCard">
+<span class="sig-name descname"><span class="pre">generateBDFCard</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constitutive.MaterialProperties.generateBDFCard" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate pyNASTRAN card class based on current design variable values.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>pyNastran card holding material information</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>card (<a class="reference external" href="https://pynastran-git.readthedocs.io/en/latest/reference/bdf/cards/pyNastran.bdf.cards.materials.html#pyNastran.bdf.cards.materials.MAT1" title="(in pyNastran 1.4-dev v1.4-dev)">pyNastran.bdf.cards.materials.MAT1</a> or <a class="reference external" href="https://pynastran-git.readthedocs.io/en/latest/reference/bdf/cards/pyNastran.bdf.cards.materials.html#pyNastran.bdf.cards.materials.MAT8" title="(in pyNastran 1.4-dev v1.4-dev)">pyNastran.bdf.cards.materials.MAT8</a>)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="tacs.constitutive.MaterialProperties.getMaterialProperties">
 <span class="sig-name descname"><span class="pre">getMaterialProperties</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constitutive.MaterialProperties.getMaterialProperties" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return a dictionary of the material properties</p>
@@ -190,12 +204,38 @@ in the '3' direction (keyword argument).</p></li>
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="tacs.constitutive.MaterialProperties.getNastranID">
+<span class="sig-name descname"><span class="pre">getNastranID</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constitutive.MaterialProperties.getNastranID" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get material ID assigned in NASTRAN card for this object.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>ID number associated with this object's NASTRAN card</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>id (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)">int</a>)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="tacs.constitutive.MaterialProperties.setDensity">
 <span class="sig-name descname"><span class="pre">setDensity</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constitutive.MaterialProperties.setDensity" title="Permalink to this definition">¶</a></dt>
 <dd><p>Set the density property values</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>rho</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.11)"><em>float</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#complex" title="(in Python v3.11)"><em>complex</em></a>) -- The material density</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.constitutive.MaterialProperties.setNastranID">
+<span class="sig-name descname"><span class="pre">setNastranID</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constitutive.MaterialProperties.setNastranID" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set material ID to be used in NASTRAN card for this object.
+Should be set before <cite>generateBDFCard</cite> is called.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>id</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)"><em>int</em></a>) -- ID number to associate with this object's NASTRAN card</p>
 </dd>
 </dl>
 </dd></dl>
@@ -235,6 +275,20 @@ Defaults to False (i.e. use max strength).</p></li>
 </ul>
 </dd>
 </dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.constitutive.OrthotropicPly.getMaterialProperties">
+<span class="sig-name descname"><span class="pre">getMaterialProperties</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constitutive.OrthotropicPly.getMaterialProperties" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get the MaterialProperties class associated with this object</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>TACS material property class associated with object.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>prop (<a class="reference internal" href="#tacs.constitutive.MaterialProperties" title="tacs.constitutive.MaterialProperties">tacs.constitutive.MaterialProperties</a>)</p>
+</dd>
+</dl>
+</dd></dl>
+
 </dd></dl>
 
 </section>
@@ -273,6 +327,20 @@ The following <code class="xref py py-class docutils literal notranslate"><span 
 </ul>
 </dd>
 </dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.constitutive.BasicBeamConstitutive.generateBDFCard">
+<span class="sig-name descname"><span class="pre">generateBDFCard</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constitutive.BasicBeamConstitutive.generateBDFCard" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate pyNASTRAN card class based on current design variable values.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>pyNastran card holding property information</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>card (<a class="reference external" href="https://pynastran-git.readthedocs.io/en/latest/reference/bdf/cards/properties/pyNastran.bdf.cards.properties.bars.html#pyNastran.bdf.cards.properties.bars.PBAR" title="(in pyNastran 1.4-dev v1.4-dev)">pyNastran.bdf.cards.properties.bars.PBAR</a>)</p>
+</dd>
+</dl>
+</dd></dl>
+
 </dd></dl>
 
 <dl class="py class">
@@ -291,6 +359,20 @@ composite laminate first-order shear deformation theory (FSDT) shell type elemen
 </ul>
 </dd>
 </dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.constitutive.CompositeShellConstitutive.generateBDFCard">
+<span class="sig-name descname"><span class="pre">generateBDFCard</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constitutive.CompositeShellConstitutive.generateBDFCard" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate pyNASTRAN card class based on current design variable values.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>pyNastran card holding property information</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>card (<a class="reference external" href="https://pynastran-git.readthedocs.io/en/latest/reference/bdf/cards/properties/pyNastran.bdf.cards.properties.shell.html#pyNastran.bdf.cards.properties.shell.PCOMP" title="(in pyNastran 1.4-dev v1.4-dev)">pyNastran.bdf.cards.properties.shell.PCOMP</a>)</p>
+</dd>
+</dl>
+</dd></dl>
+
 </dd></dl>
 
 <dl class="py class">
@@ -304,6 +386,20 @@ Assumes 6 dofs.</p>
 <dd class="field-odd"><p><strong>k</strong> (<em>array-like</em><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.11)"><em>float</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#complex" title="(in Python v3.11)"><em>complex</em></a><em>]</em>) -- Stiffness values for all 6 dofs.</p>
 </dd>
 </dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.constitutive.DOFSpringConstitutive.generateBDFCard">
+<span class="sig-name descname"><span class="pre">generateBDFCard</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constitutive.DOFSpringConstitutive.generateBDFCard" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate pyNASTRAN card class based on current design variable values.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>pyNastran card holding property information</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>card (<a class="reference external" href="https://pynastran-git.readthedocs.io/en/latest/reference/bdf/cards/properties/pyNastran.bdf.cards.properties.bush.html#pyNastran.bdf.cards.properties.bush.PBUSH" title="(in pyNastran 1.4-dev v1.4-dev)">pyNastran.bdf.cards.properties.bush.PBUSH</a>)</p>
+</dd>
+</dl>
+</dd></dl>
+
 </dd></dl>
 
 <dl class="py class">
@@ -328,6 +424,20 @@ The mass properties of this object are specified using a symmetric 6 x 6 mass ma
 <dd class="field-odd"><p><strong>M</strong> (<em>array-like</em><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.11)"><em>float</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#complex" title="(in Python v3.11)"><em>complex</em></a><em>]</em>) -- Flattened array containing one side of symmetric mass matrix entries.</p>
 </dd>
 </dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.constitutive.GeneralMassConstitutive.evalMassMatrix">
+<span class="sig-name descname"><span class="pre">evalMassMatrix</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constitutive.GeneralMassConstitutive.evalMassMatrix" title="Permalink to this definition">¶</a></dt>
+<dd><p>Evaluate 6x6 symmetric mass matrix associated with this element.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Length 21 flattened array representing unique entries of mass matrix</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>M (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.24)">numpy.ndarray</a>)</p>
+</dd>
+</dl>
+</dd></dl>
+
 </dd></dl>
 
 <dl class="py class">
@@ -378,6 +488,20 @@ the width is perpindicular to the reference axis.</p>
 </ul>
 </dd>
 </dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.constitutive.IsoRectangleBeamConstitutive.generateBDFCard">
+<span class="sig-name descname"><span class="pre">generateBDFCard</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constitutive.IsoRectangleBeamConstitutive.generateBDFCard" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate pyNASTRAN card class based on current design variable values.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>pyNastran card holding property information</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>card (<a class="reference external" href="https://pynastran-git.readthedocs.io/en/latest/reference/bdf/cards/properties/pyNastran.bdf.cards.properties.bars.html#pyNastran.bdf.cards.properties.bars.PBARL" title="(in pyNastran 1.4-dev v1.4-dev)">pyNastran.bdf.cards.properties.bars.PBARL</a>)</p>
+</dd>
+</dl>
+</dd></dl>
+
 </dd></dl>
 
 <dl class="py class">
@@ -398,6 +522,20 @@ isotropic first-order shear deformation theory shell type element.</p>
 </ul>
 </dd>
 </dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.constitutive.IsoShellConstitutive.generateBDFCard">
+<span class="sig-name descname"><span class="pre">generateBDFCard</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constitutive.IsoShellConstitutive.generateBDFCard" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate pyNASTRAN card class based on current design variable values.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>pyNastran card holding property information</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>card (<a class="reference external" href="https://pynastran-git.readthedocs.io/en/latest/reference/bdf/cards/properties/pyNastran.bdf.cards.properties.shell.html#pyNastran.bdf.cards.properties.shell.PSHELL" title="(in pyNastran 1.4-dev v1.4-dev)">pyNastran.bdf.cards.properties.shell.PSHELL</a>)</p>
+</dd>
+</dl>
+</dd></dl>
+
 </dd></dl>
 
 <dl class="py class">
@@ -422,6 +560,20 @@ isotropic first-order shear deformation theory shell type element.</p>
 </ul>
 </dd>
 </dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.constitutive.IsoTubeBeamConstitutive.generateBDFCard">
+<span class="sig-name descname"><span class="pre">generateBDFCard</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constitutive.IsoTubeBeamConstitutive.generateBDFCard" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate pyNASTRAN card class based on current design variable values.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>pyNastran card holding property information</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>card (<a class="reference external" href="https://pynastran-git.readthedocs.io/en/latest/reference/bdf/cards/properties/pyNastran.bdf.cards.properties.bars.html#pyNastran.bdf.cards.properties.bars.PBARL" title="(in pyNastran 1.4-dev v1.4-dev)">pyNastran.bdf.cards.properties.bars.PBARL</a>)</p>
+</dd>
+</dl>
+</dd></dl>
+
 </dd></dl>
 
 <dl class="py class">
@@ -445,8 +597,8 @@ isotropic first-order shear deformation theory shell type element.</p>
 <li><p><strong>t</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.11)"><em>float</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#complex" title="(in Python v3.11)"><em>complex</em></a><em>, </em><em>optional</em>) -- The material thickness (keyword argument). Defaults to 1.0.</p></li>
 <li><p><strong>tNum</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)"><em>int</em></a><em>, </em><em>optional</em>) -- Design variable number to assign to thickness (keyword argument). Defaults to -1
 (i.e. no design variable).</p></li>
-<li><p><strong>tlb</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.11)"><em>float</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#complex" title="(in Python v3.11)"><em>complex</em></a><em>, </em><em>optional</em>) -- Thickness varaible lower bound (keyword argument). Defaults to 0.0.</p></li>
-<li><p><strong>tub</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.11)"><em>float</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#complex" title="(in Python v3.11)"><em>complex</em></a><em>, </em><em>optional</em>) -- Thickness varaible upper bound (keyword argument). Defaults to 10.0.</p></li>
+<li><p><strong>tlb</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.11)"><em>float</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#complex" title="(in Python v3.11)"><em>complex</em></a><em>, </em><em>optional</em>) -- Thickness variable lower bound (keyword argument). Defaults to 0.0.</p></li>
+<li><p><strong>tub</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.11)"><em>float</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#complex" title="(in Python v3.11)"><em>complex</em></a><em>, </em><em>optional</em>) -- Thickness variable upper bound (keyword argument). Defaults to 10.0.</p></li>
 </ul>
 </dd>
 </dl>
@@ -465,8 +617,8 @@ All objects performing plane stress analysis should utilize this class.</p>
 <li><p><strong>t</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.11)"><em>float</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#complex" title="(in Python v3.11)"><em>complex</em></a><em>, </em><em>optional</em>) -- The material thickness (keyword argument). Defaults to 1.0.</p></li>
 <li><p><strong>tNum</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)"><em>int</em></a><em>, </em><em>optional</em>) -- Design variable number to assign to thickness (keyword argument). Defaults to -1
 (i.e. no design variable).</p></li>
-<li><p><strong>tlb</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.11)"><em>float</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#complex" title="(in Python v3.11)"><em>complex</em></a><em>, </em><em>optional</em>) -- Thickness varaible lower bound (keyword argument). Defaults to 0.0.</p></li>
-<li><p><strong>tub</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.11)"><em>float</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#complex" title="(in Python v3.11)"><em>complex</em></a><em>, </em><em>optional</em>) -- Thickness varaible upper bound (keyword argument). Defaults to 10.0.</p></li>
+<li><p><strong>tlb</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.11)"><em>float</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#complex" title="(in Python v3.11)"><em>complex</em></a><em>, </em><em>optional</em>) -- Thickness variable lower bound (keyword argument). Defaults to 0.0.</p></li>
+<li><p><strong>tub</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.11)"><em>float</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#complex" title="(in Python v3.11)"><em>complex</em></a><em>, </em><em>optional</em>) -- Thickness variable upper bound (keyword argument). Defaults to 10.0.</p></li>
 </ul>
 </dd>
 </dl>
@@ -559,11 +711,25 @@ Weighting factor used for topology optimization. 0.0 corresponds to void,
 1.0 corresponds material fully present, values in between are intermediate. Defaults to 1.0.</p></li>
 <li><p><strong>tNum</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)"><em>int</em></a><em>, </em><em>optional</em>) -- Design variable number to assign to &quot;thickness&quot; (keyword argument). Defaults to -1
 (i.e. no design variable).</p></li>
-<li><p><strong>tlb</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.11)"><em>float</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#complex" title="(in Python v3.11)"><em>complex</em></a><em>, </em><em>optional</em>) -- &quot;Thickness&quot; varaible lower bound (keyword argument). Defaults to 0.0.</p></li>
-<li><p><strong>tub</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.11)"><em>float</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#complex" title="(in Python v3.11)"><em>complex</em></a><em>, </em><em>optional</em>) -- &quot;Thickness&quot; varaible upper bound (keyword argument). Defaults to 10.0.</p></li>
+<li><p><strong>tlb</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.11)"><em>float</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#complex" title="(in Python v3.11)"><em>complex</em></a><em>, </em><em>optional</em>) -- &quot;Thickness&quot; variable lower bound (keyword argument). Defaults to 0.0.</p></li>
+<li><p><strong>tub</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.11)"><em>float</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#complex" title="(in Python v3.11)"><em>complex</em></a><em>, </em><em>optional</em>) -- &quot;Thickness&quot; variable upper bound (keyword argument). Defaults to 10.0.</p></li>
 </ul>
 </dd>
 </dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.constitutive.SolidConstitutive.generateBDFCard">
+<span class="sig-name descname"><span class="pre">generateBDFCard</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constitutive.SolidConstitutive.generateBDFCard" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate pyNASTRAN card class based on current design variable values.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>pyNastran card holding property information</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>card (<a class="reference external" href="https://pynastran-git.readthedocs.io/en/latest/reference/bdf/cards/properties/pyNastran.bdf.cards.properties.solid.html#pyNastran.bdf.cards.properties.solid.PSOLID" title="(in pyNastran 1.4-dev v1.4-dev)">pyNastran.bdf.cards.properties.solid.PSOLID</a>)</p>
+</dd>
+</dl>
+</dd></dl>
+
 </dd></dl>
 
 </section>
@@ -582,23 +748,50 @@ Weighting factor used for topology optimization. 0.0 corresponds to void,
 <li><a class="reference internal" href="#">constitutive module</a><ul>
 <li><a class="reference internal" href="#material-classes">Material classes</a><ul>
 <li><a class="reference internal" href="#tacs.constitutive.MaterialProperties"><code class="docutils literal notranslate"><span class="pre">MaterialProperties</span></code></a><ul>
+<li><a class="reference internal" href="#tacs.constitutive.MaterialProperties.generateBDFCard"><code class="docutils literal notranslate"><span class="pre">MaterialProperties.generateBDFCard()</span></code></a></li>
 <li><a class="reference internal" href="#tacs.constitutive.MaterialProperties.getMaterialProperties"><code class="docutils literal notranslate"><span class="pre">MaterialProperties.getMaterialProperties()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.constitutive.MaterialProperties.getNastranID"><code class="docutils literal notranslate"><span class="pre">MaterialProperties.getNastranID()</span></code></a></li>
 <li><a class="reference internal" href="#tacs.constitutive.MaterialProperties.setDensity"><code class="docutils literal notranslate"><span class="pre">MaterialProperties.setDensity()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.constitutive.MaterialProperties.setNastranID"><code class="docutils literal notranslate"><span class="pre">MaterialProperties.setNastranID()</span></code></a></li>
 <li><a class="reference internal" href="#tacs.constitutive.MaterialProperties.setSpecificHeat"><code class="docutils literal notranslate"><span class="pre">MaterialProperties.setSpecificHeat()</span></code></a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#tacs.constitutive.OrthotropicPly"><code class="docutils literal notranslate"><span class="pre">OrthotropicPly</span></code></a></li>
+<li><a class="reference internal" href="#tacs.constitutive.OrthotropicPly"><code class="docutils literal notranslate"><span class="pre">OrthotropicPly</span></code></a><ul>
+<li><a class="reference internal" href="#tacs.constitutive.OrthotropicPly.getMaterialProperties"><code class="docutils literal notranslate"><span class="pre">OrthotropicPly.getMaterialProperties()</span></code></a></li>
+</ul>
+</li>
 </ul>
 </li>
 <li><a class="reference internal" href="#constitutive-classes">Constitutive classes</a><ul>
-<li><a class="reference internal" href="#tacs.constitutive.BasicBeamConstitutive"><code class="docutils literal notranslate"><span class="pre">BasicBeamConstitutive</span></code></a></li>
-<li><a class="reference internal" href="#tacs.constitutive.CompositeShellConstitutive"><code class="docutils literal notranslate"><span class="pre">CompositeShellConstitutive</span></code></a></li>
-<li><a class="reference internal" href="#tacs.constitutive.DOFSpringConstitutive"><code class="docutils literal notranslate"><span class="pre">DOFSpringConstitutive</span></code></a></li>
-<li><a class="reference internal" href="#tacs.constitutive.GeneralMassConstitutive"><code class="docutils literal notranslate"><span class="pre">GeneralMassConstitutive</span></code></a></li>
+<li><a class="reference internal" href="#tacs.constitutive.BasicBeamConstitutive"><code class="docutils literal notranslate"><span class="pre">BasicBeamConstitutive</span></code></a><ul>
+<li><a class="reference internal" href="#tacs.constitutive.BasicBeamConstitutive.generateBDFCard"><code class="docutils literal notranslate"><span class="pre">BasicBeamConstitutive.generateBDFCard()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#tacs.constitutive.CompositeShellConstitutive"><code class="docutils literal notranslate"><span class="pre">CompositeShellConstitutive</span></code></a><ul>
+<li><a class="reference internal" href="#tacs.constitutive.CompositeShellConstitutive.generateBDFCard"><code class="docutils literal notranslate"><span class="pre">CompositeShellConstitutive.generateBDFCard()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#tacs.constitutive.DOFSpringConstitutive"><code class="docutils literal notranslate"><span class="pre">DOFSpringConstitutive</span></code></a><ul>
+<li><a class="reference internal" href="#tacs.constitutive.DOFSpringConstitutive.generateBDFCard"><code class="docutils literal notranslate"><span class="pre">DOFSpringConstitutive.generateBDFCard()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#tacs.constitutive.GeneralMassConstitutive"><code class="docutils literal notranslate"><span class="pre">GeneralMassConstitutive</span></code></a><ul>
+<li><a class="reference internal" href="#tacs.constitutive.GeneralMassConstitutive.evalMassMatrix"><code class="docutils literal notranslate"><span class="pre">GeneralMassConstitutive.evalMassMatrix()</span></code></a></li>
+</ul>
+</li>
 <li><a class="reference internal" href="#tacs.constitutive.GeneralSpringConstitutive"><code class="docutils literal notranslate"><span class="pre">GeneralSpringConstitutive</span></code></a></li>
-<li><a class="reference internal" href="#tacs.constitutive.IsoRectangleBeamConstitutive"><code class="docutils literal notranslate"><span class="pre">IsoRectangleBeamConstitutive</span></code></a></li>
-<li><a class="reference internal" href="#tacs.constitutive.IsoShellConstitutive"><code class="docutils literal notranslate"><span class="pre">IsoShellConstitutive</span></code></a></li>
-<li><a class="reference internal" href="#tacs.constitutive.IsoTubeBeamConstitutive"><code class="docutils literal notranslate"><span class="pre">IsoTubeBeamConstitutive</span></code></a></li>
+<li><a class="reference internal" href="#tacs.constitutive.IsoRectangleBeamConstitutive"><code class="docutils literal notranslate"><span class="pre">IsoRectangleBeamConstitutive</span></code></a><ul>
+<li><a class="reference internal" href="#tacs.constitutive.IsoRectangleBeamConstitutive.generateBDFCard"><code class="docutils literal notranslate"><span class="pre">IsoRectangleBeamConstitutive.generateBDFCard()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#tacs.constitutive.IsoShellConstitutive"><code class="docutils literal notranslate"><span class="pre">IsoShellConstitutive</span></code></a><ul>
+<li><a class="reference internal" href="#tacs.constitutive.IsoShellConstitutive.generateBDFCard"><code class="docutils literal notranslate"><span class="pre">IsoShellConstitutive.generateBDFCard()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#tacs.constitutive.IsoTubeBeamConstitutive"><code class="docutils literal notranslate"><span class="pre">IsoTubeBeamConstitutive</span></code></a><ul>
+<li><a class="reference internal" href="#tacs.constitutive.IsoTubeBeamConstitutive.generateBDFCard"><code class="docutils literal notranslate"><span class="pre">IsoTubeBeamConstitutive.generateBDFCard()</span></code></a></li>
+</ul>
+</li>
 <li><a class="reference internal" href="#tacs.constitutive.LamParamShellConstitutive"><code class="docutils literal notranslate"><span class="pre">LamParamShellConstitutive</span></code></a></li>
 <li><a class="reference internal" href="#tacs.constitutive.PhaseChangeMaterialConstitutive"><code class="docutils literal notranslate"><span class="pre">PhaseChangeMaterialConstitutive</span></code></a></li>
 <li><a class="reference internal" href="#tacs.constitutive.PlaneStressConstitutive"><code class="docutils literal notranslate"><span class="pre">PlaneStressConstitutive</span></code></a></li>
@@ -607,7 +800,10 @@ Weighting factor used for topology optimization. 0.0 corresponds to void,
 <li><a class="reference internal" href="#tacs.constitutive.ShellConstitutive.setDrillingRegularization"><code class="docutils literal notranslate"><span class="pre">ShellConstitutive.setDrillingRegularization()</span></code></a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#tacs.constitutive.SolidConstitutive"><code class="docutils literal notranslate"><span class="pre">SolidConstitutive</span></code></a></li>
+<li><a class="reference internal" href="#tacs.constitutive.SolidConstitutive"><code class="docutils literal notranslate"><span class="pre">SolidConstitutive</span></code></a><ul>
+<li><a class="reference internal" href="#tacs.constitutive.SolidConstitutive.generateBDFCard"><code class="docutils literal notranslate"><span class="pre">SolidConstitutive.generateBDFCard()</span></code></a></li>
+</ul>
+</li>
 </ul>
 </li>
 </ul>

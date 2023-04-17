@@ -674,6 +674,21 @@ Defaults to None.</p></li>
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="tacs.problems.TransientProblem.getDesignVarRange">
+<span class="sig-name descname"><span class="pre">getDesignVarRange</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.problems.TransientProblem.getDesignVarRange" title="Permalink to this definition">¶</a></dt>
+<dd><p>get the lower/upper bounds for the design variables.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><ul class="simple">
+<li><p><strong>xlb</strong> (<em>numpy.ndarray</em>) -- The design variable lower bound.</p></li>
+<li><p><strong>xub</strong> (<em>numpy.ndarray</em>) -- The design variable upper bound.</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="tacs.problems.TransientProblem.getDesignVars">
 <span class="sig-name descname"><span class="pre">getDesignVars</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.problems.TransientProblem.getDesignVars" title="Permalink to this definition">¶</a></dt>
 <dd><p>Get the current set of  design variables for this problem.</p>
@@ -682,7 +697,7 @@ Defaults to None.</p></li>
 <dd class="field-odd"><p><strong>x</strong> -- The current design variable vector set in tacs.</p>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p>array</p>
+<dd class="field-even"><p><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.24)">numpy.ndarray</a></p>
 </dd>
 </dl>
 </dd></dl>
@@ -869,6 +884,7 @@ Optional tacs_aim arg for TacsAim wrapper class object in root/tacs/caps2tacs/</
 <li><a class="reference internal" href="#tacs.problems.TransientProblem.zeroLoads"><code class="docutils literal notranslate"><span class="pre">TransientProblem.zeroLoads()</span></code></a></li>
 <li><a class="reference internal" href="#tacs.problems.TransientProblem.writeSolution"><code class="docutils literal notranslate"><span class="pre">TransientProblem.writeSolution()</span></code></a></li>
 <li><a class="reference internal" href="#tacs.problems.TransientProblem.dtype"><code class="docutils literal notranslate"><span class="pre">TransientProblem.dtype</span></code></a></li>
+<li><a class="reference internal" href="#tacs.problems.TransientProblem.getDesignVarRange"><code class="docutils literal notranslate"><span class="pre">TransientProblem.getDesignVarRange()</span></code></a></li>
 <li><a class="reference internal" href="#tacs.problems.TransientProblem.getDesignVars"><code class="docutils literal notranslate"><span class="pre">TransientProblem.getDesignVars()</span></code></a></li>
 <li><a class="reference internal" href="#tacs.problems.TransientProblem.getFunctionKeys"><code class="docutils literal notranslate"><span class="pre">TransientProblem.getFunctionKeys()</span></code></a></li>
 <li><a class="reference internal" href="#tacs.problems.TransientProblem.getNodes"><code class="docutils literal notranslate"><span class="pre">TransientProblem.getNodes()</span></code></a></li>

@@ -55,6 +55,7 @@
 <span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">OrderedDict</span>
 
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">pyNastran.bdf</span> <span class="k">as</span> <span class="nn">pn</span>
 
 <span class="kn">import</span> <span class="nn">tacs.TACS</span>
 <span class="kn">import</span> <span class="nn">tacs.elements</span>
@@ -211,6 +212,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">u_array</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">u</span><span class="o">.</span><span class="n">getArray</span><span class="p">()</span>
         <span class="c1"># Auxiliary element object for applying tractions/pressure</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">auxElems</span> <span class="o">=</span> <span class="n">tacs</span><span class="o">.</span><span class="n">TACS</span><span class="o">.</span><span class="n">AuxElements</span><span class="p">()</span>
+        <span class="c1"># Counter for number of calls to `solve` method</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">callCounter</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
 
         <span class="c1"># Norms</span>
@@ -1585,7 +1587,99 @@
         <span class="c1"># Unless the writeSolution option is off write actual file:</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s2">&quot;writeSolution&quot;</span><span class="p">):</span>
             <span class="n">base</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">outputDir</span><span class="p">,</span> <span class="n">baseName</span><span class="p">)</span> <span class="o">+</span> <span class="s2">&quot;.f5&quot;</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">outputViewer</span><span class="o">.</span><span class="n">writeToFile</span><span class="p">(</span><span class="n">base</span><span class="p">)</span></div></div>
+            <span class="bp">self</span><span class="o">.</span><span class="n">outputViewer</span><span class="o">.</span><span class="n">writeToFile</span><span class="p">(</span><span class="n">base</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="StaticProblem.writeLoadToBDF"><a class="viewcode-back" href="../../../pytacs/static.html#tacs.problems.StaticProblem.writeLoadToBDF">[docs]</a>    <span class="k">def</span> <span class="nf">writeLoadToBDF</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">bdfFile</span><span class="p">,</span> <span class="n">loadCaseID</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Write loads from problem to NASTRAN BDF file.</span>
+<span class="sd">        NOTE: To get correct loads, `solve` method should be called before this method.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        bdfFile: str or pyNastran.bdf.bdf.BDF or None</span>
+<span class="sd">            Name of file to write BDF file to. Only required on root proc,</span>
+<span class="sd">            can be None otherwise.</span>
+<span class="sd">        loadCaseID: int</span>
+<span class="sd">            NASTARAN loadcase ID to assign loads to in BDF.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="c1"># Grab RHS vector from previous solve</span>
+        <span class="n">F</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rhs</span>
+        <span class="n">F_array</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">real</span><span class="p">(</span><span class="n">F</span><span class="o">.</span><span class="n">getArray</span><span class="p">())</span>
+
+        <span class="c1"># Get local force info for each processor</span>
+        <span class="n">multNodes</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">meshLoader</span><span class="o">.</span><span class="n">getLocalMultiplierNodeIDs</span><span class="p">()</span>
+        <span class="n">globalToLocalNodeIDDict</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">meshLoader</span><span class="o">.</span><span class="n">getGlobalToLocalNodeIDDict</span><span class="p">()</span>
+
+        <span class="c1"># Gather local info to root processor</span>
+        <span class="n">allMultNodes</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">comm</span><span class="o">.</span><span class="n">gather</span><span class="p">(</span><span class="n">multNodes</span><span class="p">,</span> <span class="n">root</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        <span class="n">allGlobalToLocalNodeIDDict</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">comm</span><span class="o">.</span><span class="n">gather</span><span class="p">(</span><span class="n">globalToLocalNodeIDDict</span><span class="p">,</span> <span class="n">root</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        <span class="n">allF</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">comm</span><span class="o">.</span><span class="n">gather</span><span class="p">(</span><span class="n">F_array</span><span class="p">,</span> <span class="n">root</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+
+        <span class="n">vpn</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getVarsPerNode</span><span class="p">()</span>
+
+        <span class="c1"># Assemble new BDF file on root</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">comm</span><span class="o">.</span><span class="n">rank</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">bdfFile</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+                <span class="n">newBDFInfo</span> <span class="o">=</span> <span class="n">pn</span><span class="o">.</span><span class="n">bdf</span><span class="o">.</span><span class="n">BDF</span><span class="p">(</span><span class="n">debug</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">bdfFile</span><span class="p">,</span> <span class="n">pn</span><span class="o">.</span><span class="n">bdf</span><span class="o">.</span><span class="n">BDF</span><span class="p">):</span>
+                <span class="n">newBDFInfo</span> <span class="o">=</span> <span class="n">bdfFile</span>
+
+            <span class="c1"># Save subcase info to bdf</span>
+            <span class="k">if</span> <span class="n">newBDFInfo</span><span class="o">.</span><span class="n">case_control_deck</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">newBDFInfo</span><span class="o">.</span><span class="n">case_control_deck</span><span class="o">.</span><span class="n">create_new_subcase</span><span class="p">(</span><span class="n">loadCaseID</span><span class="p">)</span>
+                <span class="n">newBDFInfo</span><span class="o">.</span><span class="n">case_control_deck</span><span class="o">.</span><span class="n">add_parameter_to_local_subcase</span><span class="p">(</span>
+                    <span class="n">loadCaseID</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;SUBTITLE=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="p">)</span>
+                <span class="n">newBDFInfo</span><span class="o">.</span><span class="n">case_control_deck</span><span class="o">.</span><span class="n">add_parameter_to_local_subcase</span><span class="p">(</span>
+                    <span class="n">loadCaseID</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;ANALYSIS=STATICS&quot;</span>
+                <span class="p">)</span>
+                <span class="n">newBDFInfo</span><span class="o">.</span><span class="n">case_control_deck</span><span class="o">.</span><span class="n">add_parameter_to_local_subcase</span><span class="p">(</span>
+                    <span class="n">loadCaseID</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;LOAD=</span><span class="si">{</span><span class="n">loadCaseID</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="p">)</span>
+
+            <span class="c1"># Tolerance for writing out point loads</span>
+            <span class="n">zero_tol</span> <span class="o">=</span> <span class="mf">1e-6</span>
+            <span class="c1"># Write out force values</span>
+            <span class="n">nastranNodeIDs</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">bdfInfo</span><span class="o">.</span><span class="n">node_ids</span><span class="p">)</span>
+            <span class="c1"># Loop through each proc and pull out nodal forces</span>
+            <span class="k">for</span> <span class="n">proc_i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">comm</span><span class="o">.</span><span class="n">size</span><span class="p">):</span>
+                <span class="n">Fxyz</span> <span class="o">=</span> <span class="n">allF</span><span class="p">[</span><span class="n">proc_i</span><span class="p">]</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">vpn</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">tacsGNodeID</span> <span class="ow">in</span> <span class="n">allGlobalToLocalNodeIDDict</span><span class="p">[</span><span class="n">proc_i</span><span class="p">]:</span>
+                    <span class="c1"># Get local node ID</span>
+                    <span class="n">tacsLNodeID</span> <span class="o">=</span> <span class="n">allGlobalToLocalNodeIDDict</span><span class="p">[</span><span class="n">proc_i</span><span class="p">][</span><span class="n">tacsGNodeID</span><span class="p">]</span>
+                    <span class="c1"># Get Global nastran ID</span>
+                    <span class="n">nastranGNodeID</span> <span class="o">=</span> <span class="n">nastranNodeIDs</span><span class="p">[</span><span class="n">tacsGNodeID</span><span class="p">]</span>
+                    <span class="c1"># Add force to bdf file (if its not a multiplier node)</span>
+                    <span class="k">if</span> <span class="n">tacsLNodeID</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">allMultNodes</span><span class="p">[</span><span class="n">proc_i</span><span class="p">]:</span>
+                        <span class="c1"># Check if force is above tolerance before adding to bdf</span>
+                        <span class="k">if</span> <span class="p">(</span>
+                            <span class="n">vpn</span> <span class="o">&gt;=</span> <span class="mi">3</span>
+                            <span class="ow">and</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">Fxyz</span><span class="p">[</span><span class="n">tacsLNodeID</span><span class="p">][:</span><span class="mi">3</span><span class="p">])</span> <span class="o">&gt;</span> <span class="n">zero_tol</span>
+                        <span class="p">):</span>
+                            <span class="n">f</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
+                            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">3</span><span class="p">):</span>
+                                <span class="k">if</span> <span class="nb">abs</span><span class="p">(</span><span class="n">Fxyz</span><span class="p">[</span><span class="n">tacsLNodeID</span><span class="p">][</span><span class="n">i</span><span class="p">])</span> <span class="o">&gt;</span> <span class="n">zero_tol</span><span class="p">:</span>
+                                    <span class="n">f</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">Fxyz</span><span class="p">[</span><span class="n">tacsLNodeID</span><span class="p">][</span><span class="n">i</span><span class="p">]</span>
+                            <span class="n">newBDFInfo</span><span class="o">.</span><span class="n">add_force</span><span class="p">(</span><span class="n">loadCaseID</span><span class="p">,</span> <span class="n">nastranGNodeID</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="n">f</span><span class="p">)</span>
+                        <span class="k">if</span> <span class="p">(</span>
+                            <span class="n">vpn</span> <span class="o">&gt;=</span> <span class="mi">6</span>
+                            <span class="ow">and</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">Fxyz</span><span class="p">[</span><span class="n">tacsLNodeID</span><span class="p">][</span><span class="mi">3</span><span class="p">:</span><span class="mi">6</span><span class="p">])</span> <span class="o">&gt;</span> <span class="n">zero_tol</span>
+                        <span class="p">):</span>
+                            <span class="n">m</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
+                            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">3</span><span class="p">):</span>
+                                <span class="k">if</span> <span class="nb">abs</span><span class="p">(</span><span class="n">Fxyz</span><span class="p">[</span><span class="n">tacsLNodeID</span><span class="p">][</span><span class="n">i</span> <span class="o">+</span> <span class="mi">3</span><span class="p">])</span> <span class="o">&gt;</span> <span class="n">zero_tol</span><span class="p">:</span>
+                                    <span class="n">m</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">Fxyz</span><span class="p">[</span><span class="n">tacsLNodeID</span><span class="p">][</span><span class="n">i</span> <span class="o">+</span> <span class="mi">3</span><span class="p">]</span>
+                            <span class="n">newBDFInfo</span><span class="o">.</span><span class="n">add_moment</span><span class="p">(</span><span class="n">loadCaseID</span><span class="p">,</span> <span class="n">nastranGNodeID</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="n">m</span><span class="p">)</span>
+
+            <span class="c1"># If bdf file was provided as a file name save it directly</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">bdfFile</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+                <span class="n">newBDFInfo</span><span class="o">.</span><span class="n">write_bdf</span><span class="p">(</span>
+                    <span class="n">bdfFile</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="mi">16</span><span class="p">,</span> <span class="n">is_double</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">write_header</span><span class="o">=</span><span class="kc">False</span>
+                <span class="p">)</span>
+
+        <span class="c1"># All procs should wait for root</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">comm</span><span class="o">.</span><span class="n">barrier</span><span class="p">()</span></div></div>
 </pre></div>
 
             <div class="clearer"></div>

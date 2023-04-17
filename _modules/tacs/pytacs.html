@@ -68,6 +68,7 @@
 <span class="kn">from</span> <span class="nn">functools</span> <span class="kn">import</span> <span class="n">wraps</span>
 
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">pyNastran.bdf</span> <span class="k">as</span> <span class="nn">pn</span>
 
 <span class="kn">import</span> <span class="nn">tacs.TACS</span>
 <span class="kn">import</span> <span class="nn">tacs.constitutive</span>
@@ -258,6 +259,9 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">Xpts0</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="c1"># List of initial designvars</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">x0</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="c1"># Design var upper/lower-bounds</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">xub</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">xlb</span> <span class="o">=</span> <span class="kc">None</span>
 
         <span class="c1"># Variables per node for model</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">varsPerNode</span> <span class="o">=</span> <span class="kc">None</span>
@@ -811,7 +815,12 @@
 
         <span class="c1"># Store initial design variable values</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">x0</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">assembler</span><span class="o">.</span><span class="n">createDesignVec</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">assembler</span><span class="o">.</span><span class="n">getDesignVars</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">x0</span><span class="p">)</span></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assembler</span><span class="o">.</span><span class="n">getDesignVars</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">x0</span><span class="p">)</span>
+
+        <span class="c1"># Store design variable upper/lower-bounds</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">xub</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">assembler</span><span class="o">.</span><span class="n">createDesignVec</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">xlb</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">assembler</span><span class="o">.</span><span class="n">createDesignVec</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assembler</span><span class="o">.</span><span class="n">getDesignVarRange</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">xlb</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">xub</span><span class="p">)</span></div>
 
     <span class="k">def</span> <span class="nf">_elemCallBackFromBDF</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
@@ -988,7 +997,7 @@
 
                 <span class="c1"># if the laminate is symmetric, mirror the ply indices</span>
                 <span class="k">if</span> <span class="n">propInfo</span><span class="o">.</span><span class="n">lam</span> <span class="o">==</span> <span class="s2">&quot;SYM&quot;</span><span class="p">:</span>
-                    <span class="n">plyIndices</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="n">numPlies</span> <span class="o">/</span> <span class="mi">2</span><span class="p">))</span>
+                    <span class="n">plyIndices</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="n">numPlies</span> <span class="o">//</span> <span class="mi">2</span><span class="p">))</span>
                     <span class="n">plyIndices</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">plyIndices</span><span class="p">[::</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
                 <span class="k">else</span><span class="p">:</span>
                     <span class="n">plyIndices</span> <span class="o">=</span> <span class="nb">range</span><span class="p">(</span><span class="n">numPlies</span><span class="p">)</span>
@@ -1181,6 +1190,21 @@
 
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">x0</span><span class="o">.</span><span class="n">getArray</span><span class="p">()</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="pyTACS.getDesignVarRange"><a class="viewcode-back" href="../../pytacs/pytacs_module.html#tacs.pytacs.pyTACS.getDesignVarRange">[docs]</a>    <span class="nd">@postinitialize_method</span>
+    <span class="k">def</span> <span class="nf">getDesignVarRange</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        get the lower/upper bounds for the design variables.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        ----------</span>
+<span class="sd">        xlb : numpy.ndarray</span>
+<span class="sd">            The design variable lower bound.</span>
+<span class="sd">        xub : numpy.ndarray</span>
+<span class="sd">            The design variable upper bound.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">xlb</span><span class="o">.</span><span class="n">getArray</span><span class="p">()</span><span class="o">.</span><span class="n">copy</span><span class="p">(),</span> <span class="bp">self</span><span class="o">.</span><span class="n">xub</span><span class="o">.</span><span class="n">getArray</span><span class="p">()</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span></div>
 
 <div class="viewcode-block" id="pyTACS.createDesignVec"><a class="viewcode-back" href="../../pytacs/pytacs_module.html#tacs.pytacs.pyTACS.createDesignVec">[docs]</a>    <span class="nd">@postinitialize_method</span>
     <span class="k">def</span> <span class="nf">createDesignVec</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">asBVec</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
@@ -1556,6 +1580,270 @@
             <span class="n">structProblems</span><span class="p">[</span><span class="n">subCase</span><span class="o">.</span><span class="n">id</span><span class="p">]</span> <span class="o">=</span> <span class="n">problem</span>
 
         <span class="k">return</span> <span class="n">structProblems</span></div>
+
+<div class="viewcode-block" id="pyTACS.writeBDF"><a class="viewcode-back" href="../../pytacs/pytacs_module.html#tacs.pytacs.pyTACS.writeBDF">[docs]</a>    <span class="k">def</span> <span class="nf">writeBDF</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fileName</span><span class="p">,</span> <span class="n">problems</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Write NASTRAN BDF file from problem class.</span>
+<span class="sd">        Assumes all supplied Problems share the same nodal and design variable values.</span>
+
+<span class="sd">        NOTE: Only supports writing loads from StaticProblem types.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        fileName: str</span>
+<span class="sd">            Name of file to write BDF file to.</span>
+<span class="sd">        problems: tacs.problems.BaseProblem or List[tacs.problems.BaseProblem]</span>
+<span class="sd">            List of pytacs Problem classes to write BDF file from.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Make sure problems is in a list</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">problems</span><span class="p">,</span> <span class="s2">&quot;__iter__&quot;</span><span class="p">)</span> <span class="o">==</span> <span class="kc">False</span><span class="p">:</span>
+            <span class="n">problems</span> <span class="o">=</span> <span class="p">[</span><span class="n">problems</span><span class="p">]</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">problems</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+            <span class="n">problems</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">problems</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">problems</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">problems</span><span class="p">)</span>
+
+        <span class="c1"># Check that each problem was created by this pyTACS instance</span>
+        <span class="k">for</span> <span class="n">problem</span> <span class="ow">in</span> <span class="n">problems</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">problem</span><span class="o">.</span><span class="n">assembler</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">assembler</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TACSError</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;This problem instance (</span><span class="si">{</span><span class="n">problem</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">) is not associated with this instance of pyTACS.&quot;</span>
+                <span class="p">)</span>
+
+        <span class="c1"># Make sure design variables are up-to-date</span>
+        <span class="n">x_bvec</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">createDesignVec</span><span class="p">(</span><span class="n">asBVec</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">x_bvec</span><span class="o">.</span><span class="n">getArray</span><span class="p">()[:]</span> <span class="o">=</span> <span class="n">problems</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">getDesignVars</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assembler</span><span class="o">.</span><span class="n">setDesignVars</span><span class="p">(</span><span class="n">x_bvec</span><span class="p">)</span>
+
+        <span class="c1"># Get local node info for each processor</span>
+        <span class="n">multNodes</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getLocalMultiplierNodeIDs</span><span class="p">()</span>
+        <span class="n">globalToLocalNodeIDDict</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">meshLoader</span><span class="o">.</span><span class="n">getGlobalToLocalNodeIDDict</span><span class="p">()</span>
+        <span class="n">Xpts_bvec</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">real</span><span class="p">(</span><span class="n">problems</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">getNodes</span><span class="p">())</span>
+
+        <span class="c1"># Gather local info to root processor</span>
+        <span class="n">allMultNodes</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">comm</span><span class="o">.</span><span class="n">gather</span><span class="p">(</span><span class="n">multNodes</span><span class="p">,</span> <span class="n">root</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        <span class="n">allGlobalToLocalNodeIDDict</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">comm</span><span class="o">.</span><span class="n">gather</span><span class="p">(</span><span class="n">globalToLocalNodeIDDict</span><span class="p">,</span> <span class="n">root</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        <span class="n">allXpts</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">comm</span><span class="o">.</span><span class="n">gather</span><span class="p">(</span><span class="n">Xpts_bvec</span><span class="p">,</span> <span class="n">root</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+
+        <span class="c1"># Assemble new BDF file for mesh on root</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">comm</span><span class="o">.</span><span class="n">rank</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">newBDFInfo</span> <span class="o">=</span> <span class="n">pn</span><span class="o">.</span><span class="n">bdf</span><span class="o">.</span><span class="n">BDF</span><span class="p">(</span><span class="n">debug</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+            <span class="c1"># Write out updated node locations</span>
+            <span class="n">nastranNodeIDs</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">bdfInfo</span><span class="o">.</span><span class="n">node_ids</span><span class="p">)</span>
+            <span class="c1"># Loop through each proc and pull out new node locations</span>
+            <span class="k">for</span> <span class="n">proc_i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">comm</span><span class="o">.</span><span class="n">size</span><span class="p">):</span>
+                <span class="n">xyz</span> <span class="o">=</span> <span class="n">allXpts</span><span class="p">[</span><span class="n">proc_i</span><span class="p">]</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">tacsGNodeID</span> <span class="ow">in</span> <span class="n">allGlobalToLocalNodeIDDict</span><span class="p">[</span><span class="n">proc_i</span><span class="p">]:</span>
+                    <span class="c1"># Get local node ID</span>
+                    <span class="n">tacsLNodeID</span> <span class="o">=</span> <span class="n">allGlobalToLocalNodeIDDict</span><span class="p">[</span><span class="n">proc_i</span><span class="p">][</span><span class="n">tacsGNodeID</span><span class="p">]</span>
+                    <span class="c1"># Get Global nastran ID</span>
+                    <span class="n">nastranGNodeID</span> <span class="o">=</span> <span class="n">nastranNodeIDs</span><span class="p">[</span><span class="n">tacsGNodeID</span><span class="p">]</span>
+                    <span class="c1"># Add node to bdf file (if its not a multiplier node)</span>
+                    <span class="k">if</span> <span class="n">tacsLNodeID</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">allMultNodes</span><span class="p">[</span><span class="n">proc_i</span><span class="p">]:</span>
+                        <span class="n">newBDFInfo</span><span class="o">.</span><span class="n">add_grid</span><span class="p">(</span><span class="n">nastranGNodeID</span><span class="p">,</span> <span class="n">xyz</span><span class="p">[</span><span class="n">tacsLNodeID</span><span class="p">])</span>
+
+            <span class="c1"># Copy over boundary conditions</span>
+            <span class="c1"># Set all con IDs to one</span>
+            <span class="n">newBDFInfo</span><span class="o">.</span><span class="n">spcs</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">for</span> <span class="n">spcID</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">bdfInfo</span><span class="o">.</span><span class="n">spcs</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">spcCard</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">bdfInfo</span><span class="o">.</span><span class="n">spcs</span><span class="p">[</span><span class="n">spcID</span><span class="p">]:</span>
+                    <span class="n">newCard</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">spcCard</span><span class="p">)</span>
+                    <span class="n">newCard</span><span class="o">.</span><span class="n">conid</span> <span class="o">=</span> <span class="mi">1</span>
+                    <span class="n">newBDFInfo</span><span class="o">.</span><span class="n">spcs</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">newCard</span><span class="p">)</span>
+
+            <span class="c1"># Write updated properties and elements</span>
+            <span class="n">transObjs</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="n">matObjs</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="n">conObjs</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">for</span> <span class="n">compID</span><span class="p">,</span> <span class="n">propID</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">bdfInfo</span><span class="o">.</span><span class="n">properties</span><span class="p">):</span>
+                <span class="c1"># Get TACS element object</span>
+                <span class="n">elemObj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">meshLoader</span><span class="o">.</span><span class="n">getElementObject</span><span class="p">(</span><span class="n">compID</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+                <span class="c1"># Get TACS constitutive object for element (if applicable)</span>
+                <span class="n">conObj</span> <span class="o">=</span> <span class="n">elemObj</span><span class="o">.</span><span class="n">getConstitutive</span><span class="p">()</span>
+                <span class="k">if</span> <span class="n">conObj</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="c1"># Set the property ID number for the class to be used in the Nastran card</span>
+                    <span class="n">conObj</span><span class="o">.</span><span class="n">setNastranID</span><span class="p">(</span><span class="n">propID</span><span class="p">)</span>
+                    <span class="n">conObjs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">conObj</span><span class="p">)</span>
+                    <span class="c1"># Get TACS material properties object for constitutive (if applicable)</span>
+                    <span class="n">matObj</span> <span class="o">=</span> <span class="n">conObj</span><span class="o">.</span><span class="n">getMaterialProperties</span><span class="p">()</span>
+                    <span class="c1"># May be a single object...</span>
+                    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">matObj</span><span class="p">,</span> <span class="n">tacs</span><span class="o">.</span><span class="n">constitutive</span><span class="o">.</span><span class="n">MaterialProperties</span><span class="p">):</span>
+                        <span class="k">if</span> <span class="n">matObj</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">matObjs</span><span class="p">:</span>
+                            <span class="n">matObjs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">matObj</span><span class="p">)</span>
+                    <span class="c1"># or a list (plys for composite classes)</span>
+                    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">matObj</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+                        <span class="k">for</span> <span class="n">mat_i</span> <span class="ow">in</span> <span class="n">matObj</span><span class="p">:</span>
+                            <span class="k">if</span> <span class="n">mat_i</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">matObjs</span><span class="p">:</span>
+                                <span class="n">matObjs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">mat_i</span><span class="p">)</span>
+                <span class="c1"># Get TACS transform object for element (if applicable)</span>
+                <span class="n">transObj</span> <span class="o">=</span> <span class="n">elemObj</span><span class="o">.</span><span class="n">getTransform</span><span class="p">()</span>
+                <span class="k">if</span> <span class="n">transObj</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="n">transObjs</span><span class="p">[</span><span class="n">compID</span><span class="p">]</span> <span class="o">=</span> <span class="n">transObj</span>
+
+            <span class="c1"># Write material cards from TACS MaterialProperties class</span>
+            <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">matObj</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">matObjs</span><span class="p">):</span>
+                <span class="n">matID</span> <span class="o">=</span> <span class="n">i</span> <span class="o">+</span> <span class="mi">1</span>
+                <span class="n">matObj</span><span class="o">.</span><span class="n">setNastranID</span><span class="p">(</span><span class="n">matID</span><span class="p">)</span>
+                <span class="n">newBDFInfo</span><span class="o">.</span><span class="n">materials</span><span class="p">[</span><span class="n">matID</span><span class="p">]</span> <span class="o">=</span> <span class="n">matObj</span><span class="o">.</span><span class="n">generateBDFCard</span><span class="p">()</span>
+
+            <span class="c1"># Write property/element cards from TACSConstitutive/TACSElement classes</span>
+            <span class="n">curCoordID</span> <span class="o">=</span> <span class="mi">1</span>
+            <span class="k">for</span> <span class="n">compID</span><span class="p">,</span> <span class="n">conObj</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">conObjs</span><span class="p">):</span>
+                <span class="n">propID</span> <span class="o">=</span> <span class="n">conObj</span><span class="o">.</span><span class="n">getNastranID</span><span class="p">()</span>
+                <span class="n">propCard</span> <span class="o">=</span> <span class="n">conObj</span><span class="o">.</span><span class="n">generateBDFCard</span><span class="p">()</span>
+                <span class="k">if</span> <span class="n">propCard</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="c1"># Copy property comment (may include component name info)</span>
+                    <span class="c1"># Make sure to remove comment `$` from string</span>
+                    <span class="n">propCard</span><span class="o">.</span><span class="n">comment</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">bdfInfo</span><span class="o">.</span><span class="n">properties</span><span class="p">[</span><span class="n">propID</span><span class="p">]</span><span class="o">.</span><span class="n">comment</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span>
+                    <span class="c1"># Add property card to BDF</span>
+                    <span class="n">newBDFInfo</span><span class="o">.</span><span class="n">properties</span><span class="p">[</span><span class="n">propID</span><span class="p">]</span> <span class="o">=</span> <span class="n">propCard</span>
+                <span class="n">elemIDs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">meshLoader</span><span class="o">.</span><span class="n">getGlobalElementIDsForComps</span><span class="p">(</span>
+                    <span class="p">[</span><span class="n">compID</span><span class="p">],</span> <span class="n">nastranOrdering</span><span class="o">=</span><span class="kc">True</span>
+                <span class="p">)</span>
+                <span class="c1"># Convert any transform objects to nastran COORD2R cards, if necessary</span>
+                <span class="n">transObj</span> <span class="o">=</span> <span class="n">transObjs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">compID</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span>
+                    <span class="n">transObj</span><span class="p">,</span> <span class="n">tacs</span><span class="o">.</span><span class="n">elements</span><span class="o">.</span><span class="n">ShellRefAxisTransform</span>
+                <span class="p">)</span> <span class="ow">or</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">transObj</span><span class="p">,</span> <span class="n">tacs</span><span class="o">.</span><span class="n">elements</span><span class="o">.</span><span class="n">SpringRefFrameTransform</span><span class="p">):</span>
+                    <span class="n">coordID</span> <span class="o">=</span> <span class="n">curCoordID</span>
+                    <span class="n">origin</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">transObj</span><span class="p">,</span> <span class="n">tacs</span><span class="o">.</span><span class="n">elements</span><span class="o">.</span><span class="n">SpringRefFrameTransform</span><span class="p">):</span>
+                        <span class="n">vec1</span><span class="p">,</span> <span class="n">vec2</span> <span class="o">=</span> <span class="n">transObj</span><span class="o">.</span><span class="n">getRefAxes</span><span class="p">()</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">vec1</span> <span class="o">=</span> <span class="n">transObj</span><span class="o">.</span><span class="n">getRefAxis</span><span class="p">()</span>
+                        <span class="n">vec2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
+                    <span class="n">newBDFInfo</span><span class="o">.</span><span class="n">add_cord2r</span><span class="p">(</span><span class="n">coordID</span><span class="p">,</span> <span class="n">origin</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">real</span><span class="p">(</span><span class="n">vec1</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">real</span><span class="p">(</span><span class="n">vec2</span><span class="p">))</span>
+                    <span class="n">curCoordID</span> <span class="o">+=</span> <span class="mi">1</span>
+                <span class="c1"># We just need the ref vector for these types</span>
+                <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span>
+                    <span class="n">transObj</span><span class="p">,</span> <span class="n">tacs</span><span class="o">.</span><span class="n">elements</span><span class="o">.</span><span class="n">BeamRefAxisTransform</span>
+                <span class="p">)</span> <span class="ow">or</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">transObj</span><span class="p">,</span> <span class="n">tacs</span><span class="o">.</span><span class="n">elements</span><span class="o">.</span><span class="n">SpringRefAxisTransform</span><span class="p">):</span>
+                    <span class="n">vec</span> <span class="o">=</span> <span class="n">transObj</span><span class="o">.</span><span class="n">getRefAxis</span><span class="p">()</span>
+                    <span class="n">vec</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">real</span><span class="p">(</span><span class="n">vec</span><span class="p">)</span>
+                <span class="c1"># Otherwise, there&#39;s no transform associated with this element, use default</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">coordID</span> <span class="o">=</span> <span class="kc">None</span>
+                <span class="c1"># Copy and update element cards</span>
+                <span class="k">for</span> <span class="n">elemID</span> <span class="ow">in</span> <span class="n">elemIDs</span><span class="p">:</span>
+                    <span class="c1"># Create copy of card</span>
+                    <span class="n">newCard</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">bdfInfo</span><span class="o">.</span><span class="n">elements</span><span class="p">[</span><span class="n">elemID</span><span class="p">])</span>
+                    <span class="c1"># Copy element comment (may include component name info)</span>
+                    <span class="c1"># Make sure to remove comment `$` from string</span>
+                    <span class="n">newCard</span><span class="o">.</span><span class="n">comment</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">bdfInfo</span><span class="o">.</span><span class="n">elements</span><span class="p">[</span><span class="n">elemID</span><span class="p">]</span><span class="o">.</span><span class="n">comment</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span>
+                    <span class="c1"># Update element coordinate frame info, if necessary</span>
+                    <span class="k">if</span> <span class="s2">&quot;CQUAD&quot;</span> <span class="ow">in</span> <span class="n">newCard</span><span class="o">.</span><span class="n">type</span> <span class="ow">or</span> <span class="s2">&quot;CTRI&quot;</span> <span class="ow">in</span> <span class="n">newCard</span><span class="o">.</span><span class="n">type</span><span class="p">:</span>
+                        <span class="n">newCard</span><span class="o">.</span><span class="n">theta_mcid</span> <span class="o">=</span> <span class="n">coordID</span>
+                    <span class="k">elif</span> <span class="s2">&quot;CBAR&quot;</span> <span class="ow">in</span> <span class="n">newCard</span><span class="o">.</span><span class="n">type</span><span class="p">:</span>
+                        <span class="n">newCard</span><span class="o">.</span><span class="n">x</span> <span class="o">=</span> <span class="n">vec</span>
+                        <span class="n">newCard</span><span class="o">.</span><span class="n">g0</span> <span class="o">=</span> <span class="kc">None</span>
+                    <span class="k">elif</span> <span class="s2">&quot;CBEAM&quot;</span> <span class="ow">in</span> <span class="n">newCard</span><span class="o">.</span><span class="n">type</span><span class="p">:</span>
+                        <span class="n">newCard</span><span class="o">.</span><span class="n">x</span> <span class="o">=</span> <span class="n">vec</span>
+                        <span class="n">newCard</span><span class="o">.</span><span class="n">g0</span> <span class="o">=</span> <span class="kc">None</span>
+                        <span class="k">if</span> <span class="n">propCard</span><span class="o">.</span><span class="n">type</span> <span class="o">!=</span> <span class="s2">&quot;PBEAM&quot;</span><span class="p">:</span>
+                            <span class="c1"># TACS wrote out a PBAR card that we must convert</span>
+                            <span class="n">newPropCard</span> <span class="o">=</span> <span class="p">(</span>
+                                <span class="n">pn</span><span class="o">.</span><span class="n">cards</span><span class="o">.</span><span class="n">properties</span><span class="o">.</span><span class="n">beam</span><span class="o">.</span><span class="n">PBEAM_init_from_empty</span><span class="p">()</span>
+                            <span class="p">)</span>
+                            <span class="n">newPropCard</span><span class="o">.</span><span class="n">A</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">propCard</span><span class="o">.</span><span class="n">Area</span><span class="p">()</span>
+                            <span class="n">newPropCard</span><span class="o">.</span><span class="n">i1</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">propCard</span><span class="o">.</span><span class="n">I11</span><span class="p">()</span>
+                            <span class="n">newPropCard</span><span class="o">.</span><span class="n">i2</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">propCard</span><span class="o">.</span><span class="n">I22</span><span class="p">()</span>
+                            <span class="n">newPropCard</span><span class="o">.</span><span class="n">i12</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">propCard</span><span class="o">.</span><span class="n">I12</span><span class="p">()</span>
+                            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">propCard</span><span class="p">,</span> <span class="s2">&quot;J&quot;</span><span class="p">):</span>
+                                <span class="n">newPropCard</span><span class="o">.</span><span class="n">j</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">propCard</span><span class="o">.</span><span class="n">J</span><span class="p">()</span>
+                            <span class="k">else</span><span class="p">:</span>
+                                <span class="n">newPropCard</span><span class="o">.</span><span class="n">j</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">propCard</span><span class="o">.</span><span class="n">j</span>
+                            <span class="n">newPropCard</span><span class="o">.</span><span class="n">comment</span> <span class="o">=</span> <span class="n">propCard</span><span class="o">.</span><span class="n">comment</span>
+                            <span class="n">propCard</span> <span class="o">=</span> <span class="n">newPropCard</span>
+                    <span class="k">elif</span> <span class="s2">&quot;CROD&quot;</span> <span class="ow">in</span> <span class="n">newCard</span><span class="o">.</span><span class="n">type</span> <span class="ow">and</span> <span class="n">propCard</span><span class="o">.</span><span class="n">type</span> <span class="o">!=</span> <span class="s2">&quot;PROD&quot;</span><span class="p">:</span>
+                        <span class="c1"># TACS wrote out a PBAR card that we must convert</span>
+                        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">propCard</span><span class="p">,</span> <span class="s2">&quot;J&quot;</span><span class="p">):</span>
+                            <span class="n">J</span> <span class="o">=</span> <span class="n">propCard</span><span class="o">.</span><span class="n">J</span><span class="p">()</span>
+                        <span class="k">else</span><span class="p">:</span>
+                            <span class="n">J</span> <span class="o">=</span> <span class="n">propCard</span><span class="o">.</span><span class="n">j</span>
+                        <span class="n">newPropCard</span> <span class="o">=</span> <span class="n">pn</span><span class="o">.</span><span class="n">cards</span><span class="o">.</span><span class="n">properties</span><span class="o">.</span><span class="n">rods</span><span class="o">.</span><span class="n">PROD</span><span class="p">(</span>
+                            <span class="n">propCard</span><span class="o">.</span><span class="n">pid</span><span class="p">,</span> <span class="n">propCard</span><span class="o">.</span><span class="n">mid</span><span class="p">,</span> <span class="n">propCard</span><span class="o">.</span><span class="n">Area</span><span class="p">(),</span> <span class="n">J</span>
+                        <span class="p">)</span>
+                        <span class="n">newBDFInfo</span><span class="o">.</span><span class="n">properties</span><span class="p">[</span><span class="n">propID</span><span class="p">]</span> <span class="o">=</span> <span class="n">newPropCard</span>
+                        <span class="n">newPropCard</span><span class="o">.</span><span class="n">comment</span> <span class="o">=</span> <span class="n">propCard</span><span class="o">.</span><span class="n">comment</span>
+                        <span class="n">propCard</span> <span class="o">=</span> <span class="n">newPropCard</span>
+                    <span class="k">elif</span> <span class="n">newCard</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="s2">&quot;CBUSH&quot;</span><span class="p">:</span>
+                        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">transObj</span><span class="p">,</span> <span class="n">tacs</span><span class="o">.</span><span class="n">elements</span><span class="o">.</span><span class="n">SpringRefAxisTransform</span><span class="p">):</span>
+                            <span class="n">newCard</span><span class="o">.</span><span class="n">x</span> <span class="o">=</span> <span class="n">vec</span>
+                            <span class="n">newCard</span><span class="o">.</span><span class="n">g0</span> <span class="o">=</span> <span class="kc">None</span>
+                        <span class="k">else</span><span class="p">:</span>
+                            <span class="n">newCard</span><span class="o">.</span><span class="n">cid</span> <span class="o">=</span> <span class="n">coordID</span>
+                    <span class="c1"># Add element card to bdf</span>
+                    <span class="n">newBDFInfo</span><span class="o">.</span><span class="n">elements</span><span class="p">[</span><span class="n">elemID</span><span class="p">]</span> <span class="o">=</span> <span class="n">newCard</span>
+
+            <span class="c1"># Copy over masses elements</span>
+            <span class="k">for</span> <span class="n">massCard</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">bdfInfo</span><span class="o">.</span><span class="n">masses</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
+                <span class="n">elemID</span> <span class="o">=</span> <span class="n">massCard</span><span class="o">.</span><span class="n">eid</span>
+                <span class="c1"># We&#39;ll have to create a new CONM2 card in case the point mass is associated with tacs dvs</span>
+                <span class="k">if</span> <span class="n">massCard</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="s2">&quot;CONM2&quot;</span><span class="p">:</span>
+                    <span class="n">nodeID</span> <span class="o">=</span> <span class="n">massCard</span><span class="o">.</span><span class="n">nid</span>
+                    <span class="n">elemObj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">meshLoader</span><span class="o">.</span><span class="n">getElementObjectForElemID</span><span class="p">(</span>
+                        <span class="n">elemID</span><span class="p">,</span> <span class="n">nastranOrdering</span><span class="o">=</span><span class="kc">True</span>
+                    <span class="p">)</span>
+                    <span class="n">conObj</span> <span class="o">=</span> <span class="n">elemObj</span><span class="o">.</span><span class="n">getConstitutive</span><span class="p">()</span>
+                    <span class="n">M</span> <span class="o">=</span> <span class="n">conObj</span><span class="o">.</span><span class="n">evalMassMatrix</span><span class="p">()</span>
+                    <span class="n">mass</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">real</span><span class="p">(</span><span class="n">M</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+                    <span class="n">I11</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">real</span><span class="p">(</span><span class="n">M</span><span class="p">[</span><span class="mi">15</span><span class="p">])</span>
+                    <span class="n">I22</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">real</span><span class="p">(</span><span class="n">M</span><span class="p">[</span><span class="mi">18</span><span class="p">])</span>
+                    <span class="n">I33</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">real</span><span class="p">(</span><span class="n">M</span><span class="p">[</span><span class="mi">20</span><span class="p">])</span>
+                    <span class="c1"># Nastran uses negative convention for POI&#39;s</span>
+                    <span class="n">I12</span> <span class="o">=</span> <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">real</span><span class="p">(</span><span class="n">M</span><span class="p">[</span><span class="mi">16</span><span class="p">])</span>
+                    <span class="n">I13</span> <span class="o">=</span> <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">real</span><span class="p">(</span><span class="n">M</span><span class="p">[</span><span class="mi">17</span><span class="p">])</span>
+                    <span class="n">I23</span> <span class="o">=</span> <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">real</span><span class="p">(</span><span class="n">M</span><span class="p">[</span><span class="mi">19</span><span class="p">])</span>
+                    <span class="n">newBDFInfo</span><span class="o">.</span><span class="n">add_conm2</span><span class="p">(</span>
+                        <span class="n">elemID</span><span class="p">,</span> <span class="n">nodeID</span><span class="p">,</span> <span class="n">mass</span><span class="p">,</span> <span class="n">I</span><span class="o">=</span><span class="p">[</span><span class="n">I11</span><span class="p">,</span> <span class="n">I12</span><span class="p">,</span> <span class="n">I22</span><span class="p">,</span> <span class="n">I13</span><span class="p">,</span> <span class="n">I23</span><span class="p">,</span> <span class="n">I33</span><span class="p">]</span>
+                    <span class="p">)</span>
+                <span class="c1"># CONM1&#39;s can&#39;t be updated by TACS, so we can just copy the original value</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">newBDFInfo</span><span class="o">.</span><span class="n">masses</span><span class="p">[</span><span class="n">elemID</span><span class="p">]</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">massCard</span><span class="p">)</span>
+                <span class="c1"># Copy over comments</span>
+                <span class="n">newBDFInfo</span><span class="o">.</span><span class="n">masses</span><span class="p">[</span><span class="n">elemID</span><span class="p">]</span><span class="o">.</span><span class="n">comment</span> <span class="o">=</span> <span class="n">massCard</span><span class="o">.</span><span class="n">comment</span>
+
+            <span class="c1"># Copy over rigid elements</span>
+            <span class="n">newBDFInfo</span><span class="o">.</span><span class="n">rigid_elements</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">bdfInfo</span><span class="o">.</span><span class="n">rigid_elements</span><span class="p">)</span>
+
+            <span class="c1"># Add case control deck for loads</span>
+            <span class="n">caseConLines</span> <span class="o">=</span> <span class="p">[</span>
+                <span class="s2">&quot;TITLE = TACS Analysis Set&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;ECHO = NONE&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;DISPLACEMENT(PLOT) = ALL&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;SPCFORCE(PLOT) = ALL&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;OLOAD(PLOT) = ALL&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;FORCE(PLOT,CORNER) = ALL&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;STRESS(PLOT,CORNER) = ALL&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;SPC = 1&quot;</span><span class="p">,</span>
+            <span class="p">]</span>
+            <span class="n">newBDFInfo</span><span class="o">.</span><span class="n">case_control_deck</span> <span class="o">=</span> <span class="n">pn</span><span class="o">.</span><span class="n">case_control_deck</span><span class="o">.</span><span class="n">CaseControlDeck</span><span class="p">(</span>
+                <span class="n">caseConLines</span>
+            <span class="p">)</span>
+            <span class="c1"># Set solution type to static (101)</span>
+            <span class="n">newBDFInfo</span><span class="o">.</span><span class="n">sol</span> <span class="o">=</span> <span class="mi">101</span>
+
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">newBDFInfo</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="c1"># All procs should wait for root</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">comm</span><span class="o">.</span><span class="n">barrier</span><span class="p">()</span>
+
+        <span class="c1"># Append forces from problem classes</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">problem</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">problems</span><span class="p">):</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">problem</span><span class="p">,</span> <span class="n">tacs</span><span class="o">.</span><span class="n">problems</span><span class="o">.</span><span class="n">StaticProblem</span><span class="p">):</span>
+                <span class="n">loadCase</span> <span class="o">=</span> <span class="n">i</span> <span class="o">+</span> <span class="mi">1</span>
+                <span class="n">problem</span><span class="o">.</span><span class="n">writeLoadToBDF</span><span class="p">(</span><span class="n">newBDFInfo</span><span class="p">,</span> <span class="n">loadCase</span><span class="p">)</span>
+
+        <span class="c1"># Write out BDF file</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">comm</span><span class="o">.</span><span class="n">rank</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">newBDFInfo</span><span class="o">.</span><span class="n">write_bdf</span><span class="p">(</span>
+                <span class="n">fileName</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="mi">16</span><span class="p">,</span> <span class="n">is_double</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">write_header</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">enddata</span><span class="o">=</span><span class="kc">True</span>
+            <span class="p">)</span>
+
+        <span class="c1"># All procs should wait for root</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">comm</span><span class="o">.</span><span class="n">barrier</span><span class="p">()</span></div>
 
 <div class="viewcode-block" id="pyTACS.getNumComponents"><a class="viewcode-back" href="../../pytacs/pytacs_module.html#tacs.pytacs.pyTACS.getNumComponents">[docs]</a>    <span class="k">def</span> <span class="nf">getNumComponents</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>

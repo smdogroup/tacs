@@ -331,6 +331,8 @@
         <li><a href="pytacs/transient.html#tacs.problems.TransientProblem.evalFunctionsSens">(tacs.problems.TransientProblem method)</a>
 </li>
       </ul></li>
+      <li><a href="core/constitutive.html#tacs.constitutive.GeneralMassConstitutive.evalMassMatrix">evalMassMatrix() (tacs.constitutive.GeneralMassConstitutive method)</a>
+</li>
   </ul></td>
 </tr></table>
 
@@ -341,6 +343,24 @@
 </li>
       <li><a href="core/constitutive.html#tacs.constitutive.GeneralSpringConstitutive">GeneralSpringConstitutive (class in tacs.constitutive)</a>
 </li>
+      <li><a href="core/constitutive.html#tacs.constitutive.BasicBeamConstitutive.generateBDFCard">generateBDFCard() (tacs.constitutive.BasicBeamConstitutive method)</a>
+
+      <ul>
+        <li><a href="core/constitutive.html#tacs.constitutive.CompositeShellConstitutive.generateBDFCard">(tacs.constitutive.CompositeShellConstitutive method)</a>
+</li>
+        <li><a href="core/constitutive.html#tacs.constitutive.DOFSpringConstitutive.generateBDFCard">(tacs.constitutive.DOFSpringConstitutive method)</a>
+</li>
+        <li><a href="core/constitutive.html#tacs.constitutive.IsoRectangleBeamConstitutive.generateBDFCard">(tacs.constitutive.IsoRectangleBeamConstitutive method)</a>
+</li>
+        <li><a href="core/constitutive.html#tacs.constitutive.IsoShellConstitutive.generateBDFCard">(tacs.constitutive.IsoShellConstitutive method)</a>
+</li>
+        <li><a href="core/constitutive.html#tacs.constitutive.IsoTubeBeamConstitutive.generateBDFCard">(tacs.constitutive.IsoTubeBeamConstitutive method)</a>
+</li>
+        <li><a href="core/constitutive.html#tacs.constitutive.MaterialProperties.generateBDFCard">(tacs.constitutive.MaterialProperties method)</a>
+</li>
+        <li><a href="core/constitutive.html#tacs.constitutive.SolidConstitutive.generateBDFCard">(tacs.constitutive.SolidConstitutive method)</a>
+</li>
+      </ul></li>
       <li><a href="core/TACS.html#TACS.Integrator.getAdjoint">getAdjoint() (TACS.Integrator method)</a>
 </li>
       <li><a href="core/TACS.html#TACS.Assembler.getBcMap">getBcMap() (TACS.Assembler method)</a>
@@ -356,7 +376,17 @@
       <li><a href="core/TACS.html#TACS.MeshLoader.getConnectivity">getConnectivity() (TACS.MeshLoader method)</a>
 </li>
       <li><a href="core/TACS.html#TACS.Assembler.getDesignVarRange">getDesignVarRange() (TACS.Assembler method)</a>
+
+      <ul>
+        <li><a href="pytacs/modal.html#tacs.problems.ModalProblem.getDesignVarRange">(tacs.problems.ModalProblem method)</a>
 </li>
+        <li><a href="pytacs/static.html#tacs.problems.StaticProblem.getDesignVarRange">(tacs.problems.StaticProblem method)</a>
+</li>
+        <li><a href="pytacs/transient.html#tacs.problems.TransientProblem.getDesignVarRange">(tacs.problems.TransientProblem method)</a>
+</li>
+        <li><a href="pytacs/pytacs_module.html#tacs.pytacs.pyTACS.getDesignVarRange">(tacs.pytacs.pyTACS method)</a>
+</li>
+      </ul></li>
       <li><a href="core/TACS.html#TACS.Assembler.getDesignVars">getDesignVars() (TACS.Assembler method)</a>
 
       <ul>
@@ -404,8 +434,14 @@
       <li><a href="pytacs/pytacs_module.html#tacs.pytacs.pyTACS.getLocalNodeIDsForComps">getLocalNodeIDsForComps() (tacs.pytacs.pyTACS method)</a>
 </li>
       <li><a href="core/constitutive.html#tacs.constitutive.MaterialProperties.getMaterialProperties">getMaterialProperties() (tacs.constitutive.MaterialProperties method)</a>
+
+      <ul>
+        <li><a href="core/constitutive.html#tacs.constitutive.OrthotropicPly.getMaterialProperties">(tacs.constitutive.OrthotropicPly method)</a>
 </li>
+      </ul></li>
       <li><a href="core/TACS.html#TACS.Assembler.getMPIComm">getMPIComm() (TACS.Assembler method)</a>
+</li>
+      <li><a href="core/constitutive.html#tacs.constitutive.MaterialProperties.getNastranID">getNastranID() (tacs.constitutive.MaterialProperties method)</a>
 </li>
       <li><a href="core/TACS.html#TACS.Assembler.getNodes">getNodes() (TACS.Assembler method)</a>
 
@@ -423,6 +459,8 @@
         <li><a href="pytacs/pytacs_module.html#tacs.pytacs.pyTACS.getNumComponents">(tacs.pytacs.pyTACS method)</a>
 </li>
       </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="pytacs/modal.html#tacs.problems.ModalProblem.getNumCoordinates">getNumCoordinates() (tacs.problems.ModalProblem method)</a>
 
       <ul>
@@ -433,8 +471,6 @@
       </ul></li>
       <li><a href="core/TACS.html#TACS.Assembler.getNumDependentNodes">getNumDependentNodes() (TACS.Assembler method)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="pytacs/modal.html#tacs.problems.ModalProblem.getNumDesignVars">getNumDesignVars() (tacs.problems.ModalProblem method)</a>
 
       <ul>
@@ -497,6 +533,16 @@
 </li>
       <li><a href="core/TACS.html#TACS.Assembler.getOwnerRange">getOwnerRange() (TACS.Assembler method)</a>
 </li>
+      <li><a href="core/elements.html#tacs.elements.SpringRefFrameTransform.getRefAxes">getRefAxes() (tacs.elements.SpringRefFrameTransform method)</a>
+</li>
+      <li><a href="core/elements.html#tacs.elements.BeamRefAxisTransform.getRefAxis">getRefAxis() (tacs.elements.BeamRefAxisTransform method)</a>
+
+      <ul>
+        <li><a href="core/elements.html#tacs.elements.ShellRefAxisTransform.getRefAxis">(tacs.elements.ShellRefAxisTransform method)</a>
+</li>
+        <li><a href="core/elements.html#tacs.elements.SpringRefAxisTransform.getRefAxis">(tacs.elements.SpringRefAxisTransform method)</a>
+</li>
+      </ul></li>
       <li><a href="core/TACS.html#TACS.Assembler.getReordering">getReordering() (TACS.Assembler method)</a>
 </li>
       <li><a href="pytacs/static.html#tacs.problems.StaticProblem.getResidual">getResidual() (tacs.problems.StaticProblem method)</a>
@@ -846,6 +892,8 @@
 </li>
       <li><a href="core/TACS.html#TACS.Integrator.setMaxNewtonIters">setMaxNewtonIters() (TACS.Integrator method)</a>
 </li>
+      <li><a href="core/constitutive.html#tacs.constitutive.MaterialProperties.setNastranID">setNastranID() (tacs.constitutive.MaterialProperties method)</a>
+</li>
       <li><a href="core/TACS.html#TACS.Assembler.setNodes">setNodes() (TACS.Assembler method)</a>
 
       <ul>
@@ -1017,6 +1065,10 @@
 <h2 id="W">W</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="pytacs/pytacs_module.html#tacs.pytacs.pyTACS.writeBDF">writeBDF() (tacs.pytacs.pyTACS method)</a>
+</li>
+      <li><a href="pytacs/static.html#tacs.problems.StaticProblem.writeLoadToBDF">writeLoadToBDF() (tacs.problems.StaticProblem method)</a>
+</li>
       <li><a href="pytacs/modal.html#tacs.problems.ModalProblem.writeSensFile">writeSensFile() (tacs.problems.ModalProblem method)</a>
 
       <ul>

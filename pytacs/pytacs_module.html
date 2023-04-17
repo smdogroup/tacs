@@ -658,6 +658,21 @@ during assembler creation.</p>
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="tacs.pytacs.pyTACS.getDesignVarRange">
+<span class="sig-name descname"><span class="pre">getDesignVarRange</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/pytacs.html#pyTACS.getDesignVarRange"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.pytacs.pyTACS.getDesignVarRange" title="Permalink to this definition">¶</a></dt>
+<dd><p>get the lower/upper bounds for the design variables.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><ul class="simple">
+<li><p><strong>xlb</strong> (<em>numpy.ndarray</em>) -- The design variable lower bound.</p></li>
+<li><p><strong>xub</strong> (<em>numpy.ndarray</em>) -- The design variable upper bound.</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="tacs.pytacs.pyTACS.createDesignVec">
 <span class="sig-name descname"><span class="pre">createDesignVec</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">asBVec</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/pytacs.html#pyTACS.createDesignVec"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.pytacs.pyTACS.createDesignVec" title="Permalink to this definition">¶</a></dt>
 <dd><p>Create a new tacs distributed design vector.
@@ -867,6 +882,22 @@ Currently only supports staticProblem (SOL 101), transientProblem (SOL 109), and
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="tacs.pytacs.pyTACS.writeBDF">
+<span class="sig-name descname"><span class="pre">writeBDF</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fileName</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">problems</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/pytacs.html#pyTACS.writeBDF"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.pytacs.pyTACS.writeBDF" title="Permalink to this definition">¶</a></dt>
+<dd><p>Write NASTRAN BDF file from problem class.
+Assumes all supplied Problems share the same nodal and design variable values.</p>
+<p>NOTE: Only supports writing loads from StaticProblem types.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>fileName</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.11)"><em>str</em></a>) -- Name of file to write BDF file to.</p></li>
+<li><p><strong>problems</strong> (<em>tacs.problems.BaseProblem</em><em> or </em><em>List</em><em>[</em><em>tacs.problems.BaseProblem</em><em>]</em>) -- List of pytacs Problem classes to write BDF file from.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="tacs.pytacs.pyTACS.getNumComponents">
 <span class="sig-name descname"><span class="pre">getNumComponents</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/pytacs.html#pyTACS.getNumComponents"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.pytacs.pyTACS.getNumComponents" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return number of components (property) groups found in bdf.</p>
@@ -964,6 +995,7 @@ options to the stdout on the root processor</p>
 <li><a class="reference internal" href="#tacs.pytacs.pyTACS.getLocalNodeIDsForComps"><code class="docutils literal notranslate"><span class="pre">pyTACS.getLocalNodeIDsForComps()</span></code></a></li>
 <li><a class="reference internal" href="#tacs.pytacs.pyTACS.initialize"><code class="docutils literal notranslate"><span class="pre">pyTACS.initialize()</span></code></a></li>
 <li><a class="reference internal" href="#tacs.pytacs.pyTACS.getOrigDesignVars"><code class="docutils literal notranslate"><span class="pre">pyTACS.getOrigDesignVars()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.pytacs.pyTACS.getDesignVarRange"><code class="docutils literal notranslate"><span class="pre">pyTACS.getDesignVarRange()</span></code></a></li>
 <li><a class="reference internal" href="#tacs.pytacs.pyTACS.createDesignVec"><code class="docutils literal notranslate"><span class="pre">pyTACS.createDesignVec()</span></code></a></li>
 <li><a class="reference internal" href="#tacs.pytacs.pyTACS.getNumDesignVars"><code class="docutils literal notranslate"><span class="pre">pyTACS.getNumDesignVars()</span></code></a></li>
 <li><a class="reference internal" href="#tacs.pytacs.pyTACS.getTotalNumDesignVars"><code class="docutils literal notranslate"><span class="pre">pyTACS.getTotalNumDesignVars()</span></code></a></li>
@@ -979,6 +1011,7 @@ options to the stdout on the root processor</p>
 <li><a class="reference internal" href="#tacs.pytacs.pyTACS.createTransientProblem"><code class="docutils literal notranslate"><span class="pre">pyTACS.createTransientProblem()</span></code></a></li>
 <li><a class="reference internal" href="#tacs.pytacs.pyTACS.createModalProblem"><code class="docutils literal notranslate"><span class="pre">pyTACS.createModalProblem()</span></code></a></li>
 <li><a class="reference internal" href="#tacs.pytacs.pyTACS.createTACSProbsFromBDF"><code class="docutils literal notranslate"><span class="pre">pyTACS.createTACSProbsFromBDF()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.pytacs.pyTACS.writeBDF"><code class="docutils literal notranslate"><span class="pre">pyTACS.writeBDF()</span></code></a></li>
 <li><a class="reference internal" href="#tacs.pytacs.pyTACS.getNumComponents"><code class="docutils literal notranslate"><span class="pre">pyTACS.getNumComponents()</span></code></a></li>
 <li><a class="reference internal" href="#tacs.pytacs.pyTACS.dtype"><code class="docutils literal notranslate"><span class="pre">pyTACS.dtype</span></code></a></li>
 <li><a class="reference internal" href="#tacs.pytacs.pyTACS.getOption"><code class="docutils literal notranslate"><span class="pre">pyTACS.getOption()</span></code></a></li>
