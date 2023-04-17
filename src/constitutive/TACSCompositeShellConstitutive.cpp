@@ -334,3 +334,22 @@ void TACSCompositeShellConstitutive::evalTangentHeatFlux(int elemIndex,
 const char *TACSCompositeShellConstitutive::getObjectName() {
   return constName;
 }
+
+/*
+  Get ply thicknesses
+*/
+void TACSCompositeShellConstitutive::getPlyThicknesses(
+    TacsScalar *_ply_thickness) {
+  for (int i = 0; i < num_plies; i++) {
+    _ply_thickness[i] = ply_thickness[i];
+  }
+}
+
+/*
+  Get ply angles
+*/
+void TACSCompositeShellConstitutive::getPlyAngles(TacsScalar *_ply_angles) {
+  for (int i = 0; i < num_plies; i++) {
+    _ply_angles[i] = ply_angles[i];
+  }
+}
