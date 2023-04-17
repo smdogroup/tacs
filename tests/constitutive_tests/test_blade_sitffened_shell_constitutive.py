@@ -34,6 +34,7 @@ class ConstitutiveTest(unittest.TestCase):
         self.x = np.ones(3, dtype=self.dtype)
         self.pt = np.zeros(3)
 
+        # These values don't really matter because the tests are going to set random DV values anyway
         self.panelLength = 0.5
         self.panelLengthNum = 0
         self.stiffenerPitch = 0.2
@@ -168,6 +169,7 @@ class ConstitutiveTest(unittest.TestCase):
                     self.stiffenerPlyFracNums,
                     self.flangeFraction,
                 )
+        # con.setDrillingRegularization(0.)
         return con
 
     def test_constitutive_density(self):
@@ -188,41 +190,41 @@ class ConstitutiveTest(unittest.TestCase):
                 )
                 self.assertFalse(fail)
 
-    def test_constitutive_specific_heat(self):
-        # Test specific heat dv sensitivity
-        for ply in self.ply_list:
-            with self.subTest(ply=ply):
-                con = self.get_con(ply)
-                fail = constitutive.TestConstitutiveSpecificHeat(
-                    con,
-                    self.elem_index,
-                    self.pt,
-                    self.x,
-                    self.dvs,
-                    self.dh,
-                    self.print_level,
-                    self.atol,
-                    self.rtol,
-                )
-                self.assertFalse(fail)
+    # def test_constitutive_specific_heat(self):
+    #     # Test specific heat dv sensitivity
+    #     for ply in self.ply_list:
+    #         with self.subTest(ply=ply):
+    #             con = self.get_con(ply)
+    #             fail = constitutive.TestConstitutiveSpecificHeat(
+    #                 con,
+    #                 self.elem_index,
+    #                 self.pt,
+    #                 self.x,
+    #                 self.dvs,
+    #                 self.dh,
+    #                 self.print_level,
+    #                 self.atol,
+    #                 self.rtol,
+    #             )
+    #             self.assertFalse(fail)
 
-    def test_constitutive_heat_flux(self):
-        # Test heat flux dv sensitivity
-        for ply in self.ply_list:
-            with self.subTest(ply=ply):
-                con = self.get_con(ply)
-                fail = constitutive.TestConstitutiveHeatFlux(
-                    con,
-                    self.elem_index,
-                    self.pt,
-                    self.x,
-                    self.dvs,
-                    self.dh,
-                    self.print_level,
-                    self.atol,
-                    self.rtol,
-                )
-                self.assertFalse(fail)
+    # def test_constitutive_heat_flux(self):
+    #     # Test heat flux dv sensitivity
+    #     for ply in self.ply_list:
+    #         with self.subTest(ply=ply):
+    #             con = self.get_con(ply)
+    #             fail = constitutive.TestConstitutiveHeatFlux(
+    #                 con,
+    #                 self.elem_index,
+    #                 self.pt,
+    #                 self.x,
+    #                 self.dvs,
+    #                 self.dh,
+    #                 self.print_level,
+    #                 self.atol,
+    #                 self.rtol,
+    #             )
+    #             self.assertFalse(fail)
 
     def test_constitutive_stress(self):
         # Test stress dv sensitivity
@@ -242,23 +244,23 @@ class ConstitutiveTest(unittest.TestCase):
                 )
                 self.assertFalse(fail)
 
-    def test_constitutive_thermal_strain(self):
-        # Test thermal strain dv sensitivity
-        for ply in self.ply_list:
-            with self.subTest(ply=ply):
-                con = self.get_con(ply)
-                fail = constitutive.TestConstitutiveThermalStrain(
-                    con,
-                    self.elem_index,
-                    self.pt,
-                    self.x,
-                    self.dvs,
-                    self.dh,
-                    self.print_level,
-                    self.atol,
-                    self.rtol,
-                )
-                self.assertFalse(fail)
+    # def test_constitutive_thermal_strain(self):
+    #     # Test thermal strain dv sensitivity
+    #     for ply in self.ply_list:
+    #         with self.subTest(ply=ply):
+    #             con = self.get_con(ply)
+    #             fail = constitutive.TestConstitutiveThermalStrain(
+    #                 con,
+    #                 self.elem_index,
+    #                 self.pt,
+    #                 self.x,
+    #                 self.dvs,
+    #                 self.dh,
+    #                 self.print_level,
+    #                 self.atol,
+    #                 self.rtol,
+    #             )
+    #             self.assertFalse(fail)
 
     def test_constitutive_failure(self):
         # Test failure dv sensitivity

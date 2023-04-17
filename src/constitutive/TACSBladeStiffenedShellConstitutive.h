@@ -353,6 +353,34 @@ class TACSBladeStiffenedShellConstitutive : public TACSShellConstitutive {
                                   TacsScalar panelStrainSens[]);
 
   /**
+   * @brief Add the DV sensitivity of the product of the strain
+   * transformation matrix with two vectors
+   *
+   * This can be written as dfdx += scale * [lhs] * d/dx([Te]) * [rhs]
+   *
+   * A common use for this function is to convert the derivative of a quantity
+   * w.r.t the stiffener centroid strain to a derivative w.r.t the design
+   * variables, since the stiffener centroid strains depend on the offset of the
+   * stiffener centroid from the shell mid-plane, which depends on the design
+   * variables.
+   *
+   * This operation can be written as [df/dx] += scale * [df/deBeam] *
+   * d/dx([Te]) * [eShell]
+   *
+   * @param lhs The left-hand-side vector, should be as long as a beam strain
+   * array
+   * @param rhs The right hand side vector, should be as long as a shell strain
+   * array
+   * @param scale The scaling factor
+   * @param dfdx The sensitivities of the output w.r.t the design variables to
+   * be added to
+   */
+  inline void addStrainTransformProductDVsens(const TacsScalar lhs[],
+                                              const TacsScalar rhs[],
+                                              const TacsScalar scale,
+                                              TacsScalar dfdx[]);
+
+  /**
    * @brief Add the contribution of the stiffener stress to the panel stress
    *
    * The transformation of stiffener to panel stress consists of two steps:
@@ -391,29 +419,19 @@ class TACSBladeStiffenedShellConstitutive : public TACSShellConstitutive {
   inline void addStiffenerStiffness(const TacsScalar stiffenerStiffness[],
                                     TacsScalar panelStiffness[]);
 
-  /**
-   * @brief Convert a sensitivity w.r.t the stiffener centroid strains to a
-   * sensitivity w.r.t the design variables
-   *
-   * This operation can be written as [df/dx] += scale * [df/de] * [de/dx]
-   *
-   * @param panelStrain The shell mid-plane strains
-   * @param dfde The sensitivity of the output w.r.t the stiffener centroid
-   * strains
-   * @param scale The scaling factor
-   * @param dfdx The sensitivities of the output w.r.t the design variables to
-   * be added to
-   */
-  inline void addStiffenerStrainSensAsDVSens(const TacsScalar panelStrain[],
-                                             const TacsScalar dfde[],
-                                             const TacsScalar scale,
-                                             TacsScalar dfdx[]);
-
   // ==============================================================================
   // Helper functions for computing the panel stress/stiffness/failure
   // ==============================================================================
   // In future, these methods should be replaced by calls to another shell
   // constitutive model
+
+  /**
+   * @brief Compute the stiffness matrix of the panel (without stiffeners)
+   *
+   * @param C Array to store the stiffness matrix in (will be zeroed out within
+   * this function)
+   */
+  void computePanelStiffness(TacsScalar C[]);
 
   /**
    * @brief Compute the panel stress given the panel strains
@@ -434,14 +452,6 @@ class TACSBladeStiffenedShellConstitutive : public TACSShellConstitutive {
    */
   void addPanelStressDVSens(const TacsScalar scale, const TacsScalar strain[],
                             const TacsScalar psi[], TacsScalar dfdx[]);
-
-  /**
-   * @brief Compute the stiffness matrix of the panel (without stiffeners)
-   *
-   * @param C Array to store the stiffness matrix in (will be zeroed out within
-   * this function)
-   */
-  void computePanelStiffness(TacsScalar C[]);
 
   /**
    * @brief Compute the failure criteria in the panel

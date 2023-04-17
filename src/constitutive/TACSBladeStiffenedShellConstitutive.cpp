@@ -103,7 +103,6 @@ TACSBladeStiffenedShellConstitutive::TACSBladeStiffenedShellConstitutive(
       this->panelPlyFracLocalNums[ii] = this->numDesignVars;
       this->numDesignVars++;
     }
-    this->panelPlyFracs[ii] = 1.0 / _numPanelPlies;
     this->panelPlyFracLowerBounds[ii] = 0.1;
     this->panelPlyFracUpperBounds[ii] = 0.9;
   }
@@ -149,7 +148,6 @@ TACSBladeStiffenedShellConstitutive::TACSBladeStiffenedShellConstitutive(
       this->stiffenerPlyFracLocalNums[ii] = this->numDesignVars;
       this->numDesignVars++;
     }
-    this->stiffenerPlyFracs[ii] = 1.0 / _numStiffenerPlies;
     this->stiffenerPlyFracLowerBounds[ii] = 0.1;
     this->stiffenerPlyFracUpperBounds[ii] = 0.9;
   }
@@ -698,11 +696,12 @@ void TACSBladeStiffenedShellConstitutive::evalStress(int elemIndex,
                                                      TacsScalar s[]) {
   // NOTE: The commented out code below is a theoretically nicer way to compute
   // the stress, but it makes it difficult to include the stiffener's
-  // constribution to the drilling stress. So II've just settled for computing
+  // constribution to the drilling stress. So I've just settled for computing
   // the full stiffness matrix and multiplying by the strain.
-
+  // stiffness matrix and multiplying by the strain.
   // ========================================================
-  // stiffness matrix and multiplying by the strain. Compute the panel stresses
+  // // Compute the panel stresses
+  // memset(s, 0, this->NUM_STRESSES * sizeof(TacsScalar));
   // this->computePanelStress(e, s);
 
   // // Compute the stiffener beam stresses then transform them back to shell
@@ -710,6 +709,7 @@ void TACSBladeStiffenedShellConstitutive::evalStress(int elemIndex,
   // TacsScalar stiffenerStrain[TACSBeamConstitutive::NUM_STRESSES],
   //     stiffenerStress[TACSBeamConstitutive::NUM_STRESSES];
   // this->transformStrain(e, stiffenerStrain);
+
   // this->computeStiffenerStress(stiffenerStrain, stiffenerStress);
   // this->addStiffenerStress(stiffenerStress, s);
 
@@ -729,34 +729,48 @@ void TACSBladeStiffenedShellConstitutive::addStressDVSens(
     int elemIndex, TacsScalar scale, const double pt[], const TacsScalar X[],
     const TacsScalar strain[], const TacsScalar psi[], int dvLen,
     TacsScalar dfdx[]) {
-  // TODO: Implement this
   TacsScalar pInv = 1.0 / this->stiffenerPitch;
+  TacsScalar stiffScale = pInv * scale;
 
-  // Sensitivity of the panel stress values to it's DVs
+  TacsScalar A, dAdt, dAdh, Izz, dIzzdt, dIzzdh, J, dJdt, dJdh, z, dzdt, dzdh,
+      E, G;
+  A = this->computeStiffenerArea();
+  this->computeStiffenerAreaSens(dAdt, dAdh);
+  Izz = this->computeStiffenerIzz();
+  this->computeStiffenerIzzSens(dIzzdt, dIzzdh);
+  J = this->computeStiffenerJxx();
+  this->computeStiffenerJxxSens(dJdt, dJdh);
+  this->computeStiffenerModuli(E, G);
+  z = this->computeStiffenerCentroidHeight() - 0.5 * this->panelThick;
+  this->computeStiffenerCentroidHeightSens(dzdt, dzdh);
+
+  // Sensitivity of the panel stress values to it's DVs (this has been proven
+  // correct)
   this->addPanelStressDVSens(scale, strain, psi, &dfdx[this->panelDVStartNum]);
 
-  // Next, add the direct sensitivity of the stiffener stress value w.r.t DVs
-  // Sensitivity of the panel failure value to it's DVs
+  // Transform the psi vector the same way we do for stains
+  TacsScalar stiffenerPsi[TACSBeamConstitutive::NUM_STRESSES];
+  this->transformStrain(psi, stiffenerPsi);
 
-  // We first need to transform the psi vector the same way we do for stains
-  // TacsScalar stiffenerPsi[TACSBeamConstitutive::NUM_STRESSES];
-  // this->transformStrain(psi, stiffenerPsi);
+  TacsScalar stiffenerStrain[TACSBeamConstitutive::NUM_STRESSES],
+      stiffenerStress[TACSBeamConstitutive::NUM_STRESSES];
+  this->transformStrain(strain, stiffenerStrain);
+  this->computeStiffenerStress(stiffenerStrain, stiffenerStress);
 
-  // TacsScalar stiffenerStrain[TACSBeamConstitutive::NUM_STRESSES];
-  // this->transformStrain(strain, stiffenerStrain);
-  // this->addStiffenerStressDVSens(scale * pInv, strain, stiffenerPsi,
-  //                                &dfdx[this->stiffenerDVStartNum]);
+  // Add scale * 1/pitch * stiffenerStress^T * d/dx(Te) * stiffenerPsi
+  this->addStrainTransformProductDVsens(stiffenerStress, psi, stiffScale, dfdx);
 
-  // // Add the sensitivity of the stiffener failure value w.r.t. the DVs
-  // // due to the dependence of the stiffener strains on the DVs
-  // // dfdx += 1/pitch * psi^T * dS/de * de/dx = 1/pitch * psi^T * C * de/dx
-  // TacsScalar dfde[TACSBeamConstitutive::NUM_STRESSES];
-  // // This is equivalent to psi^T * C since the stress-strain relationship is
-  // // linear and C is symmetric
-  // this->computeStiffenerStress(stiffenerPsi, dfde);
-  // this->addStiffenerStrainSensAsDVSens(strain, dfde, scale * pInv, dfdx);
+  // Add scale * 1/pitch * Cstiffener * stiffenerPsi * d/dx(Te) * strain
+  TacsScalar psiStress[TACSBeamConstitutive::NUM_STRESSES];
+  this->computeStiffenerStress(stiffenerPsi, psiStress);
+  this->addStrainTransformProductDVsens(psiStress, strain, stiffScale, dfdx);
 
-  // Add the direct dependence on the stiffener pitch
+  // Add scale*1/pitch * stiffenerPsi^T * d/dx(stiffenerStress)
+  this->addStiffenerStressDVSens(stiffScale, stiffenerStrain, stiffenerPsi,
+                                 &dfdx[this->stiffenerDVStartNum]);
+
+  // Add the direct dependence on the stiffener pitch (this has been proven
+  // correct)
   if (this->stiffenerPitchLocalNum >= 0) {
     int index = this->stiffenerPitchLocalNum;
     TacsScalar panelStress[this->NUM_STRESSES];
@@ -766,7 +780,31 @@ void TACSBladeStiffenedShellConstitutive::addStressDVSens(
     this->evalStress(elemIndex, pt, X, strain, stress);
 
     for (int jj = 0; jj < this->NUM_STRESSES; jj++) {
-      dfdx[index] -= scale * pInv * (stress[jj] - panelStress[jj]) * psi[jj];
+      dfdx[index] -= stiffScale * (stress[jj] - panelStress[jj]) * psi[jj];
+    }
+  }
+
+  // Add terms related to the stiffener's contribution to the drilling stress
+  // (the code below here has been proven correct)
+
+  if (this->stiffenerThickNum >= 0) {
+    dfdx[this->stiffenerThickLocalNum] +=
+        scale * 0.5 * pInv * DRILLING_REGULARIZATION * this->kcorr * G * dAdt *
+        psi[8] * strain[8];
+  }
+  if (this->stiffenerHeightNum >= 0) {
+    dfdx[this->stiffenerHeightLocalNum] +=
+        scale * 0.5 * pInv * DRILLING_REGULARIZATION * this->kcorr * G * dAdh *
+        psi[8] * strain[8];
+  }
+
+  for (int ii = 0; ii < this->numStiffenerPlies; ii++) {
+    if (this->stiffenerPlyFracNums[ii] >= 0) {
+      TacsScalar* Q = &(this->stiffenerQMats[ii * NUM_Q_ENTRIES]);
+      TacsScalar dGdf = Q[5];
+      dfdx[this->stiffenerPlyFracLocalNums[ii]] +=
+          psi[8] * scale * 0.5 * pInv * DRILLING_REGULARIZATION * this->kcorr *
+          A * dGdf * strain[8];
     }
   }
 }
@@ -861,8 +899,8 @@ void TACSBladeStiffenedShellConstitutive::addFailureDVSens(
   TacsScalar stiffenerFailStrainSens[TACSBeamConstitutive::NUM_STRESSES];
   this->evalStiffenerFailureStrainSens(stiffenerStrain,
                                        stiffenerFailStrainSens);
-  this->addStiffenerStrainSensAsDVSens(strain, stiffenerFailStrainSens,
-                                       scale * dKSdf[1], dfdx);
+  this->addStrainTransformProductDVsens(stiffenerFailStrainSens, strain,
+                                        scale * dKSdf[1], dfdx);
 }
 
 // ==============================================================================
@@ -893,14 +931,11 @@ void TACSBladeStiffenedShellConstitutive::computeStiffness(TacsScalar C[]) {
   // Add the panel's stiffness contributions
   this->computePanelStiffness(C);
 
-  // Compute the stiffener's beam stiffness matrix then transform it to a shell
+  // Compute the stiffener's beam stiffness matrix ,then transform it to a shell
   // stiffness matrix and add it
   TacsScalar Cstiff[TACSBeamConstitutive::NUM_TANGENT_STIFFNESS_ENTRIES];
   this->computeStiffenerStiffness(Cstiff);
   this->addStiffenerStiffness(Cstiff, C);
-
-  // --- Compute drilling stiffness ---
-  drill[0] = 0.5 * DRILLING_REGULARIZATION * (As[0] + As[2]);
 }
 
 void TACSBladeStiffenedShellConstitutive::computeSmearedStiffness(
@@ -972,13 +1007,11 @@ void TACSBladeStiffenedShellConstitutive::addStiffenerStress(
   TacsScalar z =
       this->computeStiffenerCentroidHeight() - 0.5 * this->panelThick;
 
-  panelStress[0] += stiffenerStress[0] * pInv;        // N11 = F1 / P
-  panelStress[2] += 0.5 * stiffenerStress[4] * pInv;  // N12 = 1 / 2 * V12 / P
-  panelStress[3] += (z * stiffenerStress[0] + stiffenerStress[2]) *
-                    pInv;  // M11 = (z*F1 + M2) / P
-  panelStress[5] += 0.5 * (-stiffenerStress[1] + z * stiffenerStress[4]) *
-                    pInv;                       // M12 = 1/2 (- M1 + V12*z)/P
-  panelStress[7] += stiffenerStress[4] * pInv;  // Q13 = V13 / P
+  panelStress[0] += pInv * stiffenerStress[0];
+  panelStress[2] += pInv * 0.5 * stiffenerStress[5];
+  panelStress[3] += pInv * stiffenerStress[2] + z * stiffenerStress[0];
+  panelStress[5] += pInv * 0.5 * (z * stiffenerStress[5] - stiffenerStress[1]);
+  panelStress[7] += pInv * stiffenerStress[4];
 }
 
 // Add the contribution of the stiffener stiffness to the panel stiffness
@@ -994,6 +1027,7 @@ void TACSBladeStiffenedShellConstitutive::addStiffenerStiffness(
   TacsScalar* B = &(panelStiffness[6]);
   TacsScalar* D = &(panelStiffness[12]);
   TacsScalar* As = &(panelStiffness[18]);
+  TacsScalar* drill = &(panelStiffness[21]);
 
   // A:
   A[0] += pInv * (stiffenerStiffness[0]);
@@ -1019,39 +1053,39 @@ void TACSBladeStiffenedShellConstitutive::addStiffenerStiffness(
 
   // As:
   As[2] += pInv * (stiffenerStiffness[18]);
+
+  drill[0] += pInv * 0.5 * (stiffenerStiffness[18]) * DRILLING_REGULARIZATION;
 }
 
-void TACSBladeStiffenedShellConstitutive::addStiffenerStrainSensAsDVSens(
-    const TacsScalar panelStrain[], const TacsScalar dfde[],
-    const TacsScalar scale, TacsScalar dfdx[]) {
+void TACSBladeStiffenedShellConstitutive::addStrainTransformProductDVsens(
+    const TacsScalar lhs[], const TacsScalar rhs[], const TacsScalar scale,
+    TacsScalar dfdx[]) {
   // First compute the sensitivity of the stiffener centroid height w.r.t the
-  // design variables (panel thickness, stiffenerh ehgith and stiffener
-  // thickness) zc = panelThick/2 + computeStiffenerCentroidHeight()
+  // design variables (panel thickness, stiffener height and stiffener
+  // thickness) zc = -panelThick/2 + computeStiffenerCentroidHeight()
   TacsScalar dzdtp, dzdhs, dzdts;
   dzdtp = -0.5;
-  this->computeStiffenerCentroidHeightSens(dzdhs, dzdts);
+  this->computeStiffenerCentroidHeightSens(dzdts, dzdhs);
 
-  // The sensitivities of the beam strains w.r.t the offset are:
-  // de11b/dz = k11s = panelStrain[3]
-  // de12b/dz = k12s/2 = panelStrain[5]/2
+  // The sensitivities of the transformation matrix w.r.t the offset are:
+  // dTe[0,3]/dz = 1
+  // dTe[5,5]/dz = 1/2
 
   // Therefore:
-  // df/dfx[i] = df/de11b * de11b/dz * dz/dx[i] + df/de12b * de12b/dz * dz/dx[i]
+  // df/dfx[i] = dTe[0,3]/dz * lhs[0] *rhs[3] * dz/dx[i] + dTe[5,5]/dz * lhs[5]
+  // * rhs[5] * dz/dx[i]
 
   if (this->panelThickNum >= 0) {
     dfdx[this->panelThickLocalNum] +=
-        scale * (dfde[0] * panelStrain[3] * dzdtp +
-                 dfde[5] * 0.5 * panelStrain[5] * dzdtp);
+        scale * (lhs[0] * rhs[3] + lhs[5] * 0.5 * rhs[5]) * dzdtp;
   }
   if (this->stiffenerHeightNum >= 0) {
     dfdx[this->stiffenerHeightLocalNum] +=
-        scale * (dfde[0] * panelStrain[3] * dzdhs +
-                 dfde[5] * 0.5 * panelStrain[5] * dzdhs);
+        scale * (lhs[0] * rhs[3] + lhs[5] * 0.5 * rhs[5]) * dzdhs;
   }
   if (this->stiffenerThickNum >= 0) {
     dfdx[this->stiffenerThickLocalNum] +=
-        scale * (dfde[0] * panelStrain[3] * dzdts +
-                 dfde[5] * 0.5 * panelStrain[5] * dzdts);
+        scale * (lhs[0] * rhs[3] + lhs[5] * 0.5 * rhs[5]) * dzdts;
   }
 }
 
@@ -1111,7 +1145,7 @@ void TACSBladeStiffenedShellConstitutive::addPanelStressDVSens(
   // --- Panel thickness sensitivity ---
   if (this->panelThickNum >= 0) {
     int index = this->panelThickLocalNum - this->panelDVStartNum;
-    TacsScalar t26 = this->panelThick * this->panelThick / 6.0;
+    TacsScalar t24 = this->panelThick * this->panelThick / 4.0;
     TacsScalar tInv = 1.0 / this->panelThick;
     TacsScalar AMatProd, DMatProd, AsMatProd, drillProd;
 
@@ -1142,7 +1176,7 @@ void TACSBladeStiffenedShellConstitutive::addPanelStressDVSens(
 
     drillProd = this->kcorr * psi[8] * DRILLING_REGULARIZATION *
                 (0.5 * (AbarPanel[0] + AbarPanel[2])) * strain[8];
-    dfdx[index] = scale * (AMatProd + t26 * DMatProd + AsMatProd + drillProd);
+    dfdx[index] += scale * (AMatProd + t24 * DMatProd + AsMatProd + drillProd);
   }
 
   // --- Ply fraction sensitivity ---
@@ -1389,7 +1423,7 @@ void TACSBladeStiffenedShellConstitutive::computeStiffenerStress(
   TacsScalar C[n];
   memset(C, 0, n * sizeof(TacsScalar));
   this->computeStiffenerStiffness(C);
-  TACSBeamConstitutive::computeStress(stiffenerStrain, C, stiffenerStress);
+  TACSBeamConstitutive::computeStress(C, stiffenerStrain, stiffenerStress);
 }
 
 void TACSBladeStiffenedShellConstitutive::addStiffenerStressDVSens(
@@ -1415,6 +1449,7 @@ void TACSBladeStiffenedShellConstitutive::addStiffenerStressDVSens(
   TacsScalar E, G, K;
   this->computeStiffenerModuli(E, G);
   K = this->kcorr;
+
   // --- Stiffener height sensitivities ---
   if (this->stiffenerHeightNum >= 0) {
     int index = this->stiffenerHeightLocalNum - this->stiffenerDVStartNum;
@@ -1438,14 +1473,15 @@ void TACSBladeStiffenedShellConstitutive::addStiffenerStressDVSens(
     if (this->stiffenerPlyFracNums[ii] >= 0) {
       int index =
           this->stiffenerPlyFracLocalNums[ii] - this->stiffenerDVStartNum;
+
       TacsScalar* Q = &(this->stiffenerQMats[ii * NUM_Q_ENTRIES]);
       TacsScalar* Abar = &(this->stiffenerQMats[ii * NUM_ABAR_ENTRIES]);
-      TacsScalar dEdx = Q[0] - Q[1] * Q[1] / Q[3];
+
+      TacsScalar dEdx = Q[0] - (Q[1] * Q[1]) / Q[3];
       TacsScalar dGdx = Q[5];
-      dfdx[index] +=
-          scale *
-          (dEdx * (psiStrain[0] * A + psiStrain[2] * Izz) +
-           dGdx * (psiStrain[1] * J + psiStrain[4] * A + psiStrain[5] * A));
+      dfdx[index] += scale * (dEdx * (psiStrain[0] * A + psiStrain[2] * Izz) +
+                              dGdx * (psiStrain[1] * J + psiStrain[4] * A * K +
+                                      psiStrain[5] * A * K));
     }
   }
 }
@@ -1475,19 +1511,33 @@ void TACSBladeStiffenedShellConstitutive::computeStiffenerStiffness(
 
 void TACSBladeStiffenedShellConstitutive::computeStiffenerModuli(
     TacsScalar& E, TacsScalar& G) {
-  TacsScalar QPanel[this->NUM_Q_ENTRIES], ABarPanel[this->NUM_ABAR_ENTRIES];
+  E = 0.;
+  G = 0.;
+  for (int plyNum = 0; plyNum < this->numStiffenerPlies; plyNum++) {
+    TacsScalar* Q = &(this->stiffenerQMats[plyNum * this->NUM_Q_ENTRIES]);
+    E += this->stiffenerPlyFracs[plyNum] * (Q[0] - Q[1] * Q[1] / Q[3]);
+    G += this->stiffenerPlyFracs[plyNum] * Q[5];
+  }
+
+  // In theory the code below should produce exactly the same results as the
+  // code above, but for some reason (probably related to floating point
+  // arithmetic), it produces results that don't quite match complex step
+  // derivatives w.r.t the ply fractions
+  /*
+  TacsScalar Q[this->NUM_Q_ENTRIES], ABar[this->NUM_ABAR_ENTRIES];
 
   this->computeSmearedStiffness(this->numStiffenerPlies, this->stiffenerQMats,
                                 this->stiffenerAbarMats,
-                                this->stiffenerPlyFracs, QPanel, ABarPanel);
+                                this->stiffenerPlyFracs, Q, ABar);
 
   // Compute the effective elastic and shear moduli
-  TacsScalar Q11 = QPanel[0];
-  TacsScalar Q12 = QPanel[1];
-  TacsScalar Q22 = QPanel[3];
-  TacsScalar Q66 = QPanel[5];
+  TacsScalar Q11 = Q[0];
+  TacsScalar Q12 = Q[1];
+  TacsScalar Q22 = Q[3];
+  TacsScalar Q66 = Q[5];
   E = Q11 - Q12 * Q12 / Q22;
   G = Q66;
+  */
 }
 
 // Compute the failure criteria for the stiffener
@@ -1560,7 +1610,7 @@ void TACSBladeStiffenedShellConstitutive::addStiffenerFailureDVSens(
   TacsScalar zTipOffset = -(this->stiffenerHeight + this->stiffenerThick) -
                           this->computeStiffenerCentroidHeight();
   TacsScalar dTipStraindh, dTipStraindt;
-  this->computeStiffenerCentroidHeightSens(dTipStraindh, dTipStraindt);
+  this->computeStiffenerCentroidHeightSens(dTipStraindt, dTipStraindh);
   dTipStraindh = -dTipStraindh - 1.0;
   dTipStraindt = -dTipStraindt - 1.0;
 
@@ -1616,8 +1666,9 @@ TACSBladeStiffenedShellConstitutive::computeStiffenerCentroidHeight() {
 
 void TACSBladeStiffenedShellConstitutive::computeStiffenerCentroidHeightSens(
     TacsScalar& dzdt, TacsScalar& dzdh) {
-  dzdh = -0.5 * (1.0 + this->flangeFraction);
-  dzdt = -(1.0 + 0.5 * this->flangeFraction) / (1.0 + this->flangeFraction);
+  TacsScalar kf = this->flangeFraction;
+  dzdh = -0.5 / (1.0 + kf);
+  dzdt = -(1.0 + 0.5 * kf) / (1.0 + kf);
 }
 
 TacsScalar TACSBladeStiffenedShellConstitutive::computeStiffenerIzz() {
@@ -1675,13 +1726,14 @@ TacsScalar TACSBladeStiffenedShellConstitutive::computeStiffenerMOI() {
   TacsScalar sh = this->stiffenerHeight;
   TacsScalar st = this->stiffenerThick;
   TacsScalar kf = this->flangeFraction;
-  TacsScalar A1 = sh * st;        // Area of the stiffener web
-  TacsScalar A2 = kf * A1;        // Area of the stiffener flange
-  TacsScalar z1 = st + 0.5 * sh;  // Centroid of the stiffener web
-  TacsScalar z2 = 0.5 * st;       // Centroid of the stiffener flange
+  TacsScalar A1 = sh * st;           // Area of the stiffener web
+  TacsScalar A2 = kf * A1;           // Area of the stiffener flange
+  TacsScalar z1 = -(st + 0.5 * sh);  // Centroid of the stiffener web
+  TacsScalar z2 = -(0.5 * st);       // Centroid of the stiffener flange
   TacsScalar zc =
       this->computeStiffenerCentroidHeight();  // Centroid of the whole
                                                // stiffener section
+
   // Offsets of each area from the centroid of the whole stiffener section
   TacsScalar dz1 = z1 - zc;
   TacsScalar dz2 = z2 - zc;
@@ -1691,9 +1743,10 @@ TacsScalar TACSBladeStiffenedShellConstitutive::computeStiffenerMOI() {
   TacsScalar MOI2 = rho * A2 * st * st / 12.0;  // MOI of the stiffener flange
                                                 // about it's own centroid
 
-  // Parallel axis theorem to get the MOI of the stiffener web about its
+  // Parallel axis theorem to get the MOI of the whole stiffener about its
   // centroid
-  return MOI1 + MOI2 + 0.5 * rho * (A1 * dz1 * dz1 + A2 * dz2 * dz2);
+  TacsScalar MOI = MOI1 + MOI2 + rho * (A1 * dz1 * dz1 + A2 * dz2 * dz2);
+  return MOI;
 }
 
 void TACSBladeStiffenedShellConstitutive::computeStiffenerMOISens(
@@ -1706,15 +1759,15 @@ void TACSBladeStiffenedShellConstitutive::computeStiffenerMOISens(
   TacsScalar st2 = st * st;
   TacsScalar kf2 = kf * kf;
 
-  dMOIdt = sh * rho *
-           (3.0 * kf2 * st2 + 4.0 * kf * sh2 + 12.0 * kf * sh * st +
-            12.0 * kf * st2 + sh2) /
-           (12.0 * (kf + 1.0));
+  dMOIdt = 0.25 * sh * rho *
+           (1.0 * kf2 * st2 + 4.0 / 3.0 * kf * sh2 + 4.0 * kf * sh * st +
+            4.0 * kf * st2 + sh2 / 3.0) /
+           (kf + 1.0);
 
-  dMOIdh = st * rho *
-           (kf2 * st2 + 12.0 * kf * sh2 + 12.0 * kf * sh * st + 4.0 * kf * st2 +
-            3.0 * sh2) /
-           (12.0 * (kf + 1.0));
+  dMOIdh = 0.25 * st * rho *
+           (kf2 / 3.0 * st2 + 4.0 * kf * sh2 + 4.0 * kf * sh * st +
+            4.0 / 3.0 * kf * st2 + 1.0 * sh2) /
+           (kf + 1.0);
 }
 
 void printStiffnessMatrix(const TacsScalar* const C) {
