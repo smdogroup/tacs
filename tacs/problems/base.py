@@ -69,7 +69,7 @@ class TACSProblem(BaseUI):
 
         Returns
         ----------
-        x : array
+        x : numpy.ndarray
             The current design variable vector set in tacs.
 
         """
@@ -103,6 +103,23 @@ class TACSProblem(BaseUI):
 
         # Set the variables in tacs
         self.assembler.setDesignVars(self.x)
+
+    def getDesignVarRange(self):
+        """
+        get the lower/upper bounds for the design variables.
+
+        Returns
+        ----------
+        xlb : numpy.ndarray
+            The design variable lower bound.
+        xub : numpy.ndarray
+            The design variable upper bound.
+
+        """
+        xlb = self.assembler.createDesignVec()
+        xub = self.assembler.createDesignVec()
+        self.assembler.getDesignVarRange(xlb, xub)
+        return xlb.getArray(), xub.getArray()
 
     def _arrayToDesignVec(self, dvArray):
         """

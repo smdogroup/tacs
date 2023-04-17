@@ -3271,7 +3271,7 @@ void TACSAssembler::setDesignVars(TACSBVec *dvs) {
   Retrieve the design variable range.
 
   This call is collective on all TACS processes. The ranges provided
-  by indivdual objects may not be consistent (if someone provided
+  by individual objects may not be consistent (if someone provided
   incorrect data they could be.)
 
   @param lb the lower bound on the design variables

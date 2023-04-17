@@ -220,6 +220,9 @@ class pyTACS(BaseUI):
         self.Xpts0 = None
         # List of initial designvars
         self.x0 = None
+        # Design var upper/lower-bounds
+        self.xub = None
+        self.xlb = None
 
         # Variables per node for model
         self.varsPerNode = None
@@ -775,6 +778,11 @@ class pyTACS(BaseUI):
         self.x0 = self.assembler.createDesignVec()
         self.assembler.getDesignVars(self.x0)
 
+        # Store design variable upper/lower-bounds
+        self.xub = self.assembler.createDesignVec()
+        self.xlb = self.assembler.createDesignVec()
+        self.assembler.getDesignVarRange(self.xlb, self.xub)
+
     def _elemCallBackFromBDF(self):
         """
         Automatically setup elemCallBack using information contained in BDF file.
@@ -1143,6 +1151,21 @@ class pyTACS(BaseUI):
 
         """
         return self.x0.getArray().copy()
+
+    @postinitialize_method
+    def getDesignVarRange(self):
+        """
+        get the lower/upper bounds for the design variables.
+
+        Returns
+        ----------
+        xlb : numpy.ndarray
+            The design variable lower bound.
+        xub : numpy.ndarray
+            The design variable upper bound.
+
+        """
+        return self.xlb.getArray().copy(), self.xub.getArray().copy()
 
     @postinitialize_method
     def createDesignVec(self, asBVec=False):
