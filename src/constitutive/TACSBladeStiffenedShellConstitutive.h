@@ -257,7 +257,7 @@ class TACSBladeStiffenedShellConstitutive : public TACSShellConstitutive {
   TacsScalar evalDesignFieldValue(int elemIndex, const double pt[],
                                   const TacsScalar X[], int index);
 
- protected:
+  //  protected:
   /**
    * @brief Compute the stiffness matrix of the stiffened shell
    *
