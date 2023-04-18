@@ -942,6 +942,7 @@ void TACSBladeStiffenedShellConstitutive::computeSmearedStiffness(
     const int numPlies, const TacsScalar* const QMats,
     const TacsScalar* const AbarMats, const TacsScalar plyFractions[],
     TacsScalar Q[], TacsScalar ABar[]) {
+  // Zero out the Q and ABar matrices
   memset(Q, 0, this->NUM_Q_ENTRIES * sizeof(TacsScalar));
   memset(ABar, 0, this->NUM_ABAR_ENTRIES * sizeof(TacsScalar));
 

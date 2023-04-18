@@ -277,11 +277,11 @@ class TACSBladeStiffenedShellConstitutive : public TACSShellConstitutive {
    * @param ABar The ABar matrix for the laminate, stored as a flattened 3 entry
    * array ([Q44, Q45, Q55])
    */
-  inline void computeSmearedStiffness(const int numPlies,
-                                      const TacsScalar* const QMats,
-                                      const TacsScalar* const AbarMats,
-                                      const TacsScalar plyFractions[],
-                                      TacsScalar Q[], TacsScalar ABar[]);
+  void computeSmearedStiffness(const int numPlies,
+                               const TacsScalar* const QMats,
+                               const TacsScalar* const AbarMats,
+                               const TacsScalar plyFractions[], TacsScalar Q[],
+                               TacsScalar ABar[]);
 
   /**
    * @brief Compute the failure values for each failure mode of the stiffened
@@ -321,8 +321,8 @@ class TACSBladeStiffenedShellConstitutive : public TACSShellConstitutive {
    * @param stiffenerStrain The stiffener centroid strains [e11, xi1, xi2, xi3,
    * y13, y12]
    */
-  inline void transformStrain(const TacsScalar panelStrain[],
-                              TacsScalar stiffenerStrain[]);
+  void transformStrain(const TacsScalar panelStrain[],
+                       TacsScalar stiffenerStrain[]);
 
   /**
    * @brief Transform a sensitivity w.r.t the stiffener centroid strains to a
@@ -349,8 +349,8 @@ class TACSBladeStiffenedShellConstitutive : public TACSShellConstitutive {
    * @param panelStrainSens Array to store the sensitivity of the output w.r.t
    * shell mid-plane strains
    */
-  inline void transformStrainSens(const TacsScalar stiffenerStrainSens[],
-                                  TacsScalar panelStrainSens[]);
+  void transformStrainSens(const TacsScalar stiffenerStrainSens[],
+                           TacsScalar panelStrainSens[]);
 
   /**
    * @brief Add the DV sensitivity of the product of the strain
@@ -375,10 +375,10 @@ class TACSBladeStiffenedShellConstitutive : public TACSShellConstitutive {
    * @param dfdx The sensitivities of the output w.r.t the design variables to
    * be added to
    */
-  inline void addStrainTransformProductDVsens(const TacsScalar lhs[],
-                                              const TacsScalar rhs[],
-                                              const TacsScalar scale,
-                                              TacsScalar dfdx[]);
+  void addStrainTransformProductDVsens(const TacsScalar lhs[],
+                                       const TacsScalar rhs[],
+                                       const TacsScalar scale,
+                                       TacsScalar dfdx[]);
 
   /**
    * @brief Add the contribution of the stiffener stress to the panel stress
@@ -399,8 +399,8 @@ class TACSBladeStiffenedShellConstitutive : public TACSShellConstitutive {
    * @param panelStress The shell mid-plane stresses to be added to [N11, N22,
    * N12, M11, M22, M12, Q23, Q13]
    */
-  inline void addStiffenerStress(const TacsScalar stiffenerStress[],
-                                 TacsScalar panelStress[]);
+  void addStiffenerStress(const TacsScalar stiffenerStress[],
+                          TacsScalar panelStress[]);
 
   /**
    * @brief Add the contribution of the stiffener stiffness to the panel
@@ -416,8 +416,8 @@ class TACSBladeStiffenedShellConstitutive : public TACSShellConstitutive {
    * `computeStiffenerStiffness`
    * @param panelStiffness The panel stiffness matrix to be added to
    */
-  inline void addStiffenerStiffness(const TacsScalar stiffenerStiffness[],
-                                    TacsScalar panelStiffness[]);
+  void addStiffenerStiffness(const TacsScalar stiffenerStiffness[],
+                             TacsScalar panelStiffness[]);
 
   // ==============================================================================
   // Helper functions for computing the panel stress/stiffness/failure
@@ -495,8 +495,8 @@ class TACSBladeStiffenedShellConstitutive : public TACSShellConstitutive {
    * @param stiffenerStress The stiffener stresses/forces [N11, M1, M2, M3, V12,
    * V13]
    */
-  inline void computeStiffenerStress(const TacsScalar stiffenerStrain[],
-                                     TacsScalar stiffenerStress[]);
+  void computeStiffenerStress(const TacsScalar stiffenerStrain[],
+                              TacsScalar stiffenerStress[]);
 
   /**
    * @brief Add the derivative of the product of stiffener stresses with a
@@ -517,9 +517,9 @@ class TACSBladeStiffenedShellConstitutive : public TACSShellConstitutive {
    * @param C The stiffener local stiffness matrix (The derivative of the beam
    * stresses w.r.t the beam strains)
    */
-  inline void computeStiffenerStiffness(TacsScalar C[]);
+  void computeStiffenerStiffness(TacsScalar C[]);
 
-  inline void computeStiffenerModuli(TacsScalar& E, TacsScalar& G);
+  void computeStiffenerModuli(TacsScalar& E, TacsScalar& G);
 
   /**
    * @brief Compute the failure criterion for the stiffener in a given strain
@@ -561,7 +561,7 @@ class TACSBladeStiffenedShellConstitutive : public TACSShellConstitutive {
    *
    * @return TacsScalar Stiffener area
    */
-  inline TacsScalar computeStiffenerArea();
+  TacsScalar computeStiffenerArea();
 
   /**
    * @brief Compute the derivative of the stiffener's cross-sectional area with
@@ -572,7 +572,7 @@ class TACSBladeStiffenedShellConstitutive : public TACSShellConstitutive {
    * @param dAdh Derivative of the stiffener's cross-sectional area with respect
    * to the stiffener height
    */
-  inline void computeStiffenerAreaSens(TacsScalar& dAdt, TacsScalar& dAdh);
+  void computeStiffenerAreaSens(TacsScalar& dAdt, TacsScalar& dAdh);
 
   /**
    * @brief Compute the stiffener centroid height, this is the height relative
@@ -580,7 +580,7 @@ class TACSBladeStiffenedShellConstitutive : public TACSShellConstitutive {
    *
    * @return TacsScalar The stiffener centroid height
    */
-  inline TacsScalar computeStiffenerCentroidHeight();
+  TacsScalar computeStiffenerCentroidHeight();
 
   /**
    * @brief Compute the derivative of the stiffener centroid height with respect
@@ -591,15 +591,14 @@ class TACSBladeStiffenedShellConstitutive : public TACSShellConstitutive {
    * @param dzdh Derivative of the stiffener centroid height with respect to the
    * stiffener height
    */
-  inline void computeStiffenerCentroidHeightSens(TacsScalar& dzdt,
-                                                 TacsScalar& dzdh);
+  void computeStiffenerCentroidHeightSens(TacsScalar& dzdt, TacsScalar& dzdh);
 
   /**
    * @brief Compute the second moment of area about the stiffener centroid
    *
    * @return TacsScalar Second moment of area about the stiffener centroid
    */
-  inline TacsScalar computeStiffenerIzz();
+  TacsScalar computeStiffenerIzz();
 
   /**
    * @brief Compute the derivative of the stiffener's second moment of area
@@ -609,8 +608,7 @@ class TACSBladeStiffenedShellConstitutive : public TACSShellConstitutive {
    * @param dIdt Derivative of Izz with respect to the stiffener thickness
    * @param dIdh Derivative of Izz with respect to the stiffener height
    */
-  inline void computeStiffenerIzzSens(TacsScalar& dIdt, TacsScalar& dIdh);
-
+  void computeStiffenerIzzSens(TacsScalar& dIdt, TacsScalar& dIdh);
   /**
    * @brief Compute the torsion constant of the stiffener cross section
    *
@@ -622,7 +620,7 @@ class TACSBladeStiffenedShellConstitutive : public TACSShellConstitutive {
    *
    * @return TacsScalar The stiffener torsion constant
    */
-  inline TacsScalar computeStiffenerJxx();
+  TacsScalar computeStiffenerJxx();
 
   /**
    * @brief Compute the derivative of the stiffener's torsion constant with
@@ -631,7 +629,7 @@ class TACSBladeStiffenedShellConstitutive : public TACSShellConstitutive {
    * @param dJdt Derivative of Jxx with respect to the stiffener thickness
    * @param dJdh Derivative of Jxx with respect to the stiffener height
    */
-  inline void computeStiffenerJxxSens(TacsScalar& dJdt, TacsScalar& dJdh);
+  void computeStiffenerJxxSens(TacsScalar& dJdt, TacsScalar& dJdh);
 
   /**
    * @brief Compute the moment of inertia of the stiffener cross section about
@@ -640,7 +638,7 @@ class TACSBladeStiffenedShellConstitutive : public TACSShellConstitutive {
    * @return TacsScalar The stiffener moment of inertia (Iyy) about it's
    * centroid
    */
-  inline TacsScalar computeStiffenerMOI();
+  TacsScalar computeStiffenerMOI();
 
   /**
    * @brief Compute the derivative of the stiffener's moment of inertia about
@@ -649,7 +647,7 @@ class TACSBladeStiffenedShellConstitutive : public TACSShellConstitutive {
    * @param dMOIdt Derivative of Iyy with respect to the stiffener thickness
    * @param dMOIdh Derivative of Iyy with respect to the stiffener height
    */
-  inline void computeStiffenerMOISens(TacsScalar& dMOIdt, TacsScalar& dMOIdh);
+  void computeStiffenerMOISens(TacsScalar& dMOIdt, TacsScalar& dMOIdh);
 
   // ==============================================================================
   // Attributes
