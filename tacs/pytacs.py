@@ -34,6 +34,7 @@ import pyNastran.bdf as pn
 
 import tacs.TACS
 import tacs.constitutive
+import tacs.constraints
 import tacs.elements
 import tacs.functions
 import tacs.problems
@@ -1806,6 +1807,38 @@ class pyTACS(BaseUI):
 
         # All procs should wait for root
         self.comm.barrier()
+
+    @postinitialize_method
+    def createAdjacencyConstraint(self, name, options={}):
+        """
+        Create a new AdjacencyConstraint for performing modal analysis.
+        This problem can be used to identify the natural frequencies and mode
+        shapes of the model through eigenvalue analysis.
+
+        Parameters
+        ----------
+        name : str
+            Name to assign constraint.
+        options : dict
+            Problem-specific options to pass to AdjacencyConstraint instance (case-insensitive).
+
+        Returns
+        ----------
+        constraint : AdjacencyConstraint
+            AdjacencyConstraint object used for performing modal eigenvalue analysis.
+        """
+        constr = tacs.constraints.AdjacencyConstraint(
+            name,
+            self.assembler,
+            self.comm,
+            self.outputViewer,
+            self.meshLoader,
+            options,
+        )
+        # Set with original design vars and coordinates, in case they have changed
+        constr.setDesignVars(self.x0)
+        constr.setNodes(self.Xpts0)
+        return constr
 
     def getNumComponents(self):
         """
