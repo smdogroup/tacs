@@ -255,7 +255,7 @@ class AdjacencyConstraint(TACSProblem):
                         "using addFunction()."
                     )
 
-        # Loop through each requested eigenvalue
+        # Loop through each requested constraint set
         for funcName in evalFuncs:
             key = f"{self.name}_{funcName}"
             bounds[key] = self.functionList[funcName].getBounds()
@@ -303,7 +303,7 @@ class AdjacencyConstraint(TACSProblem):
                         "using addFunction()."
                     )
 
-        # Loop through each requested eigenvalue
+        # Loop through each requested constraint set
         for funcName in evalFuncs:
             key = f"{self.name}_{funcName}"
             funcs[key] = self.functionList[funcName].evalCon(self.x.getArray())
@@ -329,7 +329,7 @@ class AdjacencyConstraint(TACSProblem):
         >>> adjConstraint.evalFunctionsSens(funcsSens, 'LE_SPAR')
         >>> funcsSens
         >>> # Result will look like (if AdjacencyConstraint has name of 'c1'):
-        >>> # {'c1_LE_SPAR':{'struct':[1.234, ..., 7.89]}}
+        >>> # {'c1_LE_SPAR':{'struct':<50x242 sparse matrix of type '<class 'numpy.float64'>' with 100 stored elements in Compressed Sparse Row format>}}
         """
         # Check if user specified which functions to output
         # Otherwise, output them all
@@ -342,7 +342,7 @@ class AdjacencyConstraint(TACSProblem):
                 if func in self.functionList:
                     evalFuncs[func] = self.functionList[func]
 
-        # Loop through each requested eigenvalue
+        # Loop through each requested constraint set
         for funcName in evalFuncs:
             key = f"{self.name}_{funcName}"
             funcsSens[key] = {}
