@@ -23,6 +23,8 @@ bladeFSDT model from previous versions of TACS developed by Graeme Kennedy.
 #include "TACSShellConstitutive.h"
 #include "TacsUtilities.h"
 
+void printStiffnessMatrix(const TacsScalar* const C);
+
 // =============================================================================
 // Class Declaration
 // =============================================================================
@@ -650,6 +652,170 @@ class TACSBladeStiffenedShellConstitutive : public TACSShellConstitutive {
   void computeStiffenerMOISens(TacsScalar& dMOIdt, TacsScalar& dMOIdh);
 
   // ==============================================================================
+  // Buckling functions
+  // ==============================================================================
+
+  /**
+   * @brief Compute the critical axial load for local buckling of the panel
+   *
+   * @param D11 D11 stiffness
+   * @param D22 D22 stiffness
+   * @param D12 D12 stiffness
+   * @param D66 D66 stiffness
+   * @param L Length (in this case, the stiffener pitch)
+   * @return TacsScalar The critical load
+   */
+  static inline TacsScalar computeCriticalLocalAxialLoad(const TacsScalar D11,
+                                                         const TacsScalar D22,
+                                                         const TacsScalar D12,
+                                                         const TacsScalar D66,
+                                                         const TacsScalar L) {
+    return 2.0 * M_PI * M_PI / (L * L) * (sqrt(D11 * D22) + D12 + 2.0 * D66);
+  }
+
+  /**
+   * @brief Compute the sensitivity of the critical axial load for local
+   * buckling of the panel
+   *
+   * @param D11 D11 stiffness
+   * @param D22 D22 stiffness
+   * @param D12 D12 stiffness
+   * @param D66 D66 stiffness
+   * @param L Length (in this case, the stiffener pitch)
+   * @param D11Sens Sensitivity w.r.t the D11 stiffness
+   * @param D22Sens Sensitivity w.r.t the D22 stiffness
+   * @param D12Sens Sensitivity w.r.t the D12 stiffness
+   * @param D66Sens Sensitivity w.r.t the D66 stiffness
+   * @param LSens Sensitivity w.r.t the Length
+   * @return TacsScalar The critical load
+   */
+  static TacsScalar computeCriticalLocalAxialLoadSens(
+      const TacsScalar D11, const TacsScalar D22, const TacsScalar D12,
+      const TacsScalar D66, const TacsScalar L, TacsScalar* D11Sens,
+      TacsScalar* D22Sens, TacsScalar* D12Sens, TacsScalar* D66Sens,
+      TacsScalar* LSens);
+
+  /**
+   * @brief Compute the critical shear load for either local or global buckling
+   *
+   * The shear buckling loads are calculated based on an infinite-plate
+   * solution simply supported along the panel sides. For the local skin
+   * buckling calculations we use the infinite plate solution along edges
+   * supported by the blade stiffeners, therefore the panel width is
+   * equal to the stiffener pitch (sp). For the global-level
+   * calculations, we use the panel length equal to the rib pitch, thus
+   * the panel width is equal to the local panel length (Lx).
+   *
+   * In Stroud and Arganoff, the following formula are suggested for the
+   * calculation of the buckling loads:
+   *
+   * xi = sqrt(D1*D2)/D3
+   *
+   * if xi > 1.0:
+   *   Nxy,crit = (4.0/Ly^2)*(D2*D1^3)^(1/4)*(8.125 + 5.05/xi)
+   * else:
+   *   Nxy,crit = (4.0/Ly^2)*sqrt(D1*D3)*(11.7 + 0.532*xi + 0.938*xi^2)
+   *
+   * Note that if xi = 1, then D3 = sqrt(D1*D2) and so
+   * (4.0/Ly^2)*sqrt(D1*D3) = (4.0/Ly^2)*(D1*D1^3)^(1/4)
+   *
+   * However, when xi = 1, the two terms inside the brackets are not
+   * equal. As a result, there is a discontinuity between the two
+   * expressions. To avoid this, we adjust the first formula in a
+   * conservative manner. As shown in Lekhnitskii, the limit for xi ->
+   * infty is 8.125, while for xi = 1 is 13.17 and for xi = 0, 11.71.
+   *
+   * The formula in Stroud and Arganoff do not meet these end conditions.
+   * We adjust the formula as follows:
+   *
+   * if xi > 1.0:
+   *   Nxy,crit = (4.0/Ly^2)*(D2*D1^3)^(1/4)*(8.125 + 5.045/xi)
+   * else:
+   *   Nxy,crit = (4.0/Ly^2)*sqrt(D1*D3)*(11.7 + 0.532*xi + 0.938*xi^2)
+   *
+   * input:
+   * @param D1 the longitudinal bending stiffness
+   * @param D2 the transverse bending stiffness
+   * @param D3 the shear bending stiffness
+   * @param L  the side-length of the panel
+   *
+   * returns:
+   * @return N12Crit  the approximate critical buckling load
+   */
+  static TacsScalar computeCriticalShearLoad(TacsScalar D1, TacsScalar D2,
+                                             TacsScalar D3, TacsScalar L);
+
+  static bool testCriticalShearLoadSens(const TacsScalar D1,
+                                        const TacsScalar D2,
+                                        const TacsScalar D3,
+                                        const TacsScalar L);
+
+  /**
+   * @brief Compute the sensitivity of the critical shear buckling load
+   *
+   * @param D1 the longitudinal bending stiffness
+   * @param D2 the transverse bending stiffness
+   * @param D3 the shear bending stiffness
+   * @param L the side-length of the panel
+   * @param sD1 Sensitivity of the critical load w.r.t the longitudinal bending
+   * stiffness
+   * @param sD2 Sensitivity of the critical load w.r.t the transverse bending
+   * stiffness
+   * @param sD3 Sensitivity of the critical load w.r.t the shear bending
+   * stiffness
+   * @param sL Sensitivity of the critical load w.r.t the side-length of the
+   * panel
+   * @return TacsScalar The critical shear buckling load
+   */
+  static TacsScalar computeCriticalShearLoadSens(
+      const TacsScalar D1, const TacsScalar D2, const TacsScalar D3,
+      const TacsScalar L, TacsScalar* D1Sens, TacsScalar* D2Sens,
+      TacsScalar* D3Sens, TacsScalar* LSens);
+
+  /**
+   * @brief Compute the buckling failure criterion
+   *
+   * The failure criterion is: f = N1/N1Crit + (N12/N12Crit)^2
+   *
+   * @param N1 Axial load
+   * @param N1Crit Critical axial load
+   * @param N12 Shear load
+   * @param N12Crit Critical shear load
+   * @return TacsScalar The failure criterion
+   */
+  static inline TacsScalar bucklingEnvelope(const TacsScalar N1,
+                                            const TacsScalar N1Crit,
+                                            const TacsScalar N12,
+                                            const TacsScalar N12Crit) {
+    return N1 / N1Crit + (N12 / N12Crit) * (N12 / N12Crit);
+  }
+
+  /**
+   * @brief Compute the sensitivity of the buckling failure criterion w.r.t the
+   * loads and critical loads
+   *
+   * @param N1 Axial load
+   * @param N1Crit Critical axial load
+   * @param N12 Shear load
+   * @param N12Crit Critical shear load
+   * @param N1Sens Sensitivity of the failure criterion w.r.t the axial load
+   * @param N1CritSens Sensitivity of the failure criterion w.r.t the critical
+   * axial load
+   * @param N12Sens Sensitivity of the failure criterion w.r.t the shear load
+   * @param N12CritSens Sensitivity of the failure criterion w.r.t the critical
+   * shear load
+   */
+  static TacsScalar bucklingEnvelopeSens(
+      const TacsScalar N1, const TacsScalar N1Crit, const TacsScalar N12,
+      const TacsScalar N12Crit, TacsScalar* N1Sens, TacsScalar* N1CritSens,
+      TacsScalar* N12Sens, TacsScalar* N12CritSens);
+
+  static bool testBucklingEnvelopeSens(const TacsScalar N1,
+                                       const TacsScalar N1Crit,
+                                       const TacsScalar N12,
+                                       const TacsScalar N12Crit);
+
+  // ==============================================================================
   // Attributes
   // ==============================================================================
 
@@ -738,5 +904,5 @@ class TACSBladeStiffenedShellConstitutive : public TACSShellConstitutive {
   static const int NUM_Q_ENTRIES = 6;  ///< Number of entries in the Q matrix
   static const int NUM_ABAR_ENTRIES =
       3;                              ///< Number of entries in the ABar matrix
-  static const int NUM_FAILURES = 2;  ///< Number of failure modes
+  static const int NUM_FAILURES = 3;  ///< Number of failure modes
 };
