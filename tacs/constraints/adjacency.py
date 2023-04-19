@@ -11,10 +11,10 @@ The main purpose of this class is to constrain design variables step sizes acros
 import numpy as np
 import scipy as sp
 
-from tacs.problems.base import TACSProblem
+from tacs.constraints.base import TACSConstraint
 
 
-class AdjacencyConstraint(TACSProblem):
+class AdjacencyConstraint(TACSConstraint):
     def __init__(
         self,
         name,
@@ -52,9 +52,12 @@ class AdjacencyConstraint(TACSProblem):
         # Problem name
         self.name = name
 
-        # Default setup for common problem class objects, sets up comm and options
-        TACSProblem.__init__(self, assembler, comm, options, outputViewer, meshLoader)
+        # Default setup for common constraint class objects, sets up comm and options
+        TACSConstraint.__init__(
+            self, assembler, comm, options, outputViewer, meshLoader
+        )
 
+        # Create a list of all adjacent components on root proc
         self._initializeAdjacencyList()
 
     def _initializeAdjacencyList(self):
@@ -106,27 +109,31 @@ class AdjacencyConstraint(TACSProblem):
         else:
             self.adjacentComps = None
 
-    def addFunction(self, funcName, dvIndex=0, compIDs=None, lower=-1e20, upper=1e20):
+        # Wait for root
+        self.comm.barrier()
+
+    def addConstraint(self, conName, lower=-1e20, upper=1e20, compIDs=None, dvIndex=0):
         """
         Generic method to adding a new constraint set for TACS.
 
         Parameters
         ----------
-        funcName : str
+        conName : str
             The user-supplied name for the constraint set. This will
             typically be a string that is meaningful to the user
-
-        dvIndex : int
-            Index number of element DV to be used in constraint. Defaults to 0.
-
-        compIDs: list or None
-            List of compIDs to select. If None, all compIDs will be selected. Defaults to None.
 
         lower: float or complex
             lower bound for constraint. Defaults to -1e20.
 
         upper: float or complex
             upper bound for constraint. Defaults to 1e20.
+
+        compIDs: list or None
+            List of compIDs to select. If None, all compIDs will be selected. Defaults to None.
+
+        dvIndex : int
+            Index number of element DV to be used in constraint. Defaults to 0.
+
         """
         if compIDs is not None:
             # Make sure CompIDs is flat and get element numbers on each proc corresponding to specified compIDs
@@ -137,11 +144,11 @@ class AdjacencyConstraint(TACSProblem):
 
         constrObj = self._createConstraint(dvIndex, compIDs, lower, upper)
         if constrObj.nCon > 0:
-            self.functionList[funcName] = constrObj
+            self.constraintList[conName] = constrObj
             success = True
         else:
             self._TACSWarning(
-                f"No adjacent components found in `compIDs`. Skipping {funcName}."
+                f"No adjacent components found in `compIDs`. Skipping {conName}."
             )
             success = False
 
@@ -211,10 +218,10 @@ class AdjacencyConstraint(TACSProblem):
             self.comm, rows, cols, vals, conCount, nLocalDVs, lbound, ubound
         )
 
-    def getFunctionsBounds(self, bounds, evalFuncs=None, ignoreMissing=False):
+    def getConstraintBounds(self, bounds, evalCons=None, ignoreMissing=False):
         """
-        Get bounds for constraints. The functions corresponding to the strings in
-        EVAL_FUNCS are evaluated and updated into the provided
+        Get bounds for constraints. The constraints corresponding to the strings in
+        `evalCons` are evaluated and updated into the provided
         dictionary.
 
         Parameters
@@ -222,97 +229,97 @@ class AdjacencyConstraint(TACSProblem):
         bounds : dict
             Dictionary into which the constraint bounds are saved.
             Bounds will be saved as a tuple: (lower, upper)
-        evalFuncs : iterable object containing strings.
-            If not none, use these functions to evaluate.
+        evalCons : iterable object containing strings.
+            If not none, use these constraints to evaluate.
         ignoreMissing : bool
-            Flag to supress checking for a valid function. Please use
+            Flag to supress checking for a valid constraint. Please use
             this option with caution.
 
         Examples
         --------
         >>> funcs = {}
-        >>> adjConstraint.getFunctionsBounds(funcs, 'LE_SPAR')
+        >>> adjConstraint.getConstraintBounds(funcs, 'LE_SPAR')
         >>> funcs
         >>> # Result will look like (if AdjacencyConstraint has name of 'c1'):
         >>> # {'c1_LE_SPAR': (array([-1e20]), array([1e20]))}
         """
-        # Check if user specified which eigvals to output
+        # Check if user specified which constraints to output
         # Otherwise, output them all
-        if evalFuncs is None:
-            evalFuncs = self.functionList
+        if evalCons is None:
+            evalFuncs = self.constraintList
         else:
-            userFuncs = sorted(list(evalFuncs))
+            userFuncs = sorted(list(evalCons))
             evalFuncs = {}
             for func in userFuncs:
-                if func in self.functionList:
-                    evalFuncs[func] = self.functionList[func]
+                if func in self.constraintList:
+                    evalFuncs[func] = self.constraintList[func]
 
         if not ignoreMissing:
             for f in evalFuncs:
-                if f not in self.functionList:
+                if f not in self.constraintList:
                     raise self._TACSError(
-                        f"Supplied function '{f}' has not been added "
-                        "using addFunction()."
+                        f"Supplied constraint '{f}' has not been added "
+                        "using addConstraint()."
                     )
 
         # Loop through each requested constraint set
         for funcName in evalFuncs:
             key = f"{self.name}_{funcName}"
-            bounds[key] = self.functionList[funcName].getBounds()
+            bounds[key] = self.constraintList[funcName].getBounds()
 
-    def evalFunctions(self, funcs, evalFuncs=None, ignoreMissing=False):
+    def evalConstraints(self, funcs, evalCons=None, ignoreMissing=False):
         """
-        Evaluate values for constraints. The functions corresponding to the strings in
-        EVAL_FUNCS are evaluated and updated into the provided
+        Evaluate values for constraints. The constraints corresponding to the strings in
+        evalCons are evaluated and updated into the provided
         dictionary.
 
         Parameters
         ----------
         funcs : dict
-            Dictionary into which the functions are saved.
-        evalFuncs : iterable object containing strings.
-            If not none, use these functions to evaluate.
+            Dictionary into which the constraints are saved.
+        evalCons : iterable object containing strings.
+            If not none, use these constraints to evaluate.
         ignoreMissing : bool
-            Flag to supress checking for a valid function. Please use
+            Flag to supress checking for a valid constraint. Please use
             this option with caution.
 
         Examples
         --------
         >>> funcs = {}
-        >>> adjConstraint.evalFunctions(funcs, 'LE_SPAR')
+        >>> adjConstraint.evalConstraints(funcs, 'LE_SPAR')
         >>> funcs
         >>> # Result will look like (if AdjacencyConstraint has name of 'c1'):
         >>> # {'c1_LE_SPAR': array([12354.10])}
         """
-        # Check if user specified which eigvals to output
+        # Check if user specified which constraints to output
         # Otherwise, output them all
-        if evalFuncs is None:
-            evalFuncs = self.functionList
+        if evalCons is None:
+            evalCons = self.constraintList
         else:
-            userFuncs = sorted(list(evalFuncs))
-            evalFuncs = {}
-            for func in userFuncs:
-                if func in self.functionList:
-                    evalFuncs[func] = self.functionList[func]
+            userCons = sorted(list(evalCons))
+            evalCons = {}
+            for func in userCons:
+                if func in self.constraintList:
+                    evalCons[func] = self.constraintList[func]
 
         if not ignoreMissing:
-            for f in evalFuncs:
-                if f not in self.functionList:
+            for f in evalCons:
+                if f not in self.constraintList:
                     raise self._TACSError(
-                        f"Supplied function '{f}' has not been added "
-                        "using addFunction()."
+                        f"Supplied constraint '{f}' has not been added "
+                        "using addConstraint()."
                     )
 
         # Loop through each requested constraint set
-        for funcName in evalFuncs:
-            key = f"{self.name}_{funcName}"
-            funcs[key] = self.functionList[funcName].evalCon(self.x.getArray())
+        for conName in evalCons:
+            key = f"{self.name}_{conName}"
+            funcs[key] = self.constraintList[conName].evalCon(self.x.getArray())
 
-    def evalFunctionsSens(self, funcsSens, evalFuncs=None):
+    def evalConstraintsSens(self, funcsSens, evalCons=None):
         """
         This is the main routine for returning useful (sensitivity)
-        information from problem. The derivatives of the functions
-        corresponding to the strings in EVAL_FUNCS are evaluated and
+        information from constraint. The derivatives of the constraints
+        corresponding to the strings in evalCons are evaluated and
         updated into the provided dictionary. The derivitives with
         respect to all design variables and node locations are computed.
 
@@ -320,34 +327,45 @@ class AdjacencyConstraint(TACSProblem):
         ----------
         funcsSens : dict
             Dictionary into which the derivatives are saved.
-        evalFuncs : iterable object containing strings
-            The functions the user wants returned
+        evalCons : iterable object containing strings
+            The constraints the user wants returned
 
         Examples
         --------
         >>> funcsSens = {}
-        >>> adjConstraint.evalFunctionsSens(funcsSens, 'LE_SPAR')
+        >>> adjConstraint.evalConstraintsSens(funcsSens, 'LE_SPAR')
         >>> funcsSens
         >>> # Result will look like (if AdjacencyConstraint has name of 'c1'):
         >>> # {'c1_LE_SPAR':{'struct':<50x242 sparse matrix of type '<class 'numpy.float64'>' with 100 stored elements in Compressed Sparse Row format>}}
         """
         # Check if user specified which functions to output
         # Otherwise, output them all
-        if evalFuncs is None:
-            evalFuncs = self.functionList
+        if evalCons is None:
+            evalCons = self.constraintList
         else:
-            userFuncs = sorted(list(evalFuncs))
-            evalFuncs = {}
-            for func in userFuncs:
-                if func in self.functionList:
-                    evalFuncs[func] = self.functionList[func]
+            userCons = sorted(list(evalCons))
+            evalCons = {}
+            for con in userCons:
+                if con in self.constraintList:
+                    evalCons[con] = self.constraintList[con]
+
+        # Get number of nodes on this proc
+        nNodes = self.getNumOwnedNodes()
 
         # Loop through each requested constraint set
-        for funcName in evalFuncs:
-            key = f"{self.name}_{funcName}"
+        for conName in evalCons:
+            key = f"{self.name}_{conName}"
+            # Get sparse Jacobian for dv sensitivity
             funcsSens[key] = {}
-            funcsSens[key]["struct"] = self.functionList[funcName].evalConSens(
+            funcsSens[key][self.varName] = self.constraintList[conName].evalConSens(
                 self.x.getArray()
+            )
+
+            # Nodal sensitivities are always zero for this constraint,
+            # Add an empty sparse matrix
+            nCon = self.constraintList[conName].nCon
+            funcsSens[key][self.coordName] = sp.sparse.csr_matrix(
+                (nCon, nNodes), dtype=self.dtype
             )
 
 
