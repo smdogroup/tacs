@@ -1555,7 +1555,7 @@ class pyTACS(BaseUI):
         ----------
         fileName: str
             Name of file to write BDF file to.
-        problems: tacs.problems.BaseProblem or List[tacs.problems.BaseProblem]
+        problems: TACSProblem or list[TACSProblem]
             List of pytacs Problem classes to write BDF file from.
         """
         # Make sure problems is in a list
@@ -1811,21 +1811,21 @@ class pyTACS(BaseUI):
     @postinitialize_method
     def createAdjacencyConstraint(self, name, options={}):
         """
-        Create a new AdjacencyConstraint for performing modal analysis.
-        This problem can be used to identify the natural frequencies and mode
-        shapes of the model through eigenvalue analysis.
+        Create a new AdjacencyConstraint for calculating design variable differences across adjacent components.
+        This constraint can be used to ensure that the design variables
+        do not change too abruptly from component to component.
 
         Parameters
         ----------
         name : str
             Name to assign constraint.
         options : dict
-            Problem-specific options to pass to AdjacencyConstraint instance (case-insensitive).
+            Class-specific options to pass to AdjacencyConstraint instance (case-insensitive).
 
         Returns
         ----------
         constraint : AdjacencyConstraint
-            AdjacencyConstraint object used for performing modal eigenvalue analysis.
+            AdjacencyConstraint object used for calculating constraints.
         """
         constr = tacs.constraints.AdjacencyConstraint(
             name,
