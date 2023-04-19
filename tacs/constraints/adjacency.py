@@ -350,7 +350,7 @@ class AdjacencyConstraint(TACSConstraint):
                     evalCons[con] = self.constraintList[con]
 
         # Get number of nodes on this proc
-        nNodes = self.getNumOwnedNodes()
+        nCoords = self.getNumCoordinates()
 
         # Loop through each requested constraint set
         for conName in evalCons:
@@ -365,7 +365,7 @@ class AdjacencyConstraint(TACSConstraint):
             # Add an empty sparse matrix
             nCon = self.constraintList[conName].nCon
             funcsSens[key][self.coordName] = sp.sparse.csr_matrix(
-                (nCon, nNodes), dtype=self.dtype
+                (nCon, nCoords), dtype=self.dtype
             )
 
 
