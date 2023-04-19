@@ -349,7 +349,7 @@ class AdjacencyConstraint(TACSConstraint):
                 if con in self.constraintList:
                     evalCons[con] = self.constraintList[con]
 
-        # Get number of nodes on this proc
+        # Get number of nodes coords on this proc
         nCoords = self.getNumCoordinates()
 
         # Loop through each requested constraint set
