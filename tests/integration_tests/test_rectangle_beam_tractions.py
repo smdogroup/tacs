@@ -50,7 +50,7 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
         "traction_I_yy": 1.13625,
         "traction_I_yz": 0.0,
         "traction_I_zz": 1.1278125,
-        "dvcon_width_minus_thickness": -0.05,
+        "dvcon_width_minus_thickness": 0.05,
     }
 
     def setup_tacs_problems(self, comm):

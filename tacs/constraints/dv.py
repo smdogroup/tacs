@@ -144,7 +144,8 @@ class DVConstraint(TACSConstraint):
             # Check if each specified dv num is owned by this proc
             for dvIndex, dvWeight in zip(dvIndices, dvWeights):
                 if globalDvNums[dvIndex] in self.globalToLocalDVNums:
-                    localDVNum = self.globalToLocalDVNums[dvIndex]
+                    globalDVNum = globalDvNums[dvIndex]
+                    localDVNum = self.globalToLocalDVNums[globalDVNum]
                     rows.append(conCount)
                     cols.append(localDVNum)
                     vals.append(dvWeight)
