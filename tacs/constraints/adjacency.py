@@ -189,7 +189,8 @@ class AdjacencyConstraint(TACSConstraint):
                         for proc_i in range(size):
                             globalToLocalDVNums = globalToLocalDVNumsOnProc[proc_i]
                             if globalDvNums[dvIndex] in globalToLocalDVNums:
-                                localDVNum = globalDvNums[dvIndex]
+                                globalDVNum = globalDvNums[dvIndex]
+                                localDVNum = globalToLocalDVNums[globalDVNum]
                                 rowsOnProc[proc_i].append(conCount)
                                 colsOnProc[proc_i].append(localDVNum)
                                 if i == 0:
