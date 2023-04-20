@@ -162,6 +162,7 @@ class TACSConstraint(TACSSystem):
         )
 
 
+# Simple class for handling sparse linear constraints in parallel
 class SparseLinearConstraint(object):
     dtype = TACSConstraint.dtype
 

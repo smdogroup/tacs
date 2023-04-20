@@ -1,5 +1,10 @@
 """
 The main purpose of this class is to constrain design variables step sizes across adjacent components.
+The formulation is a linear constraint that takes the following form:
+
+    c = dv_i - dv_j
+
+Where dv_i and dv_j are two design variables in adjacent components.
 
 .. note:: This class should be created using the
     :meth:`pyTACS.createAdjacencyConstraint <tacs.pytacs.pyTACS.createAdjacencyConstraint>` method.
@@ -8,7 +13,6 @@ The main purpose of this class is to constrain design variables step sizes acros
 # =============================================================================
 # Imports
 # =============================================================================
-import numpy as np
 import scipy as sp
 
 from tacs.constraints.base import TACSConstraint, SparseLinearConstraint

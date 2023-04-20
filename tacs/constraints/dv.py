@@ -1,5 +1,21 @@
 """
-The main purpose of this class is to constrain design variables step sizes across adjacent components.
+The main purpose of this class is to place linear constraints on design variables within the same component.
+The constraints are of the form:
+
+    c = a_0 * dv_0 + a_1 * dv_1 + ... + a_n * dv_n = c
+
+Where which design variables to include (dv_0, dv_1, etc.) and the corresponding weights (a_0, a_1, etc.) are
+defined by the user.
+
+As an example, this constraint can be used to enforce ply fraction constraints for composite design optimization:
+
+    pf_0 + pf_45 + pf_m45 + pf_90 = 1.0
+
+Or to enforce that stiffener and panel thicknesses of a blade stiffened panel do not differ by too much:
+
+    -delta_t < st - pt < delta_t
+
+For applying constraints on design variables across components, see :class:`AdjacencyConstraint <tacs.constraints.AdjacencyConstraint>`.
 
 .. note:: This class should be created using the
     :meth:`pyTACS.createDVConstraint <tacs.pytacs.pyTACS.createDVConstraint>` method.
@@ -109,7 +125,7 @@ class DVConstraint(TACSConstraint):
             success = True
         else:
             self._TACSWarning(
-                f"No adjacent components found in `compIDs`. Skipping {conName}."
+                f"No valid `compIDs` provided. Skipping {conName}."
             )
             success = False
 
@@ -162,9 +178,9 @@ class DVConstraint(TACSConstraint):
         Examples
         --------
         >>> funcs = {}
-        >>> adjConstraint.getConstraintBounds(funcs, 'LE_SPAR')
+        >>> dvConstraint.getConstraintBounds(funcs, 'LE_SPAR')
         >>> funcs
-        >>> # Result will look like (if AdjacencyConstraint has name of 'c1'):
+        >>> # Result will look like (if DVConstraint has name of 'c1'):
         >>> # {'c1_LE_SPAR': (array([-1e20]), array([1e20]))}
         """
         # Check if user specified which constraints to output
@@ -210,9 +226,9 @@ class DVConstraint(TACSConstraint):
         Examples
         --------
         >>> funcs = {}
-        >>> adjConstraint.evalConstraints(funcs, 'LE_SPAR')
+        >>> dvConstraint.evalConstraints(funcs, 'LE_SPAR')
         >>> funcs
-        >>> # Result will look like (if AdjacencyConstraint has name of 'c1'):
+        >>> # Result will look like (if DVConstraint has name of 'c1'):
         >>> # {'c1_LE_SPAR': array([12354.10])}
         """
         # Check if user specified which constraints to output
@@ -257,9 +273,9 @@ class DVConstraint(TACSConstraint):
         Examples
         --------
         >>> funcsSens = {}
-        >>> adjConstraint.evalConstraintsSens(funcsSens, 'LE_SPAR')
+        >>> dvConstraint.evalConstraintsSens(funcsSens, 'LE_SPAR')
         >>> funcsSens
-        >>> # Result will look like (if AdjacencyConstraint has name of 'c1'):
+        >>> # Result will look like (if DVConstraint has name of 'c1'):
         >>> # {'c1_LE_SPAR':{'struct':<50x242 sparse matrix of type '<class 'numpy.float64'>' with 100 stored elements in Compressed Sparse Row format>}}
         """
         # Check if user specified which functions to output

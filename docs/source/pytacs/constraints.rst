@@ -5,3 +5,4 @@ Constraint classes
   :maxdepth: 1
 
   adjacency
+  dvcon

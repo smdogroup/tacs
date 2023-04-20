@@ -1813,7 +1813,7 @@ class pyTACS(BaseUI):
         """
         Create a new AdjacencyConstraint for calculating design variable differences across adjacent components.
         This constraint can be used to ensure that the design variables
-        do not change too abruptly from component to component.
+        do not change too abruptly across components.
 
         Parameters
         ----------
@@ -1843,9 +1843,15 @@ class pyTACS(BaseUI):
     @postinitialize_method
     def createDVConstraint(self, name, options={}):
         """
-        Create a new DVConstraint for calculating design variable differences across adjacent components.
-        This constraint can be used to ensure that the design variables
-        do not change too abruptly from component to component.
+        Create a new DVConstraint for calculating linear constraints based
+        on design variables within the same component.
+
+        The constraints are of the form:
+
+            c = a_0 * dv_0 + a_1 * dv_1 + ... + a_n * dv_n = c
+
+        Where which design variables to include (dv_0, dv_1, etc.)
+        and the corresponding weights (a_0, a_1, etc.) are defined by the user.
 
         Parameters
         ----------
