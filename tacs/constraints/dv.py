@@ -11,7 +11,7 @@ As an example, this constraint can be used to enforce ply fraction constraints f
 
     pf_0 + pf_45 + pf_m45 + pf_90 = 1.0
 
-Or to enforce that stiffener and panel thicknesses of a blade stiffened panel do not differ by too much:
+Or to enforce that stiffener and panel thicknesses of a blade-stiffened panel do not differ by too much:
 
     -delta_t < st - pt < delta_t
 
