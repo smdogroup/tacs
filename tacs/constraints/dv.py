@@ -84,7 +84,7 @@ class DVConstraint(TACSConstraint):
             The user-supplied name for the constraint set. This will
             typically be a string that is meaningful to the user
 
-        compIDs: list or None
+        compIDs: list[int] or None
             List of compIDs to select. One constraint will be added for each component.
             If None, all compIDs will be selected. Defaults to None.
 
