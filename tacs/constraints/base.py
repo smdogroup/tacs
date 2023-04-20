@@ -7,6 +7,9 @@ pyBase_constraint
 # =============================================================================
 from collections import OrderedDict
 
+import numpy as np
+import scipy as sp
+
 from ..system import TACSSystem
 
 
@@ -24,11 +27,27 @@ class TACSConstraint(TACSSystem):
         # List of constraints
         self.constraintList = OrderedDict()
 
+        # Setup global to local dv num map for each proc
+        self._initilaizeGlobalToLocalDVDict()
+
         return
+
+    def _initilaizeGlobalToLocalDVDict(self):
+        size = self.comm.size
+        rank = self.comm.rank
+        nLocalDVs = self.getNumDesignVars()
+        nLocalDVsOnProc = self.comm.allgather(nLocalDVs)
+        # Figure out which DVNums belong to each processor
+        ownerRange = np.zeros(size + 1, dtype=int)
+        # Sum local dv ranges over each proc to get global dv ranges
+        ownerRange[1:] = np.cumsum(nLocalDVsOnProc)
+        self.globalToLocalDVNums = dict(
+            zip(range(ownerRange[rank], ownerRange[rank + 1]), range(nLocalDVs))
+        )
 
     ####### Eval constraint methods ########
 
-    def addConstraint(self, conName, lower=-1e20, upper=1e20, compIDs=None, dvIndex=0):
+    def addConstraint(self, conName, compIDs=None, lower=-1e20, upper=1e20, **kwargs):
         """
         Generic method to adding a new constraint set for TACS.
 
@@ -38,17 +57,14 @@ class TACSConstraint(TACSSystem):
             The user-supplied name for the constraint set. This will
             typically be a string that is meaningful to the user
 
+        compIDs: list or None
+            List of compIDs to select. If None, all compIDs will be selected. Defaults to None.
+
         lower: float or complex
             lower bound for constraint. Defaults to -1e20.
 
         upper: float or complex
             upper bound for constraint. Defaults to 1e20.
-
-        compIDs: list or None
-            List of compIDs to select. If None, all compIDs will be selected. Defaults to None.
-
-        dvIndex : int
-            Index number of element DV to be used in constraint. Defaults to 0.
 
         """
         raise NotImplemented(
@@ -144,3 +160,37 @@ class TACSConstraint(TACSSystem):
         raise NotImplemented(
             f"'evalConstraintsSens' method is not implemented for class '{type(self).__name__}'"
         )
+
+
+class SparseLinearConstraint(object):
+    dtype = TACSConstraint.dtype
+
+    def __init__(self, comm, rows, cols, vals, nrows, ncols, lb=-1e20, ub=1e20):
+        # Sparse Jacobian for constraint
+        self.A = sp.sparse.csr_matrix(
+            (vals, (rows, cols)), shape=(nrows, ncols), dtype=self.dtype
+        )
+        # Number of constraints
+        self.nCon = nrows
+        # MPI comm
+        self.comm = comm
+        # Save bound information
+        if isinstance(lb, np.ndarray) and len(lb) == self.nCon:
+            self.lb = lb.astype(self.dtype)
+        elif isinstance(lb, float) or isinstance(lb, complex):
+            self.lb = np.array([lb] * self.nCon, dtype=self.dtype)
+
+        if isinstance(ub, np.ndarray) and len(ub) == self.nCon:
+            self.ub = ub.astype(self.dtype)
+        elif isinstance(ub, float) or isinstance(ub, complex):
+            self.ub = np.array([ub] * self.nCon, dtype=self.dtype)
+
+    def evalCon(self, x):
+        conVals = self.comm.allreduce(self.A.dot(x))
+        return conVals
+
+    def evalConSens(self, x=None):
+        return self.A.copy()
+
+    def getBounds(self):
+        return self.lb.copy(), self.ub.copy()

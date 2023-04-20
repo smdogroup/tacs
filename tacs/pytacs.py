@@ -1840,6 +1840,38 @@ class pyTACS(BaseUI):
         constr.setNodes(self.Xpts0)
         return constr
 
+    @postinitialize_method
+    def createDVConstraint(self, name, options={}):
+        """
+        Create a new DVConstraint for calculating design variable differences across adjacent components.
+        This constraint can be used to ensure that the design variables
+        do not change too abruptly from component to component.
+
+        Parameters
+        ----------
+        name : str
+            Name to assign constraint.
+        options : dict
+            Class-specific options to pass to DVConstraint instance (case-insensitive).
+
+        Returns
+        ----------
+        constraint : DVConstraint
+            DVConstraint object used for calculating constraints.
+        """
+        constr = tacs.constraints.DVConstraint(
+            name,
+            self.assembler,
+            self.comm,
+            self.outputViewer,
+            self.meshLoader,
+            options,
+        )
+        # Set with original design vars and coordinates, in case they have changed
+        constr.setDesignVars(self.x0)
+        constr.setNodes(self.Xpts0)
+        return constr
+
     def getNumComponents(self):
         """
         Return number of components (property) groups found in bdf.

@@ -2,19 +2,18 @@
 The main purpose of this class is to constrain design variables step sizes across adjacent components.
 
 .. note:: This class should be created using the
-    :meth:`pyTACS.createAdjacencyConstraint <tacs.pytacs.pyTACS.createAdjacencyConstraint>` method.
+    :meth:`pyTACS.createDVConstraint <tacs.pytacs.pyTACS.createDVConstraint>` method.
 """
 
 # =============================================================================
 # Imports
 # =============================================================================
-import numpy as np
 import scipy as sp
 
 from tacs.constraints.base import TACSConstraint, SparseLinearConstraint
 
 
-class AdjacencyConstraint(TACSConstraint):
+class DVConstraint(TACSConstraint):
     def __init__(
         self,
         name,
@@ -26,7 +25,7 @@ class AdjacencyConstraint(TACSConstraint):
     ):
         """
         NOTE: This class should not be initialized directly by the user.
-        Use pyTACS.createAdjacencyConstraint instead.
+        Use pyTACS.createDVConstraint instead.
 
         Parameters
         ----------
@@ -57,62 +56,9 @@ class AdjacencyConstraint(TACSConstraint):
             self, assembler, comm, options, outputViewer, meshLoader
         )
 
-        # Create a list of all adjacent components on root proc
-        self._initializeAdjacencyList()
-
-    def _initializeAdjacencyList(self):
-        """
-        Create a list of all components with common edges.
-        """
-
-        if self.comm.rank == 0:
-            edgeToFace = {}
-            nComp = self.meshLoader.getNumComponents()
-            for compID in range(nComp):
-                compConn = self.meshLoader.getConnectivityForComp(
-                    compID, nastranOrdering=False
-                )
-                for elemConn in compConn:
-                    nnodes = len(elemConn)
-                    if nnodes >= 2:
-                        for j in range(nnodes):
-                            nodeID1 = elemConn[j]
-                            nodeID2 = elemConn[(j + 1) % nnodes]
-
-                            if nodeID1 < nodeID2:
-                                key = (nodeID1, nodeID2)
-                            else:
-                                key = (nodeID2, nodeID1)
-
-                            if key not in edgeToFace:
-                                edgeToFace[key] = [compID]
-                            elif compID not in edgeToFace[key]:
-                                edgeToFace[key].append(compID)
-
-            # Now we loop back over each element and each edge. By
-            # using the edgeToFace dictionary, we can now determine
-            # which components IDs (jComp) are connected to the
-            # current component ID (iComp).
-            self.adjacentComps = []
-
-            for edgeKey in edgeToFace:
-                if len(edgeToFace[edgeKey]) >= 2:
-                    for i, iComp in enumerate(edgeToFace[edgeKey][:-1]):
-                        for jComp in edgeToFace[edgeKey][i + 1 :]:
-                            if iComp < jComp:
-                                dvKey = (iComp, jComp)
-                            else:
-                                dvKey = (jComp, iComp)
-                            if dvKey not in self.adjacentComps:
-                                self.adjacentComps.append(dvKey)
-
-        else:
-            self.adjacentComps = None
-
-        # Wait for root
-        self.comm.barrier()
-
-    def addConstraint(self, conName, compIDs=None, lower=-1e20, upper=1e20, dvIndex=0):
+    def addConstraint(
+        self, conName, compIDs=None, lower=-1e20, upper=1e20, dvIndices=0, dvWeights=1.0
+    ):
         """
         Generic method to adding a new constraint set for TACS.
 
@@ -131,8 +77,13 @@ class AdjacencyConstraint(TACSConstraint):
         upper: float or complex
             upper bound for constraint. Defaults to 1e20.
 
-        dvIndex : int
-            Index number of element DV to be used in constraint. Defaults to 0.
+        dvIndices : int or array-like[int]
+            Index numbers of element DVs to be used in constraint.
+            Defaults to 0.
+
+        dvWeights : float or complex or array-like[float] or array-like[complex]
+            Linear scaling factors for each DV used in constraint definition.
+            If list, should match length of dvIndices. Defaults to 1's.
 
         """
         if compIDs is not None:
@@ -142,7 +93,17 @@ class AdjacencyConstraint(TACSConstraint):
             nComps = self.meshLoader.getNumComponents()
             compIDs = range(nComps)
 
-        constrObj = self._createConstraint(dvIndex, compIDs, lower, upper)
+        if hasattr(dvIndices, "__iter__"):
+            dvIndices = list(dvIndices)
+        elif isinstance(dvIndices, int):
+            dvIndices = [dvIndices]
+
+        if hasattr(dvWeights, "__iter__"):
+            dvWeights = list(dvWeights)
+        elif isinstance(dvWeights, float) or isinstance(dvWeights, complex):
+            dvWeights = [dvWeights]
+
+        constrObj = self._createConstraint(dvIndices, dvWeights, compIDs, lower, upper)
         if constrObj.nCon > 0:
             self.constraintList[conName] = constrObj
             success = True
@@ -154,59 +115,29 @@ class AdjacencyConstraint(TACSConstraint):
 
         return success
 
-    def _createConstraint(self, dvIndex, compIDs, lbound, ubound):
-        size = self.comm.size
-        rank = self.comm.rank
-        # Gather the dv mapping from each proc
-        globalToLocalDVNumsOnProc = self.comm.gather(self.globalToLocalDVNums, root=0)
-        # Assemble constraint info on root proc
-        if rank == 0:
-            # Create a list of lists that will hold the sparse data info on each proc
-            rowsOnProc = [[] for _ in range(size)]
-            colsOnProc = [[] for _ in range(size)]
-            valsOnProc = [[] for _ in range(size)]
-            conCount = 0
-            # Loop through all adjacent component pairs
-            for compPair in self.adjacentComps:
-                # Check if they are in the user provided compIDs
-                if compPair[0] in compIDs and compPair[1] in compIDs:
-                    # We found a new constraint
-                    for i, comp in enumerate(compPair):
-                        # Get the TACS element object associated with this compID
-                        elemObj = self.meshLoader.getElementObject(comp, 0)
-                        elemIndex = 0
-                        # Get the dvs owned by this element
-                        globalDvNums = elemObj.getDesignVarNums(elemIndex)
-                        # Check if specified dv num is owned by each proc
-                        for proc_i in range(size):
-                            globalToLocalDVNums = globalToLocalDVNumsOnProc[proc_i]
-                            if globalDvNums[dvIndex] in globalToLocalDVNums:
-                                localDVNum = globalDvNums[dvIndex]
-                                rowsOnProc[proc_i].append(conCount)
-                                colsOnProc[proc_i].append(localDVNum)
-                                if i == 0:
-                                    valsOnProc[proc_i].append(1.0)
-                                else:
-                                    valsOnProc[proc_i].append(-1.0)
-                                break
-                    conCount += 1
+    def _createConstraint(self, dvIndices, dvWeights, compIDs, lbound, ubound):
+        # Assemble constraint info
+        conCount = 0
+        rows = []
+        cols = []
+        vals = []
+        for comp in compIDs:
+            # Get the TACS element object associated with this compID
+            elemObj = self.meshLoader.getElementObject(comp, 0)
+            elemIndex = 0
+            # Get the dvs owned by this element
+            globalDvNums = elemObj.getDesignVarNums(elemIndex)
+            # Check if each specified dv num is owned by this proc
+            for dvIndex, dvWeight in zip(dvIndices, dvWeights):
+                if globalDvNums[dvIndex] in self.globalToLocalDVNums:
+                    localDVNum = self.globalToLocalDVNums[dvIndex]
+                    rows.append(conCount)
+                    cols.append(localDVNum)
+                    vals.append(dvWeight)
+            conCount += 1
 
-        else:
-            rowsOnProc = None
-            colsOnProc = None
-            valsOnProc = None
-            conCount = 0
-
-        # Scatter local sparse indices/values to remaining procs
-        rows = self.comm.scatter(rowsOnProc, root=0)
-        cols = self.comm.scatter(colsOnProc, root=0)
-        vals = self.comm.scatter(valsOnProc, root=0)
-
-        # Get local sparse matrix dimensions
-        conCount = self.comm.bcast(conCount, root=0)
         nLocalDVs = self.getNumDesignVars()
 
-        # Create linear constraint object
         return SparseLinearConstraint(
             self.comm, rows, cols, vals, conCount, nLocalDVs, lbound, ubound
         )
