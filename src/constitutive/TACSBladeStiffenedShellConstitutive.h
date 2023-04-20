@@ -171,7 +171,7 @@ class TACSBladeStiffenedShellConstitutive : public TACSShellConstitutive {
    *
    * @param _ksWeight
    */
-  inline void setKSWeight(double _ksWeight) { ksWeight = _ksWeight; }
+  inline void setKSWeight(double _ksWeight) { this->ksWeight = _ksWeight; }
 
   // ==============================================================================
   // Setting/getting design variable information
@@ -259,7 +259,58 @@ class TACSBladeStiffenedShellConstitutive : public TACSShellConstitutive {
   TacsScalar evalDesignFieldValue(int elemIndex, const double pt[],
                                   const TacsScalar X[], int index);
 
-  //  protected:
+  /**
+   * @brief Compute the effective tensile thickness of the stiffened shell
+   *
+   * This is the thickness of an unstiffened shell with the same tensile
+   * stiffness and density as the stiffened shell
+   *
+   * @return TacsScalar The effective thickness
+   */
+  inline TacsScalar computeEffectiveThickness() {
+    return this->panelThick +
+           this->computeStiffenerArea() / this->stiffenerPitch;
+  }
+
+  /**
+   * @brief Compute the effective bending thickness of the stiffened shell
+   *
+   * This is the thickness of an unstiffened shell with the same bending
+   * stiffness as the stiffened shell. Note this calculation does not currently
+   * account for any difference in the modulii of the stiffener and panel.
+   *
+   * @return TacsScalar The effective thickness
+   */
+  TacsScalar computeEffectiveBendingThickness();
+
+  // ==============================================================================
+  // Tests
+  // ==============================================================================
+
+  /**
+   * @brief Test `computeCriticalGlobalBucklingStiffnessSens` against finite
+   * difference/complex-step
+   *
+   */
+  void testGlobalBucklingStiffnessSens();
+
+  /**
+   * @brief Test `computeCriticalShearLoadSens` against finite difference
+   */
+  static bool testCriticalShearLoadSens(const TacsScalar D1,
+                                        const TacsScalar D2,
+                                        const TacsScalar D3,
+                                        const TacsScalar L);
+
+  /**
+   * @brief Test `bucklingEnvelopeSens` against finite difference
+   */
+  static bool testBucklingEnvelopeSens(const TacsScalar N1,
+                                       const TacsScalar N1Crit,
+                                       const TacsScalar N12,
+                                       const TacsScalar N12Crit);
+
+ protected:
   /**
    * @brief Compute the stiffness matrix of the stiffened shell
    *
@@ -273,6 +324,10 @@ class TACSBladeStiffenedShellConstitutive : public TACSShellConstitutive {
    * ABar matrices for each ply
    *
    * @param numPlies Number of plies in the laminate
+   * @param QMats The Q matrices for each ply, stored as a flattened 6*numPlies
+   * entry array
+   * @param AbarMats The Abar matrices for each ply, stored as a flattened
+   * 3*numPlies entry array
    * @param plyFractions Ply fractions for each ply angle
    * @param Q The Q matrix for the laminate, stored as a flattened 6 entry array
    * ([Q11, Q12, Q16, Q22, Q26, Q66])
@@ -284,6 +339,21 @@ class TACSBladeStiffenedShellConstitutive : public TACSShellConstitutive {
                                const TacsScalar* const AbarMats,
                                const TacsScalar plyFractions[], TacsScalar Q[],
                                TacsScalar ABar[]);
+
+  /**
+   * @brief Compute the Q matrix for a laminate based on the Q matrices for each
+   * ply
+   *
+   * @param numPlies Number of plies in the laminate
+   * @param QMats The Q matrices for each ply, stored as a flattened 6*numPlies
+   * entry array
+   * @param plyFractions Ply fractions for each ply angle
+   * @param Q The Q matrix for the laminate, stored as a flattened 6 entry array
+   * ([Q11, Q12, Q16, Q22, Q26, Q66])
+   */
+  void computeSmearedStiffness(const int numPlies,
+                               const TacsScalar* const QMats,
+                               const TacsScalar plyFractions[], TacsScalar Q[]);
 
   /**
    * @brief Compute the failure values for each failure mode of the stiffened
@@ -521,7 +591,10 @@ class TACSBladeStiffenedShellConstitutive : public TACSShellConstitutive {
    */
   void computeStiffenerStiffness(TacsScalar C[]);
 
-  void computeStiffenerModuli(TacsScalar& E, TacsScalar& G);
+  static void computeEffectiveModulii(const int numPlies,
+                                      const TacsScalar QMats[],
+                                      const TacsScalar plyFracs[],
+                                      TacsScalar* E, TacsScalar* G);
 
   /**
    * @brief Compute the failure criterion for the stiffener in a given strain
@@ -656,6 +729,52 @@ class TACSBladeStiffenedShellConstitutive : public TACSShellConstitutive {
   // ==============================================================================
 
   /**
+   * @brief Compute the panel + stiffener stiffness values used to compute the
+   * global buckling loads
+   *
+   * @output D1 1-direction bending stiffness
+   * @output D2 2-direction bending stiffness
+   * @output D3 Twisting stiffness
+   */
+  void computeCriticalGlobalBucklingStiffness(TacsScalar* D1, TacsScalar* D2,
+                                              TacsScalar* D3);
+
+  /**
+   * @brief Compute the sensitivities of the panel + stiffener stiffness values
+   * used to compute the global buckling loads
+   *
+   * @param dfdD1 Sensitivity of the output to the 1-direction bending stiffness
+   * @param dfdD2 Sensitivity of the output to the 2-direction bending stiffness
+   * @param dfdD3 Sensitivity of the output to the twisting stiffness
+   * @output spSens Sensitivity of the output w.r.t the stiffener pitch
+   * @output tpSens Sensitivity of the output w.r.t the panel thickness
+   * @output hsSens Sensitivity of the output w.r.t the stiffener height
+   * @output tsSens Sensitivity of the output w.r.t the stiffener thickness
+   * @output QstiffSens Sensitivity of the output w.r.t the stiffener stiffener
+   * Q matrix entries
+   * @output QpanelSens Sensitivity of the output w.r.t the stiffener panel Q
+   * matrix entries
+   */
+  void computeCriticalGlobalBucklingStiffnessSens(
+      const TacsScalar dfdD1, const TacsScalar dfdD2, const TacsScalar dfdD3,
+      TacsScalar* spSens, TacsScalar* tpSens, TacsScalar* hsSens,
+      TacsScalar* tsSens, TacsScalar QstiffSens[], TacsScalar QpanelSens[]);
+
+  /**
+   * @brief Compute the critical axial load for the global buckling of the
+   * stiffened panel
+   *
+   * @param D1 1-direction bending stiffness, computed by
+   * `computeCriticalGlobalBucklingStiffness`
+   * @param L Panel length
+   * @return TacsScalar The critical load
+   */
+  static inline TacsScalar computeCriticalGlobalAxialLoad(const TacsScalar D1,
+                                                          const TacsScalar L) {
+    return M_PI * M_PI * D1 / (L * L);
+  }
+
+  /**
    * @brief Compute the critical axial load for local buckling of the panel
    *
    * @param D11 D11 stiffness
@@ -745,11 +864,6 @@ class TACSBladeStiffenedShellConstitutive : public TACSShellConstitutive {
   static TacsScalar computeCriticalShearLoad(TacsScalar D1, TacsScalar D2,
                                              TacsScalar D3, TacsScalar L);
 
-  static bool testCriticalShearLoadSens(const TacsScalar D1,
-                                        const TacsScalar D2,
-                                        const TacsScalar D3,
-                                        const TacsScalar L);
-
   /**
    * @brief Compute the sensitivity of the critical shear buckling load
    *
@@ -809,11 +923,6 @@ class TACSBladeStiffenedShellConstitutive : public TACSShellConstitutive {
       const TacsScalar N1, const TacsScalar N1Crit, const TacsScalar N12,
       const TacsScalar N12Crit, TacsScalar* N1Sens, TacsScalar* N1CritSens,
       TacsScalar* N12Sens, TacsScalar* N12CritSens);
-
-  static bool testBucklingEnvelopeSens(const TacsScalar N1,
-                                       const TacsScalar N1Crit,
-                                       const TacsScalar N12,
-                                       const TacsScalar N12Crit);
 
   // ==============================================================================
   // Attributes
@@ -904,5 +1013,5 @@ class TACSBladeStiffenedShellConstitutive : public TACSShellConstitutive {
   static const int NUM_Q_ENTRIES = 6;  ///< Number of entries in the Q matrix
   static const int NUM_ABAR_ENTRIES =
       3;                              ///< Number of entries in the ABar matrix
-  static const int NUM_FAILURES = 3;  ///< Number of failure modes
+  static const int NUM_FAILURES = 4;  ///< Number of failure modes
 };

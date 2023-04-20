@@ -25,7 +25,7 @@ class ConstitutiveTest(unittest.TestCase):
 
         # Basically, only check relative tolerance
         self.atol = 1e99
-        self.print_level = 2
+        self.print_level = 0
 
         # Set element index
         self.elem_index = 0
@@ -34,8 +34,7 @@ class ConstitutiveTest(unittest.TestCase):
         self.x = np.ones(3, dtype=self.dtype)
         self.pt = np.zeros(3)
 
-        # These values don't really matter because the tests are going to set random DV values anyway
-        self.panelLength = 0.5
+        self.panelLength = 2.0
         self.panelLengthNum = 0
         self.stiffenerPitch = 0.2
         self.stiffenerPitchNum = 1
@@ -46,20 +45,14 @@ class ConstitutiveTest(unittest.TestCase):
         self.panelThickness = 1.5e-2
         self.panelThicknessNum = 4
 
-        self.numPanelPlies = 4
-        self.panelPlyAngles = (
-            np.array([0.0, -45.0, 45.0, 90.0], dtype=self.dtype) * DEG2RAD
-        )
+        self.numPanelPlies = 3
+        self.panelPlyAngles = np.array([0.0, 45.0, 90.0], dtype=self.dtype) * DEG2RAD
         self.panelPlyFracs = np.random.random(self.numPanelPlies).astype(self.dtype)
-        self.panelPlyFracs /= np.sum(
-            self.panelPlyFracs
-        )  # Make sure ply Fracs sum to 1
+        self.panelPlyFracs /= np.sum(self.panelPlyFracs)  # Make sure ply Fracs sum to 1
         self.panelPlyFracNums = np.arange(5, 5 + self.numPanelPlies, dtype=np.intc)
 
-        self.numStiffenerPlies = 3
-        self.stiffenerPlyAngles = (
-            np.array([-60.0, 0.0, 60.0], dtype=self.dtype) * DEG2RAD
-        )
+        self.numStiffenerPlies = 2
+        self.stiffenerPlyAngles = np.array([0.0, 60.0], dtype=self.dtype) * DEG2RAD
         self.stiffenerPlyFracs = np.random.random(self.numStiffenerPlies).astype(
             self.dtype
         )
@@ -146,30 +139,32 @@ class ConstitutiveTest(unittest.TestCase):
 
     def get_con(self, ply):
         con = constitutive.BladeStiffenedShellConstitutive(
-                    ply,
-                    ply,
-                    self.kcorr,
-                    self.panelLength,
-                    self.panelLengthNum,
-                    self.stiffenerPitch,
-                    self.stiffenerPitchNum,
-                    self.panelThickness,
-                    self.panelThicknessNum,
-                    self.numPanelPlies,
-                    self.panelPlyAngles,
-                    self.panelPlyFracs,
-                    self.panelPlyFracNums,
-                    self.stiffenerHeight,
-                    self.stiffenerHeightNum,
-                    self.stiffenerThickness,
-                    self.stiffenerThicknessNum,
-                    self.numStiffenerPlies,
-                    self.stiffenerPlyAngles,
-                    self.stiffenerPlyFracs,
-                    self.stiffenerPlyFracNums,
-                    self.flangeFraction,
-                )
-        # con.setDrillingRegularization(0.)
+            ply,
+            ply,
+            self.kcorr,
+            self.panelLength,
+            self.panelLengthNum,
+            self.stiffenerPitch,
+            self.stiffenerPitchNum,
+            self.panelThickness,
+            self.panelThicknessNum,
+            self.numPanelPlies,
+            self.panelPlyAngles,
+            self.panelPlyFracs,
+            self.panelPlyFracNums,
+            self.stiffenerHeight,
+            self.stiffenerHeightNum,
+            self.stiffenerThickness,
+            self.stiffenerThicknessNum,
+            self.numStiffenerPlies,
+            self.stiffenerPlyAngles,
+            self.stiffenerPlyFracs,
+            self.stiffenerPlyFracNums,
+            self.flangeFraction,
+        )
+        # Set the KS weight really low so that all failure modes make a
+        # significant contribution to the failure function derivatives
+        con.setKSWeight(0.1)
         return con
 
     def test_constitutive_density(self):

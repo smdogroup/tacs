@@ -149,6 +149,16 @@ cdef extern from "TACSBladeStiffenedShellConstitutive.h":
             int[], # stiffenerPlyFracNums
             TacsScalar # flangeFraction
         )
+        void setKSWeight(double ksWeight)
+        void setStiffenerPitchBounds(TacsScalar lowerBound, TacsScalar upperBound)
+        void setStiffenerHeightBounds(TacsScalar lowerBound, TacsScalar upperBound)
+        void setStiffenerThicknessBounds(TacsScalar lowerBound, TacsScalar upperBound)
+        void setPanelThicknessBounds(TacsScalar lowerBound, TacsScalar upperBound)
+        void setStiffenerPlyFractionBounds(TacsScalar[] lowerBound, TacsScalar[] upperBound)
+        void setPanelPlyFractionBounds(TacsScalar[] lowerBound, TacsScalar[] upperBound)
+
+cdef class BladeStiffenedShellConstitutive(ShellConstitutive):
+    cdef TACSBladeStiffenedShellConstitutive *blade_ptr
 
 cdef extern from "TACSBeamConstitutive.h":
     cdef cppclass TACSBeamConstitutive(TACSConstitutive):

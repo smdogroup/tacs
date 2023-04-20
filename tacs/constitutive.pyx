@@ -710,7 +710,7 @@ cdef class BladeStiffenedShellConstitutive(ShellConstitutive):
             stiffenerPlyFracNums = stiffenerPlyFracNums.astype(np.intc)
         #     raise ValueError('panelPlyFracNums must be of type int32')
 
-        self.cptr = new TACSBladeStiffenedShellConstitutive(
+        self.blade_ptr = new TACSBladeStiffenedShellConstitutive(
             panelPly.ptr,
             stiffenerPly.ptr,
             kcorr,
@@ -734,8 +734,55 @@ cdef class BladeStiffenedShellConstitutive(ShellConstitutive):
             <int*>stiffenerPlyFracNums.data,
             flangeFraction
         )
-        self.ptr = self.cptr
+        self.ptr = self.cptr = self.blade_ptr
         self.ptr.incref()
+
+    def setKSWeight(self, double ksWeight):
+        """
+        Update the ks weight used for aggregating the different failure modes
+
+        Args:
+            ksWeight (float): KS weight
+        """
+        if self.blade_ptr:
+            self.blade_ptr.setKSWeight(ksWeight)
+
+    def setStiffenerPitchBounds(self, TacsScalar lowerBound, TacsScalar upperBound):
+        if self.blade_ptr:
+            self.blade_ptr.setStiffenerPitchBounds(lowerBound, upperBound)
+
+    def setStiffenerHeightBounds(self, TacsScalar lowerBound, TacsScalar upperBound):
+
+        if self.blade_ptr:
+            self.blade_ptr.setStiffenerHeightBounds(lowerBound, upperBound)
+
+    def setStiffenerThicknessBounds(self, TacsScalar lowerBound, TacsScalar upperBound):
+
+        if self.blade_ptr:
+            self.blade_ptr.setStiffenerThicknessBounds(lowerBound, upperBound)
+
+    def setPanelThicknessBounds(self, TacsScalar lowerBound, TacsScalar upperBound):
+
+        if self.blade_ptr:
+            self.blade_ptr.setPanelThicknessBounds(lowerBound, upperBound)
+
+    def setStiffenerPlyFractionBounds(
+            self,
+            np.ndarray[TacsScalar, ndim=1, mode='c'] lowerBound,
+            np.ndarray[TacsScalar, ndim=1, mode='c'] upperBound
+        ):
+
+        if self.blade_ptr:
+            self.blade_ptr.setStiffenerPlyFractionBounds(<TacsScalar*>lowerBound.data, <TacsScalar*>upperBound.data)
+
+    def setPanelPlyFractionBounds(
+            self,
+            np.ndarray[TacsScalar, ndim=1, mode='c'] lowerBound,
+            np.ndarray[TacsScalar, ndim=1, mode='c'] upperBound
+        ):
+
+        if self.blade_ptr:
+            self.blade_ptr.setPanelPlyFractionBounds(<TacsScalar*>lowerBound.data, <TacsScalar*>upperBound.data)
 
 
 cdef class LamParamShellConstitutive(ShellConstitutive):
