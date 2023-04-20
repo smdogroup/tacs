@@ -85,7 +85,8 @@ class DVConstraint(TACSConstraint):
             typically be a string that is meaningful to the user
 
         compIDs: list or None
-            List of compIDs to select. If None, all compIDs will be selected. Defaults to None.
+            List of compIDs to select. One constraint will be added for each component.
+            If None, all compIDs will be selected. Defaults to None.
 
         lower: float or complex
             lower bound for constraint. Defaults to -1e20.
