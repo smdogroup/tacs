@@ -90,6 +90,7 @@ test:
     - tacs
     - tacs.pytacs
     - tacs.problems
+    - tacs.constraints
     - tacs.TACS
     - tacs.elements
     - tacs.functions
