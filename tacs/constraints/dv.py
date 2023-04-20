@@ -124,9 +124,7 @@ class DVConstraint(TACSConstraint):
             self.constraintList[conName] = constrObj
             success = True
         else:
-            self._TACSWarning(
-                f"No valid `compIDs` provided. Skipping {conName}."
-            )
+            self._TACSWarning(f"No valid `compIDs` provided. Skipping {conName}.")
             success = False
 
         return success
