@@ -1854,7 +1854,7 @@ class pyTACS(BaseUI):
 
         The constraints are of the form:
 
-            c = a_0 * dv_0 + a_1 * dv_1 + ... + a_n * dv_n = c
+            c = a_0 * dv_0 + a_1 * dv_1 + ... + a_n * dv_n
 
         Where which design variables to include (dv_0, dv_1, etc.)
         and the corresponding weights (a_0, a_1, etc.) are defined by the user.
