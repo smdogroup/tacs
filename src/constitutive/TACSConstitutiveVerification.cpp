@@ -270,7 +270,7 @@ int TacsTestConstitutiveStress(TACSConstitutive *con, int elemIndex,
   TacsScalar *s = new TacsScalar[nstress];
   TacsScalar *e = new TacsScalar[nstress];
   TacsScalar *psi = new TacsScalar[nstress];
-  TacsGenerateRandomArray(e, nstress);
+  TacsGenerateRandomArray(e, nstress, -1e-3, 1e-3);
   TacsGenerateRandomArray(psi, nstress);
 
   // Allocate space for the derivatives
@@ -363,7 +363,7 @@ int TacsTestConstitutiveThermalStrain(TACSConstitutive *con, int elemIndex,
   int nstress = con->getNumStresses();
   TacsScalar *e = new TacsScalar[nstress];
   TacsScalar *psi = new TacsScalar[nstress];
-  TacsGenerateRandomArray(e, nstress);
+  TacsGenerateRandomArray(e, nstress, -1e-3, 1e-3);
   TacsGenerateRandomArray(psi, nstress);
 
   // Allocate space for the derivatives
@@ -455,7 +455,7 @@ int TacsTestConstitutiveFailure(TACSConstitutive *con, int elemIndex,
 
   int nstress = con->getNumStresses();
   TacsScalar *e = new TacsScalar[nstress];
-  TacsGenerateRandomArray(e, nstress);
+  TacsGenerateRandomArray(e, nstress, -1e-3, 1e-3);
 
   // Allocate space for the derivatives
   TacsScalar *xtemp = new TacsScalar[ndvs];
@@ -535,7 +535,7 @@ int TacsTestConstitutiveFailureStrainSens(TACSConstitutive *con, int elemIndex,
                                           double test_fail_rtol) {
   int nstress = con->getNumStresses();
   TacsScalar *e = new TacsScalar[nstress];
-  TacsGenerateRandomArray(e, nstress);
+  TacsGenerateRandomArray(e, nstress, -1e-3, 1e-3);
 
   // Allocate space for the derivatives
   TacsScalar *dfde = new TacsScalar[nstress];
