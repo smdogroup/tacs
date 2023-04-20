@@ -874,11 +874,6 @@ TacsScalar TACSBladeStiffenedShellConstitutive::computeFailureValues(
   this->evalStress(0, NULL, NULL, e, stress);
   fails[3] = this->bucklingEnvelope(-stress[0], N1Crit, stress[2], N12Crit);
 
-  printf("Failure values:\n");
-  for (int ii = 0; ii < this->NUM_FAILURES; ii++) {
-    printf("Fail[%d] = % 011.7e\n", ii, TacsRealPart(fails[ii]));
-  }
-
   return ksAggregation(fails, this->NUM_FAILURES, this->ksWeight);
 }
 
