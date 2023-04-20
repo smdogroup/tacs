@@ -6,6 +6,10 @@ The formulation is a linear constraint that takes the following form:
 
 Where dv_i and dv_j are two design variables in adjacent components.
 
+A common example of this is ensuring that thicknesses vary to abruptly across panel boundaries:
+
+    -delta_t < t_i - t_j < delta_t
+
 .. note:: This class should be created using the
     :meth:`pyTACS.createAdjacencyConstraint <tacs.pytacs.pyTACS.createAdjacencyConstraint>` method.
 """
