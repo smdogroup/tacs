@@ -1103,7 +1103,7 @@ void TACSBladeStiffenedShellConstitutive::addFailureDVSens(
   dfdPanelLength += dfdN1CritGlobal * (-2.0 * M_PI * M_PI * D1 / (L * L * L));
 
   if (this->panelLengthNum >= 0) {
-    dfdx[this->panelLengthNum] += scale * dfdPanelLength;
+    dfdx[this->panelLengthLocalNum] += scale * dfdPanelLength;
   }
 
   TacsScalar globalBucklingspSens, globalBucklingtpSens, globalBucklinghsSens,
