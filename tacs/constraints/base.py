@@ -71,7 +71,7 @@ class TACSConstraint(TACSSystem):
             f"'addConstraint' method is not implemented for class '{type(self).__name__}'"
         )
 
-    def getConstraintBounds(self, bounds, evalCons=None, ignoreMissing=False):
+    def getConstraintBounds(self, bounds, evalCons=None):
         """
         Get bounds for constraints. The constraints corresponding to the strings in
         `evalCons` are evaluated and updated into the provided
@@ -84,21 +84,59 @@ class TACSConstraint(TACSSystem):
             Bounds will be saved as a tuple: (lower, upper)
         evalCons : iterable object containing strings.
             If not none, use these constraints to evaluate.
-        ignoreMissing : bool
-            Flag to supress checking for a valid constraint. Please use
-            this option with caution.
 
         Examples
         --------
-        >>> funcs = {}
-        >>> tacsConstraint.getConstraintBounds(funcs, 'LE_SPAR')
-        >>> funcs
+        >>> conBounds = {}
+        >>> tacsConstraint.getConstraintBounds(conBounds, 'LE_SPAR')
+        >>> conBounds
         >>> # Result will look like (if TACSConstraint has name of 'c1'):
         >>> # {'c1_LE_SPAR': (array([-1e20]), array([1e20]))}
         """
-        raise NotImplemented(
-            f"'getConstraintBounds' method is not implemented for class '{type(self).__name__}'"
-        )
+        # Check if user specified which constraints to output
+        # Otherwise, output them all
+        evalCons = self._processEvalCons(evalCons)
+
+        # Loop through each requested constraint set
+        for conName in evalCons:
+            key = f"{self.name}_{conName}"
+            if hasattr(self.constraintList[conName], "getBounds"):
+                bounds[key] = self.constraintList[conName].getBounds()
+            else:
+                bounds[key] = (None, None)
+
+    def getConstraintSizes(self, sizes, evalCons=None):
+        """
+        Get number for constraint equations in each set.
+        The constraints corresponding to the strings in `evalCons`
+        are evaluated and updated into the provided dictionary.
+
+        Parameters
+        ----------
+        sizes : dict
+            Dictionary into which the constraint sizes are saved.
+        evalCons : iterable object containing strings.
+            If not none, use these constraints to evaluate.
+
+        Examples
+        --------
+        >>> conSizes = {}
+        >>> tacsConstraint.getConstraintSizes(conSizes, 'LE_SPAR')
+        >>> funconSizescs
+        >>> # Result will look like (if TACSConstraint has name of 'c1'):
+        >>> # {'c1_LE_SPAR': 10}
+        """
+        # Check if user specified which constraints to output
+        # Otherwise, output them all
+        evalCons = self._processEvalCons(evalCons)
+
+        # Loop through each requested constraint set
+        for conName in evalCons:
+            key = f"{self.name}_{conName}"
+            if hasattr(self.constraintList[conName], "nCon"):
+                sizes[key] = self.constraintList[conName].nCon
+            else:
+                sizes[key] = 0
 
     def getConstraintKeys(self):
         """
@@ -160,6 +198,31 @@ class TACSConstraint(TACSSystem):
         raise NotImplemented(
             f"'evalConstraintsSens' method is not implemented for class '{type(self).__name__}'"
         )
+
+    def _processEvalCons(self, evalCons, ignoreMissing=True):
+        """
+        Internal method for processing user-provided evalCons
+        """
+        # Check if user specified which constraints to output
+        # Otherwise, output them all
+        if evalCons is None:
+            evalCons = self.constraintList
+        else:
+            userCons = sorted(list(evalCons))
+            evalCons = {}
+            for func in userCons:
+                if func in self.constraintList:
+                    evalCons[func] = self.constraintList[func]
+
+        if not ignoreMissing:
+            for f in evalCons:
+                if f not in self.constraintList:
+                    raise self._TACSError(
+                        f"Supplied constraint '{f}' has not been added "
+                        "using addConstraint()."
+                    )
+
+        return evalCons
 
 
 # Simple class for handling sparse linear constraints in parallel

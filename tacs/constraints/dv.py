@@ -158,55 +158,6 @@ class DVConstraint(TACSConstraint):
             self.comm, rows, cols, vals, conCount, nLocalDVs, lbound, ubound
         )
 
-    def getConstraintBounds(self, bounds, evalCons=None, ignoreMissing=False):
-        """
-        Get bounds for constraints. The constraints corresponding to the strings in
-        `evalCons` are evaluated and updated into the provided
-        dictionary.
-
-        Parameters
-        ----------
-        bounds : dict
-            Dictionary into which the constraint bounds are saved.
-            Bounds will be saved as a tuple: (lower, upper)
-        evalCons : iterable object containing strings.
-            If not none, use these constraints to evaluate.
-        ignoreMissing : bool
-            Flag to supress checking for a valid constraint. Please use
-            this option with caution.
-
-        Examples
-        --------
-        >>> funcs = {}
-        >>> dvConstraint.getConstraintBounds(funcs, 'LE_SPAR')
-        >>> funcs
-        >>> # Result will look like (if DVConstraint has name of 'c1'):
-        >>> # {'c1_LE_SPAR': (array([-1e20]), array([1e20]))}
-        """
-        # Check if user specified which constraints to output
-        # Otherwise, output them all
-        if evalCons is None:
-            evalCons = self.constraintList
-        else:
-            userCons = sorted(list(evalCons))
-            evalCons = {}
-            for func in userCons:
-                if func in self.constraintList:
-                    evalCons[func] = self.constraintList[func]
-
-        if not ignoreMissing:
-            for f in evalCons:
-                if f not in self.constraintList:
-                    raise self._TACSError(
-                        f"Supplied constraint '{f}' has not been added "
-                        "using addConstraint()."
-                    )
-
-        # Loop through each requested constraint set
-        for conName in evalCons:
-            key = f"{self.name}_{conName}"
-            bounds[key] = self.constraintList[conName].getBounds()
-
     def evalConstraints(self, funcs, evalCons=None, ignoreMissing=False):
         """
         Evaluate values for constraints. The constraints corresponding to the strings in
@@ -233,22 +184,7 @@ class DVConstraint(TACSConstraint):
         """
         # Check if user specified which constraints to output
         # Otherwise, output them all
-        if evalCons is None:
-            evalCons = self.constraintList
-        else:
-            userCons = sorted(list(evalCons))
-            evalCons = {}
-            for func in userCons:
-                if func in self.constraintList:
-                    evalCons[func] = self.constraintList[func]
-
-        if not ignoreMissing:
-            for f in evalCons:
-                if f not in self.constraintList:
-                    raise self._TACSError(
-                        f"Supplied constraint '{f}' has not been added "
-                        "using addConstraint()."
-                    )
+        evalCons = self._processEvalCons(evalCons, ignoreMissing)
 
         # Loop through each requested constraint set
         for conName in evalCons:
@@ -278,16 +214,9 @@ class DVConstraint(TACSConstraint):
         >>> # Result will look like (if DVConstraint has name of 'c1'):
         >>> # {'c1_LE_SPAR':{'struct':<50x242 sparse matrix of type '<class 'numpy.float64'>' with 100 stored elements in Compressed Sparse Row format>}}
         """
-        # Check if user specified which functions to output
+        # Check if user specified which constraints to output
         # Otherwise, output them all
-        if evalCons is None:
-            evalCons = self.constraintList
-        else:
-            userCons = sorted(list(evalCons))
-            evalCons = {}
-            for con in userCons:
-                if con in self.constraintList:
-                    evalCons[con] = self.constraintList[con]
+        evalCons = self._processEvalCons(evalCons)
 
         # Get number of nodes coords on this proc
         nCoords = self.getNumCoordinates()
