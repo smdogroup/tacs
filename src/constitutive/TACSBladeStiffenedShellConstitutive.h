@@ -897,12 +897,10 @@ class TACSBladeStiffenedShellConstitutive : public TACSShellConstitutive {
    * @param N12Crit Critical shear load
    * @return TacsScalar The failure criterion
    */
-  static inline TacsScalar bucklingEnvelope(const TacsScalar N1,
-                                            const TacsScalar N1Crit,
-                                            const TacsScalar N12,
-                                            const TacsScalar N12Crit) {
-    return N1 / N1Crit + (N12 / N12Crit) * (N12 / N12Crit);
-  }
+  static TacsScalar bucklingEnvelope(const TacsScalar N1,
+                                     const TacsScalar N1Crit,
+                                     const TacsScalar N12,
+                                     const TacsScalar N12Crit);
 
   /**
    * @brief Compute the sensitivity of the buckling failure criterion w.r.t the

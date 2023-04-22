@@ -2733,23 +2733,37 @@ bool TACSBladeStiffenedShellConstitutive::testCriticalShearLoadSens(
          fabs(TacsRealPart(LSensRelError)) < tol;
 }
 
+TacsScalar TACSBladeStiffenedShellConstitutive::bucklingEnvelope(
+    const TacsScalar N1, const TacsScalar N1Crit, const TacsScalar N12,
+    const TacsScalar N12Crit) {
+  TacsScalar N1Term = N1 / N1Crit;
+  TacsScalar N12Term = N12 / N12Crit;
+  TacsScalar root = sqrt(N1Term * N1Term + 4.0 * N12Term * N12Term);
+  return 0.5 * (N1Term + root);
+}
+
 // Compute the sensitivity of the buckling failure criterion w.r.t the loads and
 // critical loads
 TacsScalar TACSBladeStiffenedShellConstitutive::bucklingEnvelopeSens(
     const TacsScalar N1, const TacsScalar N1Crit, const TacsScalar N12,
     const TacsScalar N12Crit, TacsScalar* dfdN1, TacsScalar* dfdN1Crit,
     TacsScalar* dfdN12, TacsScalar* dfdN12Crit) {
+  TacsScalar N1Term = N1 / N1Crit;
+  TacsScalar N12Term = N12 / N12Crit;
+  TacsScalar root = sqrt(N1Term * N1Term + 4.0 * N12Term * N12Term);
   if (dfdN1 != NULL) {
-    *dfdN1 = 1.0 / N1Crit;
+    // *dfdN1 = 1.0 / N1Crit;
+    *dfdN1 = N1 / (2.0 * N1Crit * N1Crit * root) + 1.0 / (2.0 * N1Crit);
   }
   if (dfdN12 != NULL) {
-    *dfdN12 = 2.0 * N12 / (N12Crit * N12Crit);
+    *dfdN12 = 2.0 * N12 / (N12Crit * N12Crit * root);
   }
   if (dfdN1Crit != NULL) {
-    *dfdN1Crit = -N1 / (N1Crit * N1Crit);
+    *dfdN1Crit = -N1 * N1 / (2.0 * N1Crit * N1Crit * N1Crit * root) -
+                 N1 / (2.0 * N1Crit * N1Crit);
   }
   if (dfdN12Crit != NULL) {
-    *dfdN12Crit = -2.0 * N12 * N12 / (N12Crit * N12Crit * N12Crit);
+    *dfdN12Crit = -2.0 * N12 * N12 / (N12Crit * N12Crit * N12Crit * root);
   }
   return bucklingEnvelope(N1, N1Crit, N12, N12Crit);
 }
