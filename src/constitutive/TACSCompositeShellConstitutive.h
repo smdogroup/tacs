@@ -75,6 +75,10 @@ class TACSCompositeShellConstitutive : public TACSShellConstitutive {
   // The name of the constitutive object
   const char *getObjectName();
 
+  // Get ply angles and thicknesses
+  void getPlyThicknesses(TacsScalar *_ply_thickness);
+  void getPlyAngles(TacsScalar *_ply_angles);
+
  private:
   // Store information about the design variable
   int num_plies;

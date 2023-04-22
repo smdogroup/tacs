@@ -130,6 +130,10 @@ SEP_LARGEST = LARGEST
 SEP_SMALLEST_MAGNITUDE = SMALLEST_MAGNITUDE
 SEP_LARGEST_MAGNITUDE = LARGEST_MAGNITUDE
 
+# Import the material types
+ISOTROPIC_MATERIAL = TACS_ISOTROPIC_MATERIAL
+ANISOTROPIC_MATERIAL = TACS_ANISOTROPIC_MATERIAL
+
 # This wraps a C++ array with a numpy array for later useage
 cdef inplace_array_1d(int nptype, int dim1, void *data_ptr,
                       PyObject *ptr):
@@ -242,6 +246,7 @@ cdef class ElementBasis:
 cdef class ElementModel:
     def __cinit__(self, *args, **kwargs):
         self.ptr = NULL
+        self.con = None
         return
 
     def __dealloc__(self):
@@ -258,12 +263,19 @@ cdef class ElementModel:
             return self.ptr.getVarsPerNode()
         return 0
 
+    def getConstitutive(self):
+        if self.con:
+            return self.con
+        return None
+
 cdef class Element:
     """
     TACSElement base class
     """
     def __cinit__(self, *args, **kwargs):
         self.ptr = NULL
+        self.con = None
+        self.transform = None
         return
 
     def __dealloc__(self):
@@ -310,6 +322,16 @@ cdef class Element:
     def getElementBasis(self):
         if self.ptr:
             return _init_ElementBasis(self.ptr.getElementBasis())
+        return None
+
+    def getConstitutive(self):
+        if self.con:
+            return self.con
+        return None
+
+    def getTransform(self):
+        if self.transform:
+            return self.transform
         return None
 
     def getElementType(self):
@@ -449,6 +471,8 @@ cdef class Element:
 cdef class Constitutive:
     def __cinit__(self, *args, **kwargs):
         self.ptr = NULL
+        self.nastranID = 0
+        self.props = None
         return
 
     def __dealloc__(self):
@@ -466,6 +490,43 @@ cdef class Constitutive:
         if self.ptr:
             return self.ptr.getNumStresses()
         return 0
+
+    def setNastranID(self, id):
+        """
+        Set property ID to be used in NASTRAN card for this object.
+        Should be set before `generateBDFCard` is called.
+
+        Args:
+            id (int): ID number to associate with this object's NASTRAN card
+        """
+        self.nastranID = id
+
+    def getNastranID(self):
+        """
+        Get property ID assigned in NASTRAN card for this object.
+
+        Returns:
+            id (int): ID number associated with this object's NASTRAN card
+        """
+        return self.nastranID
+
+    def getMaterialProperties(self):
+        """
+        Get the MaterialProperties class associated with this object
+
+        Returns:
+            prop (tacs.constitutive.MaterialProperties): TACS material property class associated with object.
+        """
+        return self.props
+
+    def generateBDFCard(self):
+        """
+        Generate pyNASTRAN card class based on current design variable values.
+
+        Returns:
+            card (pyNastran.bdf.cards.base_card.Property): pyNastran card holding property information
+        """
+        return None
 
     def getFailureEnvelope(self, sx, sy,
                            int elemIndex=0, int npts=100,
@@ -1757,7 +1818,7 @@ cdef class Assembler:
         Retrieve the design variable range.
 
         This call is collective on all TACS processes. The ranges
-        provided by indivdual objects may not be consistent (if
+        provided by individual objects may not be consistent (if
         someone provided incorrect data they could be.) Make a
         best guess; take the minimum upper bound and the maximum
         lower bound.

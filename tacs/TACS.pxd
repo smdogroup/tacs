@@ -100,6 +100,11 @@ cdef extern from "KSM.h":
         TACS_MAT_NORMAL
         TACS_MAT_TRANSPOSE
 
+cdef extern from "TACSMaterialProperties.h":
+    enum MaterialType:
+        TACS_ISOTROPIC_MATERIAL
+        TACS_ANISOTROPIC_MATERIAL
+
 # Special functions required for converting pointers
 cdef extern from "":
     TACSSchurMat* _dynamicSchurMat "dynamic_cast<TACSSchurMat*>"(TACSMat*)
@@ -357,6 +362,7 @@ cdef extern from "TACSElementModel.h":
 
 cdef class ElementModel:
     cdef TACSElementModel *ptr
+    cdef object con
 
 cdef inline _init_ElementModel(TACSElementModel *ptr):
     model = ElementModel()
@@ -387,6 +393,8 @@ cdef extern from "TACSElement.h":
 
 cdef class Element:
     cdef TACSElement *ptr
+    cdef object con
+    cdef object transform
 
 cdef inline _init_Element(TACSElement *ptr):
     elem = Element()
@@ -404,12 +412,18 @@ cdef class Function:
 cdef extern from "TACSConstitutive.h":
     cdef cppclass TACSConstitutive(TACSObject):
         int getNumStresses()
+        void evalStress(int, const double*, const TacsScalar*,
+                        const TacsScalar*, TacsScalar*)
+        TacsScalar evalDesignFieldValue(int, const double*,
+                             const TacsScalar*, int)
         void getFailureEnvelope(int, int, const double*,
                                 const TacsScalar*, const TacsScalar*,
                                 const TacsScalar*, TacsScalar*, TacsScalar*)
 
 cdef class Constitutive:
     cdef TACSConstitutive *ptr
+    cdef object props
+    cdef int nastranID
 
 cdef inline _init_Constitutive(TACSConstitutive *ptr):
     cons = Constitutive()

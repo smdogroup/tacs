@@ -117,6 +117,12 @@ class TACSBeamRefAxisTransform : public TACSBeamTransform {
   }
   A2D::Vec3 &getRefAxis() { return axis; }
 
+  void getRefAxis(TacsScalar _axis[]) {
+    _axis[0] = axis.x[0];
+    _axis[1] = axis.x[1];
+    _axis[2] = axis.x[2];
+  }
+
  private:
   A2D::Vec3 axis;
   /* Tolerance for colinearity test in between beam axis and ref axis */

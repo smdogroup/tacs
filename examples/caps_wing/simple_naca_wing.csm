@@ -101,6 +101,7 @@ patbeg ispar nspars
    # add caps attributes
    select face
    attribute capsGroup !$spar+ispar
+   ATTRIBUTE AFLR_GBC $TRANSP_UG3_GBC
    attribute _color $green
 patend
 
@@ -120,6 +121,7 @@ patbeg index ninnerRibs
    # add caps attributes
    select face
    attribute capsGroup !$rib+irib
+   ATTRIBUTE AFLR_GBC $TRANSP_UG3_GBC
    attribute _color $green
 
    # union with previous ribs/spars
@@ -132,10 +134,12 @@ patbeg index ninnerRibs
    endif
 
 patend
+store internalStructure
 
 ### 3. Complete the wing geometry ###
 
 # intersect the internal structure with the solid wing
+restore internalStructure
 restore solidWing
 intersect
 
@@ -165,11 +169,21 @@ udprim editAttr filename <<
 
 # add load attribute to OML
 select face $capsGroup $OML
+#ATTRIBUTE AFLR_GBC $TRANSP_UG3_GBC
 attribute capsLoad $OML
+
+# use this to refine certain edges
+#ATTRIBUTE AFLR4_Edge_Refinement_Weight 1.0
+
+select face
+#ATTRIBUTE AFLR_GBC $TRANSP_UG3_GBC
+attribute capsMesh $OML
 
 # add AIM attribute to specify the analyses to use
 select body
-attribute capsAIM $egadsTessAIM;tacsAIM
+ATTRIBUTE AFLR4_Cmp_ID 1
+attribute capsMeshLength 1.0
+attribute capsAIM $aflr4AIM;tacsAIM;egadsTessAIM
 
 end
-|||||
+||||||||||||
