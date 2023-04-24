@@ -1012,28 +1012,22 @@ class ConstraintComponent(om.ExplicitComponent):
 
         for out_name in d_outputs:
             output_key = f"{self.cp.name}_{out_name}"
+            Jdv = funcs_sens[output_key]["struct"].astype(float)
+            Jxpt = funcs_sens[output_key]["Xpts"].astype(float)
 
             if mode == "fwd":
                 if "tacs_dvs" in d_inputs:
-                    d_inputs["tacs_dvs"] += funcs_sens[output_key]["struct"].dot(
-                        d_inputs["tacs_dvs"]
-                    )
+                    d_outputs[out_name] += Jdv.dot(d_inputs["tacs_dvs"])
 
                 if "x_struct0" in d_inputs:
-                    d_inputs["x_struct0"] += funcs_sens[output_key]["Xpts"].dot(
-                        d_inputs["x_struct0"]
-                    )
+                    d_outputs[out_name] += Jxpt.dot(d_inputs["x_struct0"])
 
             elif mode == "rev":
                 if "tacs_dvs" in d_inputs:
-                    d_inputs["tacs_dvs"] += funcs_sens[output_key]["struct"].T.dot(
-                        d_outputs[out_name]
-                    )
+                    d_inputs["tacs_dvs"] += Jdv.T.dot(d_outputs[out_name])
 
                 if "x_struct0" in d_inputs:
-                    d_inputs["x_struct0"] += funcs_sens[output_key]["Xpts"].T.dot(
-                        d_outputs[out_name]
-                    )
+                    d_inputs["x_struct0"] += Jxpt.T.dot(d_outputs[out_name])
 
 
 class TacsBuilder(Builder):

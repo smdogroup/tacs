@@ -24,6 +24,7 @@ FUNC_REFS = {
     "analysis.mass": 55.6,
     "analysis.Ixx": 74.13379667,
     "analysis.ks_vmfailure": 5.778130269059719,
+    "constraints.adjacency.PANEL": [0.0, 0.0, 0.0, 0.0],
 }
 
 # Inputs to check total sensitivities wrt
@@ -98,11 +99,22 @@ class ProblemTest(OpenMDAOTestCase.OpenMDAOTest):
             g = np.array([0.0, 0.0, -9.81]) * 100  # m/s^2
             problem.addInertialLoad(g)
 
+        def constraint_setup(fea_assembler):
+            """
+            Helper function to setup tacs constraint classes
+            """
+            # Setup adjacency constraints for panel thicknesses
+            constr = fea_assembler.createAdjacencyConstraint("adjacency")
+            constr.addConstraint("PANEL")
+            constr_list = [constr]
+            return constr_list
+
         class Top(Multipoint):
             def setup(self):
                 tacs_options = {
                     "element_callback": element_callback,
                     "problem_setup": problem_setup,
+                    "constraint_setup": constraint_setup,
                     "mesh_file": bdf_file,
                 }
 
@@ -129,6 +141,12 @@ class ProblemTest(OpenMDAOTestCase.OpenMDAOTest):
                 self.connect("mesh.x_struct0", "analysis.x_struct0")
                 self.connect("dv_struct", "analysis.dv_struct")
                 self.connect("f_struct", "analysis.f_struct")
+
+                # Add group for computing adjacency constraints on DVs
+                con_group = tacs_builder.get_constraint_subsystem()
+                self.add_subsystem("constraints", con_group)
+                self.connect("mesh.x_struct0", "constraints.x_struct0")
+                self.connect("dv_struct", "constraints.dv_struct")
 
         prob = om.Problem()
         prob.model = Top()
