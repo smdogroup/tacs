@@ -1017,10 +1017,12 @@ class ConstraintComponent(om.ExplicitComponent):
 
             if mode == "fwd":
                 if "tacs_dvs" in d_inputs:
-                    d_outputs[out_name] += Jdv.dot(d_inputs["tacs_dvs"])
+                    out = Jdv.dot(d_inputs["tacs_dvs"])
+                    d_outputs[out_name] += self.comm.allreduce(out)
 
                 if "x_struct0" in d_inputs:
-                    d_outputs[out_name] += Jxpt.dot(d_inputs["x_struct0"])
+                    out = Jxpt.dot(d_inputs["x_struct0"])
+                    d_outputs[out_name] += self.comm.allreduce(out)
 
             elif mode == "rev":
                 if "tacs_dvs" in d_inputs:
