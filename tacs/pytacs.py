@@ -1572,10 +1572,11 @@ class pyTACS(BaseUI):
                     f"This problem instance ({problem.name}) is not associated with this instance of pyTACS."
                 )
 
-        # Get up-to-date design variable values
-        dvs_bvec = problems[0].getDesignVars()
-        # Make sure all dvs are available on root
-        allDVs = self.comm.gather(dvs_bvec, root=0)
+        # Make sure design variables are up-to-date
+        dv_bvec = self.createDesignVec(asBVec=True)
+        dv_bvec.getArray()[:] = problems[0].getDesignVars()
+        # Transfer all non-local dvs
+        dv_bvec.distributeValues()
 
         # Get local node info for each processor
         multNodes = self.getLocalMultiplierNodeIDs()
@@ -1590,8 +1591,6 @@ class pyTACS(BaseUI):
         # Assemble new BDF file for mesh on root
         if self.comm.rank == 0:
             newBDFInfo = pn.bdf.BDF(debug=False)
-            # Concatenate dv vec from each proc into single array
-            allDVs = np.concatenate(allDVs)
 
             # Write out updated node locations
             nastranNodeIDs = list(self.bdfInfo.node_ids)
@@ -1626,7 +1625,7 @@ class pyTACS(BaseUI):
                 # get dv nums for element
                 dvNums = elemObj.getDesignVarNums(0)
                 # Update design variable values
-                dvVals = allDVs[dvNums]
+                dvVals = dv_bvec.getValues(dvNums)
                 elemObj.setDesignVars(0, dvVals)
                 # Get TACS constitutive object for element (if applicable)
                 conObj = elemObj.getConstitutive()
