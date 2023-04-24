@@ -71,7 +71,9 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
         for problem in tacs_probs:
             problem.addFunction("mass", functions.StructuralMass)
             problem.addFunction("compliance", functions.Compliance)
-            problem.addFunction("ks_TsaiWufailure", functions.KSFailure, ksWeight=ksweight)
+            problem.addFunction(
+                "ks_TsaiWufailure", functions.KSFailure, ksWeight=ksweight
+            )
             problem.addFunction(
                 "x_disp",
                 functions.KSDisplacement,
