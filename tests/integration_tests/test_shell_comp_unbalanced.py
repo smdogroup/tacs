@@ -7,7 +7,7 @@ from tacs import pytacs, functions
 Tests an unbalanced laminate shell model with the following layup: [0, 45, 30]s.
 The laminate information is read in from a PCOMP card in the BDF file.
 Two load cases are tested: an in-plane tension and out-of-plane shear.
-tests KSDisplacement, KSFailure, StructuralMass, and Compliance functions 
+tests KSDisplacement, KSFailure, StructuralMass, and Compliance functions
 and sensitivities.
 """
 
@@ -22,13 +22,13 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
 
     FUNC_REFS = {
         "Tension_compliance": 15047.4827204001,
-        "Tension_ks_vmfailure": 34.54666371379912,
+        "Tension_ks_TsaiWufailure": 7.875796240395447,
         "Tension_mass": 1.1625,
         "Tension_x_disp": 0.08602975190111069,
         "Tension_y_disp": 0.01957454912511978,
         "Tension_z_disp": 5.484526868562824e-17,
         "VertShear_compliance": 0.00020961674292023337,
-        "VertShear_ks_vmfailure": 0.0007498886916845651,
+        "VertShear_ks_TsaiWufailure": 0.0013092603829596005,
         "VertShear_mass": 1.1625,
         "VertShear_x_disp": 2.6216565960935596e-23,
         "VertShear_y_disp": 5.97480777083504e-23,
@@ -71,7 +71,7 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
         for problem in tacs_probs:
             problem.addFunction("mass", functions.StructuralMass)
             problem.addFunction("compliance", functions.Compliance)
-            problem.addFunction("ks_vmfailure", functions.KSFailure, ksWeight=ksweight)
+            problem.addFunction("ks_TsaiWufailure", functions.KSFailure, ksWeight=ksweight)
             problem.addFunction(
                 "x_disp",
                 functions.KSDisplacement,

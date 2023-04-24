@@ -4,13 +4,13 @@ from static_analysis_base_test import StaticTestCase
 from tacs import TACS, elements, constitutive, functions
 
 """
-Create a cantilevered composite beam of linear quad shells with an 
+Create a cantilevered composite beam of linear quad shells with an
 unbalanced tip shear load on the right corner
 and test KSFailure, StructuralMass, and Compliance functions and sensitivities
 """
 
 FUNC_REFS = np.array(
-    [5812.5, 63907185.558059536, 12.21799417804536, 174.71401901274177]
+    [5812.5, 63907185.558059536, 12.21799417804536, 23.51274876481848]
 )
 
 # Length of plate in x/y direction
