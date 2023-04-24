@@ -789,6 +789,15 @@ void TACSOrthotropicPly::calculateStress(TacsScalar angle,
   F11*s[0]**2 + F22*s[1]**2 +
   2.0*F12*s[0]*s[1] + F66*s[2]**2 <= 1.0
 
+  The value returned is actually 1/2 * (b + sqrt(b^2 + 4a)) where "b"
+  is the linear part of the Tsai-Wu criterion and "a" is the quadratic
+  part. This form is equivalent to the original form at the failure
+  boundary but has the advantage that it scales lineary when the stress
+  state is uniformly scaled. This means that the failure criterion can be
+  used to compute safety factors which is not true of the original quadratic
+  form. It also means that the failure criterion becomes equivalent to the
+  von-Mises criterion when the material properties are isotropic.
+
   2. The maximum strain failure criteria:
 
   KS(e_{i}/e_max^{+/-}, ksWeight) <= 1.0
@@ -806,9 +815,6 @@ TacsScalar TACSOrthotropicPly::failure(TacsScalar angle,
   if (useTsaiWuCriterion) {
     TacsScalar s[3];  // Ply stress
     getPlyStress(e, s);
-
-    // fail = (F11 * s[0] * s[0] + F22 * s[1] * s[1] + 2.0 * F12 * s[0] * s[1] +
-    //         F66 * s[2] * s[2] + F1 * s[0] + F2 * s[1]);
 
     TacsScalar linTerm, quadTerm;
     linTerm = F1 * s[0] + F2 * s[1];
@@ -856,8 +862,6 @@ TacsScalar TACSOrthotropicPly::failureStrainSens(TacsScalar angle,
       s2[ii] = s[ii] * s[ii];
     }
 
-    // fail = (F11 * s[0] * s[0] + F22 * s[1] * s[1] + 2.0 * F12 * s[0] * s[1] +
-    //         F66 * s[2] * s[2] + F1 * s[0] + F2 * s[1]);
     TacsScalar linTerm, quadTerm;
     linTerm = F1 * s[0] + F2 * s[1];
     quadTerm = F11 * s[0] * s[0] + F22 * s[1] * s[1] + 2.0 * F12 * s[0] * s[1] +
@@ -868,17 +872,15 @@ TacsScalar TACSOrthotropicPly::failureStrainSens(TacsScalar angle,
     TacsScalar tmp2 = sqrt(4.0 * F11 * s2[0] + 8.0 * F12 * s[0] * s[1] +
                            4.0 * F22 * s2[1] + 4.0 * F66 * s2[2] + tmp);
 
-    // sens[0] = F1 + 2.0 * F11 * s[0] + 2.0 * F12 * s[1];
+    // Calculate the sensitivity of the failure criteria w.r.t the 3 stresses
     sens[0] = (F1 * (F1 * s[0] + F2 * s[1]) + F1 * tmp2 + 4.0 * F11 * s[0] +
                4.0 * F12 * s[1]) /
               (2.0 * tmp2);
 
-    // sens[1] = F2 + 2.0 * F22 * s[1] + 2.0 * F12 * s[0];
     sens[1] = (4.0 * F12 * s[0] + F2 * (F1 * s[0] + F2 * s[1]) + F2 * tmp2 +
                4.0 * F22 * s[1]) /
               (2.0 * tmp2);
 
-    // sens[2] = 2.0 * F66 * s[2];
     sens[2] = 2.0 * F66 * s[2] / tmp2;
 
     TacsScalar sSens[3];
@@ -936,8 +938,6 @@ TacsScalar TACSOrthotropicPly::failureAngleSens(TacsScalar angle,
       s2[ii] = s[ii] * s[ii];
     }
 
-    // fail = (F11 * s[0] * s[0] + F22 * s[1] * s[1] + 2.0 * F12 * s[0] * s[1] +
-    //         F66 * s[2] * s[2] + F1 * s[0] + F2 * s[1]);
     TacsScalar linTerm, quadTerm;
     linTerm = F1 * s[0] + F2 * s[1];
     quadTerm = F11 * s[0] * s[0] + F22 * s[1] * s[1] + 2.0 * F12 * s[0] * s[1] +
@@ -955,11 +955,6 @@ TacsScalar TACSOrthotropicPly::failureAngleSens(TacsScalar angle,
     TacsScalar tmp = (F1 * s[0] + F2 * s[1]) * (F1 * s[0] + F2 * s[1]);
     TacsScalar tmp2 = sqrt(4.0 * F11 * s2[0] + 8.0 * F12 * s[0] * s[1] +
                            4.0 * F22 * s2[1] + 4.0 * F66 * s2[2] + tmp);
-
-    // *failSens =
-    //     (2.0 * (F11 * s[0] * ss[0] + F22 * s[1] * ss[1] +
-    //             F12 * (ss[0] * s[1] + s[0] * ss[1]) + F66 * s[2] * ss[2]) +
-    //      F1 * ss[0] + F2 * ss[1]);
 
     *failSens = ss[0] * ((F1 * (F1 * s[0] + F2 * s[1]) + F1 * tmp2 +
                           4.0 * F11 * s[0] + 4.0 * F12 * s[1]) /
