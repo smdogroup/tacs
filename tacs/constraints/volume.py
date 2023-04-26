@@ -414,7 +414,8 @@ class ParallelVolumeConstraint(object):
         self.assembler.addXptSens([self.posVolFunc], [totSens], 1.0)
         self.assembler.addXptSens([self.negVolFunc], [totSens], -1.0)
         # Distribute non-local vals across procs
-        totSens.distributeValues()
+        totSens.beginSetValues()
+        totSens.endSetValues()
         return totSens
 
     def getBounds(self):
