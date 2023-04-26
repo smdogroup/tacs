@@ -1884,6 +1884,42 @@ class pyTACS(BaseUI):
         constr.setNodes(self.Xpts0)
         return constr
 
+    @postinitialize_method
+    def createVolumeConstraint(self, name, options={}):
+        """
+        Create a new VolumeConstraint for constraining the size of a closed volume.
+        Volume MUST be manifold and water-tight. Only shell and solid elements are supported
+        for this constraint. The formulation is a nonlinear constraint based on the nodal coordinates.
+
+        A common example of this is ensuring enough volume in the wingbox for fuel:
+
+            vol_wing >= vol_fuel
+
+        Parameters
+        ----------
+        name : str
+            Name to assign constraint.
+        options : dict
+            Class-specific options to pass to VolumeConstraint instance (case-insensitive).
+
+        Returns
+        ----------
+        constraint : VolumeConstraint
+            VolumeConstraint object used for calculating constraints.
+        """
+        constr = tacs.constraints.VolumeConstraint(
+            name,
+            self.assembler,
+            self.comm,
+            self.outputViewer,
+            self.meshLoader,
+            options,
+        )
+        # Set with original design vars and coordinates, in case they have changed
+        constr.setDesignVars(self.x0)
+        constr.setNodes(self.Xpts0)
+        return constr
+
     def getNumComponents(self):
         """
         Return number of components (property) groups found in bdf.

@@ -147,7 +147,7 @@ class AdjacencyConstraint(TACSConstraint):
             compIDs = self._flatten(compIDs)
         else:
             nComps = self.meshLoader.getNumComponents()
-            compIDs = range(nComps)
+            compIDs = list(range(nComps))
 
         constrObj = self._createConstraint(dvIndex, compIDs, lower, upper)
         if constrObj.nCon > 0:

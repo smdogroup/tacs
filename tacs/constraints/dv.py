@@ -108,7 +108,7 @@ class DVConstraint(TACSConstraint):
             compIDs = self._flatten(compIDs)
         else:
             nComps = self.meshLoader.getNumComponents()
-            compIDs = range(nComps)
+            compIDs = list(range(nComps))
 
         if hasattr(dvIndices, "__iter__"):
             dvIndices = list(dvIndices)
