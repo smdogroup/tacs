@@ -74,28 +74,27 @@ class AdjacencyConstraint(TACSConstraint):
         """
 
         if self.comm.rank == 0:
+            # First, create a dictionary of common edges shared by components
             edgeToFace = {}
-            nComp = self.meshLoader.getNumComponents()
-            for compID in range(nComp):
-                compConn = self.meshLoader.getConnectivityForComp(
-                    compID, nastranOrdering=False
-                )
-                for elemConn in compConn:
-                    nnodes = len(elemConn)
-                    if nnodes >= 2:
-                        for j in range(nnodes):
-                            nodeID1 = elemConn[j]
-                            nodeID2 = elemConn[(j + 1) % nnodes]
+            for elemID in self.bdfInfo.elements:
+                elemInfo = self.bdfInfo.elements[elemID]
+                elemConn = elemInfo.nodes
+                compID = self.meshLoader.nastranToTACSCompIDDict[elemInfo.pid]
+                nnodes = len(elemConn)
+                if nnodes >= 2:
+                    for j in range(nnodes):
+                        nodeID1 = elemConn[j]
+                        nodeID2 = elemConn[(j + 1) % nnodes]
 
-                            if nodeID1 < nodeID2:
-                                key = (nodeID1, nodeID2)
-                            else:
-                                key = (nodeID2, nodeID1)
+                        if nodeID1 < nodeID2:
+                            key = (nodeID1, nodeID2)
+                        else:
+                            key = (nodeID2, nodeID1)
 
-                            if key not in edgeToFace:
-                                edgeToFace[key] = [compID]
-                            elif compID not in edgeToFace[key]:
-                                edgeToFace[key].append(compID)
+                        if key not in edgeToFace:
+                            edgeToFace[key] = [compID]
+                        elif compID not in edgeToFace[key]:
+                            edgeToFace[key].append(compID)
 
             # Now we loop back over each element and each edge. By
             # using the edgeToFace dictionary, we can now determine
