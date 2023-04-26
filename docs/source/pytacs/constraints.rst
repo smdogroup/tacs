@@ -6,3 +6,4 @@ Constraint classes
 
   adjacency
   dvcon
+  volume

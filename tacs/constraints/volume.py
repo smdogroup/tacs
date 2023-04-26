@@ -159,7 +159,7 @@ class VolumeConstraint(TACSConstraint):
             success = True
         else:
             self._TACSWarning(
-                f"No adjacent components found in `compIDs`. Skipping {conName}."
+                f"No closed volume found in `compIDs`. Skipping {conName}."
             )
             success = False
 
@@ -273,22 +273,26 @@ class VolumeConstraint(TACSConstraint):
             ub=ubound,
         )
 
-    def _sortIDs(self, curID, orient1, orient2, compIDs):
-        for adjID in self.adjacentOrientationMatch[curID]:
-            sameOrientation = self.adjacentOrientationMatch[curID][adjID]
+    def _sortIDs(self, currID, orient1, orient2, compIDs):
+        """
+        Sort all compIDs into one of two lists (orient1 or orient2), depending on
+        the orientation of their neighbor components. This operation is performed recursively.
+        """
+        for adjID in self.adjacentOrientationMatch[currID]:
+            sameOrientation = self.adjacentOrientationMatch[currID][adjID]
             if adjID not in compIDs:
                 continue
             elif sameOrientation:
-                if curID in orient1 and adjID not in orient1:
+                if currID in orient1 and adjID not in orient1:
                     orient1.append(adjID)
-                elif curID in orient2 and adjID not in orient2:
+                elif currID in orient2 and adjID not in orient2:
                     orient2.append(adjID)
                 else:
                     continue
-            else:
-                if curID in orient1 and adjID not in orient2:
+            else:  # flipped orientations
+                if currID in orient1 and adjID not in orient2:
                     orient2.append(adjID)
-                elif curID in orient2 and adjID not in orient1:
+                elif currID in orient2 and adjID not in orient1:
                     orient1.append(adjID)
                 else:
                     continue
