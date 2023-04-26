@@ -85,7 +85,7 @@ int TacsGetOutputComponentCount(ElementType etype, int comp) {
     } else if (comp == TACS_OUTPUT_STRESSES) {
       return 9;
     } else if (comp == TACS_OUTPUT_EXTRAS) {
-      return 4;
+      return 8;
     } else if (comp == TACS_OUTPUT_LOADS) {
       return 6;
     }
@@ -305,6 +305,14 @@ const char *TacsGetOutputComponentName(ElementType etype, int comp, int index) {
           return "dv2";
         case 3:
           return "dv3";
+        case 4:
+          return "dv4";
+        case 5:
+          return "dv5";
+        case 6:
+          return "dv6";
+        case 7:
+          return "dv7";
         default:
           return NULL;
       }

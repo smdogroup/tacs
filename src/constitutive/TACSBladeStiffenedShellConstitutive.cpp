@@ -1199,12 +1199,21 @@ void TACSBladeStiffenedShellConstitutive::addFailureDVSens(
 // Retrieve the design variable for plotting purposes
 TacsScalar TACSBladeStiffenedShellConstitutive::evalDesignFieldValue(
     int elemIndex, const double pt[], const TacsScalar X[], int index) {
-  // TODO: Implement this
   switch (index) {
     case 0:
       return this->computeEffectiveThickness();
     case 1:
       return this->computeEffectiveBendingThickness();
+    case 2:
+      return this->panelLength;
+    case 3:
+      return this->stiffenerPitch;
+    case 4:
+      return this->panelThick;
+    case 5:
+      return this->stiffenerHeight;
+    case 6:
+      return this->stiffenerThick;
   }
   return 0.0;
 }
