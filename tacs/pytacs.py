@@ -1888,8 +1888,9 @@ class pyTACS(BaseUI):
     def createVolumeConstraint(self, name, options={}):
         """
         Create a new VolumeConstraint for constraining the size of a closed volume.
-        Volume MUST be manifold and water-tight. Only shell and solid elements are supported
-        for this constraint. The formulation is a nonlinear constraint based on the nodal coordinates.
+        Only shell and solid elements are supported for this constraint.
+        For shell elements, the enclosed volume MUST be manifold and water-tight (no missing/internal faces).
+        The formulation is a nonlinear constraint based on the nodal coordinates.
 
         A common example of this is ensuring enough volume in the wingbox for fuel:
 
