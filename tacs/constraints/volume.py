@@ -20,6 +20,15 @@ from tacs.functions import EnclosedVolume
 
 
 class VolumeConstraint(TACSConstraint):
+    # Default options for class
+    defaultOptions = {
+        "volCheckTol": [
+            float,
+            1e-12,
+            "Relative tolerance for surface closure check for shell elements.",
+        ],
+    }
+
     def __init__(
         self,
         name,
@@ -200,9 +209,9 @@ class VolumeConstraint(TACSConstraint):
             # All components must have consistent normal directions (normals pointing out)
             # for the volume calculation to work correctly. In general, this won't be the case.
             # So we'll need to loop through each component and figure out if their normals need
-            # to be flipped.
+            # to be flipped. We'll also need to make sure the provided volume is closed.
             if allShells:
-                # First make sure that every component is connected to at least one other component
+                # First, make sure that every component is connected to at least one other component
                 for compID in compIDs:
                     adjIDs = self.adjacentOrientationMatch[compID].keys()
                     atLeastOneConnection = False
@@ -210,7 +219,7 @@ class VolumeConstraint(TACSConstraint):
                         if adjID in compIDs:
                             atLeastOneConnection = True
                             break
-                    if atLeastOneConnection is False:
+                    if len(compIDs) > 1 and atLeastOneConnection is False:
                         self._TACSWarning(
                             "Provided compID's do not form a closed volume."
                         )
@@ -223,6 +232,36 @@ class VolumeConstraint(TACSConstraint):
                 self._sortIDs(
                     currCompID, properNormalCompIDs, flippedNormalCompIDs, compIDs
                 )
+
+                # Now we check to make sure the volume is closed
+                # This can be checked by integrating the normal over the surface of the volume.
+                # If the volume is closed, this integral should come out to the zero vector
+                avgNormal = np.zeros(3)
+                volSurfArea = 0.0
+
+                # Make sure bdf is cross-referenced
+                if self.bdfInfo.is_xrefed is False:
+                    self.bdfInfo.cross_reference()
+                    self.bdfInfo.is_xrefed = True
+
+                elemIDs = self.meshLoader.getGlobalElementIDsForComps(
+                    compIDs, nastranOrdering=True
+                )
+                for elemID in elemIDs:
+                    elemInfo = self.bdfInfo.elements[elemID]
+                    compID = self.meshLoader.nastranToTACSCompIDDict[elemInfo.pid]
+                    if compID in properNormalCompIDs:
+                        factor = 1.0
+                    else:  # compID in flippedNormalCompIDs
+                        factor = -1.0
+                    n = elemInfo.Normal()
+                    A = elemInfo.Area()
+                    volSurfArea += A
+                    avgNormal[:] += factor * n * A
+
+                avgNormal /= volSurfArea
+                if np.linalg.norm(avgNormal) > self.getOption("volCheckTol"):
+                    self._TACSWarning("Specified volume may not be closed manifold.")
 
             # We can treat all components as being proper for solids,
             # since their volumes don't depend on their normals
