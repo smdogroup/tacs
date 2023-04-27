@@ -231,7 +231,7 @@ class VolumeConstraint(TACSConstraint):
                 properNormalCompIDs.append(currCompID)
                 # Sort the remaining components based on their connectivity and adjacentOrientationMatch dict
                 self._sortIDs(
-                    currCompID, properNormalCompIDs, flippedNormalCompIDs, compIDs
+                    currCompID, compIDs, properNormalCompIDs, flippedNormalCompIDs
                 )
 
                 # Now we check to make sure the volume is closed
@@ -313,7 +313,7 @@ class VolumeConstraint(TACSConstraint):
             ub=ubound,
         )
 
-    def _sortIDs(self, currID, orient1, orient2, compIDs):
+    def _sortIDs(self, currID, compIDs, orient1, orient2):
         """
         Sort all compIDs into one of two lists (orient1 or orient2), depending on
         the orientation of their neighbor components. This operation is performed recursively.
@@ -336,7 +336,7 @@ class VolumeConstraint(TACSConstraint):
                     orient1.append(adjID)
                 else:
                     continue
-            self._sortIDs(adjID, orient1, orient2, compIDs)
+            self._sortIDs(adjID, compIDs, orient1, orient2)
 
     def evalConstraints(self, funcs, evalCons=None, ignoreMissing=False):
         """
