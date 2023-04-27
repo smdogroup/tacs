@@ -357,10 +357,10 @@ class VolumeConstraint(TACSConstraint):
         Examples
         --------
         >>> funcs = {}
-        >>> adjConstraint.evalConstraints(funcs, 'LE_SPAR')
+        >>> volConstraint.evalConstraints(funcs, 'LE_SPAR')
         >>> funcs
-        >>> # Result will look like (if AdjacencyConstraint has name of 'c1'):
-        >>> # {'c1_LE_SPAR': array([12354.10])}
+        >>> # Result will look like (if VolumeConstraint has name of 'c1'):
+        >>> # {'c1_wing': array([12354.10])}
         """
         # Check if user specified which constraints to output
         # Otherwise, output them all
@@ -389,10 +389,10 @@ class VolumeConstraint(TACSConstraint):
         Examples
         --------
         >>> funcsSens = {}
-        >>> adjConstraint.evalConstraintsSens(funcsSens, 'LE_SPAR')
+        >>> volConstraint.evalConstraintsSens(funcsSens, 'LE_SPAR')
         >>> funcsSens
-        >>> # Result will look like (if AdjacencyConstraint has name of 'c1'):
-        >>> # {'c1_LE_SPAR':{'struct':<50x242 sparse matrix of type '<class 'numpy.float64'>' with 100 stored elements in Compressed Sparse Row format>}}
+        >>> # Result will look like (if VolumeConstraint has name of 'c1'):
+        >>> # {'c1_wing':{'struct':<50x242 sparse matrix of type '<class 'numpy.float64'>' with 100 stored elements in Compressed Sparse Row format>}}
         """
         # Check if user specified which constraints to output
         # Otherwise, output them all
