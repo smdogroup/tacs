@@ -1576,8 +1576,8 @@ class pyTACS(BaseUI):
         dv_bvec = self.createDesignVec(asBVec=True)
         dv_bvec.getArray()[:] = problems[0].getDesignVars()
         # Transfer all non-local dvs
-        dv_bvec.beginSetValues()
-        dv_bvec.endSetValues()
+        dv_bvec.beginDistributeValues()
+        dv_bvec.endDistributeValues()
 
         # Get local node info for each processor
         multNodes = self.getLocalMultiplierNodeIDs()
