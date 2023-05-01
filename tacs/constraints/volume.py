@@ -439,7 +439,7 @@ class VolumeConstraint(TACSConstraint):
             if self.getOption("numberSolutions"):
                 baseName = baseName + "_%3.3d" % self.callCounter
 
-        base = os.path.join(outputDir, baseName) + ".plt"
+        base = os.path.join(outputDir, baseName) + ".dat"
 
         # Get current TACS nodes bvec
         localXpts = self.Xpts.getArray()
