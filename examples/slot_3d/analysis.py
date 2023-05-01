@@ -36,14 +36,13 @@ FEAAssembler.initialize()
 # Setup static problem
 # ==============================================================================
 # Static problem
-evalFuncs = ["mass", "ks_vmfailure", "volume"]
+evalFuncs = ["mass", "ks_vmfailure"]
 # Read in forces from BDF and create tacs static problems
 SPs = FEAAssembler.createTACSProbsFromBDF()
 
 # Set up eval functions
 for spID in SPs:
     SPs[spID].addFunction("mass", functions.StructuralMass)
-    SPs[spID].addFunction("volume", functions.EnclosedVolume)
     SPs[spID].addFunction(
         "ks_vmfailure", functions.KSFailure, safetyFactor=1.5, ksWeight=100.0
     )
