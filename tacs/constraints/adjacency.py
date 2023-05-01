@@ -359,7 +359,7 @@ class AdjacencyConstraint(TACSConstraint):
             if self.getOption("numberSolutions"):
                 baseName = baseName + "_%3.3d" % self.callCounter
 
-        base = os.path.join(outputDir, baseName) + ".plt"
+        base = os.path.join(outputDir, baseName) + ".dat"
 
         if self.comm.rank == 0:
             f = open(base, "w")
@@ -402,7 +402,13 @@ class AdjacencyConstraint(TACSConstraint):
                             )
                         )
                     f.write("1 2\n")  # Connectivity
+
+                # Wait for root
+                self.comm.barrier()
                 i += 1
 
         if self.comm.rank == 0:
             f.close()
+
+        # Wait for root
+        self.comm.barrier()
