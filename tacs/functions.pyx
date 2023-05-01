@@ -154,7 +154,7 @@ cdef class MomentOfInertia(Function):
 
 cdef class EnclosedVolume(Function):
     """
-    Evaluates the volume by the elements.
+    Evaluates the volume enclosed by the elements.
 
     Args:
         assembler (Assembler): TACS Assembler object that will evaluating this function.
