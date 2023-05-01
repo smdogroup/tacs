@@ -17,12 +17,25 @@ A common example of this is ensuring that thicknesses vary to abruptly across pa
 # =============================================================================
 # Imports
 # =============================================================================
+import os
+
+import numpy as np
 import scipy as sp
 
 from tacs.constraints.base import TACSConstraint, SparseLinearConstraint
 
 
 class AdjacencyConstraint(TACSConstraint):
+    # Default options for class
+    defaultOptions = {
+        "outputDir": [str, "./", "Output directory for F5 file writer."],
+        "numberSolutions": [
+            bool,
+            True,
+            "Flag for attaching solution counter index to f5 files.",
+        ],
+    }
+
     def __init__(
         self,
         name,
@@ -67,6 +80,9 @@ class AdjacencyConstraint(TACSConstraint):
 
         # Create a list of all adjacent components on root proc
         self._initializeAdjacencyList()
+
+        # Set call counter
+        self.callCounter = -1
 
     def _initializeAdjacencyList(self):
         """
@@ -173,10 +189,13 @@ class AdjacencyConstraint(TACSConstraint):
             colsOnProc = [[] for _ in range(size)]
             valsOnProc = [[] for _ in range(size)]
             conCount = 0
+            foundCompPairs = []
             # Loop through all adjacent component pairs
             for compPair in self.adjacentComps:
                 # Check if they are in the user provided compIDs
                 if compPair[0] in compIDs and compPair[1] in compIDs:
+                    # Add comp pair to list
+                    foundCompPairs.append(compPair)
                     # We found a new constraint
                     for i, comp in enumerate(compPair):
                         # Get the TACS element object associated with this compID
@@ -204,6 +223,7 @@ class AdjacencyConstraint(TACSConstraint):
             colsOnProc = None
             valsOnProc = None
             conCount = 0
+            foundCompPairs = None
 
         # Scatter local sparse indices/values to remaining procs
         rows = self.comm.scatter(rowsOnProc, root=0)
@@ -211,13 +231,17 @@ class AdjacencyConstraint(TACSConstraint):
         vals = self.comm.scatter(valsOnProc, root=0)
 
         # Get local sparse matrix dimensions
+        foundCompPairs = self.comm.bcast(foundCompPairs, root=0)
         conCount = self.comm.bcast(conCount, root=0)
         nLocalDVs = self.getNumDesignVars()
 
-        # Create linear constraint object
-        return SparseLinearConstraint(
+        constrObj = SparseLinearConstraint(
             self.comm, rows, cols, vals, conCount, nLocalDVs, lbound, ubound
         )
+        constrObj.compPairs = foundCompPairs
+
+        # Create linear constraint object
+        return constrObj
 
     def evalConstraints(self, funcs, evalCons=None, ignoreMissing=False):
         """
@@ -251,6 +275,9 @@ class AdjacencyConstraint(TACSConstraint):
         for conName in evalCons:
             key = f"{self.name}_{conName}"
             funcs[key] = self.constraintList[conName].evalCon(self.x.getArray())
+
+        # Update call counter
+        self.callCounter += 1
 
     def evalConstraintsSens(self, funcsSens, evalCons=None):
         """
@@ -297,3 +324,85 @@ class AdjacencyConstraint(TACSConstraint):
             funcsSens[key][self.coordName] = sp.sparse.csr_matrix(
                 (nCon, nCoords), dtype=self.dtype
             )
+
+    def writeVisualization(self, outputDir=None, baseName=None, number=None):
+        """
+        This function can be used to write a tecplot file for
+        the purposes of visualization.
+
+        Parameters
+        ----------
+        outputDir : str or None
+            Use the supplied output directory
+        baseName : str or None
+            Use this supplied string for the base filename. Typically
+            only used from an external solver.
+        number : int or None
+            Use the user supplied number to index output. Again, only
+            typically used from an external solver
+        """
+        # Check input
+        if outputDir is None:
+            outputDir = self.getOption("outputDir")
+
+        if baseName is None:
+            baseName = self.name
+
+        # If we are numbering output, it saving the sequence of
+        # calls, add the call number
+        if number is not None:
+            # We need number based on the provided number:
+            baseName = baseName + "_%3.3d" % number
+        else:
+            # if number is none, i.e. standalone, but we need to
+            # number solutions, use internal counter
+            if self.getOption("numberSolutions"):
+                baseName = baseName + "_%3.3d" % self.callCounter
+
+        base = os.path.join(outputDir, baseName) + ".plt"
+
+        if self.comm.rank == 0:
+            f = open(base, "w")
+            f.write('VARIABLES = "X", "Y", "Z"\n')
+
+        # Get current node locations
+        Xpts_local = self.Xpts.getArray()
+        Xpts_local = Xpts_local.reshape(-1, 3)
+
+        for constrName, constrObj in self.constraintList.items():
+            i = 0
+            for compPair in constrObj.compPairs:
+                # Get the 'average' location for each component in the dvGroup
+                compCenters = np.zeros([2, 3], dtype=float)
+                for j, compID in enumerate(compPair):
+                    nodeIDsGlobal = self.meshLoader.getGlobalNodeIDsForComps(
+                        [compID], nastranOrdering=True
+                    )
+                    nodeIDsLocal = self.meshLoader.getLocalNodeIDsFromGlobal(
+                        nodeIDsGlobal, nastranOrdering=True
+                    )
+                    for lID in nodeIDsLocal:
+                        if lID >= 0:
+                            compCenters[j] += np.real(Xpts_local[lID])
+                    compCenters[j] = self.comm.allreduce(compCenters[j])
+                    nnodes = len(nodeIDsGlobal)
+                    compCenters[j] /= nnodes
+
+                if self.comm.rank == 0:
+                    f.write(f"Zone T={constrName}_{i}\n")
+                    f.write("Nodes = 2, Elements = 1 ZONETYPE=FELINESEG\n")
+                    f.write("DATAPACKING=POINT\n")
+                    for ii in range(2):
+                        f.write(
+                            "%g %g %g\n"
+                            % (
+                                compCenters[ii, 0],
+                                compCenters[ii, 1],
+                                compCenters[ii, 2],
+                            )
+                        )
+                    f.write("1 2\n")  # Connectivity
+                i += 1
+
+        if self.comm.rank == 0:
+            f.close()

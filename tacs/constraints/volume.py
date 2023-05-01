@@ -12,9 +12,13 @@ A common example of this is ensuring enough volume in the wingbox for fuel:
 # =============================================================================
 # Imports
 # =============================================================================
+import os
+import copy
+
 import numpy as np
 import scipy as sp
 import pyNastran.bdf as pn
+import pyNastran.converters.tecplot.tecplot as tp
 
 from tacs.constraints.base import TACSConstraint
 from tacs.functions import EnclosedVolume
@@ -27,6 +31,12 @@ class VolumeConstraint(TACSConstraint):
             float,
             1e-12,
             "Relative tolerance for surface closure check for shell elements.",
+        ],
+        "outputDir": [str, "./", "Output directory for F5 file writer."],
+        "numberSolutions": [
+            bool,
+            True,
+            "Flag for attaching solution counter index to f5 files.",
         ],
     }
 
@@ -74,6 +84,9 @@ class VolumeConstraint(TACSConstraint):
 
         # Create a list of all adjacent components on root proc
         self._initializeAdjacencyList()
+
+        # Set call counter
+        self.callCounter = -1
 
     def _initializeAdjacencyList(self):
         """
@@ -164,7 +177,7 @@ class VolumeConstraint(TACSConstraint):
             compIDs = list(range(nComps))
 
         constrObj = self._createConstraint(compIDs, lower, upper)
-        if constrObj.nCon > 0:
+        if constrObj.nCon is not None:
             self.constraintList[conName] = constrObj
             success = True
         else:
@@ -277,38 +290,12 @@ class VolumeConstraint(TACSConstraint):
         properNormalCompIDs = self.comm.bcast(properNormalCompIDs, root=0)
         flippedNormalCompIDs = self.comm.bcast(flippedNormalCompIDs, root=0)
 
-        # Create two TACS Volume function domains,
-        # One for the properly oriented components...
-        if len(properNormalCompIDs) > 0:
-            properVolume = EnclosedVolume(self.assembler)
-            elemIDs = self.meshLoader.getLocalElementIDsForComps(properNormalCompIDs)
-            properVolume.setDomain(elemIDs)
-        else:
-            properVolume = None
-
-        # and one for the flipped components.
-        # The volumes computed by these components will be negative
-        if len(flippedNormalCompIDs) > 0:
-            flippedVolume = EnclosedVolume(self.assembler)
-            elemIDs = self.meshLoader.getLocalElementIDsForComps(flippedNormalCompIDs)
-            flippedVolume.setDomain(elemIDs)
-        else:
-            flippedVolume = None
-
-        # Compute the volume and check that we sorted the correct orientations
-        self.assembler.setNodes(self.Xpts)
-        posVol, negVol = self.assembler.evalFunctions([properVolume, flippedVolume])
-        totVol = posVol - negVol
-
-        # If the volume is negative, we need to flip the orientations
-        if totVol < 0.0:
-            properVolume, flippedVolume = flippedVolume, properVolume
-
         return ParallelVolumeConstraint(
-            self.comm,
             self.assembler,
-            properVolume,
-            flippedVolume,
+            self.meshLoader,
+            properNormalCompIDs,
+            flippedNormalCompIDs,
+            self.Xpts,
             lb=lbound,
             ub=ubound,
         )
@@ -371,6 +358,9 @@ class VolumeConstraint(TACSConstraint):
             key = f"{self.name}_{conName}"
             funcs[key] = self.constraintList[conName].evalCon(self.Xpts)
 
+        # Update call counter
+        self.callCounter += 1
+
     def evalConstraintsSens(self, funcsSens, evalCons=None):
         """
         This is the main routine for returning useful (sensitivity)
@@ -414,19 +404,192 @@ class VolumeConstraint(TACSConstraint):
             xptSens = self.constraintList[conName].evalConSens(self.Xpts)
             funcsSens[key][self.coordName] = xptSens.getArray()
 
+    def writeVisualization(self, outputDir=None, baseName=None, number=None):
+        """
+        This function can be used to write a tecplot file for
+        the purposes of visualization.
+
+        Parameters
+        ----------
+        outputDir : str or None
+            Use the supplied output directory
+        baseName : str or None
+            Use this supplied string for the base filename. Typically
+            only used from an external solver.
+        number : int or None
+            Use the user supplied number to index output. Again, only
+            typically used from an external solver
+        """
+
+        # Check input
+        if outputDir is None:
+            outputDir = self.getOption("outputDir")
+
+        if baseName is None:
+            baseName = self.name
+
+        # If we are numbering output, it saving the sequence of
+        # calls, add the call number
+        if number is not None:
+            # We need number based on the provided number:
+            baseName = baseName + "_%3.3d" % number
+        else:
+            # if number is none, i.e. standalone, but we need to
+            # number solutions, use internal counter
+            if self.getOption("numberSolutions"):
+                baseName = baseName + "_%3.3d" % self.callCounter
+
+        base = os.path.join(outputDir, baseName) + ".plt"
+
+        # Get current TACS nodes bvec
+        localXpts = self.Xpts.getArray()
+        localXpts = localXpts.reshape(-1, 3)
+
+        # Setup tecplot writter on root
+        if self.comm.rank == 0:
+            tecInfo = tp.Tecplot(debug=None)
+
+        # Loop through each constraint group and write to tecplot zone
+        for constrName, constrObj in self.constraintList.items():
+            # Identify all constrained compIDs
+            posCompIDs = constrObj.posCompIDs
+            negCompIDs = constrObj.negCompIDs
+            allCompIDs = posCompIDs + negCompIDs
+            # Get all global nodeIDs for this constraint
+            allNodeIDsGlobal = self.meshLoader.getGlobalNodeIDsForComps(
+                allCompIDs, nastranOrdering=True
+            )
+            # Find the local node ID corresponding to each global ID on each proc
+            allNodeIDsLocal = self.meshLoader.getLocalNodeIDsFromGlobal(
+                allNodeIDsGlobal, nastranOrdering=True
+            )
+            # Pull the updated xyz values of each node from each proc
+            nodeXYZDict = {}
+            for gID, lID in zip(allNodeIDsGlobal, allNodeIDsLocal):
+                # Node is owned by this proc, add values to dict
+                if lID >= 0:
+                    nodeXYZDict[gID] = localXpts[lID]
+            # Gather node xyz values to root
+            nodeDicts = self.comm.gather(nodeXYZDict, root=0)
+
+            # Write zone data for this constraint
+            if self.comm.rank == 0:
+                # Combine all node dicts received from each proc into a single dict
+                allNodeXYZDict = {}
+                for nodeXYZDict in nodeDicts:
+                    allNodeXYZDict.update(nodeXYZDict)
+
+                # Get all global elemIDs for this constraint
+                allElemIDsGlobal = self.meshLoader.getGlobalElementIDsForComps(
+                    allCompIDs, nastranOrdering=True
+                )
+
+                # Create new zone
+                zoneInfo = Zone(tecInfo.log)
+
+                # Setup header info
+                zoneInfo.title = constrName
+                zoneInfo.headers_dict["VARIABLES"] = ["X", "Y", "Z"]
+
+                # Initialize connectivity/node locations
+                nodeXYZ = []
+                quadConn = []
+                triConn = []
+                hexConn = []
+                tetConn = []
+
+                # Loop through and set up connectivity/node locations
+                currNodeID = 0
+                oldToNewNodeID = {}
+                for elemID in allElemIDsGlobal:
+                    elemInfo = self.bdfInfo.elements[elemID]
+                    compID = self.meshLoader.nastranToTACSCompIDDict[elemInfo.pid]
+                    # Reverse the connectivity if normal is facing inward
+                    if compID in negCompIDs:
+                        elemInfo = copy.deepcopy(elemInfo)
+                        elemInfo.flip_normal()
+                    # We'll need to renumber the nodes to be sequential
+                    oldConn = elemInfo.nodes
+                    newConn = []
+                    for oldNodeID in oldConn:
+                        if oldNodeID not in oldToNewNodeID:
+                            oldToNewNodeID[oldNodeID] = currNodeID
+                            nodeXYZ.append(allNodeXYZDict[oldNodeID])
+                            currNodeID += 1
+                        newNodeID = oldToNewNodeID[oldNodeID]
+                        newConn.append(newNodeID)
+
+                    # Append new connectivity to the appropriate list
+                    if "CQUAD" in elemInfo.type:
+                        quadConn.append(newConn)
+                    elif "CTRI" in elemInfo.type:
+                        triConn.append(newConn)
+                    elif "CHEXA" in elemInfo.type:
+                        hexConn.append(newConn)
+                    elif "CTETRA" in elemInfo.type:
+                        tetConn.append(newConn)
+
+                # Set all node/connectivity info to zone
+                zoneInfo.xyz = np.array(nodeXYZ, dtype=float)
+                zoneInfo.quad_elements = np.array(quadConn, dtype=np.intc)
+                zoneInfo.tri_elements = np.array(triConn, dtype=np.intc)
+                zoneInfo.hexa_elements = np.array(hexConn, dtype=np.intc)
+                zoneInfo.tet_elements = np.array(tetConn, dtype=np.intc)
+
+                # Add constraint zone to tecplot file
+                tecInfo.zones.append(zoneInfo)
+
+            # Wait for root
+            self.comm.barrier()
+
+        # Write out tecplot file
+        if self.comm.rank == 0:
+            tecInfo.write_tecplot(base)
+
+        # Wait for root
+        self.comm.barrier()
+
 
 # Simple class for handling sparse volume constraints in parallel
 class ParallelVolumeConstraint(object):
     dtype = TACSConstraint.dtype
 
-    def __init__(self, comm, assembler, posVolFunc, negVolFunc, lb=0.0, ub=1e20):
+    def __init__(
+        self, assembler, meshLoader, posCompIDs, negCompIDs, Xpts0, lb=0.0, ub=1e20
+    ):
         # Number of constraints
         self.nCon = 1
-        # MPI comm
-        self.comm = comm
         self.assembler = assembler
+
+        # Create two TACS Volume function domains,
+        # One for the properly oriented components...
+        if len(posCompIDs) > 0:
+            posVolFunc = EnclosedVolume(self.assembler)
+            elemIDs = meshLoader.getLocalElementIDsForComps(posCompIDs)
+            posVolFunc.setDomain(elemIDs)
+        else:
+            posVolFunc = None
+
+        # and one for the flipped components.
+        # The volumes computed by these components will be negative
+        if len(negCompIDs) > 0:
+            negVolFunc = EnclosedVolume(self.assembler)
+            elemIDs = meshLoader.getLocalElementIDsForComps(negCompIDs)
+            negVolFunc.setDomain(elemIDs)
+        else:
+            negVolFunc = None
+
+        # Compute the volume and check that we sorted the correct orientations
+        self.posCompIDs = posCompIDs
+        self.negCompIDs = negCompIDs
         self.posVolFunc = posVolFunc
         self.negVolFunc = negVolFunc
+        vol0 = self.evalCon(Xpts0)
+
+        # If the volume is negative, we need to flip the orientations
+        if vol0 < 0.0:
+            self.posVolFunc, self.negVolFunc = self.negVolFunc, self.posVolFunc
+            self.posCompIDs, self.negCompIDs = self.negCompIDs, self.posCompIDs
 
         # Save bound information
         if isinstance(lb, np.ndarray) and len(lb) == self.nCon:
@@ -460,3 +623,41 @@ class ParallelVolumeConstraint(object):
 
     def getBounds(self):
         return self.lb.copy(), self.ub.copy()
+
+
+# Slight modification of pyNASTRAN's tecplot Zone class
+# By default this class doesn't write out the zone title in the tecplot file for some reason
+# We make a new class here with an overriden method that includes this in the zone header
+class Zone(tp.Zone):
+    def write_unstructured_zone(
+        self,
+        tecplot_file,
+        ivars,
+        is_points,
+        nnodes,
+        nelements,
+        zone_type,
+        log,
+        is_tris,
+        is_quads,
+        is_tets,
+        is_hexas,
+        adjust_nids=True,
+    ):
+        msg = "ZONE "
+        self.log.info("is_points = %s" % is_points)
+        datapacking = "POINT" if is_points else "BLOCK"
+        # Make sure to include title
+        msg += f" T={self.title}, n={nnodes:d}, e={nelements:d}, ZONETYPE={zone_type}, DATAPACKING={datapacking}\n"
+        tecplot_file.write(msg)
+
+        self._write_xyz_results(tecplot_file, is_points, ivars)
+        self._write_elements(
+            tecplot_file,
+            nnodes,
+            is_tris,
+            is_quads,
+            is_tets,
+            is_hexas,
+            adjust_nids=adjust_nids,
+        )
