@@ -388,8 +388,9 @@ class VolumeConstraint(TACSConstraint):
         # Otherwise, output them all
         evalCons = self._processEvalCons(evalCons)
 
-        # Get number of dvs on this proc
+        # Get number of dvs/coords on this proc
         nDVs = self.getNumDesignVars()
+        ncoords = self.getNumCoordinates()
 
         # Loop through each requested constraint set
         for conName in evalCons:
@@ -402,7 +403,9 @@ class VolumeConstraint(TACSConstraint):
 
             # Get nodal sensitivity
             xptSens = self.constraintList[conName].evalConSens(self.Xpts)
-            funcsSens[key][self.coordName] = xptSens.getArray()
+            xpt_array = xptSens.getArray()
+            # Reshape from 1d array to a 1 by N column vector
+            funcsSens[key][self.coordName] = xpt_array.reshape(1, ncoords)
 
     def writeVisualization(self, outputDir=None, baseName=None, number=None):
         """
@@ -445,7 +448,7 @@ class VolumeConstraint(TACSConstraint):
         localXpts = self.Xpts.getArray()
         localXpts = localXpts.reshape(-1, 3)
 
-        # Setup tecplot writter on root
+        # Setup tecplot writer on root
         if self.comm.rank == 0:
             tecInfo = tp.Tecplot(debug=None)
 
