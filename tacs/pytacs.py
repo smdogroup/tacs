@@ -34,6 +34,7 @@ import pyNastran.bdf as pn
 
 import tacs.TACS
 import tacs.constitutive
+import tacs.constraints
 import tacs.elements
 import tacs.functions
 import tacs.problems
@@ -1554,7 +1555,7 @@ class pyTACS(BaseUI):
         ----------
         fileName: str
             Name of file to write BDF file to.
-        problems: tacs.problems.BaseProblem or List[tacs.problems.BaseProblem]
+        problems: TACSProblem or list[TACSProblem]
             List of pytacs Problem classes to write BDF file from.
         """
         # Make sure problems is in a list
@@ -1573,9 +1574,11 @@ class pyTACS(BaseUI):
                 )
 
         # Make sure design variables are up-to-date
-        x_bvec = self.createDesignVec(asBVec=True)
-        x_bvec.getArray()[:] = problems[0].getDesignVars()
-        self.assembler.setDesignVars(x_bvec)
+        dv_bvec = self.createDesignVec(asBVec=True)
+        dv_bvec.getArray()[:] = problems[0].getDesignVars()
+        # Transfer all non-local dvs
+        dv_bvec.beginDistributeValues()
+        dv_bvec.endDistributeValues()
 
         # Get local node info for each processor
         multNodes = self.getLocalMultiplierNodeIDs()
@@ -1621,6 +1624,11 @@ class pyTACS(BaseUI):
             for compID, propID in enumerate(self.bdfInfo.properties):
                 # Get TACS element object
                 elemObj = self.meshLoader.getElementObject(compID, 0)
+                # get dv nums for element
+                dvNums = elemObj.getDesignVarNums(0)
+                # Update design variable values
+                dvVals = dv_bvec.getValues(dvNums)
+                elemObj.setDesignVars(0, dvVals)
                 # Get TACS constitutive object for element (if applicable)
                 conObj = elemObj.getConstitutive()
                 if conObj is not None:
@@ -1806,6 +1814,119 @@ class pyTACS(BaseUI):
 
         # All procs should wait for root
         self.comm.barrier()
+
+    @postinitialize_method
+    def createAdjacencyConstraint(self, name, options={}):
+        """
+        Create a new AdjacencyConstraint for calculating
+        design variable differences across adjacent components.
+        This constraint can be used to ensure that the design variables
+        do not change too abruptly across components.
+        The formulation is a linear constraint that takes the following form:
+
+        c = dv_i - dv_j
+
+        Where dv_i and dv_j are two design variables in adjacent components.
+
+        Parameters
+        ----------
+        name : str
+            Name to assign constraint.
+        options : dict
+            Class-specific options to pass to AdjacencyConstraint instance (case-insensitive).
+
+        Returns
+        ----------
+        constraint : AdjacencyConstraint
+            AdjacencyConstraint object used for calculating constraints.
+        """
+        constr = tacs.constraints.AdjacencyConstraint(
+            name,
+            self.assembler,
+            self.comm,
+            self.outputViewer,
+            self.meshLoader,
+            options,
+        )
+        # Set with original design vars and coordinates, in case they have changed
+        constr.setDesignVars(self.x0)
+        constr.setNodes(self.Xpts0)
+        return constr
+
+    @postinitialize_method
+    def createDVConstraint(self, name, options={}):
+        """
+        Create a new DVConstraint for calculating linear constraints based
+        on design variables within the same component.
+
+        The constraints are of the form:
+
+            c = a_0 * dv_0 + a_1 * dv_1 + ... + a_n * dv_n
+
+        Where which design variables to include (dv_0, dv_1, etc.)
+        and the corresponding weights (a_0, a_1, etc.) are defined by the user.
+
+        Parameters
+        ----------
+        name : str
+            Name to assign constraint.
+        options : dict
+            Class-specific options to pass to DVConstraint instance (case-insensitive).
+
+        Returns
+        ----------
+        constraint : DVConstraint
+            DVConstraint object used for calculating constraints.
+        """
+        constr = tacs.constraints.DVConstraint(
+            name,
+            self.assembler,
+            self.comm,
+            self.outputViewer,
+            self.meshLoader,
+            options,
+        )
+        # Set with original design vars and coordinates, in case they have changed
+        constr.setDesignVars(self.x0)
+        constr.setNodes(self.Xpts0)
+        return constr
+
+    @postinitialize_method
+    def createVolumeConstraint(self, name, options={}):
+        """
+        Create a new VolumeConstraint for constraining the size of a closed volume.
+        Only shell and solid elements are supported for this constraint.
+        For shell elements, the enclosed volume MUST be manifold and water-tight (no missing/internal faces).
+        The formulation is a nonlinear constraint based on the nodal coordinates.
+
+        A common example of this is ensuring enough volume in the wingbox for fuel:
+
+            vol_wing >= vol_fuel
+
+        Parameters
+        ----------
+        name : str
+            Name to assign constraint.
+        options : dict
+            Class-specific options to pass to VolumeConstraint instance (case-insensitive).
+
+        Returns
+        ----------
+        constraint : VolumeConstraint
+            VolumeConstraint object used for calculating constraints.
+        """
+        constr = tacs.constraints.VolumeConstraint(
+            name,
+            self.assembler,
+            self.comm,
+            self.outputViewer,
+            self.meshLoader,
+            options,
+        )
+        # Set with original design vars and coordinates, in case they have changed
+        constr.setDesignVars(self.x0)
+        constr.setNodes(self.Xpts0)
+        return constr
 
     def getNumComponents(self):
         """

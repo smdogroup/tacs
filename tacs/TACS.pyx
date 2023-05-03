@@ -438,6 +438,27 @@ cdef class Element:
         self.ptr.getDesignVars(elemIndex, dvLen, <TacsScalar*>dvs.data)
         return dvs
 
+    def setDesignVars(self, int elemIndex, np.ndarray[TacsScalar, ndim=1] dvs):
+        """
+        setDesignVars(self, int elemIndex, np.ndarray[TacsScalar, ndim=1] dvs)
+
+        Set the design variable values associated with this element
+
+        Args:
+            elemIndex (integer) The element index
+            dvs (np.ndarray) An array of the design variable values
+        """
+        cdef int dvsPerNode = 0
+        cdef int dvLen = 0
+
+        if self.ptr is NULL:
+            return None
+
+        dvsPerNode = self.ptr.getDesignVarsPerNode()
+        dvLen = self.ptr.getDesignVarNums(elemIndex, 0, NULL)
+        assert len(dvs) == dvLen * dvsPerNode
+        self.ptr.setDesignVars(elemIndex, dvLen, <TacsScalar*>dvs.data)
+
     def getDesignVarRange(self, int elemIndex):
         """
         getDesignVarRange(self, int elemIndex)

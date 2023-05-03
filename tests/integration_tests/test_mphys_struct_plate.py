@@ -24,6 +24,7 @@ FUNC_REFS = {
     "analysis.mass": 55.6,
     "analysis.Ixx": 74.13379667,
     "analysis.ks_vmfailure": 5.778130269059719,
+    "analysis.adjacency.PANEL": [0.0, 0.0, 0.0, 0.0],
 }
 
 # Inputs to check total sensitivities wrt
@@ -98,11 +99,22 @@ class ProblemTest(OpenMDAOTestCase.OpenMDAOTest):
             g = np.array([0.0, 0.0, -9.81]) * 100  # m/s^2
             problem.addInertialLoad(g)
 
+        def constraint_setup(scenario_name, fea_assembler, constraints):
+            """
+            Helper function to setup tacs constraint classes
+            """
+            # Setup adjacency constraints for panel thicknesses
+            constr = fea_assembler.createAdjacencyConstraint("adjacency")
+            constr.addConstraint("PANEL")
+            constr_list = [constr]
+            return constr_list
+
         class Top(Multipoint):
             def setup(self):
                 tacs_options = {
                     "element_callback": element_callback,
                     "problem_setup": problem_setup,
+                    "constraint_setup": constraint_setup,
                     "mesh_file": bdf_file,
                 }
 
