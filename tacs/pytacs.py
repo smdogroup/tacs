@@ -1573,9 +1573,11 @@ class pyTACS(BaseUI):
                 )
 
         # Make sure design variables are up-to-date
-        x_bvec = self.createDesignVec(asBVec=True)
-        x_bvec.getArray()[:] = problems[0].getDesignVars()
-        self.assembler.setDesignVars(x_bvec)
+        dv_bvec = self.createDesignVec(asBVec=True)
+        dv_bvec.getArray()[:] = problems[0].getDesignVars()
+        # Transfer all non-local dvs
+        dv_bvec.beginDistributeValues()
+        dv_bvec.endDistributeValues()
 
         # Get local node info for each processor
         multNodes = self.getLocalMultiplierNodeIDs()
@@ -1621,6 +1623,11 @@ class pyTACS(BaseUI):
             for compID, propID in enumerate(self.bdfInfo.properties):
                 # Get TACS element object
                 elemObj = self.meshLoader.getElementObject(compID, 0)
+                # get dv nums for element
+                dvNums = elemObj.getDesignVarNums(0)
+                # Update design variable values
+                dvVals = dv_bvec.getValues(dvNums)
+                elemObj.setDesignVars(0, dvVals)
                 # Get TACS constitutive object for element (if applicable)
                 conObj = elemObj.getConstitutive()
                 if conObj is not None:
