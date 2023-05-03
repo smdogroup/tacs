@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+
+<html lang="python">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>tacs.constraints.adjacency &#8212; TACS  documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/sphinxdoc.css" />
+    <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+    <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+    <script src="../../../_static/doctools.js"></script>
+    <script src="../../../_static/sphinx_highlight.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">TACS  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" accesskey="U">Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">tacs.constraints.adjacency</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for tacs.constraints.adjacency</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">The main purpose of this class is to constrain design variables step sizes across adjacent components.</span>
+<span class="sd">The formulation is a linear constraint that takes the following form:</span>
+
+<span class="sd">    c = dv_i - dv_j</span>
+
+<span class="sd">Where dv_i and dv_j are two design variables in adjacent components.</span>
+
+<span class="sd">A common example of this is ensuring that thicknesses vary to abruptly across panel boundaries:</span>
+
+<span class="sd">    -delta_t &lt; t_i - t_j &lt; delta_t</span>
+
+<span class="sd">.. note:: This class should be created using the</span>
+<span class="sd">    :meth:`pyTACS.createAdjacencyConstraint &lt;tacs.pytacs.pyTACS.createAdjacencyConstraint&gt;` method.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="c1"># =============================================================================</span>
+<span class="c1"># Imports</span>
+<span class="c1"># =============================================================================</span>
+<span class="kn">import</span> <span class="nn">os</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">scipy</span> <span class="k">as</span> <span class="nn">sp</span>
+
+<span class="kn">from</span> <span class="nn">tacs.constraints.base</span> <span class="kn">import</span> <span class="n">TACSConstraint</span><span class="p">,</span> <span class="n">SparseLinearConstraint</span>
+
+
+<div class="viewcode-block" id="AdjacencyConstraint"><a class="viewcode-back" href="../../../pytacs/adjacency.html#tacs.constraints.AdjacencyConstraint">[docs]</a><span class="k">class</span> <span class="nc">AdjacencyConstraint</span><span class="p">(</span><span class="n">TACSConstraint</span><span class="p">):</span>
+    <span class="c1"># Default options for class</span>
+    <span class="n">defaultOptions</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;outputDir&quot;</span><span class="p">:</span> <span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="s2">&quot;./&quot;</span><span class="p">,</span> <span class="s2">&quot;Output directory for F5 file writer.&quot;</span><span class="p">],</span>
+        <span class="s2">&quot;numberSolutions&quot;</span><span class="p">:</span> <span class="p">[</span>
+            <span class="nb">bool</span><span class="p">,</span>
+            <span class="kc">True</span><span class="p">,</span>
+            <span class="s2">&quot;Flag for attaching solution counter index to f5 files.&quot;</span><span class="p">,</span>
+        <span class="p">],</span>
+    <span class="p">}</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">name</span><span class="p">,</span>
+        <span class="n">assembler</span><span class="p">,</span>
+        <span class="n">comm</span><span class="p">,</span>
+        <span class="n">outputViewer</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">meshLoader</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">options</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        NOTE: This class should not be initialized directly by the user.</span>
+<span class="sd">        Use pyTACS.createAdjacencyConstraint instead.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        name : str</span>
+<span class="sd">            Name of this tacs problem</span>
+
+<span class="sd">        assembler : TACS.Assembler</span>
+<span class="sd">            Cython object responsible for creating and setting tacs objects used to solve problem</span>
+
+<span class="sd">        comm : mpi4py.MPI.Intracomm</span>
+<span class="sd">            The comm object on which to create the pyTACS object.</span>
+
+<span class="sd">        outputViewer : TACS.TACSToFH5</span>
+<span class="sd">            Cython object used to write out f5 files that can be converted and used for postprocessing.</span>
+
+<span class="sd">        meshLoader : pymeshloader.pyMeshLoader</span>
+<span class="sd">            pyMeshLoader object used to create the assembler.</span>
+
+<span class="sd">        options : dict</span>
+<span class="sd">            Dictionary holding problem-specific option parameters (case-insensitive).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="c1"># Problem name</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">name</span>
+
+        <span class="c1"># Default setup for common constraint class objects, sets up comm and options</span>
+        <span class="n">TACSConstraint</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span> <span class="n">assembler</span><span class="p">,</span> <span class="n">comm</span><span class="p">,</span> <span class="n">options</span><span class="p">,</span> <span class="n">outputViewer</span><span class="p">,</span> <span class="n">meshLoader</span>
+        <span class="p">)</span>
+
+        <span class="c1"># Create a list of all adjacent components on root proc</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_initializeAdjacencyList</span><span class="p">()</span>
+
+        <span class="c1"># Set call counter</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">callCounter</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+
+    <span class="k">def</span> <span class="nf">_initializeAdjacencyList</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Create a list of all components with common edges.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">comm</span><span class="o">.</span><span class="n">rank</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="c1"># First, create a dictionary of common edges shared by components</span>
+            <span class="n">edgeToFace</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="k">for</span> <span class="n">elemID</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">bdfInfo</span><span class="o">.</span><span class="n">elements</span><span class="p">:</span>
+                <span class="n">elemInfo</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">bdfInfo</span><span class="o">.</span><span class="n">elements</span><span class="p">[</span><span class="n">elemID</span><span class="p">]</span>
+                <span class="n">elemConn</span> <span class="o">=</span> <span class="n">elemInfo</span><span class="o">.</span><span class="n">nodes</span>
+                <span class="n">compID</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">meshLoader</span><span class="o">.</span><span class="n">nastranToTACSCompIDDict</span><span class="p">[</span><span class="n">elemInfo</span><span class="o">.</span><span class="n">pid</span><span class="p">]</span>
+                <span class="n">nnodes</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">elemConn</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">nnodes</span> <span class="o">&gt;=</span> <span class="mi">2</span><span class="p">:</span>
+                    <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nnodes</span><span class="p">):</span>
+                        <span class="n">nodeID1</span> <span class="o">=</span> <span class="n">elemConn</span><span class="p">[</span><span class="n">j</span><span class="p">]</span>
+                        <span class="n">nodeID2</span> <span class="o">=</span> <span class="n">elemConn</span><span class="p">[(</span><span class="n">j</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">%</span> <span class="n">nnodes</span><span class="p">]</span>
+
+                        <span class="k">if</span> <span class="n">nodeID1</span> <span class="o">&lt;</span> <span class="n">nodeID2</span><span class="p">:</span>
+                            <span class="n">key</span> <span class="o">=</span> <span class="p">(</span><span class="n">nodeID1</span><span class="p">,</span> <span class="n">nodeID2</span><span class="p">)</span>
+                        <span class="k">else</span><span class="p">:</span>
+                            <span class="n">key</span> <span class="o">=</span> <span class="p">(</span><span class="n">nodeID2</span><span class="p">,</span> <span class="n">nodeID1</span><span class="p">)</span>
+
+                        <span class="k">if</span> <span class="n">key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">edgeToFace</span><span class="p">:</span>
+                            <span class="n">edgeToFace</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">compID</span><span class="p">]</span>
+                        <span class="k">elif</span> <span class="n">compID</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">edgeToFace</span><span class="p">[</span><span class="n">key</span><span class="p">]:</span>
+                            <span class="n">edgeToFace</span><span class="p">[</span><span class="n">key</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">compID</span><span class="p">)</span>
+
+            <span class="c1"># Now we loop back over each element and each edge. By</span>
+            <span class="c1"># using the edgeToFace dictionary, we can now determine</span>
+            <span class="c1"># which components IDs (jComp) are connected to the</span>
+            <span class="c1"># current component ID (iComp).</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">adjacentComps</span> <span class="o">=</span> <span class="p">[]</span>
+
+            <span class="k">for</span> <span class="n">edgeKey</span> <span class="ow">in</span> <span class="n">edgeToFace</span><span class="p">:</span>
+                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">edgeToFace</span><span class="p">[</span><span class="n">edgeKey</span><span class="p">])</span> <span class="o">&gt;=</span> <span class="mi">2</span><span class="p">:</span>
+                    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">iComp</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">edgeToFace</span><span class="p">[</span><span class="n">edgeKey</span><span class="p">][:</span><span class="o">-</span><span class="mi">1</span><span class="p">]):</span>
+                        <span class="k">for</span> <span class="n">jComp</span> <span class="ow">in</span> <span class="n">edgeToFace</span><span class="p">[</span><span class="n">edgeKey</span><span class="p">][</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span> <span class="p">:]:</span>
+                            <span class="k">if</span> <span class="n">iComp</span> <span class="o">&lt;</span> <span class="n">jComp</span><span class="p">:</span>
+                                <span class="n">dvKey</span> <span class="o">=</span> <span class="p">(</span><span class="n">iComp</span><span class="p">,</span> <span class="n">jComp</span><span class="p">)</span>
+                            <span class="k">else</span><span class="p">:</span>
+                                <span class="n">dvKey</span> <span class="o">=</span> <span class="p">(</span><span class="n">jComp</span><span class="p">,</span> <span class="n">iComp</span><span class="p">)</span>
+                            <span class="k">if</span> <span class="n">dvKey</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">adjacentComps</span><span class="p">:</span>
+                                <span class="bp">self</span><span class="o">.</span><span class="n">adjacentComps</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">dvKey</span><span class="p">)</span>
+
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">adjacentComps</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="c1"># Wait for root</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">comm</span><span class="o">.</span><span class="n">barrier</span><span class="p">()</span>
+
+<div class="viewcode-block" id="AdjacencyConstraint.addConstraint"><a class="viewcode-back" href="../../../pytacs/adjacency.html#tacs.constraints.AdjacencyConstraint.addConstraint">[docs]</a>    <span class="k">def</span> <span class="nf">addConstraint</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">conName</span><span class="p">,</span> <span class="n">compIDs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">lower</span><span class="o">=-</span><span class="mf">1e20</span><span class="p">,</span> <span class="n">upper</span><span class="o">=</span><span class="mf">1e20</span><span class="p">,</span> <span class="n">dvIndex</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Generic method to adding a new constraint set for TACS.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        conName : str</span>
+<span class="sd">            The user-supplied name for the constraint set. This will</span>
+<span class="sd">            typically be a string that is meaningful to the user</span>
+
+<span class="sd">        compIDs: list[int] or None</span>
+<span class="sd">            List of compIDs to select. If None, all compIDs will be selected. Defaults to None.</span>
+
+<span class="sd">        lower: float or complex</span>
+<span class="sd">            lower bound for constraint. Defaults to -1e20.</span>
+
+<span class="sd">        upper: float or complex</span>
+<span class="sd">            upper bound for constraint. Defaults to 1e20.</span>
+
+<span class="sd">        dvIndex : int</span>
+<span class="sd">            Index number of element DV to be used in constraint. Defaults to 0.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">compIDs</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="c1"># Make sure CompIDs is flat and get element numbers on each proc corresponding to specified compIDs</span>
+            <span class="n">compIDs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_flatten</span><span class="p">(</span><span class="n">compIDs</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">nComps</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">meshLoader</span><span class="o">.</span><span class="n">getNumComponents</span><span class="p">()</span>
+            <span class="n">compIDs</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="n">nComps</span><span class="p">))</span>
+
+        <span class="n">constrObj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_createConstraint</span><span class="p">(</span><span class="n">dvIndex</span><span class="p">,</span> <span class="n">compIDs</span><span class="p">,</span> <span class="n">lower</span><span class="p">,</span> <span class="n">upper</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">constrObj</span><span class="o">.</span><span class="n">nCon</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">constraintList</span><span class="p">[</span><span class="n">conName</span><span class="p">]</span> <span class="o">=</span> <span class="n">constrObj</span>
+            <span class="n">success</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_TACSWarning</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;No adjacent components found in `compIDs`. Skipping </span><span class="si">{</span><span class="n">conName</span><span class="si">}</span><span class="s2">.&quot;</span>
+            <span class="p">)</span>
+            <span class="n">success</span> <span class="o">=</span> <span class="kc">False</span>
+
+        <span class="k">return</span> <span class="n">success</span></div>
+
+    <span class="k">def</span> <span class="nf">_createConstraint</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dvIndex</span><span class="p">,</span> <span class="n">compIDs</span><span class="p">,</span> <span class="n">lbound</span><span class="p">,</span> <span class="n">ubound</span><span class="p">):</span>
+        <span class="n">size</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">comm</span><span class="o">.</span><span class="n">size</span>
+        <span class="n">rank</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">comm</span><span class="o">.</span><span class="n">rank</span>
+        <span class="c1"># Gather the dv mapping from each proc</span>
+        <span class="n">globalToLocalDVNumsOnProc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">comm</span><span class="o">.</span><span class="n">gather</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">globalToLocalDVNums</span><span class="p">,</span> <span class="n">root</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        <span class="c1"># Assemble constraint info on root proc</span>
+        <span class="k">if</span> <span class="n">rank</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="c1"># Create a list of lists that will hold the sparse data info on each proc</span>
+            <span class="n">rowsOnProc</span> <span class="o">=</span> <span class="p">[[]</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">size</span><span class="p">)]</span>
+            <span class="n">colsOnProc</span> <span class="o">=</span> <span class="p">[[]</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">size</span><span class="p">)]</span>
+            <span class="n">valsOnProc</span> <span class="o">=</span> <span class="p">[[]</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">size</span><span class="p">)]</span>
+            <span class="n">conCount</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="n">foundCompPairs</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="c1"># Loop through all adjacent component pairs</span>
+            <span class="k">for</span> <span class="n">compPair</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">adjacentComps</span><span class="p">:</span>
+                <span class="c1"># Check if they are in the user provided compIDs</span>
+                <span class="k">if</span> <span class="n">compPair</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="ow">in</span> <span class="n">compIDs</span> <span class="ow">and</span> <span class="n">compPair</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="ow">in</span> <span class="n">compIDs</span><span class="p">:</span>
+                    <span class="c1"># Add comp pair to list</span>
+                    <span class="n">foundCompPairs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">compPair</span><span class="p">)</span>
+                    <span class="c1"># We found a new constraint</span>
+                    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">comp</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">compPair</span><span class="p">):</span>
+                        <span class="c1"># Get the TACS element object associated with this compID</span>
+                        <span class="n">elemObj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">meshLoader</span><span class="o">.</span><span class="n">getElementObject</span><span class="p">(</span><span class="n">comp</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+                        <span class="n">elemIndex</span> <span class="o">=</span> <span class="mi">0</span>
+                        <span class="c1"># Get the dvs owned by this element</span>
+                        <span class="n">globalDvNums</span> <span class="o">=</span> <span class="n">elemObj</span><span class="o">.</span><span class="n">getDesignVarNums</span><span class="p">(</span><span class="n">elemIndex</span><span class="p">)</span>
+                        <span class="c1"># Check if specified dv num is owned by each proc</span>
+                        <span class="k">for</span> <span class="n">proc_i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">size</span><span class="p">):</span>
+                            <span class="n">globalToLocalDVNums</span> <span class="o">=</span> <span class="n">globalToLocalDVNumsOnProc</span><span class="p">[</span><span class="n">proc_i</span><span class="p">]</span>
+                            <span class="k">if</span> <span class="n">globalDvNums</span><span class="p">[</span><span class="n">dvIndex</span><span class="p">]</span> <span class="ow">in</span> <span class="n">globalToLocalDVNums</span><span class="p">:</span>
+                                <span class="n">globalDVNum</span> <span class="o">=</span> <span class="n">globalDvNums</span><span class="p">[</span><span class="n">dvIndex</span><span class="p">]</span>
+                                <span class="n">localDVNum</span> <span class="o">=</span> <span class="n">globalToLocalDVNums</span><span class="p">[</span><span class="n">globalDVNum</span><span class="p">]</span>
+                                <span class="n">rowsOnProc</span><span class="p">[</span><span class="n">proc_i</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">conCount</span><span class="p">)</span>
+                                <span class="n">colsOnProc</span><span class="p">[</span><span class="n">proc_i</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">localDVNum</span><span class="p">)</span>
+                                <span class="k">if</span> <span class="n">i</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                                    <span class="n">valsOnProc</span><span class="p">[</span><span class="n">proc_i</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="mf">1.0</span><span class="p">)</span>
+                                <span class="k">else</span><span class="p">:</span>
+                                    <span class="n">valsOnProc</span><span class="p">[</span><span class="n">proc_i</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="o">-</span><span class="mf">1.0</span><span class="p">)</span>
+                                <span class="k">break</span>
+                    <span class="n">conCount</span> <span class="o">+=</span> <span class="mi">1</span>
+
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">rowsOnProc</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="n">colsOnProc</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="n">valsOnProc</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="n">conCount</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="n">foundCompPairs</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="c1"># Scatter local sparse indices/values to remaining procs</span>
+        <span class="n">rows</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">comm</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">rowsOnProc</span><span class="p">,</span> <span class="n">root</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        <span class="n">cols</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">comm</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">colsOnProc</span><span class="p">,</span> <span class="n">root</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        <span class="n">vals</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">comm</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">valsOnProc</span><span class="p">,</span> <span class="n">root</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+
+        <span class="c1"># Get local sparse matrix dimensions</span>
+        <span class="n">foundCompPairs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">comm</span><span class="o">.</span><span class="n">bcast</span><span class="p">(</span><span class="n">foundCompPairs</span><span class="p">,</span> <span class="n">root</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        <span class="n">conCount</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">comm</span><span class="o">.</span><span class="n">bcast</span><span class="p">(</span><span class="n">conCount</span><span class="p">,</span> <span class="n">root</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        <span class="n">nLocalDVs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getNumDesignVars</span><span class="p">()</span>
+
+        <span class="n">constrObj</span> <span class="o">=</span> <span class="n">SparseLinearConstraint</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">comm</span><span class="p">,</span> <span class="n">rows</span><span class="p">,</span> <span class="n">cols</span><span class="p">,</span> <span class="n">vals</span><span class="p">,</span> <span class="n">conCount</span><span class="p">,</span> <span class="n">nLocalDVs</span><span class="p">,</span> <span class="n">lbound</span><span class="p">,</span> <span class="n">ubound</span>
+        <span class="p">)</span>
+        <span class="n">constrObj</span><span class="o">.</span><span class="n">compPairs</span> <span class="o">=</span> <span class="n">foundCompPairs</span>
+
+        <span class="c1"># Create linear constraint object</span>
+        <span class="k">return</span> <span class="n">constrObj</span>
+
+<div class="viewcode-block" id="AdjacencyConstraint.evalConstraints"><a class="viewcode-back" href="../../../pytacs/adjacency.html#tacs.constraints.AdjacencyConstraint.evalConstraints">[docs]</a>    <span class="k">def</span> <span class="nf">evalConstraints</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">funcs</span><span class="p">,</span> <span class="n">evalCons</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ignoreMissing</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Evaluate values for constraints. The constraints corresponding to the strings in</span>
+<span class="sd">        evalCons are evaluated and updated into the provided</span>
+<span class="sd">        dictionary.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        funcs : dict</span>
+<span class="sd">            Dictionary into which the constraints are saved.</span>
+<span class="sd">        evalCons : iterable object containing strings.</span>
+<span class="sd">            If not none, use these constraints to evaluate.</span>
+<span class="sd">        ignoreMissing : bool</span>
+<span class="sd">            Flag to supress checking for a valid constraint. Please use</span>
+<span class="sd">            this option with caution.</span>
+
+<span class="sd">        Examples</span>
+<span class="sd">        --------</span>
+<span class="sd">        &gt;&gt;&gt; funcs = {}</span>
+<span class="sd">        &gt;&gt;&gt; adjConstraint.evalConstraints(funcs, &#39;LE_SPAR&#39;)</span>
+<span class="sd">        &gt;&gt;&gt; funcs</span>
+<span class="sd">        &gt;&gt;&gt; # Result will look like (if AdjacencyConstraint has name of &#39;c1&#39;):</span>
+<span class="sd">        &gt;&gt;&gt; # {&#39;c1_LE_SPAR&#39;: array([12354.10])}</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Check if user specified which constraints to output</span>
+        <span class="c1"># Otherwise, output them all</span>
+        <span class="n">evalCons</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_processEvalCons</span><span class="p">(</span><span class="n">evalCons</span><span class="p">,</span> <span class="n">ignoreMissing</span><span class="p">)</span>
+
+        <span class="c1"># Loop through each requested constraint set</span>
+        <span class="k">for</span> <span class="n">conName</span> <span class="ow">in</span> <span class="n">evalCons</span><span class="p">:</span>
+            <span class="n">key</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">conName</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="n">funcs</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">constraintList</span><span class="p">[</span><span class="n">conName</span><span class="p">]</span><span class="o">.</span><span class="n">evalCon</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">x</span><span class="o">.</span><span class="n">getArray</span><span class="p">())</span>
+
+        <span class="c1"># Update call counter</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">callCounter</span> <span class="o">+=</span> <span class="mi">1</span></div>
+
+<div class="viewcode-block" id="AdjacencyConstraint.evalConstraintsSens"><a class="viewcode-back" href="../../../pytacs/adjacency.html#tacs.constraints.AdjacencyConstraint.evalConstraintsSens">[docs]</a>    <span class="k">def</span> <span class="nf">evalConstraintsSens</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">funcsSens</span><span class="p">,</span> <span class="n">evalCons</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        This is the main routine for returning useful (sensitivity)</span>
+<span class="sd">        information from constraint. The derivatives of the constraints</span>
+<span class="sd">        corresponding to the strings in evalCons are evaluated and</span>
+<span class="sd">        updated into the provided dictionary. The derivitives with</span>
+<span class="sd">        respect to all design variables and node locations are computed.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        funcsSens : dict</span>
+<span class="sd">            Dictionary into which the derivatives are saved.</span>
+<span class="sd">        evalCons : iterable object containing strings</span>
+<span class="sd">            The constraints the user wants returned</span>
+
+<span class="sd">        Examples</span>
+<span class="sd">        --------</span>
+<span class="sd">        &gt;&gt;&gt; funcsSens = {}</span>
+<span class="sd">        &gt;&gt;&gt; adjConstraint.evalConstraintsSens(funcsSens, &#39;LE_SPAR&#39;)</span>
+<span class="sd">        &gt;&gt;&gt; funcsSens</span>
+<span class="sd">        &gt;&gt;&gt; # Result will look like (if AdjacencyConstraint has name of &#39;c1&#39;):</span>
+<span class="sd">        &gt;&gt;&gt; # {&#39;c1_LE_SPAR&#39;:{&#39;struct&#39;:&lt;50x242 sparse matrix of type &#39;&lt;class &#39;numpy.float64&#39;&gt;&#39; with 100 stored elements in Compressed Sparse Row format&gt;}}</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Check if user specified which constraints to output</span>
+        <span class="c1"># Otherwise, output them all</span>
+        <span class="n">evalCons</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_processEvalCons</span><span class="p">(</span><span class="n">evalCons</span><span class="p">)</span>
+
+        <span class="c1"># Get number of nodes coords on this proc</span>
+        <span class="n">nCoords</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getNumCoordinates</span><span class="p">()</span>
+
+        <span class="c1"># Loop through each requested constraint set</span>
+        <span class="k">for</span> <span class="n">conName</span> <span class="ow">in</span> <span class="n">evalCons</span><span class="p">:</span>
+            <span class="n">key</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">conName</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="c1"># Get sparse Jacobian for dv sensitivity</span>
+            <span class="n">funcsSens</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="n">funcsSens</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="bp">self</span><span class="o">.</span><span class="n">varName</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">constraintList</span><span class="p">[</span><span class="n">conName</span><span class="p">]</span><span class="o">.</span><span class="n">evalConSens</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">x</span><span class="o">.</span><span class="n">getArray</span><span class="p">()</span>
+            <span class="p">)</span>
+
+            <span class="c1"># Nodal sensitivities are always zero for this constraint,</span>
+            <span class="c1"># Add an empty sparse matrix</span>
+            <span class="n">nCon</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">constraintList</span><span class="p">[</span><span class="n">conName</span><span class="p">]</span><span class="o">.</span><span class="n">nCon</span>
+            <span class="n">funcsSens</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="bp">self</span><span class="o">.</span><span class="n">coordName</span><span class="p">]</span> <span class="o">=</span> <span class="n">sp</span><span class="o">.</span><span class="n">sparse</span><span class="o">.</span><span class="n">csr_matrix</span><span class="p">(</span>
+                <span class="p">(</span><span class="n">nCon</span><span class="p">,</span> <span class="n">nCoords</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">dtype</span>
+            <span class="p">)</span></div>
+
+<div class="viewcode-block" id="AdjacencyConstraint.writeVisualization"><a class="viewcode-back" href="../../../pytacs/adjacency.html#tacs.constraints.AdjacencyConstraint.writeVisualization">[docs]</a>    <span class="k">def</span> <span class="nf">writeVisualization</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">outputDir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">baseName</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">number</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        This function can be used to write a tecplot file for</span>
+<span class="sd">        the purposes of visualization.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        outputDir : str or None</span>
+<span class="sd">            Use the supplied output directory</span>
+<span class="sd">        baseName : str or None</span>
+<span class="sd">            Use this supplied string for the base filename. Typically</span>
+<span class="sd">            only used from an external solver.</span>
+<span class="sd">        number : int or None</span>
+<span class="sd">            Use the user supplied number to index output. Again, only</span>
+<span class="sd">            typically used from an external solver</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Check input</span>
+        <span class="k">if</span> <span class="n">outputDir</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">outputDir</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s2">&quot;outputDir&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">baseName</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">baseName</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span>
+
+        <span class="c1"># If we are numbering output, it saving the sequence of</span>
+        <span class="c1"># calls, add the call number</span>
+        <span class="k">if</span> <span class="n">number</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="c1"># We need number based on the provided number:</span>
+            <span class="n">baseName</span> <span class="o">=</span> <span class="n">baseName</span> <span class="o">+</span> <span class="s2">&quot;_</span><span class="si">%3.3d</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">number</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># if number is none, i.e. standalone, but we need to</span>
+            <span class="c1"># number solutions, use internal counter</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s2">&quot;numberSolutions&quot;</span><span class="p">):</span>
+                <span class="n">baseName</span> <span class="o">=</span> <span class="n">baseName</span> <span class="o">+</span> <span class="s2">&quot;_</span><span class="si">%3.3d</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">callCounter</span>
+
+        <span class="n">base</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">outputDir</span><span class="p">,</span> <span class="n">baseName</span><span class="p">)</span> <span class="o">+</span> <span class="s2">&quot;.dat&quot;</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">comm</span><span class="o">.</span><span class="n">rank</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">f</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">base</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">)</span>
+            <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s1">&#39;VARIABLES = &quot;X&quot;, &quot;Y&quot;, &quot;Z&quot;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span>
+
+        <span class="c1"># Get current node locations</span>
+        <span class="n">Xpts_local</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">Xpts</span><span class="o">.</span><span class="n">getArray</span><span class="p">()</span>
+        <span class="n">Xpts_local</span> <span class="o">=</span> <span class="n">Xpts_local</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">constrName</span><span class="p">,</span> <span class="n">constrObj</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">constraintList</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="k">for</span> <span class="n">compPair</span> <span class="ow">in</span> <span class="n">constrObj</span><span class="o">.</span><span class="n">compPairs</span><span class="p">:</span>
+                <span class="c1"># Get the &#39;average&#39; location for each component in the dvGroup</span>
+                <span class="n">compCenters</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">([</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">j</span><span class="p">,</span> <span class="n">compID</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">compPair</span><span class="p">):</span>
+                    <span class="n">nodeIDsGlobal</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">meshLoader</span><span class="o">.</span><span class="n">getGlobalNodeIDsForComps</span><span class="p">(</span>
+                        <span class="p">[</span><span class="n">compID</span><span class="p">],</span> <span class="n">nastranOrdering</span><span class="o">=</span><span class="kc">True</span>
+                    <span class="p">)</span>
+                    <span class="n">nodeIDsLocal</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">meshLoader</span><span class="o">.</span><span class="n">getLocalNodeIDsFromGlobal</span><span class="p">(</span>
+                        <span class="n">nodeIDsGlobal</span><span class="p">,</span> <span class="n">nastranOrdering</span><span class="o">=</span><span class="kc">True</span>
+                    <span class="p">)</span>
+                    <span class="k">for</span> <span class="n">lID</span> <span class="ow">in</span> <span class="n">nodeIDsLocal</span><span class="p">:</span>
+                        <span class="k">if</span> <span class="n">lID</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">:</span>
+                            <span class="n">compCenters</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">+=</span> <span class="n">np</span><span class="o">.</span><span class="n">real</span><span class="p">(</span><span class="n">Xpts_local</span><span class="p">[</span><span class="n">lID</span><span class="p">])</span>
+                    <span class="n">compCenters</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">comm</span><span class="o">.</span><span class="n">allreduce</span><span class="p">(</span><span class="n">compCenters</span><span class="p">[</span><span class="n">j</span><span class="p">])</span>
+                    <span class="n">nnodes</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">nodeIDsGlobal</span><span class="p">)</span>
+                    <span class="n">compCenters</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">/=</span> <span class="n">nnodes</span>
+
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">comm</span><span class="o">.</span><span class="n">rank</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Zone T=</span><span class="si">{</span><span class="n">constrName</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+                    <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;Nodes = 2, Elements = 1 ZONETYPE=FELINESEG</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+                    <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;DATAPACKING=POINT</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+                    <span class="k">for</span> <span class="n">ii</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">2</span><span class="p">):</span>
+                        <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span>
+                            <span class="s2">&quot;</span><span class="si">%g</span><span class="s2"> </span><span class="si">%g</span><span class="s2"> </span><span class="si">%g</span><span class="se">\n</span><span class="s2">&quot;</span>
+                            <span class="o">%</span> <span class="p">(</span>
+                                <span class="n">compCenters</span><span class="p">[</span><span class="n">ii</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span>
+                                <span class="n">compCenters</span><span class="p">[</span><span class="n">ii</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span>
+                                <span class="n">compCenters</span><span class="p">[</span><span class="n">ii</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span>
+                            <span class="p">)</span>
+                        <span class="p">)</span>
+                    <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;1 2</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>  <span class="c1"># Connectivity</span>
+
+                <span class="c1"># Wait for root</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">comm</span><span class="o">.</span><span class="n">barrier</span><span class="p">()</span>
+                <span class="n">i</span> <span class="o">+=</span> <span class="mi">1</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">comm</span><span class="o">.</span><span class="n">rank</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">f</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+        <span class="c1"># Wait for root</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">comm</span><span class="o">.</span><span class="n">barrier</span><span class="p">()</span></div></div>
+</pre></div>
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">TACS  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" >Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">tacs.constraints.adjacency</a></li> 
+      </ul>
+    </div>
+ <script type="text/javascript">
+    $(document).ready(function() {
+        $(".toggle > *").hide();
+        $(".toggle .header").show();
+        $(".toggle .header").click(function() {
+            $(this).parent().children().not(".header").toggle(400);
+            $(this).parent().children(".header").toggleClass("open");
+        })
+    });
+</script>
+
+  </body>
+</html>

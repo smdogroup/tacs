@@ -1,0 +1,752 @@
+<!DOCTYPE html>
+
+<html lang="python">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>tacs.constraints.volume &#8212; TACS  documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/sphinxdoc.css" />
+    <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+    <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+    <script src="../../../_static/doctools.js"></script>
+    <script src="../../../_static/sphinx_highlight.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">TACS  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" accesskey="U">Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">tacs.constraints.volume</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for tacs.constraints.volume</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">The main purpose of this class is to constrain the size of a closed volume.</span>
+<span class="sd">Only shell and solid elements are supported for this constraint.</span>
+<span class="sd">For shell elements, the enclosed volume MUST be manifold and water-tight (no missing/internal faces).</span>
+<span class="sd">The formulation is a nonlinear constraint based on the nodal coordinates.</span>
+
+<span class="sd">A common example of this is ensuring enough volume in the wingbox for fuel:</span>
+
+<span class="sd">    vol_wing &gt;= vol_fuel</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="c1"># =============================================================================</span>
+<span class="c1"># Imports</span>
+<span class="c1"># =============================================================================</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">copy</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">scipy</span> <span class="k">as</span> <span class="nn">sp</span>
+<span class="kn">import</span> <span class="nn">pyNastran.bdf</span> <span class="k">as</span> <span class="nn">pn</span>
+<span class="kn">import</span> <span class="nn">pyNastran.converters.tecplot.tecplot</span> <span class="k">as</span> <span class="nn">tp</span>
+
+<span class="kn">from</span> <span class="nn">tacs.constraints.base</span> <span class="kn">import</span> <span class="n">TACSConstraint</span>
+<span class="kn">from</span> <span class="nn">tacs.functions</span> <span class="kn">import</span> <span class="n">EnclosedVolume</span>
+
+
+<div class="viewcode-block" id="VolumeConstraint"><a class="viewcode-back" href="../../../pytacs/volume.html#tacs.constraints.VolumeConstraint">[docs]</a><span class="k">class</span> <span class="nc">VolumeConstraint</span><span class="p">(</span><span class="n">TACSConstraint</span><span class="p">):</span>
+    <span class="c1"># Default options for class</span>
+    <span class="n">defaultOptions</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;volCheckTol&quot;</span><span class="p">:</span> <span class="p">[</span>
+            <span class="nb">float</span><span class="p">,</span>
+            <span class="mf">1e-12</span><span class="p">,</span>
+            <span class="s2">&quot;Relative tolerance for surface closure check for shell elements.&quot;</span><span class="p">,</span>
+        <span class="p">],</span>
+        <span class="s2">&quot;outputDir&quot;</span><span class="p">:</span> <span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="s2">&quot;./&quot;</span><span class="p">,</span> <span class="s2">&quot;Output directory for F5 file writer.&quot;</span><span class="p">],</span>
+        <span class="s2">&quot;numberSolutions&quot;</span><span class="p">:</span> <span class="p">[</span>
+            <span class="nb">bool</span><span class="p">,</span>
+            <span class="kc">True</span><span class="p">,</span>
+            <span class="s2">&quot;Flag for attaching solution counter index to f5 files.&quot;</span><span class="p">,</span>
+        <span class="p">],</span>
+    <span class="p">}</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">name</span><span class="p">,</span>
+        <span class="n">assembler</span><span class="p">,</span>
+        <span class="n">comm</span><span class="p">,</span>
+        <span class="n">outputViewer</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">meshLoader</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">options</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        NOTE: This class should not be initialized directly by the user.</span>
+<span class="sd">        Use pyTACS.createVolumeConstraint instead.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        name : str</span>
+<span class="sd">            Name of this tacs problem</span>
+
+<span class="sd">        assembler : TACS.Assembler</span>
+<span class="sd">            Cython object responsible for creating and setting tacs objects used to solve problem</span>
+
+<span class="sd">        comm : mpi4py.MPI.Intracomm</span>
+<span class="sd">            The comm object on which to create the pyTACS object.</span>
+
+<span class="sd">        outputViewer : TACS.TACSToFH5</span>
+<span class="sd">            Cython object used to write out f5 files that can be converted and used for postprocessing.</span>
+
+<span class="sd">        meshLoader : pymeshloader.pyMeshLoader</span>
+<span class="sd">            pyMeshLoader object used to create the assembler.</span>
+
+<span class="sd">        options : dict</span>
+<span class="sd">            Dictionary holding problem-specific option parameters (case-insensitive).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="c1"># Problem name</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">name</span>
+
+        <span class="c1"># Default setup for common constraint class objects, sets up comm and options</span>
+        <span class="n">TACSConstraint</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span> <span class="n">assembler</span><span class="p">,</span> <span class="n">comm</span><span class="p">,</span> <span class="n">options</span><span class="p">,</span> <span class="n">outputViewer</span><span class="p">,</span> <span class="n">meshLoader</span>
+        <span class="p">)</span>
+
+        <span class="c1"># Create a list of all adjacent components on root proc</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_initializeAdjacencyList</span><span class="p">()</span>
+
+        <span class="c1"># Set call counter</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">callCounter</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+
+    <span class="k">def</span> <span class="nf">_initializeAdjacencyList</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Create a list of all components with common edges.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">comm</span><span class="o">.</span><span class="n">rank</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="c1"># First, create a dictionary of common edges shared by components</span>
+            <span class="n">edgeToFace</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="k">for</span> <span class="n">elemID</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">bdfInfo</span><span class="o">.</span><span class="n">elements</span><span class="p">:</span>
+                <span class="n">elemInfo</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">bdfInfo</span><span class="o">.</span><span class="n">elements</span><span class="p">[</span><span class="n">elemID</span><span class="p">]</span>
+                <span class="n">elemConn</span> <span class="o">=</span> <span class="n">elemInfo</span><span class="o">.</span><span class="n">nodes</span>
+                <span class="n">compID</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">meshLoader</span><span class="o">.</span><span class="n">nastranToTACSCompIDDict</span><span class="p">[</span><span class="n">elemInfo</span><span class="o">.</span><span class="n">pid</span><span class="p">]</span>
+                <span class="n">nnodes</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">elemConn</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">nnodes</span> <span class="o">&gt;=</span> <span class="mi">2</span><span class="p">:</span>
+                    <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nnodes</span><span class="p">):</span>
+                        <span class="n">nodeID1</span> <span class="o">=</span> <span class="n">elemConn</span><span class="p">[</span><span class="n">j</span><span class="p">]</span>
+                        <span class="n">nodeID2</span> <span class="o">=</span> <span class="n">elemConn</span><span class="p">[(</span><span class="n">j</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">%</span> <span class="n">nnodes</span><span class="p">]</span>
+
+                        <span class="n">key</span> <span class="o">=</span> <span class="p">(</span><span class="n">nodeID1</span><span class="p">,</span> <span class="n">nodeID2</span><span class="p">)</span>
+
+                        <span class="k">if</span> <span class="n">key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">edgeToFace</span><span class="p">:</span>
+                            <span class="n">edgeToFace</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">compID</span><span class="p">]</span>
+                        <span class="k">elif</span> <span class="n">compID</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">edgeToFace</span><span class="p">[</span><span class="n">key</span><span class="p">]:</span>
+                            <span class="n">edgeToFace</span><span class="p">[</span><span class="n">key</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">compID</span><span class="p">)</span>
+
+            <span class="c1"># Now we loop back over each element and each edge. By</span>
+            <span class="c1"># using the edgeToFace dictionary, we can now determine</span>
+            <span class="c1"># which components IDs (jComp) are connected to the</span>
+            <span class="c1"># current component ID (iComp).</span>
+            <span class="n">nComp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">meshLoader</span><span class="o">.</span><span class="n">getNumComponents</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">adjacentOrientationMatch</span> <span class="o">=</span> <span class="p">{</span><span class="n">compID</span><span class="p">:</span> <span class="p">{}</span> <span class="k">for</span> <span class="n">compID</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nComp</span><span class="p">)}</span>
+
+            <span class="c1"># Loop through each shared edge and determine if</span>
+            <span class="c1"># components sharing the edge have matching orientations or not</span>
+            <span class="k">for</span> <span class="n">edgeKey</span> <span class="ow">in</span> <span class="n">edgeToFace</span><span class="p">:</span>
+                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">edgeToFace</span><span class="p">[</span><span class="n">edgeKey</span><span class="p">])</span> <span class="o">&gt;=</span> <span class="mi">2</span><span class="p">:</span>
+                    <span class="c1"># If this component shares an edge with another component</span>
+                    <span class="c1"># that uses the same edge ordering, the normal orientations</span>
+                    <span class="c1"># will be inconsistent</span>
+                    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">iComp</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">edgeToFace</span><span class="p">[</span><span class="n">edgeKey</span><span class="p">][:</span><span class="o">-</span><span class="mi">1</span><span class="p">]):</span>
+                        <span class="k">for</span> <span class="n">jComp</span> <span class="ow">in</span> <span class="n">edgeToFace</span><span class="p">[</span><span class="n">edgeKey</span><span class="p">][</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span> <span class="p">:]:</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">adjacentOrientationMatch</span><span class="p">[</span><span class="n">iComp</span><span class="p">][</span>
+                                <span class="n">jComp</span>
+                            <span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">adjacentOrientationMatch</span><span class="p">[</span><span class="n">jComp</span><span class="p">][</span><span class="n">iComp</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
+                <span class="c1"># If this component shares an edge with another component</span>
+                <span class="c1"># but the edge ordering is reversed, the normal orientations</span>
+                <span class="c1"># will be consistent</span>
+                <span class="n">flippedEdgeKey</span> <span class="o">=</span> <span class="p">(</span><span class="n">edgeKey</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">edgeKey</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+                <span class="k">if</span> <span class="n">flippedEdgeKey</span> <span class="ow">in</span> <span class="n">edgeToFace</span><span class="p">:</span>
+                    <span class="k">for</span> <span class="n">iComp</span> <span class="ow">in</span> <span class="n">edgeToFace</span><span class="p">[</span><span class="n">edgeKey</span><span class="p">]:</span>
+                        <span class="k">for</span> <span class="n">jComp</span> <span class="ow">in</span> <span class="n">edgeToFace</span><span class="p">[</span><span class="n">flippedEdgeKey</span><span class="p">]:</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">adjacentOrientationMatch</span><span class="p">[</span><span class="n">iComp</span><span class="p">][</span>
+                                <span class="n">jComp</span>
+                            <span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">adjacentOrientationMatch</span><span class="p">[</span><span class="n">jComp</span><span class="p">][</span><span class="n">iComp</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">adjacentOrientationMatch</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="c1"># Wait for root</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">comm</span><span class="o">.</span><span class="n">barrier</span><span class="p">()</span>
+
+<div class="viewcode-block" id="VolumeConstraint.addConstraint"><a class="viewcode-back" href="../../../pytacs/volume.html#tacs.constraints.VolumeConstraint.addConstraint">[docs]</a>    <span class="k">def</span> <span class="nf">addConstraint</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">conName</span><span class="p">,</span> <span class="n">compIDs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">lower</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">upper</span><span class="o">=</span><span class="mf">1e20</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Generic method to adding a new constraint set for TACS.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        conName : str</span>
+<span class="sd">            The user-supplied name for the constraint set. This will</span>
+<span class="sd">            typically be a string that is meaningful to the user</span>
+
+<span class="sd">        compIDs: list[int] or None</span>
+<span class="sd">            List of compIDs to select. If None, all compIDs will be selected. Defaults to None.</span>
+
+<span class="sd">        lower: float or complex</span>
+<span class="sd">            lower bound for constraint. Defaults to 0.0.</span>
+
+<span class="sd">        upper: float or complex</span>
+<span class="sd">            upper bound for constraint. Defaults to 1e20.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">compIDs</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="c1"># Make sure CompIDs is flat and get element numbers on each proc corresponding to specified compIDs</span>
+            <span class="n">compIDs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_flatten</span><span class="p">(</span><span class="n">compIDs</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">nComps</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">meshLoader</span><span class="o">.</span><span class="n">getNumComponents</span><span class="p">()</span>
+            <span class="n">compIDs</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="n">nComps</span><span class="p">))</span>
+
+        <span class="n">constrObj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_createConstraint</span><span class="p">(</span><span class="n">compIDs</span><span class="p">,</span> <span class="n">lower</span><span class="p">,</span> <span class="n">upper</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">constrObj</span><span class="o">.</span><span class="n">nCon</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">constraintList</span><span class="p">[</span><span class="n">conName</span><span class="p">]</span> <span class="o">=</span> <span class="n">constrObj</span>
+            <span class="n">success</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_TACSWarning</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;No closed volume found in `compIDs`. Skipping </span><span class="si">{</span><span class="n">conName</span><span class="si">}</span><span class="s2">.&quot;</span>
+            <span class="p">)</span>
+            <span class="n">success</span> <span class="o">=</span> <span class="kc">False</span>
+
+        <span class="k">return</span> <span class="n">success</span></div>
+
+    <span class="k">def</span> <span class="nf">_createConstraint</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">compIDs</span><span class="p">,</span> <span class="n">lbound</span><span class="p">,</span> <span class="n">ubound</span><span class="p">):</span>
+        <span class="c1"># Check if elements in supplied compIDs are all shell elements or all solid elements</span>
+        <span class="n">elemIDs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">meshLoader</span><span class="o">.</span><span class="n">getGlobalElementIDsForComps</span><span class="p">(</span>
+            <span class="n">compIDs</span><span class="p">,</span> <span class="n">nastranOrdering</span><span class="o">=</span><span class="kc">True</span>
+        <span class="p">)</span>
+        <span class="n">allShells</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="n">allSolids</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="k">for</span> <span class="n">elemID</span> <span class="ow">in</span> <span class="n">elemIDs</span><span class="p">:</span>
+            <span class="n">elemInfo</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">bdfInfo</span><span class="o">.</span><span class="n">elements</span><span class="p">[</span><span class="n">elemID</span><span class="p">]</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">elemInfo</span><span class="p">,</span> <span class="n">pn</span><span class="o">.</span><span class="n">cards</span><span class="o">.</span><span class="n">elements</span><span class="o">.</span><span class="n">shell</span><span class="o">.</span><span class="n">ShellElement</span><span class="p">):</span>
+                <span class="k">if</span> <span class="n">allShells</span> <span class="ow">is</span> <span class="kc">False</span><span class="p">:</span>
+                    <span class="n">allShells</span> <span class="o">=</span> <span class="kc">True</span>
+
+            <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">elemInfo</span><span class="p">,</span> <span class="n">pn</span><span class="o">.</span><span class="n">cards</span><span class="o">.</span><span class="n">elements</span><span class="o">.</span><span class="n">solid</span><span class="o">.</span><span class="n">SolidElement</span><span class="p">):</span>
+                <span class="k">if</span> <span class="n">allSolids</span> <span class="ow">is</span> <span class="kc">False</span><span class="p">:</span>
+                    <span class="n">allSolids</span> <span class="o">=</span> <span class="kc">True</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="n">allShells</span> <span class="ow">or</span> <span class="n">allSolids</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_TACSWarning</span><span class="p">(</span><span class="s2">&quot;No shell or solid elements found in provided compIDs.&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="kc">None</span>
+        <span class="k">elif</span> <span class="n">allShells</span> <span class="ow">and</span> <span class="n">allSolids</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_TACSWarning</span><span class="p">(</span>
+                <span class="s2">&quot;Both shell and solid elements were found in compIDs. &quot;</span>
+                <span class="s2">&quot;Only all-shell or all-solid element meshes are supported.&quot;</span>
+            <span class="p">)</span>
+            <span class="k">return</span> <span class="kc">None</span>
+
+        <span class="c1"># Assemble constraint info on root proc</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">comm</span><span class="o">.</span><span class="n">rank</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">properNormalCompIDs</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="n">flippedNormalCompIDs</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="c1"># For shell element meshes we have to take an additional step.</span>
+            <span class="c1"># All components must have consistent normal directions (normals pointing out)</span>
+            <span class="c1"># for the volume calculation to work correctly. In general, this won&#39;t be the case.</span>
+            <span class="c1"># So we&#39;ll need to loop through each component and figure out if their normals need</span>
+            <span class="c1"># to be flipped. We&#39;ll also need to make sure the provided volume is closed.</span>
+            <span class="k">if</span> <span class="n">allShells</span><span class="p">:</span>
+                <span class="c1"># First, make sure that every component is connected to at least one other component</span>
+                <span class="k">for</span> <span class="n">compID</span> <span class="ow">in</span> <span class="n">compIDs</span><span class="p">:</span>
+                    <span class="n">adjIDs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">adjacentOrientationMatch</span><span class="p">[</span><span class="n">compID</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
+                    <span class="n">atLeastOneConnection</span> <span class="o">=</span> <span class="kc">False</span>
+                    <span class="k">for</span> <span class="n">adjID</span> <span class="ow">in</span> <span class="n">adjIDs</span><span class="p">:</span>
+                        <span class="k">if</span> <span class="n">adjID</span> <span class="ow">in</span> <span class="n">compIDs</span><span class="p">:</span>
+                            <span class="n">atLeastOneConnection</span> <span class="o">=</span> <span class="kc">True</span>
+                            <span class="k">break</span>
+                    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">compIDs</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="ow">and</span> <span class="n">atLeastOneConnection</span> <span class="ow">is</span> <span class="kc">False</span><span class="p">:</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">_TACSWarning</span><span class="p">(</span>
+                            <span class="s2">&quot;Provided compID&#39;s do not form a closed volume.&quot;</span>
+                        <span class="p">)</span>
+                        <span class="k">return</span> <span class="kc">None</span>
+
+                <span class="c1"># Assume that the first component is proper (we&#39;ll test this assumption later)</span>
+                <span class="n">currCompID</span> <span class="o">=</span> <span class="n">compIDs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+                <span class="n">properNormalCompIDs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">currCompID</span><span class="p">)</span>
+                <span class="c1"># Sort the remaining components based on their connectivity and adjacentOrientationMatch dict</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_sortIDs</span><span class="p">(</span>
+                    <span class="n">currCompID</span><span class="p">,</span> <span class="n">compIDs</span><span class="p">,</span> <span class="n">properNormalCompIDs</span><span class="p">,</span> <span class="n">flippedNormalCompIDs</span>
+                <span class="p">)</span>
+
+                <span class="c1"># Now we check to make sure the volume is closed</span>
+                <span class="c1"># This can be checked by integrating the normal over the surface of the volume.</span>
+                <span class="c1"># If the volume is closed, this integral should come out to the zero vector</span>
+                <span class="n">avgNormal</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
+                <span class="n">volSurfArea</span> <span class="o">=</span> <span class="mf">0.0</span>
+
+                <span class="c1"># Make sure bdf is cross-referenced</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">bdfInfo</span><span class="o">.</span><span class="n">is_xrefed</span> <span class="ow">is</span> <span class="kc">False</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">bdfInfo</span><span class="o">.</span><span class="n">cross_reference</span><span class="p">()</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">bdfInfo</span><span class="o">.</span><span class="n">is_xrefed</span> <span class="o">=</span> <span class="kc">True</span>
+
+                <span class="n">elemIDs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">meshLoader</span><span class="o">.</span><span class="n">getGlobalElementIDsForComps</span><span class="p">(</span>
+                    <span class="n">compIDs</span><span class="p">,</span> <span class="n">nastranOrdering</span><span class="o">=</span><span class="kc">True</span>
+                <span class="p">)</span>
+                <span class="k">for</span> <span class="n">elemID</span> <span class="ow">in</span> <span class="n">elemIDs</span><span class="p">:</span>
+                    <span class="n">elemInfo</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">bdfInfo</span><span class="o">.</span><span class="n">elements</span><span class="p">[</span><span class="n">elemID</span><span class="p">]</span>
+                    <span class="n">compID</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">meshLoader</span><span class="o">.</span><span class="n">nastranToTACSCompIDDict</span><span class="p">[</span><span class="n">elemInfo</span><span class="o">.</span><span class="n">pid</span><span class="p">]</span>
+                    <span class="k">if</span> <span class="n">compID</span> <span class="ow">in</span> <span class="n">properNormalCompIDs</span><span class="p">:</span>
+                        <span class="n">factor</span> <span class="o">=</span> <span class="mf">1.0</span>
+                    <span class="k">else</span><span class="p">:</span>  <span class="c1"># compID in flippedNormalCompIDs</span>
+                        <span class="n">factor</span> <span class="o">=</span> <span class="o">-</span><span class="mf">1.0</span>
+                    <span class="n">n</span> <span class="o">=</span> <span class="n">elemInfo</span><span class="o">.</span><span class="n">Normal</span><span class="p">()</span>
+                    <span class="n">A</span> <span class="o">=</span> <span class="n">elemInfo</span><span class="o">.</span><span class="n">Area</span><span class="p">()</span>
+                    <span class="n">volSurfArea</span> <span class="o">+=</span> <span class="n">A</span>
+                    <span class="n">avgNormal</span><span class="p">[:]</span> <span class="o">+=</span> <span class="n">factor</span> <span class="o">*</span> <span class="n">n</span> <span class="o">*</span> <span class="n">A</span>
+
+                <span class="n">avgNormal</span> <span class="o">/=</span> <span class="n">volSurfArea</span>
+                <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">avgNormal</span><span class="p">)</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s2">&quot;volCheckTol&quot;</span><span class="p">):</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_TACSWarning</span><span class="p">(</span><span class="s2">&quot;Specified volume may not be closed manifold.&quot;</span><span class="p">)</span>
+
+            <span class="c1"># We can treat all components as being proper for solids,</span>
+            <span class="c1"># since their volumes don&#39;t depend on their normals</span>
+            <span class="k">else</span><span class="p">:</span>  <span class="c1"># allSolids is True</span>
+                <span class="n">properNormalCompIDs</span> <span class="o">=</span> <span class="n">compIDs</span>
+
+        <span class="k">else</span><span class="p">:</span>  <span class="c1"># self.comm.rank != 0</span>
+            <span class="n">properNormalCompIDs</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="n">flippedNormalCompIDs</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="c1"># Broadcast CompID lists from root</span>
+        <span class="n">properNormalCompIDs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">comm</span><span class="o">.</span><span class="n">bcast</span><span class="p">(</span><span class="n">properNormalCompIDs</span><span class="p">,</span> <span class="n">root</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        <span class="n">flippedNormalCompIDs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">comm</span><span class="o">.</span><span class="n">bcast</span><span class="p">(</span><span class="n">flippedNormalCompIDs</span><span class="p">,</span> <span class="n">root</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">ParallelVolumeConstraint</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">assembler</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">meshLoader</span><span class="p">,</span>
+            <span class="n">properNormalCompIDs</span><span class="p">,</span>
+            <span class="n">flippedNormalCompIDs</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">Xpts</span><span class="p">,</span>
+            <span class="n">lb</span><span class="o">=</span><span class="n">lbound</span><span class="p">,</span>
+            <span class="n">ub</span><span class="o">=</span><span class="n">ubound</span><span class="p">,</span>
+        <span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_sortIDs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">currID</span><span class="p">,</span> <span class="n">compIDs</span><span class="p">,</span> <span class="n">orient1</span><span class="p">,</span> <span class="n">orient2</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Sort all compIDs into one of two lists (orient1 or orient2), depending on</span>
+<span class="sd">        the orientation of their neighbor components. This operation is performed recursively.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">adjID</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">adjacentOrientationMatch</span><span class="p">[</span><span class="n">currID</span><span class="p">]:</span>
+            <span class="n">sameOrientation</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">adjacentOrientationMatch</span><span class="p">[</span><span class="n">currID</span><span class="p">][</span><span class="n">adjID</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">adjID</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">compIDs</span><span class="p">:</span>
+                <span class="k">continue</span>
+            <span class="k">elif</span> <span class="n">sameOrientation</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">currID</span> <span class="ow">in</span> <span class="n">orient1</span> <span class="ow">and</span> <span class="n">adjID</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">orient1</span><span class="p">:</span>
+                    <span class="n">orient1</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">adjID</span><span class="p">)</span>
+                <span class="k">elif</span> <span class="n">currID</span> <span class="ow">in</span> <span class="n">orient2</span> <span class="ow">and</span> <span class="n">adjID</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">orient2</span><span class="p">:</span>
+                    <span class="n">orient2</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">adjID</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">continue</span>
+            <span class="k">else</span><span class="p">:</span>  <span class="c1"># flipped orientations</span>
+                <span class="k">if</span> <span class="n">currID</span> <span class="ow">in</span> <span class="n">orient1</span> <span class="ow">and</span> <span class="n">adjID</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">orient2</span><span class="p">:</span>
+                    <span class="n">orient2</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">adjID</span><span class="p">)</span>
+                <span class="k">elif</span> <span class="n">currID</span> <span class="ow">in</span> <span class="n">orient2</span> <span class="ow">and</span> <span class="n">adjID</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">orient1</span><span class="p">:</span>
+                    <span class="n">orient1</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">adjID</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">continue</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_sortIDs</span><span class="p">(</span><span class="n">adjID</span><span class="p">,</span> <span class="n">compIDs</span><span class="p">,</span> <span class="n">orient1</span><span class="p">,</span> <span class="n">orient2</span><span class="p">)</span>
+
+<div class="viewcode-block" id="VolumeConstraint.evalConstraints"><a class="viewcode-back" href="../../../pytacs/volume.html#tacs.constraints.VolumeConstraint.evalConstraints">[docs]</a>    <span class="k">def</span> <span class="nf">evalConstraints</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">funcs</span><span class="p">,</span> <span class="n">evalCons</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ignoreMissing</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Evaluate values for constraints. The constraints corresponding to the strings in</span>
+<span class="sd">        evalCons are evaluated and updated into the provided</span>
+<span class="sd">        dictionary.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        funcs : dict</span>
+<span class="sd">            Dictionary into which the constraints are saved.</span>
+<span class="sd">        evalCons : iterable object containing strings.</span>
+<span class="sd">            If not none, use these constraints to evaluate.</span>
+<span class="sd">        ignoreMissing : bool</span>
+<span class="sd">            Flag to supress checking for a valid constraint. Please use</span>
+<span class="sd">            this option with caution.</span>
+
+<span class="sd">        Examples</span>
+<span class="sd">        --------</span>
+<span class="sd">        &gt;&gt;&gt; funcs = {}</span>
+<span class="sd">        &gt;&gt;&gt; volConstraint.evalConstraints(funcs, &#39;LE_SPAR&#39;)</span>
+<span class="sd">        &gt;&gt;&gt; funcs</span>
+<span class="sd">        &gt;&gt;&gt; # Result will look like (if VolumeConstraint has name of &#39;c1&#39;):</span>
+<span class="sd">        &gt;&gt;&gt; # {&#39;c1_wing&#39;: array([12354.10])}</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Check if user specified which constraints to output</span>
+        <span class="c1"># Otherwise, output them all</span>
+        <span class="n">evalCons</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_processEvalCons</span><span class="p">(</span><span class="n">evalCons</span><span class="p">,</span> <span class="n">ignoreMissing</span><span class="p">)</span>
+
+        <span class="c1"># Loop through each requested constraint set</span>
+        <span class="k">for</span> <span class="n">conName</span> <span class="ow">in</span> <span class="n">evalCons</span><span class="p">:</span>
+            <span class="n">key</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">conName</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="n">funcs</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">constraintList</span><span class="p">[</span><span class="n">conName</span><span class="p">]</span><span class="o">.</span><span class="n">evalCon</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">Xpts</span><span class="p">)</span>
+
+        <span class="c1"># Update call counter</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">callCounter</span> <span class="o">+=</span> <span class="mi">1</span></div>
+
+<div class="viewcode-block" id="VolumeConstraint.evalConstraintsSens"><a class="viewcode-back" href="../../../pytacs/volume.html#tacs.constraints.VolumeConstraint.evalConstraintsSens">[docs]</a>    <span class="k">def</span> <span class="nf">evalConstraintsSens</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">funcsSens</span><span class="p">,</span> <span class="n">evalCons</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        This is the main routine for returning useful (sensitivity)</span>
+<span class="sd">        information from constraint. The derivatives of the constraints</span>
+<span class="sd">        corresponding to the strings in evalCons are evaluated and</span>
+<span class="sd">        updated into the provided dictionary. The derivitives with</span>
+<span class="sd">        respect to all design variables and node locations are computed.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        funcsSens : dict</span>
+<span class="sd">            Dictionary into which the derivatives are saved.</span>
+<span class="sd">        evalCons : iterable object containing strings</span>
+<span class="sd">            The constraints the user wants returned</span>
+
+<span class="sd">        Examples</span>
+<span class="sd">        --------</span>
+<span class="sd">        &gt;&gt;&gt; funcsSens = {}</span>
+<span class="sd">        &gt;&gt;&gt; volConstraint.evalConstraintsSens(funcsSens, &#39;LE_SPAR&#39;)</span>
+<span class="sd">        &gt;&gt;&gt; funcsSens</span>
+<span class="sd">        &gt;&gt;&gt; # Result will look like (if VolumeConstraint has name of &#39;c1&#39;):</span>
+<span class="sd">        &gt;&gt;&gt; # {&#39;c1_wing&#39;:{&#39;struct&#39;:&lt;50x242 sparse matrix of type &#39;&lt;class &#39;numpy.float64&#39;&gt;&#39; with 100 stored elements in Compressed Sparse Row format&gt;}}</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Check if user specified which constraints to output</span>
+        <span class="c1"># Otherwise, output them all</span>
+        <span class="n">evalCons</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_processEvalCons</span><span class="p">(</span><span class="n">evalCons</span><span class="p">)</span>
+
+        <span class="c1"># Get number of dvs/coords on this proc</span>
+        <span class="n">nDVs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getNumDesignVars</span><span class="p">()</span>
+        <span class="n">ncoords</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getNumCoordinates</span><span class="p">()</span>
+
+        <span class="c1"># Loop through each requested constraint set</span>
+        <span class="k">for</span> <span class="n">conName</span> <span class="ow">in</span> <span class="n">evalCons</span><span class="p">:</span>
+            <span class="n">key</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">conName</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="c1"># DV sensitivities are always zero for this constraint,</span>
+            <span class="n">funcsSens</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="n">funcsSens</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="bp">self</span><span class="o">.</span><span class="n">varName</span><span class="p">]</span> <span class="o">=</span> <span class="n">sp</span><span class="o">.</span><span class="n">sparse</span><span class="o">.</span><span class="n">csr_matrix</span><span class="p">(</span>
+                <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">nDVs</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">dtype</span>
+            <span class="p">)</span>
+
+            <span class="c1"># Get nodal sensitivity</span>
+            <span class="n">xptSens</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">constraintList</span><span class="p">[</span><span class="n">conName</span><span class="p">]</span><span class="o">.</span><span class="n">evalConSens</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">Xpts</span><span class="p">)</span>
+            <span class="n">xpt_array</span> <span class="o">=</span> <span class="n">xptSens</span><span class="o">.</span><span class="n">getArray</span><span class="p">()</span>
+            <span class="c1"># Reshape from 1d array to a 1 by N column vector</span>
+            <span class="n">funcsSens</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="bp">self</span><span class="o">.</span><span class="n">coordName</span><span class="p">]</span> <span class="o">=</span> <span class="n">xpt_array</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">ncoords</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="VolumeConstraint.writeVisualization"><a class="viewcode-back" href="../../../pytacs/volume.html#tacs.constraints.VolumeConstraint.writeVisualization">[docs]</a>    <span class="k">def</span> <span class="nf">writeVisualization</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">outputDir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">baseName</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">number</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        This function can be used to write a tecplot file for</span>
+<span class="sd">        the purposes of visualization.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        outputDir : str or None</span>
+<span class="sd">            Use the supplied output directory</span>
+<span class="sd">        baseName : str or None</span>
+<span class="sd">            Use this supplied string for the base filename. Typically</span>
+<span class="sd">            only used from an external solver.</span>
+<span class="sd">        number : int or None</span>
+<span class="sd">            Use the user supplied number to index output. Again, only</span>
+<span class="sd">            typically used from an external solver</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="c1"># Check input</span>
+        <span class="k">if</span> <span class="n">outputDir</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">outputDir</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s2">&quot;outputDir&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">baseName</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">baseName</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span>
+
+        <span class="c1"># If we are numbering output, it saving the sequence of</span>
+        <span class="c1"># calls, add the call number</span>
+        <span class="k">if</span> <span class="n">number</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="c1"># We need number based on the provided number:</span>
+            <span class="n">baseName</span> <span class="o">=</span> <span class="n">baseName</span> <span class="o">+</span> <span class="s2">&quot;_</span><span class="si">%3.3d</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">number</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># if number is none, i.e. standalone, but we need to</span>
+            <span class="c1"># number solutions, use internal counter</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s2">&quot;numberSolutions&quot;</span><span class="p">):</span>
+                <span class="n">baseName</span> <span class="o">=</span> <span class="n">baseName</span> <span class="o">+</span> <span class="s2">&quot;_</span><span class="si">%3.3d</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">callCounter</span>
+
+        <span class="n">base</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">outputDir</span><span class="p">,</span> <span class="n">baseName</span><span class="p">)</span> <span class="o">+</span> <span class="s2">&quot;.dat&quot;</span>
+
+        <span class="c1"># Get current TACS nodes bvec</span>
+        <span class="n">localXpts</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">Xpts</span><span class="o">.</span><span class="n">getArray</span><span class="p">()</span>
+        <span class="n">localXpts</span> <span class="o">=</span> <span class="n">localXpts</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
+
+        <span class="c1"># Setup tecplot writer on root</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">comm</span><span class="o">.</span><span class="n">rank</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">tecInfo</span> <span class="o">=</span> <span class="n">tp</span><span class="o">.</span><span class="n">Tecplot</span><span class="p">(</span><span class="n">debug</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+
+        <span class="c1"># Loop through each constraint group and write to tecplot zone</span>
+        <span class="k">for</span> <span class="n">constrName</span><span class="p">,</span> <span class="n">constrObj</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">constraintList</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="c1"># Identify all constrained compIDs</span>
+            <span class="n">posCompIDs</span> <span class="o">=</span> <span class="n">constrObj</span><span class="o">.</span><span class="n">posCompIDs</span>
+            <span class="n">negCompIDs</span> <span class="o">=</span> <span class="n">constrObj</span><span class="o">.</span><span class="n">negCompIDs</span>
+            <span class="n">allCompIDs</span> <span class="o">=</span> <span class="n">posCompIDs</span> <span class="o">+</span> <span class="n">negCompIDs</span>
+            <span class="c1"># Get all global nodeIDs for this constraint</span>
+            <span class="n">allNodeIDsGlobal</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">meshLoader</span><span class="o">.</span><span class="n">getGlobalNodeIDsForComps</span><span class="p">(</span>
+                <span class="n">allCompIDs</span><span class="p">,</span> <span class="n">nastranOrdering</span><span class="o">=</span><span class="kc">True</span>
+            <span class="p">)</span>
+            <span class="c1"># Find the local node ID corresponding to each global ID on each proc</span>
+            <span class="n">allNodeIDsLocal</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">meshLoader</span><span class="o">.</span><span class="n">getLocalNodeIDsFromGlobal</span><span class="p">(</span>
+                <span class="n">allNodeIDsGlobal</span><span class="p">,</span> <span class="n">nastranOrdering</span><span class="o">=</span><span class="kc">True</span>
+            <span class="p">)</span>
+            <span class="c1"># Pull the updated xyz values of each node from each proc</span>
+            <span class="n">nodeXYZDict</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="k">for</span> <span class="n">gID</span><span class="p">,</span> <span class="n">lID</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">allNodeIDsGlobal</span><span class="p">,</span> <span class="n">allNodeIDsLocal</span><span class="p">):</span>
+                <span class="c1"># Node is owned by this proc, add values to dict</span>
+                <span class="k">if</span> <span class="n">lID</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="n">nodeXYZDict</span><span class="p">[</span><span class="n">gID</span><span class="p">]</span> <span class="o">=</span> <span class="n">localXpts</span><span class="p">[</span><span class="n">lID</span><span class="p">]</span>
+            <span class="c1"># Gather node xyz values to root</span>
+            <span class="n">nodeDicts</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">comm</span><span class="o">.</span><span class="n">gather</span><span class="p">(</span><span class="n">nodeXYZDict</span><span class="p">,</span> <span class="n">root</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+
+            <span class="c1"># Write zone data for this constraint</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">comm</span><span class="o">.</span><span class="n">rank</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="c1"># Combine all node dicts received from each proc into a single dict</span>
+                <span class="n">allNodeXYZDict</span> <span class="o">=</span> <span class="p">{}</span>
+                <span class="k">for</span> <span class="n">nodeXYZDict</span> <span class="ow">in</span> <span class="n">nodeDicts</span><span class="p">:</span>
+                    <span class="n">allNodeXYZDict</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">nodeXYZDict</span><span class="p">)</span>
+
+                <span class="c1"># Get all global elemIDs for this constraint</span>
+                <span class="n">allElemIDsGlobal</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">meshLoader</span><span class="o">.</span><span class="n">getGlobalElementIDsForComps</span><span class="p">(</span>
+                    <span class="n">allCompIDs</span><span class="p">,</span> <span class="n">nastranOrdering</span><span class="o">=</span><span class="kc">True</span>
+                <span class="p">)</span>
+
+                <span class="c1"># Create new zone</span>
+                <span class="n">zoneInfo</span> <span class="o">=</span> <span class="n">Zone</span><span class="p">(</span><span class="n">tecInfo</span><span class="o">.</span><span class="n">log</span><span class="p">)</span>
+
+                <span class="c1"># Setup header info</span>
+                <span class="n">zoneInfo</span><span class="o">.</span><span class="n">title</span> <span class="o">=</span> <span class="n">constrName</span>
+                <span class="n">zoneInfo</span><span class="o">.</span><span class="n">headers_dict</span><span class="p">[</span><span class="s2">&quot;VARIABLES&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;X&quot;</span><span class="p">,</span> <span class="s2">&quot;Y&quot;</span><span class="p">,</span> <span class="s2">&quot;Z&quot;</span><span class="p">]</span>
+
+                <span class="c1"># Initialize connectivity/node locations</span>
+                <span class="n">nodeXYZ</span> <span class="o">=</span> <span class="p">[]</span>
+                <span class="n">quadConn</span> <span class="o">=</span> <span class="p">[]</span>
+                <span class="n">triConn</span> <span class="o">=</span> <span class="p">[]</span>
+                <span class="n">hexConn</span> <span class="o">=</span> <span class="p">[]</span>
+                <span class="n">tetConn</span> <span class="o">=</span> <span class="p">[]</span>
+
+                <span class="c1"># Loop through and set up connectivity/node locations</span>
+                <span class="n">currNodeID</span> <span class="o">=</span> <span class="mi">0</span>
+                <span class="n">oldToNewNodeID</span> <span class="o">=</span> <span class="p">{}</span>
+                <span class="k">for</span> <span class="n">elemID</span> <span class="ow">in</span> <span class="n">allElemIDsGlobal</span><span class="p">:</span>
+                    <span class="n">elemInfo</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">bdfInfo</span><span class="o">.</span><span class="n">elements</span><span class="p">[</span><span class="n">elemID</span><span class="p">]</span>
+                    <span class="n">compID</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">meshLoader</span><span class="o">.</span><span class="n">nastranToTACSCompIDDict</span><span class="p">[</span><span class="n">elemInfo</span><span class="o">.</span><span class="n">pid</span><span class="p">]</span>
+                    <span class="c1"># Reverse the connectivity if normal is facing inward</span>
+                    <span class="k">if</span> <span class="n">compID</span> <span class="ow">in</span> <span class="n">negCompIDs</span><span class="p">:</span>
+                        <span class="n">elemInfo</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">elemInfo</span><span class="p">)</span>
+                        <span class="n">elemInfo</span><span class="o">.</span><span class="n">flip_normal</span><span class="p">()</span>
+                    <span class="c1"># We&#39;ll need to renumber the nodes to be sequential</span>
+                    <span class="n">oldConn</span> <span class="o">=</span> <span class="n">elemInfo</span><span class="o">.</span><span class="n">nodes</span>
+                    <span class="n">newConn</span> <span class="o">=</span> <span class="p">[]</span>
+                    <span class="k">for</span> <span class="n">oldNodeID</span> <span class="ow">in</span> <span class="n">oldConn</span><span class="p">:</span>
+                        <span class="k">if</span> <span class="n">oldNodeID</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">oldToNewNodeID</span><span class="p">:</span>
+                            <span class="n">oldToNewNodeID</span><span class="p">[</span><span class="n">oldNodeID</span><span class="p">]</span> <span class="o">=</span> <span class="n">currNodeID</span>
+                            <span class="n">nodeXYZ</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">allNodeXYZDict</span><span class="p">[</span><span class="n">oldNodeID</span><span class="p">])</span>
+                            <span class="n">currNodeID</span> <span class="o">+=</span> <span class="mi">1</span>
+                        <span class="n">newNodeID</span> <span class="o">=</span> <span class="n">oldToNewNodeID</span><span class="p">[</span><span class="n">oldNodeID</span><span class="p">]</span>
+                        <span class="n">newConn</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">newNodeID</span><span class="p">)</span>
+
+                    <span class="c1"># Append new connectivity to the appropriate list</span>
+                    <span class="k">if</span> <span class="s2">&quot;CQUAD&quot;</span> <span class="ow">in</span> <span class="n">elemInfo</span><span class="o">.</span><span class="n">type</span><span class="p">:</span>
+                        <span class="n">quadConn</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">newConn</span><span class="p">)</span>
+                    <span class="k">elif</span> <span class="s2">&quot;CTRI&quot;</span> <span class="ow">in</span> <span class="n">elemInfo</span><span class="o">.</span><span class="n">type</span><span class="p">:</span>
+                        <span class="n">triConn</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">newConn</span><span class="p">)</span>
+                    <span class="k">elif</span> <span class="s2">&quot;CHEXA&quot;</span> <span class="ow">in</span> <span class="n">elemInfo</span><span class="o">.</span><span class="n">type</span><span class="p">:</span>
+                        <span class="n">hexConn</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">newConn</span><span class="p">)</span>
+                    <span class="k">elif</span> <span class="s2">&quot;CTETRA&quot;</span> <span class="ow">in</span> <span class="n">elemInfo</span><span class="o">.</span><span class="n">type</span><span class="p">:</span>
+                        <span class="n">tetConn</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">newConn</span><span class="p">)</span>
+
+                <span class="c1"># Set all node/connectivity info to zone</span>
+                <span class="n">zoneInfo</span><span class="o">.</span><span class="n">xyz</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">nodeXYZ</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+                <span class="n">zoneInfo</span><span class="o">.</span><span class="n">quad_elements</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">quadConn</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">intc</span><span class="p">)</span>
+                <span class="n">zoneInfo</span><span class="o">.</span><span class="n">tri_elements</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">triConn</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">intc</span><span class="p">)</span>
+                <span class="n">zoneInfo</span><span class="o">.</span><span class="n">hexa_elements</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">hexConn</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">intc</span><span class="p">)</span>
+                <span class="n">zoneInfo</span><span class="o">.</span><span class="n">tet_elements</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">tetConn</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">intc</span><span class="p">)</span>
+
+                <span class="c1"># Add constraint zone to tecplot file</span>
+                <span class="n">tecInfo</span><span class="o">.</span><span class="n">zones</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">zoneInfo</span><span class="p">)</span>
+
+            <span class="c1"># Wait for root</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">comm</span><span class="o">.</span><span class="n">barrier</span><span class="p">()</span>
+
+        <span class="c1"># Write out tecplot file</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">comm</span><span class="o">.</span><span class="n">rank</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">tecInfo</span><span class="o">.</span><span class="n">write_tecplot</span><span class="p">(</span><span class="n">base</span><span class="p">)</span>
+
+        <span class="c1"># Wait for root</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">comm</span><span class="o">.</span><span class="n">barrier</span><span class="p">()</span></div></div>
+
+
+<span class="c1"># Simple class for handling sparse volume constraints in parallel</span>
+<span class="k">class</span> <span class="nc">ParallelVolumeConstraint</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="n">dtype</span> <span class="o">=</span> <span class="n">TACSConstraint</span><span class="o">.</span><span class="n">dtype</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">assembler</span><span class="p">,</span> <span class="n">meshLoader</span><span class="p">,</span> <span class="n">posCompIDs</span><span class="p">,</span> <span class="n">negCompIDs</span><span class="p">,</span> <span class="n">Xpts0</span><span class="p">,</span> <span class="n">lb</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">ub</span><span class="o">=</span><span class="mf">1e20</span>
+    <span class="p">):</span>
+        <span class="c1"># Number of constraints</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">nCon</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assembler</span> <span class="o">=</span> <span class="n">assembler</span>
+
+        <span class="c1"># Create two TACS Volume function domains,</span>
+        <span class="c1"># One for the properly oriented components...</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">posCompIDs</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">posVolFunc</span> <span class="o">=</span> <span class="n">EnclosedVolume</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">assembler</span><span class="p">)</span>
+            <span class="n">elemIDs</span> <span class="o">=</span> <span class="n">meshLoader</span><span class="o">.</span><span class="n">getLocalElementIDsForComps</span><span class="p">(</span><span class="n">posCompIDs</span><span class="p">)</span>
+            <span class="n">posVolFunc</span><span class="o">.</span><span class="n">setDomain</span><span class="p">(</span><span class="n">elemIDs</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">posVolFunc</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="c1"># and one for the flipped components.</span>
+        <span class="c1"># The volumes computed by these components will be negative</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">negCompIDs</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">negVolFunc</span> <span class="o">=</span> <span class="n">EnclosedVolume</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">assembler</span><span class="p">)</span>
+            <span class="n">elemIDs</span> <span class="o">=</span> <span class="n">meshLoader</span><span class="o">.</span><span class="n">getLocalElementIDsForComps</span><span class="p">(</span><span class="n">negCompIDs</span><span class="p">)</span>
+            <span class="n">negVolFunc</span><span class="o">.</span><span class="n">setDomain</span><span class="p">(</span><span class="n">elemIDs</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">negVolFunc</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="c1"># Compute the volume and check that we sorted the correct orientations</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">posCompIDs</span> <span class="o">=</span> <span class="n">posCompIDs</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">negCompIDs</span> <span class="o">=</span> <span class="n">negCompIDs</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">posVolFunc</span> <span class="o">=</span> <span class="n">posVolFunc</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">negVolFunc</span> <span class="o">=</span> <span class="n">negVolFunc</span>
+        <span class="n">vol0</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">evalCon</span><span class="p">(</span><span class="n">Xpts0</span><span class="p">)</span>
+
+        <span class="c1"># If the volume is negative, we need to flip the orientations</span>
+        <span class="k">if</span> <span class="n">vol0</span> <span class="o">&lt;</span> <span class="mf">0.0</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">posVolFunc</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">negVolFunc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">negVolFunc</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">posVolFunc</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">posCompIDs</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">negCompIDs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">negCompIDs</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">posCompIDs</span>
+
+        <span class="c1"># Save bound information</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">lb</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">lb</span><span class="p">)</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">nCon</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">lb</span> <span class="o">=</span> <span class="n">lb</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">lb</span><span class="p">,</span> <span class="nb">float</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">lb</span><span class="p">,</span> <span class="nb">complex</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">lb</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">lb</span><span class="p">]</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">nCon</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">ub</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">ub</span><span class="p">)</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">nCon</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">ub</span> <span class="o">=</span> <span class="n">ub</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">ub</span><span class="p">,</span> <span class="nb">float</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">ub</span><span class="p">,</span> <span class="nb">complex</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">ub</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">ub</span><span class="p">]</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">nCon</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">evalCon</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assembler</span><span class="o">.</span><span class="n">setNodes</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+        <span class="n">posVol</span><span class="p">,</span> <span class="n">negVol</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">assembler</span><span class="o">.</span><span class="n">evalFunctions</span><span class="p">(</span>
+            <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">posVolFunc</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">negVolFunc</span><span class="p">]</span>
+        <span class="p">)</span>
+        <span class="n">totVol</span> <span class="o">=</span> <span class="n">posVol</span> <span class="o">-</span> <span class="n">negVol</span>
+        <span class="k">return</span> <span class="n">totVol</span>
+
+    <span class="k">def</span> <span class="nf">evalConSens</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assembler</span><span class="o">.</span><span class="n">setNodes</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+        <span class="n">totSens</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">assembler</span><span class="o">.</span><span class="n">createNodeVec</span><span class="p">()</span>
+        <span class="c1"># Compute positive and negative volumes contributions to sens</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assembler</span><span class="o">.</span><span class="n">addXptSens</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">posVolFunc</span><span class="p">],</span> <span class="p">[</span><span class="n">totSens</span><span class="p">],</span> <span class="mf">1.0</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assembler</span><span class="o">.</span><span class="n">addXptSens</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">negVolFunc</span><span class="p">],</span> <span class="p">[</span><span class="n">totSens</span><span class="p">],</span> <span class="o">-</span><span class="mf">1.0</span><span class="p">)</span>
+        <span class="c1"># Distribute non-local vals across procs</span>
+        <span class="n">totSens</span><span class="o">.</span><span class="n">beginSetValues</span><span class="p">()</span>
+        <span class="n">totSens</span><span class="o">.</span><span class="n">endSetValues</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">totSens</span>
+
+    <span class="k">def</span> <span class="nf">getBounds</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">lb</span><span class="o">.</span><span class="n">copy</span><span class="p">(),</span> <span class="bp">self</span><span class="o">.</span><span class="n">ub</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+
+
+<span class="c1"># Slight modification of pyNASTRAN&#39;s tecplot Zone class</span>
+<span class="c1"># By default this class doesn&#39;t write out the zone title in the tecplot file for some reason</span>
+<span class="c1"># We make a new class here with an overriden method that includes this in the zone header</span>
+<span class="k">class</span> <span class="nc">Zone</span><span class="p">(</span><span class="n">tp</span><span class="o">.</span><span class="n">Zone</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">write_unstructured_zone</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">tecplot_file</span><span class="p">,</span>
+        <span class="n">ivars</span><span class="p">,</span>
+        <span class="n">is_points</span><span class="p">,</span>
+        <span class="n">nnodes</span><span class="p">,</span>
+        <span class="n">nelements</span><span class="p">,</span>
+        <span class="n">zone_type</span><span class="p">,</span>
+        <span class="n">log</span><span class="p">,</span>
+        <span class="n">is_tris</span><span class="p">,</span>
+        <span class="n">is_quads</span><span class="p">,</span>
+        <span class="n">is_tets</span><span class="p">,</span>
+        <span class="n">is_hexas</span><span class="p">,</span>
+        <span class="n">adjust_nids</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="p">):</span>
+        <span class="n">msg</span> <span class="o">=</span> <span class="s2">&quot;ZONE &quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;is_points = </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">is_points</span><span class="p">)</span>
+        <span class="n">datapacking</span> <span class="o">=</span> <span class="s2">&quot;POINT&quot;</span> <span class="k">if</span> <span class="n">is_points</span> <span class="k">else</span> <span class="s2">&quot;BLOCK&quot;</span>
+        <span class="c1"># Make sure to include title</span>
+        <span class="n">msg</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot; T=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">title</span><span class="si">}</span><span class="s2">, n=</span><span class="si">{</span><span class="n">nnodes</span><span class="si">:</span><span class="s2">d</span><span class="si">}</span><span class="s2">, e=</span><span class="si">{</span><span class="n">nelements</span><span class="si">:</span><span class="s2">d</span><span class="si">}</span><span class="s2">, ZONETYPE=</span><span class="si">{</span><span class="n">zone_type</span><span class="si">}</span><span class="s2">, DATAPACKING=</span><span class="si">{</span><span class="n">datapacking</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
+        <span class="n">tecplot_file</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_write_xyz_results</span><span class="p">(</span><span class="n">tecplot_file</span><span class="p">,</span> <span class="n">is_points</span><span class="p">,</span> <span class="n">ivars</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_write_elements</span><span class="p">(</span>
+            <span class="n">tecplot_file</span><span class="p">,</span>
+            <span class="n">nnodes</span><span class="p">,</span>
+            <span class="n">is_tris</span><span class="p">,</span>
+            <span class="n">is_quads</span><span class="p">,</span>
+            <span class="n">is_tets</span><span class="p">,</span>
+            <span class="n">is_hexas</span><span class="p">,</span>
+            <span class="n">adjust_nids</span><span class="o">=</span><span class="n">adjust_nids</span><span class="p">,</span>
+        <span class="p">)</span>
+</pre></div>
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">TACS  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" >Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">tacs.constraints.volume</a></li> 
+      </ul>
+    </div>
+ <script type="text/javascript">
+    $(document).ready(function() {
+        $(".toggle > *").hide();
+        $(".toggle .header").show();
+        $(".toggle .header").click(function() {
+            $(this).parent().children().not(".header").toggle(400);
+            $(this).parent().children(".header").toggleClass("open");
+        })
+    });
+</script>
+
+  </body>
+</html>

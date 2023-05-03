@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 
 <html lang="python">
@@ -72,6 +71,7 @@
 
 <span class="kn">import</span> <span class="nn">tacs.TACS</span>
 <span class="kn">import</span> <span class="nn">tacs.constitutive</span>
+<span class="kn">import</span> <span class="nn">tacs.constraints</span>
 <span class="kn">import</span> <span class="nn">tacs.elements</span>
 <span class="kn">import</span> <span class="nn">tacs.functions</span>
 <span class="kn">import</span> <span class="nn">tacs.problems</span>
@@ -1592,7 +1592,7 @@
 <span class="sd">        ----------</span>
 <span class="sd">        fileName: str</span>
 <span class="sd">            Name of file to write BDF file to.</span>
-<span class="sd">        problems: tacs.problems.BaseProblem or List[tacs.problems.BaseProblem]</span>
+<span class="sd">        problems: TACSProblem or list[TACSProblem]</span>
 <span class="sd">            List of pytacs Problem classes to write BDF file from.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="c1"># Make sure problems is in a list</span>
@@ -1611,9 +1611,11 @@
                 <span class="p">)</span>
 
         <span class="c1"># Make sure design variables are up-to-date</span>
-        <span class="n">x_bvec</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">createDesignVec</span><span class="p">(</span><span class="n">asBVec</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-        <span class="n">x_bvec</span><span class="o">.</span><span class="n">getArray</span><span class="p">()[:]</span> <span class="o">=</span> <span class="n">problems</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">getDesignVars</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">assembler</span><span class="o">.</span><span class="n">setDesignVars</span><span class="p">(</span><span class="n">x_bvec</span><span class="p">)</span>
+        <span class="n">dv_bvec</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">createDesignVec</span><span class="p">(</span><span class="n">asBVec</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">dv_bvec</span><span class="o">.</span><span class="n">getArray</span><span class="p">()[:]</span> <span class="o">=</span> <span class="n">problems</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">getDesignVars</span><span class="p">()</span>
+        <span class="c1"># Transfer all non-local dvs</span>
+        <span class="n">dv_bvec</span><span class="o">.</span><span class="n">beginDistributeValues</span><span class="p">()</span>
+        <span class="n">dv_bvec</span><span class="o">.</span><span class="n">endDistributeValues</span><span class="p">()</span>
 
         <span class="c1"># Get local node info for each processor</span>
         <span class="n">multNodes</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getLocalMultiplierNodeIDs</span><span class="p">()</span>
@@ -1659,6 +1661,11 @@
             <span class="k">for</span> <span class="n">compID</span><span class="p">,</span> <span class="n">propID</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">bdfInfo</span><span class="o">.</span><span class="n">properties</span><span class="p">):</span>
                 <span class="c1"># Get TACS element object</span>
                 <span class="n">elemObj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">meshLoader</span><span class="o">.</span><span class="n">getElementObject</span><span class="p">(</span><span class="n">compID</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+                <span class="c1"># get dv nums for element</span>
+                <span class="n">dvNums</span> <span class="o">=</span> <span class="n">elemObj</span><span class="o">.</span><span class="n">getDesignVarNums</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+                <span class="c1"># Update design variable values</span>
+                <span class="n">dvVals</span> <span class="o">=</span> <span class="n">dv_bvec</span><span class="o">.</span><span class="n">getValues</span><span class="p">(</span><span class="n">dvNums</span><span class="p">)</span>
+                <span class="n">elemObj</span><span class="o">.</span><span class="n">setDesignVars</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">dvVals</span><span class="p">)</span>
                 <span class="c1"># Get TACS constitutive object for element (if applicable)</span>
                 <span class="n">conObj</span> <span class="o">=</span> <span class="n">elemObj</span><span class="o">.</span><span class="n">getConstitutive</span><span class="p">()</span>
                 <span class="k">if</span> <span class="n">conObj</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
@@ -1844,6 +1851,119 @@
 
         <span class="c1"># All procs should wait for root</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">comm</span><span class="o">.</span><span class="n">barrier</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="pyTACS.createAdjacencyConstraint"><a class="viewcode-back" href="../../pytacs/pytacs_module.html#tacs.pytacs.pyTACS.createAdjacencyConstraint">[docs]</a>    <span class="nd">@postinitialize_method</span>
+    <span class="k">def</span> <span class="nf">createAdjacencyConstraint</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">options</span><span class="o">=</span><span class="p">{}):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Create a new AdjacencyConstraint for calculating</span>
+<span class="sd">        design variable differences across adjacent components.</span>
+<span class="sd">        This constraint can be used to ensure that the design variables</span>
+<span class="sd">        do not change too abruptly across components.</span>
+<span class="sd">        The formulation is a linear constraint that takes the following form:</span>
+
+<span class="sd">        c = dv_i - dv_j</span>
+
+<span class="sd">        Where dv_i and dv_j are two design variables in adjacent components.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        name : str</span>
+<span class="sd">            Name to assign constraint.</span>
+<span class="sd">        options : dict</span>
+<span class="sd">            Class-specific options to pass to AdjacencyConstraint instance (case-insensitive).</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        ----------</span>
+<span class="sd">        constraint : AdjacencyConstraint</span>
+<span class="sd">            AdjacencyConstraint object used for calculating constraints.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">constr</span> <span class="o">=</span> <span class="n">tacs</span><span class="o">.</span><span class="n">constraints</span><span class="o">.</span><span class="n">AdjacencyConstraint</span><span class="p">(</span>
+            <span class="n">name</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">assembler</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">comm</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">outputViewer</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">meshLoader</span><span class="p">,</span>
+            <span class="n">options</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="c1"># Set with original design vars and coordinates, in case they have changed</span>
+        <span class="n">constr</span><span class="o">.</span><span class="n">setDesignVars</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">x0</span><span class="p">)</span>
+        <span class="n">constr</span><span class="o">.</span><span class="n">setNodes</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">Xpts0</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">constr</span></div>
+
+<div class="viewcode-block" id="pyTACS.createDVConstraint"><a class="viewcode-back" href="../../pytacs/pytacs_module.html#tacs.pytacs.pyTACS.createDVConstraint">[docs]</a>    <span class="nd">@postinitialize_method</span>
+    <span class="k">def</span> <span class="nf">createDVConstraint</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">options</span><span class="o">=</span><span class="p">{}):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Create a new DVConstraint for calculating linear constraints based</span>
+<span class="sd">        on design variables within the same component.</span>
+
+<span class="sd">        The constraints are of the form:</span>
+
+<span class="sd">            c = a_0 * dv_0 + a_1 * dv_1 + ... + a_n * dv_n</span>
+
+<span class="sd">        Where which design variables to include (dv_0, dv_1, etc.)</span>
+<span class="sd">        and the corresponding weights (a_0, a_1, etc.) are defined by the user.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        name : str</span>
+<span class="sd">            Name to assign constraint.</span>
+<span class="sd">        options : dict</span>
+<span class="sd">            Class-specific options to pass to DVConstraint instance (case-insensitive).</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        ----------</span>
+<span class="sd">        constraint : DVConstraint</span>
+<span class="sd">            DVConstraint object used for calculating constraints.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">constr</span> <span class="o">=</span> <span class="n">tacs</span><span class="o">.</span><span class="n">constraints</span><span class="o">.</span><span class="n">DVConstraint</span><span class="p">(</span>
+            <span class="n">name</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">assembler</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">comm</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">outputViewer</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">meshLoader</span><span class="p">,</span>
+            <span class="n">options</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="c1"># Set with original design vars and coordinates, in case they have changed</span>
+        <span class="n">constr</span><span class="o">.</span><span class="n">setDesignVars</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">x0</span><span class="p">)</span>
+        <span class="n">constr</span><span class="o">.</span><span class="n">setNodes</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">Xpts0</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">constr</span></div>
+
+<div class="viewcode-block" id="pyTACS.createVolumeConstraint"><a class="viewcode-back" href="../../pytacs/pytacs_module.html#tacs.pytacs.pyTACS.createVolumeConstraint">[docs]</a>    <span class="nd">@postinitialize_method</span>
+    <span class="k">def</span> <span class="nf">createVolumeConstraint</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">options</span><span class="o">=</span><span class="p">{}):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Create a new VolumeConstraint for constraining the size of a closed volume.</span>
+<span class="sd">        Only shell and solid elements are supported for this constraint.</span>
+<span class="sd">        For shell elements, the enclosed volume MUST be manifold and water-tight (no missing/internal faces).</span>
+<span class="sd">        The formulation is a nonlinear constraint based on the nodal coordinates.</span>
+
+<span class="sd">        A common example of this is ensuring enough volume in the wingbox for fuel:</span>
+
+<span class="sd">            vol_wing &gt;= vol_fuel</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        name : str</span>
+<span class="sd">            Name to assign constraint.</span>
+<span class="sd">        options : dict</span>
+<span class="sd">            Class-specific options to pass to VolumeConstraint instance (case-insensitive).</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        ----------</span>
+<span class="sd">        constraint : VolumeConstraint</span>
+<span class="sd">            VolumeConstraint object used for calculating constraints.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">constr</span> <span class="o">=</span> <span class="n">tacs</span><span class="o">.</span><span class="n">constraints</span><span class="o">.</span><span class="n">VolumeConstraint</span><span class="p">(</span>
+            <span class="n">name</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">assembler</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">comm</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">outputViewer</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">meshLoader</span><span class="p">,</span>
+            <span class="n">options</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="c1"># Set with original design vars and coordinates, in case they have changed</span>
+        <span class="n">constr</span><span class="o">.</span><span class="n">setDesignVars</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">x0</span><span class="p">)</span>
+        <span class="n">constr</span><span class="o">.</span><span class="n">setNodes</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">Xpts0</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">constr</span></div>
 
 <div class="viewcode-block" id="pyTACS.getNumComponents"><a class="viewcode-back" href="../../pytacs/pytacs_module.html#tacs.pytacs.pyTACS.getNumComponents">[docs]</a>    <span class="k">def</span> <span class="nf">getNumComponents</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
