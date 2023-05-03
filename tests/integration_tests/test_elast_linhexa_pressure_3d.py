@@ -9,6 +9,8 @@ Six load conditions are considered: a pressure applied to each of the six faces 
 This test verifies that pyTACS/TACS applies pressure load on the consistent face based on the PLOAD4 information.
  
 tests KSDisplacement, StructuralMass, and Compliance functions and sensitivities.
+
+We also add a enclosed volume constraint and test it's values/sensitivties.
 """
 
 base_dir = os.path.dirname(os.path.abspath(__file__))
@@ -69,6 +71,7 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
         "Clamp_-Z_x_disp": 0.4238607596050309,
         "Clamp_-Z_y_disp": 0.17085389596648243,
         "Clamp_-Z_z_disp": -0.6532709558080131,
+        "volume_con": 2.0,
     }
 
     def setup_tacs_problems(self, comm):
@@ -97,7 +100,7 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
         # Read in forces from BDF and create tacs struct problems
         tacs_probs = fea_assembler.createTACSProbsFromBDF()
         # Convert from dict to list
-        tacs_probs = tacs_probs.values()
+        tacs_probs = list(tacs_probs.values())
         # Set convergence to be tight for test
         for problem in tacs_probs:
             problem.setOption("L2Convergence", 1e-20)
@@ -143,5 +146,9 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
                 ksWeight=ksweight,
                 direction=[0.0, 0.0, -10.0],
             )
+
+        constr = fea_assembler.createVolumeConstraint("volume")
+        constr.addConstraint("con")
+        tacs_probs.append(constr)
 
         return tacs_probs, fea_assembler
