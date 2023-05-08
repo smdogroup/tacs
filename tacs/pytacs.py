@@ -4,7 +4,7 @@ pytacs - The Python wrapper for the TACS assembler
 
 This python interface is designed to provide a easier interface to the
 C++ layer of TACS. User-supplied hooks allow for nearly complete
-customization of any or all parts of the problem setup. There are two
+customization of any or all parts in the problem setup. There are two
 main parts of this module: The first deals with setting up the TACS
 model including reading the mesh, setting elements and design variables.
 The second part deals with creating problem instances that are responsible
@@ -165,13 +165,13 @@ class pyTACS(BaseUI):
             The comm object on which to create the pyTACS object.
 
         dvNum : int
-            An user supplied offset to the design variable
+            A user-supplied offset to the design variable
             numbering. This is typically used with tacs+tripan when
             geometric variables have already been added and assigned
             global tacs numberings.
 
         scaleList: list
-            when dvNum is non zero, the scaleList must be same size
+            when dvNum is non-zero, the scaleList must be same size
             as the number of design variables already added. i.e.
             len(scaleList) = dvNum
 
@@ -265,24 +265,24 @@ class pyTACS(BaseUI):
         """
         This function allows adding design variables that are not
         cleanly associated with a particular constitutive object. One
-        example is the pitch of the stiffeners for blade stiffened
-        panels; It often is the same for many different constitutive
+        example is the pitch of the stiffeners for blade-stiffened
+        panels; It is often the same for many different constitutive
         objects. By calling this function, the internal dvNum counter
-        is incremented and the user doesn\'t have to worry about
+        is incremented, and the user doesn't have to worry about
         it.
 
         Parameters
         ----------
         descript : str
-            A user supplied string that can be used to retrieve the
+            A user-supplied string that can be used to retrieve the
             variable number and value elemCallBackFunction.
 
         value : float
             Initial value for variable.
         lower : float
-            Lower bound. May be None for unbounded
+            Lower bound. This may be None for unbounded
         upper : float
-            Upper bound. May be None for unbounded
+            Upper bound. This may be None for unbounded
         scale : float
             Scale factor for variable
         """
@@ -298,7 +298,7 @@ class pyTACS(BaseUI):
 
     def getGlobalDVs(self):
         """
-        Return a dict holding info about all current global DVs.
+        Return dict holding info about all current global DVs.
 
         Returns
         -------
@@ -331,7 +331,7 @@ class pyTACS(BaseUI):
 
     def getTotalNumGlobalDVs(self):
         """
-        Get total number of global DVs across all processors.
+        Get the total number of global DVs across all processors.
 
         Returns
         -------
@@ -435,23 +435,28 @@ class pyTACS(BaseUI):
     ):
         """
         This is the most important function of the entire setup
-        process. The basic idea is as follow: We have a list of nComp
-        which are the component descriptions. What we need is a way of
+        process.
+        The basic idea is as follows: We have a list of nComp
+        which are the component descriptions.
+        What we need is a way of
         generating subgroups of these for the purposes of adding
-        design variables, constitutive objects, KS domains and mass
-        domains. All of these operations boil down to selecting a
+        design variables, constitutive objects, KS domains, and mass
+        domains.
+        All of these operations boil down to selecting a
         subset of the compIDs.
 
         This function attempts to support as many ways as possible to
-        select parts of the structure. Easy and efficient selection of
+        select parts of the structure.
+        Easy and efficient selection of
         parts is critical to the end user.
 
         Methods of selection:
 
         1. include, integer, string, list of integers and/or strings: The
-           simplest and most direct way of selecting a component. The
+           simplest and most direct way of selecting a component.
+           The
            user supplies the index of the componentID, a name or partial
-           name, or a list of a combination of both.
+           name, or a list containing a combination of both.
 
            For example::
 
@@ -472,10 +477,12 @@ class pyTACS(BaseUI):
             # (This is probably not advisable!)
             selectCompIDs(include=['rib.00', 10, 'spar'])
 
-        2. Exclude, operates similarly to 'include'. The behaviour
+        2. Exclude, operates similarly to 'include'.
+        The behaviour
            of exclude is identical to include above, except that
            component ID's that are found using 'exclude' are
-           'subtracted' from those found using include. A special
+           'subtracted' from those found using include.
+           A special
            case is treated if 'include' is NOT given: if only an
            exclude list is given, this implies the selection of all
            compID's EXCEPT the those in exclude.
@@ -494,11 +501,13 @@ class pyTACS(BaseUI):
                selectCompIDs(include='ribs', exclude='le_ribs')
 
         3. includeBounds, list of components defining a region inside
-           of which 'include' components will be selected. This
+           which 'include' components will be selected.
+           This
            functionality uses a geometric approach to select the compIDs.
            All components within the project 2D convex hull are included.
            Therefore, it is essential to split up concave include regions
-           into smaller convex regions. Use multiple calls to selectCompIDs to
+           into smaller convex regions.
+           Use multiple calls to selectCompIDs to
            accumulate multiple regions.
 
            For example::
@@ -508,19 +517,22 @@ class pyTACS(BaseUI):
                selectCompIDs(include='U_SKIN', includeBound=
                    ['LE_SPAR', 'TE_SPAR', 'RIB.01', 'RIB.04'])
 
-        4. nGroup: The number of groups to divide the found componets
-           into. Generally this will be 1. However, in certain cases, it
+        4. nGroup: The number of groups to divide the found components
+           into.
+           Generally this will be 1. However, in certain cases, it
            is convenient to create multiple groups in one pass.
 
            For example::
 
              # This will 'evenly' create 10 groups on all components
-             # containing LE_SPAR. Note that once the componets are
+             # containing LE_SPAR.
+             Note that once the components are
              # selected, they are sorted **alphabetically** and assigned
              # sequentially.
              selectCompIDs(include='LE_SPAR', nGroup=10)
 
-           nGroup can also be negative. If it is negative, then a single
+           nGroup can also be negative.
+           If it is negative, then a single
            design variable group is added to each of the found
            components.
 
@@ -530,8 +542,10 @@ class pyTACS(BaseUI):
              # group to each one.
              selectCompIDs(nGroup=-1)
 
-        includeOp, str: 'and' or 'or'. Selects the logical operation
-        used for item in 'include' option. For example:
+        includeOp, str: 'and' or 'or'.
+        Selects the logical operation
+        used for item in 'include' option.
+        For example:
 
         selectCompIDs(include=['LE_SPAR', 'TE_SPAR'],
         includeOpt='or') will select the LE_SPAR and TE_SPAR
@@ -628,8 +642,9 @@ class pyTACS(BaseUI):
 
     def getBDFInfo(self):
         """
-        Return pynastran bdf object. This object can be used interactively
-        to parse information (nodes, elements, loads etc) included in the bdf file.
+        Return a pynastran bdf object.
+        This object can be used interactively
+        to parse information (nodes, elements, loads, etc.) included in the bdf file.
 
         Returns
         -------
@@ -646,13 +661,13 @@ class pyTACS(BaseUI):
         Parameters
         ----------
         compIDs : int or list[int] or None
-            List of integers of the compIDs numbers. If None, returns names for all components.
+            List of integers containing the compIDs numbers. If None, returns names for all components.
             Defaults to None.
 
         Returns
         -------
         compDescript : list
-            List of strings of the names of the corresponding compIDs
+            List of strings containing the names of the corresponding compIDs
         """
         # Return all component names
         if compIDs is None:
@@ -677,7 +692,8 @@ class pyTACS(BaseUI):
         Parameters
         ----------
         compIDs : int or list[int] or None
-            List of integers of the compIDs numbers. If None, returns nodeIDs for all components.
+            List of integers containing the compIDs numbers.
+            If None, returns nodeIDs for all components.
             Defaults to None.
 
         nastranOrdering : False
@@ -698,12 +714,13 @@ class pyTACS(BaseUI):
     @postinitialize_method
     def getLocalNodeIDsForComps(self, compIDs):
         """
-        return the local (partitioned) node IDs belonging to a given list of component IDs
+        Return the local (partitioned) node IDs belonging to a given list of component IDs
 
         Parameters
         ----------
          compIDs : int or list[int] or None
-            List of integers of the compIDs numbers. If None, returns nodeIDs for all components.
+            List of integers containing the compIDs numbers.
+            If None, returns nodeIDs for all components.
             Defaults to None.
 
         Returns
@@ -721,9 +738,9 @@ class pyTACS(BaseUI):
         """
         This is the 'last' method to be called during the setup. The
         user should have already added all the design variables,
-        domains ect. before this function is call. This function
+        domains ect. Before this function is called. This function
         finalizes the problem initialization and cannot be changed at
-        later time. If a elemCallBack function is not provided by the user,
+        later time. If the user does not provide an elemCallBack function,
         we will use pyNastran to generate one automatically from element
         properties provided in the BDF file.
 
@@ -1317,7 +1334,7 @@ class pyTACS(BaseUI):
             array[:] = vec.getArray()
 
     @postinitialize_method
-    def createStaticProblem(self, name, options={}):
+    def createStaticProblem(self, name, options=None):
         """
         Create a new staticProblem for modeling a static load cases.
         This object can be used to set loads, evalFunctions as well as perform
@@ -1329,10 +1346,11 @@ class pyTACS(BaseUI):
             Name to assign problem.
         options : dict
             Problem-specific options to pass to StaticProblem instance (case-insensitive).
+            Defaults to None.
 
         Returns
         ----------
-        problem : StaticProblem
+        problem : tacs.problems.StaticProblem
             StaticProblem object used for modeling and solving static cases.
         """
         problem = tacs.problems.static.StaticProblem(
@@ -1344,7 +1362,7 @@ class pyTACS(BaseUI):
         return problem
 
     @postinitialize_method
-    def createTransientProblem(self, name, tInit, tFinal, numSteps, options={}):
+    def createTransientProblem(self, name, tInit, tFinal, numSteps, options=None):
         """
         Create a new TransientProblem for modeling a transient load cases.
         This object can be used to set loads, evalFunctions as well as perform
@@ -1362,10 +1380,11 @@ class pyTACS(BaseUI):
             Number of time steps for transient time integration
         options : dict
             Problem-specific options to pass to TransientProblem instance (case-insensitive).
+            Defaults to None.
 
         Returns
         ----------
-        problem : TransientProblem
+        problem : tacs.problems.TransientProblem
             TransientProblem object used for modeling and solving transient cases.
         """
         problem = tacs.problems.transient.TransientProblem(
@@ -1385,7 +1404,7 @@ class pyTACS(BaseUI):
         return problem
 
     @postinitialize_method
-    def createModalProblem(self, name, sigma, numEigs, options={}):
+    def createModalProblem(self, name, sigma, numEigs, options=None):
         """
         Create a new ModalProblem for performing modal analysis.
         This problem can be used to identify the natural frequencies and mode
@@ -1402,10 +1421,11 @@ class pyTACS(BaseUI):
             Number of eigenvalues to solve for.
         options : dict
             Problem-specific options to pass to ModalProblem instance (case-insensitive).
+            Defaults to None.
 
         Returns
         ----------
-        problem : ModalProblem
+        problem : tacs.problems.ModalProblem
             ModalProblem object used for performing modal eigenvalue analysis.
         """
         problem = tacs.problems.modal.ModalProblem(
@@ -1433,7 +1453,7 @@ class pyTACS(BaseUI):
         Returns
         ----------
         structProblems : dict[TACSProblem]
-            Dictionary containing a predfined TACSProblem for every loadcase found int the BDF.
+            Dictionary containing a predefined TACSProblem for every loadcase found in the BDF.
             The dictionary keys are the loadcase IDs from the BDF.
 
         Notes
@@ -1816,7 +1836,7 @@ class pyTACS(BaseUI):
         self.comm.barrier()
 
     @postinitialize_method
-    def createAdjacencyConstraint(self, name, options={}):
+    def createAdjacencyConstraint(self, name, options=None):
         """
         Create a new AdjacencyConstraint for calculating
         design variable differences across adjacent components.
@@ -1834,10 +1854,11 @@ class pyTACS(BaseUI):
             Name to assign constraint.
         options : dict
             Class-specific options to pass to AdjacencyConstraint instance (case-insensitive).
+            Defaults to None.
 
         Returns
         ----------
-        constraint : AdjacencyConstraint
+        constraint : tacs.constraints.AdjacencyConstraint
             AdjacencyConstraint object used for calculating constraints.
         """
         constr = tacs.constraints.AdjacencyConstraint(
@@ -1854,7 +1875,7 @@ class pyTACS(BaseUI):
         return constr
 
     @postinitialize_method
-    def createDVConstraint(self, name, options={}):
+    def createDVConstraint(self, name, options=None):
         """
         Create a new DVConstraint for calculating linear constraints based
         on design variables within the same component.
@@ -1872,10 +1893,11 @@ class pyTACS(BaseUI):
             Name to assign constraint.
         options : dict
             Class-specific options to pass to DVConstraint instance (case-insensitive).
+            Defaults to None.
 
         Returns
         ----------
-        constraint : DVConstraint
+        constraint : tacs.constraints.DVConstraint
             DVConstraint object used for calculating constraints.
         """
         constr = tacs.constraints.DVConstraint(
@@ -1892,7 +1914,7 @@ class pyTACS(BaseUI):
         return constr
 
     @postinitialize_method
-    def createVolumeConstraint(self, name, options={}):
+    def createVolumeConstraint(self, name, options=None):
         """
         Create a new VolumeConstraint for constraining the size of a closed volume.
         Only shell and solid elements are supported for this constraint.
@@ -1909,10 +1931,11 @@ class pyTACS(BaseUI):
             Name to assign constraint.
         options : dict
             Class-specific options to pass to VolumeConstraint instance (case-insensitive).
+            Defaults to None.
 
         Returns
         ----------
-        constraint : VolumeConstraint
+        constraint : tacs.constraints.VolumeConstraint
             VolumeConstraint object used for calculating constraints.
         """
         constr = tacs.constraints.VolumeConstraint(

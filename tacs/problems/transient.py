@@ -1055,7 +1055,7 @@ class TransientProblem(TACSProblem):
         """
         This is the main routine for returning useful information from
         pytacs. The functions corresponding to the strings in
-        EVAL_FUNCS are evaluated and updated into the provided
+        evalFuncs are evaluated and updated into the provided
         dictionary.
 
         Parameters
@@ -1144,7 +1144,7 @@ class TransientProblem(TACSProblem):
         """
         This is the main routine for returning useful (sensitivity)
         information from problem. The derivatives of the functions
-        corresponding to the strings in EVAL_FUNCS are evaluated and
+        corresponding to the strings in evalFuncs are evaluated and
         updated into the provided dictionary. The derivitives with
         respect to all design variables and node locations are computed.
 
