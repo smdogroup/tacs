@@ -427,7 +427,7 @@ class ModalProblem(TACSProblem):
         index : int
             Mode index to return solution for.
 
-        states : TACS.Vec or numpy.ndarray or None
+        states : tacs.TACS.Vec or numpy.ndarray or None
             Place eigenvector for mode into this array (optional).
 
         Returns

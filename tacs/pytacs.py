@@ -1201,7 +1201,7 @@ class pyTACS(BaseUI):
 
         Returns
         ----------
-        x : numpy.ndarray or TACS.Vec
+        x : numpy.ndarray or tacs.TACS.Vec
             Distributed design variable vector
         """
         xVec = self.assembler.createDesignVec()
@@ -1252,7 +1252,7 @@ class pyTACS(BaseUI):
 
         Returns
         ----------
-        xpts : numpy.ndarray or TACS.Vec
+        xpts : numpy.ndarray or tacs.TACS.Vec
             Distributed node coordinate vector
         """
 
@@ -1298,7 +1298,7 @@ class pyTACS(BaseUI):
 
         Returns
         ----------
-        vars : numpy.ndarray or TACS.Vec
+        vars : numpy.ndarray or tacs.TACS.Vec
             Distributed state variable vector
         """
         vars = self.assembler.createVec()

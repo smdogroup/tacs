@@ -515,7 +515,7 @@ class StaticProblem(TACSProblem):
         Parameters
         ----------
 
-        Fapplied : numpy.ndarray or TACS.Vec
+        Fapplied : numpy.ndarray or tacs.TACS.Vec
             Distributed array containing loads to applied to RHS of the problem.
 
         """
@@ -735,7 +735,7 @@ class StaticProblem(TACSProblem):
         ----------
         Optional Arguments:
 
-        Fext : numpy.ndarray or TACS.Vec
+        Fext : numpy.ndarray or tacs.TACS.Vec
             Distributed array containing additional loads (ex. aerodynamic forces for aerostructural coupling)
             to applied to RHS of the static problem.
 
@@ -1069,7 +1069,7 @@ class StaticProblem(TACSProblem):
         evalFuncs : list[str]
             The functions the user wants returned
 
-        svSensList : list[TACS.Vec] or list[numpy.ndarray]
+        svSensList : list[tacs.TACS.Vec] or list[numpy.ndarray]
             List of sensitivity vectors to add partial sensitivity to
         """
         # Set problem vars to assembler
@@ -1470,7 +1470,7 @@ class StaticProblem(TACSProblem):
 
         Parameters
         ----------
-        states : TACS.Vec or numpy.ndarray
+        states : tacs.TACS.Vec or numpy.ndarray
             Vector to place current state variables into (optional)
 
         Returns
