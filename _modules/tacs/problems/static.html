@@ -424,7 +424,7 @@
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
-<span class="sd">        x : numpy.ndarray</span>
+<span class="sd">        x : numpy.ndarray or dict or tacs.TACS.Vec</span>
 <span class="sd">            The variables (typically from the optimizer) to set. It</span>
 <span class="sd">            looks for variable in the ``self.varName`` attribute.</span>
 
@@ -552,7 +552,7 @@
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
 
-<span class="sd">        Fapplied : numpy.ndarray or TACS.Vec</span>
+<span class="sd">        Fapplied : numpy.ndarray or tacs.TACS.Vec</span>
 <span class="sd">            Distributed array containing loads to applied to RHS of the problem.</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -772,7 +772,7 @@
 <span class="sd">        ----------</span>
 <span class="sd">        Optional Arguments:</span>
 
-<span class="sd">        Fext : numpy.ndarray or TACS.Vec</span>
+<span class="sd">        Fext : numpy.ndarray or tacs.TACS.Vec</span>
 <span class="sd">            Distributed array containing additional loads (ex. aerodynamic forces for aerostructural coupling)</span>
 <span class="sd">            to applied to RHS of the static problem.</span>
 
@@ -878,7 +878,7 @@
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        This is the main routine for returning useful information from</span>
 <span class="sd">        pytacs. The functions corresponding to the strings in</span>
-<span class="sd">        EVAL_FUNCS are evaluated and updated into the provided</span>
+<span class="sd">        evalFuncs are evaluated and updated into the provided</span>
 <span class="sd">        dictionary.</span>
 
 <span class="sd">        Parameters</span>
@@ -967,7 +967,7 @@
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        This is the main routine for returning useful (sensitivity)</span>
 <span class="sd">        information from problem. The derivatives of the functions</span>
-<span class="sd">        corresponding to the strings in EVAL_FUNCS are evaluated and</span>
+<span class="sd">        corresponding to the strings in evalFuncs are evaluated and</span>
 <span class="sd">        updated into the provided dictionary. The derivitives with</span>
 <span class="sd">        respect to all design variables and node locations are computed.</span>
 
@@ -1106,7 +1106,7 @@
 <span class="sd">        evalFuncs : list[str]</span>
 <span class="sd">            The functions the user wants returned</span>
 
-<span class="sd">        svSensList : list[TACS.Vec] or list[numpy.ndarray]</span>
+<span class="sd">        svSensList : list[tacs.TACS.Vec] or list[numpy.ndarray]</span>
 <span class="sd">            List of sensitivity vectors to add partial sensitivity to</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="c1"># Set problem vars to assembler</span>
@@ -1507,7 +1507,7 @@
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
-<span class="sd">        states : TACS.Vec or numpy.ndarray</span>
+<span class="sd">        states : tacs.TACS.Vec or numpy.ndarray</span>
 <span class="sd">            Vector to place current state variables into (optional)</span>
 
 <span class="sd">        Returns</span>

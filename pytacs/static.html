@@ -197,7 +197,7 @@ from the functions module in tacs.</p></li>
 <dd><p>Update the design variables used by tacs.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>x</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.24)"><em>numpy.ndarray</em></a>) -- The variables (typically from the optimizer) to set. It
+<dd class="field-odd"><p><strong>x</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.24)"><em>numpy.ndarray</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.11)"><em>dict</em></a><em> or </em><em>tacs.TACS.Vec</em>) -- The variables (typically from the optimizer) to set. It
 looks for variable in the <code class="docutils literal notranslate"><span class="pre">self.varName</span></code> attribute.</p>
 </dd>
 </dl>
@@ -314,7 +314,7 @@ right hand side vector given the equation below:</p>
 </dl>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>Fapplied</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.24)"><em>numpy.ndarray</em></a><em> or </em><em>TACS.Vec</em>) -- Distributed array containing loads to applied to RHS of the problem.</p>
+<dd class="field-odd"><p><strong>Fapplied</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.24)"><em>numpy.ndarray</em></a><em> or </em><em>tacs.TACS.Vec</em>) -- Distributed array containing loads to applied to RHS of the problem.</p>
 </dd>
 </dl>
 </dd></dl>
@@ -455,7 +455,7 @@ forces must already be set.</p>
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>Arguments</strong> (<em>Optional</em>) -- </p></li>
-<li><p><strong>Fext</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.24)"><em>numpy.ndarray</em></a><em> or </em><em>TACS.Vec</em>) -- Distributed array containing additional loads (ex. aerodynamic forces for aerostructural coupling)
+<li><p><strong>Fext</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.24)"><em>numpy.ndarray</em></a><em> or </em><em>tacs.TACS.Vec</em>) -- Distributed array containing additional loads (ex. aerodynamic forces for aerostructural coupling)
 to applied to RHS of the static problem.</p></li>
 </ul>
 </dd>
@@ -467,7 +467,7 @@ to applied to RHS of the static problem.</p></li>
 <span class="sig-name descname"><span class="pre">evalFunctions</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">funcs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">evalFuncs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ignoreMissing</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/problems/static.html#StaticProblem.evalFunctions"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.problems.StaticProblem.evalFunctions" title="Permalink to this definition">¶</a></dt>
 <dd><p>This is the main routine for returning useful information from
 pytacs. The functions corresponding to the strings in
-EVAL_FUNCS are evaluated and updated into the provided
+evalFuncs are evaluated and updated into the provided
 dictionary.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -495,7 +495,7 @@ this option with caution.</p></li>
 <span class="sig-name descname"><span class="pre">evalFunctionsSens</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">funcsSens</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">evalFuncs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/problems/static.html#StaticProblem.evalFunctionsSens"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.problems.StaticProblem.evalFunctionsSens" title="Permalink to this definition">¶</a></dt>
 <dd><p>This is the main routine for returning useful (sensitivity)
 information from problem. The derivatives of the functions
-corresponding to the strings in EVAL_FUNCS are evaluated and
+corresponding to the strings in evalFuncs are evaluated and
 updated into the provided dictionary. The derivitives with
 respect to all design variables and node locations are computed.</p>
 <dl class="field-list simple">
@@ -524,7 +524,7 @@ respect to all design variables and node locations are computed.</p>
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>evalFuncs</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.11)"><em>list</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.11)"><em>str</em></a><em>]</em>) -- The functions the user wants returned</p></li>
-<li><p><strong>svSensList</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.11)"><em>list</em></a><em>[</em><em>TACS.Vec</em><em>] or </em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.11)"><em>list</em></a><em>[</em><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.24)"><em>numpy.ndarray</em></a><em>]</em>) -- List of sensitivity vectors to add partial sensitivity to</p></li>
+<li><p><strong>svSensList</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.11)"><em>list</em></a><em>[</em><em>tacs.TACS.Vec</em><em>] or </em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.11)"><em>list</em></a><em>[</em><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.24)"><em>numpy.ndarray</em></a><em>]</em>) -- List of sensitivity vectors to add partial sensitivity to</p></li>
 </ul>
 </dd>
 </dl>
@@ -670,7 +670,7 @@ prod += scale * J^T . phi</p>
 problem</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>states</strong> (<em>TACS.Vec</em><em> or </em><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.24)"><em>numpy.ndarray</em></a>) -- Vector to place current state variables into (optional)</p>
+<dd class="field-odd"><p><strong>states</strong> (<em>tacs.TACS.Vec</em><em> or </em><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.24)"><em>numpy.ndarray</em></a>) -- Vector to place current state variables into (optional)</p>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p><strong>states</strong> -- current state vector</p>
@@ -765,7 +765,7 @@ typically used from an external solver</p></li>
 the number of structural nodes on this processor.</p>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p>array</p>
+<dd class="field-even"><p><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.24)">numpy.ndarray</a></p>
 </dd>
 </dl>
 </dd></dl>

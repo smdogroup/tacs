@@ -284,7 +284,7 @@
 <div class="viewcode-block" id="ModalProblem.evalFunctions"><a class="viewcode-back" href="../../../pytacs/modal.html#tacs.problems.ModalProblem.evalFunctions">[docs]</a>    <span class="k">def</span> <span class="nf">evalFunctions</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">funcs</span><span class="p">,</span> <span class="n">evalFuncs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ignoreMissing</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Evaluate eigenvalues for problem. The functions corresponding to</span>
-<span class="sd">        the integers in EVAL_FUNCS are evaluated and updated into</span>
+<span class="sd">        the integers in evalFuncs are evaluated and updated into</span>
 <span class="sd">        the provided dictionary.</span>
 
 <span class="sd">        Parameters</span>
@@ -338,7 +338,7 @@
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        This is the main routine for returning useful (sensitivity)</span>
 <span class="sd">        information from problem. The derivatives of the functions</span>
-<span class="sd">        corresponding to the strings in EVAL_FUNCS are evaluated and</span>
+<span class="sd">        corresponding to the strings in evalFuncs are evaluated and</span>
 <span class="sd">        updated into the provided dictionary. The derivitives with</span>
 <span class="sd">        respect to all design variables and node locations are computed.</span>
 
@@ -464,7 +464,7 @@
 <span class="sd">        index : int</span>
 <span class="sd">            Mode index to return solution for.</span>
 
-<span class="sd">        states : TACS.Vec or numpy.ndarray or None</span>
+<span class="sd">        states : tacs.TACS.Vec or numpy.ndarray or None</span>
 <span class="sd">            Place eigenvector for mode into this array (optional).</span>
 
 <span class="sd">        Returns</span>

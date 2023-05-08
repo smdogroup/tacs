@@ -528,7 +528,7 @@
 <span class="sd">        timeStep : int</span>
 <span class="sd">            Time step index to apply load to.</span>
 
-<span class="sd">        Fapplied : numpy.ndarray or TACS.Vec</span>
+<span class="sd">        Fapplied : numpy.ndarray or tacs.TACS.Vec</span>
 <span class="sd">            Distributed array containing loads to applied to RHS of the problem.</span>
 
 <span class="sd">        timeStage : int or None</span>
@@ -856,11 +856,11 @@
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
-<span class="sd">        vars : float or numpy.ndarray or TACS.Vec</span>
+<span class="sd">        vars : float or numpy.ndarray or tacs.TACS.Vec</span>
 <span class="sd">            Initial conditions of the state variables</span>
-<span class="sd">        dvars : float or numpy.ndarray or TACS.Vec</span>
+<span class="sd">        dvars : float or numpy.ndarray or tacs.TACS.Vec</span>
 <span class="sd">            Initial conditions of the first time-derivative of the state variables</span>
-<span class="sd">        ddvars : float or numpy.ndarray or TACS.Vec</span>
+<span class="sd">        ddvars : float or numpy.ndarray or tacs.TACS.Vec</span>
 <span class="sd">            Initial conditions of the second time-derivative of the state variables</span>
 <span class="sd">        &quot;&quot;&quot;</span>
 
@@ -999,7 +999,7 @@
 <span class="sd">        timeStage : int or None</span>
 <span class="sd">            Time stage index to iterate. If not None, solver must be multistage</span>
 
-<span class="sd">        Fext : TACS.Vec or numpy.ndarray or None</span>
+<span class="sd">        Fext : tacs.TACS.Vec or numpy.ndarray or None</span>
 <span class="sd">            If Fext is not None, add this force vector to the loads applied at</span>
 <span class="sd">            this time instance. Fext must be sized such that the flattened array</span>
 <span class="sd">            is (numOwnedNodes*numVarsPerNode) in length. Useful for applying</span>
@@ -1092,7 +1092,7 @@
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        This is the main routine for returning useful information from</span>
 <span class="sd">        pytacs. The functions corresponding to the strings in</span>
-<span class="sd">        EVAL_FUNCS are evaluated and updated into the provided</span>
+<span class="sd">        evalFuncs are evaluated and updated into the provided</span>
 <span class="sd">        dictionary.</span>
 
 <span class="sd">        Parameters</span>
@@ -1181,7 +1181,7 @@
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        This is the main routine for returning useful (sensitivity)</span>
 <span class="sd">        information from problem. The derivatives of the functions</span>
-<span class="sd">        corresponding to the strings in EVAL_FUNCS are evaluated and</span>
+<span class="sd">        corresponding to the strings in evalFuncs are evaluated and</span>
 <span class="sd">        updated into the provided dictionary. The derivitives with</span>
 <span class="sd">        respect to all design variables and node locations are computed.</span>
 
@@ -1282,13 +1282,13 @@
 <span class="sd">        timeStage : int or None</span>
 <span class="sd">            Time stage index to get state variables for.</span>
 
-<span class="sd">        states : TACS.Vec or numpy.ndarray or None</span>
+<span class="sd">        states : tacs.TACS.Vec or numpy.ndarray or None</span>
 <span class="sd">            If states is not None, place the state variables into this array (optional).</span>
 
-<span class="sd">        dstates : TACS.Vec or numpy.ndarray or None</span>
+<span class="sd">        dstates : tacs.TACS.Vec or numpy.ndarray or None</span>
 <span class="sd">            If dstates is not None, place the time derivative of the state variables into this array (optional).</span>
 
-<span class="sd">        ddstates : TACS.Vec or numpy.ndarray or None</span>
+<span class="sd">        ddstates : tacs.TACS.Vec or numpy.ndarray or None</span>
 <span class="sd">            If ddstates is not None, place the second time derivative of the state variables into this array (optional).</span>
 
 <span class="sd">        Returns</span>
@@ -1296,13 +1296,13 @@
 <span class="sd">        time: float</span>
 <span class="sd">            The time at specified time instance</span>
 
-<span class="sd">        states : TACS.Vec or numpy.ndarray</span>
+<span class="sd">        states : tacs.TACS.Vec or numpy.ndarray</span>
 <span class="sd">            The state variables.</span>
 
-<span class="sd">        dstates : TACS.Vec or numpy.ndarray or None</span>
+<span class="sd">        dstates : tacs.TACS.Vec or numpy.ndarray or None</span>
 <span class="sd">            The time derivative of the state variables.</span>
 
-<span class="sd">        ddstates : TACS.Vec or numpy.ndarray or None</span>
+<span class="sd">        ddstates : tacs.TACS.Vec or numpy.ndarray or None</span>
 <span class="sd">            The second time derivative of the state variables.</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
