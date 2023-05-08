@@ -738,7 +738,7 @@ class pyTACS(BaseUI):
         """
         This is the 'last' method to be called during the setup. The
         user should have already added all the design variables,
-        domains ect. Before this function is called. This function
+        domains, etc. Before this function is called. This function
         finalizes the problem initialization and cannot be changed at
         later time. If the user does not provide an elemCallBack function,
         we will use pyNastran to generate one automatically from element
@@ -746,7 +746,7 @@ class pyTACS(BaseUI):
 
         Parameters
         ----------
-        elemCallBack : python function handle
+        elemCallBack : function
 
            The calling sequence for elemCallBack **must** be as
            follows::
@@ -755,7 +755,7 @@ class pyTACS(BaseUI):
                              globalDVs, **kwargs):
 
            The dvNum is the current counter which must be used by the
-           user when creating constitutive object with design
+           user when creating a constitutive object with design
            variables.
 
            compID is the ID number used by tacs to reference this property group.
@@ -1452,7 +1452,7 @@ class pyTACS(BaseUI):
 
         Returns
         ----------
-        structProblems : dict[TACSProblem]
+        structProblems : dict[tacs.problems.TACSProblem]
             Dictionary containing a predefined TACSProblem for every loadcase found in the BDF.
             The dictionary keys are the loadcase IDs from the BDF.
 
@@ -1575,7 +1575,7 @@ class pyTACS(BaseUI):
         ----------
         fileName: str
             Name of file to write BDF file to.
-        problems: TACSProblem or list[TACSProblem]
+        problems: tacs.problems.TACSProblem or list[tacs.problems.TACSProblem]
             List of pytacs Problem classes to write BDF file from.
         """
         # Make sure problems is in a list
