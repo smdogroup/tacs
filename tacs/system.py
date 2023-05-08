@@ -76,7 +76,7 @@ class TACSSystem(BaseUI):
 
         Parameters
         ----------
-        x : numpy.ndarray or dict or TACS.Vec
+        x : numpy.ndarray or dict or tacs.TACS.Vec
             The variables (typically from the optimizer) to set. It
             looks for variable in the ``self.varName`` attribute if in dict.
 
@@ -127,7 +127,7 @@ class TACSSystem(BaseUI):
 
         Returns
         -------
-        xVec : TACS.Vec
+        xVec : tacs.TACS.Vec
                Converted TACS designVec.
 
         Notes
@@ -154,7 +154,7 @@ class TACSSystem(BaseUI):
 
         Returns
         -------
-        coords : array
+        coords : numpy.ndarray
             Structural coordinate in array of size (N * 3) where N is
             the number of structural nodes on this processor.
         """
@@ -197,7 +197,7 @@ class TACSSystem(BaseUI):
 
         Returns
         -------
-        Xptsvec : TACS.Vec
+        Xptsvec : tacs.TACS.Vec
                   Converted TACS nodeVec.
 
         Notes
@@ -243,7 +243,7 @@ class TACSSystem(BaseUI):
 
         Returns
         -------
-        varVec : TACS.Vec
+        varVec : tacs.TACS.Vec
                  Converted TACS Vec.
 
         Notes

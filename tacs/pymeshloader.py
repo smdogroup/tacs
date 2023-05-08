@@ -400,7 +400,7 @@ class pyMeshLoader(BaseUI):
         componentIDs : int or list[int]
             List of integers of the compIDs numbers.
 
-        nastranOrdering : False
+        nastranOrdering : bool
             Flag signaling whether nodeIDs are in TACS (default) or NASTRAN (grid IDs in bdf file) ordering
             Defaults to False.
 
@@ -438,7 +438,7 @@ class pyMeshLoader(BaseUI):
 
         Returns
         -------
-        nodeIDs : list
+        nodeIDs : list[int]
             List of unique nodeIDs that belong to the given list of compIDs
         """
         # Get the global nodes for this component (TACS ordering)

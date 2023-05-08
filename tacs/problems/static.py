@@ -387,7 +387,7 @@ class StaticProblem(TACSProblem):
 
         Parameters
         ----------
-        x : numpy.ndarray
+        x : numpy.ndarray or dict or tacs.TACS.Vec
             The variables (typically from the optimizer) to set. It
             looks for variable in the ``self.varName`` attribute.
 
@@ -515,7 +515,7 @@ class StaticProblem(TACSProblem):
         Parameters
         ----------
 
-        Fapplied : numpy.ndarray or TACS.Vec
+        Fapplied : numpy.ndarray or tacs.TACS.Vec
             Distributed array containing loads to applied to RHS of the problem.
 
         """
@@ -735,7 +735,7 @@ class StaticProblem(TACSProblem):
         ----------
         Optional Arguments:
 
-        Fext : numpy.ndarray or TACS.Vec
+        Fext : numpy.ndarray or tacs.TACS.Vec
             Distributed array containing additional loads (ex. aerodynamic forces for aerostructural coupling)
             to applied to RHS of the static problem.
 
@@ -841,7 +841,7 @@ class StaticProblem(TACSProblem):
         """
         This is the main routine for returning useful information from
         pytacs. The functions corresponding to the strings in
-        EVAL_FUNCS are evaluated and updated into the provided
+        evalFuncs are evaluated and updated into the provided
         dictionary.
 
         Parameters
@@ -930,7 +930,7 @@ class StaticProblem(TACSProblem):
         """
         This is the main routine for returning useful (sensitivity)
         information from problem. The derivatives of the functions
-        corresponding to the strings in EVAL_FUNCS are evaluated and
+        corresponding to the strings in evalFuncs are evaluated and
         updated into the provided dictionary. The derivitives with
         respect to all design variables and node locations are computed.
 
@@ -1069,7 +1069,7 @@ class StaticProblem(TACSProblem):
         evalFuncs : list[str]
             The functions the user wants returned
 
-        svSensList : list[TACS.Vec] or list[numpy.ndarray]
+        svSensList : list[tacs.TACS.Vec] or list[numpy.ndarray]
             List of sensitivity vectors to add partial sensitivity to
         """
         # Set problem vars to assembler
@@ -1470,7 +1470,7 @@ class StaticProblem(TACSProblem):
 
         Parameters
         ----------
-        states : TACS.Vec or numpy.ndarray
+        states : tacs.TACS.Vec or numpy.ndarray
             Vector to place current state variables into (optional)
 
         Returns

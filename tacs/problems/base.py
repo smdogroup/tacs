@@ -100,7 +100,7 @@ class TACSProblem(TACSSystem):
         Parameters
         ----------
 
-        FVec : TACS.Vec
+        FVec : tacs.TACS.Vec
             TACS BVec to add loads to.
 
         compIDs : list[int] or int
@@ -193,7 +193,7 @@ class TACSProblem(TACSSystem):
         Parameters
         ----------
 
-        FVec : TACS.Vec
+        FVec : tacs.TACS.Vec
             TACS BVec to add loads to.
 
         nodeIDs : list[int]
@@ -309,7 +309,7 @@ class TACSProblem(TACSSystem):
         Parameters
         ----------
 
-        Fapplied : numpy.ndarray or TACS.Vec
+        Fapplied : numpy.ndarray or tacs.TACS.Vec
             Distributed array containing loads to applied to RHS of the problem.
 
         """
@@ -699,7 +699,7 @@ class TACSProblem(TACSSystem):
         Parameters
         ----------
 
-        FVec : TACS.Vec
+        FVec : tacs.TACS.Vec
             TACS BVec to add loads to.
 
         auxElems : TACS AuxElements object
