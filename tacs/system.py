@@ -154,7 +154,7 @@ class TACSSystem(BaseUI):
 
         Returns
         -------
-        coords : array
+        coords : numpy.ndarray
             Structural coordinate in array of size (N * 3) where N is
             the number of structural nodes on this processor.
         """

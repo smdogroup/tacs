@@ -387,7 +387,7 @@ class StaticProblem(TACSProblem):
 
         Parameters
         ----------
-        x : numpy.ndarray
+        x : numpy.ndarray or dict or tacs.TACS.Vec
             The variables (typically from the optimizer) to set. It
             looks for variable in the ``self.varName`` attribute.
 
