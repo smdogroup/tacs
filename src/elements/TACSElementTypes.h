@@ -29,6 +29,7 @@ const int TACS_ELEMENT_STRAIN = 8;
 const int TACS_ELEMENT_STRESS = 9;
 const int TACS_ELEMENT_DENSITY_MOMENT = 10;
 const int TACS_ELEMENT_MOMENT_OF_INERTIA = 11;
+const int TACS_ELEMENT_ENCLOSED_VOLUME = 12;
 
 /*
   The output flags from each element type

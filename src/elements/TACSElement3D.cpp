@@ -546,6 +546,13 @@ int TACSElement3D::evalPointQuantity(
                           Xd, J, Ut, Ud, Ux);
   *detXd = det3x3(Xd);
 
+  if (quantityType == TACS_ELEMENT_ENCLOSED_VOLUME) {
+    if (quantity) {
+      *quantity = 1.0;
+    }
+    return 1;
+  }
+
   return model->evalPointQuantity(elemIndex, quantityType, time, n, pt, X, Xd,
                                   Ut, Ux, quantity);
 }

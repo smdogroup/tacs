@@ -74,11 +74,14 @@ class pyMeshLoader(BaseUI):
                     )
 
         # We have to remove any empty property groups that may have been read in from the BDF
-        pIDToeIDMap = self.bdfInfo.get_property_id_to_element_ids_map()
-        for pid in pIDToeIDMap:
+        self.propertyIDToElementIDDict = (
+            self.bdfInfo.get_property_id_to_element_ids_map()
+        )
+        for pid in self.propertyIDToElementIDDict:
             # If there are no elements referencing this property card, remove it
-            if len(pIDToeIDMap[pid]) == 0:
+            if len(self.propertyIDToElementIDDict[pid]) == 0:
                 self.bdfInfo.properties.pop(pid)
+                self.propertyIDToElementIDDict.pop(pid)
 
         # Create dictionaries for mapping between tacs and nastran id numbering
         self._updateNastranToTACSDicts()
@@ -294,7 +297,7 @@ class pyMeshLoader(BaseUI):
     def getConnectivityForComp(self, componentID, nastranOrdering=False):
         # Find all of the element IDs belonging to this property group
         propertyID = list(self.bdfInfo.property_ids)[componentID]
-        elementIDs = self.bdfInfo.get_property_id_to_element_ids_map()[propertyID]
+        elementIDs = self.propertyIDToElementIDDict[propertyID]
         compConn = []
         for elementID in elementIDs:
             # We've now got the connectivity for this element, but it is in nastrans node numbering
@@ -397,7 +400,7 @@ class pyMeshLoader(BaseUI):
         componentIDs : int or list[int]
             List of integers of the compIDs numbers.
 
-        nastranOrdering : False
+        nastranOrdering : bool
             Flag signaling whether nodeIDs are in TACS (default) or NASTRAN (grid IDs in bdf file) ordering
             Defaults to False.
 
@@ -435,7 +438,7 @@ class pyMeshLoader(BaseUI):
 
         Returns
         -------
-        nodeIDs : list
+        nodeIDs : list[int]
             List of unique nodeIDs that belong to the given list of compIDs
         """
         # Get the global nodes for this component (TACS ordering)
