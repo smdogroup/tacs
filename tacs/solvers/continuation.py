@@ -27,8 +27,6 @@ from tacs.solvers import BaseSolver
 def lagrangeInterp(xKnown, yKnown, xQuery, yQuery):
     """Interpolate an array using lagrange polynomials
 
-    _extended_summary_
-
     Parameters
     ----------
     xKnown : iterable of length n
