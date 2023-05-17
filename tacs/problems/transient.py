@@ -364,7 +364,7 @@ class TransientProblem(TACSProblem):
             to determine this.
 
         F : Numpy 1d or 2d array length (varsPerNodes) or (numCompIDs, varsPerNodes)
-            Vector(s) of 'force' to apply to each components.  If only one force vector is provided,
+            Vector(s) of 'force' to apply to each component.  If only one force vector is provided,
             force will be copied uniformly across all components.
 
         timeStage : int or None
@@ -384,7 +384,7 @@ class TransientProblem(TACSProblem):
         on the physics problem being solved and the dofs included
         in the model.
 
-        A couple of examples of force vector components for common problem are listed below:
+        A couple of examples of force vector components for common problems are listed below:
 
             In Heat Conduction with varsPerNode = 1
                 F = [Qdot] # heat rate
@@ -446,7 +446,7 @@ class TransientProblem(TACSProblem):
         on the physics problem being solved and the dofs included
         in the model.
 
-        A couple of examples of force vector components for common problem are listed below:
+        A couple of examples of force vector components for common problems are listed below:
 
             In Heat Conduction with varsPerNode = 1
                 F = [Qdot] # heat rate
@@ -531,7 +531,7 @@ class TransientProblem(TACSProblem):
             to determine this.
 
         tractions : numpy.ndarray length 1 or compIDs
-            Array of traction vectors for each components
+            Array of traction vectors for each component
 
         timeStage : int or None
             Time stage index to apply load to. Default is None, which is applicable only for
@@ -630,7 +630,7 @@ class TransientProblem(TACSProblem):
             to determine this.
 
         pressures : Numpy array length 1 or compIDs
-            Array of pressure values for each components
+            Array of pressure values for each component
 
         timeStage : int or None
             Time stage index to apply load to. Default is None, which is applicable only for
@@ -1031,7 +1031,7 @@ class TransientProblem(TACSProblem):
             The user-supplied name for the function. This will
             typically be a string that is meaningful to the user
 
-        funcHandle : TACS.Function
+        funcHandle : tacs.TACS.Function
             The function handle to use for creation. This must come
             from the functions module in tacs.
 
