@@ -209,7 +209,7 @@ This average load is then applied to the nodes.</p>
 <li><p><strong>timeStep</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)"><em>int</em></a>) -- Time step index to apply load to.</p></li>
 <li><p><strong>compIDs</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.11)"><em>list</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)"><em>int</em></a><em>] or </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)"><em>int</em></a>) -- The components with added loads. Use pyTACS.selectCompIDs method
 to determine this.</p></li>
-<li><p><strong>F</strong> (<em>Numpy 1d</em><em> or </em><em>2d array length</em><em> (</em><em>varsPerNodes</em><em>) or </em><em>(</em><em>numCompIDs</em><em>, </em><em>varsPerNodes</em><em>)</em>) -- Vector(s) of 'force' to apply to each components.  If only one force vector is provided,
+<li><p><strong>F</strong> (<em>Numpy 1d</em><em> or </em><em>2d array length</em><em> (</em><em>varsPerNodes</em><em>) or </em><em>(</em><em>numCompIDs</em><em>, </em><em>varsPerNodes</em><em>)</em>) -- Vector(s) of 'force' to apply to each component.  If only one force vector is provided,
 force will be copied uniformly across all components.</p></li>
 <li><p><strong>timeStage</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)"><em>int</em></a><em> or </em><em>None</em>) -- Time stage index to apply load to. Default is None, which is applicable only for
 multi-step methods like BDF. For multi-stage methods like DIRK, this index must
@@ -224,7 +224,7 @@ or copied and applied individually to each component (False). Defaults to False.
 necessarily physical forces and their interpretation depends
 on the physics problem being solved and the dofs included
 in the model.</p>
-<p>A couple of examples of force vector components for common problem are listed below:</p>
+<p>A couple of examples of force vector components for common problems are listed below:</p>
 <blockquote>
 <div><dl class="simple">
 <dt>In Heat Conduction with varsPerNode = 1</dt><dd><p>F = [Qdot] # heat rate</p>
@@ -266,7 +266,7 @@ or NASTRAN (grid IDs in bdf file) ordering</p></li>
 necessarily physical forces and their interpretation depends
 on the physics problem being solved and the dofs included
 in the model.</p>
-<p>A couple of examples of force vector components for common problem are listed below:</p>
+<p>A couple of examples of force vector components for common problems are listed below:</p>
 <blockquote>
 <div><dl class="simple">
 <dt>In Heat Conduction with varsPerNode = 1</dt><dd><p>F = [Qdot] # heat rate</p>
@@ -326,7 +326,7 @@ this routine is to add loads that remain fixed throughout an optimization.</p>
 <li><p><strong>timeStep</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)"><em>int</em></a>) -- Time step index to apply load to.</p></li>
 <li><p><strong>compIDs</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.11)"><em>list</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)"><em>int</em></a><em>] or </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)"><em>int</em></a>) -- The components with added loads. Use pyTACS.selectCompIDs method
 to determine this.</p></li>
-<li><p><strong>tractions</strong> (<em>numpy.ndarray length 1</em><em> or </em><em>compIDs</em>) -- Array of traction vectors for each components</p></li>
+<li><p><strong>tractions</strong> (<em>numpy.ndarray length 1</em><em> or </em><em>compIDs</em>) -- Array of traction vectors for each component</p></li>
 <li><p><strong>timeStage</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)"><em>int</em></a><em> or </em><em>None</em>) -- Time stage index to apply load to. Default is None, which is applicable only for
 multi-step methods like BDF. For multi-stage methods like DIRK, this index must
 be specified.</p></li>
@@ -375,7 +375,7 @@ would be a fuel load.</p>
 <li><p><strong>timeStep</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)"><em>int</em></a>) -- Time step index to apply load to.</p></li>
 <li><p><strong>compIDs</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.11)"><em>list</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)"><em>int</em></a><em>] or </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)"><em>int</em></a>) -- The components with added loads. Use pyTACS.selectCompIDs method
 to determine this.</p></li>
-<li><p><strong>pressures</strong> (<em>Numpy array length 1</em><em> or </em><em>compIDs</em>) -- Array of pressure values for each components</p></li>
+<li><p><strong>pressures</strong> (<em>Numpy array length 1</em><em> or </em><em>compIDs</em>) -- Array of pressure values for each component</p></li>
 <li><p><strong>timeStage</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)"><em>int</em></a><em> or </em><em>None</em>) -- Time stage index to apply load to. Default is None, which is applicable only for
 multi-step methods like BDF. For multi-stage methods like DIRK, this index must
 be specified.</p></li>
@@ -546,7 +546,7 @@ for supported TACS eval functions.</p>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>funcName</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.11)"><em>str</em></a>) -- The user-supplied name for the function. This will
 typically be a string that is meaningful to the user</p></li>
-<li><p><strong>funcHandle</strong> (<em>TACS.Function</em>) -- The function handle to use for creation. This must come
+<li><p><strong>funcHandle</strong> (<em>tacs.TACS.Function</em>) -- The function handle to use for creation. This must come
 from the functions module in tacs.</p></li>
 <li><p><strong>compIDs</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.11)"><em>list</em></a>) -- List of compIDs to select.</p></li>
 <li><p><strong>**kwargs</strong> -- Any keyword arguments to be passed to the TACS function during setup.</p></li>
@@ -705,6 +705,14 @@ Defaults to None.</p></li>
 <dt class="sig sig-object py" id="tacs.problems.TransientProblem.getFunctionKeys">
 <span class="sig-name descname"><span class="pre">getFunctionKeys</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.problems.TransientProblem.getFunctionKeys" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return a list of the current function key names</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>funcNames</strong> -- List containing user-defined names for functions added so far.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.11)">list</a>[<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.11)">str</a>]</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py method">
@@ -726,18 +734,42 @@ the number of structural nodes on this processor.</p>
 <dt class="sig sig-object py" id="tacs.problems.TransientProblem.getNumCoordinates">
 <span class="sig-name descname"><span class="pre">getNumCoordinates</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.problems.TransientProblem.getNumCoordinates" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return the number of mesh coordinates on this processor.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>ncoords</strong> -- Number of mesh coordinates on this processor.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)">int</a></p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tacs.problems.TransientProblem.getNumDesignVars">
 <span class="sig-name descname"><span class="pre">getNumDesignVars</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.problems.TransientProblem.getNumDesignVars" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return the number of design variables on this processor.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>ndvs</strong> -- Number of design variables on this processor.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)">int</a></p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tacs.problems.TransientProblem.getNumOwnedNodes">
 <span class="sig-name descname"><span class="pre">getNumOwnedNodes</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.problems.TransientProblem.getNumOwnedNodes" title="Permalink to this definition">¶</a></dt>
 <dd><p>Get the number of nodes owned by this processor.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>nnodes</strong> -- Number of nodes on this processor.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)">int</a></p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py method">
@@ -770,6 +802,14 @@ on this processor</p>
 <dt class="sig sig-object py" id="tacs.problems.TransientProblem.getVarsPerNode">
 <span class="sig-name descname"><span class="pre">getVarsPerNode</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.problems.TransientProblem.getVarsPerNode" title="Permalink to this definition">¶</a></dt>
 <dd><p>Get the number of variables per node for the model.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>vpn</strong> -- Number of variables per node.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)">int</a></p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py method">

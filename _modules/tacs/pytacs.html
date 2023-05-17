@@ -724,7 +724,7 @@
 
 <div class="viewcode-block" id="pyTACS.getGlobalNodeIDsForComps"><a class="viewcode-back" href="../../pytacs/pytacs_module.html#tacs.pytacs.pyTACS.getGlobalNodeIDsForComps">[docs]</a>    <span class="k">def</span> <span class="nf">getGlobalNodeIDsForComps</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">compIDs</span><span class="p">,</span> <span class="n">nastranOrdering</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        return the global (non-partitioned) node IDs belonging to a given list of component IDs</span>
+<span class="sd">        Return the global (non-partitioned) node IDs belonging to a given list of component IDs</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -733,7 +733,7 @@
 <span class="sd">            If None, returns nodeIDs for all components.</span>
 <span class="sd">            Defaults to None.</span>
 
-<span class="sd">        nastranOrdering : False</span>
+<span class="sd">        nastranOrdering : bool</span>
 <span class="sd">            Flag signaling whether nodeIDs are in TACS (default) or NASTRAN (grid IDs in bdf file) ordering</span>
 <span class="sd">            Defaults to False.</span>
 
@@ -783,7 +783,7 @@
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
-<span class="sd">        elemCallBack : function</span>
+<span class="sd">        elemCallBack : callable</span>
 
 <span class="sd">           The calling sequence for elemCallBack **must** be as</span>
 <span class="sd">           follows::</span>
@@ -1201,7 +1201,7 @@
 <span class="sd">        during assembler creation.</span>
 
 <span class="sd">        Returns</span>
-<span class="sd">        ----------</span>
+<span class="sd">        -------</span>
 <span class="sd">        x : numpy.ndarray</span>
 <span class="sd">            The original design variable vector set in tacs.</span>
 
@@ -1214,7 +1214,7 @@
 <span class="sd">        get the lower/upper bounds for the design variables.</span>
 
 <span class="sd">        Returns</span>
-<span class="sd">        ----------</span>
+<span class="sd">        -------</span>
 <span class="sd">        xlb : numpy.ndarray</span>
 <span class="sd">            The design variable lower bound.</span>
 <span class="sd">        xub : numpy.ndarray</span>
@@ -1237,7 +1237,7 @@
 <span class="sd">            Defaults to False.</span>
 
 <span class="sd">        Returns</span>
-<span class="sd">        ----------</span>
+<span class="sd">        -------</span>
 <span class="sd">        x : numpy.ndarray or tacs.TACS.Vec</span>
 <span class="sd">            Distributed design variable vector</span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -1251,6 +1251,11 @@
     <span class="k">def</span> <span class="nf">getNumDesignVars</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Return the number of design variables on this processor.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        ndvs : int</span>
+<span class="sd">            Number of design variables on this processor.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">x0</span><span class="o">.</span><span class="n">getSize</span><span class="p">()</span></div>
 
@@ -1258,6 +1263,11 @@
     <span class="k">def</span> <span class="nf">getTotalNumDesignVars</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Return the number of design variables across all processors.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        ndvs : int</span>
+<span class="sd">            Total number of design variables across all processors.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">dvNum</span></div>
 
@@ -1288,7 +1298,7 @@
 <span class="sd">            Defaults to False.</span>
 
 <span class="sd">        Returns</span>
-<span class="sd">        ----------</span>
+<span class="sd">        -------</span>
 <span class="sd">        xpts : numpy.ndarray or tacs.TACS.Vec</span>
 <span class="sd">            Distributed node coordinate vector</span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -1303,13 +1313,23 @@
     <span class="k">def</span> <span class="nf">getNumOwnedNodes</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get the number of nodes owned by this processor.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        nNodes : int</span>
+<span class="sd">            Number of nodes owned by this proc.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">assembler</span><span class="o">.</span><span class="n">getNumOwnedNodes</span><span class="p">()</span></div>
 
 <div class="viewcode-block" id="pyTACS.getNumOwnedMultiplierNodes"><a class="viewcode-back" href="../../pytacs/pytacs_module.html#tacs.pytacs.pyTACS.getNumOwnedMultiplierNodes">[docs]</a>    <span class="nd">@postinitialize_method</span>
     <span class="k">def</span> <span class="nf">getNumOwnedMultiplierNodes</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Get number of multiplier nodes owned by this processor.</span>
+<span class="sd">        Get the number of lagrange multiplier nodes owned by this processor.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        nMultNodes : int</span>
+<span class="sd">            Number of multiplier nodes owned by this proc.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">meshLoader</span><span class="o">.</span><span class="n">getLocalMultiplierNodeIDs</span><span class="p">())</span></div>
 
@@ -1317,6 +1337,11 @@
     <span class="k">def</span> <span class="nf">getLocalMultiplierNodeIDs</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get the tacs indices of multiplier nodes used to hold lagrange multipliers on this processor.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        nodeIDs : list[int]</span>
+<span class="sd">            List of multiplier node ID&#39;s owned by this proc.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">meshLoader</span><span class="o">.</span><span class="n">getLocalMultiplierNodeIDs</span><span class="p">()</span></div>
 
@@ -1334,7 +1359,7 @@
 <span class="sd">            Defaults to False.</span>
 
 <span class="sd">        Returns</span>
-<span class="sd">        ----------</span>
+<span class="sd">        -------</span>
 <span class="sd">        vars : numpy.ndarray or tacs.TACS.Vec</span>
 <span class="sd">            Distributed state variable vector</span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -1348,13 +1373,23 @@
     <span class="k">def</span> <span class="nf">getVarsPerNode</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get the number of variables per node for the model.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        vpn : int</span>
+<span class="sd">            Number of variables per node.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">assembler</span><span class="o">.</span><span class="n">getVarsPerNode</span><span class="p">()</span></div>
 
 <div class="viewcode-block" id="pyTACS.applyBCsToVec"><a class="viewcode-back" href="../../pytacs/pytacs_module.html#tacs.pytacs.pyTACS.applyBCsToVec">[docs]</a>    <span class="nd">@postinitialize_method</span>
     <span class="k">def</span> <span class="nf">applyBCsToVec</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">vec</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Applies zeros to boundary condition dofs in input vector.</span>
+<span class="sd">        Applies zeros to boundary condition DOFs in input vector.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        vec : numpy.ndarray or tacs.TACS.Vec</span>
+<span class="sd">            Vector to apply boundary conditions to.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="c1"># Check if input is a BVec or numpy array</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">vec</span><span class="p">,</span> <span class="n">tacs</span><span class="o">.</span><span class="n">TACS</span><span class="o">.</span><span class="n">Vec</span><span class="p">):</span>
@@ -1386,7 +1421,7 @@
 <span class="sd">            Defaults to None.</span>
 
 <span class="sd">        Returns</span>
-<span class="sd">        ----------</span>
+<span class="sd">        -------</span>
 <span class="sd">        problem : tacs.problems.StaticProblem</span>
 <span class="sd">            StaticProblem object used for modeling and solving static cases.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -1420,7 +1455,7 @@
 <span class="sd">            Defaults to None.</span>
 
 <span class="sd">        Returns</span>
-<span class="sd">        ----------</span>
+<span class="sd">        -------</span>
 <span class="sd">        problem : tacs.problems.TransientProblem</span>
 <span class="sd">            TransientProblem object used for modeling and solving transient cases.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -1461,7 +1496,7 @@
 <span class="sd">            Defaults to None.</span>
 
 <span class="sd">        Returns</span>
-<span class="sd">        ----------</span>
+<span class="sd">        -------</span>
 <span class="sd">        problem : tacs.problems.ModalProblem</span>
 <span class="sd">            ModalProblem object used for performing modal eigenvalue analysis.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -1488,8 +1523,8 @@
 <span class="sd">        skip setting loads in Python.</span>
 
 <span class="sd">        Returns</span>
-<span class="sd">        ----------</span>
-<span class="sd">        structProblems : dict[tacs.problems.TACSProblem]</span>
+<span class="sd">        -------</span>
+<span class="sd">        structProblems : dict[int, tacs.problems.TACSProblem]</span>
 <span class="sd">            Dictionary containing a predefined TACSProblem for every loadcase found in the BDF.</span>
 <span class="sd">            The dictionary keys are the loadcase IDs from the BDF.</span>
 
@@ -1894,7 +1929,7 @@
 <span class="sd">            Defaults to None.</span>
 
 <span class="sd">        Returns</span>
-<span class="sd">        ----------</span>
+<span class="sd">        -------</span>
 <span class="sd">        constraint : tacs.constraints.AdjacencyConstraint</span>
 <span class="sd">            AdjacencyConstraint object used for calculating constraints.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -1933,7 +1968,7 @@
 <span class="sd">            Defaults to None.</span>
 
 <span class="sd">        Returns</span>
-<span class="sd">        ----------</span>
+<span class="sd">        -------</span>
 <span class="sd">        constraint : tacs.constraints.DVConstraint</span>
 <span class="sd">            DVConstraint object used for calculating constraints.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -1971,7 +2006,7 @@
 <span class="sd">            Defaults to None.</span>
 
 <span class="sd">        Returns</span>
-<span class="sd">        ----------</span>
+<span class="sd">        -------</span>
 <span class="sd">        constraint : tacs.constraints.VolumeConstraint</span>
 <span class="sd">            VolumeConstraint object used for calculating constraints.</span>
 <span class="sd">        &quot;&quot;&quot;</span>

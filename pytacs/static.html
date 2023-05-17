@@ -121,10 +121,10 @@ Use pyTACS.createStaticProblem instead.</p>
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>name</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.11)"><em>str</em></a>) -- Name of this tacs problem</p></li>
-<li><p><strong>assembler</strong> (<a class="reference internal" href="../core/TACS.html#TACS.Assembler" title="TACS.Assembler"><em>TACS.Assembler</em></a>) -- Cython object responsible for creating and setting tacs objects used to solve problem</p></li>
+<li><p><strong>assembler</strong> (<a class="reference internal" href="../core/TACS.html#TACS.Assembler" title="tacs.TACS.Assembler"><em>tacs.TACS.Assembler</em></a>) -- Cython object responsible for creating and setting tacs objects used to solve problem</p></li>
 <li><p><strong>comm</strong> (<a class="reference external" href="https://mpi4py.readthedocs.io/en/stable/reference/mpi4py.MPI.Intracomm.html#mpi4py.MPI.Intracomm" title="(in MPI for Python v3.1)"><em>mpi4py.MPI.Intracomm</em></a>) -- The comm object on which to create the pyTACS object.</p></li>
-<li><p><strong>outputViewer</strong> (<em>TACS.TACSToFH5</em>) -- Cython object used to write out f5 files that can be converted and used for postprocessing.</p></li>
-<li><p><strong>meshLoader</strong> (<em>pymeshloader.pyMeshLoader</em>) -- pyMeshLoader object used to create the assembler.</p></li>
+<li><p><strong>outputViewer</strong> (<em>tacs.TACS.TACSToFH5</em>) -- Cython object used to write out f5 files that can be converted and used for postprocessing.</p></li>
+<li><p><strong>meshLoader</strong> (<em>tacs.pymeshloader.pyMeshLoader</em>) -- pyMeshLoader object used to create the assembler.</p></li>
 <li><p><strong>options</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.11)"><em>dict</em></a>) -- Dictionary holding problem-specific option parameters (case-insensitive).</p></li>
 </ul>
 </dd>
@@ -182,7 +182,7 @@ for supported TACS eval functions.</p>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>funcName</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.11)"><em>str</em></a>) -- The user-supplied name for the function. This will
 typically be a string that is meaningful to the user</p></li>
-<li><p><strong>funcHandle</strong> (<em>TACS.Function</em>) -- The function handle to use for creation. This must come
+<li><p><strong>funcHandle</strong> (<em>tacs.TACS.Function</em>) -- The function handle to use for creation. This must come
 from the functions module in tacs.</p></li>
 <li><p><strong>compIDs</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.11)"><em>list</em></a>) -- List of compIDs to select.</p></li>
 <li><p><strong>**kwargs</strong> -- Any keyword arguments to be passed to the TACS function during setup.</p></li>
@@ -229,7 +229,7 @@ number of nodes. This average load is then applied to the nodes.</p>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>compIDs</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.11)"><em>list</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)"><em>int</em></a><em>] or </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)"><em>int</em></a>) -- The components with added loads. Use pyTACS selectCompIDs method
 to determine this.</p></li>
-<li><p><strong>F</strong> (<em>numpy.ndarray 1d</em><em> or </em><em>2d length</em><em> (</em><em>varsPerNodes</em><em>) or </em><em>(</em><em>numCompIDs</em><em>, </em><em>varsPerNodes</em><em>)</em>) -- Vector(s) of 'force' to apply to each components.  If only one force vector is provided,
+<li><p><strong>F</strong> (<em>numpy.ndarray 1d</em><em> or </em><em>2d length</em><em> (</em><em>varsPerNodes</em><em>) or </em><em>(</em><em>numCompIDs</em><em>, </em><em>varsPerNodes</em><em>)</em>) -- Vector(s) of 'force' to apply to each component.  If only one force vector is provided,
 force will be copied uniformly across all components.</p></li>
 <li><p><strong>averageLoad</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.11)"><em>bool</em></a>) -- Flag to determine whether load should be split evenly across all components (True)
 or copied and applied individually to each component (False). Defaults to False.</p></li>
@@ -241,7 +241,7 @@ or copied and applied individually to each component (False). Defaults to False.
 necessarily physical forces and their interpretation depends
 on the physics problem being solved and the dofs included
 in the model.</p>
-<p>A couple of examples of force vector components for common problem are listed below:</p>
+<p>A couple of examples of force vector components for common problems are listed below:</p>
 <blockquote>
 <div><dl class="simple">
 <dt>In Heat Conduction with varsPerNode = 1</dt><dd><p>F = [Qdot] # heat rate</p>
@@ -279,7 +279,7 @@ or NASTRAN (grid IDs in bdf file) ordering</p></li>
 necessarily physical forces and their interpretation depends
 on the physics problem being solved and the dofs included
 in the model.</p>
-<p>A couple of examples of force vector components for common problem are listed below:</p>
+<p>A couple of examples of force vector components for common problems are listed below:</p>
 <blockquote>
 <div><dl class="simple">
 <dt>In Heat Conduction with varsPerNode = 1</dt><dd><p>F = [Qdot] # heat rate</p>
@@ -330,7 +330,7 @@ to add loads that remain fixed throughout an optimization.</p>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>compIDs</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.11)"><em>list</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)"><em>int</em></a><em>] or </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)"><em>int</em></a>) -- The components with added loads. Use pyTACS selectCompIDs method
 to determine this.</p></li>
-<li><p><strong>tractions</strong> (<em>Numpy array length 1</em><em> or </em><em>compIDs</em>) -- Array of traction vectors for each components</p></li>
+<li><p><strong>tractions</strong> (<em>Numpy array length 1</em><em> or </em><em>compIDs</em>) -- Array of traction vectors for each component</p></li>
 <li><p><strong>faceIndex</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)"><em>int</em></a>) -- Indicates which face (side) of element to apply traction to.
 Note: not required for certain elements (i.e. shells)</p></li>
 </ul>
@@ -371,7 +371,7 @@ would be a fuel load.</p>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>compIDs</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.11)"><em>list</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)"><em>int</em></a><em>] or </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)"><em>int</em></a>) -- The components with added loads. Use pyTACS selectCompIDs method
 to determine this.</p></li>
-<li><p><strong>pressures</strong> (<em>Numpy array length 1</em><em> or </em><em>compIDs</em>) -- Array of pressure values for each components</p></li>
+<li><p><strong>pressures</strong> (<em>Numpy array length 1</em><em> or </em><em>compIDs</em>) -- Array of pressure values for each component</p></li>
 <li><p><strong>faceIndex</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)"><em>int</em></a>) -- Indicates which face (side) of element to apply pressure to.
 Note: not required for certain elements (i.e. shells)</p></li>
 </ul>
@@ -538,7 +538,7 @@ respect to all design variables and node locations are computed.</p>
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>evalFuncs</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.11)"><em>list</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.11)"><em>str</em></a><em>]</em>) -- The functions the user wants returned</p></li>
-<li><p><strong>dvSensList</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.11)"><em>list</em></a><em>[</em><em>BVec</em><em>] or </em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.11)"><em>list</em></a><em>[</em><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.24)"><em>numpy.ndarray</em></a><em>]</em>) -- List of sensitivity vectors to add partial sensitivity to</p></li>
+<li><p><strong>dvSensList</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.11)"><em>list</em></a><em>[</em><em>tacs.TACS.Vec</em><em>] or </em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.11)"><em>list</em></a><em>[</em><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.24)"><em>numpy.ndarray</em></a><em>]</em>) -- List of sensitivity vectors to add partial sensitivity to</p></li>
 <li><p><strong>scale</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.11)"><em>float</em></a>) -- Scalar to multiply partial sensitivity by. Defaults to 1.0</p></li>
 </ul>
 </dd>
@@ -552,8 +552,8 @@ respect to all design variables and node locations are computed.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>adjointlist</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.11)"><em>list</em></a><em>[</em><em>BVec</em><em>] or </em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.11)"><em>list</em></a><em>[</em><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.24)"><em>numpy.ndarray</em></a><em>]</em>) -- List of adjoint vectors for residual sensitivity product</p></li>
-<li><p><strong>dvSensList</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.11)"><em>list</em></a><em>[</em><em>BVec</em><em>] or </em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.11)"><em>list</em></a><em>[</em><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.24)"><em>numpy.ndarray</em></a><em>]</em>) -- List of sensitivity vectors to add product to</p></li>
+<li><p><strong>adjointlist</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.11)"><em>list</em></a><em>[</em><em>tacs.TACS.Vec</em><em>] or </em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.11)"><em>list</em></a><em>[</em><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.24)"><em>numpy.ndarray</em></a><em>]</em>) -- List of adjoint vectors for residual sensitivity product</p></li>
+<li><p><strong>dvSensList</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.11)"><em>list</em></a><em>[</em><em>tacs.TACS.Vec</em><em>] or </em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.11)"><em>list</em></a><em>[</em><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.24)"><em>numpy.ndarray</em></a><em>]</em>) -- List of sensitivity vectors to add product to</p></li>
 <li><p><strong>scale</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.11)"><em>float</em></a>) -- Scalar to multiply product by. Defaults to -1.0</p></li>
 </ul>
 </dd>
@@ -568,7 +568,7 @@ respect to all design variables and node locations are computed.</p>
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>evalFuncs</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.11)"><em>list</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.11)"><em>str</em></a><em>]</em>) -- The functions the user wants returned</p></li>
-<li><p><strong>xptSensList</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.11)"><em>list</em></a><em>[</em><em>BVec</em><em>] or </em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.11)"><em>list</em></a><em>[</em><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.24)"><em>numpy.ndarray</em></a><em>]</em>) -- List of sensitivity vectors to add partial sensitivity to</p></li>
+<li><p><strong>xptSensList</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.11)"><em>list</em></a><em>[</em><em>tacs.TACS.Vec</em><em>] or </em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.11)"><em>list</em></a><em>[</em><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.24)"><em>numpy.ndarray</em></a><em>]</em>) -- List of sensitivity vectors to add partial sensitivity to</p></li>
 <li><p><strong>scale</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.11)"><em>float</em></a>) -- Scalar to multiply partial sensitivity by. Defaults to 1.0</p></li>
 </ul>
 </dd>
@@ -582,8 +582,8 @@ respect to all design variables and node locations are computed.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>adjointlist</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.11)"><em>list</em></a><em>[</em><em>BVec</em><em>] or </em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.11)"><em>list</em></a><em>[</em><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.24)"><em>numpy.ndarray</em></a><em>]</em>) -- List of adjoint vectors for residual sensitivity product</p></li>
-<li><p><strong>xptSensList</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.11)"><em>list</em></a><em>[</em><em>BVec</em><em>] or </em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.11)"><em>list</em></a><em>[</em><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.24)"><em>numpy.ndarray</em></a><em>]</em>) -- List of sensitivity vectors to add product to</p></li>
+<li><p><strong>adjointlist</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.11)"><em>list</em></a><em>[</em><em>tacs.TACS.Vec</em><em>] or </em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.11)"><em>list</em></a><em>[</em><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.24)"><em>numpy.ndarray</em></a><em>]</em>) -- List of adjoint vectors for residual sensitivity product</p></li>
+<li><p><strong>xptSensList</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.11)"><em>list</em></a><em>[</em><em>tacs.TACS.Vec</em><em>] or </em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.11)"><em>list</em></a><em>[</em><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.24)"><em>numpy.ndarray</em></a><em>]</em>) -- List of sensitivity vectors to add product to</p></li>
 <li><p><strong>scale</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.11)"><em>float</em></a>) -- Scalar to multiply product by. Defaults to -1.0</p></li>
 </ul>
 </dd>
@@ -598,8 +598,8 @@ residual. Only typically used with aerostructural analysis.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>res</strong> (<em>TACS BVec</em><em> or </em><em>numpy array</em>) -- If res is not None, place the residuals into this array.</p></li>
-<li><p><strong>Fext</strong> (<em>TACS BVec</em><em> or </em><em>numpy array</em><em>, </em><em>optional</em>) -- Distributed array containing additional loads (ex. aerodynamic forces for aerostructural coupling)
+<li><p><strong>res</strong> (<em>tacs.TACS.Vec</em><em> or </em><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.24)"><em>numpy.ndarray</em></a>) -- If res is not None, place the residuals into this array.</p></li>
+<li><p><strong>Fext</strong> (<em>tacs.TACS.Vec</em><em> or </em><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.24)"><em>numpy.ndarray</em></a><em>, </em><em>optional</em>) -- Distributed array containing additional loads (ex. aerodynamic forces for aerostructural coupling)
 to applied to RHS of the static problem.</p></li>
 </ul>
 </dd>
@@ -612,11 +612,11 @@ to applied to RHS of the static problem.</p></li>
 <dd><p>Get the problem's Jacobian in sciPy sparse matrix format</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
-<dd class="field-odd"><p>A tuple of 2 scipy.sparse.bsr_matrices (A, B) if Jacobian is a TACSParallelMat, or 4
+<dd class="field-odd"><p><strong>K</strong> -- A tuple of 2 scipy.sparse.bsr_matrices (A, B) if Jacobian is a TACSParallelMat, or 4
 scipy.sparse.bsr_matrices (A, B, C, D) if Jacobian is a TACSSchurMat</p>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.11)">tuple</a> of 2 or 4 scipy.sparse.bsr_matrices</p>
+<dd class="field-even"><p>(<a class="reference external" href="https://docs.scipy.org/doc/scipy/reference/generated/scipy.sparse.bsr_matrix.html#scipy.sparse.bsr_matrix" title="(in SciPy v1.10.1)">scipy.sparse.bsr_matrix</a>, <a class="reference external" href="https://docs.scipy.org/doc/scipy/reference/generated/scipy.sparse.bsr_matrix.html#scipy.sparse.bsr_matrix" title="(in SciPy v1.10.1)">scipy.sparse.bsr_matrix</a>) or (<a class="reference external" href="https://docs.scipy.org/doc/scipy/reference/generated/scipy.sparse.bsr_matrix.html#scipy.sparse.bsr_matrix" title="(in SciPy v1.10.1)">scipy.sparse.bsr_matrix</a>, <a class="reference external" href="https://docs.scipy.org/doc/scipy/reference/generated/scipy.sparse.bsr_matrix.html#scipy.sparse.bsr_matrix" title="(in SciPy v1.10.1)">scipy.sparse.bsr_matrix</a>, <a class="reference external" href="https://docs.scipy.org/doc/scipy/reference/generated/scipy.sparse.bsr_matrix.html#scipy.sparse.bsr_matrix" title="(in SciPy v1.10.1)">scipy.sparse.bsr_matrix</a>, <a class="reference external" href="https://docs.scipy.org/doc/scipy/reference/generated/scipy.sparse.bsr_matrix.html#scipy.sparse.bsr_matrix" title="(in SciPy v1.10.1)">scipy.sparse.bsr_matrix</a>)</p>
 </dd>
 </dl>
 </dd></dl>
@@ -629,8 +629,8 @@ prod += scale * J^T . phi</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>phi</strong> (<em>TACS BVec</em><em> or </em><em>numpy array</em>) -- Input vector to product with the transpose Jacobian.</p></li>
-<li><p><strong>prod</strong> (<em>TACS BVec</em><em> or </em><em>numpy array</em>) -- Output vector to add Jacobian product to.</p></li>
+<li><p><strong>phi</strong> (<em>tacs.TACS.Vec</em><em> or </em><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.24)"><em>numpy.ndarray</em></a>) -- Input vector to product with the transpose Jacobian.</p></li>
+<li><p><strong>prod</strong> (<em>tacs.TACS.Vec</em><em> or </em><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.24)"><em>numpy.ndarray</em></a>) -- Output vector to add Jacobian product to.</p></li>
 <li><p><strong>scale</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.11)"><em>float</em></a>) -- Scalar used to scale Jacobian product by.</p></li>
 </ul>
 </dd>
@@ -656,8 +656,8 @@ prod += scale * J^T . phi</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>rhs</strong> (<em>TACS BVec</em><em> or </em><em>numpy array</em>) -- right hand side vector for adjoint solve</p></li>
-<li><p><strong>phi</strong> (<em>TACS BVec</em><em> or </em><em>numpy array</em>) -- BVec or numpy array into which the adjoint is saved</p></li>
+<li><p><strong>rhs</strong> (<em>tacs.TACS.Vec</em><em> or </em><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.24)"><em>numpy.ndarray</em></a>) -- right hand side vector for adjoint solve</p></li>
+<li><p><strong>phi</strong> (<em>tacs.TACS.Vec</em><em> or </em><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.24)"><em>numpy.ndarray</em></a>) -- BVec or numpy array into which the adjoint is saved</p></li>
 </ul>
 </dd>
 </dl>
@@ -753,6 +753,14 @@ typically used from an external solver</p></li>
 <dt class="sig sig-object py" id="tacs.problems.StaticProblem.getFunctionKeys">
 <span class="sig-name descname"><span class="pre">getFunctionKeys</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.problems.StaticProblem.getFunctionKeys" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return a list of the current function key names</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>funcNames</strong> -- List containing user-defined names for functions added so far.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.11)">list</a>[<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.11)">str</a>]</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py method">
@@ -774,18 +782,42 @@ the number of structural nodes on this processor.</p>
 <dt class="sig sig-object py" id="tacs.problems.StaticProblem.getNumCoordinates">
 <span class="sig-name descname"><span class="pre">getNumCoordinates</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.problems.StaticProblem.getNumCoordinates" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return the number of mesh coordinates on this processor.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>ncoords</strong> -- Number of mesh coordinates on this processor.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)">int</a></p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tacs.problems.StaticProblem.getNumDesignVars">
 <span class="sig-name descname"><span class="pre">getNumDesignVars</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.problems.StaticProblem.getNumDesignVars" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return the number of design variables on this processor.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>ndvs</strong> -- Number of design variables on this processor.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)">int</a></p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tacs.problems.StaticProblem.getNumOwnedNodes">
 <span class="sig-name descname"><span class="pre">getNumOwnedNodes</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.problems.StaticProblem.getNumOwnedNodes" title="Permalink to this definition">¶</a></dt>
 <dd><p>Get the number of nodes owned by this processor.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>nnodes</strong> -- Number of nodes on this processor.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)">int</a></p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py method">
@@ -818,6 +850,14 @@ on this processor</p>
 <dt class="sig sig-object py" id="tacs.problems.StaticProblem.getVarsPerNode">
 <span class="sig-name descname"><span class="pre">getVarsPerNode</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.problems.StaticProblem.getVarsPerNode" title="Permalink to this definition">¶</a></dt>
 <dd><p>Get the number of variables per node for the model.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>vpn</strong> -- Number of variables per node.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)">int</a></p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py method">

@@ -158,16 +158,16 @@
 <span class="sd">        name : str</span>
 <span class="sd">            Name of this tacs problem</span>
 
-<span class="sd">        assembler : TACS.Assembler</span>
+<span class="sd">        assembler : tacs.TACS.Assembler</span>
 <span class="sd">            Cython object responsible for creating and setting tacs objects used to solve problem</span>
 
 <span class="sd">        comm : mpi4py.MPI.Intracomm</span>
 <span class="sd">            The comm object on which to create the pyTACS object.</span>
 
-<span class="sd">        outputViewer : TACS.TACSToFH5</span>
+<span class="sd">        outputViewer : tacs.TACS.TACSToFH5</span>
 <span class="sd">            Cython object used to write out f5 files that can be converted and used for postprocessing.</span>
 
-<span class="sd">        meshLoader : pymeshloader.pyMeshLoader</span>
+<span class="sd">        meshLoader : tacs.pymeshloader.pyMeshLoader</span>
 <span class="sd">            pyMeshLoader object used to create the assembler.</span>
 
 <span class="sd">        options : dict</span>
@@ -399,7 +399,7 @@
 <span class="sd">            The user-supplied name for the function. This will</span>
 <span class="sd">            typically be a string that is meaningful to the user</span>
 
-<span class="sd">        funcHandle : TACS.Function</span>
+<span class="sd">        funcHandle : tacs.TACS.Function</span>
 <span class="sd">            The function handle to use for creation. This must come</span>
 <span class="sd">            from the functions module in tacs.</span>
 
@@ -464,7 +464,7 @@
 <span class="sd">            to determine this.</span>
 
 <span class="sd">        F : numpy.ndarray 1d or 2d length (varsPerNodes) or (numCompIDs, varsPerNodes)</span>
-<span class="sd">            Vector(s) of &#39;force&#39; to apply to each components.  If only one force vector is provided,</span>
+<span class="sd">            Vector(s) of &#39;force&#39; to apply to each component.  If only one force vector is provided,</span>
 <span class="sd">            force will be copied uniformly across all components.</span>
 
 <span class="sd">        averageLoad : bool</span>
@@ -472,14 +472,14 @@
 <span class="sd">            or copied and applied individually to each component (False). Defaults to False.</span>
 
 <span class="sd">        Notes</span>
-<span class="sd">        ----------</span>
+<span class="sd">        -----</span>
 
 <span class="sd">        The units of the entries of the &#39;force&#39; vector F are not</span>
 <span class="sd">        necessarily physical forces and their interpretation depends</span>
 <span class="sd">        on the physics problem being solved and the dofs included</span>
 <span class="sd">        in the model.</span>
 
-<span class="sd">        A couple of examples of force vector components for common problem are listed below:</span>
+<span class="sd">        A couple of examples of force vector components for common problems are listed below:</span>
 
 <span class="sd">            In Heat Conduction with varsPerNode = 1</span>
 <span class="sd">                F = [Qdot] # heat rate</span>
@@ -514,14 +514,14 @@
 <span class="sd">            or NASTRAN (grid IDs in bdf file) ordering</span>
 
 <span class="sd">        Notes</span>
-<span class="sd">        ----------</span>
+<span class="sd">        -----</span>
 
 <span class="sd">        The units of the entries of the &#39;force&#39; vector F are not</span>
 <span class="sd">        necessarily physical forces and their interpretation depends</span>
 <span class="sd">        on the physics problem being solved and the dofs included</span>
 <span class="sd">        in the model.</span>
 
-<span class="sd">        A couple of examples of force vector components for common problem are listed below:</span>
+<span class="sd">        A couple of examples of force vector components for common problems are listed below:</span>
 
 <span class="sd">            In Heat Conduction with varsPerNode = 1</span>
 <span class="sd">                F = [Qdot] # heat rate</span>
@@ -572,7 +572,7 @@
 <span class="sd">            to determine this.</span>
 
 <span class="sd">        tractions : Numpy array length 1 or compIDs</span>
-<span class="sd">            Array of traction vectors for each components</span>
+<span class="sd">            Array of traction vectors for each component</span>
 
 <span class="sd">        faceIndex : int</span>
 <span class="sd">            Indicates which face (side) of element to apply traction to.</span>
@@ -626,7 +626,7 @@
 <span class="sd">            to determine this.</span>
 
 <span class="sd">        pressures : Numpy array length 1 or compIDs</span>
-<span class="sd">            Array of pressure values for each components</span>
+<span class="sd">            Array of pressure values for each component</span>
 
 <span class="sd">        faceIndex : int</span>
 <span class="sd">            Indicates which face (side) of element to apply pressure to.</span>
@@ -834,7 +834,7 @@
         <span class="n">finalNormTime</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
 
         <span class="c1"># If timing was was requested print it, if the solution is nonlinear</span>
-        <span class="c1"># print this information automatically if prinititerations was requested.</span>
+        <span class="c1"># print this information automatically if print iterations was requested.</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s2">&quot;printTiming&quot;</span><span class="p">):</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_pp</span><span class="p">(</span><span class="s2">&quot;+--------------------------------------------------+&quot;</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_pp</span><span class="p">(</span><span class="s2">&quot;|&quot;</span><span class="p">)</span>
@@ -1144,7 +1144,7 @@
 <span class="sd">        evalFuncs : list[str]</span>
 <span class="sd">            The functions the user wants returned</span>
 
-<span class="sd">        dvSensList : list[BVec] or list[numpy.ndarray]</span>
+<span class="sd">        dvSensList : list[tacs.TACS.Vec] or list[numpy.ndarray]</span>
 <span class="sd">            List of sensitivity vectors to add partial sensitivity to</span>
 
 <span class="sd">        scale : float</span>
@@ -1186,10 +1186,10 @@
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
-<span class="sd">        adjointlist : list[BVec] or list[numpy.ndarray]</span>
+<span class="sd">        adjointlist : list[tacs.TACS.Vec] or list[numpy.ndarray]</span>
 <span class="sd">            List of adjoint vectors for residual sensitivity product</span>
 
-<span class="sd">        dvSensList : list[BVec] or list[numpy.ndarray]</span>
+<span class="sd">        dvSensList : list[tacs.TACS.Vec] or list[numpy.ndarray]</span>
 <span class="sd">            List of sensitivity vectors to add product to</span>
 
 <span class="sd">        scale : float</span>
@@ -1242,7 +1242,7 @@
 <span class="sd">        evalFuncs : list[str]</span>
 <span class="sd">            The functions the user wants returned</span>
 
-<span class="sd">        xptSensList : list[BVec] or list[numpy.ndarray]</span>
+<span class="sd">        xptSensList : list[tacs.TACS.Vec] or list[numpy.ndarray]</span>
 <span class="sd">            List of sensitivity vectors to add partial sensitivity to</span>
 
 <span class="sd">        scale : float</span>
@@ -1284,10 +1284,10 @@
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
-<span class="sd">        adjointlist : list[BVec] or list[numpy.ndarray]</span>
+<span class="sd">        adjointlist : list[tacs.TACS.Vec] or list[numpy.ndarray]</span>
 <span class="sd">            List of adjoint vectors for residual sensitivity product</span>
 
-<span class="sd">        xptSensList : list[BVec] or list[numpy.ndarray]</span>
+<span class="sd">        xptSensList : list[tacs.TACS.Vec] or list[numpy.ndarray]</span>
 <span class="sd">            List of sensitivity vectors to add product to</span>
 
 <span class="sd">        scale : float</span>
@@ -1339,10 +1339,10 @@
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
-<span class="sd">        res : TACS BVec or numpy array</span>
+<span class="sd">        res : tacs.TACS.Vec or numpy.ndarray</span>
 <span class="sd">            If res is not None, place the residuals into this array.</span>
 
-<span class="sd">        Fext : TACS BVec or numpy array, optional</span>
+<span class="sd">        Fext : tacs.TACS.Vec or numpy.ndarray, optional</span>
 <span class="sd">            Distributed array containing additional loads (ex. aerodynamic forces for aerostructural coupling)</span>
 <span class="sd">            to applied to RHS of the static problem.</span>
 
@@ -1384,7 +1384,7 @@
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
-<span class="sd">        tuple of 2 or 4 scipy.sparse.bsr_matrices</span>
+<span class="sd">        K : (scipy.sparse.bsr_matrix, scipy.sparse.bsr_matrix) or (scipy.sparse.bsr_matrix, scipy.sparse.bsr_matrix, scipy.sparse.bsr_matrix, scipy.sparse.bsr_matrix)</span>
 <span class="sd">            A tuple of 2 scipy.sparse.bsr_matrices (A, B) if Jacobian is a TACSParallelMat, or 4</span>
 <span class="sd">            scipy.sparse.bsr_matrices (A, B, C, D) if Jacobian is a TACSSchurMat</span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -1401,10 +1401,10 @@
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
-<span class="sd">        phi : TACS BVec or numpy array</span>
+<span class="sd">        phi : tacs.TACS.Vec or numpy.ndarray</span>
 <span class="sd">            Input vector to product with the transpose Jacobian.</span>
 
-<span class="sd">        prod : TACS BVec or numpy array</span>
+<span class="sd">        prod : tacs.TACS.Vec or numpy.ndarray</span>
 <span class="sd">            Output vector to add Jacobian product to.</span>
 
 <span class="sd">        scale : float</span>
@@ -1458,9 +1458,9 @@
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
-<span class="sd">        rhs : TACS BVec or numpy array</span>
+<span class="sd">        rhs : tacs.TACS.Vec or numpy.ndarray</span>
 <span class="sd">            right hand side vector for adjoint solve</span>
-<span class="sd">        phi : TACS BVec or numpy array</span>
+<span class="sd">        phi : tacs.TACS.Vec or numpy.ndarray</span>
 <span class="sd">            BVec or numpy array into which the adjoint is saved</span>
 <span class="sd">        &quot;&quot;&quot;</span>
 

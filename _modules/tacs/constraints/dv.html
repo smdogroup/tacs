@@ -168,6 +168,34 @@
         <span class="k">return</span> <span class="n">success</span></div>
 
     <span class="k">def</span> <span class="nf">_createConstraint</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dvIndices</span><span class="p">,</span> <span class="n">dvWeights</span><span class="p">,</span> <span class="n">compIDs</span><span class="p">,</span> <span class="n">lbound</span><span class="p">,</span> <span class="n">ubound</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Create a new constraint object for TACS.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        dvIndices : list[int]</span>
+<span class="sd">            Index numbers of element DVs to be used in constraint.</span>
+<span class="sd">            Defaults to 0.</span>
+
+<span class="sd">        dvWeights : list[float or complex]</span>
+<span class="sd">            Linear scaling factors for each DV used in constraint definition.</span>
+<span class="sd">            If list, should match length of dvIndices. Defaults to 1&#39;s.</span>
+
+<span class="sd">        compIDs: list[int]</span>
+<span class="sd">            List of compIDs to select.</span>
+
+<span class="sd">        lbound: float or complex</span>
+<span class="sd">            lower bound for constraint. Defaults to 0.0.</span>
+
+<span class="sd">        ubound: float or complex</span>
+<span class="sd">            upper bound for constraint. Defaults to 1e20.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        constraint : tacs.constraints.base.SparseLinearConstraint or None</span>
+<span class="sd">            Constraint object if successful, None otherwise.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="c1"># Assemble constraint info</span>
         <span class="n">conCount</span> <span class="o">=</span> <span class="mi">0</span>
         <span class="n">rows</span> <span class="o">=</span> <span class="p">[]</span>

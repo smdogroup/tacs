@@ -189,13 +189,13 @@ index indicates the time-step of the analysis (000 through 050). These files can
 
 .. code-block:: console
 
-  $ f5tovtk Transient_000_0xx.f5
+  $ f5tovtk Transient_000_*.f5
 
 or
 
 .. code-block:: console
 
-  $ f5totec Transient_000_0xx.f5
+  $ f5totec Transient_000_*.f5
 
 The animation below shows what the transient heat transfer temperature solution looks like when visualized in Paraview.
 

@@ -226,6 +226,26 @@
         <span class="k">return</span> <span class="n">success</span></div>
 
     <span class="k">def</span> <span class="nf">_createConstraint</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">compIDs</span><span class="p">,</span> <span class="n">lbound</span><span class="p">,</span> <span class="n">ubound</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Create a new constraint object for TACS.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        compIDs: list[int]</span>
+<span class="sd">            List of compIDs to select.</span>
+
+<span class="sd">        lbound: float or complex</span>
+<span class="sd">            lower bound for constraint. Defaults to 0.0.</span>
+
+<span class="sd">        ubound: float or complex</span>
+<span class="sd">            upper bound for constraint. Defaults to 1e20.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        constraint : ParallelVolumeConstraint or None</span>
+<span class="sd">            Constraint object if successful, None otherwise.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="c1"># Check if elements in supplied compIDs are all shell elements or all solid elements</span>
         <span class="n">elemIDs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">meshLoader</span><span class="o">.</span><span class="n">getGlobalElementIDsForComps</span><span class="p">(</span>
             <span class="n">compIDs</span><span class="p">,</span> <span class="n">nastranOrdering</span><span class="o">=</span><span class="kc">True</span>
@@ -688,7 +708,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;is_points = </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">is_points</span><span class="p">)</span>
         <span class="n">datapacking</span> <span class="o">=</span> <span class="s2">&quot;POINT&quot;</span> <span class="k">if</span> <span class="n">is_points</span> <span class="k">else</span> <span class="s2">&quot;BLOCK&quot;</span>
         <span class="c1"># Make sure to include title</span>
-        <span class="n">msg</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot; T=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">title</span><span class="si">}</span><span class="s2">, n=</span><span class="si">{</span><span class="n">nnodes</span><span class="si">:</span><span class="s2">d</span><span class="si">}</span><span class="s2">, e=</span><span class="si">{</span><span class="n">nelements</span><span class="si">:</span><span class="s2">d</span><span class="si">}</span><span class="s2">, ZONETYPE=</span><span class="si">{</span><span class="n">zone_type</span><span class="si">}</span><span class="s2">, DATAPACKING=</span><span class="si">{</span><span class="n">datapacking</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
+        <span class="n">msg</span> <span class="o">+=</span> <span class="sa">f</span><span class="s1">&#39; T=&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">title</span><span class="si">}</span><span class="s1">&quot;, n=</span><span class="si">{</span><span class="n">nnodes</span><span class="si">:</span><span class="s1">d</span><span class="si">}</span><span class="s1">, e=</span><span class="si">{</span><span class="n">nelements</span><span class="si">:</span><span class="s1">d</span><span class="si">}</span><span class="s1">, ZONETYPE=</span><span class="si">{</span><span class="n">zone_type</span><span class="si">}</span><span class="s1">, DATAPACKING=</span><span class="si">{</span><span class="n">datapacking</span><span class="si">}</span><span class="se">\n</span><span class="s1">&#39;</span>
         <span class="n">tecplot_file</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_write_xyz_results</span><span class="p">(</span><span class="n">tecplot_file</span><span class="p">,</span> <span class="n">is_points</span><span class="p">,</span> <span class="n">ivars</span><span class="p">)</span>

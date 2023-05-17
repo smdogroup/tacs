@@ -401,7 +401,7 @@
 <span class="sd">            to determine this.</span>
 
 <span class="sd">        F : Numpy 1d or 2d array length (varsPerNodes) or (numCompIDs, varsPerNodes)</span>
-<span class="sd">            Vector(s) of &#39;force&#39; to apply to each components.  If only one force vector is provided,</span>
+<span class="sd">            Vector(s) of &#39;force&#39; to apply to each component.  If only one force vector is provided,</span>
 <span class="sd">            force will be copied uniformly across all components.</span>
 
 <span class="sd">        timeStage : int or None</span>
@@ -421,7 +421,7 @@
 <span class="sd">        on the physics problem being solved and the dofs included</span>
 <span class="sd">        in the model.</span>
 
-<span class="sd">        A couple of examples of force vector components for common problem are listed below:</span>
+<span class="sd">        A couple of examples of force vector components for common problems are listed below:</span>
 
 <span class="sd">            In Heat Conduction with varsPerNode = 1</span>
 <span class="sd">                F = [Qdot] # heat rate</span>
@@ -483,7 +483,7 @@
 <span class="sd">        on the physics problem being solved and the dofs included</span>
 <span class="sd">        in the model.</span>
 
-<span class="sd">        A couple of examples of force vector components for common problem are listed below:</span>
+<span class="sd">        A couple of examples of force vector components for common problems are listed below:</span>
 
 <span class="sd">            In Heat Conduction with varsPerNode = 1</span>
 <span class="sd">                F = [Qdot] # heat rate</span>
@@ -568,7 +568,7 @@
 <span class="sd">            to determine this.</span>
 
 <span class="sd">        tractions : numpy.ndarray length 1 or compIDs</span>
-<span class="sd">            Array of traction vectors for each components</span>
+<span class="sd">            Array of traction vectors for each component</span>
 
 <span class="sd">        timeStage : int or None</span>
 <span class="sd">            Time stage index to apply load to. Default is None, which is applicable only for</span>
@@ -667,7 +667,7 @@
 <span class="sd">            to determine this.</span>
 
 <span class="sd">        pressures : Numpy array length 1 or compIDs</span>
-<span class="sd">            Array of pressure values for each components</span>
+<span class="sd">            Array of pressure values for each component</span>
 
 <span class="sd">        timeStage : int or None</span>
 <span class="sd">            Time stage index to apply load to. Default is None, which is applicable only for</span>
@@ -1068,7 +1068,7 @@
 <span class="sd">            The user-supplied name for the function. This will</span>
 <span class="sd">            typically be a string that is meaningful to the user</span>
 
-<span class="sd">        funcHandle : TACS.Function</span>
+<span class="sd">        funcHandle : tacs.TACS.Function</span>
 <span class="sd">            The function handle to use for creation. This must come</span>
 <span class="sd">            from the functions module in tacs.</span>
 
