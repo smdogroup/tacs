@@ -22,6 +22,24 @@ class TACSProblem(TACSSystem):
     def __init__(
         self, assembler, comm=None, options=None, outputViewer=None, meshLoader=None
     ):
+        """
+        Parameters
+        ----------
+        assembler : tacs.TACS.Assembler
+            Cython object responsible for creating and setting tacs objects used to solve problem
+
+        comm : mpi4py.MPI.Intracomm
+            The comm object on which to create the pyTACS object.
+
+        options : dict
+            Dictionary holding problem-specific option parameters (case-insensitive).
+
+        outputViewer : tacs.TACS.TACSToFH5
+            Cython object used to write out f5 files that can be converted and used for postprocessing.
+
+        meshLoader : tacs.pymeshloader.pyMeshLoader
+            pyMeshLoader object used to create the assembler.
+        """
         # Set attributes and options
         TACSSystem.__init__(self, assembler, comm, options, outputViewer, meshLoader)
 
@@ -81,6 +99,11 @@ class TACSProblem(TACSSystem):
     def getFunctionKeys(self):
         """
         Return a list of the current function key names
+
+        Returns
+        -------
+        funcNames : list[str]
+            List containing user-defined names for functions added so far.
         """
         return list(self.functionList.keys())
 
@@ -108,7 +131,7 @@ class TACSProblem(TACSSystem):
             to determine this.
 
         F : numpy.ndarray 1d or 2d length (varsPerNodes) or (numCompIDs, varsPerNodes)
-            Vector(s) of 'force' to apply to each components.  If only one force vector is provided,
+            Vector(s) of 'force' to apply to each component.  If only one force vector is provided,
             force will be copied uniformly across all components.
 
         averageLoad : bool
@@ -123,7 +146,7 @@ class TACSProblem(TACSSystem):
         on the physics problem being solved and the dofs included
         in the model.
 
-        A couple of examples of force vector components for common problem are listed below:
+        A couple of examples of force vector components for common problems are listed below:
 
             In Heat Conduction with varsPerNode = 1
                 F = [Qdot] # heat rate
@@ -208,14 +231,14 @@ class TACSProblem(TACSSystem):
             or NASTRAN (grid IDs in bdf file) ordering
 
         Notes
-        ----------
+        -----
 
         The units of the entries of the 'force' vector F are not
         necessarily physical forces and their interpretation depends
         on the physics problem being solved and the dofs included
         in the model.
 
-        A couple of examples of force vector components for common problem are listed below:
+        A couple of examples of force vector components for common problems are listed below:
 
             In Heat Conduction with varsPerNode = 1
                 F = [Qdot] # heat rate
@@ -254,7 +277,7 @@ class TACSProblem(TACSSystem):
                 "but length of vector provided was {}".format(vpn, len(F[0]))
             )
 
-        # First find the cooresponding local node ID on each processor
+        # First find the corresponding local node ID on each processor
         localNodeIDs = self.meshLoader.getLocalNodeIDsFromGlobal(
             nodeIDs, nastranOrdering
         )
@@ -337,18 +360,18 @@ class TACSProblem(TACSSystem):
         Parameters
         ----------
 
-         auxElems : TACS AuxElements object
+         auxElems : tacs.TACS.AuxElements
             AuxElements object to add loads to.
 
         compIDs : list[int] or int
             The components with added loads. Use pyTACS.selectCompIDs method
             to determine this.
 
-        tractions : TACS AuxElements object
-            Array of traction vectors for each components
+        tractions : numpy.ndarray
+            Array of traction vectors for each component
 
         faceIndex : int
-            Indicates which face (side) of element to apply traction to.
+            Indicates which face (side) of the element to apply traction to.
             Note: not required for certain elements (i.e. shells)
         """
         # Make sure compIDs is flat and unique
@@ -386,7 +409,7 @@ class TACSProblem(TACSSystem):
         Parameters
         ----------
 
-        auxElems : TACS AuxElements object
+        auxElems : tacs.TACS.AuxElements
             AuxElements object to add loads to.
 
         elemIDs : list[int]
@@ -423,7 +446,7 @@ class TACSProblem(TACSSystem):
                 )
             )
 
-        # First find the coresponding local element ID on each processor
+        # First find the corresponding local element ID on each processor
         localElemIDs = self.meshLoader.getLocalElementIDsFromGlobal(
             elemIDs, nastranOrdering=nastranOrdering
         )
@@ -441,19 +464,19 @@ class TACSProblem(TACSSystem):
                 elemObj = self.meshLoader.getElementObjectForElemID(
                     elemIDs[i], nastranOrdering=nastranOrdering
                 )
-                # Create appropriate traction object for this element type
+                # Create an appropriate traction object for this element type
                 tracObj = elemObj.createElementTraction(faceIndex, tractions[i])
-                # Traction not implemented for element
+                # Traction not implemented for this element
                 if tracObj is None:
                     self._TACSWarning(
-                        "TACS element of type {} does not hav a traction implimentation. "
+                        "TACS element of type {} does not hav a traction implementation. "
                         "Skipping element in addTractionToElement procedure.".format(
                             elemObj.getObjectName()
                         )
                     )
                 # Traction implemented
                 else:
-                    # Add new traction to auxiliary element object
+                    # Add new traction to the auxiliary element object
                     auxElems.addElement(elemID, tracObj)
 
         # Reduce the element flag and make sure that every element was found on exactly 1 proc
@@ -484,7 +507,7 @@ class TACSProblem(TACSSystem):
         Parameters
         ----------
 
-        auxElems : TACS AuxElements object
+        auxElems : tacs.TACS.AuxElements
             AuxElements object to add loads to.
 
         compIDs : list[int] or int
@@ -492,10 +515,10 @@ class TACSProblem(TACSSystem):
             to determine this.
 
         pressures : Numpy array length 1 or compIDs
-            Array of pressure values for each components
+            Array of pressure values for each component
 
         faceIndex : int
-            Indicates which face (side) of element to apply pressure to.
+            Indicates which face (side) of the element to apply pressure to.
             Note: not required for certain elements (i.e. shells)
         """
         # Make sure compIDs is flat and unique
@@ -533,7 +556,7 @@ class TACSProblem(TACSSystem):
         Parameters
         ----------
 
-        auxElems : TACS AuxElements object
+        auxElems : tacs.TACS.AuxElements
             AuxElements object to add loads to.
 
         elemIDs : list[int]
@@ -570,7 +593,7 @@ class TACSProblem(TACSSystem):
                 )
             )
 
-        # First find the coresponding local element ID on each processor
+        # First find the corresponding local element ID on each processor
         localElemIDs = self.meshLoader.getLocalElementIDsFromGlobal(
             elemIDs, nastranOrdering=nastranOrdering
         )
@@ -592,7 +615,7 @@ class TACSProblem(TACSSystem):
                 # Pressure not implemented for element
                 if pressObj is None:
                     self._TACSWarning(
-                        "TACS element of type {} does not hav a pressure implimentation. "
+                        "TACS element of type {} does not hav a pressure implementation. "
                         "Skipping element in addPressureToElement procedure.".format(
                             elemObj.getObjectName()
                         )
@@ -629,7 +652,7 @@ class TACSProblem(TACSSystem):
         Parameters
         ----------
 
-         auxElems : TACS AuxElements object
+         auxElems : tacs.TACS.AuxElements
             AuxElements object to add loads to.
 
         inertiaVector : numpy.ndarray
@@ -659,7 +682,7 @@ class TACSProblem(TACSSystem):
         Parameters
         ----------
 
-        auxElems : TACS AuxElements object
+        auxElems : tacs.TACS.AuxElements
             AuxElements object to add loads to.
 
         omegaVector : numpy.ndarray
@@ -702,7 +725,7 @@ class TACSProblem(TACSSystem):
         FVec : tacs.TACS.Vec
             TACS BVec to add loads to.
 
-        auxElems : TACS AuxElements object
+        auxElems : tacs.TACS.AuxElements
             AuxElements object to add loads to.
 
         loadID : int

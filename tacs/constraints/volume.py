@@ -189,6 +189,26 @@ class VolumeConstraint(TACSConstraint):
         return success
 
     def _createConstraint(self, compIDs, lbound, ubound):
+        """
+        Create a new constraint object for TACS.
+
+        Parameters
+        ----------
+        compIDs: list[int]
+            List of compIDs to select.
+
+        lbound: float or complex
+            lower bound for constraint. Defaults to 0.0.
+
+        ubound: float or complex
+            upper bound for constraint. Defaults to 1e20.
+
+        Returns
+        -------
+        constraint : ParallelVolumeConstraint or None
+            Constraint object if successful, None otherwise.
+
+        """
         # Check if elements in supplied compIDs are all shell elements or all solid elements
         elemIDs = self.meshLoader.getGlobalElementIDsForComps(
             compIDs, nastranOrdering=True
@@ -651,7 +671,7 @@ class Zone(tp.Zone):
         self.log.info("is_points = %s" % is_points)
         datapacking = "POINT" if is_points else "BLOCK"
         # Make sure to include title
-        msg += f" T={self.title}, n={nnodes:d}, e={nelements:d}, ZONETYPE={zone_type}, DATAPACKING={datapacking}\n"
+        msg += f' T="{self.title}", n={nnodes:d}, e={nelements:d}, ZONETYPE={zone_type}, DATAPACKING={datapacking}\n'
         tecplot_file.write(msg)
 
         self._write_xyz_results(tecplot_file, is_points, ivars)

@@ -178,6 +178,29 @@ class AdjacencyConstraint(TACSConstraint):
         return success
 
     def _createConstraint(self, dvIndex, compIDs, lbound, ubound):
+        """
+        Create a new constraint object for TACS.
+
+        Parameters
+        ----------
+        dvIndex : int
+            Index number of element DV to be used in constraint.
+
+        compIDs: list[int]
+            List of compIDs to select.
+
+        lbound: float or complex
+            lower bound for constraint. Defaults to 0.0.
+
+        ubound: float or complex
+            upper bound for constraint. Defaults to 1e20.
+
+        Returns
+        -------
+        constraint : tacs.constraints.base.SparseLinearConstraint or None
+            Constraint object if successful, None otherwise.
+
+        """
         size = self.comm.size
         rank = self.comm.rank
         # Gather the dv mapping from each proc

@@ -131,6 +131,34 @@ class DVConstraint(TACSConstraint):
         return success
 
     def _createConstraint(self, dvIndices, dvWeights, compIDs, lbound, ubound):
+        """
+        Create a new constraint object for TACS.
+
+        Parameters
+        ----------
+        dvIndices : list[int]
+            Index numbers of element DVs to be used in constraint.
+            Defaults to 0.
+
+        dvWeights : list[float or complex]
+            Linear scaling factors for each DV used in constraint definition.
+            If list, should match length of dvIndices. Defaults to 1's.
+
+        compIDs: list[int]
+            List of compIDs to select.
+
+        lbound: float or complex
+            lower bound for constraint. Defaults to 0.0.
+
+        ubound: float or complex
+            upper bound for constraint. Defaults to 1e20.
+
+        Returns
+        -------
+        constraint : tacs.constraints.base.SparseLinearConstraint or None
+            Constraint object if successful, None otherwise.
+
+        """
         # Assemble constraint info
         conCount = 0
         rows = []
