@@ -313,7 +313,7 @@ class pyTACS(BaseUI):
 
         Returns
         -------
-        globalDVKeys : list
+        globalDVKeys : list[str]
             List holding global dv names.
         """
         return list(self.globalDVs.keys())
@@ -324,7 +324,7 @@ class pyTACS(BaseUI):
 
         Returns
         -------
-        globalDVNums : list
+        globalDVNums : list[int]
             List holding dv nums corresponding to global DVs.
         """
         return [self.globalDVs[descript]["num"] for descript in self.globalDVs]
@@ -351,7 +351,7 @@ class pyTACS(BaseUI):
             Global DV key to assign mass design variable to. If the key is does not exist,
             it will automatically be created and added to global DVs.
 
-        eIDs : int or list
+        eIDs : int or list[int]
             Element IDs of concentrated mass to assign DV to (NASTRAN ordering)
 
         dvName : str
@@ -2079,7 +2079,7 @@ class pyTACS(BaseUI):
                     )
 
             elif isinstance(item, str):
-                # This is a little inefficinet here; loop over
+                # This is a little inefficient here; loop over
                 # self.compDescripts and see if 'item' (a string) in
                 # part of the description. if so add.
                 item = item.upper()
@@ -2098,7 +2098,7 @@ class pyTACS(BaseUI):
             for i in range(len(compIDs)):
                 compIDs[i] = set(compIDs[i])
 
-            # We want to go though and take only the intersection of
+            # We want to go through and take only the intersection of
             # each of the sets we have found:
             tmp = copy.deepcopy(compIDs[0])
 
@@ -2106,7 +2106,7 @@ class pyTACS(BaseUI):
                 tmp = tmp.intersection(compIDs[i])
             compIDs = tmp
 
-        # Finally convert to a list
+        # Finally, convert to a list
         compIDs = self._flatten(list(compIDs))
 
         return compIDs
@@ -2151,7 +2151,6 @@ class pyTACS(BaseUI):
             # second one is treated as a scale list for the added dvs.
 
             # Check that result is an element object instance or .
-            foundElem = False
             numFoundElements = 0
             scaleList = None
 

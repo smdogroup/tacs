@@ -732,7 +732,7 @@ class pyMeshLoader(BaseUI):
             Some components may have multiple TACS element types associated with them.
             This index specifies which object should be assigned.
 
-        elemObj : tacs.TACS.Element
+        elemObject : tacs.TACS.Element
             TACS element object.
         """
         pointer = self.elemObjectNumByComp[componentID][objectIndex]
