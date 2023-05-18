@@ -666,7 +666,7 @@ class pyTACS(BaseUI):
 
         Returns
         -------
-        compDescript : list
+        compDescript : list[str]
             List of strings containing the names of the corresponding compIDs
         """
         # Return all component names
@@ -702,7 +702,7 @@ class pyTACS(BaseUI):
 
         Returns
         -------
-        nodeIDs : list
+        nodeIDs : list[int]
             List of unique nodeIDs that belong to the given list of compIDs
         """
         # Return all component ids
@@ -725,7 +725,7 @@ class pyTACS(BaseUI):
 
         Returns
         -------
-        nodeIDs : list
+        nodeIDs : list[int]
             List of unique nodeIDs that belong to the given list of compIDs
         """
         # Return all component ids
@@ -1599,6 +1599,7 @@ class pyTACS(BaseUI):
 
         return structProblems
 
+    @postinitialize_method
     def writeBDF(self, fileName, problems):
         """
         Write NASTRAN BDF file from problem class.
@@ -1989,6 +1990,11 @@ class pyTACS(BaseUI):
     def getNumComponents(self):
         """
         Return number of components (property) groups found in bdf.
+
+        Returns
+        -------
+        nComp : int
+            Number of components in model
         """
         return self.nComp
 
@@ -2015,7 +2021,7 @@ class pyTACS(BaseUI):
         (TACSToFH5 object) for TACS.
         """
 
-        # Depending on the user supplied options generate the
+        # Depending on the user-supplied options generate the
         # write_flag
         write_flag = 0
         if self.getOption("writeConnectivity"):
@@ -2109,6 +2115,12 @@ class pyTACS(BaseUI):
         """
         Create all the constitutive objects by calling the
         userSupplied or default callback function
+
+        Parameters
+        ----------
+        elemCallBack : callable
+            Element callback function provided by user or pyTACS
+            to set up TACS element objects.
         """
 
         for i in range(self.nComp):
@@ -2130,7 +2142,7 @@ class pyTACS(BaseUI):
                 propID=propID,
             )
 
-            # For maximum flexibiliy, multiple pieces of information
+            # For maximum flexibility, multiple pieces of information
             # can be returned. At a minimum, the element objects
             # must be returned!
 
@@ -2224,7 +2236,7 @@ class pyTACS(BaseUI):
                         f" The added design variables are {repr(newVars)}."
                     )
 
-            # Finally increment the dv counter
+            # Finally, increment the dv counter
             self.dvNum += len(newVars)
 
             if len(newVars) > 0:

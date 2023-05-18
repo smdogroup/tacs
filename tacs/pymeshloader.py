@@ -697,10 +697,44 @@ class pyMeshLoader(BaseUI):
         return globalToLocalElementIDDict
 
     def getElementObject(self, componentID, objectIndex):
+        """
+        Return TACS element object corresponding to component ID and object index.
+
+        Parameters
+        ----------
+        componentID : int
+            Component ID number
+
+        objectIndex : int
+            Object index number.
+            Some components may have multiple TACS element types associated with them.
+            This index specifies which object should be returned.
+
+        Returns
+        -------
+        elemObj : tacs.TACS.Element
+            TACS element object.
+        """
         pointer = self.elemObjectNumByComp[componentID][objectIndex]
         return self.elemObjects[pointer]
 
     def setElementObject(self, componentID, objectIndex, elemObject):
+        """
+        Set TACS element object to component ID and object index.
+
+        Parameters
+        ----------
+        componentID : int
+            Component ID number
+
+        objectIndex : int
+            Object index number.
+            Some components may have multiple TACS element types associated with them.
+            This index specifies which object should be assigned.
+
+        elemObj : tacs.TACS.Element
+            TACS element object.
+        """
         pointer = self.elemObjectNumByComp[componentID][objectIndex]
         self.elemObjects[pointer] = elemObject
 
