@@ -11,6 +11,7 @@ CXX_OBJS = TACSFunction.o \
 	TACSStructuralMass.o \
 	TACSCenterOfMass.o \
 	TACSMomentOfInertia.o \
+	TACSEnclosedVolume.o \
 	TACSKSFailure.o \
 	TACSKSDisplacement.o \
 	TACSCompliance.o \

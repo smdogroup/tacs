@@ -152,6 +152,21 @@ cdef class MomentOfInertia(Function):
         self.ptr.incref()
         return
 
+cdef class EnclosedVolume(Function):
+    """
+    Evaluates the volume enclosed by the elements.
+
+    Args:
+        assembler (Assembler): TACS Assembler object that will evaluating this function.
+    """
+    def __cinit__(self, Assembler assembler):
+        """
+        Wrap the function EnclosedVolume
+        """
+        self.ptr = new TACSEnclosedVolume(assembler.ptr)
+        self.ptr.incref()
+        return
+
 cdef class Compliance(Function):
     """
     Evaluate the compliance of the structure.

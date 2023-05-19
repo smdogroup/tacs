@@ -46,7 +46,9 @@ cdef extern from "TACSMaterialProperties.h":
                                TacsScalar, TacsScalar, TacsScalar,
                                TacsScalar, TacsScalar, TacsScalar)
         void setDensity(TacsScalar)
+        TacsScalar getDensity();
         void setSpecificHeat(TacsScalar)
+        void getIsotropicProperties(TacsScalar*, TacsScalar*)
         void getOrthotropicProperties(TacsScalar*, TacsScalar*, TacsScalar*,
                                       TacsScalar*, TacsScalar*, TacsScalar*,
                                       TacsScalar*, TacsScalar*, TacsScalar*)
@@ -56,6 +58,8 @@ cdef extern from "TACSMaterialProperties.h":
         void getCoefThermalExpansion(TacsScalar*, TacsScalar*, TacsScalar*)
         void getThermalConductivity(TacsScalar*, TacsScalar*, TacsScalar*)
 
+        MaterialType getMaterialType();
+
     cdef cppclass TACSOrthotropicPly(TACSObject):
         TACSOrthotropicPly(TacsScalar, TACSMaterialProperties*)
         void setKSWeight(TacsScalar)
@@ -64,6 +68,7 @@ cdef extern from "TACSMaterialProperties.h":
 
 cdef class MaterialProperties:
     cdef TACSMaterialProperties *ptr
+    cdef int nastranID
 
 cdef inline _init_MaterialProperties(TACSMaterialProperties *ptr):
     props = MaterialProperties()
@@ -115,6 +120,8 @@ cdef extern from "TACSCompositeShellConstitutive.h":
     cdef cppclass TACSCompositeShellConstitutive(TACSShellConstitutive):
         TACSCompositeShellConstitutive(int, TACSOrthotropicPly**, const TacsScalar*,
                                        const TacsScalar*, TacsScalar)
+        void getPlyThicknesses(TacsScalar*);
+        void getPlyAngles(TacsScalar*);
 
 cdef extern from "TACSLamParamShellConstitutive.h":
     cdef cppclass TACSLamParamShellConstitutive(TACSShellConstitutive):
@@ -185,6 +192,7 @@ cdef extern from "TACSIsoRectangleBeamConstitutive.h":
 cdef extern from "TACSGeneralMassConstitutive.h":
     cdef cppclass TACSGeneralMassConstitutive(TACSConstitutive):
         TACSGeneralMassConstitutive(const TacsScalar*)
+        void evalMassMatrix(int, const double*, const TacsScalar*, TacsScalar*)
 
 cdef class GeneralMassConstitutive(Constitutive):
     cdef TACSGeneralMassConstitutive *cptr
@@ -199,6 +207,7 @@ cdef extern from "TACSPointMassConstitutive.h":
 cdef extern from "TACSGeneralSpringConstitutive.h":
     cdef cppclass TACSGeneralSpringConstitutive(TACSConstitutive):
         TACSGeneralSpringConstitutive(TacsScalar*)
+        void evalMassMatrix(int, const double *, const TacsScalar *, TacsScalar *)
 
 cdef class GeneralSpringConstitutive(Constitutive):
     cdef TACSGeneralSpringConstitutive *cptr

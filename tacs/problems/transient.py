@@ -364,7 +364,7 @@ class TransientProblem(TACSProblem):
             to determine this.
 
         F : Numpy 1d or 2d array length (varsPerNodes) or (numCompIDs, varsPerNodes)
-            Vector(s) of 'force' to apply to each components.  If only one force vector is provided,
+            Vector(s) of 'force' to apply to each component.  If only one force vector is provided,
             force will be copied uniformly across all components.
 
         timeStage : int or None
@@ -384,7 +384,7 @@ class TransientProblem(TACSProblem):
         on the physics problem being solved and the dofs included
         in the model.
 
-        A couple of examples of force vector components for common problem are listed below:
+        A couple of examples of force vector components for common problems are listed below:
 
             In Heat Conduction with varsPerNode = 1
                 F = [Qdot] # heat rate
@@ -446,7 +446,7 @@ class TransientProblem(TACSProblem):
         on the physics problem being solved and the dofs included
         in the model.
 
-        A couple of examples of force vector components for common problem are listed below:
+        A couple of examples of force vector components for common problems are listed below:
 
             In Heat Conduction with varsPerNode = 1
                 F = [Qdot] # heat rate
@@ -491,7 +491,7 @@ class TransientProblem(TACSProblem):
         timeStep : int
             Time step index to apply load to.
 
-        Fapplied : numpy.ndarray or TACS.Vec
+        Fapplied : numpy.ndarray or tacs.TACS.Vec
             Distributed array containing loads to applied to RHS of the problem.
 
         timeStage : int or None
@@ -531,7 +531,7 @@ class TransientProblem(TACSProblem):
             to determine this.
 
         tractions : numpy.ndarray length 1 or compIDs
-            Array of traction vectors for each components
+            Array of traction vectors for each component
 
         timeStage : int or None
             Time stage index to apply load to. Default is None, which is applicable only for
@@ -630,7 +630,7 @@ class TransientProblem(TACSProblem):
             to determine this.
 
         pressures : Numpy array length 1 or compIDs
-            Array of pressure values for each components
+            Array of pressure values for each component
 
         timeStage : int or None
             Time stage index to apply load to. Default is None, which is applicable only for
@@ -819,11 +819,11 @@ class TransientProblem(TACSProblem):
 
         Parameters
         ----------
-        vars : float or numpy.ndarray or TACS.Vec
+        vars : float or numpy.ndarray or tacs.TACS.Vec
             Initial conditions of the state variables
-        dvars : float or numpy.ndarray or TACS.Vec
+        dvars : float or numpy.ndarray or tacs.TACS.Vec
             Initial conditions of the first time-derivative of the state variables
-        ddvars : float or numpy.ndarray or TACS.Vec
+        ddvars : float or numpy.ndarray or tacs.TACS.Vec
             Initial conditions of the second time-derivative of the state variables
         """
 
@@ -962,7 +962,7 @@ class TransientProblem(TACSProblem):
         timeStage : int or None
             Time stage index to iterate. If not None, solver must be multistage
 
-        Fext : TACS.Vec or numpy.ndarray or None
+        Fext : tacs.TACS.Vec or numpy.ndarray or None
             If Fext is not None, add this force vector to the loads applied at
             this time instance. Fext must be sized such that the flattened array
             is (numOwnedNodes*numVarsPerNode) in length. Useful for applying
@@ -1031,7 +1031,7 @@ class TransientProblem(TACSProblem):
             The user-supplied name for the function. This will
             typically be a string that is meaningful to the user
 
-        funcHandle : TACS.Function
+        funcHandle : tacs.TACS.Function
             The function handle to use for creation. This must come
             from the functions module in tacs.
 
@@ -1055,7 +1055,7 @@ class TransientProblem(TACSProblem):
         """
         This is the main routine for returning useful information from
         pytacs. The functions corresponding to the strings in
-        EVAL_FUNCS are evaluated and updated into the provided
+        evalFuncs are evaluated and updated into the provided
         dictionary.
 
         Parameters
@@ -1144,7 +1144,7 @@ class TransientProblem(TACSProblem):
         """
         This is the main routine for returning useful (sensitivity)
         information from problem. The derivatives of the functions
-        corresponding to the strings in EVAL_FUNCS are evaluated and
+        corresponding to the strings in evalFuncs are evaluated and
         updated into the provided dictionary. The derivitives with
         respect to all design variables and node locations are computed.
 
@@ -1245,13 +1245,13 @@ class TransientProblem(TACSProblem):
         timeStage : int or None
             Time stage index to get state variables for.
 
-        states : TACS.Vec or numpy.ndarray or None
+        states : tacs.TACS.Vec or numpy.ndarray or None
             If states is not None, place the state variables into this array (optional).
 
-        dstates : TACS.Vec or numpy.ndarray or None
+        dstates : tacs.TACS.Vec or numpy.ndarray or None
             If dstates is not None, place the time derivative of the state variables into this array (optional).
 
-        ddstates : TACS.Vec or numpy.ndarray or None
+        ddstates : tacs.TACS.Vec or numpy.ndarray or None
             If ddstates is not None, place the second time derivative of the state variables into this array (optional).
 
         Returns
@@ -1259,13 +1259,13 @@ class TransientProblem(TACSProblem):
         time: float
             The time at specified time instance
 
-        states : TACS.Vec or numpy.ndarray
+        states : tacs.TACS.Vec or numpy.ndarray
             The state variables.
 
-        dstates : TACS.Vec or numpy.ndarray or None
+        dstates : tacs.TACS.Vec or numpy.ndarray or None
             The time derivative of the state variables.
 
-        ddstates : TACS.Vec or numpy.ndarray or None
+        ddstates : tacs.TACS.Vec or numpy.ndarray or None
             The second time derivative of the state variables.
 
         """

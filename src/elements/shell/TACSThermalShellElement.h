@@ -1073,6 +1073,26 @@ int TACSThermalShellElement<quadrature, basis, director,
     return 1;
   }
 
+  else if (quantityType == TACS_ELEMENT_ENCLOSED_VOLUME) {
+    if (quantity) {
+      // Compute X, X,xi and the interpolated normal n0
+      TacsScalar Xxi[6], n0[3], X[3];
+      basis::template interpFields<3, 3>(pt, Xpts, X);
+      basis::template interpFieldsGrad<3, 3>(pt, Xpts, Xxi);
+      basis::template interpFields<3, 3>(pt, fn, n0);
+
+      TacsScalar Xd[9];
+      TacsShellAssembleFrame(Xxi, n0, Xd);
+      *detXd = det3x3(Xd);
+
+      // Compute 1/3*int[x * n]dA
+      // This can be shown to equivalent to the volume through Gauss' Theorem
+      quantity[0] = (X[0] * n0[0] + X[1] * n0[1] + X[2] * n0[2]) / 3.0;
+    }
+
+    return 1;
+  }
+
   return 0;
 }
 

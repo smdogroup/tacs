@@ -17,6 +17,7 @@ import time
 from collections import OrderedDict
 
 import numpy as np
+import pyNastran.bdf as pn
 
 import tacs.TACS
 import tacs.elements
@@ -120,16 +121,16 @@ class StaticProblem(TACSProblem):
         name : str
             Name of this tacs problem
 
-        assembler : TACS.Assembler
+        assembler : tacs.TACS.Assembler
             Cython object responsible for creating and setting tacs objects used to solve problem
 
         comm : mpi4py.MPI.Intracomm
             The comm object on which to create the pyTACS object.
 
-        outputViewer : TACS.TACSToFH5
+        outputViewer : tacs.TACS.TACSToFH5
             Cython object used to write out f5 files that can be converted and used for postprocessing.
 
-        meshLoader : pymeshloader.pyMeshLoader
+        meshLoader : tacs.pymeshloader.pyMeshLoader
             pyMeshLoader object used to create the assembler.
 
         options : dict
@@ -173,6 +174,7 @@ class StaticProblem(TACSProblem):
         self.u_array = self.u.getArray()
         # Auxiliary element object for applying tractions/pressure
         self.auxElems = tacs.TACS.AuxElements()
+        # Counter for number of calls to `solve` method
         self.callCounter = -1
 
         # Norms
@@ -360,7 +362,7 @@ class StaticProblem(TACSProblem):
             The user-supplied name for the function. This will
             typically be a string that is meaningful to the user
 
-        funcHandle : TACS.Function
+        funcHandle : tacs.TACS.Function
             The function handle to use for creation. This must come
             from the functions module in tacs.
 
@@ -385,7 +387,7 @@ class StaticProblem(TACSProblem):
 
         Parameters
         ----------
-        x : numpy.ndarray
+        x : numpy.ndarray or dict or tacs.TACS.Vec
             The variables (typically from the optimizer) to set. It
             looks for variable in the ``self.varName`` attribute.
 
@@ -425,7 +427,7 @@ class StaticProblem(TACSProblem):
             to determine this.
 
         F : numpy.ndarray 1d or 2d length (varsPerNodes) or (numCompIDs, varsPerNodes)
-            Vector(s) of 'force' to apply to each components.  If only one force vector is provided,
+            Vector(s) of 'force' to apply to each component.  If only one force vector is provided,
             force will be copied uniformly across all components.
 
         averageLoad : bool
@@ -433,14 +435,14 @@ class StaticProblem(TACSProblem):
             or copied and applied individually to each component (False). Defaults to False.
 
         Notes
-        ----------
+        -----
 
         The units of the entries of the 'force' vector F are not
         necessarily physical forces and their interpretation depends
         on the physics problem being solved and the dofs included
         in the model.
 
-        A couple of examples of force vector components for common problem are listed below:
+        A couple of examples of force vector components for common problems are listed below:
 
             In Heat Conduction with varsPerNode = 1
                 F = [Qdot] # heat rate
@@ -475,14 +477,14 @@ class StaticProblem(TACSProblem):
             or NASTRAN (grid IDs in bdf file) ordering
 
         Notes
-        ----------
+        -----
 
         The units of the entries of the 'force' vector F are not
         necessarily physical forces and their interpretation depends
         on the physics problem being solved and the dofs included
         in the model.
 
-        A couple of examples of force vector components for common problem are listed below:
+        A couple of examples of force vector components for common problems are listed below:
 
             In Heat Conduction with varsPerNode = 1
                 F = [Qdot] # heat rate
@@ -513,7 +515,7 @@ class StaticProblem(TACSProblem):
         Parameters
         ----------
 
-        Fapplied : numpy.ndarray or TACS.Vec
+        Fapplied : numpy.ndarray or tacs.TACS.Vec
             Distributed array containing loads to applied to RHS of the problem.
 
         """
@@ -533,7 +535,7 @@ class StaticProblem(TACSProblem):
             to determine this.
 
         tractions : Numpy array length 1 or compIDs
-            Array of traction vectors for each components
+            Array of traction vectors for each component
 
         faceIndex : int
             Indicates which face (side) of element to apply traction to.
@@ -587,7 +589,7 @@ class StaticProblem(TACSProblem):
             to determine this.
 
         pressures : Numpy array length 1 or compIDs
-            Array of pressure values for each components
+            Array of pressure values for each component
 
         faceIndex : int
             Indicates which face (side) of element to apply pressure to.
@@ -733,7 +735,7 @@ class StaticProblem(TACSProblem):
         ----------
         Optional Arguments:
 
-        Fext : numpy.ndarray or TACS.Vec
+        Fext : numpy.ndarray or tacs.TACS.Vec
             Distributed array containing additional loads (ex. aerodynamic forces for aerostructural coupling)
             to applied to RHS of the static problem.
 
@@ -795,7 +797,7 @@ class StaticProblem(TACSProblem):
         finalNormTime = time.time()
 
         # If timing was was requested print it, if the solution is nonlinear
-        # print this information automatically if prinititerations was requested.
+        # print this information automatically if print iterations was requested.
         if self.getOption("printTiming"):
             self._pp("+--------------------------------------------------+")
             self._pp("|")
@@ -839,7 +841,7 @@ class StaticProblem(TACSProblem):
         """
         This is the main routine for returning useful information from
         pytacs. The functions corresponding to the strings in
-        EVAL_FUNCS are evaluated and updated into the provided
+        evalFuncs are evaluated and updated into the provided
         dictionary.
 
         Parameters
@@ -928,7 +930,7 @@ class StaticProblem(TACSProblem):
         """
         This is the main routine for returning useful (sensitivity)
         information from problem. The derivatives of the functions
-        corresponding to the strings in EVAL_FUNCS are evaluated and
+        corresponding to the strings in evalFuncs are evaluated and
         updated into the provided dictionary. The derivitives with
         respect to all design variables and node locations are computed.
 
@@ -1067,7 +1069,7 @@ class StaticProblem(TACSProblem):
         evalFuncs : list[str]
             The functions the user wants returned
 
-        svSensList : list[TACS.Vec] or list[numpy.ndarray]
+        svSensList : list[tacs.TACS.Vec] or list[numpy.ndarray]
             List of sensitivity vectors to add partial sensitivity to
         """
         # Set problem vars to assembler
@@ -1105,7 +1107,7 @@ class StaticProblem(TACSProblem):
         evalFuncs : list[str]
             The functions the user wants returned
 
-        dvSensList : list[BVec] or list[numpy.ndarray]
+        dvSensList : list[tacs.TACS.Vec] or list[numpy.ndarray]
             List of sensitivity vectors to add partial sensitivity to
 
         scale : float
@@ -1147,10 +1149,10 @@ class StaticProblem(TACSProblem):
 
         Parameters
         ----------
-        adjointlist : list[BVec] or list[numpy.ndarray]
+        adjointlist : list[tacs.TACS.Vec] or list[numpy.ndarray]
             List of adjoint vectors for residual sensitivity product
 
-        dvSensList : list[BVec] or list[numpy.ndarray]
+        dvSensList : list[tacs.TACS.Vec] or list[numpy.ndarray]
             List of sensitivity vectors to add product to
 
         scale : float
@@ -1203,7 +1205,7 @@ class StaticProblem(TACSProblem):
         evalFuncs : list[str]
             The functions the user wants returned
 
-        xptSensList : list[BVec] or list[numpy.ndarray]
+        xptSensList : list[tacs.TACS.Vec] or list[numpy.ndarray]
             List of sensitivity vectors to add partial sensitivity to
 
         scale : float
@@ -1245,10 +1247,10 @@ class StaticProblem(TACSProblem):
 
         Parameters
         ----------
-        adjointlist : list[BVec] or list[numpy.ndarray]
+        adjointlist : list[tacs.TACS.Vec] or list[numpy.ndarray]
             List of adjoint vectors for residual sensitivity product
 
-        xptSensList : list[BVec] or list[numpy.ndarray]
+        xptSensList : list[tacs.TACS.Vec] or list[numpy.ndarray]
             List of sensitivity vectors to add product to
 
         scale : float
@@ -1300,10 +1302,10 @@ class StaticProblem(TACSProblem):
 
         Parameters
         ----------
-        res : TACS BVec or numpy array
+        res : tacs.TACS.Vec or numpy.ndarray
             If res is not None, place the residuals into this array.
 
-        Fext : TACS BVec or numpy array, optional
+        Fext : tacs.TACS.Vec or numpy.ndarray, optional
             Distributed array containing additional loads (ex. aerodynamic forces for aerostructural coupling)
             to applied to RHS of the static problem.
 
@@ -1345,7 +1347,7 @@ class StaticProblem(TACSProblem):
 
         Returns
         -------
-        tuple of 2 or 4 scipy.sparse.bsr_matrices
+        K : (scipy.sparse.bsr_matrix, scipy.sparse.bsr_matrix) or (scipy.sparse.bsr_matrix, scipy.sparse.bsr_matrix, scipy.sparse.bsr_matrix, scipy.sparse.bsr_matrix)
             A tuple of 2 scipy.sparse.bsr_matrices (A, B) if Jacobian is a TACSParallelMat, or 4
             scipy.sparse.bsr_matrices (A, B, C, D) if Jacobian is a TACSSchurMat
         """
@@ -1362,10 +1364,10 @@ class StaticProblem(TACSProblem):
 
         Parameters
         ----------
-        phi : TACS BVec or numpy array
+        phi : tacs.TACS.Vec or numpy.ndarray
             Input vector to product with the transpose Jacobian.
 
-        prod : TACS BVec or numpy array
+        prod : tacs.TACS.Vec or numpy.ndarray
             Output vector to add Jacobian product to.
 
         scale : float
@@ -1419,9 +1421,9 @@ class StaticProblem(TACSProblem):
 
         Parameters
         ----------
-        rhs : TACS BVec or numpy array
+        rhs : tacs.TACS.Vec or numpy.ndarray
             right hand side vector for adjoint solve
-        phi : TACS BVec or numpy array
+        phi : tacs.TACS.Vec or numpy.ndarray
             BVec or numpy array into which the adjoint is saved
         """
 
@@ -1468,7 +1470,7 @@ class StaticProblem(TACSProblem):
 
         Parameters
         ----------
-        states : TACS.Vec or numpy.ndarray
+        states : tacs.TACS.Vec or numpy.ndarray
             Vector to place current state variables into (optional)
 
         Returns
@@ -1548,3 +1550,95 @@ class StaticProblem(TACSProblem):
         if self.getOption("writeSolution"):
             base = os.path.join(outputDir, baseName) + ".f5"
             self.outputViewer.writeToFile(base)
+
+    def writeLoadToBDF(self, bdfFile, loadCaseID):
+        """
+        Write loads from problem to NASTRAN BDF file.
+        NOTE: To get correct loads, `solve` method should be called before this method.
+
+        Parameters
+        ----------
+        bdfFile: str or pyNastran.bdf.bdf.BDF or None
+            Name of file to write BDF file to. Only required on root proc,
+            can be None otherwise.
+        loadCaseID: int
+            NASTARAN loadcase ID to assign loads to in BDF.
+        """
+
+        # Grab RHS vector from previous solve
+        F = self.rhs
+        F_array = np.real(F.getArray())
+
+        # Get local force info for each processor
+        multNodes = self.meshLoader.getLocalMultiplierNodeIDs()
+        globalToLocalNodeIDDict = self.meshLoader.getGlobalToLocalNodeIDDict()
+
+        # Gather local info to root processor
+        allMultNodes = self.comm.gather(multNodes, root=0)
+        allGlobalToLocalNodeIDDict = self.comm.gather(globalToLocalNodeIDDict, root=0)
+        allF = self.comm.gather(F_array, root=0)
+
+        vpn = self.getVarsPerNode()
+
+        # Assemble new BDF file on root
+        if self.comm.rank == 0:
+            if isinstance(bdfFile, str):
+                newBDFInfo = pn.bdf.BDF(debug=False)
+            elif isinstance(bdfFile, pn.bdf.BDF):
+                newBDFInfo = bdfFile
+
+            # Save subcase info to bdf
+            if newBDFInfo.case_control_deck is not None:
+                newBDFInfo.case_control_deck.create_new_subcase(loadCaseID)
+                newBDFInfo.case_control_deck.add_parameter_to_local_subcase(
+                    loadCaseID, f"SUBTITLE={self.name}"
+                )
+                newBDFInfo.case_control_deck.add_parameter_to_local_subcase(
+                    loadCaseID, f"ANALYSIS=STATICS"
+                )
+                newBDFInfo.case_control_deck.add_parameter_to_local_subcase(
+                    loadCaseID, f"LOAD={loadCaseID}"
+                )
+
+            # Tolerance for writing out point loads
+            zero_tol = 1e-6
+            # Write out force values
+            nastranNodeIDs = list(self.bdfInfo.node_ids)
+            # Loop through each proc and pull out nodal forces
+            for proc_i in range(self.comm.size):
+                Fxyz = allF[proc_i].reshape(-1, vpn)
+                for tacsGNodeID in allGlobalToLocalNodeIDDict[proc_i]:
+                    # Get local node ID
+                    tacsLNodeID = allGlobalToLocalNodeIDDict[proc_i][tacsGNodeID]
+                    # Get Global nastran ID
+                    nastranGNodeID = nastranNodeIDs[tacsGNodeID]
+                    # Add force to bdf file (if its not a multiplier node)
+                    if tacsLNodeID not in allMultNodes[proc_i]:
+                        # Check if force is above tolerance before adding to bdf
+                        if (
+                            vpn >= 3
+                            and np.linalg.norm(Fxyz[tacsLNodeID][:3]) > zero_tol
+                        ):
+                            f = np.zeros(3)
+                            for i in range(3):
+                                if abs(Fxyz[tacsLNodeID][i]) > zero_tol:
+                                    f[i] = Fxyz[tacsLNodeID][i]
+                            newBDFInfo.add_force(loadCaseID, nastranGNodeID, 1.0, f)
+                        if (
+                            vpn >= 6
+                            and np.linalg.norm(Fxyz[tacsLNodeID][3:6]) > zero_tol
+                        ):
+                            m = np.zeros(3)
+                            for i in range(3):
+                                if abs(Fxyz[tacsLNodeID][i + 3]) > zero_tol:
+                                    m[i] = Fxyz[tacsLNodeID][i + 3]
+                            newBDFInfo.add_moment(loadCaseID, nastranGNodeID, 1.0, m)
+
+            # If bdf file was provided as a file name save it directly
+            if isinstance(bdfFile, str):
+                newBDFInfo.write_bdf(
+                    bdfFile, size=16, is_double=True, write_header=False
+                )
+
+        # All procs should wait for root
+        self.comm.barrier()

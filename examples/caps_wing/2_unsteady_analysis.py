@@ -12,7 +12,7 @@ from mpi4py import MPI
 # 1: build the tacs aim, egads aim wrapper classes
 comm = MPI.COMM_WORLD
 tacs_model = caps2tacs.TacsModel.build(csm_file="simple_naca_wing.csm", comm=comm)
-tacs_model.egads_aim.set_mesh(
+tacs_model.mesh_aim.set_mesh(
     edge_pt_min=15,
     edge_pt_max=20,
     global_mesh_size=0.25,
