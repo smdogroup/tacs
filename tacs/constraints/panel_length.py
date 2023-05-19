@@ -156,7 +156,7 @@ class PanelLengthConstraint(TACSConstraint):
     ):
         """
         NOTE: This class should not be initialized directly by the user.
-        Use pyTACS.createAdjacencyConstraint instead.
+        Use pyTACS.createPanelLengthConstraint instead.
 
         Parameters
         ----------
