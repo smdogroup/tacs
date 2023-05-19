@@ -734,6 +734,11 @@ class TACSProblem(TACSSystem):
         setScale : float
             Factor to scale the BDF loads by before adding to problem.
         """
+        # Make sure bdf is cross-referenced
+        if self.bdfInfo.is_xrefed is False:
+            self.bdfInfo.cross_reference()
+            self.bdfInfo.is_xrefed = True
+
         vpn = self.assembler.getVarsPerNode()
         # Get loads and scalers for this load case ID
         loadSet, loadScale, _ = self.bdfInfo.get_reduced_loads(loadID)
