@@ -29,31 +29,80 @@ void printStiffnessMatrix(const TacsScalar* const C);
 // Class Declaration
 // =============================================================================
 
-/*
-This constitutive class models a shell stiffened with T-shaped stiffeners.
-The stiffeners are not explicitly modelled. Instead, their stiffness is
-"smeared" across the shell.
-
-                        |                                    |         ^
-                        |                                    |         |
-                        |                                    |         |
-                        |                                    |       height
-                        | <--------------pitch-------------> |         |
-Stiffener               |                                    |         |
-thickness  ---> -----------------                    ----------------- v
-    ---------------------------------------------------------------------- <---
-Panel thickness
-
-The panel and stiffener are modelled as laminates, both of which are
-parameterised by an arbitrary number of ply angles and fractions. The laminate
-properties are then computed using a smeared stiffness approach, which assumes
-that the various ply angles are distributed evenly throughout the thicknes of
-the panel. This is a valid assumption for thick laminates.
-
-WARNING: If you use ply fractions as design variables, it is currently up to you
-to add constraints to ensure that the sum of the fractions is equal to 1.0. This
-is not done automatically (yet).
-*/
+/**
+ * @brief Constitutive model for a blade-stiffened shell
+ *
+ * This constitutive class models a shell stiffened with T-shaped stiffeners.
+ * The stiffeners are not explicitly modelled. Instead, their stiffness is
+ * "smeared" across the shell.
+ *
+ *                         |                      |         ^
+ *                         |                      |         |
+ *                         |                      |         |
+ *                         |                      |       height
+ *                         | <-------pitch------> |         |
+ * Stiffener               |                      |         v
+ * thickness ---> -----------------      -----------------
+ *     --------------------------------------------------- <--- Panel thickness
+ *
+ *     ----------> 2-direction
+ *     |
+ *     |
+ *     |
+ *     |
+ *     v
+ *     3-direction (shell normal)
+ *
+ * The stiffener is modelled as a T-shaped beam as shown above, and is modelled
+ * as pointing in the opposite of the shell normal. The thickness of the
+ * stiffener web and flange are the same. The ratio of the stiffener flange
+ * width to the stiffener height is controlled by the flangeFraction parameter,
+ * which defaults to 1.0 (i.e. the flange width is equal to the stiffener
+ * height). This value can be set when creating the constitutive object and is
+ * then fixed.
+ *
+ * The panel and stiffener are modelled as laminates, both of which are
+ * parameterised by an arbitrary number of ply angles and fractions. The
+ * laminate properties are then computed using a smeared stiffness approach,
+ * which assumes that the various ply angles are distributed evenly throughout
+ * the thickness of the panel. This is a valid assumption for thick laminates.
+ *
+ * The design variables (in order) for this constitutive model are:
+ * - Panel length
+ * - Stiffener pitch
+ * - Panel thickness
+ * - Panel ply fractions
+ * - Stiffener height
+ * - Stiffener thickness
+ * - Stiffener ply fractions
+ *
+ * The failure criterion returned by this model combines numerous possible
+ * failure modes into a single value. A material failure criterion (which one
+ * depends on the Orthotropic ply objects you pass to this class) is computed at
+ * the upper and lower surface of the panel and at the tip of the stiffener,
+ * this calculation is performed for every ply angle present in the panel and
+ * stiffener laminate. Additionally buckling criteria are computed for combined
+ * shear and axial buckling for both a global buckling mode (i.e the entire
+ * panel buckles) and a local buckling mode (i.e. the panel buckles between a
+ * pair of stiffeners). These buckling failure values are aggregated along with
+ * the material failure values into a single failure value using KS aggregation.
+ * The smoothness and conservatism of this aggregation can be controlled using
+ * the `setKSWeight` method.
+ *
+ * The panel length design variables do not directly affect the stiffness or
+ * stresses computed by the model, their only role is to allow the computation
+ * of the critical buckling loads used in the buckling failure criteria. When
+ * using this constitutive model, you must also add a set of
+ * PanelLengthConstraints to force the panel length design variables to be equal
+ * to the true physical panel length. Despite seeming needlessly complex, this
+ * approach is necessary because this constitutive model has no information
+ * about the geometry of your finite element model and so cannot compute the
+ * panel length itself.
+ *
+ * WARNING: If you use ply fractions as design variables, it is currently up to
+ * you to add DVConstraints to ensure that the sum of the fractions is equal
+ * to 1.0. This is not done automatically (yet).
+ */
 class TACSBladeStiffenedShellConstitutive : public TACSShellConstitutive {
  public:
   /**
