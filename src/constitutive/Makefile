@@ -15,7 +15,6 @@ CXX_OBJS = TACSMaterialProperties.o \
 	TACSShellConstitutive.o \
 	TACSIsoShellConstitutive.o \
 	TACSLamParamShellConstitutive.o \
-	TACSBladeStiffenedShellConstitutive.o \
 	TACSGeneralMassConstitutive.o \
 	TACSPointMassConstitutive.o \
 	TACSGeneralSpringConstitutive.o \
