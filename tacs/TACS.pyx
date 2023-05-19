@@ -3315,6 +3315,95 @@ cdef class BucklingAnalysis:
         eigval = self.ptr.extractEigenvector(eig, vec.getBVecPtr(), &err)
         return eigval, err
 
+    def evalEigenDVSens(self, int index, Vec dvsens):
+        """
+        Compute the derivative of the eigenvalues w.r.t. the design variables
+
+        The original eigenvalue problem is,
+
+        K*u = lambda*G*u
+
+        The derivative of the eigenvalue problem is given as follows,
+
+         dK/dx*u + K*du/dx =
+        d(lambda)/dx*M*u + lambda*dM/dx*u + lambda*M*du/dx
+
+        Since G = G^{T} and K = K^{T}, pre-multiplying by u^{T} gives,
+
+         u^{T}*dK/dx*u = d(lambda)/dx*(u^{T}*G*u) + lambda*u^{T}*dG/dx*u
+
+        Rearranging gives,
+
+        (u^{T}*G*u)*d(lambda)/dx = u^{T}*(dK/dx - lambda*dG/dx)*u
+
+        Args:
+            index (int): The index of the desired eigenvalue
+            dvsens (Vec): The vector in which the design variable sensitivity will be stored
+        """
+        self.ptr.evalEigenDVSens(index, dvsens.getBVecPtr())
+
+    def evalEigenXptSens(self, int index, Vec xptsens):
+        """
+        The function computes the derivatives of the buckling eigenvalues.
+
+        Compute the derivative of the eignevalues w.r.t. the design
+        variables. This function must be called after the solve function has
+        been called. The stiffness matrix and geometric stiffness matrix
+        cannot be modified from the previous call to solve.
+
+        The original eigenvalue problem is
+
+        K*u + lambda*G*u = 0
+
+        The derivative of the eigenvalue problem is given as follows:
+
+        d(lambda)/dx = - u^{T}*(dK/dx + lambda*dG/dx)*u/(u^{T}*G*u)
+
+        The difficulty is that the load path is determined by solving an
+        auxiliary linear system:
+
+        K*path = f
+
+        Since the geometric stiffness matrix is a function of the path, we
+        must compute the total derivative of the inner product of the
+        geometric stiffness matrix as follows:
+
+        d(u^{T}*G*u)/dx = [ p(u^{T}*G*u)/px - psi*d(K*path)/dx ]
+
+        where the adjoint variables psi are found by solving the linear
+        system:
+
+        K*psi = d(u^{T}*G*u)/d(path)
+
+        Args:
+            index (int): The index of the desired eigenvalue
+            xptsens (Vec): The vector in which the nodal sensitivity will be stored
+        """
+        self.ptr.evalEigenXptSens(index, xptsens.getBVecPtr())
+
+    def evalEigenSVSens(self, int index, Vec svsens):
+        """
+        The function computes the derivatives of the buckling eigenvalues.
+
+        Compute the derivative of the eigenvalues w.r.t. the design
+        variables. This function must be called after the solve function has
+        been called. The stiffness matrix and geometric stiffness matrix
+        cannot be modified from the previous call to solve.
+
+        The original eigenvalue problem is
+
+        K*u + lambda*G*u = 0
+
+        The derivative of the eigenvalue problem is given as follows:
+
+        d(lambda)/dx = -lambda*(u^{T}*dG/du*u)/(u^{T}*G*u)
+
+        Args:
+            index (int): The index of the desired eigenvalue
+            svsens (Vec): The vector in which the state variable sensitivity will be stored
+        """
+        self.ptr.evalEigenSVSens(index, svsens.getBVecPtr())
+
 # A generic abstract class for all integrators implemented in TACS
 cdef class Integrator:
     """
