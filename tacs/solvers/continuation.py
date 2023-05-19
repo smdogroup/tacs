@@ -366,6 +366,11 @@ class ContinuationSolver(BaseSolver):
             # --- Check convergence ---
             isLastIncrement = increment == MAX_INCREMENTS - 1
             if not success:
+                # If this increment failed then we should probably erase any saved states used for the predictor steps because they're clearly not working well
+                if USE_PREDICTOR:
+                    for ii in range(len(self.equilibriumPathLoadScales)):
+                        self.equilibriumPathLoadScales[ii] = None
+                        self.equilibriumPathStates[ii].zeroEntries()
                 # If this was the first increment restarting from a previous solution then we don't have a safe state to reset to, so we just have to do a full reset
                 if isRestartIncrement:
                     self.stateVec.zeroEntries()
