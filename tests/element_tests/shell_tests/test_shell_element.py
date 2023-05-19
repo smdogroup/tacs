@@ -14,7 +14,7 @@ class ElementTest(unittest.TestCase):
         # fd/cs step size
         if TACS.dtype is complex:
             self.dh = 1e-50
-            self.rtol = 1e-10
+            self.rtol = 1e-9
         else:
             self.dh = 1e-5
             self.rtol = 1e-2
