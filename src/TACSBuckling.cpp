@@ -450,7 +450,7 @@ void TACSLinearBuckling::evalEigenXptSens(int n, TACSBVec *dfdX) {
 
   // Evaluate the partial derivative for the stiffness matrix
   assembler->addMatXptSensInnerProduct(1.0, TACS_STIFFNESS_MATRIX, eigvec,
-                                      eigvec, dfdX);
+                                       eigvec, dfdX);
 
   // Evaluate the derivative of the geometric stiffness matrix
   assembler->addMatXptSensInnerProduct(
@@ -464,7 +464,8 @@ void TACSLinearBuckling::evalEigenXptSens(int n, TACSBVec *dfdX) {
   // Solve for the adjoint vector and evaluate the derivative of
   // the adjoint-residual inner product
   solver->solve(res, update);
-  assembler->addAdjointResXptSensProducts(-TacsRealPart(eig), 1, &update, &dfdX);
+  assembler->addAdjointResXptSensProducts(-TacsRealPart(eig), 1, &update,
+                                          &dfdX);
 
   // Now compute the inner product: u^{T}*G*u
   gmat->mult(eigvec, res);

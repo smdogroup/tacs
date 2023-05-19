@@ -9,9 +9,9 @@
 #include "TACSShellCentrifugalForce.h"
 #include "TACSShellConstitutive.h"
 #include "TACSShellElementModel.h"
-#include "TACSShellInplaneElementModel.h"
 #include "TACSShellElementTransform.h"
 #include "TACSShellInertialForce.h"
+#include "TACSShellInplaneElementModel.h"
 #include "TACSShellPressure.h"
 #include "TACSShellTraction.h"
 #include "TACSShellUtilities.h"
@@ -639,8 +639,8 @@ void TACSShellElement<quadrature, basis, director, model>::getMatType(
   memset(mat, 0,
          vars_per_node * num_nodes * vars_per_node * num_nodes *
              sizeof(TacsScalar));
-  TACSElement* nlElem;
-  TacsScalar* path;
+  TACSElement *nlElem;
+  TacsScalar *path;
   TacsScalar alpha, beta, gamma, dh, norm;
   alpha = beta = gamma = 0.0;
   // Create dummy residual vector
@@ -653,15 +653,18 @@ void TACSShellElement<quadrature, basis, director, model>::getMatType(
   } else if (matType == TACS_MASS_MATRIX) {
     gamma = 1.0;
   } else {  // TACS_GEOMETRIC_STIFFNESS_MATRIX
-    // Approximate geometric stiffness using directional derivative of tangential stiffness
-    // projected along path of current state vars
+    // Approximate geometric stiffness using directional derivative of
+    // tangential stiffness projected along path of current state vars
 
-    // For linear models, we'll need to switch to a nonlinear implementation to capture geometric effects
+    // For linear models, we'll need to switch to a nonlinear implementation to
+    // capture geometric effects
     if (typeid(model) == typeid(TACSShellLinearModel)) {
-      nlElem = new TACSShellElement<quadrature, basis, director, TACSShellNonlinearModel>(transform, con);
-    }
-    else if (typeid(model) == typeid(TACSShellInplaneLinearModel)) {
-      nlElem = new TACSShellElement<quadrature, basis, director, TACSShellInplaneNonlinearModel>(transform, con);
+      nlElem = new TACSShellElement<quadrature, basis, director,
+                                    TACSShellNonlinearModel>(transform, con);
+    } else if (typeid(model) == typeid(TACSShellInplaneLinearModel)) {
+      nlElem =
+          new TACSShellElement<quadrature, basis, director,
+                               TACSShellInplaneNonlinearModel>(transform, con);
     }
     // For nonlinear models we can use the current class instance
     else {
@@ -670,12 +673,12 @@ void TACSShellElement<quadrature, basis, director, model>::getMatType(
 
     // compute norm for normalizing path vec
     norm = 0.0;
-    for (int i = 0; i < vars_per_node * num_nodes; i++){
+    for (int i = 0; i < vars_per_node * num_nodes; i++) {
       norm += vars[i] * vars[i];
     }
     norm = sqrt(norm);
 
-    if (TacsRealPart(norm) == 0.0){
+    if (TacsRealPart(norm) == 0.0) {
       norm = 1.0;
     }
 
@@ -684,22 +687,22 @@ void TACSShellElement<quadrature, basis, director, model>::getMatType(
 
     // fwd step
     path = new TacsScalar[vars_per_node * num_nodes];
-    for (int i = 0; i < vars_per_node * num_nodes; i++){
+    for (int i = 0; i < vars_per_node * num_nodes; i++) {
       path[i] = dh * vars[i] / norm;
     }
 
-    nlElem->addJacobian(elemIndex, time, alpha, beta, gamma, Xpts, path, vars, vars, res,
-              mat);
+    nlElem->addJacobian(elemIndex, time, alpha, beta, gamma, Xpts, path, vars,
+                        vars, res, mat);
 
     // bwd step
-    for (int i = 0; i < vars_per_node * num_nodes; i++){
+    for (int i = 0; i < vars_per_node * num_nodes; i++) {
       path[i] = -dh * vars[i] / norm;
     }
 
-    nlElem->addJacobian(elemIndex, time, -alpha, beta, gamma, Xpts, path, vars, vars, res,
-              mat);
+    nlElem->addJacobian(elemIndex, time, -alpha, beta, gamma, Xpts, path, vars,
+                        vars, res, mat);
 
-    delete [] path;
+    delete[] path;
 
     if (nlElem != this) {
       delete nlElem;
