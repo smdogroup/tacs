@@ -1,9 +1,9 @@
 """
 The main purpose of this class is to represent all relevant
-information for a modal analysis.
+information for a linearized buckling analysis.
 
 .. note:: This class should be created using the
-    :meth:`pyTACS.createModalProblem <tacs.pytacs.pyTACS.createModalProblem>` method.
+    :meth:`pyTACS.createBucklingProblem <tacs.pytacs.pyTACS.createBucklingProblem>` method.
 """
 
 # =============================================================================
@@ -18,7 +18,7 @@ import tacs.TACS
 from .base import TACSProblem
 
 
-class ModalProblem(TACSProblem):
+class BucklingProblem(TACSProblem):
     # Default Option List
     defaultOptions = {
         "outputDir": [str, "./", "Output directory for F5 file writer."],
@@ -90,7 +90,7 @@ class ModalProblem(TACSProblem):
     ):
         """
         NOTE: This class should not be initialized directly by the user.
-        Use pyTACS.createModalProblem instead.
+        Use pyTACS.createBucklingProblem instead.
 
         Parameters
         ----------
@@ -98,7 +98,7 @@ class ModalProblem(TACSProblem):
             Name of this tacs problem
 
         sigma : float
-            Guess for the lowest eigenvalue. This corresponds to the lowest frequency squared. (rad^2/s^2)
+            Guess for the lowest eigenvalue. This corresponds to the lowest buckling load factor.
 
         numEigs : int
             Number of eigenvalues to solve for
@@ -130,7 +130,7 @@ class ModalProblem(TACSProblem):
         self.numEigs = numEigs
 
         # String name used in evalFunctions
-        self.valName = "eigsm"
+        self.valName = "eigsb"
         self._initializeFunctionList()
 
         # Create problem-specific variables
@@ -143,8 +143,18 @@ class ModalProblem(TACSProblem):
 
         self.callCounter = -1
 
-        # Solve the eigenvalue problem
-        self.M = self.assembler.createSchurMat()
+        # Buckling load state
+        self.u0 = self.assembler.createVec()
+        # Load vector
+        self.F = self.assembler.createVec()
+        self.F_array = self.F.getArray()
+        # RHS vector
+        self.rhs = self.assembler.createVec()
+        # Auxiliary element object for applying tractions/pressure
+        self.auxElems = tacs.TACS.AuxElements()
+
+        self.aux = self.assembler.createSchurMat()
+        self.G = self.assembler.createSchurMat()
         self.K = self.assembler.createSchurMat()
 
         self.pc = tacs.TACS.Pc(self.K)
@@ -158,23 +168,24 @@ class ModalProblem(TACSProblem):
         # Assemble and factor the stiffness/Jacobian matrix. Factor the
         # Jacobian and solve the linear system for the displacements
         self.assembler.assembleMatType(tacs.TACS.STIFFNESS_MATRIX, self.K)
-        self.assembler.assembleMatType(tacs.TACS.MASS_MATRIX, self.M)
+        self.assembler.assembleMatType(tacs.TACS.GEOMETRIC_STIFFNESS_MATRIX, self.G)
 
         subspace = self.getOption("subSpaceSize")
         restarts = self.getOption("nRestarts")
-        self.gmres = tacs.TACS.KSM(self.K, self.pc, subspace, restarts)
+        atol = self.getOption("L2Convergence")
+        rtol = self.getOption("L2ConvergenceRel")
+        self.gmres = tacs.TACS.KSM(self.aux, self.pc, subspace, restarts)
+        self.gmres.setTolerances(rtol, atol)
 
-        eigTol = self.getOption("L2Convergence")
-
-        # Create the frequency analysis object
-        self.freqSolver = tacs.TACS.FrequencyAnalysis(
+        # Create the buckling analysis object
+        self.buckleSolver = tacs.TACS.BucklingAnalysis(
             self.assembler,
             self.sigma,
-            self.M,
+            self.G,
             self.K,
             self.gmres,
             num_eigs=self.numEigs,
-            eig_tol=eigTol,
+            eig_tol=rtol,
         )
 
     def _initializeFunctionList(self):
@@ -263,10 +274,10 @@ class ModalProblem(TACSProblem):
         Examples
         --------
         >>> funcs = {}
-        >>> modalProblem.solve()
-        >>> modalProblem.evalFunctions(funcs, 'eigsm.0')
+        >>> bucklingProblem.solve()
+        >>> bucklingProblem.evalFunctions(funcs, 'eigsm.0')
         >>> funcs
-        >>> # Result will look like (if ModalProblem has name of 'c1'):
+        >>> # Result will look like (if bucklingProblem has name of 'c1'):
         >>> # {'c1_eigsm.0':12354.10}
         """
         # Make sure assembler variables are up to date
@@ -315,9 +326,9 @@ class ModalProblem(TACSProblem):
         Examples
         --------
         >>> funcsSens = {}
-        >>> modalProblem.evalFunctionsSens(funcsSens, 'eigsm.0')
+        >>> bucklingProblem.evalFunctionsSens(funcsSens, 'eigsm.0')
         >>> funcsSens
-        >>> # Result will look like (if ModalProblem has name of 'c1'):
+        >>> # Result will look like (if bucklingProblem has name of 'c1'):
         >>> # {'c1_eigsm.0':{'struct':[1.234, ..., 7.89], 'Xpts':[3.14, ..., 1.59]}}
         """
         # Make sure assembler variables are up to date
@@ -343,13 +354,288 @@ class ModalProblem(TACSProblem):
             key = f"{self.name}_{funcName}"
             funcsSens[key] = {}
             # Evaluate dv sens
-            self.freqSolver.evalEigenDVSens(mode_i, dvSens)
+            self.buckleSolver.evalEigenDVSens(mode_i, dvSens)
             funcsSens[key][self.varName] = dvSens.getArray().copy()
             # Evaluate nodal sens
-            self.freqSolver.evalEigenXptSens(mode_i, xptSens)
+            self.buckleSolver.evalEigenXptSens(mode_i, xptSens)
             funcsSens[key][self.coordName] = xptSens.getArray().copy()
 
-    ####### Modal solver methods ########
+    def addLoadToComponents(self, compIDs, F, averageLoad=False):
+        """
+        This method is used to add a *FIXED TOTAL LOAD* on one or more
+        components, defined by COMPIDs. The purpose of this routine is to add loads that
+        remain fixed throughout an optimization. An example would be an engine load.
+        This routine determines all the unique nodes in the FE model that are part of the
+        requested components, then takes the total 'force' by F and divides by the
+        number of nodes. This average load is then applied to the nodes.
+
+        Parameters
+        ----------
+
+        compIDs : list[int] or int
+            The components with added loads. Use pyTACS selectCompIDs method
+            to determine this.
+
+        F : numpy.ndarray 1d or 2d length (varsPerNodes) or (numCompIDs, varsPerNodes)
+            Vector(s) of 'force' to apply to each component.  If only one force vector is provided,
+            force will be copied uniformly across all components.
+
+        averageLoad : bool
+            Flag to determine whether load should be split evenly across all components (True)
+            or copied and applied individually to each component (False). Defaults to False.
+
+        Notes
+        -----
+
+        The units of the entries of the 'force' vector F are not
+        necessarily physical forces and their interpretation depends
+        on the physics problem being solved and the dofs included
+        in the model.
+
+        A couple of examples of force vector components for common problems are listed below:
+
+            In Heat Conduction with varsPerNode = 1
+                F = [Qdot] # heat rate
+            In Elasticity with varsPerNode = 3,
+                F = [fx, fy, fz] # forces
+            In Elasticity with varsPerNode = 6,
+                F = [fx, fy, fz, mx, my, mz] # forces + moments
+            In Thermoelasticity with varsPerNode = 4,
+                F = [fx, fy, fz, Qdot] # forces + heat rate
+            In Thermoelasticity with varsPerNode = 7,
+                F = [fx, fy, fz, mx, my, mz, Qdot] # forces + moments + heat rate
+        """
+        self._addLoadToComponents(self.F, compIDs, F, averageLoad)
+
+    def addLoadToNodes(self, nodeIDs, F, nastranOrdering=False):
+        """
+        This method is used to add a fixed point load of F to the
+        selected node IDs.
+
+        Parameters
+        ----------
+
+        nodeIDs : list[int]
+            The nodes IDs with added loads.
+
+        F : Numpy 1d or 2d array length (varsPerNodes) or (numNodeIDs, varsPerNodes)
+            Array of force vectors, one for each node. If only one force vector is provided,
+            force will be copied uniformly across all nodes.
+
+        nastranOrdering : bool
+            Flag signaling whether nodeIDs are in TACS (default)
+            or NASTRAN (grid IDs in bdf file) ordering
+
+        Notes
+        -----
+
+        The units of the entries of the 'force' vector F are not
+        necessarily physical forces and their interpretation depends
+        on the physics problem being solved and the dofs included
+        in the model.
+
+        A couple of examples of force vector components for common problems are listed below:
+
+            In Heat Conduction with varsPerNode = 1
+                F = [Qdot] # heat rate
+            In Elasticity with varsPerNode = 3,
+                F = [fx, fy, fz] # forces
+            In Elasticity with varsPerNode = 6,
+                F = [fx, fy, fz, mx, my, mz] # forces + moments
+            In Thermoelasticity with varsPerNode = 4,
+                F = [fx, fy, fz, Qdot] # forces + heat rate
+            In Thermoelasticity with varsPerNode = 7,
+                F = [fx, fy, fz, mx, my, mz, Qdot] # forces + moments + heat rate
+        """
+
+        self._addLoadToNodes(self.F, nodeIDs, F, nastranOrdering)
+
+    def addLoadToRHS(self, Fapplied):
+        """
+        This method is used to add a *FIXED TOTAL LOAD* directly to the
+        right hand side vector given the equation below:
+
+            K*u = f
+
+        Where:
+            - K : Stiffness matrix for problem
+            - u : State variables for problem
+            - f : Right-hand side vector to add loads to
+
+        Parameters
+        ----------
+
+        Fapplied : numpy.ndarray or tacs.TACS.Vec
+            Distributed array containing loads to applied to RHS of the problem.
+
+        """
+        self._addLoadToRHS(self.F, Fapplied)
+
+    def addTractionToComponents(self, compIDs, tractions, faceIndex=0):
+        """
+        This method is used to add a *FIXED TOTAL TRACTION* on one or more
+        components, defined by COMPIDs. The purpose of this routine is
+        to add loads that remain fixed throughout an optimization.
+
+        Parameters
+        ----------
+
+        compIDs : list[int] or int
+            The components with added loads. Use pyTACS selectCompIDs method
+            to determine this.
+
+        tractions : Numpy array length 1 or compIDs
+            Array of traction vectors for each component
+
+        faceIndex : int
+            Indicates which face (side) of element to apply traction to.
+            Note: not required for certain elements (i.e. shells)
+        """
+        self._addTractionToComponents(self.auxElems, compIDs, tractions, faceIndex)
+
+    def addTractionToElements(
+        self, elemIDs, tractions, faceIndex=0, nastranOrdering=False
+    ):
+        """
+        This method is used to add a fixed traction to the
+        selected element IDs. Tractions can be specified on an
+        element by element basis (if tractions is a 2d array) or
+        set to a uniform value (if tractions is a 1d array)
+
+        Parameters
+        ----------
+
+        elemIDs : list[int]
+            The global element ID numbers for which to apply the traction.
+
+        tractions : Numpy 1d or 2d array length varsPerNodes or (elemIDs, varsPerNodes)
+            Array of traction vectors for each element
+
+        faceIndex : int
+            Indicates which face (side) of element to apply traction to.
+            Note: not required for certain elements (i.e. shells)
+
+        nastranOrdering : bool
+            Flag signaling whether elemIDs are in TACS (default)
+            or NASTRAN ordering
+        """
+
+        self._addTractionToElements(
+            self.auxElems, elemIDs, tractions, faceIndex, nastranOrdering
+        )
+
+    def addPressureToComponents(self, compIDs, pressures, faceIndex=0):
+        """
+        This method is used to add a *FIXED TOTAL PRESSURE* on one or more
+        components, defined by COMPIds. The purpose of this routine is
+        to add loads that remain fixed throughout an optimization. An example
+        would be a fuel load.
+
+        Parameters
+        ----------
+
+        compIDs : list[int] or int
+            The components with added loads. Use pyTACS selectCompIDs method
+            to determine this.
+
+        pressures : Numpy array length 1 or compIDs
+            Array of pressure values for each component
+
+        faceIndex : int
+            Indicates which face (side) of element to apply pressure to.
+            Note: not required for certain elements (i.e. shells)
+        """
+        self._addPressureToComponents(self.auxElems, compIDs, pressures, faceIndex)
+
+    def addPressureToElements(
+        self, elemIDs, pressures, faceIndex=0, nastranOrdering=False
+    ):
+        """
+        This method is used to add a fixed presure to the
+        selected element IDs. Pressures can be specified on an
+        element by element basis (if pressures is an array) or
+        set to a uniform value (if pressures is a scalar)
+
+        Parameters
+        ----------
+
+        elemIDs : list[int]
+            The global element ID numbers for which to apply the pressure.
+
+        pressures : Numpy array length 1 or elemIDs
+            Array of pressure values for each element
+
+        faceIndex : int
+            Indicates which face (side) of element to apply pressure to.
+            Note: not required for certain elements (i.e. shells)
+
+        nastranOrdering : bool
+            Flag signaling whether elemIDs are in TACS (default)
+            or NASTRAN ordering
+        """
+
+        self._addPressureToElements(
+            self.auxElems, elemIDs, pressures, faceIndex, nastranOrdering
+        )
+
+    def addInertialLoad(self, inertiaVector):
+        """
+        This method is used to add a fixed inertial load due to
+        a uniform acceleration over the entire model.
+        This is most commonly used to model gravity loads on a model.
+
+        Parameters
+        ----------
+        inertiaVector : numpy.ndarray
+            Acceleration vector used to define inertial load.
+        """
+        self._addInertialLoad(self.auxElems, inertiaVector)
+
+    def addCentrifugalLoad(self, omegaVector, rotCenter, firstOrder=False):
+        """
+        This method is used to add a fixed centrifugal load due to a
+        uniform rotational velocity over the entire model.
+        This is most commonly used to model rotors, rolling aircraft, etc.
+
+        Parameters
+        ----------
+
+        omegaVector : numpy.ndarray
+            Rotational velocity vector (rad/s) used to define centrifugal load.
+
+        rotCenter : numpy.ndarray
+            Location of center of rotation used to define centrifugal load.
+
+        firstOrder : bool, optional
+            Whether to use first order approximation for centrifugal load,
+            which computes the force in the displaced position. By default False
+        """
+        self._addCentrifugalLoad(self.auxElems, omegaVector, rotCenter, firstOrder)
+
+    def addLoadFromBDF(self, loadID, scale=1.0):
+        """
+        This method is used to add a fixed load set defined in the BDF file to the problem.
+        Currently, only supports LOAD, FORCE, MOMENT, GRAV, RFORCE, PLOAD2, and PLOAD4.
+
+        Parameters
+        ----------
+
+        loadID : int
+            Load identification number of load set in BDF file user wishes to add to problem.
+
+        scale : float
+            Factor to scale the BDF loads by before adding to problem.
+        """
+        self._addLoadFromBDF(self.F, self.auxElems, loadID, scale)
+
+    def zeroLoads(self):
+        """
+        Zero all applied loads
+        """
+        self.F.zeroEntries()
+        self.auxElems = tacs.TACS.AuxElements()
+
+    ####### Buckling solver methods ########
 
     def _updateAssemblerVars(self):
         """
@@ -359,17 +645,23 @@ class ModalProblem(TACSProblem):
 
         self.assembler.setDesignVars(self.x)
         self.assembler.setNodes(self.Xpts)
+        # Set state variables
+        self.assembler.setVariables(self.u0)
+        # Zero any time derivative terms
+        self.assembler.zeroDotVariables()
+        self.assembler.zeroDDotVariables()
         # Make sure previous auxiliary loads are removed
-        self.assembler.setAuxElements(None)
+        self.assembler.setAuxElements(self.auxElems)
         # Set artificial stiffness factors in rbe class
         c1 = self.getOption("RBEStiffnessScaleFactor")
         c2 = self.getOption("RBEArtificialStiffness")
         tacs.elements.RBE2.setScalingParameters(c1, c2)
         tacs.elements.RBE3.setScalingParameters(c1, c2)
 
-    def solve(self):
+    def solve(self, Fext=None):
         """
-        Solve the eigenvalue problem.
+        Solve the eigenvalue problem. The
+        forces must already be set.
         """
         startTime = time.time()
 
@@ -380,13 +672,24 @@ class ModalProblem(TACSProblem):
         # Set problem vars to assembler
         self._updateAssemblerVars()
 
+        # Sum the forces from the loads not handled by TACS
+        self.rhs.copyValues(self.F)  # Fixed loads
+
+        # Add external loads, if specified
+        if Fext is not None:
+            if isinstance(Fext, tacs.TACS.Vec):
+                self.rhs.axpy(1.0, Fext)
+            elif isinstance(Fext, np.ndarray):
+                rhsArray = self.rhs.getArray()
+                rhsArray[:] = rhsArray[:] + Fext[:]
+
         initSolveTime = time.time()
 
-        # Solve the frequency analysis problem
-        self.freqSolver.solve(
-            print_flag=self.getOption("printLevel"),
-            print_level=self.getOption("printLevel"),
-        )
+        # Solve the buckling analysis problem
+        self.buckleSolver.solve(force=self.rhs, print_flag=self.getOption("printLevel"))
+
+        # Save state vars
+        self.assembler.getVariables(self.u0)
 
         solveTime = time.time()
 
@@ -432,14 +735,14 @@ class ModalProblem(TACSProblem):
         Returns
         --------
         eigVal: float
-            Eigenvalue for mode corresponds to square of eigenfrequency (rad^2/s^2)
+            Eigenvalue for mode corresponds to buckling load factor
 
         states : numpy.ndarray
             Eigenvector for mode
         """
-        eigVal, err = self.freqSolver.extractEigenvalue(index)
+        eigVal, err = self.buckleSolver.extractEigenvalue(index)
         eigVector = self.assembler.createVec()
-        self.freqSolver.extractEigenvector(index, eigVector)
+        self.buckleSolver.extractEigenvector(index, eigVector)
         # Inplace assignment if vectors were provided
         if isinstance(states, tacs.TACS.Vec):
             states.copyValues(eigVector)
