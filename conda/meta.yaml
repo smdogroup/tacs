@@ -78,6 +78,7 @@ requirements:
     - metis >=5.1
     - mpi4py
     - pynastran
+    - numba
 
 test:
   requires:
