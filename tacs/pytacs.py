@@ -1962,8 +1962,8 @@ class pyTACS(BaseUI):
 
         Returns
         ----------
-        constraint : DVConstraint
-            DVConstraint object used for calculating constraints.
+        constraint : PanelLengthConstraint
+            PanelLengthConstraint object used for calculating constraints.
         """
         constr = tacs.constraints.PanelLengthConstraint(
             name,
