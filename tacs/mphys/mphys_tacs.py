@@ -1098,12 +1098,11 @@ class TacsBuckling(om.ExplicitComponent):
         # Evaluate functions
         funcs = {}
         self.bp.evalFunctions(funcs, evalFuncs=outputs.keys())
-        for eig_name in self.bp.functionList:
-            mode_i = eig_name.split(".")[-1]
-            mode_i = int(mode_i)
-            out_name = eig_name.replace(".", "_")
-            if out_name in outputs:
-                outputs[out_name], _ = self.bp.getVariables(mode_i)
+        for out_name in outputs:
+            eig_name = out_name.replace("_", ".")
+            func_key = f"{self.bp.name}_{eig_name}"
+            self.bp.evalFunctions(funcs, evalFuncs=[eig_name])
+            outputs[out_name] = funcs[func_key]
 
         if self.write_solution:
             # write the solution files.
