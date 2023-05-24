@@ -492,8 +492,8 @@ void TACSLinearBuckling::evalEigenXptSens(int n, TACSBVec *dfdX) {
 /*
   The function computes the partial derivatives of the buckling eigenvalues.
 
-  Add the contribution from the partial derivative of the eigenvalues w.r.t. the design
-  variables. This function must be called after the solve function has
+  Add the contribution from the partial derivative of the eigenvalues w.r.t. the
+  design variables. This function must be called after the solve function has
   been called. The stiffness matrix and geometric stiffness matrix
   cannot be modified from the previous call to solve.
 */
@@ -520,8 +520,8 @@ void TACSLinearBuckling::addEigenDVSens(TacsScalar coef, int n,
 /*
   The function computes the partial derivatives of the buckling eigenvalues.
 
-  Add the contribution from the partial derivative of the eigenvalues w.r.t. the nodal
-  coordinates. This function must be called after the solve function has
+  Add the contribution from the partial derivative of the eigenvalues w.r.t. the
+  nodal coordinates. This function must be called after the solve function has
   been called. The stiffness matrix and geometric stiffness matrix
   cannot be modified from the previous call to solve.
 */
