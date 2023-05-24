@@ -3284,8 +3284,9 @@ cdef class BucklingAnalysis:
     def setSigma(self, TacsScalar sigma):
         self.ptr.setSigma(sigma)
 
-    def solve(self, Vec force=None, print_flag=True, int freq=10):
+    def solve(self, Vec force=None, Vec path=None, print_flag=True, int freq=10):
         cdef TACSBVec *f = NULL
+        cdef TACSBVec *u0 = NULL
         cdef MPI_Comm comm
         cdef int rank
         cdef TACSAssembler *assembler = NULL
@@ -3294,13 +3295,16 @@ cdef class BucklingAnalysis:
         if force is not None:
             f = force.getBVecPtr()
 
+        if path is not None:
+            u0 = path.getBVecPtr()
+
         if print_flag:
             assembler = self.ptr.getAssembler()
             comm = assembler.getMPIComm()
             MPI_Comm_rank(comm, &rank)
             ksm_print = new KSMPrintStdout("BucklingAnalysis", rank, freq)
 
-        self.ptr.solve(f, ksm_print)
+        self.ptr.solve(f, u0, ksm_print)
         return
 
     def extractEigenvalue(self, int eig):
@@ -3381,6 +3385,36 @@ cdef class BucklingAnalysis:
         """
         self.ptr.evalEigenXptSens(index, xptsens.getBVecPtr())
 
+    def addEigenDVSens(self, TacsScalar scale, int index, Vec dvsens):
+        """
+        The function computes the partial derivatives of the buckling eigenvalues.
+
+        Add the contribution from the partial derivative of the eigenvalues w.r.t. the design
+        variables. This function must be called after the solve function has
+        been called. The stiffness matrix and geometric stiffness matrix
+        cannot be modified from the previous call to solve.
+
+        Args:
+            index (int): The index of the desired eigenvalue
+            dvsens (Vec): The vector in which the state variable sensitivity will be stored
+        """
+        self.ptr.addEigenDVSens(scale, index, dvsens.getBVecPtr())
+
+    def addEigenXptSens(self, TacsScalar scale, int index, Vec xptsens):
+        """
+        The function computes the partial derivatives of the buckling eigenvalues.
+
+        Add the contribution from the partial derivative of the eigenvalues w.r.t. the nodal
+        coordinates. This function must be called after the solve function has
+        been called. The stiffness matrix and geometric stiffness matrix
+        cannot be modified from the previous call to solve.
+
+        Args:
+            index (int): The index of the desired eigenvalue
+            xptsens (Vec): The vector in which the state variable sensitivity will be stored
+        """
+        self.ptr.addEigenXptSens(scale, index, xptsens.getBVecPtr())
+
     def evalEigenSVSens(self, int index, Vec svsens):
         """
         The function computes the derivatives of the buckling eigenvalues.
@@ -3396,7 +3430,7 @@ cdef class BucklingAnalysis:
 
         The derivative of the eigenvalue problem is given as follows:
 
-        d(lambda)/dx = -lambda*(u^{T}*dG/du*u)/(u^{T}*G*u)
+        d(lambda)/du = -lambda*(u^{T}*dG/du*u)/(u^{T}*G*u)
 
         Args:
             index (int): The index of the desired eigenvalue

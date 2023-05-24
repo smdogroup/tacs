@@ -43,6 +43,21 @@ class TACSShellElement : public TACSElement {
 
     con = _con;
     con->incref();
+
+    // For linear models, we'll need to switch to a nonlinear implementation to
+    // capture geometric effects
+    if (typeid(model) == typeid(TACSShellLinearModel)) {
+      nlElem = new TACSShellElement<quadrature, basis, director,
+                                    TACSShellNonlinearModel>(transform, con);
+    } else if (typeid(model) == typeid(TACSShellInplaneLinearModel)) {
+      nlElem =
+          new TACSShellElement<quadrature, basis, director,
+                               TACSShellInplaneNonlinearModel>(transform, con);
+    }
+    // For nonlinear models we can use the current class instance
+    else {
+      nlElem = this;
+    }
   }
 
   ~TACSShellElement() {
@@ -52,6 +67,11 @@ class TACSShellElement : public TACSElement {
 
     if (con) {
       con->decref();
+    }
+
+    // free nonlinear element pointer
+    if (nlElem != this) {
+      delete nlElem;
     }
   }
 
@@ -181,6 +201,7 @@ class TACSShellElement : public TACSElement {
 
   TACSShellTransform *transform;
   TACSShellConstitutive *con;
+  TACSElement *nlElem;
 };
 
 /*
@@ -639,7 +660,6 @@ void TACSShellElement<quadrature, basis, director, model>::getMatType(
   memset(mat, 0,
          vars_per_node * num_nodes * vars_per_node * num_nodes *
              sizeof(TacsScalar));
-  TACSElement *nlElem;
   TacsScalar *path;
   TacsScalar alpha, beta, gamma, dh, norm;
   alpha = beta = gamma = 0.0;
@@ -655,21 +675,6 @@ void TACSShellElement<quadrature, basis, director, model>::getMatType(
   } else {  // TACS_GEOMETRIC_STIFFNESS_MATRIX
     // Approximate geometric stiffness using directional derivative of
     // tangential stiffness projected along path of current state vars
-
-    // For linear models, we'll need to switch to a nonlinear implementation to
-    // capture geometric effects
-    if (typeid(model) == typeid(TACSShellLinearModel)) {
-      nlElem = new TACSShellElement<quadrature, basis, director,
-                                    TACSShellNonlinearModel>(transform, con);
-    } else if (typeid(model) == typeid(TACSShellInplaneLinearModel)) {
-      nlElem =
-          new TACSShellElement<quadrature, basis, director,
-                               TACSShellInplaneNonlinearModel>(transform, con);
-    }
-    // For nonlinear models we can use the current class instance
-    else {
-      nlElem = this;
-    }
 
     // compute norm for normalizing path vec
     norm = 0.0;
@@ -703,10 +708,6 @@ void TACSShellElement<quadrature, basis, director, model>::getMatType(
                         vars, res, mat);
 
     delete[] path;
-
-    if (nlElem != this) {
-      delete nlElem;
-    }
 
     return;
   }

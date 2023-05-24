@@ -348,16 +348,39 @@ class BucklingProblem(TACSProblem):
         dvSens = self.assembler.createDesignVec()
         xptSens = self.assembler.createNodeVec()
 
+        indices = [evalFuncs[funcName] for funcName in evalFuncs]
+        dvSensList = [self.assembler.createDesignVec() for funcName in evalFuncs]
+        xptSensList = [self.assembler.createNodeVec() for funcName in evalFuncs]
+        svSensList = [self.assembler.createVec() for funcName in evalFuncs]
+        adjointList = [self.assembler.createVec() for funcName in evalFuncs]
+
+        self.addDVSens(indices, dvSensList, scale=1.0)
+        self.addXptSens(indices, xptSensList, scale=1.0)
+        self.evalSVSens(indices, svSensList)
+
+        self.aux.copyValues(self.K)
+        self.pc.factor()
+
         # Loop through each requested eigenvalue
-        for funcName in evalFuncs:
-            mode_i = evalFuncs[funcName]
+        for i, funcName in enumerate(evalFuncs):
+            rhs = svSensList[i]
+            adjoint = adjointList[i]
+            self.gmres.solve(rhs, adjoint)
+
+            # Evaluate adjoint contribution to nodal sens
+            xptSens = xptSensList[i]
+            self.assembler.addAdjointResXptSensProducts([adjoint], [xptSens], -1.0)
+            xptSens.beginSetValues()
+            xptSens.endSetValues()
+            # Evaluate adjoint contribution to dv sens
+            dvSens = dvSensList[i]
+            self.assembler.addAdjointResProducts([adjoint], [dvSens], -1.0)
+            dvSens.beginSetValues()
+            dvSens.endSetValues()
+
             key = f"{self.name}_{funcName}"
             funcsSens[key] = {}
-            # Evaluate dv sens
-            self.buckleSolver.evalEigenDVSens(mode_i, dvSens)
             funcsSens[key][self.varName] = dvSens.getArray().copy()
-            # Evaluate nodal sens
-            self.buckleSolver.evalEigenXptSens(mode_i, xptSens)
             funcsSens[key][self.coordName] = xptSens.getArray().copy()
 
     def addLoadToComponents(self, compIDs, F, averageLoad=False):
@@ -658,10 +681,20 @@ class BucklingProblem(TACSProblem):
         tacs.elements.RBE2.setScalingParameters(c1, c2)
         tacs.elements.RBE3.setScalingParameters(c1, c2)
 
-    def solve(self, Fext=None):
+    def solve(self, Fext=None, u0=None):
         """
         Solve the eigenvalue problem. The
         forces must already be set.
+
+        Parameters
+        ----------
+        Fext : tacs.TACS.Vec or numpy.ndarray, optional
+            Distributed array containing additional loads (ex. aerodynamic forces for aerostructural coupling)
+            to applied to RHS of the static problem.
+
+        u0 : tacs.TACS.Vec or numpy.ndarray, optional
+            Distributed array containing additional loads (ex. aerodynamic forces for aerostructural coupling)
+            to applied to RHS of the static problem. Alternate to Fext.
         """
         startTime = time.time()
 
@@ -672,21 +705,37 @@ class BucklingProblem(TACSProblem):
         # Set problem vars to assembler
         self._updateAssemblerVars()
 
-        # Sum the forces from the loads not handled by TACS
-        self.rhs.copyValues(self.F)  # Fixed loads
+        # states were not prescribed, pass in forces
+        if u0 is None:
+            # Sum the forces from the loads not handled by TACS
+            self.rhs.copyValues(self.F)  # Fixed loads
 
-        # Add external loads, if specified
-        if Fext is not None:
-            if isinstance(Fext, tacs.TACS.Vec):
-                self.rhs.axpy(1.0, Fext)
-            elif isinstance(Fext, np.ndarray):
-                rhsArray = self.rhs.getArray()
-                rhsArray[:] = rhsArray[:] + Fext[:]
+            # Add external loads, if specified
+            if Fext is not None:
+                if isinstance(Fext, tacs.TACS.Vec):
+                    self.rhs.axpy(1.0, Fext)
+                elif isinstance(Fext, np.ndarray):
+                    rhsArray = self.rhs.getArray()
+                    rhsArray[:] = rhsArray[:] + Fext[:]
+
+            force = self.rhs
+            path = None
+
+        # states already prescribed, we don't need forces
+        else:
+            # Convert to bvec
+            if isinstance(u0, np.ndarray):
+                path = self._arrayToVec(u0)
+            else:
+                path = u0
+            force = None
 
         initSolveTime = time.time()
 
         # Solve the buckling analysis problem
-        self.buckleSolver.solve(force=self.rhs, print_flag=self.getOption("printLevel"))
+        self.buckleSolver.solve(
+            force=force, path=path, print_flag=self.getOption("printLevel")
+        )
 
         # Save state vars
         self.assembler.getVariables(self.u0)
@@ -749,6 +798,114 @@ class BucklingProblem(TACSProblem):
         elif isinstance(states, np.ndarray):
             states[:] = eigVector.getArray()
         return eigVal, eigVector.getArray()
+
+    def addXptSens(self, indices, xptSensList, scale=1.0):
+        """
+        Add partial sensitivity contribution due to nodal coordinates for eigenvalue
+
+        Parameters
+        ----------
+        indices : list[int]
+            Mode indices to return sensitivity for.
+
+        xptSensList : list[tacs.TACS.Vec] or list[numpy.ndarray]
+            List of sensitivity vectors to add partial sensitivity to
+
+        scale : float
+            Scalar to multiply partial sensitivity by. Defaults to 1.0
+        """
+        # Set problem vars to assembler
+        self._updateAssemblerVars()
+
+        for index, xptSens in zip(indices, xptSensList):
+            # Create a tacs BVec copy for the operation if the output is a numpy array
+            if isinstance(xptSens, np.ndarray):
+                xptSensBVec = self._arrayToNodeVec(xptSens)
+            # Otherwise the input is already a BVec and we can do the operation in place
+            else:
+                xptSensBVec = xptSens
+
+            self.buckleSolver.addEigenXptSens(scale, index, xptSensBVec)
+
+            # Finalize sensitivity arrays across all procs
+            xptSensBVec.beginSetValues()
+            xptSensBVec.endSetValues()
+
+            # Update from the BVec values, if the input was a numpy array
+            if isinstance(xptSens, np.ndarray):
+                # Copy values to numpy array
+                xptSens[:] = xptSensBVec.getArray()
+
+    def addDVSens(self, indices, dvSensList, scale=1.0):
+        """
+        Add partial sensitivity contribution due to design variables for eigenvalue
+
+        Parameters
+        ----------
+        indices : list[int]
+            Mode indices to return sensitivity for.
+
+        dvSensList : list[tacs.TACS.Vec] or list[numpy.ndarray]
+            List of sensitivity vectors to add partial sensitivity to
+
+        scale : float
+            Scalar to multiply partial sensitivity by. Defaults to 1.0
+        """
+        # Set problem vars to assembler
+        self._updateAssemblerVars()
+
+        for index, dvSens in zip(indices, dvSensList):
+            # Create a tacs BVec copy for the operation if the output is a numpy array
+            if isinstance(dvSens, np.ndarray):
+                dvSensBVec = self._arrayToDesignVec(dvSens)
+            # Otherwise the input is already a BVec and we can do the operation in place
+            else:
+                dvSensBVec = dvSens
+
+            self.buckleSolver.addEigenDVSens(scale, index, dvSensBVec)
+
+            # Finalize sensitivity arrays across all procs
+            dvSensBVec.beginSetValues()
+            dvSensBVec.endSetValues()
+
+            # Update from the BVec values, if the input was a numpy array
+            if isinstance(dvSens, np.ndarray):
+                # Copy values to numpy array
+                dvSens[:] = dvSensBVec.getArray()
+
+    def evalSVSens(self, indices, svSensList):
+        """
+        Add partial sensitivity contribution due to state variables for eigenvalue
+
+        Parameters
+        ----------
+        indices : list[int]
+            Mode indices to return sensitivity for.
+
+        svSensList : list[tacs.TACS.Vec] or list[numpy.ndarray]
+            List of sensitivity vectors to add partial sensitivity to
+        """
+        # Set problem vars to assembler
+        self._updateAssemblerVars()
+
+        for index, svSens in zip(indices, svSensList):
+            # Create a tacs BVec copy for the operation if the output is a numpy array
+            if isinstance(svSens, np.ndarray):
+                svSensBVec = self._arrayToVec(svSens)
+            # Otherwise the input is already a BVec and we can do the operation in place
+            else:
+                svSensBVec = svSens
+
+            self.buckleSolver.evalEigenSVSens(index, svSensBVec)
+
+            # Finalize sensitivity arrays across all procs
+            svSensBVec.beginSetValues()
+            svSensBVec.endSetValues()
+
+            # Update from the BVec values, if the input was a numpy array
+            if isinstance(svSens, np.ndarray):
+                # Copy values to numpy array
+                svSens[:] = svSensBVec.getArray()
 
     def writeSolution(self, outputDir=None, baseName=None, number=None, indices=None):
         """
