@@ -12,18 +12,18 @@ from tacs import elements, constitutive, TACS
 
 """
 This is a simple 1m by 2m plate made up of four quad shell elements.
-The plate is structurally loaded under a 100G gravity load and a unit force, 
+The plate is structurally loaded under a compression load and a unit force, 
 "f_struct", is applied on on every node. The mass and KSFailure of the plate 
 are evaluated as outputs and have their partial and total sensitivities checked.
 """
 
 base_dir = os.path.dirname(os.path.abspath(__file__))
-bdf_file = os.path.join(base_dir, "./input_files/cantilevered_strip.bdf")
+bdf_file = os.path.join(base_dir, "./input_files/debug_plate.bdf")
 
 # Historical reference values for function outputs
 FUNC_REFS = {
-    "analysis.eigsb_0": -2.4044737098,
-    "analysis.eigsb_1": 2.4069388883,
+    "analysis.eigsb_0": -1.08864541,
+    "analysis.eigsb_1": 1.08938765,
 }
 
 # Inputs to check total sensitivities wrt
@@ -44,7 +44,7 @@ class ProblemTest(OpenMDAOTestCase.OpenMDAOTest):
             self.dh = 1e-50
         else:
             self.rtol = 1e-1
-            self.dh = 1e-6
+            self.dh = 1e-7
 
         # Callback function used to setup TACS element objects and DVs
         def element_callback(
@@ -117,7 +117,7 @@ class ProblemTest(OpenMDAOTestCase.OpenMDAOTest):
                 f_size = tacs_builder.get_ndof() * tacs_builder.get_number_of_nodes()
                 forces = self.add_subsystem("forces", om.IndepVarComp(), promotes=["*"])
                 f = np.zeros(f_size)
-                f[::3] = -1e0
+                f[1::3] = -1e0
                 forces.add_output("f_struct", val=np.ones(f_size), distributed=True)
 
                 self.add_subsystem("mesh", tacs_builder.get_mesh_coordinate_subsystem())
