@@ -14,7 +14,7 @@ class ConstitutiveTest(unittest.TestCase):
             self.dh = 1e-200
             self.rtol = 1e-9
         else:
-            self.dh = 1e-6
+            self.dh = 1e-8
             self.rtol = 1e-1
         self.dtype = TACS.dtype
 
