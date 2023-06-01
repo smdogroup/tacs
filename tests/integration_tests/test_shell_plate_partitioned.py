@@ -6,7 +6,7 @@ from pytacs_analysis_base_test import PyTACSTestCase
 from tacs import pytacs, elements, constitutive, functions
 
 """"
-The nominal case is a 0.5m x 0.5m flat plate under three load cases: 
+The nominal case is a 0.5m x 0.5m flat plate under three load cases:
 a 1 MN point distributed force, a 10MPa pressure, and a 1 MPa traction. The
 perimeter of the plate is fixed in all 6 degrees of freedom. The plate comprises
 100 CQUAD4 elements and test KSFailure, KSDisplacement, StructuralMass, and Compliance functions and sensitivities.
@@ -55,6 +55,7 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
         "traction_ks_vmfailure": 0.7396840173568021,
         "traction_mass": 0.78125,
         "adjacency_con_ALL": [0.0, 0.0, 0.0, 0.0],
+        "panel_length_con_ALL": [0.2795084971874737 - 0.005]*4,
     }
 
     def setup_tacs_problems(self, comm):
@@ -93,7 +94,7 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
             prop = constitutive.MaterialProperties(rho=rho, E=E, nu=nu, ys=ys)
             # Set up constitutive model
             con = constitutive.IsoShellConstitutive(prop, t=tplate, tNum=dv_num)
-            transform = None
+            transform = elements.ShellRefAxisTransform(np.array([1.0, 0.5, 0.5]))
             # Set up element
             elem = elements.Quad4Shell(transform, con)
             scale = [100.0]
@@ -157,6 +158,10 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
         # Create an adjacency constraint
         constraint = fea_assembler.createAdjacencyConstraint("adjacency_con")
         allCompIDs = fea_assembler.selectCompIDs()
+        constraint.addConstraint("ALL", compIDs=allCompIDs)
+        tacs_probs.append(constraint)
+
+        constraint = fea_assembler.createPanelLengthConstraint("panel_length_con")
         constraint.addConstraint("ALL", compIDs=allCompIDs)
         tacs_probs.append(constraint)
 
