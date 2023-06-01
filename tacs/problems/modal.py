@@ -247,7 +247,7 @@ class ModalProblem(TACSProblem):
     def evalFunctions(self, funcs, evalFuncs=None, ignoreMissing=False):
         """
         Evaluate eigenvalues for problem. The functions corresponding to
-        the integers in EVAL_FUNCS are evaluated and updated into
+        the integers in evalFuncs are evaluated and updated into
         the provided dictionary.
 
         Parameters
@@ -301,7 +301,7 @@ class ModalProblem(TACSProblem):
         """
         This is the main routine for returning useful (sensitivity)
         information from problem. The derivatives of the functions
-        corresponding to the strings in EVAL_FUNCS are evaluated and
+        corresponding to the strings in evalFuncs are evaluated and
         updated into the provided dictionary. The derivitives with
         respect to all design variables and node locations are computed.
 
@@ -427,7 +427,7 @@ class ModalProblem(TACSProblem):
         index : int
             Mode index to return solution for.
 
-        states : TACS.Vec or numpy.ndarray or None
+        states : tacs.TACS.Vec or numpy.ndarray or None
             Place eigenvector for mode into this array (optional).
 
         Returns

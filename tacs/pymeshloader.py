@@ -74,11 +74,14 @@ class pyMeshLoader(BaseUI):
                     )
 
         # We have to remove any empty property groups that may have been read in from the BDF
-        pIDToeIDMap = self.bdfInfo.get_property_id_to_element_ids_map()
-        for pid in pIDToeIDMap:
+        self.propertyIDToElementIDDict = (
+            self.bdfInfo.get_property_id_to_element_ids_map()
+        )
+        for pid in self.propertyIDToElementIDDict:
             # If there are no elements referencing this property card, remove it
-            if len(pIDToeIDMap[pid]) == 0:
+            if len(self.propertyIDToElementIDDict[pid]) == 0:
                 self.bdfInfo.properties.pop(pid)
+                self.propertyIDToElementIDDict.pop(pid)
 
         # Create dictionaries for mapping between tacs and nastran id numbering
         self._updateNastranToTACSDicts()
@@ -249,36 +252,66 @@ class pyMeshLoader(BaseUI):
     def getBDFInfo(self):
         """
         Return pynastran bdf object.
+
+        Returns
+        -------
+        bdfInfo : pyNastran.bdf.bdf.BDF
+            pyNastran bdf object.
         """
         return self.bdfInfo
 
     def getNumComponents(self):
         """
         Return number of components (properties) found in bdf.
+
+        Returns
+        -------
+        nComps : int
+            Number of components (properties) found in bdf file.
         """
         return self.bdfInfo.nproperties
 
     def getNumBDFNodes(self):
         """
         Return number of nodes found in bdf.
+
+        Returns
+        -------
+        nNodes : int
+            Number of nodes found in bdf file.
         """
         return self.bdfInfo.nnodes
 
     def getNumOwnedNodes(self):
         """
         Return number of nodes owned by this processor.
+
+        Returns
+        -------
+        nNodes : int
+            Number of nodes owned by this proc.
         """
         return self.assembler.getNumOwnedNodes()
 
     def getNumBDFElements(self):
         """
         Return number of elements found in bdf.
+
+        Returns
+        -------
+        nElems : int
+            Number of elements found in bdf file.
         """
         return self.bdfInfo.nelements
 
     def getBDFNodes(self, nodeIDs, nastranOrdering=False):
         """
         Return x,y,z location of specified node in bdf file.
+
+        Returns
+        -------
+        xyz : numpy.ndarray
+            Coordinates of specified nodes.
         """
         # Convert to tacs numbering, if necessary
         if nastranOrdering:
@@ -286,15 +319,40 @@ class pyMeshLoader(BaseUI):
         return self.bdfXpts[nodeIDs]
 
     def getElementComponents(self):
+        """
+        Get a list specifying the component ID of each element.
+
+        Returns
+        -------
+        compIDList : list[int]
+            List containing componentID of each element found in the bdf file.
+        """
         elements = self.bdfInfo.elements
         propertyIDList = [elements[eID].pid for eID in self.bdfInfo.element_ids]
         compIDList = self.idMap(propertyIDList, self.nastranToTACSCompIDDict)
         return compIDList
 
     def getConnectivityForComp(self, componentID, nastranOrdering=False):
+        """
+        Get a nodal connectivities of each element belonging to the specified component.
+
+        Parameters
+        ----------
+        componentID : int
+            Component ID number.
+
+        nastranOrdering : bool
+            Flag signaling whether nodeIDs should be returned in TACS (default) or NASTRAN (grid IDs in bdf file) ordering
+            Defaults to False.
+
+        Returns
+        -------
+        elemConns : list[list[int]]
+            List of nodal connectivities of each element belonging to this component.
+        """
         # Find all of the element IDs belonging to this property group
         propertyID = list(self.bdfInfo.property_ids)[componentID]
-        elementIDs = self.bdfInfo.get_property_id_to_element_ids_map()[propertyID]
+        elementIDs = self.propertyIDToElementIDDict[propertyID]
         compConn = []
         for elementID in elementIDs:
             # We've now got the connectivity for this element, but it is in nastrans node numbering
@@ -312,6 +370,16 @@ class pyMeshLoader(BaseUI):
         """
         Return tacs element object number for each element type
         belonging to this component.
+
+        Parameters
+        ----------
+        componentID : int
+            Component ID number.
+
+        Returns
+        -------
+        objNums : list[int]
+            List holding element object nums for the specifed component.
         """
         return self.elemObjectNumByComp[componentID][:]
 
@@ -319,21 +387,46 @@ class pyMeshLoader(BaseUI):
         """
         Get nested list containing all element types owned by each component group
         example: [['CQUAD4', 'CTRIA3], ['CQUAD4'], ['CQUAD4', CQUAD9']]
+
+        Returns
+        -------
+        elemDescripts : list[list[str]]
+            Nested list holding all element types owned by each component group.
         """
         return self.elemDescripts
 
     def getComponentDescripts(self):
         """
         Get user-defined labels for each component read in from the BDF.
+
+        Returns
+        -------
+        compDescripts : list[str]
+            List holding description strings for each component.
         """
         return self.compDescripts
 
     def getLocalNodeIDsFromGlobal(self, globalIDs, nastranOrdering=False):
         """
-        given a list of node IDs in global (non-partitioned) ordering
+        Given a list of node IDs in global (non-partitioned) ordering
         returns the local (partitioned) node IDs on each processor.
         If a requested node is not included on this processor,
         an entry of -1 will be returned.
+
+        Parameters
+        ----------
+        globalIDs : int or list[int]
+            List of global node IDs.
+
+        nastranOrdering : bool
+            Flag signaling whether globalIDs is in TACS (default) or NASTRAN (grid IDs in bdf file) ordering
+            Defaults to False.
+
+        Returns
+        -------
+        localIDs : list[int]
+            List of local node IDs for each entry in globalIDs.
+            If the node is not owned by this processor, its index is filled with a value of -1.
         """
         # Convert to tacs node numbering, if necessary
         if nastranOrdering:
@@ -363,10 +456,25 @@ class pyMeshLoader(BaseUI):
 
     def getLocalElementIDsFromGlobal(self, globalIDs, nastranOrdering=False):
         """
-        given a list of element IDs in global (non-partitioned) ordering
+        Given a list of element IDs in global (non-partitioned) ordering
         returns the local (partitioned) element IDs on each processor.
         If a requested element is not included on this processor,
         an entry of -1 will be returned.
+
+        Parameters
+        ----------
+        globalIDs : int or list[int]
+            List of global element IDs.
+
+        nastranOrdering : bool
+            Flag signaling whether globalIDs is in TACS (default) or NASTRAN (element IDs in bdf file) ordering
+            Defaults to False.
+
+        Returns
+        -------
+        localIDs : list[int]
+            List of local element IDs for each entry in globalIDs.
+            If the element is not owned by this processor, its index is filled with a value of -1.
         """
         # Convert to tacs node numbering, if necessary
         if nastranOrdering:
@@ -397,13 +505,13 @@ class pyMeshLoader(BaseUI):
         componentIDs : int or list[int]
             List of integers of the compIDs numbers.
 
-        nastranOrdering : False
-            Flag signaling whether nodeIDs are in TACS (default) or NASTRAN (grid IDs in bdf file) ordering
+        nastranOrdering : bool
+            Flag signaling whether nodeIDs should be returned in TACS (default) or NASTRAN (grid IDs in bdf file) ordering
             Defaults to False.
 
         Returns
         -------
-        nodeIDs : list
+        nodeIDs : list[int]
             List of unique nodeIDs that belong to the given list of compIDs
         """
         # First determine the actual physical locations
@@ -435,7 +543,7 @@ class pyMeshLoader(BaseUI):
 
         Returns
         -------
-        nodeIDs : list
+        nodeIDs : list[int]
             List of unique nodeIDs that belong to the given list of compIDs
         """
         # Get the global nodes for this component (TACS ordering)
@@ -454,6 +562,20 @@ class pyMeshLoader(BaseUI):
     def getGlobalElementIDsForComps(self, componentIDs, nastranOrdering=False):
         """
         Returns a list of element IDs belonging to specified components
+
+        Parameters
+        ----------
+        componentIDs : list[int]
+            Component ID numbers.
+
+        nastranOrdering : bool
+            Flag signaling whether elemIDs should be returned in TACS (default) or NASTRAN (grid IDs in bdf file) ordering
+            Defaults to False
+
+        Returns
+        -------
+        elemIDs : list[int]
+            List of global element IDs belonging to the specified components.
         """
         # Make sure list is flat
         componentIDs = self._flatten(componentIDs)
@@ -476,6 +598,16 @@ class pyMeshLoader(BaseUI):
         """
         Get the local element numbers on each proc used by tacs
         corresponding to the component groups in componentIDs.
+
+        Parameters
+        ----------
+        componentIDs : list[int]
+            Component ID numbers.
+
+        Returns
+        -------
+        elemIDs : list[int]
+            List of local element IDs on this proc belonging to the specified components.
         """
         if self.creator is None:
             raise self._TACSError(
@@ -497,6 +629,11 @@ class pyMeshLoader(BaseUI):
     def getLocalMultiplierNodeIDs(self):
         """
         Get the tacs indices of multiplier nodes used to hold lagrange multipliers on this processor.
+
+        Returns
+        -------
+        nodeIDs : list[int]
+            List of multiplier node ID's owned by this proc.
         """
         return self.ownedMultiplierNodeIDs
 
@@ -511,7 +648,7 @@ class pyMeshLoader(BaseUI):
 
         Returns
         -------
-        globalToLocalNodeIDDict : dict
+        globalToLocalNodeIDDict : dict[int,int]
             Dictionary holding mapping from global to local node IDs for this proc
         """
         globalToLocalNodeIDDict = {}
@@ -532,6 +669,11 @@ class pyMeshLoader(BaseUI):
         localElementID = globalToLocalElementIDDict[globalElementID]
 
         * assuming globalElementID is owned on this processor
+
+        Returns
+        -------
+        globalToLocalElementIDDict : dict[int,int]
+            Dictionary holding mapping from global to local element IDs for this proc
         """
         # Do sorting on root proc
         if self.comm.rank == 0:
@@ -563,6 +705,23 @@ class pyMeshLoader(BaseUI):
         self.elemObjects[pointer] = elemObject
 
     def getElementObjectForElemID(self, elemID, nastranOrdering=False):
+        """
+        Return TACS element object corresponding to specified element ID.
+
+        Parameters
+        ----------
+        elemID : int
+            Element ID number
+
+        nastranOrdering : bool
+            Flag signaling whether elemIDs are in TACS (default) or NASTRAN (grid IDs in bdf file) ordering
+            Defaults to False.
+
+        Returns
+        -------
+        elemObj : tacs.TACS.Element
+            TACS element object.
+        """
         # Convert to tacs numbering, if necessary
         if nastranOrdering:
             elemID = self.idMap(elemID, self.nastranToTACSElemIDDict)
@@ -574,6 +733,14 @@ class pyMeshLoader(BaseUI):
     def createTACSAssembler(self, varsPerNode, massDVs):
         """
         Setup TACSCreator object responsible for creating TACSAssembler
+
+        Parameters
+        ----------
+        varsPerNode : int
+            Number of variables per node for the model.
+
+        massDVs : dict
+            Dictionary holding dv info for point masses.
         """
         self.creator = tacs.TACS.Creator(self.comm, varsPerNode)
 
@@ -695,18 +862,24 @@ class pyMeshLoader(BaseUI):
 
     def _isDOFInString(self, constrained_dofs, dof):
         """
-        Find if dof number (nastran numbering) occurs in constraint string.
+        Determine if dof number (nastran numbering) occurs in constraint string.
 
         Parameters
         ----------
         constrained_dofs : string
             String containing list of dofs (ex. '123456')
+
         dof : int or string
             nastran dof number to check for
+
+        Returns
+        -------
+        found : bool
+            Flag indicating if specified dof is in string.
         """
         # Convert to string, if necessary
         if isinstance(dof, int):
-            dof = "%d" % (dof)
+            dof = "%d" % dof
         # pyNastran only supports 0,1,2,3,4,5,6 as valid dof components
         # For this reason, we'll treat 0 as if its 7, since it's traditionally never used in nastran
         if dof == "7":
@@ -722,13 +895,21 @@ class pyMeshLoader(BaseUI):
         """
         Method to automatically set up RBE2 element from bdf file for user.
         User should *NOT* set these up in their elemCallBack function.
+
+        Parameters
+        ----------
+        rbeInfo : pyNastran.bdf.cards.elements.rigid.RBE2
+            pyNastran object holding rbe info.
+
+        varsPerNode : int
+            Number of variables per node for the model.
         """
         indepNode = rbeInfo.independent_nodes
         depNodes = []
         depConstrainedDOFs = []
         dummyNodes = []
         dofsAsString = rbeInfo.cm
-        dofsAsList = self.isDOFInString(dofsAsString, varsPerNode)
+        dofsAsList = self.dofStringToList(dofsAsString, varsPerNode)
         for node in rbeInfo.dependent_nodes:
             depNodes.append(node)
             depConstrainedDOFs.extend(dofsAsList)
@@ -764,9 +945,17 @@ class pyMeshLoader(BaseUI):
         """
         Method to automatically set up RBE3 element from bdf file for user.
         User should *NOT* set these up in their elemCallBack function.
+
+        Parameters
+        ----------
+        rbeInfo : pyNastran.bdf.cards.elements.rigid.RBE3
+            pyNastran object holding rbe info.
+
+        varsPerNode : int
+            Number of variables per node for the model.
         """
         depNode = rbeInfo.dependent_nodes
-        depConstrainedDOFs = self.isDOFInString(rbeInfo.refc, varsPerNode)
+        depConstrainedDOFs = self.dofStringToList(rbeInfo.refc, varsPerNode)
 
         # add dummy node for lagrange multipliers
         dummyNodeNum = max(self.bdfInfo.node_ids) + 1  # Next available node number
@@ -787,7 +976,7 @@ class pyMeshLoader(BaseUI):
         for depNodeGroup in rbeInfo.wt_cg_groups:
             wt = depNodeGroup[0]
             dofsAsString = depNodeGroup[1]
-            dofsAsList = self.isDOFInString(dofsAsString, varsPerNode)
+            dofsAsList = self.dofStringToList(dofsAsString, varsPerNode)
             for node in depNodeGroup[2]:
                 indepNodes.append(node)
                 indepWeights.append(wt)
@@ -814,6 +1003,17 @@ class pyMeshLoader(BaseUI):
         """
         Method to automatically set up TACS mass elements from bdf file for user.
         User should *NOT* set these up in their elemCallBack function.
+
+        Parameters
+        ----------
+        massInfo : pyNastran.bdf.cards.elements.mass.PointMassElement
+            pyNastran object holding rbe info.
+
+        varsPerNode : int
+            Number of variables per node for the model.
+
+        dvDict : dict
+            Dictionary holding dv info for point mass.
         """
         if massInfo.type == "CONM2":
             m = massInfo.mass
@@ -861,13 +1061,13 @@ class pyMeshLoader(BaseUI):
 
     def _unattachedNodeCheck(self):
         """
-        Check for any nodes that aren't attached to element.
+        Check for any nodes that aren't attached to an element.
         Notify the user and throw an error if we find any.
         This must be checked before creating the TACS assembler or a SegFault may occur.
         """
         numUnattached = 0
         if self.comm.rank == 0:
-            # Flatten conectivity to single list
+            # Flatten connectivity to a single list
             flattenedConn = it.chain.from_iterable(self.elemConnectivity)
             # uniqueify and order all element-attached nodes
             attachedNodes = set(flattenedConn)
@@ -891,12 +1091,25 @@ class pyMeshLoader(BaseUI):
                 f"Please make sure that all nodes are attached to at least one element."
             )
 
-    def isDOFInString(self, dofString, numDOFs):
+    def dofStringToList(self, dofString, numDOFs):
         """
         Converts a dof string to a boolean list.
         Examples:
             '123' -> [1, 1, 1, 0, 0, 0]
             '1346' -> [1, 0, 1, 1, 0, 1]
+
+        Parameters
+        ----------
+        dofString : string
+            String containing list of dofs (ex. '123456')
+
+        numDOFs : int
+            Number of dofs in model
+
+        Returns
+        -------
+        dofList : list[int]
+            List of booleans indicating which dofs are present in input string.
         """
         dofList = []
         for dof in range(numDOFs):
@@ -912,6 +1125,19 @@ class pyMeshLoader(BaseUI):
         """
         Translate fromIDs numbering from nastran numbering to tacs numbering.
         If node ID doesn't exist in nastranIDList, return -1 for entry
+
+        Parameters
+        ----------
+        fromIDs : int or list[int]
+            IDs in Nastran numbering
+
+        tacsIDDict : dict[int, int]
+            ID mapping dict generated by `_updateNastranToTACSDicts`
+
+        Returns
+        -------
+        toIDs : int or list[int]
+            IDs in TACS numbering
         """
         # Input is a list return a list
         if hasattr(fromIDs, "__iter__"):

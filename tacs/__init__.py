@@ -62,5 +62,6 @@ from . import pytacs
 from . import caps2tacs
 from .pytacs import pyTACS
 from . import problems
+from . import constraints
 
-__all__.extend(["caps2tacs", "pytacs", "pyTACS", "problems"])
+__all__.extend(["caps2tacs", "pytacs", "pyTACS", "problems", "constraints"])

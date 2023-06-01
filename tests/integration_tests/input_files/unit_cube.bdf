@@ -1,0 +1,67 @@
+INIT MASTER(S)
+NASTRAN SYSTEM(442)=-1,SYSTEM(319)=1
+ID FEMAP,FEMAP
+SOL SESTATIC
+CEND
+  TITLE = Simcenter Nastran Static Analysis Set
+  ECHO = NONE
+  DISPLACEMENT(PLOT) = ALL
+  SPCFORCE(PLOT) = ALL
+  OLOAD(PLOT) = ALL
+  FORCE(PLOT,CORNER) = ALL
+  STRESS(PLOT,CORNER) = ALL
+  SPC = 1
+BEGIN BULK
+$ ***************************************************************************
+$   Written by : Femap
+$   Version    : 2023.1.0
+$   Translator : Simcenter Nastran
+$   From Model :
+$   Date       : Wed Apr 26 15:13:14 2023
+$   Output To  : C:\Users\trbrooks\AppData\Local\Temp\1\
+$ ***************************************************************************
+$
+PARAM,PRGPST,NO
+PARAM,POST,-1
+PARAM,OGEOM,NO
+PARAM,AUTOSPC,YES
+PARAM,K6ROT,100.
+PARAM,GRDPNT,0
+CORD2C         1       0      0.      0.      0.      0.      0.      1.+FEMAPC1
++FEMAPC1      1.      0.      1.
+CORD2S         2       0      0.      0.      0.      0.      0.      1.+FEMAPC2
++FEMAPC2      1.      0.      1.
+$ Femap Constraint Set 1 : Clamp
+SPC1           1  123456       2
+SPC1           1  123456       5
+SPC1           1  123456       7
+SPC1           1  123456       9
+$ Femap Property 1 : Face 1
+PSHELL         1       1      .1       1               1              0.
+$ Femap Property 2 : Face 2
+PSHELL         2       1      .1       1               1              0.
+$ Femap Property 3 : Face 3
+PSHELL         3       1      .1       1               1              0.
+$ Femap Property 4 : Face 4
+PSHELL         4       1      .1       1               1              0.
+$ Femap Property 5 : Face 5
+PSHELL         5       1      .1       1               1              0.
+$ Femap Property 6 : Face 6
+PSHELL         6       1      .1       1               1              0.
+$ Femap Material 1 : ISOTROPIC Material
+MAT1           1   7.+10              .3   2700.      0.      0.
+GRID           2       0      1.      0.      1.       0
+GRID           5       0      1.      0.      0.       0
+GRID           7       0      1.      1.      1.       0
+GRID           9       0      1.      1.      0.       0
+GRID          10       0      0.      0.      1.       0
+GRID          11       0      0.      1.      1.       0
+GRID          12       0      0.      0.      0.       0
+GRID          13       0      0.      1.      0.       0
+CQUAD4         9       5       5       9       7       2
+CQUAD4        14       6      12      10      11      13
+CQUAD4        15       1      10       2       7      11
+CQUAD4        16       2       2       5      12      10
+CQUAD4        17       4      11      13       9       7
+CQUAD4        18       3       9       5      12      13
+ENDDATA
