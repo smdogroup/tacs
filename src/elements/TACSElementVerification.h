@@ -47,6 +47,27 @@ double TacsGetMaxRelError(TacsScalar *a, TacsScalar *b, int size,
 void TacsPrintErrorComponents(FILE *fp, const char *descript, TacsScalar *a,
                               TacsScalar *b, int size);
 
+/**
+ * @brief Assert that the values in testVals are close to the values in refVals.
+ * The closeness is computed using a hybrid of absolute and relative errors that
+ * should avoid false positives when the values are close to zero. Basically, it
+ * computes a relative error for "large" values and an absolute error for
+ * "small" values. The criterion is identical to numpy's `assert_allclose`
+ * function:
+ *
+ * Failure is raised if::
+ *   abs(`test` - `ref`) > (`atol` + `rtol` * abs(`ref`))
+ *
+ * @param testVals Array of test values
+ * @param refVals Array of reference values
+ * @param size Number of values in each array
+ * @param atol Absolute tolerance
+ * @param rtol Relative tolerance
+ * @return bool True if all values are close, false otherwise
+ */
+bool TacsAssertAllClose(TacsScalar *testVals, TacsScalar *refVals, int size,
+                        double atol, double rtol);
+
 /*
   Perturb the input variables in the forward sense
 */

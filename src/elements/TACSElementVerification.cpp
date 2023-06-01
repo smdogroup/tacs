@@ -99,6 +99,22 @@ void TacsPrintErrorComponents(FILE *fp, const char *descript, TacsScalar *a,
 }
 
 /*
+  Assert that the values in testVals are close to the values in refVals.
+*/
+bool TacsAssertAllClose(TacsScalar *testVals, TacsScalar *refVals, int size,
+                        double atol, double rtol) {
+  bool all_close = true;
+  for (int i = 0; i < size; i++) {
+    if (fabs(TacsRealPart(testVals[i] - refVals[i])) >
+        atol + rtol * fabs(TacsRealPart(testVals[i]))) {
+      all_close = false;
+      break;
+    }
+  }
+  return all_close;
+}
+
+/*
   Perturb the input variables in the forward sense
 */
 void TacsForwardDiffPerturb(TacsScalar *out, int size, const TacsScalar *orig,
