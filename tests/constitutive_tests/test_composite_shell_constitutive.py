@@ -14,12 +14,12 @@ class ConstitutiveTest(unittest.TestCase):
             self.dh = 1e-50
             self.rtol = 1e-9
         else:
-            self.dh = 1e-6
-            self.rtol = 1e-1
+            self.dh = 1e-8
+            self.rtol = 1e-3
         self.dtype = TACS.dtype
 
         # Basically, only check relative tolerance
-        self.atol=self.rtol
+        self.atol = self.rtol
         self.print_level = 0
 
         # Set element index
@@ -233,3 +233,7 @@ class ConstitutiveTest(unittest.TestCase):
                     self.atol,
                 )
                 self.assertFalse(fail)
+
+
+if __name__ == "__main__":
+    unittest.main()
