@@ -881,6 +881,8 @@ TacsScalar TACSBladeStiffenedShellConstitutive::computeFailureValues(
 TacsScalar TACSBladeStiffenedShellConstitutive::evalFailureStrainSens(
     int elemIndex, const double pt[], const TacsScalar X[],
     const TacsScalar e[], TacsScalar sens[]) {
+  memset(sens, 0, this->NUM_STRESSES * sizeof(TacsScalar));
+
   TacsScalar fails[this->NUM_FAILURES], dKSdf[this->NUM_FAILURES];
   // First compute the sensitivity of the panel failure value
   TacsScalar panelFailSens[this->NUM_STRESSES];
@@ -1323,11 +1325,15 @@ void TACSBladeStiffenedShellConstitutive::transformStrainSens(
       this->computeStiffenerCentroidHeight() - 0.5 * this->panelThick;
 
   panelStrainSens[0] = stiffenerStrainSens[0];
+  panelStrainSens[1] = 0.0;
   panelStrainSens[2] = 0.5 * stiffenerStrainSens[5];
   panelStrainSens[3] = stiffenerStrainSens[2] + z * stiffenerStrainSens[0];
+  panelStrainSens[4] = 0.0;
   panelStrainSens[5] =
       0.5 * (z * stiffenerStrainSens[5] - stiffenerStrainSens[1]);
+  panelStrainSens[6] = 0.0;
   panelStrainSens[7] = stiffenerStrainSens[4];
+  panelStrainSens[8] = 0.0;
 }
 
 // Add the contribution of the stiffener stress to the panel stress
@@ -1613,11 +1619,13 @@ TacsScalar TACSBladeStiffenedShellConstitutive::evalPanelFailureStrainSens(
     const TacsScalar strain[], TacsScalar sens[]) {
   TACSOrthotropicPly* ply = this->panelPly;
   const int numPlies = this->numPanelPlies;
-  const int numStrain = TACSBeamConstitutive::NUM_STRESSES;
+  const int numStrain = TACSShellConstitutive::NUM_STRESSES;
   TacsScalar** dFaildStrain = this->panelPlyFailStrainSens;
   TacsScalar* fails = this->panelPlyFailValues;
   const TacsScalar* angles = this->panelPlyAngles;
   const TacsScalar t = this->panelThick;
+
+  memset(sens, 0, numStrain * sizeof(TacsScalar));
 
   // Compute the strain state at the top of the panel
   TacsScalar plyStrain[3];
@@ -1902,6 +1910,8 @@ TacsScalar TACSBladeStiffenedShellConstitutive::evalStiffenerFailureStrainSens(
   TacsScalar** dFaildStrain = this->stiffenerPlyFailStrainSens;
   TacsScalar* fails = this->stiffenerPlyFailValues;
   const TacsScalar* angles = this->stiffenerPlyAngles;
+
+  memset(sens, 0, numStrain * sizeof(TacsScalar));
 
   // Compute the strain state at the tip of the stiffener
   TacsScalar zTipOffset = -(this->stiffenerHeight + this->stiffenerThick) -
