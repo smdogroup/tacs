@@ -85,11 +85,14 @@ int TacsTestConstitutiveDensity(TACSConstitutive *con, int elemIndex,
     fprintf(stderr, "\n");
   }
 
+  bool allClose = TacsAssertAllClose(dfdx, dfdx_approx, ndvs, test_fail_atol,
+                                     test_fail_rtol);
+
   delete[] xtemp;
   delete[] dfdx;
   delete[] dfdx_approx;
 
-  return (max_err > test_fail_atol || max_rel > test_fail_rtol);
+  return !allClose;
 }
 
 int TacsTestConstitutiveSpecificHeat(TACSConstitutive *con, int elemIndex,
@@ -162,11 +165,14 @@ int TacsTestConstitutiveSpecificHeat(TACSConstitutive *con, int elemIndex,
     fprintf(stderr, "\n");
   }
 
+  bool allClose = TacsAssertAllClose(dfdx, dfdx_approx, ndvs, test_fail_atol,
+                                     test_fail_rtol);
+
   delete[] xtemp;
   delete[] dfdx;
   delete[] dfdx_approx;
 
-  return (max_err > test_fail_atol || max_rel > test_fail_rtol);
+  return !allClose;
 }
 
 int TacsTestConstitutiveHeatFlux(TACSConstitutive *con, int elemIndex,
@@ -252,11 +258,14 @@ int TacsTestConstitutiveHeatFlux(TACSConstitutive *con, int elemIndex,
     fprintf(stderr, "\n");
   }
 
+  bool allClose = TacsAssertAllClose(dfdx, dfdx_approx, ndvs, test_fail_atol,
+                                     test_fail_rtol);
+
   delete[] xtemp;
   delete[] dfdx;
   delete[] dfdx_approx;
 
-  return (max_err > test_fail_atol || max_rel > test_fail_rtol);
+  return !allClose;
 }
 
 int TacsTestConstitutiveStress(TACSConstitutive *con, int elemIndex,
@@ -342,6 +351,9 @@ int TacsTestConstitutiveStress(TACSConstitutive *con, int elemIndex,
     fprintf(stderr, "\n");
   }
 
+  bool allClose = TacsAssertAllClose(dfdx, dfdx_approx, ndvs, test_fail_atol,
+                                     test_fail_rtol);
+
   delete[] xtemp;
   delete[] dfdx;
   delete[] dfdx_approx;
@@ -349,7 +361,7 @@ int TacsTestConstitutiveStress(TACSConstitutive *con, int elemIndex,
   delete[] e;
   delete[] psi;
 
-  return (max_err > test_fail_atol || max_rel > test_fail_rtol);
+  return !allClose;
 }
 
 int TacsTestConstitutiveThermalStrain(TACSConstitutive *con, int elemIndex,
@@ -437,13 +449,16 @@ int TacsTestConstitutiveThermalStrain(TACSConstitutive *con, int elemIndex,
     fprintf(stderr, "\n");
   }
 
+  bool allClose = TacsAssertAllClose(dfdx, dfdx_approx, ndvs, test_fail_atol,
+                                     test_fail_rtol);
+
   delete[] xtemp;
   delete[] dfdx;
   delete[] dfdx_approx;
   delete[] e;
   delete[] psi;
 
-  return (max_err > test_fail_atol || max_rel > test_fail_rtol);
+  return !allClose;
 }
 
 int TacsTestConstitutiveFailure(TACSConstitutive *con, int elemIndex,
