@@ -19,7 +19,7 @@ class ConstitutiveTest(unittest.TestCase):
         self.dtype = TACS.dtype
 
         self.atol = np.clip(1e-5 * self.rtol, 1e-8, 1e-14)
-        self.print_level = 2
+        self.print_level = 0
 
         # Set element index
         self.elem_index = 0
