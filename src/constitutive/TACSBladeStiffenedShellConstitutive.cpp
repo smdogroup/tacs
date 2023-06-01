@@ -2217,17 +2217,17 @@ void TACSBladeStiffenedShellConstitutive::
 
   // D1 = (E1p * (Ip + Ap * zn * zn) + E1s * (Is + As * (zn - zs) * (zn - zs)))
   // / ps;
-  TacsScalar E1pSens, IpSens, ApSens, ZnSens, E1sSens, AsSens, JsSens, IsSens,
-      ZsSens;
-  E1pSens = dfdD1 * ((Ap * zn2 + Ip) / ps);
-  IpSens = dfdD1 * (E1p / ps);
-  ApSens = dfdD1 * (E1p * zn2 / ps);
-  ZnSens = dfdD1 * (2.0 * (Ap * E1p * zn + As * E1s * (zn - zs)) / ps);
-  E1sSens = dfdD1 * ((As * zns2 + Is) / ps);
-  IsSens = dfdD1 * (E1s / ps);
-  AsSens = dfdD1 * (E1s * zns2 / ps);
-  ZsSens = dfdD1 * (2.0 * As * E1s * (-zn + zs) / ps);
-  *psSens =
+
+  TacsScalar E1pSens = dfdD1 * ((Ap * zn2 + Ip) / ps);
+  TacsScalar IpSens = dfdD1 * (E1p / ps);
+  TacsScalar ApSens = dfdD1 * (E1p * zn2 / ps);
+  TacsScalar ZnSens =
+      dfdD1 * (2.0 * (Ap * E1p * zn + As * E1s * (zn - zs)) / ps);
+  TacsScalar E1sSens = dfdD1 * ((As * zns2 + Is) / ps);
+  TacsScalar IsSens = dfdD1 * (E1s / ps);
+  TacsScalar AsSens = dfdD1 * (E1s * zns2 / ps);
+  TacsScalar ZsSens = dfdD1 * (2.0 * As * E1s * (-zn + zs) / ps);
+  *psSens +=
       dfdD1 * ((-E1p * (Ap * zn2 + Ip) - E1s * (As * zns2 + Is)) * pInv * pInv);
 
   // --- 2-direction bending stiffness ---
@@ -2244,13 +2244,13 @@ void TACSBladeStiffenedShellConstitutive::
   TacsScalar zg2 = zg * zg;
   TacsScalar zgs2 = (zg - zs) * (zg - zs);
 
-  TacsScalar GpSens, JpSens, zgSens, GsSens;
-  GpSens = dfdD3 * ((Ap * zg2 + Jp) / ps);
-  JpSens = dfdD3 * (Gp / ps);
+  TacsScalar GpSens = dfdD3 * ((Ap * zg2 + Jp) / ps);
+  TacsScalar JpSens = dfdD3 * (Gp / ps);
+  TacsScalar zgSens =
+      dfdD3 * ((2.0 * Ap * Gp * zg + 0.5 * As * Gs * (zg - zs)) / ps);
+  TacsScalar GsSens = dfdD3 * (0.25 * (As * zgs2 + Js) / ps);
+  TacsScalar JsSens = dfdD3 * (0.25 * Gs / ps);
   ApSens += dfdD3 * (Gp * zg2 / ps);
-  zgSens = dfdD3 * ((2.0 * Ap * Gp * zg + 0.5 * As * Gs * (zg - zs)) / ps);
-  GsSens = dfdD3 * (0.25 * (As * zgs2 + Js) / ps);
-  JsSens += dfdD3 * (0.25 * Gs / ps);
   AsSens += dfdD3 * (0.25 * Gs * zgs2 / ps);
   ZsSens += dfdD3 * (0.5 * As * Gs * (-zg + zs) / ps);
   *psSens += dfdD3 * ((-Gp * (Ap * zg2 + Jp) - 0.25 * Gs * (As * zgs2 + Js)) *
