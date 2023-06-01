@@ -106,8 +106,9 @@ bool TacsAssertAllClose(TacsScalar *testVals, TacsScalar *refVals, int size,
                         double atol, double rtol) {
   bool all_close = true;
   for (int i = 0; i < size; i++) {
-    if (fabs(TacsRealPart(testVals[i] - refVals[i])) >
-        atol + rtol * fabs(TacsRealPart(refVals[i]))) {
+    double absError = fabs(TacsRealPart(testVals[i] - refVals[i]));
+    double combinedTol = atol + rtol * fabs(TacsRealPart(refVals[i]));
+    if (absError > combinedTol) {
       all_close = false;
       break;
     }
