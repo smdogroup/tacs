@@ -368,7 +368,7 @@ variable number and value elemCallBackFunction.</p></li>
 <dd class="field-odd"><p><strong>globalDVKeys</strong> -- List holding global dv names.</p>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.11)">list</a></p>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.11)">list</a>[<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.11)">str</a>]</p>
 </dd>
 </dl>
 </dd></dl>
@@ -382,7 +382,7 @@ variable number and value elemCallBackFunction.</p></li>
 <dd class="field-odd"><p><strong>globalDVNums</strong> -- List holding dv nums corresponding to global DVs.</p>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.11)">list</a></p>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.11)">list</a>[<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)">int</a>]</p>
 </dd>
 </dl>
 </dd></dl>
@@ -410,7 +410,7 @@ variable number and value elemCallBackFunction.</p></li>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>descript</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.11)"><em>str</em></a>) -- Global DV key to assign mass design variable to. If the key is does not exist,
 it will automatically be created and added to global DVs.</p></li>
-<li><p><strong>eIDs</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)"><em>int</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.11)"><em>list</em></a>) -- Element IDs of concentrated mass to assign DV to (NASTRAN ordering)</p></li>
+<li><p><strong>eIDs</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)"><em>int</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.11)"><em>list</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)"><em>int</em></a><em>]</em>) -- Element IDs of concentrated mass to assign DV to (NASTRAN ordering)</p></li>
 <li><p><strong>dvName</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.11)"><em>str</em></a>) -- Name of mass property to apply DV to.
 May be <cite>m</cite> for mass, <cite>I11</cite>, <cite>I22</cite>, <cite>I12</cite>, etc. for moment of inertia components.
 Defaults to <cite>m</cite> (mass).</p></li>
@@ -575,7 +575,7 @@ Defaults to None.</p>
 <dd class="field-even"><p><strong>compDescript</strong> -- List of strings containing the names of the corresponding compIDs</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.11)">list</a></p>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.11)">list</a>[<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.11)">str</a>]</p>
 </dd>
 </dl>
 </dd></dl>
@@ -598,7 +598,7 @@ Defaults to False.</p></li>
 <dd class="field-even"><p><strong>nodeIDs</strong> -- List of unique nodeIDs that belong to the given list of compIDs</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.11)">list</a></p>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.11)">list</a>[<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)">int</a>]</p>
 </dd>
 </dl>
 </dd></dl>
@@ -617,7 +617,7 @@ Defaults to None.</p>
 <dd class="field-even"><p><strong>nodeIDs</strong> -- List of unique nodeIDs that belong to the given list of compIDs</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.11)">list</a></p>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.11)">list</a>[<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)">int</a>]</p>
 </dd>
 </dl>
 </dd></dl>
@@ -1059,6 +1059,14 @@ Defaults to None.</p></li>
 <dt class="sig sig-object py" id="tacs.pytacs.pyTACS.getNumComponents">
 <span class="sig-name descname"><span class="pre">getNumComponents</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/pytacs.html#pyTACS.getNumComponents"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.pytacs.pyTACS.getNumComponents" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return number of components (property) groups found in bdf.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>nComp</strong> -- Number of components in model</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)">int</a></p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py attribute">
