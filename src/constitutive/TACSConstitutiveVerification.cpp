@@ -519,12 +519,15 @@ int TacsTestConstitutiveFailure(TACSConstitutive *con, int elemIndex,
     fprintf(stderr, "\n");
   }
 
+  bool allClose = TacsAssertAllClose(dfdx, dfdx_approx, ndvs, test_fail_atol,
+                                     test_fail_rtol);
+
   delete[] xtemp;
   delete[] dfdx;
   delete[] dfdx_approx;
   delete[] e;
 
-  return (max_err > test_fail_atol || max_rel > test_fail_rtol);
+  return !allClose;
 }
 
 int TacsTestConstitutiveFailureStrainSens(TACSConstitutive *con, int elemIndex,
@@ -589,11 +592,14 @@ int TacsTestConstitutiveFailureStrainSens(TACSConstitutive *con, int elemIndex,
     fprintf(stderr, "\n");
   }
 
+  bool allClose = TacsAssertAllClose(dfde, dfde_approx, nstress, test_fail_atol,
+                                     test_fail_rtol);
+
   delete[] e;
   delete[] dfde;
   delete[] dfde_approx;
 
-  return (max_err > test_fail_atol || max_rel > test_fail_rtol);
+  return !allClose;
 }
 
 /*

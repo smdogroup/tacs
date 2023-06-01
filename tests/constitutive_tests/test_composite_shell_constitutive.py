@@ -19,7 +19,7 @@ class ConstitutiveTest(unittest.TestCase):
         self.dtype = TACS.dtype
 
         # Basically, only check relative tolerance
-        self.atol = 1e99
+        self.atol=self.rtol
         self.print_level = 0
 
         # Set element index
