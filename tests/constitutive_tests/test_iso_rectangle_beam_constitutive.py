@@ -9,7 +9,7 @@ class ConstitutiveTest(unittest.TestCase):
     def setUp(self):
         # fd/cs step size
         if TACS.dtype is complex:
-            self.dh = 1e-50
+            self.dh = 1e-200
             self.rtol = 1e-11
             self.atol = 1e-5
         else:

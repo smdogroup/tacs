@@ -11,16 +11,16 @@ class ConstitutiveTest(unittest.TestCase):
     def setUp(self):
         # fd/cs step size
         if TACS.dtype is complex:
-            self.dh = 1e-50
-            self.rtol = 1e-9
+            self.dh = 1e-200
+            self.rtol = 1e-12
         else:
             self.dh = 1e-8
             self.rtol = 1e-3
         self.dtype = TACS.dtype
 
 
-        self.atol = self.rtol
-        self.print_level = 0
+        self.atol = np.clip(1e-5*self.rtol, 1e-8, 1e-14)
+        self.print_level = 2
 
         # Set element index
         self.elem_index = 0
