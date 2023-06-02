@@ -41,8 +41,8 @@ void TacsGenerateRandomArray(TacsComplex *array, int size, TacsComplex lower,
 }
 
 /*
-  Find the largest absolute value of the difference between the
-  arrays a and b
+  Find the largest absolute value of the difference between an array of test
+  values and an array of reference values
 */
 double TacsGetMaxError(TacsScalar *a, TacsScalar *b, int size, int *max_index) {
   double max_error = 0.0;
@@ -59,17 +59,18 @@ double TacsGetMaxError(TacsScalar *a, TacsScalar *b, int size, int *max_index) {
 }
 
 /*
-  Find the maximum relative error between a and b and return the
+  Find the maximum relative error between an array of test
+  values and an array of reference values
 */
-double TacsGetMaxRelError(TacsScalar *a, TacsScalar *b, int size,
+double TacsGetMaxRelError(TacsScalar *testVals, TacsScalar *refVals, int size,
                           int *max_index) {
   double max_error = 0.0;
   *max_index = -1;
 
   for (int i = 0; i < size; i++) {
     double er = 0.0;
-    if (a[i] != 0.0) {
-      er = fabs(TacsRealPart((a[i] - b[i]) / a[i]));
+    if (refVals[i] != 0.0) {
+      er = fabs(TacsRealPart((testVals[i] - refVals[i]) / refVals[i]));
     }
     if (i == 0 || er > max_error) {
       max_error = er;
@@ -82,19 +83,20 @@ double TacsGetMaxRelError(TacsScalar *a, TacsScalar *b, int size,
 /*
   Print out the values and the relative errors
 */
-void TacsPrintErrorComponents(FILE *fp, const char *descript, TacsScalar *a,
-                              TacsScalar *b, int size) {
+void TacsPrintErrorComponents(FILE *fp, const char *descript,
+                              TacsScalar *testVals, TacsScalar *refVals,
+                              int size) {
   fprintf(fp, "%*s[   ] %15s %15s %15s %15s\n", (int)strlen(descript), "Val",
           "Analytic", "Approximate", "Rel. Error", "Abs. Error");
   for (int i = 0; i < size; i++) {
-    if (a[i] != 0.0) {
+    if (refVals[i] != 0.0) {
       fprintf(fp, "%s[%3d] %15.6e %15.6e %15.4e %15.4e\n", descript, i,
-              TacsRealPart(a[i]), TacsRealPart(b[i]),
-              fabs(TacsRealPart((a[i] - b[i]) / a[i])),
-              fabs(TacsRealPart(a[i] - b[i])));
+              TacsRealPart(testVals[i]), TacsRealPart(refVals[i]),
+              fabs(TacsRealPart((testVals[i] - refVals[i]) / refVals[i])),
+              fabs(TacsRealPart(testVals[i] - refVals[i])));
     } else {
-      fprintf(fp, "%s[%3d] %15.6e %15.6e\n", descript, i, TacsRealPart(a[i]),
-              TacsRealPart(b[i]));
+      fprintf(fp, "%s[%3d] %15.6e %15.6e\n", descript, i,
+              TacsRealPart(testVals[i]), TacsRealPart(refVals[i]));
     }
   }
 }

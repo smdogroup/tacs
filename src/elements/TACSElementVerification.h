@@ -30,22 +30,25 @@ void TacsGenerateRandomArray(TacsComplex *array, int size,
                              TacsComplex lower = -1.0, TacsComplex upper = 1.0);
 
 /*
-  Find the largest absolute value of the difference between the
-  arrays a and b
+  Find the largest absolute value of the difference between an array of test
+  values and an array of reference values
 */
-double TacsGetMaxError(TacsScalar *a, TacsScalar *b, int size, int *max_index);
+double TacsGetMaxError(TacsScalar *testVals, TacsScalar *refVals, int size,
+                       int *max_index);
 
 /*
-  Find the maximum relative error between a and b and return the
+  Find the maximum relative error between an array of test
+  values and an array of reference values
 */
-double TacsGetMaxRelError(TacsScalar *a, TacsScalar *b, int size,
+double TacsGetMaxRelError(TacsScalar *testVals, TacsScalar *refVals, int size,
                           int *max_index);
 
 /*
   Print out the values and the relative errors
 */
-void TacsPrintErrorComponents(FILE *fp, const char *descript, TacsScalar *a,
-                              TacsScalar *b, int size);
+void TacsPrintErrorComponents(FILE *fp, const char *descript,
+                              TacsScalar *testVals, TacsScalar *refVals,
+                              int size);
 
 /**
  * @brief Assert that the values in testVals are close to the values in refVals.
