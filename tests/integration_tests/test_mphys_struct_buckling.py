@@ -31,7 +31,7 @@ wrt = ["mesh.fea_mesh.x_struct0", "dv_struct", "f_struct"]
 
 
 class ProblemTest(OpenMDAOTestCase.OpenMDAOTest):
-    N_PROCS = 2  # this is how many MPI processes to use for this TestCase.
+    N_PROCS = 1  # this is how many MPI processes to use for this TestCase.
 
     def setup_problem(self, dtype):
         """
