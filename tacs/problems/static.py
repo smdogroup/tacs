@@ -121,16 +121,16 @@ class StaticProblem(TACSProblem):
         name : str
             Name of this tacs problem
 
-        assembler : TACS.Assembler
+        assembler : tacs.TACS.Assembler
             Cython object responsible for creating and setting tacs objects used to solve problem
 
         comm : mpi4py.MPI.Intracomm
             The comm object on which to create the pyTACS object.
 
-        outputViewer : TACS.TACSToFH5
+        outputViewer : tacs.TACS.TACSToFH5
             Cython object used to write out f5 files that can be converted and used for postprocessing.
 
-        meshLoader : pymeshloader.pyMeshLoader
+        meshLoader : tacs.pymeshloader.pyMeshLoader
             pyMeshLoader object used to create the assembler.
 
         options : dict
@@ -362,7 +362,7 @@ class StaticProblem(TACSProblem):
             The user-supplied name for the function. This will
             typically be a string that is meaningful to the user
 
-        funcHandle : TACS.Function
+        funcHandle : tacs.TACS.Function
             The function handle to use for creation. This must come
             from the functions module in tacs.
 
@@ -427,7 +427,7 @@ class StaticProblem(TACSProblem):
             to determine this.
 
         F : numpy.ndarray 1d or 2d length (varsPerNodes) or (numCompIDs, varsPerNodes)
-            Vector(s) of 'force' to apply to each components.  If only one force vector is provided,
+            Vector(s) of 'force' to apply to each component.  If only one force vector is provided,
             force will be copied uniformly across all components.
 
         averageLoad : bool
@@ -435,14 +435,14 @@ class StaticProblem(TACSProblem):
             or copied and applied individually to each component (False). Defaults to False.
 
         Notes
-        ----------
+        -----
 
         The units of the entries of the 'force' vector F are not
         necessarily physical forces and their interpretation depends
         on the physics problem being solved and the dofs included
         in the model.
 
-        A couple of examples of force vector components for common problem are listed below:
+        A couple of examples of force vector components for common problems are listed below:
 
             In Heat Conduction with varsPerNode = 1
                 F = [Qdot] # heat rate
@@ -477,14 +477,14 @@ class StaticProblem(TACSProblem):
             or NASTRAN (grid IDs in bdf file) ordering
 
         Notes
-        ----------
+        -----
 
         The units of the entries of the 'force' vector F are not
         necessarily physical forces and their interpretation depends
         on the physics problem being solved and the dofs included
         in the model.
 
-        A couple of examples of force vector components for common problem are listed below:
+        A couple of examples of force vector components for common problems are listed below:
 
             In Heat Conduction with varsPerNode = 1
                 F = [Qdot] # heat rate
@@ -535,7 +535,7 @@ class StaticProblem(TACSProblem):
             to determine this.
 
         tractions : Numpy array length 1 or compIDs
-            Array of traction vectors for each components
+            Array of traction vectors for each component
 
         faceIndex : int
             Indicates which face (side) of element to apply traction to.
@@ -589,7 +589,7 @@ class StaticProblem(TACSProblem):
             to determine this.
 
         pressures : Numpy array length 1 or compIDs
-            Array of pressure values for each components
+            Array of pressure values for each component
 
         faceIndex : int
             Indicates which face (side) of element to apply pressure to.
@@ -797,7 +797,7 @@ class StaticProblem(TACSProblem):
         finalNormTime = time.time()
 
         # If timing was was requested print it, if the solution is nonlinear
-        # print this information automatically if prinititerations was requested.
+        # print this information automatically if print iterations was requested.
         if self.getOption("printTiming"):
             self._pp("+--------------------------------------------------+")
             self._pp("|")
@@ -1107,7 +1107,7 @@ class StaticProblem(TACSProblem):
         evalFuncs : list[str]
             The functions the user wants returned
 
-        dvSensList : list[BVec] or list[numpy.ndarray]
+        dvSensList : list[tacs.TACS.Vec] or list[numpy.ndarray]
             List of sensitivity vectors to add partial sensitivity to
 
         scale : float
@@ -1149,10 +1149,10 @@ class StaticProblem(TACSProblem):
 
         Parameters
         ----------
-        adjointlist : list[BVec] or list[numpy.ndarray]
+        adjointlist : list[tacs.TACS.Vec] or list[numpy.ndarray]
             List of adjoint vectors for residual sensitivity product
 
-        dvSensList : list[BVec] or list[numpy.ndarray]
+        dvSensList : list[tacs.TACS.Vec] or list[numpy.ndarray]
             List of sensitivity vectors to add product to
 
         scale : float
@@ -1205,7 +1205,7 @@ class StaticProblem(TACSProblem):
         evalFuncs : list[str]
             The functions the user wants returned
 
-        xptSensList : list[BVec] or list[numpy.ndarray]
+        xptSensList : list[tacs.TACS.Vec] or list[numpy.ndarray]
             List of sensitivity vectors to add partial sensitivity to
 
         scale : float
@@ -1247,10 +1247,10 @@ class StaticProblem(TACSProblem):
 
         Parameters
         ----------
-        adjointlist : list[BVec] or list[numpy.ndarray]
+        adjointlist : list[tacs.TACS.Vec] or list[numpy.ndarray]
             List of adjoint vectors for residual sensitivity product
 
-        xptSensList : list[BVec] or list[numpy.ndarray]
+        xptSensList : list[tacs.TACS.Vec] or list[numpy.ndarray]
             List of sensitivity vectors to add product to
 
         scale : float
@@ -1302,10 +1302,10 @@ class StaticProblem(TACSProblem):
 
         Parameters
         ----------
-        res : TACS BVec or numpy array
+        res : tacs.TACS.Vec or numpy.ndarray
             If res is not None, place the residuals into this array.
 
-        Fext : TACS BVec or numpy array, optional
+        Fext : tacs.TACS.Vec or numpy.ndarray, optional
             Distributed array containing additional loads (ex. aerodynamic forces for aerostructural coupling)
             to applied to RHS of the static problem.
 
@@ -1347,7 +1347,7 @@ class StaticProblem(TACSProblem):
 
         Returns
         -------
-        tuple of 2 or 4 scipy.sparse.bsr_matrices
+        K : (scipy.sparse.bsr_matrix, scipy.sparse.bsr_matrix) or (scipy.sparse.bsr_matrix, scipy.sparse.bsr_matrix, scipy.sparse.bsr_matrix, scipy.sparse.bsr_matrix)
             A tuple of 2 scipy.sparse.bsr_matrices (A, B) if Jacobian is a TACSParallelMat, or 4
             scipy.sparse.bsr_matrices (A, B, C, D) if Jacobian is a TACSSchurMat
         """
@@ -1364,10 +1364,10 @@ class StaticProblem(TACSProblem):
 
         Parameters
         ----------
-        phi : TACS BVec or numpy array
+        phi : tacs.TACS.Vec or numpy.ndarray
             Input vector to product with the transpose Jacobian.
 
-        prod : TACS BVec or numpy array
+        prod : tacs.TACS.Vec or numpy.ndarray
             Output vector to add Jacobian product to.
 
         scale : float
@@ -1421,9 +1421,9 @@ class StaticProblem(TACSProblem):
 
         Parameters
         ----------
-        rhs : TACS BVec or numpy array
+        rhs : tacs.TACS.Vec or numpy.ndarray
             right hand side vector for adjoint solve
-        phi : TACS BVec or numpy array
+        phi : tacs.TACS.Vec or numpy.ndarray
             BVec or numpy array into which the adjoint is saved
         """
 

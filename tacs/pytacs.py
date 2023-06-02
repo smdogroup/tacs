@@ -313,7 +313,7 @@ class pyTACS(BaseUI):
 
         Returns
         -------
-        globalDVKeys : list
+        globalDVKeys : list[str]
             List holding global dv names.
         """
         return list(self.globalDVs.keys())
@@ -324,7 +324,7 @@ class pyTACS(BaseUI):
 
         Returns
         -------
-        globalDVNums : list
+        globalDVNums : list[int]
             List holding dv nums corresponding to global DVs.
         """
         return [self.globalDVs[descript]["num"] for descript in self.globalDVs]
@@ -351,7 +351,7 @@ class pyTACS(BaseUI):
             Global DV key to assign mass design variable to. If the key is does not exist,
             it will automatically be created and added to global DVs.
 
-        eIDs : int or list
+        eIDs : int or list[int]
             Element IDs of concentrated mass to assign DV to (NASTRAN ordering)
 
         dvName : str
@@ -666,7 +666,7 @@ class pyTACS(BaseUI):
 
         Returns
         -------
-        compDescript : list
+        compDescript : list[str]
             List of strings containing the names of the corresponding compIDs
         """
         # Return all component names
@@ -687,7 +687,7 @@ class pyTACS(BaseUI):
 
     def getGlobalNodeIDsForComps(self, compIDs, nastranOrdering=False):
         """
-        return the global (non-partitioned) node IDs belonging to a given list of component IDs
+        Return the global (non-partitioned) node IDs belonging to a given list of component IDs
 
         Parameters
         ----------
@@ -696,13 +696,13 @@ class pyTACS(BaseUI):
             If None, returns nodeIDs for all components.
             Defaults to None.
 
-        nastranOrdering : False
+        nastranOrdering : bool
             Flag signaling whether nodeIDs are in TACS (default) or NASTRAN (grid IDs in bdf file) ordering
             Defaults to False.
 
         Returns
         -------
-        nodeIDs : list
+        nodeIDs : list[int]
             List of unique nodeIDs that belong to the given list of compIDs
         """
         # Return all component ids
@@ -725,7 +725,7 @@ class pyTACS(BaseUI):
 
         Returns
         -------
-        nodeIDs : list
+        nodeIDs : list[int]
             List of unique nodeIDs that belong to the given list of compIDs
         """
         # Return all component ids
@@ -746,7 +746,7 @@ class pyTACS(BaseUI):
 
         Parameters
         ----------
-        elemCallBack : function
+        elemCallBack : callable
 
            The calling sequence for elemCallBack **must** be as
            follows::
@@ -1164,7 +1164,7 @@ class pyTACS(BaseUI):
         during assembler creation.
 
         Returns
-        ----------
+        -------
         x : numpy.ndarray
             The original design variable vector set in tacs.
 
@@ -1177,7 +1177,7 @@ class pyTACS(BaseUI):
         get the lower/upper bounds for the design variables.
 
         Returns
-        ----------
+        -------
         xlb : numpy.ndarray
             The design variable lower bound.
         xub : numpy.ndarray
@@ -1200,7 +1200,7 @@ class pyTACS(BaseUI):
             Defaults to False.
 
         Returns
-        ----------
+        -------
         x : numpy.ndarray or tacs.TACS.Vec
             Distributed design variable vector
         """
@@ -1214,6 +1214,11 @@ class pyTACS(BaseUI):
     def getNumDesignVars(self):
         """
         Return the number of design variables on this processor.
+
+        Returns
+        -------
+        ndvs : int
+            Number of design variables on this processor.
         """
         return self.x0.getSize()
 
@@ -1221,6 +1226,11 @@ class pyTACS(BaseUI):
     def getTotalNumDesignVars(self):
         """
         Return the number of design variables across all processors.
+
+        Returns
+        -------
+        ndvs : int
+            Total number of design variables across all processors.
         """
         return self.dvNum
 
@@ -1251,7 +1261,7 @@ class pyTACS(BaseUI):
             Defaults to False.
 
         Returns
-        ----------
+        -------
         xpts : numpy.ndarray or tacs.TACS.Vec
             Distributed node coordinate vector
         """
@@ -1266,13 +1276,23 @@ class pyTACS(BaseUI):
     def getNumOwnedNodes(self):
         """
         Get the number of nodes owned by this processor.
+
+        Returns
+        -------
+        nNodes : int
+            Number of nodes owned by this proc.
         """
         return self.assembler.getNumOwnedNodes()
 
     @postinitialize_method
     def getNumOwnedMultiplierNodes(self):
         """
-        Get number of multiplier nodes owned by this processor.
+        Get the number of lagrange multiplier nodes owned by this processor.
+
+        Returns
+        -------
+        nMultNodes : int
+            Number of multiplier nodes owned by this proc.
         """
         return len(self.meshLoader.getLocalMultiplierNodeIDs())
 
@@ -1280,6 +1300,11 @@ class pyTACS(BaseUI):
     def getLocalMultiplierNodeIDs(self):
         """
         Get the tacs indices of multiplier nodes used to hold lagrange multipliers on this processor.
+
+        Returns
+        -------
+        nodeIDs : list[int]
+            List of multiplier node ID's owned by this proc.
         """
         return self.meshLoader.getLocalMultiplierNodeIDs()
 
@@ -1297,7 +1322,7 @@ class pyTACS(BaseUI):
             Defaults to False.
 
         Returns
-        ----------
+        -------
         vars : numpy.ndarray or tacs.TACS.Vec
             Distributed state variable vector
         """
@@ -1311,13 +1336,23 @@ class pyTACS(BaseUI):
     def getVarsPerNode(self):
         """
         Get the number of variables per node for the model.
+
+        Returns
+        -------
+        vpn : int
+            Number of variables per node.
         """
         return self.assembler.getVarsPerNode()
 
     @postinitialize_method
     def applyBCsToVec(self, vec):
         """
-        Applies zeros to boundary condition dofs in input vector.
+        Applies zeros to boundary condition DOFs in input vector.
+
+        Parameters
+        ----------
+        vec : numpy.ndarray or tacs.TACS.Vec
+            Vector to apply boundary conditions to.
         """
         # Check if input is a BVec or numpy array
         if isinstance(vec, tacs.TACS.Vec):
@@ -1349,7 +1384,7 @@ class pyTACS(BaseUI):
             Defaults to None.
 
         Returns
-        ----------
+        -------
         problem : tacs.problems.StaticProblem
             StaticProblem object used for modeling and solving static cases.
         """
@@ -1383,7 +1418,7 @@ class pyTACS(BaseUI):
             Defaults to None.
 
         Returns
-        ----------
+        -------
         problem : tacs.problems.TransientProblem
             TransientProblem object used for modeling and solving transient cases.
         """
@@ -1424,7 +1459,7 @@ class pyTACS(BaseUI):
             Defaults to None.
 
         Returns
-        ----------
+        -------
         problem : tacs.problems.ModalProblem
             ModalProblem object used for performing modal eigenvalue analysis.
         """
@@ -1451,8 +1486,8 @@ class pyTACS(BaseUI):
         skip setting loads in Python.
 
         Returns
-        ----------
-        structProblems : dict[tacs.problems.TACSProblem]
+        -------
+        structProblems : dict[int, tacs.problems.TACSProblem]
             Dictionary containing a predefined TACSProblem for every loadcase found in the BDF.
             The dictionary keys are the loadcase IDs from the BDF.
 
@@ -1564,6 +1599,7 @@ class pyTACS(BaseUI):
 
         return structProblems
 
+    @postinitialize_method
     def writeBDF(self, fileName, problems):
         """
         Write NASTRAN BDF file from problem class.
@@ -1857,7 +1893,7 @@ class pyTACS(BaseUI):
             Defaults to None.
 
         Returns
-        ----------
+        -------
         constraint : tacs.constraints.AdjacencyConstraint
             AdjacencyConstraint object used for calculating constraints.
         """
@@ -1896,7 +1932,7 @@ class pyTACS(BaseUI):
             Defaults to None.
 
         Returns
-        ----------
+        -------
         constraint : tacs.constraints.DVConstraint
             DVConstraint object used for calculating constraints.
         """
@@ -1934,7 +1970,7 @@ class pyTACS(BaseUI):
             Defaults to None.
 
         Returns
-        ----------
+        -------
         constraint : tacs.constraints.VolumeConstraint
             VolumeConstraint object used for calculating constraints.
         """
@@ -1954,6 +1990,11 @@ class pyTACS(BaseUI):
     def getNumComponents(self):
         """
         Return number of components (property) groups found in bdf.
+
+        Returns
+        -------
+        nComp : int
+            Number of components in model
         """
         return self.nComp
 
@@ -1980,7 +2021,7 @@ class pyTACS(BaseUI):
         (TACSToFH5 object) for TACS.
         """
 
-        # Depending on the user supplied options generate the
+        # Depending on the user-supplied options generate the
         # write_flag
         write_flag = 0
         if self.getOption("writeConnectivity"):
@@ -2038,7 +2079,7 @@ class pyTACS(BaseUI):
                     )
 
             elif isinstance(item, str):
-                # This is a little inefficinet here; loop over
+                # This is a little inefficient here; loop over
                 # self.compDescripts and see if 'item' (a string) in
                 # part of the description. if so add.
                 item = item.upper()
@@ -2057,7 +2098,7 @@ class pyTACS(BaseUI):
             for i in range(len(compIDs)):
                 compIDs[i] = set(compIDs[i])
 
-            # We want to go though and take only the intersection of
+            # We want to go through and take only the intersection of
             # each of the sets we have found:
             tmp = copy.deepcopy(compIDs[0])
 
@@ -2065,7 +2106,7 @@ class pyTACS(BaseUI):
                 tmp = tmp.intersection(compIDs[i])
             compIDs = tmp
 
-        # Finally convert to a list
+        # Finally, convert to a list
         compIDs = self._flatten(list(compIDs))
 
         return compIDs
@@ -2074,6 +2115,12 @@ class pyTACS(BaseUI):
         """
         Create all the constitutive objects by calling the
         userSupplied or default callback function
+
+        Parameters
+        ----------
+        elemCallBack : callable
+            Element callback function provided by user or pyTACS
+            to set up TACS element objects.
         """
 
         for i in range(self.nComp):
@@ -2095,7 +2142,7 @@ class pyTACS(BaseUI):
                 propID=propID,
             )
 
-            # For maximum flexibiliy, multiple pieces of information
+            # For maximum flexibility, multiple pieces of information
             # can be returned. At a minimum, the element objects
             # must be returned!
 
@@ -2104,7 +2151,6 @@ class pyTACS(BaseUI):
             # second one is treated as a scale list for the added dvs.
 
             # Check that result is an element object instance or .
-            foundElem = False
             numFoundElements = 0
             scaleList = None
 
@@ -2189,7 +2235,7 @@ class pyTACS(BaseUI):
                         f" The added design variables are {repr(newVars)}."
                     )
 
-            # Finally increment the dv counter
+            # Finally, increment the dv counter
             self.dvNum += len(newVars)
 
             if len(newVars) > 0:

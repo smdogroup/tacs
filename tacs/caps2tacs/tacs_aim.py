@@ -194,6 +194,10 @@ class TacsAim:
     def get_config_parameter(self, param_name: str):
         return self.geometry.cfgpmtr[param_name].value
 
+    @root_broadcast
+    def get_output_parameter(self, out_name: str):
+        return self.geometry.outpmtr[out_name].value
+
     @property
     def geometry(self):
         """
