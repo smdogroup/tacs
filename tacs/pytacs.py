@@ -1479,6 +1479,46 @@ class pyTACS(BaseUI):
         return problem
 
     @postinitialize_method
+    def createBucklingProblem(self, name, sigma, numEigs, options=None):
+        """
+        Create a new BucklingProblem for performing linearized buckling analysis.
+        This problem can be used to identify the buckling load factors and mode
+        shapes of the model through eigenvalue analysis.
+
+        Parameters
+        ----------
+        name : str
+            Name to assign problem.
+        sigma : float
+            Guess for the lowest eigenvalue.
+            This corresponds to the lowest expected buckling load factor.
+        numEigs : int
+            Number of eigenvalues to solve for.
+        options : dict
+            Problem-specific options to pass to ModalProblem instance (case-insensitive).
+            Defaults to None.
+
+        Returns
+        -------
+        problem : tacs.problems.BucklingProblem
+            BucklingProblem object used for performing buckling eigenvalue analysis.
+        """
+        problem = tacs.problems.buckling.BucklingProblem(
+            name,
+            sigma,
+            numEigs,
+            self.assembler,
+            self.comm,
+            self.outputViewer,
+            self.meshLoader,
+            options,
+        )
+        # Set with original design vars and coordinates, in case they have changed
+        problem.setDesignVars(self.x0)
+        problem.setNodes(self.Xpts0)
+        return problem
+
+    @postinitialize_method
     def createTACSProbsFromBDF(self):
         """
         Automatically define tacs problem classes with loads using information contained in BDF file.
