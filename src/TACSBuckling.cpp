@@ -193,24 +193,29 @@ void TACSLinearBuckling::setSigma(TacsScalar _sigma) {
 
   (K + sigma G)^{-1} K x = lambda/(lambda - sigma) x
 */
-void TACSLinearBuckling::solve(TACSVec *rhs, KSMPrint *ksm_print) {
+void TACSLinearBuckling::solve(TACSVec *rhs, TACSVec *u0, KSMPrint *ksm_print) {
   // Zero the variables
   assembler->zeroVariables();
 
   if (mg) {
     double alpha = 1.0, beta = 0.0, gamma = 0.0;
-    mg->assembleJacobian(alpha, beta, gamma, res);
-    mg->factor();
 
-    // Add the right-hand-side due to external forces
-    if (rhs) {
-      // res->axpy(1.0, rhs);
-      assembler->applyBCs(res);
+    if (u0) {
+      path->copyValues(u0);
+    } else {
+      mg->assembleJacobian(alpha, beta, gamma, res);
+      mg->factor();
+
+      // Add the right-hand-side due to external forces
+      if (rhs) {
+        // res->axpy(1.0, rhs);
+        assembler->applyBCs(res);
+      }
+
+      // Solve for the load path
+      solver->solve(res, path);
+      path->scale(-1.0);
     }
-
-    // Solve for the load path
-    solver->solve(res, path);
-    path->scale(-1.0);
     assembler->setVariables(path);
 
     // Assemble the linear combination of the stiffness matrix
@@ -229,18 +234,24 @@ void TACSLinearBuckling::solve(TACSVec *rhs, KSMPrint *ksm_print) {
     assembler->assembleMatType(TACS_STIFFNESS_MATRIX, kmat);
     aux_mat->copyValues(kmat);
 
-    pc->factor();
-    assembler->assembleRes(res);
+    if (u0) {
+      path->copyValues(u0);
+      assembler->applyBCs(path);
+    } else {
+      pc->factor();
+      assembler->assembleRes(res);
 
-    // If need to add rhs
-    if (rhs) {
-      res->axpy(-1.0, rhs);
-      assembler->applyBCs(res);
+      // If need to add rhs
+      if (rhs) {
+        res->axpy(-1.0, rhs);
+        assembler->applyBCs(res);
+      }
+
+      // Solve for the load path and set the variables
+      solver->solve(res, path);
+      path->scale(-1.0);
     }
 
-    // Solve for the load path and set the variables
-    solver->solve(res, path);
-    path->scale(-1.0);
     assembler->setVariables(path);
 
     // Assemble the stiffness and geometric stiffness matrix
@@ -401,6 +412,176 @@ void TACSLinearBuckling::evalEigenDVSens(int n, TACSBVec *dfdx) {
 
   // Scale the final result
   dfdx->scale(-1.0 / scale);
+}
+
+/*
+  The function computes the derivatives of the buckling eigenvalues.
+
+  Compute the derivative of the eignevalues w.r.t. the design
+  variables. This function must be called after the solve function has
+  been called. The stiffness matrix and geometric stiffness matrix
+  cannot be modified from the previous call to solve.
+
+  The original eigenvalue problem is
+
+  K*u + lambda*G*u = 0
+
+  The derivative of the eigenvalue problem is given as follows:
+
+  d(lambda)/dx = - u^{T}*(dK/dx + lambda*dG/dx)*u/(u^{T}*G*u)
+
+  The difficulty is that the load path is determined by solving an
+  auxiliary linear system:
+
+  K*path = f
+
+  Since the geometric stiffness matrix is a function of the path, we
+  must compute the total derivative of the inner product of the
+  geometric stiffness matrix as follows:
+
+  d(u^{T}*G*u)/dx = [ p(u^{T}*G*u)/px - psi*d(K*path)/dx ]
+
+  where the adjoint variables psi are found by solving the linear
+  system:
+
+  K*psi = d(u^{T}*G*u)/d(path)
+*/
+void TACSLinearBuckling::evalEigenXptSens(int n, TACSBVec *dfdX) {
+  // Zero the derivative
+  dfdX->zeroEntries();
+
+  // Copy over the values of the stiffness matrix, factor
+  // the stiffness matrix.
+  aux_mat->copyValues(kmat);
+  pc->factor();
+
+  // Get the eigenvalue and eigenvector
+  TacsScalar error;
+  TacsScalar eig = extractEigenvector(n, eigvec, &error);
+
+  // Evaluate the partial derivative for the stiffness matrix
+  assembler->addMatXptSensInnerProduct(1.0, TACS_STIFFNESS_MATRIX, eigvec,
+                                       eigvec, dfdX);
+
+  // Evaluate the derivative of the geometric stiffness matrix
+  assembler->addMatXptSensInnerProduct(
+      TacsRealPart(eig), TACS_GEOMETRIC_STIFFNESS_MATRIX, eigvec, eigvec, dfdX);
+
+  // Evaluate derivative of the inner product with respect to
+  // the path variables
+  assembler->evalMatSVSensInnerProduct(TACS_GEOMETRIC_STIFFNESS_MATRIX, eigvec,
+                                       eigvec, res);
+
+  // Solve for the adjoint vector and evaluate the derivative of
+  // the adjoint-residual inner product
+  solver->solve(res, update);
+  assembler->addAdjointResXptSensProducts(-TacsRealPart(eig), 1, &update,
+                                          &dfdX);
+
+  // Now compute the inner product: u^{T}*G*u
+  gmat->mult(eigvec, res);
+  TacsScalar scale = res->dot(eigvec);
+
+  dfdX->beginSetValues(TACS_ADD_VALUES);
+  dfdX->endSetValues(TACS_ADD_VALUES);
+
+  // Scale the final result
+  dfdX->scale(-1.0 / scale);
+}
+
+/*
+  The function computes the partial derivatives of the buckling eigenvalues.
+
+  Add the contribution from the partial derivative of the eigenvalues w.r.t. the
+  design variables. This function must be called after the solve function has
+  been called. The stiffness matrix and geometric stiffness matrix
+  cannot be modified from the previous call to solve.
+*/
+void TACSLinearBuckling::addEigenDVSens(TacsScalar coef, int n,
+                                        TACSBVec *dfdx) {
+  // Get the eigenvalue and eigenvector
+  TacsScalar error;
+  TacsScalar eig = extractEigenvector(n, eigvec, &error);
+
+  // Now compute the inner product: u^{T}*G*u
+  gmat->mult(eigvec, res);
+  TacsScalar scale = res->dot(eigvec);
+
+  // Evaluate the partial derivative for the stiffness matrix
+  assembler->addMatDVSensInnerProduct(-coef / scale, TACS_STIFFNESS_MATRIX,
+                                      eigvec, eigvec, dfdx);
+
+  // Evaluate the derivative of the geometric stiffness matrix
+  assembler->addMatDVSensInnerProduct(-eig * coef / scale,
+                                      TACS_GEOMETRIC_STIFFNESS_MATRIX, eigvec,
+                                      eigvec, dfdx);
+}
+
+/*
+  The function computes the partial derivatives of the buckling eigenvalues.
+
+  Add the contribution from the partial derivative of the eigenvalues w.r.t. the
+  nodal coordinates. This function must be called after the solve function has
+  been called. The stiffness matrix and geometric stiffness matrix
+  cannot be modified from the previous call to solve.
+*/
+void TACSLinearBuckling::addEigenXptSens(TacsScalar coef, int n,
+                                         TACSBVec *dfdX) {
+  // Get the eigenvalue and eigenvector
+  TacsScalar error;
+  TacsScalar eig = extractEigenvector(n, eigvec, &error);
+
+  // Now compute the inner product: u^{T}*G*u
+  gmat->mult(eigvec, res);
+  TacsScalar scale = res->dot(eigvec);
+
+  // Evaluate the partial derivative for the stiffness matrix
+  assembler->addMatXptSensInnerProduct(-coef / scale, TACS_STIFFNESS_MATRIX,
+                                       eigvec, eigvec, dfdX);
+
+  // Evaluate the derivative of the geometric stiffness matrix
+  assembler->addMatXptSensInnerProduct(-coef * eig / scale,
+                                       TACS_GEOMETRIC_STIFFNESS_MATRIX, eigvec,
+                                       eigvec, dfdX);
+}
+
+/*
+  The function computes the partial derivatives of the buckling eigenvalues.
+
+  Compute the derivative of the eigenvalues w.r.t. the design
+  variables. This function must be called after the solve function has
+  been called. The stiffness matrix and geometric stiffness matrix
+  cannot be modified from the previous call to solve.
+
+  The original eigenvalue problem is
+
+  K*u + lambda*G*u = 0
+
+  The derivative of the eigenvalue problem is given as follows:
+
+  d(lambda)/du = -lambda*(u^{T}*dG/du*u)/(u^{T}*G*u)
+*/
+void TACSLinearBuckling::evalEigenSVSens(int n, TACSBVec *dfdu) {
+  dfdu->zeroEntries();
+
+  // Get the eigenvalue and eigenvector
+  TacsScalar error;
+  TacsScalar eig = extractEigenvector(n, eigvec, &error);
+
+  // Evaluate derivative of the inner product with respect to
+  // the path variables
+  assembler->evalMatSVSensInnerProduct(TACS_GEOMETRIC_STIFFNESS_MATRIX, eigvec,
+                                       eigvec, dfdu);
+
+  // Now compute the inner product: u^{T}*G*u
+  gmat->mult(eigvec, res);
+  TacsScalar scale = res->dot(eigvec);
+
+  dfdu->beginSetValues(TACS_ADD_VALUES);
+  dfdu->endSetValues(TACS_ADD_VALUES);
+
+  // Scale the final result
+  dfdu->scale(-eig / scale);
 }
 
 /*!

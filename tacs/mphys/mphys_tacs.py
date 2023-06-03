@@ -7,6 +7,7 @@ from openmdao.utils.mpi import MPI
 from mphys.builder import Builder
 from mphys import MaskedConverter, UnmaskedConverter, MaskedVariableDescription
 
+import tacs.problems
 from .. import pyTACS, functions
 
 
@@ -813,6 +814,7 @@ class TacsFuncsGroup(om.Group):
         self.options.declare("problem_setup", default=None)
         self.options.declare("write_solution")
         self.options.declare("constraint_setup", default=None)
+        self.options.declare("buckling_setup", default=None)
 
     def setup(self):
         self.fea_assembler = self.options["fea_assembler"]
@@ -879,7 +881,29 @@ class TacsFuncsGroup(om.Group):
                 promotes_outputs=["*"],
             )
 
-        self.mass_funcs.mphys_set_sp(sp)
+            self.mass_funcs.mphys_set_sp(sp)
+
+        # Setup TACS problem with user-defined output functions
+        buckling_setup = self.options["buckling_setup"]
+        if buckling_setup is not None:
+            new_problem = buckling_setup(scenario_name, self.fea_assembler)
+            # Check if the user provided back a new problem to overwrite the default
+            if isinstance(new_problem, tacs.problems.BucklingProblem):
+                bp = new_problem
+
+                # Add buckling evaluation component for eigenvalue outputs
+                self.add_subsystem(
+                    "buckling",
+                    TacsBuckling(
+                        fea_assembler=self.fea_assembler,
+                        check_partials=self.check_partials,
+                        conduction=self.conduction,
+                        write_solution=self.write_solution,
+                    ),
+                    promotes_inputs=promotes_inputs + promotes_states,
+                    promotes_outputs=["*"],
+                )
+                self.buckling.mphys_set_bp(bp)
 
         # Check if there are any user-defined TACS constraints
         # Constraints behave similar to "mass" functions (i.e. they don't depend on the solution state)
@@ -997,6 +1021,125 @@ class ConstraintComponent(om.ExplicitComponent):
                     d_inputs["x_struct0"] += Jxpt.T.dot(d_outputs[out_name])
 
 
+class TacsBuckling(om.ExplicitComponent):
+    """
+    Component to compute non-mass TACS functions
+    """
+
+    def initialize(self):
+        self.options.declare("fea_assembler", recordable=False)
+        self.options.declare("conduction", default=False)
+        self.options.declare("check_partials")
+        self.options.declare("write_solution")
+
+        self.fea_assembler = None
+
+        self.check_partials = False
+
+    def setup(self):
+        self.fea_assembler = self.options["fea_assembler"]
+        self.check_partials = self.options["check_partials"]
+        self.write_solution = self.options["write_solution"]
+        self.conduction = self.options["conduction"]
+        self.solution_counter = 0
+
+        if self.conduction:
+            self.states_name = "T_conduct"
+        else:
+            self.states_name = "u_struct"
+
+        # TACS part of setup
+        local_ndvs = self.fea_assembler.getNumDesignVars()
+
+        # OpenMDAO part of setup
+        self.add_input(
+            "tacs_dvs",
+            distributed=True,
+            shape=local_ndvs,
+            desc="tacs design variables",
+            tags=["mphys_coupling"],
+        )
+        self.add_input(
+            "x_struct0",
+            distributed=True,
+            shape_by_conn=True,
+            desc="structural node coordinates",
+            tags=["mphys_coordinates"],
+        )
+        self.add_input(
+            self.states_name,
+            distributed=True,
+            shape_by_conn=True,
+            desc="structural state vector",
+            tags=["mphys_coupling"],
+        )
+
+    def mphys_set_bp(self, bp):
+        # this is the external function to set the bp to this component
+        self.bp = bp
+
+        # Add eval funcs as outputs
+        for func_name in self.bp.functionList:
+            func_name = func_name.replace(".", "_")
+            self.add_output(
+                func_name, distributed=False, shape=1, tags=["mphys_result"]
+            )
+
+    def _update_internal(self, inputs):
+        self.bp.setDesignVars(inputs["tacs_dvs"])
+        self.bp.setNodes(inputs["x_struct0"])
+
+    def compute(self, inputs, outputs):
+        self._update_internal(inputs)
+
+        # Solve
+        self.bp.solve(u0=inputs[self.states_name])
+
+        # Evaluate functions
+        funcs = {}
+        self.bp.evalFunctions(funcs, evalFuncs=outputs.keys())
+        for out_name in outputs:
+            eig_name = out_name.replace("_", ".")
+            func_key = f"{self.bp.name}_{eig_name}"
+            self.bp.evalFunctions(funcs, evalFuncs=[eig_name])
+            outputs[out_name] = funcs[func_key]
+
+        if self.write_solution:
+            # write the solution files.
+            self.bp.writeSolution(number=self.solution_counter)
+            self.solution_counter += 1
+
+    def compute_jacvec_product(self, inputs, d_inputs, d_outputs, mode):
+        if mode == "fwd":
+            if not self.check_partials:
+                raise ValueError("TACS forward mode requested but not implemented")
+        if mode == "rev":
+            # always update internal because same tacs object could be used by multiple scenarios
+            # and we need to load this scenario's state back into TACS before doing derivatives
+            self._update_internal(inputs)
+
+            for func_name in d_outputs:
+                d_func = d_outputs[func_name]
+                eig_name = func_name.replace("_", ".")
+                mode_i = self.bp.functionList[eig_name]
+
+                if d_func[0] != 0.0:
+                    if "tacs_dvs" in d_inputs:
+                        self.bp.addDVSens(
+                            [mode_i], [d_inputs["tacs_dvs"]], scale=d_func
+                        )
+
+                    if "x_struct0" in d_inputs:
+                        self.bp.addXptSens(
+                            [mode_i], [d_inputs["x_struct0"]], scale=d_func
+                        )
+
+                    if self.states_name in d_inputs:
+                        sv_sens = np.zeros_like(d_inputs[self.states_name])
+                        self.bp.evalSVSens([mode_i], [sv_sens])
+                        d_inputs[self.states_name][:] += sv_sens * d_func
+
+
 class TacsBuilder(Builder):
     def __init__(
         self,
@@ -1046,6 +1189,12 @@ class TacsBuilder(Builder):
         else:
             self.constraint_setup = None
 
+        # Load optional user-defined callback function for setting up buckling problem
+        if "buckling_setup" in pytacs_options:
+            self.buckling_setup = pytacs_options.pop("buckling_setup")
+        else:
+            self.buckling_setup = None
+
         # Create pytacs instance
         self.fea_assembler = pyTACS(bdf_file, options=pytacs_options, comm=comm)
         self.comm = comm
@@ -1087,6 +1236,7 @@ class TacsBuilder(Builder):
             scenario_name=scenario_name,
             problem_setup=self.problem_setup,
             constraint_setup=self.constraint_setup,
+            buckling_setup=self.buckling_setup,
         )
 
     def get_ndof(self):
@@ -1124,6 +1274,57 @@ class TacsBuilder(Builder):
             return global_dvs
         else:
             return self.fea_assembler.getOrigDesignVars()
+
+    def get_dv_bounds(self):
+        """Get arrays containing the lower and upper bounds for the design variables,
+        in the form needed by OpenMDAO's `add_design_variable` method.
+
+        Returns
+        -------
+        list of ndarray
+            lower and upper bounds for the design variables
+        """
+        if MPI is not None and self.comm.size > 1:
+            # Get bounds owned by this processor
+            local_dv_bounds = self.fea_assembler.getDesignVarRange()
+            local_dv_bounds = list(local_dv_bounds)
+            local_dv_bounds[0] = local_dv_bounds[0].astype(float)
+            local_dv_bounds[1] = local_dv_bounds[1].astype(float)
+
+            # Size of design variable on this processor
+            local_ndvs = self.fea_assembler.getNumDesignVars()
+            # Size of design variable vector on each processor
+            dv_sizes = self.comm.allgather(local_ndvs)
+            # Offsets for global design variable vector
+            offsets = np.zeros(self.comm.size, dtype=int)
+            offsets[1:] = np.cumsum(dv_sizes)[:-1]
+            # Gather the portions of the design variable array distributed across each processor
+            tot_ndvs = sum(dv_sizes)
+            global_dv_bounds = []
+            for ii in [0, 1]:
+                global_dv_bounds.append(
+                    np.zeros(tot_ndvs, dtype=local_dv_bounds[ii].dtype)
+                )
+                self.comm.Allgatherv(
+                    local_dv_bounds[ii],
+                    [global_dv_bounds[ii], dv_sizes, offsets, MPI.DOUBLE],
+                )
+            # return the global dv array
+            return global_dv_bounds
+        else:
+            return self.fea_assembler.getDesignVarRange()
+
+    def get_dv_scalers(self):
+        """Get an array containing the scaling factors for the design
+        variables, in the form needed by OpenMDAO's `add_design_variable`
+        method.
+
+        Returns
+        -------
+        array
+            Scaling values
+        """
+        return np.array(self.fea_assembler.scaleList)
 
     def get_ndv(self):
         """

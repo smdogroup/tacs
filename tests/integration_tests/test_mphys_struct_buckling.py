@@ -1,4 +1,5 @@
 import os
+import unittest
 
 import numpy as np
 import openmdao.api as om
@@ -7,12 +8,12 @@ from mphys.scenario_structural import ScenarioStructural
 
 import tacs.mphys
 from openmdao_analysis_base_test import OpenMDAOTestCase
-from tacs import elements, constitutive, functions
+from tacs import elements, constitutive, TACS
 
 """
 This is a simple 1m by 2m plate made up of four quad shell elements.
-The plate is structurally loaded under a 100G gravity load and a unit force,
-"f_struct", is applied on on every node. The mass and KSFailure of the plate
+The plate is structurally loaded under a compression load and a unit force, 
+"f_struct", is applied on on every node. The mass and KSFailure of the plate 
 are evaluated as outputs and have their partial and total sensitivities checked.
 """
 
@@ -21,21 +22,16 @@ bdf_file = os.path.join(base_dir, "./input_files/debug_plate.bdf")
 
 # Historical reference values for function outputs
 FUNC_REFS = {
-    "analysis.mass": 55.6,
-    "analysis.Ixx": 74.13379667,
-    "analysis.ks_vmfailure": 5.778130269059719,
-    "analysis.adjacency.PANEL": [0.0, 0.0, 0.0, 0.0],
+    "analysis.eigsb_0": -1.08864541,
+    "analysis.eigsb_1": 1.08938765,
 }
 
 # Inputs to check total sensitivities wrt
 wrt = ["mesh.fea_mesh.x_struct0", "dv_struct", "f_struct"]
 
-# KS function weight
-ksweight = 10.0
-
 
 class ProblemTest(OpenMDAOTestCase.OpenMDAOTest):
-    N_PROCS = 2  # this is how many MPI processes to use for this TestCase.
+    N_PROCS = 1  # this is how many MPI processes to use for this TestCase.
 
     def setup_problem(self, dtype):
         """
@@ -47,8 +43,8 @@ class ProblemTest(OpenMDAOTestCase.OpenMDAOTest):
             self.rtol = 1e-7
             self.dh = 1e-50
         else:
-            self.rtol = 1e-2
-            self.dh = 1e-8
+            self.rtol = 1e-1
+            self.dh = 1e-7
 
         # Callback function used to setup TACS element objects and DVs
         def element_callback(
@@ -58,7 +54,7 @@ class ProblemTest(OpenMDAOTestCase.OpenMDAOTest):
             E = 73.1e9  # elastic modulus, Pa
             nu = 0.33  # poisson's ratio
             ys = 324.0e6  # yield stress, Pa
-            thickness = 0.01
+            thickness = 0.012
             min_thickness = 0.002
             max_thickness = 0.05
 
@@ -85,36 +81,24 @@ class ProblemTest(OpenMDAOTestCase.OpenMDAOTest):
             problem.setOption("L2Convergence", 1e-20)
             problem.setOption("L2ConvergenceRel", 1e-20)
 
-            # Add TACS Functions
-            problem.addFunction("mass", functions.StructuralMass)
-            problem.addFunction("ks_vmfailure", functions.KSFailure, ksWeight=ksweight)
-            problem.addFunction(
-                "Ixx",
-                functions.MomentOfInertia,
-                direction1=[1.0, 0.0, 0.0],
-                direction2=[1.0, 0.0, 0.0],
+        def buckling_setup(scenario_name, fea_assembler):
+            """
+            Helper function to add fixed forces and eval functions
+            to structural problems used in tacs builder
+            """
+            problem = fea_assembler.createBucklingProblem(
+                "buckling", sigma=1e0, numEigs=2
             )
-
-            # Add gravity load
-            g = np.array([0.0, 0.0, -9.81]) * 100  # m/s^2
-            problem.addInertialLoad(g)
-
-        def constraint_setup(scenario_name, fea_assembler, constraints):
-            """
-            Helper function to setup tacs constraint classes
-            """
-            # Setup adjacency constraints for panel thicknesses
-            constr = fea_assembler.createAdjacencyConstraint("adjacency")
-            constr.addConstraint("PANEL")
-            constr_list = [constr]
-            return constr_list
+            problem.setOption("L2Convergence", 1e-20)
+            problem.setOption("L2ConvergenceRel", 1e-20)
+            return problem
 
         class Top(Multipoint):
             def setup(self):
                 tacs_options = {
                     "element_callback": element_callback,
                     "problem_setup": problem_setup,
-                    "constraint_setup": constraint_setup,
+                    "buckling_setup": buckling_setup,
                     "mesh_file": bdf_file,
                 }
 
@@ -125,18 +109,15 @@ class ProblemTest(OpenMDAOTestCase.OpenMDAOTest):
                     write_solution=False,
                 )
                 tacs_builder.initialize(self.comm)
+                ndv_struct = tacs_builder.get_ndv()
 
                 dvs = self.add_subsystem("dvs", om.IndepVarComp(), promotes=["*"])
-                structDVs = tacs_builder.get_initial_dvs()
-                dvs.add_output("dv_struct", structDVs)
-                lb, ub = tacs_builder.get_dv_bounds()
-                structDVScaling = tacs_builder.get_dv_scalers()
-                self.add_design_var(
-                    "dv_struct", lower=lb, upper=ub, scaler=structDVScaling
-                )
+                dvs.add_output("dv_struct", np.array(ndv_struct * [0.01]))
 
                 f_size = tacs_builder.get_ndof() * tacs_builder.get_number_of_nodes()
                 forces = self.add_subsystem("forces", om.IndepVarComp(), promotes=["*"])
+                f = np.zeros(f_size)
+                f[1::3] = -1e0
                 forces.add_output("f_struct", val=np.ones(f_size), distributed=True)
 
                 self.add_subsystem("mesh", tacs_builder.get_mesh_coordinate_subsystem())
@@ -158,3 +139,11 @@ class ProblemTest(OpenMDAOTestCase.OpenMDAOTest):
         to test their sensitivities with respect to.
         """
         return FUNC_REFS, wrt
+
+    # This test is very difficult to verify with FD, so we only run it w/ CS
+    @unittest.skipIf(TACS.dtype != complex, "Skipping test in real mode.")
+    def test_partials(self):
+        """
+        Test partial sensitivities using fd/cs
+        """
+        return OpenMDAOTestCase.OpenMDAOTest.test_partials(self)

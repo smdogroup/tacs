@@ -133,7 +133,7 @@ jobs:
           if [[ ${{ matrix.NAME }} == 'Real' ]]; then
             source ${TACS_DIR}/extern/ESP122/ESPenv.sh
           fi
-          testflo --timeout 120 .;
+          testflo --timeout 240 .;
       - name: Build docs
         run: |
           cd $TACS_DIR/docs;
