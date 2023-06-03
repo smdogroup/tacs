@@ -201,7 +201,8 @@
         <span class="n">restarts</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s2">&quot;nRestarts&quot;</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">gmres</span> <span class="o">=</span> <span class="n">tacs</span><span class="o">.</span><span class="n">TACS</span><span class="o">.</span><span class="n">KSM</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">K</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">pc</span><span class="p">,</span> <span class="n">subspace</span><span class="p">,</span> <span class="n">restarts</span><span class="p">)</span>
 
-        <span class="n">eigTol</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s2">&quot;L2Convergence&quot;</span><span class="p">)</span>
+        <span class="n">atol</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s2">&quot;L2Convergence&quot;</span><span class="p">)</span>
+        <span class="n">rtol</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s2">&quot;L2ConvergenceRel&quot;</span><span class="p">)</span>
 
         <span class="c1"># Create the frequency analysis object</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">freqSolver</span> <span class="o">=</span> <span class="n">tacs</span><span class="o">.</span><span class="n">TACS</span><span class="o">.</span><span class="n">FrequencyAnalysis</span><span class="p">(</span>
@@ -211,7 +212,9 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">K</span><span class="p">,</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">gmres</span><span class="p">,</span>
             <span class="n">num_eigs</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">numEigs</span><span class="p">,</span>
-            <span class="n">eig_tol</span><span class="o">=</span><span class="n">eigTol</span><span class="p">,</span>
+            <span class="n">eig_tol</span><span class="o">=</span><span class="n">atol</span><span class="p">,</span>
+            <span class="n">eig_atol</span><span class="o">=</span><span class="n">atol</span><span class="p">,</span>
+            <span class="n">eig_rtol</span><span class="o">=</span><span class="n">rtol</span><span class="p">,</span>
         <span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">_initializeFunctionList</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -406,8 +409,7 @@
 
 <div class="viewcode-block" id="ModalProblem.solve"><a class="viewcode-back" href="../../../pytacs/modal.html#tacs.problems.ModalProblem.solve">[docs]</a>    <span class="k">def</span> <span class="nf">solve</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Solve the time integrated transient problem. The</span>
-<span class="sd">        forces must already be set.</span>
+<span class="sd">        Solve the eigenvalue problem.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">startTime</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
 

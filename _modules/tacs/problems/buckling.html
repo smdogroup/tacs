@@ -1,0 +1,1058 @@
+<!DOCTYPE html>
+
+<html lang="python">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>tacs.problems.buckling &#8212; TACS  documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/sphinxdoc.css" />
+    <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+    <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+    <script src="../../../_static/doctools.js"></script>
+    <script src="../../../_static/sphinx_highlight.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">TACS  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" accesskey="U">Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">tacs.problems.buckling</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for tacs.problems.buckling</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">The main purpose of this class is to represent all relevant</span>
+<span class="sd">information for a linearized buckling analysis.</span>
+
+<span class="sd">.. note:: This class should be created using the</span>
+<span class="sd">    :meth:`pyTACS.createBucklingProblem &lt;tacs.pytacs.pyTACS.createBucklingProblem&gt;` method.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="c1"># =============================================================================</span>
+<span class="c1"># Imports</span>
+<span class="c1"># =============================================================================</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">time</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="kn">import</span> <span class="nn">tacs.TACS</span>
+<span class="kn">from</span> <span class="nn">.base</span> <span class="kn">import</span> <span class="n">TACSProblem</span>
+
+
+<div class="viewcode-block" id="BucklingProblem"><a class="viewcode-back" href="../../../pytacs/buckling.html#tacs.problems.BucklingProblem">[docs]</a><span class="k">class</span> <span class="nc">BucklingProblem</span><span class="p">(</span><span class="n">TACSProblem</span><span class="p">):</span>
+    <span class="c1"># Default Option List</span>
+    <span class="n">defaultOptions</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;outputDir&quot;</span><span class="p">:</span> <span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="s2">&quot;./&quot;</span><span class="p">,</span> <span class="s2">&quot;Output directory for F5 file writer.&quot;</span><span class="p">],</span>
+        <span class="c1"># Solution Options</span>
+        <span class="s2">&quot;L2Convergence&quot;</span><span class="p">:</span> <span class="p">[</span>
+            <span class="nb">float</span><span class="p">,</span>
+            <span class="mf">1e-12</span><span class="p">,</span>
+            <span class="s2">&quot;Absolute convergence tolerance for Eigenvalue solver based on l2 norm of residual.&quot;</span><span class="p">,</span>
+        <span class="p">],</span>
+        <span class="s2">&quot;L2ConvergenceRel&quot;</span><span class="p">:</span> <span class="p">[</span>
+            <span class="nb">float</span><span class="p">,</span>
+            <span class="mf">1e-12</span><span class="p">,</span>
+            <span class="s2">&quot;Relative convergence tolerance for Eigenvalue solver based on l2 norm of residual.&quot;</span><span class="p">,</span>
+        <span class="p">],</span>
+        <span class="s2">&quot;RBEStiffnessScaleFactor&quot;</span><span class="p">:</span> <span class="p">[</span>
+            <span class="nb">float</span><span class="p">,</span>
+            <span class="mf">1e3</span><span class="p">,</span>
+            <span class="s2">&quot;Constraint matrix scaling factor used in RBE Lagrange multiplier stiffness matrix.&quot;</span><span class="p">,</span>
+        <span class="p">],</span>
+        <span class="s2">&quot;RBEArtificialStiffness&quot;</span><span class="p">:</span> <span class="p">[</span>
+            <span class="nb">float</span><span class="p">,</span>
+            <span class="mf">1e-3</span><span class="p">,</span>
+            <span class="s2">&quot;Artificial constant added to diagonals of RBE Lagrange multiplier stiffness matrix </span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="s2">&quot;</span><span class="se">\t</span><span class="s2"> to stabilize preconditioner.&quot;</span><span class="p">,</span>
+        <span class="p">],</span>
+        <span class="s2">&quot;subSpaceSize&quot;</span><span class="p">:</span> <span class="p">[</span>
+            <span class="nb">int</span><span class="p">,</span>
+            <span class="mi">10</span><span class="p">,</span>
+            <span class="s2">&quot;Subspace size for Krylov solver used by Eigenvalue solver.&quot;</span><span class="p">,</span>
+        <span class="p">],</span>
+        <span class="s2">&quot;nRestarts&quot;</span><span class="p">:</span> <span class="p">[</span>
+            <span class="nb">int</span><span class="p">,</span>
+            <span class="mi">15</span><span class="p">,</span>
+            <span class="s2">&quot;Max number of resets for Krylov solver used by Eigenvalue solver.&quot;</span><span class="p">,</span>
+        <span class="p">],</span>
+        <span class="c1"># Output Options</span>
+        <span class="s2">&quot;writeSolution&quot;</span><span class="p">:</span> <span class="p">[</span><span class="nb">bool</span><span class="p">,</span> <span class="kc">True</span><span class="p">,</span> <span class="s2">&quot;Flag for suppressing all f5 file writing.&quot;</span><span class="p">],</span>
+        <span class="s2">&quot;numberSolutions&quot;</span><span class="p">:</span> <span class="p">[</span>
+            <span class="nb">bool</span><span class="p">,</span>
+            <span class="kc">True</span><span class="p">,</span>
+            <span class="s2">&quot;Flag for attaching solution counter index to f5 files.&quot;</span><span class="p">,</span>
+        <span class="p">],</span>
+        <span class="s2">&quot;printTiming&quot;</span><span class="p">:</span> <span class="p">[</span>
+            <span class="nb">bool</span><span class="p">,</span>
+            <span class="kc">False</span><span class="p">,</span>
+            <span class="s2">&quot;Flag for printing out timing information for class procedures.&quot;</span><span class="p">,</span>
+        <span class="p">],</span>
+        <span class="s2">&quot;printLevel&quot;</span><span class="p">:</span> <span class="p">[</span>
+            <span class="nb">int</span><span class="p">,</span>
+            <span class="mi">0</span><span class="p">,</span>
+            <span class="s2">&quot;Print level for Eigenvalue solver.</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="s2">&quot;</span><span class="se">\t</span><span class="s2"> Accepts:</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="s2">&quot;</span><span class="se">\t\t</span><span class="s2">   0 : No printing.</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="s2">&quot;</span><span class="se">\t\t</span><span class="s2">   1 : Print major iterations.</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="s2">&quot;</span><span class="se">\t\t</span><span class="s2"> &gt; 1 : Print major + minor iterations.&quot;</span><span class="p">,</span>
+        <span class="p">],</span>
+    <span class="p">}</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">name</span><span class="p">,</span>
+        <span class="n">sigma</span><span class="p">,</span>
+        <span class="n">numEigs</span><span class="p">,</span>
+        <span class="n">assembler</span><span class="p">,</span>
+        <span class="n">comm</span><span class="p">,</span>
+        <span class="n">outputViewer</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">meshLoader</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">options</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        NOTE: This class should not be initialized directly by the user.</span>
+<span class="sd">        Use pyTACS.createBucklingProblem instead.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        name : str</span>
+<span class="sd">            Name of this tacs problem</span>
+
+<span class="sd">        sigma : float</span>
+<span class="sd">            Guess for the lowest eigenvalue. This corresponds to the lowest buckling load factor.</span>
+
+<span class="sd">        numEigs : int</span>
+<span class="sd">            Number of eigenvalues to solve for</span>
+
+<span class="sd">        assembler : TACS.Assembler</span>
+<span class="sd">            Cython object responsible for creating and setting tacs objects used to solve problem</span>
+
+<span class="sd">        comm : mpi4py.MPI.Intracomm</span>
+<span class="sd">            The comm object on which to create the pyTACS object.</span>
+
+<span class="sd">        outputViewer : TACS.TACSToFH5</span>
+<span class="sd">            Cython object used to write out f5 files that can be converted and used for postprocessing.</span>
+
+<span class="sd">        meshLoader : pymeshloader.pyMeshLoader</span>
+<span class="sd">            pyMeshLoader object used to create the assembler.</span>
+
+<span class="sd">        options : dict</span>
+<span class="sd">            Dictionary holding problem-specific option parameters (case-insensitive).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="c1"># Problem name</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">name</span>
+
+        <span class="c1"># Default setup for common problem class objects, sets up comm and options</span>
+        <span class="n">TACSProblem</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">assembler</span><span class="p">,</span> <span class="n">comm</span><span class="p">,</span> <span class="n">options</span><span class="p">,</span> <span class="n">outputViewer</span><span class="p">,</span> <span class="n">meshLoader</span><span class="p">)</span>
+
+        <span class="c1"># Set time eigenvalue parameters</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sigma</span> <span class="o">=</span> <span class="n">sigma</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">numEigs</span> <span class="o">=</span> <span class="n">numEigs</span>
+
+        <span class="c1"># String name used in evalFunctions</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">valName</span> <span class="o">=</span> <span class="s2">&quot;eigsb&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_initializeFunctionList</span><span class="p">()</span>
+
+        <span class="c1"># Create problem-specific variables</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_createVariables</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">_createVariables</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Internal to create the objects required by TACS Integrator</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">callCounter</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+
+        <span class="c1"># Buckling load state</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">u0</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">assembler</span><span class="o">.</span><span class="n">createVec</span><span class="p">()</span>
+        <span class="c1"># Load vector</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">F</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">assembler</span><span class="o">.</span><span class="n">createVec</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">F_array</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">F</span><span class="o">.</span><span class="n">getArray</span><span class="p">()</span>
+        <span class="c1"># RHS vector</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">rhs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">assembler</span><span class="o">.</span><span class="n">createVec</span><span class="p">()</span>
+        <span class="c1"># Auxiliary element object for applying tractions/pressure</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">auxElems</span> <span class="o">=</span> <span class="n">tacs</span><span class="o">.</span><span class="n">TACS</span><span class="o">.</span><span class="n">AuxElements</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">aux</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">assembler</span><span class="o">.</span><span class="n">createSchurMat</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">G</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">assembler</span><span class="o">.</span><span class="n">createSchurMat</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">K</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">assembler</span><span class="o">.</span><span class="n">createSchurMat</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">pc</span> <span class="o">=</span> <span class="n">tacs</span><span class="o">.</span><span class="n">TACS</span><span class="o">.</span><span class="n">Pc</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">K</span><span class="p">)</span>
+
+        <span class="c1"># Set artificial stiffness factors in rbe class</span>
+        <span class="n">c1</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s2">&quot;RBEStiffnessScaleFactor&quot;</span><span class="p">)</span>
+        <span class="n">c2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s2">&quot;RBEArtificialStiffness&quot;</span><span class="p">)</span>
+        <span class="n">tacs</span><span class="o">.</span><span class="n">elements</span><span class="o">.</span><span class="n">RBE2</span><span class="o">.</span><span class="n">setScalingParameters</span><span class="p">(</span><span class="n">c1</span><span class="p">,</span> <span class="n">c2</span><span class="p">)</span>
+        <span class="n">tacs</span><span class="o">.</span><span class="n">elements</span><span class="o">.</span><span class="n">RBE3</span><span class="o">.</span><span class="n">setScalingParameters</span><span class="p">(</span><span class="n">c1</span><span class="p">,</span> <span class="n">c2</span><span class="p">)</span>
+
+        <span class="c1"># Assemble and factor the stiffness/Jacobian matrix. Factor the</span>
+        <span class="c1"># Jacobian and solve the linear system for the displacements</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assembler</span><span class="o">.</span><span class="n">assembleMatType</span><span class="p">(</span><span class="n">tacs</span><span class="o">.</span><span class="n">TACS</span><span class="o">.</span><span class="n">STIFFNESS_MATRIX</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">K</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assembler</span><span class="o">.</span><span class="n">assembleMatType</span><span class="p">(</span><span class="n">tacs</span><span class="o">.</span><span class="n">TACS</span><span class="o">.</span><span class="n">GEOMETRIC_STIFFNESS_MATRIX</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">G</span><span class="p">)</span>
+
+        <span class="n">subspace</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s2">&quot;subSpaceSize&quot;</span><span class="p">)</span>
+        <span class="n">restarts</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s2">&quot;nRestarts&quot;</span><span class="p">)</span>
+        <span class="n">atol</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s2">&quot;L2Convergence&quot;</span><span class="p">)</span>
+        <span class="n">rtol</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s2">&quot;L2ConvergenceRel&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">gmres</span> <span class="o">=</span> <span class="n">tacs</span><span class="o">.</span><span class="n">TACS</span><span class="o">.</span><span class="n">KSM</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">aux</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">pc</span><span class="p">,</span> <span class="n">subspace</span><span class="p">,</span> <span class="n">restarts</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">gmres</span><span class="o">.</span><span class="n">setTolerances</span><span class="p">(</span><span class="n">rtol</span><span class="p">,</span> <span class="n">atol</span><span class="p">)</span>
+
+        <span class="c1"># Create the buckling analysis object</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">buckleSolver</span> <span class="o">=</span> <span class="n">tacs</span><span class="o">.</span><span class="n">TACS</span><span class="o">.</span><span class="n">BucklingAnalysis</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">assembler</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">sigma</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">G</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">K</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">gmres</span><span class="p">,</span>
+            <span class="n">num_eigs</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">numEigs</span><span class="p">,</span>
+            <span class="n">eig_tol</span><span class="o">=</span><span class="n">rtol</span><span class="p">,</span>
+        <span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_initializeFunctionList</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Create FunctionList dict which maps eigenvalue strings</span>
+<span class="sd">        to mode indices used in evalFunctions method.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">functionList</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">mode_i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">numEigs</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">functionList</span><span class="p">[</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">valName</span><span class="si">}</span><span class="s2">.</span><span class="si">{</span><span class="n">mode_i</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">mode_i</span>
+
+<div class="viewcode-block" id="BucklingProblem.setOption"><a class="viewcode-back" href="../../../pytacs/buckling.html#tacs.problems.BucklingProblem.setOption">[docs]</a>    <span class="k">def</span> <span class="nf">setOption</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Set a solver option value. The name is not case sensitive.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        name : str</span>
+<span class="sd">            Name of option to modify</span>
+
+<span class="sd">        value : depends on option</span>
+<span class="sd">            New option value to set</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Default setOption for common problem class objects</span>
+        <span class="n">TACSProblem</span><span class="o">.</span><span class="n">setOption</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+
+        <span class="c1"># No need to reset solver for output options</span>
+        <span class="k">if</span> <span class="n">name</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">in</span> <span class="p">[</span>
+            <span class="s2">&quot;writesolution&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;printtiming&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;numbersolutions&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;outputdir&quot;</span><span class="p">,</span>
+        <span class="p">]:</span>
+            <span class="k">pass</span>
+        <span class="c1"># Reset solver for all other option changes</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_createVariables</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="BucklingProblem.setValName"><a class="viewcode-back" href="../../../pytacs/buckling.html#tacs.problems.BucklingProblem.setValName">[docs]</a>    <span class="k">def</span> <span class="nf">setValName</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">valName</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Set a name for the eigenvalues. Only needs</span>
+<span class="sd">        to be changed if more than 1 pytacs object is used in an</span>
+<span class="sd">        optimization</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        valName : str</span>
+<span class="sd">            Name of the eigenvalue output used in evalFunctions().</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">valName</span> <span class="o">=</span> <span class="n">valName</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_initializeFunctionList</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="BucklingProblem.getNumEigs"><a class="viewcode-back" href="../../../pytacs/buckling.html#tacs.problems.BucklingProblem.getNumEigs">[docs]</a>    <span class="k">def</span> <span class="nf">getNumEigs</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the number of eigenvalues requested from solver for this problem.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        ----------</span>
+<span class="sd">        numEigs : int</span>
+<span class="sd">            Number of eigenvalues.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">numEigs</span></div>
+
+<div class="viewcode-block" id="BucklingProblem.addFunction"><a class="viewcode-back" href="../../../pytacs/buckling.html#tacs.problems.BucklingProblem.addFunction">[docs]</a>    <span class="k">def</span> <span class="nf">addFunction</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">funcName</span><span class="p">,</span> <span class="n">funcHandle</span><span class="p">,</span> <span class="n">compIDs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        NOT SUPPORTED FOR THIS PROBLEM</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_TACSWarning</span><span class="p">(</span><span class="s2">&quot;addFunction method not supported for this class.&quot;</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="BucklingProblem.evalFunctions"><a class="viewcode-back" href="../../../pytacs/buckling.html#tacs.problems.BucklingProblem.evalFunctions">[docs]</a>    <span class="k">def</span> <span class="nf">evalFunctions</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">funcs</span><span class="p">,</span> <span class="n">evalFuncs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ignoreMissing</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Evaluate eigenvalues for problem. The functions corresponding to</span>
+<span class="sd">        the integers in evalFuncs are evaluated and updated into</span>
+<span class="sd">        the provided dictionary.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        funcs : dict</span>
+<span class="sd">            Dictionary into which the functions are saved.</span>
+<span class="sd">        evalFuncs : iterable object containing strings.</span>
+<span class="sd">            If not none, use these functions to evaluate.</span>
+<span class="sd">        ignoreMissing : bool</span>
+<span class="sd">            Flag to supress checking for a valid function. Please use</span>
+<span class="sd">            this option with caution.</span>
+
+<span class="sd">        Examples</span>
+<span class="sd">        --------</span>
+<span class="sd">        &gt;&gt;&gt; funcs = {}</span>
+<span class="sd">        &gt;&gt;&gt; bucklingProblem.solve()</span>
+<span class="sd">        &gt;&gt;&gt; bucklingProblem.evalFunctions(funcs, &#39;eigsm.0&#39;)</span>
+<span class="sd">        &gt;&gt;&gt; funcs</span>
+<span class="sd">        &gt;&gt;&gt; # Result will look like (if bucklingProblem has name of &#39;c1&#39;):</span>
+<span class="sd">        &gt;&gt;&gt; # {&#39;c1_eigsm.0&#39;:12354.10}</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Make sure assembler variables are up to date</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_updateAssemblerVars</span><span class="p">()</span>
+
+        <span class="c1"># Check if user specified which eigvals to output</span>
+        <span class="c1"># Otherwise, output them all</span>
+        <span class="k">if</span> <span class="n">evalFuncs</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">evalFuncs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">functionList</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">userFuncs</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">evalFuncs</span><span class="p">))</span>
+            <span class="n">evalFuncs</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="k">for</span> <span class="n">func</span> <span class="ow">in</span> <span class="n">userFuncs</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">func</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">functionList</span><span class="p">:</span>
+                    <span class="n">evalFuncs</span><span class="p">[</span><span class="n">func</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">functionList</span><span class="p">[</span><span class="n">func</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">ignoreMissing</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">evalFuncs</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">f</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">functionList</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TACSError</span><span class="p">(</span>
+                        <span class="sa">f</span><span class="s2">&quot;Supplied function &#39;</span><span class="si">{</span><span class="n">f</span><span class="si">}</span><span class="s2">&#39; has not been added &quot;</span>
+                        <span class="s2">&quot;using addFunction().&quot;</span>
+                    <span class="p">)</span>
+
+        <span class="c1"># Loop through each requested eigenvalue</span>
+        <span class="k">for</span> <span class="n">funcName</span> <span class="ow">in</span> <span class="n">evalFuncs</span><span class="p">:</span>
+            <span class="n">mode_i</span> <span class="o">=</span> <span class="n">evalFuncs</span><span class="p">[</span><span class="n">funcName</span><span class="p">]</span>
+            <span class="n">key</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">funcName</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="n">funcs</span><span class="p">[</span><span class="n">key</span><span class="p">],</span> <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getVariables</span><span class="p">(</span><span class="n">mode_i</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="BucklingProblem.evalFunctionsSens"><a class="viewcode-back" href="../../../pytacs/buckling.html#tacs.problems.BucklingProblem.evalFunctionsSens">[docs]</a>    <span class="k">def</span> <span class="nf">evalFunctionsSens</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">funcsSens</span><span class="p">,</span> <span class="n">evalFuncs</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        This is the main routine for returning useful (sensitivity)</span>
+<span class="sd">        information from problem. The derivatives of the functions</span>
+<span class="sd">        corresponding to the strings in evalFuncs are evaluated and</span>
+<span class="sd">        updated into the provided dictionary. The derivitives with</span>
+<span class="sd">        respect to all design variables and node locations are computed.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        funcsSens : dict</span>
+<span class="sd">            Dictionary into which the derivatives are saved.</span>
+<span class="sd">        evalFuncs : iterable object containing strings</span>
+<span class="sd">            The functions the user wants returned</span>
+
+<span class="sd">        Examples</span>
+<span class="sd">        --------</span>
+<span class="sd">        &gt;&gt;&gt; funcsSens = {}</span>
+<span class="sd">        &gt;&gt;&gt; bucklingProblem.evalFunctionsSens(funcsSens, &#39;eigsm.0&#39;)</span>
+<span class="sd">        &gt;&gt;&gt; funcsSens</span>
+<span class="sd">        &gt;&gt;&gt; # Result will look like (if bucklingProblem has name of &#39;c1&#39;):</span>
+<span class="sd">        &gt;&gt;&gt; # {&#39;c1_eigsm.0&#39;:{&#39;struct&#39;:[1.234, ..., 7.89], &#39;Xpts&#39;:[3.14, ..., 1.59]}}</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Make sure assembler variables are up to date</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_updateAssemblerVars</span><span class="p">()</span>
+
+        <span class="c1"># Check if user specified which eigvals to output</span>
+        <span class="c1"># Otherwise, output them all</span>
+        <span class="k">if</span> <span class="n">evalFuncs</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">evalFuncs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">functionList</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">userFuncs</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">evalFuncs</span><span class="p">))</span>
+            <span class="n">evalFuncs</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="k">for</span> <span class="n">func</span> <span class="ow">in</span> <span class="n">userFuncs</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">func</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">functionList</span><span class="p">:</span>
+                    <span class="n">evalFuncs</span><span class="p">[</span><span class="n">func</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">functionList</span><span class="p">[</span><span class="n">func</span><span class="p">]</span>
+
+        <span class="n">dvSens</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">assembler</span><span class="o">.</span><span class="n">createDesignVec</span><span class="p">()</span>
+        <span class="n">xptSens</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">assembler</span><span class="o">.</span><span class="n">createNodeVec</span><span class="p">()</span>
+
+        <span class="n">indices</span> <span class="o">=</span> <span class="p">[</span><span class="n">evalFuncs</span><span class="p">[</span><span class="n">funcName</span><span class="p">]</span> <span class="k">for</span> <span class="n">funcName</span> <span class="ow">in</span> <span class="n">evalFuncs</span><span class="p">]</span>
+        <span class="n">dvSensList</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">assembler</span><span class="o">.</span><span class="n">createDesignVec</span><span class="p">()</span> <span class="k">for</span> <span class="n">funcName</span> <span class="ow">in</span> <span class="n">evalFuncs</span><span class="p">]</span>
+        <span class="n">xptSensList</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">assembler</span><span class="o">.</span><span class="n">createNodeVec</span><span class="p">()</span> <span class="k">for</span> <span class="n">funcName</span> <span class="ow">in</span> <span class="n">evalFuncs</span><span class="p">]</span>
+        <span class="n">svSensList</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">assembler</span><span class="o">.</span><span class="n">createVec</span><span class="p">()</span> <span class="k">for</span> <span class="n">funcName</span> <span class="ow">in</span> <span class="n">evalFuncs</span><span class="p">]</span>
+        <span class="n">adjointList</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">assembler</span><span class="o">.</span><span class="n">createVec</span><span class="p">()</span> <span class="k">for</span> <span class="n">funcName</span> <span class="ow">in</span> <span class="n">evalFuncs</span><span class="p">]</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">addDVSens</span><span class="p">(</span><span class="n">indices</span><span class="p">,</span> <span class="n">dvSensList</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="mf">1.0</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">addXptSens</span><span class="p">(</span><span class="n">indices</span><span class="p">,</span> <span class="n">xptSensList</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="mf">1.0</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">evalSVSens</span><span class="p">(</span><span class="n">indices</span><span class="p">,</span> <span class="n">svSensList</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">aux</span><span class="o">.</span><span class="n">copyValues</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">K</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pc</span><span class="o">.</span><span class="n">factor</span><span class="p">()</span>
+
+        <span class="c1"># Loop through each requested eigenvalue</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">funcName</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">evalFuncs</span><span class="p">):</span>
+            <span class="n">rhs</span> <span class="o">=</span> <span class="n">svSensList</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+            <span class="n">adjoint</span> <span class="o">=</span> <span class="n">adjointList</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">gmres</span><span class="o">.</span><span class="n">solve</span><span class="p">(</span><span class="n">rhs</span><span class="p">,</span> <span class="n">adjoint</span><span class="p">)</span>
+
+            <span class="c1"># Evaluate adjoint contribution to nodal sens</span>
+            <span class="n">xptSens</span> <span class="o">=</span> <span class="n">xptSensList</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">assembler</span><span class="o">.</span><span class="n">addAdjointResXptSensProducts</span><span class="p">([</span><span class="n">adjoint</span><span class="p">],</span> <span class="p">[</span><span class="n">xptSens</span><span class="p">],</span> <span class="o">-</span><span class="mf">1.0</span><span class="p">)</span>
+            <span class="n">xptSens</span><span class="o">.</span><span class="n">beginSetValues</span><span class="p">()</span>
+            <span class="n">xptSens</span><span class="o">.</span><span class="n">endSetValues</span><span class="p">()</span>
+            <span class="c1"># Evaluate adjoint contribution to dv sens</span>
+            <span class="n">dvSens</span> <span class="o">=</span> <span class="n">dvSensList</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">assembler</span><span class="o">.</span><span class="n">addAdjointResProducts</span><span class="p">([</span><span class="n">adjoint</span><span class="p">],</span> <span class="p">[</span><span class="n">dvSens</span><span class="p">],</span> <span class="o">-</span><span class="mf">1.0</span><span class="p">)</span>
+            <span class="n">dvSens</span><span class="o">.</span><span class="n">beginSetValues</span><span class="p">()</span>
+            <span class="n">dvSens</span><span class="o">.</span><span class="n">endSetValues</span><span class="p">()</span>
+
+            <span class="n">key</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">funcName</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="n">funcsSens</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="n">funcsSens</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="bp">self</span><span class="o">.</span><span class="n">varName</span><span class="p">]</span> <span class="o">=</span> <span class="n">dvSens</span><span class="o">.</span><span class="n">getArray</span><span class="p">()</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+            <span class="n">funcsSens</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="bp">self</span><span class="o">.</span><span class="n">coordName</span><span class="p">]</span> <span class="o">=</span> <span class="n">xptSens</span><span class="o">.</span><span class="n">getArray</span><span class="p">()</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="BucklingProblem.addLoadToComponents"><a class="viewcode-back" href="../../../pytacs/buckling.html#tacs.problems.BucklingProblem.addLoadToComponents">[docs]</a>    <span class="k">def</span> <span class="nf">addLoadToComponents</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">compIDs</span><span class="p">,</span> <span class="n">F</span><span class="p">,</span> <span class="n">averageLoad</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        This method is used to add a *FIXED TOTAL LOAD* on one or more</span>
+<span class="sd">        components, defined by COMPIDs. The purpose of this routine is to add loads that</span>
+<span class="sd">        remain fixed throughout an optimization. An example would be an engine load.</span>
+<span class="sd">        This routine determines all the unique nodes in the FE model that are part of the</span>
+<span class="sd">        requested components, then takes the total &#39;force&#39; by F and divides by the</span>
+<span class="sd">        number of nodes. This average load is then applied to the nodes.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+
+<span class="sd">        compIDs : list[int] or int</span>
+<span class="sd">            The components with added loads. Use pyTACS selectCompIDs method</span>
+<span class="sd">            to determine this.</span>
+
+<span class="sd">        F : numpy.ndarray 1d or 2d length (varsPerNodes) or (numCompIDs, varsPerNodes)</span>
+<span class="sd">            Vector(s) of &#39;force&#39; to apply to each component.  If only one force vector is provided,</span>
+<span class="sd">            force will be copied uniformly across all components.</span>
+
+<span class="sd">        averageLoad : bool</span>
+<span class="sd">            Flag to determine whether load should be split evenly across all components (True)</span>
+<span class="sd">            or copied and applied individually to each component (False). Defaults to False.</span>
+
+<span class="sd">        Notes</span>
+<span class="sd">        -----</span>
+
+<span class="sd">        The units of the entries of the &#39;force&#39; vector F are not</span>
+<span class="sd">        necessarily physical forces and their interpretation depends</span>
+<span class="sd">        on the physics problem being solved and the dofs included</span>
+<span class="sd">        in the model.</span>
+
+<span class="sd">        A couple of examples of force vector components for common problems are listed below:</span>
+
+<span class="sd">            In Heat Conduction with varsPerNode = 1</span>
+<span class="sd">                F = [Qdot] # heat rate</span>
+<span class="sd">            In Elasticity with varsPerNode = 3,</span>
+<span class="sd">                F = [fx, fy, fz] # forces</span>
+<span class="sd">            In Elasticity with varsPerNode = 6,</span>
+<span class="sd">                F = [fx, fy, fz, mx, my, mz] # forces + moments</span>
+<span class="sd">            In Thermoelasticity with varsPerNode = 4,</span>
+<span class="sd">                F = [fx, fy, fz, Qdot] # forces + heat rate</span>
+<span class="sd">            In Thermoelasticity with varsPerNode = 7,</span>
+<span class="sd">                F = [fx, fy, fz, mx, my, mz, Qdot] # forces + moments + heat rate</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_addLoadToComponents</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">F</span><span class="p">,</span> <span class="n">compIDs</span><span class="p">,</span> <span class="n">F</span><span class="p">,</span> <span class="n">averageLoad</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="BucklingProblem.addLoadToNodes"><a class="viewcode-back" href="../../../pytacs/buckling.html#tacs.problems.BucklingProblem.addLoadToNodes">[docs]</a>    <span class="k">def</span> <span class="nf">addLoadToNodes</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">nodeIDs</span><span class="p">,</span> <span class="n">F</span><span class="p">,</span> <span class="n">nastranOrdering</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        This method is used to add a fixed point load of F to the</span>
+<span class="sd">        selected node IDs.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+
+<span class="sd">        nodeIDs : list[int]</span>
+<span class="sd">            The nodes IDs with added loads.</span>
+
+<span class="sd">        F : Numpy 1d or 2d array length (varsPerNodes) or (numNodeIDs, varsPerNodes)</span>
+<span class="sd">            Array of force vectors, one for each node. If only one force vector is provided,</span>
+<span class="sd">            force will be copied uniformly across all nodes.</span>
+
+<span class="sd">        nastranOrdering : bool</span>
+<span class="sd">            Flag signaling whether nodeIDs are in TACS (default)</span>
+<span class="sd">            or NASTRAN (grid IDs in bdf file) ordering</span>
+
+<span class="sd">        Notes</span>
+<span class="sd">        -----</span>
+
+<span class="sd">        The units of the entries of the &#39;force&#39; vector F are not</span>
+<span class="sd">        necessarily physical forces and their interpretation depends</span>
+<span class="sd">        on the physics problem being solved and the dofs included</span>
+<span class="sd">        in the model.</span>
+
+<span class="sd">        A couple of examples of force vector components for common problems are listed below:</span>
+
+<span class="sd">            In Heat Conduction with varsPerNode = 1</span>
+<span class="sd">                F = [Qdot] # heat rate</span>
+<span class="sd">            In Elasticity with varsPerNode = 3,</span>
+<span class="sd">                F = [fx, fy, fz] # forces</span>
+<span class="sd">            In Elasticity with varsPerNode = 6,</span>
+<span class="sd">                F = [fx, fy, fz, mx, my, mz] # forces + moments</span>
+<span class="sd">            In Thermoelasticity with varsPerNode = 4,</span>
+<span class="sd">                F = [fx, fy, fz, Qdot] # forces + heat rate</span>
+<span class="sd">            In Thermoelasticity with varsPerNode = 7,</span>
+<span class="sd">                F = [fx, fy, fz, mx, my, mz, Qdot] # forces + moments + heat rate</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_addLoadToNodes</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">F</span><span class="p">,</span> <span class="n">nodeIDs</span><span class="p">,</span> <span class="n">F</span><span class="p">,</span> <span class="n">nastranOrdering</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="BucklingProblem.addLoadToRHS"><a class="viewcode-back" href="../../../pytacs/buckling.html#tacs.problems.BucklingProblem.addLoadToRHS">[docs]</a>    <span class="k">def</span> <span class="nf">addLoadToRHS</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">Fapplied</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        This method is used to add a *FIXED TOTAL LOAD* directly to the</span>
+<span class="sd">        right hand side vector given the equation below:</span>
+
+<span class="sd">            K*u = f</span>
+
+<span class="sd">        Where:</span>
+<span class="sd">            - K : Stiffness matrix for problem</span>
+<span class="sd">            - u : State variables for problem</span>
+<span class="sd">            - f : Right-hand side vector to add loads to</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+
+<span class="sd">        Fapplied : numpy.ndarray or tacs.TACS.Vec</span>
+<span class="sd">            Distributed array containing loads to applied to RHS of the problem.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_addLoadToRHS</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">F</span><span class="p">,</span> <span class="n">Fapplied</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="BucklingProblem.addTractionToComponents"><a class="viewcode-back" href="../../../pytacs/buckling.html#tacs.problems.BucklingProblem.addTractionToComponents">[docs]</a>    <span class="k">def</span> <span class="nf">addTractionToComponents</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">compIDs</span><span class="p">,</span> <span class="n">tractions</span><span class="p">,</span> <span class="n">faceIndex</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        This method is used to add a *FIXED TOTAL TRACTION* on one or more</span>
+<span class="sd">        components, defined by COMPIDs. The purpose of this routine is</span>
+<span class="sd">        to add loads that remain fixed throughout an optimization.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+
+<span class="sd">        compIDs : list[int] or int</span>
+<span class="sd">            The components with added loads. Use pyTACS selectCompIDs method</span>
+<span class="sd">            to determine this.</span>
+
+<span class="sd">        tractions : Numpy array length 1 or compIDs</span>
+<span class="sd">            Array of traction vectors for each component</span>
+
+<span class="sd">        faceIndex : int</span>
+<span class="sd">            Indicates which face (side) of element to apply traction to.</span>
+<span class="sd">            Note: not required for certain elements (i.e. shells)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_addTractionToComponents</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">auxElems</span><span class="p">,</span> <span class="n">compIDs</span><span class="p">,</span> <span class="n">tractions</span><span class="p">,</span> <span class="n">faceIndex</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="BucklingProblem.addTractionToElements"><a class="viewcode-back" href="../../../pytacs/buckling.html#tacs.problems.BucklingProblem.addTractionToElements">[docs]</a>    <span class="k">def</span> <span class="nf">addTractionToElements</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">elemIDs</span><span class="p">,</span> <span class="n">tractions</span><span class="p">,</span> <span class="n">faceIndex</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">nastranOrdering</span><span class="o">=</span><span class="kc">False</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        This method is used to add a fixed traction to the</span>
+<span class="sd">        selected element IDs. Tractions can be specified on an</span>
+<span class="sd">        element by element basis (if tractions is a 2d array) or</span>
+<span class="sd">        set to a uniform value (if tractions is a 1d array)</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+
+<span class="sd">        elemIDs : list[int]</span>
+<span class="sd">            The global element ID numbers for which to apply the traction.</span>
+
+<span class="sd">        tractions : Numpy 1d or 2d array length varsPerNodes or (elemIDs, varsPerNodes)</span>
+<span class="sd">            Array of traction vectors for each element</span>
+
+<span class="sd">        faceIndex : int</span>
+<span class="sd">            Indicates which face (side) of element to apply traction to.</span>
+<span class="sd">            Note: not required for certain elements (i.e. shells)</span>
+
+<span class="sd">        nastranOrdering : bool</span>
+<span class="sd">            Flag signaling whether elemIDs are in TACS (default)</span>
+<span class="sd">            or NASTRAN ordering</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_addTractionToElements</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">auxElems</span><span class="p">,</span> <span class="n">elemIDs</span><span class="p">,</span> <span class="n">tractions</span><span class="p">,</span> <span class="n">faceIndex</span><span class="p">,</span> <span class="n">nastranOrdering</span>
+        <span class="p">)</span></div>
+
+<div class="viewcode-block" id="BucklingProblem.addPressureToComponents"><a class="viewcode-back" href="../../../pytacs/buckling.html#tacs.problems.BucklingProblem.addPressureToComponents">[docs]</a>    <span class="k">def</span> <span class="nf">addPressureToComponents</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">compIDs</span><span class="p">,</span> <span class="n">pressures</span><span class="p">,</span> <span class="n">faceIndex</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        This method is used to add a *FIXED TOTAL PRESSURE* on one or more</span>
+<span class="sd">        components, defined by COMPIds. The purpose of this routine is</span>
+<span class="sd">        to add loads that remain fixed throughout an optimization. An example</span>
+<span class="sd">        would be a fuel load.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+
+<span class="sd">        compIDs : list[int] or int</span>
+<span class="sd">            The components with added loads. Use pyTACS selectCompIDs method</span>
+<span class="sd">            to determine this.</span>
+
+<span class="sd">        pressures : Numpy array length 1 or compIDs</span>
+<span class="sd">            Array of pressure values for each component</span>
+
+<span class="sd">        faceIndex : int</span>
+<span class="sd">            Indicates which face (side) of element to apply pressure to.</span>
+<span class="sd">            Note: not required for certain elements (i.e. shells)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_addPressureToComponents</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">auxElems</span><span class="p">,</span> <span class="n">compIDs</span><span class="p">,</span> <span class="n">pressures</span><span class="p">,</span> <span class="n">faceIndex</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="BucklingProblem.addPressureToElements"><a class="viewcode-back" href="../../../pytacs/buckling.html#tacs.problems.BucklingProblem.addPressureToElements">[docs]</a>    <span class="k">def</span> <span class="nf">addPressureToElements</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">elemIDs</span><span class="p">,</span> <span class="n">pressures</span><span class="p">,</span> <span class="n">faceIndex</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">nastranOrdering</span><span class="o">=</span><span class="kc">False</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        This method is used to add a fixed presure to the</span>
+<span class="sd">        selected element IDs. Pressures can be specified on an</span>
+<span class="sd">        element by element basis (if pressures is an array) or</span>
+<span class="sd">        set to a uniform value (if pressures is a scalar)</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+
+<span class="sd">        elemIDs : list[int]</span>
+<span class="sd">            The global element ID numbers for which to apply the pressure.</span>
+
+<span class="sd">        pressures : Numpy array length 1 or elemIDs</span>
+<span class="sd">            Array of pressure values for each element</span>
+
+<span class="sd">        faceIndex : int</span>
+<span class="sd">            Indicates which face (side) of element to apply pressure to.</span>
+<span class="sd">            Note: not required for certain elements (i.e. shells)</span>
+
+<span class="sd">        nastranOrdering : bool</span>
+<span class="sd">            Flag signaling whether elemIDs are in TACS (default)</span>
+<span class="sd">            or NASTRAN ordering</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_addPressureToElements</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">auxElems</span><span class="p">,</span> <span class="n">elemIDs</span><span class="p">,</span> <span class="n">pressures</span><span class="p">,</span> <span class="n">faceIndex</span><span class="p">,</span> <span class="n">nastranOrdering</span>
+        <span class="p">)</span></div>
+
+<div class="viewcode-block" id="BucklingProblem.addInertialLoad"><a class="viewcode-back" href="../../../pytacs/buckling.html#tacs.problems.BucklingProblem.addInertialLoad">[docs]</a>    <span class="k">def</span> <span class="nf">addInertialLoad</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">inertiaVector</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        This method is used to add a fixed inertial load due to</span>
+<span class="sd">        a uniform acceleration over the entire model.</span>
+<span class="sd">        This is most commonly used to model gravity loads on a model.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        inertiaVector : numpy.ndarray</span>
+<span class="sd">            Acceleration vector used to define inertial load.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_addInertialLoad</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">auxElems</span><span class="p">,</span> <span class="n">inertiaVector</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="BucklingProblem.addCentrifugalLoad"><a class="viewcode-back" href="../../../pytacs/buckling.html#tacs.problems.BucklingProblem.addCentrifugalLoad">[docs]</a>    <span class="k">def</span> <span class="nf">addCentrifugalLoad</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">omegaVector</span><span class="p">,</span> <span class="n">rotCenter</span><span class="p">,</span> <span class="n">firstOrder</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        This method is used to add a fixed centrifugal load due to a</span>
+<span class="sd">        uniform rotational velocity over the entire model.</span>
+<span class="sd">        This is most commonly used to model rotors, rolling aircraft, etc.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+
+<span class="sd">        omegaVector : numpy.ndarray</span>
+<span class="sd">            Rotational velocity vector (rad/s) used to define centrifugal load.</span>
+
+<span class="sd">        rotCenter : numpy.ndarray</span>
+<span class="sd">            Location of center of rotation used to define centrifugal load.</span>
+
+<span class="sd">        firstOrder : bool, optional</span>
+<span class="sd">            Whether to use first order approximation for centrifugal load,</span>
+<span class="sd">            which computes the force in the displaced position. By default False</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_addCentrifugalLoad</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">auxElems</span><span class="p">,</span> <span class="n">omegaVector</span><span class="p">,</span> <span class="n">rotCenter</span><span class="p">,</span> <span class="n">firstOrder</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="BucklingProblem.addLoadFromBDF"><a class="viewcode-back" href="../../../pytacs/buckling.html#tacs.problems.BucklingProblem.addLoadFromBDF">[docs]</a>    <span class="k">def</span> <span class="nf">addLoadFromBDF</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">loadID</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="mf">1.0</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        This method is used to add a fixed load set defined in the BDF file to the problem.</span>
+<span class="sd">        Currently, only supports LOAD, FORCE, MOMENT, GRAV, RFORCE, PLOAD2, and PLOAD4.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+
+<span class="sd">        loadID : int</span>
+<span class="sd">            Load identification number of load set in BDF file user wishes to add to problem.</span>
+
+<span class="sd">        scale : float</span>
+<span class="sd">            Factor to scale the BDF loads by before adding to problem.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_addLoadFromBDF</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">F</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">auxElems</span><span class="p">,</span> <span class="n">loadID</span><span class="p">,</span> <span class="n">scale</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="BucklingProblem.zeroLoads"><a class="viewcode-back" href="../../../pytacs/buckling.html#tacs.problems.BucklingProblem.zeroLoads">[docs]</a>    <span class="k">def</span> <span class="nf">zeroLoads</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Zero all applied loads</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">F</span><span class="o">.</span><span class="n">zeroEntries</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">auxElems</span> <span class="o">=</span> <span class="n">tacs</span><span class="o">.</span><span class="n">TACS</span><span class="o">.</span><span class="n">AuxElements</span><span class="p">()</span></div>
+
+    <span class="c1">####### Buckling solver methods ########</span>
+
+    <span class="k">def</span> <span class="nf">_updateAssemblerVars</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Make sure that the assembler is using</span>
+<span class="sd">        the input variables associated with this problem</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">assembler</span><span class="o">.</span><span class="n">setDesignVars</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">x</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assembler</span><span class="o">.</span><span class="n">setNodes</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">Xpts</span><span class="p">)</span>
+        <span class="c1"># Set state variables</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assembler</span><span class="o">.</span><span class="n">setVariables</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">u0</span><span class="p">)</span>
+        <span class="c1"># Zero any time derivative terms</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assembler</span><span class="o">.</span><span class="n">zeroDotVariables</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assembler</span><span class="o">.</span><span class="n">zeroDDotVariables</span><span class="p">()</span>
+        <span class="c1"># Make sure previous auxiliary loads are removed</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assembler</span><span class="o">.</span><span class="n">setAuxElements</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">auxElems</span><span class="p">)</span>
+        <span class="c1"># Set artificial stiffness factors in rbe class</span>
+        <span class="n">c1</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s2">&quot;RBEStiffnessScaleFactor&quot;</span><span class="p">)</span>
+        <span class="n">c2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s2">&quot;RBEArtificialStiffness&quot;</span><span class="p">)</span>
+        <span class="n">tacs</span><span class="o">.</span><span class="n">elements</span><span class="o">.</span><span class="n">RBE2</span><span class="o">.</span><span class="n">setScalingParameters</span><span class="p">(</span><span class="n">c1</span><span class="p">,</span> <span class="n">c2</span><span class="p">)</span>
+        <span class="n">tacs</span><span class="o">.</span><span class="n">elements</span><span class="o">.</span><span class="n">RBE3</span><span class="o">.</span><span class="n">setScalingParameters</span><span class="p">(</span><span class="n">c1</span><span class="p">,</span> <span class="n">c2</span><span class="p">)</span>
+
+<div class="viewcode-block" id="BucklingProblem.solve"><a class="viewcode-back" href="../../../pytacs/buckling.html#tacs.problems.BucklingProblem.solve">[docs]</a>    <span class="k">def</span> <span class="nf">solve</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">Fext</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">u0</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Solve the eigenvalue problem. The</span>
+<span class="sd">        forces must already be set.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        Fext : tacs.TACS.Vec or numpy.ndarray, optional</span>
+<span class="sd">            Distributed array containing additional loads (ex. aerodynamic forces for aerostructural coupling)</span>
+<span class="sd">            to applied to RHS of the static problem.</span>
+
+<span class="sd">        u0 : tacs.TACS.Vec or numpy.ndarray, optional</span>
+<span class="sd">            Distributed array containing additional loads (ex. aerodynamic forces for aerostructural coupling)</span>
+<span class="sd">            to applied to RHS of the static problem. Alternate to Fext.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">startTime</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">callCounter</span> <span class="o">+=</span> <span class="mi">1</span>
+
+        <span class="n">setupProblemTime</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+
+        <span class="c1"># Set problem vars to assembler</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_updateAssemblerVars</span><span class="p">()</span>
+
+        <span class="c1"># states were not prescribed, pass in forces</span>
+        <span class="k">if</span> <span class="n">u0</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="c1"># Sum the forces from the loads not handled by TACS</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">rhs</span><span class="o">.</span><span class="n">copyValues</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">F</span><span class="p">)</span>  <span class="c1"># Fixed loads</span>
+
+            <span class="c1"># Add external loads, if specified</span>
+            <span class="k">if</span> <span class="n">Fext</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">Fext</span><span class="p">,</span> <span class="n">tacs</span><span class="o">.</span><span class="n">TACS</span><span class="o">.</span><span class="n">Vec</span><span class="p">):</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">rhs</span><span class="o">.</span><span class="n">axpy</span><span class="p">(</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">Fext</span><span class="p">)</span>
+                <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">Fext</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
+                    <span class="n">rhsArray</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rhs</span><span class="o">.</span><span class="n">getArray</span><span class="p">()</span>
+                    <span class="n">rhsArray</span><span class="p">[:]</span> <span class="o">=</span> <span class="n">rhsArray</span><span class="p">[:]</span> <span class="o">+</span> <span class="n">Fext</span><span class="p">[:]</span>
+
+            <span class="n">force</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rhs</span>
+            <span class="n">path</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="c1"># states already prescribed, we don&#39;t need forces</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># Convert to bvec</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">u0</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
+                <span class="n">path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_arrayToVec</span><span class="p">(</span><span class="n">u0</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">path</span> <span class="o">=</span> <span class="n">u0</span>
+            <span class="n">force</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="n">initSolveTime</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+
+        <span class="c1"># Solve the buckling analysis problem</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">buckleSolver</span><span class="o">.</span><span class="n">solve</span><span class="p">(</span>
+            <span class="n">force</span><span class="o">=</span><span class="n">force</span><span class="p">,</span> <span class="n">path</span><span class="o">=</span><span class="n">path</span><span class="p">,</span> <span class="n">print_flag</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s2">&quot;printLevel&quot;</span><span class="p">)</span>
+        <span class="p">)</span>
+
+        <span class="c1"># Save state vars</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assembler</span><span class="o">.</span><span class="n">getVariables</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">u0</span><span class="p">)</span>
+
+        <span class="n">solveTime</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+
+        <span class="c1"># If timing was was requested print it, if the solution is nonlinear</span>
+        <span class="c1"># print this information automatically if prinititerations was requested.</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s2">&quot;printTiming&quot;</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_pp</span><span class="p">(</span><span class="s2">&quot;+--------------------------------------------------+&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_pp</span><span class="p">(</span><span class="s2">&quot;|&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_pp</span><span class="p">(</span><span class="s2">&quot;| TACS Solve Times:&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_pp</span><span class="p">(</span><span class="s2">&quot;|&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_pp</span><span class="p">(</span>
+                <span class="s2">&quot;| </span><span class="si">%-30s</span><span class="s2">: </span><span class="si">%10.3f</span><span class="s2"> sec&quot;</span>
+                <span class="o">%</span> <span class="p">(</span><span class="s2">&quot;TACS Setup Time&quot;</span><span class="p">,</span> <span class="n">setupProblemTime</span> <span class="o">-</span> <span class="n">startTime</span><span class="p">)</span>
+            <span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_pp</span><span class="p">(</span>
+                <span class="s2">&quot;| </span><span class="si">%-30s</span><span class="s2">: </span><span class="si">%10.3f</span><span class="s2"> sec&quot;</span>
+                <span class="o">%</span> <span class="p">(</span><span class="s2">&quot;TACS Solve Init Time&quot;</span><span class="p">,</span> <span class="n">initSolveTime</span> <span class="o">-</span> <span class="n">setupProblemTime</span><span class="p">)</span>
+            <span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_pp</span><span class="p">(</span>
+                <span class="s2">&quot;| </span><span class="si">%-30s</span><span class="s2">: </span><span class="si">%10.3f</span><span class="s2"> sec&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="s2">&quot;TACS Solve Time&quot;</span><span class="p">,</span> <span class="n">solveTime</span> <span class="o">-</span> <span class="n">initSolveTime</span><span class="p">)</span>
+            <span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_pp</span><span class="p">(</span><span class="s2">&quot;|&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_pp</span><span class="p">(</span>
+                <span class="s2">&quot;| </span><span class="si">%-30s</span><span class="s2">: </span><span class="si">%10.3f</span><span class="s2"> sec&quot;</span>
+                <span class="o">%</span> <span class="p">(</span><span class="s2">&quot;TACS Total Solution Time&quot;</span><span class="p">,</span> <span class="n">solveTime</span> <span class="o">-</span> <span class="n">startTime</span><span class="p">)</span>
+            <span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_pp</span><span class="p">(</span><span class="s2">&quot;+--------------------------------------------------+&quot;</span><span class="p">)</span>
+
+        <span class="k">return</span></div>
+
+<div class="viewcode-block" id="BucklingProblem.getVariables"><a class="viewcode-back" href="../../../pytacs/buckling.html#tacs.problems.BucklingProblem.getVariables">[docs]</a>    <span class="k">def</span> <span class="nf">getVariables</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">index</span><span class="p">,</span> <span class="n">states</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Return the current state values for one mode of the current problem</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        index : int</span>
+<span class="sd">            Mode index to return solution for.</span>
+
+<span class="sd">        states : tacs.TACS.Vec or numpy.ndarray or None</span>
+<span class="sd">            Place eigenvector for mode into this array (optional).</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        --------</span>
+<span class="sd">        eigVal: float</span>
+<span class="sd">            Eigenvalue for mode corresponds to buckling load factor</span>
+
+<span class="sd">        states : numpy.ndarray</span>
+<span class="sd">            Eigenvector for mode</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">eigVal</span><span class="p">,</span> <span class="n">err</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">buckleSolver</span><span class="o">.</span><span class="n">extractEigenvalue</span><span class="p">(</span><span class="n">index</span><span class="p">)</span>
+        <span class="n">eigVector</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">assembler</span><span class="o">.</span><span class="n">createVec</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">buckleSolver</span><span class="o">.</span><span class="n">extractEigenvector</span><span class="p">(</span><span class="n">index</span><span class="p">,</span> <span class="n">eigVector</span><span class="p">)</span>
+        <span class="c1"># Inplace assignment if vectors were provided</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">states</span><span class="p">,</span> <span class="n">tacs</span><span class="o">.</span><span class="n">TACS</span><span class="o">.</span><span class="n">Vec</span><span class="p">):</span>
+            <span class="n">states</span><span class="o">.</span><span class="n">copyValues</span><span class="p">(</span><span class="n">eigVector</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">states</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
+            <span class="n">states</span><span class="p">[:]</span> <span class="o">=</span> <span class="n">eigVector</span><span class="o">.</span><span class="n">getArray</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">eigVal</span><span class="p">,</span> <span class="n">eigVector</span><span class="o">.</span><span class="n">getArray</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="BucklingProblem.addXptSens"><a class="viewcode-back" href="../../../pytacs/buckling.html#tacs.problems.BucklingProblem.addXptSens">[docs]</a>    <span class="k">def</span> <span class="nf">addXptSens</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">indices</span><span class="p">,</span> <span class="n">xptSensList</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="mf">1.0</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Add partial sensitivity contribution due to nodal coordinates for eigenvalue</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        indices : list[int]</span>
+<span class="sd">            Mode indices to return sensitivity for.</span>
+
+<span class="sd">        xptSensList : list[tacs.TACS.Vec] or list[numpy.ndarray]</span>
+<span class="sd">            List of sensitivity vectors to add partial sensitivity to</span>
+
+<span class="sd">        scale : float</span>
+<span class="sd">            Scalar to multiply partial sensitivity by. Defaults to 1.0</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Set problem vars to assembler</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_updateAssemblerVars</span><span class="p">()</span>
+
+        <span class="k">for</span> <span class="n">index</span><span class="p">,</span> <span class="n">xptSens</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">indices</span><span class="p">,</span> <span class="n">xptSensList</span><span class="p">):</span>
+            <span class="c1"># Create a tacs BVec copy for the operation if the output is a numpy array</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">xptSens</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
+                <span class="n">xptSensBVec</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_arrayToNodeVec</span><span class="p">(</span><span class="n">xptSens</span><span class="p">)</span>
+            <span class="c1"># Otherwise the input is already a BVec and we can do the operation in place</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">xptSensBVec</span> <span class="o">=</span> <span class="n">xptSens</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">buckleSolver</span><span class="o">.</span><span class="n">addEigenXptSens</span><span class="p">(</span><span class="n">scale</span><span class="p">,</span> <span class="n">index</span><span class="p">,</span> <span class="n">xptSensBVec</span><span class="p">)</span>
+
+            <span class="c1"># Finalize sensitivity arrays across all procs</span>
+            <span class="n">xptSensBVec</span><span class="o">.</span><span class="n">beginSetValues</span><span class="p">()</span>
+            <span class="n">xptSensBVec</span><span class="o">.</span><span class="n">endSetValues</span><span class="p">()</span>
+
+            <span class="c1"># Update from the BVec values, if the input was a numpy array</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">xptSens</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
+                <span class="c1"># Copy values to numpy array</span>
+                <span class="n">xptSens</span><span class="p">[:]</span> <span class="o">=</span> <span class="n">xptSensBVec</span><span class="o">.</span><span class="n">getArray</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="BucklingProblem.addDVSens"><a class="viewcode-back" href="../../../pytacs/buckling.html#tacs.problems.BucklingProblem.addDVSens">[docs]</a>    <span class="k">def</span> <span class="nf">addDVSens</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">indices</span><span class="p">,</span> <span class="n">dvSensList</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="mf">1.0</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Add partial sensitivity contribution due to design variables for eigenvalue</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        indices : list[int]</span>
+<span class="sd">            Mode indices to return sensitivity for.</span>
+
+<span class="sd">        dvSensList : list[tacs.TACS.Vec] or list[numpy.ndarray]</span>
+<span class="sd">            List of sensitivity vectors to add partial sensitivity to</span>
+
+<span class="sd">        scale : float</span>
+<span class="sd">            Scalar to multiply partial sensitivity by. Defaults to 1.0</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Set problem vars to assembler</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_updateAssemblerVars</span><span class="p">()</span>
+
+        <span class="k">for</span> <span class="n">index</span><span class="p">,</span> <span class="n">dvSens</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">indices</span><span class="p">,</span> <span class="n">dvSensList</span><span class="p">):</span>
+            <span class="c1"># Create a tacs BVec copy for the operation if the output is a numpy array</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">dvSens</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
+                <span class="n">dvSensBVec</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_arrayToDesignVec</span><span class="p">(</span><span class="n">dvSens</span><span class="p">)</span>
+            <span class="c1"># Otherwise the input is already a BVec and we can do the operation in place</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">dvSensBVec</span> <span class="o">=</span> <span class="n">dvSens</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">buckleSolver</span><span class="o">.</span><span class="n">addEigenDVSens</span><span class="p">(</span><span class="n">scale</span><span class="p">,</span> <span class="n">index</span><span class="p">,</span> <span class="n">dvSensBVec</span><span class="p">)</span>
+
+            <span class="c1"># Finalize sensitivity arrays across all procs</span>
+            <span class="n">dvSensBVec</span><span class="o">.</span><span class="n">beginSetValues</span><span class="p">()</span>
+            <span class="n">dvSensBVec</span><span class="o">.</span><span class="n">endSetValues</span><span class="p">()</span>
+
+            <span class="c1"># Update from the BVec values, if the input was a numpy array</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">dvSens</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
+                <span class="c1"># Copy values to numpy array</span>
+                <span class="n">dvSens</span><span class="p">[:]</span> <span class="o">=</span> <span class="n">dvSensBVec</span><span class="o">.</span><span class="n">getArray</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="BucklingProblem.evalSVSens"><a class="viewcode-back" href="../../../pytacs/buckling.html#tacs.problems.BucklingProblem.evalSVSens">[docs]</a>    <span class="k">def</span> <span class="nf">evalSVSens</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">indices</span><span class="p">,</span> <span class="n">svSensList</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Add partial sensitivity contribution due to state variables for eigenvalue</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        indices : list[int]</span>
+<span class="sd">            Mode indices to return sensitivity for.</span>
+
+<span class="sd">        svSensList : list[tacs.TACS.Vec] or list[numpy.ndarray]</span>
+<span class="sd">            List of sensitivity vectors to add partial sensitivity to</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Set problem vars to assembler</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_updateAssemblerVars</span><span class="p">()</span>
+
+        <span class="k">for</span> <span class="n">index</span><span class="p">,</span> <span class="n">svSens</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">indices</span><span class="p">,</span> <span class="n">svSensList</span><span class="p">):</span>
+            <span class="c1"># Create a tacs BVec copy for the operation if the output is a numpy array</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">svSens</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
+                <span class="n">svSensBVec</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_arrayToVec</span><span class="p">(</span><span class="n">svSens</span><span class="p">)</span>
+            <span class="c1"># Otherwise the input is already a BVec and we can do the operation in place</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">svSensBVec</span> <span class="o">=</span> <span class="n">svSens</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">buckleSolver</span><span class="o">.</span><span class="n">evalEigenSVSens</span><span class="p">(</span><span class="n">index</span><span class="p">,</span> <span class="n">svSensBVec</span><span class="p">)</span>
+
+            <span class="c1"># Finalize sensitivity arrays across all procs</span>
+            <span class="n">svSensBVec</span><span class="o">.</span><span class="n">beginSetValues</span><span class="p">()</span>
+            <span class="n">svSensBVec</span><span class="o">.</span><span class="n">endSetValues</span><span class="p">()</span>
+
+            <span class="c1"># Update from the BVec values, if the input was a numpy array</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">svSens</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
+                <span class="c1"># Copy values to numpy array</span>
+                <span class="n">svSens</span><span class="p">[:]</span> <span class="o">=</span> <span class="n">svSensBVec</span><span class="o">.</span><span class="n">getArray</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="BucklingProblem.writeSolution"><a class="viewcode-back" href="../../../pytacs/buckling.html#tacs.problems.BucklingProblem.writeSolution">[docs]</a>    <span class="k">def</span> <span class="nf">writeSolution</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">outputDir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">baseName</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">number</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">indices</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        This is a generic shell function that writes the output</span>
+<span class="sd">        file(s).  The intent is that the user or calling program can</span>
+<span class="sd">        call this function and pyTACS writes all the files that the</span>
+<span class="sd">        user has defined. It is recommended that this function is used</span>
+<span class="sd">        along with the associated logical flags in the options to</span>
+<span class="sd">        determine the desired writing procedure</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        outputDir : str or None</span>
+<span class="sd">            Use the supplied output directory</span>
+<span class="sd">        baseName : str or None</span>
+<span class="sd">            Use this supplied string for the base filename. Typically</span>
+<span class="sd">            only used from an external solver.</span>
+<span class="sd">        number : int or None</span>
+<span class="sd">            Use the user supplied number to index solution. Again, only</span>
+<span class="sd">            typically used from an external solver</span>
+<span class="sd">        indices : int or list[int] or None</span>
+<span class="sd">            Mode index or indices to get state variables for.</span>
+<span class="sd">            If None, returns a solution for all modes.</span>
+<span class="sd">            Defaults to None.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Make sure assembler variables are up-to-date</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_updateAssemblerVars</span><span class="p">()</span>
+
+        <span class="c1"># Check input</span>
+        <span class="k">if</span> <span class="n">outputDir</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">outputDir</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s2">&quot;outputDir&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">baseName</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">baseName</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span>
+
+        <span class="c1"># If we are numbering solution, it saving the sequence of</span>
+        <span class="c1"># calls, add the call number</span>
+        <span class="k">if</span> <span class="n">number</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="c1"># We need number based on the provided number:</span>
+            <span class="n">baseName</span> <span class="o">=</span> <span class="n">baseName</span> <span class="o">+</span> <span class="s2">&quot;_</span><span class="si">%3.3d</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">number</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># if number is none, i.e. standalone, but we need to</span>
+            <span class="c1"># number solutions, use internal counter</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s2">&quot;numberSolutions&quot;</span><span class="p">):</span>
+                <span class="n">baseName</span> <span class="o">=</span> <span class="n">baseName</span> <span class="o">+</span> <span class="s2">&quot;_</span><span class="si">%3.3d</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">callCounter</span>
+
+        <span class="c1"># Unless the writeSolution option is off write actual file:</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s2">&quot;writeSolution&quot;</span><span class="p">):</span>
+            <span class="c1"># If indices is None, output all modes</span>
+            <span class="k">if</span> <span class="n">indices</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">indices</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">numEigs</span><span class="p">)</span>
+
+            <span class="c1"># Write out each specified mode</span>
+            <span class="n">indices</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">atleast_1d</span><span class="p">(</span><span class="n">indices</span><span class="p">)</span>
+            <span class="n">vec</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">assembler</span><span class="o">.</span><span class="n">createVec</span><span class="p">()</span>
+            <span class="k">for</span> <span class="n">index</span> <span class="ow">in</span> <span class="n">indices</span><span class="p">:</span>
+                <span class="c1"># Extract eigenvector</span>
+                <span class="n">eig</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getVariables</span><span class="p">(</span><span class="n">index</span><span class="p">,</span> <span class="n">states</span><span class="o">=</span><span class="n">vec</span><span class="p">)</span>
+                <span class="c1"># Set eigen mode in assembler</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">assembler</span><span class="o">.</span><span class="n">setVariables</span><span class="p">(</span><span class="n">vec</span><span class="p">)</span>
+                <span class="c1"># Write out mode shape as f5 file</span>
+                <span class="n">modeName</span> <span class="o">=</span> <span class="n">baseName</span> <span class="o">+</span> <span class="s2">&quot;_</span><span class="si">%3.3d</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">index</span>
+                <span class="n">fileName</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">outputDir</span><span class="p">,</span> <span class="n">modeName</span><span class="p">)</span> <span class="o">+</span> <span class="s2">&quot;.f5&quot;</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">outputViewer</span><span class="o">.</span><span class="n">writeToFile</span><span class="p">(</span><span class="n">fileName</span><span class="p">)</span></div></div>
+</pre></div>
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">TACS  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" >Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">tacs.problems.buckling</a></li> 
+      </ul>
+    </div>
+ <script type="text/javascript">
+    $(document).ready(function() {
+        $(".toggle > *").hide();
+        $(".toggle .header").show();
+        $(".toggle .header").click(function() {
+            $(this).parent().children().not(".header").toggle(400);
+            $(this).parent().children(".header").toggleClass("open");
+        })
+    });
+</script>
+
+  </body>
+</html>

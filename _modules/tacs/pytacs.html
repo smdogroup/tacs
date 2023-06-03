@@ -1515,6 +1515,46 @@
         <span class="n">problem</span><span class="o">.</span><span class="n">setNodes</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">Xpts0</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">problem</span></div>
 
+<div class="viewcode-block" id="pyTACS.createBucklingProblem"><a class="viewcode-back" href="../../pytacs/pytacs_module.html#tacs.pytacs.pyTACS.createBucklingProblem">[docs]</a>    <span class="nd">@postinitialize_method</span>
+    <span class="k">def</span> <span class="nf">createBucklingProblem</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">sigma</span><span class="p">,</span> <span class="n">numEigs</span><span class="p">,</span> <span class="n">options</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Create a new BucklingProblem for performing linearized buckling analysis.</span>
+<span class="sd">        This problem can be used to identify the buckling load factors and mode</span>
+<span class="sd">        shapes of the model through eigenvalue analysis.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        name : str</span>
+<span class="sd">            Name to assign problem.</span>
+<span class="sd">        sigma : float</span>
+<span class="sd">            Guess for the lowest eigenvalue.</span>
+<span class="sd">            This corresponds to the lowest expected buckling load factor.</span>
+<span class="sd">        numEigs : int</span>
+<span class="sd">            Number of eigenvalues to solve for.</span>
+<span class="sd">        options : dict</span>
+<span class="sd">            Problem-specific options to pass to ModalProblem instance (case-insensitive).</span>
+<span class="sd">            Defaults to None.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        problem : tacs.problems.BucklingProblem</span>
+<span class="sd">            BucklingProblem object used for performing buckling eigenvalue analysis.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">problem</span> <span class="o">=</span> <span class="n">tacs</span><span class="o">.</span><span class="n">problems</span><span class="o">.</span><span class="n">buckling</span><span class="o">.</span><span class="n">BucklingProblem</span><span class="p">(</span>
+            <span class="n">name</span><span class="p">,</span>
+            <span class="n">sigma</span><span class="p">,</span>
+            <span class="n">numEigs</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">assembler</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">comm</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">outputViewer</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">meshLoader</span><span class="p">,</span>
+            <span class="n">options</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="c1"># Set with original design vars and coordinates, in case they have changed</span>
+        <span class="n">problem</span><span class="o">.</span><span class="n">setDesignVars</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">x0</span><span class="p">)</span>
+        <span class="n">problem</span><span class="o">.</span><span class="n">setNodes</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">Xpts0</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">problem</span></div>
+
 <div class="viewcode-block" id="pyTACS.createTACSProbsFromBDF"><a class="viewcode-back" href="../../pytacs/pytacs_module.html#tacs.pytacs.pyTACS.createTACSProbsFromBDF">[docs]</a>    <span class="nd">@postinitialize_method</span>
     <span class="k">def</span> <span class="nf">createTACSProbsFromBDF</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>

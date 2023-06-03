@@ -1,0 +1,900 @@
+<!DOCTYPE html>
+
+<html lang="python">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>BucklingProblem &#8212; TACS  documentation</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinxdoc.css" />
+    <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+    <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/sphinx_highlight.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Constraint classes" href="constraints.html" />
+    <link rel="prev" title="ModalProblem" href="modal.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="constraints.html" title="Constraint classes"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="modal.html" title="ModalProblem"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">TACS  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../interfaces.html" >Interfaces</a> &#187;</li>
+          <li class="nav-item nav-item-2"><a href="pytacs.html" >pyTACS</a> &#187;</li>
+          <li class="nav-item nav-item-3"><a href="problems.html" accesskey="U">Problem classes</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">BucklingProblem</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <section id="bucklingproblem">
+<h1>BucklingProblem<a class="headerlink" href="#bucklingproblem" title="Permalink to this heading">¶</a></h1>
+<span class="target" id="module-tacs.problems.buckling"></span><p>The main purpose of this class is to represent all relevant
+information for a linearized buckling analysis.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>This class should be created using the
+<a class="reference internal" href="pytacs_module.html#tacs.pytacs.pyTACS.createBucklingProblem" title="tacs.pytacs.pyTACS.createBucklingProblem"><code class="xref py py-meth docutils literal notranslate"><span class="pre">pyTACS.createBucklingProblem</span></code></a> method.</p>
+</div>
+<section id="options">
+<h2>Options<a class="headerlink" href="#options" title="Permalink to this heading">¶</a></h2>
+<p>Options can be set for <a class="reference internal" href="#tacs.problems.BucklingProblem" title="tacs.problems.BucklingProblem"><code class="xref py py-class docutils literal notranslate"><span class="pre">BucklingProblem</span></code></a> at time of creation for the class in the
+<a class="reference internal" href="pytacs_module.html#tacs.pytacs.pyTACS.createBucklingProblem" title="tacs.pytacs.pyTACS.createBucklingProblem"><code class="xref py py-meth docutils literal notranslate"><span class="pre">pyTACS.createBucklingProblem</span></code></a> method or using the
+<a class="reference internal" href="#tacs.problems.BucklingProblem.setOption" title="tacs.problems.BucklingProblem.setOption"><code class="xref py py-meth docutils literal notranslate"><span class="pre">BucklingProblem.setOption</span></code></a> method. Current option values for a class
+instance can be printed out using the <a class="reference internal" href="#tacs.problems.BucklingProblem.printOptions" title="tacs.problems.BucklingProblem.printOptions"><code class="xref py py-meth docutils literal notranslate"><span class="pre">BucklingProblem.printOption</span></code></a> method.
+The following options, their default values and descriptions are listed below:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>+----------------------------------------+
+|    BucklingProblem default options:    |
++----------------------------------------+
+&#39;outputDir&#39;: &#39;./&#39;
+	 Output directory for F5 file writer.
+&#39;L2Convergence&#39;: 1e-12
+	 Absolute convergence tolerance for Eigenvalue solver based on l2 norm of residual.
+&#39;L2ConvergenceRel&#39;: 1e-12
+	 Relative convergence tolerance for Eigenvalue solver based on l2 norm of residual.
+&#39;RBEStiffnessScaleFactor&#39;: 1000.0
+	 Constraint matrix scaling factor used in RBE Lagrange multiplier stiffness matrix.
+&#39;RBEArtificialStiffness&#39;: 0.001
+	 Artificial constant added to diagonals of RBE Lagrange multiplier stiffness matrix 
+	 to stabilize preconditioner.
+&#39;subSpaceSize&#39;: 10
+	 Subspace size for Krylov solver used by Eigenvalue solver.
+&#39;nRestarts&#39;: 15
+	 Max number of resets for Krylov solver used by Eigenvalue solver.
+&#39;writeSolution&#39;: True
+	 Flag for suppressing all f5 file writing.
+&#39;numberSolutions&#39;: True
+	 Flag for attaching solution counter index to f5 files.
+&#39;printTiming&#39;: False
+	 Flag for printing out timing information for class procedures.
+&#39;printLevel&#39;: 0
+	 Print level for Eigenvalue solver.
+	 Accepts:
+		   0 : No printing.
+		   1 : Print major iterations.
+		 &gt; 1 : Print major + minor iterations.
+</pre></div>
+</div>
+</section>
+<section id="api-reference">
+<h2>API Reference<a class="headerlink" href="#api-reference" title="Permalink to this heading">¶</a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="tacs.problems.BucklingProblem">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tacs.problems.</span></span><span class="sig-name descname"><span class="pre">BucklingProblem</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sigma</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">numEigs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">assembler</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">comm</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">outputViewer</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">meshLoader</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">options</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/problems/buckling.html#BucklingProblem"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.problems.BucklingProblem" title="Permalink to this definition">¶</a></dt>
+<dd><p>NOTE: This class should not be initialized directly by the user.
+Use pyTACS.createBucklingProblem instead.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>name</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.11)"><em>str</em></a>) -- Name of this tacs problem</p></li>
+<li><p><strong>sigma</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.11)"><em>float</em></a>) -- Guess for the lowest eigenvalue. This corresponds to the lowest buckling load factor.</p></li>
+<li><p><strong>numEigs</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)"><em>int</em></a>) -- Number of eigenvalues to solve for</p></li>
+<li><p><strong>assembler</strong> (<a class="reference internal" href="../core/TACS.html#TACS.Assembler" title="TACS.Assembler"><em>TACS.Assembler</em></a>) -- Cython object responsible for creating and setting tacs objects used to solve problem</p></li>
+<li><p><strong>comm</strong> (<a class="reference external" href="https://mpi4py.readthedocs.io/en/stable/reference/mpi4py.MPI.Intracomm.html#mpi4py.MPI.Intracomm" title="(in MPI for Python v3.1)"><em>mpi4py.MPI.Intracomm</em></a>) -- The comm object on which to create the pyTACS object.</p></li>
+<li><p><strong>outputViewer</strong> (<em>TACS.TACSToFH5</em>) -- Cython object used to write out f5 files that can be converted and used for postprocessing.</p></li>
+<li><p><strong>meshLoader</strong> (<em>pymeshloader.pyMeshLoader</em>) -- pyMeshLoader object used to create the assembler.</p></li>
+<li><p><strong>options</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.11)"><em>dict</em></a>) -- Dictionary holding problem-specific option parameters (case-insensitive).</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.problems.BucklingProblem.setOption">
+<span class="sig-name descname"><span class="pre">setOption</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/problems/buckling.html#BucklingProblem.setOption"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.problems.BucklingProblem.setOption" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set a solver option value. The name is not case sensitive.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>name</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.11)"><em>str</em></a>) -- Name of option to modify</p></li>
+<li><p><strong>value</strong> (<em>depends on option</em>) -- New option value to set</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.problems.BucklingProblem.setValName">
+<span class="sig-name descname"><span class="pre">setValName</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">valName</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/problems/buckling.html#BucklingProblem.setValName"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.problems.BucklingProblem.setValName" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set a name for the eigenvalues. Only needs
+to be changed if more than 1 pytacs object is used in an
+optimization</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>valName</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.11)"><em>str</em></a>) -- Name of the eigenvalue output used in evalFunctions().</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.problems.BucklingProblem.getNumEigs">
+<span class="sig-name descname"><span class="pre">getNumEigs</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/problems/buckling.html#BucklingProblem.getNumEigs"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.problems.BucklingProblem.getNumEigs" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get the number of eigenvalues requested from solver for this problem.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>numEigs</strong> -- Number of eigenvalues.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)">int</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.problems.BucklingProblem.addFunction">
+<span class="sig-name descname"><span class="pre">addFunction</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">funcName</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">funcHandle</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">compIDs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/problems/buckling.html#BucklingProblem.addFunction"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.problems.BucklingProblem.addFunction" title="Permalink to this definition">¶</a></dt>
+<dd><p>NOT SUPPORTED FOR THIS PROBLEM</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.problems.BucklingProblem.evalFunctions">
+<span class="sig-name descname"><span class="pre">evalFunctions</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">funcs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">evalFuncs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ignoreMissing</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/problems/buckling.html#BucklingProblem.evalFunctions"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.problems.BucklingProblem.evalFunctions" title="Permalink to this definition">¶</a></dt>
+<dd><p>Evaluate eigenvalues for problem. The functions corresponding to
+the integers in evalFuncs are evaluated and updated into
+the provided dictionary.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>funcs</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.11)"><em>dict</em></a>) -- Dictionary into which the functions are saved.</p></li>
+<li><p><strong>evalFuncs</strong> (<em>iterable object containing strings.</em>) -- If not none, use these functions to evaluate.</p></li>
+<li><p><strong>ignoreMissing</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.11)"><em>bool</em></a>) -- Flag to supress checking for a valid function. Please use
+this option with caution.</p></li>
+</ul>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">funcs</span> <span class="o">=</span> <span class="p">{}</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">bucklingProblem</span><span class="o">.</span><span class="n">solve</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">bucklingProblem</span><span class="o">.</span><span class="n">evalFunctions</span><span class="p">(</span><span class="n">funcs</span><span class="p">,</span> <span class="s1">&#39;eigsm.0&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">funcs</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># Result will look like (if bucklingProblem has name of &#39;c1&#39;):</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># {&#39;c1_eigsm.0&#39;:12354.10}</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.problems.BucklingProblem.evalFunctionsSens">
+<span class="sig-name descname"><span class="pre">evalFunctionsSens</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">funcsSens</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">evalFuncs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/problems/buckling.html#BucklingProblem.evalFunctionsSens"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.problems.BucklingProblem.evalFunctionsSens" title="Permalink to this definition">¶</a></dt>
+<dd><p>This is the main routine for returning useful (sensitivity)
+information from problem. The derivatives of the functions
+corresponding to the strings in evalFuncs are evaluated and
+updated into the provided dictionary. The derivitives with
+respect to all design variables and node locations are computed.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>funcsSens</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.11)"><em>dict</em></a>) -- Dictionary into which the derivatives are saved.</p></li>
+<li><p><strong>evalFuncs</strong> (<em>iterable object containing strings</em>) -- The functions the user wants returned</p></li>
+</ul>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">funcsSens</span> <span class="o">=</span> <span class="p">{}</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">bucklingProblem</span><span class="o">.</span><span class="n">evalFunctionsSens</span><span class="p">(</span><span class="n">funcsSens</span><span class="p">,</span> <span class="s1">&#39;eigsm.0&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">funcsSens</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># Result will look like (if bucklingProblem has name of &#39;c1&#39;):</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># {&#39;c1_eigsm.0&#39;:{&#39;struct&#39;:[1.234, ..., 7.89], &#39;Xpts&#39;:[3.14, ..., 1.59]}}</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.problems.BucklingProblem.addLoadToComponents">
+<span class="sig-name descname"><span class="pre">addLoadToComponents</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">compIDs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">F</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">averageLoad</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/problems/buckling.html#BucklingProblem.addLoadToComponents"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.problems.BucklingProblem.addLoadToComponents" title="Permalink to this definition">¶</a></dt>
+<dd><p>This method is used to add a <em>FIXED TOTAL LOAD</em> on one or more
+components, defined by COMPIDs. The purpose of this routine is to add loads that
+remain fixed throughout an optimization. An example would be an engine load.
+This routine determines all the unique nodes in the FE model that are part of the
+requested components, then takes the total 'force' by F and divides by the
+number of nodes. This average load is then applied to the nodes.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>compIDs</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.11)"><em>list</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)"><em>int</em></a><em>] or </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)"><em>int</em></a>) -- The components with added loads. Use pyTACS selectCompIDs method
+to determine this.</p></li>
+<li><p><strong>F</strong> (<em>numpy.ndarray 1d</em><em> or </em><em>2d length</em><em> (</em><em>varsPerNodes</em><em>) or </em><em>(</em><em>numCompIDs</em><em>, </em><em>varsPerNodes</em><em>)</em>) -- Vector(s) of 'force' to apply to each component.  If only one force vector is provided,
+force will be copied uniformly across all components.</p></li>
+<li><p><strong>averageLoad</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.11)"><em>bool</em></a>) -- Flag to determine whether load should be split evenly across all components (True)
+or copied and applied individually to each component (False). Defaults to False.</p></li>
+</ul>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<p>The units of the entries of the 'force' vector F are not
+necessarily physical forces and their interpretation depends
+on the physics problem being solved and the dofs included
+in the model.</p>
+<p>A couple of examples of force vector components for common problems are listed below:</p>
+<blockquote>
+<div><dl class="simple">
+<dt>In Heat Conduction with varsPerNode = 1</dt><dd><p>F = [Qdot] # heat rate</p>
+</dd>
+<dt>In Elasticity with varsPerNode = 3,</dt><dd><p>F = [fx, fy, fz] # forces</p>
+</dd>
+<dt>In Elasticity with varsPerNode = 6,</dt><dd><p>F = [fx, fy, fz, mx, my, mz] # forces + moments</p>
+</dd>
+<dt>In Thermoelasticity with varsPerNode = 4,</dt><dd><p>F = [fx, fy, fz, Qdot] # forces + heat rate</p>
+</dd>
+<dt>In Thermoelasticity with varsPerNode = 7,</dt><dd><p>F = [fx, fy, fz, mx, my, mz, Qdot] # forces + moments + heat rate</p>
+</dd>
+</dl>
+</div></blockquote>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.problems.BucklingProblem.addLoadToNodes">
+<span class="sig-name descname"><span class="pre">addLoadToNodes</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">nodeIDs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">F</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nastranOrdering</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/problems/buckling.html#BucklingProblem.addLoadToNodes"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.problems.BucklingProblem.addLoadToNodes" title="Permalink to this definition">¶</a></dt>
+<dd><p>This method is used to add a fixed point load of F to the
+selected node IDs.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>nodeIDs</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.11)"><em>list</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)"><em>int</em></a><em>]</em>) -- The nodes IDs with added loads.</p></li>
+<li><p><strong>F</strong> (<em>Numpy 1d</em><em> or </em><em>2d array length</em><em> (</em><em>varsPerNodes</em><em>) or </em><em>(</em><em>numNodeIDs</em><em>, </em><em>varsPerNodes</em><em>)</em>) -- Array of force vectors, one for each node. If only one force vector is provided,
+force will be copied uniformly across all nodes.</p></li>
+<li><p><strong>nastranOrdering</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.11)"><em>bool</em></a>) -- Flag signaling whether nodeIDs are in TACS (default)
+or NASTRAN (grid IDs in bdf file) ordering</p></li>
+</ul>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<p>The units of the entries of the 'force' vector F are not
+necessarily physical forces and their interpretation depends
+on the physics problem being solved and the dofs included
+in the model.</p>
+<p>A couple of examples of force vector components for common problems are listed below:</p>
+<blockquote>
+<div><dl class="simple">
+<dt>In Heat Conduction with varsPerNode = 1</dt><dd><p>F = [Qdot] # heat rate</p>
+</dd>
+<dt>In Elasticity with varsPerNode = 3,</dt><dd><p>F = [fx, fy, fz] # forces</p>
+</dd>
+<dt>In Elasticity with varsPerNode = 6,</dt><dd><p>F = [fx, fy, fz, mx, my, mz] # forces + moments</p>
+</dd>
+<dt>In Thermoelasticity with varsPerNode = 4,</dt><dd><p>F = [fx, fy, fz, Qdot] # forces + heat rate</p>
+</dd>
+<dt>In Thermoelasticity with varsPerNode = 7,</dt><dd><p>F = [fx, fy, fz, mx, my, mz, Qdot] # forces + moments + heat rate</p>
+</dd>
+</dl>
+</div></blockquote>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.problems.BucklingProblem.addLoadToRHS">
+<span class="sig-name descname"><span class="pre">addLoadToRHS</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">Fapplied</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/problems/buckling.html#BucklingProblem.addLoadToRHS"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.problems.BucklingProblem.addLoadToRHS" title="Permalink to this definition">¶</a></dt>
+<dd><p>This method is used to add a <em>FIXED TOTAL LOAD</em> directly to the
+right hand side vector given the equation below:</p>
+<blockquote>
+<div><p>K*u = f</p>
+</div></blockquote>
+<dl class="simple">
+<dt>Where:</dt><dd><ul class="simple">
+<li><p>K : Stiffness matrix for problem</p></li>
+<li><p>u : State variables for problem</p></li>
+<li><p>f : Right-hand side vector to add loads to</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>Fapplied</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.24)"><em>numpy.ndarray</em></a><em> or </em><em>tacs.TACS.Vec</em>) -- Distributed array containing loads to applied to RHS of the problem.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.problems.BucklingProblem.addTractionToComponents">
+<span class="sig-name descname"><span class="pre">addTractionToComponents</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">compIDs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tractions</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">faceIndex</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/problems/buckling.html#BucklingProblem.addTractionToComponents"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.problems.BucklingProblem.addTractionToComponents" title="Permalink to this definition">¶</a></dt>
+<dd><p>This method is used to add a <em>FIXED TOTAL TRACTION</em> on one or more
+components, defined by COMPIDs. The purpose of this routine is
+to add loads that remain fixed throughout an optimization.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>compIDs</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.11)"><em>list</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)"><em>int</em></a><em>] or </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)"><em>int</em></a>) -- The components with added loads. Use pyTACS selectCompIDs method
+to determine this.</p></li>
+<li><p><strong>tractions</strong> (<em>Numpy array length 1</em><em> or </em><em>compIDs</em>) -- Array of traction vectors for each component</p></li>
+<li><p><strong>faceIndex</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)"><em>int</em></a>) -- Indicates which face (side) of element to apply traction to.
+Note: not required for certain elements (i.e. shells)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.problems.BucklingProblem.addTractionToElements">
+<span class="sig-name descname"><span class="pre">addTractionToElements</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">elemIDs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tractions</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">faceIndex</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nastranOrdering</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/problems/buckling.html#BucklingProblem.addTractionToElements"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.problems.BucklingProblem.addTractionToElements" title="Permalink to this definition">¶</a></dt>
+<dd><p>This method is used to add a fixed traction to the
+selected element IDs. Tractions can be specified on an
+element by element basis (if tractions is a 2d array) or
+set to a uniform value (if tractions is a 1d array)</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>elemIDs</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.11)"><em>list</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)"><em>int</em></a><em>]</em>) -- The global element ID numbers for which to apply the traction.</p></li>
+<li><p><strong>tractions</strong> (<em>Numpy 1d</em><em> or </em><em>2d array length varsPerNodes</em><em> or </em><em>(</em><em>elemIDs</em><em>, </em><em>varsPerNodes</em><em>)</em>) -- Array of traction vectors for each element</p></li>
+<li><p><strong>faceIndex</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)"><em>int</em></a>) -- Indicates which face (side) of element to apply traction to.
+Note: not required for certain elements (i.e. shells)</p></li>
+<li><p><strong>nastranOrdering</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.11)"><em>bool</em></a>) -- Flag signaling whether elemIDs are in TACS (default)
+or NASTRAN ordering</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.problems.BucklingProblem.addPressureToComponents">
+<span class="sig-name descname"><span class="pre">addPressureToComponents</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">compIDs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pressures</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">faceIndex</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/problems/buckling.html#BucklingProblem.addPressureToComponents"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.problems.BucklingProblem.addPressureToComponents" title="Permalink to this definition">¶</a></dt>
+<dd><p>This method is used to add a <em>FIXED TOTAL PRESSURE</em> on one or more
+components, defined by COMPIds. The purpose of this routine is
+to add loads that remain fixed throughout an optimization. An example
+would be a fuel load.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>compIDs</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.11)"><em>list</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)"><em>int</em></a><em>] or </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)"><em>int</em></a>) -- The components with added loads. Use pyTACS selectCompIDs method
+to determine this.</p></li>
+<li><p><strong>pressures</strong> (<em>Numpy array length 1</em><em> or </em><em>compIDs</em>) -- Array of pressure values for each component</p></li>
+<li><p><strong>faceIndex</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)"><em>int</em></a>) -- Indicates which face (side) of element to apply pressure to.
+Note: not required for certain elements (i.e. shells)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.problems.BucklingProblem.addPressureToElements">
+<span class="sig-name descname"><span class="pre">addPressureToElements</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">elemIDs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pressures</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">faceIndex</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nastranOrdering</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/problems/buckling.html#BucklingProblem.addPressureToElements"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.problems.BucklingProblem.addPressureToElements" title="Permalink to this definition">¶</a></dt>
+<dd><p>This method is used to add a fixed presure to the
+selected element IDs. Pressures can be specified on an
+element by element basis (if pressures is an array) or
+set to a uniform value (if pressures is a scalar)</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>elemIDs</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.11)"><em>list</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)"><em>int</em></a><em>]</em>) -- The global element ID numbers for which to apply the pressure.</p></li>
+<li><p><strong>pressures</strong> (<em>Numpy array length 1</em><em> or </em><em>elemIDs</em>) -- Array of pressure values for each element</p></li>
+<li><p><strong>faceIndex</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)"><em>int</em></a>) -- Indicates which face (side) of element to apply pressure to.
+Note: not required for certain elements (i.e. shells)</p></li>
+<li><p><strong>nastranOrdering</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.11)"><em>bool</em></a>) -- Flag signaling whether elemIDs are in TACS (default)
+or NASTRAN ordering</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.problems.BucklingProblem.addInertialLoad">
+<span class="sig-name descname"><span class="pre">addInertialLoad</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">inertiaVector</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/problems/buckling.html#BucklingProblem.addInertialLoad"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.problems.BucklingProblem.addInertialLoad" title="Permalink to this definition">¶</a></dt>
+<dd><p>This method is used to add a fixed inertial load due to
+a uniform acceleration over the entire model.
+This is most commonly used to model gravity loads on a model.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>inertiaVector</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.24)"><em>numpy.ndarray</em></a>) -- Acceleration vector used to define inertial load.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.problems.BucklingProblem.addCentrifugalLoad">
+<span class="sig-name descname"><span class="pre">addCentrifugalLoad</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">omegaVector</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rotCenter</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">firstOrder</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/problems/buckling.html#BucklingProblem.addCentrifugalLoad"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.problems.BucklingProblem.addCentrifugalLoad" title="Permalink to this definition">¶</a></dt>
+<dd><p>This method is used to add a fixed centrifugal load due to a
+uniform rotational velocity over the entire model.
+This is most commonly used to model rotors, rolling aircraft, etc.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>omegaVector</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.24)"><em>numpy.ndarray</em></a>) -- Rotational velocity vector (rad/s) used to define centrifugal load.</p></li>
+<li><p><strong>rotCenter</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.24)"><em>numpy.ndarray</em></a>) -- Location of center of rotation used to define centrifugal load.</p></li>
+<li><p><strong>firstOrder</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.11)"><em>bool</em></a><em>, </em><em>optional</em>) -- Whether to use first order approximation for centrifugal load,
+which computes the force in the displaced position. By default False</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.problems.BucklingProblem.addLoadFromBDF">
+<span class="sig-name descname"><span class="pre">addLoadFromBDF</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">loadID</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scale</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/problems/buckling.html#BucklingProblem.addLoadFromBDF"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.problems.BucklingProblem.addLoadFromBDF" title="Permalink to this definition">¶</a></dt>
+<dd><p>This method is used to add a fixed load set defined in the BDF file to the problem.
+Currently, only supports LOAD, FORCE, MOMENT, GRAV, RFORCE, PLOAD2, and PLOAD4.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>loadID</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)"><em>int</em></a>) -- Load identification number of load set in BDF file user wishes to add to problem.</p></li>
+<li><p><strong>scale</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.11)"><em>float</em></a>) -- Factor to scale the BDF loads by before adding to problem.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.problems.BucklingProblem.zeroLoads">
+<span class="sig-name descname"><span class="pre">zeroLoads</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/problems/buckling.html#BucklingProblem.zeroLoads"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.problems.BucklingProblem.zeroLoads" title="Permalink to this definition">¶</a></dt>
+<dd><p>Zero all applied loads</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.problems.BucklingProblem.solve">
+<span class="sig-name descname"><span class="pre">solve</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">Fext</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">u0</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/problems/buckling.html#BucklingProblem.solve"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.problems.BucklingProblem.solve" title="Permalink to this definition">¶</a></dt>
+<dd><p>Solve the eigenvalue problem. The
+forces must already be set.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>Fext</strong> (<em>tacs.TACS.Vec</em><em> or </em><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.24)"><em>numpy.ndarray</em></a><em>, </em><em>optional</em>) -- Distributed array containing additional loads (ex. aerodynamic forces for aerostructural coupling)
+to applied to RHS of the static problem.</p></li>
+<li><p><strong>u0</strong> (<em>tacs.TACS.Vec</em><em> or </em><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.24)"><em>numpy.ndarray</em></a><em>, </em><em>optional</em>) -- Distributed array containing additional loads (ex. aerodynamic forces for aerostructural coupling)
+to applied to RHS of the static problem. Alternate to Fext.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.problems.BucklingProblem.getVariables">
+<span class="sig-name descname"><span class="pre">getVariables</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">index</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">states</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/problems/buckling.html#BucklingProblem.getVariables"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.problems.BucklingProblem.getVariables" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the current state values for one mode of the current problem</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>index</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)"><em>int</em></a>) -- Mode index to return solution for.</p></li>
+<li><p><strong>states</strong> (<em>tacs.TACS.Vec</em><em> or </em><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.24)"><em>numpy.ndarray</em></a><em> or </em><em>None</em>) -- Place eigenvector for mode into this array (optional).</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>eigVal</strong> (<em>float</em>) -- Eigenvalue for mode corresponds to buckling load factor</p></li>
+<li><p><strong>states</strong> (<em>numpy.ndarray</em>) -- Eigenvector for mode</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.problems.BucklingProblem.addXptSens">
+<span class="sig-name descname"><span class="pre">addXptSens</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">indices</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xptSensList</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scale</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/problems/buckling.html#BucklingProblem.addXptSens"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.problems.BucklingProblem.addXptSens" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add partial sensitivity contribution due to nodal coordinates for eigenvalue</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>indices</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.11)"><em>list</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)"><em>int</em></a><em>]</em>) -- Mode indices to return sensitivity for.</p></li>
+<li><p><strong>xptSensList</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.11)"><em>list</em></a><em>[</em><em>tacs.TACS.Vec</em><em>] or </em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.11)"><em>list</em></a><em>[</em><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.24)"><em>numpy.ndarray</em></a><em>]</em>) -- List of sensitivity vectors to add partial sensitivity to</p></li>
+<li><p><strong>scale</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.11)"><em>float</em></a>) -- Scalar to multiply partial sensitivity by. Defaults to 1.0</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.problems.BucklingProblem.addDVSens">
+<span class="sig-name descname"><span class="pre">addDVSens</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">indices</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dvSensList</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scale</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/problems/buckling.html#BucklingProblem.addDVSens"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.problems.BucklingProblem.addDVSens" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add partial sensitivity contribution due to design variables for eigenvalue</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>indices</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.11)"><em>list</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)"><em>int</em></a><em>]</em>) -- Mode indices to return sensitivity for.</p></li>
+<li><p><strong>dvSensList</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.11)"><em>list</em></a><em>[</em><em>tacs.TACS.Vec</em><em>] or </em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.11)"><em>list</em></a><em>[</em><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.24)"><em>numpy.ndarray</em></a><em>]</em>) -- List of sensitivity vectors to add partial sensitivity to</p></li>
+<li><p><strong>scale</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.11)"><em>float</em></a>) -- Scalar to multiply partial sensitivity by. Defaults to 1.0</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.problems.BucklingProblem.evalSVSens">
+<span class="sig-name descname"><span class="pre">evalSVSens</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">indices</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">svSensList</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/problems/buckling.html#BucklingProblem.evalSVSens"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.problems.BucklingProblem.evalSVSens" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add partial sensitivity contribution due to state variables for eigenvalue</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>indices</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.11)"><em>list</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)"><em>int</em></a><em>]</em>) -- Mode indices to return sensitivity for.</p></li>
+<li><p><strong>svSensList</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.11)"><em>list</em></a><em>[</em><em>tacs.TACS.Vec</em><em>] or </em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.11)"><em>list</em></a><em>[</em><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.24)"><em>numpy.ndarray</em></a><em>]</em>) -- List of sensitivity vectors to add partial sensitivity to</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.problems.BucklingProblem.writeSolution">
+<span class="sig-name descname"><span class="pre">writeSolution</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">outputDir</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">baseName</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">number</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">indices</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/problems/buckling.html#BucklingProblem.writeSolution"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.problems.BucklingProblem.writeSolution" title="Permalink to this definition">¶</a></dt>
+<dd><p>This is a generic shell function that writes the output
+file(s).  The intent is that the user or calling program can
+call this function and pyTACS writes all the files that the
+user has defined. It is recommended that this function is used
+along with the associated logical flags in the options to
+determine the desired writing procedure</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>outputDir</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.11)"><em>str</em></a><em> or </em><em>None</em>) -- Use the supplied output directory</p></li>
+<li><p><strong>baseName</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.11)"><em>str</em></a><em> or </em><em>None</em>) -- Use this supplied string for the base filename. Typically
+only used from an external solver.</p></li>
+<li><p><strong>number</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)"><em>int</em></a><em> or </em><em>None</em>) -- Use the user supplied number to index solution. Again, only
+typically used from an external solver</p></li>
+<li><p><strong>indices</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)"><em>int</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.11)"><em>list</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)"><em>int</em></a><em>] or </em><em>None</em>) -- Mode index or indices to get state variables for.
+If None, returns a solution for all modes.
+Defaults to None.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="tacs.problems.BucklingProblem.dtype">
+<span class="sig-name descname"><span class="pre">dtype</span></span><a class="headerlink" href="#tacs.problems.BucklingProblem.dtype" title="Permalink to this definition">¶</a></dt>
+<dd><p>alias of <code class="xref py py-class docutils literal notranslate"><span class="pre">float64</span></code></p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.problems.BucklingProblem.getDesignVarRange">
+<span class="sig-name descname"><span class="pre">getDesignVarRange</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.problems.BucklingProblem.getDesignVarRange" title="Permalink to this definition">¶</a></dt>
+<dd><p>get the lower/upper bounds for the design variables.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><ul class="simple">
+<li><p><strong>xlb</strong> (<em>numpy.ndarray</em>) -- The design variable lower bound.</p></li>
+<li><p><strong>xub</strong> (<em>numpy.ndarray</em>) -- The design variable upper bound.</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.problems.BucklingProblem.getDesignVars">
+<span class="sig-name descname"><span class="pre">getDesignVars</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.problems.BucklingProblem.getDesignVars" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get the current set of  design variables for this problem.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>x</strong> -- The current design variable vector set in tacs.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.24)">numpy.ndarray</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.problems.BucklingProblem.getFunctionKeys">
+<span class="sig-name descname"><span class="pre">getFunctionKeys</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.problems.BucklingProblem.getFunctionKeys" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a list of the current function key names</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>funcNames</strong> -- List containing user-defined names for functions added so far.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.11)">list</a>[<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.11)">str</a>]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.problems.BucklingProblem.getNodes">
+<span class="sig-name descname"><span class="pre">getNodes</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.problems.BucklingProblem.getNodes" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the mesh coordinates of this problem.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>coords</strong> -- Structural coordinate in array of size (N * 3) where N is
+the number of structural nodes on this processor.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.24)">numpy.ndarray</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.problems.BucklingProblem.getNumCoordinates">
+<span class="sig-name descname"><span class="pre">getNumCoordinates</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.problems.BucklingProblem.getNumCoordinates" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the number of mesh coordinates on this processor.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>ncoords</strong> -- Number of mesh coordinates on this processor.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)">int</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.problems.BucklingProblem.getNumDesignVars">
+<span class="sig-name descname"><span class="pre">getNumDesignVars</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.problems.BucklingProblem.getNumDesignVars" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the number of design variables on this processor.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>ndvs</strong> -- Number of design variables on this processor.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)">int</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.problems.BucklingProblem.getNumOwnedNodes">
+<span class="sig-name descname"><span class="pre">getNumOwnedNodes</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.problems.BucklingProblem.getNumOwnedNodes" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get the number of nodes owned by this processor.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>nnodes</strong> -- Number of nodes on this processor.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)">int</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.problems.BucklingProblem.getNumVariables">
+<span class="sig-name descname"><span class="pre">getNumVariables</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.problems.BucklingProblem.getNumVariables" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the number of degrees of freedom (states) that are
+on this processor</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>nstate</strong> -- number of states.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)">int</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.problems.BucklingProblem.getOption">
+<span class="sig-name descname"><span class="pre">getOption</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tacs.problems.BucklingProblem.getOption" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get a solver option value. The name is not case sensitive.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>name</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.11)"><em>str</em></a>) -- Name of option to get</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.problems.BucklingProblem.getVarsPerNode">
+<span class="sig-name descname"><span class="pre">getVarsPerNode</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.problems.BucklingProblem.getVarsPerNode" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get the number of variables per node for the model.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>vpn</strong> -- Number of variables per node.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)">int</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.problems.BucklingProblem.printDefaultOptions">
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">printDefaultOptions</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.problems.BucklingProblem.printDefaultOptions" title="Permalink to this definition">¶</a></dt>
+<dd><p>Prints a nicely formatted dictionary of all the default solver
+options to the stdout</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.problems.BucklingProblem.printOptions">
+<span class="sig-name descname"><span class="pre">printOptions</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.problems.BucklingProblem.printOptions" title="Permalink to this definition">¶</a></dt>
+<dd><p>Prints a nicely formatted dictionary of all the current solver
+options to the stdout on the root processor</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.problems.BucklingProblem.setDesignVars">
+<span class="sig-name descname"><span class="pre">setDesignVars</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tacs.problems.BucklingProblem.setDesignVars" title="Permalink to this definition">¶</a></dt>
+<dd><p>Update the design variables used by tacs.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>x</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.24)"><em>numpy.ndarray</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.11)"><em>dict</em></a><em> or </em><em>tacs.TACS.Vec</em>) -- The variables (typically from the optimizer) to set. It
+looks for variable in the <code class="docutils literal notranslate"><span class="pre">self.varName</span></code> attribute if in dict.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.problems.BucklingProblem.setNodes">
+<span class="sig-name descname"><span class="pre">setNodes</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">Xpts</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tacs.problems.BucklingProblem.setNodes" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set the mesh coordinates of the structure.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>coords</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.24)"><em>numpy.ndarray</em></a>) -- Structural coordinate in array of size (N * 3) where N is
+the number of structural nodes on this processor.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.problems.BucklingProblem.setVarName">
+<span class="sig-name descname"><span class="pre">setVarName</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">varName</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tacs.problems.BucklingProblem.setVarName" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set a name for the structural variables in pyOpt. Only needs
+to be changed if more than 1 pytacs object is used in an
+optimization</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>varName</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.11)"><em>str</em></a>) -- Name of the structural variable used in addVarGroup().</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.problems.BucklingProblem.writeSensFile">
+<span class="sig-name descname"><span class="pre">writeSensFile</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">evalFuncs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tacsAim</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tacs.problems.BucklingProblem.writeSensFile" title="Permalink to this definition">¶</a></dt>
+<dd><p>write an ESP/CAPS .sens file from the tacs aim
+Optional tacs_aim arg for TacsAim wrapper class object in root/tacs/caps2tacs/</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>evalFuncs</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.11)"><em>list</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.11)"><em>str</em></a><em>]</em>) -- names of TACS functions to be evaluated</p></li>
+<li><p><strong>tacsAim</strong> (<em>tacs.caps2tacs.TacsAIM</em>) -- class which handles the sensitivity file writing for ESP/CAPS shape derivatives</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+</section>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <div>
+    <h3><a href="../index.html">Table of Contents</a></h3>
+    <ul>
+<li><a class="reference internal" href="#">BucklingProblem</a><ul>
+<li><a class="reference internal" href="#options">Options</a></li>
+<li><a class="reference internal" href="#api-reference">API Reference</a><ul>
+<li><a class="reference internal" href="#tacs.problems.BucklingProblem"><code class="docutils literal notranslate"><span class="pre">BucklingProblem</span></code></a><ul>
+<li><a class="reference internal" href="#tacs.problems.BucklingProblem.setOption"><code class="docutils literal notranslate"><span class="pre">BucklingProblem.setOption()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.problems.BucklingProblem.setValName"><code class="docutils literal notranslate"><span class="pre">BucklingProblem.setValName()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.problems.BucklingProblem.getNumEigs"><code class="docutils literal notranslate"><span class="pre">BucklingProblem.getNumEigs()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.problems.BucklingProblem.addFunction"><code class="docutils literal notranslate"><span class="pre">BucklingProblem.addFunction()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.problems.BucklingProblem.evalFunctions"><code class="docutils literal notranslate"><span class="pre">BucklingProblem.evalFunctions()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.problems.BucklingProblem.evalFunctionsSens"><code class="docutils literal notranslate"><span class="pre">BucklingProblem.evalFunctionsSens()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.problems.BucklingProblem.addLoadToComponents"><code class="docutils literal notranslate"><span class="pre">BucklingProblem.addLoadToComponents()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.problems.BucklingProblem.addLoadToNodes"><code class="docutils literal notranslate"><span class="pre">BucklingProblem.addLoadToNodes()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.problems.BucklingProblem.addLoadToRHS"><code class="docutils literal notranslate"><span class="pre">BucklingProblem.addLoadToRHS()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.problems.BucklingProblem.addTractionToComponents"><code class="docutils literal notranslate"><span class="pre">BucklingProblem.addTractionToComponents()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.problems.BucklingProblem.addTractionToElements"><code class="docutils literal notranslate"><span class="pre">BucklingProblem.addTractionToElements()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.problems.BucklingProblem.addPressureToComponents"><code class="docutils literal notranslate"><span class="pre">BucklingProblem.addPressureToComponents()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.problems.BucklingProblem.addPressureToElements"><code class="docutils literal notranslate"><span class="pre">BucklingProblem.addPressureToElements()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.problems.BucklingProblem.addInertialLoad"><code class="docutils literal notranslate"><span class="pre">BucklingProblem.addInertialLoad()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.problems.BucklingProblem.addCentrifugalLoad"><code class="docutils literal notranslate"><span class="pre">BucklingProblem.addCentrifugalLoad()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.problems.BucklingProblem.addLoadFromBDF"><code class="docutils literal notranslate"><span class="pre">BucklingProblem.addLoadFromBDF()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.problems.BucklingProblem.zeroLoads"><code class="docutils literal notranslate"><span class="pre">BucklingProblem.zeroLoads()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.problems.BucklingProblem.solve"><code class="docutils literal notranslate"><span class="pre">BucklingProblem.solve()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.problems.BucklingProblem.getVariables"><code class="docutils literal notranslate"><span class="pre">BucklingProblem.getVariables()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.problems.BucklingProblem.addXptSens"><code class="docutils literal notranslate"><span class="pre">BucklingProblem.addXptSens()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.problems.BucklingProblem.addDVSens"><code class="docutils literal notranslate"><span class="pre">BucklingProblem.addDVSens()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.problems.BucklingProblem.evalSVSens"><code class="docutils literal notranslate"><span class="pre">BucklingProblem.evalSVSens()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.problems.BucklingProblem.writeSolution"><code class="docutils literal notranslate"><span class="pre">BucklingProblem.writeSolution()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.problems.BucklingProblem.dtype"><code class="docutils literal notranslate"><span class="pre">BucklingProblem.dtype</span></code></a></li>
+<li><a class="reference internal" href="#tacs.problems.BucklingProblem.getDesignVarRange"><code class="docutils literal notranslate"><span class="pre">BucklingProblem.getDesignVarRange()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.problems.BucklingProblem.getDesignVars"><code class="docutils literal notranslate"><span class="pre">BucklingProblem.getDesignVars()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.problems.BucklingProblem.getFunctionKeys"><code class="docutils literal notranslate"><span class="pre">BucklingProblem.getFunctionKeys()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.problems.BucklingProblem.getNodes"><code class="docutils literal notranslate"><span class="pre">BucklingProblem.getNodes()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.problems.BucklingProblem.getNumCoordinates"><code class="docutils literal notranslate"><span class="pre">BucklingProblem.getNumCoordinates()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.problems.BucklingProblem.getNumDesignVars"><code class="docutils literal notranslate"><span class="pre">BucklingProblem.getNumDesignVars()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.problems.BucklingProblem.getNumOwnedNodes"><code class="docutils literal notranslate"><span class="pre">BucklingProblem.getNumOwnedNodes()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.problems.BucklingProblem.getNumVariables"><code class="docutils literal notranslate"><span class="pre">BucklingProblem.getNumVariables()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.problems.BucklingProblem.getOption"><code class="docutils literal notranslate"><span class="pre">BucklingProblem.getOption()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.problems.BucklingProblem.getVarsPerNode"><code class="docutils literal notranslate"><span class="pre">BucklingProblem.getVarsPerNode()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.problems.BucklingProblem.printDefaultOptions"><code class="docutils literal notranslate"><span class="pre">BucklingProblem.printDefaultOptions()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.problems.BucklingProblem.printOptions"><code class="docutils literal notranslate"><span class="pre">BucklingProblem.printOptions()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.problems.BucklingProblem.setDesignVars"><code class="docutils literal notranslate"><span class="pre">BucklingProblem.setDesignVars()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.problems.BucklingProblem.setNodes"><code class="docutils literal notranslate"><span class="pre">BucklingProblem.setNodes()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.problems.BucklingProblem.setVarName"><code class="docutils literal notranslate"><span class="pre">BucklingProblem.setVarName()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.problems.BucklingProblem.writeSensFile"><code class="docutils literal notranslate"><span class="pre">BucklingProblem.writeSensFile()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+  </div>
+  <div>
+    <h4>Previous topic</h4>
+    <p class="topless"><a href="modal.html"
+                          title="previous chapter">ModalProblem</a></p>
+  </div>
+  <div>
+    <h4>Next topic</h4>
+    <p class="topless"><a href="constraints.html"
+                          title="next chapter">Constraint classes</a></p>
+  </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="constraints.html" title="Constraint classes"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="modal.html" title="ModalProblem"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">TACS  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../interfaces.html" >Interfaces</a> &#187;</li>
+          <li class="nav-item nav-item-2"><a href="pytacs.html" >pyTACS</a> &#187;</li>
+          <li class="nav-item nav-item-3"><a href="problems.html" >Problem classes</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">BucklingProblem</a></li> 
+      </ul>
+    </div>
+ <script type="text/javascript">
+    $(document).ready(function() {
+        $(".toggle > *").hide();
+        $(".toggle .header").show();
+        $(".toggle .header").click(function() {
+            $(this).parent().children().not(".header").toggle(400);
+            $(this).parent().children(".header").toggleClass("open");
+        })
+    });
+</script>
+
+  </body>
+</html>
