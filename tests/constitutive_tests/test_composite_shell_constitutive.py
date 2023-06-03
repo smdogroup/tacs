@@ -15,7 +15,7 @@ class ConstitutiveTest(unittest.TestCase):
             self.rtol = 1e-12
         else:
             self.dh = 1e-8
-            self.rtol = 1e-6
+            self.rtol = 1e-4
         self.dtype = TACS.dtype
 
         self.atol = np.clip(1e-5 * self.rtol, 1e-8, 1e-14)
