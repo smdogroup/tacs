@@ -1,0 +1,200 @@
+INIT MASTER(S)
+NASTRAN SYSTEM(442)=-1,SYSTEM(319)=1
+ID FEMAP,FEMAP
+SOL SEBUCKL
+CEND
+  TITLE = Simcenter Nastran Buckling Analysis Set
+  ECHO = NONE
+  DISPLACEMENT(PLOT) = ALL
+  SPCFORCE(PLOT) = ALL
+  STRESS(PLOT,CORNER) = ALL
+  SPC = 1
+SUBCASE 1
+  LOAD = 1
+SUBCASE 2
+  LABEL = BUCKLING CASE
+  METHOD = 1
+BEGIN BULK
+$ ***************************************************************************
+$   Written by : Femap
+$   Version    : 2023.1.0
+$   Translator : Simcenter Nastran
+$   From Model :
+$   Date       : Fri May 19 14:25:00 2023
+$   Output To  : C:\Users\trbrooks\AppData\Local\Temp\2\
+$ ***************************************************************************
+$
+PARAM,PRGPST,NO
+PARAM,POST,-1
+PARAM,OGEOM,NO
+PARAM,AUTOSPC,YES
+PARAM,GRDPNT,0
+EIGRL          1           3000.       1       0                     MAX
+CORD2C         1       0      0.      0.      0.      0.      0.      1.+FEMAPC1
++FEMAPC1      1.      0.      1.
+CORD2S         2       0      0.      0.      0.      0.      0.      1.+FEMAPC2
++FEMAPC2      1.      0.      1.
+$ Femap Load Set 1 : Untitled
+FORCE          1      15       0      1.      0.  -5000.      0.
+FORCE          1      16       0      1.      0. -10000.      0.
+FORCE          1      17       0      1.      0. -10000.      0.
+FORCE          1      18       0      1.      0. -10000.      0.
+FORCE          1      19       0      1.      0. -10000.      0.
+FORCE          1      20       0      1.      0. -10000.      0.
+FORCE          1      21       0      1.      0. -10000.      0.
+FORCE          1      22       0      1.      0. -10000.      0.
+FORCE          1      23       0      1.      0.  -5000.      0.
+FORCE          1       1       0      1.      0.   5000.      0.
+FORCE          1       2       0      1.      0.  10000.      0.
+FORCE          1       3       0      1.      0.  10000.      0.
+FORCE          1       4       0      1.      0.  10000.      0.
+FORCE          1       5       0      1.      0.  10000.      0.
+FORCE          1       6       0      1.      0.  10000.      0.
+FORCE          1       7       0      1.      0.  10000.      0.
+FORCE          1       8       0      1.      0.  10000.      0.
+FORCE          1       9       0      1.      0.   5000.      0.
+$ Femap Constraint Set 1 : Untitled
+SPC1           1  123456       1
+SPC1           1     236       2
+SPC1           1     236       3
+SPC1           1     236       4
+SPC1           1     236       5
+SPC1           1     236       6
+SPC1           1     236       7
+SPC1           1     236       8
+SPC1           1     236       9
+SPC1           1      36      10
+SPC1           1      36      11
+SPC1           1      36      12
+SPC1           1      36      13
+SPC1           1      36      14
+SPC1           1      36      15
+SPC1           1      36      16
+SPC1           1      36      17
+SPC1           1      36      18
+SPC1           1      36      19
+SPC1           1      36      20
+SPC1           1      36      21
+SPC1           1      36      22
+SPC1           1      36      23
+SPC1           1      36      24
+SPC1           1      36      25
+SPC1           1      36      26
+SPC1           1      36      27
+SPC1           1      36      28
+$ Femap Property 1 : PLATE Property
+PSHELL         1       1     .02       1               1              0.
+$ Femap Material 1 : ISOTROPIC Material
+MAT1           1 2.05+11              .3      0.      0.      0.
+GRID           1       0      0.      0.      0.       0
+GRID           2       0      .5      0.      0.       0
+GRID           3       0      1.      0.      0.       0
+GRID           4       0     1.5      0.      0.       0
+GRID           5       0      2.      0.      0.       0
+GRID           6       0     2.5      0.      0.       0
+GRID           7       0      3.      0.      0.       0
+GRID           8       0     3.5      0.      0.       0
+GRID           9       0      4.      0.      0.       0
+GRID          10       0      4.      .5      0.       0
+GRID          11       0      4.      1.      0.       0
+GRID          12       0      4.     1.5      0.       0
+GRID          13       0      4.      2.      0.       0
+GRID          14       0      4.     2.5      0.       0
+GRID          15       0      4.      3.      0.       0
+GRID          16       0     3.5      3.      0.       0
+GRID          17       0      3.      3.      0.       0
+GRID          18       0     2.5      3.      0.       0
+GRID          19       0      2.      3.      0.       0
+GRID          20       0     1.5      3.      0.       0
+GRID          21       0      1.      3.      0.       0
+GRID          22       0      .5      3.      0.       0
+GRID          23       0      0.      3.      0.       0
+GRID          24       0      0.     2.5      0.       0
+GRID          25       0      0.      2.      0.       0
+GRID          26       0      0.     1.5      0.       0
+GRID          27       0      0.      1.      0.       0
+GRID          28       0      0.      .5      0.       0
+GRID          29       0      .5      .5      0.       0
+GRID          30       0      1.      .5      0.       0
+GRID          31       0     1.5      .5      0.       0
+GRID          32       0      2.      .5      0.       0
+GRID          33       0     2.5      .5      0.       0
+GRID          34       0      3.      .5      0.       0
+GRID          35       0     3.5      .5      0.       0
+GRID          36       0      .5      1.      0.       0
+GRID          37       0      1.      1.      0.       0
+GRID          38       0     1.5      1.      0.       0
+GRID          39       0      2.      1.      0.       0
+GRID          40       0     2.5      1.      0.       0
+GRID          41       0      3.      1.      0.       0
+GRID          42       0     3.5      1.      0.       0
+GRID          43       0      .5     1.5      0.       0
+GRID          44       0      1.     1.5      0.       0
+GRID          45       0     1.5     1.5      0.       0
+GRID          46       0      2.     1.5      0.       0
+GRID          47       0     2.5     1.5      0.       0
+GRID          48       0      3.     1.5      0.       0
+GRID          49       0     3.5     1.5      0.       0
+GRID          50       0      .5      2.      0.       0
+GRID          51       0      1.      2.      0.       0
+GRID          52       0     1.5      2.      0.       0
+GRID          53       0      2.      2.      0.       0
+GRID          54       0     2.5      2.      0.       0
+GRID          55       0      3.      2.      0.       0
+GRID          56       0     3.5      2.      0.       0
+GRID          57       0      .5     2.5      0.       0
+GRID          58       0      1.     2.5      0.       0
+GRID          59       0     1.5     2.5      0.       0
+GRID          60       0      2.     2.5      0.       0
+GRID          61       0     2.5     2.5      0.       0
+GRID          62       0      3.     2.5      0.       0
+GRID          63       0     3.5     2.5      0.       0
+CQUAD4         1       1       1       2      29      28
+CQUAD4         2       1       2       3      30      29
+CQUAD4         3       1       3       4      31      30
+CQUAD4         4       1       4       5      32      31
+CQUAD4         5       1       5       6      33      32
+CQUAD4         6       1       6       7      34      33
+CQUAD4         7       1       7       8      35      34
+CQUAD4         8       1       8       9      10      35
+CQUAD4         9       1      28      29      36      27
+CQUAD4        10       1      29      30      37      36
+CQUAD4        11       1      30      31      38      37
+CQUAD4        12       1      31      32      39      38
+CQUAD4        13       1      32      33      40      39
+CQUAD4        14       1      33      34      41      40
+CQUAD4        15       1      34      35      42      41
+CQUAD4        16       1      35      10      11      42
+CQUAD4        17       1      27      36      43      26
+CQUAD4        18       1      36      37      44      43
+CQUAD4        19       1      37      38      45      44
+CQUAD4        20       1      38      39      46      45
+CQUAD4        21       1      39      40      47      46
+CQUAD4        22       1      40      41      48      47
+CQUAD4        23       1      41      42      49      48
+CQUAD4        24       1      42      11      12      49
+CQUAD4        25       1      26      43      50      25
+CQUAD4        26       1      43      44      51      50
+CQUAD4        27       1      44      45      52      51
+CQUAD4        28       1      45      46      53      52
+CQUAD4        29       1      46      47      54      53
+CQUAD4        30       1      47      48      55      54
+CQUAD4        31       1      48      49      56      55
+CQUAD4        32       1      49      12      13      56
+CQUAD4        33       1      25      50      57      24
+CQUAD4        34       1      50      51      58      57
+CQUAD4        35       1      51      52      59      58
+CQUAD4        36       1      52      53      60      59
+CQUAD4        37       1      53      54      61      60
+CQUAD4        38       1      54      55      62      61
+CQUAD4        39       1      55      56      63      62
+CQUAD4        40       1      56      13      14      63
+CQUAD4        41       1      24      57      22      23
+CQUAD4        42       1      57      58      21      22
+CQUAD4        43       1      58      59      20      21
+CQUAD4        44       1      59      60      19      20
+CQUAD4        45       1      60      61      18      19
+CQUAD4        46       1      61      62      17      18
+CQUAD4        47       1      62      63      16      17
+CQUAD4        48       1      63      14      15      16
+ENDDATA

@@ -644,7 +644,7 @@ cdef extern from "TACSBuckling.h":
         TacsScalar extractEigenvalue(int, TacsScalar*)
         TacsScalar extractEigenvector(int, TACSBVec*, TacsScalar*)
         void evalEigenDVSens(int, TACSBVec*)
-        void evalEigenXptSens(int, TACSBVec *)
+        void evalEigenXptSens(int, TACSBVec*)
 
     cdef cppclass TACSLinearBuckling(TACSObject):
         TACSLinearBuckling( TACSAssembler *,
@@ -655,10 +655,15 @@ cdef extern from "TACSBuckling.h":
         TACSAssembler* getAssembler()
         TacsScalar getSigma()
         void setSigma(TacsScalar)
-        void solve(TACSVec*, KSMPrint*)
+        void solve(TACSVec*, TACSVec*, KSMPrint*)
         void evalEigenDVSens(int, TacsScalar, int)
         TacsScalar extractEigenvalue(int, TacsScalar*)
         TacsScalar extractEigenvector(int, TACSBVec*, TacsScalar*)
+        void evalEigenDVSens(int, TACSBVec*)
+        void evalEigenXptSens(int, TACSBVec*)
+        void addEigenDVSens(TacsScalar, int, TACSBVec*)
+        void addEigenXptSens(TacsScalar, int, TACSBVec*)
+        void evalEigenSVSens(int, TACSBVec*)
 
 cdef extern from "TACSMeshLoader.h":
     cdef cppclass TACSMeshLoader(TACSObject):

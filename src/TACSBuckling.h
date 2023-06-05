@@ -59,8 +59,13 @@ class TACSLinearBuckling : public TACSObject {
 
   // Solve the eigenvalue problem
   // ----------------------------
-  void solve(TACSVec *rhs = NULL, KSMPrint *ksm_print = NULL);
+  void solve(TACSVec *rhs = NULL, TACSVec *u0 = NULL,
+             KSMPrint *ksm_print = NULL);
   void evalEigenDVSens(int n, TACSBVec *dfdx);
+  void evalEigenXptSens(int n, TACSBVec *dfdX);
+  void evalEigenSVSens(int n, TACSBVec *dfdu);
+  void addEigenDVSens(TacsScalar coef, int n, TACSBVec *dfdx);
+  void addEigenXptSens(TacsScalar coef, int n, TACSBVec *dfdX);
 
   // Extract the eigenvalue or check the solution
   // --------------------------------------------
