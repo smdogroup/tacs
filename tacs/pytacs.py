@@ -1534,7 +1534,8 @@ class pyTACS(BaseUI):
         Notes
         -----
         Currently only supports LOAD, FORCE, MOMENT, GRAV, RFORCE, PLOAD2, PLOAD4, TLOAD1, TLOAD2, and DLOAD cards.
-        Currently only supports staticProblem (SOL 101), transientProblem (SOL 109), and modalProblems (SOL 103)
+        Currently only supports staticProblem (SOL 101), transientProblem (SOL 109), modalProblems (SOL 103),
+        and bucklingProblems (SOL 105)
         """
         # Make sure cross-referencing is turned on in pynastran
         if self.bdfInfo.is_xrefed is False:
@@ -1573,6 +1574,27 @@ class pyTACS(BaseUI):
                 else:
                     nEigs = 20
                 problem = self.createModalProblem(name, sigma, nEigs)
+
+            elif self.bdfInfo.sol == 105:
+                methodID = subCase["METHOD"][0]
+                methodInfo = self.bdfInfo.methods[methodID]
+                if methodInfo.v1 is not None:
+                    sigma = methodInfo.v1
+                elif methodInfo.v2 is not None:
+                    sigma = methodInfo.v2
+                else:
+                    sigma = 1.0
+                if methodInfo.nd is not None:
+                    nEigs = methodInfo.nd
+                else:
+                    nEigs = 20
+                problem = self.createBucklingProblem(name, sigma, nEigs)
+
+                # Find the static load specified for this test case
+                if "LOAD" in subCase:
+                    # Add loads to problem
+                    loadsID = subCase["LOAD"][0]
+                    problem.addLoadFromBDF(loadsID)
 
             elif self.bdfInfo.sol == 109:
                 # Get time step info

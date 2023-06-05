@@ -67,9 +67,8 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
         # Set up constitutive objects and elements
         fea_assembler.initialize(elem_call_back)
 
-        buckle_prob = fea_assembler.createBucklingProblem("buckling", 10.0, 10)
-        buckle_prob.setOption("L2Convergence", 1e-20)
-        buckle_prob.setOption("L2ConvergenceRel", 1e-20)
-        buckle_prob.addLoadFromBDF(loadID=1)
+        bdf_probs = fea_assembler.createTACSProbsFromBDF()
+        bdf_probs[2].setOption("L2Convergence", 1e-20)
+        bdf_probs[2].setOption("L2ConvergenceRel", 1e-20)
 
-        return [buckle_prob], fea_assembler
+        return bdf_probs.values(), fea_assembler

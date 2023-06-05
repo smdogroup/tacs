@@ -9,9 +9,9 @@ CEND
   SPCFORCE(PLOT) = ALL
   STRESS(PLOT,CORNER) = ALL
   SPC = 1
-SUBCASE 1
   LOAD = 1
 SUBCASE 2
+  TITLE = buckling
   LABEL = BUCKLING CASE
   METHOD = 1
 BEGIN BULK
@@ -29,7 +29,7 @@ PARAM,POST,-1
 PARAM,OGEOM,NO
 PARAM,AUTOSPC,YES
 PARAM,GRDPNT,0
-EIGRL          1           3000.       1       0                     MAX
+EIGRL          1             10.      10       0                     MAX
 CORD2C         1       0      0.      0.      0.      0.      0.      1.+FEMAPC1
 +FEMAPC1      1.      0.      1.
 CORD2S         2       0      0.      0.      0.      0.      0.      1.+FEMAPC2
