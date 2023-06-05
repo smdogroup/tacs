@@ -14,7 +14,7 @@ bdf_file = os.path.join(base_dir, "./input_files/ss_plate.bdf")
 
 
 class ProblemTest(PyTACSTestCase.PyTACSTest):
-    N_PROCS = 2  # this is how many MPI processes to use for this TestCase.
+    N_PROCS = 1  # this is how many MPI processes to use for this TestCase.
 
     FUNC_REFS = {
         "buckling_eigsb.0": 20.18364503170502,
