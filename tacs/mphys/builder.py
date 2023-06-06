@@ -126,25 +126,10 @@ class TacsBuilder(Builder):
         """
         Get an array holding all dvs values that have been added to TACS
         """
-        if MPI is not None and self.comm.size > 1:
-            # Get DVs locally owned by this processor
-            local_dvs = self.fea_assembler.getOrigDesignVars()
-            local_dvs = local_dvs.astype(float)
-            # Size of design variable on this processor
-            local_ndvs = self.fea_assembler.getNumDesignVars()
-            # Size of design variable vector on each processor
-            dv_sizes = self.comm.allgather(local_ndvs)
-            # Offsets for global design variable vector
-            offsets = np.zeros(self.comm.size, dtype=int)
-            offsets[1:] = np.cumsum(dv_sizes)[:-1]
-            # Gather the portions of the design variable array distributed across each processor
-            tot_ndvs = sum(dv_sizes)
-            global_dvs = np.zeros(tot_ndvs, dtype=local_dvs.dtype)
-            self.comm.Allgatherv(local_dvs, [global_dvs, dv_sizes, offsets, MPI.DOUBLE])
-            # return the global dv array
-            return global_dvs
-        else:
-            return self.fea_assembler.getOrigDesignVars()
+        local_dvs = self.fea_assembler.getOrigDesignVars()
+        all_local_dvs = self.comm.allgather(local_dvs)
+        global_dvs = np.concatenate(all_local_dvs, dtype=float)
+        return global_dvs
 
     def get_dv_bounds(self):
         """Get arrays containing the lower and upper bounds for the design variables,
@@ -155,35 +140,12 @@ class TacsBuilder(Builder):
         list of ndarray
             lower and upper bounds for the design variables
         """
-        if MPI is not None and self.comm.size > 1:
-            # Get bounds owned by this processor
-            local_dv_bounds = self.fea_assembler.getDesignVarRange()
-            local_dv_bounds = list(local_dv_bounds)
-            local_dv_bounds[0] = local_dv_bounds[0].astype(float)
-            local_dv_bounds[1] = local_dv_bounds[1].astype(float)
-
-            # Size of design variable on this processor
-            local_ndvs = self.fea_assembler.getNumDesignVars()
-            # Size of design variable vector on each processor
-            dv_sizes = self.comm.allgather(local_ndvs)
-            # Offsets for global design variable vector
-            offsets = np.zeros(self.comm.size, dtype=int)
-            offsets[1:] = np.cumsum(dv_sizes)[:-1]
-            # Gather the portions of the design variable array distributed across each processor
-            tot_ndvs = sum(dv_sizes)
-            global_dv_bounds = []
-            for ii in [0, 1]:
-                global_dv_bounds.append(
-                    np.zeros(tot_ndvs, dtype=local_dv_bounds[ii].dtype)
-                )
-                self.comm.Allgatherv(
-                    local_dv_bounds[ii],
-                    [global_dv_bounds[ii], dv_sizes, offsets, MPI.DOUBLE],
-                )
-            # return the global dv array
-            return global_dv_bounds
-        else:
-            return self.fea_assembler.getDesignVarRange()
+        local_lb, local_ub = self.fea_assembler.getDesignVarRange()
+        all_lb = self.comm.allgather(local_lb)
+        global_lbs = np.concatenate(all_lb, dtype=float)
+        all_ub = self.comm.allgather(local_ub)
+        global_ubs = np.concatenate(all_ub, dtype=float)
+        return global_lbs, global_ubs
 
     def get_dv_scalers(self):
         """Get an array containing the scaling factors for the design
