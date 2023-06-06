@@ -1,3 +1,3 @@
-from .mphys_tacs import TacsBuilder
+from .builder import TacsBuilder
 
 __all__ = ["TacsBuilder"]
