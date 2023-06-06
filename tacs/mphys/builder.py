@@ -128,8 +128,8 @@ class TacsBuilder(Builder):
         """
         local_dvs = self.fea_assembler.getOrigDesignVars()
         all_local_dvs = self.comm.allgather(local_dvs)
-        global_dvs = np.concatenate(all_local_dvs, dtype=float)
-        return global_dvs
+        global_dvs = np.concatenate(all_local_dvs)
+        return global_dvs.astype(float)
 
     def get_dv_bounds(self):
         """Get arrays containing the lower and upper bounds for the design variables,
@@ -142,10 +142,10 @@ class TacsBuilder(Builder):
         """
         local_lb, local_ub = self.fea_assembler.getDesignVarRange()
         all_lb = self.comm.allgather(local_lb)
-        global_lbs = np.concatenate(all_lb, dtype=float)
+        global_lbs = np.concatenate(all_lb)
         all_ub = self.comm.allgather(local_ub)
-        global_ubs = np.concatenate(all_ub, dtype=float)
-        return global_lbs, global_ubs
+        global_ubs = np.concatenate(all_ub)
+        return global_lbs.astype(float), global_ubs.astype(float)
 
     def get_dv_scalers(self):
         """Get an array containing the scaling factors for the design
