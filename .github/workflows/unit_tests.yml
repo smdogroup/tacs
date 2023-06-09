@@ -110,10 +110,10 @@ jobs:
           # Install ESP/CAPS prebuilt for shape derivatives, only in Real mode
           if [[ ${{ matrix.NAME }} == 'Real' ]]; then
             cd $TACS_DIR/extern/
-            wget https://acdl.mit.edu/ESP/PreBuilts/ESP123-linux-x86_64.tgz
-            tar -xvf ESP123-linux-x86_64.tgz
-            export ESP_ROOT=${TACS_DIR}/extern/ESP123/EngSketchPad
-            export CASROOT=${TACS_DIR}/extern/ESP123/OpenCASCADE-7.6.0
+            wget https://acdl.mit.edu/ESP/archive/ESP122Lin.tgz
+            tar -xvf ESP122Lin.tgz
+            export ESP_ROOT=${TACS_DIR}/extern/ESP122/EngSketchPad
+            export CASROOT=${TACS_DIR}/extern/ESP122/OpenCASCADE-7.6.0
             export CASARCH=
             export PATH=$PATH:$CASROOT/bin
             export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$CASROOT/lib
@@ -122,7 +122,7 @@ jobs:
             source $ESP_ROOT/../ESPenv.sh
             cd ./src/CAPS/aim
             make
-            cd $TACS_DIR/extern/ESP123/
+            cd $TACS_DIR/extern/ESP122/
             # remove all ESP/CAPS unit test files with recursive delete
             find . -name "test*" -type f -delete
             cd $TACS_DIR
