@@ -12,6 +12,7 @@ This test is identical to test_shell_comp_unbalanced.py except since the laminat
 is smeared all stacking sequence dependence is neglected.
 tests KSDisplacement, KSFailure, StructuralMass, and Compliance functions
 and sensitivities.
+We also test a ply fraction summation constraint using the DVConstraint class.
 """
 
 base_dir = os.path.dirname(os.path.abspath(__file__))
@@ -36,6 +37,7 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
         "VertShear_x_disp": 0.0,
         "VertShear_y_disp": 0.0,
         "VertShear_z_disp": 0.0054598659927654735,
+        "ply_fractions_sum": 1.0,
     }
 
     def setup_tacs_problems(self, comm):
@@ -176,5 +178,15 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
                 ksWeight=ksweight,
                 direction=[0.0, 0.0, 10.0],
             )
+
+        tacs_probs = list(tacs_probs)
+
+        # Add linear constraint on ply fraction summation
+        constr = fea_assembler.createDVConstraint("ply_fractions")
+        allComponents = fea_assembler.selectCompIDs()
+        constr.addConstraint(
+            "sum", allComponents, dvIndices=[1, 2, 3], dvWeights=[1.0, 1.0, 1.0]
+        )
+        tacs_probs.append(constr)
 
         return tacs_probs, fea_assembler
