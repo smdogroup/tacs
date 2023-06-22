@@ -22,6 +22,35 @@
 #include <stdio.h>
 
 /*
+  Classical Gram-Schmidt orthogonalization.
+
+  Given an input vector q, and the set of orthogonal vectors w. Make q
+  orthogonal to the set of vectors w.
+
+  Return an array h = w^{T} q.
+  q' = q - w h
+  w^{T} q' = w^{T} q - w^{T} w w^{T} q
+*/
+static void ClassicalGramSchmidt(TacsScalar *h, TACSVec *q, TACSVec **w,
+                                 int nvecs) {
+  q->mdot(w, h, nvecs);
+  for (int j = 0; j < nvecs; j++) {
+    q->axpy(-h[j], w[j]);
+  }
+}
+
+/*
+  Modified Gram-Schmidt orthogonalization
+*/
+static void ModifiedGramSchmidt(TacsScalar *h, TACSVec *q, TACSVec **w,
+                                int nvecs) {
+  for (int j = 0; j < nvecs; j++) {
+    h[j] = w[j]->dot(q);
+    q->axpy(-h[j], w[j]);
+  }
+}
+
+/*
   Implementation of various Krylov-subspace methods
 */
 
@@ -332,6 +361,45 @@ void KSMPrintFile::print(const char *cstr) {
   }
 }
 
+TACSKSMConstraint::TACSKSMConstraint(int _nvecs, TACSVec *_vecs[],
+                                     OrthogonalizationType otype) {
+  nvecs = _nvecs;
+  alpha = new TacsScalar[nvecs];
+  vecs = new TACSVec *[nvecs];
+  for (int i = 0; i < nvecs; i++) {
+    vecs[i] = _vecs[i];
+    vecs[i]->incref();
+  }
+
+  if (otype == CLASSICAL_GRAM_SCHMIDT) {
+    ortho = ClassicalGramSchmidt;
+  } else {
+    ortho = ModifiedGramSchmidt;
+  }
+
+  orthogonalize();
+}
+
+TACSKSMConstraint::~TACSKSMConstraint() {
+  for (int i = 0; i < nvecs; i++) {
+    vecs[i]->decref();
+  }
+  delete[] vecs;
+  delete[] alpha;
+}
+
+void TACSKSMConstraint::orthogonalize() {
+  for (int i = 0; i < nvecs; i++) {
+    // Orthogonalize this vector against all previous vectors
+    ortho(alpha, vecs[i], vecs, i);
+
+    TacsScalar nrm = vecs[i]->norm();
+    vecs[i]->scale(1.0 / nrm);
+  }
+}
+
+void TACSKSMConstraint::apply(TACSVec *x) { ortho(alpha, x, vecs, nvecs); }
+
 /*
   The preconditioned conjugate gradient method
 
@@ -344,14 +412,19 @@ void KSMPrintFile::print(const char *cstr) {
   reset:  reset the CG iterations every 'reset' iterations
   nouter: the number of resets to try before giving up
 */
-PCG::PCG(TACSMat *_mat, TACSPc *_pc, int _reset, int _nouter) {
+PCG::PCG(TACSMat *_mat, TACSPc *_pc, int _reset, int _nouter,
+         TACSKSMConstraint *_con) {
   monitor = NULL;
 
   mat = _mat;
   pc = _pc;
+  con = _con;
 
   mat->incref();
   pc->incref();
+  if (con) {
+    con->incref();
+  }
 
   reset = _reset;
   nouter = _nouter;
@@ -375,6 +448,9 @@ PCG::PCG(TACSMat *_mat, TACSPc *_pc, int _reset, int _nouter) {
 PCG::~PCG() {
   mat->decref();
   pc->decref();
+  if (con) {
+    con->decref();
+  }
 
   work->decref();
   R->decref();
@@ -428,6 +504,9 @@ void PCG::setMonitor(KSMPrint *_monitor) {
   Solve the linear system with the preconditioned conjugate gradient
   method
 
+  This uses the variant of PCG from the paper "Inexact Preconditioned
+  Conjugate Gradient Method with Inner-Outer Iteration" by Golub and Ye.
+
   input:
   b:          the right-hand-side
   x:          the solution vector
@@ -464,21 +543,29 @@ int PCG::solve(TACSVec *b, TACSVec *x, int zero_guess) {
     }
 
     if (TacsRealPart(rhs_norm) > atol) {
-      // Apply the preconditioner
+      // Apply the preconditioner Z = M^{-1} * R
       pc->applyFactor(R, Z);
 
       // Copy Z to P, ie. P = Z
       P->copyValues(Z);
 
+      // Compute rz = (R, Z)
+      TacsScalar rz = R->dot(Z);
+
       for (int i = 0; i < reset; i++) {
-        mat->mult(P, work);                        // work = A*P
-        TacsScalar temp = R->dot(Z);               // (R,Z)
-        TacsScalar alpha = temp / (work->dot(P));  // alpha = (R,Z)/(A*P,P)
-        x->axpy(alpha, P);                         // x = x + alpha*P
-        R->axpy(-alpha, work);                     // R' = R - alpha*A*P
-        pc->applyFactor(R, Z);                     // Z' = M^{-1} R
-        TacsScalar beta = R->dot(Z) / temp;        // beta = (R',Z')/(R,Z)
-        P->axpby(1.0, beta, Z);                    // P' = Z' + beta*P
+        mat->mult(P, work);                      // work = A * P
+        TacsScalar alpha = rz / (work->dot(P));  // alpha = (R, Z)/(A * P, P)
+        x->axpy(alpha, P);                       // x = x + alpha * P
+        R->axpy(-alpha, work);                   // R' = R - alpha * A * P
+
+        pc->applyFactor(R, work);          // Z' = M^{-1} R
+        TacsScalar rz_new = R->dot(work);  // rz_new = (R', Z')
+        TacsScalar rz_old = R->dot(Z);     // rz_old = (R', Z)
+        TacsScalar beta =
+            (rz_new - rz_old) / rz;  // beta = ((R',Z') - rz0) / (R,Z)
+        P->axpby(1.0, beta, work);   // P' = Z' + beta*P
+        Z->copyValues(work);         // Z <- work
+        rz = rz_new;                 // rz <- (R', Z')
         iterCount++;
 
         resNorm = R->norm();
@@ -503,35 +590,6 @@ int PCG::solve(TACSVec *b, TACSVec *x, int zero_guess) {
 }
 
 /*
-  Classical Gram-Schmidt orthogonalization.
-
-  Given an input vector q, and the set of orthogonal vectors w. Make q
-  orthogonal to the set of vectors w.
-
-  Return an array h = w^{T} q.
-  q' = q - w h
-  w^{T} q' = w^{T} q - w^{T} w w^{T} q
-*/
-static void ClassicalGramSchmidt(TacsScalar *h, TACSVec *q, TACSVec **w,
-                                 int nvecs) {
-  q->mdot(w, h, nvecs);
-  for (int j = 0; j < nvecs; j++) {
-    q->axpy(-h[j], w[j]);
-  }
-}
-
-/*
-  Modified Gram-Schmidt orthogonalization
-*/
-static void ModifiedGramSchmidt(TacsScalar *h, TACSVec *q, TACSVec **w,
-                                int nvecs) {
-  for (int j = 0; j < nvecs; j++) {
-    h[j] = w[j]->dot(q);
-    q->axpy(-h[j], w[j]);
-  }
-}
-
-/*
   Create a GMRES object for solving a linear system.
 
   This automatically allocates the requried Krylov subspace on
@@ -544,9 +602,9 @@ static void ModifiedGramSchmidt(TacsScalar *h, TACSVec *q, TACSVec **w,
   nrestart:   the number of restarts before we give up
   isFlexible: is the preconditioner actually flexible? If so use FGMRES
 */
-GMRES::GMRES(TACSMat *_mat, TACSPc *_pc, int _m, int _nrestart,
-             int _isFlexible) {
-  init(_mat, _pc, _m, _nrestart, _isFlexible);
+GMRES::GMRES(TACSMat *_mat, TACSPc *_pc, int _m, int _nrestart, int _isFlexible,
+             TACSKSMConstraint *_con) {
+  init(_mat, _pc, _m, _nrestart, _isFlexible, _con);
 }
 
 /*
@@ -558,8 +616,8 @@ GMRES::GMRES(TACSMat *_mat, TACSPc *_pc, int _m, int _nrestart,
   m:        the size of the Krylov subspace
   nrestart: try this many times before giving up
 */
-GMRES::GMRES(TACSMat *_mat, int _m, int _nrestart) {
-  init(_mat, NULL, _m, _nrestart, 0);
+GMRES::GMRES(TACSMat *_mat, int _m, int _nrestart, TACSKSMConstraint *_con) {
+  init(_mat, NULL, _m, _nrestart, 0, _con);
 }
 
 /*
@@ -568,7 +626,7 @@ GMRES::GMRES(TACSMat *_mat, int _m, int _nrestart) {
   This is called by both of the two constructors above.
 */
 void GMRES::init(TACSMat *_mat, TACSPc *_pc, int _m, int _nrestart,
-                 int _isFlexible) {
+                 int _isFlexible, TACSKSMConstraint *_con) {
   orthogonalize = ModifiedGramSchmidt;
   monitor = NULL;
   monitor_time = 0;
@@ -578,8 +636,12 @@ void GMRES::init(TACSMat *_mat, TACSPc *_pc, int _m, int _nrestart,
 
   mat = _mat;
   pc = _pc;
-  mat->incref();
+  con = _con;
 
+  mat->incref();
+  if (con) {
+    con->incref();
+  }
   if (pc) {
     pc->incref();
   } else {
@@ -647,6 +709,9 @@ GMRES::~GMRES() {
 
   if (pc) {
     pc->decref();
+  }
+  if (con) {
+    con->decref();
   }
   if (work) {
     work->decref();
@@ -750,7 +815,7 @@ void GMRES::setMonitor(KSMPrint *_monitor) {
 
   Unless you have a good reason, you should use modified Gram-Schmidt.
 */
-void GMRES::setOrthoType(enum OrthoType otype) {
+void GMRES::setOrthoType(OrthogonalizationType otype) {
   if (otype == CLASSICAL_GRAM_SCHMIDT) {
     orthogonalize = ClassicalGramSchmidt;
   } else {
@@ -800,13 +865,22 @@ int GMRES::solve(TACSVec *b, TACSVec *x, int zero_guess) {
       // If the initial guess is zero
       x->zeroEntries();     // Set x = 0
       W[0]->copyValues(b);  // W[0] = b
+      if (con) {            // Compute W[0] = (I - Q * Q^{T}) * W[0]
+        con->apply(W[0]);
+      }
 
       res[0] = W[0]->norm();
       W[0]->scale(1.0 / res[0]);  // W[0] = b/|| b ||
     } else {
       // If the initial guess is non-zero or restarting
+      if (con) {
+        con->apply(x);
+      }
       mat->mult(x, W[0]);
       W[0]->axpy(-1.0, b);  // W[0] = A*x - b
+      if (con) {            // Compute W[0] = (I - Q * Q^{T}) * W[0]
+        con->apply(W[0]);
+      }
 
       res[0] = W[0]->norm();
       W[0]->scale(-1.0 / res[0]);  // W[0] = (b - A*x)/|| b - A*x ||
@@ -835,14 +909,29 @@ int GMRES::solve(TACSVec *b, TACSVec *x, int zero_guess) {
       if (isFlexible) {
         // Apply the preconditioner, Z[i] = M^{-1} W[i]
         pc->applyFactor(W[i], Z[i]);
+        if (con) {
+          con->apply(Z[i]);
+        }
         mat->mult(Z[i], W[i + 1]);  // W[i+1] = A*Z[i] = A*M^{-1}*W[i]
+        if (con) {
+          con->apply(W[i + 1]);
+        }
       } else {
         if (pc) {
           // Apply the preconditioner, work = M^{-1} W[i]
           pc->applyFactor(W[i], work);
+          if (con) {
+            con->apply(work);
+          }
           mat->mult(work, W[i + 1]);  // W[i+1] = A*work = A*M^{-1}*W[i]
+          if (con) {
+            con->apply(W[i + 1]);
+          }
         } else {
           mat->mult(W[i], W[i + 1]);  // Compute W[i+1] = A*W[i]
+          if (con) {
+            con->apply(W[i + 1]);
+          }
         }
       }
       if (monitor_time) {
@@ -934,6 +1023,9 @@ int GMRES::solve(TACSVec *b, TACSVec *x, int zero_guess) {
       // Apply M^{-1} to the linear combination
       pc->applyFactor(work, W[0]);
       x->axpy(1.0, W[0]);
+      if (con) {
+        con->apply(x);
+      }
     }
 
     if (solve_flag) {
