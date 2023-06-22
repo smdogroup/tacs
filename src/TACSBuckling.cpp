@@ -1011,6 +1011,88 @@ void TACSFrequencyAnalysis::evalEigenXptSens(int n, TACSBVec *dfdXpt) {
   dfdXpt->scale(scale);
 }
 
+/*
+void TACSFrequencyAnalysis::addEigenDVSens(int neigs, TacsScalar dfdlam[],
+                                           TACSBVec *dfdq[], TACSBVec *dfdx,
+                                           TACSBVec *dfdXpts) {
+  TacsScalar *eigs = new TacsScalar[neigs];
+  TACSVec **Cvecs = new TACSVec *[neigs];
+  TACSBVec *eigvecs = new TACSBVec *[neigs];
+
+  for (int i = 0; i < neigs; i++) {
+    // Create space for the eigenvector
+    eigvecs[i] = assembler->createVec();
+    eigvecs[i]->incref();
+
+    // Extract the eigenvalue and eigenvector
+    TacsScalar error;
+    eigs[i] = extractEigenvector(i, eigvecs[i], &error);
+
+    // Now compute the contribution from the mass matrix derivative
+    TacsScalar alpha = dfdq[i]->dot(eigvecs[i]);
+
+    // Add the material derivatives
+    if (dfdx) {
+      assembler->addMatDVSensInnerProduct(dfdlamda[i], TACS_STIFFNESS_MATRIX,
+                                          eigvecs[i], eigvecs[i], dfdx);
+      TacsScalar scale = alpha - dfdlambda[i] * eigs[i];
+      assembler->addMatDVSensInnerProduct(scale, TACS_MASS_MATRIX, eigvecs[i],
+                                          eigvecs[i], dfdx);
+    }
+
+    // Add the coordinate derivatives
+    if (dfdXpts) {
+      assembler->addMatXptSensInnerProduct(dfdlambda[i], TACS_STIFFNESS_MATRIX,
+                                           eigvecs[i], eigvecs[i], dfdXpt);
+      TacsScalar scale = alpha - dfdlambda[i] * eigs[i];
+      assembler->addMatXptSensInnerProduct(scale, TACS_MASS_MATRIX, eigvecs[i],
+                                           eigvecs[i], dfdXpt);
+    }
+
+    // Now, create the constraint space vector
+    TACSBVec *vec = assembler->createVec();
+    mmat->mult(eigvecs[i], vec);
+    Cvecs[i] = vec;
+  }
+
+  // Allocate the space
+  TACSKSMConstraint *con = new TACSKSMConstraint(neigs, Cvecs);
+  delete[] Cvecs;
+
+  // Now solve for the eigenvalue corrections
+  GMRES *gmres = new GMRES(mat, pc, gmres_iters, nrestart, is_flexible, con);
+
+  for (int i = 0; i < neigs; i++) {
+    // Solve the constrained problem
+    gmres->solve(dfdq[i], psi);
+    psi->scale(-1.0);
+
+    for (int j = 0; j < neigs; j++) {
+      if (i != j) {
+        TacsScalar theta = dfdq[i]->dot(eigvecs[j]) / (eigs[i] - eigs[j]);
+        psi->axpy(theta, eigvecs[j]);
+      }
+    }
+
+    // Add the material derivatives
+    if (dfdx) {
+      assembler->addMatDVSensInnerProduct(1.0, TACS_STIFFNESS_MATRIX, psi,
+                                          eigvecs[i], dfdx);
+      assembler->addMatDVSensInnerProduct(eigs[i], TACS_MASS_MATRIX, psi,
+                                          eigvecs[i], dfdx);
+    }
+
+    // Add the coordinate derivatives
+    if (dfdXpts) {
+      assembler->addMatXptSensInnerProduct(dfdlambda[i], TACS_STIFFNESS_MATRIX,
+                                           psi, eigvecs[i], dfdXpt);
+      assembler->addMatXptSensInnerProduct(eigs[i], TACS_MASS_MATRIX, psi,
+                                           eigvecs[i], dfdXpt);
+    }
+  }
+}
+*/
+
 /*!
   Check the actual residual for the given eigenvalue
 */

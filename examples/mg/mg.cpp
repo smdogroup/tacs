@@ -321,24 +321,6 @@ int main(int argc, char *argv[]) {
   TACSBVec *ans = assembler[0]->createVec();
   ans->incref();
 
-  const int nvecs = 1;
-  TACSVec *vecs[nvecs];
-  for (int i = 0; i < nvecs; i++) {
-    TACSBVec *vec = assembler[0]->createVec();
-    vec->incref();
-
-    TacsScalar *array;
-    int size = vec->getArray(&array);
-    for (int k = 0; k < size; k++) {
-      array[k] = 1.0;
-    }
-    assembler[0]->applyBCs(vec);
-
-    vecs[i] = vec;
-  }
-
-  TACSKSMConstraint *con = new TACSKSMConstraint(nvecs, vecs);
-
   TACSKsm *ksm = NULL;
 
   if (use_gmres) {
@@ -346,7 +328,7 @@ int main(int argc, char *argv[]) {
     int gmres_iters = 25;
     int nrestart = 8;
     int is_flexible = 1;
-    ksm = new GMRES(mg->getMat(0), mg, gmres_iters, nrestart, is_flexible, con);
+    ksm = new GMRES(mg->getMat(0), mg, gmres_iters, nrestart, is_flexible);
 
     // Set a monitor to check on solution progress
     int freq = 1;
@@ -356,7 +338,7 @@ int main(int argc, char *argv[]) {
     // Create the PCG object
     int reset_iter = 100;
     int max_reset = 100;
-    ksm = new PCG(mg->getMat(0), mg, reset_iter, max_reset, con);
+    ksm = new PCG(mg->getMat(0), mg, reset_iter, max_reset);
 
     // Set a monitor to check on solution progress
     int freq = 1;
@@ -385,13 +367,6 @@ int main(int argc, char *argv[]) {
 
   // Compute the solution
   ksm->solve(force, ans);
-
-  for (int k = 0; k < nvecs; k++) {
-    TacsScalar dot = vecs[k]->dot(ans);
-    if (rank == 0) {
-      printf("V[%d]^{T} * ans = %25.15e\n", k, dot);
-    }
-  }
 
   t0 = MPI_Wtime() - t0;
 
