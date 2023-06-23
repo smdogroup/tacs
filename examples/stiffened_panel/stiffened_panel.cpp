@@ -333,7 +333,7 @@ int main(int argc, char *argv[]) {
       new TACSLinearBuckling(assembler, sigma, gmat, kmat, aux_mat, ksm,
                              max_lanczos, neigvals, eig_tol);
   linear_buckling->incref();
-  linear_buckling->solve(NULL, ksm_print);
+  linear_buckling->solve(NULL, NULL, ksm_print);
   f5->writeToFile("results/load_path.f5");
   linear_buckling->checkEigenvector(0);
 
@@ -439,8 +439,8 @@ int main(int argc, char *argv[]) {
   //     // Set the local variables
   //     tacs->setVariables(vec);
   //     char file_name[256];
-  //     sprintf(file_name, "results/tacs_buckling_mode%02d.f5", k);
-  //     f5->writeToFile(file_name);
+  //     snprintf(file_name, sizeof(file_name),
+  //     "results/tacs_buckling_mode%02d.f5", k); f5->writeToFile(file_name);
   //   }
 
   //   linear_buckling->decref();

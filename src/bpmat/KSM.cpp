@@ -1036,9 +1036,9 @@ int GMRES::solve(TACSVec *b, TACSVec *x, int zero_guess) {
   if (monitor_time && monitor) {
     t_total = MPI_Wtime() - t_total;
     char str_mat[80], str_ort[80], str_tot[80];
-    sprintf(str_mat, "pc-mat time %10.6f\n", t_pc);
-    sprintf(str_ort, "ortho time  %10.6f\n", t_ortho);
-    sprintf(str_tot, "total time  %10.6f\n", t_total);
+    snprintf(str_mat, sizeof(str_mat), "pc-mat time %10.6f\n", t_pc);
+    snprintf(str_ort, sizeof(str_ort), "ortho time  %10.6f\n", t_ortho);
+    snprintf(str_tot, sizeof(str_tot), "total time  %10.6f\n", t_total);
     monitor->print(str_mat);
     monitor->print(str_ort);
     monitor->print(str_tot);

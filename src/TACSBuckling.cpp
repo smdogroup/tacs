@@ -827,7 +827,7 @@ void TACSFrequencyAnalysis::solve(KSMPrint *ksm_print, int print_level) {
       t0 = MPI_Wtime() - t0;
 
       char line[256];
-      sprintf(line, "JD computational time: %15.6f\n", t0);
+      snprintf(line, sizeof(line), "JD computational time: %15.6f\n", t0);
       ksm_print->print(line);
     }
   } else {
@@ -873,7 +873,7 @@ void TACSFrequencyAnalysis::solve(KSMPrint *ksm_print, int print_level) {
       t0 = MPI_Wtime() - t0;
 
       char line[256];
-      sprintf(line, "Lanczos computational time: %15.6f\n", t0);
+      snprintf(line, sizeof(line), "Lanczos computational time: %15.6f\n", t0);
       ksm_print->print(line);
     }
   }
@@ -1012,12 +1012,19 @@ void TACSFrequencyAnalysis::evalEigenXptSens(int n, TACSBVec *dfdXpt) {
 }
 
 /*
-void TACSFrequencyAnalysis::addEigenDVSens(int neigs, TacsScalar dfdlam[],
-                                           TACSBVec *dfdq[], TACSBVec *dfdx,
-                                           TACSBVec *dfdXpts) {
+  Compute the derivative a function of interest with respect to design variables
+  given the derivative of the eigenvalues and eigenvectors with respect to a
+  function of interest.
+*/
+void TACSFrequencyAnalysis::addEigenSens(int neigs, TacsScalar dfdlam[],
+                                         TACSBVec *dfdq[], TACSBVec *dfdx,
+                                         TACSBVec *dfdXpt) {
   TacsScalar *eigs = new TacsScalar[neigs];
   TACSVec **Cvecs = new TACSVec *[neigs];
-  TACSBVec *eigvecs = new TACSBVec *[neigs];
+  TACSBVec **eigvecs = new TACSBVec *[neigs];
+
+  // Assemble the mass matrix
+  assembler->assembleMatType(TACS_MASS_MATRIX, mmat);
 
   for (int i = 0; i < neigs; i++) {
     // Create space for the eigenvector
@@ -1028,41 +1035,57 @@ void TACSFrequencyAnalysis::addEigenDVSens(int neigs, TacsScalar dfdlam[],
     TacsScalar error;
     eigs[i] = extractEigenvector(i, eigvecs[i], &error);
 
-    // Now compute the contribution from the mass matrix derivative
-    TacsScalar alpha = dfdq[i]->dot(eigvecs[i]);
-
-    // Add the material derivatives
-    if (dfdx) {
-      assembler->addMatDVSensInnerProduct(dfdlamda[i], TACS_STIFFNESS_MATRIX,
-                                          eigvecs[i], eigvecs[i], dfdx);
-      TacsScalar scale = alpha - dfdlambda[i] * eigs[i];
-      assembler->addMatDVSensInnerProduct(scale, TACS_MASS_MATRIX, eigvecs[i],
-                                          eigvecs[i], dfdx);
-    }
-
-    // Add the coordinate derivatives
-    if (dfdXpts) {
-      assembler->addMatXptSensInnerProduct(dfdlambda[i], TACS_STIFFNESS_MATRIX,
-                                           eigvecs[i], eigvecs[i], dfdXpt);
-      TacsScalar scale = alpha - dfdlambda[i] * eigs[i];
-      assembler->addMatXptSensInnerProduct(scale, TACS_MASS_MATRIX, eigvecs[i],
-                                           eigvecs[i], dfdXpt);
-    }
-
     // Now, create the constraint space vector
     TACSBVec *vec = assembler->createVec();
+    vec->incref();
+
+    // Form the matrix-vector product C = M * eigvec
     mmat->mult(eigvecs[i], vec);
     Cvecs[i] = vec;
   }
 
+  // Assemble a linear combination of the mass and stiffness matrices
+  // kmat = K - fact * eigs[0] * M
+  double fact = 0.99;  // This should be a parameter
+  ElementMatrixType kmat_types[2] = {TACS_STIFFNESS_MATRIX, TACS_MASS_MATRIX};
+  TacsScalar kscale[2];
+  kscale[0] = 1.0;
+  kscale[1] = -fact * eigs[0];
+  if (mg) {
+    mg->assembleMatCombo(kmat_types, kscale, 2);
+  } else {
+    assembler->assembleMatCombo(kmat_types, kscale, 2, kmat);
+  }
+
+  // Factor the stiffness matrix
+  pc->factor();
+
   // Allocate the space
   TACSKSMConstraint *con = new TACSKSMConstraint(neigs, Cvecs);
-  delete[] Cvecs;
+  con->incref();
 
   // Now solve for the eigenvalue corrections
-  GMRES *gmres = new GMRES(mat, pc, gmres_iters, nrestart, is_flexible, con);
+  int gmres_iters = 25;
+  int nrestart = 5;
+  int is_flexible = 1;
+  GMRES *gmres = new GMRES(mmat, pc, gmres_iters, nrestart, is_flexible, con);
+  gmres->incref();
+
+  // Set the adjoint vector
+  TACSBVec *psi = res;
 
   for (int i = 0; i < neigs; i++) {
+    // Assemble the linear system mmat = K - eigs[i] * M
+    ElementMatrixType mmat_types[2] = {TACS_STIFFNESS_MATRIX, TACS_MASS_MATRIX};
+    TacsScalar mscale[2];
+    mscale[0] = 1.0;
+    mscale[1] = -eigs[i];
+    if (mg) {
+      mg->assembleMatCombo(mmat_types, mscale, 2);
+    } else {
+      assembler->assembleMatCombo(mmat_types, mscale, 2, mmat);
+    }
+
     // Solve the constrained problem
     gmres->solve(dfdq[i], psi);
     psi->scale(-1.0);
@@ -1074,24 +1097,51 @@ void TACSFrequencyAnalysis::addEigenDVSens(int neigs, TacsScalar dfdlam[],
       }
     }
 
+    // Add the contribution from the derivative of the eigenvalues
+    psi->axpy(dfdlam[i], eigvecs[i]);
+
     // Add the material derivatives
     if (dfdx) {
       assembler->addMatDVSensInnerProduct(1.0, TACS_STIFFNESS_MATRIX, psi,
                                           eigvecs[i], dfdx);
-      assembler->addMatDVSensInnerProduct(eigs[i], TACS_MASS_MATRIX, psi,
+      assembler->addMatDVSensInnerProduct(-eigs[i], TACS_MASS_MATRIX, psi,
                                           eigvecs[i], dfdx);
     }
 
     // Add the coordinate derivatives
-    if (dfdXpts) {
-      assembler->addMatXptSensInnerProduct(dfdlambda[i], TACS_STIFFNESS_MATRIX,
-                                           psi, eigvecs[i], dfdXpt);
-      assembler->addMatXptSensInnerProduct(eigs[i], TACS_MASS_MATRIX, psi,
+    if (dfdXpt) {
+      assembler->addMatXptSensInnerProduct(1.0, TACS_STIFFNESS_MATRIX, psi,
+                                           eigvecs[i], dfdXpt);
+      assembler->addMatXptSensInnerProduct(-eigs[i], TACS_MASS_MATRIX, psi,
+                                           eigvecs[i], dfdXpt);
+    }
+
+    // Add the contribution from alpha
+    TacsScalar alpha = dfdq[i]->dot(eigvecs[i]);
+    if (dfdx) {
+      assembler->addMatDVSensInnerProduct(alpha, TACS_MASS_MATRIX, eigvecs[i],
+                                          eigvecs[i], dfdx);
+    }
+
+    // Add the coordinate derivatives
+    if (dfdXpt) {
+      assembler->addMatXptSensInnerProduct(alpha, TACS_MASS_MATRIX, eigvecs[i],
                                            eigvecs[i], dfdXpt);
     }
   }
+
+  // Free memory
+  for (int i = 0; i < neigs; i++) {
+    eigvecs[i]->decref();
+    Cvecs[i]->decref();
+  }
+  delete[] eigvecs;
+  delete[] Cvecs;
+  delete[] eigs;
+
+  con->decref();
+  gmres->decref();
 }
-*/
 
 /*!
   Check the actual residual for the given eigenvalue

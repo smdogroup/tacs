@@ -400,7 +400,7 @@ int main(int argc, char *argv[]) {
   // Extra the data to a file
   for (int pt = 0; pt < 3; pt++) {
     char filename[128];
-    sprintf(filename, "mid_beam_%d.dat", pt + 1);
+    snprintf(filename, sizeof(filename), "mid_beam_%d.dat", pt + 1);
     FILE *fp = fopen(filename, "w");
 
     fprintf(fp, "Variables = t, u0, v0, w0, quantity\n");

@@ -118,7 +118,9 @@ int main(int argc, char **argv) {
     double t1 = MPI_Wtime();
     freq_analysis->solve(ksm_print);
     t1 = MPI_Wtime() - t1;
-    printf("Lanczos time: %15.5e\n", t1);
+    if (rank == 0) {
+      printf("Lanczos time: %15.5e\n", t1);
+    }
 
     TacsScalar freq;
     for (int k = 0; k < num_eigvals; k++) {
@@ -127,8 +129,10 @@ int main(int argc, char **argv) {
       eigvalue = sqrt(eigvalue);
       freq = TacsRealPart(eigvalue) / (2.0 * 3.14159);
 
-      printf("TACS frequency[%2d]: %15.6f %15.6f\n", k, TacsRealPart(eigvalue),
-             TacsRealPart(freq));
+      if (rank == 0) {
+        printf("TACS frequency[%2d]: %15.6f %15.6f\n", k,
+               TacsRealPart(eigvalue), TacsRealPart(freq));
+      }
     }
 
     pc->decref();
@@ -158,14 +162,18 @@ int main(int argc, char **argv) {
       freq_analysis->solve(ksm_print);
       t1 = MPI_Wtime() - t1;
 
-      printf("Jacobi-Davidson time: %15.5e\n", t1);
+      if (rank == 0) {
+        printf("Jacobi-Davidson time: %15.5e\n", t1);
+      }
       for (int k = 0; k < num_eigvals; k++) {
         TacsScalar eigvalue = freq_analysis->extractEigenvalue(k, NULL);
         eigvalue = sqrt(eigvalue);
         TacsScalar freq = TacsRealPart(eigvalue) / (2.0 * 3.14159);
 
-        printf("TACS frequency[%2d]: %15.6f %15.6f\n", k,
-               TacsRealPart(eigvalue), TacsRealPart(freq));
+        if (rank == 0) {
+          printf("TACS frequency[%2d]: %15.6f %15.6f\n", k,
+                 TacsRealPart(eigvalue), TacsRealPart(freq));
+        }
       }
       freq_analysis->decref();
     } else {
@@ -185,15 +193,19 @@ int main(int argc, char **argv) {
       double t1 = MPI_Wtime();
       jd->solve(ksm_print);
       t1 = MPI_Wtime() - t1;
-      printf("Jacobi-Davidson time: %15.5e\n", t1);
+      if (rank == 0) {
+        printf("Jacobi-Davidson time: %15.5e\n", t1);
+      }
 
       for (int k = 0; k < num_eigvals; k++) {
         TacsScalar eigvalue = jd->extractEigenvalue(k, NULL);
         eigvalue = sqrt(eigvalue);
         TacsScalar freq = TacsRealPart(eigvalue) / (2.0 * 3.14159);
 
-        printf("TACS frequency[%2d]: %15.6f %15.6f\n", k,
-               TacsRealPart(eigvalue), TacsRealPart(freq));
+        if (rank == 0) {
+          printf("TACS frequency[%2d]: %15.6f %15.6f\n", k,
+                 TacsRealPart(eigvalue), TacsRealPart(freq));
+        }
       }
 
       jd->decref();
