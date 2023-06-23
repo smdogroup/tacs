@@ -135,6 +135,78 @@ int main(int argc, char **argv) {
       }
     }
 
+    TACSBVec *x = assembler->createDesignVec();
+    x->incref();
+    assembler->getDesignVars(x);
+
+    // Set the vector
+    TACSBVec *px = assembler->createDesignVec();
+    px->incref();
+
+    TacsScalar *px_array;
+    int size = px->getArray(&px_array);
+    for (int k = 0; k < size; k++) {
+      px_array[k] = 1.0 - 2.0 * (k % 3);
+    }
+
+    // Create the dfdq
+    TACSBVec *dfdq = assembler->createVec();
+    dfdq->setRand(-1.0, 1.0);
+    assembler->applyBCs(dfdq);
+    dfdq->scale(1.0 / dfdq->norm());
+
+    TACSBVec *zero = assembler->createVec();
+
+    TACSBVec *dfdq_list[10];
+    TacsScalar dfdlam[10];
+    dfdq_list[0] = dfdq;
+    for (int k = 1; k < 10; k++) {
+      dfdlam[k] = 0.0;
+      dfdq_list[k] = zero;
+    }
+
+    // Create the derivative vector
+    TACSBVec *dfdx = assembler->createDesignVec();
+    dfdx->incref();
+
+    TacsScalar error;
+    freq_analysis->extractEigenvector(0, vec, &error);
+
+    TacsScalar f0 = dfdq->dot(vec);
+
+    // Compute the derivative
+    freq_analysis->addEigenSens(10, dfdlam, dfdq_list, dfdx);
+
+    // Perturb the design variables
+    double dh = 1e-6;
+    x->axpy(dh, px);
+    assembler->setDesignVars(x);
+
+    // Solve the frequency analysis again
+    freq_analysis->solve(ksm_print);
+
+    freq_analysis->extractEigenvector(0, vec, &error);
+    TacsScalar f1 = dfdq->dot(vec);
+
+    // Compute the exact solution
+    TacsScalar ans = px->dot(dfdx);
+
+    // Compute the finite difference
+    TacsScalar fd0 = (f1 - f0) / dh;
+    TacsScalar fd1 = (-f1 - f0) / dh;  // Eigenvector may flip signs
+
+    if (rank == 0) {
+      printf(
+          "Ans: %25.10e  FD: %25.10e  FD: %25.10e  Rel. Err: %25.10e Rel. Err: "
+          "%25.10e\n",
+          TacsRealPart(ans), TacsRealPart(fd0), TacsRealPart(fd1),
+          TacsRealPart((ans - fd0) / fd0), TacsRealPart((ans - fd1) / fd1));
+    }
+
+    x->decref();
+    dfdx->decref();
+    px->decref();
+
     pc->decref();
     vec->decref();
     ksm->decref();

@@ -954,6 +954,7 @@ void TACSFrequencyAnalysis::evalEigenDVSens(int n, TACSBVec *dfdx) {
                                       eigvec, eigvec, dfdx);
 
   // Finish computing the derivative
+  // Note - this shouldn't be needed since the eigenvalues are M-orthogonal
   if (mmat) {
     mmat->mult(eigvec, res);
   }
@@ -1060,7 +1061,7 @@ void TACSFrequencyAnalysis::addEigenSens(int neigs, TacsScalar dfdlam[],
   // Factor the stiffness matrix
   pc->factor();
 
-  // Allocate the space
+  // Allocate the constraint
   TACSKSMConstraint *con = new TACSKSMConstraint(neigs, Cvecs);
   con->incref();
 
@@ -1071,6 +1072,12 @@ void TACSFrequencyAnalysis::addEigenSens(int neigs, TacsScalar dfdlam[],
   GMRES *gmres = new GMRES(mmat, pc, gmres_iters, nrestart, is_flexible, con);
   gmres->incref();
 
+  gmres->setTolerances(1e-12, 1e-30);
+
+  int mpi_rank;
+  MPI_Comm_rank(assembler->getMPIComm(), &mpi_rank);
+  gmres->setMonitor(new KSMPrintStdout("GMRES", mpi_rank, 1));
+
   // Set the adjoint vector
   TACSBVec *psi = res;
 
@@ -1080,11 +1087,7 @@ void TACSFrequencyAnalysis::addEigenSens(int neigs, TacsScalar dfdlam[],
     TacsScalar mscale[2];
     mscale[0] = 1.0;
     mscale[1] = -eigs[i];
-    if (mg) {
-      mg->assembleMatCombo(mmat_types, mscale, 2);
-    } else {
-      assembler->assembleMatCombo(mmat_types, mscale, 2, mmat);
-    }
+    assembler->assembleMatCombo(mmat_types, mscale, 2, mmat);
 
     // Solve the constrained problem
     gmres->solve(dfdq[i], psi);
@@ -1117,7 +1120,7 @@ void TACSFrequencyAnalysis::addEigenSens(int neigs, TacsScalar dfdlam[],
     }
 
     // Add the contribution from alpha
-    TacsScalar alpha = dfdq[i]->dot(eigvecs[i]);
+    TacsScalar alpha = -0.5 * dfdq[i]->dot(eigvecs[i]);
     if (dfdx) {
       assembler->addMatDVSensInnerProduct(alpha, TACS_MASS_MATRIX, eigvecs[i],
                                           eigvecs[i], dfdx);
@@ -1128,6 +1131,16 @@ void TACSFrequencyAnalysis::addEigenSens(int neigs, TacsScalar dfdlam[],
       assembler->addMatXptSensInnerProduct(alpha, TACS_MASS_MATRIX, eigvecs[i],
                                            eigvecs[i], dfdXpt);
     }
+  }
+
+  if (dfdx) {
+    dfdx->beginSetValues(TACS_ADD_VALUES);
+    dfdx->endSetValues(TACS_ADD_VALUES);
+  }
+
+  if (dfdXpt) {
+    dfdXpt->beginSetValues(TACS_ADD_VALUES);
+    dfdXpt->endSetValues(TACS_ADD_VALUES);
   }
 
   // Free memory
