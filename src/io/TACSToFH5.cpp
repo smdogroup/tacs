@@ -183,7 +183,7 @@ int TACSToFH5::writeToFile(const char *filename) {
     char *var_names = new char[str_len];
     var_names[0] = '\0';
     if (write_flag & TACS_OUTPUT_NODES) {
-      snprintf(var_names, str_len, "X,Y,Z");
+      snprintf(var_names, sizeof(var_names), "X,Y,Z");
     }
     if (write_flag & TACS_OUTPUT_DISPLACEMENTS) {
       str_len = strlen(var_names);
@@ -194,14 +194,14 @@ int TACSToFH5::writeToFile(const char *filename) {
             TacsGetOutputComponentName(elem_type, TACS_OUTPUT_DISPLACEMENTS, k);
         size_t len = strlen(var_names);
         if (k == 0 && !(write_flag & TACS_OUTPUT_NODES)) {
-          snprintf(&(var_names[len]), str_len - len, "%s", stemp);
+          snprintf(&(var_names[len]), sizeof(var_names) - len, "%s", stemp);
         } else {
-          snprintf(&(var_names[len]), str_len - len, ",%s", stemp);
+          snprintf(&(var_names[len]), sizeof(var_names) - len, ",%s", stemp);
         }
       }
       for (; k < vars_per_node; k++) {
         size_t len = strlen(var_names);
-        snprintf(&(var_names[len]), str_len - len, ",v%d", k);
+        snprintf(&(var_names[len]), sizeof(var_names) - len, ",v%d", k);
       }
     }
     if (write_flag & TACS_OUTPUT_LOADS) {
@@ -214,14 +214,14 @@ int TACSToFH5::writeToFile(const char *filename) {
         size_t len = strlen(var_names);
         if (k == 0 && !(write_flag & TACS_OUTPUT_NODES ||
                         write_flag & TACS_OUTPUT_DISPLACEMENTS)) {
-          snprintf(&(var_names[len]), str_len - len, "%s", stemp);
+          snprintf(&(var_names[len]), sizeof(var_names) - len, "%s", stemp);
         } else {
-          snprintf(&(var_names[len]), str_len - len, ",%s", stemp);
+          snprintf(&(var_names[len]), sizeof(var_names) - len, ",%s", stemp);
         }
       }
       for (; k < vars_per_node; k++) {
         size_t len = strlen(var_names);
-        snprintf(&(var_names[len]), str_len - len, ",f%d", k);
+        snprintf(&(var_names[len]), sizeof(var_names) - len, ",f%d", k);
       }
     }
 
