@@ -352,7 +352,7 @@ void TACSIntegrator::setFunctions(int _num_funcs, TACSFunction **_funcs,
   Set the output directory prefix
 */
 void TACSIntegrator::setOutputPrefix(const char *_prefix) {
-  strncpy(prefix, _prefix, sizeof(prefix));
+  strncpy(prefix, _prefix, sizeof(prefix) - 1);
 }
 
 /*
@@ -483,7 +483,7 @@ void TACSIntegrator::writeStepToF5(int step_num) {
 
   // Write the f5 file
   if (f5) {
-    char fname[256];
+    char fname[512];
     snprintf(fname, sizeof(fname), "%s/output_%06d.f5", prefix, step_num);
     f5->writeToFile(fname);
   }
@@ -926,7 +926,7 @@ int TACSIntegrator::lapackNaturalFrequencies(int use_gyroscopic, TACSBVec *q,
           // Write the mode to disk as f5
           assembler->setVariables(mode, mode, mode);
           if (f5) {
-            char fname[256];
+            char fname[512];
             snprintf(fname, sizeof(fname), "%s/mode_freq_%d.f5", prefix, index);
             f5->writeToFile(fname);
           }
@@ -991,7 +991,7 @@ int TACSIntegrator::lapackNaturalFrequencies(int use_gyroscopic, TACSBVec *q,
           // Write the mode to disk as f5
           assembler->setVariables(mode, mode, mode);
           if (f5) {
-            char fname[256];
+            char fname[512];
             snprintf(fname, sizeof(fname), "%s/mode_freq_%d.f5", prefix, index);
             f5->writeToFile(fname);
           }
