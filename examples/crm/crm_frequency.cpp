@@ -1,6 +1,7 @@
 #include "JacobiDavidson.h"
 #include "TACSBuckling.h"
 #include "TACSIsoShellConstitutive.h"
+#include "TACSKSFailure.h"
 #include "TACSMeshLoader.h"
 #include "TACSShellElementDefs.h"
 
@@ -105,7 +106,7 @@ int main(int argc, char **argv) {
 
     // Perform the Frequency Analysis
     int max_lanczos = 60;
-    int num_eigvals = 20;
+    int num_eigvals = 20;  // 20;
     double eig_tol = 1e-8;
     TacsScalar sigma = 10.0;
     int output_freq = 1;
@@ -149,33 +150,38 @@ int main(int argc, char **argv) {
       px_array[k] = 1.0 - 2.0 * (k % 3);
     }
 
-    // Create the dfdq
-    TACSBVec *dfdq = assembler->createVec();
-    dfdq->setRand(-1.0, 1.0);
-    assembler->applyBCs(dfdq);
-    dfdq->scale(1.0 / dfdq->norm());
-
-    TACSBVec *zero = assembler->createVec();
-
-    TACSBVec *dfdq_list[10];
-    TacsScalar dfdlam[10];
-    dfdq_list[0] = dfdq;
-    for (int k = 1; k < 10; k++) {
-      dfdlam[k] = 0.0;
-      dfdq_list[k] = zero;
-    }
-
-    // Create the derivative vector
+    // The function values and the derivative
+    TacsScalar f0 = 0.0, f1 = 0.0;
     TACSBVec *dfdx = assembler->createDesignVec();
     dfdx->incref();
 
-    TacsScalar error;
-    freq_analysis->extractEigenvector(0, vec, &error);
+    TACSFunction *func = new TACSKSFailure(assembler, 100.0);
+    func->incref();
 
-    TacsScalar f0 = dfdq->dot(vec);
+    // Number of vectors to include in the eigenvalue function
+    int num_vecs = 4;
+
+    // Evaluate the function and the derivative for the first
+    TACSBVec **dfdq = new TACSBVec *[num_vecs];
+    TacsScalar *dfdlam = new TacsScalar[num_vecs];
+    for (int i = 0; i < num_vecs; i++) {
+      dfdlam[i] = 0.0;
+      dfdq[i] = assembler->createVec();
+      dfdq[i]->incref();
+
+      TacsScalar error;
+      freq_analysis->extractEigenvector(i, vec, &error);
+
+      TacsScalar fval;
+      assembler->setVariables(vec);
+      assembler->evalFunctions(1, &func, &fval);
+      assembler->addDVSens(1.0, 1, &func, &dfdx);
+      assembler->addSVSens(1.0, 0.0, 0.0, 1, &func, &dfdq[i]);
+      f0 += fval;
+    }
 
     // Compute the derivative
-    freq_analysis->addEigenSens(10, dfdlam, dfdq_list, dfdx);
+    freq_analysis->addEigenSens(num_vecs, dfdlam, dfdq, dfdx);
 
     // Perturb the design variables
     double dh = 1e-6;
@@ -185,24 +191,32 @@ int main(int argc, char **argv) {
     // Solve the frequency analysis again
     freq_analysis->solve(ksm_print);
 
-    freq_analysis->extractEigenvector(0, vec, &error);
-    TacsScalar f1 = dfdq->dot(vec);
+    for (int i = 0; i < num_vecs; i++) {
+      TacsScalar error;
+      freq_analysis->extractEigenvector(i, vec, &error);
+
+      TacsScalar fval;
+      assembler->setVariables(vec);
+      assembler->evalFunctions(1, &func, &fval);
+      f1 += fval;
+    }
 
     // Compute the exact solution
     TacsScalar ans = px->dot(dfdx);
 
     // Compute the finite difference
-    TacsScalar fd0 = (f1 - f0) / dh;
-    TacsScalar fd1 = (-f1 - f0) / dh;  // Eigenvector may flip signs
+    TacsScalar fd = (f1 - f0) / dh;
 
     if (rank == 0) {
-      printf(
-          "Ans: %25.10e  FD: %25.10e  FD: %25.10e  Rel. Err: %25.10e Rel. Err: "
-          "%25.10e\n",
-          TacsRealPart(ans), TacsRealPart(fd0), TacsRealPart(fd1),
-          TacsRealPart((ans - fd0) / fd0), TacsRealPart((ans - fd1) / fd1));
+      printf("Ans: %25.10e  FD: %25.10e  Rel. Err: %25.10e \n",
+             TacsRealPart(ans), TacsRealPart(fd),
+             TacsRealPart((ans - fd) / fd));
     }
 
+    func->decref();
+    for (int i = 0; i < num_vecs; i++) {
+      dfdq[i]->decref();
+    }
     x->decref();
     dfdx->decref();
     px->decref();

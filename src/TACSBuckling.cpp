@@ -20,6 +20,56 @@
 
 #include "tacslapack.h"
 
+class TACSMatCombo : public TACSMat {
+ public:
+  TACSMatCombo(TacsScalar _Acoef, TacsScalar _Bcoef, TACSMat *_A, TACSMat *_B,
+               TACSAssembler *_assembler) {
+    Acoef = _Acoef;
+    Bcoef = _Bcoef;
+
+    A = _A;
+    B = _B;
+    A->incref();
+    B->incref();
+
+    assembler = _assembler;
+    assembler->incref();
+
+    temp = assembler->createVec();
+    temp->incref();
+  }
+  ~TACSMatCombo() {
+    A->decref();
+    B->decref();
+    assembler->decref();
+    temp->decref();
+  }
+
+  TACSVec *createVec() { return A->createVec(); }
+
+  void setCoefficients(TacsScalar _Acoef, TacsScalar _Bcoef) {
+    Acoef = _Acoef;
+    Bcoef = _Bcoef;
+  }
+
+  void mult(TACSVec *x, TACSVec *y) {
+    A->mult(x, y);
+    if (!(TacsRealPart(Acoef) == 1.0)) {
+      y->scale(Acoef);
+    }
+
+    B->mult(x, temp);
+    y->axpy(Bcoef, temp);
+    assembler->applyBCs(y);
+  }
+
+ private:
+  TacsScalar Acoef, Bcoef;
+  TACSMat *A, *B;
+  TACSAssembler *assembler;
+  TACSBVec *temp;
+};
+
 /*
   Implementation of the buckling/frequency analysis
 */
@@ -1045,31 +1095,41 @@ void TACSFrequencyAnalysis::addEigenSens(int neigs, TacsScalar dfdlam[],
     Cvecs[i] = vec;
   }
 
-  // Assemble a linear combination of the mass and stiffness matrices
-  // kmat = K - fact * eigs[0] * M
-  double fact = 0.99;  // This should be a parameter
-  ElementMatrixType kmat_types[2] = {TACS_STIFFNESS_MATRIX, TACS_MASS_MATRIX};
-  TacsScalar kscale[2];
-  kscale[0] = 1.0;
-  kscale[1] = -fact * eigs[0];
-  if (mg) {
-    mg->assembleMatCombo(kmat_types, kscale, 2);
-  } else {
-    assembler->assembleMatCombo(kmat_types, kscale, 2, kmat);
-  }
-
-  // Factor the stiffness matrix
-  pc->factor();
-
   // Allocate the constraint
   TACSKSMConstraint *con = new TACSKSMConstraint(neigs, Cvecs);
   con->incref();
+
+  if (mg) {
+    assembler->assembleMatType(TACS_STIFFNESS_MATRIX, kmat);
+
+    // Factor the matrix - associated with the stiffness matrix
+    pc->factor();
+  } else {
+    // Assemble a linear combination of the mass and stiffness matrices
+    // kmat = K - fact * eigs[0] * M
+    double fact = 0.99;  // This should be a parameter
+    ElementMatrixType kmat_types[2] = {TACS_STIFFNESS_MATRIX, TACS_MASS_MATRIX};
+    TacsScalar kscale[2];
+    kscale[0] = 1.0;
+    kscale[1] = -fact * eigs[0];
+    assembler->assembleMatCombo(kmat_types, kscale, 2, kmat);
+
+    // Factor the matrix
+    pc->factor();
+
+    // Now assemble the stiffness and mass matrices again
+    assembler->assembleMatType(TACS_STIFFNESS_MATRIX, kmat);
+  }
+
+  // Create the combo matrix operator
+  TACSMatCombo *combo = new TACSMatCombo(1.0, 0.0, kmat, mmat, assembler);
+  combo->incref();
 
   // Now solve for the eigenvalue corrections
   int gmres_iters = 25;
   int nrestart = 5;
   int is_flexible = 1;
-  GMRES *gmres = new GMRES(mmat, pc, gmres_iters, nrestart, is_flexible, con);
+  GMRES *gmres = new GMRES(combo, pc, gmres_iters, nrestart, is_flexible, con);
   gmres->incref();
 
   gmres->setTolerances(1e-12, 1e-30);
@@ -1083,11 +1143,7 @@ void TACSFrequencyAnalysis::addEigenSens(int neigs, TacsScalar dfdlam[],
 
   for (int i = 0; i < neigs; i++) {
     // Assemble the linear system mmat = K - eigs[i] * M
-    ElementMatrixType mmat_types[2] = {TACS_STIFFNESS_MATRIX, TACS_MASS_MATRIX};
-    TacsScalar mscale[2];
-    mscale[0] = 1.0;
-    mscale[1] = -eigs[i];
-    assembler->assembleMatCombo(mmat_types, mscale, 2, mmat);
+    combo->setCoefficients(1.0, -eigs[i]);
 
     // Solve the constrained problem
     gmres->solve(dfdq[i], psi);
@@ -1152,6 +1208,7 @@ void TACSFrequencyAnalysis::addEigenSens(int neigs, TacsScalar dfdlam[],
   delete[] Cvecs;
   delete[] eigs;
 
+  combo->decref();
   con->decref();
   gmres->decref();
 }
