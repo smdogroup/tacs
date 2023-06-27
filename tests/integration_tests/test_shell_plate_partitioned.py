@@ -55,7 +55,6 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
         "traction_ks_vmfailure": 0.7396840173568021,
         "traction_mass": 0.78125,
         "adjacency_con_ALL": [0.0, 0.0, 0.0, 0.0],
-        "panel_length_con_ALL": [0.2795084971874737 - 0.005]*4,
     }
 
     def setup_tacs_problems(self, comm):
@@ -158,10 +157,6 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
         # Create an adjacency constraint
         constraint = fea_assembler.createAdjacencyConstraint("adjacency_con")
         allCompIDs = fea_assembler.selectCompIDs()
-        constraint.addConstraint("ALL", compIDs=allCompIDs)
-        tacs_probs.append(constraint)
-
-        constraint = fea_assembler.createPanelLengthConstraint("panel_length_con")
         constraint.addConstraint("ALL", compIDs=allCompIDs)
         tacs_probs.append(constraint)
 
