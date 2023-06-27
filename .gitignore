@@ -59,3 +59,5 @@ reports/
 .vscode
 .DS_Store
 .pre-commit-config.yaml
+
+**/__pycache__/
