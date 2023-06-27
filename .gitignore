@@ -30,6 +30,7 @@ extern/
 *.f5
 *.bdf
 !tests/integration_tests/input_files/*.bdf
+!examples/**/*.bdf
 *.su2
 *.tar.gz
 *.png
