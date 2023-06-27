@@ -373,21 +373,15 @@ constraints.append(panelLengthCon)
 # ==============================================================================
 # Solve static problem
 # ==============================================================================
+# Solve structural problem
+problem.solve()
 
+# Evaluate functions
+funcs = {}
+problem.evalFunctions(funcs)
+for constraint in constraints:
+    constraint.evalConstraints(funcs)
 
-def runSolve():
-    # Solve structural problem
-    problem.solve()
-
-    # Evaluate functions
-    funcs = {}
-    problem.evalFunctions(funcs)
-    for constraint in constraints:
-        constraint.evalConstraints(funcs)
-    return funcs
-
-
-funcs = runSolve()
 if comm.rank == 0:
     pprint(funcs)
 
@@ -396,104 +390,8 @@ funcsSens = {}
 problem.evalFunctionsSens(funcsSens)
 for constraint in constraints:
     constraint.evalConstraintsSens(funcsSens)
-if comm.rank == 0:
-    pprint(funcsSens)
+# if comm.rank == 0:
+#     pprint(funcsSens)
 
 # Write out solution
 problem.writeSolution(outputDir=os.path.dirname(__file__))
-
-# ==============================================================================
-# Perform sensitivity check
-# ==============================================================================
-# Perform a fd/cs sensisitivity check on design  variable sensitivity
-x_orig = problem.getDesignVars()
-
-# Get number of design variables owned by this proc
-ndvs = FEAAssembler.getNumDesignVars()
-x_pert = np.random.rand(ndvs)
-
-if TACS.dtype == complex:
-    dh = 1e-200
-    x_new = x_orig + x_pert * dh * 1j
-else:
-    dh = 1e-4
-    x_new = x_orig + x_pert * dh
-
-# Re-solve and evaluate function with new perturbed design variable
-problem.setDesignVars(x_new)
-for constraint in constraints:
-    constraint.setDesignVars(x_new)
-funcs_new = runSolve()
-
-# Loop through each function and compare sensitivities
-for funcName in funcs:
-    if TACS.dtype == complex:
-        dfunc_approx = np.imag(funcs_new[funcName]) / dh
-    else:
-        dfunc_approx = np.real((funcs_new[funcName] - funcs[funcName]) / dh)
-    # Project sensitivity against perturbation vector
-    dfunc_exact_local = np.real(funcsSens[funcName]["struct"] @ x_pert)
-    # The sens vector is distributed across multiple processors,
-    # accumulate sensitivity contribution from each processor to get total sensitivity
-    dfunc_exact = comm.allreduce(dfunc_exact_local)
-    if not (np.linalg.norm(dfunc_approx) == 0.0 and np.linalg.norm(dfunc_exact) == 0.0):
-        if comm.rank == 0:
-            print(
-                "\n====================================================================="
-            )
-            print("Func name:      ", funcName)
-            print("Approx (DVSens):      ", dfunc_approx)
-            print("Analytic (DVSens):  ", dfunc_exact)
-            print("Rel err (DVSens): ", (dfunc_exact - dfunc_approx) / dfunc_approx)
-            print(
-                "====================================================================="
-            )
-
-# Reset design variables
-problem.setDesignVars(x_orig)
-for constraint in constraints:
-    constraint.setDesignVars(x_orig)
-
-# Perform a fd/cs sensisitivity check on nodal coordinate sensitivity
-xpts_orig = problem.getNodes()
-
-# Get number of nodes owned by this proc
-nnodes = FEAAssembler.getNumOwnedNodes()
-xpts_pert = np.random.rand(3 * nnodes)
-
-if TACS.dtype == complex:
-    xpts_new = xpts_orig + xpts_pert * dh * 1j
-else:
-    xpts_new = xpts_orig + xpts_pert * dh
-
-# Re-solve and evaluate function with new perturbed node coordinates
-problem.setNodes(xpts_new)
-for constraint in constraints:
-    constraint.setNodes(xpts_new)
-
-# Solve
-funcs_new = runSolve()
-
-# Loop through each function and compare sensitivities
-for funcName in funcs:
-    if TACS.dtype == complex:
-        dfunc_approx = np.imag(funcs_new[funcName]) / dh
-    else:
-        dfunc_approx = np.real((funcs_new[funcName] - funcs[funcName]) / dh)
-    # Project sensitivity against perturbation vector
-    dfunc_exact_local = np.real(funcsSens[funcName]["Xpts"] @ xpts_pert)
-    # The sens vector is distributed across multiple processors,
-    # accumulate sensitivity contribution from each processor to get total sensitivity
-    dfunc_exact = comm.allreduce(dfunc_exact_local)
-    if not (np.linalg.norm(dfunc_approx) == 0.0 and np.linalg.norm(dfunc_exact) == 0.0):
-        if comm.rank == 0:
-            print(
-                "\n====================================================================="
-            )
-            print("Func name: ", funcName)
-            print("Approx (XptSens):   ", dfunc_approx)
-            print("Analytic (XptSens): ", dfunc_exact)
-            print("Rel err (XptSens):  ", (dfunc_exact - dfunc_approx) / dfunc_approx)
-            print(
-                "====================================================================="
-            )
