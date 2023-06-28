@@ -10,6 +10,11 @@ int main(int argc, char **argv) {
   MPI_Init(&argc, &argv);
   MPI_Comm comm = MPI_COMM_WORLD;
 
+  int rank;
+  MPI_Comm_rank(comm, &rank);
+
+  int use_cg = 0;
+  int num_vecs = 4;  // Number of vectors to include in the eigenvalue function
   int use_lanczos = 1;
   int use_tacs_freq = 0;
   for (int i = 0; i < argc; i++) {
@@ -20,10 +25,20 @@ int main(int argc, char **argv) {
       use_lanczos = 0;
       use_tacs_freq = 1;
     }
+    if (strcmp(argv[i], "use_cg") == 0) {
+      use_cg = 1;
+    }
+    if (sscanf(argv[i], "num_vecs=%d", &num_vecs) == 1) {
+      if (rank == 0) {
+        if (num_vecs < 1) {
+          num_vecs = 1;
+        } else if (num_vecs > 20) {
+          num_vecs = 20;
+        }
+        printf("num_vecs = %d\n", num_vecs);
+      }
+    }
   }
-
-  int rank;
-  MPI_Comm_rank(comm, &rank);
 
   // Write name of BDF file to be load to char array
   const char *filename = "CRM_box_2nd.bdf";
@@ -107,7 +122,7 @@ int main(int argc, char **argv) {
     // Perform the Frequency Analysis
     int max_lanczos = 60;
     int num_eigvals = 20;  // 20;
-    double eig_tol = 1e-8;
+    double eig_tol = 1e-12;
     TacsScalar sigma = 10.0;
     int output_freq = 1;
 
@@ -158,9 +173,6 @@ int main(int argc, char **argv) {
     TACSFunction *func = new TACSKSFailure(assembler, 100.0);
     func->incref();
 
-    // Number of vectors to include in the eigenvalue function
-    int num_vecs = 4;
-
     // Evaluate the function and the derivative for the first
     TACSBVec **dfdq = new TACSBVec *[num_vecs];
     TacsScalar *dfdlam = new TacsScalar[num_vecs];
@@ -181,7 +193,7 @@ int main(int argc, char **argv) {
     }
 
     // Compute the derivative
-    freq_analysis->addEigenSens(num_vecs, dfdlam, dfdq, dfdx);
+    freq_analysis->addEigenSens(num_vecs, dfdlam, dfdq, dfdx, NULL, use_cg);
 
     // Perturb the design variables
     double dh = 1e-6;

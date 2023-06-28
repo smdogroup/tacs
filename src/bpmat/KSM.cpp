@@ -533,6 +533,11 @@ int PCG::solve(TACSVec *b, TACSVec *x, int zero_guess) {
       R->axpby(1.0, -1.0, b);  // R = b - A*x
     }
 
+    if (con) {
+      con->apply(R);
+      con->apply(x);
+    }
+
     if (count == 0) {
       rhs_norm = R->norm();
       resNorm = rhs_norm;
@@ -545,6 +550,9 @@ int PCG::solve(TACSVec *b, TACSVec *x, int zero_guess) {
     if (TacsRealPart(rhs_norm) > atol) {
       // Apply the preconditioner Z = M^{-1} * R
       pc->applyFactor(R, Z);
+      if (con) {
+        con->apply(Z);
+      }
 
       // Copy Z to P, ie. P = Z
       P->copyValues(Z);
@@ -553,12 +561,20 @@ int PCG::solve(TACSVec *b, TACSVec *x, int zero_guess) {
       TacsScalar rz = R->dot(Z);
 
       for (int i = 0; i < reset; i++) {
-        mat->mult(P, work);                      // work = A * P
+        mat->mult(P, work);  // work = A * P
+        if (con) {           // work = (I - Q * Q^{T}) * work
+          con->apply(work);
+        }
+
         TacsScalar alpha = rz / (work->dot(P));  // alpha = (R, Z)/(A * P, P)
         x->axpy(alpha, P);                       // x = x + alpha * P
         R->axpy(-alpha, work);                   // R' = R - alpha * A * P
 
-        pc->applyFactor(R, work);          // Z' = M^{-1} R
+        pc->applyFactor(R, work);  // Z' = M^{-1} R
+        if (con) {                 // Z' = (I - Q * Q^{T}) * Z'
+          con->apply(work);
+        }
+
         TacsScalar rz_new = R->dot(work);  // rz_new = (R', Z')
         TacsScalar rz_old = R->dot(Z);     // rz_old = (R', Z)
         TacsScalar beta =

@@ -1069,7 +1069,8 @@ void TACSFrequencyAnalysis::evalEigenXptSens(int n, TACSBVec *dfdXpt) {
 */
 void TACSFrequencyAnalysis::addEigenSens(int neigs, TacsScalar dfdlam[],
                                          TACSBVec *dfdq[], TACSBVec *dfdx,
-                                         TACSBVec *dfdXpt) {
+                                         TACSBVec *dfdXpt, int use_cg,
+                                         double rtol, double atol) {
   TacsScalar *eigs = new TacsScalar[neigs];
   TACSVec **Cvecs = new TACSVec *[neigs];
   TACSBVec **eigvecs = new TACSBVec *[neigs];
@@ -1111,7 +1112,7 @@ void TACSFrequencyAnalysis::addEigenSens(int neigs, TacsScalar dfdlam[],
     ElementMatrixType kmat_types[2] = {TACS_STIFFNESS_MATRIX, TACS_MASS_MATRIX};
     TacsScalar kscale[2];
     kscale[0] = 1.0;
-    kscale[1] = -fact * eigs[0];
+    kscale[1] = 0.0;  // -fact * eigs[0];
     assembler->assembleMatCombo(kmat_types, kscale, 2, kmat);
 
     // Factor the matrix
@@ -1125,18 +1126,28 @@ void TACSFrequencyAnalysis::addEigenSens(int neigs, TacsScalar dfdlam[],
   TACSMatCombo *combo = new TACSMatCombo(1.0, 0.0, kmat, mmat, assembler);
   combo->incref();
 
-  // Now solve for the eigenvalue corrections
-  int gmres_iters = 25;
-  int nrestart = 5;
-  int is_flexible = 1;
-  GMRES *gmres = new GMRES(combo, pc, gmres_iters, nrestart, is_flexible, con);
-  gmres->incref();
+  TACSKsm *ksm = NULL;
 
-  gmres->setTolerances(1e-12, 1e-30);
+  if (use_cg) {
+    ksm = new PCG(combo, pc, 100, 10, con);
+    ksm->incref();
 
-  int mpi_rank;
-  MPI_Comm_rank(assembler->getMPIComm(), &mpi_rank);
-  gmres->setMonitor(new KSMPrintStdout("GMRES", mpi_rank, 1));
+    int mpi_rank;
+    MPI_Comm_rank(assembler->getMPIComm(), &mpi_rank);
+    ksm->setMonitor(new KSMPrintStdout("PCG", mpi_rank, 1));
+  } else {
+    int gmres_iters = 25;
+    int nrestart = 5;
+    int is_flexible = 0;
+    ksm = new GMRES(combo, pc, gmres_iters, nrestart, is_flexible, con);
+    ksm->incref();
+
+    int mpi_rank;
+    MPI_Comm_rank(assembler->getMPIComm(), &mpi_rank);
+    ksm->setMonitor(new KSMPrintStdout("GMRES", mpi_rank, 1));
+  }
+
+  ksm->setTolerances(rtol, atol);
 
   // Set the adjoint vector
   TACSBVec *psi = res;
@@ -1146,7 +1157,7 @@ void TACSFrequencyAnalysis::addEigenSens(int neigs, TacsScalar dfdlam[],
     combo->setCoefficients(1.0, -eigs[i]);
 
     // Solve the constrained problem
-    gmres->solve(dfdq[i], psi);
+    ksm->solve(dfdq[i], psi);
     psi->scale(-1.0);
 
     for (int j = 0; j < neigs; j++) {
@@ -1210,7 +1221,7 @@ void TACSFrequencyAnalysis::addEigenSens(int neigs, TacsScalar dfdlam[],
 
   combo->decref();
   con->decref();
-  gmres->decref();
+  ksm->decref();
 }
 
 /*!
