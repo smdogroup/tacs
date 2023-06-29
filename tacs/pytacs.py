@@ -313,7 +313,7 @@ class pyTACS(BaseUI):
 
         Returns
         -------
-        globalDVKeys : list
+        globalDVKeys : list[str]
             List holding global dv names.
         """
         return list(self.globalDVs.keys())
@@ -324,7 +324,7 @@ class pyTACS(BaseUI):
 
         Returns
         -------
-        globalDVNums : list
+        globalDVNums : list[int]
             List holding dv nums corresponding to global DVs.
         """
         return [self.globalDVs[descript]["num"] for descript in self.globalDVs]
@@ -351,7 +351,7 @@ class pyTACS(BaseUI):
             Global DV key to assign mass design variable to. If the key is does not exist,
             it will automatically be created and added to global DVs.
 
-        eIDs : int or list
+        eIDs : int or list[int]
             Element IDs of concentrated mass to assign DV to (NASTRAN ordering)
 
         dvName : str
@@ -666,7 +666,7 @@ class pyTACS(BaseUI):
 
         Returns
         -------
-        compDescript : list
+        compDescript : list[str]
             List of strings containing the names of the corresponding compIDs
         """
         # Return all component names
@@ -702,7 +702,7 @@ class pyTACS(BaseUI):
 
         Returns
         -------
-        nodeIDs : list
+        nodeIDs : list[int]
             List of unique nodeIDs that belong to the given list of compIDs
         """
         # Return all component ids
@@ -725,7 +725,7 @@ class pyTACS(BaseUI):
 
         Returns
         -------
-        nodeIDs : list
+        nodeIDs : list[int]
             List of unique nodeIDs that belong to the given list of compIDs
         """
         # Return all component ids
@@ -1479,6 +1479,46 @@ class pyTACS(BaseUI):
         return problem
 
     @postinitialize_method
+    def createBucklingProblem(self, name, sigma, numEigs, options=None):
+        """
+        Create a new BucklingProblem for performing linearized buckling analysis.
+        This problem can be used to identify the buckling load factors and mode
+        shapes of the model through eigenvalue analysis.
+
+        Parameters
+        ----------
+        name : str
+            Name to assign problem.
+        sigma : float
+            Guess for the lowest eigenvalue.
+            This corresponds to the lowest expected buckling load factor.
+        numEigs : int
+            Number of eigenvalues to solve for.
+        options : dict
+            Problem-specific options to pass to ModalProblem instance (case-insensitive).
+            Defaults to None.
+
+        Returns
+        -------
+        problem : tacs.problems.BucklingProblem
+            BucklingProblem object used for performing buckling eigenvalue analysis.
+        """
+        problem = tacs.problems.buckling.BucklingProblem(
+            name,
+            sigma,
+            numEigs,
+            self.assembler,
+            self.comm,
+            self.outputViewer,
+            self.meshLoader,
+            options,
+        )
+        # Set with original design vars and coordinates, in case they have changed
+        problem.setDesignVars(self.x0)
+        problem.setNodes(self.Xpts0)
+        return problem
+
+    @postinitialize_method
     def createTACSProbsFromBDF(self):
         """
         Automatically define tacs problem classes with loads using information contained in BDF file.
@@ -1599,6 +1639,7 @@ class pyTACS(BaseUI):
 
         return structProblems
 
+    @postinitialize_method
     def writeBDF(self, fileName, problems):
         """
         Write NASTRAN BDF file from problem class.
@@ -2019,6 +2060,11 @@ class pyTACS(BaseUI):
     def getNumComponents(self):
         """
         Return number of components (property) groups found in bdf.
+
+        Returns
+        -------
+        nComp : int
+            Number of components in model
         """
         return self.nComp
 
@@ -2045,7 +2091,7 @@ class pyTACS(BaseUI):
         (TACSToFH5 object) for TACS.
         """
 
-        # Depending on the user supplied options generate the
+        # Depending on the user-supplied options generate the
         # write_flag
         write_flag = 0
         if self.getOption("writeConnectivity"):
@@ -2103,7 +2149,7 @@ class pyTACS(BaseUI):
                     )
 
             elif isinstance(item, str):
-                # This is a little inefficinet here; loop over
+                # This is a little inefficient here; loop over
                 # self.compDescripts and see if 'item' (a string) in
                 # part of the description. if so add.
                 item = item.upper()
@@ -2122,7 +2168,7 @@ class pyTACS(BaseUI):
             for i in range(len(compIDs)):
                 compIDs[i] = set(compIDs[i])
 
-            # We want to go though and take only the intersection of
+            # We want to go through and take only the intersection of
             # each of the sets we have found:
             tmp = copy.deepcopy(compIDs[0])
 
@@ -2130,7 +2176,7 @@ class pyTACS(BaseUI):
                 tmp = tmp.intersection(compIDs[i])
             compIDs = tmp
 
-        # Finally convert to a list
+        # Finally, convert to a list
         compIDs = self._flatten(list(compIDs))
 
         return compIDs
@@ -2139,6 +2185,12 @@ class pyTACS(BaseUI):
         """
         Create all the constitutive objects by calling the
         userSupplied or default callback function
+
+        Parameters
+        ----------
+        elemCallBack : callable
+            Element callback function provided by user or pyTACS
+            to set up TACS element objects.
         """
 
         for i in range(self.nComp):
@@ -2160,7 +2212,7 @@ class pyTACS(BaseUI):
                 propID=propID,
             )
 
-            # For maximum flexibiliy, multiple pieces of information
+            # For maximum flexibility, multiple pieces of information
             # can be returned. At a minimum, the element objects
             # must be returned!
 
@@ -2169,7 +2221,6 @@ class pyTACS(BaseUI):
             # second one is treated as a scale list for the added dvs.
 
             # Check that result is an element object instance or .
-            foundElem = False
             numFoundElements = 0
             scaleList = None
 
@@ -2254,7 +2305,7 @@ class pyTACS(BaseUI):
                         f" The added design variables are {repr(newVars)}."
                     )
 
-            # Finally increment the dv counter
+            # Finally, increment the dv counter
             self.dvNum += len(newVars)
 
             if len(newVars) > 0:

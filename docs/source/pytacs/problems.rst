@@ -7,3 +7,4 @@ Problem classes
   static
   transient
   modal
+  buckling

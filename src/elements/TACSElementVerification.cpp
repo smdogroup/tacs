@@ -41,8 +41,8 @@ void TacsGenerateRandomArray(TacsComplex *array, int size, TacsComplex lower,
 }
 
 /*
-  Find the largest absolute value of the difference between the
-  arrays a and b
+  Find the largest absolute value of the difference between an array of test
+  values and an array of reference values
 */
 double TacsGetMaxError(TacsScalar *a, TacsScalar *b, int size, int *max_index) {
   double max_error = 0.0;
@@ -59,17 +59,18 @@ double TacsGetMaxError(TacsScalar *a, TacsScalar *b, int size, int *max_index) {
 }
 
 /*
-  Find the maximum relative error between a and b and return the
+  Find the maximum relative error between an array of test
+  values and an array of reference values
 */
-double TacsGetMaxRelError(TacsScalar *a, TacsScalar *b, int size,
+double TacsGetMaxRelError(TacsScalar *testVals, TacsScalar *refVals, int size,
                           int *max_index) {
   double max_error = 0.0;
   *max_index = -1;
 
   for (int i = 0; i < size; i++) {
     double er = 0.0;
-    if (a[i] != 0.0) {
-      er = fabs(TacsRealPart((a[i] - b[i]) / a[i]));
+    if (refVals[i] != 0.0) {
+      er = fabs(TacsRealPart((testVals[i] - refVals[i]) / refVals[i]));
     }
     if (i == 0 || er > max_error) {
       max_error = er;
@@ -82,19 +83,21 @@ double TacsGetMaxRelError(TacsScalar *a, TacsScalar *b, int size,
 /*
   Print out the values and the relative errors
 */
-void TacsPrintErrorComponents(FILE *fp, const char *descript, TacsScalar *a,
-                              TacsScalar *b, int size) {
+void TacsPrintErrorComponents(FILE *fp, const char *descript,
+                              TacsScalar *testVals, TacsScalar *refVals,
+                              int size) {
   fprintf(fp, "%*s[   ] %15s %15s %15s %15s\n", (int)strlen(descript), "Val",
           "Analytic", "Approximate", "Rel. Error", "Abs. Error");
   for (int i = 0; i < size; i++) {
-    if (a[i] != 0.0) {
+    double absError = fabs(TacsRealPart(testVals[i] - refVals[i]));
+    if (refVals[i] != 0.0) {
       fprintf(fp, "%s[%3d] %15.6e %15.6e %15.4e %15.4e\n", descript, i,
-              TacsRealPart(a[i]), TacsRealPart(b[i]),
-              fabs(TacsRealPart((a[i] - b[i]) / a[i])),
-              fabs(TacsRealPart(a[i] - b[i])));
+              TacsRealPart(testVals[i]), TacsRealPart(refVals[i]),
+              fabs(TacsRealPart(absError / refVals[i])), absError);
     } else {
-      fprintf(fp, "%s[%3d] %15.6e %15.6e\n", descript, i, TacsRealPart(a[i]),
-              TacsRealPart(b[i]));
+      fprintf(fp, "%s[%3d] %15.6e %15.6e %15s %15.4e\n", descript, i,
+              TacsRealPart(testVals[i]), TacsRealPart(refVals[i]), "-",
+              absError);
     }
   }
 }
@@ -326,13 +329,16 @@ int TacsTestElementResidual(TACSElement *element, int elemIndex, double time,
     fprintf(stderr, "\n");
   }
 
+  bool allClose =
+      TacsAssertAllClose(res1, fd, nvars, test_fail_atol, test_fail_rtol);
+
   delete[] q;
   delete[] dq;
   delete[] res1;
   delete[] res2;
   delete[] fd;
 
-  return (max_err > test_fail_atol || max_rel > test_fail_rtol);
+  return !allClose;
 }
 
 /*
@@ -435,7 +441,9 @@ int TacsTestElementJacobian(TACSElement *element, int elemIndex, double time,
     fprintf(stderr, "\n");
   }
 
-  fail = (max_err > test_fail_atol || max_rel > test_fail_rtol);
+  fail =
+      !TacsAssertAllClose(result, res, nvars, test_fail_atol, test_fail_rtol);
+  // fail = (max_err > test_fail_atol || max_rel > test_fail_rtol);
 
   // Test residual computed through addJacobian, make sure it's consistent with
   // addResidual
@@ -471,7 +479,8 @@ int TacsTestElementJacobian(TACSElement *element, int elemIndex, double time,
     fprintf(stderr, "\n");
   }
 
-  fail = fail || (max_err > test_fail_atol || max_rel > test_fail_rtol);
+  fail = fail ||
+         !TacsAssertAllClose(temp, res, nvars, test_fail_atol, test_fail_rtol);
 
   delete[] temp;
   delete[] q;
@@ -498,9 +507,6 @@ int TacsTestElementMatFreeJacobian(
     const TacsScalar vars[], const TacsScalar dvars[],
     const TacsScalar ddvars[], int col, double dh, int test_print_level,
     double test_fail_atol, double test_fail_rtol) {
-  // Set the failure flag
-  int fail = 0;
-
   // Retrieve the number of variables
   int nvars = element->getNumVariables();
 
@@ -565,6 +571,9 @@ int TacsTestElementMatFreeJacobian(
     fprintf(stderr, "\n");
   }
 
+  bool allClose =
+      TacsAssertAllClose(result, res, nvars, test_fail_atol, test_fail_rtol);
+
   delete[] pert;
   delete[] res;
   delete[] result;
@@ -572,7 +581,7 @@ int TacsTestElementMatFreeJacobian(
   delete[] data;
   delete[] tarray;
 
-  return fail;
+  return !allClose;
 }
 
 /*
@@ -706,12 +715,15 @@ int TacsTestAdjResProduct(TACSElement *element, int elemIndex, double time,
     fprintf(stderr, "\n");
   }
 
+  bool allClose =
+      TacsAssertAllClose(&dpdx, &fd_dpdx, 1, test_fail_atol, test_fail_rtol);
+
   delete[] result;
   delete[] adjoint;
   delete[] xpert;
   delete[] res;
 
-  return (max_err > test_fail_atol || max_rel > test_fail_rtol);
+  return !allClose;
 }
 
 /*
@@ -800,13 +812,16 @@ int TacsTestAdjResXptProduct(TACSElement *element, int elemIndex, double time,
     fprintf(stderr, "\n");
   }
 
+  bool allClose = TacsAssertAllClose(result, fd, 3 * nnodes, test_fail_atol,
+                                     test_fail_rtol);
+
   delete[] result;
   delete[] adjoint;
   delete[] fd;
   delete[] X;
   delete[] res;
 
-  return (max_err > test_fail_atol || max_rel > test_fail_rtol);
+  return !allClose;
 }
 
 int TacsTestElementMatDVSens(TACSElement *element, ElementMatrixType matType,
@@ -912,6 +927,9 @@ int TacsTestElementMatDVSens(TACSElement *element, ElementMatrixType matType,
     fprintf(stderr, "\n");
   }
 
+  bool allClose =
+      TacsAssertAllClose(result, fd, num_dvs, test_fail_atol, test_fail_rtol);
+
   delete[] xcopy;
   delete[] psi;
   delete[] phi;
@@ -919,7 +937,7 @@ int TacsTestElementMatDVSens(TACSElement *element, ElementMatrixType matType,
   delete[] result;
   delete[] fd;
 
-  return (max_err > test_fail_atol || max_rel > test_fail_rtol);
+  return !allClose;
 }
 
 int TacsTestElementMatXptSens(TACSElement *element, ElementMatrixType elemType,
@@ -1005,6 +1023,9 @@ int TacsTestElementMatXptSens(TACSElement *element, ElementMatrixType elemType,
     fprintf(stderr, "\n");
   }
 
+  bool allClose =
+      TacsAssertAllClose(&res, &fd, 1, test_fail_atol, test_fail_rtol);
+
   delete[] result;
   delete[] psi;
   delete[] phi;
@@ -1012,7 +1033,7 @@ int TacsTestElementMatXptSens(TACSElement *element, ElementMatrixType elemType,
   delete[] Xp;
   delete[] mat;
 
-  return (max_err > test_fail_atol || max_rel > test_fail_rtol);
+  return !allClose;
 }
 
 int TacsTestElementMatSVSens(TACSElement *element, ElementMatrixType elemType,
@@ -1093,6 +1114,9 @@ int TacsTestElementMatSVSens(TACSElement *element, ElementMatrixType elemType,
     fprintf(stderr, "\n");
   }
 
+  bool allClose =
+      TacsAssertAllClose(&res, &fd, 1, test_fail_atol, test_fail_rtol);
+
   delete[] result;
   delete[] psi;
   delete[] phi;
@@ -1100,7 +1124,7 @@ int TacsTestElementMatSVSens(TACSElement *element, ElementMatrixType elemType,
   delete[] q;
   delete[] mat;
 
-  return (max_err > test_fail_atol || max_rel > test_fail_rtol);
+  return !allClose;
 }
 
 int TacsTestElementBasisFunctions(TACSElementBasis *basis, double dh,
@@ -1163,16 +1187,15 @@ int TacsTestElementBasisFunctions(TACSElementBasis *basis, double dh,
   if (test_print_level) {
     fprintf(stderr, "\n");
   }
+
+  fail = !TacsAssertAllClose(result, fd, nparams * nnodes, test_fail_atol,
+                             test_fail_rtol);
 #endif  // not TACS_USE_COMPLEX
 
   delete[] result;
   delete[] fd;
   delete[] N;
   delete[] N0;
-
-#ifndef TACS_USE_COMPLEX
-  fail = (max_err > test_fail_atol || max_rel > test_fail_rtol);
-#endif  // not TACS_USE_COMPLEX
 
   return fail;
 }
@@ -1256,7 +1279,8 @@ int TacsTestElementBasisFaceNormals(TACSElementBasis *basis, double dh,
       int max_err_index, max_rel_index;
       double max_err = TacsGetMaxError(&proj, &fd, 1, &max_err_index);
       double max_rel = TacsGetMaxRelError(&proj, &fd, 1, &max_rel_index);
-      int flag = (max_err > test_fail_atol || max_rel > test_fail_rtol);
+      bool flag =
+          !TacsAssertAllClose(&proj, &fd, 1, test_fail_atol, test_fail_rtol);
       fail = flag || fail;
 
       if (test_print_level > 0) {
@@ -1362,7 +1386,8 @@ int TacsTestElementBasisJacobianTransform(TACSElementBasis *basis, double dh,
     int max_err_index, max_rel_index;
     double max_err = TacsGetMaxError(&proj, &fd, 1, &max_err_index);
     double max_rel = TacsGetMaxRelError(&proj, &fd, 1, &max_rel_index);
-    int flag = (max_err > test_fail_atol || max_rel > test_fail_rtol);
+    bool flag =
+        !TacsAssertAllClose(&proj, &fd, 1, test_fail_atol, test_fail_rtol);
     fail = flag || fail;
 
     if (test_print_level > 0) {
@@ -1482,11 +1507,14 @@ int TacsTestElementQuantityDVSens(
     fprintf(stderr, "\n");
   }
 
+  bool allClose =
+      TacsAssertAllClose(result, fd, num_dvs, test_fail_atol, test_fail_rtol);
+
   delete[] result;
   delete[] fd;
   delete[] x;
 
-  return (max_err > test_fail_atol || max_rel > test_fail_rtol);
+  return !allClose;
 }
 
 /*
@@ -1579,13 +1607,16 @@ int TacsTestElementQuantitySVSens(
     fprintf(stderr, "\n");
   }
 
+  bool allClose =
+      TacsAssertAllClose(result, fd, nvars, test_fail_atol, test_fail_rtol);
+
   delete[] result;
   delete[] fd;
   delete[] q;
   delete[] qdot;
   delete[] qddot;
 
-  return (max_err > test_fail_atol || max_rel > test_fail_rtol);
+  return !allClose;
 }
 
 /*
@@ -1677,11 +1708,14 @@ int TacsTestElementQuantityXptSens(
     fprintf(stderr, "\n");
   }
 
+  bool allClose = TacsAssertAllClose(result, fd, 3 * nnodes, test_fail_atol,
+                                     test_fail_rtol);
+
   delete[] result;
   delete[] fd;
   delete[] Xt;
 
-  return (max_err > test_fail_atol || max_rel > test_fail_rtol);
+  return !allClose;
 }
 
 /*
@@ -1770,7 +1804,8 @@ int TacsTestElementModelJacobian(TACSElementModel *model, int elemIndex,
     fprintf(stderr, "\n");
   }
 
-  fail = (max_err > test_fail_atol || max_rel > test_fail_rtol);
+  fail = !TacsAssertAllClose(DUt, pDUt, 3 * vars_per_node, test_fail_atol,
+                             test_fail_rtol);
 
   max_err =
       TacsGetMaxError(DUx, pDUx, num_params * vars_per_node, &max_err_index);
@@ -1794,7 +1829,8 @@ int TacsTestElementModelJacobian(TACSElementModel *model, int elemIndex,
     fprintf(stderr, "\n");
   }
 
-  fail = fail || (max_err > test_fail_atol || max_rel > test_fail_rtol);
+  fail = fail || !TacsAssertAllClose(DUx, pDUx, num_params * vars_per_node,
+                                     test_fail_atol, test_fail_rtol);
 
   // Now compute the derivative, component by component. Assume that
   // the Jacobian is supplied in a sparse format (the most common)
@@ -1867,7 +1903,8 @@ int TacsTestElementModelJacobian(TACSElementModel *model, int elemIndex,
     fprintf(stderr, "\n");
   }
 
-  fail = fail || (max_err > test_fail_atol || max_rel > test_fail_rtol);
+  fail = fail ||
+         !TacsAssertAllClose(Jac, fd, Jac_nnz, test_fail_atol, test_fail_rtol);
 
   return fail;
 }
@@ -1939,7 +1976,8 @@ int TacsTestElementModelAdjXptSensProduct(TACSElementModel *model,
     fprintf(stderr, "\n");
   }
 
-  fail = fail || (max_err > test_fail_atol || max_rel > test_fail_rtol);
+  fail = fail || !TacsAssertAllClose(&product, &result, 1, test_fail_atol,
+                                     test_fail_rtol);
 
   // Perturb X
   TacsScalar fdX[3];
@@ -1991,7 +2029,8 @@ int TacsTestElementModelAdjXptSensProduct(TACSElementModel *model,
     fprintf(stderr, "\n");
   }
 
-  fail = fail || (max_err > test_fail_atol || max_rel > test_fail_rtol);
+  fail =
+      fail || !TacsAssertAllClose(dfdX, fdX, 3, test_fail_atol, test_fail_rtol);
 
   // Perturb Xd
   TacsScalar fdXd[9];
@@ -2043,7 +2082,8 @@ int TacsTestElementModelAdjXptSensProduct(TACSElementModel *model,
     fprintf(stderr, "\n");
   }
 
-  fail = fail || (max_err > test_fail_atol || max_rel > test_fail_rtol);
+  fail = fail || !TacsAssertAllClose(dfdXd, fdXd, 3 * num_params,
+                                     test_fail_atol, test_fail_rtol);
 
   // Perturb Ux
   TacsScalar fdUx[3 * MAX_VARS_PER_NODE];
@@ -2098,7 +2138,8 @@ int TacsTestElementModelAdjXptSensProduct(TACSElementModel *model,
     fprintf(stderr, "\n");
   }
 
-  fail = fail || (max_err > test_fail_atol || max_rel > test_fail_rtol);
+  fail = fail || !TacsAssertAllClose(dfdUx, fdUx, vars_per_node * num_params,
+                                     test_fail_atol, test_fail_rtol);
 
   // Perturb Psix
   TacsScalar fdPsix[3 * MAX_VARS_PER_NODE];
@@ -2152,7 +2193,9 @@ int TacsTestElementModelAdjXptSensProduct(TACSElementModel *model,
     fprintf(stderr, "\n");
   }
 
-  fail = fail || (max_err > test_fail_atol || max_rel > test_fail_rtol);
+  fail =
+      fail || !TacsAssertAllClose(dfdPsix, fdPsix, vars_per_node * num_params,
+                                  test_fail_atol, test_fail_rtol);
 
   return fail;
 }
