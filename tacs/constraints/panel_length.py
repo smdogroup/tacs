@@ -335,13 +335,18 @@ class PanelLengthConstraint(TACSConstraint):
                 boundaryNodeLocalProcs.append(LocalProcs)
 
                 # Figure out the jacobian sparsity for each proc
-                # The DV jacobian on the proc that owns this component's DV will have a -1 in the row corresponding to this constraint and the column corresponding to the local DV index
+                # The DV jacobian on the proc that owns this component's DV
+                # will have a -1 in the row corresponding to this constraint
+                # and the column corresponding to the local DV index
                 dvJacRows[dvProcs[-1]].append(constraintInd)
                 dvJacCols[dvProcs[-1]].append(dvLocalInds[-1])
                 dvJacVals[dvProcs[-1]].append(-1.0)
 
                 for ii in range(len(boundaryNodeIDs[compID])):
-                    # the coordinate jacobian on the proc that owns this node will have 3 entries in the row corresponding to this constraint and the columns corresponding to the local node index on the proc
+                    # the coordinate jacobian on the proc that owns this node
+                    # will have 3 entries in the row corresponding to this
+                    # constraint and the columns corresponding to the local
+                    # node index on the proc
                     proc = boundaryNodeLocalProcs[-1][ii]
                     localNodeInd = boundaryNodeLocalInds[-1][ii]
                     coordJacRows[proc] += [constraintInd] * 3
