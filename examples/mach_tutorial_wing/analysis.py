@@ -326,7 +326,7 @@ for group in ["SPAR", "U_SKIN", "L_SKIN"]:
         compIDs=compIDs[group],
         lower=-pitchAdjCon,
         upper=pitchAdjCon,
-        dvIndex=2,
+        dvIndex=1,
     )
 constraints.append(adjCon)
 
