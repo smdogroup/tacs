@@ -552,7 +552,7 @@ void TACSBladeStiffenedShellConstitutive::evalMassMoments(
   TacsScalar stiffenerDensity = this->stiffenerPly->getDensity();
   TacsScalar stiffenerArea = this->computeStiffenerArea();
   TacsScalar stiffenerOffset =
-      this->computeStiffenerCentroidHeight() + 0.5 * pThick;
+      this->computeStiffenerCentroidHeight() - 0.5 * pThick;
   TacsScalar stiffenerMOI = this->computeStiffenerMOI();
 
   moments[0] =
@@ -596,7 +596,7 @@ void TACSBladeStiffenedShellConstitutive::addMassMomentsDVSens(
   TacsScalar stiffenerDensity = this->stiffenerPly->getDensity();
   TacsScalar stiffenerArea = this->computeStiffenerArea();
   TacsScalar stiffenerOffset =
-      this->computeStiffenerCentroidHeight() + 0.5 * pThick;
+      this->computeStiffenerCentroidHeight() - 0.5 * pThick;
   TacsScalar stiffenerMOI = this->computeStiffenerMOI();
 
   TacsScalar dzdt, dzdh;
@@ -635,7 +635,7 @@ void TACSBladeStiffenedShellConstitutive::addMassMomentsDVSens(
     dfdx[ii] += scale[0] * stiffenerDensity * dAdh * sPitchInv;
     // --- First moment of area contribution ---
     dfdx[ii] +=
-        scale[1] *
+        scale[1] * sPitchInv *
         (sThick * stiffenerDensity *
          (-kf * pThick - kf * sThick - pThick - 2.0 * sHeight - 2.0 * sThick) *
          0.5);
@@ -643,7 +643,7 @@ void TACSBladeStiffenedShellConstitutive::addMassMomentsDVSens(
     // --- Second moment of area contribution ---
     // d/dh(MOI + 0.5*rho*A*z^2) = d/dh(MOI) + 0.5*rho*(dAdh*z^2 + 2*A*z*dzdh)
     dfdx[ii] +=
-        scale[2] *
+        scale[2] * sPitchInv *
         (dMOIdh + 0.5 * stiffenerDensity * stiffenerOffset *
                       (stiffenerOffset * dAdh + 2.0 * stiffenerArea * dzdh));
   }
@@ -657,7 +657,7 @@ void TACSBladeStiffenedShellConstitutive::addMassMomentsDVSens(
 
     // --- First moment of area contribution ---
     dfdx[ii] +=
-        scale[1] *
+        scale[1] * sPitchInv *
         (sHeight * stiffenerDensity *
          (-kf * pThick - 2.0 * kf * sThick - pThick - sHeight - 4.0 * sThick) /
          2.0);
@@ -665,7 +665,7 @@ void TACSBladeStiffenedShellConstitutive::addMassMomentsDVSens(
     // --- Second moment of area contribution ---
     // d/dt(MOI + 0.5*rho*A*z^2) = d/dt(MOI) + 0.5*rho*(dAdt*z^2 + 2*A*z*dzdt)
     dfdx[ii] +=
-        scale[2] *
+        scale[2] * sPitchInv *
         (dMOIdt + 0.5 * stiffenerDensity * stiffenerOffset *
                       (stiffenerOffset * dAdt + 2.0 * stiffenerArea * dzdt));
   }
@@ -675,8 +675,13 @@ void TACSBladeStiffenedShellConstitutive::addMassMomentsDVSens(
     int ii = this->panelThickLocalNum;
     // Density contribution
     dfdx[ii] += scale[0] * panelDensity;
-    // Second moment of area contribution
-    dfdx[ii] += scale[2] * panelDensity * 0.25 * pThick * pThick;
+    // First moment of area contribution
+    dfdx[ii] -= scale[1] * (stiffenerDensity * sHeight * sThick * (kf + 1.0) *
+                            0.5 * sPitchInv);
+    // Second moment of area contributions
+    dfdx[ii] += scale[2] * panelDensity * 0.125 * pThick * pThick;
+    dfdx[ii] -= scale[2] * sPitchInv * 0.5 * stiffenerDensity * 2.0 *
+                stiffenerArea * stiffenerOffset * 0.5;
   }
 }
 
