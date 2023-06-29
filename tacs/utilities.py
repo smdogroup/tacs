@@ -222,6 +222,11 @@ class BaseUI:
     def _TACSWarning(self, message):
         """
         Format a class-specific warning for message
+
+        Parameters
+        ----------
+        message : str
+            Warning message to print to user.
         """
         if self.comm.rank == 0:
             # Class name
@@ -246,6 +251,11 @@ class BaseUI:
     def _TACSError(self, message):
         """
         Format a class-specific error for message
+
+        Parameters
+        ----------
+        message : str
+            Error message to print to user.
         """
         # Class name
         header = type(self).__name__
@@ -258,7 +268,7 @@ class BaseUI:
 class Error(Exception):
     """
     Format the error message in a box to make it clear this
-    was a explicitly raised exception.
+    was an explicitly raised exception.
     """
 
     def __init__(self, objName, message):

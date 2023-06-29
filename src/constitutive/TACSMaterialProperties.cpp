@@ -457,16 +457,15 @@ TacsScalar TACSMaterialProperties::vonMisesFailure2DStressSens(
   TacsScalar fail =
       sqrt(s[0] * s[0] + s[1] * s[1] - s[0] * s[1] + 3.0 * s[2] * s[2]);
 
-  if (fail != 0.0) {
+  if (TacsRealPart(fail) != 0.0) {
     sens[0] = (s[0] - 0.5 * s[1]) / (fail * ys);
     sens[1] = (s[1] - 0.5 * s[0]) / (fail * ys);
     sens[2] = (3.0 * s[2]) / (fail * ys);
   } else {
     sens[0] = sens[1] = sens[2] = 0.0;
   }
-  fail = fail / ys;
 
-  return fail;
+  return fail / ys;
 }
 
 /*
