@@ -53,7 +53,7 @@ filesToConvert=()
 for f in *.f5;
 do
 	if   ([ ! -f "${f%.*}.plt" ] && [ ! -f "${f%.*}.szplt" ]) || [ $reconvert = true ] ; then
-		# If there is not .plt file corresponding to the current .f5 or is user specified -r then convert the file
+		# If there is not .plt or .szplt file corresponding to the current .f5 or is user specified -r then convert the file
 		filesToConvert[${#filesToConvert[@]}]=$f
 		echo "$f" 'will be converted'
 	elif [ -f "${f%.*}.plt" ] ; then
@@ -78,8 +78,5 @@ done
 # Do the conversion
 for f in "${filesToConvert[@]}";
 do
-	# if [ ! -f "${f%.*}.plt" ] || [ $reconvert = true ] || ([ -f "${f%.*}.plt" ] && [ "${f%.*}.plt" -ot "$f" ]) ; then
-	# 	echo "$f"
-	# fi
 	echo "$f"
 done | parallel --will-cite -j$nprocs f5totec {}
