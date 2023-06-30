@@ -1,7 +1,6 @@
 import numpy as np
 import copy
 
-from openmdao.utils.mpi import MPI
 from mphys.builder import Builder
 
 from .. import pyTACS
