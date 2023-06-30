@@ -343,6 +343,40 @@ The following <code class="xref py py-class docutils literal notranslate"><span 
 </dd></dl>
 
 <dl class="py class">
+<dt class="sig sig-object py" id="tacs.constitutive.BladeStiffenedShellConstitutive">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tacs.constitutive.</span></span><span class="sig-name descname"><span class="pre">BladeStiffenedShellConstitutive</span></span><a class="headerlink" href="#tacs.constitutive.BladeStiffenedShellConstitutive" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#tacs.constitutive.ShellConstitutive" title="tacs.constitutive.ShellConstitutive"><code class="xref py py-class docutils literal notranslate"><span class="pre">ShellConstitutive</span></code></a></p>
+<p>This constitutive class models a shell stiffened with T-shaped stiffeners.
+The stiffeners are not explicitly modelled.
+Instead, their stiffness is &quot;smeared&quot; across the shell.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.constitutive.BladeStiffenedShellConstitutive.generateBDFCard">
+<span class="sig-name descname"><span class="pre">generateBDFCard</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constitutive.BladeStiffenedShellConstitutive.generateBDFCard" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate pyNASTRAN card class based on current design variable values.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>pyNastran card holding property information</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>card (<a class="reference external" href="https://pynastran-git.readthedocs.io/en/latest/reference/bdf/cards/properties/pyNastran.bdf.cards.properties.shell.html#pyNastran.bdf.cards.properties.shell.PCOMP" title="(in pyNastran 1.4-dev v1.4-dev)">pyNastran.bdf.cards.properties.shell.PCOMP</a>)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.constitutive.BladeStiffenedShellConstitutive.setKSWeight">
+<span class="sig-name descname"><span class="pre">setKSWeight</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constitutive.BladeStiffenedShellConstitutive.setKSWeight" title="Permalink to this definition">¶</a></dt>
+<dd><p>Update the ks weight used for aggregating the different failure modes</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>ksWeight</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.11)"><em>float</em></a>) -- KS weight</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
 <dt class="sig sig-object py" id="tacs.constitutive.CompositeShellConstitutive">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tacs.constitutive.</span></span><span class="sig-name descname"><span class="pre">CompositeShellConstitutive</span></span><a class="headerlink" href="#tacs.constitutive.CompositeShellConstitutive" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#tacs.constitutive.ShellConstitutive" title="tacs.constitutive.ShellConstitutive"><code class="xref py py-class docutils literal notranslate"><span class="pre">ShellConstitutive</span></code></a></p>
@@ -358,20 +392,6 @@ composite laminate first-order shear deformation theory (FSDT) shell type elemen
 </ul>
 </dd>
 </dl>
-<dl class="py method">
-<dt class="sig sig-object py" id="tacs.constitutive.CompositeShellConstitutive.generateBDFCard">
-<span class="sig-name descname"><span class="pre">generateBDFCard</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constitutive.CompositeShellConstitutive.generateBDFCard" title="Permalink to this definition">¶</a></dt>
-<dd><p>Generate pyNASTRAN card class based on current design variable values.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Returns<span class="colon">:</span></dt>
-<dd class="field-odd"><p>pyNastran card holding property information</p>
-</dd>
-<dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p>card (<a class="reference external" href="https://pynastran-git.readthedocs.io/en/latest/reference/bdf/cards/properties/pyNastran.bdf.cards.properties.shell.html#pyNastran.bdf.cards.properties.shell.PCOMP" title="(in pyNastran 1.4-dev v1.4-dev)">pyNastran.bdf.cards.properties.shell.PCOMP</a>)</p>
-</dd>
-</dl>
-</dd></dl>
-
 </dd></dl>
 
 <dl class="py class">
@@ -766,10 +786,12 @@ Weighting factor used for topology optimization. 0.0 corresponds to void,
 <li><a class="reference internal" href="#tacs.constitutive.BasicBeamConstitutive.generateBDFCard"><code class="docutils literal notranslate"><span class="pre">BasicBeamConstitutive.generateBDFCard()</span></code></a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#tacs.constitutive.CompositeShellConstitutive"><code class="docutils literal notranslate"><span class="pre">CompositeShellConstitutive</span></code></a><ul>
-<li><a class="reference internal" href="#tacs.constitutive.CompositeShellConstitutive.generateBDFCard"><code class="docutils literal notranslate"><span class="pre">CompositeShellConstitutive.generateBDFCard()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.constitutive.BladeStiffenedShellConstitutive"><code class="docutils literal notranslate"><span class="pre">BladeStiffenedShellConstitutive</span></code></a><ul>
+<li><a class="reference internal" href="#tacs.constitutive.BladeStiffenedShellConstitutive.generateBDFCard"><code class="docutils literal notranslate"><span class="pre">BladeStiffenedShellConstitutive.generateBDFCard()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.constitutive.BladeStiffenedShellConstitutive.setKSWeight"><code class="docutils literal notranslate"><span class="pre">BladeStiffenedShellConstitutive.setKSWeight()</span></code></a></li>
 </ul>
 </li>
+<li><a class="reference internal" href="#tacs.constitutive.CompositeShellConstitutive"><code class="docutils literal notranslate"><span class="pre">CompositeShellConstitutive</span></code></a></li>
 <li><a class="reference internal" href="#tacs.constitutive.DOFSpringConstitutive"><code class="docutils literal notranslate"><span class="pre">DOFSpringConstitutive</span></code></a><ul>
 <li><a class="reference internal" href="#tacs.constitutive.DOFSpringConstitutive.generateBDFCard"><code class="docutils literal notranslate"><span class="pre">DOFSpringConstitutive.generateBDFCard()</span></code></a></li>
 </ul>
