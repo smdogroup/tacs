@@ -182,15 +182,5 @@ class TacsSolver(om.ImplicitComponent):
                         scale=1.0,
                     )
 
-    def _design_vector_changed(self, x):
-        if self.x_save is None:
-            self.x_save = x.copy()
-            return True
-        elif not np.allclose(x, self.x_save, rtol=1e-10, atol=1e-10):
-            self.x_save = x.copy()
-            return True
-        else:
-            return False
-
     def set_sp(self, sp):
         self.sp = sp
