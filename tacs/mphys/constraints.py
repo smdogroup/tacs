@@ -1,3 +1,4 @@
+import numpy as np
 import openmdao.api as om
 
 
@@ -12,6 +13,9 @@ class ConstraintComponent(om.ExplicitComponent):
 
         self.fea_assembler = None
         self.constr = None
+
+        self.old_dvs = None
+        self.old_xs = None
 
     def setup(self):
         self.fea_assembler = self.options["fea_assembler"]
@@ -48,8 +52,43 @@ class ConstraintComponent(om.ExplicitComponent):
             )
 
     def _update_internal(self, inputs):
-        self.constr.setDesignVars(inputs["tacs_dvs"])
-        self.constr.setNodes(inputs["x_struct0"])
+        dvsNeedUpdate, xsNeedUpdate = self._need_update(inputs)
+        if dvsNeedUpdate:
+            self.constr.setDesignVars(inputs["tacs_dvs"])
+        if xsNeedUpdate:
+            self.constr.setNodes(inputs["x_struct0"])
+
+    def _need_update(self, inputs):
+        dvsNeedUpdate = False
+        xsNeedUpdate = False
+
+        dvs = inputs["tacs_dvs"]
+        xs = inputs["x_struct0"]
+
+        if self.old_dvs is None:
+            self.old_dvs = inputs["tacs_dvs"].copy()
+            dvsNeedUpdate = True
+
+        elif len(dvs) > 0:
+            if max(np.abs(dvs - self.old_dvs)) > 0.0:  # 1e-7:
+                self.old_dvs = inputs["tacs_dvs"].copy()
+                dvsNeedUpdate = True
+
+        if self.old_xs is None:
+            self.old_xs = inputs["x_struct0"].copy()
+            xsNeedUpdate = True
+
+        elif len(xs) > 0:
+            if max(np.abs(xs - self.old_xs)) > 0.0:  # 1e-7:
+                self.old_xs = inputs["x_struct0"].copy()
+                xsNeedUpdate = True
+
+        tmp1 = dvsNeedUpdate
+        tmp2 = xsNeedUpdate
+        # Perform all reduce to check if any other procs came back True
+        dvsNeedUpdate = self.comm.allreduce(tmp1)
+        xsNeedUpdate = self.comm.allreduce(tmp2)
+        return dvsNeedUpdate, xsNeedUpdate
 
     def compute(self, inputs, outputs):
         self._update_internal(inputs)
