@@ -85,7 +85,7 @@ class TACSConstraint(TACSSystem):
             upper bound for constraint. Defaults to 1e20.
 
         """
-        raise NotImplemented(
+        raise NotImplementedError(
             f"'addConstraint' method is not implemented for class '{type(self).__name__}'"
         )
 
@@ -191,7 +191,7 @@ class TACSConstraint(TACSSystem):
         >>> # Result will look like (if TACSConstraint has name of 'c1'):
         >>> # {'c1_LE_SPAR': array([12354.10])}
         """
-        raise NotImplemented(
+        raise NotImplementedError(
             f"'evalConstraints' method is not implemented for class '{type(self).__name__}'"
         )
 
@@ -218,7 +218,7 @@ class TACSConstraint(TACSSystem):
         >>> # Result will look like (if TACSConstraint has name of 'c1'):
         >>> # {'c1_LE_SPAR':{'struct':<50x242 sparse matrix of type '<class 'numpy.float64'>' with 100 stored elements in Compressed Sparse Row format>}}
         """
-        raise NotImplemented(
+        raise NotImplementedError(
             f"'evalConstraintsSens' method is not implemented for class '{type(self).__name__}'"
         )
 

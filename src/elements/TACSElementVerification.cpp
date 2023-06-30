@@ -89,14 +89,15 @@ void TacsPrintErrorComponents(FILE *fp, const char *descript,
   fprintf(fp, "%*s[   ] %15s %15s %15s %15s\n", (int)strlen(descript), "Val",
           "Analytic", "Approximate", "Rel. Error", "Abs. Error");
   for (int i = 0; i < size; i++) {
+    double absError = fabs(TacsRealPart(testVals[i] - refVals[i]));
     if (refVals[i] != 0.0) {
       fprintf(fp, "%s[%3d] %15.6e %15.6e %15.4e %15.4e\n", descript, i,
               TacsRealPart(testVals[i]), TacsRealPart(refVals[i]),
-              fabs(TacsRealPart((testVals[i] - refVals[i]) / refVals[i])),
-              fabs(TacsRealPart(testVals[i] - refVals[i])));
+              fabs(TacsRealPart(absError / refVals[i])), absError);
     } else {
-      fprintf(fp, "%s[%3d] %15.6e %15.6e\n", descript, i,
-              TacsRealPart(testVals[i]), TacsRealPart(refVals[i]));
+      fprintf(fp, "%s[%3d] %15.6e %15.6e %15s %15.4e\n", descript, i,
+              TacsRealPart(testVals[i]), TacsRealPart(refVals[i]), "-",
+              absError);
     }
   }
 }

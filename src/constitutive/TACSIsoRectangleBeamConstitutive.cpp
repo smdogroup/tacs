@@ -336,7 +336,7 @@ TacsScalar TACSIsoRectangleBeamConstitutive::evalFailureStrainSens(
     const TacsScalar e[], TacsScalar sens[]) {
   // Check the cross-section for failure at the four corners
   TacsScalar e0[6], s0[6];
-  TacsScalar e0d[6], s0d[6];
+  TacsScalar dfde0[6], dfds0[6];
   TacsScalar fail_checks[4];
   TacsScalar fail_checks_sens[4][6];
   TacsScalar max_fail = -1e20, ks_sum = 0.0;
@@ -360,14 +360,15 @@ TacsScalar TACSIsoRectangleBeamConstitutive::evalFailureStrainSens(
       props->evalStress3D(e0, s0);
 
       // Compute the von Mises stress
-      fail_checks[count] = props->vonMisesFailure3DStressSens(s0, s0d);
-      props->evalStress3D(s0d, e0d);
-      fail_checks_sens[count][0] = e0d[0];
-      fail_checks_sens[count][2] = -y_lim[i] * e0d[0];
-      fail_checks_sens[count][3] = -z_lim[j] * e0d[0];
-      fail_checks_sens[count][1] = y_lim[i] * e0d[4] - z_lim[j] * e0d[5];
-      fail_checks_sens[count][5] = e0d[4];
-      fail_checks_sens[count][4] = e0d[5];
+      fail_checks[count] = props->vonMisesFailure3DStressSens(s0, dfds0);
+
+      props->evalStress3D(dfds0, dfde0);
+      fail_checks_sens[count][0] = dfde0[0];
+      fail_checks_sens[count][2] = -y_lim[i] * dfde0[0];
+      fail_checks_sens[count][3] = -z_lim[j] * dfde0[0];
+      fail_checks_sens[count][1] = y_lim[i] * dfde0[4] - z_lim[j] * dfde0[5];
+      fail_checks_sens[count][5] = dfde0[4];
+      fail_checks_sens[count][4] = dfde0[5];
 
       if (TacsRealPart(fail_checks[count]) > TacsRealPart(max_fail)) {
         max_fail = fail_checks[count];
@@ -375,15 +376,15 @@ TacsScalar TACSIsoRectangleBeamConstitutive::evalFailureStrainSens(
     }
   }
 
-  for (int i = 0; i < count; i++) {
-    ks_sum += exp(ks_weight * (fail_checks[i] - max_fail));
-  }
-
-  for (int i = 0; i < count; i++) {
-    for (int k = 0; k < NUM_STRESSES; k++) {
-      sens[k] += exp(ks_weight * (fail_checks[i] - max_fail)) *
-                 fail_checks_sens[i][k] / ks_sum;
+  for (int ii = 0; ii < count; ii++) {
+    TacsScalar val = exp(ks_weight * (fail_checks[ii] - max_fail));
+    ks_sum += val;
+    for (int kk = 0; kk < NUM_STRESSES; kk++) {
+      sens[kk] += val * fail_checks_sens[ii][kk];
     }
+  }
+  for (int kk = 0; kk < NUM_STRESSES; kk++) {
+    sens[kk] /= ks_sum;
   }
 
   return max_fail + log(ks_sum) / ks_weight;

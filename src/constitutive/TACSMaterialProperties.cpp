@@ -1288,7 +1288,7 @@ void TACSOrthotropicPly::testFailSens(double dh, TacsScalar angle) {
          TacsRealPart(angle));
 
   for (int k = 0; k < 3; k++) {
-    strain[k] = -1.0;
+    strain[k] = -1.0e-3;
 
     // Calculate the failure load
     TacsScalar p = failure(angle, strain);
