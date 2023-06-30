@@ -59,6 +59,20 @@ class ConstraintComponent(om.ExplicitComponent):
             self.constr.setNodes(inputs["x_struct0"])
 
     def _need_update(self, inputs):
+        """Checks whether the design variables or coordinates being passed
+        in by OpenMDAO are different from those currently stored in TACS
+
+        Parameters
+        ----------
+        inputs : OpenMDAO input vector
+            _description_
+
+        Returns
+        -------
+        (bool, bool)
+            Whether the design variables or coordinates need to be updated
+            respectively
+        """
         dvsNeedUpdate = False
         xsNeedUpdate = False
 
