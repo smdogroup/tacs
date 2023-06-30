@@ -110,7 +110,7 @@ jobs:
           # Install ESP/CAPS prebuilt for shape derivatives, only in Real mode
           if [[ ${{ matrix.NAME }} == 'Real' ]]; then
             cd $TACS_DIR/extern/
-            wget https://acdl.mit.edu/ESP/PreBuilts/ESP122Lin.tgz
+            wget https://acdl.mit.edu/ESP/archive/ESP122Lin.tgz
             tar -xvf ESP122Lin.tgz
             export ESP_ROOT=${TACS_DIR}/extern/ESP122/EngSketchPad
             export CASROOT=${TACS_DIR}/extern/ESP122/OpenCASCADE-7.6.0

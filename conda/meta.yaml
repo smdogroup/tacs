@@ -21,7 +21,7 @@ source:
 
 build:
   number: {{ build }}
-  skip: true  # [py<=36]
+  skip: true  # [py<=37]
   string: py{{ CONDA_PY }}_{{ scalar }}_h{{ PKG_HASH }}_{{ build }}
   track_features:
     - tacs_complex  # [scalar == "complex"]
@@ -29,7 +29,6 @@ build:
 requirements:
   build:
     - python {{ python }}
-    - numpy   1.18   # [py==37]
     - numpy   1.18   # [py==38]
     - numpy   1.19   # [py==39]
     - numpy   1.22   # [py==310]
@@ -46,7 +45,6 @@ requirements:
   host:
     - python {{ python }}
     - pip
-    - numpy   1.18   # [py==37]
     - numpy   1.18   # [py==38]
     - numpy   1.19   # [py==39]
     - numpy   1.22   # [py==310]
@@ -64,7 +62,6 @@ requirements:
 
   run:
     - python
-    - numpy >=1.18.5,<2.0.a0   # [py==37]
     - numpy >=1.18.5,<2.0.a0   # [py==38]
     - numpy >=1.19.5,<2.0.a0   # [py==39]
     - numpy >=1.22.0,<2.0.a0   # [py==310]
@@ -78,6 +75,7 @@ requirements:
     - metis >=5.1
     - mpi4py
     - pynastran
+    - numba
 
 test:
   requires:

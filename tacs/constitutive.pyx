@@ -764,6 +764,127 @@ cdef class CompositeShellConstitutive(ShellConstitutive):
 
         self.props = [prop.getMaterialProperties() for prop in ply_list]
 
+cdef class BladeStiffenedShellConstitutive(ShellConstitutive):
+    """This constitutive class models a shell stiffened with T-shaped stiffeners.
+    The stiffeners are not explicitly modelled.
+    Instead, their stiffness is "smeared" across the shell.
+    """
+    def __cinit__(
+        self,
+        OrthotropicPly panelPly,
+        OrthotropicPly stiffenerPly,
+        TacsScalar kcorr,
+        TacsScalar panelLength,
+        int panelLengthNum,
+        TacsScalar stiffenerPitch,
+        int stiffenerPitchNum,
+        TacsScalar panelThick,
+        int panelThickNum,
+        int numPanelPlies,
+        np.ndarray[TacsScalar, ndim=1, mode='c'] panelPlyAngles,
+        np.ndarray[TacsScalar, ndim=1, mode='c'] panelPlyFracs,
+        np.ndarray[int, ndim=1, mode='c'] panelPlyFracNums,
+        TacsScalar stiffenerHeight,
+        int stiffenerHeightNum,
+        TacsScalar stiffenerThick,
+        int stiffenerThickNum,
+        int numStiffenerPlies,
+        np.ndarray[TacsScalar, ndim=1, mode='c'] stiffenerPlyAngles,
+        np.ndarray[TacsScalar, ndim=1, mode='c'] stiffenerPlyFracs,
+        np.ndarray[int, ndim=1, mode='c'] stiffenerPlyFracNums,
+        TacsScalar flangeFraction = 1.0
+        ):
+
+        if len(panelPlyAngles) != numPanelPlies:
+            raise ValueError('panelPlyAngles must have length numPanelPlies')
+        if len(panelPlyAngles) != numPanelPlies:
+            raise ValueError('panelPlyNums must have length numPanelPlies')
+        if len(stiffenerPlyAngles) != numStiffenerPlies:
+            raise ValueError('stiffenerPlyAngles must have length numStiffenerPlies')
+        if len(stiffenerPlyAngles) != numStiffenerPlies:
+            raise ValueError('stiffenerPlyNums must have length numStiffenerPlies')
+
+        # Numpy's default int type is int64, but this is interpreted by Cython as a long.
+        if panelPlyFracNums.dtype != np.intc:
+            panelPlyFracNums = panelPlyFracNums.astype(np.intc)
+        if stiffenerPlyFracNums.dtype != np.intc:
+            stiffenerPlyFracNums = stiffenerPlyFracNums.astype(np.intc)
+        #     raise ValueError('panelPlyFracNums must be of type int32')
+
+        self.blade_ptr = new TACSBladeStiffenedShellConstitutive(
+            panelPly.ptr,
+            stiffenerPly.ptr,
+            kcorr,
+            panelLength,
+            panelLengthNum,
+            stiffenerPitch,
+            stiffenerPitchNum,
+            panelThick,
+            panelThickNum,
+            numPanelPlies,
+            <TacsScalar*>panelPlyAngles.data,
+            <TacsScalar*>panelPlyFracs.data,
+            <int*>panelPlyFracNums.data,
+            stiffenerHeight,
+            stiffenerHeightNum,
+            stiffenerThick,
+            stiffenerThickNum,
+            numStiffenerPlies,
+            <TacsScalar*>stiffenerPlyAngles.data,
+            <TacsScalar*>stiffenerPlyFracs.data,
+            <int*>stiffenerPlyFracNums.data,
+            flangeFraction
+        )
+        self.ptr = self.cptr = self.blade_ptr
+        self.ptr.incref()
+
+    def setKSWeight(self, double ksWeight):
+        """
+        Update the ks weight used for aggregating the different failure modes
+
+        Args:
+            ksWeight (float): KS weight
+        """
+        if self.blade_ptr:
+            self.blade_ptr.setKSWeight(ksWeight)
+
+    def setStiffenerPitchBounds(self, TacsScalar lowerBound, TacsScalar upperBound):
+        if self.blade_ptr:
+            self.blade_ptr.setStiffenerPitchBounds(lowerBound, upperBound)
+
+    def setStiffenerHeightBounds(self, TacsScalar lowerBound, TacsScalar upperBound):
+
+        if self.blade_ptr:
+            self.blade_ptr.setStiffenerHeightBounds(lowerBound, upperBound)
+
+    def setStiffenerThicknessBounds(self, TacsScalar lowerBound, TacsScalar upperBound):
+
+        if self.blade_ptr:
+            self.blade_ptr.setStiffenerThicknessBounds(lowerBound, upperBound)
+
+    def setPanelThicknessBounds(self, TacsScalar lowerBound, TacsScalar upperBound):
+
+        if self.blade_ptr:
+            self.blade_ptr.setPanelThicknessBounds(lowerBound, upperBound)
+
+    def setStiffenerPlyFractionBounds(
+            self,
+            np.ndarray[TacsScalar, ndim=1, mode='c'] lowerBound,
+            np.ndarray[TacsScalar, ndim=1, mode='c'] upperBound
+        ):
+
+        if self.blade_ptr:
+            self.blade_ptr.setStiffenerPlyFractionBounds(<TacsScalar*>lowerBound.data, <TacsScalar*>upperBound.data)
+
+    def setPanelPlyFractionBounds(
+            self,
+            np.ndarray[TacsScalar, ndim=1, mode='c'] lowerBound,
+            np.ndarray[TacsScalar, ndim=1, mode='c'] upperBound
+        ):
+
+        if self.blade_ptr:
+            self.blade_ptr.setPanelPlyFractionBounds(<TacsScalar*>lowerBound.data, <TacsScalar*>upperBound.data)
+
     def generateBDFCard(self):
         """
         Generate pyNASTRAN card class based on current design variable values.
