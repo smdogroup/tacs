@@ -786,7 +786,7 @@ cdef class CompositeShellConstitutive(ShellConstitutive):
 
         prop = nastran_cards.properties.shell.PCOMP(self.nastranID, mat_ids,
                                                     ply_thicknesses.astype(float),
-                                                    np.rad2deg(ply_angles, dtype=float))
+                                                    np.rad2deg(np.real(ply_angles)))
         return prop
 
 cdef class BladeStiffenedShellConstitutive(ShellConstitutive):
@@ -1013,7 +1013,7 @@ cdef class SmearedCompositeShellConstitutive(ShellConstitutive):
 
         prop = nastran_cards.properties.shell.PCOMP(self.nastranID, mat_ids,
                                                     ply_thicknesses.astype(float),
-                                                    np.rad2deg(ply_angles, dtype=float),
+                                                    np.rad2deg(np.real(ply_angles)),
                                                     lam="SMEAR")
         return prop
 

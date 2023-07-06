@@ -1792,8 +1792,8 @@ class pyTACS(BaseUI):
                         "CORD2R",
                         coordID,
                         origin,
-                        xaxis=vec1,
-                        xzplane=vec2,
+                        xaxis=np.real(vec1),
+                        xzplane=np.real(vec2),
                         add=True,
                     )
                     curCoordID += 1

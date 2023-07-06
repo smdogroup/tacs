@@ -3,7 +3,7 @@ import os
 import numpy as np
 
 from pytacs_analysis_base_test import PyTACSTestCase
-from tacs import pytacs, functions
+from tacs import pytacs, elements, constitutive, functions
 
 """
 Tests a smeared laminate shell model with the following layup: [0, 45, 30].
@@ -56,8 +56,6 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
             self.dh = 1e-6
 
         fea_assembler = pytacs.pyTACS(bdf_file, comm)
-
-        from tacs import elements, constitutive, functions
 
         # Material properties
         rho = 1550.0
