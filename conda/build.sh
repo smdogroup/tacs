@@ -49,3 +49,7 @@ make default TACS_DIR=${TACS_DIR} \
              SO_LINK_FLAGS="${F5TOVTK_SLF}" SO_EXT=${SO_EXT};
 mv ./f5totec ${PREFIX}/bin;
 
+cd ${TACS_DIR}/extern
+mv ./f5convert ${PREFIX}/bin;
+mv ./f5clean ${PREFIX}/bin;
+
