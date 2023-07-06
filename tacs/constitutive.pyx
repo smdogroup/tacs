@@ -764,6 +764,31 @@ cdef class CompositeShellConstitutive(ShellConstitutive):
 
         self.props = [prop.getMaterialProperties() for prop in ply_list]
 
+    def generateBDFCard(self):
+        """
+        Generate pyNASTRAN card class based on current design variable values.
+
+        Returns:
+            card (pyNastran.bdf.cards.properties.shell.PCOMP): pyNastran card holding property information
+        """
+        num_plies = len(self.props)
+        cdef TACSCompositeShellConstitutive* comp_ptr = <TACSCompositeShellConstitutive*>self.cptr
+        cdef np.ndarray ply_thicknesses = np.zeros(num_plies, dtype)
+        cdef np.ndarray ply_angles = np.zeros(num_plies, dtype)
+
+        comp_ptr.getPlyThicknesses(<TacsScalar*>ply_thicknesses.data)
+        comp_ptr.getPlyAngles(<TacsScalar*>ply_angles.data)
+
+        mat_ids = []
+        for i in range(num_plies):
+            ply_id = self.props[i].getNastranID()
+            mat_ids.append(ply_id)
+
+        prop = nastran_cards.properties.shell.PCOMP(self.nastranID, mat_ids,
+                                                    ply_thicknesses.astype(float),
+                                                    np.rad2deg(ply_angles, dtype=float))
+        return prop
+
 cdef class BladeStiffenedShellConstitutive(ShellConstitutive):
     """This constitutive class models a shell stiffened with T-shaped stiffeners.
     The stiffeners are not explicitly modelled.
@@ -885,31 +910,6 @@ cdef class BladeStiffenedShellConstitutive(ShellConstitutive):
         if self.blade_ptr:
             self.blade_ptr.setPanelPlyFractionBounds(<TacsScalar*>lowerBound.data, <TacsScalar*>upperBound.data)
 
-    def generateBDFCard(self):
-        """
-        Generate pyNASTRAN card class based on current design variable values.
-
-        Returns:
-            card (pyNastran.bdf.cards.properties.shell.PCOMP): pyNastran card holding property information
-        """
-        num_plies = len(self.props)
-        cdef TACSCompositeShellConstitutive* comp_ptr = <TACSCompositeShellConstitutive*>self.cptr
-        cdef np.ndarray ply_thicknesses = np.zeros(num_plies, dtype)
-        cdef np.ndarray ply_angles = np.zeros(num_plies, dtype)
-
-        comp_ptr.getPlyThicknesses(<TacsScalar*>ply_thicknesses.data)
-        comp_ptr.getPlyAngles(<TacsScalar*>ply_angles.data)
-
-        mat_ids = []
-        for i in range(num_plies):
-            ply_id = self.props[i].getNastranID()
-            mat_ids.append(ply_id)
-
-        prop = nastran_cards.properties.shell.PCOMP(self.nastranID, mat_ids,
-                                                    ply_thicknesses.astype(float),
-                                                    np.rad2deg(ply_angles, dtype=float))
-        return prop
-
 cdef class SmearedCompositeShellConstitutive(ShellConstitutive):
     """
     This constitutive class defines the stiffness properties for a
@@ -917,9 +917,21 @@ cdef class SmearedCompositeShellConstitutive(ShellConstitutive):
 
     Args:
        ply_list (list[OrthotropicPly]): List of ply properties in layup.
-       ply_thicknesses (numpy.ndarray[float or complex]): Array of ply thicknesses in layup.
+       thicknesses (float or complex): Totl laminate thickness of layup.
        ply_angles (numpy.ndarray[float or complex]): Array of ply angles (in radians) in layup.
-       kcorr (float or complex, optional): FSDT shear correction factor. Defaults to 5.0/6.0.
+       ply_fractions (numpy.ndarray[float or complex]): Fraction of layup contribution of each ply in ply_list.
+       thickness_dv_num (int, optional): Design variable number to assign to thickness (keyword argument).
+          Defaults to -1.
+       ply_fraction_dv_nums (numpy.ndarray[int], optional): Design variable numbers to assign to ply fractions (keyword argument).
+          Defaults to -1.
+       thickness_lb (float or complex, optional): Lower bound for thickness design variable (keyword argument).
+          Defaults to 0.0.
+       thickness_ub (float or complex, optional): Upper bound for thickness design variable (keyword argument).
+          Defaults to 1e20.
+       ply_fraction_lb (numpy.ndarray[float or complex], optional): Lower bound for ply fraction design variables (keyword argument).
+          Defaults to 0.0.
+       ply_fraction_ub (numpy.ndarray[float or complex], optional): Upper bound for ply fraction design variables (keyword argument).
+          Defaults to 1.0.
     """
     def __cinit__(self, ply_list,
                   TacsScalar thickness,
