@@ -220,4 +220,60 @@ class TACSMatrixHash : public TACSObject {
   MemNode *mem_root, *mem;
 };
 
+/**
+ * @brief Compute the KS aggregate of a set of values
+ *
+ * @param f The values to aggregate
+ * @param numVals The number of values to aggregate
+ * @param ksWeight The KS weight parameter (rho)
+ * @return TacsScalar The aggregated value
+ */
+TacsScalar ksAggregation(const TacsScalar f[], const int numVals,
+                         const double ksWeight);
+
+/**
+ * @brief Compute the KS aggregate of a set of values
+ *
+ * @param f The values to aggregate
+ * @param maxVal The maximum of the values
+ * @param numVals The number of values to aggregate
+ * @param ksWeight The KS weight parameter (rho)
+ * @return TacsScalar The aggregated value
+ */
+TacsScalar ksAggregation(const TacsScalar f[], const TacsScalar maxVal,
+                         const int numVals, const double ksWeight);
+
+/**
+ * @brief Compute the derivative of the KS aggregate with respect to the input
+ * values
+ *
+ * @param f The values to aggregate
+ * @param numVals The number of values to aggregate
+ * @param ksWeight The KS weight parameter (rho)
+ * @param dKSdf Array to store the derivative in, dKSdf[i] = dKS/df[i]
+ * @return TacsScalar The aggregated value
+ */
+TacsScalar ksAggregationSens(const TacsScalar f[], const int numVals,
+                             const double ksWeight, TacsScalar dKSdf[]);
+
+/**
+ * @brief Given the sensitivities of f w.r.t x, compute the sensitivity of KS(f)
+ * w.r.t x
+ *
+ * This function is essentially computing the product, dKS/dx = dKS/df * df/dx,
+ * without explicitly storing the matrix dKS/df
+ *
+ * @param f Values to aggregate
+ * @param numVals Number of values to aggregate
+ * @param numVars Number of variables sensitivities are w.r.t
+ * @param ksWeight The KS weight parameter (rho)
+ * @param dfdx The sensitivities of f w.r.t x, dfdx[i][j] = df[i]/dx[j]
+ * @param dKSdx The array to store the sensitivities of KS(f) w.r.t x, dKSdx[i]=
+ * dKS/dx[i]
+ * @return TacsScalar The aggregated value
+ */
+TacsScalar ksAggregationSensProduct(const TacsScalar f[], const int numVals,
+                                    const int numVars, const double ksWeight,
+                                    TacsScalar **dfdx, TacsScalar dKSdx[]);
+
 #endif  // TACS_UTILITIES_H
