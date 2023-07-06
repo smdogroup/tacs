@@ -19,6 +19,7 @@
 #include "TACSSmearedCompositeShellConstitutive.h"
 
 #include "TACSElementAlgebra.h"
+#include "TACSUtilities.h"
 
 const char *TACSSmearedCompositeShellConstitutive::constName =
     "TACSSmearedCompositeShellConstitutive";
@@ -387,11 +388,12 @@ void TACSSmearedCompositeShellConstitutive::addStressDVSens(
 TacsScalar TACSSmearedCompositeShellConstitutive::evalFailure(
     int elemIndex, const double pt[], const TacsScalar X[],
     const TacsScalar strain[]) {
-  TacsScalar *fvals = new TacsScalar[2 * num_plies];
+  int nvals = 2 * num_plies;
+  TacsScalar *fvals = new TacsScalar[nvals];
+
   evalPlyTopBottomFailure(strain, fvals);
-  TacsScalar max = evalMaxPlyFailure(fvals);
-  TacsScalar ks_sum = evalKSSum(fvals, max);
-  TacsScalar ks_val = max + log(ks_sum) / ks_weight;
+  TacsScalar ks_val = ksAggregation(fvals, nvals, ks_weight);
+
   delete[] fvals;
 
   return ks_val;
@@ -417,34 +419,13 @@ void TACSSmearedCompositeShellConstitutive::evalPlyTopBottomFailure(
   }
 }
 
-TacsScalar TACSSmearedCompositeShellConstitutive::evalMaxPlyFailure(
-    const TacsScalar fvals[]) {
-  TacsScalar max = 0.0;
-
-  for (int i = 0; i < 2 * num_plies; i++) {
-    if (TacsRealPart(fvals[i]) > TacsRealPart(max)) {
-      max = fvals[i];
-    }
-  }
-
-  return max;
-}
-
-TacsScalar TACSSmearedCompositeShellConstitutive::evalKSSum(
-    const TacsScalar fvals[], TacsScalar max) {
-  TacsScalar ks_sum = 0.0;
-
-  for (int i = 0; i < 2 * num_plies; i++) {
-    ks_sum += exp(ks_weight * (fvals[i] - max));
-  }
-
-  return ks_sum;
-}
-
 // Evaluate the derivative of the failure criteria w.r.t. the strain
 TacsScalar TACSSmearedCompositeShellConstitutive::evalFailureStrainSens(
     int elemIndex, const double pt[], const TacsScalar X[],
     const TacsScalar strain[], TacsScalar sens[]) {
+  int nvals = 2 * num_plies;
+  int nvars = 9;
+
   sens[0] = sens[1] = sens[2] = 0.0;
   sens[3] = sens[4] = sens[5] = 0.0;
   sens[6] = sens[7] = sens[8] = 0.0;
@@ -453,43 +434,49 @@ TacsScalar TACSSmearedCompositeShellConstitutive::evalFailureStrainSens(
   TacsScalar tb = -0.5 * thickness;
   TacsScalar tt = 0.5 * thickness;
 
-  TacsScalar *fvals = new TacsScalar[2 * num_plies];
+  TacsScalar *fvals = new TacsScalar[nvals];
   evalPlyTopBottomFailure(strain, fvals);
-  TacsScalar max = evalMaxPlyFailure(fvals);
-  TacsScalar ks_sum = evalKSSum(fvals, max);
-  TacsScalar ks_val = max + log(ks_sum) / ks_weight;
 
+  TacsScalar **dfvals = new TacsScalar *[nvals];
   for (int i = 0; i < num_plies; i++) {
     TacsScalar lamStrain[3], phi[3];
 
     // plate bottom stress
+    dfvals[2 * i + 0] = new TacsScalar[nvars];
     getLaminaStrain(strain, tb, lamStrain);
     TacsScalar fval_bot =
         ply_props[i]->failureStrainSens(ply_angles[i], lamStrain, phi);
-    TacsScalar dks_val = exp(ks_weight * (fval_bot - max)) / ks_sum;
-
-    sens[0] += dks_val * phi[0];
-    sens[1] += dks_val * phi[1];
-    sens[2] += dks_val * phi[2];
-    sens[3] += dks_val * tb * phi[0];
-    sens[4] += dks_val * tb * phi[1];
-    sens[5] += dks_val * tb * phi[2];
+    dfvals[2 * i + 0][0] = phi[0];
+    dfvals[2 * i + 0][1] = phi[1];
+    dfvals[2 * i + 0][2] = phi[2];
+    dfvals[2 * i + 0][3] = tb * phi[0];
+    dfvals[2 * i + 0][4] = tb * phi[1];
+    dfvals[2 * i + 0][5] = tb * phi[2];
+    dfvals[2 * i + 0][6] = dfvals[2 * i + 0][7] = dfvals[2 * i + 0][8] = 0.0;
 
     // plate top stress
+    dfvals[2 * i + 1] = new TacsScalar[nvars];
     getLaminaStrain(strain, tt, lamStrain);
     TacsScalar fval_top =
         ply_props[i]->failureStrainSens(ply_angles[i], lamStrain, phi);
-    dks_val = exp(ks_weight * (fval_top - max)) / ks_sum;
+    dfvals[2 * i + 1][0] = phi[0];
+    dfvals[2 * i + 1][1] = phi[1];
+    dfvals[2 * i + 1][2] = phi[2];
+    dfvals[2 * i + 1][3] = tt * phi[0];
+    dfvals[2 * i + 1][4] = tt * phi[1];
+    dfvals[2 * i + 1][5] = tt * phi[2];
+    dfvals[2 * i + 1][6] = dfvals[2 * i + 1][7] = dfvals[2 * i + 1][8] = 0.0;
+  }
 
-    sens[0] += dks_val * phi[0];
-    sens[1] += dks_val * phi[1];
-    sens[2] += dks_val * phi[2];
-    sens[3] += dks_val * tt * phi[0];
-    sens[4] += dks_val * tt * phi[1];
-    sens[5] += dks_val * tt * phi[2];
+  TacsScalar ks_val =
+      ksAggregationSensProduct(fvals, nvals, nvars, ks_weight, dfvals, sens);
+
+  for (int i = 0; i < nvals; i++) {
+    delete[] dfvals[i];
   }
 
   delete[] fvals;
+  delete[] dfvals;
 
   return ks_val;
 }
@@ -500,15 +487,15 @@ void TACSSmearedCompositeShellConstitutive::addFailureDVSens(
     const TacsScalar e[], int dvLen, TacsScalar dfdx[]) {
   int index = 0;
   if (thickness_dv_num >= 0 && dvLen >= 1) {
+    int nvals = 2 * num_plies;
     // Compute the total thickness of the laminate
     TacsScalar tb = -0.5 * thickness;
     TacsScalar tt = 0.5 * thickness;
 
-    TacsScalar *fvals = new TacsScalar[2 * num_plies];
+    TacsScalar *fvals = new TacsScalar[nvals];
     evalPlyTopBottomFailure(e, fvals);
-    TacsScalar max = evalMaxPlyFailure(fvals);
-    TacsScalar ks_sum = evalKSSum(fvals, max);
-    TacsScalar ks_val = max + log(ks_sum) / ks_weight;
+    TacsScalar *dks_vals = new TacsScalar[nvals];
+    TacsScalar ks_val = ksAggregationSens(fvals, nvals, ks_weight, dks_vals);
 
     for (int i = 0; i < num_plies; i++) {
       TacsScalar lamStrain[3], phi[3];
@@ -517,22 +504,19 @@ void TACSSmearedCompositeShellConstitutive::addFailureDVSens(
       getLaminaStrain(e, tb, lamStrain);
       TacsScalar fval_bot =
           ply_props[i]->failureStrainSens(ply_angles[i], lamStrain, phi);
-      TacsScalar dks_val = exp(ks_weight * (fval_bot - max)) / ks_sum;
-
-      dfdx[index] += -0.5 * scale * dks_val *
+      dfdx[index] += -0.5 * scale * dks_vals[2 * i + 0] *
                      (phi[0] * e[3] + phi[1] * e[4] + phi[2] * e[5]);
 
       // plate top stress
       getLaminaStrain(e, tt, lamStrain);
       TacsScalar fval_top =
           ply_props[i]->failureStrainSens(ply_angles[i], lamStrain, phi);
-      dks_val = exp(ks_weight * (fval_top - max)) / ks_sum;
-
-      dfdx[index] += 0.5 * scale * dks_val *
+      dfdx[index] += 0.5 * scale * dks_vals[2 * i + 1] *
                      (phi[0] * e[3] + phi[1] * e[4] + phi[2] * e[5]);
     }
 
     delete[] fvals;
+    delete[] dks_vals;
     index++;
   }
 }

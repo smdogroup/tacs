@@ -129,7 +129,7 @@ class TACSSmearedCompositeShellConstitutive : public TACSShellConstitutive {
   TacsScalar thickness_lb, thickness_ub;
   TacsScalar *ply_fraction_lb, *ply_fraction_ub;
   TacsScalar kcorr;
-  TacsScalar ks_weight;
+  double ks_weight;
 
   // The object name
   static const char *constName;
@@ -140,10 +140,6 @@ class TACSSmearedCompositeShellConstitutive : public TACSShellConstitutive {
   void getLaminaStrain(const TacsScalar rmStrain[], TacsScalar tp,
                        TacsScalar strain[]);
   void evalPlyTopBottomFailure(const TacsScalar strain[], TacsScalar fvals[]);
-
-  TacsScalar evalMaxPlyFailure(const TacsScalar fvals[]);
-
-  TacsScalar evalKSSum(const TacsScalar fvals[], TacsScalar max);
 };
 
 #endif  // TACS_SMEARED_COMPOSITE_SHELL_CONSTITUTIVE_H
