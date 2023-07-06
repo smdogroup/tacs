@@ -15,14 +15,14 @@ To also run recursively in all subdirectories that contain .f5 files:
 "
 
 if [ "$1" == "-h" ]; then
-	echo "$helpstring"
-	exit 0
+    echo "$helpstring"
+    exit 0
 fi
 
 subdirs=false
 while [[ "$#" -gt 0 ]]; do case $1 in
-	-s|--subdirs) subdirs=true;;
-	*) echo "Unknown parameter passed: $1"; exit 1;;
+    -s|--subdirs) subdirs=true;;
+    *) echo "Unknown parameter passed: $1"; exit 1;;
 esac; shift; done
 
 f5clean_all() {
@@ -36,10 +36,10 @@ f5clean_all() {
 
 
 if [ $subdirs = true ] ; then
-	RootDir=$(pwd)
-	find . -iname '*.f5' -printf '%h\n' | sort -u | while read i; do
-		cd "$i" && pwd && f5clean_all ; cd "$RootDir"
-	done
+    RootDir=$(pwd)
+    find . -iname '*.f5' -printf '%h\n' | sort -u | while read i; do
+        cd "$i" && pwd && f5clean_all ; cd "$RootDir"
+    done
 else
-	f5clean_all
+    f5clean_all
 fi

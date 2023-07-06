@@ -32,8 +32,8 @@ This script uses GNU parallel which can be installed on debian using:
 "
 
 if [ "$1" == "-h" ]; then
-	echo "$helpstring"
-	exit 0
+    echo "$helpstring"
+    exit 0
 fi
 
 if ! command -v parallel &> /dev/null
@@ -50,78 +50,78 @@ subdirs=false
 extra_args=""
 nprocs=+0
 while [[ "$#" -gt 0 ]]; do case $1 in
-	-n|--nprocs) nprocs=$2; shift;;
-	-q|--quiet) quiet=true; shift;;
-	-r|--reconvert) reconvert=true; shift;;
-	-s|--subdirs) subdirs=true; shift;;
-	--vtk) vtk=true;;
-	*) echo "Unknown parameter passed: $1"; exit 1;;
+    -n|--nprocs) nprocs=$2; shift;;
+    -q|--quiet) quiet=true; shift;;
+    -r|--reconvert) reconvert=true; shift;;
+    -s|--subdirs) subdirs=true; shift;;
+    --vtk) vtk=true;;
+    *) echo "Unknown parameter passed: $1"; exit 1;;
 esac; shift; done
 
 f5convert_all() {
 
-	reconvert=$1
-	quiet=$2
-	vtk=$3
-	nprocs=$4
+    reconvert=$1
+    quiet=$2
+    vtk=$3
+    nprocs=$4
 
-	for value in $reconvert $quiet $vtk $nprocs; do
-		echo $value
-	done
+    for value in $reconvert $quiet $vtk $nprocs; do
+        echo $value
+    done
 
-	if [ $vtk = true ] ; then
-		convertCommand=f5tovtk
-	else
-		convertCommand=f5totec
-	fi
+    if [ $vtk = true ] ; then
+        convertCommand=f5tovtk
+    else
+        convertCommand=f5totec
+    fi
 
-	# Loop through all the f5 files in the current directory and figure out which ones to convert
-	filesToConvert=()
-	for f in *.f5;
-	do
-		if [ $reconvert = true ] || ([ "$vtk" = false ] && [ ! -f "${f%.*}.plt" ] && [ ! -f "${f%.*}.szplt" ]) || ([ "$vtk" = true ] && [ ! -f "${f%.*}.vtk" ]) ; then
-			# If there is not .plt/.szplt/.vtk file corresponding to the current .f5 or is user specified -r then convert the file
-			filesToConvert[${#filesToConvert[@]}]=$f
-			echo "$f" 'will be converted'
-		elif [ -f "${f%.*}.plt" ] && [ "$vtk" = false ] ; then
-			if [ "${f%.*}.plt" -ot "$f" ] ; then
-				# If there is a .plt file but it's older than the corresponding .f5 file then convert the .f5 file
-				echo "$f" 'will be converted as it is newer than' "${f%.*}.plt"
-				filesToConvert[${#filesToConvert[@]}]=$f
-			else
-				echo "$f" 'will not be converted as' "${f%.*}.plt" 'already exists, to force overwriting use the -r flag'
-			fi
-		elif [ -f "${f%.*}.szplt" ] && [ "$vtk" = false ]  ; then
-			if [ "${f%.*}.szplt" -ot "$f" ] ; then
-				# If there is a .szplt file but it's older than the corresponding .f5 file then convert the .f5 file
-				echo "$f" 'will be converted as it is newer than' "${f%.*}.szplt"
-				filesToConvert[${#filesToConvert[@]}]=$f
-			else
-				echo "$f" 'will not be converted as' "${f%.*}.szplt" 'already exists, to force overwriting use the -r flag'
-			fi
-		elif [ -f "${f%.*}.vtk" ] && [ "$vtk" = true ]  ; then
-			if [ "${f%.*}.vtk" -ot "$f" ] ; then
-				# If there is a .vtk file but it's older than the corresponding .f5 file then convert the .f5 file
-				echo "$f" 'will be converted as it is newer than' "${f%.*}.vtk"
-				filesToConvert[${#filesToConvert[@]}]=$f
-			else
-				echo "$f" 'will not be converted as' "${f%.*}.vtk" 'already exists, to force overwriting use the -r flag'
-			fi
-		fi
-	done
+    # Loop through all the f5 files in the current directory and figure out which ones to convert
+    filesToConvert=()
+    for f in *.f5;
+    do
+        if [ $reconvert = true ] || ([ "$vtk" = false ] && [ ! -f "${f%.*}.plt" ] && [ ! -f "${f%.*}.szplt" ]) || ([ "$vtk" = true ] && [ ! -f "${f%.*}.vtk" ]) ; then
+            # If there is not .plt/.szplt/.vtk file corresponding to the current .f5 or is user specified -r then convert the file
+            filesToConvert[${#filesToConvert[@]}]=$f
+            echo "$f" 'will be converted'
+        elif [ -f "${f%.*}.plt" ] && [ "$vtk" = false ] ; then
+            if [ "${f%.*}.plt" -ot "$f" ] ; then
+                # If there is a .plt file but it's older than the corresponding .f5 file then convert the .f5 file
+                echo "$f" 'will be converted as it is newer than' "${f%.*}.plt"
+                filesToConvert[${#filesToConvert[@]}]=$f
+            else
+                echo "$f" 'will not be converted as' "${f%.*}.plt" 'already exists, to force overwriting use the -r flag'
+            fi
+        elif [ -f "${f%.*}.szplt" ] && [ "$vtk" = false ]  ; then
+            if [ "${f%.*}.szplt" -ot "$f" ] ; then
+                # If there is a .szplt file but it's older than the corresponding .f5 file then convert the .f5 file
+                echo "$f" 'will be converted as it is newer than' "${f%.*}.szplt"
+                filesToConvert[${#filesToConvert[@]}]=$f
+            else
+                echo "$f" 'will not be converted as' "${f%.*}.szplt" 'already exists, to force overwriting use the -r flag'
+            fi
+        elif [ -f "${f%.*}.vtk" ] && [ "$vtk" = true ]  ; then
+            if [ "${f%.*}.vtk" -ot "$f" ] ; then
+                # If there is a .vtk file but it's older than the corresponding .f5 file then convert the .f5 file
+                echo "$f" 'will be converted as it is newer than' "${f%.*}.vtk"
+                filesToConvert[${#filesToConvert[@]}]=$f
+            else
+                echo "$f" 'will not be converted as' "${f%.*}.vtk" 'already exists, to force overwriting use the -r flag'
+            fi
+        fi
+    done
 
-	# Do the conversion
-	for f in "${filesToConvert[@]}";
-	do
-		echo "$f"
-	done | parallel --will-cite -j$nprocs $convertCommand {}
+    # Do the conversion
+    for f in "${filesToConvert[@]}";
+    do
+        echo "$f"
+    done | parallel --will-cite -j$nprocs $convertCommand {}
 }
 
 if [ $subdirs = true ] ; then
-	RootDir=$(pwd)
-	find . -iname '*.f5' -printf '%h\n' | sort -u | while read i; do
-		cd "$i" && pwd && f5convert_all $reconvert $quiet $vtk $nprocs ; cd "$RootDir"
-	done
+    RootDir=$(pwd)
+    find . -iname '*.f5' -printf '%h\n' | sort -u | while read i; do
+        cd "$i" && pwd && f5convert_all $reconvert $quiet $vtk $nprocs ; cd "$RootDir"
+    done
 else
-	f5convert_all $reconvert $quiet $vtk $nprocs
+    f5convert_all $reconvert $quiet $vtk $nprocs
 fi
