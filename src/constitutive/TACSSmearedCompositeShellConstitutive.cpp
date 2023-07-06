@@ -19,7 +19,6 @@
 #include "TACSSmearedCompositeShellConstitutive.h"
 
 #include "TACSElementAlgebra.h"
-#include "TACSUtilities.h"
 
 const char *TACSSmearedCompositeShellConstitutive::constName =
     "TACSSmearedCompositeShellConstitutive";

@@ -21,6 +21,7 @@
 
 #include "TACSMaterialProperties.h"
 #include "TACSShellConstitutive.h"
+#include "TACSUtilities.h"
 
 class TACSSmearedCompositeShellConstitutive : public TACSShellConstitutive {
  public:
