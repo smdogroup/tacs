@@ -764,6 +764,31 @@ cdef class CompositeShellConstitutive(ShellConstitutive):
 
         self.props = [prop.getMaterialProperties() for prop in ply_list]
 
+    def generateBDFCard(self):
+        """
+        Generate pyNASTRAN card class based on current design variable values.
+
+        Returns:
+            card (pyNastran.bdf.cards.properties.shell.PCOMP): pyNastran card holding property information
+        """
+        num_plies = len(self.props)
+        cdef TACSCompositeShellConstitutive* comp_ptr = <TACSCompositeShellConstitutive*>self.cptr
+        cdef np.ndarray ply_thicknesses = np.zeros(num_plies, dtype)
+        cdef np.ndarray ply_angles = np.zeros(num_plies, dtype)
+
+        comp_ptr.getPlyThicknesses(<TacsScalar*>ply_thicknesses.data)
+        comp_ptr.getPlyAngles(<TacsScalar*>ply_angles.data)
+
+        mat_ids = []
+        for i in range(num_plies):
+            ply_id = self.props[i].getNastranID()
+            mat_ids.append(ply_id)
+
+        prop = nastran_cards.properties.shell.PCOMP(self.nastranID, mat_ids,
+                                                    ply_thicknesses.astype(float),
+                                                    np.rad2deg(ply_angles, dtype=float))
+        return prop
+
 cdef class BladeStiffenedShellConstitutive(ShellConstitutive):
     """This constitutive class models a shell stiffened with T-shaped stiffeners.
     The stiffeners are not explicitly modelled.
@@ -884,31 +909,6 @@ cdef class BladeStiffenedShellConstitutive(ShellConstitutive):
 
         if self.blade_ptr:
             self.blade_ptr.setPanelPlyFractionBounds(<TacsScalar*>lowerBound.data, <TacsScalar*>upperBound.data)
-
-    def generateBDFCard(self):
-        """
-        Generate pyNASTRAN card class based on current design variable values.
-
-        Returns:
-            card (pyNastran.bdf.cards.properties.shell.PCOMP): pyNastran card holding property information
-        """
-        num_plies = len(self.props)
-        cdef TACSCompositeShellConstitutive* comp_ptr = <TACSCompositeShellConstitutive*>self.cptr
-        cdef np.ndarray ply_thicknesses = np.zeros(num_plies, dtype)
-        cdef np.ndarray ply_angles = np.zeros(num_plies, dtype)
-
-        comp_ptr.getPlyThicknesses(<TacsScalar*>ply_thicknesses.data)
-        comp_ptr.getPlyAngles(<TacsScalar*>ply_angles.data)
-
-        mat_ids = []
-        for i in range(num_plies):
-            ply_id = self.props[i].getNastranID()
-            mat_ids.append(ply_id)
-
-        prop = nastran_cards.properties.shell.PCOMP(self.nastranID, mat_ids,
-                                                    ply_thicknesses.astype(float),
-                                                    np.rad2deg(ply_angles, dtype=float))
-        return prop
 
 cdef class LamParamShellConstitutive(ShellConstitutive):
     def __cinit__(self, OrthotropicPly ply, **kwargs):
