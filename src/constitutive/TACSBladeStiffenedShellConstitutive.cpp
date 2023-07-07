@@ -106,8 +106,8 @@ TACSBladeStiffenedShellConstitutive::TACSBladeStiffenedShellConstitutive(
       this->numDesignVars++;
       this->numPanelDV++;
     }
-    this->panelPlyFracLowerBounds[ii] = 0.1;
-    this->panelPlyFracUpperBounds[ii] = 0.9;
+    this->panelPlyFracLowerBounds[ii] = 0.0;
+    this->panelPlyFracUpperBounds[ii] = 1.0;
   }
 
   // --- Stiffener DVs ---
@@ -154,8 +154,8 @@ TACSBladeStiffenedShellConstitutive::TACSBladeStiffenedShellConstitutive(
       this->numDesignVars++;
       this->numStiffenerDV++;
     }
-    this->stiffenerPlyFracLowerBounds[ii] = 0.1;
-    this->stiffenerPlyFracUpperBounds[ii] = 0.9;
+    this->stiffenerPlyFracLowerBounds[ii] = 0.0;
+    this->stiffenerPlyFracUpperBounds[ii] = 1.0;
   }
 
   // --- Stiffener flange fraction ---
