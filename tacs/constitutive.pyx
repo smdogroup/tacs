@@ -1006,9 +1006,9 @@ cdef class BladeStiffenedShellConstitutive(ShellConstitutive):
 
         Parameters
         ----------
-        lowerBound : np.ndarray[float or complex]
+        lowerBound : numpy.ndarray[float or complex]
             Lower bound
-        upperBound : np.ndarray[float or complex]
+        upperBound : numpy.ndarray[float or complex]
             Upper bounds
 
         Raises
@@ -1026,8 +1026,8 @@ cdef class BladeStiffenedShellConstitutive(ShellConstitutive):
 
     def setPanelPlyFractionBounds(
             self,
-            np.ndarray[TacsScalar, ndim=1, mode='c'] lowerBound,
-            np.ndarray[TacsScalar, ndim=1, mode='c'] upperBound
+            numpy.ndarray[TacsScalar, ndim=1, mode='c'] lowerBound,
+            numpy.ndarray[TacsScalar, ndim=1, mode='c'] upperBound
         ):
         """Set the lower and upper bounds for the panel ply fraction design variables
 
@@ -1035,9 +1035,9 @@ cdef class BladeStiffenedShellConstitutive(ShellConstitutive):
 
         Parameters
         ----------
-        lowerBound : np.ndarray[float or complex]
+        lowerBound : numpy.ndarray[float or complex]
             Lower bound
-        upperBound : np.ndarray[float or complex]
+        upperBound : numpy.ndarray[float or complex]
             Upper bounds
 
         Raises
