@@ -836,7 +836,7 @@ cdef class BladeStiffenedShellConstitutive(ShellConstitutive):
         Array of ply angles for the stiffener
     stiffenerPlyFracs : numpy.ndarray[float or complex]
         Array of ply fractions for the stiffener
-    stiffenerPlyFracNums : numpy.ndarray[np.intc]
+    stiffenerPlyFracNums : numpy.ndarray[numpy.intc]
         Array of ply fraction DV numbers for the stiffener, passing negative values tells TACS not to treat that ply fraction as a DV
     flangeFraction : float, optional
         Ratio of the stiffener base width to the stiffener height, by default 1.0
