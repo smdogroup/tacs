@@ -796,47 +796,47 @@ cdef class BladeStiffenedShellConstitutive(ShellConstitutive):
 
     Parameters
     ----------
-    panelPly : tacs.constitutive.OrthotropicPly object
+    panelPly : tacs.constitutive.OrthotropicPly
         Ply model to use for the panel
-    stiffenerPly : tacs.constitutive.OrthotropicPly object
+    stiffenerPly : tacs.constitutive.OrthotropicPly
         Ply model to use for the stiffener
-    kcorr : TacsScalar
+    kcorr : float or complex
         Shear correction factor, usually 5.0/6.0
-    panelLength : TacsScalar
+    panelLength : float or complex
         Panel length DV value
     panelLengthNum : int
         Panel lenth DV number, passing a negative value tells TACS not to treat this as a DV
-    stiffenerPitch : TacsScalar
+    stiffenerPitch : float or complex
         Stiffener pitch DV value
     stiffenerPitchNum : int
         DV number, passing a negative value tells TACS not to treat this as a DV
-    panelThick : TacsScalar
+    panelThick : float or complex
         Panel thickness DV value
     panelThickNum : int
         DV number, passing a negative value tells TACS not to treat this as a DV
     numPanelPlies : int
         Number of distinct ply angles in the panel
-    panelPlyAngles : np.array of numPanelPlies TacsScalars
+    panelPlyAngles : numpy.ndarray[float or complex]
         Array of ply angles in the panel
-    panelPlyFracs : np.array of numPanelPlies TacsScalars
+    panelPlyFracs : numpy.ndarray[float or complex]
         Array of ply fractions in the panel
-    panelPlyFracNums : np.array of numPanelPlies int
+    panelPlyFracNums : numpy.ndarray[np.intc]
         Array of ply fraction DV numbers in the panel, passing negative values tells TACS not to treat that ply fraction as a DV
-    stiffenerHeight : TacsScalar
+    stiffenerHeight : float or complex
         Stiffener height DV value
     stiffenerHeightNum : int
         DV number, passing a negative value tells TACS not to treat this as a DV
-    stiffenerThick : TacsScalar
+    stiffenerThick : float or complex
         Stiffener thickness DV value
     stiffenerThickNum : int
         DV number, passing a negative value tells TACS not to treat this as a DV
     numStiffenerPlies : int
         Number of distinct ply angles in the stiffener
-    stiffenerPlyAngles : np.array of numPanelPlies TacsScalars
+    stiffenerPlyAngles : numpy.ndarray[float or complex]
         Array of ply angles for the stiffener
-    stiffenerPlyFracs : np.array of numPanelPlies TacsScalars
+    stiffenerPlyFracs : numpy.ndarray[float or complex]
         Array of ply fractions for the stiffener
-    stiffenerPlyFracNums : np.array of numPanelPlies int
+    stiffenerPlyFracNums : numpy.ndarray[np.intc]
         Array of ply fraction DV numbers for the stiffener, passing negative values tells TACS not to treat that ply fraction as a DV
     flangeFraction : float, optional
         Ratio of the stiffener base width to the stiffener height, by default 1.0
@@ -924,8 +924,10 @@ cdef class BladeStiffenedShellConstitutive(ShellConstitutive):
         """
         Update the ks weight used for aggregating the different failure modes
 
-        Args:
-            ksWeight (float): KS weight
+        Parameters
+        ----------
+        ksWeight : float
+            KS aggregation weight
         """
         if self.blade_ptr:
             self.blade_ptr.setKSWeight(ksWeight)
@@ -937,9 +939,9 @@ cdef class BladeStiffenedShellConstitutive(ShellConstitutive):
 
         Parameters
         ----------
-        lowerBound : TacsScalar
+        lowerBound : float or complex
             Lower bound
-        upperBound : TacsScalar
+        upperBound : float or complex
             Upper bound
         """
         if self.blade_ptr:
@@ -952,9 +954,9 @@ cdef class BladeStiffenedShellConstitutive(ShellConstitutive):
 
         Parameters
         ----------
-        lowerBound : TacsScalar
+        lowerBound : float or complex
             Lower bound
-        upperBound : TacsScalar
+        upperBound : float or complex
             Upper bound
         """
 
@@ -968,9 +970,9 @@ cdef class BladeStiffenedShellConstitutive(ShellConstitutive):
 
         Parameters
         ----------
-        lowerBound : TacsScalar
+        lowerBound : float or complex
             Lower bound
-        upperBound : TacsScalar
+        upperBound : float or complex
             Upper bound
         """
 
@@ -984,9 +986,9 @@ cdef class BladeStiffenedShellConstitutive(ShellConstitutive):
 
         Parameters
         ----------
-        lowerBound : TacsScalar
+        lowerBound : float or complex
             Lower bound
-        upperBound : TacsScalar
+        upperBound : float or complex
             Upper bound
         """
 
@@ -1001,6 +1003,13 @@ cdef class BladeStiffenedShellConstitutive(ShellConstitutive):
         """Set the lower and upper bounds for the stiffener ply fraction design variables
 
         The default bounds are 0 and 1
+
+        Parameters
+        ----------
+        lowerBound : np.ndarray[float or complex]
+            Lower bound
+        upperBound : np.ndarray[float or complex]
+            Upper bounds
 
         Raises
         ------
@@ -1023,6 +1032,13 @@ cdef class BladeStiffenedShellConstitutive(ShellConstitutive):
         """Set the lower and upper bounds for the panel ply fraction design variables
 
         The default bounds are 0 and 1
+
+        Parameters
+        ----------
+        lowerBound : np.ndarray[float or complex]
+            Lower bound
+        upperBound : np.ndarray[float or complex]
+            Upper bounds
 
         Raises
         ------
