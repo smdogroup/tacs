@@ -349,27 +349,143 @@ The following <code class="xref py py-class docutils literal notranslate"><span 
 <p>This constitutive class models a shell stiffened with T-shaped stiffeners.
 The stiffeners are not explicitly modelled.
 Instead, their stiffness is &quot;smeared&quot; across the shell.</p>
-<dl class="py method">
-<dt class="sig sig-object py" id="tacs.constitutive.BladeStiffenedShellConstitutive.generateBDFCard">
-<span class="sig-name descname"><span class="pre">generateBDFCard</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constitutive.BladeStiffenedShellConstitutive.generateBDFCard" title="Permalink to this definition">¶</a></dt>
-<dd><p>Generate pyNASTRAN card class based on current design variable values.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Returns<span class="colon">:</span></dt>
-<dd class="field-odd"><p>pyNastran card holding property information</p>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>panelPly</strong> (<a class="reference internal" href="#tacs.constitutive.OrthotropicPly" title="tacs.constitutive.OrthotropicPly"><em>tacs.constitutive.OrthotropicPly</em></a>) -- Ply model to use for the panel</p></li>
+<li><p><strong>stiffenerPly</strong> (<a class="reference internal" href="#tacs.constitutive.OrthotropicPly" title="tacs.constitutive.OrthotropicPly"><em>tacs.constitutive.OrthotropicPly</em></a>) -- Ply model to use for the stiffener</p></li>
+<li><p><strong>kcorr</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.11)"><em>float</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#complex" title="(in Python v3.11)"><em>complex</em></a>) -- Shear correction factor, usually 5.0/6.0</p></li>
+<li><p><strong>panelLength</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.11)"><em>float</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#complex" title="(in Python v3.11)"><em>complex</em></a>) -- Panel length DV value</p></li>
+<li><p><strong>panelLengthNum</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)"><em>int</em></a>) -- Panel lenth DV number, passing a negative value tells TACS not to treat this as a DV</p></li>
+<li><p><strong>stiffenerPitch</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.11)"><em>float</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#complex" title="(in Python v3.11)"><em>complex</em></a>) -- Stiffener pitch DV value</p></li>
+<li><p><strong>stiffenerPitchNum</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)"><em>int</em></a>) -- DV number, passing a negative value tells TACS not to treat this as a DV</p></li>
+<li><p><strong>panelThick</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.11)"><em>float</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#complex" title="(in Python v3.11)"><em>complex</em></a>) -- Panel thickness DV value</p></li>
+<li><p><strong>panelThickNum</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)"><em>int</em></a>) -- DV number, passing a negative value tells TACS not to treat this as a DV</p></li>
+<li><p><strong>numPanelPlies</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)"><em>int</em></a>) -- Number of distinct ply angles in the panel</p></li>
+<li><p><strong>panelPlyAngles</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.25)"><em>numpy.ndarray</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.11)"><em>float</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#complex" title="(in Python v3.11)"><em>complex</em></a><em>]</em>) -- Array of ply angles in the panel</p></li>
+<li><p><strong>panelPlyFracs</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.25)"><em>numpy.ndarray</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.11)"><em>float</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#complex" title="(in Python v3.11)"><em>complex</em></a><em>]</em>) -- Array of ply fractions in the panel</p></li>
+<li><p><strong>panelPlyFracNums</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.25)"><em>numpy.ndarray</em></a><em>[</em><em>np.intc</em><em>]</em>) -- Array of ply fraction DV numbers in the panel, passing negative values tells TACS not to treat that ply fraction as a DV</p></li>
+<li><p><strong>stiffenerHeight</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.11)"><em>float</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#complex" title="(in Python v3.11)"><em>complex</em></a>) -- Stiffener height DV value</p></li>
+<li><p><strong>stiffenerHeightNum</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)"><em>int</em></a>) -- DV number, passing a negative value tells TACS not to treat this as a DV</p></li>
+<li><p><strong>stiffenerThick</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.11)"><em>float</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#complex" title="(in Python v3.11)"><em>complex</em></a>) -- Stiffener thickness DV value</p></li>
+<li><p><strong>stiffenerThickNum</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)"><em>int</em></a>) -- DV number, passing a negative value tells TACS not to treat this as a DV</p></li>
+<li><p><strong>numStiffenerPlies</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)"><em>int</em></a>) -- Number of distinct ply angles in the stiffener</p></li>
+<li><p><strong>stiffenerPlyAngles</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.25)"><em>numpy.ndarray</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.11)"><em>float</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#complex" title="(in Python v3.11)"><em>complex</em></a><em>]</em>) -- Array of ply angles for the stiffener</p></li>
+<li><p><strong>stiffenerPlyFracs</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.25)"><em>numpy.ndarray</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.11)"><em>float</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#complex" title="(in Python v3.11)"><em>complex</em></a><em>]</em>) -- Array of ply fractions for the stiffener</p></li>
+<li><p><strong>stiffenerPlyFracNums</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.25)"><em>numpy.ndarray</em></a><em>[</em><a class="reference external" href="https://numpy.org/doc/stable/reference/arrays.scalars.html#numpy.intc" title="(in NumPy v1.25)"><em>numpy.intc</em></a><em>]</em>) -- Array of ply fraction DV numbers for the stiffener, passing negative values tells TACS not to treat that ply fraction as a DV</p></li>
+<li><p><strong>flangeFraction</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.11)"><em>float</em></a><em>, </em><em>optional</em>) -- Ratio of the stiffener base width to the stiffener height, by default 1.0</p></li>
+</ul>
 </dd>
-<dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p>card (<a class="reference external" href="https://pynastran-git.readthedocs.io/en/latest/reference/bdf/cards/properties/pyNastran.bdf.cards.properties.shell.html#pyNastran.bdf.cards.properties.shell.PCOMP" title="(in pyNastran 1.4-dev v1.4-dev)">pyNastran.bdf.cards.properties.shell.PCOMP</a>)</p>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#ValueError" title="(in Python v3.11)"><strong>ValueError</strong></a> -- Raises error if panelPlyAngles, panelPlyFracs, or panelPlyFracNums do not have numPanelPlies entries</p></li>
+<li><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#ValueError" title="(in Python v3.11)"><strong>ValueError</strong></a> -- Raises error if stiffenerPlyAngles, stiffenerPlyFracs, or stiffenerPlyFracNums do not have numStiffenerPlies entries</p></li>
+</ul>
 </dd>
 </dl>
-</dd></dl>
-
 <dl class="py method">
 <dt class="sig sig-object py" id="tacs.constitutive.BladeStiffenedShellConstitutive.setKSWeight">
 <span class="sig-name descname"><span class="pre">setKSWeight</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constitutive.BladeStiffenedShellConstitutive.setKSWeight" title="Permalink to this definition">¶</a></dt>
 <dd><p>Update the ks weight used for aggregating the different failure modes</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>ksWeight</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.11)"><em>float</em></a>) -- KS weight</p>
+<dd class="field-odd"><p><strong>ksWeight</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.11)"><em>float</em></a>) -- KS aggregation weight</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.constitutive.BladeStiffenedShellConstitutive.setPanelPlyFractionBounds">
+<span class="sig-name descname"><span class="pre">setPanelPlyFractionBounds</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constitutive.BladeStiffenedShellConstitutive.setPanelPlyFractionBounds" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set the lower and upper bounds for the panel ply fraction design variables</p>
+<p>The default bounds are 0 and 1</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>lowerBound</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.25)"><em>numpy.ndarray</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.11)"><em>float</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#complex" title="(in Python v3.11)"><em>complex</em></a><em>]</em>) -- Lower bound</p></li>
+<li><p><strong>upperBound</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.25)"><em>numpy.ndarray</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.11)"><em>float</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#complex" title="(in Python v3.11)"><em>complex</em></a><em>]</em>) -- Upper bounds</p></li>
+</ul>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#ValueError" title="(in Python v3.11)"><strong>ValueError</strong></a> -- Raises error if the length of lowerBound or upperBound is not equal to the number of panel plies</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.constitutive.BladeStiffenedShellConstitutive.setPanelThicknessBounds">
+<span class="sig-name descname"><span class="pre">setPanelThicknessBounds</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constitutive.BladeStiffenedShellConstitutive.setPanelThicknessBounds" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set the lower and upper bounds for the panel thickness design variable</p>
+<p>The default bounds are 1e-4 and 1e20</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>lowerBound</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.11)"><em>float</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#complex" title="(in Python v3.11)"><em>complex</em></a>) -- Lower bound</p></li>
+<li><p><strong>upperBound</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.11)"><em>float</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#complex" title="(in Python v3.11)"><em>complex</em></a>) -- Upper bound</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.constitutive.BladeStiffenedShellConstitutive.setStiffenerHeightBounds">
+<span class="sig-name descname"><span class="pre">setStiffenerHeightBounds</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constitutive.BladeStiffenedShellConstitutive.setStiffenerHeightBounds" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set the lower and upper bounds for the stiffener height design variable</p>
+<p>The default bounds are 1e-3 and 1e20</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>lowerBound</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.11)"><em>float</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#complex" title="(in Python v3.11)"><em>complex</em></a>) -- Lower bound</p></li>
+<li><p><strong>upperBound</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.11)"><em>float</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#complex" title="(in Python v3.11)"><em>complex</em></a>) -- Upper bound</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.constitutive.BladeStiffenedShellConstitutive.setStiffenerPitchBounds">
+<span class="sig-name descname"><span class="pre">setStiffenerPitchBounds</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constitutive.BladeStiffenedShellConstitutive.setStiffenerPitchBounds" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set the lower and upper bounds for the stiffener pitch design variable</p>
+<p>The default bounds are 1e-3 and 1e20</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>lowerBound</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.11)"><em>float</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#complex" title="(in Python v3.11)"><em>complex</em></a>) -- Lower bound</p></li>
+<li><p><strong>upperBound</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.11)"><em>float</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#complex" title="(in Python v3.11)"><em>complex</em></a>) -- Upper bound</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.constitutive.BladeStiffenedShellConstitutive.setStiffenerPlyFractionBounds">
+<span class="sig-name descname"><span class="pre">setStiffenerPlyFractionBounds</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constitutive.BladeStiffenedShellConstitutive.setStiffenerPlyFractionBounds" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set the lower and upper bounds for the stiffener ply fraction design variables</p>
+<p>The default bounds are 0 and 1</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>lowerBound</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.25)"><em>numpy.ndarray</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.11)"><em>float</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#complex" title="(in Python v3.11)"><em>complex</em></a><em>]</em>) -- Lower bound</p></li>
+<li><p><strong>upperBound</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.25)"><em>numpy.ndarray</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.11)"><em>float</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#complex" title="(in Python v3.11)"><em>complex</em></a><em>]</em>) -- Upper bounds</p></li>
+</ul>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#ValueError" title="(in Python v3.11)"><strong>ValueError</strong></a> -- Raises error if the length of lowerBound or upperBound is not equal to the number of stiffener plies</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.constitutive.BladeStiffenedShellConstitutive.setStiffenerThicknessBounds">
+<span class="sig-name descname"><span class="pre">setStiffenerThicknessBounds</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constitutive.BladeStiffenedShellConstitutive.setStiffenerThicknessBounds" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set the lower and upper bounds for the stiffener thickness design variable</p>
+<p>The default bounds are 1e-4 and 1e20</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>lowerBound</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.11)"><em>float</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#complex" title="(in Python v3.11)"><em>complex</em></a>) -- Lower bound</p></li>
+<li><p><strong>upperBound</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.11)"><em>float</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#complex" title="(in Python v3.11)"><em>complex</em></a>) -- Upper bound</p></li>
+</ul>
 </dd>
 </dl>
 </dd></dl>
@@ -392,6 +508,20 @@ composite laminate first-order shear deformation theory (FSDT) shell type elemen
 </ul>
 </dd>
 </dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.constitutive.CompositeShellConstitutive.generateBDFCard">
+<span class="sig-name descname"><span class="pre">generateBDFCard</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constitutive.CompositeShellConstitutive.generateBDFCard" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate pyNASTRAN card class based on current design variable values.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>pyNastran card holding property information</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>card (<a class="reference external" href="https://pynastran-git.readthedocs.io/en/latest/reference/bdf/cards/properties/pyNastran.bdf.cards.properties.shell.html#pyNastran.bdf.cards.properties.shell.PCOMP" title="(in pyNastran 1.4-dev v1.4-dev)">pyNastran.bdf.cards.properties.shell.PCOMP</a>)</p>
+</dd>
+</dl>
+</dd></dl>
+
 </dd></dl>
 
 <dl class="py class">
@@ -787,11 +917,19 @@ Weighting factor used for topology optimization. 0.0 corresponds to void,
 </ul>
 </li>
 <li><a class="reference internal" href="#tacs.constitutive.BladeStiffenedShellConstitutive"><code class="docutils literal notranslate"><span class="pre">BladeStiffenedShellConstitutive</span></code></a><ul>
-<li><a class="reference internal" href="#tacs.constitutive.BladeStiffenedShellConstitutive.generateBDFCard"><code class="docutils literal notranslate"><span class="pre">BladeStiffenedShellConstitutive.generateBDFCard()</span></code></a></li>
 <li><a class="reference internal" href="#tacs.constitutive.BladeStiffenedShellConstitutive.setKSWeight"><code class="docutils literal notranslate"><span class="pre">BladeStiffenedShellConstitutive.setKSWeight()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.constitutive.BladeStiffenedShellConstitutive.setPanelPlyFractionBounds"><code class="docutils literal notranslate"><span class="pre">BladeStiffenedShellConstitutive.setPanelPlyFractionBounds()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.constitutive.BladeStiffenedShellConstitutive.setPanelThicknessBounds"><code class="docutils literal notranslate"><span class="pre">BladeStiffenedShellConstitutive.setPanelThicknessBounds()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.constitutive.BladeStiffenedShellConstitutive.setStiffenerHeightBounds"><code class="docutils literal notranslate"><span class="pre">BladeStiffenedShellConstitutive.setStiffenerHeightBounds()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.constitutive.BladeStiffenedShellConstitutive.setStiffenerPitchBounds"><code class="docutils literal notranslate"><span class="pre">BladeStiffenedShellConstitutive.setStiffenerPitchBounds()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.constitutive.BladeStiffenedShellConstitutive.setStiffenerPlyFractionBounds"><code class="docutils literal notranslate"><span class="pre">BladeStiffenedShellConstitutive.setStiffenerPlyFractionBounds()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.constitutive.BladeStiffenedShellConstitutive.setStiffenerThicknessBounds"><code class="docutils literal notranslate"><span class="pre">BladeStiffenedShellConstitutive.setStiffenerThicknessBounds()</span></code></a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#tacs.constitutive.CompositeShellConstitutive"><code class="docutils literal notranslate"><span class="pre">CompositeShellConstitutive</span></code></a></li>
+<li><a class="reference internal" href="#tacs.constitutive.CompositeShellConstitutive"><code class="docutils literal notranslate"><span class="pre">CompositeShellConstitutive</span></code></a><ul>
+<li><a class="reference internal" href="#tacs.constitutive.CompositeShellConstitutive.generateBDFCard"><code class="docutils literal notranslate"><span class="pre">CompositeShellConstitutive.generateBDFCard()</span></code></a></li>
+</ul>
+</li>
 <li><a class="reference internal" href="#tacs.constitutive.DOFSpringConstitutive"><code class="docutils literal notranslate"><span class="pre">DOFSpringConstitutive</span></code></a><ul>
 <li><a class="reference internal" href="#tacs.constitutive.DOFSpringConstitutive.generateBDFCard"><code class="docutils literal notranslate"><span class="pre">DOFSpringConstitutive.generateBDFCard()</span></code></a></li>
 </ul>

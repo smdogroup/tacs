@@ -1,5 +1,5 @@
 BucklingProblem
-------------
+---------------
 .. automodule:: tacs.problems.buckling
 
 Options
