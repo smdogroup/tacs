@@ -931,20 +931,64 @@ cdef class BladeStiffenedShellConstitutive(ShellConstitutive):
             self.blade_ptr.setKSWeight(ksWeight)
 
     def setStiffenerPitchBounds(self, TacsScalar lowerBound, TacsScalar upperBound):
+        """Set the lower and upper bounds for the stiffener pitch design variable
+
+        The default bounds are 1e-3 and 1e20
+
+        Parameters
+        ----------
+        lowerBound : TacsScalar
+            Lower bound
+        upperBound : TacsScalar
+            Upper bound
+        """
         if self.blade_ptr:
             self.blade_ptr.setStiffenerPitchBounds(lowerBound, upperBound)
 
     def setStiffenerHeightBounds(self, TacsScalar lowerBound, TacsScalar upperBound):
+        """Set the lower and upper bounds for the stiffener height design variable
+
+        The default bounds are 1e-3 and 1e20
+
+        Parameters
+        ----------
+        lowerBound : TacsScalar
+            Lower bound
+        upperBound : TacsScalar
+            Upper bound
+        """
 
         if self.blade_ptr:
             self.blade_ptr.setStiffenerHeightBounds(lowerBound, upperBound)
 
     def setStiffenerThicknessBounds(self, TacsScalar lowerBound, TacsScalar upperBound):
+        """Set the lower and upper bounds for the stiffener thickness design variable
+
+        The default bounds are 1e-4 and 1e20
+
+        Parameters
+        ----------
+        lowerBound : TacsScalar
+            Lower bound
+        upperBound : TacsScalar
+            Upper bound
+        """
 
         if self.blade_ptr:
             self.blade_ptr.setStiffenerThicknessBounds(lowerBound, upperBound)
 
     def setPanelThicknessBounds(self, TacsScalar lowerBound, TacsScalar upperBound):
+        """Set the lower and upper bounds for the panel thickness design variable
+
+        The default bounds are 1e-4 and 1e20
+
+        Parameters
+        ----------
+        lowerBound : TacsScalar
+            Lower bound
+        upperBound : TacsScalar
+            Upper bound
+        """
 
         if self.blade_ptr:
             self.blade_ptr.setPanelThicknessBounds(lowerBound, upperBound)
@@ -954,6 +998,15 @@ cdef class BladeStiffenedShellConstitutive(ShellConstitutive):
             np.ndarray[TacsScalar, ndim=1, mode='c'] lowerBound,
             np.ndarray[TacsScalar, ndim=1, mode='c'] upperBound
         ):
+        """Set the lower and upper bounds for the stiffener ply fraction design variables
+
+        The default bounds are 0 and 1
+
+        Raises
+        ------
+        ValueError
+            Raises error if the length of lowerBound or upperBound is not equal to the number of stiffener plies
+        """
 
         if self.blade_ptr:
             if len(lowerBound) != self.blade_ptr.getNumStiffenerPlies():
@@ -967,6 +1020,15 @@ cdef class BladeStiffenedShellConstitutive(ShellConstitutive):
             np.ndarray[TacsScalar, ndim=1, mode='c'] lowerBound,
             np.ndarray[TacsScalar, ndim=1, mode='c'] upperBound
         ):
+        """Set the lower and upper bounds for the panel ply fraction design variables
+
+        The default bounds are 0 and 1
+
+        Raises
+        ------
+        ValueError
+            Raises error if the length of lowerBound or upperBound is not equal to the number of panel plies
+        """
 
         if self.blade_ptr:
             if len(lowerBound) != self.blade_ptr.getNumPanelPlies():
