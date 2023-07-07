@@ -793,6 +793,60 @@ cdef class BladeStiffenedShellConstitutive(ShellConstitutive):
     """This constitutive class models a shell stiffened with T-shaped stiffeners.
     The stiffeners are not explicitly modelled.
     Instead, their stiffness is "smeared" across the shell.
+
+    Parameters
+    ----------
+    panelPly : tacs.constitutive.OrthotropicPly object
+        Ply model to use for the panel
+    stiffenerPly : tacs.constitutive.OrthotropicPly object
+        Ply model to use for the stiffener
+    kcorr : TacsScalar
+        Shear correction factor, usually 5.0/6.0
+    panelLength : TacsScalar
+        Panel length DV value
+    panelLengthNum : int
+        Panel lenth DV number, passing a negative value tells TACS not to treat this as a DV
+    stiffenerPitch : TacsScalar
+        Stiffener pitch DV value
+    stiffenerPitchNum : int
+        DV number, passing a negative value tells TACS not to treat this as a DV
+    panelThick : TacsScalar
+        Panel thickness DV value
+    panelThickNum : int
+        DV number, passing a negative value tells TACS not to treat this as a DV
+    numPanelPlies : int
+        Number of distinct ply angles in the panel
+    panelPlyAngles : np.array of numPanelPlies TacsScalars
+        Array of ply angles in the panel
+    panelPlyFracs : np.array of numPanelPlies TacsScalars
+        Array of ply fractions in the panel
+    panelPlyFracNums : np.array of numPanelPlies int
+        Array of ply fraction DV numbers in the panel, passing negative values tells TACS not to treat that ply fraction as a DV
+    stiffenerHeight : TacsScalar
+        Stiffener height DV value
+    stiffenerHeightNum : int
+        DV number, passing a negative value tells TACS not to treat this as a DV
+    stiffenerThick : TacsScalar
+        Stiffener thickness DV value
+    stiffenerThickNum : int
+        DV number, passing a negative value tells TACS not to treat this as a DV
+    numStiffenerPlies : int
+        Number of distinct ply angles in the stiffener
+    stiffenerPlyAngles : np.array of numPanelPlies TacsScalars
+        Array of ply angles for the stiffener
+    stiffenerPlyFracs : np.array of numPanelPlies TacsScalars
+        Array of ply fractions for the stiffener
+    stiffenerPlyFracNums : np.array of numPanelPlies int
+        Array of ply fraction DV numbers for the stiffener, passing negative values tells TACS not to treat that ply fraction as a DV
+    flangeFraction : float, optional
+        Ratio of the stiffener base width to the stiffener height, by default 1.0
+
+    Raises
+    ------
+    ValueError
+        Raises error if panelPlyAngles, panelPlyFracs, or panelPlyFracNums do not have numPanelPlies entries
+    ValueError
+        Raises error if stiffenerPlyAngles, stiffenerPlyFracs, or stiffenerPlyFracNums do not have numStiffenerPlies entries
     """
     def __cinit__(
         self,
