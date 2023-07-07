@@ -238,6 +238,16 @@ class TACSBladeStiffenedShellConstitutive : public TACSShellConstitutive {
   int getDesignVarRange(int elemIndex, int dvLen, TacsScalar lb[],
                         TacsScalar ub[]);
 
+  /**
+   * @brief Get the number of panel plies
+   */
+  int getNumPanelPlies() { return this->numPanelPlies; }
+
+  /**
+   * @brief Get the number of stiffener plies
+   */
+  int getNumStiffenerPlies() { return this->numStiffenerPlies; }
+
   // ==============================================================================
   // Evaluate mass properties
   // ==============================================================================

@@ -156,6 +156,8 @@ cdef extern from "TACSBladeStiffenedShellConstitutive.h":
             int[], # stiffenerPlyFracNums
             TacsScalar # flangeFraction
         )
+        int getNumPanelPlies()
+        int getNumStiffenerPlies()
         void setKSWeight(double ksWeight)
         void setStiffenerPitchBounds(TacsScalar lowerBound, TacsScalar upperBound)
         void setStiffenerHeightBounds(TacsScalar lowerBound, TacsScalar upperBound)

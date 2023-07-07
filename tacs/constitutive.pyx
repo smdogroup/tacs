@@ -956,6 +956,10 @@ cdef class BladeStiffenedShellConstitutive(ShellConstitutive):
         ):
 
         if self.blade_ptr:
+            if len(lowerBound) != self.blade_ptr.getNumStiffenerPlies():
+                raise ValueError('lowerBound must have length numStiffenerPlies')
+            if len(upperBound) != self.blade_ptr.getNumStiffenerPlies():
+                raise ValueError('upperBound must have length numStiffenerPlies')
             self.blade_ptr.setStiffenerPlyFractionBounds(<TacsScalar*>lowerBound.data, <TacsScalar*>upperBound.data)
 
     def setPanelPlyFractionBounds(
@@ -965,6 +969,10 @@ cdef class BladeStiffenedShellConstitutive(ShellConstitutive):
         ):
 
         if self.blade_ptr:
+            if len(lowerBound) != self.blade_ptr.getNumPanelPlies():
+                raise ValueError('lowerBound must have length numPanelPlies')
+            if len(upperBound) != self.blade_ptr.getNumPanelPlies():
+                raise ValueError('upperBound must have length numPanelPlies')
             self.blade_ptr.setPanelPlyFractionBounds(<TacsScalar*>lowerBound.data, <TacsScalar*>upperBound.data)
 
 cdef class LamParamShellConstitutive(ShellConstitutive):
