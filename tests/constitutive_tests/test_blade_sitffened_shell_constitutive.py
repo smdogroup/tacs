@@ -60,7 +60,9 @@ class ConstitutiveTest(unittest.TestCase):
             self.stiffenerPlyFracs
         )  # Make sure ply Fracs sum to 1
         self.stiffenerPlyFracNums = np.arange(
-            5 + self.numPanelPlies, 5 + self.numStiffenerPlies, dtype=np.intc
+            5 + self.numPanelPlies,
+            5 + self.numPanelPlies + self.numStiffenerPlies,
+            dtype=np.intc,
         )
 
         self.dvs = (
