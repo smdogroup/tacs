@@ -21,7 +21,7 @@ jobs:
   unit_test_and_docs:
     # Run on Ubuntu
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 40
     # Necessary to prevent mpi tests failing due to lack of slots
     env:
       OMPI_MCA_btl: self,tcp
