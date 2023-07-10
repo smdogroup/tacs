@@ -264,7 +264,7 @@ class ConstitutiveTest(unittest.TestCase):
                     self.x,
                     self.dh,
                     self.print_level,
-                    self.rtol,
                     self.atol,
+                    self.rtol,
                 )
                 self.assertFalse(fail)
