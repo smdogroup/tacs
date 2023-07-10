@@ -76,6 +76,13 @@ TACSSmearedCompositeShellConstitutive::TACSSmearedCompositeShellConstitutive(
   }
 
   ks_weight = 100.0;
+  nfvals = 2 * num_plies;
+  fvals = new TacsScalar[nfvals];
+  dks_vals = new TacsScalar[nfvals];
+  dfvals = new TacsScalar *[nfvals];
+  for (int i = 0; i < nfvals; i++) {
+    dfvals[i] = new TacsScalar[NUM_STRESSES];
+  }
 }
 
 TACSSmearedCompositeShellConstitutive::
@@ -89,6 +96,12 @@ TACSSmearedCompositeShellConstitutive::
   delete[] ply_fraction_dv_nums;
   delete[] ply_fraction_lb;
   delete[] ply_fraction_ub;
+  delete[] fvals;
+  delete[] dks_vals;
+  for (int i = 0; i < nfvals; i++) {
+    delete[] dfvals[i];
+  }
+  delete[] dfvals;
 }
 
 int TACSSmearedCompositeShellConstitutive::getDesignVarNums(int elemIndex,
@@ -388,13 +401,8 @@ void TACSSmearedCompositeShellConstitutive::addStressDVSens(
 TacsScalar TACSSmearedCompositeShellConstitutive::evalFailure(
     int elemIndex, const double pt[], const TacsScalar X[],
     const TacsScalar strain[]) {
-  int nvals = 2 * num_plies;
-  TacsScalar *fvals = new TacsScalar[nvals];
-
   evalPlyTopBottomFailure(strain, fvals);
-  TacsScalar ks_val = ksAggregation(fvals, nvals, ks_weight);
-
-  delete[] fvals;
+  TacsScalar ks_val = ksAggregation(fvals, nfvals, ks_weight);
 
   return ks_val;
 }
@@ -423,9 +431,6 @@ void TACSSmearedCompositeShellConstitutive::evalPlyTopBottomFailure(
 TacsScalar TACSSmearedCompositeShellConstitutive::evalFailureStrainSens(
     int elemIndex, const double pt[], const TacsScalar X[],
     const TacsScalar strain[], TacsScalar sens[]) {
-  int nvals = 2 * num_plies;
-  int nvars = 9;
-
   sens[0] = sens[1] = sens[2] = 0.0;
   sens[3] = sens[4] = sens[5] = 0.0;
   sens[6] = sens[7] = sens[8] = 0.0;
@@ -434,15 +439,12 @@ TacsScalar TACSSmearedCompositeShellConstitutive::evalFailureStrainSens(
   TacsScalar tb = -0.5 * thickness;
   TacsScalar tt = 0.5 * thickness;
 
-  TacsScalar *fvals = new TacsScalar[nvals];
   evalPlyTopBottomFailure(strain, fvals);
 
-  TacsScalar **dfvals = new TacsScalar *[nvals];
   for (int i = 0; i < num_plies; i++) {
     TacsScalar lamStrain[3], phi[3];
 
     // plate bottom stress
-    dfvals[2 * i + 0] = new TacsScalar[nvars];
     getLaminaStrain(strain, tb, lamStrain);
     TacsScalar fval_bot =
         ply_props[i]->failureStrainSens(ply_angles[i], lamStrain, phi);
@@ -455,7 +457,6 @@ TacsScalar TACSSmearedCompositeShellConstitutive::evalFailureStrainSens(
     dfvals[2 * i + 0][6] = dfvals[2 * i + 0][7] = dfvals[2 * i + 0][8] = 0.0;
 
     // plate top stress
-    dfvals[2 * i + 1] = new TacsScalar[nvars];
     getLaminaStrain(strain, tt, lamStrain);
     TacsScalar fval_top =
         ply_props[i]->failureStrainSens(ply_angles[i], lamStrain, phi);
@@ -468,15 +469,8 @@ TacsScalar TACSSmearedCompositeShellConstitutive::evalFailureStrainSens(
     dfvals[2 * i + 1][6] = dfvals[2 * i + 1][7] = dfvals[2 * i + 1][8] = 0.0;
   }
 
-  TacsScalar ks_val =
-      ksAggregationSensProduct(fvals, nvals, nvars, ks_weight, dfvals, sens);
-
-  for (int i = 0; i < nvals; i++) {
-    delete[] dfvals[i];
-  }
-
-  delete[] fvals;
-  delete[] dfvals;
+  TacsScalar ks_val = ksAggregationSensProduct(fvals, nfvals, NUM_STRESSES,
+                                               ks_weight, dfvals, sens);
 
   return ks_val;
 }
@@ -487,15 +481,12 @@ void TACSSmearedCompositeShellConstitutive::addFailureDVSens(
     const TacsScalar e[], int dvLen, TacsScalar dfdx[]) {
   int index = 0;
   if (thickness_dv_num >= 0 && dvLen >= 1) {
-    int nvals = 2 * num_plies;
     // Compute the total thickness of the laminate
     TacsScalar tb = -0.5 * thickness;
     TacsScalar tt = 0.5 * thickness;
 
-    TacsScalar *fvals = new TacsScalar[nvals];
     evalPlyTopBottomFailure(e, fvals);
-    TacsScalar *dks_vals = new TacsScalar[nvals];
-    TacsScalar ks_val = ksAggregationSens(fvals, nvals, ks_weight, dks_vals);
+    TacsScalar ks_val = ksAggregationSens(fvals, nfvals, ks_weight, dks_vals);
 
     for (int i = 0; i < num_plies; i++) {
       TacsScalar lamStrain[3], phi[3];
@@ -515,8 +506,6 @@ void TACSSmearedCompositeShellConstitutive::addFailureDVSens(
                      (phi[0] * e[3] + phi[1] * e[4] + phi[2] * e[5]);
     }
 
-    delete[] fvals;
-    delete[] dks_vals;
     index++;
   }
 }

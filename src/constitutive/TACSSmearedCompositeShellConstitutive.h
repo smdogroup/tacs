@@ -130,6 +130,9 @@ class TACSSmearedCompositeShellConstitutive : public TACSShellConstitutive {
   TacsScalar *ply_fraction_lb, *ply_fraction_ub;
   TacsScalar kcorr;
   double ks_weight;
+  int nfvals;
+  TacsScalar *fvals, *dks_vals;
+  TacsScalar **dfvals;
 
   // The object name
   static const char *constName;
