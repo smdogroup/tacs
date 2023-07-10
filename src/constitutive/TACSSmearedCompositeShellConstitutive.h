@@ -75,7 +75,7 @@ class TACSSmearedCompositeShellConstitutive : public TACSShellConstitutive {
   void evalStress(int elemIndex, const double pt[], const TacsScalar X[],
                   const TacsScalar strain[], TacsScalar stress[]);
 
-  // Add the contribution
+  // Add the contribution of the product of stress with a vector psi to dfdx
   void addStressDVSens(int elemIndex, TacsScalar scale, const double pt[],
                        const TacsScalar X[], const TacsScalar strain[],
                        const TacsScalar psi[], int dvLen, TacsScalar dfdx[]);
