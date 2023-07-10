@@ -13,7 +13,7 @@ class ConstitutiveTest(unittest.TestCase):
             self.rtol = 1e-9
         else:
             self.dh = 1e-6
-            self.rtol = 1e-1
+            self.rtol = 1e-4
         self.dtype = TACS.dtype
 
         # Basically, only check relative tolerance
