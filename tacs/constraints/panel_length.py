@@ -1,4 +1,7 @@
 """
+Author:
+    - Alasdair Christison Gray
+
 This class implements a constraint which enforces the panel
 length design variable values passed to elements using the BladeStiffenedShell
 constitutive model to be consistent with the true length of the panel they are
