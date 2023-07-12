@@ -2000,7 +2000,7 @@ class pyTACS(BaseUI):
 
         Returns
         ----------
-        constraint : PanelLengthConstraint
+        constraint : tacs.constraints.PanelLengthConstraint
             PanelLengthConstraint object used for calculating constraints.
         """
         constr = tacs.constraints.PanelLengthConstraint(
