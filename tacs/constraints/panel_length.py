@@ -6,6 +6,9 @@ This class implements a constraint which enforces the panel
 length design variable values passed to elements using the BladeStiffenedShell
 constitutive model to be consistent with the true length of the panel they are
 a part of.
+
+.. note:: This class should be created using the
+    :meth:`pyTACS.createPanelLengthConstraint <tacs.pytacs.pyTACS.createPanelLengthConstraint>` method.
 """
 
 # ==============================================================================
