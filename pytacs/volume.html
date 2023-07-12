@@ -15,7 +15,7 @@
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
     <link rel="next" title="Plate under static load" href="../examples/Example-Plate.html" />
-    <link rel="prev" title="DVConstraint" href="dvcon.html" /> 
+    <link rel="prev" title="PanelLengthConstraint" href="panel_length.html" /> 
   </head><body>
     <div class="related" role="navigation" aria-label="related navigation">
       <h3>Navigation</h3>
@@ -30,7 +30,7 @@
           <a href="../examples/Example-Plate.html" title="Plate under static load"
              accesskey="N">next</a> |</li>
         <li class="right" >
-          <a href="dvcon.html" title="DVConstraint"
+          <a href="panel_length.html" title="PanelLengthConstraint"
              accesskey="P">previous</a> |</li>
         <li class="nav-item nav-item-0"><a href="../index.html">TACS  documentation</a> &#187;</li>
           <li class="nav-item nav-item-1"><a href="../interfaces.html" >Interfaces</a> &#187;</li>
@@ -55,6 +55,11 @@ The formulation is a nonlinear constraint based on the nodal coordinates.</p>
 <blockquote>
 <div><p>vol_wing &gt;= vol_fuel</p>
 </div></blockquote>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>This class should be created using the
+<a class="reference internal" href="pytacs_module.html#tacs.pytacs.pyTACS.createVolumeConstraint" title="tacs.pytacs.pyTACS.createVolumeConstraint"><code class="xref py py-meth docutils literal notranslate"><span class="pre">pyTACS.createVolumeConstraint</span></code></a> method.</p>
+</div>
 <section id="options">
 <h2>Options<a class="headerlink" href="#options" title="Permalink to this heading">¶</a></h2>
 <p>Options can be set for <a class="reference internal" href="#tacs.constraints.VolumeConstraint" title="tacs.constraints.VolumeConstraint"><code class="xref py py-class docutils literal notranslate"><span class="pre">VolumeConstraint</span></code></a> at time of creation for the class in the
@@ -493,8 +498,8 @@ optimization</p>
   </div>
   <div>
     <h4>Previous topic</h4>
-    <p class="topless"><a href="dvcon.html"
-                          title="previous chapter">DVConstraint</a></p>
+    <p class="topless"><a href="panel_length.html"
+                          title="previous chapter">PanelLengthConstraint</a></p>
   </div>
   <div>
     <h4>Next topic</h4>
@@ -528,7 +533,7 @@ optimization</p>
           <a href="../examples/Example-Plate.html" title="Plate under static load"
              >next</a> |</li>
         <li class="right" >
-          <a href="dvcon.html" title="DVConstraint"
+          <a href="panel_length.html" title="PanelLengthConstraint"
              >previous</a> |</li>
         <li class="nav-item nav-item-0"><a href="../index.html">TACS  documentation</a> &#187;</li>
           <li class="nav-item nav-item-1"><a href="../interfaces.html" >Interfaces</a> &#187;</li>

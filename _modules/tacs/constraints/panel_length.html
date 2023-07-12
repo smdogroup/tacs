@@ -1,0 +1,892 @@
+<!DOCTYPE html>
+
+<html lang="python">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>tacs.constraints.panel_length &#8212; TACS  documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/sphinxdoc.css" />
+    <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+    <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+    <script src="../../../_static/doctools.js"></script>
+    <script src="../../../_static/sphinx_highlight.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">TACS  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" accesskey="U">Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">tacs.constraints.panel_length</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for tacs.constraints.panel_length</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Author:</span>
+<span class="sd">    - Alasdair Christison Gray</span>
+
+<span class="sd">This class implements a constraint which enforces the panel</span>
+<span class="sd">length design variable values passed to elements using the BladeStiffenedShell</span>
+<span class="sd">constitutive model to be consistent with the true length of the panel they are</span>
+<span class="sd">a part of.</span>
+
+<span class="sd">.. note:: This class should be created using the</span>
+<span class="sd">    :meth:`pyTACS.createPanelLengthConstraint &lt;tacs.pytacs.pyTACS.createPanelLengthConstraint&gt;` method.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="c1"># ==============================================================================</span>
+<span class="c1"># Standard Python modules</span>
+<span class="c1"># ==============================================================================</span>
+
+<span class="c1"># ==============================================================================</span>
+<span class="c1"># External Python modules</span>
+<span class="c1"># ==============================================================================</span>
+<span class="kn">from</span> <span class="nn">numba</span> <span class="kn">import</span> <span class="n">njit</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">scipy</span> <span class="k">as</span> <span class="nn">sp</span>
+
+<span class="c1"># ==============================================================================</span>
+<span class="c1"># Extension modules</span>
+<span class="c1"># ==============================================================================</span>
+<span class="kn">from</span> <span class="nn">tacs.constraints.base</span> <span class="kn">import</span> <span class="n">TACSConstraint</span>
+
+
+<span class="nd">@njit</span><span class="p">(</span><span class="n">cache</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">fastmath</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">computePanelLength</span><span class="p">(</span><span class="n">points</span><span class="p">,</span> <span class="n">direction</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Given the sorted points around the perimeter of a panel, compute the length of the panel in a given direction</span>
+
+<span class="sd">    Note: This function is approximate, it works best when the length direction is close to parallel with the panel</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    points : n x 3 array</span>
+<span class="sd">        Coordinates of the perimeter points of the panel, in sorted order, so that points[i] - points[i-1] is a vector</span>
+<span class="sd">        along the perimeter</span>
+<span class="sd">    direction : length 3 array</span>
+<span class="sd">        Direction in which to compute the panel length</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    float or complex</span>
+<span class="sd">        The panel length in the given direction</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">numPoints</span> <span class="o">=</span> <span class="n">points</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">length</span> <span class="o">=</span> <span class="mf">0.0</span>
+    <span class="k">for</span> <span class="n">pointInd</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">numPoints</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">edgeInd</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">numPoints</span><span class="p">):</span>
+            <span class="n">startInd</span> <span class="o">=</span> <span class="n">edgeInd</span>
+            <span class="n">endInd</span> <span class="o">=</span> <span class="p">(</span><span class="n">edgeInd</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">%</span> <span class="n">numPoints</span>
+            <span class="c1"># We only need to check edges that are not adjacent to the current point</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="n">startInd</span> <span class="o">==</span> <span class="n">pointInd</span> <span class="ow">or</span> <span class="n">endInd</span> <span class="o">==</span> <span class="n">pointInd</span><span class="p">):</span>
+                <span class="c1"># Find the intersection of a line through the point in the given</span>
+                <span class="c1"># direction with a line along the current edge</span>
+                <span class="n">edge</span> <span class="o">=</span> <span class="n">points</span><span class="p">[</span><span class="n">endInd</span><span class="p">]</span> <span class="o">-</span> <span class="n">points</span><span class="p">[</span><span class="n">startInd</span><span class="p">]</span>
+                <span class="n">mat</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">stack</span><span class="p">((</span><span class="n">direction</span><span class="p">,</span> <span class="o">-</span><span class="n">edge</span><span class="p">),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+                <span class="n">rhs</span> <span class="o">=</span> <span class="n">points</span><span class="p">[</span><span class="n">startInd</span><span class="p">]</span> <span class="o">-</span> <span class="n">points</span><span class="p">[</span><span class="n">pointInd</span><span class="p">]</span>
+                <span class="n">sol</span><span class="p">,</span> <span class="n">res</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">lstsq</span><span class="p">(</span><span class="n">mat</span><span class="p">,</span> <span class="n">rhs</span><span class="p">)</span>
+                <span class="n">alpha</span> <span class="o">=</span> <span class="n">sol</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+                <span class="n">beta</span> <span class="o">=</span> <span class="n">sol</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+                <span class="c1"># Only compute the length if the intersection occurs within the true bounds of the edge</span>
+                <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">real</span><span class="p">(</span><span class="n">beta</span><span class="p">)</span> <span class="o">-</span> <span class="mf">1e-12</span> <span class="o">&lt;=</span> <span class="mi">1</span> <span class="ow">and</span> <span class="n">np</span><span class="o">.</span><span class="n">real</span><span class="p">(</span><span class="n">beta</span><span class="p">)</span> <span class="o">+</span> <span class="mf">1e-12</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="c1"># intersectionPoint = points[startInd] + beta * edge</span>
+                    <span class="c1"># newLength = np.sqrt(np.sum((intersectionPoint - points[pointInd]) ** 2))</span>
+                    <span class="n">newLength</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">((</span><span class="n">alpha</span> <span class="o">*</span> <span class="n">direction</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span><span class="p">))</span>
+                    <span class="k">if</span> <span class="p">(</span>
+                        <span class="n">np</span><span class="o">.</span><span class="n">real</span><span class="p">(</span><span class="n">newLength</span><span class="p">)</span> <span class="o">&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">real</span><span class="p">(</span><span class="n">length</span><span class="p">)</span>
+                        <span class="ow">and</span> <span class="n">np</span><span class="o">.</span><span class="n">real</span><span class="p">(</span><span class="n">newLength</span><span class="p">)</span> <span class="o">&gt;</span> <span class="n">res</span>
+                    <span class="p">):</span>
+                        <span class="n">length</span> <span class="o">=</span> <span class="n">newLength</span>
+    <span class="k">return</span> <span class="n">length</span>
+
+
+<span class="nd">@njit</span><span class="p">(</span><span class="n">cache</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">fastmath</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">computePanelLengthSens</span><span class="p">(</span><span class="n">points</span><span class="p">,</span> <span class="n">direction</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Given the sorted points around the perimeter of a panel, compute the</span>
+<span class="sd">    sensitivitiy of the length of the panel in a given direction with</span>
+<span class="sd">    respect to the coordinates of the points</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    points : n x 3 array</span>
+<span class="sd">        Coordinates of the perimeter points of the panel, in sorted order, so that points[i] - points[i-1] is a vector</span>
+<span class="sd">        along the perimeter</span>
+<span class="sd">    direction : length 3 array</span>
+<span class="sd">        Direction in which to compute the panel length</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    n x 3 array</span>
+<span class="sd">        Panel length sensitivities</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">sens</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">points</span><span class="p">)</span>
+    <span class="n">pointsPert</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">points</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">complex128</span><span class="p">)</span>
+    <span class="n">pointsPert</span><span class="p">[:]</span> <span class="o">=</span> <span class="n">points</span><span class="p">[:]</span>
+    <span class="k">for</span> <span class="n">ii</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">points</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
+        <span class="k">for</span> <span class="n">jj</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">points</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]):</span>
+            <span class="n">pointsPert</span><span class="p">[</span><span class="n">ii</span><span class="p">,</span> <span class="n">jj</span><span class="p">]</span> <span class="o">+=</span> <span class="mf">1e-200j</span>
+            <span class="n">sens</span><span class="p">[</span><span class="n">ii</span><span class="p">,</span> <span class="n">jj</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">imag</span><span class="p">(</span><span class="n">computePanelLength</span><span class="p">(</span><span class="n">pointsPert</span><span class="p">,</span> <span class="n">direction</span><span class="p">))</span> <span class="o">*</span> <span class="mf">1e200</span>
+            <span class="n">pointsPert</span><span class="p">[</span><span class="n">ii</span><span class="p">,</span> <span class="n">jj</span><span class="p">]</span> <span class="o">-=</span> <span class="mf">1e-200j</span>
+    <span class="k">return</span> <span class="n">sens</span>
+
+
+<span class="k">def</span> <span class="nf">simplifyPoly</span><span class="p">(</span><span class="n">nodeIDs</span><span class="p">,</span> <span class="n">nodes</span><span class="p">,</span> <span class="n">angleTol</span><span class="o">=</span><span class="mf">18.0</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Take a (closed) chain of nodes and remove any nodes that turn by less than angleTol degrees.</span>
+<span class="sd">    This simplifies the polygon by leaving only &quot;sharp&quot; corners</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">cont</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="k">while</span> <span class="n">cont</span><span class="p">:</span>
+        <span class="n">newNodes</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">newNodeIDs</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">nodes</span><span class="p">)):</span>
+            <span class="n">im1</span> <span class="o">=</span> <span class="n">i</span> <span class="o">-</span> <span class="mi">1</span>
+            <span class="n">ip1</span> <span class="o">=</span> <span class="n">i</span> <span class="o">+</span> <span class="mi">1</span>
+            <span class="k">if</span> <span class="n">i</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">im1</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">nodes</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span>
+            <span class="k">if</span> <span class="n">i</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">nodes</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="n">ip1</span> <span class="o">=</span> <span class="mi">0</span>
+
+            <span class="n">v1</span> <span class="o">=</span> <span class="n">nodes</span><span class="p">[</span><span class="n">ip1</span><span class="p">]</span> <span class="o">-</span> <span class="n">nodes</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+            <span class="n">v2</span> <span class="o">=</span> <span class="n">nodes</span><span class="p">[</span><span class="n">im1</span><span class="p">]</span> <span class="o">-</span> <span class="n">nodes</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+            <span class="c1"># Angle between vectors</span>
+            <span class="n">arg</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">v1</span><span class="p">,</span> <span class="n">v2</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">v1</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">v2</span><span class="p">))</span>
+            <span class="n">arg</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">arg</span><span class="p">)</span>
+            <span class="n">arg</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">arg</span><span class="p">)</span>
+            <span class="n">theta</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arccos</span><span class="p">(</span><span class="n">arg</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">theta</span> <span class="o">&lt;</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">angleTol</span> <span class="o">/</span> <span class="mi">180</span><span class="p">):</span>
+                <span class="n">newNodes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">nodes</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+                <span class="n">newNodeIDs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">nodeIDs</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">newNodes</span><span class="p">)</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">nodes</span><span class="p">):</span>
+            <span class="n">cont</span> <span class="o">=</span> <span class="kc">False</span>
+
+        <span class="n">nodes</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">newNodes</span><span class="p">)</span>
+        <span class="n">nodeIDs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">newNodeIDs</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="n">nodeIDs</span><span class="p">),</span> <span class="n">nodes</span>
+
+
+<div class="viewcode-block" id="PanelLengthConstraint"><a class="viewcode-back" href="../../../pytacs/panel_length.html#tacs.constraints.PanelLengthConstraint">[docs]</a><span class="k">class</span> <span class="nc">PanelLengthConstraint</span><span class="p">(</span><span class="n">TACSConstraint</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">name</span><span class="p">,</span>
+        <span class="n">assembler</span><span class="p">,</span>
+        <span class="n">comm</span><span class="p">,</span>
+        <span class="n">outputViewer</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">meshLoader</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">options</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        NOTE: This class should not be initialized directly by the user.</span>
+<span class="sd">        Use pyTACS.createPanelLengthConstraint instead.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        name : str</span>
+<span class="sd">            Name of this tacs problem</span>
+
+<span class="sd">        assembler : TACS.Assembler</span>
+<span class="sd">            Cython object responsible for creating and setting tacs objects used to solve problem</span>
+
+<span class="sd">        comm : mpi4py.MPI.Intracomm</span>
+<span class="sd">            The comm object on which to create the pyTACS object.</span>
+
+<span class="sd">        outputViewer : TACS.TACSToFH5</span>
+<span class="sd">            Cython object used to write out f5 files that can be converted and used for postprocessing.</span>
+
+<span class="sd">        meshLoader : pymeshloader.pyMeshLoader</span>
+<span class="sd">            pyMeshLoader object used to create the assembler.</span>
+
+<span class="sd">        options : dict</span>
+<span class="sd">            Dictionary holding problem-specific option parameters (case-insensitive).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="c1"># Problem name</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">name</span>
+
+        <span class="c1"># Default setup for common constraint class objects, sets up comm and options</span>
+        <span class="n">TACSConstraint</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span> <span class="n">assembler</span><span class="p">,</span> <span class="n">comm</span><span class="p">,</span> <span class="n">options</span><span class="p">,</span> <span class="n">outputViewer</span><span class="p">,</span> <span class="n">meshLoader</span>
+        <span class="p">)</span>
+
+        <span class="c1"># Create a map from the global DV index to the proc index that owns it and the local index on that proc</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">globalToLocalDVNumsOnProc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">comm</span><span class="o">.</span><span class="n">gather</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">globalToLocalDVNums</span><span class="p">,</span> <span class="n">root</span><span class="o">=</span><span class="mi">0</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">DVMap</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">rank</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">procInd</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">comm</span><span class="o">.</span><span class="n">size</span><span class="p">):</span>
+                <span class="k">for</span> <span class="n">globalInd</span><span class="p">,</span> <span class="n">localInd</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">globalToLocalDVNumsOnProc</span><span class="p">[</span>
+                    <span class="n">procInd</span>
+                <span class="p">]</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">DVMap</span><span class="p">[</span><span class="n">globalInd</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;proc&quot;</span><span class="p">:</span> <span class="n">procInd</span><span class="p">,</span> <span class="s2">&quot;localInd&quot;</span><span class="p">:</span> <span class="n">localInd</span><span class="p">}</span>
+
+        <span class="c1"># Now create the same thing for the nodes</span>
+        <span class="n">nodeDict</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">meshLoader</span><span class="o">.</span><span class="n">getGlobalToLocalNodeIDDict</span><span class="p">()</span>
+        <span class="n">nodeDicts</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">comm</span><span class="o">.</span><span class="n">gather</span><span class="p">(</span><span class="n">nodeDict</span><span class="p">,</span> <span class="n">root</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">nodeMap</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">rank</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">procInd</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">comm</span><span class="o">.</span><span class="n">size</span><span class="p">):</span>
+                <span class="k">for</span> <span class="n">globalInd</span><span class="p">,</span> <span class="n">localInd</span> <span class="ow">in</span> <span class="n">nodeDicts</span><span class="p">[</span><span class="n">procInd</span><span class="p">]</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">nodeMap</span><span class="p">[</span><span class="n">globalInd</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;proc&quot;</span><span class="p">:</span> <span class="n">procInd</span><span class="p">,</span> <span class="s2">&quot;localInd&quot;</span><span class="p">:</span> <span class="n">localInd</span><span class="p">}</span>
+
+        <span class="c1"># Store the number of DVs and nodes on each proc</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">numLocalDVs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getNumDesignVars</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">computePanelLength</span> <span class="o">=</span> <span class="n">computePanelLength</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">computePanelLengthSens</span> <span class="o">=</span> <span class="n">computePanelLengthSens</span>
+
+        <span class="c1"># Store flags for whether or not we need to recompute the constraints and derivatives</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">constraintsUpToDate</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">funcs</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">constraintsSensUpToDate</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">funcsSens</span> <span class="o">=</span> <span class="p">{}</span>
+
+<div class="viewcode-block" id="PanelLengthConstraint.setDesignVars"><a class="viewcode-back" href="../../../pytacs/panel_length.html#tacs.constraints.PanelLengthConstraint.setDesignVars">[docs]</a>    <span class="k">def</span> <span class="nf">setDesignVars</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Update the design variables used by tacs.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        x : numpy.ndarray or dict or tacs.TACS.Vec</span>
+<span class="sd">            The variables (typically from the optimizer) to set. It</span>
+<span class="sd">            looks for variable in the ``self.varName`` attribute if in dict.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">TACSConstraint</span><span class="o">.</span><span class="n">setDesignVars</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">constraintsUpToDate</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">constraintsUpToDate</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span></div>
+
+<div class="viewcode-block" id="PanelLengthConstraint.setNodes"><a class="viewcode-back" href="../../../pytacs/panel_length.html#tacs.constraints.PanelLengthConstraint.setNodes">[docs]</a>    <span class="k">def</span> <span class="nf">setNodes</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">Xpts</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Set the mesh coordinates of the structure.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        coords : numpy.ndarray</span>
+<span class="sd">            Structural coordinate in array of size (N * 3) where N is</span>
+<span class="sd">            the number of structural nodes on this processor.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">TACSConstraint</span><span class="o">.</span><span class="n">setNodes</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">Xpts</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">constraintsUpToDate</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">constraintsUpToDate</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">constraintsSensUpToDate</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span></div>
+
+<div class="viewcode-block" id="PanelLengthConstraint.addConstraint"><a class="viewcode-back" href="../../../pytacs/panel_length.html#tacs.constraints.PanelLengthConstraint.addConstraint">[docs]</a>    <span class="k">def</span> <span class="nf">addConstraint</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">conName</span><span class="p">,</span> <span class="n">compIDs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">lower</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">upper</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">dvIndex</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Generic method to adding a new constraint set for TACS.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        conName : str</span>
+<span class="sd">            The user-supplied name for the constraint set. This will</span>
+<span class="sd">            typically be a string that is meaningful to the user</span>
+
+<span class="sd">        compIDs: list[int] or None</span>
+<span class="sd">            List of compIDs to apply constraints to. If None, all compIDs will be used. Defaults to None.</span>
+
+<span class="sd">        lower: float or complex</span>
+<span class="sd">            lower bound for constraint. Not used.</span>
+
+<span class="sd">        upper: float or complex</span>
+<span class="sd">            upper bound for constraint. Not used.</span>
+
+<span class="sd">        dvIndex : int</span>
+<span class="sd">            Index number of the panel length DV&#39;s. Defaults to 0.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">compIDs</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="c1"># Make sure CompIDs is flat and get element numbers on each proc corresponding to specified compIDs</span>
+            <span class="n">compIDs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_flatten</span><span class="p">(</span><span class="n">compIDs</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">nComps</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">meshLoader</span><span class="o">.</span><span class="n">getNumComponents</span><span class="p">()</span>
+            <span class="n">compIDs</span> <span class="o">=</span> <span class="nb">range</span><span class="p">(</span><span class="n">nComps</span><span class="p">)</span>
+
+        <span class="n">dvGlobalInds</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">dvProcs</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">dvLocalInds</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">boundaryNodeGlobalInds</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">boundaryNodeLocalInds</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">boundaryNodeLocalProcs</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">refAxes</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">dvJacRows</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">dvJacCols</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">dvJacVals</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">coordJacRows</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">coordJacCols</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">ii</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">comm</span><span class="o">.</span><span class="n">size</span><span class="p">):</span>
+            <span class="n">dvJacRows</span><span class="o">.</span><span class="n">append</span><span class="p">([])</span>
+            <span class="n">dvJacCols</span><span class="o">.</span><span class="n">append</span><span class="p">([])</span>
+            <span class="n">dvJacVals</span><span class="o">.</span><span class="n">append</span><span class="p">([])</span>
+            <span class="n">coordJacRows</span><span class="o">.</span><span class="n">append</span><span class="p">([])</span>
+            <span class="n">coordJacCols</span><span class="o">.</span><span class="n">append</span><span class="p">([])</span>
+
+        <span class="c1"># Get the boundary node IDs for each component</span>
+        <span class="n">boundaryNodeIDs</span><span class="p">,</span> <span class="n">boundaryNodeCoords</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_getComponentBoundaryNodes</span><span class="p">(</span><span class="n">compIDs</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">rank</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">constraintInd</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="k">for</span> <span class="n">compID</span> <span class="ow">in</span> <span class="n">compIDs</span><span class="p">:</span>
+                <span class="c1"># Get the TACS element object associated with this compID to</span>
+                <span class="c1"># get the ref axis</span>
+                <span class="n">elemObj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">meshLoader</span><span class="o">.</span><span class="n">getElementObject</span><span class="p">(</span><span class="n">compID</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+                <span class="n">transObj</span> <span class="o">=</span> <span class="n">elemObj</span><span class="o">.</span><span class="n">getTransform</span><span class="p">()</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">refAxis</span> <span class="o">=</span> <span class="n">transObj</span><span class="o">.</span><span class="n">getRefAxis</span><span class="p">()</span>
+                <span class="k">except</span> <span class="ne">AttributeError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">AttributeError</span><span class="p">(</span>
+                        <span class="sa">f</span><span class="s2">&quot;The elements in component </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">meshLoader</span><span class="o">.</span><span class="n">compDescripts</span><span class="p">[</span><span class="n">compID</span><span class="p">]</span><span class="si">}</span><span class="s2"> do not have a reference axis. Please define one by using the &#39;ShellRefAxisTransform&#39; class with your elements&quot;</span>
+                    <span class="p">)</span> <span class="kn">from</span> <span class="nn">e</span>
+
+                <span class="c1"># For a more accurate length calculation, roject the ref axis</span>
+                <span class="c1"># onto the &quot;average&quot; plane of the baseline panel geometry by</span>
+                <span class="c1"># using an SVD to compute a normal vector</span>
+                <span class="n">centroid</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">boundaryNodeCoords</span><span class="p">[</span><span class="n">compID</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">keepdims</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+                <span class="n">centredPoints</span> <span class="o">=</span> <span class="n">boundaryNodeCoords</span><span class="p">[</span><span class="n">compID</span><span class="p">]</span> <span class="o">-</span> <span class="n">centroid</span>
+                <span class="n">_</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">VT</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">svd</span><span class="p">(</span><span class="n">centredPoints</span><span class="p">,</span> <span class="n">full_matrices</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+                <span class="n">panelNormal</span> <span class="o">=</span> <span class="n">VT</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+                <span class="n">refAxis</span> <span class="o">-=</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">refAxis</span><span class="p">,</span> <span class="n">panelNormal</span><span class="p">)</span> <span class="o">*</span> <span class="n">panelNormal</span>
+                <span class="n">refAxis</span> <span class="o">/=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">refAxis</span><span class="p">)</span>
+                <span class="n">refAxes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">refAxis</span><span class="p">)</span>
+
+                <span class="c1"># Now figure out where the DV for this component lives</span>
+                <span class="n">globalDvNums</span> <span class="o">=</span> <span class="n">elemObj</span><span class="o">.</span><span class="n">getDesignVarNums</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+                <span class="n">dvGlobalInds</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">globalDvNums</span><span class="p">[</span><span class="n">dvIndex</span><span class="p">])</span>
+                <span class="n">dvProcs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">DVMap</span><span class="p">[</span><span class="n">globalDvNums</span><span class="p">[</span><span class="n">dvIndex</span><span class="p">]][</span><span class="s2">&quot;proc&quot;</span><span class="p">])</span>
+                <span class="n">dvLocalInds</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">DVMap</span><span class="p">[</span><span class="n">globalDvNums</span><span class="p">[</span><span class="n">dvIndex</span><span class="p">]][</span><span class="s2">&quot;localInd&quot;</span><span class="p">])</span>
+
+                <span class="c1"># Do the same for the boundary nodes, this is a little more</span>
+                <span class="c1"># complicated because each node may be on a different proc</span>
+                <span class="n">GlobalInds</span> <span class="o">=</span> <span class="p">[]</span>
+                <span class="n">LocalInds</span> <span class="o">=</span> <span class="p">[]</span>
+                <span class="n">LocalProcs</span> <span class="o">=</span> <span class="p">[]</span>
+                <span class="k">for</span> <span class="n">nodeID</span> <span class="ow">in</span> <span class="n">boundaryNodeIDs</span><span class="p">[</span><span class="n">compID</span><span class="p">]:</span>
+                    <span class="n">GlobalInds</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">nodeID</span><span class="p">)</span>
+                    <span class="n">LocalInds</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nodeMap</span><span class="p">[</span><span class="n">nodeID</span><span class="p">][</span><span class="s2">&quot;localInd&quot;</span><span class="p">])</span>
+                    <span class="n">LocalProcs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nodeMap</span><span class="p">[</span><span class="n">nodeID</span><span class="p">][</span><span class="s2">&quot;proc&quot;</span><span class="p">])</span>
+                <span class="n">boundaryNodeGlobalInds</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">GlobalInds</span><span class="p">)</span>
+                <span class="n">boundaryNodeLocalInds</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">LocalInds</span><span class="p">)</span>
+                <span class="n">boundaryNodeLocalProcs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">LocalProcs</span><span class="p">)</span>
+
+                <span class="c1"># Figure out the jacobian sparsity for each proc</span>
+                <span class="c1"># The DV jacobian on the proc that owns this component&#39;s DV</span>
+                <span class="c1"># will have a -1 in the row corresponding to this constraint</span>
+                <span class="c1"># and the column corresponding to the local DV index</span>
+                <span class="n">dvJacRows</span><span class="p">[</span><span class="n">dvProcs</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">constraintInd</span><span class="p">)</span>
+                <span class="n">dvJacCols</span><span class="p">[</span><span class="n">dvProcs</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">dvLocalInds</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+                <span class="n">dvJacVals</span><span class="p">[</span><span class="n">dvProcs</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="o">-</span><span class="mf">1.0</span><span class="p">)</span>
+
+                <span class="k">for</span> <span class="n">ii</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">boundaryNodeIDs</span><span class="p">[</span><span class="n">compID</span><span class="p">])):</span>
+                    <span class="c1"># the coordinate jacobian on the proc that owns this node</span>
+                    <span class="c1"># will have 3 entries in the row corresponding to this</span>
+                    <span class="c1"># constraint and the columns corresponding to the local</span>
+                    <span class="c1"># node index on the proc</span>
+                    <span class="n">proc</span> <span class="o">=</span> <span class="n">boundaryNodeLocalProcs</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">][</span><span class="n">ii</span><span class="p">]</span>
+                    <span class="n">localNodeInd</span> <span class="o">=</span> <span class="n">boundaryNodeLocalInds</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">][</span><span class="n">ii</span><span class="p">]</span>
+                    <span class="n">coordJacRows</span><span class="p">[</span><span class="n">proc</span><span class="p">]</span> <span class="o">+=</span> <span class="p">[</span><span class="n">constraintInd</span><span class="p">]</span> <span class="o">*</span> <span class="mi">3</span>
+                    <span class="n">coordJacCols</span><span class="p">[</span><span class="n">proc</span><span class="p">]</span> <span class="o">+=</span> <span class="p">[</span>
+                        <span class="mi">3</span> <span class="o">*</span> <span class="n">localNodeInd</span><span class="p">,</span>
+                        <span class="mi">3</span> <span class="o">*</span> <span class="n">localNodeInd</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span>
+                        <span class="mi">3</span> <span class="o">*</span> <span class="n">localNodeInd</span> <span class="o">+</span> <span class="mi">2</span><span class="p">,</span>
+                    <span class="p">]</span>
+
+                <span class="n">constraintInd</span> <span class="o">+=</span> <span class="mi">1</span>
+
+            <span class="c1"># Add the constraint to the constraint list, we need to store:</span>
+            <span class="c1"># - The size of this constraint</span>
+            <span class="c1"># - The global index of each DV</span>
+            <span class="c1"># - The proc number that is in charge of each DV</span>
+            <span class="c1"># - The local index of each DV on the proc that is in charge of it</span>
+            <span class="c1"># - The global boundary node IDs for each component</span>
+            <span class="c1"># - The proc that owns each boundary node for each component</span>
+            <span class="c1"># - The local index of each boundary node on the proc that owns it</span>
+            <span class="c1"># - The reference axis direction for each component</span>
+            <span class="c1"># - The DV jacobian for each proc (because it&#39;s constant)</span>
+            <span class="c1"># - The coordinate jacobian sparsity pattern for each proc (because it&#39;s also constant)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">constraintList</span><span class="p">[</span><span class="n">conName</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s2">&quot;nCon&quot;</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">compIDs</span><span class="p">),</span>
+                <span class="s2">&quot;compIDs&quot;</span><span class="p">:</span> <span class="n">compIDs</span><span class="p">,</span>
+                <span class="s2">&quot;dvGlobalInds&quot;</span><span class="p">:</span> <span class="n">dvGlobalInds</span><span class="p">,</span>
+                <span class="s2">&quot;dvProcs&quot;</span><span class="p">:</span> <span class="n">dvProcs</span><span class="p">,</span>
+                <span class="s2">&quot;dvLocalInds&quot;</span><span class="p">:</span> <span class="n">dvLocalInds</span><span class="p">,</span>
+                <span class="s2">&quot;boundaryNodeGlobalInds&quot;</span><span class="p">:</span> <span class="n">boundaryNodeGlobalInds</span><span class="p">,</span>
+                <span class="s2">&quot;boundaryNodeLocalInds&quot;</span><span class="p">:</span> <span class="n">boundaryNodeLocalInds</span><span class="p">,</span>
+                <span class="s2">&quot;boundaryNodeLocalProcs&quot;</span><span class="p">:</span> <span class="n">boundaryNodeLocalProcs</span><span class="p">,</span>
+                <span class="s2">&quot;refAxes&quot;</span><span class="p">:</span> <span class="n">refAxes</span><span class="p">,</span>
+            <span class="p">}</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">constraintList</span><span class="p">[</span><span class="n">conName</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;nCon&quot;</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">compIDs</span><span class="p">)}</span>
+            <span class="n">dvJacRows</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="n">dvJacCols</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="n">dvJacVals</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="n">coordJacRows</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="n">coordJacCols</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="c1"># These constraints are linear w.r.t the DVs so we can just precompute</span>
+        <span class="c1"># the DV jacobian for each proc</span>
+        <span class="n">dvJacRows</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">comm</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">dvJacRows</span><span class="p">,</span> <span class="n">root</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        <span class="n">dvJacCols</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">comm</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">dvJacCols</span><span class="p">,</span> <span class="n">root</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        <span class="n">dvJacVals</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">comm</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">dvJacVals</span><span class="p">,</span> <span class="n">root</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        <span class="n">coordJacRows</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">comm</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">coordJacRows</span><span class="p">,</span> <span class="n">root</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        <span class="n">coordJacCols</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">comm</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">coordJacCols</span><span class="p">,</span> <span class="n">root</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">constraintList</span><span class="p">[</span><span class="n">conName</span><span class="p">][</span><span class="s2">&quot;dvJac&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">sp</span><span class="o">.</span><span class="n">sparse</span><span class="o">.</span><span class="n">csr_matrix</span><span class="p">(</span>
+            <span class="p">(</span><span class="n">dvJacVals</span><span class="p">,</span> <span class="p">(</span><span class="n">dvJacRows</span><span class="p">,</span> <span class="n">dvJacCols</span><span class="p">)),</span>
+            <span class="n">shape</span><span class="o">=</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">compIDs</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">numLocalDVs</span><span class="p">),</span>
+        <span class="p">)</span>
+
+        <span class="c1"># The constraints aren&#39;t linear w.r.t the coordinates, but the</span>
+        <span class="c1"># sparsity pattern is constant so we can store that</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">constraintList</span><span class="p">[</span><span class="n">conName</span><span class="p">][</span><span class="s2">&quot;coordJacRows&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">coordJacRows</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">constraintList</span><span class="p">[</span><span class="n">conName</span><span class="p">][</span><span class="s2">&quot;coordJacCols&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">coordJacCols</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">constraintsUpToDate</span><span class="p">[</span><span class="n">conName</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">constraintsSensUpToDate</span><span class="p">[</span><span class="n">conName</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="n">success</span> <span class="o">=</span> <span class="kc">True</span>
+
+        <span class="k">return</span> <span class="n">success</span></div>
+
+<div class="viewcode-block" id="PanelLengthConstraint.getConstraintBounds"><a class="viewcode-back" href="../../../pytacs/panel_length.html#tacs.constraints.PanelLengthConstraint.getConstraintBounds">[docs]</a>    <span class="k">def</span> <span class="nf">getConstraintBounds</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">bounds</span><span class="p">,</span> <span class="n">evalCons</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get bounds for constraints. The constraints corresponding to the strings in</span>
+<span class="sd">        `evalCons` are evaluated and updated into the provided</span>
+<span class="sd">        dictionary.</span>
+
+<span class="sd">        The panel length constraints are equality constraints so both the upper and lower bounds are zero</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        bounds : dict</span>
+<span class="sd">            Dictionary into which the constraint bounds are saved.</span>
+<span class="sd">            Bounds will be saved as a tuple: (lower, upper)</span>
+<span class="sd">        evalCons : iterable object containing strings.</span>
+<span class="sd">            If not none, use these constraints to evaluate.</span>
+
+<span class="sd">        Examples</span>
+<span class="sd">        --------</span>
+<span class="sd">        &gt;&gt;&gt; conBounds = {}</span>
+<span class="sd">        &gt;&gt;&gt; tacsConstraint.getConstraintBounds(conBounds, &#39;LE_SPAR&#39;)</span>
+<span class="sd">        &gt;&gt;&gt; conBounds</span>
+<span class="sd">        &gt;&gt;&gt; # Result will look like (if TACSConstraint has name of &#39;c1&#39;):</span>
+<span class="sd">        &gt;&gt;&gt; # {&#39;c1_LE_SPAR&#39;: (array([-1e20]), array([1e20]))}</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Check if user specified which constraints to output</span>
+        <span class="c1"># Otherwise, output them all</span>
+        <span class="n">evalCons</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_processEvalCons</span><span class="p">(</span><span class="n">evalCons</span><span class="p">)</span>
+
+        <span class="c1"># Loop through each requested constraint set</span>
+        <span class="k">for</span> <span class="n">conName</span> <span class="ow">in</span> <span class="n">evalCons</span><span class="p">:</span>
+            <span class="n">key</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">conName</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="n">nCon</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">constraintList</span><span class="p">[</span><span class="n">conName</span><span class="p">][</span><span class="s2">&quot;nCon&quot;</span><span class="p">]</span>
+            <span class="n">bounds</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">nCon</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">nCon</span><span class="p">))</span></div>
+
+<div class="viewcode-block" id="PanelLengthConstraint.getConstraintSizes"><a class="viewcode-back" href="../../../pytacs/panel_length.html#tacs.constraints.PanelLengthConstraint.getConstraintSizes">[docs]</a>    <span class="k">def</span> <span class="nf">getConstraintSizes</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sizes</span><span class="p">,</span> <span class="n">evalCons</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get number for constraint equations in each set.</span>
+<span class="sd">        The constraints corresponding to the strings in `evalCons`</span>
+<span class="sd">        are evaluated and updated into the provided dictionary.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        sizes : dict</span>
+<span class="sd">            Dictionary into which the constraint sizes are saved.</span>
+<span class="sd">        evalCons : iterable object containing strings.</span>
+<span class="sd">            If not none, use these constraints to evaluate.</span>
+
+<span class="sd">        Examples</span>
+<span class="sd">        --------</span>
+<span class="sd">        &gt;&gt;&gt; conSizes = {}</span>
+<span class="sd">        &gt;&gt;&gt; tacsConstraint.getConstraintSizes(conSizes, &#39;LE_SPAR&#39;)</span>
+<span class="sd">        &gt;&gt;&gt; funconSizescs</span>
+<span class="sd">        &gt;&gt;&gt; # Result will look like (if TACSConstraint has name of &#39;c1&#39;):</span>
+<span class="sd">        &gt;&gt;&gt; # {&#39;c1_LE_SPAR&#39;: 10}</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Check if user specified which constraints to output</span>
+        <span class="c1"># Otherwise, output them all</span>
+        <span class="n">evalCons</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_processEvalCons</span><span class="p">(</span><span class="n">evalCons</span><span class="p">)</span>
+
+        <span class="c1"># Loop through each requested constraint set</span>
+        <span class="k">for</span> <span class="n">conName</span> <span class="ow">in</span> <span class="n">evalCons</span><span class="p">:</span>
+            <span class="n">key</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">conName</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="n">sizes</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">constraintList</span><span class="p">[</span><span class="n">conName</span><span class="p">][</span><span class="s2">&quot;nCon&quot;</span><span class="p">]</span></div>
+
+<div class="viewcode-block" id="PanelLengthConstraint.evalConstraints"><a class="viewcode-back" href="../../../pytacs/panel_length.html#tacs.constraints.PanelLengthConstraint.evalConstraints">[docs]</a>    <span class="k">def</span> <span class="nf">evalConstraints</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">funcs</span><span class="p">,</span> <span class="n">evalCons</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ignoreMissing</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Evaluate values for constraints. The constraints corresponding to the strings in</span>
+<span class="sd">        evalCons are evaluated and updated into the provided dictionary.</span>
+
+<span class="sd">        The same constraint arrays are returned on every proc</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        funcs : dict</span>
+<span class="sd">            Dictionary into which the constraints are saved.</span>
+<span class="sd">        evalCons : iterable object containing strings.</span>
+<span class="sd">            If not none, use these constraints to evaluate.</span>
+<span class="sd">        ignoreMissing : bool</span>
+<span class="sd">            Flag to supress checking for a valid constraint. Please use</span>
+<span class="sd">            this option with caution.</span>
+
+<span class="sd">        Examples</span>
+<span class="sd">        --------</span>
+<span class="sd">        &gt;&gt;&gt; funcs = {}</span>
+<span class="sd">        &gt;&gt;&gt; adjConstraint.evalConstraints(funcs, &#39;LE_SPAR&#39;)</span>
+<span class="sd">        &gt;&gt;&gt; funcs</span>
+<span class="sd">        &gt;&gt;&gt; # Result will look like (if PanelLengthConstraint has name of &#39;c1&#39;):</span>
+<span class="sd">        &gt;&gt;&gt; # {&#39;c1_LE_SPAR&#39;: array([1.325, 2.1983645, 3.1415926, ...])}</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="c1"># Check if user specified which constraints to output</span>
+        <span class="c1"># Otherwise, output them all</span>
+        <span class="n">evalCons</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_processEvalCons</span><span class="p">(</span><span class="n">evalCons</span><span class="p">,</span> <span class="n">ignoreMissing</span><span class="p">)</span>
+
+        <span class="c1"># We will compute everything on the root proc and then broadcast the</span>
+        <span class="c1"># results, this is definitely not the most efficient way to do this</span>
+        <span class="c1"># so we may want to re-do it in future, but this works for now</span>
+
+        <span class="n">DVs</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">nodes</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="c1"># Loop through each requested constraint set</span>
+        <span class="k">for</span> <span class="n">conName</span> <span class="ow">in</span> <span class="n">evalCons</span><span class="p">:</span>
+            <span class="n">key</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">conName</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="n">nCon</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">constraintList</span><span class="p">[</span><span class="n">conName</span><span class="p">][</span><span class="s2">&quot;nCon&quot;</span><span class="p">]</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">constraintsUpToDate</span><span class="p">[</span><span class="n">conName</span><span class="p">]:</span>
+                <span class="n">funcs</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">funcs</span><span class="p">[</span><span class="n">key</span><span class="p">])</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">constraintValues</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">nCon</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">nodes</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="c1"># Get all of the DVs and nodes on the root proc</span>
+                    <span class="n">DVs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">comm</span><span class="o">.</span><span class="n">gather</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">x</span><span class="o">.</span><span class="n">getArray</span><span class="p">(),</span> <span class="n">root</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+                    <span class="n">nodes</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">comm</span><span class="o">.</span><span class="n">gather</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">Xpts</span><span class="o">.</span><span class="n">getArray</span><span class="p">(),</span> <span class="n">root</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">rank</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                        <span class="k">for</span> <span class="n">ii</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">comm</span><span class="o">.</span><span class="n">size</span><span class="p">):</span>
+                            <span class="n">nodes</span><span class="p">[</span><span class="n">ii</span><span class="p">]</span> <span class="o">=</span> <span class="n">nodes</span><span class="p">[</span><span class="n">ii</span><span class="p">]</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">rank</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="k">for</span> <span class="n">ii</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nCon</span><span class="p">):</span>
+                        <span class="n">numPoints</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">constraintList</span><span class="p">[</span><span class="n">conName</span><span class="p">][</span><span class="s2">&quot;boundaryNodeGlobalInds&quot;</span><span class="p">][</span><span class="n">ii</span><span class="p">]</span>
+                        <span class="p">)</span>
+                        <span class="n">boundaryPoints</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">numPoints</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
+                        <span class="k">for</span> <span class="n">jj</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">numPoints</span><span class="p">):</span>
+                            <span class="n">nodeProc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">constraintList</span><span class="p">[</span><span class="n">conName</span><span class="p">][</span>
+                                <span class="s2">&quot;boundaryNodeLocalProcs&quot;</span>
+                            <span class="p">][</span><span class="n">ii</span><span class="p">][</span><span class="n">jj</span><span class="p">]</span>
+                            <span class="n">localInd</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">constraintList</span><span class="p">[</span><span class="n">conName</span><span class="p">][</span>
+                                <span class="s2">&quot;boundaryNodeLocalInds&quot;</span>
+                            <span class="p">][</span><span class="n">ii</span><span class="p">][</span><span class="n">jj</span><span class="p">]</span>
+                            <span class="n">boundaryPoints</span><span class="p">[</span><span class="n">jj</span><span class="p">]</span> <span class="o">=</span> <span class="n">nodes</span><span class="p">[</span><span class="n">nodeProc</span><span class="p">][</span><span class="n">localInd</span><span class="p">]</span>
+                        <span class="n">refAxis</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">constraintList</span><span class="p">[</span><span class="n">conName</span><span class="p">][</span><span class="s2">&quot;refAxes&quot;</span><span class="p">][</span><span class="n">ii</span><span class="p">]</span>
+                        <span class="n">DVProc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">constraintList</span><span class="p">[</span><span class="n">conName</span><span class="p">][</span><span class="s2">&quot;dvProcs&quot;</span><span class="p">][</span><span class="n">ii</span><span class="p">]</span>
+                        <span class="n">DVLocalInd</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">constraintList</span><span class="p">[</span><span class="n">conName</span><span class="p">][</span><span class="s2">&quot;dvLocalInds&quot;</span><span class="p">][</span><span class="n">ii</span><span class="p">]</span>
+                        <span class="n">constraintValues</span><span class="p">[</span><span class="n">ii</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">computePanelLength</span><span class="p">(</span><span class="n">boundaryPoints</span><span class="p">,</span> <span class="n">refAxis</span><span class="p">)</span>
+                            <span class="o">-</span> <span class="n">DVs</span><span class="p">[</span><span class="n">DVProc</span><span class="p">][</span><span class="n">DVLocalInd</span><span class="p">]</span>
+                        <span class="p">)</span>
+                <span class="n">funcs</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">comm</span><span class="o">.</span><span class="n">bcast</span><span class="p">(</span><span class="n">constraintValues</span><span class="p">,</span> <span class="n">root</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">funcs</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">funcs</span><span class="p">[</span><span class="n">key</span><span class="p">])</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">constraintsUpToDate</span><span class="p">[</span><span class="n">conName</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span></div>
+
+<div class="viewcode-block" id="PanelLengthConstraint.evalConstraintsSens"><a class="viewcode-back" href="../../../pytacs/panel_length.html#tacs.constraints.PanelLengthConstraint.evalConstraintsSens">[docs]</a>    <span class="k">def</span> <span class="nf">evalConstraintsSens</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">funcsSens</span><span class="p">,</span> <span class="n">evalCons</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;This is the main routine for returning useful (sensitivity)</span>
+<span class="sd">        information from constraint. The derivatives of the constraints</span>
+<span class="sd">        corresponding to the strings in evalCons are evaluated and</span>
+<span class="sd">        updated into the provided dictionary. The derivitives with</span>
+<span class="sd">        respect to all design variables and node locations are computed.</span>
+
+<span class="sd">        The sensitivities returned on each proc are a sparse m x n matrix</span>
+<span class="sd">        where m is the number of constraints and n is the number of design</span>
+<span class="sd">        variables or 3x the number of nodes on this proc. The matrix contains</span>
+<span class="sd">        the sensitivities of all constraints w.r.t only the design</span>
+<span class="sd">        variables/node coordinates on this proc.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        funcsSens : dict</span>
+<span class="sd">            Dictionary into which the derivatives are saved.</span>
+<span class="sd">        evalCons : iterable object containing strings</span>
+<span class="sd">            The constraints the user wants returned</span>
+
+<span class="sd">        Examples</span>
+<span class="sd">        --------</span>
+<span class="sd">        &gt;&gt;&gt; funcsSens = {}</span>
+<span class="sd">        &gt;&gt;&gt; adjConstraint.evalConstraintsSens(funcsSens, &#39;LE_SPAR&#39;)</span>
+<span class="sd">        &gt;&gt;&gt; funcsSens</span>
+<span class="sd">        &gt;&gt;&gt; # Result will look like (if AdjacencyConstraint has name of &#39;c1&#39;):</span>
+<span class="sd">        &gt;&gt;&gt; # {&#39;c1_LE_SPAR&#39;:{&#39;struct&#39;:&lt;50x242 sparse matrix of type &#39;&lt;class &#39;numpy.float64&#39;&gt;&#39; with 100 stored elements in Compressed Sparse Row format&gt;}}</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="c1"># Check if user specified which constraints to output</span>
+        <span class="c1"># Otherwise, output them all</span>
+        <span class="n">evalCons</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_processEvalCons</span><span class="p">(</span><span class="n">evalCons</span><span class="p">)</span>
+
+        <span class="c1"># We will compute everything on the root proc and then broadcast the results,</span>
+        <span class="c1"># this is definitely not the most efficient way to do this so we may want to</span>
+        <span class="c1"># re-do it in future, but this works for now</span>
+
+        <span class="n">nodes</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="c1"># Get number of nodes coords on this proc</span>
+        <span class="n">nCoords</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getNumCoordinates</span><span class="p">()</span>
+
+        <span class="c1"># Loop through each requested constraint set</span>
+        <span class="k">for</span> <span class="n">conName</span> <span class="ow">in</span> <span class="n">evalCons</span><span class="p">:</span>
+            <span class="n">key</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">conName</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="n">nCon</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">constraintList</span><span class="p">[</span><span class="n">conName</span><span class="p">][</span><span class="s2">&quot;nCon&quot;</span><span class="p">]</span>
+            <span class="n">funcsSens</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="n">funcsSens</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="bp">self</span><span class="o">.</span><span class="n">varName</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">constraintList</span><span class="p">[</span><span class="n">conName</span><span class="p">][</span><span class="s2">&quot;dvJac&quot;</span><span class="p">]</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">constraintsSensUpToDate</span><span class="p">[</span><span class="n">conName</span><span class="p">]:</span>
+                <span class="n">funcsSens</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="bp">self</span><span class="o">.</span><span class="n">coordName</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">funcsSens</span><span class="p">[</span><span class="n">key</span><span class="p">]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c1"># Get all of the nodes on the root proc</span>
+                <span class="k">if</span> <span class="n">nodes</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="n">nodes</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">comm</span><span class="o">.</span><span class="n">gather</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">Xpts</span><span class="o">.</span><span class="n">getArray</span><span class="p">(),</span> <span class="n">root</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">rank</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                        <span class="k">for</span> <span class="n">ii</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">comm</span><span class="o">.</span><span class="n">size</span><span class="p">):</span>
+                            <span class="n">nodes</span><span class="p">[</span><span class="n">ii</span><span class="p">]</span> <span class="o">=</span> <span class="n">nodes</span><span class="p">[</span><span class="n">ii</span><span class="p">]</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
+                <span class="n">funcsSens</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="bp">self</span><span class="o">.</span><span class="n">coordName</span><span class="p">]</span> <span class="o">=</span> <span class="n">sp</span><span class="o">.</span><span class="n">sparse</span><span class="o">.</span><span class="n">csr_matrix</span><span class="p">(</span>
+                    <span class="p">(</span><span class="n">nCon</span><span class="p">,</span> <span class="n">nCoords</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">dtype</span>
+                <span class="p">)</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">rank</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="n">coordJacVals</span> <span class="o">=</span> <span class="p">[]</span>
+                    <span class="k">for</span> <span class="n">ii</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">comm</span><span class="o">.</span><span class="n">size</span><span class="p">):</span>
+                        <span class="n">coordJacVals</span><span class="o">.</span><span class="n">append</span><span class="p">([])</span>
+                    <span class="k">for</span> <span class="n">ii</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nCon</span><span class="p">):</span>
+                        <span class="n">numPoints</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">constraintList</span><span class="p">[</span><span class="n">conName</span><span class="p">][</span><span class="s2">&quot;boundaryNodeGlobalInds&quot;</span><span class="p">][</span><span class="n">ii</span><span class="p">]</span>
+                        <span class="p">)</span>
+                        <span class="n">boundaryPoints</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">numPoints</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
+
+                        <span class="k">for</span> <span class="n">jj</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">numPoints</span><span class="p">):</span>
+                            <span class="n">nodeProc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">constraintList</span><span class="p">[</span><span class="n">conName</span><span class="p">][</span>
+                                <span class="s2">&quot;boundaryNodeLocalProcs&quot;</span>
+                            <span class="p">][</span><span class="n">ii</span><span class="p">][</span><span class="n">jj</span><span class="p">]</span>
+                            <span class="n">localInd</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">constraintList</span><span class="p">[</span><span class="n">conName</span><span class="p">][</span>
+                                <span class="s2">&quot;boundaryNodeLocalInds&quot;</span>
+                            <span class="p">][</span><span class="n">ii</span><span class="p">][</span><span class="n">jj</span><span class="p">]</span>
+                            <span class="n">boundaryPoints</span><span class="p">[</span><span class="n">jj</span><span class="p">]</span> <span class="o">=</span> <span class="n">nodes</span><span class="p">[</span><span class="n">nodeProc</span><span class="p">][</span><span class="n">localInd</span><span class="p">]</span>
+                        <span class="n">refAxis</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">constraintList</span><span class="p">[</span><span class="n">conName</span><span class="p">][</span><span class="s2">&quot;refAxes&quot;</span><span class="p">][</span><span class="n">ii</span><span class="p">]</span>
+                        <span class="n">LSens</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">computePanelLengthSens</span><span class="p">(</span><span class="n">boundaryPoints</span><span class="p">,</span> <span class="n">refAxis</span><span class="p">)</span>
+                        <span class="k">for</span> <span class="n">jj</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">numPoints</span><span class="p">):</span>
+                            <span class="n">nodeProc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">constraintList</span><span class="p">[</span><span class="n">conName</span><span class="p">][</span>
+                                <span class="s2">&quot;boundaryNodeLocalProcs&quot;</span>
+                            <span class="p">][</span><span class="n">ii</span><span class="p">][</span><span class="n">jj</span><span class="p">]</span>
+                            <span class="n">coordJacVals</span><span class="p">[</span><span class="n">nodeProc</span><span class="p">]</span> <span class="o">+=</span> <span class="n">LSens</span><span class="p">[</span><span class="n">jj</span><span class="p">]</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">coordJacVals</span> <span class="o">=</span> <span class="kc">None</span>
+                <span class="n">coordJacVals</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">comm</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">coordJacVals</span><span class="p">,</span> <span class="n">root</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+                <span class="n">coordJacRows</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">constraintList</span><span class="p">[</span><span class="n">conName</span><span class="p">][</span><span class="s2">&quot;coordJacRows&quot;</span><span class="p">]</span>
+                <span class="n">coordJacCols</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">constraintList</span><span class="p">[</span><span class="n">conName</span><span class="p">][</span><span class="s2">&quot;coordJacCols&quot;</span><span class="p">]</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">funcsSens</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">sp</span><span class="o">.</span><span class="n">sparse</span><span class="o">.</span><span class="n">csr_matrix</span><span class="p">(</span>
+                    <span class="p">(</span><span class="n">coordJacVals</span><span class="p">,</span> <span class="p">(</span><span class="n">coordJacRows</span><span class="p">,</span> <span class="n">coordJacCols</span><span class="p">)),</span>
+                    <span class="p">(</span><span class="n">nCon</span><span class="p">,</span> <span class="n">nCoords</span><span class="p">),</span>
+                    <span class="n">dtype</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">dtype</span><span class="p">,</span>
+                <span class="p">)</span>
+                <span class="n">funcsSens</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="bp">self</span><span class="o">.</span><span class="n">coordName</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">funcsSens</span><span class="p">[</span><span class="n">key</span><span class="p">]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">constraintsSensUpToDate</span><span class="p">[</span><span class="n">conName</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span></div>
+
+    <span class="k">def</span> <span class="nf">_getComponentBoundaryNodes</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">compIDs</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;For a given list of components, find the nodes on the boundaries of</span>
+<span class="sd">        each of the components.</span>
+
+<span class="sd">        The results are broadcast to all procs</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        compIDs: list[int]</span>
+<span class="sd">            List of compIDs to find boundaries of.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        --------</span>
+<span class="sd">        dict[int, list[int]]</span>
+<span class="sd">            Dictionary where dict[compID] = sorted list of nodeIDs on the</span>
+<span class="sd">            boundary of the component</span>
+<span class="sd">        dict[int, np.array]</span>
+<span class="sd">            Dictionary where dict[compID] = array of node coordinates on the</span>
+<span class="sd">            boundary of the component</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">boundaryNodeIDs</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">boundaryNodeCoords</span> <span class="o">=</span> <span class="p">{}</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">rank</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">compID</span> <span class="ow">in</span> <span class="n">compIDs</span><span class="p">:</span>
+                <span class="n">allEdges</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+                <span class="n">dupEdges</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+                <span class="n">compConn</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">meshLoader</span><span class="o">.</span><span class="n">getConnectivityForComp</span><span class="p">(</span>
+                    <span class="n">compID</span><span class="p">,</span> <span class="n">nastranOrdering</span><span class="o">=</span><span class="kc">False</span>
+                <span class="p">)</span>
+                <span class="c1"># Go over all the elements in the component and add their edges to the sets of all and possibly duplicate edges</span>
+                <span class="k">for</span> <span class="n">elemConn</span> <span class="ow">in</span> <span class="n">compConn</span><span class="p">:</span>
+                    <span class="n">nnodes</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">elemConn</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="n">nnodes</span> <span class="o">&gt;=</span> <span class="mi">2</span><span class="p">:</span>
+                        <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nnodes</span><span class="p">):</span>
+                            <span class="n">nodeID1</span> <span class="o">=</span> <span class="n">elemConn</span><span class="p">[</span><span class="n">j</span><span class="p">]</span>
+                            <span class="n">nodeID2</span> <span class="o">=</span> <span class="n">elemConn</span><span class="p">[(</span><span class="n">j</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">%</span> <span class="n">nnodes</span><span class="p">]</span>
+
+                            <span class="k">if</span> <span class="n">nodeID1</span> <span class="o">&lt;</span> <span class="n">nodeID2</span><span class="p">:</span>
+                                <span class="n">key</span> <span class="o">=</span> <span class="p">(</span><span class="n">nodeID1</span><span class="p">,</span> <span class="n">nodeID2</span><span class="p">)</span>
+                            <span class="k">else</span><span class="p">:</span>
+                                <span class="n">key</span> <span class="o">=</span> <span class="p">(</span><span class="n">nodeID2</span><span class="p">,</span> <span class="n">nodeID1</span><span class="p">)</span>
+
+                            <span class="c1"># Skip degenerate edges</span>
+                            <span class="k">if</span> <span class="n">key</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="n">key</span><span class="p">[</span><span class="mi">1</span><span class="p">]:</span>
+                                <span class="c1"># Either add to allEdges or dupEdges depending on whether we&#39;ve seen this edge before</span>
+                                <span class="k">if</span> <span class="n">key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">allEdges</span><span class="p">:</span>
+                                    <span class="n">allEdges</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+                                <span class="k">else</span><span class="p">:</span>
+                                    <span class="n">dupEdges</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+                <span class="c1"># Now get a list of all the edges that aren&#39;t duplicated, these are the boundary edges</span>
+                <span class="n">boundaryEdges</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">allEdges</span> <span class="o">-</span> <span class="n">dupEdges</span><span class="p">)</span>
+
+                <span class="c1"># Create a nodeToElem Pointer using a dictionary:</span>
+                <span class="n">nodeToElem</span> <span class="o">=</span> <span class="p">{}</span>
+                <span class="k">for</span> <span class="n">iEdge</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">boundaryEdges</span><span class="p">)):</span>
+                    <span class="n">edge</span> <span class="o">=</span> <span class="n">boundaryEdges</span><span class="p">[</span><span class="n">iEdge</span><span class="p">]</span>
+                    <span class="k">for</span> <span class="n">ii</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">2</span><span class="p">):</span>
+                        <span class="k">if</span> <span class="n">edge</span><span class="p">[</span><span class="n">ii</span><span class="p">]</span> <span class="ow">in</span> <span class="n">nodeToElem</span><span class="p">:</span>
+                            <span class="n">nodeToElem</span><span class="p">[</span><span class="n">edge</span><span class="p">[</span><span class="n">ii</span><span class="p">]]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">iEdge</span><span class="p">)</span>
+                        <span class="k">else</span><span class="p">:</span>
+                            <span class="n">nodeToElem</span><span class="p">[</span><span class="n">edge</span><span class="p">[</span><span class="n">ii</span><span class="p">]]</span> <span class="o">=</span> <span class="p">[</span><span class="n">iEdge</span><span class="p">]</span>
+
+                <span class="c1"># Now check that each nodeToElem has a length of</span>
+                <span class="c1"># 2. This means we have a chance it is a</span>
+                <span class="c1"># closed curve</span>
+                <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">nodeToElem</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">nodeToElem</span><span class="p">[</span><span class="n">key</span><span class="p">])</span> <span class="o">!=</span> <span class="mi">2</span><span class="p">:</span>
+                        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                            <span class="s2">&quot;The topology of the geometry associated with &quot;</span>
+                            <span class="s2">&quot;a constitutive object is not manifold &quot;</span>
+                            <span class="s2">&quot;(There is a node with three or more edges &quot;</span>
+                            <span class="s2">&quot;attached. This constitutive object cannot &quot;</span>
+                            <span class="s2">&quot;use a panel-type constitutive object. &quot;</span>
+                            <span class="sa">f</span><span class="s2">&quot;CompIDs are: </span><span class="si">{</span><span class="nb">repr</span><span class="p">(</span><span class="n">compIDs</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
+                        <span class="p">)</span>
+
+                <span class="c1"># Now we will &quot;order&quot; the edges if possible. This</span>
+                <span class="c1"># will also allow us to detect multiple loops</span>
+                <span class="c1"># which isn&#39;t allowed, or a non-manifold local</span>
+                <span class="c1"># geometry - ie. in this context a node connected</span>
+                <span class="c1"># to three edges. This is also not allowed.</span>
+
+                <span class="n">nodeChain</span> <span class="o">=</span> <span class="p">[</span><span class="n">boundaryEdges</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span> <span class="n">boundaryEdges</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">1</span><span class="p">]]</span>
+                <span class="n">cont</span> <span class="o">=</span> <span class="kc">True</span>
+                <span class="n">curElem</span> <span class="o">=</span> <span class="mi">0</span>
+                <span class="k">while</span> <span class="n">cont</span><span class="p">:</span>
+                    <span class="c1"># We arbitrarily pick the first &#39;element&#39;</span>
+                    <span class="c1"># (edge) containing the first two nodes of our</span>
+                    <span class="c1"># chain. Next step is to find the next element</span>
+                    <span class="c1"># and node in the chain:</span>
+                    <span class="n">nextElems</span> <span class="o">=</span> <span class="n">nodeToElem</span><span class="p">[</span><span class="n">nodeChain</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]]</span>
+                    <span class="c1"># Get the &#39;nextElem&#39; that isn&#39;t the current</span>
+                    <span class="c1"># one</span>
+                    <span class="k">if</span> <span class="n">nextElems</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="n">curElem</span><span class="p">:</span>
+                        <span class="n">nextElem</span> <span class="o">=</span> <span class="n">nextElems</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">nextElem</span> <span class="o">=</span> <span class="n">nextElems</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+                    <span class="c1"># Now nextElem is the next in the chain. Get</span>
+                    <span class="c1"># the nodes for this elem:</span>
+                    <span class="n">nextNodes</span> <span class="o">=</span> <span class="n">boundaryEdges</span><span class="p">[</span><span class="n">nextElem</span><span class="p">]</span>
+
+                    <span class="c1"># Append the node that isn&#39;t the last one</span>
+                    <span class="c1"># (that is already in the chain)</span>
+                    <span class="k">if</span> <span class="n">nextNodes</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="n">nodeChain</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]:</span>
+                        <span class="n">nodeChain</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">nextNodes</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">nodeChain</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">nextNodes</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+
+                    <span class="c1"># Exit condition:</span>
+                    <span class="k">if</span> <span class="n">nodeChain</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="n">nodeChain</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span>
+                        <span class="c1"># We&#39;ve made it all the way around!</span>
+                        <span class="n">cont</span> <span class="o">=</span> <span class="kc">False</span>
+
+                    <span class="c1"># Set current element</span>
+                    <span class="n">curElem</span> <span class="o">=</span> <span class="n">nextElem</span>
+
+                <span class="c1"># Now check that we&#39;ve *actually* used all of our</span>
+                <span class="c1"># nodes. Since we&#39;ve determined it is manifold,</span>
+                <span class="c1"># this must mean we have multiple loops which</span>
+                <span class="c1"># *also* isn&#39;t allowed.</span>
+                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">nodeChain</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">boundaryEdges</span><span class="p">):</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                        <span class="s2">&quot;Detected more than one closed loop for &quot;</span>
+                        <span class="s2">&quot;constitutive object. This is not allowed. &quot;</span>
+                        <span class="s2">&quot;This constitutive object cannot use a &quot;</span>
+                        <span class="s2">&quot;panel-type constitutive object. &quot;</span>
+                        <span class="sa">f</span><span class="s2">&quot;CompIDs are: </span><span class="si">{</span><span class="nb">repr</span><span class="p">(</span><span class="n">compIDs</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
+                    <span class="p">)</span>
+                <span class="n">nodeChain</span> <span class="o">=</span> <span class="n">nodeChain</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+                <span class="n">nodeChainCoords</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">meshLoader</span><span class="o">.</span><span class="n">getBDFNodes</span><span class="p">(</span>
+                    <span class="n">nodeChain</span><span class="p">,</span> <span class="n">nastranOrdering</span><span class="o">=</span><span class="kc">False</span>
+                <span class="p">)</span>
+                <span class="n">nodeIDs</span><span class="p">,</span> <span class="n">coords</span> <span class="o">=</span> <span class="n">simplifyPoly</span><span class="p">(</span><span class="n">nodeChain</span><span class="p">,</span> <span class="n">nodeChainCoords</span><span class="p">)</span>
+                <span class="n">boundaryNodeIDs</span><span class="p">[</span><span class="n">compID</span><span class="p">]</span> <span class="o">=</span> <span class="n">nodeIDs</span>
+                <span class="n">boundaryNodeCoords</span><span class="p">[</span><span class="n">compID</span><span class="p">]</span> <span class="o">=</span> <span class="n">coords</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">comm</span><span class="o">.</span><span class="n">bcast</span><span class="p">(</span><span class="n">boundaryNodeIDs</span><span class="p">,</span> <span class="n">root</span><span class="o">=</span><span class="mi">0</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">comm</span><span class="o">.</span><span class="n">bcast</span><span class="p">(</span>
+            <span class="n">boundaryNodeCoords</span><span class="p">,</span> <span class="n">root</span><span class="o">=</span><span class="mi">0</span>
+        <span class="p">)</span></div>
+</pre></div>
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">TACS  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" >Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">tacs.constraints.panel_length</a></li> 
+      </ul>
+    </div>
+ <script type="text/javascript">
+    $(document).ready(function() {
+        $(".toggle > *").hide();
+        $(".toggle .header").show();
+        $(".toggle .header").click(function() {
+            $(this).parent().children().not(".header").toggle(400);
+            $(this).parent().children(".header").toggleClass("open");
+        })
+    });
+</script>
+
+  </body>
+</html>
