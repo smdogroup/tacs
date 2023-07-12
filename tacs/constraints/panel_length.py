@@ -1,11 +1,5 @@
 """
-==============================================================================
-Panel Length Constraint
-==============================================================================
-@File    :   panel_length.py
-@Date    :   2023/04/23
-@Author  :   Alasdair Christison Gray
-@Description : This class implements a constraint which enforces the panel
+This class implements a constraint which enforces the panel
 length design variable values passed to elements using the BladeStiffenedShell
 constitutive model to be consistent with the true length of the panel they are
 a part of.
@@ -221,17 +215,29 @@ class PanelLengthConstraint(TACSConstraint):
         self.funcsSens = {}
 
     def setDesignVars(self, x):
-        """Wrapper around the base class setDesignVars method that also sets
-        the flag to indicate that the constraints need to be recomputed
+        """
+        Update the design variables used by tacs.
+
+        Parameters
+        ----------
+        x : numpy.ndarray or dict or tacs.TACS.Vec
+            The variables (typically from the optimizer) to set. It
+            looks for variable in the ``self.varName`` attribute if in dict.
+
         """
         TACSConstraint.setDesignVars(self, x)
         for key in self.constraintsUpToDate:
             self.constraintsUpToDate[key] = False
 
     def setNodes(self, Xpts):
-        """Wrapper around the base class setNodes method that also sets
-        the flag to indicate that the constraints and their derivatives
-        need to be recomputed
+        """
+        Set the mesh coordinates of the structure.
+
+        Parameters
+        ----------
+        coords : numpy.ndarray
+            Structural coordinate in array of size (N * 3) where N is
+            the number of structural nodes on this processor.
         """
         TACSConstraint.setNodes(self, Xpts)
         for key in self.constraintsUpToDate:
