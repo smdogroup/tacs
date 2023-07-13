@@ -1937,8 +1937,6 @@ class StaticProblem(TACSProblem):
         baseName = self.getOutputFileName(outputDir, baseName, number)
         if self.history is not None:
             self.history.save(baseName)
-            base = os.path.join(outputDir, baseName) + ".f5"
-            self.outputViewer.writeToFile(base)
 
     def writeLoadToBDF(self, bdfFile, loadCaseID):
         """
