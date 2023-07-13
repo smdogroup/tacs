@@ -46,14 +46,15 @@ class TACSProblem(TACSSystem):
         meshLoader : tacs.pymeshloader.pyMeshLoader
             pyMeshLoader object used to create the assembler.
         """
+
+        # Set nonlinear flag
+        self._isNonlinear = isNonlinear
+
         # Set attributes and options
         TACSSystem.__init__(self, assembler, comm, options, outputViewer, meshLoader)
 
         # List of functions
         self.functionList = OrderedDict()
-
-        # Set nonlinear flag
-        self._isNonlinear = isNonlinear
 
         return
 
