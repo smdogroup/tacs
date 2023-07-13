@@ -107,6 +107,12 @@ class TACSShellRefAxisTransform : public TACSShellTransform {
     vec3Scale(invNorm, axis);
   }
 
+  void getRefAxis(TacsScalar _axis[]) {
+    _axis[0] = axis[0];
+    _axis[1] = axis[1];
+    _axis[2] = axis[2];
+  }
+
   void computeTransform(const TacsScalar Xxi[], const TacsScalar n0[],
                         TacsScalar T[]) {
     TacsScalar n[3];

@@ -172,6 +172,9 @@ class TACSOrthotropicPly : public TACSObject {
   void setKSWeight(TacsScalar _ksWeight);
   void setUseMaxStrainCriterion();
   void setUseTsaiWuCriterion();
+  // Set whether to use the standard Tsai-Wu failure index or the modified
+  // version which returns a strength ratio
+  void setUseModifiedTsaiWu(bool _useModifiedTsaiWu);
 
   // Retrieve the material properties
   // --------------------------------
@@ -275,7 +278,8 @@ class TACSOrthotropicPly : public TACSObject {
   TacsScalar G12, G23, G13;
 
   // Keep track of which failure criterion to use
-  int useTsaiWuCriterion;
+  bool useTsaiWuCriterion;
+  bool useModifiedTsaiWu;
 
   // The stress-based strength properties
   TacsScalar Xt, Xc;

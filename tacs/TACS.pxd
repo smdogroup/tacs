@@ -100,6 +100,11 @@ cdef extern from "KSM.h":
         TACS_MAT_NORMAL
         TACS_MAT_TRANSPOSE
 
+cdef extern from "TACSMaterialProperties.h":
+    enum MaterialType:
+        TACS_ISOTROPIC_MATERIAL
+        TACS_ANISOTROPIC_MATERIAL
+
 # Special functions required for converting pointers
 cdef extern from "":
     TACSSchurMat* _dynamicSchurMat "dynamic_cast<TACSSchurMat*>"(TACSMat*)
@@ -107,6 +112,8 @@ cdef extern from "":
     TACSParallelMat* _dynamicParallelMat "dynamic_cast<TACSParallelMat*>"(TACSMat*)
     TACSMg* _dynamicTACSMg "dynamic_cast<TACSMg*>"(TACSPc*)
     GMRES* _dynamicGMRES "dynamic_cast<GMRES*>"(TACSKsm*)
+    TACSBVec* _dynamicBVec "dynamic_cast<TACSBVec*>"(TACSVec*)
+    TACSSpectralVec* _dynamicSpectralVec "dynamic_cast<TACSSpectralVec*>"(TACSVec*)
     void deleteArray "delete []"(void*)
 
 cdef extern from "TACSObject.h":
@@ -293,9 +300,10 @@ cdef extern from "TACSMg.h":
         void setMonitor(KSMPrint*)
 
 cdef class Vec:
-    cdef TACSBVec *ptr
+    cdef TACSVec *ptr
+    cdef TACSBVec* getBVecPtr(self)
 
-cdef inline _init_Vec(TACSBVec *ptr):
+cdef inline _init_Vec(TACSVec *ptr):
     vec = Vec()
     vec.ptr = ptr
     vec.ptr.incref()
@@ -354,6 +362,7 @@ cdef extern from "TACSElementModel.h":
 
 cdef class ElementModel:
     cdef TACSElementModel *ptr
+    cdef object con
 
 cdef inline _init_ElementModel(TACSElementModel *ptr):
     model = ElementModel()
@@ -373,6 +382,7 @@ cdef extern from "TACSElement.h":
         int getDesignVarsPerNode()
         int getDesignVarNums(int, int, int*)
         int getDesignVars(int, int, TacsScalar*)
+        int setDesignVars(int, int, const TacsScalar*)
         int getDesignVarRange(int, int, TacsScalar*, TacsScalar*)
         TACSElementBasis* getElementBasis()
         TACSElementModel* getElementModel()
@@ -384,6 +394,8 @@ cdef extern from "TACSElement.h":
 
 cdef class Element:
     cdef TACSElement *ptr
+    cdef object con
+    cdef object transform
 
 cdef inline _init_Element(TACSElement *ptr):
     elem = Element()
@@ -401,12 +413,18 @@ cdef class Function:
 cdef extern from "TACSConstitutive.h":
     cdef cppclass TACSConstitutive(TACSObject):
         int getNumStresses()
+        void evalStress(int, const double*, const TacsScalar*,
+                        const TacsScalar*, TacsScalar*)
+        TacsScalar evalDesignFieldValue(int, const double*,
+                             const TacsScalar*, int)
         void getFailureEnvelope(int, int, const double*,
                                 const TacsScalar*, const TacsScalar*,
                                 const TacsScalar*, TacsScalar*, TacsScalar*)
 
 cdef class Constitutive:
     cdef TACSConstitutive *ptr
+    cdef object props
+    cdef int nastranID
 
 cdef inline _init_Constitutive(TACSConstitutive *ptr):
     cons = Constitutive()
@@ -626,7 +644,7 @@ cdef extern from "TACSBuckling.h":
         TacsScalar extractEigenvalue(int, TacsScalar*)
         TacsScalar extractEigenvector(int, TACSBVec*, TacsScalar*)
         void evalEigenDVSens(int, TACSBVec*)
-        void evalEigenXptSens(int, TACSBVec *)
+        void evalEigenXptSens(int, TACSBVec*)
 
     cdef cppclass TACSLinearBuckling(TACSObject):
         TACSLinearBuckling( TACSAssembler *,
@@ -637,10 +655,15 @@ cdef extern from "TACSBuckling.h":
         TACSAssembler* getAssembler()
         TacsScalar getSigma()
         void setSigma(TacsScalar)
-        void solve(TACSVec*, KSMPrint*)
+        void solve(TACSVec*, TACSVec*, KSMPrint*)
         void evalEigenDVSens(int, TacsScalar, int)
         TacsScalar extractEigenvalue(int, TacsScalar*)
         TacsScalar extractEigenvector(int, TACSBVec*, TacsScalar*)
+        void evalEigenDVSens(int, TACSBVec*)
+        void evalEigenXptSens(int, TACSBVec*)
+        void addEigenDVSens(TacsScalar, int, TACSBVec*)
+        void addEigenXptSens(TacsScalar, int, TACSBVec*)
+        void evalEigenSVSens(int, TACSBVec*)
 
 cdef extern from "TACSMeshLoader.h":
     cdef cppclass TACSMeshLoader(TACSObject):
@@ -811,3 +834,47 @@ cdef extern from "TACSIntegrator.h":
                           double tinit, double tfinal,
                           double num_steps,
                           int order)
+
+cdef extern from "TACSSpectralIntegrator.h":
+    cdef cppclass TACSSpectralVec(TACSVec):
+        TacsScalar norm()
+        void scale(TacsScalar)
+        TacsScalar dot(TACSSpectralVec*)
+        void axpy(TacsScalar, TACSSpectralVec*)
+        void copyValues(TACSSpectralVec*)
+        void zeroEntries()
+        TACSBVec *getVec(int)
+
+    cdef cppclass TACSLinearSpectralMat(TACSMat):
+        TACSLinearSpectralMat(TACSSpectralIntegrator*)
+
+    cdef cppclass TACSLinearSpectralMg(TACSPc):
+        TACSLinearSpectralMg(TACSLinearSpectralMat*, int,
+                             TACSAssembler**, TACSBVecInterp**, int*)
+        void factor()
+
+    cdef cppclass TACSSpectralIntegrator(TACSObject):
+        TACSSpectralIntegrator(TACSAssembler*, double, int)
+
+        int getNumLGLNodes()
+        double getPointAtLGLNode(int)
+        double getTimeAtLGLNode(int);
+        double getWeightAtLGLNode(int)
+        TACSAssembler *getAssembler()
+
+        TACSSpectralVec *createVec()
+        TACSLinearSpectralMat *createLinearMat()
+        void setInitialConditions(TACSBVec*)
+        void setVariables(TACSSpectralVec*)
+        void assembleRes(TACSSpectralVec*res)
+        void assembleMat(TACSLinearSpectralMat*,
+                         MatrixOrientation matOr)
+
+        void evalFunctions(int, TACSFunction**, TacsScalar*)
+        void evalSVSens(TACSFunction*, TACSSpectralVec*)
+        void addDVSens(TACSFunction*, TACSBVec*)
+        void addAdjointResProduct(TacsScalar, TACSSpectralVec*,
+                                  TACSBVec*)
+
+        # Compute the solution at a point in the time interval
+        void computeSolutionAndDeriv(double, TACSSpectralVec*, TACSBVec *u, TACSBVec*)

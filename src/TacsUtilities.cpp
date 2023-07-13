@@ -967,3 +967,69 @@ void TACSMatrixHash::reset(int new_table_size) {
   table = new_table;
   table_size = new_table_size;
 }
+
+TacsScalar ksAggregation(const TacsScalar f[], const int numVals,
+                         const double ksWeight) {
+  TacsScalar maxVal = f[0];
+  for (int ii = 1; ii < numVals; ii++) {
+    if (TacsRealPart(f[ii]) > TacsRealPart(maxVal)) {
+      maxVal = f[ii];
+    }
+  }
+  return ksAggregation(f, maxVal, numVals, ksWeight);
+}
+
+TacsScalar ksAggregation(const TacsScalar f[], const TacsScalar maxVal,
+                         const int numVals, const double ksWeight) {
+  TacsScalar aggregatedValue = 0.0;
+  for (int ii = 0; ii < numVals; ii++) {
+    aggregatedValue += exp(ksWeight * (f[ii] - maxVal));
+  }
+  return maxVal + log(aggregatedValue) / ksWeight;
+}
+
+TacsScalar ksAggregationSens(const TacsScalar f[], const int numVals,
+                             const double ksWeight, TacsScalar dKSdf[]) {
+  TacsScalar maxVal = f[0];
+  for (int ii = 1; ii < numVals; ii++) {
+    if (TacsRealPart(f[ii]) > TacsRealPart(maxVal)) {
+      maxVal = f[ii];
+    }
+  }
+  TacsScalar sum = 0.0;
+  memset(dKSdf, 0, numVals * sizeof(TacsScalar));
+  for (int ii = 0; ii < numVals; ii++) {
+    TacsScalar val = exp(ksWeight * (f[ii] - maxVal));
+    sum += val;
+    dKSdf[ii] = val;
+  }
+  for (int ii = 0; ii < numVals; ii++) {
+    dKSdf[ii] /= sum;
+  }
+
+  return maxVal + log(sum) / ksWeight;
+}
+
+TacsScalar ksAggregationSensProduct(const TacsScalar f[], const int numVals,
+                                    const int numVars, const double ksWeight,
+                                    TacsScalar **dfdx, TacsScalar dKSdx[]) {
+  TacsScalar maxVal = f[0];
+  for (int ii = 1; ii < numVals; ii++) {
+    if (TacsRealPart(f[ii]) > TacsRealPart(maxVal)) {
+      maxVal = f[ii];
+    }
+  }
+  TacsScalar sum = 0.0;
+  memset(dKSdx, 0, numVars * sizeof(TacsScalar));
+  for (int ii = 0; ii < numVals; ii++) {
+    TacsScalar val = exp(ksWeight * (f[ii] - maxVal));
+    sum += val;
+    for (int jj = 0; jj < numVars; jj++) {
+      dKSdx[jj] += val * dfdx[ii][jj];
+    }
+  }
+  for (int jj = 0; jj < numVars; jj++) {
+    dKSdx[jj] /= sum;
+  }
+  return maxVal + log(sum) / ksWeight;
+}

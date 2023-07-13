@@ -1,6 +1,11 @@
 # use glob syntax.
 syntax: glob
 
+# To ignore compiled binaries that have no extensions we need to first ignore everything, then unignore files with extensions and directories
+*
+!*.*
+!*/
+
 extern/
 !extern/Makefile*
 !extern/f5to*/
@@ -25,6 +30,7 @@ extern/
 *.f5
 *.bdf
 !tests/integration_tests/input_files/*.bdf
+!examples/**/*.bdf
 *.su2
 *.tar.gz
 *.png
@@ -47,9 +53,11 @@ reports/
 *.vtk
 *.cfg
 *.pkl
+*.png
+*.gif
+*.mp4
 .vscode
 .DS_Store
 .pre-commit-config.yaml
 
-# pycache files
-**/__pycache__/**
+**/__pycache__/

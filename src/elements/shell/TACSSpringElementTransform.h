@@ -47,6 +47,12 @@ class TACSSpringRefAxisTransform : public TACSSpringTransform {
     vec3Normalize(ref_dir);
   }
 
+  void getRefAxis(TacsScalar _axis[]) {
+    _axis[0] = ref_dir[0];
+    _axis[1] = ref_dir[1];
+    _axis[2] = ref_dir[2];
+  }
+
   /*
     Compute the local transformation from the global axis to the local
     reference frame for the spring element.
@@ -120,6 +126,16 @@ class TACSSpringRefFrameTransform : public TACSSpringTransform {
     crossProduct(&transform[0], _ref_axis_j, &transform[6]);
     vec3Normalize(&transform[6]);
     crossProduct(&transform[6], &transform[0], &transform[3]);
+  }
+
+  void getRefAxes(TacsScalar _axis_i[], TacsScalar _axis_j[]) {
+    _axis_i[0] = transform[0];
+    _axis_i[1] = transform[1];
+    _axis_i[2] = transform[2];
+
+    _axis_j[0] = transform[3];
+    _axis_j[1] = transform[4];
+    _axis_j[2] = transform[5];
   }
 
   void computeTransform(const TacsScalar Xpts[], TacsScalar T[]) {

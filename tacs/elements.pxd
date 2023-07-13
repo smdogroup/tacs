@@ -195,6 +195,7 @@ cdef extern from "TACSShellElementTransform.h":
 
     cdef cppclass TACSShellRefAxisTransform(TACSShellTransform):
         TACSShellRefAxisTransform(const TacsScalar*)
+        void getRefAxis(TacsScalar*)
 
 cdef extern from "TACSBeamElement.h":
     cdef cppclass TACSBeamTransform(TACSObject):
@@ -202,6 +203,7 @@ cdef extern from "TACSBeamElement.h":
 
     cdef cppclass TACSBeamRefAxisTransform(TACSBeamTransform):
         TACSBeamRefAxisTransform(const TacsScalar*)
+        void getRefAxis(TacsScalar*)
 
 cdef extern from "TACSShellElementDefs.h":
     cdef cppclass TACSQuad4Shell(TACSElement):
@@ -365,9 +367,11 @@ cdef extern from "TACSSpringElementTransform.h":
 
     cdef cppclass TACSSpringRefAxisTransform(TACSSpringTransform):
         TACSSpringRefAxisTransform(TacsScalar*)
+        void getRefAxis(TacsScalar*)
 
     cdef cppclass TACSSpringRefFrameTransform(TACSSpringTransform):
         TACSSpringRefFrameTransform(TacsScalar*, TacsScalar*)
+        void getRefAxes(TacsScalar*, TacsScalar*)
 
 cdef extern from "TACSSpringElement.h":
     cdef cppclass TACSSpringElement(TACSElement):

@@ -39,7 +39,7 @@ class TACSShellConstitutive : public TACSConstitutive {
   // Get the number of stresses
   int getNumStresses();
 
-  /*
+  /**
     Get the integrals of the density through the thickness
 
     moments = int_{-t/2}^{t/2} [1, z, z^2] rho(z) dz
@@ -53,7 +53,15 @@ class TACSShellConstitutive : public TACSConstitutive {
                                const TacsScalar X[], TacsScalar moments[]) = 0;
 
   /**
-    Add the derivative of the pointwise mass times the given scalar
+    Add the contribution of the mass moment sensitivities to the derivative of a
+    function
+
+    Given the sensitivity of some function, f, with respect to the mass moments,
+    this function adds the sensitivity of the function the design variables due
+    to the dependence of the mass moments on the design variables.
+
+    e.g dfdx[0] += scale[0]*dm0/dx1 + scale[1]*dm1/dx1 + scale[2]*dm2/dx1
+        dfdx[1] += scale[0]*dm0/dx2 + scale[1]*dm1/dx2 + scale[2]*dm2/dx2
 
     @param elemIndex The local element index
     @param pt The parametric location

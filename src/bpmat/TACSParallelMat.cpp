@@ -160,6 +160,17 @@ TACSParallelMat::~TACSParallelMat() {
   }
 }
 
+TACSMat *TACSParallelMat::createDuplicate() {
+  BCSRMat *Adup = Aloc->createDuplicate();
+  BCSRMat *Bdup = Bext->createDuplicate();
+
+  TACSParallelMat *mat = new TACSParallelMat(rmap, Adup, Bdup, ext_dist);
+  mat->mat_dist = mat_dist;
+  mat->mat_dist->incref();
+
+  return mat;
+}
+
 /*!
   Determine the local dimensions of the matrix - the diagonal part
 */
@@ -500,7 +511,9 @@ void TACSParallelMat::printNzPattern(const char *fileName) {
 void TACSParallelMat::addValues(int nrow, const int *row, int ncol,
                                 const int *col, int nv, int mv,
                                 const TacsScalar *values) {
-  mat_dist->addValues(this, nrow, row, ncol, col, nv, mv, values);
+  if (mat_dist) {
+    mat_dist->addValues(this, nrow, row, ncol, col, nv, mv, values);
+  }
 }
 
 /*
@@ -529,8 +542,10 @@ void TACSParallelMat::addWeightValues(int nvars, const int *varp,
                                       const TacsScalar *weights, int nv, int mv,
                                       const TacsScalar *values,
                                       MatrixOrientation matOr) {
-  mat_dist->addWeightValues(this, nvars, varp, vars, weights, nv, mv, values,
-                            matOr);
+  if (mat_dist) {
+    mat_dist->addWeightValues(this, nvars, varp, vars, weights, nv, mv, values,
+                              matOr);
+  }
 }
 
 /*!
@@ -539,18 +554,28 @@ void TACSParallelMat::addWeightValues(int nvars, const int *varp,
 void TACSParallelMat::setValues(int nvars, const int *ext_vars, const int *rowp,
                                 const int *cols, TacsScalar *avals) {
   zeroEntries();
-  mat_dist->setValues(this, nvars, ext_vars, rowp, cols, avals);
+  if (mat_dist) {
+    mat_dist->setValues(this, nvars, ext_vars, rowp, cols, avals);
+  }
 }
 
 /**
    Begin the parallel assembly of the matrix
 */
-void TACSParallelMat::beginAssembly() { mat_dist->beginAssembly(this); }
+void TACSParallelMat::beginAssembly() {
+  if (mat_dist) {
+    mat_dist->beginAssembly(this);
+  }
+}
 
 /**
    End the parallel assembly of the matrix
 */
-void TACSParallelMat::endAssembly() { mat_dist->endAssembly(this); }
+void TACSParallelMat::endAssembly() {
+  if (mat_dist) {
+    mat_dist->endAssembly(this);
+  }
+}
 
 const char *TACSParallelMat::getObjectName() { return matName; }
 
