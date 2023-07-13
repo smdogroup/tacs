@@ -52,12 +52,12 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
         # Overwrite default check values
         if self.dtype == complex:
             self.rtol = 1e-8
-            self.atol = 1e-8
-            self.dh = 1e-50
+            self.atol = 1e-13
+            self.dh = 1e-200
         else:
-            self.rtol = 2e-1
-            self.atol = 1e-3
-            self.dh = 1e-6
+            self.rtol = 1e-2
+            self.atol = 1e-4
+            self.dh = 1e-4
 
         E = 6.825e7  # Young's modulus
         NU = 0.3  # Poisson's ratio
