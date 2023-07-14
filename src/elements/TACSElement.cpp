@@ -437,7 +437,7 @@ void TACSElement::addMatXptSensInnerProduct(
     const TacsScalar vars[], TacsScalar dfdX[]) {
   // The step length
 #ifdef TACS_USE_COMPLEX
-  const double dh = 1e-30;
+  const double dh = 1e-200;
 #else
   const double dh = 1e-7;
 #endif  // TACS_USE_COMPLEX

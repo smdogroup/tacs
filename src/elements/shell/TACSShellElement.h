@@ -681,10 +681,11 @@ void TACSShellElement<quadrature, basis, director, model>::getMatType(
     for (int i = 0; i < vars_per_node * num_nodes; i++) {
       norm += vars[i] * vars[i];
     }
-    norm = sqrt(norm);
 
     if (TacsRealPart(norm) == 0.0) {
       norm = 1.0;
+    } else {
+      norm = sqrt(norm);
     }
 
     // Central difference the tangent stiffness matrix
