@@ -134,15 +134,15 @@ class ContinuationSolver(BaseSolver):
         Parameters
         ----------
         jacFunc : function
-            Function to update the residual Jacobian at the current state, with signature jacFunc()
+            Function to update the residual Jacobian at the current state, with signature `jacFunc() -> None`
         pcUpdateFunc : function
-            Function to update the residual Jacobian preconditioner at the current state, with signature pcUpdateFunc()
+            Function to update the residual Jacobian preconditioner at the current state, with signature `pcUpdateFunc() -> None`
         linearSolver : tacs.TACS.KSM
             TACS linear solver object to use for the Newton solve, the linear solver owns the matrix and preconditioner
         setLambdaFunc : function
-            Function to set the continuation parameter, with signature setLambdaFunc(lambda:float) -> None
+            Function to set the continuation parameter, with signature `setLambdaFunc(lambda:float) -> None`
         setLambdaFunc : function
-            Function to get the current continuation parameter, with signature getLambdaFunc() -> float
+            Function to get the current continuation parameter, with signature `getLambdaFunc() -> float`
         innerSolver : TACS Nonlinear Solver
             A Solver object to use for the corrector solve in each increment (e.g a NewtonSolver object)
         options : dict, optional
@@ -159,8 +159,13 @@ class ContinuationSolver(BaseSolver):
         self.innerSolver = innerSolver
         self.defaultOptions.update(innerSolver.defaultOptions)
 
-        self.equilibriumPathStates = None
-        self.equilibriumPathLoadScales = None
+        self.equilibriumPathStates = []
+        self.equilibriumPathLoadScales = []
+
+        # --- Make list of inner solver option names ---
+        self.innerSolverOptionNames = [
+            opt.lower() for opt in self.innerSolver.defaultOptions
+        ]
 
         BaseSolver.__init__(
             self,
@@ -191,11 +196,11 @@ class ContinuationSolver(BaseSolver):
                 self.equilibriumPathLoadScales.append(None)
 
     def setOption(self, name, value) -> None:
-        BaseSolver.setOption(self, name, value)
-
-        # Pass option to inner solver if it is a inner solver option
-        if name.lower() in [opt.lower() for opt in self.innerSolver.defaultOptions]:
+        # Pass option to inner solver if it's an inner solver option
+        if name.lower() in self.innerSolverOptionNames:
             self.innerSolver.setOption(name, value)
+        else:
+            BaseSolver.setOption(self, name, value)
 
         # Update the predictor computation data structures if the relevant options are changed
         if name.lower() in [
@@ -203,6 +208,13 @@ class ContinuationSolver(BaseSolver):
             "continuationnumpredictorstates",
         ]:
             self._setupPredictorVectors()
+
+    def getOption(self, name):
+        # Get the option from the inner solver if it's an inner solver option
+        if name.lower() in self.innerSolverOptionNames:
+            return self.innerSolver.getOption(name)
+        else:
+            return BaseSolver.getOption(self, name)
 
     def setConvergenceTolerance(
         self, absTol: Optional[float] = None, relTol: Optional[float] = None

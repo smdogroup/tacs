@@ -43,7 +43,7 @@ class BaseSolver(BaseUI):
         setStateFunc : function
             Function to set the state vector, with signature setStateFunc(stateVec: tacs.TACS.Vec) -> None
         resFunc : function
-            Function to evaluate the residual at the current state, with signature resFunc(resVec: tacs.TACS.Vec) -> None
+            Function to evaluate the residual at the current state, with signature `resFunc(resVec: tacs.TACS.Vec) -> None`
         stateVec : tacs.TACS.Vec, optional
             Vector to store the state in, by default the solver will create it's own but these can be passed to save additional allocations
         resVec : tacs.TACS.Vec, optional
@@ -149,9 +149,9 @@ class BaseSolver(BaseUI):
             Callback function, should have the following signature:
             callback(solver: tacs.solver, u: tacs.TACS.Vec, res: tacs.TACS.Vec, monitorVars: dict) -> None
             Where:
-                - ``solver`` is the solver object
-                - ``u`` is the current state vector
-                - ``res`` is the current residual vector
-                - ``monitorVars`` is a dictionary of variables to monitor, which can be specified through the ``"nonlinearSolverMonitorVars"`` option
+            - ``solver`` is the solver object
+            - ``u`` is the current state vector
+            - ``res`` is the current residual vector
+            - ``monitorVars`` is a dictionary of variables to monitor, which can be specified through the ``"nonlinearSolverMonitorVars"`` option
         """
         self.callback = callback

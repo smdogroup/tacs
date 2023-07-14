@@ -90,7 +90,7 @@ probOptions = {
     "printTiming": True,
     "continuationInitialStep": 0.25,
     "newtonSolverMaxLinIters": 0,
-    "skipFirstNLineSearch": 0,
+    "newtonSolverSkipFirstNLineSearch": 0,
     "newtonSolverMaxIter": 100,
     "nRestarts": 3,
     "subSpaceSize": 20,

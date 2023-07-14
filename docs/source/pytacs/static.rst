@@ -12,6 +12,8 @@ The following options, their default values and descriptions are listed below:
 
 .. program-output:: python -c "from tacs.problems import StaticProblem; StaticProblem.printDefaultOptions()"
 
+When solving a nonlinear static problem, these methods will also accept any of the options from the :doc:`newton_solver` and :doc:`continuation_solver` solvers.
+
 API Reference
 ^^^^^^^^^^^^^
 .. autoclass:: tacs.problems.StaticProblem

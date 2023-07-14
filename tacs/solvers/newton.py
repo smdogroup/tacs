@@ -75,43 +75,47 @@ class NewtonSolver(BaseSolver):
             "Eisenstat-Walker alpha parameter.",
         ],
         # Line search options
-        "useLineSearch": [
+        "newtonSolverUseLineSearch": [
             bool,
             True,
             "Flag for using line search in the nonlinear solver.",
         ],
-        "lineSearchMonitor": [
+        "newtonSolverPrintLineSearchIters": [
             bool,
             False,
             "Flag for printing out line search information.",
         ],
-        "skipFirstNLineSearch": [
+        "newtonSolverSkipFirstNLineSearch": [
             int,
             0,
             "Skip the first N line searches. Setting this to 1 can improve the convergence speed of Newton solver, but also decreases robustness",
         ],
-        "lineSearchMaxIter": [int, 25, "Maximum number of linesearch iterations."],
-        "lineSearchExpectedDecrease": [
+        "newtonSolverLineSearchMaxIter": [
+            int,
+            25,
+            "Maximum number of linesearch iterations.",
+        ],
+        "newtonSolverLineSearchExpectedDecrease": [
             float,
             1e-4,
             "Minimum fraction of the expected decrease in the energy gradient during the linesearch. Should be between 0 and 1. Higher values should improve robustness at the expense of solution time.",
         ],
-        "lineSearchMaxStep": [
+        "newtonSolverLineSearchMaxStep": [
             float,
             2.0,
             "Maximum step size for the linesearch, as a fraction of the Newton step",
         ],
-        "lineSearchMinStep": [
+        "newtonSolverLineSearchMinStep": [
             float,
             1e-2,
             "Minimum step size for the linesearch, as a fraction of the Newton step",
         ],
-        "lineSearchMaxStepChange": [
+        "newtonSolverLineSearchMaxStepChange": [
             float,
             0.5,
             "Maximum change in the step size from one linesearch iteration to the next, can be useful in cases where secant method bounces between upper and lower step bounds.",
         ],
-        "lineSearchFallbackStepLimit": [
+        "newtonSolverLineSearchFallbackStepLimit": [
             float,
             0.9,
             "Often, the value of the merit function at the Newton step (alpha = 1.0), is orders of magnitude greater than at the start point. In these situations, the linesearch then tries to evaluate a point with a very small step size, which usually meets the expected decrease criteria but results in very slow progress of the Newton solver. To combat this, this value limits how far the linesearch can backtrack on the first iteration after evaluating alpha = 1. This has the effect of encouraging the linesearch to find larger steps that meet the expected decrease criterion, which results in faster convergence of the Newton solver.",
@@ -204,8 +208,8 @@ class NewtonSolver(BaseSolver):
             Vector in which to store the solution, by default None.
             The problem's state is updated with the solution whether or not this is provided.
         """
-        USE_LINESEARCH = self.getOption("useLineSearch")
-        LINESEARCH_SKIP_ITERS = self.getOption("skipFirstNLineSearch")
+        USE_LINESEARCH = self.getOption("newtonSolverUseLineSearch")
+        LINESEARCH_SKIP_ITERS = self.getOption("newtonSolverSkipFirstNLineSearch")
         MAX_ITERS = self.getOption("newtonSolverMaxIter")
         MAX_RES = self.getOption("newtonSolverDivergenceTol")
         MAX_LIN_ITERS = self.getOption("newtonSolverMaxLinIters")
@@ -333,12 +337,15 @@ class NewtonSolver(BaseSolver):
             result.copyValues(self.stateVec)
 
     def energyLineSearch(self, u, stepDir, slope=None):
-        MAX_LINESEARCH_ITERS = self.getOption("lineSearchMaxIter")
-        LINESEARCH_MU = self.getOption("lineSearchExpectedDecrease")
-        LINESEARCH_ALPHA_MIN = self.getOption("lineSearchMinStep")
-        LINESEARCH_ALPHA_MAX = self.getOption("lineSearchMaxStep")
-        LINESEARCH_MAX_STEP_CHANGE = self.getOption("lineSearchMaxStepChange")
-        PRINT_LINESEARCH_ITERS = self.getOption("lineSearchMonitor")
+        MAX_LINESEARCH_ITERS = self.getOption("newtonSolverLineSearchMaxIter")
+        LINESEARCH_MU = self.getOption("newtonSolverLineSearchExpectedDecrease")
+        LINESEARCH_ALPHA_MIN = self.getOption("newtonSolverLineSearchMinStep")
+        LINESEARCH_ALPHA_MAX = self.getOption("newtonSolverLineSearchMaxStep")
+        LINESEARCH_MAX_STEP_CHANGE = self.getOption(
+            "newtonSolverLineSearchMaxStepChange"
+        )
+        FALLBACK_ALPHA = self.getOption("newtonSolverLineSearchFallbackStepLimit")
+        PRINT_LINESEARCH_ITERS = self.getOption("newtonSolverPrintLineSearchIters")
         if slope is None:
             slope = 1.0
 
@@ -382,7 +389,7 @@ class NewtonSolver(BaseSolver):
             else:
                 # 8. Update $\alpha$ (based on search method)
                 if iteration == 0:
-                    alphaMin = 0.9
+                    alphaMin = FALLBACK_ALPHA
                 else:
                     alphaMin = LINESEARCH_ALPHA_MIN
                 if fNew == fOld:

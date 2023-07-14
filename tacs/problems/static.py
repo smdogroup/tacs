@@ -119,8 +119,6 @@ class StaticProblem(TACSProblem):
             "Flag for printing out timing information for class procedures.",
         ],
     }
-    defaultOptions.update(tacs.solvers.NewtonSolver.defaultOptions)
-    defaultOptions.update(tacs.solvers.ContinuationSolver.defaultOptions)
 
     def __init__(
         self,
@@ -166,6 +164,27 @@ class StaticProblem(TACSProblem):
         self.history = None
         self.newtonSolver = None
         self.nonlinearSolver = None
+        self.nonlinearSolverOptionNames = []
+
+        if isNonlinear:
+            # --- Compile a list of nonlinear solver options then separate out any nonlinear options supplied by the user ---
+            self.nonlinearSolverOptionNames += [
+                name.lower() for name in tacs.solvers.NewtonSolver.defaultOptions
+            ]
+            self.nonlinearSolverOptionNames += [
+                name.lower() for name in tacs.solvers.ContinuationSolver.defaultOptions
+            ]
+
+            nonlinearSolverOptions = {
+                key: options[key]
+                for key in options
+                if key.lower() in self.nonlinearSolverOptionNames
+            }
+            options = {
+                key: options[key]
+                for key in options
+                if key.lower() not in self.nonlinearSolverOptionNames
+            }
 
         # Default setup for common problem class objects, sets up comm and options
         TACSProblem.__init__(
@@ -177,17 +196,7 @@ class StaticProblem(TACSProblem):
 
         # Setup solver and solver history objects for nonlinear problems
         if self.isNonlinear:
-            self._createSolverHistory()
-
             # Create Newton solver, the inner solver for the continuation solver
-            solverOptions = {}
-            solverOptionNames = [
-                name.lower() for name in tacs.solvers.NewtonSolver.defaultOptions
-            ]
-            for key in self.options:
-                if key.lower() in solverOptionNames:
-                    solverOptions[key] = self.getOption(key)
-
             self.newtonSolver = tacs.solvers.NewtonSolver(
                 assembler=self.assembler,
                 setStateFunc=self.setVariables,
@@ -197,33 +206,24 @@ class StaticProblem(TACSProblem):
                 linearSolver=self.KSM,
                 stateVec=self.u,
                 resVec=self.res,
-                options=solverOptions,
                 comm=self.comm,
             )
 
             # And now create the continuation solver
-            solverOptions = {}
-            solverOptionNames = [
-                name.lower() for name in tacs.solvers.ContinuationSolver.defaultOptions
-            ]
-            for key in self.options:
-                if key.lower() in solverOptionNames:
-                    solverOptions[key] = self.getOption(key)
-
-            def getLoadScale():
-                return self.loadScale
-
             self.nonlinearSolver = tacs.solvers.ContinuationSolver(
                 jacFunc=self.updateJacobian,
                 pcUpdateFunc=self.updatePreconditioner,
                 linearSolver=self.KSM,
                 setLambdaFunc=self.setLoadScale,
-                getLambdaFunc=getLoadScale,
+                getLambdaFunc=self.getLoadScale,
                 innerSolver=self.newtonSolver,
-                options=solverOptions,
                 comm=self.comm,
             )
             self.nonlinearSolver.setCallback(self._nonlinearCallback)
+            for name, value in nonlinearSolverOptions.items():
+                self.nonlinearSolver.setOption(name, value)
+
+            self._createSolverHistory()
 
     def _createSolverHistory(self):
         """Setup the solver history object based on the current options
@@ -232,7 +232,7 @@ class StaticProblem(TACSProblem):
         """
         monitorVars = [s.lower() for s in self.getOption("nonlinearSolverMonitorVars")]
         numType = float if self.dtype == np.float64 else complex
-        if self.comm.rank == 0:
+        if self.nonlinearSolver is not None and self.comm.rank == 0:
             history = SolverHistory()
 
             # Define the variables to be stored in the history
@@ -243,7 +243,7 @@ class StaticProblem(TACSProblem):
             # Newton solve iteration number
             history.addVariable("SubIter", int, printVar=True)
             # Einstat walker linear solver tolerance
-            if self.getOption("newtonSolverUseEW"):
+            if self.nonlinearSolver.getOption("newtonSolverUseEW"):
                 history.addVariable("EW Tol", float, printVar="ewtol" in monitorVars)
             # Number of linear solver iterations
             history.addVariable(
@@ -263,14 +263,14 @@ class StaticProblem(TACSProblem):
                 "LS step",
                 float,
                 printVar="linesearchstep" in monitorVars
-                and self.getOption("useLineSearch"),
+                and self.nonlinearSolver.getOption("newtonSolverUseLineSearch"),
             )
             # Num line search iterations
             history.addVariable(
                 "LS iters",
                 int,
                 printVar="linesearchiters" in monitorVars
-                and self.getOption("useLineSearch"),
+                and self.nonlinearSolver.getOption("newtonSolverUseLineSearch"),
             )
             # Flags
             history.addVariable("Flags", str, printVar=True)
@@ -429,8 +429,16 @@ class StaticProblem(TACSProblem):
         value : depends on option
             New option value to set
         """
-        # Default setOption for common problem class objects
-        TACSProblem.setOption(self, name, value)
+        # If the supplied option is a nonlinear solver option, pass it to the nonlinear solver instead of the problem
+        if (
+            self.isNonlinear
+            and name.lower() in self.nonlinearSolverOptionNames
+        ):
+            if self.nonlinearSolver is not None:
+                self.nonlinearSolver.setOption(name, value)
+        else:
+            # Default setOption for common problem class objects
+            TACSProblem.setOption(self, name, value)
 
         createVariables = True
 
@@ -458,14 +466,6 @@ class StaticProblem(TACSProblem):
                 createVariables = False
 
             if self.isNonlinear:
-                # Pass option to nonlinear solver if it is a nonlinear solver option
-                if name.lower() in [
-                    opt.lower() for opt in self.nonlinearSolver.defaultOptions
-                ]:
-                    createVariables = False
-                    if self.nonlinearSolver is not None:
-                        self.nonlinearSolver.setOption(name, value)
-
                 # We need to create a new solver history object if the monitor variables have updated
                 if (
                     name.lower() in ["nonlinearsolvermonitorvars", "newtonsolveruseew"]
@@ -520,6 +520,18 @@ class StaticProblem(TACSProblem):
         if value != self._loadScale:
             self._jacobianUpdateRequired = True
             self._loadScale = value
+
+    def getLoadScale(self):
+        """Get the current load scale
+
+        This function is required by the continuation solver
+
+        Returns
+        -------
+        float
+            Current load scale
+        """
+        return self.loadScale
 
     def addFunction(self, funcName, funcHandle, compIDs=None, **kwargs):
         """
