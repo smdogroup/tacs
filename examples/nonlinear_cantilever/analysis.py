@@ -85,7 +85,7 @@ FEAAssembler.initialize(elemCallBack)
 
 probOptions = {
     "printTiming": True,
-    "skipFirstNLineSearch": 0,
+    "newtonSolverSkipFirstNLineSearch": 0,
     "newtonSolverCoarseRelTol": 1e-3,
     "continuationInitialStep": 0.05,
     "continuationUsePredictor": True,
