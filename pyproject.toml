@@ -1,7 +1,7 @@
 #pyproject.toml
 [build-system]
 # Minimum requirements for the build system to execute.
-requires = ['setuptools>=45.0', 'wheel', 'cython>=0.29', 'oldest-supported-numpy',
+requires = ['setuptools>=45.0', 'wheel', 'cython>=0.29,<3.0', 'oldest-supported-numpy',
             # Build against an old version (3.1.1) of mpi4py for forward compatibility
             "mpi4py==3.1.1; python_version<'3.11'",
             # Python 3.11 requires 3.1.4+
