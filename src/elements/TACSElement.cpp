@@ -46,7 +46,7 @@ void TACSElement::addJacobian(int elemIndex, double time, TacsScalar alpha,
                               TacsScalar J[]) {
   // The step length
 #ifdef TACS_USE_COMPLEX
-  const double dh = 1e-30;
+  const double dh = 1e-200;
 #else
   const double dh = 1e-7;
 #endif  // TACS_USE_COMPLEX
@@ -203,7 +203,7 @@ void TACSElement::addAdjResProduct(
     const TacsScalar ddvars[], int dvLen, TacsScalar dfdx[]) {
   // The step length
 #ifdef TACS_USE_COMPLEX
-  const double dh = 1e-30;
+  const double dh = 1e-200;
 #else
   const double dh = 1e-7;
 #endif  // TACS_USE_COMPLEX
@@ -273,7 +273,7 @@ void TACSElement::addAdjResXptProduct(
     const TacsScalar ddvars[], TacsScalar fXptSens[]) {
   // The step length
 #ifdef TACS_USE_COMPLEX
-  const double dh = 1e-30;
+  const double dh = 1e-200;
 #else
   const double dh = 1e-7;
 #endif  // TACS_USE_COMPLEX
@@ -358,7 +358,7 @@ void TACSElement::addMatDVSensInnerProduct(
     const TacsScalar vars[], int dvLen, TacsScalar dfdx[]) {
   // The step length
 #ifdef TACS_USE_COMPLEX
-  const double dh = 1e-30;
+  const double dh = 1e-200;
 #else
   const double dh = 1e-7;
 #endif  // TACS_USE_COMPLEX
@@ -512,7 +512,7 @@ void TACSElement::getMatSVSensInnerProduct(
     const TacsScalar vars[], TacsScalar dfdu[]) {
   // The step length
 #ifdef TACS_USE_COMPLEX
-  const double dh = 1e-30;
+  const double dh = 1e-200;
 #else
   const double dh = 1e-7;
 #endif  // TACS_USE_COMPLEX
@@ -587,7 +587,7 @@ void TACSElement::addPointQuantityDVSens(
     const TacsScalar dfdq[], int dvLen, TacsScalar dfdx[]) {
   // The step length
 #ifdef TACS_USE_COMPLEX
-  const double dh = 1e-30;
+  const double dh = 1e-200;
 #else
   const double dh = 1e-7;
 #endif  // TACS_USE_COMPLEX
@@ -664,7 +664,7 @@ void TACSElement::addPointQuantitySVSens(
     const TacsScalar ddvars[], const TacsScalar dfdq[], TacsScalar dfdu[]) {
   // The step length
 #ifdef TACS_USE_COMPLEX
-  const double dh = 1e-30;
+  const double dh = 1e-200;
 #else
   const double dh = 1e-7;
 #endif  // TACS_USE_COMPLEX
@@ -750,7 +750,7 @@ void TACSElement::addPointQuantityXptSens(
     const TacsScalar dfddetXd, const TacsScalar dfdq[], TacsScalar dfdXpts[]) {
   // The step length
 #ifdef TACS_USE_COMPLEX
-  const double dh = 1e-30;
+  const double dh = 1e-200;
 #else
   const double dh = 1e-7;
 #endif  // TACS_USE_COMPLEX
