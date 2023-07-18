@@ -39,7 +39,7 @@ requirements:
     - {{ compiler('cxx') }}
     - make
     - mpi4py
-    - cython
+    - cython >=0.29,<3.0
     - setuptools
 
   host:
@@ -57,7 +57,7 @@ requirements:
     - metis >=5.1
     - tecio
     - mpi4py
-    - cython
+    - cython >=0.29,<3.0
     - setuptools
 
   run:
