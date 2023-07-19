@@ -1425,7 +1425,7 @@ cdef class RBE2(Element):
     cdef TACSRBE2 *cptr
     def __cinit__(self, int num_nodes,
                   np.ndarray[int, ndim=1, mode='c'] constrained_dofs):
-        num_dep = (num_nodes - 1) / 2
+        num_dep = (num_nodes - 1) // 2
 
         assert len(constrained_dofs) == 6 or len(constrained_dofs) == 6 * num_dep
 
