@@ -34,8 +34,7 @@ from libc.stdlib cimport malloc, free
 from cpython cimport PyObject, Py_INCREF
 
 # Import the definitions
-from TACS cimport *
-from constitutive cimport *
+from tacs.TACS cimport *
 
 # Include the definitions
 include "TacsDefs.pxi"

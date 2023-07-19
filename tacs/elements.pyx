@@ -34,9 +34,8 @@ from cpython cimport PyObject, Py_INCREF
 include "TacsDefs.pxi"
 
 # Import the definitions
-from TACS cimport *
-from constitutive cimport *
-from elements cimport *
+from tacs.TACS cimport *
+from tacs.constitutive cimport *
 
 # Include the mpi4py header
 cdef extern from "mpi-compat.h":
