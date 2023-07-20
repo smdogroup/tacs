@@ -33,7 +33,7 @@ class TacsModel:
         return self._tacs_aim
 
     @property
-    def mesh_aim(self):
+    def mesh_aim(self) -> AflrAim:
         return self._mesh_aim
 
     @property
@@ -116,6 +116,10 @@ class TacsModel:
 
         if include_aim:
             self.tacs_aim.setup_aim()
+
+            # Set additional options for AFLR4 AIM through dictionaries
+            if self.mesh_aim._dictOptions is not None:
+                self.mesh_aim._setDictOptions()
 
             # go ahead and generate the first input files and mesh for TACS
             if not self.tacs_aim.change_shape:
