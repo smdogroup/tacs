@@ -201,7 +201,8 @@ class TacsBuilder(Builder):
         # Loop through the multiplier nodes and remove them
         masked_local_nodes = list(masked_local_nodes)
         for mult_node in local_mnodes:
-            masked_local_nodes.remove(mult_node)
+            if mult_node in masked_local_nodes:
+                masked_local_nodes.remove(mult_node)
         masked_local_nodes = np.array(masked_local_nodes)
 
         # Loop through the multiplier nodes and offset for the multiplier nodes we removed
