@@ -177,7 +177,7 @@ void TACSPhaseChangeMaterialConstitutive::addDensityDVSens(
 void TACSPhaseChangeMaterialConstitutive::addDensitySVSens(
     int elemIndex, const double pt[], const TacsScalar X[], TacsScalar dfdu[],
     const TacsScalar u[]) {
-  if (solid_properties && liquid_properties && tNum >= 0) {
+  if (solid_properties && liquid_properties) {
     TacsScalar T = u[0];
     TacsScalar dBdT = evalTransitionCoefSVSens(T);
     TacsScalar rhos = solid_properties->getDensity();
@@ -195,7 +195,7 @@ TacsScalar TACSPhaseChangeMaterialConstitutive::evalSpecificHeat(
     TacsScalar cs = solid_properties->getSpecificHeat();
     TacsScalar cl = liquid_properties->getSpecificHeat();
     TacsScalar f1 = -(T - Tm) * (T - Tm) / (dT * dT);
-    TacsScalar f2 = pow(dT * dT, 0.5) / 3.14159265359;
+    TacsScalar f2 = pow(dT * dT, 0.5) / M_PI;
     TacsScalar D = exp(f1 / f2);
     return cs + (cl - cs) * B + lh * D;
   }
@@ -205,13 +205,13 @@ TacsScalar TACSPhaseChangeMaterialConstitutive::evalSpecificHeat(
 void TACSPhaseChangeMaterialConstitutive::addSpecificHeatSVSens(
     int elemIndex, const double pt[], const TacsScalar X[], TacsScalar dfdu[],
     const TacsScalar u[]) {
-  if (solid_properties && liquid_properties && tNum >= 0) {
+  if (solid_properties && liquid_properties) {
     TacsScalar T = u[0];
     TacsScalar dBdT = evalTransitionCoefSVSens(T);
     TacsScalar cs = solid_properties->getSpecificHeat();
     TacsScalar cl = liquid_properties->getSpecificHeat();
     TacsScalar f1 = -(T - Tm) * (T - Tm) / (dT * dT);
-    TacsScalar f2 = pow(dT * dT, 0.5) / 3.14159265359;
+    TacsScalar f2 = pow(dT * dT, 0.5) / M_PI;
     TacsScalar dDdT = (-2.0 / f2) * exp(f1 / f2) * (T - Tm) / (dT * dT);
     dfdu[0] += (cl - cs) * dBdT + lh * dDdT;
   }
@@ -293,7 +293,7 @@ void TACSPhaseChangeMaterialConstitutive::addKappaSVSens(int elemIndex,
                                                          const TacsScalar X[],
                                                          TacsScalar dfdu[],
                                                          const TacsScalar u[]) {
-  if (solid_properties && liquid_properties && tNum >= 0) {
+  if (solid_properties && liquid_properties) {
     TacsScalar T = u[0];
     TacsScalar dBdT = evalTransitionCoefSVSens(T);
 

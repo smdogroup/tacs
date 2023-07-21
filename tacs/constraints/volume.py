@@ -7,6 +7,9 @@ The formulation is a nonlinear constraint based on the nodal coordinates.
 A common example of this is ensuring enough volume in the wingbox for fuel:
 
     vol_wing >= vol_fuel
+
+.. note:: This class should be created using the
+    :meth:`pyTACS.createVolumeConstraint <tacs.pytacs.pyTACS.createVolumeConstraint>` method.
 """
 
 # =============================================================================

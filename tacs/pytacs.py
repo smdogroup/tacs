@@ -263,10 +263,12 @@ class pyTACS(BaseUI):
     @preinitialize_method
     def addGlobalDV(self, descript, value, lower=None, upper=None, scale=1.0):
         """
+        Add a global design variable that can affect multiple components.
+
         This function allows adding design variables that are not
         cleanly associated with a particular constitutive object. One
         example is the pitch of the stiffeners for blade-stiffened
-        panels; It is often the same for many different constitutive
+        panels. It is often the same for many different constitutive
         objects. By calling this function, the internal dvNum counter
         is incremented, and the user doesn't have to worry about
         it.
@@ -276,7 +278,6 @@ class pyTACS(BaseUI):
         descript : str
             A user-supplied string that can be used to retrieve the
             variable number and value elemCallBackFunction.
-
         value : float
             Initial value for variable.
         lower : float
@@ -453,12 +454,12 @@ class pyTACS(BaseUI):
         Methods of selection:
 
         1. include, integer, string, list of integers and/or strings: The
-           simplest and most direct way of selecting a component.
-           The
-           user supplies the index of the componentID, a name or partial
-           name, or a list containing a combination of both.
+        simplest and most direct way of selecting a component.
+        The
+        user supplies the index of the componentID, a name or partial
+        name, or a list containing a combination of both.
 
-           For example::
+        For example::
 
             # Select the 11th component
             selectCompIDs(include=10)
@@ -478,69 +479,65 @@ class pyTACS(BaseUI):
             selectCompIDs(include=['rib.00', 10, 'spar'])
 
         2. Exclude, operates similarly to 'include'.
-        The behaviour
-           of exclude is identical to include above, except that
-           component ID's that are found using 'exclude' are
-           'subtracted' from those found using include.
-           A special
-           case is treated if 'include' is NOT given: if only an
-           exclude list is given, this implies the selection of all
-           compID's EXCEPT the those in exclude.
+        The behaviour of exclude is identical to include above, except that
+        component ID's that are found using 'exclude' are
+        'subtracted' from those found using include.
+        A special case is treated if 'include' is NOT given: if only an
+        exclude list is given, this implies the selection of all
+        compID's EXCEPT the those in exclude.
 
-           For example::
+        For example::
 
-               # This will return will [0, 1, 2, 3, 5, ..., nComp-1]
-               selectCompIDs(exclude = 4)
+            # This will return will [0, 1, 2, 3, 5, ..., nComp-1]
+            selectCompIDs(exclude = 4)
 
-               # This will return [0, 1, 4, 5, ..., nComp-1]
-               selectCompIDs(exclude = [2, 3]) will return
+            # This will return [0, 1, 4, 5, ..., nComp-1]
+            selectCompIDs(exclude = [2, 3]) will return
 
-               # This will return components that have 'ribs' in the
-               # component ID, but not those that have 'le_ribs' in the
-               # component id.
-               selectCompIDs(include='ribs', exclude='le_ribs')
+            # This will return components that have 'ribs' in the
+            # component ID, but not those that have 'le_ribs' in the
+            # component id.
+            selectCompIDs(include='ribs', exclude='le_ribs')
 
         3. includeBounds, list of components defining a region inside
-           which 'include' components will be selected.
-           This
-           functionality uses a geometric approach to select the compIDs.
-           All components within the project 2D convex hull are included.
-           Therefore, it is essential to split up concave include regions
-           into smaller convex regions.
-           Use multiple calls to selectCompIDs to
-           accumulate multiple regions.
+        which 'include' components will be selected.
+        This functionality uses a geometric approach to select the compIDs.
+        All components within the project 2D convex hull are included.
+        Therefore, it is essential to split up concave include regions
+        into smaller convex regions.
+        Use multiple calls to selectCompIDs to accumulate multiple regions.
 
-           For example::
+        For example::
 
-               # This will select upper skin components between the
-               # leading and trailing edge spars and between ribs 1 and 4.
-               selectCompIDs(include='U_SKIN', includeBound=
-                   ['LE_SPAR', 'TE_SPAR', 'RIB.01', 'RIB.04'])
+            # This will select upper skin components between the
+            # leading and trailing edge spars and between ribs 1 and 4.
+            selectCompIDs(include='U_SKIN', includeBound=
+                ['LE_SPAR', 'TE_SPAR', 'RIB.01', 'RIB.04'])
 
         4. nGroup: The number of groups to divide the found components
-           into.
-           Generally this will be 1. However, in certain cases, it
-           is convenient to create multiple groups in one pass.
+        into.
+        Generally this will be 1. However, in certain cases, it
+        is convenient to create multiple groups in one pass.
 
-           For example::
+        For example::
 
-             # This will 'evenly' create 10 groups on all components
-             # containing LE_SPAR.
-             Note that once the components are
-             # selected, they are sorted **alphabetically** and assigned
-             # sequentially.
-             selectCompIDs(include='LE_SPAR', nGroup=10)
+            # This will 'evenly' create 10 groups on all components
+            # containing LE_SPAR.
+            Note that once the components are
+            # selected, they are sorted **alphabetically** and assigned
+            # sequentially.
+            selectCompIDs(include='LE_SPAR', nGroup=10)
 
-           nGroup can also be negative.
-           If it is negative, then a single
-           design variable group is added to each of the found
-           components.
+        nGroup can also be negative.
+        If it is negative, then a single
+        design variable group is added to each of the found
+        components.
 
-           For example::
+        For example::
 
-             # will select all components and assign a design variable
-             # group to each one.
-             selectCompIDs(nGroup=-1)
+            # will select all components and assign a design variable
+            # group to each one.
+            selectCompIDs(nGroup=-1)
 
         includeOp, str: 'and' or 'or'.
         Selects the logical operation
@@ -1977,6 +1974,36 @@ class pyTACS(BaseUI):
             DVConstraint object used for calculating constraints.
         """
         constr = tacs.constraints.DVConstraint(
+            name,
+            self.assembler,
+            self.comm,
+            self.outputViewer,
+            self.meshLoader,
+            options,
+        )
+        # Set with original design vars and coordinates, in case they have changed
+        constr.setDesignVars(self.x0)
+        constr.setNodes(self.Xpts0)
+        return constr
+
+    @postinitialize_method
+    def createPanelLengthConstraint(self, name, options=None):
+        """Create a new PanelLengthConstraint for enforcing that the panel
+        length DV values passed to components match the actual panel lengths.
+
+        Parameters
+        ----------
+        name : str
+            Name to assign constraint.
+        options : dict
+            Class-specific options to pass to DVConstraint instance (case-insensitive).
+
+        Returns
+        ----------
+        constraint : tacs.constraints.PanelLengthConstraint
+            PanelLengthConstraint object used for calculating constraints.
+        """
+        constr = tacs.constraints.PanelLengthConstraint(
             name,
             self.assembler,
             self.comm,

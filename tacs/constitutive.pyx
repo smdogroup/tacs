@@ -789,6 +789,270 @@ cdef class CompositeShellConstitutive(ShellConstitutive):
                                                     np.rad2deg(ply_angles, dtype=float))
         return prop
 
+cdef class BladeStiffenedShellConstitutive(ShellConstitutive):
+    """This constitutive class models a shell stiffened with T-shaped stiffeners.
+    The stiffeners are not explicitly modelled.
+    Instead, their stiffness is "smeared" across the shell.
+
+    Parameters
+    ----------
+    panelPly : tacs.constitutive.OrthotropicPly
+        Ply model to use for the panel
+    stiffenerPly : tacs.constitutive.OrthotropicPly
+        Ply model to use for the stiffener
+    kcorr : float or complex
+        Shear correction factor, usually 5.0/6.0
+    panelLength : float or complex
+        Panel length DV value
+    panelLengthNum : int
+        Panel lenth DV number, passing a negative value tells TACS not to treat this as a DV
+    stiffenerPitch : float or complex
+        Stiffener pitch DV value
+    stiffenerPitchNum : int
+        DV number, passing a negative value tells TACS not to treat this as a DV
+    panelThick : float or complex
+        Panel thickness DV value
+    panelThickNum : int
+        DV number, passing a negative value tells TACS not to treat this as a DV
+    numPanelPlies : int
+        Number of distinct ply angles in the panel
+    panelPlyAngles : numpy.ndarray[float or complex]
+        Array of ply angles in the panel
+    panelPlyFracs : numpy.ndarray[float or complex]
+        Array of ply fractions in the panel
+    panelPlyFracNums : numpy.ndarray[np.intc]
+        Array of ply fraction DV numbers in the panel, passing negative values tells TACS not to treat that ply fraction as a DV
+    stiffenerHeight : float or complex
+        Stiffener height DV value
+    stiffenerHeightNum : int
+        DV number, passing a negative value tells TACS not to treat this as a DV
+    stiffenerThick : float or complex
+        Stiffener thickness DV value
+    stiffenerThickNum : int
+        DV number, passing a negative value tells TACS not to treat this as a DV
+    numStiffenerPlies : int
+        Number of distinct ply angles in the stiffener
+    stiffenerPlyAngles : numpy.ndarray[float or complex]
+        Array of ply angles for the stiffener
+    stiffenerPlyFracs : numpy.ndarray[float or complex]
+        Array of ply fractions for the stiffener
+    stiffenerPlyFracNums : numpy.ndarray[numpy.intc]
+        Array of ply fraction DV numbers for the stiffener, passing negative values tells TACS not to treat that ply fraction as a DV
+    flangeFraction : float, optional
+        Ratio of the stiffener base width to the stiffener height, by default 1.0
+
+    Raises
+    ------
+    ValueError
+        Raises error if panelPlyAngles, panelPlyFracs, or panelPlyFracNums do not have numPanelPlies entries
+    ValueError
+        Raises error if stiffenerPlyAngles, stiffenerPlyFracs, or stiffenerPlyFracNums do not have numStiffenerPlies entries
+    """
+    def __cinit__(
+        self,
+        OrthotropicPly panelPly,
+        OrthotropicPly stiffenerPly,
+        TacsScalar kcorr,
+        TacsScalar panelLength,
+        int panelLengthNum,
+        TacsScalar stiffenerPitch,
+        int stiffenerPitchNum,
+        TacsScalar panelThick,
+        int panelThickNum,
+        int numPanelPlies,
+        np.ndarray[TacsScalar, ndim=1, mode='c'] panelPlyAngles,
+        np.ndarray[TacsScalar, ndim=1, mode='c'] panelPlyFracs,
+        np.ndarray[int, ndim=1, mode='c'] panelPlyFracNums,
+        TacsScalar stiffenerHeight,
+        int stiffenerHeightNum,
+        TacsScalar stiffenerThick,
+        int stiffenerThickNum,
+        int numStiffenerPlies,
+        np.ndarray[TacsScalar, ndim=1, mode='c'] stiffenerPlyAngles,
+        np.ndarray[TacsScalar, ndim=1, mode='c'] stiffenerPlyFracs,
+        np.ndarray[int, ndim=1, mode='c'] stiffenerPlyFracNums,
+        TacsScalar flangeFraction = 1.0
+        ):
+
+        if len(panelPlyAngles) != numPanelPlies:
+            raise ValueError('panelPlyAngles must have length numPanelPlies')
+        if len(panelPlyFracs) != numPanelPlies:
+            raise ValueError('panelPlyFracs must have length numPanelPlies')
+        if len(panelPlyFracNums) != numPanelPlies:
+            raise ValueError('panelPlyFracNums must have length numPanelPlies')
+        if len(stiffenerPlyAngles) != numStiffenerPlies:
+            raise ValueError('stiffenerPlyAngles must have length numStiffenerPlies')
+        if len(stiffenerPlyFracs) != numStiffenerPlies:
+            raise ValueError('stiffenerPlyFracs must have length numStiffenerPlies')
+        if len(stiffenerPlyFracNums) != numStiffenerPlies:
+            raise ValueError('stiffenerPlyFracNums must have length numStiffenerPlies')
+
+        # Numpy's default int type is int64, but this is interpreted by Cython as a long.
+        if panelPlyFracNums.dtype != np.intc:
+            panelPlyFracNums = panelPlyFracNums.astype(np.intc)
+        if stiffenerPlyFracNums.dtype != np.intc:
+            stiffenerPlyFracNums = stiffenerPlyFracNums.astype(np.intc)
+
+        self.blade_ptr = new TACSBladeStiffenedShellConstitutive(
+            panelPly.ptr,
+            stiffenerPly.ptr,
+            kcorr,
+            panelLength,
+            panelLengthNum,
+            stiffenerPitch,
+            stiffenerPitchNum,
+            panelThick,
+            panelThickNum,
+            numPanelPlies,
+            <TacsScalar*>panelPlyAngles.data,
+            <TacsScalar*>panelPlyFracs.data,
+            <int*>panelPlyFracNums.data,
+            stiffenerHeight,
+            stiffenerHeightNum,
+            stiffenerThick,
+            stiffenerThickNum,
+            numStiffenerPlies,
+            <TacsScalar*>stiffenerPlyAngles.data,
+            <TacsScalar*>stiffenerPlyFracs.data,
+            <int*>stiffenerPlyFracNums.data,
+            flangeFraction
+        )
+        self.ptr = self.cptr = self.blade_ptr
+        self.ptr.incref()
+
+    def setKSWeight(self, double ksWeight):
+        """
+        Update the ks weight used for aggregating the different failure modes
+
+        Parameters
+        ----------
+        ksWeight : float
+            KS aggregation weight
+        """
+        if self.blade_ptr:
+            self.blade_ptr.setKSWeight(ksWeight)
+
+    def setStiffenerPitchBounds(self, TacsScalar lowerBound, TacsScalar upperBound):
+        """Set the lower and upper bounds for the stiffener pitch design variable
+
+        The default bounds are 1e-3 and 1e20
+
+        Parameters
+        ----------
+        lowerBound : float or complex
+            Lower bound
+        upperBound : float or complex
+            Upper bound
+        """
+        if self.blade_ptr:
+            self.blade_ptr.setStiffenerPitchBounds(lowerBound, upperBound)
+
+    def setStiffenerHeightBounds(self, TacsScalar lowerBound, TacsScalar upperBound):
+        """Set the lower and upper bounds for the stiffener height design variable
+
+        The default bounds are 1e-3 and 1e20
+
+        Parameters
+        ----------
+        lowerBound : float or complex
+            Lower bound
+        upperBound : float or complex
+            Upper bound
+        """
+
+        if self.blade_ptr:
+            self.blade_ptr.setStiffenerHeightBounds(lowerBound, upperBound)
+
+    def setStiffenerThicknessBounds(self, TacsScalar lowerBound, TacsScalar upperBound):
+        """Set the lower and upper bounds for the stiffener thickness design variable
+
+        The default bounds are 1e-4 and 1e20
+
+        Parameters
+        ----------
+        lowerBound : float or complex
+            Lower bound
+        upperBound : float or complex
+            Upper bound
+        """
+
+        if self.blade_ptr:
+            self.blade_ptr.setStiffenerThicknessBounds(lowerBound, upperBound)
+
+    def setPanelThicknessBounds(self, TacsScalar lowerBound, TacsScalar upperBound):
+        """Set the lower and upper bounds for the panel thickness design variable
+
+        The default bounds are 1e-4 and 1e20
+
+        Parameters
+        ----------
+        lowerBound : float or complex
+            Lower bound
+        upperBound : float or complex
+            Upper bound
+        """
+
+        if self.blade_ptr:
+            self.blade_ptr.setPanelThicknessBounds(lowerBound, upperBound)
+
+    def setStiffenerPlyFractionBounds(
+            self,
+            np.ndarray[TacsScalar, ndim=1, mode='c'] lowerBound,
+            np.ndarray[TacsScalar, ndim=1, mode='c'] upperBound
+        ):
+        """Set the lower and upper bounds for the stiffener ply fraction design variables
+
+        The default bounds are 0 and 1
+
+        Parameters
+        ----------
+        lowerBound : numpy.ndarray[float or complex]
+            Lower bound
+        upperBound : numpy.ndarray[float or complex]
+            Upper bounds
+
+        Raises
+        ------
+        ValueError
+            Raises error if the length of lowerBound or upperBound is not equal to the number of stiffener plies
+        """
+
+        if self.blade_ptr:
+            if len(lowerBound) != self.blade_ptr.getNumStiffenerPlies():
+                raise ValueError('lowerBound must have length numStiffenerPlies')
+            if len(upperBound) != self.blade_ptr.getNumStiffenerPlies():
+                raise ValueError('upperBound must have length numStiffenerPlies')
+            self.blade_ptr.setStiffenerPlyFractionBounds(<TacsScalar*>lowerBound.data, <TacsScalar*>upperBound.data)
+
+    def setPanelPlyFractionBounds(
+            self,
+            np.ndarray[TacsScalar, ndim=1, mode='c'] lowerBound,
+            np.ndarray[TacsScalar, ndim=1, mode='c'] upperBound
+        ):
+        """Set the lower and upper bounds for the panel ply fraction design variables
+
+        The default bounds are 0 and 1
+
+        Parameters
+        ----------
+        lowerBound : numpy.ndarray[float or complex]
+            Lower bound
+        upperBound : numpy.ndarray[float or complex]
+            Upper bounds
+
+        Raises
+        ------
+        ValueError
+            Raises error if the length of lowerBound or upperBound is not equal to the number of panel plies
+        """
+
+        if self.blade_ptr:
+            if len(lowerBound) != self.blade_ptr.getNumPanelPlies():
+                raise ValueError('lowerBound must have length numPanelPlies')
+            if len(upperBound) != self.blade_ptr.getNumPanelPlies():
+                raise ValueError('upperBound must have length numPanelPlies')
+            self.blade_ptr.setPanelPlyFractionBounds(<TacsScalar*>lowerBound.data, <TacsScalar*>upperBound.data)
+
 cdef class LamParamShellConstitutive(ShellConstitutive):
     def __cinit__(self, OrthotropicPly ply, **kwargs):
         cdef TacsScalar t = 1.0
