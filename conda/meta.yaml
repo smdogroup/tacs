@@ -54,7 +54,7 @@ requirements:
     - mpich-mpicxx  # [mpi == "mpich"]
     - libopenblas
     - lapack
-    - metis >=5.1
+    - metis ==5.1.0
     - tecio
     - mpi4py
     - cython >=0.29,<3.0
@@ -72,7 +72,7 @@ requirements:
     - mpich-mpicxx  # [mpi == "mpich"]
     - libopenblas
     - lapack
-    - metis >=5.1
+    - metis ==5.1.0
     - mpi4py
     - pynastran
     - numba
