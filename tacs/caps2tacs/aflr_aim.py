@@ -41,31 +41,44 @@ class AflrAim:
             self._aim = self.caps_problem.analysis.create(aim="aflr4AIM", name="aflr4")
         return
 
-    def set_mesh(
-        self, ff_growth=1.4, min_scale=0.05, max_scale=0.5, use_quad=False, no_prox=True
-    ):
-        # set surface mesh properties
+    def set_mesh(self, min_scale=0.05, max_scale=0.5, AFLR4_Quad=False, no_prox=True):
+        """
+        Set mesh properties for AFLR4 AIM. A few options are available in this routine.
+        To set other options for AFLR4, use the save_dict_options routine.
+
+        Parameters
+        ----------
+        min_scale: Relative scale of minimum spacing to reference length.
+            The relative scale of minimum spacing to reference length (ref_len) controls
+            the minimum spacing that can be set on any component/body surface.
+        max_scale: Relative scale of maximum spacing to reference length.
+            The relative scale of maximum spacing to reference length (ref_len) controls
+            the maximum spacing that can be set on any component/body surface.
+        AFLR4_Quad: Generate a mixed quad/tria-face grid.
+        no_prox: Disable proximity checking.
+            Proximity checking is automatically disabled if there is only one component/body defined.
+        """
+
         if self.root_proc:
-            self.aim.input.ff_cdfr = ff_growth
             self.aim.input.min_scale = min_scale
             self.aim.input.max_scale = max_scale
-            self.aim.input.AFLR4_Quad = use_quad
+            self.aim.input.AFLR4_Quad = AFLR4_Quad
             self._aim.input.no_prox = no_prox
         return self
-    
-    def saveDictOptions(self, dictOptions: dict = None):
+
+    def save_dict_options(self, dictOptions: dict = None):
         """
         Optional method to set AFLR4 mesh settings using dictionaries.
         Call this before setting up the TACS model. The dictionary should take
-        the form of, e.g.: 
+        the form of, e.g.:
 
         dictOptions['aflr4AIM']['myOption'] = myValue
         """
         self._dictOptions = dictOptions
 
         return self
-    
-    def _setDictOptions(self):
+
+    def _set_dict_options(self):
         """
         Set AFLR4 options via dictionaries.
         """

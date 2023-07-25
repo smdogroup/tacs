@@ -117,10 +117,9 @@ class TacsModel:
         if include_aim:
             self.tacs_aim.setup_aim()
 
-            # Set additional options for AFLR4 AIM through dictionaries
-            if self.uses_aflr:
-                if self.mesh_aim._dictOptions is not None:
-                    self.mesh_aim._setDictOptions()
+            # Set additional options for meshing AIM through dictionaries
+            if self.mesh_aim._dictOptions is not None:
+                self.mesh_aim._set_dict_options()
 
             # go ahead and generate the first input files and mesh for TACS
             if not self.tacs_aim.change_shape:

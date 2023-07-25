@@ -41,6 +41,8 @@ class TacsAim:
         self._design_variables = []
         self._mesh_aim = None
 
+        self._dict_options = None
+
         # build flags
         self._setup = False
         self._first_setup = True
@@ -179,6 +181,9 @@ class TacsAim:
                     dv.name: dv.DV_dictionary for dv in self._design_variables
                 }
 
+            if self._dict_options is not None:
+                self._set_dict_options()
+
         # end of serial or root proc section
 
         # note that setup is finished now
@@ -301,6 +306,30 @@ class TacsAim:
             }
 
         return
+
+    def save_dict_options(self, aimOptions: dict = None):
+        """
+        Optional method to set tacsAIM settings using dictionaries. Settings specified
+        through dictionaries take precedence over other methods. The dictionary should
+        take the form of, e.g.:
+
+        aimOptions['tacsAIM']['myOption'] = myValue
+        """
+
+        self._dict_options = aimOptions
+
+        return self
+
+    def _set_dict_options(self):
+        """
+        Set any options that were specified through dictionaries.
+        """
+        aimOptions = self._dict_options
+
+        for ind, option in enumerate(aimOptions["tacsAim"]):
+            self.aim.input[option].value = aimOptions["tacsAim"][option]
+
+        return self
 
     @root_proc
     def pre_analysis(self):
