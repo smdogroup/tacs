@@ -42,7 +42,7 @@ The following packages are required to use TACS:
 * MPI
 * BLAS
 * LAPACK
-* Metis 5.1
+* Metis 5.1.0
 
 To use the python interface to TACS you will also require:
 
@@ -123,7 +123,7 @@ These instructions direct you to install METIS and other dependencies in the dir
 This location for the dependencies is not required, and indeed may not be best.
 If you already have these libraries installed, simply adjust the variables in ``tacs/Makefile.in`` accordingly.
 
-Go to the directory ``tacs/extern``. Download ``metis-5.1.0`` from `<http://glaros.dtc.umn.edu/gkhome/metis/metis/download>`_ and place the file ``metis-5.1.0.tar.gz`` there.
+Go to the directory ``tacs/extern``. Download ``metis-5.1.0`` from `<https://src.fedoraproject.org/lookaside/pkgs/metis/metis-5.1.0.tar.gz/5465e67079419a69e0116de24fce58fe/>`_ and place the file ``metis-5.1.0.tar.gz`` there.
 Note that METIS needs CMake to build and install.
 
 Optionally, you can also place ``SuiteSparse-5.13.0.tar.gz`` (available from `<https://github.com/DrTimothyAldenDavis/SuiteSparse/releases>`_) in the same directory if you want to use the approximate minimum degree ordering routines from SuiteSparse.
