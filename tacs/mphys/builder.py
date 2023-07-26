@@ -189,19 +189,24 @@ class TacsBuilder(Builder):
         """
         # Select all compIDs
         if tags == -1 or tags == [-1]:
-            tagged_comps = self.fea_assembler.selectCompIDs()
+            nnodes = self.fea_assembler.getNumOwnedNodes()
+            # Select all node IDs
+            masked_local_nodes = np.arange(nnodes)
+
         # Get the compIDs associated with tags
         else:
             tagged_comps = self.fea_assembler.selectCompIDs(include=tags)
+            # Select local node IDs for tags
+            masked_local_nodes = self.fea_assembler.getLocalNodeIDsForComps(tagged_comps)
 
         # Select local node IDs and multiplier node IDs
-        masked_local_nodes = self.fea_assembler.getLocalNodeIDsForComps(tagged_comps)
         local_mnodes = self.fea_assembler.getLocalMultiplierNodeIDs()
 
         # Loop through the multiplier nodes and remove them
         masked_local_nodes = list(masked_local_nodes)
         for mult_node in local_mnodes:
-            masked_local_nodes.remove(mult_node)
+            if mult_node in masked_local_nodes:
+                masked_local_nodes.remove(mult_node)
         masked_local_nodes = np.array(masked_local_nodes)
 
         # Loop through the multiplier nodes and offset for the multiplier nodes we removed
