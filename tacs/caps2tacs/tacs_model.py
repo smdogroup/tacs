@@ -45,7 +45,7 @@ class TacsModel:
         return isinstance(self.mesh_aim, AflrAim)
 
     @classmethod
-    def build(cls, csm_file, comm=None, mesh="egads", problem_name: str = "capsStruct"):
+    def build(cls, csm_file, comm=None, mesh="egads", problem_name: str = "capsStruct", verbosity=1):
         """
         make a pyCAPS problem with the tacsAIM and egadsAIM on serial / root proc
 
@@ -61,7 +61,7 @@ class TacsModel:
         assert mesh in cls.MESH_AIMS
         if comm is None or comm.rank == 0:
             caps_problem = pyCAPS.Problem(
-                problemName=problem_name, capsFile=csm_file, outLevel=1
+                problemName=problem_name, capsFile=csm_file, outLevel=verbosity
             )
         tacs_aim = TacsAim(caps_problem, comm)
         mesh_aim = None
