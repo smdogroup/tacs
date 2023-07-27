@@ -64,8 +64,9 @@ class EgadsAim:
         """
         dictOptions = self._dictOptions
 
-        for ind, option in enumerate(dictOptions["egadsTessAIM"]):
-            self.aim.input[option].value = dictOptions["egadsTessAIM"][option]
+        if self.root_proc:
+            for ind, option in enumerate(dictOptions["egadsTessAIM"]):
+                self.aim.input[option].value = dictOptions["egadsTessAIM"][option]
 
         return self
 

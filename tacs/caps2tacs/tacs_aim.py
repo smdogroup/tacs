@@ -320,6 +320,7 @@ class TacsAim:
 
         return self
 
+    @root_proc
     def _set_dict_options(self):
         """
         Set any options that were specified through dictionaries.
