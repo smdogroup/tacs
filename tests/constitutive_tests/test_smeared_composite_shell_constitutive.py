@@ -4,20 +4,19 @@ import numpy as np
 
 from tacs import TACS, constitutive, elements
 
-DEG2RAD = np.pi / 180.0
-
 
 class ConstitutiveTest(unittest.TestCase):
     def setUp(self):
         # fd/cs step size
         if TACS.dtype is complex:
             self.dh = 1e-200
-            self.rtol = 1e-12
+            self.rtol = 1e-9
         else:
             self.dh = 1e-8
             self.rtol = 1e-4
         self.dtype = TACS.dtype
 
+        # Basically, only check relative tolerance
         self.atol = np.clip(1e-5 * self.rtol, 1e-14, 1e-8)
         self.print_level = 0
 
@@ -27,11 +26,9 @@ class ConstitutiveTest(unittest.TestCase):
         # Set the variable arrays
         self.x = np.ones(3, dtype=self.dtype)
         self.pt = np.zeros(3)
-        # This constituitive class has no dvs
-        self.dvs = np.array([], dtype=self.dtype)
 
         nplies = 3
-        ply_thickness = 0.1
+        thickness = 0.1
 
         # Create the isotropic layup
         rho = 2700.0
@@ -50,7 +47,7 @@ class ConstitutiveTest(unittest.TestCase):
             cte=cte,
             kappa=kappa,
         )
-        iso_ply = constitutive.OrthotropicPly(ply_thickness, iso_prop)
+        iso_ply = constitutive.OrthotropicPly(thickness, iso_prop)
         iso_layup = [iso_ply] * nplies
 
         # Create the orthotropic layup
@@ -85,12 +82,16 @@ class ConstitutiveTest(unittest.TestCase):
             cte=cte,
             kappa=kappa,
         )
-        ortho_ply = constitutive.OrthotropicPly(ply_thickness, ortho_prop)
+        ortho_ply = constitutive.OrthotropicPly(thickness, ortho_prop)
         ortho_layup = [ortho_ply] * nplies
 
         self.layup_list = [iso_layup, ortho_layup]
-        self.ply_thicknesses = np.array([ply_thickness] * nplies, dtype=self.dtype)
-        self.ply_angles = np.array([0.0, -45.0, 90.0], dtype=self.dtype) * DEG2RAD
+        self.thickness = thickness
+        self.thickness_dv_num = 0
+        self.ply_angles = np.deg2rad([0.0, -45.0, 90.0]).astype(self.dtype)
+        self.ply_fractions = np.array([0.333, 0.333, 0.333], dtype=self.dtype)
+        self.ply_fraction_dv_nums = np.array([1, 2, 3], dtype=np.intc)
+        self.dvs = np.array([0.1, 0.333, 0.333, 0.333], dtype=self.dtype)
 
         # Seed random number generator in tacs for consistent test results
         elements.SeedRandomGenerator(0)
@@ -99,8 +100,13 @@ class ConstitutiveTest(unittest.TestCase):
         # Test density dv sensitivity
         for layup in self.layup_list:
             with self.subTest(layup=layup):
-                con = constitutive.CompositeShellConstitutive(
-                    layup, self.ply_thicknesses, self.ply_angles
+                con = constitutive.SmearedCompositeShellConstitutive(
+                    layup,
+                    self.thickness,
+                    self.ply_angles,
+                    self.ply_fractions,
+                    self.thickness_dv_num,
+                    self.ply_fraction_dv_nums,
                 )
                 fail = constitutive.TestConstitutiveDensity(
                     con,
@@ -119,8 +125,13 @@ class ConstitutiveTest(unittest.TestCase):
         # Test specific heat dv sensitivity
         for layup in self.layup_list:
             with self.subTest(layup=layup):
-                con = constitutive.CompositeShellConstitutive(
-                    layup, self.ply_thicknesses, self.ply_angles
+                con = constitutive.SmearedCompositeShellConstitutive(
+                    layup,
+                    self.thickness,
+                    self.ply_angles,
+                    self.ply_fractions,
+                    self.thickness_dv_num,
+                    self.ply_fraction_dv_nums,
                 )
                 fail = constitutive.TestConstitutiveSpecificHeat(
                     con,
@@ -139,8 +150,13 @@ class ConstitutiveTest(unittest.TestCase):
         # Test heat flux dv sensitivity
         for layup in self.layup_list:
             with self.subTest(layup=layup):
-                con = constitutive.CompositeShellConstitutive(
-                    layup, self.ply_thicknesses, self.ply_angles
+                con = constitutive.SmearedCompositeShellConstitutive(
+                    layup,
+                    self.thickness,
+                    self.ply_angles,
+                    self.ply_fractions,
+                    self.thickness_dv_num,
+                    self.ply_fraction_dv_nums,
                 )
                 fail = constitutive.TestConstitutiveHeatFlux(
                     con,
@@ -159,8 +175,13 @@ class ConstitutiveTest(unittest.TestCase):
         # Test stress dv sensitivity
         for layup in self.layup_list:
             with self.subTest(layup=layup):
-                con = constitutive.CompositeShellConstitutive(
-                    layup, self.ply_thicknesses, self.ply_angles
+                con = constitutive.SmearedCompositeShellConstitutive(
+                    layup,
+                    self.thickness,
+                    self.ply_angles,
+                    self.ply_fractions,
+                    self.thickness_dv_num,
+                    self.ply_fraction_dv_nums,
                 )
                 fail = constitutive.TestConstitutiveStress(
                     con,
@@ -179,8 +200,13 @@ class ConstitutiveTest(unittest.TestCase):
         # Test thermal strain dv sensitivity
         for layup in self.layup_list:
             with self.subTest(layup=layup):
-                con = constitutive.CompositeShellConstitutive(
-                    layup, self.ply_thicknesses, self.ply_angles
+                con = constitutive.SmearedCompositeShellConstitutive(
+                    layup,
+                    self.thickness,
+                    self.ply_angles,
+                    self.ply_fractions,
+                    self.thickness_dv_num,
+                    self.ply_fraction_dv_nums,
                 )
                 fail = constitutive.TestConstitutiveThermalStrain(
                     con,
@@ -199,8 +225,13 @@ class ConstitutiveTest(unittest.TestCase):
         # Test failure dv sensitivity
         for layup in self.layup_list:
             with self.subTest(layup=layup):
-                con = constitutive.CompositeShellConstitutive(
-                    layup, self.ply_thicknesses, self.ply_angles
+                con = constitutive.SmearedCompositeShellConstitutive(
+                    layup,
+                    self.thickness,
+                    self.ply_angles,
+                    self.ply_fractions,
+                    self.thickness_dv_num,
+                    self.ply_fraction_dv_nums,
                 )
                 fail = constitutive.TestConstitutiveFailure(
                     con,
@@ -218,8 +249,13 @@ class ConstitutiveTest(unittest.TestCase):
     def test_constitutive_failure_strain_sens(self):
         for layup in self.layup_list:
             with self.subTest(layup=layup):
-                con = constitutive.CompositeShellConstitutive(
-                    layup, self.ply_thicknesses, self.ply_angles
+                con = constitutive.SmearedCompositeShellConstitutive(
+                    layup,
+                    self.thickness,
+                    self.ply_angles,
+                    self.ply_fractions,
+                    self.thickness_dv_num,
+                    self.ply_fraction_dv_nums,
                 )
                 fail = constitutive.TestConstitutiveFailureStrainSens(
                     con,
@@ -232,7 +268,3 @@ class ConstitutiveTest(unittest.TestCase):
                     self.rtol,
                 )
                 self.assertFalse(fail)
-
-
-if __name__ == "__main__":
-    unittest.main()

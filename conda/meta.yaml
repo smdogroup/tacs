@@ -54,10 +54,10 @@ requirements:
     - mpich-mpicxx  # [mpi == "mpich"]
     - libopenblas
     - lapack
-    - metis >=5.1
+    - metis ==5.1.0
     - tecio
     - mpi4py
-    - cython >=0.29,<3.0
+    - cython >=3.0.0
     - setuptools
 
   run:
@@ -72,7 +72,7 @@ requirements:
     - mpich-mpicxx  # [mpi == "mpich"]
     - libopenblas
     - lapack
-    - metis >=5.1
+    - metis ==5.1.0
     - mpi4py
     - pynastran
     - numba

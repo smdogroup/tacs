@@ -33,7 +33,7 @@ class TacsModel:
         return self._tacs_aim
 
     @property
-    def mesh_aim(self):
+    def mesh_aim(self) -> AflrAim:
         return self._mesh_aim
 
     @property
@@ -45,7 +45,7 @@ class TacsModel:
         return isinstance(self.mesh_aim, AflrAim)
 
     @classmethod
-    def build(cls, csm_file, comm=None, mesh="egads", problem_name: str = "capsStruct"):
+    def build(cls, csm_file, comm=None, mesh="egads", problem_name: str = "capsStruct", verbosity=1):
         """
         make a pyCAPS problem with the tacsAIM and egadsAIM on serial / root proc
 
@@ -61,7 +61,7 @@ class TacsModel:
         assert mesh in cls.MESH_AIMS
         if comm is None or comm.rank == 0:
             caps_problem = pyCAPS.Problem(
-                problemName=problem_name, capsFile=csm_file, outLevel=1
+                problemName=problem_name, capsFile=csm_file, outLevel=verbosity
             )
         tacs_aim = TacsAim(caps_problem, comm)
         mesh_aim = None
@@ -116,6 +116,10 @@ class TacsModel:
 
         if include_aim:
             self.tacs_aim.setup_aim()
+
+            # Set additional options for meshing AIM through dictionaries
+            if self.mesh_aim._dictOptions is not None:
+                self.mesh_aim._set_dict_options()
 
             # go ahead and generate the first input files and mesh for TACS
             if not self.tacs_aim.change_shape:
