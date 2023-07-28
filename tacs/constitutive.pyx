@@ -1056,10 +1056,14 @@ cdef class SmearedCompositeShellConstitutive(ShellConstitutive):
     """
     This constitutive class defines the stiffness properties for a
     composite laminate first-order shear deformation theory (FSDT) shell type element.
+    The stiffness of the laminate is computed by homogenizing the stiffness properties
+    of each ply through the thickness weighted by their relative ply fractions. This class
+    is a good continuous parametrization for laminates used in gradient-based optimizations where
+    stacking sequence effects can be ignored.
 
     Args:
        ply_list (list[OrthotropicPly]): List of ply properties in layup.
-       thicknesses (float or complex): Totl laminate thickness of layup.
+       thicknesses (float or complex): Total laminate thickness of layup.
        ply_angles (numpy.ndarray[float or complex]): Array of ply angles (in radians) in layup.
        ply_fractions (numpy.ndarray[float or complex]): Fraction of layup contribution of each ply in ply_list.
        thickness_dv_num (int, optional): Design variable number to assign to thickness (keyword argument).
