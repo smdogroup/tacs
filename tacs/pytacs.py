@@ -827,26 +827,26 @@ class pyTACS(BaseUI):
 
         # Evaluate r(0)
         state.zeroEntries()
-        self.assembler.setVariables(state)
+        self.assembler.setVariables(state, state, state)
         self.assembler.assembleRes(res0)
 
         # Evaluate r(u) - r(0)
         state.setRand()
         self.applyBCsToVec(state)
-        self.assembler.setVariables(state)
+        self.assembler.setVariables(state, state, state)
         self.assembler.assembleRes(res1)
         res1.axpy(-1.0, res0)
 
         # Evaluate r(2u) -  r(0)
         state.scale(2.0)
         self.applyBCsToVec(state)
-        self.assembler.setVariables(state)
+        self.assembler.setVariables(state, state, state)
         self.assembler.assembleRes(res2)
         res2.axpy(-1.0, res0)
 
         # Reset the state variables
         state.zeroEntries()
-        self.assembler.setVariables(state)
+        self.assembler.setVariables(state, state, state)
 
         # Check if (res2-res0) - 2 * (res1 - res0) is zero (or very close to it)
         resNorm = res1.norm()
