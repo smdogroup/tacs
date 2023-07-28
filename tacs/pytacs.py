@@ -820,23 +820,36 @@ class pyTACS(BaseUI):
         bool
             True if the problem is nonlinear, False otherwise.
         """
-
+        res0 = self.assembler.createVec()
         res1 = self.assembler.createVec()
         res2 = self.assembler.createVec()
         state = self.assembler.createVec()
-        state.setRand(-1e-3, 1e-3)
+
+        # Evaluate r(0)
+        state.zeroEntries()
+        self.assembler.setVariables(state)
+        self.assembler.assembleRes(res0)
+
+        # Evaluate r(u) - r(0)
+        state.setRand()
+        self.applyBCsToVec(state)
         self.assembler.setVariables(state)
         self.assembler.assembleRes(res1)
+        res1.axpy(-1.0, res0)
+
+        # Evaluate r(2u) -  r(0)
         state.scale(2.0)
+        self.applyBCsToVec(state)
         self.assembler.setVariables(state)
         self.assembler.assembleRes(res2)
-        resNorm = res1.norm()
+        res2.axpy(-1.0, res0)
 
         # Reset the state variables
         state.zeroEntries()
         self.assembler.setVariables(state)
 
-        # Check if res2 - 2 * res1 is zero
+        # Check if (res2-res0) - 2 * (res1 - res0) is zero (or very close to it)
+        resNorm = res1.norm()
         res2.axpy(-2.0, res1)
         return (res2.norm()/resNorm) > 1e-14
 
