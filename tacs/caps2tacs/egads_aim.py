@@ -15,6 +15,9 @@ class EgadsAim:
 
     def __init__(self, caps_problem, comm):
         self.comm = comm
+
+        self._dictOptions = None
+
         if comm is None or comm.rank == 0:
             self._aim = caps_problem.analysis.create(aim="egadsTessAIM")
         self._is_setup = False
@@ -41,6 +44,30 @@ class EgadsAim:
                 max_dihedral_angle,
             ]
         self._is_setup = True
+        return self
+
+    def save_dict_options(self, dictOptions: dict = None):
+        """
+        Optional method to set EGADS mesh settings using dictionaries.
+        Call this before setting up the TACS model. The dictionary should take
+        the form of, e.g.:
+
+        dictOptions['egadsTessAIM']['myOption'] = myValue
+        """
+        self._dictOptions = dictOptions
+
+        return self
+
+    def _set_dict_options(self):
+        """
+        Set EGADS options via dictionaries.
+        """
+        dictOptions = self._dictOptions
+
+        if self.root_proc:
+            for ind, option in enumerate(dictOptions["egadsTessAIM"]):
+                self.aim.input[option].value = dictOptions["egadsTessAIM"][option]
+
         return self
 
     @property
