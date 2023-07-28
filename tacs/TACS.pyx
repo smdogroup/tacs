@@ -32,9 +32,6 @@ from libcpp cimport bool
 # Import C methods for python
 from cpython cimport PyObject, Py_INCREF
 
-# Import the definitions
-from TACS cimport *
-
 # Include the definitions
 include "TacsDefs.pxi"
 
@@ -153,7 +150,7 @@ cdef inplace_array_1d(int nptype, int dim1, void *data_ptr,
 
     # Set the base class who owns the memory
     if ptr != NULL:
-        ndarray.base = ptr
+        np.PyArray_SetBaseObject(ndarray, <object>ptr)
 
     return ndarray
 
@@ -177,7 +174,7 @@ cdef inplace_array_2d(int nptype, int dim1, int dim2, void *data_ptr,
 
     # Set the base class who owns the memory
     if ptr != NULL:
-        ndarray.base = ptr
+        np.PyArray_SetBaseObject(ndarray, <object>ptr)
 
     return ndarray
 
@@ -202,7 +199,7 @@ cdef inplace_array_3d(int nptype, int dim1, int dim2, int dim3, void *data_ptr,
 
     # Set the base class who owns the memory
     if ptr != NULL:
-        ndarray.base = ptr
+        np.PyArray_SetBaseObject(ndarray, <object>ptr)
 
     return ndarray
 
