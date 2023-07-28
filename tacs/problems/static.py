@@ -308,9 +308,6 @@ class StaticProblem(TACSProblem):
         self.externalForce = self.assembler.createVec()
         self.internalForce = self.assembler.createVec()
 
-        if self.isNonlinear:
-            self.u_inc_start = self.assembler.createVec()
-
         # Auxiliary element object for applying tractions/pressure
         self.auxElems = tacs.TACS.AuxElements()
         # Counter for number of calls to `solve` method
