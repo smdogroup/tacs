@@ -89,7 +89,7 @@ be evaluated using the adjoint method with the <a class="reference internal" hre
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">TACS.</span></span><span class="sig-name descname"><span class="pre">Assembler</span></span><a class="headerlink" href="#TACS.Assembler" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="py method">
 <dt class="sig sig-object py" id="TACS.Assembler.addAdjointResProducts">
-<span class="sig-name descname"><span class="pre">addAdjointResProducts</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#TACS.Assembler.addAdjointResProducts" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">addAdjointResProducts</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">adjlist</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dfdxlist</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">alpha</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">loadScale</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#TACS.Assembler.addAdjointResProducts" title="Permalink to this definition">¶</a></dt>
 <dd><p>This function is collective on all TACSAssembler processes. This
 computes the product of the derivative of the residual
 w.r.t. the design variables with several adjoint vectors
@@ -106,7 +106,7 @@ loadScale: Scaling factor for the aux element contributions, by default 1</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="TACS.Assembler.addAdjointResXptSensProducts">
-<span class="sig-name descname"><span class="pre">addAdjointResXptSensProducts</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#TACS.Assembler.addAdjointResXptSensProducts" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">addAdjointResXptSensProducts</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">adjlist</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dfdXlist</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">alpha</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">loadScale</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#TACS.Assembler.addAdjointResXptSensProducts" title="Permalink to this definition">¶</a></dt>
 <dd><p>This function is collective on all TACSAssembler processes. This
 computes the product of the derivative of the residual
 w.r.t. the node locations with several adjoint vectors
@@ -115,20 +115,20 @@ simultaneously.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="TACS.Assembler.addDVSens">
-<span class="sig-name descname"><span class="pre">addDVSens</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#TACS.Assembler.addDVSens" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">addDVSens</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">funclist</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dfdxlist</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">alpha</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#TACS.Assembler.addDVSens" title="Permalink to this definition">¶</a></dt>
 <dd><p>Evaluate the derivative of a list of functions w.r.t. the design
 variables.</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="TACS.Assembler.addJacobianVecProduct">
-<span class="sig-name descname"><span class="pre">addJacobianVecProduct</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#TACS.Assembler.addJacobianVecProduct" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">addJacobianVecProduct</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">scale</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">alpha</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">beta</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gamma</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">matOr</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">loadScale</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#TACS.Assembler.addJacobianVecProduct" title="Permalink to this definition">¶</a></dt>
 <dd><p>Compute the Jacobian-vector product</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="TACS.Assembler.addMatDVSensInnerProduct">
-<span class="sig-name descname"><span class="pre">addMatDVSensInnerProduct</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#TACS.Assembler.addMatDVSensInnerProduct" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">addMatDVSensInnerProduct</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">scale</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">matType</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">psi</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">phi</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dfdx</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#TACS.Assembler.addMatDVSensInnerProduct" title="Permalink to this definition">¶</a></dt>
 <dd><p>Add the derivative of the inner product of the specified
 matrix with the input vectors to the design variable
 sensitivity vector A.</p>
@@ -136,7 +136,7 @@ sensitivity vector A.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="TACS.Assembler.addSVSens">
-<span class="sig-name descname"><span class="pre">addSVSens</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#TACS.Assembler.addSVSens" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">addSVSens</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">funclist</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dfdulist</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">alpha</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">beta</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gamma</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#TACS.Assembler.addSVSens" title="Permalink to this definition">¶</a></dt>
 <dd><p>Evaluate the derivative of the function w.r.t. the state
 variables.</p>
 <p>function: the function pointer</p>
@@ -145,26 +145,26 @@ variables.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="TACS.Assembler.addXptSens">
-<span class="sig-name descname"><span class="pre">addXptSens</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#TACS.Assembler.addXptSens" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">addXptSens</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">funclist</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dfdXlist</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">alpha</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#TACS.Assembler.addXptSens" title="Permalink to this definition">¶</a></dt>
 <dd><p>Evaluate the derivative of a list of functions w.r.t.
 the node locations</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="TACS.Assembler.applyBCs">
-<span class="sig-name descname"><span class="pre">applyBCs</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#TACS.Assembler.applyBCs" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">applyBCs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">vec</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#TACS.Assembler.applyBCs" title="Permalink to this definition">¶</a></dt>
 <dd><p>Apply boundary conditions to the vector</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="TACS.Assembler.applyMatBCs">
-<span class="sig-name descname"><span class="pre">applyMatBCs</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#TACS.Assembler.applyMatBCs" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">applyMatBCs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mat</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#TACS.Assembler.applyMatBCs" title="Permalink to this definition">¶</a></dt>
 <dd><p>Apply boundary conditions to the matrix</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="TACS.Assembler.assembleJacobian">
-<span class="sig-name descname"><span class="pre">assembleJacobian</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#TACS.Assembler.assembleJacobian" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">assembleJacobian</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">alpha</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">beta</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gamma</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">residual</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">A</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">matOr</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">loadScale</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#TACS.Assembler.assembleJacobian" title="Permalink to this definition">¶</a></dt>
 <dd><p>Assemble the Jacobian matrix</p>
 <p>This function assembles the global Jacobian matrix and
 residual. This Jacobian includes the contributions from all
@@ -184,13 +184,13 @@ loadScale: Scaling factor for the aux element contributions, by default 1</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="TACS.Assembler.assembleMatCombo">
-<span class="sig-name descname"><span class="pre">assembleMatCombo</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#TACS.Assembler.assembleMatCombo" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">assembleMatCombo</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">matType1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scale1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">matType2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scale2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">A</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">matOr</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">loadScale</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#TACS.Assembler.assembleMatCombo" title="Permalink to this definition">¶</a></dt>
 <dd><p>Assemble a combination of two matrices</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="TACS.Assembler.assembleMatType">
-<span class="sig-name descname"><span class="pre">assembleMatType</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#TACS.Assembler.assembleMatType" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">assembleMatType</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">matType</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">A</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">matOr</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">loadScale</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#TACS.Assembler.assembleMatType" title="Permalink to this definition">¶</a></dt>
 <dd><p>Assemble the Jacobian matrix</p>
 <p>This function assembles the global Jacobian matrix and
 residual. This Jacobian includes the contributions from all
@@ -211,7 +211,7 @@ loadScale: Scaling factor for the aux element contributions, by default 1</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="TACS.Assembler.assembleRes">
-<span class="sig-name descname"><span class="pre">assembleRes</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#TACS.Assembler.assembleRes" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">assembleRes</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">residual</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">loadScale</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#TACS.Assembler.assembleRes" title="Permalink to this definition">¶</a></dt>
 <dd><p>Assemble the residual associated with the input load case.</p>
 <p>This residual includes the contributions from element tractions
 set in the TACSSurfaceTraction class and any point loads. Note
@@ -224,19 +224,19 @@ loadScale:  Scaling factor for the aux element contributions, by default 1</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="TACS.Assembler.computeReordering">
-<span class="sig-name descname"><span class="pre">computeReordering</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#TACS.Assembler.computeReordering" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">computeReordering</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">order_type</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mat_type</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#TACS.Assembler.computeReordering" title="Permalink to this definition">¶</a></dt>
 <dd><p>Compute a reordering of the unknowns before initialize()</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="TACS.Assembler.copyVariables">
-<span class="sig-name descname"><span class="pre">copyVariables</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#TACS.Assembler.copyVariables" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">copyVariables</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">vec</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dvec</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ddvec</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#TACS.Assembler.copyVariables" title="Permalink to this definition">¶</a></dt>
 <dd><p>Set the values of the state variables</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="TACS.Assembler.create">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">create</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#TACS.Assembler.create" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">create</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">comm</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">varsPerNode</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">numOwnedNodes</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">numElements</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">numDependentNodes</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#TACS.Assembler.create" title="Permalink to this definition">¶</a></dt>
 <dd><p>Static factory method for creating an instance of Assembler</p>
 </dd></dl>
 
@@ -260,7 +260,7 @@ loadScale:  Scaling factor for the aux element contributions, by default 1</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="TACS.Assembler.createSchurMat">
-<span class="sig-name descname"><span class="pre">createSchurMat</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#TACS.Assembler.createSchurMat" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">createSchurMat</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">order_type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">4</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#TACS.Assembler.createSchurMat" title="Permalink to this definition">¶</a></dt>
 <dd><p>Create a parallel matrix specially suited for finite-element
 analysis.</p>
 <p>On the first call, this computes a reordering with the scheme
@@ -307,7 +307,7 @@ parallel layout.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="TACS.Assembler.evalFunctions">
-<span class="sig-name descname"><span class="pre">evalFunctions</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#TACS.Assembler.evalFunctions" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">evalFunctions</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">funclist</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#TACS.Assembler.evalFunctions" title="Permalink to this definition">¶</a></dt>
 <dd><p>Evaluate a list of TACS function</p>
 </dd></dl>
 
@@ -319,7 +319,7 @@ parallel layout.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="TACS.Assembler.getDesignVarRange">
-<span class="sig-name descname"><span class="pre">getDesignVarRange</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#TACS.Assembler.getDesignVarRange" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">getDesignVarRange</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">lb</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ub</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#TACS.Assembler.getDesignVarRange" title="Permalink to this definition">¶</a></dt>
 <dd><p>Retrieve the design variable range.</p>
 <p>This call is collective on all TACS processes. The ranges
 provided by individual objects may not be consistent (if
@@ -333,7 +333,7 @@ numDVs:      the number of design variables</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="TACS.Assembler.getDesignVars">
-<span class="sig-name descname"><span class="pre">getDesignVars</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#TACS.Assembler.getDesignVars" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">getDesignVars</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#TACS.Assembler.getDesignVars" title="Permalink to this definition">¶</a></dt>
 <dd><p>Collect all the design variable values assigned by this
 process</p>
 <p>This code does not ensure consistency of the design variable
@@ -350,13 +350,13 @@ results in undefined behaviour.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="TACS.Assembler.getElementData">
-<span class="sig-name descname"><span class="pre">getElementData</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#TACS.Assembler.getElementData" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">getElementData</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">num</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#TACS.Assembler.getElementData" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return the element data associated with the element</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="TACS.Assembler.getElementNodes">
-<span class="sig-name descname"><span class="pre">getElementNodes</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#TACS.Assembler.getElementNodes" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">getElementNodes</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">num</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#TACS.Assembler.getElementNodes" title="Permalink to this definition">¶</a></dt>
 <dd><p>Get the node numbers associated with the given element</p>
 </dd></dl>
 
@@ -368,7 +368,7 @@ results in undefined behaviour.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="TACS.Assembler.getInitConditions">
-<span class="sig-name descname"><span class="pre">getInitConditions</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#TACS.Assembler.getInitConditions" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">getInitConditions</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">vec</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dvec</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ddvec</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#TACS.Assembler.getInitConditions" title="Permalink to this definition">¶</a></dt>
 <dd><p>Retrieve the initial conditions</p>
 </dd></dl>
 
@@ -380,7 +380,7 @@ results in undefined behaviour.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="TACS.Assembler.getNodes">
-<span class="sig-name descname"><span class="pre">getNodes</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#TACS.Assembler.getNodes" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">getNodes</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#TACS.Assembler.getNodes" title="Permalink to this definition">¶</a></dt>
 <dd><p>Get the node locations</p>
 </dd></dl>
 
@@ -428,7 +428,7 @@ results in undefined behaviour.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="TACS.Assembler.getVariables">
-<span class="sig-name descname"><span class="pre">getVariables</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#TACS.Assembler.getVariables" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">getVariables</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">vec</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dvec</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ddvec</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#TACS.Assembler.getVariables" title="Permalink to this definition">¶</a></dt>
 <dd><p>Set the values of the state variables</p>
 </dd></dl>
 
@@ -448,19 +448,19 @@ be called when tacs is created using TACSCreator class.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="TACS.Assembler.reorderVec">
-<span class="sig-name descname"><span class="pre">reorderVec</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#TACS.Assembler.reorderVec" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">reorderVec</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">vec</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#TACS.Assembler.reorderVec" title="Permalink to this definition">¶</a></dt>
 <dd><p>Reorder the vector based on the TACSAssembler reordering</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="TACS.Assembler.setAuxElements">
-<span class="sig-name descname"><span class="pre">setAuxElements</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#TACS.Assembler.setAuxElements" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">setAuxElements</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">elems</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#TACS.Assembler.setAuxElements" title="Permalink to this definition">¶</a></dt>
 <dd><p>Set the auxiliary elements</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="TACS.Assembler.setBCValuesFromVec">
-<span class="sig-name descname"><span class="pre">setBCValuesFromVec</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#TACS.Assembler.setBCValuesFromVec" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">setBCValuesFromVec</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">vec</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#TACS.Assembler.setBCValuesFromVec" title="Permalink to this definition">¶</a></dt>
 <dd><p>Set new Dirichlet BC values at nodes where BCs are imposed</p>
 <p>This takes the new boundary condition values as the entries in the
 given vector where the Dirichlet boundary conditions are imposed.</p>
@@ -468,19 +468,19 @@ given vector where the Dirichlet boundary conditions are imposed.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="TACS.Assembler.setBCs">
-<span class="sig-name descname"><span class="pre">setBCs</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#TACS.Assembler.setBCs" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">setBCs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">vec</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#TACS.Assembler.setBCs" title="Permalink to this definition">¶</a></dt>
 <dd><p>Apply the Dirichlet boundary conditions to the state vector</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="TACS.Assembler.setDependentNodes">
-<span class="sig-name descname"><span class="pre">setDependentNodes</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#TACS.Assembler.setDependentNodes" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">setDependentNodes</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ptr</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">conn</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">weights</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#TACS.Assembler.setDependentNodes" title="Permalink to this definition">¶</a></dt>
 <dd><p>Set the dependent node connectivity</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="TACS.Assembler.setDesignVars">
-<span class="sig-name descname"><span class="pre">setDesignVars</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#TACS.Assembler.setDesignVars" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">setDesignVars</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#TACS.Assembler.setDesignVars" title="Permalink to this definition">¶</a></dt>
 <dd><p>Set the design variables.</p>
 <p>The design variable values provided must be the same on all
 processes for consistency. This call however, is not
@@ -489,49 +489,49 @@ collective.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="TACS.Assembler.setElementConnectivity">
-<span class="sig-name descname"><span class="pre">setElementConnectivity</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#TACS.Assembler.setElementConnectivity" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">setElementConnectivity</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ptr</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">conn</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#TACS.Assembler.setElementConnectivity" title="Permalink to this definition">¶</a></dt>
 <dd><p>Set the connectivity</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="TACS.Assembler.setElements">
-<span class="sig-name descname"><span class="pre">setElements</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#TACS.Assembler.setElements" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">setElements</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">elements</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#TACS.Assembler.setElements" title="Permalink to this definition">¶</a></dt>
 <dd><p>Set the elements in to TACSAssembler</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="TACS.Assembler.setInitConditions">
-<span class="sig-name descname"><span class="pre">setInitConditions</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#TACS.Assembler.setInitConditions" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">setInitConditions</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">vec</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dvec</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ddvec</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#TACS.Assembler.setInitConditions" title="Permalink to this definition">¶</a></dt>
 <dd><p>Set the initial conditions as a vector</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="TACS.Assembler.setNodes">
-<span class="sig-name descname"><span class="pre">setNodes</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#TACS.Assembler.setNodes" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">setNodes</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#TACS.Assembler.setNodes" title="Permalink to this definition">¶</a></dt>
 <dd><p>Set the node locations</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="TACS.Assembler.setNumThreads">
-<span class="sig-name descname"><span class="pre">setNumThreads</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#TACS.Assembler.setNumThreads" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">setNumThreads</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">t</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#TACS.Assembler.setNumThreads" title="Permalink to this definition">¶</a></dt>
 <dd><p>Set the number of threads to use in computation</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="TACS.Assembler.setSimulationTime">
-<span class="sig-name descname"><span class="pre">setSimulationTime</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#TACS.Assembler.setSimulationTime" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">setSimulationTime</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">time</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#TACS.Assembler.setSimulationTime" title="Permalink to this definition">¶</a></dt>
 <dd><p>Set the simulation time within TACS</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="TACS.Assembler.setVariables">
-<span class="sig-name descname"><span class="pre">setVariables</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#TACS.Assembler.setVariables" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">setVariables</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">vec</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dvec</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ddvec</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#TACS.Assembler.setVariables" title="Permalink to this definition">¶</a></dt>
 <dd><p>Set the values of the state variables</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="TACS.Assembler.testElement">
-<span class="sig-name descname"><span class="pre">testElement</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#TACS.Assembler.testElement" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">testElement</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">elemNum</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">print_level</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dh</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1e-06</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rtol</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1e-08</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">atol</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.1</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#TACS.Assembler.testElement" title="Permalink to this definition">¶</a></dt>
 <dd><p>Test the implementation of the given element number.</p>
 <p>This tests the stiffness matrix and various parts of the
 design-sensitivities: the derivative of the determinant of the
@@ -544,7 +544,7 @@ print_level:  the print level to use</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="TACS.Assembler.testFunction">
-<span class="sig-name descname"><span class="pre">testFunction</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#TACS.Assembler.testFunction" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">testFunction</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">func</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dh</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#TACS.Assembler.testFunction" title="Permalink to this definition">¶</a></dt>
 <dd><p>Test the implementation of the function.</p>
 <p>This tests the state variable sensitivities and the design
 variable sensitivities of the function of interest. These
@@ -601,19 +601,19 @@ create the <a class="reference internal" href="#TACS.Assembler" title="TACS.Asse
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">TACS.</span></span><span class="sig-name descname"><span class="pre">MeshLoader</span></span><a class="headerlink" href="#TACS.MeshLoader" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="py method">
 <dt class="sig sig-object py" id="TACS.MeshLoader.addAuxElement">
-<span class="sig-name descname"><span class="pre">addAuxElement</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#TACS.MeshLoader.addAuxElement" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">addAuxElement</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">aux</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">comp_num</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">elem</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#TACS.MeshLoader.addAuxElement" title="Permalink to this definition">¶</a></dt>
 <dd><p>Add the auxiliary element to the given component</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="TACS.MeshLoader.addFunctionDomain">
-<span class="sig-name descname"><span class="pre">addFunctionDomain</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#TACS.MeshLoader.addFunctionDomain" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">addFunctionDomain</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">func</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">comp_list</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#TACS.MeshLoader.addFunctionDomain" title="Permalink to this definition">¶</a></dt>
 <dd><p>Add the specified components to the domain of the function</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="TACS.MeshLoader.createTACS">
-<span class="sig-name descname"><span class="pre">createTACS</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#TACS.MeshLoader.createTACS" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">createTACS</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">varsPerNode</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">order_type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mat_type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">2</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#TACS.MeshLoader.createTACS" title="Permalink to this definition">¶</a></dt>
 <dd><p>Create a distribtued version of TACS</p>
 </dd></dl>
 
@@ -625,7 +625,7 @@ create the <a class="reference internal" href="#TACS.Assembler" title="TACS.Asse
 
 <dl class="py method">
 <dt class="sig sig-object py" id="TACS.MeshLoader.getComponentDescript">
-<span class="sig-name descname"><span class="pre">getComponentDescript</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#TACS.MeshLoader.getComponentDescript" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">getComponentDescript</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">comp_num</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#TACS.MeshLoader.getComponentDescript" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return the component description</p>
 </dd></dl>
 
@@ -637,7 +637,7 @@ create the <a class="reference internal" href="#TACS.Assembler" title="TACS.Asse
 
 <dl class="py method">
 <dt class="sig sig-object py" id="TACS.MeshLoader.getElementDescript">
-<span class="sig-name descname"><span class="pre">getElementDescript</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#TACS.MeshLoader.getElementDescript" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">getElementDescript</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">comp_num</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#TACS.MeshLoader.getElementDescript" title="Permalink to this definition">¶</a></dt>
 <dd><p>Retrieve the element description corresponding to
 the component number</p>
 </dd></dl>
@@ -650,7 +650,7 @@ the component number</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="TACS.MeshLoader.scanBDFFile">
-<span class="sig-name descname"><span class="pre">scanBDFFile</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#TACS.MeshLoader.scanBDFFile" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">scanBDFFile</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fname</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#TACS.MeshLoader.scanBDFFile" title="Permalink to this definition">¶</a></dt>
 <dd><p>This scans a Nastran file - only scanning in information from the
 bulk data section</p>
 <p>The only entries scanned are the entries beginning with elem_types
@@ -659,7 +659,7 @@ and any GRID/GRID* entries</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="TACS.MeshLoader.setElement">
-<span class="sig-name descname"><span class="pre">setElement</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#TACS.MeshLoader.setElement" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">setElement</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">comp_num</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">elem</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#TACS.MeshLoader.setElement" title="Permalink to this definition">¶</a></dt>
 <dd><p>Set the element associated with a given component number</p>
 </dd></dl>
 
@@ -685,19 +685,19 @@ object.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="TACS.Creator.setBoundaryConditions">
-<span class="sig-name descname"><span class="pre">setBoundaryConditions</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#TACS.Creator.setBoundaryConditions" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">setBoundaryConditions</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">nodes</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bcptr</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bcvars</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bcvals</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#TACS.Creator.setBoundaryConditions" title="Permalink to this definition">¶</a></dt>
 <dd><p>Set the boundary conditions</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="TACS.Creator.setElements">
-<span class="sig-name descname"><span class="pre">setElements</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#TACS.Creator.setElements" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">setElements</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">elements</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#TACS.Creator.setElements" title="Permalink to this definition">¶</a></dt>
 <dd><p>Set the elements</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="TACS.Creator.setGlobalConnectivity">
-<span class="sig-name descname"><span class="pre">setGlobalConnectivity</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#TACS.Creator.setGlobalConnectivity" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">setGlobalConnectivity</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">num_nodes</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">node_ptr</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">node_conn</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">id_nums</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#TACS.Creator.setGlobalConnectivity" title="Permalink to this definition">¶</a></dt>
 <dd><p>Set the connectivity and the element id numbers</p>
 </dd></dl>
 
@@ -764,7 +764,7 @@ time and adjoint.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="TACS.Integrator.initAdjoint">
-<span class="sig-name descname"><span class="pre">initAdjoint</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#TACS.Integrator.initAdjoint" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">initAdjoint</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">step_num</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#TACS.Integrator.initAdjoint" title="Permalink to this definition">¶</a></dt>
 <dd><p>initAdjoint(self, int step_num):</p>
 <p>Initialize adjoint at the specified step</p>
 </dd></dl>
@@ -789,14 +789,14 @@ time and adjoint.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="TACS.Integrator.iterateAdjoint">
-<span class="sig-name descname"><span class="pre">iterateAdjoint</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#TACS.Integrator.iterateAdjoint" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">iterateAdjoint</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">step_num</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">adjlist</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#TACS.Integrator.iterateAdjoint" title="Permalink to this definition">¶</a></dt>
 <dd><p>iterateAdjoint(self, int step_num, list adjlist=None):</p>
 <p>Perform one iteration in reverse mode</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="TACS.Integrator.loadStates">
-<span class="sig-name descname"><span class="pre">loadStates</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#TACS.Integrator.loadStates" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">loadStates</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">step_num</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">prefix</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#TACS.Integrator.loadStates" title="Permalink to this definition">¶</a></dt>
 <dd><p>Loads the states variables to disk. The string argument
 prefix can be used to put the binaries in a separate
 directory.</p>
@@ -804,7 +804,7 @@ directory.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="TACS.Integrator.persistStates">
-<span class="sig-name descname"><span class="pre">persistStates</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#TACS.Integrator.persistStates" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">persistStates</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">step_num</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">prefix</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#TACS.Integrator.persistStates" title="Permalink to this definition">¶</a></dt>
 <dd><p>Writes the states variables to disk. The string argument
 prefix can be used to put the binaries in a separate
 directory.</p>
@@ -830,7 +830,7 @@ directory.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="TACS.Integrator.setFunctions">
-<span class="sig-name descname"><span class="pre">setFunctions</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#TACS.Integrator.setFunctions" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">setFunctions</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">funcs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">start_plane</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">-1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">end_plane</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">-1</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#TACS.Integrator.setFunctions" title="Permalink to this definition">¶</a></dt>
 <dd><p>Sets the functions for obtaining the derivatives.</p>
 </dd></dl>
 
@@ -854,7 +854,7 @@ directory.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="TACS.Integrator.setMaxNewtonIters">
-<span class="sig-name descname"><span class="pre">setMaxNewtonIters</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#TACS.Integrator.setMaxNewtonIters" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">setMaxNewtonIters</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">max_newton_iters</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#TACS.Integrator.setMaxNewtonIters" title="Permalink to this definition">¶</a></dt>
 <dd><p>setMaxNewtonIters(self, int max_newton_iters):</p>
 <p>Maximum iteration in Newton solver</p>
 </dd></dl>
@@ -888,7 +888,7 @@ directory.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="TACS.Integrator.setTimeInterval">
-<span class="sig-name descname"><span class="pre">setTimeInterval</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#TACS.Integrator.setTimeInterval" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">setTimeInterval</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tinit</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tfinal</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#TACS.Integrator.setTimeInterval" title="Permalink to this definition">¶</a></dt>
 <dd><p>setTimeInterval(self, double tinit, double tfinal):</p>
 <p>Set the time interval for the simulation</p>
 </dd></dl>

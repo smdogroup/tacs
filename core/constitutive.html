@@ -218,7 +218,7 @@ in the '3' direction (keyword argument).</p></li>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tacs.constitutive.MaterialProperties.setDensity">
-<span class="sig-name descname"><span class="pre">setDensity</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constitutive.MaterialProperties.setDensity" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">setDensity</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">rho</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constitutive.MaterialProperties.setDensity" title="Permalink to this definition">¶</a></dt>
 <dd><p>Set the density property values</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -229,7 +229,7 @@ in the '3' direction (keyword argument).</p></li>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tacs.constitutive.MaterialProperties.setNastranID">
-<span class="sig-name descname"><span class="pre">setNastranID</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constitutive.MaterialProperties.setNastranID" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">setNastranID</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">id</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constitutive.MaterialProperties.setNastranID" title="Permalink to this definition">¶</a></dt>
 <dd><p>Set material ID to be used in NASTRAN card for this object.
 Should be set before <cite>generateBDFCard</cite> is called.</p>
 <dl class="field-list simple">
@@ -241,7 +241,7 @@ Should be set before <cite>generateBDFCard</cite> is called.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tacs.constitutive.MaterialProperties.setSpecificHeat">
-<span class="sig-name descname"><span class="pre">setSpecificHeat</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constitutive.MaterialProperties.setSpecificHeat" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">setSpecificHeat</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">specific_heat</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constitutive.MaterialProperties.setSpecificHeat" title="Permalink to this definition">¶</a></dt>
 <dd><p>Set the density property values</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -385,7 +385,7 @@ Instead, their stiffness is &quot;smeared&quot; across the shell.</p>
 </dl>
 <dl class="py method">
 <dt class="sig sig-object py" id="tacs.constitutive.BladeStiffenedShellConstitutive.setKSWeight">
-<span class="sig-name descname"><span class="pre">setKSWeight</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constitutive.BladeStiffenedShellConstitutive.setKSWeight" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">setKSWeight</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ksWeight</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constitutive.BladeStiffenedShellConstitutive.setKSWeight" title="Permalink to this definition">¶</a></dt>
 <dd><p>Update the ks weight used for aggregating the different failure modes</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -396,7 +396,7 @@ Instead, their stiffness is &quot;smeared&quot; across the shell.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tacs.constitutive.BladeStiffenedShellConstitutive.setPanelPlyFractionBounds">
-<span class="sig-name descname"><span class="pre">setPanelPlyFractionBounds</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constitutive.BladeStiffenedShellConstitutive.setPanelPlyFractionBounds" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">setPanelPlyFractionBounds</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">lowerBound</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">upperBound</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constitutive.BladeStiffenedShellConstitutive.setPanelPlyFractionBounds" title="Permalink to this definition">¶</a></dt>
 <dd><p>Set the lower and upper bounds for the panel ply fraction design variables</p>
 <p>The default bounds are 0 and 1</p>
 <dl class="field-list simple">
@@ -414,7 +414,7 @@ Instead, their stiffness is &quot;smeared&quot; across the shell.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tacs.constitutive.BladeStiffenedShellConstitutive.setPanelThicknessBounds">
-<span class="sig-name descname"><span class="pre">setPanelThicknessBounds</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constitutive.BladeStiffenedShellConstitutive.setPanelThicknessBounds" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">setPanelThicknessBounds</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">lowerBound</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">upperBound</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constitutive.BladeStiffenedShellConstitutive.setPanelThicknessBounds" title="Permalink to this definition">¶</a></dt>
 <dd><p>Set the lower and upper bounds for the panel thickness design variable</p>
 <p>The default bounds are 1e-4 and 1e20</p>
 <dl class="field-list simple">
@@ -429,7 +429,7 @@ Instead, their stiffness is &quot;smeared&quot; across the shell.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tacs.constitutive.BladeStiffenedShellConstitutive.setStiffenerHeightBounds">
-<span class="sig-name descname"><span class="pre">setStiffenerHeightBounds</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constitutive.BladeStiffenedShellConstitutive.setStiffenerHeightBounds" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">setStiffenerHeightBounds</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">lowerBound</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">upperBound</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constitutive.BladeStiffenedShellConstitutive.setStiffenerHeightBounds" title="Permalink to this definition">¶</a></dt>
 <dd><p>Set the lower and upper bounds for the stiffener height design variable</p>
 <p>The default bounds are 1e-3 and 1e20</p>
 <dl class="field-list simple">
@@ -444,7 +444,7 @@ Instead, their stiffness is &quot;smeared&quot; across the shell.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tacs.constitutive.BladeStiffenedShellConstitutive.setStiffenerPitchBounds">
-<span class="sig-name descname"><span class="pre">setStiffenerPitchBounds</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constitutive.BladeStiffenedShellConstitutive.setStiffenerPitchBounds" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">setStiffenerPitchBounds</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">lowerBound</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">upperBound</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constitutive.BladeStiffenedShellConstitutive.setStiffenerPitchBounds" title="Permalink to this definition">¶</a></dt>
 <dd><p>Set the lower and upper bounds for the stiffener pitch design variable</p>
 <p>The default bounds are 1e-3 and 1e20</p>
 <dl class="field-list simple">
@@ -459,7 +459,7 @@ Instead, their stiffness is &quot;smeared&quot; across the shell.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tacs.constitutive.BladeStiffenedShellConstitutive.setStiffenerPlyFractionBounds">
-<span class="sig-name descname"><span class="pre">setStiffenerPlyFractionBounds</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constitutive.BladeStiffenedShellConstitutive.setStiffenerPlyFractionBounds" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">setStiffenerPlyFractionBounds</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">lowerBound</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">upperBound</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constitutive.BladeStiffenedShellConstitutive.setStiffenerPlyFractionBounds" title="Permalink to this definition">¶</a></dt>
 <dd><p>Set the lower and upper bounds for the stiffener ply fraction design variables</p>
 <p>The default bounds are 0 and 1</p>
 <dl class="field-list simple">
@@ -477,7 +477,7 @@ Instead, their stiffness is &quot;smeared&quot; across the shell.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tacs.constitutive.BladeStiffenedShellConstitutive.setStiffenerThicknessBounds">
-<span class="sig-name descname"><span class="pre">setStiffenerThicknessBounds</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constitutive.BladeStiffenedShellConstitutive.setStiffenerThicknessBounds" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">setStiffenerThicknessBounds</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">lowerBound</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">upperBound</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constitutive.BladeStiffenedShellConstitutive.setStiffenerThicknessBounds" title="Permalink to this definition">¶</a></dt>
 <dd><p>Set the lower and upper bounds for the stiffener thickness design variable</p>
 <p>The default bounds are 1e-4 and 1e20</p>
 <dl class="field-list simple">
@@ -834,7 +834,7 @@ Assumes 6 dofs.</p>
 All objects performing shell elastic analysis should utilize this class.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="tacs.constitutive.ShellConstitutive.setDrillingRegularization">
-<span class="sig-name descname"><span class="pre">setDrillingRegularization</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constitutive.ShellConstitutive.setDrillingRegularization" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">setDrillingRegularization</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">kpenalty</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10.0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constitutive.ShellConstitutive.setDrillingRegularization" title="Permalink to this definition">¶</a></dt>
 <dd><p>Update regularization parameter used to stiffen shell in drilling rotation dof.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
