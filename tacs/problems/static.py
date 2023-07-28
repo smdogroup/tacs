@@ -948,7 +948,7 @@ class StaticProblem(TACSProblem):
             initNormTime = time.time()
 
             # Solve Linear System for the update
-            hasConverged = self.solveLinear(self.res, self.update)
+            hasConverged = self._solveLinear(self.res, self.update)
 
             self.update.scale(-1.0)
 
@@ -1072,7 +1072,7 @@ class StaticProblem(TACSProblem):
                 baseName=f"{self.name}-{self.callCounter:03d}-NLIter", number=iteration
             )
 
-    def solveLinear(self, res, sol):
+    def _solveLinear(self, res, sol):
         """Solve the linear system J * sol = res using the current Jacobian matrix
 
         Parameters
@@ -1808,7 +1808,7 @@ class StaticProblem(TACSProblem):
         bcTerms.axpy(-1.0, self.adjRHS)
 
         # Solve Linear System
-        self.solveLinear(self.adjRHS, self.phi)
+        self._solveLinear(self.adjRHS, self.phi)
         self.assembler.applyBCs(self.phi)
         # Add bc terms back in
         self.phi.axpy(1.0, bcTerms)
