@@ -175,16 +175,19 @@ class StaticProblem(TACSProblem):
                 name.lower() for name in tacs.solvers.ContinuationSolver.defaultOptions
             ]
 
-            nonlinearSolverOptions = {
-                key: options[key]
-                for key in options
-                if key.lower() in self.nonlinearSolverOptionNames
-            }
-            options = {
-                key: options[key]
-                for key in options
-                if key.lower() not in self.nonlinearSolverOptionNames
-            }
+            if options is None:
+                nonlinearSolverOptions = {}
+            else:
+                nonlinearSolverOptions = {
+                    key: options[key]
+                    for key in options
+                    if key.lower() in self.nonlinearSolverOptionNames
+                }
+                options = {
+                    key: options[key]
+                    for key in options
+                    if key.lower() not in self.nonlinearSolverOptionNames
+                }
 
         # Default setup for common problem class objects, sets up comm and options
         TACSProblem.__init__(
