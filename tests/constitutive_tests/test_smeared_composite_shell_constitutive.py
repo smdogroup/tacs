@@ -18,7 +18,7 @@ class ConstitutiveTest(unittest.TestCase):
 
         # Basically, only check relative tolerance
         self.atol = np.clip(1e-5 * self.rtol, 1e-14, 1e-8)
-        self.print_level = 2
+        self.print_level = 0
 
         # Set element index
         self.elem_index = 0
