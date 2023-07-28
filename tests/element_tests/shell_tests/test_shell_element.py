@@ -33,7 +33,7 @@ class ElementTest(unittest.TestCase):
             self.rtol = 1e-2
         self.dtype = TACS.dtype
 
-        self.atol = np.clip(1e-5 * self.rtol, 1e-8, 1e-14)
+        self.atol = np.clip(1e-5 * self.rtol, 1e-14, 1e-8)
         self.print_level = 0
 
         # Set element index

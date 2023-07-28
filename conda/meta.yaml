@@ -39,7 +39,7 @@ requirements:
     - {{ compiler('cxx') }}
     - make
     - mpi4py
-    - cython
+    - cython >=0.29,<3.0
     - setuptools
 
   host:
@@ -54,10 +54,10 @@ requirements:
     - mpich-mpicxx  # [mpi == "mpich"]
     - libopenblas
     - lapack
-    - metis >=5.1
+    - metis ==5.1.0
     - tecio
     - mpi4py
-    - cython
+    - cython >=0.29,<3.0
     - setuptools
 
   run:
@@ -72,7 +72,7 @@ requirements:
     - mpich-mpicxx  # [mpi == "mpich"]
     - libopenblas
     - lapack
-    - metis >=5.1
+    - metis ==5.1.0
     - mpi4py
     - pynastran
     - numba

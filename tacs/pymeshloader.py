@@ -520,6 +520,7 @@ class pyMeshLoader(BaseUI):
         uniqueNodes = None
         if self.comm.rank == 0:
             allNodes = []
+            componentIDs = self._flatten(componentIDs)
             componentIDs = set(componentIDs)
             for cID in componentIDs:
                 tmp = self.getConnectivityForComp(cID, nastranOrdering=nastranOrdering)
