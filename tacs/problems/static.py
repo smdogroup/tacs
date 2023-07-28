@@ -194,8 +194,6 @@ class StaticProblem(TACSProblem):
         # Create problem-specific variables
         self._createVariables()
 
-        self._isNonlinear = self._checkNonlinearity()
-
         # Setup solver and solver history objects for nonlinear problems
         if self.isNonlinear:
             # Create Newton solver, the inner solver for the continuation solver
@@ -226,36 +224,6 @@ class StaticProblem(TACSProblem):
                 self.nonlinearSolver.setOption(name, value)
 
             self._createSolverHistory()
-
-    def _checkNonlinearity(self)->bool:
-        """Check if the problem is nonlinear
-
-        This check works by checking whether the residual is nonlinear w.r.t the states using 2 residual evaluations.
-
-        Returns
-        -------
-        bool
-            True if the problem is nonlinear, False otherwise.
-        """
-        # Store the current state
-        self.getVariables(self.u)
-
-        res1 = self.assembler.createVec()
-        res2 = self.assembler.createVec()
-        state = self.assembler.createVec()
-        state.setRand(-1e-3, 1e-3)
-        self.setVariables(state)
-        self.getResidual(res1)
-        state.scale(2.0)
-        self.setVariables(state)
-        self.getResidual(res2)
-
-        # Reset the state
-        self.setVariables(self.u)
-
-        # Check if res2 - 2 * res1 is zero
-        res2.axpy(-2.0, res1)
-        return res2.norm() > 1e-14
 
     def _createSolverHistory(self):
         """Setup the solver history object based on the current options

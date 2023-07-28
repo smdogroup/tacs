@@ -81,8 +81,6 @@ class pyTACS(BaseUI):
 
     # Default class options
     defaultOptions = {
-        # TODO: Figure out a way to automatically figure out if model is nonlinear so we can remove this option
-        "isNonlinear": [bool, False, "Flag for whether the model is nonlinear."],
         # Meshloader options
         "printDebug": [
             bool,
@@ -235,7 +233,7 @@ class pyTACS(BaseUI):
         self.assembler = None
 
         # Nonlinear flag
-        self._isNonlinear = self.getOption("isNonlinear")
+        self._isNonlinear = None
 
         initFinishTime = time.time()
         if self.getOption("printTiming"):
@@ -808,6 +806,38 @@ class pyTACS(BaseUI):
         self.xub = self.assembler.createDesignVec()
         self.xlb = self.assembler.createDesignVec()
         self.assembler.getDesignVarRange(self.xlb, self.xub)
+
+        self._isNonlinear = self._checkNonlinearity()
+
+    @postinitialize_method
+    def _checkNonlinearity(self) -> bool:
+        """Check if the finite element model is nonlinear
+
+        This check works by checking whether the residual is nonlinear w.r.t the states using 2 residual evaluations.
+
+        Returns
+        -------
+        bool
+            True if the problem is nonlinear, False otherwise.
+        """
+
+        res1 = self.assembler.createVec()
+        res2 = self.assembler.createVec()
+        state = self.assembler.createVec()
+        state.setRand(-1e-3, 1e-3)
+        self.assembler.setVariables(state)
+        self.assembler.assembleRes(res1)
+        state.scale(2.0)
+        self.assembler.setVariables(state)
+        self.assembler.assembleRes(res2)
+
+        # Reset the state variables
+        state.zeroEntries()
+        self.assembler.setVariables(state)
+
+        # Check if res2 - 2 * res1 is zero
+        res2.axpy(-2.0, res1)
+        return res2.norm() > 1e-14
 
     def _elemCallBackFromBDF(self):
         """
@@ -1533,6 +1563,7 @@ class pyTACS(BaseUI):
             self.comm,
             self.outputViewer,
             self.meshLoader,
+            self.isNonlinear,
             options,
         )
         # Set with original design vars and coordinates, in case they have changed
