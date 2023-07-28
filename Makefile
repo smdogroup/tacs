@@ -35,11 +35,11 @@ default:
 	fi
 	${CXX} ${SO_LINK_FLAGS} ${TACS_OBJS} ${TACS_EXTERN_LIBS} -o ${TACS_DIR}/lib/libtacs.${SO_EXT}
 	@if [ "${TACS_IS_COMPLEX}" = "true" ]; then \
-		echo "ctypedef complex TacsScalar" > tacs/TacsTypedefs.pxi; \
+		echo "ctypedef complex TacsScalar" > tacs/cpp_headers/TacsTypedefs.pxi; \
 		echo "TACS_NPY_SCALAR = np.NPY_CDOUBLE" > tacs/TacsDefs.pxi; \
 		echo "dtype = complex" >> tacs/TacsDefs.pxi; \
 	else \
-		echo "ctypedef double TacsScalar" > tacs/TacsTypedefs.pxi; \
+		echo "ctypedef double TacsScalar" > tacs/cpp_headers/TacsTypedefs.pxi; \
 		echo "TACS_NPY_SCALAR = np.NPY_DOUBLE" > tacs/TacsDefs.pxi; \
 		echo "dtype = np.double" >> tacs/TacsDefs.pxi; \
 	fi
@@ -60,11 +60,11 @@ debug:
 	fi
 	${CXX} ${SO_LINK_FLAGS} ${TACS_OBJS} ${TACS_EXTERN_LIBS} -o ${TACS_DIR}/lib/libtacs.${SO_EXT}
 	@if [ "${TACS_IS_COMPLEX}" = "true" ]; then \
-		echo "ctypedef complex TacsScalar" > tacs/TacsTypedefs.pxi; \
+		echo "ctypedef complex TacsScalar" > tacs/cpp_headers/TacsTypedefs.pxi; \
 		echo "TACS_NPY_SCALAR = np.NPY_CDOUBLE" > tacs/TacsDefs.pxi; \
 		echo "dtype = complex" >> tacs/TacsDefs.pxi; \
 	else \
-		echo "ctypedef double TacsScalar" > tacs/TacsTypedefs.pxi; \
+		echo "ctypedef double TacsScalar" > tacs/cpp_headers/TacsTypedefs.pxi; \
 		echo "TACS_NPY_SCALAR = np.NPY_DOUBLE" > tacs/TacsDefs.pxi; \
 		echo "dtype = np.double" >> tacs/TacsDefs.pxi; \
 	fi

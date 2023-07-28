@@ -34,9 +34,8 @@ from cpython cimport PyObject, Py_INCREF
 include "TacsDefs.pxi"
 
 # Import the definitions
-from TACS cimport *
-from constitutive cimport *
-from elements cimport *
+from tacs.TACS cimport *
+from tacs.constitutive cimport *
 
 # Include the mpi4py header
 cdef extern from "mpi-compat.h":
@@ -1872,7 +1871,7 @@ cdef class RBE2(Element):
     cdef TACSRBE2 *cptr
     def __cinit__(self, int num_nodes,
                   np.ndarray[int, ndim=1, mode='c'] constrained_dofs):
-        num_dep = (num_nodes - 1) / 2
+        cdef int num_dep = (num_nodes - 1) // 2
 
         assert len(constrained_dofs) == 6 or len(constrained_dofs) == 6 * num_dep
 
@@ -1926,7 +1925,7 @@ cdef class RBE3(Element):
                   np.ndarray[int, ndim=1, mode='c'] dep_constrained_dofs,
                   np.ndarray[double, ndim=1, mode='c'] weights,
                   np.ndarray[int, ndim=1, mode='c'] indep_constrained_dofs):
-        num_indep = num_nodes - 2
+        cdef int num_indep = num_nodes - 2
 
         assert len(dep_constrained_dofs) == 6
         assert len(weights) == 1 or len(weights) == num_indep
