@@ -197,7 +197,9 @@ class TacsBuilder(Builder):
         else:
             tagged_comps = self.fea_assembler.selectCompIDs(include=tags)
             # Select local node IDs for tags
-            masked_local_nodes = self.fea_assembler.getLocalNodeIDsForComps(tagged_comps)
+            masked_local_nodes = self.fea_assembler.getLocalNodeIDsForComps(
+                tagged_comps
+            )
 
         # Select local node IDs and multiplier node IDs
         local_mnodes = self.fea_assembler.getLocalMultiplierNodeIDs()

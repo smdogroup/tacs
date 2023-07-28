@@ -427,10 +427,7 @@ class StaticProblem(TACSProblem):
             New option value to set
         """
         # If the supplied option is a nonlinear solver option, pass it to the nonlinear solver instead of the problem
-        if (
-            self.isNonlinear
-            and name.lower() in self.nonlinearSolverOptionNames
-        ):
+        if self.isNonlinear and name.lower() in self.nonlinearSolverOptionNames:
             if self.nonlinearSolver is not None:
                 self.nonlinearSolver.setOption(name, value)
         else:
