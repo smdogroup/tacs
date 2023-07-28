@@ -15,7 +15,7 @@ class ModelTest(unittest.TestCase):
             self.dh = 1e-6
             self.rtol = 1e-2
 
-        self.atol = np.clip(1e-5 * self.rtol, 1e-8, 1e-14)
+        self.atol = np.clip(1e-5 * self.rtol, 1e-14, 1e-8)
         self.print_level = 0
 
         # Set the simulation time

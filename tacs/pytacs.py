@@ -997,8 +997,15 @@ class pyTACS(BaseUI):
                     con = tacs.constitutive.CompositeShellConstitutive(
                         plyMats, plyThicknesses, plyAngles
                     )
-                    # Need to add functionality to consider only membrane in TACS for type = MEM
 
+                elif propInfo.lam == "SMEAR":
+                    lamThickness = sum(plyThicknesses)
+                    plyFractions = plyThicknesses / lamThickness
+                    con = tacs.constitutive.SmearedCompositeShellConstitutive(
+                        plyMats, lamThickness, plyAngles, plyFractions
+                    )
+
+                # Need to add functionality to consider only membrane in TACS for type = MEM
                 else:
                     raise self._TACSError(
                         f"Unrecognized LAM type '{propInfo.lam}' for PCOMP number {propertyID}."
@@ -1776,7 +1783,16 @@ class pyTACS(BaseUI):
                     else:
                         vec1 = transObj.getRefAxis()
                         vec2 = np.random.random(3)
-                    newBDFInfo.add_cord2r(coordID, origin, np.real(vec1), np.real(vec2))
+                    # Add COORD2R card to BDF
+                    pn.cards.coordinate_systems.define_coord_e123(
+                        newBDFInfo,
+                        "CORD2R",
+                        coordID,
+                        origin,
+                        xaxis=np.real(vec1),
+                        xzplane=np.real(vec2),
+                        add=True,
+                    )
                     curCoordID += 1
                 # We just need the ref vector for these types
                 elif isinstance(

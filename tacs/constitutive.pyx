@@ -785,7 +785,7 @@ cdef class CompositeShellConstitutive(ShellConstitutive):
 
         prop = nastran_cards.properties.shell.PCOMP(self.nastranID, mat_ids,
                                                     ply_thicknesses.astype(float),
-                                                    np.rad2deg(ply_angles, dtype=float))
+                                                    np.rad2deg(np.real(ply_angles)))
         return prop
 
 cdef class BladeStiffenedShellConstitutive(ShellConstitutive):
@@ -1051,6 +1051,113 @@ cdef class BladeStiffenedShellConstitutive(ShellConstitutive):
             if len(upperBound) != self.blade_ptr.getNumPanelPlies():
                 raise ValueError('upperBound must have length numPanelPlies')
             self.blade_ptr.setPanelPlyFractionBounds(<TacsScalar*>lowerBound.data, <TacsScalar*>upperBound.data)
+
+cdef class SmearedCompositeShellConstitutive(ShellConstitutive):
+    """
+    This constitutive class defines the stiffness properties for a
+    composite laminate first-order shear deformation theory (FSDT) shell type element.
+
+    Args:
+       ply_list (list[OrthotropicPly]): List of ply properties in layup.
+       thicknesses (float or complex): Totl laminate thickness of layup.
+       ply_angles (numpy.ndarray[float or complex]): Array of ply angles (in radians) in layup.
+       ply_fractions (numpy.ndarray[float or complex]): Fraction of layup contribution of each ply in ply_list.
+       thickness_dv_num (int, optional): Design variable number to assign to thickness (keyword argument).
+          Defaults to -1.
+       ply_fraction_dv_nums (numpy.ndarray[int], optional): Design variable numbers to assign to ply fractions (keyword argument).
+          Defaults to -1.
+       thickness_lb (float or complex, optional): Lower bound for thickness design variable (keyword argument).
+          Defaults to 0.0.
+       thickness_ub (float or complex, optional): Upper bound for thickness design variable (keyword argument).
+          Defaults to 1e20.
+       ply_fraction_lb (numpy.ndarray[float or complex], optional): Lower bound for ply fraction design variables (keyword argument).
+          Defaults to 0.0.
+       ply_fraction_ub (numpy.ndarray[float or complex], optional): Upper bound for ply fraction design variables (keyword argument).
+          Defaults to 1.0.
+    """
+    def __cinit__(self, ply_list,
+                  TacsScalar thickness,
+                  np.ndarray[TacsScalar, ndim=1, mode='c'] ply_angles,
+                  np.ndarray[TacsScalar, ndim=1, mode='c'] ply_fractions,
+                  int thickness_dv_num=-1,
+                  np.ndarray[int, ndim=1, mode='c'] ply_fraction_dv_nums=None,
+                  TacsScalar thickness_lb=0.0,
+                  TacsScalar thickness_ub=1e20,
+                  np.ndarray[TacsScalar, ndim=1, mode='c'] ply_fraction_lb=None,
+                  np.ndarray[TacsScalar, ndim=1, mode='c'] ply_fraction_ub=None,):
+
+        num_plies = len(ply_list)
+
+        cdef np.ndarray _ply_fraction_dv_nums
+        if ply_fraction_dv_nums is None:
+            _ply_fraction_dv_nums = -np.ones(num_plies, int)
+        else:
+            _ply_fraction_dv_nums = ply_fraction_dv_nums
+
+        cdef np.ndarray _ply_fraction_lb
+        if ply_fraction_lb is None:
+            _ply_fraction_lb = np.zeros(num_plies, dtype)
+        else:
+            _ply_fraction_lb = ply_fraction_lb
+
+        cdef np.ndarray _ply_fraction_ub
+        if ply_fraction_ub is None:
+            _ply_fraction_ub = np.ones(num_plies, dtype)
+        else:
+            _ply_fraction_ub = ply_fraction_ub
+
+        # Allocate the array of TACSOrthotropicPly pointers
+        cdef TACSOrthotropicPly **plys
+        plys = <TACSOrthotropicPly**>malloc(num_plies*sizeof(TACSOrthotropicPly*))
+        if plys is NULL:
+            raise MemoryError()
+
+        for i in range(num_plies):
+            plys[i] = (<OrthotropicPly>ply_list[i]).ptr
+
+        self.cptr = new TACSSmearedCompositeShellConstitutive(num_plies, plys,
+                                                              thickness, <TacsScalar*>ply_angles.data,
+                                                              <TacsScalar*>ply_fractions.data,
+                                                              thickness_dv_num,
+                                                              <int*>_ply_fraction_dv_nums.data,
+                                                              thickness_lb, thickness_ub,
+                                                              <TacsScalar *> _ply_fraction_lb.data,
+                                                              <TacsScalar*>_ply_fraction_ub.data)
+        self.ptr = self.cptr
+        self.ptr.incref()
+
+        # Free the allocated array
+        free(plys)
+
+        self.props = [prop.getMaterialProperties() for prop in ply_list]
+
+    def generateBDFCard(self):
+        """
+        Generate pyNASTRAN card class based on current design variable values.
+
+        Returns:
+            card (pyNastran.bdf.cards.properties.shell.PCOMP): pyNastran card holding property information
+        """
+        num_plies = len(self.props)
+        cdef TACSSmearedCompositeShellConstitutive* comp_ptr = <TACSSmearedCompositeShellConstitutive*>self.cptr
+        cdef np.ndarray ply_fractions = np.zeros(num_plies, dtype)
+        cdef np.ndarray ply_angles = np.zeros(num_plies, dtype)
+
+        t_tot = comp_ptr.getLaminateThickness()
+        comp_ptr.getPlyFractions(<TacsScalar *> ply_fractions.data)
+        comp_ptr.getPlyAngles(<TacsScalar*>ply_angles.data)
+        ply_thicknesses = t_tot * ply_fractions
+
+        mat_ids = []
+        for i in range(num_plies):
+            ply_id = self.props[i].getNastranID()
+            mat_ids.append(ply_id)
+
+        prop = nastran_cards.properties.shell.PCOMP(self.nastranID, mat_ids,
+                                                    ply_thicknesses.astype(float),
+                                                    np.rad2deg(np.real(ply_angles)),
+                                                    lam="SMEAR")
+        return prop
 
 cdef class LamParamShellConstitutive(ShellConstitutive):
     def __cinit__(self, OrthotropicPly ply, **kwargs):

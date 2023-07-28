@@ -1,0 +1,45 @@
+#!/bin/bash
+
+helpstring="
+
+This command will look for all .f5 files in the current directory and delete any files with the same name but a
+.plt, .szplt or .vtk extension, this is useful for clearing space on your filesystem by removing tecplot/paraview files
+that can be regenerated from the f5 files when needed. It is also safer than simply running 'rm *.plt *.szplt *.vtk' as
+it will only delete the files that can be regenerated from the f5 files.
+
+To clean up all files in the current directory:
+> `basename $0`
+
+To also run recursively in all subdirectories that contain .f5 files:
+> `basename $0` -s
+"
+
+if [ "$1" == "-h" ]; then
+    echo "$helpstring"
+    exit 0
+fi
+
+subdirs=false
+while [[ "$#" -gt 0 ]]; do case $1 in
+    -s|--subdirs) subdirs=true;;
+    *) echo "Unknown parameter passed: $1"; exit 1;;
+esac; shift; done
+
+f5clean_all() {
+    for f in *.f5; do
+        for extension in plt szplt vtk; do
+            fileName="${f%.*}.$extension"
+            [ -e $fileName ] && echo "deleting $fileName" && rm -f ./$fileName
+        done
+    done
+}
+
+
+if [ $subdirs = true ] ; then
+    RootDir=$(pwd)
+    find . -iname '*.f5' -printf '%h\n' | sort -u | while read i; do
+        cd "$i" && pwd && f5clean_all ; cd "$RootDir"
+    done
+else
+    f5clean_all
+fi

@@ -18,7 +18,7 @@ and sensitivities.
 """
 
 base_dir = os.path.dirname(os.path.abspath(__file__))
-orig_bdf_file = os.path.join(base_dir, "./input_files/cylinder.bdf")
+orig_bdf_file = os.path.join(base_dir, "./input_files/comp_plate.bdf")
 
 from test_shell_comp_unbalanced import ProblemTest as PT, ksweight
 
@@ -44,11 +44,11 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
 
         # Overwrite default check values
         if self.dtype == complex:
-            self.rtol = 1e-8
-            self.atol = 1e-8
+            self.rtol = 1e-7
+            self.atol = 1e-7
             self.dh = 1e-50
         else:
-            self.rtol = 2e-1
+            self.rtol = 1e-3
             self.atol = 1e-3
             self.dh = 1e-6
 
@@ -75,11 +75,18 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
         # Convert from dict to list
         new_tacs_probs = new_tacs_probs.values()
 
+        # Set convergence to be tight for test
+        for problem in new_tacs_probs:
+            problem.setOption("L2Convergence", 1e-20)
+            problem.setOption("L2ConvergenceRel", 1e-20)
+
         # Add Functions
         for problem in new_tacs_probs:
             problem.addFunction("mass", functions.StructuralMass)
             problem.addFunction("compliance", functions.Compliance)
-            problem.addFunction("ks_vmfailure", functions.KSFailure, ksWeight=ksweight)
+            problem.addFunction(
+                "ks_TsaiWufailure", functions.KSFailure, ksWeight=ksweight
+            )
             problem.addFunction(
                 "x_disp",
                 functions.KSDisplacement,
