@@ -846,6 +846,50 @@ All objects performing shell elastic analysis should utilize this class.</p>
 </dd></dl>
 
 <dl class="py class">
+<dt class="sig sig-object py" id="tacs.constitutive.SmearedCompositeShellConstitutive">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tacs.constitutive.</span></span><span class="sig-name descname"><span class="pre">SmearedCompositeShellConstitutive</span></span><a class="headerlink" href="#tacs.constitutive.SmearedCompositeShellConstitutive" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#tacs.constitutive.ShellConstitutive" title="tacs.constitutive.ShellConstitutive"><code class="xref py py-class docutils literal notranslate"><span class="pre">ShellConstitutive</span></code></a></p>
+<p>This constitutive class defines the stiffness properties for a
+composite laminate first-order shear deformation theory (FSDT) shell type element.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>ply_list</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.11)"><em>list</em></a><em>[</em><a class="reference internal" href="#tacs.constitutive.OrthotropicPly" title="tacs.constitutive.OrthotropicPly"><em>OrthotropicPly</em></a><em>]</em>) -- List of ply properties in layup.</p></li>
+<li><p><strong>thicknesses</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.11)"><em>float</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#complex" title="(in Python v3.11)"><em>complex</em></a>) -- Totl laminate thickness of layup.</p></li>
+<li><p><strong>ply_angles</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.25)"><em>numpy.ndarray</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.11)"><em>float</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#complex" title="(in Python v3.11)"><em>complex</em></a><em>]</em>) -- Array of ply angles (in radians) in layup.</p></li>
+<li><p><strong>ply_fractions</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.25)"><em>numpy.ndarray</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.11)"><em>float</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#complex" title="(in Python v3.11)"><em>complex</em></a><em>]</em>) -- Fraction of layup contribution of each ply in ply_list.</p></li>
+<li><p><strong>thickness_dv_num</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)"><em>int</em></a><em>, </em><em>optional</em>) -- Design variable number to assign to thickness (keyword argument).
+Defaults to -1.</p></li>
+<li><p><strong>ply_fraction_dv_nums</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.25)"><em>numpy.ndarray</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)"><em>int</em></a><em>]</em><em>, </em><em>optional</em>) -- Design variable numbers to assign to ply fractions (keyword argument).
+Defaults to -1.</p></li>
+<li><p><strong>thickness_lb</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.11)"><em>float</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#complex" title="(in Python v3.11)"><em>complex</em></a><em>, </em><em>optional</em>) -- Lower bound for thickness design variable (keyword argument).
+Defaults to 0.0.</p></li>
+<li><p><strong>thickness_ub</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.11)"><em>float</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#complex" title="(in Python v3.11)"><em>complex</em></a><em>, </em><em>optional</em>) -- Upper bound for thickness design variable (keyword argument).
+Defaults to 1e20.</p></li>
+<li><p><strong>ply_fraction_lb</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.25)"><em>numpy.ndarray</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.11)"><em>float</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#complex" title="(in Python v3.11)"><em>complex</em></a><em>]</em><em>, </em><em>optional</em>) -- Lower bound for ply fraction design variables (keyword argument).
+Defaults to 0.0.</p></li>
+<li><p><strong>ply_fraction_ub</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.25)"><em>numpy.ndarray</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.11)"><em>float</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#complex" title="(in Python v3.11)"><em>complex</em></a><em>]</em><em>, </em><em>optional</em>) -- Upper bound for ply fraction design variables (keyword argument).
+Defaults to 1.0.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.constitutive.SmearedCompositeShellConstitutive.generateBDFCard">
+<span class="sig-name descname"><span class="pre">generateBDFCard</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constitutive.SmearedCompositeShellConstitutive.generateBDFCard" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate pyNASTRAN card class based on current design variable values.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>pyNastran card holding property information</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>card (<a class="reference external" href="https://pynastran-git.readthedocs.io/en/latest/reference/bdf/cards/properties/pyNastran.bdf.cards.properties.shell.html#pyNastran.bdf.cards.properties.shell.PCOMP" title="(in pyNastran 1.4-dev v1.4-dev)">pyNastran.bdf.cards.properties.shell.PCOMP</a>)</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
 <dt class="sig sig-object py" id="tacs.constitutive.SolidConstitutive">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tacs.constitutive.</span></span><span class="sig-name descname"><span class="pre">SolidConstitutive</span></span><a class="headerlink" href="#tacs.constitutive.SolidConstitutive" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Constitutive</span></code></p>
@@ -957,6 +1001,10 @@ Weighting factor used for topology optimization. 0.0 corresponds to void,
 <li><a class="reference internal" href="#tacs.constitutive.PointMassConstitutive"><code class="docutils literal notranslate"><span class="pre">PointMassConstitutive</span></code></a></li>
 <li><a class="reference internal" href="#tacs.constitutive.ShellConstitutive"><code class="docutils literal notranslate"><span class="pre">ShellConstitutive</span></code></a><ul>
 <li><a class="reference internal" href="#tacs.constitutive.ShellConstitutive.setDrillingRegularization"><code class="docutils literal notranslate"><span class="pre">ShellConstitutive.setDrillingRegularization()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#tacs.constitutive.SmearedCompositeShellConstitutive"><code class="docutils literal notranslate"><span class="pre">SmearedCompositeShellConstitutive</span></code></a><ul>
+<li><a class="reference internal" href="#tacs.constitutive.SmearedCompositeShellConstitutive.generateBDFCard"><code class="docutils literal notranslate"><span class="pre">SmearedCompositeShellConstitutive.generateBDFCard()</span></code></a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#tacs.constitutive.SolidConstitutive"><code class="docutils literal notranslate"><span class="pre">SolidConstitutive</span></code></a><ul>

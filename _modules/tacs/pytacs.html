@@ -1034,8 +1034,15 @@
                     <span class="n">con</span> <span class="o">=</span> <span class="n">tacs</span><span class="o">.</span><span class="n">constitutive</span><span class="o">.</span><span class="n">CompositeShellConstitutive</span><span class="p">(</span>
                         <span class="n">plyMats</span><span class="p">,</span> <span class="n">plyThicknesses</span><span class="p">,</span> <span class="n">plyAngles</span>
                     <span class="p">)</span>
-                    <span class="c1"># Need to add functionality to consider only membrane in TACS for type = MEM</span>
 
+                <span class="k">elif</span> <span class="n">propInfo</span><span class="o">.</span><span class="n">lam</span> <span class="o">==</span> <span class="s2">&quot;SMEAR&quot;</span><span class="p">:</span>
+                    <span class="n">lamThickness</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">plyThicknesses</span><span class="p">)</span>
+                    <span class="n">plyFractions</span> <span class="o">=</span> <span class="n">plyThicknesses</span> <span class="o">/</span> <span class="n">lamThickness</span>
+                    <span class="n">con</span> <span class="o">=</span> <span class="n">tacs</span><span class="o">.</span><span class="n">constitutive</span><span class="o">.</span><span class="n">SmearedCompositeShellConstitutive</span><span class="p">(</span>
+                        <span class="n">plyMats</span><span class="p">,</span> <span class="n">lamThickness</span><span class="p">,</span> <span class="n">plyAngles</span><span class="p">,</span> <span class="n">plyFractions</span>
+                    <span class="p">)</span>
+
+                <span class="c1"># Need to add functionality to consider only membrane in TACS for type = MEM</span>
                 <span class="k">else</span><span class="p">:</span>
                     <span class="k">raise</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TACSError</span><span class="p">(</span>
                         <span class="sa">f</span><span class="s2">&quot;Unrecognized LAM type &#39;</span><span class="si">{</span><span class="n">propInfo</span><span class="o">.</span><span class="n">lam</span><span class="si">}</span><span class="s2">&#39; for PCOMP number </span><span class="si">{</span><span class="n">propertyID</span><span class="si">}</span><span class="s2">.&quot;</span>
@@ -1813,7 +1820,16 @@
                     <span class="k">else</span><span class="p">:</span>
                         <span class="n">vec1</span> <span class="o">=</span> <span class="n">transObj</span><span class="o">.</span><span class="n">getRefAxis</span><span class="p">()</span>
                         <span class="n">vec2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
-                    <span class="n">newBDFInfo</span><span class="o">.</span><span class="n">add_cord2r</span><span class="p">(</span><span class="n">coordID</span><span class="p">,</span> <span class="n">origin</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">real</span><span class="p">(</span><span class="n">vec1</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">real</span><span class="p">(</span><span class="n">vec2</span><span class="p">))</span>
+                    <span class="c1"># Add COORD2R card to BDF</span>
+                    <span class="n">pn</span><span class="o">.</span><span class="n">cards</span><span class="o">.</span><span class="n">coordinate_systems</span><span class="o">.</span><span class="n">define_coord_e123</span><span class="p">(</span>
+                        <span class="n">newBDFInfo</span><span class="p">,</span>
+                        <span class="s2">&quot;CORD2R&quot;</span><span class="p">,</span>
+                        <span class="n">coordID</span><span class="p">,</span>
+                        <span class="n">origin</span><span class="p">,</span>
+                        <span class="n">xaxis</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">real</span><span class="p">(</span><span class="n">vec1</span><span class="p">),</span>
+                        <span class="n">xzplane</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">real</span><span class="p">(</span><span class="n">vec2</span><span class="p">),</span>
+                        <span class="n">add</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                    <span class="p">)</span>
                     <span class="n">curCoordID</span> <span class="o">+=</span> <span class="mi">1</span>
                 <span class="c1"># We just need the ref vector for these types</span>
                 <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span>
