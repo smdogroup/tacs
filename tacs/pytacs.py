@@ -830,6 +830,7 @@ class pyTACS(BaseUI):
         state.scale(2.0)
         self.assembler.setVariables(state)
         self.assembler.assembleRes(res2)
+        resNorm = res1.norm()
 
         # Reset the state variables
         state.zeroEntries()
@@ -837,7 +838,7 @@ class pyTACS(BaseUI):
 
         # Check if res2 - 2 * res1 is zero
         res2.axpy(-2.0, res1)
-        return res2.norm() > 1e-14
+        return (res2.norm()/resNorm) > 1e-14
 
     def _elemCallBackFromBDF(self):
         """
