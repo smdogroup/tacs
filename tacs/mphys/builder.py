@@ -173,3 +173,44 @@ class TacsBuilder(Builder):
         Returns underlying pytacs object.
         """
         return self.fea_assembler
+
+    def get_tagged_indices(self, tags):
+        """
+        Method that returns grid IDs for a list of body/boundary tags.
+
+        Parameters
+        ----------
+        tags : list[str]
+
+        Returns
+        -------
+        grid_ids : list[int]
+            list of grid IDs that correspond to given body/boundary tags
+        """
+        # Select all compIDs
+        if tags == -1 or tags == [-1]:
+            nnodes = self.fea_assembler.getNumOwnedNodes()
+            # Select all node IDs
+            masked_local_nodes = np.arange(nnodes)
+
+        # Get the compIDs associated with tags
+        else:
+            tagged_comps = self.fea_assembler.selectCompIDs(include=tags)
+            # Select local node IDs for tags
+            masked_local_nodes = self.fea_assembler.getLocalNodeIDsForComps(tagged_comps)
+
+        # Select local node IDs and multiplier node IDs
+        local_mnodes = self.fea_assembler.getLocalMultiplierNodeIDs()
+
+        # Loop through the multiplier nodes and remove them
+        masked_local_nodes = list(masked_local_nodes)
+        for mult_node in local_mnodes:
+            if mult_node in masked_local_nodes:
+                masked_local_nodes.remove(mult_node)
+        masked_local_nodes = np.array(masked_local_nodes)
+
+        # Loop through the multiplier nodes and offset for the multiplier nodes we removed
+        for mult_node in reversed(local_mnodes):
+            masked_local_nodes[masked_local_nodes > mult_node] -= 1
+
+        return list(masked_local_nodes)
