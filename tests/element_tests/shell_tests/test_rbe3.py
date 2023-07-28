@@ -43,7 +43,7 @@ class ElementTest(unittest.TestCase):
         xpts = np.append(dep_xpts, indep_xpts)
         self.xpts = np.append(xpts, dummy_xpts)
 
-        self.atol = np.clip(1e-5 * self.rtol, 1e-8, 1e-14)
+        self.atol = np.clip(1e-5 * self.rtol, 1e-14, 1e-8)
         self.print_level = 0
 
         # Set element index
