@@ -1854,6 +1854,7 @@ class StaticProblem(TACSProblem):
         elif isinstance(states, np.ndarray):
             self.u_array[:] = states[:]
         # Set states to assembler
+        self.assembler.setBCs(self.u)
         self.assembler.setVariables(self.u)
 
         # If this is a nonlinear problem then changing the state will change the jacobian
