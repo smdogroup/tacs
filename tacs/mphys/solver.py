@@ -128,7 +128,7 @@ class TacsSolver(om.ImplicitComponent):
         self.sp.getResidual(res=residuals[self.states_name], Fext=Fext)
 
     def solve_nonlinear(self, inputs, outputs):
-        self._update_internal(inputs)
+        self._update_internal(inputs) # TODO: We should also pass in outputs here in-case OpenMDAO is trying to pass in an intial state?
 
         if self.coupled:
             Fext = inputs[self.rhs_name]

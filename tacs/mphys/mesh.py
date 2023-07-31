@@ -2,7 +2,7 @@ import numpy as np
 
 import openmdao.api as om
 
-from mphys import MaskedConverter, MaskedVariableDescription
+from mphys.mask_converter import MaskedConverter, MaskedVariableDescription
 
 
 class TacsMesh(om.IndepVarComp):
