@@ -271,7 +271,14 @@ class ContinuationSolver(BaseSolver):
 
         # Compute the internal and external forcing vectors at the current point
         self.computeForceVectors()
-        self.setRefNorm(np.real(self.fExt.norm()))
+        if np.real(self.fExt.norm()) == 0:
+            self.du_e.copyValues(self.stateVec)
+            self.stateVec.zeroEntries()
+            self.setStateFunc(self.stateVec)
+            self.resFunc(self.resVec)
+            self.setRefNorm(np.real(self.resVec.norm()))
+        else:
+            self.setRefNorm(np.real(self.fExt.norm()))
 
         # ==============================================================================
         # Compute the initial load scale
@@ -285,7 +292,7 @@ class ContinuationSolver(BaseSolver):
         # optLoadScale = (Fe^T dUi + Fi^T dUe) / (-2 Fe^T dUe)
         # Where: Fe = external force, Fi = internal force, dUi = inv(K) * Fi, dUe = inv(K) * Fe
         isRestartIncrement = False
-        if np.real(self.stateVec.norm()) > 0:
+        if np.real(self.stateVec.norm()) > 0 and np.real(self.fExt.norm()) > 0.:
             self.jacFunc()
             self.pcUpdateFunc()
             self.linearSolver.solve(self.fExt, self.du_e)
@@ -316,6 +323,9 @@ class ContinuationSolver(BaseSolver):
                     loadStepDirection = -1
 
             self.setLambdaFunc(optLoadScale)
+        elif np.real(self.fExt.norm()) == 0.:
+            # If the external force is zero then the load scale doesn't mean anything and we can just set it to 1
+            self.setLambdaFunc(1.0)
 
         # If starting from zero, we can assume that u=0, lambda=0 is an equilibrium state
         if USE_PREDICTOR and self.stateVec.norm() == 0:
