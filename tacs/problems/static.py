@@ -1853,8 +1853,6 @@ class StaticProblem(TACSProblem):
             self.u.copyValues(states)
         elif isinstance(states, np.ndarray):
             self.u_array[:] = states[:]
-        # Apply boundary conditions
-        self.assembler.applyBCs(self.u)
         # Set states to assembler
         self.assembler.setVariables(self.u)
 
