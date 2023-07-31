@@ -832,14 +832,14 @@ class pyTACS(BaseUI):
 
         # Evaluate r(u) - r(0)
         state.setRand()
-        self.applyBCsToVec(state)
+        self.setBCsInVec(state)
         self.assembler.setVariables(state, state, state)
         self.assembler.assembleRes(res1)
         res1.axpy(-1.0, res0)
 
         # Evaluate r(2u) -  r(0)
         state.scale(2.0)
-        self.applyBCsToVec(state)
+        self.setBCsInVec(state)
         self.assembler.setVariables(state, state, state)
         self.assembler.assembleRes(res2)
         res2.axpy(-1.0, res0)
@@ -1423,6 +1423,30 @@ class pyTACS(BaseUI):
             vec.getArray()[:] = array
             # Apply BCs
             self.assembler.applyBCs(vec)
+            # Copy values back to array
+            array[:] = vec.getArray()
+
+    @postinitialize_method
+    def setBCsInVec(self, vec):
+        """
+        Sets dirichlet boundary condition values in the input vector.
+
+        Parameters
+        ----------
+        vec : numpy.ndarray or tacs.TACS.Vec
+            Vector to set boundary conditions in.
+        """
+        # Check if input is a BVec or numpy array
+        if isinstance(vec, tacs.TACS.Vec):
+            self.assembler.setBCs(vec)
+        elif isinstance(vec, np.ndarray):
+            array = vec
+            # Create temporary BVec
+            vec = self.assembler.createVec()
+            # Copy array values to BVec
+            vec.getArray()[:] = array
+            # Apply BCs
+            self.assembler.setBCs(vec)
             # Copy values back to array
             array[:] = vec.getArray()
 
