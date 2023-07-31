@@ -849,9 +849,9 @@ class pyTACS(BaseUI):
         self.assembler.setVariables(state, state, state)
 
         # Check if (res2-res0) - 2 * (res1 - res0) is zero (or very close to it)
-        resNorm = res1.norm()
+        resNorm = np.real(res1.norm())
         res2.axpy(-2.0, res1)
-        return (res2.norm()/resNorm) > 1e-14
+        return (np.real(res2.norm())/resNorm) > 1e-14
 
     def _elemCallBackFromBDF(self):
         """
