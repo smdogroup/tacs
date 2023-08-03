@@ -995,7 +995,7 @@ class pyTACS(BaseUI):
                 # Get the total laminate thickness
                 lamThickness = propInfo.Thickness()
                 # Get the offset distance from the ref plane to the midplane
-                tOffset = propInfo.z0 / lamThickness + 0.5
+                tOffset = -(propInfo.z0 / lamThickness + 0.5)
 
                 if propInfo.lam is None or propInfo.lam in ["SYM", "MEM"]:
                     # Discrete laminate class (not for optimization)

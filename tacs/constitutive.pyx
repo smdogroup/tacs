@@ -793,7 +793,7 @@ cdef class CompositeShellConstitutive(ShellConstitutive):
 
         # Calculate distance from ref plane to bottom ply
         lam_thickness = sum(ply_thicknesses)
-        z0 = (comp_ptr.getThicknessOffset() - 0.5) * lam_thickness
+        z0 = -(comp_ptr.getThicknessOffset() + 0.5) * lam_thickness
 
         prop = nastran_cards.properties.shell.PCOMP(self.nastranID, mat_ids,
                                                     ply_thicknesses.astype(float),
