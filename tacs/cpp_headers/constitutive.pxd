@@ -79,7 +79,7 @@ cdef extern from "TACSShellConstitutive.h":
 cdef extern from "TACSIsoShellConstitutive.h":
     cdef cppclass TACSIsoShellConstitutive(TACSShellConstitutive):
         TACSIsoShellConstitutive(TACSMaterialProperties*, TacsScalar, int,
-                                 TacsScalar, TacsScalar)
+                                 TacsScalar, TacsScalar, TacsScalar)
 
 cdef extern from "TACSCompositeShellConstitutive.h":
     cdef cppclass TACSCompositeShellConstitutive(TACSShellConstitutive):

@@ -671,6 +671,8 @@ cdef class IsoShellConstitutive(ShellConstitutive):
             (i.e. no design variable).
         tlb (float or complex, optional): Thickness variable lower bound (keyword argument). Defaults to 0.0.
         tub (float or complex, optional): Thickness variable upper bound (keyword argument). Defaults to 10.0.
+        tOffset (float or complex, optional): Offset distance of reference plane (where nodes are located) relative to thickness mid-plane.
+            Measured in fraction of shell thickness. Defaults to 0.0.
     """
     def __cinit__(self, *args, **kwargs):
         cdef TACSMaterialProperties *props = NULL
@@ -678,6 +680,7 @@ cdef class IsoShellConstitutive(ShellConstitutive):
         cdef int tNum = -1
         cdef TacsScalar tlb = 0.0
         cdef TacsScalar tub = 10.0
+        cdef TacsScalar tOff = 0.0
 
         if len(args) >= 1:
             props = (<MaterialProperties>args[0]).ptr
@@ -690,10 +693,12 @@ cdef class IsoShellConstitutive(ShellConstitutive):
             tlb = kwargs['tlb']
         if 'tub' in kwargs:
             tub = kwargs['tub']
+        if 'tOffset' in kwargs:
+            tOff = kwargs['tOffset']
 
         if props is not NULL:
             self.cptr = new TACSIsoShellConstitutive(props, t, tNum,
-                                                     tlb, tub)
+                                                     tlb, tub, tOff)
             self.ptr = self.cptr
             self.ptr.incref()
         else:
