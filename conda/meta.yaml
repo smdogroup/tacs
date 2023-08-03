@@ -77,6 +77,34 @@ requirements:
     - pynastran
     - numba >=0.55.2
 
+test:
+  requires:
+    - testflo
+
+  source_files:
+    - tests
+
+  imports:
+    - tacs
+    - tacs.pytacs
+    - tacs.problems
+    - tacs.constraints
+    - tacs.TACS
+    - tacs.elements
+    - tacs.functions
+    - tacs.constitutive
+    #- tacs.mphys # Needs OpenMDAO/MPHYS conda packages
+
+  commands:
+    - |
+
+    - test -f $PREFIX/bin/f5tovtk
+    - test -f $PREFIX/bin/f5totec
+    - export OMPI_MCA_btl=self,tcp
+    - export OMPI_MCA_rmaps_base_oversubscribe=1
+    - rm tests/integration_tests/test_mphys*
+    - testflo --pre_announce --timeout 120 tests/ # [linux64]
+
 about:
   home: https://github.com/smdogroup/tacs
   license: Apache
