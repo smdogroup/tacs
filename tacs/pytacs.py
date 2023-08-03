@@ -992,14 +992,18 @@ class pyTACS(BaseUI):
                 plyThicknesses = np.array(plyThicknesses, dtype=self.dtype)
                 plyAngles = np.array(plyAngles, dtype=self.dtype)
 
+                # Get the total laminate thickness
+                lamThickness = propInfo.Thickness()
+                # Get the offset distance from the ref plane to the midplane
+                tOffset = propInfo.z0 / lamThickness + 0.5
+
                 if propInfo.lam is None or propInfo.lam in ["SYM", "MEM"]:
                     # Discrete laminate class (not for optimization)
                     con = tacs.constitutive.CompositeShellConstitutive(
-                        plyMats, plyThicknesses, plyAngles
+                        plyMats, plyThicknesses, plyAngles, tOffset=tOffset
                     )
 
                 elif propInfo.lam == "SMEAR":
-                    lamThickness = sum(plyThicknesses)
                     plyFractions = plyThicknesses / lamThickness
                     con = tacs.constitutive.SmearedCompositeShellConstitutive(
                         plyMats, lamThickness, plyAngles, plyFractions

@@ -736,11 +736,14 @@ cdef class CompositeShellConstitutive(ShellConstitutive):
        ply_thicknesses (numpy.ndarray[float or complex]): Array of ply thicknesses in layup.
        ply_angles (numpy.ndarray[float or complex]): Array of ply angles (in radians) in layup.
        kcorr (float or complex, optional): FSDT shear correction factor. Defaults to 5.0/6.0.
+       tOffset (float or complex, optional): Offset distance of reference plane (where nodes are located) relative to thickness mid-plane.
+            Measured in fraction of shell thickness. Defaults to 0.0.
     """
     def __cinit__(self, ply_list,
                   np.ndarray[TacsScalar, ndim=1, mode='c'] ply_thicknesses,
                   np.ndarray[TacsScalar, ndim=1, mode='c'] ply_angles,
-                  TacsScalar kcorr=5.0/6.0):
+                  TacsScalar kcorr=5.0/6.0,
+                  TacsScalar tOffset=0.0):
 
         num_plies = len(ply_list)
         if len(ply_thicknesses) != num_plies:
@@ -759,7 +762,7 @@ cdef class CompositeShellConstitutive(ShellConstitutive):
 
         self.cptr = new TACSCompositeShellConstitutive(num_plies, plys,
                                                        <TacsScalar*>ply_thicknesses.data,
-                                                       <TacsScalar*>ply_angles.data, kcorr)
+                                                       <TacsScalar*>ply_angles.data, kcorr, tOffset)
         self.ptr = self.cptr
         self.ptr.incref()
 
@@ -788,9 +791,14 @@ cdef class CompositeShellConstitutive(ShellConstitutive):
             ply_id = self.props[i].getNastranID()
             mat_ids.append(ply_id)
 
+        # Calculate distance from ref plane to bottom ply
+        lam_thickness = sum(ply_thicknesses)
+        z0 = comp_ptr.getThicknessOffset() * lam_thickness - 0.5
+
         prop = nastran_cards.properties.shell.PCOMP(self.nastranID, mat_ids,
                                                     ply_thicknesses.astype(float),
-                                                    np.rad2deg(np.real(ply_angles)))
+                                                    np.rad2deg(np.real(ply_angles)),
+                                                    z0=np.real(z0))
         return prop
 
 cdef class BladeStiffenedShellConstitutive(ShellConstitutive):
