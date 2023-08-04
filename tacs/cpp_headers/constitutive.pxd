@@ -114,10 +114,12 @@ cdef extern from "TACSSmearedCompositeShellConstitutive.h":
                                        const TacsScalar*, const TacsScalar*,
                                        int, const int*,
                                        TacsScalar, TacsScalar,
-                                       const TacsScalar*, const TacsScalar*)
+                                       const TacsScalar*, const TacsScalar*,
+                                       TacsScalar)
         TacsScalar getLaminateThickness();
         void getPlyAngles(TacsScalar*);
-        void getPlyFractions(TacsScalar *);
+        void getPlyFractions(TacsScalar*);
+        TacsScalar getThicknessOffset();
 
 cdef extern from "TACSLamParamShellConstitutive.h":
     cdef cppclass TACSLamParamShellConstitutive(TACSShellConstitutive):

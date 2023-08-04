@@ -1091,6 +1091,8 @@ cdef class SmearedCompositeShellConstitutive(ShellConstitutive):
           Defaults to 0.0.
        ply_fraction_ub (numpy.ndarray[float or complex], optional): Upper bound for ply fraction design variables (keyword argument).
           Defaults to 1.0.
+       t_offset (float or complex, optional): Offset distance of reference plane (where nodes are located) relative to thickness mid-plane.
+            Measured in fraction of shell thickness. Defaults to 0.0.
     """
     def __cinit__(self, ply_list,
                   TacsScalar thickness,
@@ -1101,7 +1103,8 @@ cdef class SmearedCompositeShellConstitutive(ShellConstitutive):
                   TacsScalar thickness_lb=0.0,
                   TacsScalar thickness_ub=1e20,
                   np.ndarray[TacsScalar, ndim=1, mode='c'] ply_fraction_lb=None,
-                  np.ndarray[TacsScalar, ndim=1, mode='c'] ply_fraction_ub=None,):
+                  np.ndarray[TacsScalar, ndim=1, mode='c'] ply_fraction_ub=None,
+                  TacsScalar t_offset=0.0):
 
         num_plies = len(ply_list)
 
@@ -1139,7 +1142,8 @@ cdef class SmearedCompositeShellConstitutive(ShellConstitutive):
                                                               <int*>_ply_fraction_dv_nums.data,
                                                               thickness_lb, thickness_ub,
                                                               <TacsScalar *> _ply_fraction_lb.data,
-                                                              <TacsScalar*>_ply_fraction_ub.data)
+                                                              <TacsScalar*>_ply_fraction_ub.data,
+                                                              t_offset)
         self.ptr = self.cptr
         self.ptr.incref()
 
@@ -1170,10 +1174,13 @@ cdef class SmearedCompositeShellConstitutive(ShellConstitutive):
             ply_id = self.props[i].getNastranID()
             mat_ids.append(ply_id)
 
+        z0 = -(comp_ptr.getThicknessOffset() + 0.5) * t_tot
+
         prop = nastran_cards.properties.shell.PCOMP(self.nastranID, mat_ids,
                                                     ply_thicknesses.astype(float),
                                                     np.rad2deg(np.real(ply_angles)),
-                                                    lam="SMEAR")
+                                                    lam="SMEAR",
+                                                    z0=np.real(z0))
         return prop
 
 cdef class LamParamShellConstitutive(ShellConstitutive):

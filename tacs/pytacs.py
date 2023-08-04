@@ -1006,7 +1006,7 @@ class pyTACS(BaseUI):
                 elif propInfo.lam == "SMEAR":
                     plyFractions = plyThicknesses / lamThickness
                     con = tacs.constitutive.SmearedCompositeShellConstitutive(
-                        plyMats, lamThickness, plyAngles, plyFractions
+                        plyMats, lamThickness, plyAngles, plyFractions, t_offset=tOffset
                     )
 
                 # Need to add functionality to consider only membrane in TACS for type = MEM
