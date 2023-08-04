@@ -1004,7 +1004,7 @@ int TacsTestElementMatXptSens(TACSElement *element, ElementMatrixType matType,
     TacsScalar forward = 0.0;
     for (int i = 0; i < nvars; i++) {
       for (int j = 0; j < nvars; j++) {
-        forward += mat[nvars * i + j] * psi[i] * phi[j];
+        forward += mat[i + j * nvars] * psi[i] * phi[j];
       }
     }
 
@@ -1016,7 +1016,7 @@ int TacsTestElementMatXptSens(TACSElement *element, ElementMatrixType matType,
     element->getMatType(matType, elemIndex, time, Xp, vars, mat);
     for (int i = 0; i < nvars; i++) {
       for (int j = 0; j < nvars; j++) {
-        backward += mat[nvars * i + j] * psi[i] * phi[j];
+        backward += mat[i + j * nvars] * psi[i] * phi[j];
       }
     }
 #endif
@@ -1093,19 +1093,21 @@ int TacsTestElementMatSVSens(TACSElement *element, ElementMatrixType matType,
   TacsScalar forward = 0.0;
   for (int i = 0; i < nvars; i++) {
     for (int j = 0; j < nvars; j++) {
-      forward += mat[nvars * i + j] * psi[i] * phi[j];
+      forward += mat[i + j * nvars] * psi[i] * phi[j];
     }
   }
 
   // Perturb the variables in the reverse sense
+  TacsScalar backward = 0.0;
+#ifndef TACS_USE_COMPLEX
   TacsBackwardDiffPerturb(q, nvars, vars, pert, dh);
   element->getMatType(matType, elemIndex, time, Xpts, q, mat);
-  TacsScalar backward = 0.0;
   for (int i = 0; i < nvars; i++) {
     for (int j = 0; j < nvars; j++) {
-      backward += mat[nvars * i + j] * psi[i] * phi[j];
+      backward += mat[i + j * nvars] * psi[i] * phi[j];
     }
   }
+#endif
 
   // Form the FD/CS approximate
   TacsFormDiffApproximate(&forward, &backward, 1, dh);
