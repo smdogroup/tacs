@@ -9,7 +9,7 @@ TACS Nonlinear Continuation Solver
 # ==============================================================================
 # Standard Python modules
 # ==============================================================================
-from typing import Optional, Callable
+from typing import Optional, Callable, Any
 
 # ==============================================================================
 # External Python modules
@@ -51,71 +51,71 @@ def lagrangeInterp(xKnown, yKnown, xQuery, yQuery):
 
 class ContinuationSolver(BaseSolver):
     defaultOptions = {
-        "continuationMaxLambda": [
+        "MaxLambda": [
             float,
             1.0,
             "Final continuation parameter value to aim for.",
         ],
-        "continuationAbsTol": [
+        "AbsTol": [
             float,
             1e-8,
             "Convergence criteria for the nonlinear residual norm.",
         ],
-        "continuationRelTol": [
+        "RelTol": [
             float,
             1e-8,
             "Relative convergence criteria for the nonlinear residual norm, norm is measured relative to that of the external load vector.",
         ],
-        "continuationCoarseAbsTol": [
+        "CoarseAbsTol": [
             float,
             1e-4,
             "Residual norm criteria for intermediate continuation steps, making this larger may speed up the nonlinear solver by allowing it to only partially converge intermediate steps.",
         ],
-        "continuationCoarseRelTol": [
+        "CoarseRelTol": [
             float,
             1e-4,
             "Relative residual norm criteria for intermediate load increments.",
         ],
-        "continuationTargetIter": [
+        "TargetIter": [
             int,
             8,
             "Target number of Newton iterations for each continuation increment.",
         ],
-        "continuationMaxIter": [int, 30, "Maximum number of continuation steps."],
-        "continuationInitialStep": [float, 0.2, "Initial continuation step size."],
-        "continuationMinStep": [float, 1e-4, "Minimum continuation step size."],
-        "continuationMaxStep": [float, np.inf, "Maximum continuation step size."],
-        "continuationMinStepFactor": [
+        "MaxIter": [int, 30, "Maximum number of continuation steps."],
+        "InitialStep": [float, 0.2, "Initial continuation step size."],
+        "MinStep": [float, 1e-4, "Minimum continuation step size."],
+        "MaxStep": [float, np.inf, "Maximum continuation step size."],
+        "MinStepFactor": [
             float,
             0.5,
             "The minimum factor by which the continuation step size can decrease in a single step.",
         ],
-        "continuationMaxStepFactor": [
+        "MaxStepFactor": [
             float,
             2.0,
             "The maximum factor by which the continuation step size can increase in a single step.",
         ],
-        "continuationRetractionFactor": [
+        "RetractionFactor": [
             float,
             0.5,
             "The factor by which the continuation step size is reduced when the Newton solver fails to converge.",
         ],
         # Predictor step options
-        "continuationUsePredictor": [
+        "UsePredictor": [
             bool,
             False,
             "Flag for using predictor step in continuation.",
         ],
-        "continuationNumPredictorStates": [
+        "NumPredictorStates": [
             int,
             2,
             "Number of previous equilibrium states to use in computing the predictor step.",
         ],
-        "predictorUseDerivative": [
-            bool,
-            False,
-            "Whether to use the equilibrium path slope in the computation of the predictor step. This requires a linear solve and thus greatly increases the cost of the predictor step computation.",
-        ],
+        # "predictorUseDerivative": [
+        #     bool,
+        #     False,
+        #     "Whether to use the equilibrium path slope in the computation of the predictor step. This requires a linear solve and thus greatly increases the cost of the predictor step computation.",
+        # ],
     }
 
     def __init__(
@@ -157,15 +157,9 @@ class ContinuationSolver(BaseSolver):
         self.setLambdaFunc = setLambdaFunc
         self.getLambdaFunc = getLambdaFunc
         self.innerSolver = innerSolver
-        self.defaultOptions.update(innerSolver.defaultOptions)
 
         self.equilibriumPathStates = []
         self.equilibriumPathLoadScales = []
-
-        # --- Make list of inner solver option names ---
-        self.innerSolverOptionNames = [
-            opt.lower() for opt in self.innerSolver.defaultOptions
-        ]
 
         BaseSolver.__init__(
             self,
@@ -190,31 +184,20 @@ class ContinuationSolver(BaseSolver):
         """Setup the structures containing the data for computing the predictor steps"""
         self.equilibriumPathStates = []
         self.equilibriumPathLoadScales = []
-        if self.getOption("continuationUsePredictor"):
-            for _ in range(self.getOption("continuationNumPredictorStates")):
+        if self.getOption("UsePredictor"):
+            for _ in range(self.getOption("NumPredictorStates")):
                 self.equilibriumPathStates.append(self.assembler.createVec())
                 self.equilibriumPathLoadScales.append(None)
 
-    def setOption(self, name, value) -> None:
-        # Pass option to inner solver if it's an inner solver option
-        if name.lower() in self.innerSolverOptionNames:
-            self.innerSolver.setOption(name, value)
-        else:
-            BaseSolver.setOption(self, name, value)
+    def setOption(self, name: str, value: Any) -> None:
+        BaseSolver.setOption(self, name, value)
 
         # Update the predictor computation data structures if the relevant options are changed
         if name.lower() in [
-            "continuationusepredictor",
-            "continuationnumpredictorstates",
+            "usepredictor",
+            "numpredictorstates",
         ]:
             self._setupPredictorVectors()
-
-    def getOption(self, name):
-        # Get the option from the inner solver if it's an inner solver option
-        if name.lower() in self.innerSolverOptionNames:
-            return self.innerSolver.getOption(name)
-        else:
-            return BaseSolver.getOption(self, name)
 
     def setConvergenceTolerance(
         self, absTol: Optional[float] = None, relTol: Optional[float] = None
@@ -229,39 +212,39 @@ class ContinuationSolver(BaseSolver):
             Relative tolerance, not changed if no value is provided
         """
         if absTol is not None:
-            self.setOption("continuationAbsTol", absTol)
+            self.setOption("AbsTol", absTol)
         if relTol is not None:
-            self.setOption("continuationRelTol", relTol)
+            self.setOption("RelTol", relTol)
 
         return
 
     def initializeSolve(self) -> None:
         """Perform any initialization required before the solve"""
         BaseSolver.initializeSolve(self)
-        if self.getOption("continuationUsePredictor"):
-            for ii in range(self.getOption("continuationNumPredictorStates")):
+        if self.getOption("UsePredictor"):
+            for ii in range(self.getOption("NumPredictorStates")):
                 self.equilibriumPathLoadScales[ii] = None
                 self.equilibriumPathStates[ii].zeroEntries()
 
     def solve(
         self, u0: Optional[tacs.TACS.Vec] = None, result: Optional[tacs.TACS.Vec] = None
     ) -> None:
-        MAX_LAMBDA = self.getOption("continuationMaxLambda")
-        TARGET_ITERS = self.getOption("continuationTargetIter")
-        INIT_STEP = self.getOption("continuationInitialStep")
-        MIN_STEP = self.getOption("continuationMinStep")
-        MAX_STEP = self.getOption("continuationMaxStep")
-        MAX_INCREMENTS = self.getOption("continuationMaxIter")
-        MIN_STEP_FACTOR = self.getOption("continuationMinStepFactor")
-        MAX_STEP_FACTOR = self.getOption("continuationMaxStepFactor")
-        STEP_RETRACT_FACTOR = self.getOption("continuationRetractionFactor")
+        MAX_LAMBDA = self.getOption("MaxLambda")
+        TARGET_ITERS = self.getOption("TargetIter")
+        INIT_STEP = self.getOption("InitialStep")
+        MIN_STEP = self.getOption("MinStep")
+        MAX_STEP = self.getOption("MaxStep")
+        MAX_INCREMENTS = self.getOption("MaxIter")
+        MIN_STEP_FACTOR = self.getOption("MinStepFactor")
+        MAX_STEP_FACTOR = self.getOption("MaxStepFactor")
+        STEP_RETRACT_FACTOR = self.getOption("RetractionFactor")
 
-        ABS_TOL = self.getOption("continuationAbsTol")
-        REL_TOL = self.getOption("continuationRelTol")
-        COARSE_ABS_TOL = self.getOption("continuationCoarseAbsTol")
-        COARSE_REL_TOL = self.getOption("continuationCoarseRelTol")
+        ABS_TOL = self.getOption("AbsTol")
+        REL_TOL = self.getOption("RelTol")
+        COARSE_ABS_TOL = self.getOption("CoarseAbsTol")
+        COARSE_REL_TOL = self.getOption("CoarseRelTol")
 
-        USE_PREDICTOR = self.getOption("continuationUsePredictor")
+        USE_PREDICTOR = self.getOption("UsePredictor")
         # PREDICTOR_USE_DERIVATIVE = self.getOption("predictorUseDerivative")
 
         self.initializeSolve()
@@ -292,7 +275,7 @@ class ContinuationSolver(BaseSolver):
         # optLoadScale = (Fe^T dUi + Fi^T dUe) / (-2 Fe^T dUe)
         # Where: Fe = external force, Fi = internal force, dUi = inv(K) * Fi, dUe = inv(K) * Fe
         isRestartIncrement = False
-        if np.real(self.stateVec.norm()) > 0 and np.real(self.fExt.norm()) > 0.:
+        if np.real(self.stateVec.norm()) > 0 and np.real(self.fExt.norm()) > 0.0:
             self.jacFunc()
             self.pcUpdateFunc()
             self.linearSolver.solve(self.fExt, self.du_e)
@@ -323,7 +306,7 @@ class ContinuationSolver(BaseSolver):
                     loadStepDirection = -1
 
             self.setLambdaFunc(optLoadScale)
-        elif np.real(self.fExt.norm()) == 0.:
+        elif np.real(self.fExt.norm()) == 0.0:
             # If the external force is zero then the load scale doesn't mean anything and we can just set it to 1
             self.setLambdaFunc(1.0)
 

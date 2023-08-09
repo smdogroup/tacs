@@ -26,96 +26,96 @@ from tacs.solvers import BaseSolver
 
 class NewtonSolver(BaseSolver):
     defaultOptions = {
-        "newtonSolverMaxIter": [int, 40, "Maximum number of Newton iterations."],
-        "newtonSolverForceFirstIter": [
+        "MaxIter": [int, 40, "Maximum number of Newton iterations."],
+        "ForceFirstIter": [
             bool,
             False,
             "Force the solver to perform the first Newton iteration, even if the convergence criteria are satisfied at the initial point.",
         ],
-        "newtonSolverAbsTol": [
+        "AbsTol": [
             float,
             1e-8,
             "Convergence criteria for the nonlinear residual norm.",
         ],
-        "newtonSolverRelTol": [
+        "RelTol": [
             float,
             1e-8,
             "Relative convergence criteria for the nonlinear residual norm, norm is measured relative to that of the external load vector.",
         ],
-        "newtonSolverDivergenceTol": [
+        "DivergenceTol": [
             float,
             1e10,
             "Residual norm at which the nonlinear solver is jugded to have diverged",
         ],
-        "newtonSolverAbsLinTol": [float, 1e-12, "Linear solver residual tolerance."],
-        "newtonSolverRelLinTol": [
+        "AbsLinTol": [float, 1e-12, "Linear solver residual tolerance."],
+        "RelLinTol": [
             float,
             1e-12,
             "Linear solver relative residual tolerance.",
         ],
-        "newtonSolverMaxLinIters": [
+        "MaxLinIters": [
             int,
             0,
             "If the linear solver takes more than this number of iterations to converge, the preconditioner is updated.",
         ],
-        "newtonSolverUseEW": [
+        "UseEW": [
             bool,
             False,
             "Flag for enabling use of variable linear solver convergence using the Eisenstat-Walker method.",
         ],
-        "newtonSolverEWMaxTol": [
+        "EWMaxTol": [
             float,
             0.01,
             "Eisenstat-Walker max allowable linear solver tolerance.",
         ],
-        "newtonSolverEWGamma": [float, 1.0, "Eisenstat-Walker gamma parameter."],
-        "newtonSolverEWAlpha": [
+        "EWGamma": [float, 1.0, "Eisenstat-Walker gamma parameter."],
+        "EWAlpha": [
             float,
             0.5 * (1.0 + np.sqrt(5)),
             "Eisenstat-Walker alpha parameter.",
         ],
         # Line search options
-        "newtonSolverUseLineSearch": [
+        "UseLineSearch": [
             bool,
             True,
             "Flag for using line search in the nonlinear solver.",
         ],
-        "newtonSolverPrintLineSearchIters": [
+        "PrintLineSearchIters": [
             bool,
             False,
             "Flag for printing out line search information.",
         ],
-        "newtonSolverSkipFirstNLineSearch": [
+        "SkipFirstNLineSearch": [
             int,
             0,
             "Skip the first N line searches. Setting this to 1 can improve the convergence speed of Newton solver, but also decreases robustness",
         ],
-        "newtonSolverLineSearchMaxIter": [
+        "LineSearchMaxIter": [
             int,
             25,
             "Maximum number of linesearch iterations.",
         ],
-        "newtonSolverLineSearchExpectedDecrease": [
+        "LineSearchExpectedDecrease": [
             float,
             1e-4,
             "Minimum fraction of the expected decrease in the energy gradient during the linesearch. Should be between 0 and 1. Higher values should improve robustness at the expense of solution time.",
         ],
-        "newtonSolverLineSearchMaxStep": [
+        "LineSearchMaxStep": [
             float,
             2.0,
             "Maximum step size for the linesearch, as a fraction of the Newton step",
         ],
-        "newtonSolverLineSearchMinStep": [
+        "LineSearchMinStep": [
             float,
             1e-2,
             "Minimum step size for the linesearch, as a fraction of the Newton step",
         ],
-        "newtonSolverLineSearchMaxStepChange": [
+        "LineSearchMaxStepChange": [
             float,
             0.5,
             "Maximum change in the step size from one linesearch iteration to the next, can be useful in cases where secant method bounces between upper and lower step bounds.",
         ],
-        "newtonSolverLineSearchFallbackStepLimit": [
+        "LineSearchFallbackStepLimit": [
             float,
             0.9,
             "Often, the value of the merit function at the Newton step (alpha = 1.0), is orders of magnitude greater than at the start point. In these situations, the linesearch then tries to evaluate a point with a very small step size, which usually meets the expected decrease criteria but results in very slow progress of the Newton solver. To combat this, this value limits how far the linesearch can backtrack on the first iteration after evaluating alpha = 1. This has the effect of encouraging the linesearch to find larger steps that meet the expected decrease criterion, which results in faster convergence of the Newton solver.",
@@ -190,9 +190,9 @@ class NewtonSolver(BaseSolver):
             Relative tolerance, not changed if no value is provided
         """
         if absTol is not None:
-            self.setOption("newtonSolverAbsTol", absTol)
+            self.setOption("AbsTol", absTol)
         if relTol is not None:
-            self.setOption("newtonSolverRelTol", relTol)
+            self.setOption("RelTol", relTol)
         return
 
     def solve(
@@ -208,23 +208,23 @@ class NewtonSolver(BaseSolver):
             Vector in which to store the solution, by default None.
             The problem's state is updated with the solution whether or not this is provided.
         """
-        USE_LINESEARCH = self.getOption("newtonSolverUseLineSearch")
-        LINESEARCH_SKIP_ITERS = self.getOption("newtonSolverSkipFirstNLineSearch")
-        MAX_ITERS = self.getOption("newtonSolverMaxIter")
-        MAX_RES = self.getOption("newtonSolverDivergenceTol")
-        MAX_LIN_ITERS = self.getOption("newtonSolverMaxLinIters")
-        FORCE_FIRST_ITER = self.getOption("newtonSolverForceFirstIter")
+        USE_LINESEARCH = self.getOption("UseLineSearch")
+        LINESEARCH_SKIP_ITERS = self.getOption("SkipFirstNLineSearch")
+        MAX_ITERS = self.getOption("MaxIter")
+        MAX_RES = self.getOption("DivergenceTol")
+        MAX_LIN_ITERS = self.getOption("MaxLinIters")
+        FORCE_FIRST_ITER = self.getOption("ForceFirstIter")
 
         # Linear solver convergence options
-        USE_EW = self.getOption("newtonSolverUseEW")
-        LIN_SOLVE_TOL_MAX = self.getOption("newtonSolverEWMaxTol")
-        LIN_SOLVE_TOL_MIN = self.getOption("newtonSolverRelLinTol")
-        EW_ALPHA = self.getOption("newtonSolverEWAlpha")
-        EW_GAMMA = self.getOption("newtonSolverEWGamma")
+        USE_EW = self.getOption("UseEW")
+        LIN_SOLVE_TOL_MAX = self.getOption("EWMaxTol")
+        LIN_SOLVE_TOL_MIN = self.getOption("RelLinTol")
+        EW_ALPHA = self.getOption("EWAlpha")
+        EW_GAMMA = self.getOption("EWGamma")
         linCovergenceRel = LIN_SOLVE_TOL_MAX if USE_EW else LIN_SOLVE_TOL_MIN
 
-        ABS_TOL = self.getOption("newtonSolverAbsTol")
-        REL_TOL = self.getOption("newtonSolverRelTol")
+        ABS_TOL = self.getOption("AbsTol")
+        REL_TOL = self.getOption("RelTol")
 
         self.initializeSolve()
 
@@ -303,7 +303,7 @@ class NewtonSolver(BaseSolver):
                     linCovergenceRel, LIN_SOLVE_TOL_MIN, LIN_SOLVE_TOL_MAX
                 )
                 self.linearSolver.setTolerances(
-                    float(linCovergenceRel), self.getOption("newtonSolverAbsLinTol")
+                    float(linCovergenceRel), self.getOption("AbsLinTol")
                 )
 
             # Compute Newton step
@@ -337,15 +337,13 @@ class NewtonSolver(BaseSolver):
             result.copyValues(self.stateVec)
 
     def energyLineSearch(self, u, stepDir, slope=None):
-        MAX_LINESEARCH_ITERS = self.getOption("newtonSolverLineSearchMaxIter")
-        LINESEARCH_MU = self.getOption("newtonSolverLineSearchExpectedDecrease")
-        LINESEARCH_ALPHA_MIN = self.getOption("newtonSolverLineSearchMinStep")
-        LINESEARCH_ALPHA_MAX = self.getOption("newtonSolverLineSearchMaxStep")
-        LINESEARCH_MAX_STEP_CHANGE = self.getOption(
-            "newtonSolverLineSearchMaxStepChange"
-        )
-        FALLBACK_ALPHA = self.getOption("newtonSolverLineSearchFallbackStepLimit")
-        PRINT_LINESEARCH_ITERS = self.getOption("newtonSolverPrintLineSearchIters")
+        MAX_LINESEARCH_ITERS = self.getOption("LineSearchMaxIter")
+        LINESEARCH_MU = self.getOption("LineSearchExpectedDecrease")
+        LINESEARCH_ALPHA_MIN = self.getOption("LineSearchMinStep")
+        LINESEARCH_ALPHA_MAX = self.getOption("LineSearchMaxStep")
+        LINESEARCH_MAX_STEP_CHANGE = self.getOption("LineSearchMaxStepChange")
+        FALLBACK_ALPHA = self.getOption("LineSearchFallbackStepLimit")
+        PRINT_LINESEARCH_ITERS = self.getOption("PrintLineSearchIters")
         if slope is None:
             slope = 1.0
 

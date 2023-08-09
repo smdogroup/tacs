@@ -164,30 +164,6 @@ class StaticProblem(TACSProblem):
         self.history = None
         self.newtonSolver = None
         self.nonlinearSolver = None
-        self.nonlinearSolverOptionNames = []
-
-        if isNonlinear:
-            # --- Compile a list of nonlinear solver options then separate out any nonlinear options supplied by the user ---
-            self.nonlinearSolverOptionNames += [
-                name.lower() for name in tacs.solvers.NewtonSolver.defaultOptions
-            ]
-            self.nonlinearSolverOptionNames += [
-                name.lower() for name in tacs.solvers.ContinuationSolver.defaultOptions
-            ]
-
-            if options is None:
-                nonlinearSolverOptions = {}
-            else:
-                nonlinearSolverOptions = {
-                    key: options[key]
-                    for key in options
-                    if key.lower() in self.nonlinearSolverOptionNames
-                }
-                options = {
-                    key: options[key]
-                    for key in options
-                    if key.lower() not in self.nonlinearSolverOptionNames
-                }
 
         # Default setup for common problem class objects, sets up comm and options
         TACSProblem.__init__(
@@ -223,8 +199,6 @@ class StaticProblem(TACSProblem):
                 comm=self.comm,
             )
             self.nonlinearSolver.setCallback(self._nonlinearCallback)
-            for name, value in nonlinearSolverOptions.items():
-                self.nonlinearSolver.setOption(name, value)
 
             self._createSolverHistory()
 
@@ -246,7 +220,7 @@ class StaticProblem(TACSProblem):
             # Newton solve iteration number
             history.addVariable("SubIter", int, printVar=True)
             # Einstat walker linear solver tolerance
-            if self.nonlinearSolver.getOption("newtonSolverUseEW"):
+            if self.newtonSolver.getOption("UseEW"):
                 history.addVariable("EW Tol", float, printVar="ewtol" in monitorVars)
             # Number of linear solver iterations
             history.addVariable(
@@ -266,14 +240,14 @@ class StaticProblem(TACSProblem):
                 "LS step",
                 float,
                 printVar="linesearchstep" in monitorVars
-                and self.nonlinearSolver.getOption("newtonSolverUseLineSearch"),
+                and self.newtonSolver.getOption("UseLineSearch"),
             )
             # Num line search iterations
             history.addVariable(
                 "LS iters",
                 int,
                 printVar="linesearchiters" in monitorVars
-                and self.nonlinearSolver.getOption("newtonSolverUseLineSearch"),
+                and self.newtonSolver.getOption("UseLineSearch"),
             )
             # Flags
             history.addVariable("Flags", str, printVar=True)
@@ -429,13 +403,8 @@ class StaticProblem(TACSProblem):
         value : depends on option
             New option value to set
         """
-        # If the supplied option is a nonlinear solver option, pass it to the nonlinear solver instead of the problem
-        if self.isNonlinear and name.lower() in self.nonlinearSolverOptionNames:
-            if self.nonlinearSolver is not None:
-                self.nonlinearSolver.setOption(name, value)
-        else:
-            # Default setOption for common problem class objects
-            TACSProblem.setOption(self, name, value)
+        # Default setOption for common problem class objects
+        TACSProblem.setOption(self, name, value)
 
         createVariables = True
 
@@ -465,7 +434,7 @@ class StaticProblem(TACSProblem):
             if self.isNonlinear:
                 # We need to create a new solver history object if the monitor variables have updated
                 if (
-                    name.lower() in ["nonlinearsolvermonitorvars", "newtonsolveruseew"]
+                    name.lower() == "nonlinearsolvermonitorvars"
                     and self.history is not None
                 ):
                     createVariables = False
