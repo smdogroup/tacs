@@ -65,7 +65,6 @@ if elementType is None:
 # ==============================================================================
 structOptions = {
     "printtiming": True,
-    "isNonlinear": True,
 }
 FEAAssembler = pyTACS(BDF_FILE, options=structOptions, comm=COMM)
 
@@ -85,17 +84,27 @@ FEAAssembler.initialize(elemCallBack)
 
 probOptions = {
     "printTiming": True,
-    "newtonSolverSkipFirstNLineSearch": 0,
-    "newtonSolverCoarseRelTol": 1e-3,
-    "continuationInitialStep": 0.05,
-    "continuationUsePredictor": True,
-    "continuationNumPredictorStates": 7,
     "writeNLIterSolutions": True,
 }
+newtonOptions = {
+    "SkipFirstNLineSearch": 1
+    }
+continuationOptions = {
+    "CoarseRelTol": 1e-3,
+    "InitialStep": 0.05,
+    "UsePredictor": True,
+    "NumPredictorStates": 7,
+    }
 forceProblem = FEAAssembler.createStaticProblem("TipForce", options=probOptions)
 momentProblem = FEAAssembler.createStaticProblem("TipMoment", options=probOptions)
 problems = [forceProblem, momentProblem]
 
+for problem in problems:
+    problem.newtonSolver.setOptions(newtonOptions)
+    problem.nonlinearSolver.setOptions(continuationOptions)
+
+forceProblem.nonlinearSolver.printModifiedOptions()
+forceProblem.newtonSolver.printModifiedOptions()
 
 # ==============================================================================
 # Determine beam dimensions and other properties
