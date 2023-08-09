@@ -87,6 +87,18 @@ class BaseUI:
                 " is %s." % (name, self.options[name][0], type(value))
             )
 
+    def setOptions(self, options):
+        """
+        Set multiple solver options at once. The names are not case sensitive.
+
+        Parameters
+        ----------
+        options : dict
+            Dictionary of option names and values to set
+        """
+        for name, value in options.items():
+            self.setOption(name, value)
+
     def getOption(self, name):
         """
         Get a solver option value. The name is not case sensitive.
