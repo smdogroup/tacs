@@ -99,6 +99,21 @@ class BaseUI:
         for name, value in options.items():
             self.setOption(name, value)
 
+    def printModifiedOptions(self):
+        """Prints a nicely formatted table of all the options that have been modified from their defaults
+
+        _extended_summary_
+        """
+        if self.comm.rank == 0:
+            print("\n")
+            self._info("Modified options", box=True)
+            for opt in self.defaultOptions:
+                defaultValue = self.defaultOptions[opt][1]
+                actualValue = self.getOption(opt)
+                if defaultValue != actualValue:
+                    print(f"{opt}: {actualValue} (default: {defaultValue})")
+            print("\n", flush=True)
+
     def getOption(self, name):
         """
         Get a solver option value. The name is not case sensitive.
