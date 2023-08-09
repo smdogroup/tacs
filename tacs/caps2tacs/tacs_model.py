@@ -45,7 +45,14 @@ class TacsModel:
         return isinstance(self.mesh_aim, AflrAim)
 
     @classmethod
-    def build(cls, csm_file, comm=None, mesh="egads", problem_name: str = "capsStruct", verbosity=1):
+    def build(
+        cls,
+        csm_file,
+        comm=None,
+        mesh="egads",
+        problem_name: str = "capsStruct",
+        verbosity=1,
+    ):
         """
         make a pyCAPS problem with the tacsAIM and egadsAIM on serial / root proc
 
