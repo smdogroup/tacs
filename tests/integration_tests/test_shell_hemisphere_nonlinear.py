@@ -129,7 +129,7 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
             "ForceFirstIter": True,
             "MaxLinIters": 10,}
         problem = FEAAssembler.createStaticProblem("RadialForces", options=probOptions)
-        problem.nonlinearSolver.setOptions(continuationOptions)
+        problem.continuationSolver.setOptions(continuationOptions)
         problem.newtonSolver.setOptions(newtonOptions)
 
         # ==============================================================================

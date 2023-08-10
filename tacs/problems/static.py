@@ -159,11 +159,11 @@ class StaticProblem(TACSProblem):
         # Problem name
         self.name = name
 
-        # Set linear solver to None, until we set it up later
+        # Set solvers to None, until we set them up later
         self.KSM = None
         self.history = None
         self.newtonSolver = None
-        self.nonlinearSolver = None
+        self.continuationSolver = None
 
         # Default setup for common problem class objects, sets up comm and options
         TACSProblem.__init__(
@@ -189,7 +189,7 @@ class StaticProblem(TACSProblem):
             )
 
             # And now create the continuation solver
-            self.nonlinearSolver = tacs.solvers.ContinuationSolver(
+            self.continuationSolver = tacs.solvers.ContinuationSolver(
                 jacFunc=self.updateJacobian,
                 pcUpdateFunc=self.updatePreconditioner,
                 linearSolver=self.KSM,
@@ -198,7 +198,7 @@ class StaticProblem(TACSProblem):
                 innerSolver=self.newtonSolver,
                 comm=self.comm,
             )
-            self.nonlinearSolver.setCallback(self._nonlinearCallback)
+            self.continuationSolver.setCallback(self._nonlinearCallback)
 
     def _createSolverHistory(self):
         """Setup the solver history object based on the current options
@@ -207,7 +207,7 @@ class StaticProblem(TACSProblem):
         """
         monitorVars = [s.lower() for s in self.getOption("nonlinearSolverMonitorVars")]
         numType = float if self.dtype == np.float64 else complex
-        if self.nonlinearSolver is not None and self.comm.rank == 0:
+        if self.continuationSolver is not None and self.comm.rank == 0:
             history = SolverHistory()
 
             # Define the variables to be stored in the history
@@ -383,7 +383,7 @@ class StaticProblem(TACSProblem):
         self._preconditionerUpdateRequired = True
 
         # Give new vectors and linear solver to nonlinear solver
-        for solver in [self.newtonSolver, self.nonlinearSolver]:
+        for solver in [self.newtonSolver, self.continuationSolver]:
             if solver is not None:
                 solver.linearSolver = self.KSM
                 solver.stateVec = self.u
@@ -414,8 +414,8 @@ class StaticProblem(TACSProblem):
                     self.getOption("L2ConvergenceRel"),
                     self.getOption("L2Convergence"),
                 )
-                if self.nonlinearSolver is not None:
-                    self.nonlinearSolver.setOption(
+                if self.continuationSolver is not None:
+                    self.continuationSolver.setOption(
                         "newtonSolverRelLinTol", self.getOption("L2ConvergenceRel")
                     )
 
@@ -987,10 +987,10 @@ class StaticProblem(TACSProblem):
         def resFunc(res):
             self.getResidual(res, Fext=Fext)
 
-        self.nonlinearSolver.resFunc = resFunc
+        self.continuationSolver.resFunc = resFunc
         self.newtonSolver.resFunc = resFunc
-        self.nonlinearSolver.setRefNorm(self.initNorm)
-        self.nonlinearSolver.solve()
+        self.continuationSolver.setRefNorm(self.initNorm)
+        self.continuationSolver.solve()
 
         # Since the state has changed, we need to flag that the jacobian and preconditioner should be before the next primal or adjoint solve
         self._preconditionerUpdateRequired = True
@@ -1003,7 +1003,7 @@ class StaticProblem(TACSProblem):
         )
 
         # Finally return a bool indicating whether the solve was successful
-        return self.nonlinearSolver.hasConverged
+        return self.continuationSolver.hasConverged
 
     def _nonlinearCallback(self, solver, u, res, monitorVars):
         """Callback function to be called by the nonlinear solver at each iteration

@@ -101,9 +101,9 @@ problems = [forceProblem, momentProblem]
 
 for problem in problems:
     problem.newtonSolver.setOptions(newtonOptions)
-    problem.nonlinearSolver.setOptions(continuationOptions)
+    problem.continuationSolver.setOptions(continuationOptions)
 
-forceProblem.nonlinearSolver.printModifiedOptions()
+forceProblem.continuationSolver.printModifiedOptions()
 forceProblem.newtonSolver.printModifiedOptions()
 
 # ==============================================================================
