@@ -2,8 +2,12 @@
 ==============================================================================
 TACS Nonlinear Newton Solver
 ==============================================================================
-@Author : Alasdair Christison Gray
-@Description : A Newton solver for nonlinear TACS problems
+This is a fairly standard Newton solver with a critical point (or minimum
+energy) line search.
+The convergence of the linear solution in each iteration can be controlled
+adaptively using the Eisenstat-Walker method (specifically variant (b)
+described on page 50 of `this paper
+<https://doi.org/10.1016/j.cam.2005.12.030>`_ by An, Mo and Liu)
 """
 
 # ==============================================================================
@@ -61,7 +65,7 @@ class NewtonSolver(BaseSolver):
         "UseEW": [
             bool,
             False,
-            "Flag for enabling use of variable linear solver convergence using the Eisenstat-Walker method.",
+            "Flag for enabling use of adaptive linear solver convergence using the Eisenstat-Walker method.",
         ],
         "EWMaxTol": [
             float,
@@ -158,7 +162,7 @@ class NewtonSolver(BaseSolver):
         options : dict, optional
             Dictionary holding solver-specific option parameters (case-insensitive)., by default None
         comm : mpi4py.MPI.Intracomm, optional
-            The comm object on which to create the pyTACS object., by default MPI.COMM_WORLD
+            The comm object on which to create the pyTACS object., by default mpi4py.MPI.COMM_WORLD
         """
         BaseSolver.__init__(
             self,

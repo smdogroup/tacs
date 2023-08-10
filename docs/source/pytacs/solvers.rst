@@ -4,5 +4,6 @@ Solver classes
 .. toctree::
   :maxdepth: 1
 
-  newton_solver
+  base_solver
   continuation_solver
+  newton_solver

@@ -2,7 +2,9 @@
 ==============================================================================
 TACS: Base Solver Class
 ==============================================================================
-@Description : Base class for pyTACS nonlinear solvers
+This is the base class from which all other TACS solvers are derived.
+It is an abstract class, so cannot be used directly. Instead, it defines
+the methods that all solvers must implement.
 """
 
 # ==============================================================================
@@ -51,7 +53,7 @@ class BaseSolver(BaseUI):
         options : dict, optional
             Dictionary holding solver-specific option parameters (case-insensitive)., by default None
         comm : mpi4py.MPI.Intracomm, optional
-            The comm object on which to create the pyTACS object., by default MPI.COMM_WORLD
+            The comm object on which to create the pyTACS object., by default mpi4py.MPI.COMM_WORLD
         """
         self.assembler = assembler
         self.setStateFunc = setStateFunc

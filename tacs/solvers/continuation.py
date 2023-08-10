@@ -2,8 +2,12 @@
 ==============================================================================
 TACS Nonlinear Continuation Solver
 ==============================================================================
-@Author : Alasdair Christison Gray
-@Description : A predictor-corrector force continuation solver for nonlinear TACS problems
+This continuation solver uses a predictor-corrector scheme to increment the load scale in nonlinear problems.
+Each iteration of the continuation solver consists of three steps:
+
+#. Predictor computation: If enabled, the solver will use the solutions from previous continuation steps to extrapolate the equilibrium path to the current load scale, which should provide a good initial guess for the inner solver.
+#. Corrector computation: The continuation solver calls an inner solver to solve the nonlinear problem at the current load scale.
+#. Load scale update: The continuation solver increments the load scale, the size of the step taken is adapted each iteration to try and achieve a target number of inner solver iterations.
 """
 
 # ==============================================================================
@@ -148,7 +152,7 @@ class ContinuationSolver(BaseSolver):
         options : dict, optional
             Dictionary holding solver-specific option parameters (case-insensitive)., by default None
         comm : mpi4py.MPI.Intracomm, optional
-            The comm object on which to create the pyTACS object., by default MPI.COMM_WORLD
+            The comm object on which to create the pyTACS object., by default mpi4py.MPI.COMM_WORLD
         """
 
         self.jacFunc = jacFunc

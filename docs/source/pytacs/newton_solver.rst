@@ -1,6 +1,6 @@
 NewtonSolver
 -------------
-.. automodule:: tacs.solvers.NewtonSolver
+.. automodule:: tacs.solvers.newton
 
 Options
 ^^^^^^^
