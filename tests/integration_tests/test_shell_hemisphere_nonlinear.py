@@ -118,23 +118,19 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
         FEAAssembler.initialize(elemCallBack)
 
         probOptions = {
-            "continuationInitialStep": 1.0,
-            "newtonSolverMaxIter": 50,
-            "newtonSolverUseEW": True,
-            "newtonSolverForceFirstIter": True,
             "nRestarts": 3,
             "subSpaceSize": 20,
-            "nonlinearSolverMonitorVars": [
-                "lambda",
-                "linsolveriters",
-                "linsolverres",
-                "EWTol",
-                "linesearchstep",
-                "linesearchiters",
-            ],
             "newtonSolverMaxLinIters": 10,
         }
+        continuationOptions = {"InitialStep": 1.0}
+        newtonOptions = {
+            "MaxIter": 50,
+            "UseEW": True,
+            "ForceFirstIter": True,
+            "MaxLinIters": 10,}
         problem = FEAAssembler.createStaticProblem("RadialForces", options=probOptions)
+        problem.nonlinearSolver.setOptions(continuationOptions)
+        problem.newtonSolver.setOptions(newtonOptions)
 
         # ==============================================================================
         # Find tip force points
@@ -191,3 +187,7 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
         problem.addFunction("Compliance", functions.Compliance)
 
         return [problem], FEAAssembler
+
+if __name__ == "__main__":
+    import unittest
+    unittest.main()
