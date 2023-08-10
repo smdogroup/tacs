@@ -200,8 +200,6 @@ class StaticProblem(TACSProblem):
             )
             self.nonlinearSolver.setCallback(self._nonlinearCallback)
 
-            self._createSolverHistory()
-
     def _createSolverHistory(self):
         """Setup the solver history object based on the current options
 
@@ -862,11 +860,14 @@ class StaticProblem(TACSProblem):
         self.updatePreconditioner()
 
         if self.isNonlinear:
-            # Reset the solver history
-            if self.rank == 0:
-                self.history.reset(clearMetadata=True)
-                self.history.addMetadata("Options", self.options)
-                self.history.addMetadata("Name", self.name)
+            if self.comm.rank == 0:
+                # Create the solver history if we don't have one yet, otherwise reset it
+                if self.history is None:
+                    self._createSolverHistory()
+                else:
+                    self.history.reset(clearMetadata=True)
+                    self.history.addMetadata("Options", self.options)
+                    self.history.addMetadata("Name", self.name)
 
     def solve(self, Fext=None):
         """
