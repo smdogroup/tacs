@@ -12,6 +12,13 @@ The following options, their default values and descriptions are listed below:
 
 .. program-output:: python -c "from tacs.problems import StaticProblem; StaticProblem.printDefaultOptions()"
 
+Nonlinear solvers
+^^^^^^^^^^^^^^^^^
+When you create an assembler using a nonlinear element type or constitutive model, any static problems you create will automatically setup a nonlinear solver.
+A continuation solver is used to control an adaptive load incrementation process, and a Newton solver is used to solve the nonlinear system of equations at each load increment.
+The options for these solvers should be set directly to ``problem.continuationSolver`` and ``problem.newtonSolver``.
+See :class:`~tacs.solvers.ContinuationSolver` and :class:`~tacs.solvers.NewtonSolver` for more information.
+
 API Reference
 ^^^^^^^^^^^^^
 .. autoclass:: tacs.problems.StaticProblem
