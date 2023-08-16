@@ -1,8 +1,5 @@
 """
-==============================================================================
-
-==============================================================================
-@Description : Functions for computing the geometrically exact tip displacement
+Functions for computing the geometrically exact tip displacement
 of a cantilever beam with an applied tip force
 """
 
@@ -13,6 +10,9 @@ of a cantilever beam with an applied tip force
 # ==============================================================================
 # External Python modules
 # ==============================================================================
+import numpy as np
+from scipy.optimize import root_scalar
+from scipy.special import ellipe, ellipeinc, ellipk, ellipkinc
 
 # ==============================================================================
 # Extension modules
@@ -29,7 +29,9 @@ def analyticCantileverDisplacement(alpha):
     for a in range(len(alpha)):
         if alpha[a] != 0.0:
             # Use the linear cantilever tip rotation as a good starting guess for the nonlinear rotation
-            ResidualFun = lambda theta: tipRotationResidual(theta, alpha[a])
+            def ResidualFun(theta):
+                return tipRotationResidual(theta, alpha[a])
+
             sol = root_scalar(
                 ResidualFun,
                 x0=1e-4,
