@@ -149,7 +149,7 @@ class ConstitutiveTest(unittest.TestCase):
             self.pt,
             self.x,
             self.dh,
-            self.print_level,
+            2,
             self.atol,
             self.rtol,
         )
