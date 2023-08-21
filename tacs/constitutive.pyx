@@ -1446,6 +1446,10 @@ cdef class IsoRectangleBeamConstitutive(BeamConstitutive):
             (i.e. no design variable).
         tlb (float or complex, optional): Lower bound on thickness (keyword argument). Defaults to 0.0.
         tub (float or complex, optional): Upper bound on thickness (keyword argument). Defaults to 10.0.
+        wOffset (float or complex, optional): Offset distance along width axis of reference axis (where nodes are located) relative to elastic axis.
+            Measured in fraction of cross-section width. Defaults to 0.0.
+        tOffset (float or complex, optional): Offset distance along thickness axis of reference axis (where nodes are located) relative to elastic axis.
+            Measured in fraction of cross-section thickness. Defaults to 0.0.
     """
     def __cinit__(self, *args, **kwargs):
         cdef TACSMaterialProperties *props = NULL
@@ -1457,6 +1461,8 @@ cdef class IsoRectangleBeamConstitutive(BeamConstitutive):
         cdef int tNum = -1
         cdef TacsScalar tlb = 0.0
         cdef TacsScalar tub = 10.0
+        cdef TacsScalar wOffset = 0.0
+        cdef TacsScalar tOffset = 0.0
 
         if len(args) >= 1:
             props = (<MaterialProperties>args[0]).ptr
@@ -1477,10 +1483,14 @@ cdef class IsoRectangleBeamConstitutive(BeamConstitutive):
             tlb = kwargs['tlb']
         if 'tub' in kwargs:
             tub = kwargs['tub']
+        if 'wOffset' in kwargs:
+            wOffset = kwargs['wOffset']
+        if 'tOffset' in kwargs:
+            tOffset = kwargs['tOffset']
 
         if props is not NULL:
             self.cptr = new TACSIsoRectangleBeamConstitutive(props, w, t, wNum, tNum,
-                                                             wlb, wub, tlb, tub)
+                                                             wlb, wub, tlb, tub, wOffset, tOffset)
             self.ptr = self.cptr
             self.ptr.incref()
         else:
