@@ -49,9 +49,7 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
             self.dh = 1e-6
 
         # Instantiate FEA Assembler
-        struct_options = {}
-
-        fea_assembler = pytacs.pyTACS(bdf_file, comm, options=struct_options)
+        fea_assembler = pytacs.pyTACS(bdf_file, comm)
 
         # Material properties
         rho = 27.0  # density kg/m^3
@@ -78,9 +76,6 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
             elem = elements.Beam2(transform, con)
             return elem
 
-        # Instantiate FEA Assembler
-        fea_assembler = pytacs.pyTACS(bdf_file, comm)
-
         # Set up constitutive objects and elements
         fea_assembler.initialize(elem_call_back)
 
@@ -90,8 +85,8 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
         tacs_probs = tacs_probs.values()
         # Set convergence to be tight for test
         for problem in tacs_probs:
-            problem.setOption("L2Convergence", 1e-15)
-            problem.setOption("L2ConvergenceRel", 1e-15)
+            problem.setOption("L2Convergence", 1e-20)
+            problem.setOption("L2ConvergenceRel", 1e-20)
 
         # Add Functions
         for problem in tacs_probs:

@@ -255,59 +255,67 @@ void TACSIsoRectangleBeamConstitutive::addStressDVSens(
   TacsScalar A = thickness * width;
   TacsScalar delta_y = t_offset * thickness;
   TacsScalar delta_z = w_offset * width;
+  TacsScalar a = width / 2.0;
+  TacsScalar b = thickness / 2.0;
+  TacsScalar b3 = b * b * b;
+  TacsScalar b4 = b * b3;
+  TacsScalar a4 = a * a * a * a;
 
   int index = 0;
   if (width_num >= 0) {
     TacsScalar ddelta_z = w_offset;
     TacsScalar dA = thickness;
-    TacsScalar dIz = 1.0 / 12.0 * thickness * thickness * thickness + delta_y * delta_y * dA;
-    TacsScalar dIy = width * width * thickness / 4.0 + 2.0 * ddelta_z * delta_z * A + delta_z * delta_z * dA;
-    TacsScalar dIyz = -delta_y * ddelta_z * A + -delta_y * delta_z * dA ;
-    TacsScalar a = width / 2.0;
-    TacsScalar da = 1.0 / 2.0;
-    TacsScalar b = thickness / 2.0;
-    TacsScalar b3 = b * b * b;
-    TacsScalar b4 = b * b3;
-    TacsScalar a4 = a * a * a * a;
+    TacsScalar dIz =
+        1.0 / 12.0 * thickness * thickness * thickness + delta_y * delta_y * dA;
+    TacsScalar dIy = width * width * thickness / 4.0 +
+                     2.0 * ddelta_z * delta_z * A + delta_z * delta_z * dA;
+    TacsScalar dIyz = -delta_y * ddelta_z * A + -delta_y * delta_z * dA;
+    TacsScalar da = 0.5;
     TacsScalar da4 = 4.0 * a * a * a * da;
     TacsScalar dJ =
         da * b3 * (16.0 / 3.0 - 3.36 * b / a * (1.0 - b4 / a4 / 12.0)) +
         a * b3 * (3.36 * b / a * da / a * (1.0 - b4 / a4 / 12.0)) +
         a * b3 * (3.36 * b / a * (-b4 / a4 / 12.0 * da4 / a4));
 
-    dfdx[index] += scale * (E * (dA * e[0] - delta_y * dA * e[2] - (delta_z * dA + ddelta_z * A) * e[3]) * psi[0] +
-                            G * dJ * e[1] * psi[1] +
-                            E * (dIz * e[2] - dIyz * e[3] - delta_y * dA * e[0]) * psi[2] +
-                            E * (dIy * e[3] - dIyz * e[2] - (delta_z * dA + ddelta_z * A) * e[0]) * psi[3] +
-                            kcorr * G * dA * e[4] * psi[4] +
-                            kcorr * G * dA * e[5] * psi[5]);
+    dfdx[index] +=
+        scale *
+        (E *
+             (dA * e[0] - delta_y * dA * e[2] -
+              (delta_z * dA + ddelta_z * A) * e[3]) *
+             psi[0] +
+         G * dJ * e[1] * psi[1] +
+         E * (dIz * e[2] - dIyz * e[3] - delta_y * dA * e[0]) * psi[2] +
+         E * (dIy * e[3] - dIyz * e[2] - (delta_z * dA + ddelta_z * A) * e[0]) *
+             psi[3] +
+         kcorr * G * dA * e[4] * psi[4] + kcorr * G * dA * e[5] * psi[5]);
     index++;
   }
   if (thickness_num >= 0) {
     TacsScalar ddelta_y = t_offset;
     TacsScalar dA = width;
-    TacsScalar dIz = width * thickness * thickness / 4.0 + 2.0 * ddelta_y * delta_y * A + delta_y * delta_y * dA;
+    TacsScalar dIz = width * thickness * thickness / 4.0 +
+                     2.0 * ddelta_y * delta_y * A + delta_y * delta_y * dA;
     TacsScalar dIy = width * width * width / 12.0 + delta_z * delta_z * dA;
-    TacsScalar dIyz = -ddelta_y * delta_z * A + -delta_y * delta_z * dA ;
-    TacsScalar a = width / 2.0;
-    TacsScalar b = thickness / 2.0;
-    TacsScalar db = 1.0 / 2.0;
-    TacsScalar b3 = b * b * b;
+    TacsScalar dIyz = -ddelta_y * delta_z * A + -delta_y * delta_z * dA;
+    TacsScalar db = 0.5;
     TacsScalar db3 = 3.0 * b * b * db;
-    TacsScalar b4 = b * b3;
     TacsScalar db4 = 4.0 * b3 * db;
-    TacsScalar a4 = a * a * a * a;
     TacsScalar dJ =
         a * db3 * (16.0 / 3.0 - 3.36 * b / a * (1.0 - b4 / a4 / 12.0)) +
         a * b3 * (-3.36 * db / a * (1.0 - b4 / a4 / 12.0)) +
         a * b3 * (-3.36 * b / a * (-db4 / a4 / 12.0));
 
-    dfdx[index] += scale * (E * (dA * e[0] - (delta_y * dA + ddelta_y * A) * e[2] - delta_z * dA * e[3]) * psi[0] +
-                            G * dJ * e[1] * psi[1] +
-                            E * (dIz * e[2] - dIyz * e[3] - (delta_y * dA + ddelta_y * A) * e[0]) * psi[2] +
-                            E * (dIy * e[3] - dIyz * e[2] - delta_z * dA * e[0]) * psi[3] +
-                            kcorr * G * dA * e[4] * psi[4] +
-                            kcorr * G * dA * e[5] * psi[5]);
+    dfdx[index] +=
+        scale *
+        (E *
+             (dA * e[0] - (delta_y * dA + ddelta_y * A) * e[2] -
+              delta_z * dA * e[3]) *
+             psi[0] +
+         G * dJ * e[1] * psi[1] +
+         E * (dIz * e[2] - dIyz * e[3] - (delta_y * dA + ddelta_y * A) * e[0]) *
+             psi[2] +
+         E * (dIy * e[3] - dIyz * e[2] - delta_z * dA * e[0]) * psi[3] +
+         kcorr * G * dA * e[4] * psi[4] + kcorr * G * dA * e[5] * psi[5]);
     index++;
   }
 }
@@ -320,7 +328,8 @@ TacsScalar TACSIsoRectangleBeamConstitutive::evalFailure(int elemIndex,
   TacsScalar e0[6], s0[6];    // 3D stress, NOT beam stresses
   TacsScalar fail_checks[4];  // fail value a four corners
   TacsScalar max_fail = -1e20, ks_sum = 0.0;
-  TacsScalar y_lim[] = {-(0.5 + t_offset) * thickness, (0.5 - t_offset) * thickness};
+  TacsScalar y_lim[] = {-(0.5 + t_offset) * thickness,
+                        (0.5 - t_offset) * thickness};
   TacsScalar z_lim[] = {-(0.5 + w_offset) * width, (0.5 - w_offset) * width};
 
   int count = 0;
@@ -362,7 +371,8 @@ TacsScalar TACSIsoRectangleBeamConstitutive::evalFailureStrainSens(
   TacsScalar fail_checks[4];
   TacsScalar fail_checks_sens[4][6];
   TacsScalar max_fail = -1e20, ks_sum = 0.0;
-  TacsScalar y_lim[] = {-(0.5 + t_offset) * thickness, (0.5 - t_offset) * thickness};
+  TacsScalar y_lim[] = {-(0.5 + t_offset) * thickness,
+                        (0.5 - t_offset) * thickness};
   TacsScalar z_lim[] = {-(0.5 + w_offset) * width, (0.5 - w_offset) * width};
 
   memset(sens, 0, 6 * sizeof(TacsScalar));
@@ -388,7 +398,9 @@ TacsScalar TACSIsoRectangleBeamConstitutive::evalFailureStrainSens(
       fail_checks_sens[count][0] = dfde0[0];
       fail_checks_sens[count][2] = y_lim[i] * dfde0[0];
       fail_checks_sens[count][3] = z_lim[j] * dfde0[0];
-      fail_checks_sens[count][1] = (y_lim[i] + t_offset * thickness) * dfde0[4] - (z_lim[j] + w_offset * width) * dfde0[5];
+      fail_checks_sens[count][1] =
+          (y_lim[i] + t_offset * thickness) * dfde0[4] -
+          (z_lim[j] + w_offset * width) * dfde0[5];
       fail_checks_sens[count][5] = dfde0[4];
       fail_checks_sens[count][4] = dfde0[5];
 
@@ -427,7 +439,8 @@ void TACSIsoRectangleBeamConstitutive::addFailureDVSens(
     TacsScalar fail_checks[4];
     TacsScalar fail_checks_sens[4];
     TacsScalar max_fail = -1e20, ks_sum = 0.0;
-    TacsScalar y_lim[] = {-(0.5 + t_offset) * thickness, (0.5 - t_offset) * thickness};
+    TacsScalar y_lim[] = {-(0.5 + t_offset) * thickness,
+                          (0.5 - t_offset) * thickness};
     TacsScalar z_lim[] = {-(0.5 + w_offset) * width, (0.5 - w_offset) * width};
     TacsScalar dwidth = 0.0, dthickness = 0.0;
 
@@ -438,8 +451,10 @@ void TACSIsoRectangleBeamConstitutive::addFailureDVSens(
       dthickness = 1.0;
     }
 
-    TacsScalar dy_lim[] = {-(0.5 + t_offset) * dthickness, (0.5 - t_offset) * dthickness};
-    TacsScalar dz_lim[] = {-(0.5 + w_offset) * dwidth, (0.5 - w_offset) * dwidth};
+    TacsScalar dy_lim[] = {-(0.5 + t_offset) * dthickness,
+                           (0.5 - t_offset) * dthickness};
+    TacsScalar dz_lim[] = {-(0.5 + w_offset) * dwidth,
+                           (0.5 - w_offset) * dwidth};
 
     int count = 0;
     for (int i = 0; i < 2; i++) {
@@ -461,7 +476,9 @@ void TACSIsoRectangleBeamConstitutive::addFailureDVSens(
 
         fail_checks_sens[count] =
             e0d[0] * (dy_lim[i] * e[2] + dz_lim[j] * e[3]) +
-            (e0d[4] * (dy_lim[i] + t_offset * dthickness) - e0d[5] * (dz_lim[j] + w_offset * dwidth)) * e[1];
+            (e0d[4] * (dy_lim[i] + t_offset * dthickness) -
+             e0d[5] * (dz_lim[j] + w_offset * dwidth)) *
+                e[1];
 
         if (TacsRealPart(fail_checks[count]) > TacsRealPart(max_fail)) {
           max_fail = fail_checks[count];
