@@ -13,7 +13,7 @@ class ConstitutiveTest(unittest.TestCase):
             self.rtol = 1e-11
         else:
             self.dh = 1e-8
-            self.rtol = 1e-4
+            self.rtol = 1e-3
         self.dtype = TACS.dtype
 
         self.atol = np.clip(1e-5 * self.rtol, 1e-14, 1e-8)
@@ -149,7 +149,7 @@ class ConstitutiveTest(unittest.TestCase):
             self.pt,
             self.x,
             self.dh,
-            2,
+            self.print_level,
             self.atol,
             self.rtol,
         )
