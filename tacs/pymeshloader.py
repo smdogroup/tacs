@@ -552,11 +552,7 @@ class pyMeshLoader(BaseUI):
             componentIDs, nastranOrdering=False
         )
 
-        # convert global nodeIDs to local numbering on this processor if requested
-        rank = self.comm.rank
-        ownerRange = self.assembler.getOwnerRange()
-        allNodesOnProc = list(range(ownerRange[rank], ownerRange[rank + 1]))
-        nodes = [i for i, v in enumerate(allNodesOnProc) if v in globalNodeIDs]
+        nodes = self.getLocalNodeIDsFromGlobal(globalNodeIDs, nastranOrdering=False)
 
         return nodes
 
