@@ -1,6 +1,16 @@
+"""
+This example shows how to initialize pyTACS directly from a pyNASTRAN BDF object.
+In this example we create an annulus out of shell elements using pyNASTRAN's BDF class.
+We then use this class object to initialize pyTACS rather than reading in a file.
+We analyze two load cases: A static case where we apply a load at the spider-webbed RBE2 centered inside the annulus
+and modal case where we evaluate the mode shapes of the structure.
+"""
+
 import numpy as np
 from pyNastran.bdf.bdf import BDF
+
 from tacs import pyTACS, functions
+
 
 # Geometric properties
 Ri = 0.5
@@ -42,8 +52,8 @@ curID = 1
 for i in range(nr - 1):
     for j in range(ntheta):
         r0 = r_array[i]
-        t0 = theta_array[j-1]
-        r1 = r_array[i+1]
+        t0 = theta_array[j - 1]
+        r1 = r_array[i + 1]
         t1 = theta_array[j]
         conn = [nodeIDs[r0, t0], nodeIDs[r0, t1], nodeIDs[r1, t1], nodeIDs[r1, t0]]
         bdfInfo.add_cquad4(curID, 1, conn)
@@ -74,7 +84,9 @@ FEAAssembler.initialize()
 # Apply a static load case with a x moment at the center
 prob = FEAAssembler.createStaticProblem("center_moment")
 prob.addLoadToNodes(center_nid, [0.0, 0.0, 0.0, 1e7, 0.0, 0.0], nastranOrdering=True)
-prob.addFunction("Izz", functions.MomentOfInertia, direction1=[0, 0, 1], direction2=[0, 0, 1])
+prob.addFunction(
+    "Izz", functions.MomentOfInertia, direction1=[0, 0, 1], direction2=[0, 0, 1]
+)
 prob.solve()
 f = {}
 prob.evalFunctions(f)
