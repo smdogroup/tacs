@@ -53,7 +53,7 @@ class pyMeshLoader(BaseUI):
         elif isinstance(bdf, pn.BDF):
             self.bdfInfo = deepcopy(bdf)
         else:
-            raise ValueError("BDF file must be provided as a string or pyNastran BDF object instance.")
+            raise self._TACSError("BDF input must be provided as a file name string or pyNastran BDF object.")
 
         # Set flag letting us know model is not xrefed yet
         self.bdfInfo.is_xrefed = False
