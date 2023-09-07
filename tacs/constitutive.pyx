@@ -392,6 +392,7 @@ cdef class MaterialProperties:
         cdef TacsScalar alpha1, alpha2, alpha3
         cdef TacsScalar kappa1, kappa2, kappa3
 
+        rho = self.ptr.getDensity()
         self.ptr.getOrthotropicProperties(&E1, &E2, &E3, &nu12, &nu13, &nu23, &G12, &G13, &G23)
         self.ptr.getStrengthProperties(&T1, &C1, &T2, &C2, &T3, &C3,
                                        &S12, &S13, &S23)
@@ -399,6 +400,7 @@ cdef class MaterialProperties:
         self.ptr.getThermalConductivity(&kappa1, &kappa2, &kappa3)
 
         mat = {}
+        mat['rho'] = rho
         mat['E1'] = E1
         mat['E2'] = E2
         mat['E3'] = E3
