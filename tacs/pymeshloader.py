@@ -33,7 +33,7 @@ class pyMeshLoader(BaseUI):
     def scanBdfFile(self, bdf):
         """
         Scan nastran bdf file using pyNastran's bdf parser.
-        We also set up arrays that will be require later to build tacs.
+        We also set up arrays that will be required later to build tacs.
         """
 
         # Only print debug info on root, if requested
@@ -53,7 +53,8 @@ class pyMeshLoader(BaseUI):
         elif isinstance(bdf, pn.BDF):
             self.bdfInfo = deepcopy(bdf)
         else:
-            raise self._TACSError("BDF input must be provided as a file name string or pyNastran BDF object.")
+            raise self._TACSError("BDF input must be provided as a file name 'str' or pyNastran 'BDF' object. "
+                                  f"Provided input was of type '{type(bdf).__name__}'.")
 
         # Set flag letting us know model is not xrefed yet
         self.bdfInfo.is_xrefed = False
