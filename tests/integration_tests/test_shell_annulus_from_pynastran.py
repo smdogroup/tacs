@@ -53,7 +53,7 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
             self.atol = 1e-8
             self.dh = 1e-10
         else:
-            self.rtol = 2e-1
+            self.rtol = 1e-3
             self.atol = 1e-3
             self.dh = 1e-6
 
