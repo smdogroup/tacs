@@ -553,7 +553,9 @@ class pyMeshLoader(BaseUI):
         )
 
         # get the corresponding local IDs on each proc
-        localNodeIDs = self.getLocalNodeIDsFromGlobal(globalNodeIDs, nastranOrdering=False)
+        localNodeIDs = self.getLocalNodeIDsFromGlobal(
+            globalNodeIDs, nastranOrdering=False
+        )
         # If the returned index is > 0 then it is owned by this proc, otherwise remove it
         localNodeIDs = [localID for localID in localNodeIDs if localID >= 0]
 
