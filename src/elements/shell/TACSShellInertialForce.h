@@ -96,15 +96,19 @@ class TACSShellInertialForce : public TACSElement {
       TacsScalar detXd = det3x3(Xd);
       detXd *= weight;
 
-      TacsScalar mass = con->evalDensity(elemIndex, pt, X);
+      TacsScalar moments[3];
+      con->evalMassMoments(elemIndex, pt, X, moments);
+      TacsScalar mass = moments[0];
 
       // Compute the traction
-      TacsScalar tr[3];
+      TacsScalar tr[vars_per_node];
       tr[0] = -detXd * mass * inertiaVec[0];
       tr[1] = -detXd * mass * inertiaVec[1];
       tr[2] = -detXd * mass * inertiaVec[2];
+      // Add moment terms if theres a shell offset
+      crossProductAdd(-detXd * mass * moments[1], n, inertiaVec, &tr[3]);
 
-      basis::template addInterpFieldsTranspose<vars_per_node, 3>(pt, tr, res);
+      basis::template addInterpFieldsTranspose<vars_per_node, vars_per_node>(pt, tr, res);
     }
   }
 
