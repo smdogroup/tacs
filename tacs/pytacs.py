@@ -151,6 +151,11 @@ class pyTACS(BaseUI):
             False,
             "Flag for printing out timing information for class procedures.",
         ],
+        "linearityTol": [
+            float,
+            1e-14,
+            "When created, pyTACS will check if the model is linear or nonlinear by checking whether (res(2*u) - res(0)) - 2 * (res(u) - res(0)) == 0 this tolerance controls how close to zero the residual must be to be considered linear.",
+        ],
     }
 
     def __init__(self, fileName, comm=None, dvNum=0, scaleList=None, options=None):
@@ -813,7 +818,7 @@ class pyTACS(BaseUI):
     def _checkNonlinearity(self) -> bool:
         """Check if the finite element model is nonlinear
 
-        This check works by checking whether the residual is nonlinear w.r.t the states using 2 residual evaluations.
+        This check works by checking whether the residual is nonlinear w.r.t the states using 3 residual evaluations.
 
         Returns
         -------
@@ -851,7 +856,7 @@ class pyTACS(BaseUI):
         # Check if (res2-res0) - 2 * (res1 - res0) is zero (or very close to it)
         resNorm = np.real(res1.norm())
         res2.axpy(-2.0, res1)
-        return (np.real(res2.norm()) / resNorm) > 1e-14
+        return (np.real(res2.norm()) / resNorm) > self.getOption("linearityTol")
 
     def _elemCallBackFromBDF(self):
         """
