@@ -108,7 +108,8 @@ class TACSShellInertialForce : public TACSElement {
       // Add moment terms if theres a shell offset
       crossProductAdd(-detXd * mass * moments[1], n, inertiaVec, &tr[3]);
 
-      basis::template addInterpFieldsTranspose<vars_per_node, vars_per_node>(pt, tr, res);
+      basis::template addInterpFieldsTranspose<vars_per_node, vars_per_node>(
+          pt, tr, res);
     }
   }
 
