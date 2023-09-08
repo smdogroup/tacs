@@ -190,13 +190,13 @@
         <span class="p">],</span>
     <span class="p">}</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fileName</span><span class="p">,</span> <span class="n">comm</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">dvNum</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">scaleList</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">options</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">bdf</span><span class="p">,</span> <span class="n">comm</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">dvNum</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">scaleList</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">options</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
-<span class="sd">        fileName : str</span>
-<span class="sd">            The filename of the BDF file to load.</span>
+<span class="sd">        bdf : str or pyNastran.bdf.bdf.BDF</span>
+<span class="sd">            The BDF file or a pyNastran BDF object to load.</span>
 
 <span class="sd">        comm : mpi4py.MPI.Intracomm</span>
 <span class="sd">            The comm object on which to create the pyTACS object.</span>
@@ -226,10 +226,10 @@
         <span class="c1"># Create and load mesh loader object.</span>
         <span class="n">debugFlag</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s2">&quot;printDebug&quot;</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">meshLoader</span> <span class="o">=</span> <span class="n">pyMeshLoader</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">comm</span><span class="p">,</span> <span class="n">debugFlag</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">meshLoader</span><span class="o">.</span><span class="n">scanBdfFile</span><span class="p">(</span><span class="n">fileName</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">bdfName</span> <span class="o">=</span> <span class="n">fileName</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">meshLoader</span><span class="o">.</span><span class="n">scanBdfFile</span><span class="p">(</span><span class="n">bdf</span><span class="p">)</span>
         <span class="c1"># Save pynastran bdf object</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">bdfInfo</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">meshLoader</span><span class="o">.</span><span class="n">getBDFInfo</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">bdfName</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">bdfInfo</span><span class="o">.</span><span class="n">bdf_filename</span>
 
         <span class="n">meshLoadTime</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
 
