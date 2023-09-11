@@ -101,7 +101,7 @@ class TACSShellInertialForce : public TACSElement {
       TacsScalar mass = moments[0];
 
       // Compute the traction
-      TacsScalar tr[vars_per_node];
+      TacsScalar tr[vars_per_node] = {0.0};
       tr[0] = -detXd * mass * inertiaVec[0];
       tr[1] = -detXd * mass * inertiaVec[1];
       tr[2] = -detXd * mass * inertiaVec[2];
