@@ -118,4 +118,4 @@ class TACSShellInertialForce : public TACSElement {
   TACSShellConstitutive *con;
 };
 
-#endif  // TACS_SHELL_TRACTION_H
+#endif  // TACS_SHELL_INERTIAL_FORCE_H
