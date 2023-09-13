@@ -45,7 +45,14 @@ class TacsModel:
         return isinstance(self.mesh_aim, AflrAim)
 
     @classmethod
-    def build(cls, csm_file, comm=None, mesh="egads", problem_name: str = "capsStruct", verbosity=1):
+    def build(
+        cls,
+        csm_file,
+        comm=None,
+        mesh="egads",
+        tacs_project="tacs",
+        problem_name: str = "capsStruct",
+    ):
         """
         make a pyCAPS problem with the tacsAIM and egadsAIM on serial / root proc
 
@@ -61,9 +68,9 @@ class TacsModel:
         assert mesh in cls.MESH_AIMS
         if comm is None or comm.rank == 0:
             caps_problem = pyCAPS.Problem(
-                problemName=problem_name, capsFile=csm_file, outLevel=verbosity
+                problemName=problem_name, capsFile=csm_file, outLevel=1
             )
-        tacs_aim = TacsAim(caps_problem, comm)
+        tacs_aim = TacsAim(caps_problem, comm, project_name=tacs_project)
         mesh_aim = None
         if mesh == "egads":
             mesh_aim = EgadsAim(caps_problem, comm)
@@ -73,6 +80,9 @@ class TacsModel:
 
     def get_config_parameter(self, param_name: str):
         return self.tacs_aim.get_config_parameter(param_name=param_name)
+
+    def get_output_parameter(self, param_name: str):
+        return self.tacs_aim.get_output_parameter(param_name=param_name)
 
     def register(self, obj):
         """
@@ -147,6 +157,14 @@ class TacsModel:
     @property
     def analysis_dir(self) -> str:
         return self.tacs_aim.analysis_dir
+    
+    @property
+    def mesh_morph(self) -> bool:
+        return self.tacs_aim.mesh_morph
+    
+    @mesh_morph.setter
+    def mesh_morph(self, new_bool):
+        self.tacs_aim.mesh_morph = new_bool
 
     @property
     def geometry(self):
@@ -357,5 +375,8 @@ class TacsModel:
                 struct_derivs = self._tacs_sens[tacs_key]["struct"]
                 for ithick, thick_var in enumerate(self.thickness_variables):
                     func.set_derivative(thick_var, struct_derivs[ithick].real)
+
+        if self.mesh_morph:
+            self.tacs_aim.unlink()
 
         return self
