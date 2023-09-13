@@ -45,7 +45,14 @@ class TacsModel:
         return isinstance(self.mesh_aim, AflrAim)
 
     @classmethod
-    def build(cls, csm_file, comm=None, mesh="egads", problem_name: str = "capsStruct"):
+    def build(
+        cls,
+        csm_file,
+        comm=None,
+        mesh="egads",
+        tacs_project="tacs",
+        problem_name: str = "capsStruct",
+    ):
         """
         make a pyCAPS problem with the tacsAIM and egadsAIM on serial / root proc
 
@@ -63,7 +70,7 @@ class TacsModel:
             caps_problem = pyCAPS.Problem(
                 problemName=problem_name, capsFile=csm_file, outLevel=1
             )
-        tacs_aim = TacsAim(caps_problem, comm)
+        tacs_aim = TacsAim(caps_problem, comm, project_name=tacs_project)
         mesh_aim = None
         if mesh == "egads":
             mesh_aim = EgadsAim(caps_problem, comm)
@@ -73,6 +80,9 @@ class TacsModel:
 
     def get_config_parameter(self, param_name: str):
         return self.tacs_aim.get_config_parameter(param_name=param_name)
+
+    def get_output_parameter(self, param_name: str):
+        return self.tacs_aim.get_output_parameter(param_name=param_name)
 
     def register(self, obj):
         """
