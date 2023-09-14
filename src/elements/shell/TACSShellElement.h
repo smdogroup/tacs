@@ -669,7 +669,7 @@ void TACSShellElement<quadrature, basis, director, model>::getMatType(
   // We have to override the complex step size sice, complex step can't be used
   // here since the user may need to complex step over this function to get
   // derivatives
-  dh = fmin(TACSElement::dh, 1e-7);
+  dh = fmax(TACSElement::dh, 1e-7);
   // Set alpha or gamma based on if this is a stiffness or mass matrix
   if (matType == TACS_STIFFNESS_MATRIX) {
     alpha = 1.0;
