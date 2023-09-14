@@ -70,6 +70,13 @@ class TACSElement : public TACSObject {
   */
   static void setFiniteDifferenceOrder(int order);
 
+  /*
+    Allow users to set default finite difference step size
+
+    @param dh The requested finite difference step size
+  */
+  static void setFiniteDifferenceStepSize(double _dh);
+
   /**
     Get the number of degrees of freedom per node for this element
 
@@ -743,10 +750,14 @@ class TACSElement : public TACSObject {
                              const TacsScalar ddvars[], int ld_data,
                              TacsScalar *data) {}
 
- private:
-  int componentNum;
+ protected:
   // Defines order of finite differencing method
   static int fdOrder;
+  // Defines step size of finite differencing method
+  static double dh;
+
+ private:
+  int componentNum;
 };
 
 #endif  // TACS_ELEMENT_H

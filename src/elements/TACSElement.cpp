@@ -28,9 +28,23 @@
 int TACSElement::fdOrder = 2;
 
 /*
+  Default finite difference step length
+*/
+#ifdef TACS_USE_COMPLEX
+double TACSElement::dh = 1e-30;
+#else
+double TACSElement::dh = 1e-7;
+#endif  // TACS_USE_COMPLEX
+
+/*
   Allow users to set default finite difference order for real analysis
 */
 void TACSElement::setFiniteDifferenceOrder(int order) { fdOrder = order; }
+
+/*
+  Allow users to set default finite difference order for real analysis
+*/
+void TACSElement::setFiniteDifferenceStepSize(double _dh) { dh = _dh; }
 
 /*
   Finds the finite-difference based Jacobian of the element. This is
@@ -44,13 +58,6 @@ void TACSElement::addJacobian(int elemIndex, double time, TacsScalar alpha,
                               const TacsScalar dvars[],
                               const TacsScalar ddvars[], TacsScalar res[],
                               TacsScalar J[]) {
-  // The step length
-#ifdef TACS_USE_COMPLEX
-  const double dh = 1e-30;
-#else
-  const double dh = 1e-7;
-#endif  // TACS_USE_COMPLEX
-
   // Get the number of variables
   int nvars = getNumVariables();
 
@@ -201,13 +208,6 @@ void TACSElement::addAdjResProduct(
     int elemIndex, double time, TacsScalar scale, const TacsScalar psi[],
     const TacsScalar Xpts[], const TacsScalar vars[], const TacsScalar dvars[],
     const TacsScalar ddvars[], int dvLen, TacsScalar dfdx[]) {
-  // The step length
-#ifdef TACS_USE_COMPLEX
-  const double dh = 1e-30;
-#else
-  const double dh = 1e-7;
-#endif  // TACS_USE_COMPLEX
-
   TacsScalar *x = new TacsScalar[dvLen];
   getDesignVars(elemIndex, dvLen, x);
 
@@ -271,13 +271,6 @@ void TACSElement::addAdjResXptProduct(
     int elemIndex, double time, TacsScalar scale, const TacsScalar psi[],
     const TacsScalar Xpts[], const TacsScalar vars[], const TacsScalar dvars[],
     const TacsScalar ddvars[], TacsScalar fXptSens[]) {
-  // The step length
-#ifdef TACS_USE_COMPLEX
-  const double dh = 1e-30;
-#else
-  const double dh = 1e-7;
-#endif  // TACS_USE_COMPLEX
-
   int nnodes = getNumNodes();
   TacsScalar *X = new TacsScalar[3 * nnodes];
   memcpy(X, Xpts, 3 * nnodes * sizeof(TacsScalar));
@@ -356,13 +349,6 @@ void TACSElement::addMatDVSensInnerProduct(
     ElementMatrixType matType, int elemIndex, double time, TacsScalar scale,
     const TacsScalar psi[], const TacsScalar phi[], const TacsScalar Xpts[],
     const TacsScalar vars[], int dvLen, TacsScalar dfdx[]) {
-  // The step length
-#ifdef TACS_USE_COMPLEX
-  const double dh = 1e-30;
-#else
-  const double dh = 1e-7;
-#endif  // TACS_USE_COMPLEX
-
   TacsScalar *x = new TacsScalar[dvLen];
   getDesignVars(elemIndex, dvLen, x);
 
@@ -435,13 +421,6 @@ void TACSElement::addMatXptSensInnerProduct(
     ElementMatrixType matType, int elemIndex, double time, TacsScalar scale,
     const TacsScalar psi[], const TacsScalar phi[], const TacsScalar Xpts[],
     const TacsScalar vars[], TacsScalar dfdX[]) {
-  // The step length
-#ifdef TACS_USE_COMPLEX
-  const double dh = 1e-30;
-#else
-  const double dh = 1e-7;
-#endif  // TACS_USE_COMPLEX
-
   int nnodes = getNumNodes();
   TacsScalar *X = new TacsScalar[3 * nnodes];
   memcpy(X, Xpts, 3 * nnodes * sizeof(TacsScalar));
@@ -510,13 +489,6 @@ void TACSElement::getMatSVSensInnerProduct(
     ElementMatrixType matType, int elemIndex, double time,
     const TacsScalar psi[], const TacsScalar phi[], const TacsScalar Xpts[],
     const TacsScalar vars[], TacsScalar dfdu[]) {
-  // The step length
-#ifdef TACS_USE_COMPLEX
-  const double dh = 1e-30;
-#else
-  const double dh = 1e-7;
-#endif  // TACS_USE_COMPLEX
-
   int nvars = getNumVariables();
   memset(dfdu, 0, nvars * sizeof(TacsScalar));
   TacsScalar *mat = new TacsScalar[nvars * nvars];
@@ -585,13 +557,6 @@ void TACSElement::addPointQuantityDVSens(
     double pt[], const TacsScalar Xpts[], const TacsScalar vars[],
     const TacsScalar dvars[], const TacsScalar ddvars[],
     const TacsScalar dfdq[], int dvLen, TacsScalar dfdx[]) {
-  // The step length
-#ifdef TACS_USE_COMPLEX
-  const double dh = 1e-30;
-#else
-  const double dh = 1e-7;
-#endif  // TACS_USE_COMPLEX
-
   TacsScalar *x = new TacsScalar[dvLen];
   getDesignVars(elemIndex, dvLen, x);
 
@@ -662,13 +627,6 @@ void TACSElement::addPointQuantitySVSens(
     TacsScalar beta, TacsScalar gamma, int n, double pt[],
     const TacsScalar Xpts[], const TacsScalar vars[], const TacsScalar dvars[],
     const TacsScalar ddvars[], const TacsScalar dfdq[], TacsScalar dfdu[]) {
-  // The step length
-#ifdef TACS_USE_COMPLEX
-  const double dh = 1e-30;
-#else
-  const double dh = 1e-7;
-#endif  // TACS_USE_COMPLEX
-
   TacsScalar detXd = 0.0;
   int nvals = evalPointQuantity(elemIndex, quantityType, time, n, pt, Xpts,
                                 vars, dvars, ddvars, &detXd, NULL);
@@ -748,13 +706,6 @@ void TACSElement::addPointQuantityXptSens(
     double pt[], const TacsScalar Xpts[], const TacsScalar vars[],
     const TacsScalar dvars[], const TacsScalar ddvars[],
     const TacsScalar dfddetXd, const TacsScalar dfdq[], TacsScalar dfdXpts[]) {
-  // The step length
-#ifdef TACS_USE_COMPLEX
-  const double dh = 1e-30;
-#else
-  const double dh = 1e-7;
-#endif  // TACS_USE_COMPLEX
-
   TacsScalar detXd = 0.0;
   int nvals = evalPointQuantity(elemIndex, quantityType, time, n, pt, Xpts,
                                 vars, dvars, ddvars, &detXd, NULL);

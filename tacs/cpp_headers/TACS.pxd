@@ -262,6 +262,8 @@ cdef extern from "TACSElement.h":
         int getComponentNum()
         @staticmethod
         void setFiniteDifferenceOrder(int)
+        @staticmethod
+        void setFiniteDifferenceStepSize(double)
         int getVarsPerNode()
         int getNumNodes()
         int getNumVariables()

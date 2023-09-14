@@ -666,7 +666,10 @@ void TACSShellElement<quadrature, basis, director, model>::getMatType(
   // Create dummy residual vector
   TacsScalar res[vars_per_node * num_nodes];
   memset(res, 0, vars_per_node * num_nodes * sizeof(TacsScalar));
-  dh = 1e-4;
+  // We have to override the complex step size sice, complex step can't be used
+  // here since the user may need to complex step over this function to get
+  // derivatives
+  dh = fmin(TACSElement::dh, 1e-7);
   // Set alpha or gamma based on if this is a stiffness or mass matrix
   if (matType == TACS_STIFFNESS_MATRIX) {
     alpha = 1.0;
