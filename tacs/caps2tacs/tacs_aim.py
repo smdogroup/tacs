@@ -12,12 +12,6 @@ from .egads_aim import EgadsAim
 from .aflr_aim import AflrAim
 
 
-class TacsAimMetadata:
-    def __init__(self, analysis_dir, project_name):
-        self.analysis_dir = analysis_dir
-        self.project_name = project_name
-
-
 class TacsAim:
     """
     Wrapper class for TacsAim with default build setting in different scenarios
@@ -25,7 +19,7 @@ class TacsAim:
     only supports shell properties at the moment
     """
 
-    def __init__(self, caps_problem, comm=None):
+    def __init__(self, caps_problem, comm=None, project_name="tacs", mesh_morph:bool=False):
         self.comm = comm
 
         # geometry and design parameters to change the design of the CSM file during an optimization
@@ -40,16 +34,20 @@ class TacsAim:
         self._constraints = []
         self._design_variables = []
         self._mesh_aim = None
+        self._project_name = project_name
 
         self._dict_options = None
 
         # build flags
         self._setup = False
         self._first_setup = True
+        self._mesh_morph = mesh_morph
 
         # broadcast TacsAimMetadata from root proc to other processors
-        self._metadata = None
-        self._broadcast_metadata()
+        self._analysis_dir = None
+        if self.comm.rank == 0:
+            self._analysis_dir = self.aim.analysisDir
+        self._analysis_dir = self.comm.bcast(self._analysis_dir, root=0)
 
     @root_proc
     def _build_aim(self, caps_problem):
@@ -58,23 +56,6 @@ class TacsAim:
         """
         self._aim = caps_problem.analysis.create(aim="tacsAIM", name="tacs")
         self._geometry = caps_problem.geometry
-
-    def _broadcast_metadata(self):
-        """
-        broadcast any tacs aim metadata needed for this class from root proc to other processors
-        """
-        if self.comm is None:
-            self._metadata = TacsAimMetadata(
-                analysis_dir=self._aim.analysisDir,
-                project_name=self._aim.input.Proj_Name,
-            )
-        else:
-            if self.comm.rank == 0:
-                self._metadata = TacsAimMetadata(
-                    analysis_dir=self._aim.analysisDir,
-                    project_name=self._aim.input.Proj_Name,
-                )
-            self._metadata = self.comm.bcast(self._metadata, root=0)
 
     def register(self, obj):
         """
@@ -107,7 +88,6 @@ class TacsAim:
         self,
         large_format: bool = True,
         static: bool = True,
-        auto_shape_variables: bool = False,
     ):
         # make sure there is at least one material, property, constraint, etc.
         assert len(self._materials) > 0
@@ -134,6 +114,8 @@ class TacsAim:
                     "Analysis types other than static analyses for tacsAim are not supported yet."
                 )
 
+            self.aim.input.Proj_Name = self._project_name
+
             # add materials to tacsAim
             self.aim.input.Material = {
                 material.name: material.dictionary for material in self._materials
@@ -154,17 +136,6 @@ class TacsAim:
                 self.aim.input.Load = {
                     load.name: load.dictionary for load in self._loads
                 }
-
-            if auto_shape_variables and self._first_setup:
-                for despmtr in self._metadata.design_parameters:
-                    # TODO : setup for dv arrays too but not yet
-                    new_value = self._geometry.despmtr[despmtr].value
-                    if isinstance(
-                        new_value, float
-                    ):  # make sure not a list despmtr, not supported yet
-                        shape_var = ShapeVariable(name=despmtr, value=new_value)
-                        self.add_variable(variable=shape_var)
-                self._first_setup = False
 
             # link the egads aim to the tacs aim
             self.aim.input["Mesh"].link(self._mesh_aim.aim.output["Surface_Mesh"])
@@ -202,6 +173,22 @@ class TacsAim:
     @root_broadcast
     def get_output_parameter(self, out_name: str):
         return self.geometry.outpmtr[out_name].value
+    
+    @property
+    def mesh_morph(self) -> bool:
+        return self._mesh_morph
+    
+    @mesh_morph.setter
+    def mesh_morph(self, new_bool:bool):
+        self._mesh_morph = new_bool
+
+    @property
+    def project_name(self):
+        return self._project_name
+
+    @project_name.setter
+    def project_name(self, new_name):
+        self._project_name = new_name
 
     @property
     def geometry(self):
@@ -237,7 +224,7 @@ class TacsAim:
 
     @property
     def analysis_dir(self) -> str:
-        return self._metadata.analysis_dir
+        return self._analysis_dir
 
     @property
     def dat_file(self) -> str:
@@ -254,10 +241,6 @@ class TacsAim:
     @property
     def sens_file_path(self) -> str:
         return os.path.join(self.analysis_dir, self.sens_file)
-
-    @property
-    def project_name(self) -> str:
-        return self._metadata.project_name
 
     @property
     def is_setup(self) -> bool:
@@ -350,3 +333,7 @@ class TacsAim:
         """
         self.aim.postAnalysis()
         return self
+    
+    def unlink(self):
+        if self.comm.rank == 0:
+            self.aim.input["Mesh"].unlink()
