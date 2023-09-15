@@ -1429,11 +1429,14 @@ int TACSBeamElement<quadrature, basis, director, model>::evalPointQuantity(
     return 3;
   } else if (quantityType == TACS_ELEMENT_DENSITY_MOMENT) {
     if (quantity) {
-      TacsScalar density = con->evalDensity(elemIndex, pt, X0.x);
+      TacsScalar mass_moment[6];
+      con->evalMassMoments(elemIndex, pt, X0.x, mass_moment);
+      TacsScalar density = mass_moment[0];
 
-      quantity[0] = density * X0.x[0];
-      quantity[1] = density * X0.x[1];
-      quantity[2] = density * X0.x[2];
+      for (int i = 0; i < 3; i++) {
+        quantity[i] = density * X0.x[i] + mass_moment[2] * n1.x[i] -
+                      mass_moment[1] * n2.x[i];
+      }
     }
 
     return 3;
@@ -1444,21 +1447,25 @@ int TACSBeamElement<quadrature, basis, director, model>::evalPointQuantity(
       // Evaluate the self MOI
       TacsScalar moments[6];
       con->evalMassMoments(elemIndex, pt, X0.x, moments);
-      I0[3] = moments[3];
-      I0[4] = moments[5];
-      I0[5] = moments[4];
+      TacsScalar density = moments[0];
+      I0[3] = moments[3] - moments[1] * moments[1] / density;
+      I0[4] = moments[5] - moments[1] * moments[2] / density;
+      I0[5] = moments[4] - moments[2] * moments[2] / density;
       // Compute T*I0*T^{T}
       mat3x3SymmTransform(T.A, I0, quantity);
-
-      TacsScalar density = con->evalDensity(elemIndex, pt, X0.x);
+      TacsScalar dXcg[3];
+      for (int i = 0; i < 3; i++) {
+        dXcg[i] =
+            X0.x[i] + (moments[2] * n1.x[i] - moments[1] * n2.x[i]) / density;
+      }
 
       // Use parallel axis theorem to move MOI to origin
-      quantity[0] += density * (X0.x[1] * X0.x[1] + X0.x[2] * X0.x[2]);
-      quantity[1] += -density * X0.x[0] * X0.x[1];
-      quantity[2] += -density * X0.x[0] * X0.x[2];
-      quantity[3] += density * (X0.x[0] * X0.x[0] + X0.x[2] * X0.x[2]);
-      quantity[4] += -density * X0.x[2] * X0.x[1];
-      quantity[5] += density * (X0.x[0] * X0.x[0] + X0.x[1] * X0.x[1]);
+      quantity[0] += density * (dXcg[1] * dXcg[1] + dXcg[2] * dXcg[2]);
+      quantity[1] += -density * dXcg[0] * dXcg[1];
+      quantity[2] += -density * dXcg[0] * dXcg[2];
+      quantity[3] += density * (dXcg[0] * dXcg[0] + dXcg[2] * dXcg[2]);
+      quantity[4] += -density * dXcg[2] * dXcg[1];
+      quantity[5] += density * (dXcg[0] * dXcg[0] + dXcg[1] * dXcg[1]);
     }
 
     return 6;
@@ -1660,36 +1667,100 @@ void TACSBeamElement<quadrature, basis, director, model>::
     con->addStressDVSens(elemIndex, scale * dfdq[0], pt, X0.x, e, e, dvLen,
                          dfdx);
   } else if (quantityType == TACS_ELEMENT_DENSITY_MOMENT) {
-    TacsScalar dfdm = 0.0;
+    TacsScalar dfdmom[6] = {0.0};
 
     for (int i = 0; i < 3; i++) {
-      dfdm += scale * dfdq[i] * X0.x[i];
+      dfdmom[0] += scale * dfdq[i] * X0.x[i];
+      dfdmom[1] += -scale * dfdq[i] * n2.x[i];
+      dfdmom[2] += scale * dfdq[i] * n1.x[i];
     }
 
-    con->addDensityDVSens(elemIndex, dfdm, pt, X0.x, dvLen, dfdx);
+    con->addMassMomentsDVSens(elemIndex, pt, X0.x, dfdmom, dvLen, dfdx);
   } else if (quantityType == TACS_ELEMENT_MOMENT_OF_INERTIA) {
     TacsScalar dfdI0[6] = {0.0};
 
     // Evaluate the self MOI
+    TacsScalar moments[6];
+    con->evalMassMoments(elemIndex, pt, X0.x, moments);
+    TacsScalar density = moments[0];
+
     TacsScalar dfdmoments[6] = {0.0};
     mat3x3SymmTransformSens(T.A, dfdq, dfdI0);
+    dfdmoments[0] = scale *
+                    (moments[1] * moments[1] * dfdI0[3] +
+                     moments[1] * moments[2] * dfdI0[4] +
+                     moments[2] * moments[2] * dfdI0[5]) /
+                    density / density;
+    dfdmoments[1] = -scale *
+                    (2.0 * moments[1] * dfdI0[3] + moments[2] * dfdI0[4]) /
+                    density;
+    dfdmoments[2] = -scale *
+                    (2.0 * moments[2] * dfdI0[5] + moments[1] * dfdI0[4]) /
+                    density;
     dfdmoments[3] = scale * dfdI0[3];
-    dfdmoments[5] = scale * dfdI0[4];
     dfdmoments[4] = scale * dfdI0[5];
+    dfdmoments[5] = scale * dfdI0[4];
 
-    con->addMassMomentsDVSens(elemIndex, pt, X0.x, dfdmoments, dvLen, dfdx);
-
-    TacsScalar dfdm = 0.0;
+    TacsScalar dXcg[3], dXcgdrho[3], dXcgdmom1[3], dXcgdmom2[3];
+    for (int i = 0; i < 3; i++) {
+      dXcg[i] =
+          X0.x[i] + (moments[2] * n1.x[i] - moments[1] * n2.x[i]) / density;
+      dXcgdrho[i] =
+          -(moments[2] * n1.x[i] - moments[1] * n2.x[i]) / density / density;
+      dXcgdmom1[i] = -n2.x[i] / density;
+      dXcgdmom2[i] = n1.x[i] / density;
+    }
 
     // Use parallel axis theorem to move MOI to origin
-    dfdm += scale * dfdq[0] * (X0.x[1] * X0.x[1] + X0.x[2] * X0.x[2]);
-    dfdm -= scale * dfdq[1] * X0.x[0] * X0.x[1];
-    dfdm -= scale * dfdq[2] * X0.x[0] * X0.x[2];
-    dfdm += scale * dfdq[3] * (X0.x[0] * X0.x[0] + X0.x[2] * X0.x[2]);
-    dfdm -= scale * dfdq[4] * X0.x[2] * X0.x[1];
-    dfdm += scale * dfdq[5] * (X0.x[0] * X0.x[0] + X0.x[1] * X0.x[1]);
+    dfdmoments[0] +=
+        scale * dfdq[0] *
+        (dXcg[1] * dXcg[1] + dXcg[2] * dXcg[2] +
+         2.0 * density * (dXcg[1] * dXcgdrho[1] + dXcg[2] * dXcgdrho[2]));
+    dfdmoments[0] -= scale * dfdq[1] *
+                     (dXcg[0] * dXcg[1] + density * (dXcgdrho[0] * dXcg[1] +
+                                                     dXcg[0] * dXcgdrho[1]));
+    dfdmoments[0] -= scale * dfdq[2] *
+                     (dXcg[0] * dXcg[2] + density * (dXcgdrho[0] * dXcg[2] +
+                                                     dXcg[0] * dXcgdrho[2]));
+    dfdmoments[0] +=
+        scale * dfdq[3] *
+        (dXcg[0] * dXcg[0] + dXcg[2] * dXcg[2] +
+         2.0 * density * (dXcg[0] * dXcgdrho[0] + dXcg[2] * dXcgdrho[2]));
+    dfdmoments[0] -= scale * dfdq[4] *
+                     (dXcg[2] * dXcg[1] + density * (dXcgdrho[1] * dXcg[2] +
+                                                     dXcg[1] * dXcgdrho[2]));
+    dfdmoments[0] +=
+        scale * dfdq[5] *
+        (dXcg[0] * dXcg[0] + dXcg[1] * dXcg[1] +
+         2.0 * density * (dXcg[0] * dXcgdrho[0] + dXcg[1] * dXcgdrho[1]));
 
-    con->addDensityDVSens(elemIndex, dfdm, pt, X0.x, dvLen, dfdx);
+    dfdmoments[1] += scale * dfdq[0] * density * 2.0 *
+                     (dXcg[1] * dXcgdmom1[1] + dXcg[2] * dXcgdmom1[2]);
+    dfdmoments[1] += -scale * dfdq[1] * density *
+                     (dXcgdmom1[0] * dXcg[1] + dXcg[0] * dXcgdmom1[1]);
+    dfdmoments[1] += -scale * dfdq[2] * density *
+                     (dXcgdmom1[0] * dXcg[2] + dXcg[0] * dXcgdmom1[2]);
+    dfdmoments[1] += scale * dfdq[3] * density * 2.0 *
+                     (dXcg[0] * dXcgdmom1[0] + dXcg[2] * dXcgdmom1[2]);
+    dfdmoments[1] += -scale * dfdq[4] * density *
+                     (dXcgdmom1[2] * dXcg[1] + dXcg[2] * dXcgdmom1[1]);
+    dfdmoments[1] += scale * dfdq[5] * density * 2.0 *
+                     (dXcg[0] * dXcgdmom1[0] + dXcg[1] * dXcgdmom1[1]);
+
+    dfdmoments[2] += scale * dfdq[0] * density * 2.0 *
+                     (dXcg[1] * dXcgdmom2[1] + dXcg[2] * dXcgdmom2[2]);
+    dfdmoments[2] += -scale * dfdq[1] * density *
+                     (dXcgdmom2[0] * dXcg[1] + dXcg[0] * dXcgdmom2[1]);
+    dfdmoments[2] += -scale * dfdq[2] * density *
+                     (dXcgdmom2[0] * dXcg[2] + dXcg[0] * dXcgdmom2[2]);
+    dfdmoments[2] += scale * dfdq[3] * density * 2.0 *
+                     (dXcg[0] * dXcgdmom2[0] + dXcg[2] * dXcgdmom2[2]);
+    dfdmoments[2] += -scale * dfdq[4] * density *
+                     (dXcgdmom2[2] * dXcg[1] + dXcg[2] * dXcgdmom2[1]);
+    dfdmoments[2] += scale * dfdq[5] * density * 2.0 *
+                     (dXcg[0] * dXcgdmom2[0] + dXcg[1] * dXcgdmom2[1]);
+
+    con->addMassMomentsDVSens(elemIndex, pt, X0.x, dfdmoments, dvLen, dfdx);
   }
 }
 
@@ -2023,11 +2094,15 @@ void TACSBeamElement<quadrature, basis, director, model>::
     }
   } else if (quantityType == TACS_ELEMENT_DENSITY_MOMENT) {
     // Compute the sensitivity of the strain energy density w.r.t. the strain
-    TacsScalar density = con->evalDensity(elemIndex, pt, X0.x);
+    TacsScalar mass_moment[6];
+    con->evalMassMoments(elemIndex, pt, X0.x, mass_moment);
+    TacsScalar density = mass_moment[0];
 
-    X0.xd[0] = density * dfdq[0];
-    X0.xd[1] = density * dfdq[1];
-    X0.xd[2] = density * dfdq[2];
+    for (int i = 0; i < 3; i++) {
+      X0.xd[i] = density * dfdq[i];
+      n1.xd[i] = mass_moment[2] * dfdq[i];
+      n2.xd[i] = -mass_moment[1] * dfdq[i];
+    }
   } else if (quantityType == TACS_ELEMENT_MOMENT_OF_INERTIA) {
     TACSElement::addPointQuantityXptSens(elemIndex, quantityType, time, scale,
                                          n, pt, Xpts, vars, dvars, ddvars,

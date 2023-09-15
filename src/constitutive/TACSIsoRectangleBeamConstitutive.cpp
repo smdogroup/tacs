@@ -96,17 +96,20 @@ void TACSIsoRectangleBeamConstitutive::evalMassMoments(int elemIndex,
                                                        TacsScalar moments[]) {
   TacsScalar rho = props->getDensity();
   TacsScalar A = thickness * width;
+  TacsScalar delta_y = t_offset * thickness;
+  TacsScalar delta_z = w_offset * width;
   TacsScalar t3 = thickness * thickness * thickness;
   TacsScalar w3 = width * width * width;
-  TacsScalar Iy = 1.0 / 12.0 * thickness * w3;
-  TacsScalar Iz = 1.0 / 12.0 * width * t3;
+  TacsScalar Iy = 1.0 / 12.0 * thickness * w3 + delta_z * delta_z * A;
+  TacsScalar Iz = 1.0 / 12.0 * width * t3 + delta_y * delta_y * A;
+  TacsScalar Iyz = -delta_y * delta_z * A;
 
   moments[0] = rho * A;
-  moments[1] = 0.0;  // centroid offset y?
-  moments[2] = 0.0;  // centroid offset z?
+  moments[1] = rho * delta_z * A;   // centroid offset y?
+  moments[2] = -rho * delta_y * A;  // centroid offset z?
   moments[3] = rho * Iy;
   moments[4] = rho * Iz;
-  moments[5] = 0.0;  // rho * Iyz
+  moments[5] = rho * Iyz;  // rho * Iyz
 }
 
 void TACSIsoRectangleBeamConstitutive::addMassMomentsDVSens(
@@ -114,26 +117,39 @@ void TACSIsoRectangleBeamConstitutive::addMassMomentsDVSens(
     const TacsScalar scale[], int dvLen, TacsScalar dfdx[]) {
   TacsScalar rho = props->getDensity();
   TacsScalar A = thickness * width;
+  TacsScalar delta_y = t_offset * thickness;
+  TacsScalar delta_z = w_offset * width;
   TacsScalar t3 = thickness * thickness * thickness;
   TacsScalar w3 = width * width * width;
-  TacsScalar Iy = 1.0 / 12.0 * thickness * w3;
-  TacsScalar Iz = 1.0 / 12.0 * width * t3;
+  TacsScalar Iy = 1.0 / 12.0 * thickness * w3 + delta_z * delta_z * A;
+  TacsScalar Iz = 1.0 / 12.0 * width * t3 + delta_y * delta_y * A;
+  TacsScalar Iyz = -delta_y * delta_z * A;
 
   int index = 0;
   if (width_num >= 0) {
     TacsScalar dA = A / width;
-    TacsScalar dIy = 3.0 * Iy / width;
-    TacsScalar dIz = Iz / width;
+    TacsScalar dAz = delta_z * dA + w_offset * A;
+    TacsScalar dAy = -delta_y * dA;
+    TacsScalar dIy = 0.25 * thickness * width * width +
+                     2.0 * w_offset * delta_z * A + delta_z * delta_z * dA;
+    TacsScalar dIz = 1.0 / 12.0 * t3 + delta_y * delta_y * dA;
+    TacsScalar dIyz = -delta_y * w_offset * A - delta_y * delta_z * dA;
 
-    dfdx[index] += rho * (scale[0] * dA + scale[3] * dIy + scale[4] * dIz);
+    dfdx[index] += rho * (scale[0] * dA + scale[1] * dAz + scale[2] * dAy +
+                          scale[3] * dIy + scale[4] * dIz + scale[5] * dIyz);
     index++;
   }
   if (thickness_num >= 0) {
     TacsScalar dA = A / thickness;
-    TacsScalar dIy = Iy / thickness;
-    TacsScalar dIz = 3.0 * Iz / thickness;
+    TacsScalar dAy = -delta_y * dA - t_offset * A;
+    TacsScalar dAz = delta_z * dA;
+    TacsScalar dIy = 1.0 / 12.0 * w3 + delta_z * delta_z * dA;
+    TacsScalar dIz = 0.25 * thickness * thickness * width +
+                     2.0 * t_offset * delta_y * A + delta_y * delta_y * dA;
+    TacsScalar dIyz = -delta_z * t_offset * A - delta_y * delta_z * dA;
 
-    dfdx[index] += rho * (scale[0] * dA + scale[3] * dIy + scale[4] * dIz);
+    dfdx[index] += rho * (scale[0] * dA + scale[1] * dAz + scale[2] * dAy +
+                          scale[3] * dIy + scale[4] * dIz + scale[5] * dIyz);
     index++;
   }
 }
