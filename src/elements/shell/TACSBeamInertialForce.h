@@ -124,7 +124,7 @@ class TACSBeamInertialForce : public TACSElement {
       tr[0] = -detXd.value * weight * mass_moment[0] * inertiaVec[0];
       tr[1] = -detXd.value * weight * mass_moment[0] * inertiaVec[1];
       tr[2] = -detXd.value * weight * mass_moment[0] * inertiaVec[2];
-      // Add moment terms if theres a shell offset
+      // Add moment terms if theres a beam offset
       crossProductAdd(-detXd.value * mass_moment[2], n1.x, inertiaVec, &tr[3]);
       crossProductAdd(detXd.value * mass_moment[1], n2.x, inertiaVec, &tr[3]);
 
