@@ -6,14 +6,17 @@ from pytacs_analysis_base_test import PyTACSTestCase
 from tacs import pytacs, elements, constitutive, functions
 
 """
-6 noded beam model 1 meter long in x direction.
+This is the same test cases as `test_rectangle_beam_tractions.py`, but the beam element is offset 
+in the y and z directions, so that the beam axis no longer aligns with the nodes of the model. 
+This test ensures that the beam solution is invariant under trivial transformation: 
+
+6 noded beam model 1 meter long in x' direction.
 The cross-section is a solid rectangle with the following properties:
     w = 0.1
     t = 0.05
-We apply two load cases: a distributed gravity and distributed traction case.
-We apply apply various tip loads test KSDisplacement, StructuralMass, MomentOfInertia, 
-and Compliance functions and sensitivities.
-We also apply a constraint on the difference between the width and thickness dvs of the cross-section.
+We apply a distributed gravity load.
+We test KSDisplacement, KSFailure, StructuralMass, CenterOfMass, MomentOfInertia, and Compliance 
+functions and sensitivities.
 """
 
 base_dir = os.path.dirname(os.path.abspath(__file__))
