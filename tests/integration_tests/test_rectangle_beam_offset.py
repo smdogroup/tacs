@@ -35,12 +35,12 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
         "gravity_cgx": 0.5,
         "gravity_cgy": -0.025,
         "gravity_cgz": 0.05,
-        "gravity_compliance": 2122.8465420003886,
-        "gravity_ks_vmfailure": 215.1818614336772,
-        "gravity_mass": 13.500000000000004,
-        "gravity_x_disp": -1.6583315711749391,
-        "gravity_y_disp": 799.295036755241,
-        "gravity_z_disp": 203.87221230880806,
+        "gravity_compliance": 2000.6857974986824,
+        "gravity_ks_vmfailure": 219.37317664566586,
+        "gravity_mass": 13.5,
+        "gravity_x_disp": -0.7780125287445699,
+        "gravity_y_disp": 656.1378755073663,
+        "gravity_z_disp": 275.45079293279235,
     }
 
     def setup_tacs_problems(self, comm):
