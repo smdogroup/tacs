@@ -672,7 +672,8 @@ cdef class IsoShellConstitutive(ShellConstitutive):
         tlb (float or complex, optional): Thickness variable lower bound (keyword argument). Defaults to 0.0.
         tub (float or complex, optional): Thickness variable upper bound (keyword argument). Defaults to 10.0.
         tOffset (float or complex, optional): Offset distance of reference plane (where nodes are located) relative to thickness mid-plane.
-            Measured in fraction of shell thickness. Defaults to 0.0.
+            Measured in fraction of shell thickness. A value of 0.5 places the reference plane at the top of the plate,
+            a value of 0.0 at the plate mid-plane, and a value of -0.5 at the bottom of the plate. Defaults to 0.0.
     """
     def __cinit__(self, *args, **kwargs):
         cdef TACSMaterialProperties *props = NULL
@@ -737,7 +738,8 @@ cdef class CompositeShellConstitutive(ShellConstitutive):
        ply_angles (numpy.ndarray[float or complex]): Array of ply angles (in radians) in layup.
        kcorr (float or complex, optional): FSDT shear correction factor. Defaults to 5.0/6.0.
        tOffset (float or complex, optional): Offset distance of reference plane (where nodes are located) relative to thickness mid-plane.
-            Measured in fraction of shell thickness. Defaults to 0.0.
+            Measured in fraction of shell thickness. A value of 0.5 places the reference plane at the top of the plate,
+            a value of 0.0 at the plate mid-plane, and a value of -0.5 at the bottom of the plate. Defaults to 0.0.
     """
     def __cinit__(self, ply_list,
                   np.ndarray[TacsScalar, ndim=1, mode='c'] ply_thicknesses,
@@ -1092,7 +1094,8 @@ cdef class SmearedCompositeShellConstitutive(ShellConstitutive):
        ply_fraction_ub (numpy.ndarray[float or complex], optional): Upper bound for ply fraction design variables (keyword argument).
           Defaults to 1.0.
        t_offset (float or complex, optional): Offset distance of reference plane (where nodes are located) relative to thickness mid-plane.
-            Measured in fraction of shell thickness. Defaults to 0.0.
+            Measured in fraction of shell thickness. A value of 0.5 places the reference plane at the top of the plate,
+            a value of 0.0 at the plate mid-plane, and a value of -0.5 at the bottom of the plate. Defaults to 0.0.
     """
     def __cinit__(self, ply_list,
                   TacsScalar thickness,
@@ -1447,9 +1450,11 @@ cdef class IsoRectangleBeamConstitutive(BeamConstitutive):
         tlb (float or complex, optional): Lower bound on thickness (keyword argument). Defaults to 0.0.
         tub (float or complex, optional): Upper bound on thickness (keyword argument). Defaults to 10.0.
         wOffset (float or complex, optional): Offset distance along width axis of reference axis (where nodes are located) relative to elastic axis.
-            Measured in fraction of cross-section width. Defaults to 0.0.
+            Measured in fraction of cross-section width. A value of 0.5 places the reference axis in the plane z=/2,
+            a value of 0.0 at z=0.0, and a value of -0.5 at z=-w/2 (where z is the local beam axis). Defaults to 0.0.
         tOffset (float or complex, optional): Offset distance along thickness axis of reference axis (where nodes are located) relative to elastic axis.
-            Measured in fraction of cross-section thickness. Defaults to 0.0.
+            Measured in fraction of cross-section thickness. A value of 0.5 places the reference axis in the plane y=t/2,
+            a value of 0.0 at y=0.0, and a value of -0.5 at y=-t/2 (where y is the local beam axis). Defaults to 0.0.
     """
     def __cinit__(self, *args, **kwargs):
         cdef TACSMaterialProperties *props = NULL
