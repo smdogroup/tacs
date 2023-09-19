@@ -244,7 +244,7 @@ void TACSSmearedCompositeShellConstitutive::evalMassMoments(
     TacsScalar rho_ply = ply_props[i]->getDensity();
 
     moments[0] += thickness * rho_ply * ply_fractions[i];
-    moments[0] += t_offset * t2 * rho_ply * ply_fractions[i];
+    moments[1] += t_offset * t2 * rho_ply * ply_fractions[i];
     moments[2] +=
         (t_offset * t_offset + 1.0 / 12.0) * t3 * rho_ply * ply_fractions[i];
   }
