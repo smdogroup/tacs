@@ -920,9 +920,9 @@ int TACSShellElement<quadrature, basis, director, model>::evalPointQuantity(
       con->evalMassMoments(elemIndex, pt, X, moments);
       TacsScalar density = moments[0];
 
-      quantity[0] = density * X[0] - moments[1] * n0[0];
-      quantity[1] = density * X[1] - moments[1] * n0[1];
-      quantity[2] = density * X[2] - moments[1] * n0[2];
+      quantity[0] = density * X[0] + moments[1] * n0[0];
+      quantity[1] = density * X[1] + moments[1] * n0[1];
+      quantity[2] = density * X[2] + moments[1] * n0[2];
     }
 
     return 3;
@@ -952,7 +952,7 @@ int TACSShellElement<quadrature, basis, director, model>::evalPointQuantity(
       mat3x3SymmTransform(T, I0, quantity);
       TacsScalar dXcg[3];
       for (int i = 0; i < 3; i++) {
-        dXcg[i] = X[i] - moments[1] / density * n0[i];
+        dXcg[i] = X[i] + moments[1] / density * n0[i];
       }
 
       // Use parallel axis theorem to move MOI to origin
@@ -1069,7 +1069,7 @@ void TACSShellElement<quadrature, basis, director, model>::
 
     for (int i = 0; i < 3; i++) {
       dfdmoments[0] += scale * dfdq[i] * X[i];
-      dfdmoments[1] -= scale * dfdq[i] * n0[i];
+      dfdmoments[1] += scale * dfdq[i] * n0[i];
     }
 
     con->addMassMomentsDVSens(elemIndex, pt, X, dfdmoments, dvLen, dfdx);
@@ -1107,44 +1107,44 @@ void TACSShellElement<quadrature, basis, director, model>::
 
     TacsScalar dXcg[3];
     for (int i = 0; i < 3; i++) {
-      dXcg[i] = X[i] - moments[1] / density * n0[i];
+      dXcg[i] = X[i] + moments[1] / density * n0[i];
     }
 
     // Use parallel axis theorem to move MOI to origin
     dfdmoments[0] +=
         scale * dfdq[0] *
-        (dXcg[1] * dXcg[1] + dXcg[2] * dXcg[2] +
+        (dXcg[1] * dXcg[1] + dXcg[2] * dXcg[2] -
          2.0 * moments[1] / density * (dXcg[1] * n0[1] + dXcg[2] * n0[2]));
     dfdmoments[0] -=
         scale * dfdq[1] *
-        (dXcg[0] * dXcg[1] +
+        (dXcg[0] * dXcg[1] -
          moments[1] / density * (dXcg[0] * n0[1] + dXcg[1] * n0[0]));
     dfdmoments[0] -=
         scale * dfdq[2] *
-        (dXcg[0] * dXcg[2] +
+        (dXcg[0] * dXcg[2] -
          moments[1] / density * (dXcg[0] * n0[2] + dXcg[2] * n0[0]));
     dfdmoments[0] +=
         scale * dfdq[3] *
-        (dXcg[0] * dXcg[0] + dXcg[2] * dXcg[2] +
+        (dXcg[0] * dXcg[0] + dXcg[2] * dXcg[2] -
          2.0 * moments[1] / density * (dXcg[0] * n0[0] + dXcg[2] * n0[2]));
     dfdmoments[0] -=
         scale * dfdq[4] *
-        (dXcg[2] * dXcg[1] +
+        (dXcg[2] * dXcg[1] -
          moments[1] / density * (dXcg[1] * n0[2] + dXcg[2] * n0[1]));
     dfdmoments[0] +=
         scale * dfdq[5] *
-        (dXcg[0] * dXcg[0] + dXcg[1] * dXcg[1] +
+        (dXcg[0] * dXcg[0] + dXcg[1] * dXcg[1] -
          2.0 * moments[1] / density * (dXcg[0] * n0[0] + dXcg[1] * n0[1]));
 
     dfdmoments[1] +=
-        -scale * dfdq[0] * 2.0 * (dXcg[1] * n0[1] + dXcg[2] * n0[2]);
-    dfdmoments[1] -= -scale * dfdq[1] * (dXcg[0] * n0[1] + dXcg[1] * n0[0]);
-    dfdmoments[1] -= -scale * dfdq[2] * (dXcg[0] * n0[2] + dXcg[2] * n0[0]);
+        scale * dfdq[0] * 2.0 * (dXcg[1] * n0[1] + dXcg[2] * n0[2]);
+    dfdmoments[1] -= scale * dfdq[1] * (dXcg[0] * n0[1] + dXcg[1] * n0[0]);
+    dfdmoments[1] -= scale * dfdq[2] * (dXcg[0] * n0[2] + dXcg[2] * n0[0]);
     dfdmoments[1] +=
-        -scale * dfdq[3] * 2.0 * (dXcg[0] * n0[0] + dXcg[2] * n0[2]);
-    dfdmoments[1] -= -scale * dfdq[4] * (dXcg[1] * n0[2] + dXcg[2] * n0[1]);
+        scale * dfdq[3] * 2.0 * (dXcg[0] * n0[0] + dXcg[2] * n0[2]);
+    dfdmoments[1] -= scale * dfdq[4] * (dXcg[1] * n0[2] + dXcg[2] * n0[1]);
     dfdmoments[1] +=
-        -scale * dfdq[5] * 2.0 * (dXcg[0] * n0[0] + dXcg[1] * n0[1]);
+        scale * dfdq[5] * 2.0 * (dXcg[0] * n0[0] + dXcg[1] * n0[1]);
 
     con->addMassMomentsDVSens(elemIndex, pt, X, dfdmoments, dvLen, dfdx);
   }

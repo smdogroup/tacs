@@ -123,7 +123,7 @@ void TACSIsoShellConstitutive::evalMassMoments(int elemIndex, const double pt[],
   if (properties) {
     TacsScalar rho = properties->getDensity();
     moments[0] = rho * t;
-    moments[1] = rho * t * t * tOffset;
+    moments[1] = -rho * t * t * tOffset;
     moments[2] = rho * t * t * t * (tOffset * tOffset + 1.0 / 12.0);
   }
 }
@@ -134,7 +134,7 @@ void TACSIsoShellConstitutive::addMassMomentsDVSens(
     const TacsScalar scale[], int dvLen, TacsScalar dfdx[]) {
   if (properties && tNum >= 0) {
     TacsScalar rho = properties->getDensity();
-    dfdx[0] += rho * (scale[0] + 2.0 * tOffset * t * scale[1] +
+    dfdx[0] += rho * (scale[0] - 2.0 * tOffset * t * scale[1] +
                       (3.0 * tOffset * tOffset + 0.25) * t * t * scale[2]);
   }
 }

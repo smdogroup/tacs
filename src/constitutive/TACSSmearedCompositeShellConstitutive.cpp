@@ -244,7 +244,7 @@ void TACSSmearedCompositeShellConstitutive::evalMassMoments(
     TacsScalar rho_ply = ply_props[i]->getDensity();
 
     moments[0] += thickness * rho_ply * ply_fractions[i];
-    moments[1] += t_offset * t2 * rho_ply * ply_fractions[i];
+    moments[1] -= t_offset * t2 * rho_ply * ply_fractions[i];
     moments[2] +=
         (t_offset * t_offset + 1.0 / 12.0) * t3 * rho_ply * ply_fractions[i];
   }
@@ -260,7 +260,7 @@ void TACSSmearedCompositeShellConstitutive::addMassMomentsDVSens(
       TacsScalar rho_ply = ply_props[i]->getDensity();
 
       dfdx[index] += rho_ply * ply_fractions[i] *
-                     (scale[0] + 2.0 * t_offset * thickness * scale[1] +
+                     (scale[0] - 2.0 * t_offset * thickness * scale[1] +
                       (3.0 * t_offset * t_offset + 0.25) * thickness *
                           thickness * scale[2]);
     }
@@ -270,7 +270,7 @@ void TACSSmearedCompositeShellConstitutive::addMassMomentsDVSens(
     if (ply_fraction_dv_nums[i] >= 0) {
       TacsScalar rho_ply = ply_props[i]->getDensity();
 
-      dfdx[index] += rho_ply * (scale[0] * thickness +
+      dfdx[index] += rho_ply * (scale[0] * thickness -
                                 t_offset * thickness * thickness * scale[1] +
                                 (t_offset * t_offset + 1.0 / 12.0) * thickness *
                                     thickness * thickness * scale[2]);
