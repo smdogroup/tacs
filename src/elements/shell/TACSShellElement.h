@@ -1130,7 +1130,7 @@ void TACSShellElement<quadrature, basis, director, model>::
     dfdmoments[0] -=
         scale * dfdq[4] *
         (dXcg[2] * dXcg[1] +
-         moments[1] / density * (dXcg[0] * n0[2] + dXcg[2] * n0[0]));
+         moments[1] / density * (dXcg[1] * n0[2] + dXcg[2] * n0[1]));
     dfdmoments[0] +=
         scale * dfdq[5] *
         (dXcg[0] * dXcg[0] + dXcg[1] * dXcg[1] +
@@ -1142,7 +1142,7 @@ void TACSShellElement<quadrature, basis, director, model>::
     dfdmoments[1] -= -scale * dfdq[2] * (dXcg[0] * n0[2] + dXcg[2] * n0[0]);
     dfdmoments[1] +=
         -scale * dfdq[3] * 2.0 * (dXcg[0] * n0[0] + dXcg[2] * n0[2]);
-    dfdmoments[1] -= -scale * dfdq[4] * (dXcg[0] * n0[2] + dXcg[2] * n0[0]);
+    dfdmoments[1] -= -scale * dfdq[4] * (dXcg[1] * n0[2] + dXcg[2] * n0[1]);
     dfdmoments[1] +=
         -scale * dfdq[5] * 2.0 * (dXcg[0] * n0[0] + dXcg[1] * n0[1]);
 
