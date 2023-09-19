@@ -6,7 +6,7 @@ from pytacs_analysis_base_test import PyTACSTestCase
 from tacs import pytacs, elements, constitutive, functions
 
 """
-This is the same test cases as `test_shell_plate_quad.py`, but the beam element is offset 
+This is the same test cases as `test_shell_plate_quad.py`, but the plate is offset 
 in the z direction, so that the shell plane no longer aligns with the nodes of the model.
 The nominal case is a 1m x 1m flat plate under a 100G gravity load. The
 perimeter of the plate is fixed in all 6 degrees of freedom. The plate comprises
