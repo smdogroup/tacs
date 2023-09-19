@@ -77,7 +77,7 @@ TACSSmearedCompositeShellConstitutive::TACSSmearedCompositeShellConstitutive(
   }
 
   ks_weight = 100.0;
-  t_offset = t_offset;
+  t_offset = _t_offset;
   nfvals = 2 * num_plies;
   fvals = new TacsScalar[nfvals];
   dks_vals = new TacsScalar[nfvals];
@@ -260,7 +260,7 @@ void TACSSmearedCompositeShellConstitutive::addMassMomentsDVSens(
       TacsScalar rho_ply = ply_props[i]->getDensity();
 
       dfdx[index] +=
-          rho_ply * (scale[0] + 2.0 * t_offset * thickness * scale[1] +
+          rho_ply * ply_fractions[i] * (scale[0] + 2.0 * t_offset * thickness * scale[1] +
                      (3.0 * t_offset * t_offset + 0.25) * thickness *
                          thickness * scale[2]);
     }
@@ -307,12 +307,13 @@ TacsScalar TACSSmearedCompositeShellConstitutive::evalFSDTStiffness(
     ply_props[k]->calculateAbar(ply_angles[k], Abar);
 
     TacsScalar a = ply_fractions[k] * thickness;
-    TacsScalar b = t_offset * ply_fractions[k] * thickness;
+    TacsScalar b = t_offset * ply_fractions[k] * thickness * thickness;
     TacsScalar d = (t_offset * t_offset + 1.0 / 12.0) * ply_fractions[k] *
                    (thickness * thickness * thickness);
 
     for (int i = 0; i < 6; i++) {
       A[i] += a * Qbar[i];
+      B[i] += -b * Qbar[i];
       D[i] += d * Qbar[i];
     }
 
@@ -355,13 +356,13 @@ void TACSSmearedCompositeShellConstitutive::addStressDVSens(
       ply_props[k]->calculateAbar(ply_angles[k], Abar);
 
       TacsScalar da = ply_fractions[k];
-      TacsScalar db = t_offset * ply_fractions[k];
+      TacsScalar db = 2.0 * t_offset * ply_fractions[k] * thickness;
       TacsScalar dd = (3.0 * t_offset * t_offset + 0.25) * ply_fractions[k] *
                       (thickness * thickness);
 
       for (int i = 0; i < 6; i++) {
         dA[i] += da * Qbar[i];
-        dB[i] += db * Qbar[i];
+        dB[i] += -db * Qbar[i];
         dD[i] += dd * Qbar[i];
       }
 
@@ -374,8 +375,11 @@ void TACSSmearedCompositeShellConstitutive::addStressDVSens(
 
     dfdx[index] +=
         scale * (mat3x3SymmInner(dA, &psi[0], &e[0]) +
-                 mat3x3SymmInner(dD, &psi[3], &e[3]) +
-                 mat2x2SymmInner(dAs, &psi[6], &e[6]) + ddrill * psi[8] * e[8]);
+                              mat3x3SymmInner(dD, &psi[3], &e[3]) +
+                              mat3x3SymmInner(dB, &psi[0], &e[3]) +
+                              mat3x3SymmInner(dB, &psi[3], &e[0]) +
+                              mat2x2SymmInner(dAs, &psi[6], &e[6]) +
+                              ddrill * psi[8] * e[8]);
     index++;
   }
 
@@ -386,13 +390,13 @@ void TACSSmearedCompositeShellConstitutive::addStressDVSens(
       ply_props[k]->calculateAbar(ply_angles[k], Abar);
 
       TacsScalar da = thickness;
-      TacsScalar db = t_offset * thickness;
+      TacsScalar db = t_offset * thickness * thickness;
       TacsScalar dd = (t_offset * t_offset + 1.0 / 12.0) *
                       (thickness * thickness * thickness);
 
       for (int i = 0; i < 6; i++) {
         dA[i] = da * Qbar[i];
-        dB[i] = db * Qbar[i];
+        dB[i] = -db * Qbar[i];
         dD[i] = dd * Qbar[i];
       }
 
