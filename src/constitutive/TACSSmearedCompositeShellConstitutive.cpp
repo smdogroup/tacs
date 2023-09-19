@@ -259,10 +259,10 @@ void TACSSmearedCompositeShellConstitutive::addMassMomentsDVSens(
     for (int i = 0; i < num_plies; i++) {
       TacsScalar rho_ply = ply_props[i]->getDensity();
 
-      dfdx[index] +=
-          rho_ply * ply_fractions[i] * (scale[0] + 2.0 * t_offset * thickness * scale[1] +
-                     (3.0 * t_offset * t_offset + 0.25) * thickness *
-                         thickness * scale[2]);
+      dfdx[index] += rho_ply * ply_fractions[i] *
+                     (scale[0] + 2.0 * t_offset * thickness * scale[1] +
+                      (3.0 * t_offset * t_offset + 0.25) * thickness *
+                          thickness * scale[2]);
     }
     index++;
   }
@@ -375,11 +375,10 @@ void TACSSmearedCompositeShellConstitutive::addStressDVSens(
 
     dfdx[index] +=
         scale * (mat3x3SymmInner(dA, &psi[0], &e[0]) +
-                              mat3x3SymmInner(dD, &psi[3], &e[3]) +
-                              mat3x3SymmInner(dB, &psi[0], &e[3]) +
-                              mat3x3SymmInner(dB, &psi[3], &e[0]) +
-                              mat2x2SymmInner(dAs, &psi[6], &e[6]) +
-                              ddrill * psi[8] * e[8]);
+                 mat3x3SymmInner(dD, &psi[3], &e[3]) +
+                 mat3x3SymmInner(dB, &psi[0], &e[3]) +
+                 mat3x3SymmInner(dB, &psi[3], &e[0]) +
+                 mat2x2SymmInner(dAs, &psi[6], &e[6]) + ddrill * psi[8] * e[8]);
     index++;
   }
 
