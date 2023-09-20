@@ -105,7 +105,7 @@ void TACSIsoRectangleBeamConstitutive::evalMassMoments(int elemIndex,
   TacsScalar Iyz = -delta_y * delta_z * A;
 
   moments[0] = rho * A;
-  moments[1] = rho * delta_y * A;   // centroid offset y?
+  moments[1] = rho * delta_y * A;  // centroid offset y?
   moments[2] = rho * delta_z * A;  // centroid offset z?
   moments[3] = rho * Iz;
   moments[4] = rho * Iy;
