@@ -105,11 +105,11 @@ void TACSIsoRectangleBeamConstitutive::evalMassMoments(int elemIndex,
   TacsScalar Iyz = -delta_y * delta_z * A;
 
   moments[0] = rho * A;
-  moments[1] = rho * delta_z * A;   // centroid offset y?
-  moments[2] = -rho * delta_y * A;  // centroid offset z?
-  moments[3] = rho * Iy;
-  moments[4] = rho * Iz;
-  moments[5] = rho * Iyz;  // rho * Iyz
+  moments[1] = rho * delta_y * A;   // centroid offset y?
+  moments[2] = rho * delta_z * A;  // centroid offset z?
+  moments[3] = rho * Iz;
+  moments[4] = rho * Iy;
+  moments[5] = -rho * Iyz;  // -rho * Iyz
 }
 
 void TACSIsoRectangleBeamConstitutive::addMassMomentsDVSens(
@@ -129,27 +129,27 @@ void TACSIsoRectangleBeamConstitutive::addMassMomentsDVSens(
   if (width_num >= 0) {
     TacsScalar dA = A / width;
     TacsScalar dAz = delta_z * dA + w_offset * A;
-    TacsScalar dAy = -delta_y * dA;
+    TacsScalar dAy = delta_y * dA;
     TacsScalar dIy = 0.25 * thickness * width * width +
                      2.0 * w_offset * delta_z * A + delta_z * delta_z * dA;
     TacsScalar dIz = 1.0 / 12.0 * t3 + delta_y * delta_y * dA;
     TacsScalar dIyz = -delta_y * w_offset * A - delta_y * delta_z * dA;
 
-    dfdx[index] += rho * (scale[0] * dA + scale[1] * dAz + scale[2] * dAy +
-                          scale[3] * dIy + scale[4] * dIz + scale[5] * dIyz);
+    dfdx[index] += rho * (scale[0] * dA + scale[1] * dAy + scale[2] * dAz +
+                          scale[3] * dIz + scale[4] * dIy - scale[5] * dIyz);
     index++;
   }
   if (thickness_num >= 0) {
     TacsScalar dA = A / thickness;
-    TacsScalar dAy = -delta_y * dA - t_offset * A;
+    TacsScalar dAy = delta_y * dA + t_offset * A;
     TacsScalar dAz = delta_z * dA;
     TacsScalar dIy = 1.0 / 12.0 * w3 + delta_z * delta_z * dA;
     TacsScalar dIz = 0.25 * thickness * thickness * width +
                      2.0 * t_offset * delta_y * A + delta_y * delta_y * dA;
     TacsScalar dIyz = -delta_z * t_offset * A - delta_y * delta_z * dA;
 
-    dfdx[index] += rho * (scale[0] * dA + scale[1] * dAz + scale[2] * dAy +
-                          scale[3] * dIy + scale[4] * dIz + scale[5] * dIyz);
+    dfdx[index] += rho * (scale[0] * dA + scale[1] * dAy + scale[2] * dAz +
+                          scale[3] * dIz + scale[4] * dIy - scale[5] * dIyz);
     index++;
   }
 }

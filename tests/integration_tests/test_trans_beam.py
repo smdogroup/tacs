@@ -23,13 +23,13 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
     N_PROCS = 2  # this is how many MPI processes to use for this TestCase.
 
     FUNC_REFS = {
-        "ramp_compliance": 10.507315462331803,
+        "ramp_compliance": 10.917589919679486,
         "ramp_x_disp": 0.06931471805599457,
-        "ramp_y_disp": 12.186052999423167,
+        "ramp_y_disp": 12.191784286714391,
         "ramp_z_disp": 0.06931471805599457,
-        "sinusoid_compliance": 22.093569888841497,
+        "sinusoid_compliance": 23.113858857368683,
         "sinusoid_x_disp": 0.06931471805599457,
-        "sinusoid_y_disp": 25.654265895487846,
+        "sinusoid_y_disp": 25.47755094553053,
         "sinusoid_z_disp": 0.06931471805599457,
     }
 
@@ -85,8 +85,8 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
         tacs_probs = tacs_probs.values()
         # Set convergence to be tight for test
         for problem in tacs_probs:
-            problem.setOption("L2Convergence", 1e-20)
-            problem.setOption("L2ConvergenceRel", 1e-20)
+            problem.setOption("L2Convergence", 1e-16)
+            problem.setOption("L2ConvergenceRel", 1e-16)
 
         # Add Functions
         for problem in tacs_probs:

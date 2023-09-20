@@ -1340,7 +1340,7 @@ cdef class BasicBeamConstitutive(BeamConstitutive):
         A = np.real(s[0])
         J = np.real(s[1])
         Iz = np.real(s[2])
-        Iyz = np.real(s[3])
+        Iyz = -np.real(s[3])
         e[:] = 0.0
         e[3] = 1.0 / E
         e[4:5] = 1.0 / (G * A)
@@ -1348,7 +1348,8 @@ cdef class BasicBeamConstitutive(BeamConstitutive):
         Iy = np.real(s[3])
         ky = np.real(s[4])
         kz = np.real(s[5])
-        prop = nastran_cards.properties.bars.PBAR(self.nastranID, mat_id, A, Iz, Iy, Iyz, J, k1=ky, k2=kz)
+        # Nastran uses negative convention for POI's
+        prop = nastran_cards.properties.bars.PBAR(self.nastranID, mat_id, A, Iz, Iy, -Iyz, J, k1=ky, k2=kz)
         return prop
 
 cdef class IsoTubeBeamConstitutive(BeamConstitutive):

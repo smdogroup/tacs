@@ -85,7 +85,7 @@
   .              u0,xi * e1^{T} * x,d0^{-1},z1 ) * T^{T} * e1
 
 
-  Note that the second coefficient for d1x can be simplifed to
+  Note that the second coefficient for d1x can be simplified to
 
   e1^{T} * x,d0^{-1},z1 * T^{T} * e1
   .   = - e1^{T} * x,d0^{-1} * x,d,z1 * x,d0^{-1} * T^{T} * e1
@@ -1321,8 +1321,8 @@ int TACSBeamElement<quadrature, basis, director, model>::evalPointQuantity(
       TacsScalar density = mass_moment[0];
 
       for (int i = 0; i < 3; i++) {
-        quantity[i] = density * X0.x[i] + mass_moment[2] * n1.x[i] -
-                      mass_moment[1] * n2.x[i];
+        quantity[i] = density * X0.x[i] - mass_moment[1] * n1.x[i] -
+                      mass_moment[2] * n2.x[i];
       }
     }
 
@@ -1335,15 +1335,15 @@ int TACSBeamElement<quadrature, basis, director, model>::evalPointQuantity(
       TacsScalar moments[6];
       con->evalMassMoments(elemIndex, pt, X0.x, moments);
       TacsScalar density = moments[0];
-      I0[3] = moments[3] - moments[1] * moments[1] / density;
-      I0[4] = moments[5] - moments[1] * moments[2] / density;
-      I0[5] = moments[4] - moments[2] * moments[2] / density;
+      I0[3] = moments[4] - moments[2] * moments[2] / density;
+      I0[4] = -moments[5] + moments[1] * moments[2] / density;
+      I0[5] = moments[3] - moments[1] * moments[1] / density;
       // Compute T*I0*T^{T}
       mat3x3SymmTransform(T.A, I0, quantity);
       TacsScalar dXcg[3];
       for (int i = 0; i < 3; i++) {
         dXcg[i] =
-            X0.x[i] + (moments[2] * n1.x[i] - moments[1] * n2.x[i]) / density;
+            X0.x[i] - (moments[1] * n1.x[i] + moments[2] * n2.x[i]) / density;
       }
 
       // Use parallel axis theorem to move MOI to origin
@@ -1558,8 +1558,8 @@ void TACSBeamElement<quadrature, basis, director, model>::
 
     for (int i = 0; i < 3; i++) {
       dfdmom[0] += scale * dfdq[i] * X0.x[i];
-      dfdmom[1] += -scale * dfdq[i] * n2.x[i];
-      dfdmom[2] += scale * dfdq[i] * n1.x[i];
+      dfdmom[1] += -scale * dfdq[i] * n1.x[i];
+      dfdmom[2] += -scale * dfdq[i] * n2.x[i];
     }
 
     con->addMassMomentsDVSens(elemIndex, pt, X0.x, dfdmom, dvLen, dfdx);
@@ -1574,28 +1574,28 @@ void TACSBeamElement<quadrature, basis, director, model>::
     TacsScalar dfdmoments[6] = {0.0};
     mat3x3SymmTransformSens(T.A, dfdq, dfdI0);
     dfdmoments[0] = scale *
-                    (moments[1] * moments[1] * dfdI0[3] +
-                     moments[1] * moments[2] * dfdI0[4] +
-                     moments[2] * moments[2] * dfdI0[5]) /
+                    (moments[2] * moments[2] * dfdI0[3] +
+                     -moments[1] * moments[2] * dfdI0[4] +
+                     moments[1] * moments[1] * dfdI0[5]) /
                     density / density;
-    dfdmoments[1] = -scale *
-                    (2.0 * moments[1] * dfdI0[3] + moments[2] * dfdI0[4]) /
+    dfdmoments[1] = scale *
+                    (-2.0 * moments[1] * dfdI0[5] + moments[2] * dfdI0[4]) /
                     density;
-    dfdmoments[2] = -scale *
-                    (2.0 * moments[2] * dfdI0[5] + moments[1] * dfdI0[4]) /
+    dfdmoments[2] = scale *
+                    (-2.0 * moments[2] * dfdI0[3] + moments[1] * dfdI0[4]) /
                     density;
-    dfdmoments[3] = scale * dfdI0[3];
-    dfdmoments[4] = scale * dfdI0[5];
-    dfdmoments[5] = scale * dfdI0[4];
+    dfdmoments[3] = scale * dfdI0[5];
+    dfdmoments[4] = scale * dfdI0[3];
+    dfdmoments[5] = -scale * dfdI0[4];
 
     TacsScalar dXcg[3], dXcgdrho[3], dXcgdmom1[3], dXcgdmom2[3];
     for (int i = 0; i < 3; i++) {
       dXcg[i] =
-          X0.x[i] + (moments[2] * n1.x[i] - moments[1] * n2.x[i]) / density;
+          X0.x[i] - (moments[1] * n1.x[i] + moments[2] * n2.x[i]) / density;
       dXcgdrho[i] =
-          -(moments[2] * n1.x[i] - moments[1] * n2.x[i]) / density / density;
-      dXcgdmom1[i] = -n2.x[i] / density;
-      dXcgdmom2[i] = n1.x[i] / density;
+          (moments[1] * n1.x[i] + moments[2] * n2.x[i]) / density / density;
+      dXcgdmom2[i] = -n2.x[i] / density;
+      dXcgdmom1[i] = -n1.x[i] / density;
     }
 
     // Use parallel axis theorem to move MOI to origin
