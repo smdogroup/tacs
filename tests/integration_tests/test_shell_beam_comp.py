@@ -81,7 +81,7 @@ class ProblemTest(StaticTestCase.StaticTest):
             Yt=Yt,
             Yc=Yc,
             S12=S12,
-            cte=cte,
+            alpha=cte,
             kappa=kappa,
         )
 

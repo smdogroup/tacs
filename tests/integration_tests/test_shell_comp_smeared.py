@@ -88,7 +88,7 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
             Yt=Yt,
             Yc=Yc,
             S12=S12,
-            cte=cte,
+            alpha=cte,
             kappa=kappa,
         )
         ortho_ply = constitutive.OrthotropicPly(ply_thickness, ortho_prop)

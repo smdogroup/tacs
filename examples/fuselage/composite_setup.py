@@ -44,7 +44,7 @@ def elemCallBack(dvNum, compID, compDescript, elemDescripts, globalDVs, **kwargs
         Yt=Yt,
         Yc=Yc,
         S12=S12,
-        cte=cte,
+        alpha=cte,
         kappa=kappa,
     )
 
