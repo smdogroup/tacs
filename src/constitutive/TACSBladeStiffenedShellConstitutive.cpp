@@ -2754,8 +2754,10 @@ bool TACSBladeStiffenedShellConstitutive::testCriticalShearLoadSens(
       "------------------------------------------------------------------------"
       "\n");
 
-  return fabs(D1SensRelError) < tol && fabs(D2SensRelError) < tol &&
-         fabs(D3SensRelError) < tol && fabs(LSensRelError) < tol;
+  return fabs(TacsRealPart(D1SensRelError)) < tol &&
+         fabs(TacsRealPart(D2SensRelError)) < tol &&
+         fabs(TacsRealPart(D3SensRelError)) < tol &&
+         fabs(TacsRealPart(LSensRelError)) < tol;
 }
 
 TacsScalar TACSBladeStiffenedShellConstitutive::bucklingEnvelope(
