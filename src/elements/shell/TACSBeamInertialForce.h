@@ -118,12 +118,13 @@ class TACSBeamInertialForce : public TACSElement {
 
       TacsScalar mass_moment[6];
       con->evalMassMoments(elemIndex, pt, X0.x, mass_moment);
+      TacsScalar mass = mass_moment[0];
 
       // Compute the traction
-      TacsScalar tr[6] = {0.0};
-      tr[0] = -detXd.value * weight * mass_moment[0] * inertiaVec[0];
-      tr[1] = -detXd.value * weight * mass_moment[0] * inertiaVec[1];
-      tr[2] = -detXd.value * weight * mass_moment[0] * inertiaVec[2];
+      TacsScalar tr[vars_per_node] = {0.0};
+      tr[0] = -detXd.value * weight * mass * inertiaVec[0];
+      tr[1] = -detXd.value * weight * mass * inertiaVec[1];
+      tr[2] = -detXd.value * weight * mass * inertiaVec[2];
       // Add moment terms if theres a beam offset
       crossProductAdd(detXd.value * weight * mass_moment[1], n1.x, inertiaVec,
                       &tr[3]);

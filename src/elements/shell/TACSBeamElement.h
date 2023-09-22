@@ -204,7 +204,7 @@ class TACSBeamElement : public TACSElement {
                                              const TacsScalar rotCenter[],
                                              const bool first_order = false) {
     return new TACSBeamCentrifugalForce<vars_per_node, quadrature, basis>(
-        con, omegaVec, rotCenter);
+        transform, con, omegaVec, rotCenter);
   }
 
   void computeEnergies(int elemIndex, double time, const TacsScalar Xpts[],

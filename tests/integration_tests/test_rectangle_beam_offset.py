@@ -14,7 +14,7 @@ This test ensures that the beam solution is invariant under trivial transformati
 The cross-section is a solid rectangle with the following properties:
     w = 0.1
     t = 0.05
-We apply a distributed gravity load.
+We apply a distributed gravity load and a centrifugal load.
 We test KSDisplacement, KSFailure, StructuralMass, CenterOfMass, MomentOfInertia, and Compliance 
 functions and sensitivities.
 """
@@ -41,9 +41,24 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
         "gravity_compliance": 2000.6857974986858,
         "gravity_ks_vmfailure": 219.37317664566595,
         "gravity_mass": 13.5,
-        "gravity_x_disp": -0.7780125287445702,
-        "gravity_y_disp": 656.1378755073665,
-        "gravity_z_disp": 275.4507929327926,
+        "gravity_x_disp": -0.7780125287429587,
+        "gravity_y_disp": 656.1378755069089,
+        "gravity_z_disp": 275.45079293282816,
+        "centrifugal_I_xx": 0.0,
+        "centrifugal_I_xy": 0.0,
+        "centrifugal_I_xz": 0.0,
+        "centrifugal_I_yy": 1.13625,
+        "centrifugal_I_yz": 0.0,
+        "centrifugal_I_zz": 1.1278125,
+        "centrifugal_cgx": 0.5,
+        "centrifugal_cgy": -0.025,
+        "centrifugal_cgz": 0.05,
+        "centrifugal_compliance": 9718.610964493391,
+        "centrifugal_ks_vmfailure": 402.6071884894102,
+        "centrifugal_mass": 13.5,
+        "centrifugal_x_disp": 10.454782137288209,
+        "centrifugal_y_disp": -18.840495836112435,
+        "centrifugal_z_disp": -8.065586771046936,
     }
 
     def setup_tacs_problems(self, comm):
@@ -103,76 +118,89 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
         grav_prob = fea_assembler.createStaticProblem("gravity")
         grav_prob.addInertialLoad([-10.0, 3.0, 5.0])
 
+        rot_prob = fea_assembler.createStaticProblem("centrifugal")
+        rot_prob.addCentrifugalLoad([10.0, 3.0, 5.0], [0.5, -0.025, 0.05])
+
+        probs = [grav_prob, rot_prob]
+
         # Set convergence to be tight for test
-        grav_prob.setOption("L2Convergence", 1e-20)
-        grav_prob.setOption("L2ConvergenceRel", 1e-20)
+        for problem in probs:
+            problem.setOption("L2Convergence", 1e-15)
+            problem.setOption("L2ConvergenceRel", 1e-15)
 
         # Add Functions
-        grav_prob.addFunction("mass", functions.StructuralMass)
-        grav_prob.addFunction("compliance", functions.Compliance)
-        grav_prob.addFunction("ks_vmfailure", functions.KSFailure, ksWeight=ksweight)
-        grav_prob.addFunction(
-            "x_disp",
-            functions.KSDisplacement,
-            ksWeight=ksweight,
-            direction=[10.0, 0.0, 0.0],
-        )
-        grav_prob.addFunction(
-            "y_disp",
-            functions.KSDisplacement,
-            ksWeight=ksweight,
-            direction=[0.0, 10.0, 0.0],
-        )
-        grav_prob.addFunction(
-            "z_disp",
-            functions.KSDisplacement,
-            ksWeight=ksweight,
-            direction=[0.0, 0.0, 10.0],
-        )
-        grav_prob.addFunction("cgx", functions.CenterOfMass, direction=[1.0, 0.0, 0.0])
-        grav_prob.addFunction("cgy", functions.CenterOfMass, direction=[0.0, 1.0, 0.0])
-        grav_prob.addFunction("cgz", functions.CenterOfMass, direction=[0.0, 0.0, 1.0])
-        grav_prob.addFunction(
-            "I_xx",
-            functions.MomentOfInertia,
-            direction1=[1.0, 0.0, 0.0],
-            direction2=[1.0, 0.0, 0.0],
-            aboutCM=True,
-        )
-        grav_prob.addFunction(
-            "I_xy",
-            functions.MomentOfInertia,
-            direction1=[1.0, 0.0, 0.0],
-            direction2=[0.0, 1.0, 0.0],
-            aboutCM=True,
-        )
-        grav_prob.addFunction(
-            "I_xz",
-            functions.MomentOfInertia,
-            direction1=[1.0, 0.0, 0.0],
-            direction2=[0.0, 0.0, 1.0],
-            aboutCM=True,
-        )
-        grav_prob.addFunction(
-            "I_yy",
-            functions.MomentOfInertia,
-            direction1=[0.0, 1.0, 0.0],
-            direction2=[0.0, 1.0, 0.0],
-            aboutCM=True,
-        )
-        grav_prob.addFunction(
-            "I_yz",
-            functions.MomentOfInertia,
-            direction1=[0.0, 1.0, 0.0],
-            direction2=[0.0, 0.0, 1.0],
-            aboutCM=True,
-        )
-        grav_prob.addFunction(
-            "I_zz",
-            functions.MomentOfInertia,
-            direction1=[0.0, 0.0, 1.0],
-            direction2=[0.0, 0.0, 1.0],
-            aboutCM=True,
-        )
+        for problem in probs:
+            problem.addFunction("mass", functions.StructuralMass)
+            problem.addFunction("compliance", functions.Compliance)
+            problem.addFunction("ks_vmfailure", functions.KSFailure, ksWeight=ksweight)
+            problem.addFunction(
+                "x_disp",
+                functions.KSDisplacement,
+                ksWeight=ksweight,
+                direction=[10.0, 0.0, 0.0],
+            )
+            problem.addFunction(
+                "y_disp",
+                functions.KSDisplacement,
+                ksWeight=ksweight,
+                direction=[0.0, 10.0, 0.0],
+            )
+            problem.addFunction(
+                "z_disp",
+                functions.KSDisplacement,
+                ksWeight=ksweight,
+                direction=[0.0, 0.0, 10.0],
+            )
+            problem.addFunction(
+                "cgx", functions.CenterOfMass, direction=[1.0, 0.0, 0.0]
+            )
+            problem.addFunction(
+                "cgy", functions.CenterOfMass, direction=[0.0, 1.0, 0.0]
+            )
+            problem.addFunction(
+                "cgz", functions.CenterOfMass, direction=[0.0, 0.0, 1.0]
+            )
+            problem.addFunction(
+                "I_xx",
+                functions.MomentOfInertia,
+                direction1=[1.0, 0.0, 0.0],
+                direction2=[1.0, 0.0, 0.0],
+                aboutCM=True,
+            )
+            problem.addFunction(
+                "I_xy",
+                functions.MomentOfInertia,
+                direction1=[1.0, 0.0, 0.0],
+                direction2=[0.0, 1.0, 0.0],
+                aboutCM=True,
+            )
+            problem.addFunction(
+                "I_xz",
+                functions.MomentOfInertia,
+                direction1=[1.0, 0.0, 0.0],
+                direction2=[0.0, 0.0, 1.0],
+                aboutCM=True,
+            )
+            problem.addFunction(
+                "I_yy",
+                functions.MomentOfInertia,
+                direction1=[0.0, 1.0, 0.0],
+                direction2=[0.0, 1.0, 0.0],
+                aboutCM=True,
+            )
+            problem.addFunction(
+                "I_yz",
+                functions.MomentOfInertia,
+                direction1=[0.0, 1.0, 0.0],
+                direction2=[0.0, 0.0, 1.0],
+                aboutCM=True,
+            )
+            problem.addFunction(
+                "I_zz",
+                functions.MomentOfInertia,
+                direction1=[0.0, 0.0, 1.0],
+                direction2=[0.0, 0.0, 1.0],
+                aboutCM=True,
+            )
 
-        return [grav_prob], fea_assembler
+        return probs, fea_assembler
