@@ -2833,14 +2833,18 @@ bool TACSBladeStiffenedShellConstitutive::testBucklingEnvelopeSens(
       TacsRealPart(N1), TacsRealPart(N1Crit), TacsRealPart(N12),
       TacsRealPart(N12Crit));
   printf("f: % 011.7e\n", f);
-  printf("dfdN1: % 011.7e, dfdN1p: % 011.7e, rel error: % 011.7e\n", TacsRealPart(dfdN1),
-         TacsRealPart(dfdN1FD), TacsRealPart(dfdN1RelError));
+  printf("dfdN1: % 011.7e, dfdN1p: % 011.7e, rel error: % 011.7e\n",
+         TacsRealPart(dfdN1), TacsRealPart(dfdN1FD),
+         TacsRealPart(dfdN1RelError));
   printf("dfdN1Crit: % 011.7e, dfdN1Critp: % 011.7e, rel error: % 011.7e\n",
-         TacsRealPart(dfdN1Crit), TacsRealPart(dfdN1CritFD), TacsRealPart(dfdN1CritRelError));
-  printf("dfdN12: % 011.7e, dfdN12p: % 011.7e, rel error: % 011.7e\n", TacsRealPart(dfdN12),
-         TacsRealPart(dfdN12FD), TacsRealPart(dfdN1CritRelError));
+         TacsRealPart(dfdN1Crit), TacsRealPart(dfdN1CritFD),
+         TacsRealPart(dfdN1CritRelError));
+  printf("dfdN12: % 011.7e, dfdN12p: % 011.7e, rel error: % 011.7e\n",
+         TacsRealPart(dfdN12), TacsRealPart(dfdN12FD),
+         TacsRealPart(dfdN1CritRelError));
   printf("dfdN12Crit: % 011.7e, dfdN12Critp: % 011.7e, rel error: % 011.7e\n",
-         TacsRealPart(dfdN12Crit), TacsRealPart(dfdN12CritFD), TacsRealPart(dfdN12CritRelError));
+         TacsRealPart(dfdN12Crit), TacsRealPart(dfdN12CritFD),
+         TacsRealPart(dfdN12CritRelError));
 
   return (fabs(dfdN1RelError) < tol && fabs(dfdN1CritRelError) < tol &&
           fabs(dfdN12RelError) < tol && fabs(dfdN12CritRelError) < tol);
