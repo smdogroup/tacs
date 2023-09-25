@@ -2730,23 +2730,26 @@ bool TACSBladeStiffenedShellConstitutive::testCriticalShearLoadSens(
 
   printf("testCriticalShearLoadSens results:\n");
   printf("----------------------------------\n");
-  printf("D1 = % 011.7e\n", D1);
-  printf("D2 = % 011.7e\n", D2);
-  printf("D3 = % 011.7e\n", D3);
-  printf("L = % 011.7e\n", L);
-  printf("N12Crit = % 011.7e\n", N12Crit);
+  printf("D1 = % 011.7e\n", TacsRealPart(D1));
+  printf("D2 = % 011.7e\n", TacsRealPart(D2));
+  printf("D3 = % 011.7e\n", TacsRealPart(D3));
+  printf("L = % 011.7e\n", TacsRealPart(L));
+  printf("N12Crit = % 011.7e\n", TacsRealPart(N12Crit));
   printf(
       "D1Sens = % 011.7e | D1SensFD = % 011.7e | D1SensRelError = % 011.7e\n",
-      D1Sens, D1SensFD, D1SensRelError);
+      TacsRealPart(D1Sens), TacsRealPart(D1SensFD),
+      TacsRealPart(D1SensRelError));
   printf(
       "D2Sens = % 011.7e | D2SensFD = % 011.7e | D2SensRelError = % 011.7e\n",
-      D2Sens, D2SensFD, D2SensRelError);
+      TacsRealPart(D2Sens), TacsRealPart(D2SensFD),
+      TacsRealPart(D2SensRelError));
   printf(
       "D3Sens = % 011.7e | D3SensFD = % 011.7e | D3SensRelError = % 011.7e\n",
-      D3Sens, D3SensFD, D3SensRelError);
+      TacsRealPart(D3Sens), TacsRealPart(D3SensFD),
+      TacsRealPart(D3SensRelError));
   printf(
       " LSens = % 011.7e |  LSensFD = % 011.7e |  LSensRelError = % 011.7e\n",
-      LSens, LSensFD, LSensRelError);
+      TacsRealPart(LSens), TacsRealPart(LSensFD), TacsRealPart(LSensRelError));
   printf(
       "------------------------------------------------------------------------"
       "\n");
@@ -2797,49 +2800,54 @@ bool TACSBladeStiffenedShellConstitutive::testBucklingEnvelopeSens(
     const TacsScalar N12Crit) {
   const double tol = 1e-5;
   TacsScalar dfdN1, dfdN1Crit, dfdN12, dfdN12Crit;
-  TacsScalar f = bucklingEnvelopeSens(N1, N1Crit, N12, N12Crit, &dfdN1,
-                                      &dfdN1Crit, &dfdN12, &dfdN12Crit);
+  double f = TacsRealPart(bucklingEnvelopeSens(
+      N1, N1Crit, N12, N12Crit, &dfdN1, &dfdN1Crit, &dfdN12, &dfdN12Crit));
 
-  TacsScalar eps = 1e-6;
+  double eps = 1e-6;
   TacsScalar N1p = N1 + eps;
   TacsScalar N1Critp = N1Crit + eps;
   TacsScalar N12p = N12 + eps;
   TacsScalar N12Critp = N12Crit + eps;
 
-  TacsScalar fp = bucklingEnvelope(N1p, N1Crit, N12, N12Crit);
-  TacsScalar dfdN1FD = (fp - f) / eps;
-  TacsScalar dfdN1RelError = (dfdN1 - dfdN1FD) / dfdN1FD;
+  double fp = TacsRealPart(bucklingEnvelope(N1p, N1Crit, N12, N12Crit));
+  double dfdN1FD = TacsRealPart((fp - f) / eps);
+  double dfdN1RelError = TacsRealPart((dfdN1 - dfdN1FD) / dfdN1FD);
 
-  fp = bucklingEnvelope(N1, N1Critp, N12, N12Crit);
-  TacsScalar dfdN1CritFD = (fp - f) / eps;
-  TacsScalar dfdN1CritRelError = (dfdN1Crit - dfdN1CritFD) / dfdN1CritFD;
+  fp = TacsRealPart(bucklingEnvelope(N1, N1Critp, N12, N12Crit));
+  double dfdN1CritFD = TacsRealPart((fp - f) / eps);
+  double dfdN1CritRelError =
+      TacsRealPart((dfdN1Crit - dfdN1CritFD) / dfdN1CritFD);
 
-  fp = bucklingEnvelope(N1, N1Crit, N12p, N12Crit);
-  TacsScalar dfdN12FD = (fp - f) / eps;
-  TacsScalar dfdN12RelError = (dfdN12 - dfdN12FD) / dfdN12FD;
+  fp = TacsRealPart(bucklingEnvelope(N1, N1Crit, N12p, N12Crit));
+  double dfdN12FD = TacsRealPart((fp - f) / eps);
+  double dfdN12RelError = TacsRealPart((dfdN12 - dfdN12FD) / dfdN12FD);
 
-  fp = bucklingEnvelope(N1, N1Crit, N12, N12Critp);
-  TacsScalar dfdN12CritFD = (fp - f) / eps;
-  TacsScalar dfdN12CritRelError = (dfdN12Crit - dfdN12CritFD) / dfdN12CritFD;
+  fp = TacsRealPart(bucklingEnvelope(N1, N1Crit, N12, N12Critp));
+  double dfdN12CritFD = TacsRealPart((fp - f) / eps);
+  double dfdN12CritRelError =
+      TacsRealPart((dfdN12Crit - dfdN12CritFD) / dfdN12CritFD);
 
   printf("testBucklingEnvelopeSens results:");
   printf(
       "N1 = % 011.7e, N1Crit = % 011.7e, N12 = % 011.7e, N12Crit = % 011.7e\n",
-      N1, N1Crit, N12, N12Crit);
+      TacsRealPart(N1), TacsRealPart(N1Crit), TacsRealPart(N12),
+      TacsRealPart(N12Crit));
   printf("f: % 011.7e\n", f);
-  printf("dfdN1: % 011.7e, dfdN1p: % 011.7e, rel error: % 011.7e\n", dfdN1,
-         dfdN1FD, dfdN1RelError);
+  printf("dfdN1: % 011.7e, dfdN1p: % 011.7e, rel error: % 011.7e\n",
+         TacsRealPart(dfdN1), TacsRealPart(dfdN1FD),
+         TacsRealPart(dfdN1RelError));
   printf("dfdN1Crit: % 011.7e, dfdN1Critp: % 011.7e, rel error: % 011.7e\n",
-         dfdN1Crit, dfdN1CritFD, dfdN1CritRelError);
-  printf("dfdN12: % 011.7e, dfdN12p: % 011.7e, rel error: % 011.7e\n", dfdN12,
-         dfdN12FD, dfdN1CritRelError);
+         TacsRealPart(dfdN1Crit), TacsRealPart(dfdN1CritFD),
+         TacsRealPart(dfdN1CritRelError));
+  printf("dfdN12: % 011.7e, dfdN12p: % 011.7e, rel error: % 011.7e\n",
+         TacsRealPart(dfdN12), TacsRealPart(dfdN12FD),
+         TacsRealPart(dfdN1CritRelError));
   printf("dfdN12Crit: % 011.7e, dfdN12Critp: % 011.7e, rel error: % 011.7e\n",
-         dfdN12Crit, dfdN12CritFD, dfdN12CritRelError);
+         TacsRealPart(dfdN12Crit), TacsRealPart(dfdN12CritFD),
+         TacsRealPart(dfdN12CritRelError));
 
-  return (fabs(TacsRealPart(dfdN1RelError)) < tol &&
-          fabs(TacsRealPart(dfdN1CritRelError)) < tol &&
-          fabs(TacsRealPart(dfdN12RelError)) < tol &&
-          fabs(TacsRealPart(dfdN12CritRelError)) < tol);
+  return (fabs(dfdN1RelError) < tol && fabs(dfdN1CritRelError) < tol &&
+          fabs(dfdN12RelError) < tol && fabs(dfdN12CritRelError) < tol);
 }
 
 // ==============================================================================
@@ -2857,15 +2865,18 @@ void printStiffnessMatrix(const TacsScalar* const C) {
   printf(
       "[% 03.5e, % 03.5e, % 03.5e | % 03.5e, % 03.5e, % 03.5e | % 03.5e, % "
       "03.5e | % 03.5e]\n",
-      A[0], A[1], A[2], B[0], B[1], B[2], 0., 0., 0.);
+      TacsRealPart(A[0]), TacsRealPart(A[1]), TacsRealPart(A[2]),
+      TacsRealPart(B[0]), TacsRealPart(B[1]), TacsRealPart(B[2]), 0., 0., 0.);
   printf(
       "[% 03.5e, % 03.5e, % 03.5e | % 03.5e, % 03.5e, % 03.5e | % 03.5e, % "
       "03.5e | % 03.5e]\n",
-      A[1], A[3], A[4], B[1], B[3], B[4], 0., 0., 0.);
+      TacsRealPart(A[1]), TacsRealPart(A[3]), TacsRealPart(A[4]),
+      TacsRealPart(B[1]), TacsRealPart(B[3]), TacsRealPart(B[4]), 0., 0., 0.);
   printf(
       "[% 03.5e, % 03.5e, % 03.5e | % 03.5e, % 03.5e, % 03.5e | % 03.5e, % "
       "03.5e | % 03.5e]\n",
-      A[2], A[4], A[5], B[2], B[4], B[5], 0., 0., 0.);
+      TacsRealPart(A[2]), TacsRealPart(A[4]), TacsRealPart(A[5]),
+      TacsRealPart(B[2]), TacsRealPart(B[4]), TacsRealPart(B[5]), 0., 0., 0.);
 
   printf(
       "--------------------------------------------------------------------"
@@ -2875,15 +2886,18 @@ void printStiffnessMatrix(const TacsScalar* const C) {
   printf(
       "[% 03.5e, % 03.5e, % 03.5e | % 03.5e, % 03.5e, % 03.5e | % 03.5e, % "
       "03.5e | % 03.5e]\n",
-      B[0], B[1], B[2], D[0], D[1], D[2], 0., 0., 0.);
+      TacsRealPart(B[0]), TacsRealPart(B[1]), TacsRealPart(B[2]),
+      TacsRealPart(D[0]), TacsRealPart(D[1]), TacsRealPart(D[2]), 0., 0., 0.);
   printf(
       "[% 03.5e, % 03.5e, % 03.5e | % 03.5e, % 03.5e, % 03.5e | % 03.5e, % "
       "03.5e | % 03.5e]\n",
-      B[1], B[3], B[4], D[1], D[3], D[4], 0., 0., 0.);
+      TacsRealPart(B[1]), TacsRealPart(B[3]), TacsRealPart(B[4]),
+      TacsRealPart(D[1]), TacsRealPart(D[3]), TacsRealPart(D[4]), 0., 0., 0.);
   printf(
       "[% 03.5e, % 03.5e, % 03.5e | % 03.5e, % 03.5e, % 03.5e | % 03.5e, % "
       "03.5e | % 03.5e]\n",
-      B[2], B[4], B[5], D[2], D[4], D[5], 0., 0., 0.);
+      TacsRealPart(B[2]), TacsRealPart(B[4]), TacsRealPart(B[5]),
+      TacsRealPart(D[2]), TacsRealPart(D[4]), TacsRealPart(D[5]), 0., 0., 0.);
 
   printf(
       "--------------------------------------------------------------------"
@@ -2893,11 +2907,11 @@ void printStiffnessMatrix(const TacsScalar* const C) {
   printf(
       "[% 03.5e, % 03.5e, % 03.5e | % 03.5e, % 03.5e, % 03.5e | % 03.5e, % "
       "03.5e | % 03.5e]\n",
-      0., 0., 0., 0., 0., 0., As[0], As[1], 0.);
+      0., 0., 0., 0., 0., 0., TacsRealPart(As[0]), TacsRealPart(As[1]), 0.);
   printf(
       "[% 03.5e, % 03.5e, % 03.5e | % 03.5e, % 03.5e, % 03.5e | % 03.5e, % "
       "03.5e | % 03.5e]\n",
-      0., 0., 0., 0., 0., 0., As[1], As[2], 0.);
+      0., 0., 0., 0., 0., 0., TacsRealPart(As[1]), TacsRealPart(As[2]), 0.);
 
   printf(
       "--------------------------------------------------------------------"
@@ -2907,6 +2921,6 @@ void printStiffnessMatrix(const TacsScalar* const C) {
   printf(
       "[% 03.5e, % 03.5e, % 03.5e | % 03.5e, % 03.5e, % 03.5e | % 03.5e, % "
       "03.5e | % 03.5e]\n",
-      0., 0., 0., 0., 0., 0., 0., 0., drill);
+      0., 0., 0., 0., 0., 0., 0., 0., TacsRealPart(drill));
   printf("]\n");
 }
