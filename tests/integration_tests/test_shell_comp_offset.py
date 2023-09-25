@@ -34,12 +34,27 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
         "gravity_cgx": 0.25000000000000006,
         "gravity_cgy": 1.0000000000000002,
         "gravity_cgz": -0.00037500000000000006,
-        "gravity_compliance": 3.420523543411088e-06,
-        "gravity_ks_TsaiWufailure": 0.2259320352899518,
+        "gravity_compliance": 3.4205235434811567e-06,
+        "gravity_ks_TsaiWufailure": 0.2259320352899525,
         "gravity_mass": 1.1624999999999999,
-        "gravity_x_disp": 1.6259769815911458e-06,
-        "gravity_y_disp": -1.273646302570262e-07,
-        "gravity_z_disp": -0.0009208646634763277,
+        "gravity_x_disp": 1.625976981601372e-06,
+        "gravity_y_disp": -1.2736463024905141e-07,
+        "gravity_z_disp": -0.000920864663486706,
+        "centrifugal_I_xx": 0.38750005449218716,
+        "centrifugal_I_xy": 5.551115123125783e-17,
+        "centrifugal_I_xz": -2.710505431213761e-20,
+        "centrifugal_I_yy": 0.02421880449218755,
+        "centrifugal_I_yz": -2.168404344971009e-19,
+        "centrifugal_I_zz": 0.4117187499999999,
+        "centrifugal_cgx": 0.25000000000000006,
+        "centrifugal_cgy": 1.0000000000000002,
+        "centrifugal_cgz": -0.00037500000000000006,
+        "centrifugal_compliance": 0.23430251098271168,
+        "centrifugal_ks_TsaiWufailure": 0.24632761512178053,
+        "centrifugal_mass": 1.1624999999999999,
+        "centrifugal_x_disp": 0.0001570586015183079,
+        "centrifugal_y_disp": 8.748943337216315e-05,
+        "centrifugal_z_disp": 0.0966983775511979,
     }
 
     def setup_tacs_problems(self, comm):
@@ -143,84 +158,97 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
         fea_assembler.initialize(elemCallBack)
 
         # Read in forces from BDF and create tacs struct problems
-        problem = fea_assembler.createStaticProblem("gravity")
-        # Add 1000G load in x direction
-        problem.addInertialLoad(1000 * [9.81, 0.0, 0.0])
+        grav_prob = fea_assembler.createStaticProblem("gravity")
+        grav_prob.addInertialLoad(1000 * [9.81, 0.0, 0.0])
+
+        rot_prob = fea_assembler.createStaticProblem("centrifugal")
+        rot_prob.addCentrifugalLoad([10.0, 3.0, 5.0], [0.25, 1.0, -0.000375])
+
+        probs = [grav_prob, rot_prob]
+
         # Set convergence to be tight for test
-        problem.setOption("L2Convergence", 1e-20)
-        problem.setOption("L2ConvergenceRel", 1e-20)
+        for problem in probs:
+            problem.setOption("L2Convergence", 1e-15)
+            problem.setOption("L2ConvergenceRel", 1e-15)
 
         # Add Functions
-        problem.addFunction("mass", functions.StructuralMass)
-        problem.addFunction("compliance", functions.Compliance)
-        problem.addFunction(
-            "ks_TsaiWufailure",
-            functions.KSFailure,
-            ksWeight=ksweight,
-            ftype="discrete",
-        )
-        problem.addFunction(
-            "x_disp",
-            functions.KSDisplacement,
-            ksWeight=ksweight,
-            direction=[10.0, 0.0, 0.0],
-        )
-        problem.addFunction(
-            "y_disp",
-            functions.KSDisplacement,
-            ksWeight=ksweight,
-            direction=[0.0, 10.0, 0.0],
-        )
-        problem.addFunction(
-            "z_disp",
-            functions.KSDisplacement,
-            ksWeight=ksweight,
-            direction=[0.0, 0.0, 10.0],
-        )
-        problem.addFunction("cgx", functions.CenterOfMass, direction=[1.0, 0.0, 0.0])
-        problem.addFunction("cgy", functions.CenterOfMass, direction=[0.0, 1.0, 0.0])
-        problem.addFunction("cgz", functions.CenterOfMass, direction=[0.0, 0.0, 1.0])
-        problem.addFunction(
-            "I_xx",
-            functions.MomentOfInertia,
-            direction1=[1.0, 0.0, 0.0],
-            direction2=[1.0, 0.0, 0.0],
-            aboutCM=True,
-        )
-        problem.addFunction(
-            "I_xy",
-            functions.MomentOfInertia,
-            direction1=[1.0, 0.0, 0.0],
-            direction2=[0.0, 1.0, 0.0],
-            aboutCM=True,
-        )
-        problem.addFunction(
-            "I_xz",
-            functions.MomentOfInertia,
-            direction1=[1.0, 0.0, 0.0],
-            direction2=[0.0, 0.0, 1.0],
-            aboutCM=True,
-        )
-        problem.addFunction(
-            "I_yy",
-            functions.MomentOfInertia,
-            direction1=[0.0, 1.0, 0.0],
-            direction2=[0.0, 1.0, 0.0],
-            aboutCM=True,
-        )
-        problem.addFunction(
-            "I_yz",
-            functions.MomentOfInertia,
-            direction1=[0.0, 1.0, 0.0],
-            direction2=[0.0, 0.0, 1.0],
-            aboutCM=True,
-        )
-        problem.addFunction(
-            "I_zz",
-            functions.MomentOfInertia,
-            direction1=[0.0, 0.0, 1.0],
-            direction2=[0.0, 0.0, 1.0],
-            aboutCM=True,
-        )
+        for problem in probs:
+            problem.addFunction("mass", functions.StructuralMass)
+            problem.addFunction("compliance", functions.Compliance)
+            problem.addFunction(
+                "ks_TsaiWufailure",
+                functions.KSFailure,
+                ksWeight=ksweight,
+                ftype="discrete",
+            )
+            problem.addFunction(
+                "x_disp",
+                functions.KSDisplacement,
+                ksWeight=ksweight,
+                direction=[10.0, 0.0, 0.0],
+            )
+            problem.addFunction(
+                "y_disp",
+                functions.KSDisplacement,
+                ksWeight=ksweight,
+                direction=[0.0, 10.0, 0.0],
+            )
+            problem.addFunction(
+                "z_disp",
+                functions.KSDisplacement,
+                ksWeight=ksweight,
+                direction=[0.0, 0.0, 10.0],
+            )
+            problem.addFunction(
+                "cgx", functions.CenterOfMass, direction=[1.0, 0.0, 0.0]
+            )
+            problem.addFunction(
+                "cgy", functions.CenterOfMass, direction=[0.0, 1.0, 0.0]
+            )
+            problem.addFunction(
+                "cgz", functions.CenterOfMass, direction=[0.0, 0.0, 1.0]
+            )
+            problem.addFunction(
+                "I_xx",
+                functions.MomentOfInertia,
+                direction1=[1.0, 0.0, 0.0],
+                direction2=[1.0, 0.0, 0.0],
+                aboutCM=True,
+            )
+            problem.addFunction(
+                "I_xy",
+                functions.MomentOfInertia,
+                direction1=[1.0, 0.0, 0.0],
+                direction2=[0.0, 1.0, 0.0],
+                aboutCM=True,
+            )
+            problem.addFunction(
+                "I_xz",
+                functions.MomentOfInertia,
+                direction1=[1.0, 0.0, 0.0],
+                direction2=[0.0, 0.0, 1.0],
+                aboutCM=True,
+            )
+            problem.addFunction(
+                "I_yy",
+                functions.MomentOfInertia,
+                direction1=[0.0, 1.0, 0.0],
+                direction2=[0.0, 1.0, 0.0],
+                aboutCM=True,
+            )
+            problem.addFunction(
+                "I_yz",
+                functions.MomentOfInertia,
+                direction1=[0.0, 1.0, 0.0],
+                direction2=[0.0, 0.0, 1.0],
+                aboutCM=True,
+            )
+            problem.addFunction(
+                "I_zz",
+                functions.MomentOfInertia,
+                direction1=[0.0, 0.0, 1.0],
+                direction2=[0.0, 0.0, 1.0],
+                aboutCM=True,
+            )
 
-        return [problem], fea_assembler
+        return probs, fea_assembler
