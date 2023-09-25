@@ -2730,11 +2730,11 @@ bool TACSBladeStiffenedShellConstitutive::testCriticalShearLoadSens(
 
   printf("testCriticalShearLoadSens results:\n");
   printf("----------------------------------\n");
-  printf("D1 = % 011.7e\n", D1);
-  printf("D2 = % 011.7e\n", D2);
-  printf("D3 = % 011.7e\n", D3);
-  printf("L = % 011.7e\n", L);
-  printf("N12Crit = % 011.7e\n", N12Crit);
+  printf("D1 = % 011.7e\n", TacsRealPart(D1));
+  printf("D2 = % 011.7e\n", TacsRealPart(D2));
+  printf("D3 = % 011.7e\n", TacsRealPart(D3));
+  printf("L = % 011.7e\n", TacsRealPart(L));
+  printf("N12Crit = % 011.7e\n", TacsRealPart(N12Crit));
   printf(
       "D1Sens = % 011.7e | D1SensFD = % 011.7e | D1SensRelError = % 011.7e\n",
       TacsRealPart(D1Sens), TacsRealPart(D1SensFD),
@@ -2833,14 +2833,14 @@ bool TACSBladeStiffenedShellConstitutive::testBucklingEnvelopeSens(
       TacsRealPart(N1), TacsRealPart(N1Crit), TacsRealPart(N12),
       TacsRealPart(N12Crit));
   printf("f: % 011.7e\n", f);
-  printf("dfdN1: % 011.7e, dfdN1p: % 011.7e, rel error: % 011.7e\n", dfdN1,
-         dfdN1FD, dfdN1RelError);
+  printf("dfdN1: % 011.7e, dfdN1p: % 011.7e, rel error: % 011.7e\n", TacsRealPart(dfdN1),
+         TacsRealPart(dfdN1FD), TacsRealPart(dfdN1RelError));
   printf("dfdN1Crit: % 011.7e, dfdN1Critp: % 011.7e, rel error: % 011.7e\n",
-         dfdN1Crit, dfdN1CritFD, dfdN1CritRelError);
-  printf("dfdN12: % 011.7e, dfdN12p: % 011.7e, rel error: % 011.7e\n", dfdN12,
-         dfdN12FD, dfdN1CritRelError);
+         TacsRealPart(dfdN1Crit), TacsRealPart(dfdN1CritFD), TacsRealPart(dfdN1CritRelError));
+  printf("dfdN12: % 011.7e, dfdN12p: % 011.7e, rel error: % 011.7e\n", TacsRealPart(dfdN12),
+         TacsRealPart(dfdN12FD), TacsRealPart(dfdN1CritRelError));
   printf("dfdN12Crit: % 011.7e, dfdN12Critp: % 011.7e, rel error: % 011.7e\n",
-         dfdN12Crit, dfdN12CritFD, dfdN12CritRelError);
+         TacsRealPart(dfdN12Crit), TacsRealPart(dfdN12CritFD), TacsRealPart(dfdN12CritRelError));
 
   return (fabs(dfdN1RelError) < tol && fabs(dfdN1CritRelError) < tol &&
           fabs(dfdN12RelError) < tol && fabs(dfdN12CritRelError) < tol);
