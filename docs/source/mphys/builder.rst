@@ -113,6 +113,6 @@ The function should have the following structure:
 API Reference
 -------------
 
-.. autoclass:: tacs.mphys.mphys_tacs.TacsBuilder
+.. autoclass:: tacs.mphys.builder.TacsBuilder
    :members:
    :undoc-members:

@@ -1,7 +1,7 @@
 MPhys
 *****
 `MPhys <https://pypi.org/project/mphys/>`_ is a package that standardizes high-fidelity multiphysics problems in OpenMDAO. Mphys eases the problem set up, provides straightforward extension to new disciplines, and has a library of OpenMDAO groups for multidisciplinary problems addressed by its standard.
-The interface consists of two main groups of classes: an builder class called :class:`~tacs.mphys.mphys_tacs.TacsBuilder` and
+The interface consists of two main groups of classes: an builder class called :class:`~tacs.mphys.builder.TacsBuilder` and
 a set of problem classes for analysis. The details of the interfaces will be discussed in the sections below.
 
 Workflow
