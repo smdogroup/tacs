@@ -10,14 +10,17 @@ from .property import ShellProperty
 from .loads import Load
 from .variables import ShapeVariable, ThicknessVariable
 from .egads_aim import EgadsAim
+from .aflr_aim import AflrAim
 from typing import List
 from tacs.pytacs import pyTACS
 
 
 class TacsModel:
-    def __init__(self, tacs_aim: TacsAim, egads_aim: EgadsAim, comm=None):
+    MESH_AIMS = ["egads", "aflr"]
+
+    def __init__(self, tacs_aim: TacsAim, mesh_aim, comm=None):
         self._tacs_aim = tacs_aim
-        self._egads_aim = egads_aim
+        self._mesh_aim = mesh_aim
         self.comm = comm
 
         self._analysis_functions = []
@@ -30,11 +33,27 @@ class TacsModel:
         return self._tacs_aim
 
     @property
-    def egads_aim(self) -> EgadsAim:
-        return self._egads_aim
+    def mesh_aim(self) -> AflrAim:
+        return self._mesh_aim
+
+    @property
+    def uses_egads(self):
+        return isinstance(self.mesh_aim, EgadsAim)
+
+    @property
+    def uses_aflr(self):
+        return isinstance(self.mesh_aim, AflrAim)
 
     @classmethod
-    def build(cls, csm_file, comm=None, problem_name: str = "capsStruct"):
+    def build(
+        cls,
+        csm_file,
+        comm=None,
+        mesh="egads",
+        tacs_project="tacs",
+        problem_name: str = "capsStruct",
+        mesh_morph:bool=False,
+    ):
         """
         make a pyCAPS problem with the tacsAIM and egadsAIM on serial / root proc
 
@@ -45,17 +64,26 @@ class TacsModel:
         comm : MPI.COMM
             MPI communicator
         """
+
         caps_problem = None
+        assert mesh in cls.MESH_AIMS
         if comm is None or comm.rank == 0:
             caps_problem = pyCAPS.Problem(
                 problemName=problem_name, capsFile=csm_file, outLevel=1
             )
-        tacs_aim = TacsAim(caps_problem, comm)
-        egads_aim = EgadsAim(caps_problem, comm)
-        return cls(tacs_aim, egads_aim, comm)
+        tacs_aim = TacsAim(caps_problem, comm, project_name=tacs_project, mesh_morph=mesh_morph)
+        mesh_aim = None
+        if mesh == "egads":
+            mesh_aim = EgadsAim(caps_problem, comm)
+        elif mesh == "aflr":
+            mesh_aim = AflrAim(caps_problem, comm)
+        return cls(tacs_aim, mesh_aim, comm)
 
     def get_config_parameter(self, param_name: str):
         return self.tacs_aim.get_config_parameter(param_name=param_name)
+
+    def get_output_parameter(self, param_name: str):
+        return self.tacs_aim.get_output_parameter(param_name=param_name)
 
     def register(self, obj):
         """
@@ -74,6 +102,7 @@ class TacsModel:
             Constraint,
             Load,
             EgadsAim,
+            AflrAim,
         ]
         for tacs_aim_obj in tacs_aim_objects:
             if isinstance(obj, tacs_aim_obj):
@@ -98,6 +127,10 @@ class TacsModel:
 
         if include_aim:
             self.tacs_aim.setup_aim()
+
+            # Set additional options for meshing AIM through dictionaries
+            if self.mesh_aim._dictOptions is not None:
+                self.mesh_aim._set_dict_options()
 
             # go ahead and generate the first input files and mesh for TACS
             if not self.tacs_aim.change_shape:
@@ -125,6 +158,14 @@ class TacsModel:
     @property
     def analysis_dir(self) -> str:
         return self.tacs_aim.analysis_dir
+    
+    @property
+    def mesh_morph(self) -> bool:
+        return self.tacs_aim.mesh_morph
+    
+    @mesh_morph.setter
+    def mesh_morph(self, new_bool):
+        self.tacs_aim.mesh_morph = new_bool
 
     @property
     def geometry(self):
@@ -335,5 +376,8 @@ class TacsModel:
                 struct_derivs = self._tacs_sens[tacs_key]["struct"]
                 for ithick, thick_var in enumerate(self.thickness_variables):
                     func.set_derivative(thick_var, struct_derivs[ithick].real)
+
+        if self.mesh_morph:
+            self.tacs_aim.unlink()
 
         return self

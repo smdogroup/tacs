@@ -125,4 +125,11 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
                 direction=10.0 * z_prime,
             )
 
+        # Add constraint on difference between width and thickness dvs (i.e. con = w - t)
+        constr = fea_assembler.createDVConstraint("dvcon")
+        constr.addConstraint(
+            "width_minus_thickness", dvIndices=[0, 1], dvWeights=[1.0, -1.0]
+        )
+        tacs_probs.append(constr)
+
         return tacs_probs, fea_assembler

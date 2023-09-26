@@ -203,6 +203,7 @@ epub_exclude_files = ["search.html"]
 intersphinx_mapping = {
     "https://docs.python.org/": None,
     "numpy [stable]": ("https://numpy.org/doc/stable/", None),
+    "scipy [stable]": ("https://docs.scipy.org/doc/scipy/", None),
     "pynastran [latest]": ("https://pynastran-git.readthedocs.io/en/latest/", None),
     "mpi4py [stable]": ("https://mpi4py.readthedocs.io/en/stable/", None),
     "paropt": ("https://smdogroup.github.io/paropt/", None),

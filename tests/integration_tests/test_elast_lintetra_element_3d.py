@@ -7,12 +7,12 @@ from tacs import TACS, elements, constitutive, functions
 
 """
 Load in a bdf file with tetrahedral elements, apply a load,
-and test KSFailure, StructuralMass, and Compliance functions and sensitivities.
+and test KSFailure, StructuralMass, EnclosedVolume, and Compliance functions and sensitivities.
 
 This test is based on the "tetrahedral" script under the examples directory.
 """
 
-FUNC_REFS = np.array([1.2622791020763084, 172800.0, 16.257419866831018])
+FUNC_REFS = np.array([1.2622791020763084, 172800.0, 16.257419866831018, 64.0])
 
 base_dir = os.path.dirname(os.path.abspath(__file__))
 bdf_file = os.path.join(base_dir, "./input_files/5x5x5_cube.bdf")
@@ -137,5 +137,6 @@ class ProblemTest(StaticTestCase.StaticTest):
             functions.KSFailure(assembler, ksWeight=ksweight),
             functions.StructuralMass(assembler),
             functions.Compliance(assembler),
+            functions.EnclosedVolume(assembler),
         ]
         return func_list, FUNC_REFS

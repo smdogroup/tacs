@@ -11,6 +11,7 @@
 #include "TACSShellElementModel.h"
 #include "TACSShellElementTransform.h"
 #include "TACSShellInertialForce.h"
+#include "TACSShellInplaneElementModel.h"
 #include "TACSShellPressure.h"
 #include "TACSShellTraction.h"
 #include "TACSShellUtilities.h"
@@ -42,6 +43,21 @@ class TACSShellElement : public TACSElement {
 
     con = _con;
     con->incref();
+
+    // For linear models, we'll need to switch to a nonlinear implementation to
+    // capture geometric effects
+    if (typeid(model) == typeid(TACSShellLinearModel)) {
+      nlElem = new TACSShellElement<quadrature, basis, director,
+                                    TACSShellNonlinearModel>(transform, con);
+    } else if (typeid(model) == typeid(TACSShellInplaneLinearModel)) {
+      nlElem =
+          new TACSShellElement<quadrature, basis, director,
+                               TACSShellInplaneNonlinearModel>(transform, con);
+    }
+    // For nonlinear models we can use the current class instance
+    else {
+      nlElem = this;
+    }
   }
 
   ~TACSShellElement() {
@@ -51,6 +67,11 @@ class TACSShellElement : public TACSElement {
 
     if (con) {
       con->decref();
+    }
+
+    // free nonlinear element pointer
+    if (nlElem != this) {
+      delete nlElem;
     }
   }
 
@@ -180,6 +201,7 @@ class TACSShellElement : public TACSElement {
 
   TACSShellTransform *transform;
   TACSShellConstitutive *con;
+  TACSElement *nlElem;
 };
 
 /*
@@ -638,20 +660,57 @@ void TACSShellElement<quadrature, basis, director, model>::getMatType(
   memset(mat, 0,
          vars_per_node * num_nodes * vars_per_node * num_nodes *
              sizeof(TacsScalar));
-  TacsScalar alpha, beta, gamma;
+  TacsScalar *path;
+  TacsScalar alpha, beta, gamma, dh, norm;
   alpha = beta = gamma = 0.0;
+  // Create dummy residual vector
+  TacsScalar res[vars_per_node * num_nodes];
+  memset(res, 0, vars_per_node * num_nodes * sizeof(TacsScalar));
+  dh = 1e-4;
   // Set alpha or gamma based on if this is a stiffness or mass matrix
   if (matType == TACS_STIFFNESS_MATRIX) {
     alpha = 1.0;
   } else if (matType == TACS_MASS_MATRIX) {
     gamma = 1.0;
   } else {  // TACS_GEOMETRIC_STIFFNESS_MATRIX
-    // Not implimented
+    // Approximate geometric stiffness using directional derivative of
+    // tangential stiffness projected along path of current state vars
+
+    // compute norm for normalizing path vec
+    norm = 0.0;
+    for (int i = 0; i < vars_per_node * num_nodes; i++) {
+      norm += vars[i] * vars[i];
+    }
+    norm = sqrt(norm);
+
+    if (TacsRealPart(norm) == 0.0) {
+      norm = 1.0;
+    }
+
+    // Central difference the tangent stiffness matrix
+    alpha = 0.5 * norm / dh;
+
+    // fwd step
+    path = new TacsScalar[vars_per_node * num_nodes];
+    for (int i = 0; i < vars_per_node * num_nodes; i++) {
+      path[i] = dh * vars[i] / norm;
+    }
+
+    nlElem->addJacobian(elemIndex, time, alpha, beta, gamma, Xpts, path, vars,
+                        vars, res, mat);
+
+    // bwd step
+    for (int i = 0; i < vars_per_node * num_nodes; i++) {
+      path[i] = -dh * vars[i] / norm;
+    }
+
+    nlElem->addJacobian(elemIndex, time, -alpha, beta, gamma, Xpts, path, vars,
+                        vars, res, mat);
+
+    delete[] path;
+
     return;
   }
-  // Create dummy residual vector
-  TacsScalar res[vars_per_node * num_nodes];
-  memset(res, 0, vars_per_node * num_nodes * sizeof(TacsScalar));
   // Add appropriate Jacobian to matrix
   addJacobian(elemIndex, time, alpha, beta, gamma, Xpts, vars, vars, vars, res,
               mat);
@@ -900,6 +959,26 @@ int TACSShellElement<quadrature, basis, director, model>::evalPointQuantity(
     }
 
     return 6;
+  }
+
+  else if (quantityType == TACS_ELEMENT_ENCLOSED_VOLUME) {
+    if (quantity) {
+      // Compute X, X,xi and the interpolated normal n0
+      TacsScalar Xxi[6], n0[3], X[3];
+      basis::template interpFields<3, 3>(pt, Xpts, X);
+      basis::template interpFieldsGrad<3, 3>(pt, Xpts, Xxi);
+      basis::template interpFields<3, 3>(pt, fn, n0);
+
+      TacsScalar Xd[9];
+      TacsShellAssembleFrame(Xxi, n0, Xd);
+      *detXd = det3x3(Xd);
+
+      // Compute 1/3*int[x * n]dA
+      // This can be shown to equivalent to the volume through Gauss' Theorem
+      quantity[0] = (X[0] * n0[0] + X[1] * n0[1] + X[2] * n0[2]) / 3.0;
+    }
+
+    return 1;
   }
 
   return 0;
@@ -1229,7 +1308,11 @@ void TACSShellElement<quadrature, basis, director, model>::getOutputData(
         data[1] = con->evalDesignFieldValue(elemIndex, pt, X, 0);
         data[2] = con->evalDesignFieldValue(elemIndex, pt, X, 1);
         data[3] = con->evalDesignFieldValue(elemIndex, pt, X, 2);
-        data += 4;
+        data[4] = con->evalDesignFieldValue(elemIndex, pt, X, 3);
+        data[5] = con->evalDesignFieldValue(elemIndex, pt, X, 4);
+        data[6] = con->evalDesignFieldValue(elemIndex, pt, X, 5);
+        data[7] = con->evalDesignFieldValue(elemIndex, pt, X, 6);
+        data += 8;
       }
     }
   }

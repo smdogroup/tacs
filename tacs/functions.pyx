@@ -31,8 +31,7 @@ from libc.stdlib cimport malloc, free
 from cpython cimport PyObject, Py_INCREF
 
 # Import the definitions
-from TACS cimport *
-from functions cimport *
+from tacs.TACS cimport *
 
 # Include the definitions
 include "TacsDefs.pxi"
@@ -149,6 +148,21 @@ cdef class MomentOfInertia(Function):
         cmFlag = kwargs.get('aboutCM', False);
 
         self.ptr = new TACSMomentOfInertia(assembler.ptr, d1, d2, cmFlag)
+        self.ptr.incref()
+        return
+
+cdef class EnclosedVolume(Function):
+    """
+    Evaluates the volume enclosed by the elements.
+
+    Args:
+        assembler (Assembler): TACS Assembler object that will evaluating this function.
+    """
+    def __cinit__(self, Assembler assembler):
+        """
+        Wrap the function EnclosedVolume
+        """
+        self.ptr = new TACSEnclosedVolume(assembler.ptr)
         self.ptr.incref()
         return
 

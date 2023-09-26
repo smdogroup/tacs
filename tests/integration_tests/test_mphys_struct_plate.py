@@ -11,8 +11,8 @@ from tacs import elements, constitutive, functions
 
 """
 This is a simple 1m by 2m plate made up of four quad shell elements.
-The plate is structurally loaded under a 100G gravity load and a unit force, 
-"f_struct", is applied on on every node. The mass and KSFailure of the plate 
+The plate is structurally loaded under a 100G gravity load and a unit force,
+"f_struct", is applied on on every node. The mass and KSFailure of the plate
 are evaluated as outputs and have their partial and total sensitivities checked.
 """
 
@@ -24,6 +24,7 @@ FUNC_REFS = {
     "analysis.mass": 55.6,
     "analysis.Ixx": 74.13379667,
     "analysis.ks_vmfailure": 5.778130269059719,
+    "analysis.adjacency.PANEL": [0.0, 0.0, 0.0, 0.0],
 }
 
 # Inputs to check total sensitivities wrt
@@ -57,7 +58,7 @@ class ProblemTest(OpenMDAOTestCase.OpenMDAOTest):
             E = 73.1e9  # elastic modulus, Pa
             nu = 0.33  # poisson's ratio
             ys = 324.0e6  # yield stress, Pa
-            thickness = 0.012
+            thickness = 0.01
             min_thickness = 0.002
             max_thickness = 0.05
 
@@ -98,11 +99,22 @@ class ProblemTest(OpenMDAOTestCase.OpenMDAOTest):
             g = np.array([0.0, 0.0, -9.81]) * 100  # m/s^2
             problem.addInertialLoad(g)
 
+        def constraint_setup(scenario_name, fea_assembler, constraints):
+            """
+            Helper function to setup tacs constraint classes
+            """
+            # Setup adjacency constraints for panel thicknesses
+            constr = fea_assembler.createAdjacencyConstraint("adjacency")
+            constr.addConstraint("PANEL")
+            constr_list = [constr]
+            return constr_list
+
         class Top(Multipoint):
             def setup(self):
                 tacs_options = {
                     "element_callback": element_callback,
                     "problem_setup": problem_setup,
+                    "constraint_setup": constraint_setup,
                     "mesh_file": bdf_file,
                 }
 
@@ -113,10 +125,15 @@ class ProblemTest(OpenMDAOTestCase.OpenMDAOTest):
                     write_solution=False,
                 )
                 tacs_builder.initialize(self.comm)
-                ndv_struct = tacs_builder.get_ndv()
 
                 dvs = self.add_subsystem("dvs", om.IndepVarComp(), promotes=["*"])
-                dvs.add_output("dv_struct", np.array(ndv_struct * [0.01]))
+                structDVs = tacs_builder.get_initial_dvs()
+                dvs.add_output("dv_struct", structDVs)
+                lb, ub = tacs_builder.get_dv_bounds()
+                structDVScaling = tacs_builder.get_dv_scalers()
+                self.add_design_var(
+                    "dv_struct", lower=lb, upper=ub, scaler=structDVScaling
+                )
 
                 f_size = tacs_builder.get_ndof() * tacs_builder.get_number_of_nodes()
                 forces = self.add_subsystem("forces", om.IndepVarComp(), promotes=["*"])

@@ -16,6 +16,8 @@ class Material:
         shear_allow: float = None,
         yield_allow: float = None,
         thermExpCoeff: float = None,
+        kappa:float=None,
+        specific_heat:float=None,
     ):
         """
         Material base class to wrap ESP/CAPS material inputs to TACS AIM
@@ -36,6 +38,8 @@ class Material:
         self._shear_allow = shear_allow
         self._yield_allow = yield_allow
         self._thermExpCoeff = thermExpCoeff
+        self._kappa = kappa
+        self._specific_heat = specific_heat
 
     @property
     def name(self) -> str:
@@ -60,6 +64,8 @@ class Material:
         m_dict["compressionAllow"] = self._compression_allow
         m_dict["shearAllow"] = self._shear_allow
         m_dict["yieldAllow"] = self._yield_allow
+        m_dict["kappa"] = self._kappa
+        m_dict["specificHeat"] = self._specific_heat
 
         # return all items that are not None
         return {k: v for k, v in m_dict.items() if v is not None}
@@ -92,6 +98,8 @@ class Isotropic(Material):
         shear_allow: float = None,
         yield_allow: float = None,
         thermExpCoeff: float = None,
+        kappa:float=None,
+        specific_heat:float=None,
     ):
         """
         wrapper class for ESP/CAPS isotropic materials
@@ -107,6 +115,8 @@ class Isotropic(Material):
             shear_allow=shear_allow,
             yield_allow=yield_allow,
             thermExpCoeff=thermExpCoeff,
+            kappa=kappa,
+            specific_heat=specific_heat,
         )
 
     @classmethod
@@ -136,6 +146,8 @@ class Isotropic(Material):
             compression_allow=20.0e7,
             yield_allow=20.0e7,
             thermExpCoeff=23.1e-6,
+            specific_heat=903,
+            kappa=237,
         )
 
     @classmethod
@@ -149,9 +161,11 @@ class Isotropic(Material):
             compression_allow=1.7e9,
             yield_allow=0.9e9,
             thermExpCoeff=11.5e-6,
+            kappa=45,
+            specific_heat=420,
         )
 
 
 class Orthotropic(Material):
-    # TBD
+    # TBD, ESP/CAPS doesn't accept all of E1, E2, E3, alpha_i, kappa_i, c_p, etc.
     pass

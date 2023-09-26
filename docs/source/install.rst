@@ -42,7 +42,7 @@ The following packages are required to use TACS:
 * MPI
 * BLAS
 * LAPACK
-* Metis 5.1
+* Metis 5.1.0
 
 To use the python interface to TACS you will also require:
 
@@ -123,7 +123,7 @@ These instructions direct you to install METIS and other dependencies in the dir
 This location for the dependencies is not required, and indeed may not be best.
 If you already have these libraries installed, simply adjust the variables in ``tacs/Makefile.in`` accordingly.
 
-Go to the directory ``tacs/extern``. Download ``metis-5.1.0`` from `<http://glaros.dtc.umn.edu/gkhome/metis/metis/download>`_ and place the file ``metis-5.1.0.tar.gz`` there.
+Go to the directory ``tacs/extern``. Download ``metis-5.1.0`` from `<https://src.fedoraproject.org/lookaside/pkgs/metis/metis-5.1.0.tar.gz/5465e67079419a69e0116de24fce58fe/>`_ and place the file ``metis-5.1.0.tar.gz`` there.
 Note that METIS needs CMake to build and install.
 
 Optionally, you can also place ``SuiteSparse-5.13.0.tar.gz`` (available from `<https://github.com/DrTimothyAldenDavis/SuiteSparse/releases>`_) in the same directory if you want to use the approximate minimum degree ordering routines from SuiteSparse.
@@ -158,14 +158,19 @@ After compiling the C++ TACS library, go to the subdirectory ``tacs/extern/f5tov
 
 ``f5totec`` requires Tecplot's ``tecio`` library, the installation of which is described above.
 
+The ``extern`` directory also contains two bash scripts, ``f5convert`` and ``f5clean``, that can be used to convert and clean ``.f5`` files.
+``f5convert`` converts any ``.f5`` files that don't have an up-to-date ``.vtk`` or ``.plt`` file, and ``f5clean`` removes the ``.vtk`` or ``.plt`` file corresponding to each ``.f5`` file.
+Both scripts accept a ``-s`` flag that will also convert or clean the ``.f5`` files in any subdirectories that contain ``.f5`` files.
+Run ``f5convert -h`` or ``f5clean -h`` for more information.
 
-It is useful to put these utilities on your path if possible.
-I add the directory ``$HOME/bin`` to my ``PATH`` and then from the directory ``$HOME/bin`` execute
+Add the following lines to your ``.bashrc`` file to add the executables to your path:
 
 ::
 
-    ln -s $HOME/git/tacs/extern/f5tovtk
-    ln -s $HOME/git/tacs/extern/f5totec
+    export PATH="<path to the tacs directory>/extern/f5totec:$PATH"
+    export PATH="<path to the tacs directory>/extern/f5tovtk:$PATH"
+    export PATH="<path to the tacs directory>/extern:$PATH"
+
 
 Installing the python interface
 -------------------------------

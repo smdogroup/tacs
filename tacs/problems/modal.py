@@ -164,7 +164,8 @@ class ModalProblem(TACSProblem):
         restarts = self.getOption("nRestarts")
         self.gmres = tacs.TACS.KSM(self.K, self.pc, subspace, restarts)
 
-        eigTol = self.getOption("L2Convergence")
+        atol = self.getOption("L2Convergence")
+        rtol = self.getOption("L2ConvergenceRel")
 
         # Create the frequency analysis object
         self.freqSolver = tacs.TACS.FrequencyAnalysis(
@@ -174,7 +175,9 @@ class ModalProblem(TACSProblem):
             self.K,
             self.gmres,
             num_eigs=self.numEigs,
-            eig_tol=eigTol,
+            eig_tol=atol,
+            eig_atol=atol,
+            eig_rtol=rtol,
         )
 
     def _initializeFunctionList(self):
@@ -247,7 +250,7 @@ class ModalProblem(TACSProblem):
     def evalFunctions(self, funcs, evalFuncs=None, ignoreMissing=False):
         """
         Evaluate eigenvalues for problem. The functions corresponding to
-        the integers in EVAL_FUNCS are evaluated and updated into
+        the integers in evalFuncs are evaluated and updated into
         the provided dictionary.
 
         Parameters
@@ -301,7 +304,7 @@ class ModalProblem(TACSProblem):
         """
         This is the main routine for returning useful (sensitivity)
         information from problem. The derivatives of the functions
-        corresponding to the strings in EVAL_FUNCS are evaluated and
+        corresponding to the strings in evalFuncs are evaluated and
         updated into the provided dictionary. The derivitives with
         respect to all design variables and node locations are computed.
 
@@ -369,8 +372,7 @@ class ModalProblem(TACSProblem):
 
     def solve(self):
         """
-        Solve the time integrated transient problem. The
-        forces must already be set.
+        Solve the eigenvalue problem.
         """
         startTime = time.time()
 
@@ -427,7 +429,7 @@ class ModalProblem(TACSProblem):
         index : int
             Mode index to return solution for.
 
-        states : TACS.Vec or numpy.ndarray or None
+        states : tacs.TACS.Vec or numpy.ndarray or None
             Place eigenvector for mode into this array (optional).
 
         Returns
