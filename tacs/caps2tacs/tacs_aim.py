@@ -19,7 +19,9 @@ class TacsAim:
     only supports shell properties at the moment
     """
 
-    def __init__(self, caps_problem, comm=None, project_name="tacs", mesh_morph:bool=False):
+    def __init__(
+        self, caps_problem, comm=None, project_name="tacs", mesh_morph: bool = False
+    ):
         self.comm = comm
 
         # geometry and design parameters to change the design of the CSM file during an optimization
@@ -173,13 +175,13 @@ class TacsAim:
     @root_broadcast
     def get_output_parameter(self, out_name: str):
         return self.geometry.outpmtr[out_name].value
-    
+
     @property
     def mesh_morph(self) -> bool:
         return self._mesh_morph
-    
+
     @mesh_morph.setter
-    def mesh_morph(self, new_bool:bool):
+    def mesh_morph(self, new_bool: bool):
         self._mesh_morph = new_bool
 
     @property
@@ -333,7 +335,7 @@ class TacsAim:
         """
         self.aim.postAnalysis()
         return self
-    
+
     def unlink(self):
         if self.comm.rank == 0:
             self.aim.input["Mesh"].unlink()
