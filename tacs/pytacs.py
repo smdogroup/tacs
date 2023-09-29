@@ -743,7 +743,7 @@ class pyTACS(BaseUI):
 
         Parameters
         ----------
-        elemCallBack : callable
+        elemCallBack : collections.abc.Callable or None
 
            The calling sequence for elemCallBack **must** be as
            follows::

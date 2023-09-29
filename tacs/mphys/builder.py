@@ -59,11 +59,38 @@ class TacsBuilder(Builder):
         else:
             self.constraint_setup = None
 
-        # Load optional user-defined callback function for setting up buckling problem
-        if "buckling_setup" in pytacs_options:
-            self.buckling_setup = pytacs_options.pop("buckling_setup")
-        else:
-            self.buckling_setup = None
+            # Load optional user-defined callback function for setting up buckling problem
+            if "buckling_setup" in pytacs_options:
+                buckling_setup = pytacs_options.pop("buckling_setup")
+
+        self.mesh_file = mesh_file
+        self.assembler_setup = assembler_setup
+        self.element_callback = element_callback
+        self.problem_setup = problem_setup
+        self.constraint_setup = constraint_setup
+        self.buckling_setup = buckling_setup
+        self.pytacs_options = pytacs_options
+        self.check_partials = check_partials
+        # Flag to switch to tacs conduction solver (False->structural)
+        self.conduction = conduction
+        # Flag to turn on f5 file writer
+        self.write_solution = write_solution
+        # Flag to turn on coupling variables
+        self.coupled = coupled
+        # Flag to separate point mass dvs from struct dvs in openmdao input array
+        self.separate_mass_dvs = separate_mass_dvs
+
+    def initialize(self, comm):
+        """
+        Initialize the solver, transfer scheme, etc.
+        This method will be called when the MPI comm is available
+
+        Parameters
+        ----------
+        comm : :class:`~mpi4py.MPI.Comm`
+            The communicator object created for this xfer object instance.
+
+        """
 
         # Create pytacs instance
         self.fea_assembler = pyTACS(bdf_file, options=pytacs_options, comm=comm)
@@ -77,6 +104,20 @@ class TacsBuilder(Builder):
         self.fea_assembler.initialize(element_callback)
 
     def get_coupling_group_subsystem(self, scenario_name=None):
+        """
+        The subsystem that this builder will add to the CouplingGroup
+
+        Parameters
+        ----------
+        scenario_name : str or None
+            The name of the scenario calling the builder.
+
+        Returns
+        -------
+        subsystem : openmdao.api.Group
+            The openmdao subsystem that handles all the computations for
+            this solver. Transfer schemes can return multiple subsystems
+        """
         return TacsCouplingGroup(
             fea_assembler=self.fea_assembler,
             conduction=self.conduction,
@@ -87,9 +128,35 @@ class TacsBuilder(Builder):
         )
 
     def get_mesh_coordinate_subsystem(self, scenario_name=None):
+        """
+        The subsystem that contains the subsystem that will return the mesh
+        coordinates
+
+        Parameters
+        ----------
+        scenario_name : str or None
+            The name of the scenario calling the builder.
+
+        Returns
+        -------
+        mesh : :class:`~openmdao.api.Component` or :class:`~openmdao.api.Group` or None
+            The openmdao subsystem that has an output of coordinates.
+        """
         return TacsMeshGroup(fea_assembler=self.fea_assembler)
 
     def get_pre_coupling_subsystem(self, scenario_name=None):
+        """
+        Method that returns the openmdao subsystem to be added to each scenario before the coupling group
+
+        Parameters
+        ----------
+        scenario_name : str or None
+            The name of the scenario calling the builder.
+
+        Returns
+        -------
+        subsystem : openmdao.api.Group
+        """
         initial_dvs = self.get_initial_dvs()
         return TacsPrecouplingGroup(
             fea_assembler=self.fea_assembler,
@@ -98,6 +165,18 @@ class TacsBuilder(Builder):
         )
 
     def get_post_coupling_subsystem(self, scenario_name=None):
+        """
+        Method that returns the openmdao subsystem to be added to each scenario after the coupling group
+
+        Parameters
+        ----------
+        scenario_name : str or None
+            The name of the scenario calling the builder.
+
+        Returns
+        -------
+        subsystem : openmdao.api.Group
+        """
         return TacsPostcouplingGroup(
             fea_assembler=self.fea_assembler,
             check_partials=self.check_partials,
@@ -110,6 +189,14 @@ class TacsBuilder(Builder):
         )
 
     def get_ndof(self):
+        """
+        The number of degrees of freedom used at each output location.
+
+        Returns
+        -------
+        ndof : int
+            number of degrees of freedom of each node in the domain
+        """
         return self.fea_assembler.getVarsPerNode()
 
     def get_number_of_nodes(self):
