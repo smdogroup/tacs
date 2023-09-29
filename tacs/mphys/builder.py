@@ -231,6 +231,16 @@ class TacsBuilder(Builder):
         self.separate_mass_dvs = separate_mass_dvs
 
     def initialize(self, comm):
+        """
+        Initialize pyTACSc.
+        This method will be called when the MPI comm is available
+
+        Parameters
+        ----------
+        comm : :class:`~mpi4py.MPI.Comm`
+            The communicator object created for this xfer object instance.
+
+        """
         # Create pytacs instance
         self.fea_assembler = pyTACS(
             self.mesh_file, options=self.pytacs_options, comm=comm
