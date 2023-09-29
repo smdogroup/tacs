@@ -239,7 +239,6 @@ class TacsBuilder(Builder):
         ----------
         comm : :class:`~mpi4py.MPI.Comm`
             The communicator object created for this xfer object instance.
-
         """
         # Create pytacs instance
         self.fea_assembler = pyTACS(
