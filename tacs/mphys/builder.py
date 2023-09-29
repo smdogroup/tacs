@@ -1,80 +1,248 @@
-import numpy as np
 import copy
+import warnings
 
 from mphys.builder import Builder
+import numpy as np
 
-from .. import pyTACS
-from .mesh import TacsMeshGroup
-from .precoupling import TacsPrecouplingGroup
-from .coupling import TacsCouplingGroup
-from .postcoupling import TacsPostcouplingGroup
+from tacs.pytacs import pyTACS
+from tacs.mphys.mesh import TacsMeshGroup
+from tacs.mphys.precoupling import TacsPrecouplingGroup
+from tacs.mphys.coupling import TacsCouplingGroup
+from tacs.mphys.postcoupling import TacsPostcouplingGroup
 
 
 class TacsBuilder(Builder):
     def __init__(
         self,
-        options,
+        mesh_file,
+        assembler_setup=None,
+        element_callback=None,
+        problem_setup=None,
+        constraint_setup=None,
+        buckling_setup=None,
+        pytacs_options=None,
         check_partials=False,
         conduction=False,
         coupled=True,
         write_solution=True,
         separate_mass_dvs=False,
     ):
-        self.options = copy.deepcopy(options)
+        """
+        Create the Builder responsible for creating MPhys Scenario's based on TACS Analyses.
+
+        Parameters
+        ----------
+        mesh_file : str or pyNastran.bdf.bdf.BDF
+            The BDF file or a pyNastran BDF object to load.
+        assembler_setup : collections.abc.Callable or None
+            User-defined callback function for modifying pyTACS assembler prior to initialization.
+            This is used for adding point mass DVs to the model. Defaults to None.
+            follows::
+
+                def assembler_setup(fea_assembler):
+
+            fea_assembler is the uninitialized pyTACS assembler instance created by the builder.
+        element_callback : collections.abc.Callable or None
+            User-defined callback function for setting up TACS elements and element DVs. Defaults to None.
+            See :ref:`pytacs/pytacs_module:Initializing with elemCallBack` for more info.
+            The calling sequence for elem_callback **must** be as follows::
+
+                def elem_callback(dv_num, comp_id, comp_descript, elem_descripts, special_dvs, **kwargs):
+
+            The dv_num is the current counter which must be used by the
+            user when creating a constitutive object with design
+            variables.
+
+            comp_id is the ID number used by tacs to reference this property group.
+            Use kwargs['propID'] to get the corresponding Nastran property ID that
+            is read in from the BDF.
+
+            comp_descript is the component description label read in from optional
+            formatted comments in BDF file
+
+            elem_descripts are the name of the elements belonging to this group
+            (e.g. CQUAD4, CTRIA3, CTETRA, etc). This value will be a list since
+            one component may contain multiple compatible element types.
+            Example: ['CQUAD4', CTRIA3']
+
+            global_dvs is a dictionary containing information about any
+            global DVs that have been added.
+            elem_callback must return a list containing as many TACS element
+            objects as there are element types in elemDescripts (one for each).
+        problem_setup : collections.abc.Callable or None
+            This function is called each time a new MPhys Scenario is created. This function sets up problem adding
+            fixed loads, modifying options, and adding eval functions. The function should have the following structure::
+
+              def problem_setup(scenario_name, fea_assembler, problem):
+
+            scenario_name is a str denoting which MPhys Scenario the problem is currently being set up for.
+            fea_assembler is the uninitialized pyTACS assembler instance created by the builder.
+            problem is the tacs.BaseProblem class being setup for this scenario.
+        constraint_setup : collections.abc.Callable or None
+            This function is called each time a new MPhys Scenario is created. This function sets up a series of
+            constraints to be run after at the end of an MPhys analysis.
+            The function should have the following structure::
+
+                def constraint_setup(scenario_name, fea_assembler, constraints):
+
+        buckling_setup : collections.abc.Callable or None
+            This function is called each time a new MPhys Scenario is created. This function sets up a buckling problem
+            to be run after at the end of an MPhys analysis. The function should have the following structure::
+
+                def buckling_setup(scenario_name, fea_assembler)
+
+        pytacs_options : dict
+            Options dictionary passed to pyTACS assembler.
+        check_partials : bool
+            This flag allows TACS components partial derivative routines to be evaluated in forward mode without raising
+            an error. This lets OpenMDAO's check_partials routine run without errors, allowing users to check TACS'
+            reverse derivatives. The forward derivative checks will still not be meaningful since TACS only supports
+            reverse mode. Defaults to False.
+        conduction : bool
+            Flag to determine weather TACS component represents a thermal (True) or structural (False) analysis.
+            Defaults to False.
+        coupled : bool
+            Flag to determine of if multidisciplinary coupling variables should be turned on
+            (used in aerostructural/thermostructural analyses). Defaults to True.
+        write_solution : bool
+            Flag to determine whether to write out TACS solutions to f5 file each design iteration. Defaults to True.
+        separate_mass_dvs : bool
+            Flag to determine if TACS' mass dvs should be lumped into the struct_dv input vector (False) or
+            split into separate OpenMDAO inputs based on their assigned names (True). Defaults to False.
+
+        Examples
+        --------
+        assembler_setup:
+            >>>  def assembler_setup(fea_assembler):
+            >>>      # Assign dvs for point mass elements 10401 and 10402
+            >>>      # to vary mass values during optimization
+            >>>      fea_assembler.assignMassDV("engine_mass", 10401)
+            >>>      fea_assembler.assignMassDV("fuel_mass", 10402)
+        element_callback:
+            >>>  def elem_callback(dv_num, comp_id, comp_descript, elem_descripts, special_dvs, **kwargs):
+            >>>      # Material properties
+            >>>      rho = 2500.0        # density kg/m^3
+            >>>      E = 70e9            # Young's modulus (Pa)
+            >>>      nu = 0.3            # Poisson's ratio
+            >>>      ys = 464.0e6        # yield stress
+            >>>
+            >>>      # Plate geometry
+            >>>      tplate = 0.005    # 5 mm
+            >>>
+            >>>      # Set up material properties
+            >>>      prop = constitutive.MaterialProperties(rho=rho, E=E, nu=nu, ys=ys)
+            >>>      # Set up constitutive model
+            >>>      con = constitutive.IsoShellConstitutive(prop, t=tplate, tNum=dv_num)
+            >>>      # Set the transform used to define shell stresses, None defaults to NaturalShellTransform
+            >>>      transform = None
+            >>>      # Set up tacs element for every entry in elem_descripts
+            >>>      # According to the bdf file, elem_descripts should always be ["CQUAD4"]
+            >>>      elem_list = []
+            >>>      for descript in elem_descripts:
+            >>>          if descript == 'CQUAD4':
+            >>>              elem = elements.Quad4Shell(transform, con)
+            >>>          else: # Add a catch for any unexpected element types
+            >>>              raise ValueError(f"Unexpected element of type {descript}.")
+            >>>      return elem_list
+        problem_setup:
+            >>> def problem_setup(scenario_name, fea_assembler, problem):
+            >>>     # Set scenario to its own output directory
+            >>>     problem.setOption('outputDir', scenario_name)
+            >>>
+            >>>     # Only include mass from elements that belong to pytacs components (i.e. skip concentrated masses)
+            >>>     comp_ids = fea_assembler.selectCompIDs(nGroup=-1)
+            >>>     problem.addFunction('struct_mass', functions.StructuralMass, comp_ids=comp_ids)
+            >>>     problem.addFunction('ks_vmfailure', functions.KSFailure,
+            >>>                         safetyFactor=1.5, ksWeight=100.0)
+            >>>
+            >>>     # load factor
+            >>>     if scenario_name == "maneuver_2_5g":
+            >>>       n = 2.5
+            >>>     elif scenario_name == "maneuver_m1g":
+            >>>       n = -1.0
+            >>>     else:
+            >>>       n = 1.0
+            >>>     # Add gravity load
+            >>>     g = n * np.array([0.0, 0.0, -9.81])  # m/s^2
+            >>>     problem.addInertialLoad(g)
+
+        constraint_setup:
+            >>> def constraint_setup(scenario_name, fea_assembler, constraints):
+            >>>     # Add constraint on enclosed volume of structure
+            >>>     constr = fea_assembler.createVolumeConstraint("constraints")
+            >>>     constr.addConstraint("volume")
+            >>>     constraints.append(constr)
+
+        buckling_setup:
+            >>> def buckling_setup(scenario_name, fea_assembler):
+            >>>     # Add buckling analysis only to 2.5g maneuver scenario
+            >>>     if scenario_name == "maneuver_2_5g":
+            >>>         problem = fea_assembler.createBucklingProblem(
+            >>>             "buckling", sigma=1.0, numEigs=2
+            >>>         )
+            >>>         problem.setOption("L2Convergence", 1e-20)
+            >>>         problem.setOption("L2ConvergenceRel", 1e-20)
+            >>>         return problem
+
+        """
+        if isinstance(mesh_file, dict):
+            warnings.warn(
+                "The signature for TacsBuilder has changed. Arguments such as 'mesh_file' must be passed directly as "
+                "arguments to TacsBuilder. Please see the TacsBuilder docstring for more info. This will become an "
+                "error in tacs 3.7.0",
+                DeprecationWarning,
+            )
+            options = mesh_file
+            # Make deep copy of dict so we can modify it
+            pytacs_options = copy.deepcopy(options)
+            mesh_file = pytacs_options.pop("mesh_file")
+
+            # Load optional user-defined callback function for setting up tacs elements
+            if "assembler_setup" in pytacs_options:
+                assembler_setup = pytacs_options.pop("assembler_setup")
+
+            # Load optional user-defined callback function for setting up tacs elements
+            if "element_callback" in pytacs_options:
+                element_callback = pytacs_options.pop("element_callback")
+
+            # Load optional user-defined callback function for setting up tacs elements
+            if "problem_setup" in pytacs_options:
+                problem_setup = pytacs_options.pop("problem_setup")
+
+            # Load optional user-defined callback function for setting up constraints
+            if "constraint_setup" in pytacs_options:
+                constraint_setup = pytacs_options.pop("constraint_setup")
+
+            # Load optional user-defined callback function for setting up buckling problem
+            if "buckling_setup" in pytacs_options:
+                buckling_setup = pytacs_options.pop("buckling_setup")
+
+        self.mesh_file = mesh_file
+        self.assembler_setup = assembler_setup
+        self.element_callback = element_callback
+        self.problem_setup = problem_setup
+        self.constraint_setup = constraint_setup
+        self.buckling_setup = buckling_setup
+        self.pytacs_options = pytacs_options
         self.check_partials = check_partials
-        # Flag to switch to tacs conduction solver (False->structural)
         self.conduction = conduction
-        # Flag to turn on f5 file writer
-        self.write_solution = write_solution
-        # Flag to turn on coupling variables
         self.coupled = coupled
-        # Flag to separate point mass dvs from struct dvs in openmdao input array
+        self.write_solution = write_solution
         self.separate_mass_dvs = separate_mass_dvs
 
     def initialize(self, comm):
-        pytacs_options = copy.deepcopy(self.options)
-        bdf_file = pytacs_options.pop("mesh_file")
-
-        # Load optional user-defined callback function for setting up tacs elements
-        if "assembler_setup" in pytacs_options:
-            assembler_setup = pytacs_options.pop("assembler_setup")
-        else:
-            assembler_setup = None
-
-        # Load optional user-defined callback function for setting up tacs elements
-        if "element_callback" in pytacs_options:
-            element_callback = pytacs_options.pop("element_callback")
-        else:
-            element_callback = None
-
-        # Load optional user-defined callback function for setting up tacs elements
-        if "problem_setup" in pytacs_options:
-            self.problem_setup = pytacs_options.pop("problem_setup")
-        else:
-            self.problem_setup = None
-
-        # Load optional user-defined callback function for setting up constraints
-        if "constraint_setup" in pytacs_options:
-            self.constraint_setup = pytacs_options.pop("constraint_setup")
-        else:
-            self.constraint_setup = None
-
-        # Load optional user-defined callback function for setting up buckling problem
-        if "buckling_setup" in pytacs_options:
-            self.buckling_setup = pytacs_options.pop("buckling_setup")
-        else:
-            self.buckling_setup = None
-
         # Create pytacs instance
-        self.fea_assembler = pyTACS(bdf_file, options=pytacs_options, comm=comm)
+        self.fea_assembler = pyTACS(
+            self.mesh_file, options=self.pytacs_options, comm=comm
+        )
         self.comm = comm
 
         # Do any pre-initialize setup requested by user
-        if assembler_setup is not None:
-            assembler_setup(self.fea_assembler)
+        if self.assembler_setup is not None:
+            self.assembler_setup(self.fea_assembler)
 
         # Set up elements and TACS assembler
-        self.fea_assembler.initialize(element_callback)
+        self.fea_assembler.initialize(self.element_callback)
 
     def get_coupling_group_subsystem(self, scenario_name=None):
         return TacsCouplingGroup(
@@ -197,7 +365,9 @@ class TacsBuilder(Builder):
         else:
             tagged_comps = self.fea_assembler.selectCompIDs(include=tags)
             # Select local node IDs for tags
-            masked_local_nodes = self.fea_assembler.getLocalNodeIDsForComps(tagged_comps)
+            masked_local_nodes = self.fea_assembler.getLocalNodeIDsForComps(
+                tagged_comps
+            )
 
         # Select local node IDs and multiplier node IDs
         local_mnodes = self.fea_assembler.getLocalMultiplierNodeIDs()
