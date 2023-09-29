@@ -4,11 +4,11 @@ import warnings
 from mphys.builder import Builder
 import numpy as np
 
-from .. import pyTACS
-from .mesh import TacsMeshGroup
-from .precoupling import TacsPrecouplingGroup
-from .coupling import TacsCouplingGroup
-from .postcoupling import TacsPostcouplingGroup
+from tacs.pytacs import pyTACS
+from tacs.mphys.mesh import TacsMeshGroup
+from tacs.mphys.precoupling import TacsPrecouplingGroup
+from tacs.mphys.coupling import TacsCouplingGroup
+from tacs.mphys.postcoupling import TacsPostcouplingGroup
 
 
 class TacsBuilder(Builder):
