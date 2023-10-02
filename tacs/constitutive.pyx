@@ -215,6 +215,14 @@ cdef class MaterialProperties:
         cdef TacsScalar kappa2 = 230.0
         cdef TacsScalar kappa3 = 230.0
 
+        ISOTROPIC_KEYS = ["rho", "E", "nu", "G", "ys", "alpha", "specific_heat", "kappa"]
+
+        # Check if any input provided in kwargs was orthotropic
+        if any(input_key not in ISOTROPIC_KEYS for input_key in kwargs):
+            is_orthotropic = True
+        else:
+            is_orthotropic = False
+
         if 'rho' in kwargs:
             rho = kwargs['rho']
         if 'specific_heat' in kwargs:
@@ -313,7 +321,7 @@ cdef class MaterialProperties:
         if 'kappa3' in kwargs:
             kappa3 = kwargs['kappa3']
 
-        if 'E1' in kwargs:
+        if is_orthotropic:
             self.ptr = new TACSMaterialProperties(rho, specific_heat, E1, E2, E3,
                                                   nu12, nu13, nu23, G12, G13, G23,
                                                   T1, C1, T2, C2, T3, C3, S12, S13, S23,
