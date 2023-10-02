@@ -28,7 +28,8 @@ class TACSCompositeShellConstitutive : public TACSShellConstitutive {
                                  TACSOrthotropicPly **_ply_props,
                                  const TacsScalar *_ply_thickness,
                                  const TacsScalar *_ply_angles,
-                                 TacsScalar _kcorr = 5.0 / 6.0);
+                                 TacsScalar _kcorr = 5.0 / 6.0,
+                                 TacsScalar _tOffset = 0.0);
   ~TACSCompositeShellConstitutive();
 
   // Evaluate the material density
@@ -78,13 +79,14 @@ class TACSCompositeShellConstitutive : public TACSShellConstitutive {
   // Get ply angles and thicknesses
   void getPlyThicknesses(TacsScalar *_ply_thickness);
   void getPlyAngles(TacsScalar *_ply_angles);
+  TacsScalar getThicknessOffset();
 
  private:
   // Store information about the design variable
   int num_plies;
   TACSOrthotropicPly **ply_props;
   TacsScalar *ply_thickness, *ply_angles;
-  TacsScalar kcorr;
+  TacsScalar kcorr, tOffset;
 
   // The object name
   static const char *constName;

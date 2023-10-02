@@ -52,7 +52,7 @@ class ConstitutiveTest(unittest.TestCase):
 
         # Create stiffness (need class)
         self.con = constitutive.IsoRectangleBeamConstitutive(
-            self.props, t=t, tNum=tNum, w=w, wNum=wNum
+            self.props, t=t, tNum=tNum, w=w, wNum=wNum, wOffset=0.5, tOffset=-0.5
         )
 
         # Seed random number generator in tacs for consistent test results

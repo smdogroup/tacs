@@ -6,10 +6,10 @@ from pytacs_analysis_base_test import PyTACSTestCase
 from tacs import pytacs, elements, constitutive, functions
 
 """
+This is the same geometry as `test_shell_plate_quad.py`, but the plate is offset 
+in the z direction, so that the shell plane no longer aligns with the nodes of the model.
 Tests a smeared laminate shell model with the following layup: [0, 45, 30].
-Two load cases are tested: an in-plane tension and out-of-plane shear.
-This test is identical to test_shell_comp_unbalanced.py except since the laminate 
-is smeared all stacking sequence dependence is neglected.
+Agravity load in the x direction is applied.
 tests KSDisplacement, KSFailure, StructuralMass, CenterOfMass, MomentOfInertia, and Compliance functions
 and sensitivities.
 We also test a ply fraction summation constraint using the DVConstraint class.
@@ -25,36 +25,36 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
     N_PROCS = 2  # this is how many MPI processes to use for this TestCase.
 
     FUNC_REFS = {
-        "Tension_I_xx": 0.3875000544921874,
-        "Tension_I_xy": 5.551115123125783e-17,
-        "Tension_I_xz": 0.0,
-        "Tension_I_yy": 0.02421880449218751,
-        "Tension_I_yz": 0.0,
-        "Tension_I_zz": 0.4117187499999999,
-        "Tension_cgx": 0.25000000000000006,
-        "Tension_cgy": 1.0000000000000002,
-        "Tension_cgz": 0.0,
-        "Tension_compliance": 8433.69262638969,
-        "Tension_ks_TsaiWufailure": 4.35234046725213,
-        "Tension_mass": 1.1624999999999999,
-        "Tension_x_disp": 0.04604283873354243,
-        "Tension_y_disp": -0.014684823847867035,
-        "Tension_z_disp": 0.0,
-        "VertShear_I_xx": 0.3875000544921874,
-        "VertShear_I_xy": 5.551115123125783e-17,
-        "VertShear_I_xz": 0.0,
-        "VertShear_I_yy": 0.02421880449218751,
-        "VertShear_I_yz": 0.0,
-        "VertShear_I_zz": 0.4117187499999999,
-        "VertShear_cgx": 0.25000000000000006,
-        "VertShear_cgy": 1.0000000000000002,
-        "VertShear_cgz": 0.0,
-        "VertShear_compliance": 0.00010817284888043632,
-        "VertShear_ks_TsaiWufailure": 0.22626387488408603,
-        "VertShear_mass": 1.1624999999999999,
-        "VertShear_x_disp": 0.0,
-        "VertShear_y_disp": 0.0,
-        "VertShear_z_disp": 0.0054598659927803965,
+        "gravity_I_xx": 0.38750005449218716,
+        "gravity_I_xy": 5.551115123125783e-17,
+        "gravity_I_xz": -2.710505431213761e-20,
+        "gravity_I_yy": 0.02421880449218755,
+        "gravity_I_yz": -2.168404344971009e-19,
+        "gravity_I_zz": 0.4117187499999999,
+        "gravity_cgx": 0.25000000000000006,
+        "gravity_cgy": 1.0000000000000002,
+        "gravity_cgz": -0.00037500000000000006,
+        "gravity_compliance": 3.4205235434811567e-06,
+        "gravity_ks_TsaiWufailure": 0.2259320352899525,
+        "gravity_mass": 1.1624999999999999,
+        "gravity_x_disp": 1.625976981601372e-06,
+        "gravity_y_disp": -1.2736463024905141e-07,
+        "gravity_z_disp": -0.000920864663486706,
+        "centrifugal_I_xx": 0.38750005449218716,
+        "centrifugal_I_xy": 5.551115123125783e-17,
+        "centrifugal_I_xz": -2.710505431213761e-20,
+        "centrifugal_I_yy": 0.02421880449218755,
+        "centrifugal_I_yz": -2.168404344971009e-19,
+        "centrifugal_I_zz": 0.4117187499999999,
+        "centrifugal_cgx": 0.25000000000000006,
+        "centrifugal_cgy": 1.0000000000000002,
+        "centrifugal_cgz": -0.00037500000000000006,
+        "centrifugal_compliance": 0.23430251098271168,
+        "centrifugal_ks_TsaiWufailure": 0.24632761512178053,
+        "centrifugal_mass": 1.1624999999999999,
+        "centrifugal_x_disp": 0.0001570586015183079,
+        "centrifugal_y_disp": 8.748943337216315e-05,
+        "centrifugal_z_disp": 0.0966983775511979,
     }
 
     def setup_tacs_problems(self, comm):
@@ -137,6 +137,7 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
                 ply_fractions,
                 thickness_dv_num=thickness_dv_num,
                 ply_fraction_dv_nums=ply_fraction_dv_nums,
+                t_offset=0.5,
             )
 
             # For each element type in this component,
@@ -157,16 +158,21 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
         fea_assembler.initialize(elemCallBack)
 
         # Read in forces from BDF and create tacs struct problems
-        tacs_probs = fea_assembler.createTACSProbsFromBDF()
-        # Convert from dict to list
-        tacs_probs = tacs_probs.values()
+        grav_prob = fea_assembler.createStaticProblem("gravity")
+        grav_prob.addInertialLoad(1000 * [9.81, 0.0, 0.0])
+
+        rot_prob = fea_assembler.createStaticProblem("centrifugal")
+        rot_prob.addCentrifugalLoad([10.0, 3.0, 5.0], [0.25, 1.0, -0.000375])
+
+        probs = [grav_prob, rot_prob]
+
         # Set convergence to be tight for test
-        for problem in tacs_probs:
-            problem.setOption("L2Convergence", 1e-20)
-            problem.setOption("L2ConvergenceRel", 1e-20)
+        for problem in probs:
+            problem.setOption("L2Convergence", 1e-15)
+            problem.setOption("L2ConvergenceRel", 1e-15)
 
         # Add Functions
-        for problem in tacs_probs:
+        for problem in probs:
             problem.addFunction("mass", functions.StructuralMass)
             problem.addFunction("compliance", functions.Compliance)
             problem.addFunction(
@@ -245,6 +251,4 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
                 aboutCM=True,
             )
 
-        tacs_probs = list(tacs_probs)
-
-        return tacs_probs, fea_assembler
+        return probs, fea_assembler
