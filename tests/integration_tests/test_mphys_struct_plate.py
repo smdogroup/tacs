@@ -111,15 +111,11 @@ class ProblemTest(OpenMDAOTestCase.OpenMDAOTest):
 
         class Top(Multipoint):
             def setup(self):
-                tacs_options = {
-                    "element_callback": element_callback,
-                    "problem_setup": problem_setup,
-                    "constraint_setup": constraint_setup,
-                    "mesh_file": bdf_file,
-                }
-
                 tacs_builder = tacs.mphys.TacsBuilder(
-                    tacs_options,
+                    mesh_file=bdf_file,
+                    element_callback=element_callback,
+                    problem_setup=problem_setup,
+                    constraint_setup=constraint_setup,
                     check_partials=True,
                     coupled=True,
                     write_solution=False,
