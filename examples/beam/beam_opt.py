@@ -81,14 +81,14 @@ def problem_setup(scenario_name, fea_assembler, problem):
 
 class Top(Multipoint):
     def setup(self):
-        tacs_options = {
-            "element_callback": element_callback,
-            "problem_setup": problem_setup,
-            "mesh_file": bdf_file,
-        }
-
         # Initialize MPHYS builder for TACS
-        struct_builder = TacsBuilder(tacs_options, coupled=False, write_solution=False)
+        struct_builder = TacsBuilder(
+            mesh_file=bdf_file,
+            element_callback=element_callback,
+            problem_setup=problem_setup,
+            coupled=False,
+            write_solution=False,
+        )
         struct_builder.initialize(self.comm)
         dv_array = struct_builder.get_initial_dvs()
 

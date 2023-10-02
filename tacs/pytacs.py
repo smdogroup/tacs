@@ -158,13 +158,13 @@ class pyTACS(BaseUI):
         ],
     }
 
-    def __init__(self, fileName, comm=None, dvNum=0, scaleList=None, options=None):
+    def __init__(self, bdf, comm=None, dvNum=0, scaleList=None, options=None):
         """
 
         Parameters
         ----------
-        fileName : str
-            The filename of the BDF file to load.
+        bdf : str or pyNastran.bdf.bdf.BDF
+            The BDF file or a pyNastran BDF object to load.
 
         comm : mpi4py.MPI.Intracomm
             The comm object on which to create the pyTACS object.
@@ -194,10 +194,10 @@ class pyTACS(BaseUI):
         # Create and load mesh loader object.
         debugFlag = self.getOption("printDebug")
         self.meshLoader = pyMeshLoader(self.comm, debugFlag)
-        self.meshLoader.scanBdfFile(fileName)
-        self.bdfName = fileName
+        self.meshLoader.scanBdfFile(bdf)
         # Save pynastran bdf object
         self.bdfInfo = self.meshLoader.getBDFInfo()
+        self.bdfName = self.bdfInfo.bdf_filename
 
         meshLoadTime = time.time()
 

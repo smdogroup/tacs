@@ -10,10 +10,11 @@ functionality.
 # =============================================================================
 # Imports
 # =============================================================================
+from copy import deepcopy
 import itertools as it
 
 import numpy as np
-from pyNastran.bdf.bdf import read_bdf
+import pyNastran.bdf.bdf as pn
 
 import tacs.TACS
 import tacs.constitutive
@@ -29,10 +30,10 @@ class pyMeshLoader(BaseUI):
         self.printDebug = printDebug
         self.bdfInfo = None
 
-    def scanBdfFile(self, fileName):
+    def scanBdfFile(self, bdf):
         """
         Scan nastran bdf file using pyNastran's bdf parser.
-        We also set up arrays that will be require later to build tacs.
+        We also set up arrays that will be required later to build tacs.
         """
 
         # Only print debug info on root, if requested
@@ -41,10 +42,20 @@ class pyMeshLoader(BaseUI):
         else:
             debugPrint = False
 
-        # Read in bdf file as pynastran object
-        # By default we avoid cross-referencing unless we actually need it,
-        # since its expensive for large models
-        self.bdfInfo = read_bdf(fileName, validate=False, xref=False, debug=debugPrint)
+        # Check if a file name was provided
+        # Create a BDF object from the file
+        if isinstance(bdf, str):
+            # Read in bdf file as pynastran object
+            # By default we avoid cross-referencing unless we actually need it,
+            # since its expensive for large models
+            self.bdfInfo = pn.read_bdf(bdf, validate=False, xref=False, debug=debugPrint)
+        # Create a copy of the BDF object
+        elif isinstance(bdf, pn.BDF):
+            self.bdfInfo = deepcopy(bdf)
+        else:
+            raise self._TACSError("BDF input must be provided as a file name 'str' or pyNastran 'BDF' object. "
+                                  f"Provided input was of type '{type(bdf).__name__}'.")
+
         # Set flag letting us know model is not xrefed yet
         self.bdfInfo.is_xrefed = False
 
