@@ -1029,17 +1029,21 @@
                 <span class="n">plyThicknesses</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">plyThicknesses</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
                 <span class="n">plyAngles</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">plyAngles</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
 
+                <span class="c1"># Get the total laminate thickness</span>
+                <span class="n">lamThickness</span> <span class="o">=</span> <span class="n">propInfo</span><span class="o">.</span><span class="n">Thickness</span><span class="p">()</span>
+                <span class="c1"># Get the offset distance from the ref plane to the midplane</span>
+                <span class="n">tOffset</span> <span class="o">=</span> <span class="o">-</span><span class="p">(</span><span class="n">propInfo</span><span class="o">.</span><span class="n">z0</span> <span class="o">/</span> <span class="n">lamThickness</span> <span class="o">+</span> <span class="mf">0.5</span><span class="p">)</span>
+
                 <span class="k">if</span> <span class="n">propInfo</span><span class="o">.</span><span class="n">lam</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">propInfo</span><span class="o">.</span><span class="n">lam</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;SYM&quot;</span><span class="p">,</span> <span class="s2">&quot;MEM&quot;</span><span class="p">]:</span>
                     <span class="c1"># Discrete laminate class (not for optimization)</span>
                     <span class="n">con</span> <span class="o">=</span> <span class="n">tacs</span><span class="o">.</span><span class="n">constitutive</span><span class="o">.</span><span class="n">CompositeShellConstitutive</span><span class="p">(</span>
-                        <span class="n">plyMats</span><span class="p">,</span> <span class="n">plyThicknesses</span><span class="p">,</span> <span class="n">plyAngles</span>
+                        <span class="n">plyMats</span><span class="p">,</span> <span class="n">plyThicknesses</span><span class="p">,</span> <span class="n">plyAngles</span><span class="p">,</span> <span class="n">tOffset</span><span class="o">=</span><span class="n">tOffset</span>
                     <span class="p">)</span>
 
                 <span class="k">elif</span> <span class="n">propInfo</span><span class="o">.</span><span class="n">lam</span> <span class="o">==</span> <span class="s2">&quot;SMEAR&quot;</span><span class="p">:</span>
-                    <span class="n">lamThickness</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">plyThicknesses</span><span class="p">)</span>
                     <span class="n">plyFractions</span> <span class="o">=</span> <span class="n">plyThicknesses</span> <span class="o">/</span> <span class="n">lamThickness</span>
                     <span class="n">con</span> <span class="o">=</span> <span class="n">tacs</span><span class="o">.</span><span class="n">constitutive</span><span class="o">.</span><span class="n">SmearedCompositeShellConstitutive</span><span class="p">(</span>
-                        <span class="n">plyMats</span><span class="p">,</span> <span class="n">lamThickness</span><span class="p">,</span> <span class="n">plyAngles</span><span class="p">,</span> <span class="n">plyFractions</span>
+                        <span class="n">plyMats</span><span class="p">,</span> <span class="n">lamThickness</span><span class="p">,</span> <span class="n">plyAngles</span><span class="p">,</span> <span class="n">plyFractions</span><span class="p">,</span> <span class="n">t_offset</span><span class="o">=</span><span class="n">tOffset</span>
                     <span class="p">)</span>
 
                 <span class="c1"># Need to add functionality to consider only membrane in TACS for type = MEM</span>
@@ -1079,7 +1083,8 @@
                 <span class="n">area</span> <span class="o">=</span> <span class="n">propInfo</span><span class="o">.</span><span class="n">A</span>
                 <span class="n">I1</span> <span class="o">=</span> <span class="n">propInfo</span><span class="o">.</span><span class="n">i1</span>
                 <span class="n">I2</span> <span class="o">=</span> <span class="n">propInfo</span><span class="o">.</span><span class="n">i2</span>
-                <span class="n">I12</span> <span class="o">=</span> <span class="n">propInfo</span><span class="o">.</span><span class="n">i12</span>
+                <span class="c1"># Nastran uses negative convention for POI&#39;s</span>
+                <span class="n">I12</span> <span class="o">=</span> <span class="o">-</span><span class="n">propInfo</span><span class="o">.</span><span class="n">i12</span>
                 <span class="n">J</span> <span class="o">=</span> <span class="n">propInfo</span><span class="o">.</span><span class="n">j</span>
                 <span class="n">k1</span> <span class="o">=</span> <span class="n">propInfo</span><span class="o">.</span><span class="n">k1</span>
                 <span class="n">k2</span> <span class="o">=</span> <span class="n">propInfo</span><span class="o">.</span><span class="n">k2</span>
