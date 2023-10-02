@@ -47,7 +47,7 @@ class ConstitutiveTest(unittest.TestCase):
             E=E,
             nu=nu,
             ys=ys,
-            cte=cte,
+            alpha=cte,
             kappa=kappa,
         )
         iso_ply = constitutive.OrthotropicPly(ply_thickness, iso_prop)
@@ -82,7 +82,7 @@ class ConstitutiveTest(unittest.TestCase):
             Yt=Yt,
             Yc=Yc,
             S12=S12,
-            cte=cte,
+            alpha=cte,
             kappa=kappa,
         )
         ortho_ply = constitutive.OrthotropicPly(ply_thickness, ortho_prop)
@@ -91,6 +91,8 @@ class ConstitutiveTest(unittest.TestCase):
         self.layup_list = [iso_layup, ortho_layup]
         self.ply_thicknesses = np.array([ply_thickness] * nplies, dtype=self.dtype)
         self.ply_angles = np.array([0.0, -45.0, 90.0], dtype=self.dtype) * DEG2RAD
+        # Distance between mid-plane and reference plane (nodes) of shell
+        self.tOffset = 0.5 # This places the nodes at the top ply
 
         # Seed random number generator in tacs for consistent test results
         elements.SeedRandomGenerator(0)
@@ -100,7 +102,7 @@ class ConstitutiveTest(unittest.TestCase):
         for layup in self.layup_list:
             with self.subTest(layup=layup):
                 con = constitutive.CompositeShellConstitutive(
-                    layup, self.ply_thicknesses, self.ply_angles
+                    layup, self.ply_thicknesses, self.ply_angles, tOffset=self.tOffset,
                 )
                 fail = constitutive.TestConstitutiveDensity(
                     con,
@@ -120,7 +122,7 @@ class ConstitutiveTest(unittest.TestCase):
         for layup in self.layup_list:
             with self.subTest(layup=layup):
                 con = constitutive.CompositeShellConstitutive(
-                    layup, self.ply_thicknesses, self.ply_angles
+                    layup, self.ply_thicknesses, self.ply_angles, tOffset=self.tOffset,
                 )
                 fail = constitutive.TestConstitutiveSpecificHeat(
                     con,
@@ -140,7 +142,7 @@ class ConstitutiveTest(unittest.TestCase):
         for layup in self.layup_list:
             with self.subTest(layup=layup):
                 con = constitutive.CompositeShellConstitutive(
-                    layup, self.ply_thicknesses, self.ply_angles
+                    layup, self.ply_thicknesses, self.ply_angles, tOffset=self.tOffset,
                 )
                 fail = constitutive.TestConstitutiveHeatFlux(
                     con,
@@ -160,7 +162,7 @@ class ConstitutiveTest(unittest.TestCase):
         for layup in self.layup_list:
             with self.subTest(layup=layup):
                 con = constitutive.CompositeShellConstitutive(
-                    layup, self.ply_thicknesses, self.ply_angles
+                    layup, self.ply_thicknesses, self.ply_angles, tOffset=self.tOffset,
                 )
                 fail = constitutive.TestConstitutiveStress(
                     con,
@@ -180,7 +182,7 @@ class ConstitutiveTest(unittest.TestCase):
         for layup in self.layup_list:
             with self.subTest(layup=layup):
                 con = constitutive.CompositeShellConstitutive(
-                    layup, self.ply_thicknesses, self.ply_angles
+                    layup, self.ply_thicknesses, self.ply_angles, tOffset=self.tOffset,
                 )
                 fail = constitutive.TestConstitutiveThermalStrain(
                     con,
@@ -200,7 +202,7 @@ class ConstitutiveTest(unittest.TestCase):
         for layup in self.layup_list:
             with self.subTest(layup=layup):
                 con = constitutive.CompositeShellConstitutive(
-                    layup, self.ply_thicknesses, self.ply_angles
+                    layup, self.ply_thicknesses, self.ply_angles, tOffset=self.tOffset,
                 )
                 fail = constitutive.TestConstitutiveFailure(
                     con,
@@ -219,7 +221,7 @@ class ConstitutiveTest(unittest.TestCase):
         for layup in self.layup_list:
             with self.subTest(layup=layup):
                 con = constitutive.CompositeShellConstitutive(
-                    layup, self.ply_thicknesses, self.ply_angles
+                    layup, self.ply_thicknesses, self.ply_angles, tOffset=self.tOffset,
                 )
                 fail = constitutive.TestConstitutiveFailureStrainSens(
                     con,

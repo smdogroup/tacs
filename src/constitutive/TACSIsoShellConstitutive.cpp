@@ -27,7 +27,7 @@ const char *TACSIsoShellConstitutive::constName = "TACSIsoShellConstitutive";
 */
 TACSIsoShellConstitutive::TACSIsoShellConstitutive(
     TACSMaterialProperties *props, TacsScalar _t, int _tNum, TacsScalar _tlb,
-    TacsScalar _tub) {
+    TacsScalar _tub, TacsScalar _tOffset) {
   properties = props;
   if (properties) {
     properties->incref();
@@ -37,6 +37,7 @@ TACSIsoShellConstitutive::TACSIsoShellConstitutive(
   tNum = _tNum;
   tlb = _tlb;
   tub = _tub;
+  tOffset = _tOffset;
   kcorr = 5.0 / 6.0;
   ksWeight = 100.0;
 }
@@ -122,8 +123,8 @@ void TACSIsoShellConstitutive::evalMassMoments(int elemIndex, const double pt[],
   if (properties) {
     TacsScalar rho = properties->getDensity();
     moments[0] = rho * t;
-    moments[1] = 0.0;
-    moments[2] = rho * t * t * t / 12.0;
+    moments[1] = -rho * t * t * tOffset;
+    moments[2] = rho * t * t * t * (tOffset * tOffset + 1.0 / 12.0);
   }
 }
 
@@ -133,7 +134,8 @@ void TACSIsoShellConstitutive::addMassMomentsDVSens(
     const TacsScalar scale[], int dvLen, TacsScalar dfdx[]) {
   if (properties && tNum >= 0) {
     TacsScalar rho = properties->getDensity();
-    dfdx[0] += rho * (scale[0] + 0.25 * t * t * scale[2]);
+    dfdx[0] += rho * (scale[0] - 2.0 * tOffset * t * scale[1] +
+                      (3.0 * tOffset * tOffset + 0.25) * t * t * scale[2]);
   }
 }
 
@@ -147,7 +149,7 @@ TacsScalar TACSIsoShellConstitutive::evalSpecificHeat(int elemIndex,
   return 0.0;
 }
 
-// Evaluate the stresss
+// Evaluate the stress
 void TACSIsoShellConstitutive::evalStress(int elemIndex, const double pt[],
                                           const TacsScalar X[],
                                           const TacsScalar e[],
@@ -167,6 +169,8 @@ void TACSIsoShellConstitutive::evalStress(int elemIndex, const double pt[],
     for (int i = 0; i < 6; i++) {
       D[i] = I * A[i];
       A[i] *= t;
+      B[i] += -tOffset * t * A[i];
+      D[i] += tOffset * tOffset * t * t * A[i];
     }
 
     // Set the through-thickness shear stiffness
@@ -207,6 +211,8 @@ void TACSIsoShellConstitutive::evalTangentStiffness(int elemIndex,
     for (int i = 0; i < 6; i++) {
       D[i] = I * A[i];
       A[i] *= t;
+      B[i] += -tOffset * t * A[i];
+      D[i] += tOffset * tOffset * t * t * A[i];
     }
 
     // Set the through-thickness shear stiffness
@@ -231,13 +237,16 @@ void TACSIsoShellConstitutive::addStressDVSens(int elemIndex, TacsScalar scale,
     TacsScalar A[6];
     properties->evalTangentStiffness2D(A);
 
-    TacsScalar dI = t * t / 4.0;
+    TacsScalar dI = (3.0 * tOffset * tOffset + 0.25) * t * t;
 
-    dfdx[0] += scale * (mat3x3SymmInner(A, &psi[0], &e[0]) +
-                        dI * mat3x3SymmInner(A, &psi[3], &e[3]) +
-                        (5.0 / 6.0) * A[5] *
-                            (psi[6] * e[6] + psi[7] * e[7] +
-                             DRILLING_REGULARIZATION * psi[8] * e[8]));
+    dfdx[0] +=
+        scale * (mat3x3SymmInner(A, &psi[0], &e[0]) +
+                 dI * mat3x3SymmInner(A, &psi[3], &e[3]) +
+                 -2.0 * tOffset * t * mat3x3SymmInner(A, &psi[0], &e[3]) +
+                 -2.0 * tOffset * t * mat3x3SymmInner(A, &psi[3], &e[0]) +
+                 (5.0 / 6.0) * A[5] *
+                     (psi[6] * e[6] + psi[7] * e[7] +
+                      DRILLING_REGULARIZATION * psi[8] * e[8]));
   }
 }
 
@@ -248,15 +257,16 @@ TacsScalar TACSIsoShellConstitutive::evalFailure(int elemIndex,
                                                  const TacsScalar e[]) {
   if (properties) {
     TacsScalar et[3], eb[3];
-    TacsScalar ht = 0.5 * t;
+    TacsScalar ht = (0.5 - tOffset) * t;
+    TacsScalar hb = -(0.5 + tOffset) * t;
 
     et[0] = e[0] + ht * e[3];
     et[1] = e[1] + ht * e[4];
     et[2] = e[2] + ht * e[5];
 
-    eb[0] = e[0] - ht * e[3];
-    eb[1] = e[1] - ht * e[4];
-    eb[2] = e[2] - ht * e[5];
+    eb[0] = e[0] + hb * e[3];
+    eb[1] = e[1] + hb * e[4];
+    eb[2] = e[2] + hb * e[5];
 
     TacsScalar C[6];
     properties->evalTangentStiffness2D(C);
@@ -298,15 +308,16 @@ TacsScalar TACSIsoShellConstitutive::evalFailureStrainSens(int elemIndex,
 
   if (properties) {
     TacsScalar et[3], eb[3];
-    TacsScalar ht = 0.5 * t;
+    TacsScalar ht = (0.5 - tOffset) * t;
+    TacsScalar hb = -(0.5 + tOffset) * t;
 
     et[0] = e[0] + ht * e[3];
     et[1] = e[1] + ht * e[4];
     et[2] = e[2] + ht * e[5];
 
-    eb[0] = e[0] - ht * e[3];
-    eb[1] = e[1] - ht * e[4];
-    eb[2] = e[2] - ht * e[5];
+    eb[0] = e[0] + hb * e[3];
+    eb[1] = e[1] + hb * e[4];
+    eb[2] = e[2] + hb * e[5];
 
     TacsScalar C[6];
     properties->evalTangentStiffness2D(C);
@@ -354,9 +365,9 @@ TacsScalar TACSIsoShellConstitutive::evalFailureStrainSens(int elemIndex,
     sens[1] += ksFactor * phi[1];
     sens[2] += ksFactor * phi[2];
 
-    sens[3] -= ksFactor * ht * phi[0];
-    sens[4] -= ksFactor * ht * phi[1];
-    sens[5] -= ksFactor * ht * phi[2];
+    sens[3] += ksFactor * hb * phi[0];
+    sens[4] += ksFactor * hb * phi[1];
+    sens[5] += ksFactor * hb * phi[2];
 
     sens[6] = sens[7] = sens[8] = 0.0;
 
@@ -374,15 +385,16 @@ void TACSIsoShellConstitutive::addFailureDVSens(int elemIndex, TacsScalar scale,
                                                 TacsScalar dfdx[]) {
   if (properties && tNum >= 0 && dvLen >= 1) {
     TacsScalar et[3], eb[3];
-    TacsScalar ht = 0.5 * t;
+    TacsScalar ht = (0.5 - tOffset) * t;
+    TacsScalar hb = -(0.5 + tOffset) * t;
 
     et[0] = e[0] + ht * e[3];
     et[1] = e[1] + ht * e[4];
     et[2] = e[2] + ht * e[5];
 
-    eb[0] = e[0] - ht * e[3];
-    eb[1] = e[1] - ht * e[4];
-    eb[2] = e[2] - ht * e[5];
+    eb[0] = e[0] + hb * e[3];
+    eb[1] = e[1] + hb * e[4];
+    eb[2] = e[2] + hb * e[5];
 
     TacsScalar C[6];
     properties->evalTangentStiffness2D(C);
@@ -410,14 +422,14 @@ void TACSIsoShellConstitutive::addFailureDVSens(int elemIndex, TacsScalar scale,
     properties->vonMisesFailure2DStressSens(st, psi);
     mat3x3SymmMult(C, psi, phi);
     TacsScalar ksFactor = exp(ksWeight * (top - ksMax)) / ksSum;
-    dfdx[0] += ksFactor * 0.5 * scale *
+    dfdx[0] += ksFactor * (0.5 - tOffset) * scale *
                (phi[0] * e[3] + phi[1] * e[4] + phi[2] * e[5]);
 
     // Contribution from plate bottom
     properties->vonMisesFailure2DStressSens(sb, psi);
     mat3x3SymmMult(C, psi, phi);
     ksFactor = exp(ksWeight * (bottom - ksMax)) / ksSum;
-    dfdx[0] -= ksFactor * 0.5 * scale *
+    dfdx[0] += ksFactor * -(0.5 + tOffset) * scale *
                (phi[0] * e[3] + phi[1] * e[4] + phi[2] * e[5]);
   }
 }

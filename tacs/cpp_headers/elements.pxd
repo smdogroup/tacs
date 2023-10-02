@@ -192,7 +192,7 @@ cdef extern from "TACSShellElementTransform.h":
         TACSShellRefAxisTransform(const TacsScalar*)
         void getRefAxis(TacsScalar*)
 
-cdef extern from "TACSBeamElement.h":
+cdef extern from "TACSBeamElementTransform.h":
     cdef cppclass TACSBeamTransform(TACSObject):
         pass
 

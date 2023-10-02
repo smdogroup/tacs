@@ -32,7 +32,8 @@ TACSSmearedCompositeShellConstitutive::TACSSmearedCompositeShellConstitutive(
     const TacsScalar *_ply_angles, const TacsScalar *_ply_fractions,
     int _thickness_dv_num, const int *_ply_fraction_dv_nums,
     TacsScalar _thickness_lb, TacsScalar _thickness_ub,
-    const TacsScalar *_ply_fraction_lb, const TacsScalar *_ply_fraction_ub) {
+    const TacsScalar *_ply_fraction_lb, const TacsScalar *_ply_fraction_ub,
+    TacsScalar _t_offset) {
   num_plies = _num_plies;
 
   thickness = _thickness;
@@ -76,6 +77,7 @@ TACSSmearedCompositeShellConstitutive::TACSSmearedCompositeShellConstitutive(
   }
 
   ks_weight = 100.0;
+  t_offset = _t_offset;
   nfvals = 2 * num_plies;
   fvals = new TacsScalar[nfvals];
   dks_vals = new TacsScalar[nfvals];
@@ -236,12 +238,15 @@ void TACSSmearedCompositeShellConstitutive::evalMassMoments(
   moments[2] = 0.0;
 
   // Compute the contribution to the mass moment from each layer
+  TacsScalar t2 = thickness * thickness;
+  TacsScalar t3 = t2 * thickness;
   for (int i = 0; i < num_plies; i++) {
     TacsScalar rho_ply = ply_props[i]->getDensity();
 
     moments[0] += thickness * rho_ply * ply_fractions[i];
+    moments[1] -= t_offset * t2 * rho_ply * ply_fractions[i];
     moments[2] +=
-        thickness * thickness * thickness * rho_ply * ply_fractions[i] / 12.0;
+        (t_offset * t_offset + 1.0 / 12.0) * t3 * rho_ply * ply_fractions[i];
   }
 }
 
@@ -254,8 +259,10 @@ void TACSSmearedCompositeShellConstitutive::addMassMomentsDVSens(
     for (int i = 0; i < num_plies; i++) {
       TacsScalar rho_ply = ply_props[i]->getDensity();
 
-      dfdx[index] +=
-          rho_ply * (scale[0] + 0.25 * thickness * thickness * scale[2]);
+      dfdx[index] += rho_ply * ply_fractions[i] *
+                     (scale[0] - 2.0 * t_offset * thickness * scale[1] +
+                      (3.0 * t_offset * t_offset + 0.25) * thickness *
+                          thickness * scale[2]);
     }
     index++;
   }
@@ -263,9 +270,10 @@ void TACSSmearedCompositeShellConstitutive::addMassMomentsDVSens(
     if (ply_fraction_dv_nums[i] >= 0) {
       TacsScalar rho_ply = ply_props[i]->getDensity();
 
-      dfdx[index] +=
-          rho_ply * (scale[0] * thickness +
-                     thickness * thickness * thickness * scale[2] / 12.0);
+      dfdx[index] += rho_ply * (scale[0] * thickness -
+                                t_offset * thickness * thickness * scale[1] +
+                                (t_offset * t_offset + 1.0 / 12.0) * thickness *
+                                    thickness * thickness * scale[2]);
       index++;
     }
   }
@@ -299,11 +307,13 @@ TacsScalar TACSSmearedCompositeShellConstitutive::evalFSDTStiffness(
     ply_props[k]->calculateAbar(ply_angles[k], Abar);
 
     TacsScalar a = ply_fractions[k] * thickness;
-    TacsScalar d =
-        1.0 / 12.0 * ply_fractions[k] * (thickness * thickness * thickness);
+    TacsScalar b = t_offset * ply_fractions[k] * thickness * thickness;
+    TacsScalar d = (t_offset * t_offset + 1.0 / 12.0) * ply_fractions[k] *
+                   (thickness * thickness * thickness);
 
     for (int i = 0; i < 6; i++) {
       A[i] += a * Qbar[i];
+      B[i] += -b * Qbar[i];
       D[i] += d * Qbar[i];
     }
 
@@ -335,7 +345,8 @@ void TACSSmearedCompositeShellConstitutive::addStressDVSens(
     int elemIndex, TacsScalar scale, const double pt[], const TacsScalar X[],
     const TacsScalar e[], const TacsScalar psi[], int dvLen,
     TacsScalar dfdx[]) {
-  TacsScalar dA[6] = {0.0}, dD[6] = {0.0}, dAs[3] = {0.0}, ddrill;
+  TacsScalar dA[6] = {0.0}, dB[6] = {0.0}, dD[6] = {0.0}, dAs[3] = {0.0},
+             ddrill;
 
   int index = 0;
   if (thickness_dv_num >= 0) {
@@ -345,10 +356,13 @@ void TACSSmearedCompositeShellConstitutive::addStressDVSens(
       ply_props[k]->calculateAbar(ply_angles[k], Abar);
 
       TacsScalar da = ply_fractions[k];
-      TacsScalar dd = 0.25 * ply_fractions[k] * (thickness * thickness);
+      TacsScalar db = 2.0 * t_offset * ply_fractions[k] * thickness;
+      TacsScalar dd = (3.0 * t_offset * t_offset + 0.25) * ply_fractions[k] *
+                      (thickness * thickness);
 
       for (int i = 0; i < 6; i++) {
         dA[i] += da * Qbar[i];
+        dB[i] += -db * Qbar[i];
         dD[i] += dd * Qbar[i];
       }
 
@@ -362,6 +376,8 @@ void TACSSmearedCompositeShellConstitutive::addStressDVSens(
     dfdx[index] +=
         scale * (mat3x3SymmInner(dA, &psi[0], &e[0]) +
                  mat3x3SymmInner(dD, &psi[3], &e[3]) +
+                 mat3x3SymmInner(dB, &psi[0], &e[3]) +
+                 mat3x3SymmInner(dB, &psi[3], &e[0]) +
                  mat2x2SymmInner(dAs, &psi[6], &e[6]) + ddrill * psi[8] * e[8]);
     index++;
   }
@@ -373,10 +389,13 @@ void TACSSmearedCompositeShellConstitutive::addStressDVSens(
       ply_props[k]->calculateAbar(ply_angles[k], Abar);
 
       TacsScalar da = thickness;
-      TacsScalar dd = 1.0 / 12.0 * (thickness * thickness * thickness);
+      TacsScalar db = t_offset * thickness * thickness;
+      TacsScalar dd = (t_offset * t_offset + 1.0 / 12.0) *
+                      (thickness * thickness * thickness);
 
       for (int i = 0; i < 6; i++) {
         dA[i] = da * Qbar[i];
+        dB[i] = -db * Qbar[i];
         dD[i] = dd * Qbar[i];
       }
 
@@ -388,6 +407,8 @@ void TACSSmearedCompositeShellConstitutive::addStressDVSens(
 
       dfdx[index] += scale * (mat3x3SymmInner(dA, &psi[0], &e[0]) +
                               mat3x3SymmInner(dD, &psi[3], &e[3]) +
+                              mat3x3SymmInner(dB, &psi[0], &e[3]) +
+                              mat3x3SymmInner(dB, &psi[3], &e[0]) +
                               mat2x2SymmInner(dAs, &psi[6], &e[6]) +
                               ddrill * psi[8] * e[8]);
       index++;
@@ -413,8 +434,8 @@ TacsScalar TACSSmearedCompositeShellConstitutive::evalFailure(
 void TACSSmearedCompositeShellConstitutive::evalPlyTopBottomFailure(
     const TacsScalar strain[], TacsScalar fvals[]) {
   // Compute the total thickness of the laminate
-  TacsScalar tb = -0.5 * thickness;
-  TacsScalar tt = 0.5 * thickness;
+  TacsScalar tb = (-0.5 - t_offset) * thickness;
+  TacsScalar tt = (0.5 - t_offset) * thickness;
 
   for (int i = 0; i < num_plies; i++) {
     TacsScalar lamStrain[3] = {0.0};
@@ -436,8 +457,8 @@ TacsScalar TACSSmearedCompositeShellConstitutive::evalFailureStrainSens(
   sens[6] = sens[7] = sens[8] = 0.0;
 
   // Compute the total thickness of the laminate
-  TacsScalar tb = -0.5 * thickness;
-  TacsScalar tt = 0.5 * thickness;
+  TacsScalar tb = (-0.5 - t_offset) * thickness;
+  TacsScalar tt = (0.5 - t_offset) * thickness;
 
   evalPlyTopBottomFailure(strain, fvals);
 
@@ -482,8 +503,8 @@ void TACSSmearedCompositeShellConstitutive::addFailureDVSens(
   int index = 0;
   if (thickness_dv_num >= 0 && dvLen >= 1) {
     // Compute the total thickness of the laminate
-    TacsScalar tb = -0.5 * thickness;
-    TacsScalar tt = 0.5 * thickness;
+    TacsScalar tb = (-0.5 - t_offset) * thickness;
+    TacsScalar tt = (0.5 - t_offset) * thickness;
 
     evalPlyTopBottomFailure(e, fvals);
     TacsScalar ks_val = ksAggregationSens(fvals, nfvals, ks_weight, dks_vals);
@@ -495,14 +516,14 @@ void TACSSmearedCompositeShellConstitutive::addFailureDVSens(
       getLaminaStrain(e, tb, lamStrain);
       TacsScalar fval_bot =
           ply_props[i]->failureStrainSens(ply_angles[i], lamStrain, phi);
-      dfdx[index] += -0.5 * scale * dks_vals[2 * i + 0] *
+      dfdx[index] += (-0.5 - t_offset) * scale * dks_vals[2 * i + 0] *
                      (phi[0] * e[3] + phi[1] * e[4] + phi[2] * e[5]);
 
       // plate top stress
       getLaminaStrain(e, tt, lamStrain);
       TacsScalar fval_top =
           ply_props[i]->failureStrainSens(ply_angles[i], lamStrain, phi);
-      dfdx[index] += 0.5 * scale * dks_vals[2 * i + 1] *
+      dfdx[index] += (0.5 - t_offset) * scale * dks_vals[2 * i + 1] *
                      (phi[0] * e[3] + phi[1] * e[4] + phi[2] * e[5]);
     }
 
@@ -586,4 +607,11 @@ void TACSSmearedCompositeShellConstitutive::getPlyFractions(
   for (int i = 0; i < num_plies; i++) {
     _ply_fractions[i] = ply_fractions[i];
   }
+}
+
+/*
+  Get thickness offset
+*/
+TacsScalar TACSSmearedCompositeShellConstitutive::getThicknessOffset() {
+  return t_offset;
 }
