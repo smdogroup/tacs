@@ -10,7 +10,7 @@ The cross-sectional properties of the beam are as follows:
     Iz = 0.2
     Iy = 0.3
     J = 0.4
-    Iyz = 0.1
+    Iyz = -0.1
 Because Iyz =/= 0.0, we expect some coupling to show up in y and z bending. 
 We apply apply various tip loads test KSDisplacement, StructuralMass, MomentOfInertia, 
 and Compliance functions and sensitivities.
@@ -30,7 +30,7 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
         "z-shear_I_xy": 0.0,
         "z-shear_I_xz": 0.0,
         "z-shear_I_yy": 0.8325,
-        "z-shear_I_yz": 0.27,
+        "z-shear_I_yz": -0.27,
         "z-shear_I_zz": 0.5625,
         "z-shear_compliance": 1.346,
         "z-shear_mass": 0.27,
@@ -41,7 +41,7 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
         "y-shear_I_xy": 0.0,
         "y-shear_I_xz": 0.0,
         "y-shear_I_yy": 0.8325,
-        "y-shear_I_yz": 0.27,
+        "y-shear_I_yz": -0.27,
         "y-shear_I_zz": 0.5625,
         "y-shear_compliance": 2.006,
         "y-shear_mass": 0.27,
@@ -52,7 +52,7 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
         "x-axial_I_xy": 0.0,
         "x-axial_I_xz": 0.0,
         "x-axial_I_yy": 0.8325,
-        "x-axial_I_yz": 0.27,
+        "x-axial_I_yz": -0.27,
         "x-axial_I_zz": 0.5625,
         "x-axial_compliance": 10.0,
         "x-axial_mass": 0.27,
@@ -63,7 +63,7 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
         "x-torsion_I_xy": 0.0,
         "x-torsion_I_xz": 0.0,
         "x-torsion_I_yy": 0.8325,
-        "x-torsion_I_yz": 0.27,
+        "x-torsion_I_yz": -0.27,
         "x-torsion_I_zz": 0.5625,
         "x-torsion_compliance": 6.5,
         "x-torsion_mass": 0.27,

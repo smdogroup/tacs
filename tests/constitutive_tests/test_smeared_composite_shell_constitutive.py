@@ -44,7 +44,7 @@ class ConstitutiveTest(unittest.TestCase):
             E=E,
             nu=nu,
             ys=ys,
-            cte=cte,
+            alpha=cte,
             kappa=kappa,
         )
         iso_ply = constitutive.OrthotropicPly(thickness, iso_prop)
@@ -79,7 +79,7 @@ class ConstitutiveTest(unittest.TestCase):
             Yt=Yt,
             Yc=Yc,
             S12=S12,
-            cte=cte,
+            alpha=cte,
             kappa=kappa,
         )
         ortho_ply = constitutive.OrthotropicPly(thickness, ortho_prop)
@@ -92,6 +92,8 @@ class ConstitutiveTest(unittest.TestCase):
         self.ply_fractions = np.array([0.333, 0.333, 0.333], dtype=self.dtype)
         self.ply_fraction_dv_nums = np.array([1, 2, 3], dtype=np.intc)
         self.dvs = np.array([0.1, 0.333, 0.333, 0.333], dtype=self.dtype)
+        # Distance between mid-plane and reference plane (nodes) of shell
+        self.t_offset = 0.5  # This places the nodes at the top ply
 
         # Seed random number generator in tacs for consistent test results
         elements.SeedRandomGenerator(0)
@@ -107,6 +109,7 @@ class ConstitutiveTest(unittest.TestCase):
                     self.ply_fractions,
                     self.thickness_dv_num,
                     self.ply_fraction_dv_nums,
+                    t_offset=self.t_offset,
                 )
                 fail = constitutive.TestConstitutiveDensity(
                     con,
@@ -132,6 +135,7 @@ class ConstitutiveTest(unittest.TestCase):
                     self.ply_fractions,
                     self.thickness_dv_num,
                     self.ply_fraction_dv_nums,
+                    t_offset=self.t_offset,
                 )
                 fail = constitutive.TestConstitutiveSpecificHeat(
                     con,
@@ -157,6 +161,7 @@ class ConstitutiveTest(unittest.TestCase):
                     self.ply_fractions,
                     self.thickness_dv_num,
                     self.ply_fraction_dv_nums,
+                    t_offset=self.t_offset,
                 )
                 fail = constitutive.TestConstitutiveHeatFlux(
                     con,
@@ -182,6 +187,7 @@ class ConstitutiveTest(unittest.TestCase):
                     self.ply_fractions,
                     self.thickness_dv_num,
                     self.ply_fraction_dv_nums,
+                    t_offset=self.t_offset,
                 )
                 fail = constitutive.TestConstitutiveStress(
                     con,
@@ -207,6 +213,7 @@ class ConstitutiveTest(unittest.TestCase):
                     self.ply_fractions,
                     self.thickness_dv_num,
                     self.ply_fraction_dv_nums,
+                    t_offset=self.t_offset,
                 )
                 fail = constitutive.TestConstitutiveThermalStrain(
                     con,
@@ -232,6 +239,7 @@ class ConstitutiveTest(unittest.TestCase):
                     self.ply_fractions,
                     self.thickness_dv_num,
                     self.ply_fraction_dv_nums,
+                    t_offset=self.t_offset,
                 )
                 fail = constitutive.TestConstitutiveFailure(
                     con,
@@ -256,6 +264,7 @@ class ConstitutiveTest(unittest.TestCase):
                     self.ply_fractions,
                     self.thickness_dv_num,
                     self.ply_fraction_dv_nums,
+                    t_offset=self.t_offset,
                 )
                 fail = constitutive.TestConstitutiveFailureStrainSens(
                     con,

@@ -992,17 +992,21 @@ class pyTACS(BaseUI):
                 plyThicknesses = np.array(plyThicknesses, dtype=self.dtype)
                 plyAngles = np.array(plyAngles, dtype=self.dtype)
 
+                # Get the total laminate thickness
+                lamThickness = propInfo.Thickness()
+                # Get the offset distance from the ref plane to the midplane
+                tOffset = -(propInfo.z0 / lamThickness + 0.5)
+
                 if propInfo.lam is None or propInfo.lam in ["SYM", "MEM"]:
                     # Discrete laminate class (not for optimization)
                     con = tacs.constitutive.CompositeShellConstitutive(
-                        plyMats, plyThicknesses, plyAngles
+                        plyMats, plyThicknesses, plyAngles, tOffset=tOffset
                     )
 
                 elif propInfo.lam == "SMEAR":
-                    lamThickness = sum(plyThicknesses)
                     plyFractions = plyThicknesses / lamThickness
                     con = tacs.constitutive.SmearedCompositeShellConstitutive(
-                        plyMats, lamThickness, plyAngles, plyFractions
+                        plyMats, lamThickness, plyAngles, plyFractions, t_offset=tOffset
                     )
 
                 # Need to add functionality to consider only membrane in TACS for type = MEM
@@ -1042,7 +1046,8 @@ class pyTACS(BaseUI):
                 area = propInfo.A
                 I1 = propInfo.i1
                 I2 = propInfo.i2
-                I12 = propInfo.i12
+                # Nastran uses negative convention for POI's
+                I12 = -propInfo.i12
                 J = propInfo.j
                 k1 = propInfo.k1
                 k2 = propInfo.k2

@@ -79,14 +79,15 @@ cdef extern from "TACSShellConstitutive.h":
 cdef extern from "TACSIsoShellConstitutive.h":
     cdef cppclass TACSIsoShellConstitutive(TACSShellConstitutive):
         TACSIsoShellConstitutive(TACSMaterialProperties*, TacsScalar, int,
-                                 TacsScalar, TacsScalar)
+                                 TacsScalar, TacsScalar, TacsScalar)
 
 cdef extern from "TACSCompositeShellConstitutive.h":
     cdef cppclass TACSCompositeShellConstitutive(TACSShellConstitutive):
         TACSCompositeShellConstitutive(int, TACSOrthotropicPly**, const TacsScalar*,
-                                       const TacsScalar*, TacsScalar)
+                                       const TacsScalar*, TacsScalar, TacsScalar)
         void getPlyThicknesses(TacsScalar*);
         void getPlyAngles(TacsScalar*);
+        TacsScalar getThicknessOffset();
 
 cdef extern from "TACSLamParamShellConstitutive.h":
     cdef cppclass TACSLamParamShellConstitutive(TACSShellConstitutive):
@@ -113,10 +114,12 @@ cdef extern from "TACSSmearedCompositeShellConstitutive.h":
                                        const TacsScalar*, const TacsScalar*,
                                        int, const int*,
                                        TacsScalar, TacsScalar,
-                                       const TacsScalar*, const TacsScalar*)
+                                       const TacsScalar*, const TacsScalar*,
+                                       TacsScalar)
         TacsScalar getLaminateThickness();
         void getPlyAngles(TacsScalar*);
-        void getPlyFractions(TacsScalar *);
+        void getPlyFractions(TacsScalar*);
+        TacsScalar getThicknessOffset();
 
 cdef extern from "TACSLamParamShellConstitutive.h":
     cdef cppclass TACSLamParamShellConstitutive(TACSShellConstitutive):
@@ -214,7 +217,8 @@ cdef extern from "TACSIsoTubeBeamConstitutive.h":
 cdef extern from "TACSIsoRectangleBeamConstitutive.h":
     cdef cppclass TACSIsoRectangleBeamConstitutive(TACSBeamConstitutive):
         TACSIsoRectangleBeamConstitutive(TACSMaterialProperties*, TacsScalar, TacsScalar,
-                                         int, int, TacsScalar, TacsScalar, TacsScalar, TacsScalar)
+                                         int, int, TacsScalar, TacsScalar, TacsScalar, TacsScalar,
+                                         TacsScalar, TacsScalar)
 
 cdef extern from "TACSGeneralMassConstitutive.h":
     cdef cppclass TACSGeneralMassConstitutive(TACSConstitutive):

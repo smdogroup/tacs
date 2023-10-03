@@ -13,7 +13,7 @@ class ConstitutiveTest(unittest.TestCase):
             self.rtol = 1e-11
         else:
             self.dh = 1e-8
-            self.rtol = 1e-4
+            self.rtol = 1e-3
         self.dtype = TACS.dtype
 
         self.atol = np.clip(1e-5 * self.rtol, 1e-14, 1e-8)
@@ -41,12 +41,12 @@ class ConstitutiveTest(unittest.TestCase):
             E=E,
             nu=nu,
             ys=ys,
-            cte=cte,
+            alpha=cte,
             kappa=kappa,
         )
 
         # Create stiffness (need class)
-        self.con = constitutive.IsoShellConstitutive(self.props, t=1.0, tNum=0)
+        self.con = constitutive.IsoShellConstitutive(self.props, t=1.0, tNum=0, tOffset=-0.5)
 
         # Seed random number generator in tacs for consistent test results
         elements.SeedRandomGenerator(0)

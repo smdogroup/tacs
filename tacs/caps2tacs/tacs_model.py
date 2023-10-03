@@ -52,7 +52,7 @@ class TacsModel:
         mesh="egads",
         tacs_project="tacs",
         problem_name: str = "capsStruct",
-        mesh_morph:bool=False,
+        mesh_morph: bool = False,
     ):
         """
         make a pyCAPS problem with the tacsAIM and egadsAIM on serial / root proc
@@ -71,7 +71,9 @@ class TacsModel:
             caps_problem = pyCAPS.Problem(
                 problemName=problem_name, capsFile=csm_file, outLevel=1
             )
-        tacs_aim = TacsAim(caps_problem, comm, project_name=tacs_project, mesh_morph=mesh_morph)
+        tacs_aim = TacsAim(
+            caps_problem, comm, project_name=tacs_project, mesh_morph=mesh_morph
+        )
         mesh_aim = None
         if mesh == "egads":
             mesh_aim = EgadsAim(caps_problem, comm)
@@ -158,11 +160,11 @@ class TacsModel:
     @property
     def analysis_dir(self) -> str:
         return self.tacs_aim.analysis_dir
-    
+
     @property
     def mesh_morph(self) -> bool:
         return self.tacs_aim.mesh_morph
-    
+
     @mesh_morph.setter
     def mesh_morph(self, new_bool):
         self.tacs_aim.mesh_morph = new_bool

@@ -30,7 +30,7 @@ class TACSSmearedCompositeShellConstitutive : public TACSShellConstitutive {
       int _thickness_dv_num = -1, const int *_ply_fraction_dv_nums = NULL,
       TacsScalar _thickness_lb = 0.0, TacsScalar _thickness_ub = 1e20,
       const TacsScalar *_ply_fraction_lb = NULL,
-      const TacsScalar *_ply_fraction_ub = NULL);
+      const TacsScalar *_ply_fraction_ub = NULL, TacsScalar _t_offset = 0.0);
   ~TACSSmearedCompositeShellConstitutive();
 
   // Retrieve the global design variable numbers
@@ -117,6 +117,7 @@ class TACSSmearedCompositeShellConstitutive : public TACSShellConstitutive {
   TacsScalar getLaminateThickness();
   void getPlyAngles(TacsScalar *_ply_angles);
   void getPlyFractions(TacsScalar *_ply_fractions);
+  TacsScalar getThicknessOffset();
 
  private:
   // Store information about the design variable
@@ -133,6 +134,7 @@ class TACSSmearedCompositeShellConstitutive : public TACSShellConstitutive {
   int nfvals;
   TacsScalar *fvals, *dks_vals;
   TacsScalar **dfvals;
+  TacsScalar t_offset;
 
   // The object name
   static const char *constName;

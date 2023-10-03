@@ -215,6 +215,14 @@ cdef class MaterialProperties:
         cdef TacsScalar kappa2 = 230.0
         cdef TacsScalar kappa3 = 230.0
 
+        ISOTROPIC_KEYS = ["rho", "E", "nu", "G", "ys", "alpha", "specific_heat", "kappa"]
+
+        # Check if any input provided in kwargs was orthotropic
+        if any(input_key not in ISOTROPIC_KEYS for input_key in kwargs):
+            is_orthotropic = True
+        else:
+            is_orthotropic = False
+
         if 'rho' in kwargs:
             rho = kwargs['rho']
         if 'specific_heat' in kwargs:
@@ -313,7 +321,7 @@ cdef class MaterialProperties:
         if 'kappa3' in kwargs:
             kappa3 = kwargs['kappa3']
 
-        if 'E1' in kwargs:
+        if is_orthotropic:
             self.ptr = new TACSMaterialProperties(rho, specific_heat, E1, E2, E3,
                                                   nu12, nu13, nu23, G12, G13, G23,
                                                   T1, C1, T2, C2, T3, C3, S12, S13, S23,
@@ -673,6 +681,9 @@ cdef class IsoShellConstitutive(ShellConstitutive):
             (i.e. no design variable).
         tlb (float or complex, optional): Thickness variable lower bound (keyword argument). Defaults to 0.0.
         tub (float or complex, optional): Thickness variable upper bound (keyword argument). Defaults to 10.0.
+        tOffset (float or complex, optional): Offset distance of reference plane (where nodes are located) relative to thickness mid-plane.
+            Measured in fraction of shell thickness. A value of 0.5 places the reference plane at the top of the plate,
+            a value of 0.0 at the plate mid-plane, and a value of -0.5 at the bottom of the plate. Defaults to 0.0.
     """
     def __cinit__(self, *args, **kwargs):
         cdef TACSMaterialProperties *props = NULL
@@ -680,6 +691,7 @@ cdef class IsoShellConstitutive(ShellConstitutive):
         cdef int tNum = -1
         cdef TacsScalar tlb = 0.0
         cdef TacsScalar tub = 10.0
+        cdef TacsScalar tOff = 0.0
 
         if len(args) >= 1:
             props = (<MaterialProperties>args[0]).ptr
@@ -692,10 +704,12 @@ cdef class IsoShellConstitutive(ShellConstitutive):
             tlb = kwargs['tlb']
         if 'tub' in kwargs:
             tub = kwargs['tub']
+        if 'tOffset' in kwargs:
+            tOff = kwargs['tOffset']
 
         if props is not NULL:
             self.cptr = new TACSIsoShellConstitutive(props, t, tNum,
-                                                     tlb, tub)
+                                                     tlb, tub, tOff)
             self.ptr = self.cptr
             self.ptr.incref()
         else:
@@ -733,11 +747,15 @@ cdef class CompositeShellConstitutive(ShellConstitutive):
        ply_thicknesses (numpy.ndarray[float or complex]): Array of ply thicknesses in layup.
        ply_angles (numpy.ndarray[float or complex]): Array of ply angles (in radians) in layup.
        kcorr (float or complex, optional): FSDT shear correction factor. Defaults to 5.0/6.0.
+       tOffset (float or complex, optional): Offset distance of reference plane (where nodes are located) relative to thickness mid-plane.
+            Measured in fraction of shell thickness. A value of 0.5 places the reference plane at the top of the plate,
+            a value of 0.0 at the plate mid-plane, and a value of -0.5 at the bottom of the plate. Defaults to 0.0.
     """
     def __cinit__(self, ply_list,
                   np.ndarray[TacsScalar, ndim=1, mode='c'] ply_thicknesses,
                   np.ndarray[TacsScalar, ndim=1, mode='c'] ply_angles,
-                  TacsScalar kcorr=5.0/6.0):
+                  TacsScalar kcorr=5.0/6.0,
+                  TacsScalar tOffset=0.0):
 
         num_plies = len(ply_list)
         if len(ply_thicknesses) != num_plies:
@@ -756,7 +774,7 @@ cdef class CompositeShellConstitutive(ShellConstitutive):
 
         self.cptr = new TACSCompositeShellConstitutive(num_plies, plys,
                                                        <TacsScalar*>ply_thicknesses.data,
-                                                       <TacsScalar*>ply_angles.data, kcorr)
+                                                       <TacsScalar*>ply_angles.data, kcorr, tOffset)
         self.ptr = self.cptr
         self.ptr.incref()
 
@@ -785,9 +803,14 @@ cdef class CompositeShellConstitutive(ShellConstitutive):
             ply_id = self.props[i].getNastranID()
             mat_ids.append(ply_id)
 
+        # Calculate distance from ref plane to bottom ply
+        lam_thickness = sum(ply_thicknesses)
+        z0 = -(comp_ptr.getThicknessOffset() + 0.5) * lam_thickness
+
         prop = nastran_cards.properties.shell.PCOMP(self.nastranID, mat_ids,
                                                     ply_thicknesses.astype(float),
-                                                    np.rad2deg(np.real(ply_angles)))
+                                                    np.rad2deg(np.real(ply_angles)),
+                                                    z0=np.real(z0))
         return prop
 
 cdef class BladeStiffenedShellConstitutive(ShellConstitutive):
@@ -1080,6 +1103,9 @@ cdef class SmearedCompositeShellConstitutive(ShellConstitutive):
           Defaults to 0.0.
        ply_fraction_ub (numpy.ndarray[float or complex], optional): Upper bound for ply fraction design variables (keyword argument).
           Defaults to 1.0.
+       t_offset (float or complex, optional): Offset distance of reference plane (where nodes are located) relative to thickness mid-plane.
+            Measured in fraction of shell thickness. A value of 0.5 places the reference plane at the top of the plate,
+            a value of 0.0 at the plate mid-plane, and a value of -0.5 at the bottom of the plate. Defaults to 0.0.
     """
     def __cinit__(self, ply_list,
                   TacsScalar thickness,
@@ -1090,7 +1116,8 @@ cdef class SmearedCompositeShellConstitutive(ShellConstitutive):
                   TacsScalar thickness_lb=0.0,
                   TacsScalar thickness_ub=1e20,
                   np.ndarray[TacsScalar, ndim=1, mode='c'] ply_fraction_lb=None,
-                  np.ndarray[TacsScalar, ndim=1, mode='c'] ply_fraction_ub=None,):
+                  np.ndarray[TacsScalar, ndim=1, mode='c'] ply_fraction_ub=None,
+                  TacsScalar t_offset=0.0):
 
         num_plies = len(ply_list)
 
@@ -1128,7 +1155,8 @@ cdef class SmearedCompositeShellConstitutive(ShellConstitutive):
                                                               <int*>_ply_fraction_dv_nums.data,
                                                               thickness_lb, thickness_ub,
                                                               <TacsScalar *> _ply_fraction_lb.data,
-                                                              <TacsScalar*>_ply_fraction_ub.data)
+                                                              <TacsScalar*>_ply_fraction_ub.data,
+                                                              t_offset)
         self.ptr = self.cptr
         self.ptr.incref()
 
@@ -1159,10 +1187,13 @@ cdef class SmearedCompositeShellConstitutive(ShellConstitutive):
             ply_id = self.props[i].getNastranID()
             mat_ids.append(ply_id)
 
+        z0 = -(comp_ptr.getThicknessOffset() + 0.5) * t_tot
+
         prop = nastran_cards.properties.shell.PCOMP(self.nastranID, mat_ids,
                                                     ply_thicknesses.astype(float),
                                                     np.rad2deg(np.real(ply_angles)),
-                                                    lam="SMEAR")
+                                                    lam="SMEAR",
+                                                    z0=np.real(z0))
         return prop
 
 cdef class LamParamShellConstitutive(ShellConstitutive):
@@ -1319,7 +1350,7 @@ cdef class BasicBeamConstitutive(BeamConstitutive):
         A = np.real(s[0])
         J = np.real(s[1])
         Iz = np.real(s[2])
-        Iyz = np.real(s[3])
+        Iyz = -np.real(s[3])
         e[:] = 0.0
         e[3] = 1.0 / E
         e[4:5] = 1.0 / (G * A)
@@ -1327,7 +1358,8 @@ cdef class BasicBeamConstitutive(BeamConstitutive):
         Iy = np.real(s[3])
         ky = np.real(s[4])
         kz = np.real(s[5])
-        prop = nastran_cards.properties.bars.PBAR(self.nastranID, mat_id, A, Iz, Iy, Iyz, J, k1=ky, k2=kz)
+        # Nastran uses negative convention for POI's
+        prop = nastran_cards.properties.bars.PBAR(self.nastranID, mat_id, A, Iz, Iy, -Iyz, J, k1=ky, k2=kz)
         return prop
 
 cdef class IsoTubeBeamConstitutive(BeamConstitutive):
@@ -1428,6 +1460,12 @@ cdef class IsoRectangleBeamConstitutive(BeamConstitutive):
             (i.e. no design variable).
         tlb (float or complex, optional): Lower bound on thickness (keyword argument). Defaults to 0.0.
         tub (float or complex, optional): Upper bound on thickness (keyword argument). Defaults to 10.0.
+        wOffset (float or complex, optional): Offset distance along width axis of reference axis (where nodes are located) relative to elastic axis.
+            Measured in fraction of cross-section width. A value of 0.5 places the reference axis in the plane z=/2,
+            a value of 0.0 at z=0.0, and a value of -0.5 at z=-w/2 (where z is the local beam axis). Defaults to 0.0.
+        tOffset (float or complex, optional): Offset distance along thickness axis of reference axis (where nodes are located) relative to elastic axis.
+            Measured in fraction of cross-section thickness. A value of 0.5 places the reference axis in the plane y=t/2,
+            a value of 0.0 at y=0.0, and a value of -0.5 at y=-t/2 (where y is the local beam axis). Defaults to 0.0.
     """
     def __cinit__(self, *args, **kwargs):
         cdef TACSMaterialProperties *props = NULL
@@ -1439,6 +1477,8 @@ cdef class IsoRectangleBeamConstitutive(BeamConstitutive):
         cdef int tNum = -1
         cdef TacsScalar tlb = 0.0
         cdef TacsScalar tub = 10.0
+        cdef TacsScalar wOffset = 0.0
+        cdef TacsScalar tOffset = 0.0
 
         if len(args) >= 1:
             props = (<MaterialProperties>args[0]).ptr
@@ -1459,10 +1499,14 @@ cdef class IsoRectangleBeamConstitutive(BeamConstitutive):
             tlb = kwargs['tlb']
         if 'tub' in kwargs:
             tub = kwargs['tub']
+        if 'wOffset' in kwargs:
+            wOffset = kwargs['wOffset']
+        if 'tOffset' in kwargs:
+            tOffset = kwargs['tOffset']
 
         if props is not NULL:
             self.cptr = new TACSIsoRectangleBeamConstitutive(props, w, t, wNum, tNum,
-                                                             wlb, wub, tlb, tub)
+                                                             wlb, wub, tlb, tub, wOffset, tOffset)
             self.ptr = self.cptr
             self.ptr.incref()
         else:

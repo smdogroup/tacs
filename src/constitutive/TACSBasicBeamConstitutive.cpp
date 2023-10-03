@@ -122,7 +122,7 @@ TACSBasicBeamConstitutive::TACSBasicBeamConstitutive(
   C[0] = E * A;
   C[6] = G * J;
   C[11] = E * Iz;
-  C[12] = E * Iyz;
+  C[12] = -E * Iyz;
   C[15] = E * Iy;
   C[18] = ky * G * A;
   C[20] = kz * G * A;
@@ -131,9 +131,9 @@ TACSBasicBeamConstitutive::TACSBasicBeamConstitutive(
   rho[0] = density * A;
   rho[1] = 0.0;
   rho[2] = 0.0;
-  rho[3] = density * Iy;
-  rho[4] = density * Iz;
-  rho[5] = density * Iyz;
+  rho[3] = density * Iz;
+  rho[4] = density * Iy;
+  rho[5] = -density * Iyz;
 }
 
 TACSBasicBeamConstitutive::~TACSBasicBeamConstitutive() {
