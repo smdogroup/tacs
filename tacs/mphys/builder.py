@@ -70,7 +70,7 @@ class TacsBuilder(Builder):
             elem_callback must return a list containing as many TACS element
             objects as there are element types in elemDescripts (one for each).
         problem_setup : collections.abc.Callable or None
-            This function is called each time a new MPhys Scenario is created. This function sets up problem adding
+            This function is called each time a new MPhys Scenario is created. This function sets up the problem by adding
             fixed loads, modifying options, and adding eval functions. The function should have the following structure::
 
               def problem_setup(scenario_name, fea_assembler, problem):

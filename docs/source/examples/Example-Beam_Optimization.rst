@@ -64,7 +64,8 @@ First, we import required libraries, define the model bdf file, and define impor
 
 Next we define an :func:`~tacs.pytacs.elemCallBack` function.
 This is a user-defined callback function for setting up TACS elements and element design variables.
-:class:`~tacs.constitutive.IsoRectangleBeamConstitutive` and :class:`~tacs.elements.Beam2`
+We use the :class:`~tacs.constitutive.IsoRectangleBeamConstitutive` class for the constitutive properties,
+assign a design variable number for the thickness parameter, and return a :class:`~tacs.elements.Beam2` element class.
 
 .. code-block:: python
 
@@ -85,8 +86,8 @@ This is a user-defined callback function for setting up TACS elements and elemen
 
 We define a :func:`problem_setup` function.
 This function is called each time a new MPhys Scenario is created.
-This function sets up problem adding fixed loads, modifying options, and adding eval functions.
-Here we specify the beam mass and aggregated failure as outputs for our analysis and add our 1 kN shear load.
+This function sets up the :class:`~tacs.problems.StaticProblem` by adding fixed loads, modifying options, and adding eval functions.
+Here we specify the beam mass (:class:`~tacs.functions.StructuralMass`) and aggregated failure (:class:`~tacs.functions.KSFailure`) as outputs for our analysis and add our 1 kN shear load.
 
 .. code-block:: python
 
@@ -105,9 +106,10 @@ Here we specify the beam mass and aggregated failure as outputs for our analysis
       # Add forces to static problem
       problem.addLoadToNodes(101, [0.0, V, 0.0, 0.0, 0.0, 0.0], nastranOrdering=True)
 
-Here we instantiate the :class:`~tacs.mphys.builder.TacsBuilder` using the ``element_callback`` and ``problem_setup`` we defined above.
-Using this class we create an MPhys :ref:`Scenario <mphys:scenario_groups>`.
+Here we define our :class:`~mphys.Multipoint` (essentially an OpenMDAO ``Group``) which will contain our analysis :class:`~mphys.Scenario`.
+To do this, we instantiate the :class:`~tacs.mphys.builder.TacsBuilder` using the ``element_callback`` and ``problem_setup`` we defined above.
 We create OpenMDAO ``Component``'s to feed design variable and mesh inputs to the ``Scenario`` component.
+We use this builder to create an MPhys :class:`~mphys.StructuralScenario`.
 
 .. code-block:: python
 
@@ -181,7 +183,7 @@ After the optimization completes the user should see a print out to screen like 
 Once the optimization is complete we can post-process results.
 We can write our optimized beam model to a BDF file so they can
 be processed in other commonly used FEM software.
-The ``f5`` solution file at each optimization iteration can also be converted to a Tecplot or Paraview using ``f5totec`` or ``f5tovtk``, respectively.
+The ``f5`` solution file at each optimization iteration can also be converted to a Tecplot or Paraview files using ``f5totec`` or ``f5tovtk``, respectively.
 
 .. code-block:: python
 
