@@ -63,9 +63,8 @@ First, we import required libraries, define the model bdf file, and define impor
   V = 1e3
 
 Next we define an :func:`~tacs.pytacs.elemCallBack` function.
-This class will initialize the model in TACS with constitutive
-properties and design variables, then generate the ParOpt
-problem to be optimized.
+This is a user-defined callback function for setting up TACS elements and element design variables.
+:class:`~tacs.constitutive.IsoRectangleBeamConstitutive` and :class:`~tacs.elements.Beam2`
 
 .. code-block:: python
 
@@ -76,6 +75,7 @@ problem to be optimized.
       # Set one thickness dv for every property group
       con = constitutive.IsoRectangleBeamConstitutive(prop, t=t, w=w, tNum=dvNum)
 
+      # Defines local y/width direction for beam
       refAxis = np.array([0.0, 1.0, 0.0])
       transform = elements.BeamRefAxisTransform(refAxis)
 
@@ -84,9 +84,9 @@ problem to be optimized.
       return elem
 
 We define a :func:`problem_setup` function.
-This class will initialize the model in TACS with constitutive
-properties and design variables, then generate the ParOpt
-problem to be optimized.
+This function is called each time a new MPhys Scenario is created.
+This function sets up problem adding fixed loads, modifying options, and adding eval functions.
+Here we specify the beam mass and aggregated failure as outputs for our analysis and add our 1 kN shear load.
 
 .. code-block:: python
 
@@ -105,12 +105,13 @@ problem to be optimized.
       # Add forces to static problem
       problem.addLoadToNodes(101, [0.0, V, 0.0, 0.0, 0.0, 0.0], nastranOrdering=True)
 
-This function sets the values of the bounds on the design variables.
-
+Here we instantiate the :class:`~tacs.mphys.builder.TacsBuilder` using the ``element_callback`` and ``problem_setup`` we defined above.
+Using this class we create an MPhys :ref:`Scenario <mphys:scenario_groups>`.
+We create OpenMDAO ``Component``'s to feed design variable and mesh inputs to the ``Scenario`` component.
 
 .. code-block:: python
 
-  class Top(Multipoint):
+  class BeamModel(Multipoint):
       def setup(self):
           # Initialize MPHYS builder for TACS
           struct_builder = TacsBuilder(
@@ -137,14 +138,16 @@ This function sets the values of the bounds on the design variables.
           # Connect dv component to input of structural scenario
           self.connect("dv_struct", "tip_shear.dv_struct")
 
-This function assigns new values to the design variables and then
-evaluates the objective and constraint functionals.
+At this point we setup the OpenMDAO ``Problem`` class that we will use to perform our optimization.
+We assign our ``BeamModel`` to the problem class and set ``ScipyOptimizeDriver``.
+We define our design variables, constraint, and objective.
+Finally we run the problem driver to optimize the problem.
 
 .. code-block:: python
 
   # Instantiate OpenMDAO problem
   prob = om.Problem()
-  prob.model = Top()
+  prob.model = BeamModel()
   model = prob.model
 
   # Declare design variables, objective, and constraint
@@ -159,19 +162,36 @@ evaluates the objective and constraint functionals.
   # Setup OpenMDAO problem
   prob.setup()
 
+  # Output N2 representation of OpenMDAO model
+  om.n2(prob, show_browser=False, outfile="beam_opt_n2.html")
+
   # Run optimization
   prob.run_driver()
 
-This function evaluates the gradients of the objective and constraint
-functions with respect to the design variables.
-Here we instantiate the :class:`~tacs.mphys.builder.TacsBuilder` using the ``element_callback`` and ``problem_setup`` we defined above.
-:ref:`Scenarios <mphys:structural_scenario>`
+After the optimization completes the user should see a print out to screen like shown below.
+
+>>> Optimization terminated successfully    (Exit mode 0)
+>>>             Current function value: 1.5534716448382722
+>>>             Iterations: 138
+>>>             Function evaluations: 372
+>>>             Gradient evaluations: 138
+>>> Optimization Complete
+>>> -----------------------------------
+
+Once the optimization is complete we can post-process results.
+We can write our optimized beam model to a BDF file so they can
+be processed in other commonly used FEM software.
+The ``f5`` solution file at each optimization iteration can also be converted to a Tecplot or Paraview using ``f5totec`` or ``f5tovtk``, respectively.
 
 .. code-block:: python
 
   # Write optimized structure to BDF
   bdf_out = os.path.join(os.path.dirname(__file__), "beam_sol.bdf")
   prob.model.tip_shear.coupling.write_bdf(bdf_out)
+
+Finally, we can plot the optimized thickness distribution using matplotlib and compare against the expected optimal result from beam theory.
+
+.. code-block:: python
 
   # Get optimized solution variables
   x = prob.get_val("mesh.x_struct0", get_remote=True)[:-3:3]
@@ -180,15 +200,6 @@ Here we instantiate the :class:`~tacs.mphys.builder.TacsBuilder` using the ``ele
 
   # Get analytical solution
   t_exact = np.sqrt(6 * (L - x) * V / w / ys)
-
-Now that the class is defined, initialize it with the desired bdf of
-the model and set optimization parameters. Finally, call the 
-:func:`~ParOpt.pyParOpt.optimize` function on the :class:`~ParOpt.pyParOpt` problem.
-
-.. code-block:: python
-
-  # Output N2 representation of OpenMDAO model
-  om.n2(prob, show_browser=False, outfile="beam_opt_n2.html")
 
   # Plot results for solution
   plt.plot(x, t_opt, "o", x, t_exact)

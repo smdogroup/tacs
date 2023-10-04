@@ -56,6 +56,7 @@ def element_callback(dvNum, compID, compDescript, elemDescripts, specialDVs, **k
     # Set one thickness dv for every property group
     con = constitutive.IsoRectangleBeamConstitutive(prop, t=t, w=w, tNum=dvNum)
 
+    # Defines local y/width direction for beam
     refAxis = np.array([0.0, 1.0, 0.0])
     transform = elements.BeamRefAxisTransform(refAxis)
 
@@ -80,7 +81,7 @@ def problem_setup(scenario_name, fea_assembler, problem):
     problem.addLoadToNodes(101, [0.0, V, 0.0, 0.0, 0.0, 0.0], nastranOrdering=True)
 
 
-class Top(Multipoint):
+class BeamModel(Multipoint):
     def setup(self):
         # Initialize MPHYS builder for TACS
         struct_builder = TacsBuilder(
@@ -113,7 +114,7 @@ class Top(Multipoint):
 ################################################################################
 # Instantiate OpenMDAO problem
 prob = om.Problem()
-prob.model = Top()
+prob.model = BeamModel()
 model = prob.model
 
 # Declare design variables, objective, and constraint
