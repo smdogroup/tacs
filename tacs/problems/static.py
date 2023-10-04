@@ -898,6 +898,7 @@ class StaticProblem(TACSProblem):
 
         if self.isNonlinear:
             hasConverged = self.solveNonlinear(Fext)
+            solveTime = time.time()
         else:
             # Get current residual
             self.getResidual(self.res, Fext=Fext)
@@ -912,8 +913,6 @@ class StaticProblem(TACSProblem):
             # Starting Norm for this computation
             self.startNorm = np.real(self.res.norm())
 
-            initNormTime = time.time()
-
             # Solve Linear System for the update
             hasConverged = self._solveLinear(self.res, self.update)
 
@@ -926,51 +925,33 @@ class StaticProblem(TACSProblem):
             self.u.axpy(1.0, self.update)
             self.assembler.setVariables(self.u)
 
-            stateUpdateTime = time.time()
+        # Get updated residual
+        self.getResidual(self.res, Fext)
+        self.finalNorm = np.real(self.res.norm())
 
-            # Get updated residual
-            self.getResidual(self.res, Fext)
-            self.finalNorm = np.real(self.res.norm())
+        finalNormTime = time.time()
 
-            finalNormTime = time.time()
-
-            # If timing was was requested print it, if the solution is nonlinear
-            # print this information automatically if prinititerations was requested.
-            if self.getOption("printTiming"):
-                self._pp("+--------------------------------------------------+")
-                self._pp("|")
-                self._pp("| TACS Solve Times:")
-                self._pp("|")
-                self._pp(
-                    "| %-30s: %10.3f sec"
-                    % ("TACS Setup Time", setupProblemTime - startTime)
-                )
-                self._pp(
-                    "| %-30s: %10.3f sec"
-                    % ("TACS Solve Init Time", initSolveTime - setupProblemTime)
-                )
-                self._pp(
-                    "| %-30s: %10.3f sec"
-                    % ("TACS Init Norm Time", initNormTime - initSolveTime)
-                )
-                self._pp(
-                    "| %-30s: %10.3f sec"
-                    % ("TACS Solve Time", solveTime - initNormTime)
-                )
-                self._pp(
-                    "| %-30s: %10.3f sec"
-                    % ("TACS State Update Time", stateUpdateTime - solveTime)
-                )
-                self._pp(
-                    "| %-30s: %10.3f sec"
-                    % ("TACS Final Norm Time", finalNormTime - stateUpdateTime)
-                )
-                self._pp("|")
-                self._pp(
-                    "| %-30s: %10.3f sec"
-                    % ("TACS Total Solution Time", finalNormTime - startTime)
-                )
-                self._pp("+--------------------------------------------------+")
+        # If timing was was requested print it, if the solution is nonlinear
+        # print this information automatically if prinititerations was requested.
+        if self.getOption("printTiming"):
+            self._pp("+--------------------------------------------------+")
+            self._pp("|")
+            self._pp("| TACS Solve Times:")
+            self._pp("|")
+            self._pp(
+                "| %-30s: %10.3f sec"
+                % ("TACS Solve Init Time", initSolveTime - startTime)
+            )
+            self._pp(
+                "| %-30s: %10.3f sec"
+                % ("TACS Solve Time", solveTime - initSolveTime)
+            )
+            self._pp("|")
+            self._pp(
+                "| %-30s: %10.3f sec"
+                % ("TACS Total Solution Time", finalNormTime - startTime)
+            )
+            self._pp("+--------------------------------------------------+")
 
         return hasConverged
 
