@@ -3,7 +3,7 @@ Beam optimization with MPhys
 .. note:: The script for this example can be found under the `examples/beam/` directory.
 
 This example demonstrates TACS structural optimization capabilities.
-The optimization is setup using TACS' MPhys module, which acts as a wrapper
+The optimization is setup using TACS' :ref:`mphys/mphys:MPhys` module, which acts as a wrapper
 for OpenMDAO.
 The beam model that we will be using for this problem is a rectangular beam,
 cantilevered, with a shear load applied at the tip. The beam is discretized using
