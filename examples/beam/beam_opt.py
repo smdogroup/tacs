@@ -29,6 +29,7 @@ from mphys.scenario_structural import ScenarioStructural
 from tacs import elements, constitutive, functions
 from tacs.mphys import TacsBuilder
 
+# BDF file containing mesh
 bdf_file = os.path.join(os.path.dirname(__file__), "beam_opt.bdf")
 
 # Beam thickness (initial)
@@ -142,14 +143,18 @@ m_opt = prob["tip_shear.mass"]
 # Get analytical solution
 t_exact = np.sqrt(6 * (L - x) * V / w / ys)
 
+# Compute max thickness value
+t0 = np.sqrt(6 * L * V / w / ys)
+
 if __name__ == "__main__" and prob.comm.size == 1:
     # Output N2 representation of OpenMDAO model
     om.n2(prob, show_browser=False, outfile="beam_opt_n2.html")
 
     # Plot results for solution
-    plt.plot(x, t_opt, "o", x, t_exact)
+    plt.plot(x / L, t_opt / t0, "o", x, t_exact / t0)
     plt.legend(["optimized", "analytical"])
-    plt.ylabel("t(x)")
-    plt.xlabel("x")
+    plt.ylabel(r"$\frac{t(x)}{t_0}$", fontsize=16)
+    plt.xlabel(r"$\frac{x}{L}$", fontsize=16, labelpad=-5)
     plt.title("Optimal beam thickness profile")
+    plt.text(0.05, 0.25, r"$t_0 = \sqrt{\frac{6VL}{w\sigma_y}}$", fontsize=12)
     plt.show()
