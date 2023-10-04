@@ -897,7 +897,7 @@ class StaticProblem(TACSProblem):
         initSolveTime = time.time()
 
         if self.isNonlinear:
-            hasConverged = self.solveNonlinear(Fext)
+            hasConverged = self._solveNonlinearProblem(Fext)
             solveTime = time.time()
         else:
             # Get current residual
@@ -955,7 +955,7 @@ class StaticProblem(TACSProblem):
 
         return hasConverged
 
-    def solveNonlinear(self, Fext=None):
+    def _solveNonlinearProblem(self, Fext=None):
         # Compute the internal and external force components of the residual at the current point
         self.getForces(
             externalForceVec=self.externalForce,
