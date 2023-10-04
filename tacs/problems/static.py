@@ -876,11 +876,9 @@ class StaticProblem(TACSProblem):
 
         Parameters
         ----------
-        Optional Arguments:
-
-        Fext : numpy.ndarray or tacs.TACS.Vec
+        Fext : numpy.ndarray or tacs.TACS.Vec, optional
             Distributed array containing additional loads (ex. aerodynamic forces for aerostructural coupling)
-            to applied to RHS of the static problem.
+            to applied to RHS of the static problem, by default None
 
         """
         startTime = time.time()
@@ -898,32 +896,10 @@ class StaticProblem(TACSProblem):
 
         if self.isNonlinear:
             hasConverged = self._solveNonlinearProblem(Fext)
-            solveTime = time.time()
         else:
-            # Get current residual
-            self.getResidual(self.res, Fext=Fext)
+            hasConverged = self._solveLinearProblem(Fext)
 
-            # Get rhs vector
-            self.K.mult(self.u, self.rhs)
-            self.rhs.axpy(-1.0, self.res)
-
-            # Set initnorm as the norm of rhs
-            self.initNorm = np.real(self.rhs.norm())
-
-            # Starting Norm for this computation
-            self.startNorm = np.real(self.res.norm())
-
-            # Solve Linear System for the update
-            hasConverged = self._solveLinear(self.res, self.update)
-
-            self.update.scale(-1.0)
-
-            solveTime = time.time()
-
-            # Update State Variables
-            self.assembler.getVariables(self.u)
-            self.u.axpy(1.0, self.update)
-            self.assembler.setVariables(self.u)
+        solveTime = time.time()
 
         # Get updated residual
         self.getResidual(self.res, Fext)
@@ -955,7 +931,59 @@ class StaticProblem(TACSProblem):
 
         return hasConverged
 
+    def _solveLinearProblem(self, Fext=None):
+        """Solve a linear StaticProblem for a given external force vector
+
+        Parameters
+        ----------
+        Fext : numpy.ndarray or tacs.TACS.Vec, optional
+            Distributed array containing additional loads (ex. aerodynamic forces for aerostructural coupling)
+            to applied to RHS of the static problem, by default None
+
+        Returns
+        -------
+        bool
+            Flag indicating whether the solver converged
+        """
+        # Get current residual
+        self.getResidual(self.res, Fext=Fext)
+
+        # Get rhs vector
+        self.K.mult(self.u, self.rhs)
+        self.rhs.axpy(-1.0, self.res)
+
+        # Set initnorm as the norm of rhs
+        self.initNorm = np.real(self.rhs.norm())
+
+        # Starting Norm for this computation
+        self.startNorm = np.real(self.res.norm())
+
+        # Solve Linear System for the update
+        hasConverged = self._solveLinear(self.res, self.update)
+
+        self.update.scale(-1.0)
+
+        # Update State Variables
+        self.assembler.getVariables(self.u)
+        self.u.axpy(1.0, self.update)
+        self.assembler.setVariables(self.u)
+
+        return hasConverged
+
     def _solveNonlinearProblem(self, Fext=None):
+        """Solve a nonlinear StaticProblem for a given external force vector
+
+        Parameters
+        ----------
+        Fext : numpy.ndarray or tacs.TACS.Vec, optional
+            Distributed array containing additional loads (ex. aerodynamic forces for aerostructural coupling)
+            to applied to RHS of the static problem, by default None
+
+        Returns
+        -------
+        bool
+            Flag indicating whether the solver converged
+        """
         # Compute the internal and external force components of the residual at the current point
         self.getForces(
             externalForceVec=self.externalForce,
