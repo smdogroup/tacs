@@ -1048,12 +1048,12 @@ class StaticProblem(TACSProblem):
                 baseName=f"{self.name}-{self.callCounter:03d}-NLIter", number=iteration
             )
 
-    def _solveLinear(self, res, sol):
-        """Solve the linear system J * sol = res using the current Jacobian matrix
+    def _solveLinear(self, rhs, sol):
+        """Solve the linear system J * sol = rhs using the current Jacobian matrix
 
         Parameters
         ----------
-        res : tacs.TACS.Vec
+        rhs : tacs.TACS.Vec
             Right hand side of the linear system
         sol : tacs.TACS.Vec
             Vector to store the solution in
@@ -1063,7 +1063,7 @@ class StaticProblem(TACSProblem):
         bool
             Whether the linear solve converged
         """
-        success = self.KSM.solve(res, sol)
+        success = self.KSM.solve(rhs, sol)
         success = success == 1
 
         if not success:
