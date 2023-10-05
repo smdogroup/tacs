@@ -74,7 +74,7 @@ FEAAssembler = pyTACS(BDF_FILE, options=structOptions, comm=COMM)
 
 
 def elemCallBack(dvNum, compID, compDescript, elemDescripts, specialDVs, **kwargs):
-    matProps = constitutive.MaterialProperties(rho=RHO, E=E, nu=NU, YS=YIELD_STRESS)
+    matProps = constitutive.MaterialProperties(rho=RHO, E=E, nu=NU, ys=YIELD_STRESS)
     con = constitutive.IsoShellConstitutive(
         matProps, t=THICKNESS, tNum=dvNum, tlb=1e-2 * THICKNESS, tub=1e2 * THICKNESS
     )
