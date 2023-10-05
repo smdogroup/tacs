@@ -101,7 +101,7 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
             dvNum, compID, compDescript, elemDescripts, specialDVs, **kwargs
         ):
             matProps = constitutive.MaterialProperties(
-                rho=RHO, E=E, nu=NU, YS=YIELD_STRESS
+                rho=RHO, E=E, nu=NU, ys=YIELD_STRESS
             )
             con = constitutive.IsoShellConstitutive(
                 matProps,
@@ -127,7 +127,8 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
             "MaxIter": 50,
             "UseEW": True,
             "ForceFirstIter": True,
-            "MaxLinIters": 10,}
+            "MaxLinIters": 10,
+        }
         problem = FEAAssembler.createStaticProblem("RadialForces", options=probOptions)
         problem.continuationSolver.setOptions(continuationOptions)
         problem.newtonSolver.setOptions(newtonOptions)
@@ -188,6 +189,8 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
 
         return [problem], FEAAssembler
 
+
 if __name__ == "__main__":
     import unittest
+
     unittest.main()
