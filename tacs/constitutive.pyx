@@ -234,7 +234,9 @@ cdef class MaterialProperties:
         for input_key in kwargs:
             if input_key not in ALL_KEYS:
                 guess = difflib.get_close_matches(input_key, ALL_KEYS, n=1, cutoff=0.0)[0]
-                raise ValueError(f"{input_key} is not a valid material property. Perhaps you meant {guess}?\nAcceptable arguments are: \n" + ", ".join(ALL_KEYS),)
+                raise ValueError(f"{input_key} is not a valid material property. Perhaps you meant {guess}?\n "
+                                 "Acceptable arguments are: \n" +
+                                 ", ".join(ALL_KEYS),)
 
         # Check if any input provided in kwargs was orthotropic
         if any(input_key in ORTHOTROPIC_KEYS for input_key in kwargs):
