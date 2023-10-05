@@ -235,7 +235,7 @@ cdef class MaterialProperties:
               warnings.warn(
                 f"Invalid keyword argument '{input_key}' detected in MaterialProperties. \n"
                 "Keyword argument will be ignored. Acceptable arguments are: \n"
-                f"{ALL_KEYS}",
+                + ", ".join(ALL_KEYS),
                 RuntimeWarning
             )
 
