@@ -2,8 +2,6 @@
 # this example goes through the process of setting up the using the
 # tacs assembler directly as opposed to using the pyTACS user interface (see analysis.py):
 # loading a mesh, creating elements, evaluating functions, solution, and output
-from __future__ import print_function
-
 # Import necessary libraries
 import numpy as np
 import os
