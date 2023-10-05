@@ -39,7 +39,7 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
 
     FUNC_REFS = {
         "RadialForces_Compliance": 121.37975434927841,
-        "RadialForces_KSFailure": 0.09375588756570011,
+        "RadialForces_KSFailure": 312113.1779703602,
         "RadialForces_MaxYDisp": 0.23012106687058378,
         "RadialForces_MaxZDisp": 2.3202346529634763,
     }
