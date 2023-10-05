@@ -12,6 +12,8 @@
 
 #distutils: language=c++
 
+import warnings
+
 # For the use of MPI
 from mpi4py.libmpi cimport *
 cimport mpi4py.MPI as MPI
@@ -216,9 +218,29 @@ cdef class MaterialProperties:
         cdef TacsScalar kappa3 = 230.0
 
         ISOTROPIC_KEYS = ["rho", "E", "nu", "G", "ys", "alpha", "specific_heat", "kappa"]
+        ORTHOTROPIC_KEYS = ["E1", "E2", "E3",
+                            "nu12", "nu13", "nu23",
+                            "G12", "G13", "G23",
+                            "T1", "T2", "T3",
+                            "C1", "C2", "C3",
+                            "S12", "S13", "S23",
+                            "Xt", "Yt", "Xc", "Yc", "S",
+                            "alpha1", "alpha2", "alpha3",
+                            "kappa1", "kappa2", "kappa3"]
+        ALL_KEYS = ISOTROPIC_KEYS + ORTHOTROPIC_KEYS
+
+        # Check for any invalid/misspelled inputs
+        for input_key in kwargs:
+          if input_key not in ALL_KEYS:
+              warnings.warn(
+                f"Invalid keyword argument '{input_key}' detected in MaterialProperties. \n"
+                "Keyword argument will be ignored. Acceptable arguments are: \n"
+                f"{ALL_KEYS}",
+                RuntimeWarning
+            )
 
         # Check if any input provided in kwargs was orthotropic
-        if any(input_key not in ISOTROPIC_KEYS for input_key in kwargs):
+        if any(input_key in ORTHOTROPIC_KEYS for input_key in kwargs):
             is_orthotropic = True
         else:
             is_orthotropic = False
