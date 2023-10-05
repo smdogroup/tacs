@@ -108,15 +108,15 @@ Use pyTACS.createTransientProblem instead.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>name</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.11)"><em>str</em></a>) -- Name of this tacs problem</p></li>
-<li><p><strong>tInit</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.11)"><em>float</em></a>) -- Starting time for transient problem integration</p></li>
-<li><p><strong>tFinal</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.11)"><em>float</em></a>) -- Ending time for transient problem integration</p></li>
-<li><p><strong>numSteps</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)"><em>int</em></a>) -- Number of time steps for transient problem integration</p></li>
+<li><p><strong>name</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><em>str</em></a>) -- Name of this tacs problem</p></li>
+<li><p><strong>tInit</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.12)"><em>float</em></a>) -- Starting time for transient problem integration</p></li>
+<li><p><strong>tFinal</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.12)"><em>float</em></a>) -- Ending time for transient problem integration</p></li>
+<li><p><strong>numSteps</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.12)"><em>int</em></a>) -- Number of time steps for transient problem integration</p></li>
 <li><p><strong>assembler</strong> (<a class="reference internal" href="../core/TACS.html#TACS.Assembler" title="TACS.Assembler"><em>TACS.Assembler</em></a>) -- Cython object responsible for creating and setting tacs objects used to solve problem</p></li>
 <li><p><strong>comm</strong> (<a class="reference external" href="https://mpi4py.readthedocs.io/en/stable/reference/mpi4py.MPI.Intracomm.html#mpi4py.MPI.Intracomm" title="(in MPI for Python v3.1)"><em>mpi4py.MPI.Intracomm</em></a>) -- The comm object on which to create the pyTACS object.</p></li>
 <li><p><strong>outputViewer</strong> (<em>TACS.TACSToFH5</em>) -- Cython object used to write out f5 files that can be converted and used for postprocessing.</p></li>
 <li><p><strong>meshLoader</strong> (<em>pymeshloader.pyMeshLoader</em>) -- pyMeshLoader object used to create the assembler.</p></li>
-<li><p><strong>options</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.11)"><em>dict</em></a>) -- Dictionary holding problem-specific option parameters (case-insensitive).</p></li>
+<li><p><strong>options</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.12)"><em>dict</em></a>) -- Dictionary holding problem-specific option parameters (case-insensitive).</p></li>
 </ul>
 </dd>
 </dl>
@@ -127,7 +127,7 @@ Use pyTACS.createTransientProblem instead.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>name</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.11)"><em>str</em></a>) -- Name of option to modify</p></li>
+<li><p><strong>name</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><em>str</em></a>) -- Name of option to modify</p></li>
 <li><p><strong>value</strong> (<em>depends on option</em>) -- New option value to set</p></li>
 </ul>
 </dd>
@@ -143,7 +143,7 @@ Use pyTACS.createTransientProblem instead.</p>
 <dd class="field-odd"><p><strong>numSteps</strong> -- Number of time steps.</p>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)">int</a></p>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.12)">int</a></p>
 </dd>
 </dl>
 </dd></dl>
@@ -157,7 +157,7 @@ Use pyTACS.createTransientProblem instead.</p>
 <dd class="field-odd"><p><strong>timeSteps</strong> -- Discrete time step slices used in time integration.</p>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.26)">numpy.ndarray</a>[<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.11)">float</a>]</p>
+<dd class="field-even"><p><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.26)">numpy.ndarray</a>[<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.12)">float</a>]</p>
 </dd>
 </dl>
 </dd></dl>
@@ -171,7 +171,7 @@ Use pyTACS.createTransientProblem instead.</p>
 <dd class="field-odd"><p><strong>numStages</strong> -- Number of time stages.</p>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)">int</a></p>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.12)">int</a></p>
 </dd>
 </dl>
 </dd></dl>
@@ -182,13 +182,13 @@ Use pyTACS.createTransientProblem instead.</p>
 <dd><p>Get the discrete time stage sub-intervals used in a multi-stage integration scheme.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>timeStep</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)"><em>int</em></a>) -- Time step index to get stage times for.</p>
+<dd class="field-odd"><p><strong>timeStep</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.12)"><em>int</em></a>) -- Time step index to get stage times for.</p>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p><strong>timeStages</strong> -- Time step slices used to discretize this time step.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.26)">numpy.ndarray</a>[<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.11)">float</a>]</p>
+<dd class="field-odd"><p><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.26)">numpy.ndarray</a>[<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.12)">float</a>]</p>
 </dd>
 </dl>
 </dd></dl>
@@ -206,15 +206,15 @@ This average load is then applied to the nodes.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>timeStep</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)"><em>int</em></a>) -- Time step index to apply load to.</p></li>
-<li><p><strong>compIDs</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.11)"><em>list</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)"><em>int</em></a><em>] or </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)"><em>int</em></a>) -- The components with added loads. Use pyTACS.selectCompIDs method
+<li><p><strong>timeStep</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.12)"><em>int</em></a>) -- Time step index to apply load to.</p></li>
+<li><p><strong>compIDs</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.12)"><em>list</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.12)"><em>int</em></a><em>] or </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.12)"><em>int</em></a>) -- The components with added loads. Use pyTACS.selectCompIDs method
 to determine this.</p></li>
 <li><p><strong>F</strong> (<em>Numpy 1d</em><em> or </em><em>2d array length</em><em> (</em><em>varsPerNodes</em><em>) or </em><em>(</em><em>numCompIDs</em><em>, </em><em>varsPerNodes</em><em>)</em>) -- Vector(s) of 'force' to apply to each component.  If only one force vector is provided,
 force will be copied uniformly across all components.</p></li>
-<li><p><strong>timeStage</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)"><em>int</em></a><em> or </em><em>None</em>) -- Time stage index to apply load to. Default is None, which is applicable only for
+<li><p><strong>timeStage</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.12)"><em>int</em></a><em> or </em><em>None</em>) -- Time stage index to apply load to. Default is None, which is applicable only for
 multi-step methods like BDF. For multi-stage methods like DIRK, this index must
 be specified.</p></li>
-<li><p><strong>averageLoad</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.11)"><em>bool</em></a>) -- Flag to determine whether load should be split evenly across all components (True)
+<li><p><strong>averageLoad</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.12)"><em>bool</em></a>) -- Flag to determine whether load should be split evenly across all components (True)
 or copied and applied individually to each component (False). Defaults to False.</p></li>
 </ul>
 </dd>
@@ -249,14 +249,14 @@ selected node IDs at a specified time instance.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>timeStep</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)"><em>int</em></a>) -- Time step index to apply load to.</p></li>
-<li><p><strong>nodeIDs</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.11)"><em>list</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)"><em>int</em></a><em>]</em>) -- The nodes IDs with added loads.</p></li>
+<li><p><strong>timeStep</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.12)"><em>int</em></a>) -- Time step index to apply load to.</p></li>
+<li><p><strong>nodeIDs</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.12)"><em>list</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.12)"><em>int</em></a><em>]</em>) -- The nodes IDs with added loads.</p></li>
 <li><p><strong>F</strong> (<em>Numpy 1d</em><em> or </em><em>2d array length</em><em> (</em><em>varsPerNodes</em><em>) or </em><em>(</em><em>numNodeIDs</em><em>, </em><em>varsPerNodes</em><em>)</em>) -- Array of force vectors, one for each node. If only one force vector is provided,
 force will be copied uniformly across all nodes.</p></li>
-<li><p><strong>timeStage</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)"><em>int</em></a><em> or </em><em>None</em>) -- Time stage index to apply load to. Default is None, which is applicable only for
+<li><p><strong>timeStage</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.12)"><em>int</em></a><em> or </em><em>None</em>) -- Time stage index to apply load to. Default is None, which is applicable only for
 multi-step methods like BDF. For multi-stage methods like DIRK, this index must
 be specified.</p></li>
-<li><p><strong>nastranOrdering</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.11)"><em>bool</em></a>) -- Flag signaling whether nodeIDs are in TACS (default)
+<li><p><strong>nastranOrdering</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.12)"><em>bool</em></a>) -- Flag signaling whether nodeIDs are in TACS (default)
 or NASTRAN (grid IDs in bdf file) ordering</p></li>
 </ul>
 </dd>
@@ -304,9 +304,9 @@ right hand side vector given the equation below:</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>timeStep</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)"><em>int</em></a>) -- Time step index to apply load to.</p></li>
+<li><p><strong>timeStep</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.12)"><em>int</em></a>) -- Time step index to apply load to.</p></li>
 <li><p><strong>Fapplied</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.26)"><em>numpy.ndarray</em></a><em> or </em><em>tacs.TACS.Vec</em>) -- Distributed array containing loads to applied to RHS of the problem.</p></li>
-<li><p><strong>timeStage</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)"><em>int</em></a><em> or </em><em>None</em>) -- Time stage index to apply load to. Default is None, which is applicable only for
+<li><p><strong>timeStage</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.12)"><em>int</em></a><em> or </em><em>None</em>) -- Time stage index to apply load to. Default is None, which is applicable only for
 multi-step methods like BDF. For multi-stage methods like DIRK, this index must
 be specified.</p></li>
 </ul>
@@ -323,14 +323,14 @@ this routine is to add loads that remain fixed throughout an optimization.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>timeStep</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)"><em>int</em></a>) -- Time step index to apply load to.</p></li>
-<li><p><strong>compIDs</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.11)"><em>list</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)"><em>int</em></a><em>] or </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)"><em>int</em></a>) -- The components with added loads. Use pyTACS.selectCompIDs method
+<li><p><strong>timeStep</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.12)"><em>int</em></a>) -- Time step index to apply load to.</p></li>
+<li><p><strong>compIDs</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.12)"><em>list</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.12)"><em>int</em></a><em>] or </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.12)"><em>int</em></a>) -- The components with added loads. Use pyTACS.selectCompIDs method
 to determine this.</p></li>
 <li><p><strong>tractions</strong> (<em>numpy.ndarray length 1</em><em> or </em><em>compIDs</em>) -- Array of traction vectors for each component</p></li>
-<li><p><strong>timeStage</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)"><em>int</em></a><em> or </em><em>None</em>) -- Time stage index to apply load to. Default is None, which is applicable only for
+<li><p><strong>timeStage</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.12)"><em>int</em></a><em> or </em><em>None</em>) -- Time stage index to apply load to. Default is None, which is applicable only for
 multi-step methods like BDF. For multi-stage methods like DIRK, this index must
 be specified.</p></li>
-<li><p><strong>faceIndex</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)"><em>int</em></a>) -- Indicates which face (side) of element to apply traction to.
+<li><p><strong>faceIndex</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.12)"><em>int</em></a>) -- Indicates which face (side) of element to apply traction to.
 Note: not required for certain elements (i.e. shells)</p></li>
 </ul>
 </dd>
@@ -347,15 +347,15 @@ Tractions can be specified on an element by element basis
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>timeStep</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)"><em>int</em></a>) -- Time step index to apply load to.</p></li>
-<li><p><strong>elemIDs</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.11)"><em>list</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)"><em>int</em></a><em>]</em>) -- The global element ID numbers for which to apply the traction.</p></li>
+<li><p><strong>timeStep</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.12)"><em>int</em></a>) -- Time step index to apply load to.</p></li>
+<li><p><strong>elemIDs</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.12)"><em>list</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.12)"><em>int</em></a><em>]</em>) -- The global element ID numbers for which to apply the traction.</p></li>
 <li><p><strong>tractions</strong> (<em>numpy.ndarray 1d</em><em> or </em><em>2d length varsPerNodes</em><em> or </em><em>(</em><em>elemIDs</em><em>, </em><em>varsPerNodes</em><em>)</em>) -- Array of traction vectors for each element</p></li>
-<li><p><strong>timeStage</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)"><em>int</em></a><em> or </em><em>None</em>) -- Time stage index to apply load to. Default is None, which is applicable only for
+<li><p><strong>timeStage</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.12)"><em>int</em></a><em> or </em><em>None</em>) -- Time stage index to apply load to. Default is None, which is applicable only for
 multi-step methods like BDF. For multi-stage methods like DIRK, this index must
 be specified.</p></li>
-<li><p><strong>faceIndex</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)"><em>int</em></a>) -- Indicates which face (side) of element to apply traction to.
+<li><p><strong>faceIndex</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.12)"><em>int</em></a>) -- Indicates which face (side) of element to apply traction to.
 Note: not required for certain elements (i.e. shells)</p></li>
-<li><p><strong>nastranOrdering</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.11)"><em>bool</em></a>) -- Flag signaling whether elemIDs are in TACS (default)
+<li><p><strong>nastranOrdering</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.12)"><em>bool</em></a>) -- Flag signaling whether elemIDs are in TACS (default)
 or NASTRAN ordering</p></li>
 </ul>
 </dd>
@@ -372,14 +372,14 @@ would be a fuel load.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>timeStep</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)"><em>int</em></a>) -- Time step index to apply load to.</p></li>
-<li><p><strong>compIDs</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.11)"><em>list</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)"><em>int</em></a><em>] or </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)"><em>int</em></a>) -- The components with added loads. Use pyTACS.selectCompIDs method
+<li><p><strong>timeStep</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.12)"><em>int</em></a>) -- Time step index to apply load to.</p></li>
+<li><p><strong>compIDs</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.12)"><em>list</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.12)"><em>int</em></a><em>] or </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.12)"><em>int</em></a>) -- The components with added loads. Use pyTACS.selectCompIDs method
 to determine this.</p></li>
 <li><p><strong>pressures</strong> (<em>Numpy array length 1</em><em> or </em><em>compIDs</em>) -- Array of pressure values for each component</p></li>
-<li><p><strong>timeStage</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)"><em>int</em></a><em> or </em><em>None</em>) -- Time stage index to apply load to. Default is None, which is applicable only for
+<li><p><strong>timeStage</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.12)"><em>int</em></a><em> or </em><em>None</em>) -- Time stage index to apply load to. Default is None, which is applicable only for
 multi-step methods like BDF. For multi-stage methods like DIRK, this index must
 be specified.</p></li>
-<li><p><strong>faceIndex</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)"><em>int</em></a>) -- Indicates which face (side) of element to apply pressure to.
+<li><p><strong>faceIndex</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.12)"><em>int</em></a>) -- Indicates which face (side) of element to apply pressure to.
 Note: not required for certain elements (i.e. shells)</p></li>
 </ul>
 </dd>
@@ -396,15 +396,15 @@ basis (if pressures is an array) or set to a uniform value (if pressures is a sc
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>timeStep</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)"><em>int</em></a>) -- Time step index to apply load to.</p></li>
-<li><p><strong>elemIDs</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.11)"><em>list</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)"><em>int</em></a><em>]</em>) -- The global element ID numbers for which to apply the pressure.</p></li>
+<li><p><strong>timeStep</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.12)"><em>int</em></a>) -- Time step index to apply load to.</p></li>
+<li><p><strong>elemIDs</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.12)"><em>list</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.12)"><em>int</em></a><em>]</em>) -- The global element ID numbers for which to apply the pressure.</p></li>
 <li><p><strong>pressures</strong> (<em>Numpy array length 1</em><em> or </em><em>elemIDs</em>) -- Array of pressure values for each element</p></li>
-<li><p><strong>timeStage</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)"><em>int</em></a><em> or </em><em>None</em>) -- Time stage index to apply load to. Default is None, which is applicable only for
+<li><p><strong>timeStage</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.12)"><em>int</em></a><em> or </em><em>None</em>) -- Time stage index to apply load to. Default is None, which is applicable only for
 multi-step methods like BDF. For multi-stage methods like DIRK, this index must
 be specified.</p></li>
-<li><p><strong>faceIndex</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)"><em>int</em></a>) -- Indicates which face (side) of element to apply pressure to.
+<li><p><strong>faceIndex</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.12)"><em>int</em></a>) -- Indicates which face (side) of element to apply pressure to.
 Note: not required for certain elements (i.e. shells)</p></li>
-<li><p><strong>nastranOrdering</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.11)"><em>bool</em></a>) -- Flag signaling whether elemIDs are in TACS (default)
+<li><p><strong>nastranOrdering</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.12)"><em>bool</em></a>) -- Flag signaling whether elemIDs are in TACS (default)
 or NASTRAN ordering</p></li>
 </ul>
 </dd>
@@ -420,9 +420,9 @@ This is most commonly used to model gravity loads on a model.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>timeStep</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)"><em>int</em></a>) -- Time step index to apply load to.</p></li>
+<li><p><strong>timeStep</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.12)"><em>int</em></a>) -- Time step index to apply load to.</p></li>
 <li><p><strong>inertiaVector</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.26)"><em>numpy.ndarray</em></a>) -- Acceleration vector used to define inertial load.</p></li>
-<li><p><strong>timeStage</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)"><em>int</em></a><em> or </em><em>None</em>) -- Time stage index to apply load to. Default is None, which is applicable only for
+<li><p><strong>timeStage</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.12)"><em>int</em></a><em> or </em><em>None</em>) -- Time stage index to apply load to. Default is None, which is applicable only for
 multi-step methods like BDF. For multi-stage methods like DIRK, this index must
 be specified.</p></li>
 </ul>
@@ -439,10 +439,10 @@ This is most commonly used to model rotors, rolling aircraft, etc.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>timeStep</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)"><em>int</em></a>) -- Time step index to apply load to.</p></li>
+<li><p><strong>timeStep</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.12)"><em>int</em></a>) -- Time step index to apply load to.</p></li>
 <li><p><strong>omegaVector</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.26)"><em>numpy.ndarray</em></a>) -- Rotational velocity vector (rad/s) used to define centrifugal load.</p></li>
 <li><p><strong>rotCenter</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.26)"><em>numpy.ndarray</em></a>) -- Location of center of rotation used to define centrifugal load.</p></li>
-<li><p><strong>timeStage</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)"><em>int</em></a><em> or </em><em>None</em>) -- Time stage index to apply load to. Default is None, which is applicable only for
+<li><p><strong>timeStage</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.12)"><em>int</em></a><em> or </em><em>None</em>) -- Time stage index to apply load to. Default is None, which is applicable only for
 multi-step methods like BDF. For multi-stage methods like DIRK, this index must
 be specified.</p></li>
 </ul>
@@ -459,12 +459,12 @@ RFORCE, PLOAD2, and PLOAD4.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>timeStep</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)"><em>int</em></a>) -- Time step index to apply load to.</p></li>
-<li><p><strong>loadID</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)"><em>int</em></a>) -- Load identification number of load set in BDF file user wishes to add to problem.</p></li>
-<li><p><strong>timeStage</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)"><em>int</em></a><em> or </em><em>None</em>) -- Time stage index to apply load to. Default is None, which is applicable only for
+<li><p><strong>timeStep</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.12)"><em>int</em></a>) -- Time step index to apply load to.</p></li>
+<li><p><strong>loadID</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.12)"><em>int</em></a>) -- Load identification number of load set in BDF file user wishes to add to problem.</p></li>
+<li><p><strong>timeStage</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.12)"><em>int</em></a><em> or </em><em>None</em>) -- Time stage index to apply load to. Default is None, which is applicable only for
 multi-step methods like BDF. For multi-stage methods like DIRK, this index must
 be specified.</p></li>
-<li><p><strong>scale</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.11)"><em>float</em></a>) -- Factor to scale the BDF loads by before adding to problem.</p></li>
+<li><p><strong>scale</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.12)"><em>float</em></a>) -- Factor to scale the BDF loads by before adding to problem.</p></li>
 </ul>
 </dd>
 </dl>
@@ -477,9 +477,9 @@ be specified.</p></li>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>vars</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.11)"><em>float</em></a><em> or </em><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.26)"><em>numpy.ndarray</em></a><em> or </em><em>tacs.TACS.Vec</em>) -- Initial conditions of the state variables</p></li>
-<li><p><strong>dvars</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.11)"><em>float</em></a><em> or </em><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.26)"><em>numpy.ndarray</em></a><em> or </em><em>tacs.TACS.Vec</em>) -- Initial conditions of the first time-derivative of the state variables</p></li>
-<li><p><strong>ddvars</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.11)"><em>float</em></a><em> or </em><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.26)"><em>numpy.ndarray</em></a><em> or </em><em>tacs.TACS.Vec</em>) -- Initial conditions of the second time-derivative of the state variables</p></li>
+<li><p><strong>vars</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.12)"><em>float</em></a><em> or </em><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.26)"><em>numpy.ndarray</em></a><em> or </em><em>tacs.TACS.Vec</em>) -- Initial conditions of the state variables</p></li>
+<li><p><strong>dvars</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.12)"><em>float</em></a><em> or </em><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.26)"><em>numpy.ndarray</em></a><em> or </em><em>tacs.TACS.Vec</em>) -- Initial conditions of the first time-derivative of the state variables</p></li>
+<li><p><strong>ddvars</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.12)"><em>float</em></a><em> or </em><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.26)"><em>numpy.ndarray</em></a><em> or </em><em>tacs.TACS.Vec</em>) -- Initial conditions of the second time-derivative of the state variables</p></li>
 </ul>
 </dd>
 </dl>
@@ -510,8 +510,8 @@ steps/stages of the problem.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>timeStep</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)"><em>int</em></a>) -- Time step index to iterate</p></li>
-<li><p><strong>timeStage</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)"><em>int</em></a><em> or </em><em>None</em>) -- Time stage index to iterate. If not None, solver must be multistage</p></li>
+<li><p><strong>timeStep</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.12)"><em>int</em></a>) -- Time step index to iterate</p></li>
+<li><p><strong>timeStage</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.12)"><em>int</em></a><em> or </em><em>None</em>) -- Time stage index to iterate. If not None, solver must be multistage</p></li>
 <li><p><strong>Fext</strong> (<em>tacs.TACS.Vec</em><em> or </em><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.26)"><em>numpy.ndarray</em></a><em> or </em><em>None</em>) -- If Fext is not None, add this force vector to the loads applied at
 this time instance. Fext must be sized such that the flattened array
 is (numOwnedNodes*numVarsPerNode) in length. Useful for applying
@@ -544,11 +544,11 @@ for supported TACS eval functions.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>funcName</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.11)"><em>str</em></a>) -- The user-supplied name for the function. This will
+<li><p><strong>funcName</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><em>str</em></a>) -- The user-supplied name for the function. This will
 typically be a string that is meaningful to the user</p></li>
 <li><p><strong>funcHandle</strong> (<em>tacs.TACS.Function</em>) -- The function handle to use for creation. This must come
 from the functions module in tacs.</p></li>
-<li><p><strong>compIDs</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.11)"><em>list</em></a>) -- List of compIDs to select.</p></li>
+<li><p><strong>compIDs</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.12)"><em>list</em></a>) -- List of compIDs to select.</p></li>
 <li><p><strong>**kwargs</strong> -- Any keyword arguments to be passed to the TACS function during setup.</p></li>
 </ul>
 </dd>
@@ -565,9 +565,9 @@ dictionary.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>funcs</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.11)"><em>dict</em></a>) -- Dictionary into which the functions are saved.</p></li>
+<li><p><strong>funcs</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.12)"><em>dict</em></a>) -- Dictionary into which the functions are saved.</p></li>
 <li><p><strong>evalFuncs</strong> (<em>iterable object containing strings.</em>) -- If not none, use these functions to evaluate.</p></li>
-<li><p><strong>ignoreMissing</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.11)"><em>bool</em></a>) -- Flag to supress checking for a valid function. Please use
+<li><p><strong>ignoreMissing</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.12)"><em>bool</em></a>) -- Flag to supress checking for a valid function. Please use
 this option with caution.</p></li>
 </ul>
 </dd>
@@ -594,7 +594,7 @@ respect to all design variables and node locations are computed.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>funcsSens</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.11)"><em>dict</em></a>) -- Dictionary into which the derivatives are saved.</p></li>
+<li><p><strong>funcsSens</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.12)"><em>dict</em></a>) -- Dictionary into which the derivatives are saved.</p></li>
 <li><p><strong>evalFuncs</strong> (<em>iterable object containing strings</em>) -- The functions the user wants returned</p></li>
 </ul>
 </dd>
@@ -616,8 +616,8 @@ respect to all design variables and node locations are computed.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>timeStep</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)"><em>int</em></a>) -- Time step index to get state variables for.</p></li>
-<li><p><strong>timeStage</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)"><em>int</em></a><em> or </em><em>None</em>) -- Time stage index to get state variables for.</p></li>
+<li><p><strong>timeStep</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.12)"><em>int</em></a>) -- Time step index to get state variables for.</p></li>
+<li><p><strong>timeStage</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.12)"><em>int</em></a><em> or </em><em>None</em>) -- Time stage index to get state variables for.</p></li>
 <li><p><strong>states</strong> (<em>tacs.TACS.Vec</em><em> or </em><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.26)"><em>numpy.ndarray</em></a><em> or </em><em>None</em>) -- If states is not None, place the state variables into this array (optional).</p></li>
 <li><p><strong>dstates</strong> (<em>tacs.TACS.Vec</em><em> or </em><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.26)"><em>numpy.ndarray</em></a><em> or </em><em>None</em>) -- If dstates is not None, place the time derivative of the state variables into this array (optional).</p></li>
 <li><p><strong>ddstates</strong> (<em>tacs.TACS.Vec</em><em> or </em><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.26)"><em>numpy.ndarray</em></a><em> or </em><em>None</em>) -- If ddstates is not None, place the second time derivative of the state variables into this array (optional).</p></li>
@@ -653,12 +653,12 @@ determine the desired writing procedure</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>outputDir</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.11)"><em>str</em></a><em> or </em><em>None</em>) -- Use the supplied output directory</p></li>
-<li><p><strong>baseName</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.11)"><em>str</em></a><em> or </em><em>None</em>) -- Use this supplied string for the base filename. Typically
+<li><p><strong>outputDir</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><em>str</em></a><em> or </em><em>None</em>) -- Use the supplied output directory</p></li>
+<li><p><strong>baseName</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><em>str</em></a><em> or </em><em>None</em>) -- Use this supplied string for the base filename. Typically
 only used from an external solver.</p></li>
-<li><p><strong>number</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)"><em>int</em></a><em> or </em><em>None</em>) -- Use the user supplied number to index solution. Again, only
+<li><p><strong>number</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.12)"><em>int</em></a><em> or </em><em>None</em>) -- Use the user supplied number to index solution. Again, only
 typically used from an external solver</p></li>
-<li><p><strong>timeSteps</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)"><em>int</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.11)"><em>list</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)"><em>int</em></a><em>] or </em><em>None</em>) -- Time step index or indices to get state variables for.
+<li><p><strong>timeSteps</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.12)"><em>int</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.12)"><em>list</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.12)"><em>int</em></a><em>] or </em><em>None</em>) -- Time step index or indices to get state variables for.
 If None, returns a solution for all time steps.
 Defaults to None.</p></li>
 </ul>
@@ -710,7 +710,7 @@ Defaults to None.</p></li>
 <dd class="field-odd"><p><strong>funcNames</strong> -- List containing user-defined names for functions added so far.</p>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.11)">list</a>[<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.11)">str</a>]</p>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.12)">list</a>[<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)">str</a>]</p>
 </dd>
 </dl>
 </dd></dl>
@@ -739,7 +739,7 @@ the number of structural nodes on this processor.</p>
 <dd class="field-odd"><p><strong>ncoords</strong> -- Number of mesh coordinates on this processor.</p>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)">int</a></p>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.12)">int</a></p>
 </dd>
 </dl>
 </dd></dl>
@@ -753,7 +753,7 @@ the number of structural nodes on this processor.</p>
 <dd class="field-odd"><p><strong>ndvs</strong> -- Number of design variables on this processor.</p>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)">int</a></p>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.12)">int</a></p>
 </dd>
 </dl>
 </dd></dl>
@@ -767,7 +767,7 @@ the number of structural nodes on this processor.</p>
 <dd class="field-odd"><p><strong>nnodes</strong> -- Number of nodes on this processor.</p>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)">int</a></p>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.12)">int</a></p>
 </dd>
 </dl>
 </dd></dl>
@@ -782,7 +782,7 @@ on this processor</p>
 <dd class="field-odd"><p><strong>nstate</strong> -- number of states.</p>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)">int</a></p>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.12)">int</a></p>
 </dd>
 </dl>
 </dd></dl>
@@ -793,7 +793,7 @@ on this processor</p>
 <dd><p>Get a solver option value. The name is not case sensitive.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>name</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.11)"><em>str</em></a>) -- Name of option to get</p>
+<dd class="field-odd"><p><strong>name</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><em>str</em></a>) -- Name of option to get</p>
 </dd>
 </dl>
 </dd></dl>
@@ -807,7 +807,7 @@ on this processor</p>
 <dd class="field-odd"><p><strong>vpn</strong> -- Number of variables per node.</p>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)">int</a></p>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.12)">int</a></p>
 </dd>
 </dl>
 </dd></dl>
@@ -832,7 +832,7 @@ options to the stdout on the root processor</p>
 <dd><p>Update the design variables used by tacs.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>x</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.26)"><em>numpy.ndarray</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.11)"><em>dict</em></a><em> or </em><em>tacs.TACS.Vec</em>) -- The variables (typically from the optimizer) to set. It
+<dd class="field-odd"><p><strong>x</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.26)"><em>numpy.ndarray</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.12)"><em>dict</em></a><em> or </em><em>tacs.TACS.Vec</em>) -- The variables (typically from the optimizer) to set. It
 looks for variable in the <code class="docutils literal notranslate"><span class="pre">self.varName</span></code> attribute if in dict.</p>
 </dd>
 </dl>
@@ -858,7 +858,7 @@ to be changed if more than 1 pytacs object is used in an
 optimization</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>varName</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.11)"><em>str</em></a>) -- Name of the structural variable used in addVarGroup().</p>
+<dd class="field-odd"><p><strong>varName</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><em>str</em></a>) -- Name of the structural variable used in addVarGroup().</p>
 </dd>
 </dl>
 </dd></dl>
@@ -871,7 +871,7 @@ Optional tacs_aim arg for TacsAim wrapper class object in root/tacs/caps2tacs/</
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>evalFuncs</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.11)"><em>list</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.11)"><em>str</em></a><em>]</em>) -- names of TACS functions to be evaluated</p></li>
+<li><p><strong>evalFuncs</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.12)"><em>list</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><em>str</em></a><em>]</em>) -- names of TACS functions to be evaluated</p></li>
 <li><p><strong>tacsAim</strong> (<em>tacs.caps2tacs.TacsAIM</em>) -- class which handles the sensitivity file writing for ESP/CAPS shape derivatives</p></li>
 </ul>
 </dd>
