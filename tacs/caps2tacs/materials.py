@@ -180,6 +180,20 @@ class Isotropic(Material):
             cp=903,
             kappa=237,
         )
+    
+    @classmethod
+    def titanium(cls):
+        return cls(
+            name="titanium",
+            E=120e9,
+            nu=0.361,
+            rho=4.51e3,
+            T1=2.4e7,
+            C1=2.4e7,
+            alpha=8.41e-6,
+            cp=522.3,
+            kappa=11.4,
+        )
 
     @classmethod
     def steel(cls):
