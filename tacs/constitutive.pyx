@@ -488,7 +488,7 @@ cdef class OrthotropicPly:
       to zero by default. If a value of C, the failure stress under
       combined in-plane loading, is supplied, the interaction coefficient
       is determined. Be careful - the value can easily fall outside
-      acceptible bounds - these are tested during initialization.
+      acceptable bounds - these are tested during initialization.
 
       Args:
           ply_thickness (float or complex): The ply thickness.
