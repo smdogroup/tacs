@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+
+<html lang="python">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>tacs.mphys.builder &#8212; TACS  documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/sphinxdoc.css?v=0a676766" />
+    <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+    <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js?v=a888008e"></script>
+    <script src="../../../_static/doctools.js?v=888ff710"></script>
+    <script src="../../../_static/sphinx_highlight.js?v=4825356b"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">TACS  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" accesskey="U">Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">tacs.mphys.builder</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for tacs.mphys.builder</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">copy</span>
+<span class="kn">import</span> <span class="nn">warnings</span>
+
+<span class="kn">from</span> <span class="nn">mphys.builder</span> <span class="kn">import</span> <span class="n">Builder</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="kn">from</span> <span class="nn">tacs.pytacs</span> <span class="kn">import</span> <span class="n">pyTACS</span>
+<span class="kn">from</span> <span class="nn">tacs.mphys.mesh</span> <span class="kn">import</span> <span class="n">TacsMeshGroup</span>
+<span class="kn">from</span> <span class="nn">tacs.mphys.precoupling</span> <span class="kn">import</span> <span class="n">TacsPrecouplingGroup</span>
+<span class="kn">from</span> <span class="nn">tacs.mphys.coupling</span> <span class="kn">import</span> <span class="n">TacsCouplingGroup</span>
+<span class="kn">from</span> <span class="nn">tacs.mphys.postcoupling</span> <span class="kn">import</span> <span class="n">TacsPostcouplingGroup</span>
+
+
+<div class="viewcode-block" id="TacsBuilder"><a class="viewcode-back" href="../../../mphys/builder.html#tacs.mphys.builder.TacsBuilder">[docs]</a><span class="k">class</span> <span class="nc">TacsBuilder</span><span class="p">(</span><span class="n">Builder</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">mesh_file</span><span class="p">,</span>
+        <span class="n">assembler_setup</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">element_callback</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">problem_setup</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">constraint_setup</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">buckling_setup</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">pytacs_options</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">check_partials</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+        <span class="n">conduction</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+        <span class="n">coupled</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">write_solution</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">separate_mass_dvs</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Create the Builder responsible for creating MPhys Scenario&#39;s based on TACS Analyses.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        mesh_file : str or pyNastran.bdf.bdf.BDF</span>
+<span class="sd">            The BDF file or a pyNastran BDF object to load.</span>
+<span class="sd">        assembler_setup : collections.abc.Callable, optional</span>
+<span class="sd">            User-defined callback function for modifying pyTACS assembler prior to initialization.</span>
+<span class="sd">            This is used for adding point mass DVs to the model. Defaults to None.</span>
+<span class="sd">            follows::</span>
+
+<span class="sd">                def assembler_setup(fea_assembler):</span>
+
+<span class="sd">            fea_assembler is the uninitialized pyTACS assembler instance created by the builder.</span>
+<span class="sd">        element_callback : collections.abc.Callable, optional</span>
+<span class="sd">            User-defined callback function for setting up TACS elements and element DVs. Defaults to None.</span>
+<span class="sd">            See :ref:`pytacs/pytacs_module:Initializing with elemCallBack` for more info.</span>
+<span class="sd">            The calling sequence for elem_callback **must** be as follows::</span>
+
+<span class="sd">                def elem_callback(dv_num, comp_id, comp_descript, elem_descripts, special_dvs, **kwargs):</span>
+
+<span class="sd">            The dv_num is the current counter which must be used by the</span>
+<span class="sd">            user when creating a constitutive object with design</span>
+<span class="sd">            variables.</span>
+
+<span class="sd">            comp_id is the ID number used by tacs to reference this property group.</span>
+<span class="sd">            Use kwargs[&#39;propID&#39;] to get the corresponding Nastran property ID that</span>
+<span class="sd">            is read in from the BDF.</span>
+
+<span class="sd">            comp_descript is the component description label read in from optional</span>
+<span class="sd">            formatted comments in BDF file</span>
+
+<span class="sd">            elem_descripts are the name of the elements belonging to this group</span>
+<span class="sd">            (e.g. CQUAD4, CTRIA3, CTETRA, etc). This value will be a list since</span>
+<span class="sd">            one component may contain multiple compatible element types.</span>
+<span class="sd">            Example: [&#39;CQUAD4&#39;, CTRIA3&#39;]</span>
+
+<span class="sd">            global_dvs is a dictionary containing information about any</span>
+<span class="sd">            global DVs that have been added.</span>
+<span class="sd">            elem_callback must return a list containing as many TACS element</span>
+<span class="sd">            objects as there are element types in elemDescripts (one for each).</span>
+<span class="sd">        problem_setup : collections.abc.Callable, optional</span>
+<span class="sd">            This function is called each time a new MPhys Scenario is created. This function sets up the problem by adding</span>
+<span class="sd">            fixed loads, modifying options, and adding eval functions. The function should have the following structure::</span>
+
+<span class="sd">              def problem_setup(scenario_name, fea_assembler, problem):</span>
+
+<span class="sd">            scenario_name is a str denoting which MPhys Scenario the problem is currently being set up for.</span>
+<span class="sd">            fea_assembler is the uninitialized pyTACS assembler instance created by the builder.</span>
+<span class="sd">            problem is the tacs.BaseProblem class being setup for this scenario.</span>
+<span class="sd">        constraint_setup : collections.abc.Callable, optional</span>
+<span class="sd">            This function is called each time a new MPhys Scenario is created. This function sets up a series of</span>
+<span class="sd">            constraints to be run after at the end of an MPhys analysis.</span>
+<span class="sd">            The function should have the following structure::</span>
+
+<span class="sd">                def constraint_setup(scenario_name, fea_assembler, constraints):</span>
+
+<span class="sd">        buckling_setup : collections.abc.Callable, optional</span>
+<span class="sd">            This function is called each time a new MPhys Scenario is created. This function sets up a buckling problem</span>
+<span class="sd">            to be run after at the end of an MPhys analysis. The function should have the following structure::</span>
+
+<span class="sd">                def buckling_setup(scenario_name, fea_assembler)</span>
+
+<span class="sd">        pytacs_options : dict, optional</span>
+<span class="sd">            Options dictionary passed to pyTACS assembler.</span>
+<span class="sd">        check_partials : bool, optional</span>
+<span class="sd">            This flag allows TACS components partial derivative routines to be evaluated in forward mode without raising</span>
+<span class="sd">            an error. This lets OpenMDAO&#39;s check_partials routine run without errors, allowing users to check TACS&#39;</span>
+<span class="sd">            reverse derivatives. The forward derivative checks will still not be meaningful since TACS only supports</span>
+<span class="sd">            reverse mode. Defaults to False.</span>
+<span class="sd">        conduction : bool, optional</span>
+<span class="sd">            Flag to determine weather TACS component represents a thermal (True) or structural (False) analysis.</span>
+<span class="sd">            Defaults to False.</span>
+<span class="sd">        coupled : bool, optional</span>
+<span class="sd">            Flag to determine of if multidisciplinary coupling variables should be turned on</span>
+<span class="sd">            (used in aerostructural/thermostructural analyses). Defaults to True.</span>
+<span class="sd">        write_solution : bool, optional</span>
+<span class="sd">            Flag to determine whether to write out TACS solutions to f5 file each design iteration. Defaults to True.</span>
+<span class="sd">        separate_mass_dvs : bool, optional</span>
+<span class="sd">            Flag to determine if TACS&#39; mass dvs should be lumped into the struct_dv input vector (False) or</span>
+<span class="sd">            split into separate OpenMDAO inputs based on their assigned names (True). Defaults to False.</span>
+
+<span class="sd">        Examples</span>
+<span class="sd">        --------</span>
+<span class="sd">        assembler_setup:</span>
+<span class="sd">            &gt;&gt;&gt;  def assembler_setup(fea_assembler):</span>
+<span class="sd">            &gt;&gt;&gt;      # Assign dvs for point mass elements 10401 and 10402</span>
+<span class="sd">            &gt;&gt;&gt;      # to vary mass values during optimization</span>
+<span class="sd">            &gt;&gt;&gt;      fea_assembler.assignMassDV(&quot;engine_mass&quot;, 10401)</span>
+<span class="sd">            &gt;&gt;&gt;      fea_assembler.assignMassDV(&quot;fuel_mass&quot;, 10402)</span>
+<span class="sd">        element_callback:</span>
+<span class="sd">            &gt;&gt;&gt;  def elem_callback(dv_num, comp_id, comp_descript, elem_descripts, special_dvs, **kwargs):</span>
+<span class="sd">            &gt;&gt;&gt;      # Material properties</span>
+<span class="sd">            &gt;&gt;&gt;      rho = 2500.0        # density kg/m^3</span>
+<span class="sd">            &gt;&gt;&gt;      E = 70e9            # Young&#39;s modulus (Pa)</span>
+<span class="sd">            &gt;&gt;&gt;      nu = 0.3            # Poisson&#39;s ratio</span>
+<span class="sd">            &gt;&gt;&gt;      ys = 464.0e6        # yield stress</span>
+<span class="sd">            &gt;&gt;&gt;</span>
+<span class="sd">            &gt;&gt;&gt;      # Plate geometry</span>
+<span class="sd">            &gt;&gt;&gt;      tplate = 0.005    # 5 mm</span>
+<span class="sd">            &gt;&gt;&gt;</span>
+<span class="sd">            &gt;&gt;&gt;      # Set up material properties</span>
+<span class="sd">            &gt;&gt;&gt;      prop = constitutive.MaterialProperties(rho=rho, E=E, nu=nu, ys=ys)</span>
+<span class="sd">            &gt;&gt;&gt;      # Set up constitutive model</span>
+<span class="sd">            &gt;&gt;&gt;      con = constitutive.IsoShellConstitutive(prop, t=tplate, tNum=dv_num)</span>
+<span class="sd">            &gt;&gt;&gt;      # Set the transform used to define shell stresses, None defaults to NaturalShellTransform</span>
+<span class="sd">            &gt;&gt;&gt;      transform = None</span>
+<span class="sd">            &gt;&gt;&gt;      # Set up tacs element for every entry in elem_descripts</span>
+<span class="sd">            &gt;&gt;&gt;      # According to the bdf file, elem_descripts should always be [&quot;CQUAD4&quot;]</span>
+<span class="sd">            &gt;&gt;&gt;      elem_list = []</span>
+<span class="sd">            &gt;&gt;&gt;      for descript in elem_descripts:</span>
+<span class="sd">            &gt;&gt;&gt;          if descript == &#39;CQUAD4&#39;:</span>
+<span class="sd">            &gt;&gt;&gt;              elem = elements.Quad4Shell(transform, con)</span>
+<span class="sd">            &gt;&gt;&gt;          else: # Add a catch for any unexpected element types</span>
+<span class="sd">            &gt;&gt;&gt;              raise ValueError(f&quot;Unexpected element of type {descript}.&quot;)</span>
+<span class="sd">            &gt;&gt;&gt;      return elem_list</span>
+<span class="sd">        problem_setup:</span>
+<span class="sd">            &gt;&gt;&gt; def problem_setup(scenario_name, fea_assembler, problem):</span>
+<span class="sd">            &gt;&gt;&gt;     # Set scenario to its own output directory</span>
+<span class="sd">            &gt;&gt;&gt;     problem.setOption(&#39;outputDir&#39;, scenario_name)</span>
+<span class="sd">            &gt;&gt;&gt;</span>
+<span class="sd">            &gt;&gt;&gt;     # Only include mass from elements that belong to pytacs components (i.e. skip concentrated masses)</span>
+<span class="sd">            &gt;&gt;&gt;     comp_ids = fea_assembler.selectCompIDs(nGroup=-1)</span>
+<span class="sd">            &gt;&gt;&gt;     problem.addFunction(&#39;struct_mass&#39;, functions.StructuralMass, comp_ids=comp_ids)</span>
+<span class="sd">            &gt;&gt;&gt;     problem.addFunction(&#39;ks_vmfailure&#39;, functions.KSFailure,</span>
+<span class="sd">            &gt;&gt;&gt;                         safetyFactor=1.5, ksWeight=100.0)</span>
+<span class="sd">            &gt;&gt;&gt;</span>
+<span class="sd">            &gt;&gt;&gt;     # load factor</span>
+<span class="sd">            &gt;&gt;&gt;     if scenario_name == &quot;maneuver_2_5g&quot;:</span>
+<span class="sd">            &gt;&gt;&gt;       n = 2.5</span>
+<span class="sd">            &gt;&gt;&gt;     elif scenario_name == &quot;maneuver_m1g&quot;:</span>
+<span class="sd">            &gt;&gt;&gt;       n = -1.0</span>
+<span class="sd">            &gt;&gt;&gt;     else:</span>
+<span class="sd">            &gt;&gt;&gt;       n = 1.0</span>
+<span class="sd">            &gt;&gt;&gt;     # Add gravity load</span>
+<span class="sd">            &gt;&gt;&gt;     g = n * np.array([0.0, 0.0, -9.81])  # m/s^2</span>
+<span class="sd">            &gt;&gt;&gt;     problem.addInertialLoad(g)</span>
+
+<span class="sd">        constraint_setup:</span>
+<span class="sd">            &gt;&gt;&gt; def constraint_setup(scenario_name, fea_assembler, constraints):</span>
+<span class="sd">            &gt;&gt;&gt;     # Add constraint on enclosed volume of structure</span>
+<span class="sd">            &gt;&gt;&gt;     constr = fea_assembler.createVolumeConstraint(&quot;constraints&quot;)</span>
+<span class="sd">            &gt;&gt;&gt;     constr.addConstraint(&quot;volume&quot;)</span>
+<span class="sd">            &gt;&gt;&gt;     constraints.append(constr)</span>
+
+<span class="sd">        buckling_setup:</span>
+<span class="sd">            &gt;&gt;&gt; def buckling_setup(scenario_name, fea_assembler):</span>
+<span class="sd">            &gt;&gt;&gt;     # Add buckling analysis only to 2.5g maneuver scenario</span>
+<span class="sd">            &gt;&gt;&gt;     if scenario_name == &quot;maneuver_2_5g&quot;:</span>
+<span class="sd">            &gt;&gt;&gt;         problem = fea_assembler.createBucklingProblem(</span>
+<span class="sd">            &gt;&gt;&gt;             &quot;buckling&quot;, sigma=1.0, numEigs=2</span>
+<span class="sd">            &gt;&gt;&gt;         )</span>
+<span class="sd">            &gt;&gt;&gt;         problem.setOption(&quot;L2Convergence&quot;, 1e-20)</span>
+<span class="sd">            &gt;&gt;&gt;         problem.setOption(&quot;L2ConvergenceRel&quot;, 1e-20)</span>
+<span class="sd">            &gt;&gt;&gt;         return problem</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">mesh_file</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+            <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
+                <span class="s2">&quot;The signature for TacsBuilder has changed. Arguments such as &#39;mesh_file&#39; must be passed directly as &quot;</span>
+                <span class="s2">&quot;arguments to TacsBuilder. Please see the TacsBuilder docstring for more info. This will become an &quot;</span>
+                <span class="s2">&quot;error in tacs 3.7.0&quot;</span><span class="p">,</span>
+                <span class="ne">DeprecationWarning</span><span class="p">,</span>
+            <span class="p">)</span>
+            <span class="n">options</span> <span class="o">=</span> <span class="n">mesh_file</span>
+            <span class="c1"># Make deep copy of dict so we can modify it</span>
+            <span class="n">pytacs_options</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">options</span><span class="p">)</span>
+            <span class="n">mesh_file</span> <span class="o">=</span> <span class="n">pytacs_options</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;mesh_file&quot;</span><span class="p">)</span>
+
+            <span class="c1"># Load optional user-defined callback function for setting up tacs elements</span>
+            <span class="k">if</span> <span class="s2">&quot;assembler_setup&quot;</span> <span class="ow">in</span> <span class="n">pytacs_options</span><span class="p">:</span>
+                <span class="n">assembler_setup</span> <span class="o">=</span> <span class="n">pytacs_options</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;assembler_setup&quot;</span><span class="p">)</span>
+
+            <span class="c1"># Load optional user-defined callback function for setting up tacs elements</span>
+            <span class="k">if</span> <span class="s2">&quot;element_callback&quot;</span> <span class="ow">in</span> <span class="n">pytacs_options</span><span class="p">:</span>
+                <span class="n">element_callback</span> <span class="o">=</span> <span class="n">pytacs_options</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;element_callback&quot;</span><span class="p">)</span>
+
+            <span class="c1"># Load optional user-defined callback function for setting up tacs elements</span>
+            <span class="k">if</span> <span class="s2">&quot;problem_setup&quot;</span> <span class="ow">in</span> <span class="n">pytacs_options</span><span class="p">:</span>
+                <span class="n">problem_setup</span> <span class="o">=</span> <span class="n">pytacs_options</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;problem_setup&quot;</span><span class="p">)</span>
+
+            <span class="c1"># Load optional user-defined callback function for setting up constraints</span>
+            <span class="k">if</span> <span class="s2">&quot;constraint_setup&quot;</span> <span class="ow">in</span> <span class="n">pytacs_options</span><span class="p">:</span>
+                <span class="n">constraint_setup</span> <span class="o">=</span> <span class="n">pytacs_options</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;constraint_setup&quot;</span><span class="p">)</span>
+
+            <span class="c1"># Load optional user-defined callback function for setting up buckling problem</span>
+            <span class="k">if</span> <span class="s2">&quot;buckling_setup&quot;</span> <span class="ow">in</span> <span class="n">pytacs_options</span><span class="p">:</span>
+                <span class="n">buckling_setup</span> <span class="o">=</span> <span class="n">pytacs_options</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;buckling_setup&quot;</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">mesh_file</span> <span class="o">=</span> <span class="n">mesh_file</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assembler_setup</span> <span class="o">=</span> <span class="n">assembler_setup</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">element_callback</span> <span class="o">=</span> <span class="n">element_callback</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">problem_setup</span> <span class="o">=</span> <span class="n">problem_setup</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">constraint_setup</span> <span class="o">=</span> <span class="n">constraint_setup</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">buckling_setup</span> <span class="o">=</span> <span class="n">buckling_setup</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pytacs_options</span> <span class="o">=</span> <span class="n">pytacs_options</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">check_partials</span> <span class="o">=</span> <span class="n">check_partials</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">conduction</span> <span class="o">=</span> <span class="n">conduction</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">coupled</span> <span class="o">=</span> <span class="n">coupled</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">write_solution</span> <span class="o">=</span> <span class="n">write_solution</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">separate_mass_dvs</span> <span class="o">=</span> <span class="n">separate_mass_dvs</span>
+
+<div class="viewcode-block" id="TacsBuilder.initialize"><a class="viewcode-back" href="../../../mphys/builder.html#tacs.mphys.builder.TacsBuilder.initialize">[docs]</a>    <span class="k">def</span> <span class="nf">initialize</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">comm</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Initialize pyTACS.</span>
+<span class="sd">        This method will be called when the MPI comm is available</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        comm : :class:`~mpi4py.MPI.Comm`</span>
+<span class="sd">            The communicator object created for this xfer object instance.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Create pytacs instance</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fea_assembler</span> <span class="o">=</span> <span class="n">pyTACS</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">mesh_file</span><span class="p">,</span> <span class="n">options</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">pytacs_options</span><span class="p">,</span> <span class="n">comm</span><span class="o">=</span><span class="n">comm</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">comm</span> <span class="o">=</span> <span class="n">comm</span>
+
+        <span class="c1"># Do any pre-initialize setup requested by user</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">assembler_setup</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">assembler_setup</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fea_assembler</span><span class="p">)</span>
+
+        <span class="c1"># Set up elements and TACS assembler</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fea_assembler</span><span class="o">.</span><span class="n">initialize</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">element_callback</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="TacsBuilder.get_coupling_group_subsystem"><a class="viewcode-back" href="../../../mphys/builder.html#tacs.mphys.builder.TacsBuilder.get_coupling_group_subsystem">[docs]</a>    <span class="k">def</span> <span class="nf">get_coupling_group_subsystem</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scenario_name</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        The subsystem that this builder will add to the CouplingGroup</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        scenario_name : str, optional</span>
+<span class="sd">            The name of the scenario calling the builder.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        subsystem : openmdao.api.Group</span>
+<span class="sd">            The openmdao subsystem that handles all the computations for</span>
+<span class="sd">            this solver. Transfer schemes can return multiple subsystems</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">TacsCouplingGroup</span><span class="p">(</span>
+            <span class="n">fea_assembler</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">fea_assembler</span><span class="p">,</span>
+            <span class="n">conduction</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">conduction</span><span class="p">,</span>
+            <span class="n">check_partials</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">check_partials</span><span class="p">,</span>
+            <span class="n">coupled</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">coupled</span><span class="p">,</span>
+            <span class="n">scenario_name</span><span class="o">=</span><span class="n">scenario_name</span><span class="p">,</span>
+            <span class="n">problem_setup</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">problem_setup</span><span class="p">,</span>
+        <span class="p">)</span></div>
+
+<div class="viewcode-block" id="TacsBuilder.get_mesh_coordinate_subsystem"><a class="viewcode-back" href="../../../mphys/builder.html#tacs.mphys.builder.TacsBuilder.get_mesh_coordinate_subsystem">[docs]</a>    <span class="k">def</span> <span class="nf">get_mesh_coordinate_subsystem</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scenario_name</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        The subsystem that contains the subsystem that will return the mesh</span>
+<span class="sd">        coordinates</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        scenario_name : str, optional</span>
+<span class="sd">            The name of the scenario calling the builder.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        mesh : :class:`~openmdao.api.Component` or :class:`~openmdao.api.Group`</span>
+<span class="sd">            The openmdao subsystem that has an output of coordinates.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">TacsMeshGroup</span><span class="p">(</span><span class="n">fea_assembler</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">fea_assembler</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="TacsBuilder.get_pre_coupling_subsystem"><a class="viewcode-back" href="../../../mphys/builder.html#tacs.mphys.builder.TacsBuilder.get_pre_coupling_subsystem">[docs]</a>    <span class="k">def</span> <span class="nf">get_pre_coupling_subsystem</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scenario_name</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Method that returns the openmdao subsystem to be added to each scenario before the coupling group</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        scenario_name : str, optional</span>
+<span class="sd">            The name of the scenario calling the builder.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        subsystem : openmdao.api.Group</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">initial_dvs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_initial_dvs</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">TacsPrecouplingGroup</span><span class="p">(</span>
+            <span class="n">fea_assembler</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">fea_assembler</span><span class="p">,</span>
+            <span class="n">initial_dv_vals</span><span class="o">=</span><span class="n">initial_dvs</span><span class="p">,</span>
+            <span class="n">separate_mass_dvs</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">separate_mass_dvs</span><span class="p">,</span>
+        <span class="p">)</span></div>
+
+<div class="viewcode-block" id="TacsBuilder.get_post_coupling_subsystem"><a class="viewcode-back" href="../../../mphys/builder.html#tacs.mphys.builder.TacsBuilder.get_post_coupling_subsystem">[docs]</a>    <span class="k">def</span> <span class="nf">get_post_coupling_subsystem</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scenario_name</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Method that returns the openmdao subsystem to be added to each scenario after the coupling group</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        scenario_name : str, optional</span>
+<span class="sd">            The name of the scenario calling the builder.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        subsystem : openmdao.api.Group</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">TacsPostcouplingGroup</span><span class="p">(</span>
+            <span class="n">fea_assembler</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">fea_assembler</span><span class="p">,</span>
+            <span class="n">check_partials</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">check_partials</span><span class="p">,</span>
+            <span class="n">conduction</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">conduction</span><span class="p">,</span>
+            <span class="n">write_solution</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">write_solution</span><span class="p">,</span>
+            <span class="n">scenario_name</span><span class="o">=</span><span class="n">scenario_name</span><span class="p">,</span>
+            <span class="n">problem_setup</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">problem_setup</span><span class="p">,</span>
+            <span class="n">constraint_setup</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">constraint_setup</span><span class="p">,</span>
+            <span class="n">buckling_setup</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">buckling_setup</span><span class="p">,</span>
+        <span class="p">)</span></div>
+
+<div class="viewcode-block" id="TacsBuilder.get_ndof"><a class="viewcode-back" href="../../../mphys/builder.html#tacs.mphys.builder.TacsBuilder.get_ndof">[docs]</a>    <span class="k">def</span> <span class="nf">get_ndof</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        The number of degrees of freedom used at each output location.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        ndof : int</span>
+<span class="sd">            number of degrees of freedom of each node in the domain</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">fea_assembler</span><span class="o">.</span><span class="n">getVarsPerNode</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="TacsBuilder.get_number_of_nodes"><a class="viewcode-back" href="../../../mphys/builder.html#tacs.mphys.builder.TacsBuilder.get_number_of_nodes">[docs]</a>    <span class="k">def</span> <span class="nf">get_number_of_nodes</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the number of nodes on this processor,</span>
+<span class="sd">        not including lagrange multiplier nodes</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">nnodes</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fea_assembler</span><span class="o">.</span><span class="n">getNumOwnedNodes</span><span class="p">()</span>
+        <span class="n">nmult</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fea_assembler</span><span class="o">.</span><span class="n">getNumOwnedMultiplierNodes</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">nnodes</span> <span class="o">-</span> <span class="n">nmult</span></div>
+
+<div class="viewcode-block" id="TacsBuilder.get_initial_dvs"><a class="viewcode-back" href="../../../mphys/builder.html#tacs.mphys.builder.TacsBuilder.get_initial_dvs">[docs]</a>    <span class="k">def</span> <span class="nf">get_initial_dvs</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get an array holding all dvs values that have been added to TACS</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">local_dvs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fea_assembler</span><span class="o">.</span><span class="n">getOrigDesignVars</span><span class="p">()</span>
+        <span class="n">all_local_dvs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">comm</span><span class="o">.</span><span class="n">allgather</span><span class="p">(</span><span class="n">local_dvs</span><span class="p">)</span>
+        <span class="n">global_dvs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span><span class="n">all_local_dvs</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">global_dvs</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">float</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="TacsBuilder.get_dv_bounds"><a class="viewcode-back" href="../../../mphys/builder.html#tacs.mphys.builder.TacsBuilder.get_dv_bounds">[docs]</a>    <span class="k">def</span> <span class="nf">get_dv_bounds</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get arrays containing the lower and upper bounds for the design variables,</span>
+<span class="sd">        in the form needed by OpenMDAO&#39;s `add_design_variable` method.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        list of ndarray</span>
+<span class="sd">            lower and upper bounds for the design variables</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">local_lb</span><span class="p">,</span> <span class="n">local_ub</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fea_assembler</span><span class="o">.</span><span class="n">getDesignVarRange</span><span class="p">()</span>
+        <span class="n">all_lb</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">comm</span><span class="o">.</span><span class="n">allgather</span><span class="p">(</span><span class="n">local_lb</span><span class="p">)</span>
+        <span class="n">global_lbs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span><span class="n">all_lb</span><span class="p">)</span>
+        <span class="n">all_ub</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">comm</span><span class="o">.</span><span class="n">allgather</span><span class="p">(</span><span class="n">local_ub</span><span class="p">)</span>
+        <span class="n">global_ubs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span><span class="n">all_ub</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">global_lbs</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">float</span><span class="p">),</span> <span class="n">global_ubs</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">float</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="TacsBuilder.get_dv_scalers"><a class="viewcode-back" href="../../../mphys/builder.html#tacs.mphys.builder.TacsBuilder.get_dv_scalers">[docs]</a>    <span class="k">def</span> <span class="nf">get_dv_scalers</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get an array containing the scaling factors for the design</span>
+<span class="sd">        variables, in the form needed by OpenMDAO&#39;s `add_design_variable`</span>
+<span class="sd">        method.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        array</span>
+<span class="sd">            Scaling values</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fea_assembler</span><span class="o">.</span><span class="n">scaleList</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="TacsBuilder.get_ndv"><a class="viewcode-back" href="../../../mphys/builder.html#tacs.mphys.builder.TacsBuilder.get_ndv">[docs]</a>    <span class="k">def</span> <span class="nf">get_ndv</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get total number of structural design variables across all procs</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">fea_assembler</span><span class="o">.</span><span class="n">getTotalNumDesignVars</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="TacsBuilder.get_solver"><a class="viewcode-back" href="../../../mphys/builder.html#tacs.mphys.builder.TacsBuilder.get_solver">[docs]</a>    <span class="k">def</span> <span class="nf">get_solver</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="c1"># this method is only used by the RLT transfer scheme</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">fea_assembler</span><span class="o">.</span><span class="n">assembler</span></div>
+
+<div class="viewcode-block" id="TacsBuilder.get_fea_assembler"><a class="viewcode-back" href="../../../mphys/builder.html#tacs.mphys.builder.TacsBuilder.get_fea_assembler">[docs]</a>    <span class="k">def</span> <span class="nf">get_fea_assembler</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns underlying pytacs object.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">fea_assembler</span></div>
+
+<div class="viewcode-block" id="TacsBuilder.get_tagged_indices"><a class="viewcode-back" href="../../../mphys/builder.html#tacs.mphys.builder.TacsBuilder.get_tagged_indices">[docs]</a>    <span class="k">def</span> <span class="nf">get_tagged_indices</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tags</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Method that returns grid IDs for a list of body/boundary tags.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        tags : list[str]</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        grid_ids : list[int]</span>
+<span class="sd">            list of grid IDs that correspond to given body/boundary tags</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Select all compIDs</span>
+        <span class="k">if</span> <span class="n">tags</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span> <span class="ow">or</span> <span class="n">tags</span> <span class="o">==</span> <span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]:</span>
+            <span class="n">nnodes</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fea_assembler</span><span class="o">.</span><span class="n">getNumOwnedNodes</span><span class="p">()</span>
+            <span class="c1"># Select all node IDs</span>
+            <span class="n">masked_local_nodes</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">nnodes</span><span class="p">)</span>
+
+        <span class="c1"># Get the compIDs associated with tags</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">tagged_comps</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fea_assembler</span><span class="o">.</span><span class="n">selectCompIDs</span><span class="p">(</span><span class="n">include</span><span class="o">=</span><span class="n">tags</span><span class="p">)</span>
+            <span class="c1"># Select local node IDs for tags</span>
+            <span class="n">masked_local_nodes</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fea_assembler</span><span class="o">.</span><span class="n">getLocalNodeIDsForComps</span><span class="p">(</span>
+                <span class="n">tagged_comps</span>
+            <span class="p">)</span>
+
+        <span class="c1"># Select local node IDs and multiplier node IDs</span>
+        <span class="n">local_mnodes</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fea_assembler</span><span class="o">.</span><span class="n">getLocalMultiplierNodeIDs</span><span class="p">()</span>
+
+        <span class="c1"># Loop through the multiplier nodes and remove them</span>
+        <span class="n">masked_local_nodes</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">masked_local_nodes</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">mult_node</span> <span class="ow">in</span> <span class="n">local_mnodes</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">mult_node</span> <span class="ow">in</span> <span class="n">masked_local_nodes</span><span class="p">:</span>
+                <span class="n">masked_local_nodes</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">mult_node</span><span class="p">)</span>
+        <span class="n">masked_local_nodes</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">masked_local_nodes</span><span class="p">)</span>
+
+        <span class="c1"># Loop through the multiplier nodes and offset for the multiplier nodes we removed</span>
+        <span class="k">for</span> <span class="n">mult_node</span> <span class="ow">in</span> <span class="nb">reversed</span><span class="p">(</span><span class="n">local_mnodes</span><span class="p">):</span>
+            <span class="n">masked_local_nodes</span><span class="p">[</span><span class="n">masked_local_nodes</span> <span class="o">&gt;</span> <span class="n">mult_node</span><span class="p">]</span> <span class="o">-=</span> <span class="mi">1</span>
+
+        <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="n">masked_local_nodes</span><span class="p">)</span></div></div>
+</pre></div>
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">TACS  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" >Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">tacs.mphys.builder</a></li> 
+      </ul>
+    </div>
+ <script type="text/javascript">
+    $(document).ready(function() {
+        $(".toggle > *").hide();
+        $(".toggle .header").show();
+        $(".toggle .header").click(function() {
+            $(this).parent().children().not(".header").toggle(400);
+            $(this).parent().children(".header").toggleClass("open");
+        })
+    });
+</script>
+
+  </body>
+</html>

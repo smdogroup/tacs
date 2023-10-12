@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+
+<html lang="python">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Beam optimization with MPhys &#8212; TACS  documentation</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinxdoc.css?v=0a676766" />
+    <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+    <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js?v=a888008e"></script>
+    <script src="../_static/doctools.js?v=888ff710"></script>
+    <script src="../_static/sphinx_highlight.js?v=4825356b"></script>
+    <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Theory" href="../theory/theory.html" />
+    <link rel="prev" title="Battery pack during thermal runaway" href="Example-Transient_Battery.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="../theory/theory.html" title="Theory"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="Example-Transient_Battery.html" title="Battery pack during thermal runaway"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">TACS  documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Beam optimization with MPhys</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <section id="beam-optimization-with-mphys">
+<h1>Beam optimization with MPhys<a class="headerlink" href="#beam-optimization-with-mphys" title="Permalink to this heading">¶</a></h1>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The script for this example can be found under the <cite>examples/beam/</cite> directory.</p>
+</div>
+<p>This example demonstrates TACS structural optimization capabilities.
+The optimization is setup using TACS' <a class="reference internal" href="../mphys/mphys.html#mphys"><span class="std std-ref">MPhys</span></a> module, which acts as a wrapper
+for OpenMDAO.
+The beam model that we will be using for this problem is a rectangular beam,
+cantilevered, with a shear load applied at the tip. The beam is discretized using
+100 beam elements along it's span.</p>
+<p>The optimization problem is as follows:
+Minimize the mass of the beam with respect to the thickness of each element,
+subject to a max stress constraint dictated by the materials yield stress.</p>
+<a class="reference internal image-reference" href="../_images/beam_prob.png"><img alt="Beam problem" src="../_images/beam_prob.png" style="width: 800px;" /></a>
+<p>By realizing that the stress at any spanwise cross-section in the beam as a function of the running moment
+can be found independently using:</p>
+<div class="math notranslate nohighlight">
+\[\sigma(x,y) = y \frac{M(x)}{I}\]</div>
+<p>An analytical solution for this problem can be shown to be:</p>
+<div class="math notranslate nohighlight">
+\[t(x) = \sqrt{\frac{6V\cdot(L-x)}{w\sigma_y}}\]</div>
+<p>First, we import required libraries, define the model bdf file, and define important problem constants:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">os</span>
+
+<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">openmdao.api</span> <span class="k">as</span> <span class="nn">om</span>
+<span class="kn">from</span> <span class="nn">mphys</span> <span class="kn">import</span> <span class="n">Multipoint</span>
+<span class="kn">from</span> <span class="nn">mphys.scenario_structural</span> <span class="kn">import</span> <span class="n">ScenarioStructural</span>
+
+<span class="kn">from</span> <span class="nn">tacs</span> <span class="kn">import</span> <span class="n">elements</span><span class="p">,</span> <span class="n">constitutive</span><span class="p">,</span> <span class="n">functions</span>
+<span class="kn">from</span> <span class="nn">tacs.mphys</span> <span class="kn">import</span> <span class="n">TacsBuilder</span>
+
+<span class="c1"># BDF file containing mesh</span>
+<span class="n">bdf_file</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="vm">__file__</span><span class="p">),</span> <span class="s2">&quot;beam_opt.bdf&quot;</span><span class="p">)</span>
+
+<span class="c1"># Beam thickness (initial)</span>
+<span class="n">t</span> <span class="o">=</span> <span class="mf">0.05</span>  <span class="c1"># m</span>
+<span class="c1"># Beam width</span>
+<span class="n">w</span> <span class="o">=</span> <span class="mf">0.05</span>  <span class="c1"># m</span>
+<span class="c1"># Length of beam</span>
+<span class="n">L</span> <span class="o">=</span> <span class="mf">1.0</span>
+
+<span class="c1"># Material properties</span>
+<span class="n">rho</span> <span class="o">=</span> <span class="mf">2500.0</span>  <span class="c1"># density kg/m^3</span>
+<span class="n">E</span> <span class="o">=</span> <span class="mf">70.0e9</span>  <span class="c1"># Young&#39;s modulus (Pa)</span>
+<span class="n">nu</span> <span class="o">=</span> <span class="mf">0.0</span>  <span class="c1"># Poisson&#39;s ratio</span>
+<span class="n">ys</span> <span class="o">=</span> <span class="mf">350e6</span>  <span class="c1"># yield stress</span>
+
+<span class="c1"># Shear force applied at tip</span>
+<span class="n">V</span> <span class="o">=</span> <span class="mf">1e3</span>
+</pre></div>
+</div>
+<p>Next we define an <a class="reference internal" href="../pytacs/pytacs_module.html#tacs.pytacs.elemCallBack" title="tacs.pytacs.elemCallBack"><code class="xref py py-func docutils literal notranslate"><span class="pre">elemCallBack()</span></code></a> function.
+This is a user-defined callback function for setting up TACS elements and element design variables.
+We use the <a class="reference internal" href="../core/constitutive.html#tacs.constitutive.IsoRectangleBeamConstitutive" title="tacs.constitutive.IsoRectangleBeamConstitutive"><code class="xref py py-class docutils literal notranslate"><span class="pre">IsoRectangleBeamConstitutive</span></code></a> class for the constitutive properties,
+assign a design variable number for the thickness parameter, and return a <a class="reference internal" href="../core/elements.html#tacs.elements.Beam2" title="tacs.elements.Beam2"><code class="xref py py-class docutils literal notranslate"><span class="pre">Beam2</span></code></a> element class.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Callback function used to setup TACS element objects and DVs</span>
+<span class="k">def</span> <span class="nf">element_callback</span><span class="p">(</span><span class="n">dvNum</span><span class="p">,</span> <span class="n">compID</span><span class="p">,</span> <span class="n">compDescript</span><span class="p">,</span> <span class="n">elemDescripts</span><span class="p">,</span> <span class="n">specialDVs</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="c1"># Setup (isotropic) property and constitutive objects</span>
+    <span class="n">prop</span> <span class="o">=</span> <span class="n">constitutive</span><span class="o">.</span><span class="n">MaterialProperties</span><span class="p">(</span><span class="n">rho</span><span class="o">=</span><span class="n">rho</span><span class="p">,</span> <span class="n">E</span><span class="o">=</span><span class="n">E</span><span class="p">,</span> <span class="n">nu</span><span class="o">=</span><span class="n">nu</span><span class="p">,</span> <span class="n">ys</span><span class="o">=</span><span class="n">ys</span><span class="p">)</span>
+    <span class="c1"># Set one thickness dv for every property group</span>
+    <span class="n">con</span> <span class="o">=</span> <span class="n">constitutive</span><span class="o">.</span><span class="n">IsoRectangleBeamConstitutive</span><span class="p">(</span><span class="n">prop</span><span class="p">,</span> <span class="n">t</span><span class="o">=</span><span class="n">t</span><span class="p">,</span> <span class="n">w</span><span class="o">=</span><span class="n">w</span><span class="p">,</span> <span class="n">tNum</span><span class="o">=</span><span class="n">dvNum</span><span class="p">)</span>
+
+    <span class="c1"># Defines local y/width direction for beam</span>
+    <span class="n">refAxis</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">])</span>
+    <span class="n">transform</span> <span class="o">=</span> <span class="n">elements</span><span class="o">.</span><span class="n">BeamRefAxisTransform</span><span class="p">(</span><span class="n">refAxis</span><span class="p">)</span>
+
+    <span class="c1"># Pass back the appropriate tacs element object</span>
+    <span class="n">elem</span> <span class="o">=</span> <span class="n">elements</span><span class="o">.</span><span class="n">Beam2</span><span class="p">(</span><span class="n">transform</span><span class="p">,</span> <span class="n">con</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">elem</span>
+</pre></div>
+</div>
+<p>We define a <code class="xref py py-func docutils literal notranslate"><span class="pre">problem_setup()</span></code> function.
+This function is called each time a new MPhys Scenario is created.
+This function sets up the <a class="reference internal" href="../pytacs/static.html#tacs.problems.StaticProblem" title="tacs.problems.StaticProblem"><code class="xref py py-class docutils literal notranslate"><span class="pre">StaticProblem</span></code></a> by adding fixed loads, modifying options, and adding eval functions.
+Here we specify the beam mass (<a class="reference internal" href="../core/functions.html#tacs.functions.StructuralMass" title="tacs.functions.StructuralMass"><code class="xref py py-class docutils literal notranslate"><span class="pre">StructuralMass</span></code></a>) and aggregated failure (<a class="reference internal" href="../core/functions.html#tacs.functions.KSFailure" title="tacs.functions.KSFailure"><code class="xref py py-class docutils literal notranslate"><span class="pre">KSFailure</span></code></a>) as outputs for our analysis and add our 1 kN shear load.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">problem_setup</span><span class="p">(</span><span class="n">scenario_name</span><span class="p">,</span> <span class="n">fea_assembler</span><span class="p">,</span> <span class="n">problem</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Helper function to add fixed forces and eval functions</span>
+<span class="sd">    to structural problems used in tacs builder</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># Add TACS Functions</span>
+    <span class="n">problem</span><span class="o">.</span><span class="n">addFunction</span><span class="p">(</span><span class="s2">&quot;mass&quot;</span><span class="p">,</span> <span class="n">functions</span><span class="o">.</span><span class="n">StructuralMass</span><span class="p">)</span>
+    <span class="n">problem</span><span class="o">.</span><span class="n">addFunction</span><span class="p">(</span>
+        <span class="s2">&quot;ks_vmfailure&quot;</span><span class="p">,</span> <span class="n">functions</span><span class="o">.</span><span class="n">KSFailure</span><span class="p">,</span> <span class="n">safetyFactor</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">ksWeight</span><span class="o">=</span><span class="mf">100.0</span>
+    <span class="p">)</span>
+
+    <span class="c1"># Add forces to static problem</span>
+    <span class="n">problem</span><span class="o">.</span><span class="n">addLoadToNodes</span><span class="p">(</span><span class="mi">101</span><span class="p">,</span> <span class="p">[</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">V</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">],</span> <span class="n">nastranOrdering</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Here we define our <code class="xref py py-class docutils literal notranslate"><span class="pre">Multipoint</span></code> (essentially an OpenMDAO <code class="docutils literal notranslate"><span class="pre">Group</span></code>) which will contain our analysis <code class="xref py py-class docutils literal notranslate"><span class="pre">Scenario</span></code>.
+To do this, we instantiate the <a class="reference internal" href="../mphys/builder.html#tacs.mphys.builder.TacsBuilder" title="tacs.mphys.builder.TacsBuilder"><code class="xref py py-class docutils literal notranslate"><span class="pre">TacsBuilder</span></code></a> using the <code class="docutils literal notranslate"><span class="pre">element_callback</span></code> and <code class="docutils literal notranslate"><span class="pre">problem_setup</span></code> we defined above.
+We create OpenMDAO <code class="docutils literal notranslate"><span class="pre">Component</span></code>'s to feed design variable and mesh inputs to the <code class="docutils literal notranslate"><span class="pre">Scenario</span></code> component.
+We use this builder to create an MPhys <code class="xref py py-class docutils literal notranslate"><span class="pre">StructuralScenario</span></code>.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">BeamModel</span><span class="p">(</span><span class="n">Multipoint</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">setup</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="c1"># Initialize MPHYS builder for TACS</span>
+        <span class="n">struct_builder</span> <span class="o">=</span> <span class="n">TacsBuilder</span><span class="p">(</span>
+            <span class="n">mesh_file</span><span class="o">=</span><span class="n">bdf_file</span><span class="p">,</span>
+            <span class="n">element_callback</span><span class="o">=</span><span class="n">element_callback</span><span class="p">,</span>
+            <span class="n">problem_setup</span><span class="o">=</span><span class="n">problem_setup</span><span class="p">,</span>
+            <span class="n">coupled</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+            <span class="n">write_solution</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="n">struct_builder</span><span class="o">.</span><span class="n">initialize</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">comm</span><span class="p">)</span>
+        <span class="n">dv_array</span> <span class="o">=</span> <span class="n">struct_builder</span><span class="o">.</span><span class="n">get_initial_dvs</span><span class="p">()</span>
+
+        <span class="c1"># Create independent variable component to control design variables for problem</span>
+        <span class="n">dvs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">add_subsystem</span><span class="p">(</span><span class="s2">&quot;dvs&quot;</span><span class="p">,</span> <span class="n">om</span><span class="o">.</span><span class="n">IndepVarComp</span><span class="p">(),</span> <span class="n">promotes</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;*&quot;</span><span class="p">])</span>
+        <span class="n">dvs</span><span class="o">.</span><span class="n">add_output</span><span class="p">(</span><span class="s2">&quot;dv_struct&quot;</span><span class="p">,</span> <span class="n">dv_array</span><span class="p">)</span>
+
+        <span class="c1"># Add mesh component</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">add_subsystem</span><span class="p">(</span><span class="s2">&quot;mesh&quot;</span><span class="p">,</span> <span class="n">struct_builder</span><span class="o">.</span><span class="n">get_mesh_coordinate_subsystem</span><span class="p">())</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mphys_add_scenario</span><span class="p">(</span>
+            <span class="s2">&quot;tip_shear&quot;</span><span class="p">,</span> <span class="n">ScenarioStructural</span><span class="p">(</span><span class="n">struct_builder</span><span class="o">=</span><span class="n">struct_builder</span><span class="p">)</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mphys_connect_scenario_coordinate_source</span><span class="p">(</span><span class="s2">&quot;mesh&quot;</span><span class="p">,</span> <span class="s2">&quot;tip_shear&quot;</span><span class="p">,</span> <span class="s2">&quot;struct&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Connect dv component to input of structural scenario</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="s2">&quot;dv_struct&quot;</span><span class="p">,</span> <span class="s2">&quot;tip_shear.dv_struct&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>At this point we setup the OpenMDAO <code class="docutils literal notranslate"><span class="pre">Problem</span></code> class that we will use to perform our optimization.
+We assign our <code class="docutils literal notranslate"><span class="pre">BeamModel</span></code> to the problem class and set <code class="docutils literal notranslate"><span class="pre">ScipyOptimizeDriver</span></code>.
+We define our design variables, constraint, and objective.
+Finally we run the problem driver to optimize the problem.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Instantiate OpenMDAO problem</span>
+<span class="n">prob</span> <span class="o">=</span> <span class="n">om</span><span class="o">.</span><span class="n">Problem</span><span class="p">()</span>
+<span class="n">prob</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="n">BeamModel</span><span class="p">()</span>
+<span class="n">model</span> <span class="o">=</span> <span class="n">prob</span><span class="o">.</span><span class="n">model</span>
+
+<span class="c1"># Declare design variables, objective, and constraint</span>
+<span class="n">model</span><span class="o">.</span><span class="n">add_design_var</span><span class="p">(</span><span class="s2">&quot;dv_struct&quot;</span><span class="p">,</span> <span class="n">lower</span><span class="o">=</span><span class="mf">0.001</span><span class="p">,</span> <span class="n">upper</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span> <span class="n">scaler</span><span class="o">=</span><span class="mf">100.0</span><span class="p">)</span>
+<span class="n">model</span><span class="o">.</span><span class="n">add_objective</span><span class="p">(</span><span class="s2">&quot;tip_shear.mass&quot;</span><span class="p">,</span> <span class="n">scaler</span><span class="o">=</span><span class="mf">1.0</span><span class="p">)</span>
+<span class="n">model</span><span class="o">.</span><span class="n">add_constraint</span><span class="p">(</span><span class="s2">&quot;tip_shear.ks_vmfailure&quot;</span><span class="p">,</span> <span class="n">lower</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">upper</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">scaler</span><span class="o">=</span><span class="mf">1.0</span><span class="p">)</span>
+
+<span class="c1"># Configure optimizer</span>
+<span class="n">prob</span><span class="o">.</span><span class="n">driver</span> <span class="o">=</span> <span class="n">om</span><span class="o">.</span><span class="n">ScipyOptimizeDriver</span><span class="p">(</span><span class="n">debug_print</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;objs&quot;</span><span class="p">,</span> <span class="s2">&quot;nl_cons&quot;</span><span class="p">],</span> <span class="n">maxiter</span><span class="o">=</span><span class="mi">1000</span><span class="p">)</span>
+<span class="n">prob</span><span class="o">.</span><span class="n">driver</span><span class="o">.</span><span class="n">options</span><span class="p">[</span><span class="s2">&quot;optimizer&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;SLSQP&quot;</span>
+
+<span class="c1"># Setup OpenMDAO problem</span>
+<span class="n">prob</span><span class="o">.</span><span class="n">setup</span><span class="p">()</span>
+
+<span class="c1"># Output N2 representation of OpenMDAO model</span>
+<span class="n">om</span><span class="o">.</span><span class="n">n2</span><span class="p">(</span><span class="n">prob</span><span class="p">,</span> <span class="n">show_browser</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">outfile</span><span class="o">=</span><span class="s2">&quot;beam_opt_n2.html&quot;</span><span class="p">)</span>
+
+<span class="c1"># Run optimization</span>
+<span class="n">prob</span><span class="o">.</span><span class="n">run_driver</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>After the optimization completes the user should see a print out to screen like shown below.</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">Optimization</span> <span class="n">terminated</span> <span class="n">successfully</span>    <span class="p">(</span><span class="n">Exit</span> <span class="n">mode</span> <span class="mi">0</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span>            <span class="n">Current</span> <span class="n">function</span> <span class="n">value</span><span class="p">:</span> <span class="mf">1.5534716448382722</span>
+<span class="gp">&gt;&gt;&gt; </span>            <span class="n">Iterations</span><span class="p">:</span> <span class="mi">138</span>
+<span class="gp">&gt;&gt;&gt; </span>            <span class="n">Function</span> <span class="n">evaluations</span><span class="p">:</span> <span class="mi">372</span>
+<span class="gp">&gt;&gt;&gt; </span>            <span class="n">Gradient</span> <span class="n">evaluations</span><span class="p">:</span> <span class="mi">138</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">Optimization</span> <span class="n">Complete</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="o">-----------------------------------</span>
+</pre></div>
+</div>
+<p>Once the optimization is complete we can post-process results.
+We can write our optimized beam model to a BDF file so they can
+be processed in other commonly used FEM software.
+The <code class="docutils literal notranslate"><span class="pre">f5</span></code> solution file at each optimization iteration can also be converted to a Tecplot or Paraview files using <code class="docutils literal notranslate"><span class="pre">f5totec</span></code> or <code class="docutils literal notranslate"><span class="pre">f5tovtk</span></code>, respectively.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Write optimized structure to BDF</span>
+<span class="n">bdf_out</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="vm">__file__</span><span class="p">),</span> <span class="s2">&quot;beam_sol.bdf&quot;</span><span class="p">)</span>
+<span class="n">prob</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">tip_shear</span><span class="o">.</span><span class="n">coupling</span><span class="o">.</span><span class="n">write_bdf</span><span class="p">(</span><span class="n">bdf_out</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Finally, we can plot the optimized thickness distribution using matplotlib and compare against the expected optimal result from beam theory.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Get optimized solution variables</span>
+<span class="n">x</span> <span class="o">=</span> <span class="n">prob</span><span class="o">.</span><span class="n">get_val</span><span class="p">(</span><span class="s2">&quot;mesh.x_struct0&quot;</span><span class="p">,</span> <span class="n">get_remote</span><span class="o">=</span><span class="kc">True</span><span class="p">)[:</span><span class="o">-</span><span class="mi">3</span><span class="p">:</span><span class="mi">3</span><span class="p">]</span>
+<span class="n">t_opt</span> <span class="o">=</span> <span class="n">prob</span><span class="p">[</span><span class="s2">&quot;dv_struct&quot;</span><span class="p">]</span>
+<span class="n">m_opt</span> <span class="o">=</span> <span class="n">prob</span><span class="p">[</span><span class="s2">&quot;tip_shear.mass&quot;</span><span class="p">]</span>
+
+<span class="c1"># Get analytical solution</span>
+<span class="n">t_exact</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mi">6</span> <span class="o">*</span> <span class="p">(</span><span class="n">L</span> <span class="o">-</span> <span class="n">x</span><span class="p">)</span> <span class="o">*</span> <span class="n">V</span> <span class="o">/</span> <span class="n">w</span> <span class="o">/</span> <span class="n">ys</span><span class="p">)</span>
+
+<span class="c1"># Plot results for solution</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">t_opt</span><span class="p">,</span> <span class="s2">&quot;o&quot;</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">t_exact</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">legend</span><span class="p">([</span><span class="s2">&quot;optimized&quot;</span><span class="p">,</span> <span class="s2">&quot;analytical&quot;</span><span class="p">])</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s2">&quot;t(x)&quot;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s2">&quot;x&quot;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s2">&quot;Optimal beam thickness profile&quot;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+<a class="reference internal image-reference" href="../_images/beam_plot.png"><img alt="Beam solution" src="../_images/beam_plot.png" style="width: 800px;" /></a>
+</section>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <div>
+    <h4>Previous topic</h4>
+    <p class="topless"><a href="Example-Transient_Battery.html"
+                          title="previous chapter">Battery pack during thermal runaway</a></p>
+  </div>
+  <div>
+    <h4>Next topic</h4>
+    <p class="topless"><a href="../theory/theory.html"
+                          title="next chapter">Theory</a></p>
+  </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="../theory/theory.html" title="Theory"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="Example-Transient_Battery.html" title="Battery pack during thermal runaway"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">TACS  documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Beam optimization with MPhys</a></li> 
+      </ul>
+    </div>
+ <script type="text/javascript">
+    $(document).ready(function() {
+        $(".toggle > *").hide();
+        $(".toggle .header").show();
+        $(".toggle .header").click(function() {
+            $(this).parent().children().not(".header").toggle(400);
+            $(this).parent().children(".header").toggleClass("open");
+        })
+    });
+</script>
+
+  </body>
+</html>

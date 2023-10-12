@@ -3,8 +3,9 @@
 <html lang="python">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Overview: module code &#8212; TACS  documentation</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>MPhys &#8212; TACS  documentation</title>
     <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
     <link rel="stylesheet" type="text/css" href="../_static/sphinxdoc.css?v=0a676766" />
     <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
@@ -12,7 +13,9 @@
     <script src="../_static/doctools.js?v=888ff710"></script>
     <script src="../_static/sphinx_highlight.js?v=4825356b"></script>
     <link rel="index" title="Index" href="../genindex.html" />
-    <link rel="search" title="Search" href="../search.html" /> 
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="TacsBuilder class" href="builder.html" />
+    <link rel="prev" title="VolumeConstraint" href="../pytacs/volume.html" /> 
   </head><body>
     <div class="related" role="navigation" aria-label="related navigation">
       <h3>Navigation</h3>
@@ -23,8 +26,15 @@
         <li class="right" >
           <a href="../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
+        <li class="right" >
+          <a href="builder.html" title="TacsBuilder class"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="../pytacs/volume.html" title="VolumeConstraint"
+             accesskey="P">previous</a> |</li>
         <li class="nav-item nav-item-0"><a href="../index.html">TACS  documentation</a> &#187;</li>
-        <li class="nav-item nav-item-this"><a href="">Overview: module code</a></li> 
+          <li class="nav-item nav-item-1"><a href="../interfaces.html" accesskey="U">Interfaces</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">MPhys</a></li> 
       </ul>
     </div>  
 
@@ -33,22 +43,20 @@
         <div class="bodywrapper">
           <div class="body" role="main">
             
-  <h1>All modules for which code is available</h1>
-<ul><li><a href="tacs/TACS.html">tacs.TACS</a></li>
-<li><a href="tacs/constitutive.html">tacs.constitutive</a></li>
-<li><a href="tacs/constraints/adjacency.html">tacs.constraints.adjacency</a></li>
-<li><a href="tacs/constraints/dv.html">tacs.constraints.dv</a></li>
-<li><a href="tacs/constraints/panel_length.html">tacs.constraints.panel_length</a></li>
-<li><a href="tacs/constraints/volume.html">tacs.constraints.volume</a></li>
-<li><a href="tacs/elements.html">tacs.elements</a></li>
-<li><a href="tacs/functions.html">tacs.functions</a></li>
-<li><a href="tacs/mphys/builder.html">tacs.mphys.builder</a></li>
-<li><a href="tacs/problems/buckling.html">tacs.problems.buckling</a></li>
-<li><a href="tacs/problems/modal.html">tacs.problems.modal</a></li>
-<li><a href="tacs/problems/static.html">tacs.problems.static</a></li>
-<li><a href="tacs/problems/transient.html">tacs.problems.transient</a></li>
-<li><a href="tacs/pytacs.html">tacs.pytacs</a></li>
+  <section id="mphys">
+<h1>MPhys<a class="headerlink" href="#mphys" title="Permalink to this heading">¶</a></h1>
+<p><a class="reference external" href="https://pypi.org/project/mphys/">MPhys</a> is a package that standardizes high-fidelity multiphysics problems in OpenMDAO.
+MPhys provides a convenient interface for connecting TACS problems to optimizers and other physics disciplinary solvers for coupled analysis.
+The TACS MPhys interface consists of one main classes: a builder class called <a class="reference internal" href="builder.html#tacs.mphys.builder.TacsBuilder" title="tacs.mphys.builder.TacsBuilder"><code class="xref py py-class docutils literal notranslate"><span class="pre">TacsBuilder</span></code></a>.
+For more information on the general MPhys interface users should see the MPhys <a class="reference external" href="https://openmdao.github.io/mphys/">docs</a>.
+The details of the interfaces will be discussed in the sections below.</p>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="builder.html">TacsBuilder class</a></li>
 </ul>
+</div>
+</section>
+
 
             <div class="clearer"></div>
           </div>
@@ -56,6 +64,16 @@
       </div>
       <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
         <div class="sphinxsidebarwrapper">
+  <div>
+    <h4>Previous topic</h4>
+    <p class="topless"><a href="../pytacs/volume.html"
+                          title="previous chapter">VolumeConstraint</a></p>
+  </div>
+  <div>
+    <h4>Next topic</h4>
+    <p class="topless"><a href="builder.html"
+                          title="next chapter">TacsBuilder class</a></p>
+  </div>
 <div id="searchbox" style="display: none" role="search">
   <h3 id="searchlabel">Quick search</h3>
     <div class="searchformwrapper">
@@ -79,8 +97,15 @@
         <li class="right" >
           <a href="../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
+        <li class="right" >
+          <a href="builder.html" title="TacsBuilder class"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="../pytacs/volume.html" title="VolumeConstraint"
+             >previous</a> |</li>
         <li class="nav-item nav-item-0"><a href="../index.html">TACS  documentation</a> &#187;</li>
-        <li class="nav-item nav-item-this"><a href="">Overview: module code</a></li> 
+          <li class="nav-item nav-item-1"><a href="../interfaces.html" >Interfaces</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">MPhys</a></li> 
       </ul>
     </div>
  <script type="text/javascript">

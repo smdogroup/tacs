@@ -26,7 +26,6 @@ First, import required libraries:
 
 .. code-block:: python
 
-  from __future__ import print_function
   import os
   from pprint import pprint
 

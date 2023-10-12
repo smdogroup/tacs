@@ -622,7 +622,7 @@ we will use pyNastran to generate one automatically from element
 properties provided in the BDF file.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>elemCallBack</strong> (<em>callable</em>) -- <p>The calling sequence for elemCallBack <strong>must</strong> be as
+<dd class="field-odd"><p><strong>elemCallBack</strong> (<a class="reference external" href="https://docs.python.org/3/library/collections.abc.html#collections.abc.Callable" title="(in Python v3.12)"><em>collections.abc.Callable</em></a><em> or </em><em>None</em>) -- <p>The calling sequence for elemCallBack <strong>must</strong> be as
 follows:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">elemCallBack</span><span class="p">(</span><span class="n">dvNum</span><span class="p">,</span> <span class="n">compID</span><span class="p">,</span> <span class="n">compDescript</span><span class="p">,</span> <span class="n">elemDescripts</span><span class="p">,</span>
                 <span class="n">globalDVs</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>

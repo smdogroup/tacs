@@ -13,8 +13,6 @@ First, import required libraries:
 
 .. code-block:: python
 
-	from __future__ import print_function   
-
 	import numpy as np
 	from mpi4py import MPI
 	from tacs import TACS, elements, constitutive, functions
