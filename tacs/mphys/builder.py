@@ -91,22 +91,22 @@ class TacsBuilder(Builder):
 
                 def buckling_setup(scenario_name, fea_assembler)
 
-        pytacs_options : dict
+        pytacs_options : dict, optional
             Options dictionary passed to pyTACS assembler.
-        check_partials : bool
+        check_partials : bool, optional
             This flag allows TACS components partial derivative routines to be evaluated in forward mode without raising
             an error. This lets OpenMDAO's check_partials routine run without errors, allowing users to check TACS'
             reverse derivatives. The forward derivative checks will still not be meaningful since TACS only supports
             reverse mode. Defaults to False.
-        conduction : bool
+        conduction : bool, optional
             Flag to determine weather TACS component represents a thermal (True) or structural (False) analysis.
             Defaults to False.
-        coupled : bool
+        coupled : bool, optional
             Flag to determine of if multidisciplinary coupling variables should be turned on
             (used in aerostructural/thermostructural analyses). Defaults to True.
-        write_solution : bool
+        write_solution : bool, optional
             Flag to determine whether to write out TACS solutions to f5 file each design iteration. Defaults to True.
-        separate_mass_dvs : bool
+        separate_mass_dvs : bool, optional
             Flag to determine if TACS' mass dvs should be lumped into the struct_dv input vector (False) or
             split into separate OpenMDAO inputs based on their assigned names (True). Defaults to False.
 
