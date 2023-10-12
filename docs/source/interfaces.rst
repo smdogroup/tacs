@@ -11,3 +11,4 @@ These methods are documented below.
   core/TACS
   pytacs/pytacs
   mphys/mphys
+  caps2tacs/caps2tacs
