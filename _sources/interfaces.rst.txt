@@ -10,3 +10,4 @@ These two methods are documented below.
 
   core/TACS
   pytacs/pytacs
+  caps2tacs/caps2tacs
