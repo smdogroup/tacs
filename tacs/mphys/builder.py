@@ -34,7 +34,7 @@ class TacsBuilder(Builder):
         ----------
         mesh_file : str or pyNastran.bdf.bdf.BDF
             The BDF file or a pyNastran BDF object to load.
-        assembler_setup : collections.abc.Callable or None
+        assembler_setup : collections.abc.Callable, optional
             User-defined callback function for modifying pyTACS assembler prior to initialization.
             This is used for adding point mass DVs to the model. Defaults to None.
             follows::
@@ -42,7 +42,7 @@ class TacsBuilder(Builder):
                 def assembler_setup(fea_assembler):
 
             fea_assembler is the uninitialized pyTACS assembler instance created by the builder.
-        element_callback : collections.abc.Callable or None
+        element_callback : collections.abc.Callable, optional
             User-defined callback function for setting up TACS elements and element DVs. Defaults to None.
             See :ref:`pytacs/pytacs_module:Initializing with elemCallBack` for more info.
             The calling sequence for elem_callback **must** be as follows::
@@ -69,7 +69,7 @@ class TacsBuilder(Builder):
             global DVs that have been added.
             elem_callback must return a list containing as many TACS element
             objects as there are element types in elemDescripts (one for each).
-        problem_setup : collections.abc.Callable or None
+        problem_setup : collections.abc.Callable, optional
             This function is called each time a new MPhys Scenario is created. This function sets up the problem by adding
             fixed loads, modifying options, and adding eval functions. The function should have the following structure::
 
@@ -78,14 +78,14 @@ class TacsBuilder(Builder):
             scenario_name is a str denoting which MPhys Scenario the problem is currently being set up for.
             fea_assembler is the uninitialized pyTACS assembler instance created by the builder.
             problem is the tacs.BaseProblem class being setup for this scenario.
-        constraint_setup : collections.abc.Callable or None
+        constraint_setup : collections.abc.Callable, optional
             This function is called each time a new MPhys Scenario is created. This function sets up a series of
             constraints to be run after at the end of an MPhys analysis.
             The function should have the following structure::
 
                 def constraint_setup(scenario_name, fea_assembler, constraints):
 
-        buckling_setup : collections.abc.Callable or None
+        buckling_setup : collections.abc.Callable, optional
             This function is called each time a new MPhys Scenario is created. This function sets up a buckling problem
             to be run after at the end of an MPhys analysis. The function should have the following structure::
 
@@ -232,7 +232,7 @@ class TacsBuilder(Builder):
 
     def initialize(self, comm):
         """
-        Initialize pyTACSc.
+        Initialize pyTACS.
         This method will be called when the MPI comm is available
 
         Parameters
@@ -259,7 +259,7 @@ class TacsBuilder(Builder):
 
         Parameters
         ----------
-        scenario_name : str or None
+        scenario_name : str, optional
             The name of the scenario calling the builder.
 
         Returns
@@ -284,12 +284,12 @@ class TacsBuilder(Builder):
 
         Parameters
         ----------
-        scenario_name : str or None
+        scenario_name : str, optional
             The name of the scenario calling the builder.
 
         Returns
         -------
-        mesh : :class:`~openmdao.api.Component` or :class:`~openmdao.api.Group` or None
+        mesh : :class:`~openmdao.api.Component` or :class:`~openmdao.api.Group`
             The openmdao subsystem that has an output of coordinates.
         """
         return TacsMeshGroup(fea_assembler=self.fea_assembler)
@@ -300,7 +300,7 @@ class TacsBuilder(Builder):
 
         Parameters
         ----------
-        scenario_name : str or None
+        scenario_name : str, optional
             The name of the scenario calling the builder.
 
         Returns
@@ -320,7 +320,7 @@ class TacsBuilder(Builder):
 
         Parameters
         ----------
-        scenario_name : str or None
+        scenario_name : str, optional
             The name of the scenario calling the builder.
 
         Returns
