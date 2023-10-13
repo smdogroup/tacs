@@ -333,7 +333,7 @@ int main(int argc, char *argv[]) {
       new TACSLinearBuckling(assembler, sigma, gmat, kmat, aux_mat, ksm,
                              max_lanczos, neigvals, eig_tol);
   linear_buckling->incref();
-  linear_buckling->solve(NULL, ksm_print);
+  linear_buckling->solve(NULL, NULL, ksm_print);
   f5->writeToFile("results/load_path.f5");
   linear_buckling->checkEigenvector(0);
 

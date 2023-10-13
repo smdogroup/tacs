@@ -911,10 +911,10 @@ class pyMeshLoader(BaseUI):
 
         Parameters
         ----------
-        constrained_dofs : string
+        constrained_dofs : str
             String containing list of dofs (ex. '123456')
 
-        dof : int or string
+        dof : int or str
             nastran dof number to check for
 
         Returns

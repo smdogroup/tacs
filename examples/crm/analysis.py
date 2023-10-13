@@ -5,12 +5,11 @@ This wingbox is a simplified version of the one of the University of Michigan uC
 We use a couple of pyTACS load generating methods to model various wing loads under cruise.
 The script runs the structural analysis, evaluates the wing mass and von misses failure index
 and computes sensitivities with respect to wingbox thicknesses and node xyz locations.
-The sensitivities are then verified agains finite-difference or complex step approximations.
+The sensitivities are then verified against finite-difference or complex step approximations.
 """
 # ==============================================================================
 # Standard Python modules
 # ==============================================================================
-from __future__ import print_function
 import os
 
 # ==============================================================================
@@ -141,7 +140,7 @@ problem.writeSolution(outputDir=os.path.dirname(__file__))
 # ==============================================================================
 # Perform sensitivity check
 # ==============================================================================
-# Perform a fd/cs sensisitivity check on design  variable sensitivity
+# Perform a fd/cs sensitivity check on design variable sensitivity
 x_orig = problem.getDesignVars()
 
 # Get number of design variables owned by this proc
@@ -159,7 +158,7 @@ funcs_new = {}
 problem.setDesignVars(x_new)
 # Solve
 problem.solve()
-# Evaluate pertrubed functions
+# Evaluate perturbed functions
 problem.evalFunctions(funcs_new)
 
 # Loop through each function and compare sensitivities
@@ -179,7 +178,7 @@ for funcName in funcs:
 # Reset design variables
 problem.setDesignVars(x_orig)
 
-# Perform a fd/cs sensisitivity check on nodal coordinate sensitivity
+# Perform a fd/cs sensitivity check on nodal coordinate sensitivity
 xpts_orig = problem.getNodes()
 
 # Get number of nodes owned by this proc
@@ -192,7 +191,7 @@ xpts_new = xpts_orig + xpts_pert * dh
 problem.setNodes(xpts_new)
 # Solve
 problem.solve()
-# Evaluate pertrubed functions
+# Evaluate perturbed functions
 problem.evalFunctions(funcs_new)
 
 # Loop through each function and compare sensitivities
