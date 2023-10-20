@@ -34,7 +34,7 @@ class TacsBuilder(Builder):
         ----------
         mesh_file : str or pyNastran.bdf.bdf.BDF
             The BDF file or a pyNastran BDF object to load.
-        assembler_setup : collections.abc.Callable or None
+        assembler_setup : collections.abc.Callable, optional
             User-defined callback function for modifying pyTACS assembler prior to initialization.
             This is used for adding point mass DVs to the model. Defaults to None.
             follows::
@@ -42,7 +42,7 @@ class TacsBuilder(Builder):
                 def assembler_setup(fea_assembler):
 
             fea_assembler is the uninitialized pyTACS assembler instance created by the builder.
-        element_callback : collections.abc.Callable or None
+        element_callback : collections.abc.Callable, optional
             User-defined callback function for setting up TACS elements and element DVs. Defaults to None.
             See :ref:`pytacs/pytacs_module:Initializing with elemCallBack` for more info.
             The calling sequence for elem_callback **must** be as follows::
@@ -69,8 +69,8 @@ class TacsBuilder(Builder):
             global DVs that have been added.
             elem_callback must return a list containing as many TACS element
             objects as there are element types in elemDescripts (one for each).
-        problem_setup : collections.abc.Callable or None
-            This function is called each time a new MPhys Scenario is created. This function sets up problem adding
+        problem_setup : collections.abc.Callable, optional
+            This function is called each time a new MPhys Scenario is created. This function sets up the problem by adding
             fixed loads, modifying options, and adding eval functions. The function should have the following structure::
 
               def problem_setup(scenario_name, fea_assembler, problem):
@@ -78,35 +78,35 @@ class TacsBuilder(Builder):
             scenario_name is a str denoting which MPhys Scenario the problem is currently being set up for.
             fea_assembler is the uninitialized pyTACS assembler instance created by the builder.
             problem is the tacs.BaseProblem class being setup for this scenario.
-        constraint_setup : collections.abc.Callable or None
+        constraint_setup : collections.abc.Callable, optional
             This function is called each time a new MPhys Scenario is created. This function sets up a series of
             constraints to be run after at the end of an MPhys analysis.
             The function should have the following structure::
 
                 def constraint_setup(scenario_name, fea_assembler, constraints):
 
-        buckling_setup : collections.abc.Callable or None
+        buckling_setup : collections.abc.Callable, optional
             This function is called each time a new MPhys Scenario is created. This function sets up a buckling problem
             to be run after at the end of an MPhys analysis. The function should have the following structure::
 
                 def buckling_setup(scenario_name, fea_assembler)
 
-        pytacs_options : dict
+        pytacs_options : dict, optional
             Options dictionary passed to pyTACS assembler.
-        check_partials : bool
+        check_partials : bool, optional
             This flag allows TACS components partial derivative routines to be evaluated in forward mode without raising
             an error. This lets OpenMDAO's check_partials routine run without errors, allowing users to check TACS'
             reverse derivatives. The forward derivative checks will still not be meaningful since TACS only supports
             reverse mode. Defaults to False.
-        conduction : bool
+        conduction : bool, optional
             Flag to determine weather TACS component represents a thermal (True) or structural (False) analysis.
             Defaults to False.
-        coupled : bool
+        coupled : bool, optional
             Flag to determine of if multidisciplinary coupling variables should be turned on
             (used in aerostructural/thermostructural analyses). Defaults to True.
-        write_solution : bool
+        write_solution : bool, optional
             Flag to determine whether to write out TACS solutions to f5 file each design iteration. Defaults to True.
-        separate_mass_dvs : bool
+        separate_mass_dvs : bool, optional
             Flag to determine if TACS' mass dvs should be lumped into the struct_dv input vector (False) or
             split into separate OpenMDAO inputs based on their assigned names (True). Defaults to False.
 
@@ -231,6 +231,15 @@ class TacsBuilder(Builder):
         self.separate_mass_dvs = separate_mass_dvs
 
     def initialize(self, comm):
+        """
+        Initialize pyTACS.
+        This method will be called when the MPI comm is available
+
+        Parameters
+        ----------
+        comm : :class:`~mpi4py.MPI.Comm`
+            The communicator object created for this xfer object instance.
+        """
         # Create pytacs instance
         self.fea_assembler = pyTACS(
             self.mesh_file, options=self.pytacs_options, comm=comm
@@ -245,6 +254,20 @@ class TacsBuilder(Builder):
         self.fea_assembler.initialize(self.element_callback)
 
     def get_coupling_group_subsystem(self, scenario_name=None):
+        """
+        The subsystem that this builder will add to the CouplingGroup
+
+        Parameters
+        ----------
+        scenario_name : str, optional
+            The name of the scenario calling the builder.
+
+        Returns
+        -------
+        subsystem : openmdao.api.Group
+            The openmdao subsystem that handles all the computations for
+            this solver. Transfer schemes can return multiple subsystems
+        """
         return TacsCouplingGroup(
             fea_assembler=self.fea_assembler,
             conduction=self.conduction,
@@ -255,9 +278,35 @@ class TacsBuilder(Builder):
         )
 
     def get_mesh_coordinate_subsystem(self, scenario_name=None):
+        """
+        The subsystem that contains the subsystem that will return the mesh
+        coordinates
+
+        Parameters
+        ----------
+        scenario_name : str, optional
+            The name of the scenario calling the builder.
+
+        Returns
+        -------
+        mesh : :class:`~openmdao.api.Component` or :class:`~openmdao.api.Group`
+            The openmdao subsystem that has an output of coordinates.
+        """
         return TacsMeshGroup(fea_assembler=self.fea_assembler)
 
     def get_pre_coupling_subsystem(self, scenario_name=None):
+        """
+        Method that returns the openmdao subsystem to be added to each scenario before the coupling group
+
+        Parameters
+        ----------
+        scenario_name : str, optional
+            The name of the scenario calling the builder.
+
+        Returns
+        -------
+        subsystem : openmdao.api.Group
+        """
         initial_dvs = self.get_initial_dvs()
         return TacsPrecouplingGroup(
             fea_assembler=self.fea_assembler,
@@ -266,6 +315,18 @@ class TacsBuilder(Builder):
         )
 
     def get_post_coupling_subsystem(self, scenario_name=None):
+        """
+        Method that returns the openmdao subsystem to be added to each scenario after the coupling group
+
+        Parameters
+        ----------
+        scenario_name : str, optional
+            The name of the scenario calling the builder.
+
+        Returns
+        -------
+        subsystem : openmdao.api.Group
+        """
         return TacsPostcouplingGroup(
             fea_assembler=self.fea_assembler,
             check_partials=self.check_partials,
@@ -278,6 +339,14 @@ class TacsBuilder(Builder):
         )
 
     def get_ndof(self):
+        """
+        The number of degrees of freedom used at each output location.
+
+        Returns
+        -------
+        ndof : int
+            number of degrees of freedom of each node in the domain
+        """
         return self.fea_assembler.getVarsPerNode()
 
     def get_number_of_nodes(self):

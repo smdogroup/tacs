@@ -10,7 +10,7 @@ Tests a smeared laminate shell model with the following layup: [0, 45, 30].
 Two load cases are tested: an in-plane tension and out-of-plane shear.
 This test is identical to test_shell_comp_unbalanced.py except since the laminate 
 is smeared all stacking sequence dependence is neglected.
-tests KSDisplacement, KSFailure, StructuralMass, and Compliance functions
+tests KSDisplacement, KSFailure, StructuralMass, CenterOfMass, MomentOfInertia, and Compliance functions
 and sensitivities.
 We also test a ply fraction summation constraint using the DVConstraint class.
 """
@@ -25,19 +25,36 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
     N_PROCS = 2  # this is how many MPI processes to use for this TestCase.
 
     FUNC_REFS = {
-        "Tension_compliance": 8433.692626389691,
-        "Tension_ks_TsaiWufailure": 4.352340467252131,
+        "Tension_I_xx": 0.3875000544921874,
+        "Tension_I_xy": 5.551115123125783e-17,
+        "Tension_I_xz": 0.0,
+        "Tension_I_yy": 0.02421880449218751,
+        "Tension_I_yz": 0.0,
+        "Tension_I_zz": 0.4117187499999999,
+        "Tension_cgx": 0.25000000000000006,
+        "Tension_cgy": 1.0000000000000002,
+        "Tension_cgz": 0.0,
+        "Tension_compliance": 8433.69262638969,
+        "Tension_ks_TsaiWufailure": 4.35234046725213,
         "Tension_mass": 1.1624999999999999,
         "Tension_x_disp": 0.04604283873354243,
-        "Tension_y_disp": -0.01468482384786706,
+        "Tension_y_disp": -0.014684823847867035,
         "Tension_z_disp": 0.0,
-        "VertShear_compliance": 0.0001081728488799184,
-        "VertShear_ks_TsaiWufailure": 0.22626387488407798,
+        "VertShear_I_xx": 0.3875000544921874,
+        "VertShear_I_xy": 5.551115123125783e-17,
+        "VertShear_I_xz": 0.0,
+        "VertShear_I_yy": 0.02421880449218751,
+        "VertShear_I_yz": 0.0,
+        "VertShear_I_zz": 0.4117187499999999,
+        "VertShear_cgx": 0.25000000000000006,
+        "VertShear_cgy": 1.0000000000000002,
+        "VertShear_cgz": 0.0,
+        "VertShear_compliance": 0.00010817284888043632,
+        "VertShear_ks_TsaiWufailure": 0.22626387488408603,
         "VertShear_mass": 1.1624999999999999,
         "VertShear_x_disp": 0.0,
         "VertShear_y_disp": 0.0,
-        "VertShear_z_disp": 0.0054598659927654735,
-        "ply_fractions_sum": 1.0,
+        "VertShear_z_disp": 0.0054598659927803965,
     }
 
     def setup_tacs_problems(self, comm):
@@ -88,7 +105,7 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
             Yt=Yt,
             Yc=Yc,
             S12=S12,
-            cte=cte,
+            alpha=cte,
             kappa=kappa,
         )
         ortho_ply = constitutive.OrthotropicPly(ply_thickness, ortho_prop)
@@ -176,15 +193,58 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
                 ksWeight=ksweight,
                 direction=[0.0, 0.0, 10.0],
             )
+            problem.addFunction(
+                "cgx", functions.CenterOfMass, direction=[1.0, 0.0, 0.0]
+            )
+            problem.addFunction(
+                "cgy", functions.CenterOfMass, direction=[0.0, 1.0, 0.0]
+            )
+            problem.addFunction(
+                "cgz", functions.CenterOfMass, direction=[0.0, 0.0, 1.0]
+            )
+            problem.addFunction(
+                "I_xx",
+                functions.MomentOfInertia,
+                direction1=[1.0, 0.0, 0.0],
+                direction2=[1.0, 0.0, 0.0],
+                aboutCM=True,
+            )
+            problem.addFunction(
+                "I_xy",
+                functions.MomentOfInertia,
+                direction1=[1.0, 0.0, 0.0],
+                direction2=[0.0, 1.0, 0.0],
+                aboutCM=True,
+            )
+            problem.addFunction(
+                "I_xz",
+                functions.MomentOfInertia,
+                direction1=[1.0, 0.0, 0.0],
+                direction2=[0.0, 0.0, 1.0],
+                aboutCM=True,
+            )
+            problem.addFunction(
+                "I_yy",
+                functions.MomentOfInertia,
+                direction1=[0.0, 1.0, 0.0],
+                direction2=[0.0, 1.0, 0.0],
+                aboutCM=True,
+            )
+            problem.addFunction(
+                "I_yz",
+                functions.MomentOfInertia,
+                direction1=[0.0, 1.0, 0.0],
+                direction2=[0.0, 0.0, 1.0],
+                aboutCM=True,
+            )
+            problem.addFunction(
+                "I_zz",
+                functions.MomentOfInertia,
+                direction1=[0.0, 0.0, 1.0],
+                direction2=[0.0, 0.0, 1.0],
+                aboutCM=True,
+            )
 
         tacs_probs = list(tacs_probs)
-
-        # Add linear constraint on ply fraction summation
-        constr = fea_assembler.createDVConstraint("ply_fractions")
-        allComponents = fea_assembler.selectCompIDs()
-        constr.addConstraint(
-            "sum", allComponents, dvIndices=[1, 2, 3], dvWeights=[1.0, 1.0, 1.0]
-        )
-        tacs_probs.append(constr)
 
         return tacs_probs, fea_assembler

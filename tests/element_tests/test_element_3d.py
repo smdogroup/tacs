@@ -50,7 +50,7 @@ class ElementTest(unittest.TestCase):
             E=E,
             nu=nu,
             ys=ys,
-            cte=cte,
+            alpha=cte,
             kappa=kappa,
         )
 

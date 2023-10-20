@@ -95,7 +95,7 @@ class ConstitutiveTest(unittest.TestCase):
             E=E,
             nu=nu,
             ys=ys,
-            cte=cte,
+            alpha=cte,
             kappa=kappa,
         )
         iso_ply = constitutive.OrthotropicPly(1e-3, iso_prop)
@@ -129,7 +129,7 @@ class ConstitutiveTest(unittest.TestCase):
             Yt=Yt,
             Yc=Yc,
             S12=S12,
-            cte=cte,
+            alpha=cte,
             kappa=kappa,
         )
         ortho_ply = constitutive.OrthotropicPly(1e-3, ortho_prop)

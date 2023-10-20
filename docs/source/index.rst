@@ -25,6 +25,7 @@ Examples
 
    examples/Example-Plate
    examples/Example-Transient_Battery
+   examples/Example-Beam_Optimization
 
 References
 ==========

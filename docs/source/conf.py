@@ -207,7 +207,14 @@ intersphinx_mapping = {
     "pynastran [latest]": ("https://pynastran-git.readthedocs.io/en/latest/", None),
     "mpi4py [stable]": ("https://mpi4py.readthedocs.io/en/stable/", None),
     "paropt": ("https://smdogroup.github.io/paropt/", None),
+    "openmdao [latest]": (
+        "http://openmdao.org/newdocs/versions/latest/",
+        None,
+    ),
+    "mphys": ("https://openmdao.github.io/mphys/", None),
 }
+
+autodoc_mock_imports = ["mphys"]
 
 # -----------------------------------------------------------------------------
 # Document both class docstring and init docstring
