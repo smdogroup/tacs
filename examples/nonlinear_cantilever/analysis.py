@@ -102,6 +102,7 @@ FEAAssembler.initialize(elemCallBack)
 
 probOptions = {
     "printTiming": True,
+    "printLevel": 1,
 }
 newtonOptions = {"useEW": True, "MaxLinIters": 10}
 continuationOptions = {

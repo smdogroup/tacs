@@ -90,7 +90,7 @@ probOptions = {
     "printTiming": True,
     "nRestarts": 3,
     "subSpaceSize": 20,
-    "writeNLIterSolutions": True,
+    "printLevel": 1,
 }
 continuationOptions = {
     "InitialStep": 0.25,

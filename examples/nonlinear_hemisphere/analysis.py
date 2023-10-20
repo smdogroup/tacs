@@ -67,7 +67,6 @@ if elementType is None:
 # ==============================================================================
 structOptions = {
     "printtiming": True,
-    "isNonlinear": STRAIN_TYPE != "linear" or ROTATION_TYPE != "linear",
 }
 FEAAssembler = pyTACS(BDF_FILE, options=structOptions, comm=COMM)
 
@@ -89,6 +88,7 @@ probOptions = {
     "nRestarts": 3,
     "subSpaceSize": 20,
     "printTiming": True,
+    "printLevel": 1,
 }
 continuationOptions = {
     "InitialStep": 1.0,
