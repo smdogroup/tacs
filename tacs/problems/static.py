@@ -107,6 +107,14 @@ class StaticProblem(TACSProblem):
             False,
             "Flag for printing out timing information for class procedures.",
         ],
+        "printLevel": [
+            int,
+            0,
+            "Print level for nonlinear solver.\n"
+            "\t Accepts:\n"
+            "\t\t   0 : No printing.\n"
+            "\t\t   1 : Print nonlinear iterations.\n"
+        ],
     }
 
     def __init__(
@@ -946,9 +954,10 @@ class StaticProblem(TACSProblem):
         if self.rank == 0:
             # Figure out the iteration number
             iteration = self.nonlinearSolver.history.getIter() - 1
-            if iteration % 50 == 0:
-                self.nonlinearSolver.history.printHeader()
-            self.nonlinearSolver.history.printData()
+            if self.getOption("printLevel") > 0:
+                if iteration % 50 == 0:
+                    self.nonlinearSolver.history.printHeader()
+                self.nonlinearSolver.history.printData()
 
         self.comm.bcast(iteration, root=0)
 
