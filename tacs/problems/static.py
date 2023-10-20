@@ -469,17 +469,17 @@ class StaticProblem(TACSProblem):
         TACSProblem.setDesignVars(self, x)
         self._jacobianUpdateRequired = True
 
-    def setNodes(self, coords):
+    def setNodes(self, Xpts):
         """
         Set the mesh coordinates of the structure.
 
         Parameters
         ----------
-        coords : numpy.ndarray
+        Xpts : numpy.ndarray
             Structural coordinate in array of size (N * 3) where N is
             the number of structural nodes on this processor.
         """
-        TACSProblem.setNodes(self, coords)
+        TACSProblem.setNodes(self, Xpts)
         self._jacobianUpdateRequired = True
 
     ####### Load adding methods ########
@@ -1878,7 +1878,7 @@ class StaticProblem(TACSProblem):
                     loadCaseID, f"SUBTITLE={self.name}"
                 )
                 newBDFInfo.case_control_deck.add_parameter_to_local_subcase(
-                    loadCaseID, f"ANALYSIS=STATICS"
+                    loadCaseID, "ANALYSIS=STATICS"
                 )
                 newBDFInfo.case_control_deck.add_parameter_to_local_subcase(
                     loadCaseID, f"LOAD={loadCaseID}"
