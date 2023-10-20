@@ -818,9 +818,9 @@ class StaticProblem(TACSProblem):
         initSolveTime = time.time()
 
         if self.isNonlinear:
-            hasConverged = self._solveNonlinearProblem(Fext)
+            hasConverged = self._solveNonlinear(Fext)
         else:
-            hasConverged = self._solveLinearProblem(Fext)
+            hasConverged = self._solveLinear(Fext)
 
         solveTime = time.time()
 
@@ -853,7 +853,7 @@ class StaticProblem(TACSProblem):
 
         return hasConverged
 
-    def _solveLinearProblem(self, Fext=None):
+    def _solveLinear(self, Fext=None):
         """Solve a linear StaticProblem for a given external force vector
 
         Parameters
@@ -881,7 +881,15 @@ class StaticProblem(TACSProblem):
         self.startNorm = np.real(self.res.norm())
 
         # Solve Linear System for the update
-        hasConverged = self._solveLinear(self.res, self.update)
+        hasConverged = self.linearSolver.solve(self.res, self.update)
+        hasConverged = hasConverged == 1
+
+        if not hasConverged:
+            self._TACSWarning(
+                "Linear solver failed to converge. "
+                "This is likely a sign that the problem is ill-conditioned. "
+                "Check that the model is properly restrained."
+            )
 
         self.update.scale(-1.0)
 
@@ -892,7 +900,7 @@ class StaticProblem(TACSProblem):
 
         return hasConverged
 
-    def _solveNonlinearProblem(self, Fext=None):
+    def _solveNonlinear(self, Fext=None):
         """Solve a nonlinear StaticProblem for a given external force vector
 
         Parameters
@@ -965,32 +973,6 @@ class StaticProblem(TACSProblem):
             self.writeSolution(
                 baseName=f"{self.name}-{self.callCounter:03d}-NLIter", number=iteration
             )
-
-    def _solveLinear(self, rhs, sol):
-        """Solve the linear system J * sol = rhs using the current Jacobian matrix
-
-        Parameters
-        ----------
-        rhs : tacs.TACS.Vec
-            Right hand side of the linear system
-        sol : tacs.TACS.Vec
-            Vector to store the solution in
-
-        Returns
-        -------
-        bool
-            Whether the linear solve converged
-        """
-        success = self.linearSolver.solve(rhs, sol)
-        success = success == 1
-
-        if not success:
-            self._TACSWarning(
-                "Linear solver failed to converge. "
-                "This is likely a sign that the problem is ill-conditioned. "
-                "Check that the model is properly restrained."
-            )
-        return success
 
     def updateJacobian(self, res=None):
         """Update the Jacobian (a.k.a stiffness) matrix
