@@ -196,6 +196,21 @@ class Isotropic(Material):
         )
 
     @classmethod
+    def titanium_alloy(cls):
+        # Ti 6AL-4V (grade 5)
+        return cls(
+            name="titanium-alloy",
+            E=114e9,
+            nu=0.361,
+            rho=4.43e3,
+            T1=880e6,
+            C1=970e6,
+            alpha=9.2e-6,
+            cp=526.3,
+            kappa=6.7,
+        )
+
+    @classmethod
     def steel(cls):
         return cls(
             name="steel",
