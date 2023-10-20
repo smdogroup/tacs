@@ -184,6 +184,14 @@ class ContinuationSolver(BaseSolver):
         self.predictorStep = self.assembler.createVec()
         self.incStartState = self.assembler.createVec()
 
+    @property
+    def resFunc(self) -> Callable:
+        return self.innerSolver.resFunc
+
+    @resFunc.setter
+    def resFunc(self, resFunc: Callable) -> None:
+        self.innerSolver.resFunc = resFunc
+
     def _setupPredictorVectors(self) -> None:
         """Setup the structures containing the data for computing the predictor steps"""
         self.equilibriumPathStates = []

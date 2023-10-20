@@ -160,9 +160,7 @@ class StaticProblem(TACSProblem):
         self.name = name
 
         # Set solvers to None, until we set them up later
-        self.KSM = None
-        self.history = None
-        self.newtonSolver = None
+        self.linearSolver = None
         self.nonlinearSolver = None
 
         # Default setup for common problem class objects, sets up comm and options
@@ -176,13 +174,13 @@ class StaticProblem(TACSProblem):
         # Setup solver and solver history objects for nonlinear problems
         if self.isNonlinear:
             # Create Newton solver, the inner solver for the continuation solver
-            self.newtonSolver = tacs.solvers.NewtonSolver(
+            newtonSolver = tacs.solvers.NewtonSolver(
                 assembler=self.assembler,
                 setStateFunc=self.setVariables,
                 resFunc=self.getResidual,
                 jacFunc=self.updateJacobian,
                 pcUpdateFunc=self.updatePreconditioner,
-                linearSolver=self.KSM,
+                linearSolver=self.linearSolver,
                 stateVec=self.u,
                 resVec=self.res,
                 comm=self.comm,
@@ -192,10 +190,10 @@ class StaticProblem(TACSProblem):
             self.nonlinearSolver = tacs.solvers.ContinuationSolver(
                 jacFunc=self.updateJacobian,
                 pcUpdateFunc=self.updatePreconditioner,
-                linearSolver=self.KSM,
+                linearSolver=self.linearSolver,
                 setLambdaFunc=self.setLoadScale,
                 getLambdaFunc=self.getLoadScale,
-                innerSolver=self.newtonSolver,
+                innerSolver=newtonSolver,
                 comm=self.comm,
             )
             self.nonlinearSolver.setCallback(self._nonlinearCallback)
@@ -350,7 +348,7 @@ class StaticProblem(TACSProblem):
 
         # Operator, fill level, fill ratio, msub, rtol, ataol
         if opt("KSMSolver").upper() == "GMRES":
-            self.KSM = tacs.TACS.KSM(
+            self.linearSolver = tacs.TACS.KSM(
                 self.K,
                 self.PC,
                 opt("subSpaceSize"),
@@ -367,12 +365,12 @@ class StaticProblem(TACSProblem):
                 "Unknown KSMSolver option. Valid options are " "'GMRES' or 'GCROT'"
             )
 
-        self.KSM.setTolerances(
+        self.linearSolver.setTolerances(
             self.getOption("L2ConvergenceRel"), self.getOption("L2Convergence")
         )
 
         if opt("useMonitor"):
-            self.KSM.setMonitor(
+            self.linearSolver.setMonitor(
                 self.comm,
                 _descript=opt("KSMSolver").upper(),
                 freq=opt("monitorFrequency"),
@@ -383,11 +381,15 @@ class StaticProblem(TACSProblem):
         self._preconditionerUpdateRequired = True
 
         # Give new vectors and linear solver to nonlinear solver
-        for solver in [self.newtonSolver, self.nonlinearSolver]:
-            if solver is not None:
-                solver.linearSolver = self.KSM
-                solver.stateVec = self.u
-                solver.resVec = self.res
+        if self.nonlinearSolver is not None:
+            self.nonlinearSolver.linearSolver = self.linearSolver
+            self.nonlinearSolver.innerSolver.linearSolver = self.linearSolver
+
+            self.nonlinearSolver.stateVec = self.u
+            self.nonlinearSolver.innerSolver.stateVec = self.u
+
+            self.nonlinearSolver.resVec = self.res
+            self.nonlinearSolver.innerSolver.resVec = self.res
 
     def setOption(self, name, value):
         """
@@ -406,18 +408,14 @@ class StaticProblem(TACSProblem):
 
         createVariables = True
 
-        if self.KSM is not None:
+        if self.linearSolver is not None:
             # Update tolerances
             if "l2convergence" in name.lower():
                 createVariables = False
-                self.KSM.setTolerances(
+                self.linearSolver.setTolerances(
                     self.getOption("L2ConvergenceRel"),
                     self.getOption("L2Convergence"),
                 )
-                if self.nonlinearSolver is not None:
-                    self.nonlinearSolver.setOption(
-                        "newtonSolverRelLinTol", self.getOption("L2ConvergenceRel")
-                    )
 
             # No need to reset solver for output options
             if name.lower() in [
@@ -884,7 +882,6 @@ class StaticProblem(TACSProblem):
         startTime = time.time()
 
         self.callCounter += 1
-        setupProblemTime = time.time()
 
         # Set problem vars to assembler
         self._updateAssemblerVars()
@@ -919,8 +916,7 @@ class StaticProblem(TACSProblem):
                 % ("TACS Solve Init Time", initSolveTime - startTime)
             )
             self._pp(
-                "| %-30s: %10.3f sec"
-                % ("TACS Solve Time", solveTime - initSolveTime)
+                "| %-30s: %10.3f sec" % ("TACS Solve Time", solveTime - initSolveTime)
             )
             self._pp("|")
             self._pp(
@@ -997,7 +993,6 @@ class StaticProblem(TACSProblem):
             self.getResidual(res, Fext=Fext)
 
         self.nonlinearSolver.resFunc = resFunc
-        self.newtonSolver.resFunc = resFunc
         self.nonlinearSolver.setRefNorm(self.initNorm)
         self.nonlinearSolver.solve()
 
@@ -1006,7 +1001,7 @@ class StaticProblem(TACSProblem):
         self._jacobianUpdateRequired = True
 
         # We should also reset the linear solver convergence so that any loosening of the linear convergence criteria are undone before a possible adjoint solve
-        self.KSM.setTolerances(
+        self.linearSolver.setTolerances(
             self.getOption("L2ConvergenceRel"),
             self.getOption("L2Convergence"),
         )
@@ -1063,7 +1058,7 @@ class StaticProblem(TACSProblem):
         bool
             Whether the linear solve converged
         """
-        success = self.KSM.solve(rhs, sol)
+        success = self.linearSolver.solve(rhs, sol)
         success = success == 1
 
         if not success:
