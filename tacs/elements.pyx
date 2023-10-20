@@ -766,7 +766,7 @@ cdef class Quad4ShellModRot(Element):
     .. seealso:: :ref:`theory/shell_element:Mixed Interpolation of Tensorial Components`
 
     .. note::
-        varsPerNode: 6
+        **varsPerNode**: 6
 
         outputElement: ``TACS.BEAM_OR_SHELL_ELEMENT``
 
@@ -796,7 +796,7 @@ cdef class Quad4ShellQuaternion(Element):
     .. seealso:: :ref:`theory/shell_element:Mixed Interpolation of Tensorial Components`
 
     .. note::
-        varsPerNode: 8
+        **varsPerNode**: 8
 
         outputElement: ``TACS.BEAM_OR_SHELL_ELEMENT``
 
@@ -826,7 +826,9 @@ cdef class Quad4NonlinearShellModRot(Element):
     .. seealso:: :ref:`theory/shell_element:Mixed Interpolation of Tensorial Components`
 
     .. note::
-        varsPerNode: 6
+        **varsPerNode**: 6
+
+        **numNodes**: 4
 
         outputElement: ``TACS.BEAM_OR_SHELL_ELEMENT``
 
@@ -856,7 +858,9 @@ cdef class Quad4NonlinearShellQuaternion(Element):
     .. seealso:: :ref:`theory/shell_element:Mixed Interpolation of Tensorial Components`
 
     .. note::
-        varsPerNode: 8
+        **varsPerNode**: 8
+
+        **numNodes**: 4
 
         outputElement: ``TACS.BEAM_OR_SHELL_ELEMENT``
 
@@ -948,7 +952,9 @@ cdef class Quad9ShellModRot(Element):
     .. seealso:: :ref:`theory/shell_element:Mixed Interpolation of Tensorial Components`
 
     .. note::
-        varsPerNode: 6
+        **varsPerNode**: 6
+
+        **numNodes**: 4
 
         outputElement: ``TACS.BEAM_OR_SHELL_ELEMENT``
 
@@ -978,7 +984,9 @@ cdef class Quad9ShellQuaternion(Element):
     .. seealso:: :ref:`theory/shell_element:Mixed Interpolation of Tensorial Components`
 
     .. note::
-        varsPerNode: 8
+        **varsPerNode**: 8
+
+        **numNodes**: 9
 
         outputElement: ``TACS.BEAM_OR_SHELL_ELEMENT``
 
@@ -1008,7 +1016,9 @@ cdef class Quad9NonlinearShellModRot(Element):
     .. seealso:: :ref:`theory/shell_element:Mixed Interpolation of Tensorial Components`
 
     .. note::
-        varsPerNode: 6
+        **varsPerNode**: 6
+
+        **numNodes**: 9
 
         outputElement: ``TACS.BEAM_OR_SHELL_ELEMENT``
 
@@ -1038,7 +1048,9 @@ cdef class Quad9NonlinearShellQuaternion(Element):
     .. seealso:: :ref:`theory/shell_element:Mixed Interpolation of Tensorial Components`
 
     .. note::
-        varsPerNode: 8
+        **varsPerNode**: 8
+
+        **numNodes**: 9
 
         outputElement: ``TACS.BEAM_OR_SHELL_ELEMENT``
 
@@ -1130,7 +1142,9 @@ cdef class Quad16ShellModRot(Element):
     .. seealso:: :ref:`theory/shell_element:Mixed Interpolation of Tensorial Components`
 
     .. note::
-        varsPerNode: 6
+        **varsPerNode**: 6
+
+        **numNodes**: 16
 
         outputElement: ``TACS.BEAM_OR_SHELL_ELEMENT``
 
@@ -1160,7 +1174,9 @@ cdef class Quad16ShellQuaternion(Element):
     .. seealso:: :ref:`theory/shell_element:Mixed Interpolation of Tensorial Components`
 
     .. note::
-        varsPerNode: 8
+        **varsPerNode**: 8
+
+        **numNodes**: 16
 
         outputElement: ``TACS.BEAM_OR_SHELL_ELEMENT``
 
@@ -1190,7 +1206,9 @@ cdef class Quad16NonlinearShellModRot(Element):
     .. seealso:: :ref:`theory/shell_element:Mixed Interpolation of Tensorial Components`
 
     .. note::
-        varsPerNode: 6
+        **varsPerNode**: 6
+
+        **numNodes**: 16
 
         outputElement: ``TACS.BEAM_OR_SHELL_ELEMENT``
 
@@ -1220,7 +1238,9 @@ cdef class Quad16NonlinearShellQuaternion(Element):
     .. seealso:: :ref:`theory/shell_element:Mixed Interpolation of Tensorial Components`
 
     .. note::
-        varsPerNode: 8
+        **varsPerNode**: 8
+
+        **numNodes**: 16
 
         outputElement: ``TACS.BEAM_OR_SHELL_ELEMENT``
 
@@ -1313,7 +1333,7 @@ cdef class Tri3ShellModRot(Element):
 
     .. note::
         **varsPerNode**: 6
-        
+
         **numNodes**: 3
 
         **outputElement**: ``TACS.BEAM_OR_SHELL_ELEMENT``
@@ -1470,7 +1490,9 @@ cdef class Quad4NonlinearThermalShell(Element):
     .. seealso:: :ref:`theory/shell_element:Mixed Interpolation of Tensorial Components`
 
     .. note::
-        varsPerNode: 7
+        **varsPerNode**: 7
+
+        **numNodes**: 4
 
         outputElement: ``TACS.BEAM_OR_SHELL_ELEMENT``
 
