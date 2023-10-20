@@ -104,7 +104,9 @@ class TACSShellCentrifugalForce : public TACSElement {
       TacsScalar detXd = det3x3(Xd);
       detXd *= weight;
 
-      TacsScalar mass = con->evalDensity(elemIndex, pt, X);
+      TacsScalar moments[3];
+      con->evalMassMoments(elemIndex, pt, X, moments);
+      TacsScalar mass = moments[0];
 
       TacsScalar r[3], wxr[3], ac[3];
 
@@ -113,6 +115,13 @@ class TACSShellCentrifugalForce : public TACSElement {
       r[1] = X[1] - rotCenter[1] + U[1];
       r[2] = X[2] - rotCenter[2] + U[2];
 
+      // Account for shell mass offset
+      if (!first_order) {
+        for (int i = 0; i < 3; i++) {
+          r[i] -= moments[1] / mass * n[i];
+        }
+      }
+
       // Compute omega x r
       crossProduct(omegaVec, r, wxr);
 
@@ -120,12 +129,17 @@ class TACSShellCentrifugalForce : public TACSElement {
       crossProduct(omegaVec, wxr, ac);
 
       // Compute the traction
-      TacsScalar tr[3];
+      TacsScalar tr[vars_per_node] = {0.0};
       tr[0] = detXd * mass * ac[0];
       tr[1] = detXd * mass * ac[1];
       tr[2] = detXd * mass * ac[2];
+      // Add moment terms if theres a shell offset
+      if (!first_order) {
+        crossProductAdd(-detXd * moments[1], n, ac, &tr[3]);
+      }
 
-      basis::template addInterpFieldsTranspose<vars_per_node, 3>(pt, tr, res);
+      basis::template addInterpFieldsTranspose<vars_per_node, vars_per_node>(
+          pt, tr, res);
     }
   }
 

@@ -113,6 +113,10 @@ TACSMaterialProperties::TACSMaterialProperties(
   alpha1 = _alpha1;
   alpha2 = _alpha2;
   alpha3 = _alpha3;
+
+  kappa1 = _kappa1;
+  kappa2 = _kappa2;
+  kappa3 = _kappa3;
 }
 
 // Get the material type

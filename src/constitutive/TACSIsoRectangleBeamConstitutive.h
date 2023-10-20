@@ -40,7 +40,9 @@ class TACSIsoRectangleBeamConstitutive : public TACSBeamConstitutive {
                                    int _width_num, int _thickness_num,
                                    TacsScalar _lb_width, TacsScalar _ub_width,
                                    TacsScalar _lb_thickness,
-                                   TacsScalar _ub_thickness);
+                                   TacsScalar _ub_thickness,
+                                   TacsScalar _w_offset = 0.0,
+                                   TacsScalar _t_offset = 0.0);
   ~TACSIsoRectangleBeamConstitutive();
 
   // Retrieve the global design variable numbers
@@ -118,6 +120,7 @@ class TACSIsoRectangleBeamConstitutive : public TACSBeamConstitutive {
   TacsScalar lb_thickness, ub_thickness;
   TacsScalar lb_width, ub_width;
   TacsScalar ks_weight;
+  TacsScalar w_offset, t_offset;
   // The object name
   static const char *constName;
 };

@@ -9,7 +9,7 @@ Some :class:`~TACS.Element` classes are capable of running under different eleme
 These elements may require an :class:`~TACS.ElementBasis` class at setup. The following :class:`~TACS.ElementBasis` classes are available in TACS:
 
 .. automodule:: tacs.elements
-  :members: LinearTetrahedralBasis, QuadraticTetrahedralBasis, CubicTetrahedralBasis,
+  :members: LinearTetrahedralBasis, QuadraticTetrahedralBasis,
     LinearHexaBasis, QuadraticHexaBasis, CubicHexaBasis,
     LinearQuadBasis, QuadraticQuadBasis, CubicQuadBasis, QuarticQuadBasis, QuinticQuadBasis,
     LinearTriangleBasis, QuadraticTriangleBasis, CubicTriangleBasis

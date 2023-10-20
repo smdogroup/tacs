@@ -27,7 +27,7 @@ const char *TACSCompositeShellConstitutive::constName =
 TACSCompositeShellConstitutive::TACSCompositeShellConstitutive(
     int _num_plies, TACSOrthotropicPly **_ply_props,
     const TacsScalar *_ply_thickness, const TacsScalar *_ply_angles,
-    TacsScalar _kcorr) {
+    TacsScalar _kcorr, TacsScalar _tOffset) {
   num_plies = _num_plies;
   ply_thickness = new TacsScalar[num_plies];
   ply_angles = new TacsScalar[num_plies];
@@ -42,6 +42,7 @@ TACSCompositeShellConstitutive::TACSCompositeShellConstitutive(
   }
 
   kcorr = _kcorr;
+  tOffset = _tOffset;
 }
 
 TACSCompositeShellConstitutive::~TACSCompositeShellConstitutive() {
@@ -83,7 +84,7 @@ void TACSCompositeShellConstitutive::evalMassMoments(int elemIndex,
   }
 
   // Compute the contribution to the mass moment from each layer
-  TacsScalar t0 = -0.5 * t;
+  TacsScalar t0 = -(0.5 + tOffset) * t;
   for (int i = 0; i < num_plies; i++) {
     TacsScalar rho_ply = ply_props[i]->getDensity();
     TacsScalar t1 = t0 + ply_thickness[i];
@@ -131,7 +132,7 @@ void TACSCompositeShellConstitutive::evalStress(int elemIndex,
   }
 
   // Compute the contribution to the stiffness from each layer
-  TacsScalar t0 = -0.5 * t;
+  TacsScalar t0 = -(0.5 + tOffset) * t;
   for (int k = 0; k < num_plies; k++) {
     TacsScalar Qbar[6], Abar[3];
     ply_props[k]->calculateQbar(ply_angles[k], Qbar);
@@ -174,7 +175,7 @@ TacsScalar TACSCompositeShellConstitutive::evalFailure(
   for (int i = 0; i < num_plies; i++) {
     t += ply_thickness[i];
   }
-  TacsScalar t0 = -0.5 * t;
+  TacsScalar t0 = -(0.5 + tOffset) * t;
 
   // Keep track of the maximum failure criterion
   TacsScalar max = 0.0;
@@ -207,7 +208,7 @@ TacsScalar TACSCompositeShellConstitutive::evalFailureStrainSens(
   for (int i = 0; i < num_plies; i++) {
     t += ply_thickness[i];
   }
-  TacsScalar t0 = -0.5 * t;
+  TacsScalar t0 = -(0.5 + tOffset) * t;
 
   // Keep track of the maximum failure criterion
   TacsScalar max = 0.0;
@@ -270,7 +271,7 @@ void TACSCompositeShellConstitutive::evalTangentStiffness(int elemIndex,
   }
 
   // Compute the contribution to the stiffness from each layer
-  TacsScalar t0 = -0.5 * t;
+  TacsScalar t0 = -(0.5 + tOffset) * t;
   for (int k = 0; k < num_plies; k++) {
     TacsScalar Qbar[6], Abar[3];
     ply_props[k]->calculateQbar(ply_angles[k], Qbar);
@@ -352,4 +353,11 @@ void TACSCompositeShellConstitutive::getPlyAngles(TacsScalar *_ply_angles) {
   for (int i = 0; i < num_plies; i++) {
     _ply_angles[i] = ply_angles[i];
   }
+}
+
+/*
+  Get thickness offset
+*/
+TacsScalar TACSCompositeShellConstitutive::getThicknessOffset() {
+  return tOffset;
 }
