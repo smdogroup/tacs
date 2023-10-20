@@ -1687,7 +1687,7 @@ class StaticProblem(TACSProblem):
         bcTerms.axpy(-1.0, self.adjRHS)
 
         # Solve Linear System
-        self._solveLinear(self.adjRHS, self.phi)
+        self.linearSolver.solve(self.adjRHS, self.phi)
         self.assembler.applyBCs(self.phi)
         # Add bc terms back in
         self.phi.axpy(1.0, bcTerms)
