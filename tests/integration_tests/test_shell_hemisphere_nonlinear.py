@@ -131,7 +131,7 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
         }
         problem = FEAAssembler.createStaticProblem("RadialForces", options=probOptions)
         problem.nonlinearSolver.setOptions(continuationOptions)
-        problem.newtonSolver.setOptions(newtonOptions)
+        problem.nonlinearSolver.innerSolver.setOptions(newtonOptions)
 
         # ==============================================================================
         # Find tip force points

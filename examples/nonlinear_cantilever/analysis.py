@@ -112,7 +112,7 @@ continuationOptions = {
 }
 forceProblem = FEAAssembler.createStaticProblem("TipForce", options=probOptions)
 try:
-    forceProblem.newtonSolver.setOptions(newtonOptions)
+    forceProblem.nonlinearSolver.innerSolver.setOptions(newtonOptions)
     forceProblem.nonlinearSolver.setOptions(continuationOptions)
 except AttributeError:
     pass

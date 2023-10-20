@@ -87,28 +87,25 @@ def elemCallBack(dvNum, compID, compDescript, elemDescripts, specialDVs, **kwarg
 FEAAssembler.initialize(elemCallBack)
 
 probOptions = {
-    "continuationInitialStep": 0.01,
-    "continuationTargetIter": 6,
-    "newtonSolverMaxIter": 50,
-    "continuationRelTol": 1e-7,
-    "newtonSolverMaxLinIters": 5,
-    "continuationUsePredictor": True,
-    "continuationNumPredictorStates": 8,
-    # "newtonSolverUseEW": True,
     "nRestarts": 3,
     "subSpaceSize": 20,
-    "nonlinearSolverMonitorVars": [
-        "lambda",
-        "linsolveriters",
-        "linsolverres",
-        "EWTol",
-        "linesearchstep",
-        "linesearchiters",
-    ],
     "writeNLIterSolutions": True,
 }
+newtonOptions = {
+    "MaxIter": 50,
+    "MaxLinIters": 5,
+    "UseEW": True,
+}
+continuationOptions = {
+    "InitialStep": 0.01,
+    "TargetIter": 6,
+    "RelTol": 1e-7,
+    "UsePredictor": True,
+    "NumPredictorStates": 8,
+}
 problem = FEAAssembler.createStaticProblem("Annulus", options=probOptions)
-
+problem.nonlinearSolver.setOptions(continuationOptions)
+problem.nonlinearSolver.innerSolver.setOptions(newtonOptions)
 
 # ==============================================================================
 # Find tip force points

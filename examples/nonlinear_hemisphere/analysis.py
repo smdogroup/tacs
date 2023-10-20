@@ -86,23 +86,22 @@ def elemCallBack(dvNum, compID, compDescript, elemDescripts, specialDVs, **kwarg
 FEAAssembler.initialize(elemCallBack)
 
 probOptions = {
-    "continuationInitialStep": 1.0,
-    "newtonSolverMaxIter": 50,
-    "newtonSolverUseEW": True,
     "nRestarts": 3,
     "subSpaceSize": 20,
-    "nonlinearSolverMonitorVars": [
-        "lambda",
-        "linsolveriters",
-        "linsolverres",
-        "EWTol",
-        "linesearchstep",
-        "linesearchiters",
-    ],
-    "newtonSolverMaxLinIters": 10,
     "printTiming": True,
 }
+continuationOptions = {
+    "InitialStep": 1.0,
+}
+newtonOptions = {
+    "newtonSolverMaxIter": 50,
+    "newtonSolverUseEW": True,
+    "newtonSolverMaxLinIters": 10,
+}
+
 problem = FEAAssembler.createStaticProblem("RadialForces", options=probOptions)
+problem.nonlinearSolver.setOptions(continuationOptions)
+problem.nonlinearSolver.innerSolver.setOptions(newtonOptions)
 
 # ==============================================================================
 # Find tip force points

@@ -88,16 +88,22 @@ FEAAssembler.initialize(elemCallBack)
 
 probOptions = {
     "printTiming": True,
-    "continuationInitialStep": 0.25,
-    "newtonSolverMaxLinIters": 0,
-    "newtonSolverSkipFirstNLineSearch": 0,
-    "newtonSolverMaxIter": 100,
     "nRestarts": 3,
     "subSpaceSize": 20,
     "writeNLIterSolutions": True,
 }
-problem = FEAAssembler.createStaticProblem("TipForce", options=probOptions)
+continuationOptions = {
+    "InitialStep": 0.25,
+}
+newtonOptions = {
+    "MaxLinIters": 0,
+    "SkipFirstNLineSearch": 0,
+    "MaxIter": 100,
+}
 
+problem = FEAAssembler.createStaticProblem("TipForce", options=probOptions)
+problem.nonlinearSolver.setOptions(continuationOptions)
+problem.nonlinearSolver.innerSolver.setOptions(newtonOptions)
 
 # ==============================================================================
 # Find tip force points
