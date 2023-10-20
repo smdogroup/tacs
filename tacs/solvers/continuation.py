@@ -13,7 +13,7 @@ Each iteration of the continuation solver consists of three steps:
 # ==============================================================================
 # Standard Python modules
 # ==============================================================================
-from typing import Optional, Callable, Any
+from typing import Optional, Callable, Any, Dict
 
 # ==============================================================================
 # External Python modules
@@ -192,6 +192,26 @@ class ContinuationSolver(BaseSolver):
     def resFunc(self, resFunc: Callable) -> None:
         self.innerSolver.resFunc = resFunc
 
+    def getHistoryVariables(self) -> Dict[str, Dict]:
+        """Get the variables to be stored in the solver history
+
+        This method allows for implementation of any logic that dictates any changes in the stored variables depending on the current options.
+
+        Returns
+        -------
+        Dict[str, Dict]
+            Dictionary of solver variables, keys are the variable names, value is another dictionary with keys "type" and "print", where "type" is the data type of the variable and "print" is a boolean indicating whether or not to print the variable to the screen
+        """
+        variables = {}
+        variables["Increment"] = {"type": int, "print": True}
+        variables["Lambda"] = {"type": float, "print": True}
+        variables["SubIter"] = {"type": int, "print": True}
+
+        # Add the variables from the inner solver
+        variables.update(self.innerSolver.getHistoryVariables())
+
+        return variables
+
     def _setupPredictorVectors(self) -> None:
         """Setup the structures containing the data for computing the predictor steps"""
         self.equilibriumPathStates = []
@@ -363,16 +383,19 @@ class ContinuationSolver(BaseSolver):
                 atol = COARSE_ABS_TOL
             self.innerSolver.setConvergenceTolerance(absTol=atol, relTol=rtol)
 
-            # Before calling the inner solver we need to create a wrapper around the user's callback function so that we can add some continuation information to the monitor variables
-            if self.callback is not None:
+            # Before calling the inner solver we need to create a callback function so that we can store data in this solver's history file at every iteration of the inner solver
+            def continuationcallBack(solver, u, res, monitorVars):
+                monitorVars["SubIter"] = solver.iterationCount
+                monitorVars["Increment"] = increment
+                monitorVars["Lambda"] = currentLambda
 
-                def continuationcallBack(solver, u, res, monitorVars):
-                    monitorVars["SubIter"] = solver.iterationCount
-                    monitorVars["Increment"] = increment
-                    monitorVars["Lambda"] = currentLambda
-                    self.callback(solver, u, res, monitorVars)
+                if self.rank == 0:
+                    self.history.write(monitorVars)
 
-                self.innerSolver.setCallback(continuationcallBack)
+                if self.userCallback is not None:
+                    self.userCallback(solver, u, res, monitorVars)
+
+            self.innerSolver.setCallback(continuationcallBack)
 
             self.innerSolver.setRefNorm(self.refNorm * currentLambda)
             self.innerSolver.solve()

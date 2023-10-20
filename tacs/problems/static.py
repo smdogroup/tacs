@@ -23,7 +23,6 @@ import tacs.TACS
 import tacs.elements
 import tacs.solvers
 from tacs.problems.base import TACSProblem
-from tacs.utilities import SolverHistory
 
 
 class StaticProblem(TACSProblem):
@@ -86,16 +85,6 @@ class StaticProblem(TACSProblem):
             int,
             10,
             "Print frequency for sub iterations of linear solver.",
-        ],
-        "nonlinearSolverMonitorVars": [
-            list,
-            [
-                "linSolverIters",
-                "linSolverRes",
-                "lineSearchStep",
-                "lineSearchIters",
-            ],
-            "List of variables to include in nonlinear solver monitor output. Choose from 'linSolverIters', 'linSolverRes', 'loadScale', 'lineSearchStep', 'EWTol', and 'lineSearchIters'.",
         ],
         # Output Options
         "writeSolution": [
@@ -197,58 +186,6 @@ class StaticProblem(TACSProblem):
                 comm=self.comm,
             )
             self.nonlinearSolver.setCallback(self._nonlinearCallback)
-
-    def _createSolverHistory(self):
-        """Setup the solver history object based on the current options
-
-        The solver history is only created on the root processor.
-        """
-        monitorVars = [s.lower() for s in self.getOption("nonlinearSolverMonitorVars")]
-        numType = float if self.dtype == np.float64 else complex
-        if self.nonlinearSolver is not None and self.comm.rank == 0:
-            history = SolverHistory()
-
-            # Define the variables to be stored in the history
-            # Continuation increment
-            history.addVariable("Increment", int, printVar=True)
-            # Load scale
-            history.addVariable("Lambda", float, printVar=True)
-            # Newton solve iteration number
-            history.addVariable("SubIter", int, printVar=True)
-            # Einstat walker linear solver tolerance
-            if self.newtonSolver.getOption("UseEW"):
-                history.addVariable("EW Tol", float, printVar="ewtol" in monitorVars)
-            # Number of linear solver iterations
-            history.addVariable(
-                "Lin iters", int, printVar="linsolveriters" in monitorVars
-            )
-            # Linear solver residual norm
-            history.addVariable(
-                "Lin res", numType, printVar="linsolverres" in monitorVars
-            )
-            # Residual norm (absolute and relative)
-            history.addVariable("Res norm", numType, printVar=True)
-            history.addVariable("Rel res norm", numType, printVar=True)
-            # state norm
-            history.addVariable("U norm", numType, printVar=True)
-            # Line search step size
-            history.addVariable(
-                "LS step",
-                float,
-                printVar="linesearchstep" in monitorVars
-                and self.newtonSolver.getOption("UseLineSearch"),
-            )
-            # Num line search iterations
-            history.addVariable(
-                "LS iters",
-                int,
-                printVar="linesearchiters" in monitorVars
-                and self.newtonSolver.getOption("UseLineSearch"),
-            )
-            # Flags
-            history.addVariable("Flags", str, printVar=True)
-
-            self.history = history
 
     def _createVariables(self):
         """Internal to create the variable required by TACS"""
@@ -426,15 +363,6 @@ class StaticProblem(TACSProblem):
                 "outputdir",
             ]:
                 createVariables = False
-
-            if self.isNonlinear:
-                # We need to create a new solver history object if the monitor variables have updated
-                if (
-                    name.lower() == "nonlinearsolvermonitorvars"
-                    and self.history is not None
-                ):
-                    createVariables = False
-                    self._createSolverHistory()
 
             # Reset solver for all other option changes
             if createVariables:
@@ -857,16 +785,6 @@ class StaticProblem(TACSProblem):
         self.updateJacobian()
         self.updatePreconditioner()
 
-        if self.isNonlinear:
-            if self.comm.rank == 0:
-                # Create the solver history if we don't have one yet, otherwise reset it
-                if self.history is None:
-                    self._createSolverHistory()
-                else:
-                    self.history.reset(clearMetadata=True)
-                    self.history.addMetadata("Options", self.options)
-                    self.history.addMetadata("Name", self.name)
-
     def solve(self, Fext=None):
         """
         Solution of the static problem for current load set. The
@@ -1027,18 +945,14 @@ class StaticProblem(TACSProblem):
         iteration = 0
         if self.rank == 0:
             # Figure out the iteration number
-            iteration = self.history.getIter()
+            iteration = self.nonlinearSolver.history.getIter() - 1
             if iteration % 50 == 0:
-                self.history.printHeader()
-            self.history.write(monitorVars)
-            self.history.printData()
+                self.nonlinearSolver.history.printHeader()
+            self.nonlinearSolver.history.printData()
 
         self.comm.bcast(iteration, root=0)
 
         if self.getOption("writeNLIterSolutions"):
-            # import pdb
-
-            # pdb.set_trace()
             self.writeSolution(
                 baseName=f"{self.name}-{self.callCounter:03d}-NLIter", number=iteration
             )
@@ -1917,8 +1831,8 @@ class StaticProblem(TACSProblem):
         """
         # Figure out the output file base name
         baseName = self.getOutputFileName(outputDir, baseName, number)
-        if self.history is not None:
-            self.history.save(baseName)
+        if self.nonlinearSolver.history is not None:
+            self.nonlinearSolver.history.save(baseName)
 
     def writeLoadToBDF(self, bdfFile, loadCaseID):
         """

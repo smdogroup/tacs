@@ -60,7 +60,6 @@ class BaseUI:
         ----------
         name : str
             Name of option to modify
-
         value : depends on option
             New option value to set
         """
@@ -662,6 +661,8 @@ class SolverHistory(object):
         data : dict
             Dictionary of values to record, with variable names as keys
         """
+
+        data = copy.deepcopy(data)
 
         # Store time
         if self._includeTime:

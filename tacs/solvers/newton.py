@@ -13,7 +13,7 @@ described on page 50 of `this paper
 # ==============================================================================
 # Standard Python modules
 # ==============================================================================
-from typing import Optional, Callable
+from typing import Optional, Callable, Dict
 
 # ==============================================================================
 # External Python modules
@@ -124,6 +124,16 @@ class NewtonSolver(BaseSolver):
             0.9,
             "Often, the value of the merit function at the Newton step (alpha = 1.0), is orders of magnitude greater than at the start point. In these situations, the linesearch then tries to evaluate a point with a very small step size, which usually meets the expected decrease criteria but results in very slow progress of the Newton solver. To combat this, this value limits how far the linesearch can backtrack on the first iteration after evaluating alpha = 1. This has the effect of encouraging the linesearch to find larger steps that meet the expected decrease criterion, which results in faster convergence of the Newton solver.",
         ],
+        "monitorVars": [
+            list,
+            [
+                "linSolverIters",
+                "linSolverRes",
+                "lineSearchStep",
+                "lineSearchIters",
+            ],
+            "List of variables to include in nonlinear solver monitor output. Choose from 'linSolverIters', 'linSolverRes', 'lineSearchStep', 'EWTol', and 'lineSearchIters'.",
+        ],
     }
 
     def __init__(
@@ -180,6 +190,68 @@ class NewtonSolver(BaseSolver):
 
         # Create additional vectors
         self.update = self.assembler.createVec()
+
+    def setOption(self, name, value):
+        """A thin wrapper around the base setOption method that makes necessary changes when certain options are changed
+
+        Parameters
+        ----------
+        name : str
+            Name of option to modify
+        value : depends on option
+            New option value to set
+        """
+        BaseSolver.setOption(self, name, value)
+
+        # May need to re-create the solver history if the monitor variables have changed, if not then we still need to clear the options we set as metadata
+        if self.history is not None:
+            if name.lower() == "monitorvars":
+                self._createSolverHistory()
+            else:
+                self.history.reset(clearMetadata=True)
+
+    def getHistoryVariables(self) -> Dict[str, Dict]:
+        """Get the variables to be stored in the solver history
+
+        This method allows for implementation of any logic that dictates any changes in the stored variables depending on the current options.
+
+        Returns
+        -------
+        Dict[str, Dict]
+            Dictionary of solver variables, keys are the variable names, value is another dictionary with keys "type" and "print", where "type" is the data type of the variable and "print" is a boolean indicating whether or not to print the variable to the screen
+        """
+        variables = {}
+        numType = float if self.dtype == np.float64 else complex
+
+        monitorVars = [var.lower() for var in self.getOption("monitorVars")]
+
+        # Einstat walker linear solver tolerance
+        if self.getOption("UseEW"):
+            variables["EW Tol"] = {"type": float, "print": "ewtol" in monitorVars}
+        # Number of linear solver iterations
+        variables["Lin iters"] = {"type": int, "print": "linsolveriters" in monitorVars}
+        # Linear solver residual norm
+        variables["Lin res"] = {"type": numType, "print": "linsolverres" in monitorVars}
+        # Residual norm (absolute and relative)
+        variables["Res norm"] = {"type": numType, "print": True}
+        variables["Rel res norm"] = {"type": numType, "print": True}
+        # state norm
+        variables["U norm"] = {"type": numType, "print": True}
+        if self.getOption("UseLineSearch"):
+            # Line search step size
+            variables["LS step"] = {
+                "type": float,
+                "print": "linesearchstep" in monitorVars,
+            }
+            # Num line search iterations
+            variables["LS iters"] = {
+                "type": int,
+                "print": "linesearchiters" in monitorVars,
+            }
+        # Flags
+        variables["Flags"] = {"type": str, "print": True}
+
+        return variables
 
     def setConvergenceTolerance(
         self, absTol: Optional[float] = None, relTol: Optional[float] = None
@@ -262,7 +334,6 @@ class NewtonSolver(BaseSolver):
 
             # Write data to history
             monitorVars = {
-                "SubIter": iteration,
                 "Res norm": resNorm,
                 "Rel res norm": resNorm / self.refNorm,
                 "U norm": uNorm,
@@ -275,8 +346,12 @@ class NewtonSolver(BaseSolver):
                 monitorVars["LS iters"] = lineSearchIters
                 if USE_EW:
                     monitorVars["EW Tol"] = prevLinCovergenceRel
-            if self.callback is not None:
-                self.callback(self, self.stateVec, self.resVec, monitorVars)
+
+            if self.rank == 0:
+                self.history.write(monitorVars)
+
+            if self.userCallback is not None:
+                self.userCallback(self, self.stateVec, self.resVec, monitorVars)
 
             flags = ""
 

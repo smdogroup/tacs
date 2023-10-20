@@ -11,7 +11,7 @@ the methods that all solvers must implement.
 # Standard Python modules
 # ==============================================================================
 import abc
-from typing import Optional, Callable
+from typing import Optional, Callable, Dict
 
 # ==============================================================================
 # External Python modules
@@ -22,7 +22,7 @@ import mpi4py
 # Extension modules
 # ==============================================================================
 import tacs.TACS
-from tacs.utilities import BaseUI
+from tacs.utilities import BaseUI, SolverHistory
 
 
 class BaseSolver(BaseUI):
@@ -65,8 +65,36 @@ class BaseSolver(BaseUI):
         self._hasConverged = False
         self._fatalFailure = False
         self._iterationCount = 0
-        self.callback = None
         BaseUI.__init__(self, options, comm)
+
+        # No solver history for now
+        self.history = None
+        self.userCallback = None
+
+    def _createSolverHistory(self):
+        """Setup the solver history object based on the current options
+
+        The solver history is only created on the root processor.
+        """
+        histVars = self.getHistoryVariables()
+        if self.comm.rank == 0:
+            self.history = SolverHistory()
+            for varName, variable in histVars.items():
+                self.history.addVariable(
+                    varName, variable["type"], printVar=variable["print"]
+                )
+
+    @abc.abstractmethod
+    def getHistoryVariables(self) -> Dict[str, Dict]:
+        """Get the variables to be stored in the solver history
+
+        This method allows for implementation of any logic that dictates any changes in the stored variables depending on the current options.
+
+        Returns
+        -------
+        Dict[str, Dict]
+            Dictionary of solver variables, keys are the variable names, value is another dictionary with keys "type" and "print", where "type" is the data type of the variable and "print" is a boolean indicating whether or not to print the variable to the screen
+        """
 
     @property
     def hasConverged(self) -> bool:
@@ -124,6 +152,15 @@ class BaseSolver(BaseUI):
         self._hasConverged = False
         self._fatalFailure = False
 
+        # Reset the solver history and store the solver options as metadata
+        if self.rank == 0:
+            if self.history is None:
+                self._createSolverHistory()
+            else:
+                self.history.reset()
+            if "options" not in self.history.getMetadata():
+                self.history.addMetadata("options", self.options)
+
     def reset(self) -> None:
         """Reset the solver
 
@@ -156,4 +193,4 @@ class BaseSolver(BaseUI):
             - ``res`` is the current residual vector
             - ``monitorVars`` is a dictionary of variables to monitor, which can be specified through the ``"nonlinearSolverMonitorVars"`` option
         """
-        self.callback = callback
+        self.userCallback = callback
