@@ -113,7 +113,7 @@ class StaticProblem(TACSProblem):
             "Print level for nonlinear solver.\n"
             "\t Accepts:\n"
             "\t\t   0 : No printing.\n"
-            "\t\t   1 : Print nonlinear iterations.\n"
+            "\t\t   1 : Print nonlinear iterations.\n",
         ],
     }
 
