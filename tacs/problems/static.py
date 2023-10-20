@@ -1830,9 +1830,10 @@ class StaticProblem(TACSProblem):
             typically used from an external solver
         """
         # Figure out the output file base name
-        baseName = self.getOutputFileName(outputDir, baseName, number)
-        if self.nonlinearSolver.history is not None:
-            self.nonlinearSolver.history.save(baseName)
+        if self.nonlinearSolver is not None:
+            baseName = self.getOutputFileName(outputDir, baseName, number)
+            if self.nonlinearSolver.history is not None:
+                self.nonlinearSolver.history.save(baseName)
 
     def writeLoadToBDF(self, bdfFile, loadCaseID):
         """
