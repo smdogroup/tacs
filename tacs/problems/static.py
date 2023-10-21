@@ -170,6 +170,28 @@ class StaticProblem(TACSProblem):
 
         # Setup solver and solver history objects for nonlinear problems
         if self.isNonlinear:
+            # Give the nonlinear solvers their own linear solvers
+            newtonLinearSolver = tacs.TACS.KSM(
+                self.K,
+                self.PC,
+                self.getOption("subSpaceSize"),
+                self.getOption("nRestarts"),
+                self.getOption("flexible"),
+            )
+            newtonLinearSolver.setTolerances(
+                self.getOption("L2ConvergenceRel"), self.getOption("L2Convergence")
+            )
+            continuationLinearSolver = tacs.TACS.KSM(
+                self.K,
+                self.PC,
+                self.getOption("subSpaceSize"),
+                self.getOption("nRestarts"),
+                self.getOption("flexible"),
+            )
+            continuationLinearSolver.setTolerances(
+                self.getOption("L2ConvergenceRel"), self.getOption("L2Convergence")
+            )
+
             # Create Newton solver, the inner solver for the continuation solver
             newtonSolver = tacs.solvers.NewtonSolver(
                 assembler=self.assembler,
@@ -177,9 +199,7 @@ class StaticProblem(TACSProblem):
                 resFunc=self.getResidual,
                 jacFunc=self.updateJacobian,
                 pcUpdateFunc=self.updatePreconditioner,
-                linearSolver=self.linearSolver,
-                stateVec=self.u,
-                resVec=self.res,
+                linearSolver=newtonLinearSolver,
                 comm=self.comm,
             )
 
@@ -187,7 +207,7 @@ class StaticProblem(TACSProblem):
             self.nonlinearSolver = tacs.solvers.ContinuationSolver(
                 jacFunc=self.updateJacobian,
                 pcUpdateFunc=self.updatePreconditioner,
-                linearSolver=self.linearSolver,
+                linearSolver=continuationLinearSolver,
                 setLambdaFunc=self.setLoadScale,
                 getLambdaFunc=self.getLoadScale,
                 innerSolver=newtonSolver,
@@ -324,17 +344,6 @@ class StaticProblem(TACSProblem):
         # Linear solver factor flag
         self._jacobianUpdateRequired = True
         self._preconditionerUpdateRequired = True
-
-        # Give new vectors and linear solver to nonlinear solver
-        if self.nonlinearSolver is not None:
-            self.nonlinearSolver.linearSolver = self.linearSolver
-            self.nonlinearSolver.innerSolver.linearSolver = self.linearSolver
-
-            self.nonlinearSolver.stateVec = self.u
-            self.nonlinearSolver.innerSolver.stateVec = self.u
-
-            self.nonlinearSolver.resVec = self.res
-            self.nonlinearSolver.innerSolver.resVec = self.res
 
     def setOption(self, name, value):
         """
@@ -928,17 +937,11 @@ class StaticProblem(TACSProblem):
 
         self.nonlinearSolver.resFunc = resFunc
         self.nonlinearSolver.setRefNorm(self.initNorm)
-        self.nonlinearSolver.solve()
+        self.nonlinearSolver.solve(u0=self.u, result=self.u)
 
         # Since the state has changed, we need to flag that the jacobian and preconditioner should be before the next primal or adjoint solve
         self._preconditionerUpdateRequired = True
         self._jacobianUpdateRequired = True
-
-        # We should also reset the linear solver convergence so that any loosening of the linear convergence criteria are undone before a possible adjoint solve
-        self.linearSolver.setTolerances(
-            self.getOption("L2ConvergenceRel"),
-            self.getOption("L2Convergence"),
-        )
 
         # Finally return a bool indicating whether the solve was successful
         return self.nonlinearSolver.hasConverged
