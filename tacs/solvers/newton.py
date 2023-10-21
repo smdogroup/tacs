@@ -302,12 +302,9 @@ class NewtonSolver(BaseSolver):
         ABS_TOL = self.getOption("AbsTol")
         REL_TOL = self.getOption("RelTol")
 
-        self.initializeSolve()
+        self.initializeSolve(u0)
 
         flags = ""
-
-        if u0 is not None:
-            self.stateVec.copyValues(u0)
 
         for iteration in range(MAX_ITERS):
             self._iterationCount = iteration

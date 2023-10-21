@@ -250,9 +250,9 @@ class ContinuationSolver(BaseSolver):
 
         return
 
-    def initializeSolve(self) -> None:
+    def initializeSolve(self, u0: Optional[tacs.TACS.Vec] = None) -> None:
         """Perform any initialization required before the solve"""
-        BaseSolver.initializeSolve(self)
+        BaseSolver.initializeSolve(self, u0)
         if self.getOption("UsePredictor"):
             for ii in range(self.getOption("NumPredictorStates")):
                 self.equilibriumPathLoadScales[ii] = None

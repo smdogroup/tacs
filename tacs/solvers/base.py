@@ -143,14 +143,23 @@ class BaseSolver(BaseUI):
             Relative tolerance, not changed if no value is provided
         """
 
-    def initializeSolve(self) -> None:
+    def initializeSolve(self, u0: Optional[tacs.TACS.Vec] = None) -> None:
         """Perform any initialization required before the solve
 
-        In the base solver class, this simply involves resetting the iteration counter and convergence flags
+        Parameters
+        ----------
+        u0 : TACS vector, optional
+            Initial guess, by default uses the current state
         """
         self._iterationCount = 0
         self._hasConverged = False
         self._fatalFailure = False
+
+        # Initialize the state vector and set the boundary conditions
+        if u0 is not None:
+            self.stateVec.copyValues(u0)
+        self.assembler.setBCs(self.stateVec)
+        self.setStateFunc(self.stateVec)
 
         # Reset the solver history and store the solver options as metadata
         if self.rank == 0:
