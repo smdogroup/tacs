@@ -4,10 +4,8 @@ ContinuationSolver
 
 Options
 ^^^^^^^
-Options can be set for :class:`~tacs.solvers.ContinuationSolver` at time of creation for the class in the
-:meth:`pyTACS.createStaticProblem <tacs.solvers.ContinuationSolver.__init__>` method or using the
-:meth:`ContinuationSolver.setOption <tacs.solvers.ContinuationSolver.setOption>` method. Current option values for a class
-instance can be printed out using the :meth:`ContinuationSolver.printOption <tacs.solvers.ContinuationSolver.printOptions>` method.
+Options can be set using the :meth:`ContinuationSolver.setOption <tacs.solvers.ContinuationSolver.setOption>` and :meth:`ContinuationSolver.setOptions <tacs.solvers.ContinuationSolver.setOptions>` methods.
+Current option values for a class instance can be printed out using the :meth:`ContinuationSolver.printOptions <tacs.solvers.ContinuationSolver.printOptions>` method.
 The following options, their default values and descriptions are listed below:
 
 .. program-output:: python -c "from tacs.solvers import ContinuationSolver; ContinuationSolver.printDefaultOptions()"
