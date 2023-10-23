@@ -15,6 +15,7 @@ import copy
 import os
 import time
 from collections import OrderedDict
+import warnings
 
 import numpy as np
 import pyNastran.bdf as pn
@@ -30,10 +31,15 @@ class StaticProblem(TACSProblem):
     defaultOptions = {
         "outputDir": [str, "./", "Output directory for F5 file writer."],
         # Solution Options
-        "KSMSolver": [
+        "linearSolver": [
             str,
             "GMRES",
             "Krylov subspace method to use for linear solver. Currently only supports 'GMRES'",
+        ],
+        "nonlinearSolver": [
+            str,
+            "Continuation",
+            "Convergence method to use for nonlinear solver. Currently only supports 'Continuation'",
         ],
         "orderingType": [
             int,
@@ -170,50 +176,57 @@ class StaticProblem(TACSProblem):
 
         # Setup solver and solver history objects for nonlinear problems
         if self.isNonlinear:
-            # Give the nonlinear solvers their own linear solvers
-            newtonLinearSolver = tacs.TACS.KSM(
-                self.K,
-                self.PC,
-                self.getOption("subSpaceSize"),
-                self.getOption("nRestarts"),
-                self.getOption("flexible"),
-            )
-            newtonLinearSolver.setTolerances(
-                self.getOption("L2ConvergenceRel"), self.getOption("L2Convergence")
-            )
-            continuationLinearSolver = tacs.TACS.KSM(
-                self.K,
-                self.PC,
-                self.getOption("subSpaceSize"),
-                self.getOption("nRestarts"),
-                self.getOption("flexible"),
-            )
-            continuationLinearSolver.setTolerances(
-                self.getOption("L2ConvergenceRel"), self.getOption("L2Convergence")
-            )
+            # TODO: I'd like to have an option to specify other NL solvers in future
+            if self.getOption("nonlinearSolver") == "Continuation":
+                # Give the nonlinear solvers their own linear solvers
+                newtonLinearSolver = tacs.TACS.KSM(
+                    self.K,
+                    self.PC,
+                    self.getOption("subSpaceSize"),
+                    self.getOption("nRestarts"),
+                    self.getOption("flexible"),
+                )
+                newtonLinearSolver.setTolerances(
+                    self.getOption("L2ConvergenceRel"), self.getOption("L2Convergence")
+                )
+                continuationLinearSolver = tacs.TACS.KSM(
+                    self.K,
+                    self.PC,
+                    self.getOption("subSpaceSize"),
+                    self.getOption("nRestarts"),
+                    self.getOption("flexible"),
+                )
+                continuationLinearSolver.setTolerances(
+                    self.getOption("L2ConvergenceRel"), self.getOption("L2Convergence")
+                )
 
-            # Create Newton solver, the inner solver for the continuation solver
-            newtonSolver = tacs.solvers.NewtonSolver(
-                assembler=self.assembler,
-                setStateFunc=self.setVariables,
-                resFunc=self.getResidual,
-                jacFunc=self.updateJacobian,
-                pcUpdateFunc=self.updatePreconditioner,
-                linearSolver=newtonLinearSolver,
-                comm=self.comm,
-            )
+                # Create Newton solver, the inner solver for the continuation solver
+                newtonSolver = tacs.solvers.NewtonSolver(
+                    assembler=self.assembler,
+                    setStateFunc=self.setVariables,
+                    resFunc=self.getResidual,
+                    jacFunc=self.updateJacobian,
+                    pcUpdateFunc=self.updatePreconditioner,
+                    linearSolver=newtonLinearSolver,
+                    comm=self.comm,
+                )
 
-            # And now create the continuation solver
-            self.nonlinearSolver = tacs.solvers.ContinuationSolver(
-                jacFunc=self.updateJacobian,
-                pcUpdateFunc=self.updatePreconditioner,
-                linearSolver=continuationLinearSolver,
-                setLambdaFunc=self.setLoadScale,
-                getLambdaFunc=self.getLoadScale,
-                innerSolver=newtonSolver,
-                comm=self.comm,
-            )
-            self.nonlinearSolver.setCallback(self._nonlinearCallback)
+                # And now create the continuation solver
+                self.nonlinearSolver = tacs.solvers.ContinuationSolver(
+                    jacFunc=self.updateJacobian,
+                    pcUpdateFunc=self.updatePreconditioner,
+                    linearSolver=continuationLinearSolver,
+                    setLambdaFunc=self.setLoadScale,
+                    getLambdaFunc=self.getLoadScale,
+                    innerSolver=newtonSolver,
+                    comm=self.comm,
+                )
+                self.nonlinearSolver.setCallback(self._nonlinearCallback)
+            else:
+                raise self._TACSError(
+                    "Unknown nonlinearSolver option. Valid options are "
+                    "'Continuation'"
+                )
 
     def _createVariables(self):
         """Internal to create the variable required by TACS"""
@@ -312,7 +325,7 @@ class StaticProblem(TACSProblem):
         )
 
         # Operator, fill level, fill ratio, msub, rtol, ataol
-        if opt("KSMSolver").upper() == "GMRES":
+        if opt("linearSolver").upper() == "GMRES":
             self.linearSolver = tacs.TACS.KSM(
                 self.K,
                 self.PC,
@@ -321,13 +334,13 @@ class StaticProblem(TACSProblem):
                 opt("flexible"),
             )
         # TODO: Fix this
-        # elif opt('KSMSolver').upper() == 'GCROT':
+        # elif opt('linearSolver').upper() == 'GCROT':
         #    self.KSM = tacs.TACS.GCROT(
         #        self.K, self.PC, opt('subSpaceSize'), opt('subSpaceSize'),
         #        opt('nRestarts'), opt('flexible'))
         else:
             raise self._TACSError(
-                "Unknown KSMSolver option. Valid options are " "'GMRES' or 'GCROT'"
+                "Unknown linearSolver option. Valid options are " "'GMRES' or 'GCROT'"
             )
 
         self.linearSolver.setTolerances(
@@ -337,7 +350,7 @@ class StaticProblem(TACSProblem):
         if opt("useMonitor"):
             self.linearSolver.setMonitor(
                 self.comm,
-                _descript=opt("KSMSolver").upper(),
+                _descript=opt("linearSolver").upper(),
                 freq=opt("monitorFrequency"),
             )
 
@@ -357,6 +370,15 @@ class StaticProblem(TACSProblem):
         value : depends on option
             New option value to set
         """
+        # Updated deprecated option
+        if name.lower() == "ksmsolver":
+            name = "linearSolver"
+            warnings.warn(
+                "'KSMSolver' option will be deprecated starting in tacs 3.7.0. "
+                "Please use `linearSolver` option instead.",
+                DeprecationWarning,
+            )
+
         # Default setOption for common problem class objects
         TACSProblem.setOption(self, name, value)
 
@@ -891,7 +913,8 @@ class StaticProblem(TACSProblem):
 
         # Solve Linear System for the update
         hasConverged = self.linearSolver.solve(self.res, self.update)
-        hasConverged = hasConverged == 1
+        # Convert from int to bool
+        hasConverged = bool(hasConverged)
 
         if not hasConverged:
             self._TACSWarning(
