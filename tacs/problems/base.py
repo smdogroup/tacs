@@ -20,7 +20,13 @@ class TACSProblem(TACSSystem):
     """
 
     def __init__(
-        self, assembler, comm=None, options=None, outputViewer=None, meshLoader=None
+        self,
+        assembler,
+        comm=None,
+        options=None,
+        outputViewer=None,
+        meshLoader=None,
+        isNonlinear=False,
     ):
         """
         Parameters
@@ -40,6 +46,10 @@ class TACSProblem(TACSSystem):
         meshLoader : tacs.pymeshloader.pyMeshLoader
             pyMeshLoader object used to create the assembler.
         """
+
+        # Set nonlinear flag
+        self._isNonlinear = isNonlinear
+
         # Set attributes and options
         TACSSystem.__init__(self, assembler, comm, options, outputViewer, meshLoader)
 
@@ -47,6 +57,11 @@ class TACSProblem(TACSSystem):
         self.functionList = OrderedDict()
 
         return
+
+    @property
+    def isNonlinear(self):
+        """The public interface for the isNonlinear attribute. Implemented as a property so that it is read-only."""
+        return self._isNonlinear
 
     ####### Eval function methods ########
 

@@ -1,7 +1,7 @@
 import numpy as np
 
 import openmdao.api as om
-from mphys import UnmaskedConverter, MaskedVariableDescription
+from mphys.mask_converter import UnmaskedConverter, MaskedVariableDescription
 
 from .dv import TacsDVComp
 

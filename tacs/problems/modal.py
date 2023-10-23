@@ -15,7 +15,7 @@ import time
 import numpy as np
 
 import tacs.TACS
-from .base import TACSProblem
+from tacs.problems.base import TACSProblem
 
 
 class ModalProblem(TACSProblem):
@@ -86,6 +86,7 @@ class ModalProblem(TACSProblem):
         comm,
         outputViewer=None,
         meshLoader=None,
+        isNonlinear=False,
         options=None,
     ):
         """
@@ -123,7 +124,9 @@ class ModalProblem(TACSProblem):
         self.name = name
 
         # Default setup for common problem class objects, sets up comm and options
-        TACSProblem.__init__(self, assembler, comm, options, outputViewer, meshLoader)
+        TACSProblem.__init__(
+            self, assembler, comm, options, outputViewer, meshLoader, isNonlinear
+        )
 
         # Set time eigenvalue parameters
         self.sigma = sigma

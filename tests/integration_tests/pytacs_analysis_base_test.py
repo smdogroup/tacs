@@ -225,8 +225,11 @@ class PyTACSTestCase:
                     # Write solution
                     prob.writeSolution(outputDir=tmp_dir_name)
 
+                if isinstance(prob, problems.StaticProblem):
+                    prob.writeSolutionHistory(outputDir=tmp_dir_name)
+
             if self.comm.rank == 0:
-                # Loop through each problem and make sure solution file exists
+                # Loop through each problem and make sure solution file exists and history file exists if static nonlinear problem
                 for prob in self.tacs_probs:
                     if isinstance(prob, problems.TACSProblem):
                         with self.subTest(problem=prob.name):
@@ -234,8 +237,19 @@ class PyTACSTestCase:
                             if isinstance(prob, problems.StaticProblem):
                                 f5_file = f"{base_name}.f5"
                                 self.assertTrue(
-                                    os.path.exists(f5_file), msg=f"{f5_file} exists"
+                                    os.path.exists(f5_file), msg=f"{f5_file} not found"
                                 )
+                                history_file = f"{base_name}.pkl"
+                                if prob.isNonlinear:
+                                    self.assertTrue(
+                                        os.path.exists(history_file),
+                                        msg=f"{history_file} not found",
+                                    )
+                                else:
+                                    self.assertFalse(
+                                        os.path.exists(history_file),
+                                        msg=f"{history_file} found but should not have been",
+                                    )
                             else:
                                 if isinstance(prob, problems.TransientProblem):
                                     num_steps = prob.getNumTimeSteps() + 1

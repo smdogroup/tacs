@@ -56,13 +56,13 @@ METIS_LIB = ${TACS_DIR}/extern/metis/lib/libmetis.a
 
 # AMD is a set of routines for ordering matrices, included in the SuiteSparse package. It is not required by default.
 
-# SUITESPARSE_DIR = ${TACS_DIR}/extern/SuiteSparse-5.13.0
+# SUITESPARSE_DIR = ${TACS_DIR}/extern/SuiteSparse-7.0.1
 # The variables below should not need to be altered if you are installing SuiteSparse from the standard release tarball
 
 # SUITESPARSE_CONFIG_DIR = ${SUITESPARSE_DIR}/SuiteSparse_config
 # AMD_DIR = ${SUITESPARSE_DIR}/AMD
 # AMD_INCLUDE = -I${AMD_DIR}/Include -I${SUITESPARSE_CONFIG_DIR}
-# AMD_LIBS = ${AMD_DIR}/Lib/libamd.a ${SUITESPARSE_CONFIG_DIR}/libsuitesparseconfig.a
+# AMD_LIBS = ${AMD_DIR}/build/libamd.a ${SUITESPARSE_CONFIG_DIR}/build/libsuitesparseconfig.a
 # TACS_DEF += -DTACS_HAS_AMD_LIBRARY
 
 # TECIO is a library for reading and writing tecplot data files, only required for building f5totec, can use either teciosrc or teciompisrc

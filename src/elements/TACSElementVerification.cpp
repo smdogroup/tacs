@@ -18,6 +18,30 @@
 #include "tacslapack.h"
 
 /*
+  Helper function to get the matrix type name from the ElementMatrixType enum
+*/
+inline auto TacsGetMatrixTypeName(ElementMatrixType matType) {
+  switch (matType) {
+    case TACS_JACOBIAN_MATRIX:
+      return "Jacobian Matrix";
+      break;
+    case TACS_MASS_MATRIX:
+      return "Mass Matrix";
+      break;
+    case TACS_STIFFNESS_MATRIX:
+      return "Stiffness Matrix";
+      break;
+    case TACS_GEOMETRIC_STIFFNESS_MATRIX:
+      return "Geometric Stiffness Matrix";
+      break;
+    case TACS_STIFFNESS_PRODUCT_DERIVATIVE:
+      return "Stiffness Product Derivative";
+      break;
+  }
+  return "Unknown Matrix Type";
+}
+
+/*
   Seed random number generator for repeatable test results
 */
 void TacsSeedRandomGenerator(int seed) { srand(seed); }
@@ -86,16 +110,16 @@ double TacsGetMaxRelError(TacsScalar *testVals, TacsScalar *refVals, int size,
 void TacsPrintErrorComponents(FILE *fp, const char *descript,
                               TacsScalar *testVals, TacsScalar *refVals,
                               int size) {
-  fprintf(fp, "%*s[   ] %15s %15s %15s %15s\n", (int)strlen(descript), "Val",
+  fprintf(fp, "%*s[   ] %25s %25s %25s %25s\n", (int)strlen(descript), "Val",
           "Analytic", "Approximate", "Rel. Error", "Abs. Error");
   for (int i = 0; i < size; i++) {
     double absError = fabs(TacsRealPart(testVals[i] - refVals[i]));
     if (refVals[i] != 0.0) {
-      fprintf(fp, "%s[%3d] %15.6e %15.6e %15.4e %15.4e\n", descript, i,
+      fprintf(fp, "%s[%3d] %25.16e %25.16e %25.16e %25.16e\n", descript, i,
               TacsRealPart(testVals[i]), TacsRealPart(refVals[i]),
               fabs(TacsRealPart(absError / refVals[i])), absError);
     } else {
-      fprintf(fp, "%s[%3d] %15.6e %15.6e %15s %15.4e\n", descript, i,
+      fprintf(fp, "%s[%3d] %25.16e %25.16e %25s %25.16e\n", descript, i,
               TacsRealPart(testVals[i]), TacsRealPart(refVals[i]), "-",
               absError);
     }
@@ -910,9 +934,8 @@ int TacsTestElementMatDVSens(TACSElement *element, ElementMatrixType matType,
   double max_rel = TacsGetMaxRelError(result, fd, num_dvs, &max_rel_index);
 
   if (test_print_level > 0) {
-    fprintf(stderr,
-            "Testing the derivative of the matrix inner product for %s\n",
-            element->getObjectName());
+    fprintf(stderr, "Testing the %s derivative for %s.\n",
+            TacsGetMatrixTypeName(matType), element->getObjectName());
     fprintf(stderr, "Max Err: %10.4e in component %d.\n", max_err,
             max_err_index);
     fprintf(stderr, "Max REr: %10.4e in component %d.\n", max_rel,
@@ -940,7 +963,7 @@ int TacsTestElementMatDVSens(TACSElement *element, ElementMatrixType matType,
   return !allClose;
 }
 
-int TacsTestElementMatXptSens(TACSElement *element, ElementMatrixType elemType,
+int TacsTestElementMatXptSens(TACSElement *element, ElementMatrixType matType,
                               int elemIndex, double time,
                               const TacsScalar Xpts[], const TacsScalar vars[],
                               double dh, int test_print_level,
@@ -948,66 +971,73 @@ int TacsTestElementMatXptSens(TACSElement *element, ElementMatrixType elemType,
   // Retrieve the number of variables
   int nvars = element->getNumVariables();
 
-  TacsScalar *psi = new TacsScalar[nvars];
-  TacsScalar *phi = new TacsScalar[nvars];
+  TacsScalar psi[nvars];
+  TacsScalar phi[nvars];
 
   int nnodes = element->getNumNodes();
 
-  TacsScalar *result = new TacsScalar[3 * nnodes];
-  TacsScalar *pert = new TacsScalar[3 * nnodes];  // perturbation for nodes
-  TacsScalar *Xp = new TacsScalar[3 * nnodes];
-  TacsScalar *mat = new TacsScalar[nvars * nvars];
+  TacsScalar dfdX[3 * nnodes];
+  TacsScalar dfdX_approx[3 * nnodes];
+  TacsScalar xPert[3 * nnodes];  // perturbation for nodes
+  TacsScalar Xp[3 * nnodes];
+  TacsScalar mat[nvars * nvars];
 
   // Generate a perturbation vector
-  TacsGenerateRandomArray(pert, 3 * nnodes);
+  memset(xPert, 0, 3 * nnodes * sizeof(TacsScalar));
   TacsGenerateRandomArray(psi, nvars);
   TacsGenerateRandomArray(phi, nvars);
-  memset(result, 0, 3 * nnodes * sizeof(TacsScalar));
+  memset(dfdX, 0, 3 * nnodes * sizeof(TacsScalar));
+  memcpy(Xp, Xpts, 3 * nnodes * sizeof(TacsScalar));
 
   double scale = 1.0 * rand() / RAND_MAX;
 
   // Compute the element matrix
-  element->addMatXptSensInnerProduct(elemType, elemIndex, time, scale, psi, phi,
-                                     Xpts, vars, result);
+  element->addMatXptSensInnerProduct(matType, elemIndex, time, scale, psi, phi,
+                                     Xpts, vars, dfdX);
 
-  // Perturb the nodes in the forward sense
-  TacsForwardDiffPerturb(Xp, 3 * nnodes, Xpts, pert, dh);
-  element->getMatType(elemType, elemIndex, time, Xp, vars, mat);
-  TacsScalar forward = 0.0;
-  for (int i = 0; i < nvars; i++) {
-    for (int j = 0; j < nvars; j++) {
-      forward += mat[nvars * i + j] * psi[i] * phi[j];
+  for (int kk = 0; kk < 3 * nnodes; kk++) {
+    xPert[kk] = 1.0;
+    // Perturb the nodes in the forward sense
+    memset(mat, 0, nvars * nvars * sizeof(TacsScalar));
+    TacsForwardDiffPerturb(Xp, 3 * nnodes, Xpts, xPert, dh);
+    element->getMatType(matType, elemIndex, time, Xp, vars, mat);
+    TacsScalar forward = 0.0;
+    for (int i = 0; i < nvars; i++) {
+      for (int j = 0; j < nvars; j++) {
+        forward += mat[i + j * nvars] * psi[i] * phi[j];
+      }
     }
-  }
 
-  // Perturb the nodes in the reverse sense
-  TacsBackwardDiffPerturb(Xp, 3 * nnodes, Xpts, pert, dh);
-  element->getMatType(elemType, elemIndex, time, Xp, vars, mat);
-  TacsScalar backward = 0.0;
-  for (int i = 0; i < nvars; i++) {
-    for (int j = 0; j < nvars; j++) {
-      backward += mat[nvars * i + j] * psi[i] * phi[j];
+    TacsScalar backward = 0.0;
+#ifndef TACS_USE_COMPLEX
+    // Perturb the nodes in the reverse sense
+    memset(mat, 0, nvars * nvars * sizeof(TacsScalar));
+    TacsBackwardDiffPerturb(Xp, 3 * nnodes, Xpts, xPert, dh);
+    element->getMatType(matType, elemIndex, time, Xp, vars, mat);
+    for (int i = 0; i < nvars; i++) {
+      for (int j = 0; j < nvars; j++) {
+        backward += mat[i + j * nvars] * psi[i] * phi[j];
+      }
     }
-  }
+#endif
 
-  // Form the FD/CS approximate
-  TacsFormDiffApproximate(&forward, &backward, 1, dh);
-
-  // Compute the fd result
-  TacsScalar res = 0.0;
-  for (int i = 0; i < 3 * nnodes; i++) {
-    res += result[i] * pert[i];
+    // Form the FD/CS approximate
+    TacsFormDiffApproximate(&forward, &backward, 1, dh);
+    dfdX_approx[kk] = forward * scale;
+    xPert[kk] = 0.0;
+    Xp[kk] = Xpts[kk];
   }
-  TacsScalar fd = scale * forward;
 
   // Compute the error
   int max_err_index, max_rel_index;
-  double max_err = TacsGetMaxError(&res, &fd, 1, &max_err_index);
-  double max_rel = TacsGetMaxRelError(&res, &fd, 1, &max_rel_index);
+  double max_err =
+      TacsGetMaxError(dfdX, dfdX_approx, 3 * nnodes, &max_err_index);
+  double max_rel =
+      TacsGetMaxRelError(dfdX, dfdX_approx, 3 * nnodes, &max_rel_index);
 
   if (test_print_level > 0) {
-    fprintf(stderr, "Testing the element matrix type for element %s.\n",
-            element->getObjectName());
+    fprintf(stderr, "Testing the %s derivative for %s.\n",
+            TacsGetMatrixTypeName(matType), element->getObjectName());
     fprintf(stderr, "Max Err: %10.4e in component %d.\n", max_err,
             max_err_index);
     fprintf(stderr, "Max REr: %10.4e in component %d.\n", max_rel,
@@ -1016,27 +1046,23 @@ int TacsTestElementMatXptSens(TACSElement *element, ElementMatrixType elemType,
   // Print the error if required
   if (test_print_level > 1) {
     fprintf(stderr,
-            "The product of a random vector and the stiffness matrix\n");
-    TacsPrintErrorComponents(stderr, "Element Xpt product", &res, &fd, 1);
+            "The derivative of the inner product of the %s and two random "
+            "vectors w.r.t the node coordinates\n",
+            TacsGetMatrixTypeName(matType));
+    TacsPrintErrorComponents(stderr, "Element product XptSens", dfdX,
+                             dfdX_approx, 3 * nnodes);
   }
   if (test_print_level) {
     fprintf(stderr, "\n");
   }
 
-  bool allClose =
-      TacsAssertAllClose(&res, &fd, 1, test_fail_atol, test_fail_rtol);
-
-  delete[] result;
-  delete[] psi;
-  delete[] phi;
-  delete[] pert;
-  delete[] Xp;
-  delete[] mat;
+  bool allClose = TacsAssertAllClose(dfdX, dfdX_approx, 3 * nnodes,
+                                     test_fail_atol, test_fail_rtol);
 
   return !allClose;
 }
 
-int TacsTestElementMatSVSens(TACSElement *element, ElementMatrixType elemType,
+int TacsTestElementMatSVSens(TACSElement *element, ElementMatrixType matType,
                              int elemIndex, double time,
                              const TacsScalar Xpts[], const TacsScalar vars[],
                              double dh, int test_print_level,
@@ -1044,13 +1070,13 @@ int TacsTestElementMatSVSens(TACSElement *element, ElementMatrixType elemType,
   // Retrieve the number of variables
   int nvars = element->getNumVariables();
 
-  TacsScalar *result = new TacsScalar[nvars];
-  TacsScalar *psi = new TacsScalar[nvars];
-  TacsScalar *phi = new TacsScalar[nvars];
+  TacsScalar result[nvars];
+  TacsScalar psi[nvars];
+  TacsScalar phi[nvars];
 
-  TacsScalar *pert = new TacsScalar[nvars];  // perturbation for vars
-  TacsScalar *q = new TacsScalar[nvars];
-  TacsScalar *mat = new TacsScalar[nvars * nvars];
+  TacsScalar pert[nvars];  // perturbation for vars
+  TacsScalar q[nvars];
+  TacsScalar mat[nvars * nvars];
 
   // Generate a perturbation vector
   TacsGenerateRandomArray(pert, nvars);
@@ -1058,28 +1084,30 @@ int TacsTestElementMatSVSens(TACSElement *element, ElementMatrixType elemType,
   TacsGenerateRandomArray(phi, nvars);
 
   // Compute the element matrix
-  element->getMatSVSensInnerProduct(elemType, elemIndex, time, psi, phi, Xpts,
+  element->getMatSVSensInnerProduct(matType, elemIndex, time, psi, phi, Xpts,
                                     vars, result);
 
   // Perturb the variables in the forward sense
   TacsForwardDiffPerturb(q, nvars, vars, pert, dh);
-  element->getMatType(elemType, elemIndex, time, Xpts, q, mat);
+  element->getMatType(matType, elemIndex, time, Xpts, q, mat);
   TacsScalar forward = 0.0;
   for (int i = 0; i < nvars; i++) {
     for (int j = 0; j < nvars; j++) {
-      forward += mat[nvars * i + j] * psi[i] * phi[j];
+      forward += mat[i + j * nvars] * psi[i] * phi[j];
     }
   }
 
   // Perturb the variables in the reverse sense
-  TacsBackwardDiffPerturb(q, nvars, vars, pert, dh);
-  element->getMatType(elemType, elemIndex, time, Xpts, q, mat);
   TacsScalar backward = 0.0;
+#ifndef TACS_USE_COMPLEX
+  TacsBackwardDiffPerturb(q, nvars, vars, pert, dh);
+  element->getMatType(matType, elemIndex, time, Xpts, q, mat);
   for (int i = 0; i < nvars; i++) {
     for (int j = 0; j < nvars; j++) {
-      backward += mat[nvars * i + j] * psi[i] * phi[j];
+      backward += mat[i + j * nvars] * psi[i] * phi[j];
     }
   }
+#endif
 
   // Form the FD/CS approximate
   TacsFormDiffApproximate(&forward, &backward, 1, dh);
@@ -1097,8 +1125,8 @@ int TacsTestElementMatSVSens(TACSElement *element, ElementMatrixType elemType,
   double max_rel = TacsGetMaxRelError(&res, &fd, 1, &max_rel_index);
 
   if (test_print_level > 0) {
-    fprintf(stderr, "Testing the element matrix type for element %s.\n",
-            element->getObjectName());
+    fprintf(stderr, "Testing the %s derivative for %s.\n",
+            TacsGetMatrixTypeName(matType), element->getObjectName());
     fprintf(stderr, "Max Err: %10.4e in component %d.\n", max_err,
             max_err_index);
     fprintf(stderr, "Max REr: %10.4e in component %d.\n", max_rel,
@@ -1107,7 +1135,9 @@ int TacsTestElementMatSVSens(TACSElement *element, ElementMatrixType elemType,
   // Print the error if required
   if (test_print_level > 1) {
     fprintf(stderr,
-            "The product of a random vector and the stiffness matrix\n");
+            "The derivative of the inner product of the %s and two random "
+            "vectors w.r.t the state variables\n",
+            TacsGetMatrixTypeName(matType));
     TacsPrintErrorComponents(stderr, "Element SV product", &res, &fd, 1);
   }
   if (test_print_level) {
@@ -1116,13 +1146,6 @@ int TacsTestElementMatSVSens(TACSElement *element, ElementMatrixType elemType,
 
   bool allClose =
       TacsAssertAllClose(&res, &fd, 1, test_fail_atol, test_fail_rtol);
-
-  delete[] result;
-  delete[] psi;
-  delete[] phi;
-  delete[] pert;
-  delete[] q;
-  delete[] mat;
 
   return !allClose;
 }
