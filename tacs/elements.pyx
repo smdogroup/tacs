@@ -768,7 +768,7 @@ cdef class Quad4ShellModRot(Element):
     .. note::
         **varsPerNode**: 6
 
-        outputElement: ``TACS.BEAM_OR_SHELL_ELEMENT``
+        **outputElement**: ``TACS.BEAM_OR_SHELL_ELEMENT``
 
     Args:
         transform (ShellTransform or None): Shell transform object.
@@ -798,7 +798,7 @@ cdef class Quad4ShellQuaternion(Element):
     .. note::
         **varsPerNode**: 8
 
-        outputElement: ``TACS.BEAM_OR_SHELL_ELEMENT``
+        **outputElement**: ``TACS.BEAM_OR_SHELL_ELEMENT``
 
     Args:
         transform (ShellTransform or None): Shell transform object.
@@ -830,7 +830,7 @@ cdef class Quad4NonlinearShellModRot(Element):
 
         **numNodes**: 4
 
-        outputElement: ``TACS.BEAM_OR_SHELL_ELEMENT``
+        **outputElement**: ``TACS.BEAM_OR_SHELL_ELEMENT``
 
     Args:
         transform (ShellTransform or None): Shell transform object.
@@ -862,7 +862,7 @@ cdef class Quad4NonlinearShellQuaternion(Element):
 
         **numNodes**: 4
 
-        outputElement: ``TACS.BEAM_OR_SHELL_ELEMENT``
+        **outputElement**: ``TACS.BEAM_OR_SHELL_ELEMENT``
 
     Args:
         transform (ShellTransform or None): Shell transform object.
@@ -956,7 +956,7 @@ cdef class Quad9ShellModRot(Element):
 
         **numNodes**: 4
 
-        outputElement: ``TACS.BEAM_OR_SHELL_ELEMENT``
+        **outputElement**: ``TACS.BEAM_OR_SHELL_ELEMENT``
 
     Args:
         transform (ShellTransform or None): Shell transform object.
@@ -988,7 +988,7 @@ cdef class Quad9ShellQuaternion(Element):
 
         **numNodes**: 9
 
-        outputElement: ``TACS.BEAM_OR_SHELL_ELEMENT``
+        **outputElement**: ``TACS.BEAM_OR_SHELL_ELEMENT``
 
     Args:
         transform (ShellTransform or None): Shell transform object.
@@ -1020,7 +1020,7 @@ cdef class Quad9NonlinearShellModRot(Element):
 
         **numNodes**: 9
 
-        outputElement: ``TACS.BEAM_OR_SHELL_ELEMENT``
+        **outputElement**: ``TACS.BEAM_OR_SHELL_ELEMENT``
 
     Args:
         transform (ShellTransform or None): Shell transform object.
@@ -1052,7 +1052,7 @@ cdef class Quad9NonlinearShellQuaternion(Element):
 
         **numNodes**: 9
 
-        outputElement: ``TACS.BEAM_OR_SHELL_ELEMENT``
+        **outputElement**: ``TACS.BEAM_OR_SHELL_ELEMENT``
 
     Args:
         transform (ShellTransform or None): Shell transform object.
@@ -1146,7 +1146,7 @@ cdef class Quad16ShellModRot(Element):
 
         **numNodes**: 16
 
-        outputElement: ``TACS.BEAM_OR_SHELL_ELEMENT``
+        **outputElement**: ``TACS.BEAM_OR_SHELL_ELEMENT``
 
     Args:
         transform (ShellTransform or None): Shell transform object.
@@ -1178,7 +1178,7 @@ cdef class Quad16ShellQuaternion(Element):
 
         **numNodes**: 16
 
-        outputElement: ``TACS.BEAM_OR_SHELL_ELEMENT``
+        **outputElement**: ``TACS.BEAM_OR_SHELL_ELEMENT``
 
     Args:
         transform (ShellTransform or None): Shell transform object.
@@ -1210,7 +1210,7 @@ cdef class Quad16NonlinearShellModRot(Element):
 
         **numNodes**: 16
 
-        outputElement: ``TACS.BEAM_OR_SHELL_ELEMENT``
+        **outputElement**: ``TACS.BEAM_OR_SHELL_ELEMENT``
 
     Args:
         transform (ShellTransform or None): Shell transform object.
@@ -1242,7 +1242,7 @@ cdef class Quad16NonlinearShellQuaternion(Element):
 
         **numNodes**: 16
 
-        outputElement: ``TACS.BEAM_OR_SHELL_ELEMENT``
+        **outputElement**: ``TACS.BEAM_OR_SHELL_ELEMENT``
 
     Args:
         transform (ShellTransform or None): Shell transform object.
@@ -1400,7 +1400,7 @@ cdef class Tri3NonlinearShellModRot(Element):
 
         **numNodes**: 3
 
-        outputElement: ``TACS.BEAM_OR_SHELL_ELEMENT``
+        **outputElement**: ``TACS.BEAM_OR_SHELL_ELEMENT``
 
     Args:
         transform (ShellTransform or None): Shell transform object.
@@ -1494,7 +1494,7 @@ cdef class Quad4NonlinearThermalShell(Element):
 
         **numNodes**: 4
 
-        outputElement: ``TACS.BEAM_OR_SHELL_ELEMENT``
+        **outputElement**: ``TACS.BEAM_OR_SHELL_ELEMENT``
 
     Args:
         transform (ShellTransform or None): Shell transform object.
